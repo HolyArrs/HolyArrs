@@ -36,7 +36,7 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-test('history: every step is listed with filters by kind, movie and date, and paging', async () => {
+test('history: day by day, with tabs, one title and a details panel', async () => {
 	await page.goto('/downloads');
 	await page.locator('main').getByRole('link', { name: 'History', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'History' })).toBeVisible();
@@ -44,30 +44,32 @@ test('history: every step is listed with filters by kind, movie and date, and pa
 	await expect(rows.first()).toBeVisible();
 	await expect(page.getByTestId('history-count')).toContainText(' of ');
 
-	// What happened: only renames.
-	await page.getByRole('checkbox', { name: 'Renamed' }).check();
-	await expect(page).toHaveURL(/kinds=rename/);
-	await expect(rows.first()).toBeVisible();
-	// The list reloads after the address changes; wait for the filtered rows.
+	// Changes, then Renamed: only renames, kept in the address.
+	await page.getByTestId('look-tabs').getByRole('button', { name: /^Changes/ }).click();
+	await page.getByTestId('look-subtabs').getByRole('button', { name: /^Renamed/ }).click();
+	await expect(page).toHaveURL(/show=changes\.renamed/);
 	await expect.poll(async () => (await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-kind')))).every((k) => /^rename/.test(k ?? ''))).toBe(true);
-	// Why and where: the reasons and paths of a row.
-	await rows.first().getByRole('button', { name: 'Why and where' }).click();
-	await expect(rows.first().locator('dl')).toContainText('From');
-	await page.getByRole('checkbox', { name: 'Renamed' }).uncheck();
+	// The details panel tells the picked row's reasons and paths.
+	await rows.first().click();
+	await expect(page.getByTestId('look-pane').locator('dl').first()).toContainText('From');
+	// The panel hides and comes back, and a picked row brings it back too.
+	const toggle = page.getByTestId('history-details-toggle');
+	await toggle.click();
+	await expect(page.getByTestId('look-days')).toHaveAttribute('data-panel', 'hidden');
+	await rows.first().click();
+	await expect(page.getByTestId('look-days')).toHaveAttribute('data-panel', 'open');
 
 	// A date range in the future matches nothing.
-	await page.getByLabel('From').fill('2099-01-01');
-	await page.getByLabel('From').dispatchEvent('change');
+	await page.goto('/downloads/history?from=2099-01-01');
 	await expect(page.getByText('Nothing matches')).toBeVisible();
-	await page.getByRole('button', { name: 'Show everything' }).click();
-	await expect(rows.first()).toBeVisible();
 
 	// One movie.
 	const titles = (await (await page.request.get('/api/v1/titles')).json()).titles as TitleRow[];
 	const cinder = titles.find((t) => t.name === 'Cinder Waltz')!;
-	await page.getByLabel('Movie').selectOption(String(cinder.id));
-	await expect(page.getByTestId('history-count')).toContainText('for Cinder Waltz');
-	for (const t of await rows.locator('a').allTextContents()) expect(t).toBe('Cinder Waltz');
+	await page.goto(`/downloads/history?title=${cinder.id}`);
+	await expect(page.getByTestId('look-title')).toContainText('Cinder Waltz');
+	await expect(rows.first()).toBeVisible();
+	for (const t of await page.getByTestId('history-title').allTextContents()) expect(t).toMatch(/^Cinder Waltz/);
 });
 
 test('history on the movie page links to the movie in History', async () => {
@@ -78,7 +80,7 @@ test('history on the movie page links to the movie in History', async () => {
 	await expect(card.locator('li').first()).toBeVisible();
 	await card.getByRole('link', { name: /All \d+ rows/ }).click();
 	await expect(page).toHaveURL(/\/downloads\/history\?title=\d+/);
-	await expect(page.getByTestId('history-count')).toContainText('for Cinder Waltz');
+	await expect(page.getByTestId('look-title')).toContainText('Cinder Waltz');
 });
 
 test('health: checks run on Health checks, show on Home, and their settings are saved', async () => {

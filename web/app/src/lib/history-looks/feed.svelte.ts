@@ -1,4 +1,4 @@
-// One page of Events for a History look: the page's filters plus the kinds
+// One page of Events for History: the page's filters plus the kinds
 // of the picked tab. Newer requests win; "more" appends the next page.
 import { api, message } from '../api.ts';
 import { live } from '../live.svelte.ts';
@@ -10,6 +10,8 @@ import type { EventPage, EventRecord } from '../types.ts';
 export class EventFeed {
 	events = $state<EventRecord[]>([]);
 	total = $state(0);
+	/** With an episode filter: the episode, named by the server. */
+	episode = $state('');
 	offset = $state(0);
 	loaded = $state(false);
 	busy = $state(false);
@@ -33,6 +35,7 @@ export class EventFeed {
 			if (!ok()) return;
 			this.events = append ? [...this.events, ...p.events] : p.events;
 			this.total = p.total;
+			this.episode = p.episode ?? '';
 			this.offset = offset;
 			this.error = '';
 		} catch (e) {

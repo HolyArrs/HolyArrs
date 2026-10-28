@@ -1,19 +1,13 @@
-// History designs (Downloads > History, ?view=1…5): how much an Event
-// matters, the verb and icon it is shown with, and the ways the designs fold
-// a page of Events (by day, by title, routine bursts) so the few Events that
-// matter are not lost among thousands of scans.
+// History (Downloads > History): how much an Event matters, the verb and
+// icon it is shown with, its day and clock, and the one line a run of
+// routine Events folds into, so the few Events that matter are not lost
+// among thousands of scans.
 import type { IconName } from './Icon.svelte';
-import { groupDownloads, historyQuery, kindGroups, type HistoryFilter, type HistoryRow } from './history.ts';
+import { historyQuery, kindGroups, type HistoryFilter, type HistoryRow } from './history.ts';
 import type { EventRecord, TitleView } from './types.ts';
 
 /** How much an Event matters: a result to look at, a change, or routine upkeep. */
 export type Tier = 'important' | 'changes' | 'routine';
-
-export const tiers: { key: Tier; label: string; hint: string }[] = [
-	{ key: 'important', label: 'Important', hint: 'Imported, failed, deleted, needs a decision, health' },
-	{ key: 'changes', label: 'Changes', hint: 'Upgraded, renamed, subtitles, added, asks, downloads' },
-	{ key: 'routine', label: 'Routine', hint: 'Scans, searches and refreshed details' }
-];
 
 const groupTier: Record<string, Tier> = {
 	import: 'important', fail: 'important', delete: 'important', decide: 'important', health: 'important',
@@ -44,27 +38,6 @@ export function tierOf(kind: string): Tier {
 	return looseKinds[kind] ?? groupTier[groupOf(kind)] ?? 'changes';
 }
 
-/** groupsOfTier lists the filter groups (kindGroups keys) shown under a tier. */
-export function groupsOfTier(tier: Tier): string[] {
-	return kindGroups.filter((g) => groupTier[g.key] === tier || (tier === 'changes' && g.key === 'import')).map((g) => g.key);
-}
-
-/**
- * tierKinds is the kind list a tier asks the server for. With groups picked,
- * only their kinds that belong to the tier.
- */
-export function tierKinds(tier: Tier, groups: string[] = []): string[] {
-	const picked = groups.length ? kindGroups.filter((g) => groups.includes(g.key)) : kindGroups;
-	const out = picked.flatMap((g) => g.kinds).filter((k) => tierOf(k.replace(/\*$/, 'x')) === tier);
-	if (!groups.length) for (const [k, t] of Object.entries(looseKinds)) if (t === tier) out.push(k);
-	return out;
-}
-
-/** routineKinds is every kind of upkeep, for the "hide routine" switches. */
-export const routineKinds = tierKinds('routine');
-/** notRoutineKinds is every other kind (used to leave routine out). */
-export const notRoutineKinds = [...tierKinds('important'), ...tierKinds('changes')];
-
 /**
  * eventsQuery is the /events query for the page's filters, with the kinds
  * replaced when `kinds` is given (an empty list matches nothing, so callers
@@ -74,15 +47,6 @@ export function eventsQuery(f: HistoryFilter, opts: { kinds?: string[]; limit?: 
 	const q = new URLSearchParams(historyQuery({ ...f, groups: opts.kinds ? [] : f.groups, limit: opts.limit ?? f.limit, offset: opts.offset ?? f.offset }));
 	if (opts.kinds) q.set('kind', opts.kinds.join(','));
 	return q.toString();
-}
-
-/** pickedKinds is the kinds of the picked groups, limited to a set (for "hide routine"). */
-export function pickedKinds(groups: string[], within?: string[]): string[] | undefined {
-	if (!groups.length) return within;
-	const kinds = kindGroups.filter((g) => groups.includes(g.key)).flatMap((g) => g.kinds);
-	if (!within) return kinds;
-	const keep = new Set(within);
-	return kinds.filter((k) => keep.has(k));
 }
 
 /** A verb, icon and tone an Event is shown with. */
@@ -242,172 +206,6 @@ export function burstLine(events: EventRecord[], titles: Map<number, Pick<TitleV
 		}
 	}
 	return parts.join(' · ');
-}
-
-/** One item of the feed: a day header, one row, or a folded run of rows. */
-export type FeedItem =
-	| { type: 'day'; key: string; label: string; count: number }
-	| { type: 'row'; key: string; row: HistoryRow; tier: Tier }
-	| { type: 'burst'; key: string; rows: HistoryRow[]; tier: Tier; line: string };
-
-/** routineFamily is the line a routine Event folds into: refreshes, searches or scans. */
-export function routineFamily(kind: string): string {
-	if (kind === 'title_refreshed' || kind === 'albums_changed' || kind === 'album_changed' || kind === 'episodes_changed' || kind === 'details_source_changed') return 'refresh';
-	if (groupOf(kind) === 'search') return 'search';
-	return 'scan';
-}
-
-/** The kind a run of rows folds by: routine folds together, others only with the same kind. */
-function burstKey(row: HistoryRow, tier: Tier): string {
-	if (tier === 'routine') return 'routine';
-	if (row.steps.length) return '';
-	return row.head.Kind;
-}
-
-/**
- * feedItems lays a page of Events out as a feed: a header per day, routine
- * runs folded into one line (two or more), and runs of three or more of the
- * same other kind (a clean-up deleting 20 titles) folded too.
- */
-export function feedItems(events: EventRecord[], titles: Map<number, Pick<TitleView, 'kind'>>, now = new Date()): FeedItem[] {
-	const out: FeedItem[] = [];
-	let day = '';
-	let dayHead: Extract<FeedItem, { type: 'day' }> | null = null;
-	let run: HistoryRow[] = [];
-	let runKey = '';
-	let runTier: Tier = 'routine';
-	const flush = () => {
-		if (!run.length) return;
-		if (runKey === 'routine') {
-			// Upkeep folds by family (refreshes, searches, scans), each its own line, newest family first.
-			const families = new Map<string, HistoryRow[]>();
-			for (const r of run) {
-				const f = routineFamily(r.head.Kind);
-				families.set(f, [...(families.get(f) ?? []), r]);
-			}
-			for (const rows of families.values()) {
-				if (rows.length >= 2) out.push({ type: 'burst', key: `b${rows[0].key}`, rows, tier: 'routine', line: burstLine(rows.flatMap((r) => r.events), titles) });
-				else out.push({ type: 'row', key: rows[0].key, row: rows[0], tier: 'routine' });
-			}
-		} else if (runKey && run.length >= 3) {
-			out.push({ type: 'burst', key: `b${run[0].key}`, rows: run, tier: runTier, line: burstLine(run.flatMap((r) => r.events), titles) });
-		} else {
-			for (const r of run) out.push({ type: 'row', key: r.key, row: r, tier: rowTier(r) });
-		}
-		run = [];
-		runKey = '';
-	};
-	for (const row of groupDownloads(events)) {
-		const d = dayKey(row.head.At);
-		if (d !== day) {
-			flush();
-			day = d;
-			dayHead = { type: 'day', key: `day${d}`, label: dayLabel(d, now), count: 0 };
-			out.push(dayHead);
-		}
-		if (dayHead) dayHead.count += row.events.length;
-		const tier = rowTier(row);
-		const key = burstKey(row, tier);
-		if (key && key === runKey) {
-			run.push(row);
-			continue;
-		}
-		flush();
-		run = [row];
-		runKey = key;
-		runTier = tier;
-	}
-	flush();
-	return out;
-}
-
-/** One title's story: its Events oldest first, folded into steps. */
-export interface Story {
-	key: string;
-	titleId: number | null;
-	name: string;
-	/** Newest Event time (cards are ordered by it). */
-	latest: string;
-	steps: StoryStep[];
-	/** Every step is routine (refreshes, scans, searches). */
-	quiet: boolean;
-	events: EventRecord[];
-}
-
-export interface StoryStep {
-	key: string;
-	verb: Verb;
-	tier: Tier;
-	/** The first Event of the step (oldest). */
-	first: EventRecord;
-	/** The newest Event of the step. */
-	last: EventRecord;
-	count: number;
-	events: EventRecord[];
-}
-
-/** The step an Event is, so repeats ("Searched" 23 times in a row) fold into one. */
-function stepWord(kind: string): string {
-	const g = groupOf(kind);
-	if (g === 'scan' || kind === 'albums_changed' || kind === 'album_changed') return 'Refreshed';
-	return verbOf(kind).word;
-}
-
-/**
- * stories groups a page of Events by title (Events with no title share one
- * story per summary-less group, "HolyArrs itself"), each told oldest first
- * with repeated steps folded. Stories come newest first.
- */
-export function stories(events: EventRecord[]): Story[] {
-	const by = new Map<string, Story>();
-	for (const e of events) {
-		const key = e.TitleID ? `t${e.TitleID}` : 'none';
-		let s = by.get(key);
-		if (!s) {
-			s = { key, titleId: e.TitleID ?? null, name: e.title_name ?? 'HolyArrs itself', latest: e.At, steps: [], quiet: true, events: [] };
-			by.set(key, s);
-		}
-		s.events.push(e);
-		if (e.At > s.latest) s.latest = e.At;
-	}
-	const out = [...by.values()];
-	for (const s of out) {
-		const oldestFirst = [...s.events].sort((a, b) => (a.At === b.At ? a.ID - b.ID : a.At < b.At ? -1 : 1));
-		for (const e of oldestFirst) {
-			const word = stepWord(e.Kind);
-			const prev = s.steps[s.steps.length - 1];
-			if (prev && stepWord(prev.last.Kind) === word && !(s.titleId === null && prev.last.Kind !== e.Kind)) {
-				prev.count++;
-				prev.last = e;
-				prev.events.push(e);
-				if (tierOf(e.Kind) === 'important') prev.tier = 'important';
-				continue;
-			}
-			const tier = tierOf(e.Kind);
-			s.steps.push({ key: `s${e.ID}`, verb: word === 'Refreshed' ? verbOf('title_refreshed') : verbOf(e.Kind), tier, first: e, last: e, count: 1, events: [e] });
-		}
-		s.quiet = s.steps.every((st) => st.tier === 'routine');
-	}
-	return out.sort((a, b) => (a.latest < b.latest ? 1 : a.latest > b.latest ? -1 : 0));
-}
-
-/** The table's sortable columns. */
-export type SortKey = 'at' | 'title' | 'what' | 'by';
-
-/** sortRows orders a page of rows by a column (time keeps the server's order for ties). */
-export function sortRows(rows: HistoryRow[], key: SortKey, dir: 1 | -1): HistoryRow[] {
-	const val = (r: HistoryRow): string => {
-		switch (key) {
-			case 'at': return r.head.At;
-			case 'title': return (r.head.title_name ?? '￿').toLowerCase();
-			case 'what': return headVerb(r).word.toLowerCase();
-			case 'by': return byWhom(r.head).toLowerCase();
-		}
-	};
-	return rows
-		.map((r, i) => ({ r, i, v: val(r) }))
-		.sort((a, b) => (a.v < b.v ? -dir : a.v > b.v ? dir : a.i - b.i))
-		.map((x) => x.r);
 }
 
 /** titleHref is the link to a title still in the Library (removed titles have none). */

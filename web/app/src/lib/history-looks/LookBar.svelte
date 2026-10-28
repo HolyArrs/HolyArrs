@@ -1,9 +1,10 @@
 <script lang="ts">
-	// The bar every History look shares, built like the Downloads table's:
+	// History's bar, built like the Downloads table's:
 	// five status tabs with counts (All · Came in · Problems · Changes ·
 	// Routine), toggle sub-tabs under the picked one, and a finder that keeps
 	// the page to one movie, show or artist. The tabs live in the address
 	// (&show=tab or tab.sub).
+	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
 	import { fade, slide, type TransitionConfig } from 'svelte/transition';
@@ -23,7 +24,8 @@
 		filter,
 		titles,
 		episodeName = '',
-		onfilter
+		onfilter,
+		tools
 	}: {
 		show: string;
 		sub: string;
@@ -33,6 +35,8 @@
 		titles: TitleView[];
 		episodeName?: string;
 		onfilter: (change: Partial<HistoryFilter>) => void;
+		/** Page controls beside the finder (poster size, details panel). */
+		tools?: Snippet;
 	} = $props();
 
 	const uid = $props.id();
@@ -111,6 +115,8 @@
 				</span>
 			{/each}
 		</div>
+		<div class="end">
+		{#if tools}<div class="tools">{@render tools()}</div>{/if}
 		<div class="finder" class:has={!!filter.title}>
 			<Icon name="search" size={16} />
 			{#if filter.title}
@@ -148,6 +154,7 @@
 					</ul>
 				{/if}
 			{/if}
+		</div>
 		</div>
 	</div>
 
@@ -192,6 +199,8 @@
 	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
+	.end { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: 0 1 auto; min-width: 0; }
+	.tools { display: flex; align-items: center; gap: 8px; flex: none; }
 	.finder { position: relative; display: flex; align-items: center; gap: 8px; flex: 0 1 280px; min-width: 0; height: 36px; padding: 0 4px 0 12px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text-muted); box-shadow: inset 0 0 0 1px var(--line); transition: background var(--dur-fast) var(--ease-out); }
 	.finder:focus-within { background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line-strong, var(--line)); }
 	.finder.has { background: var(--accent-soft); color: var(--accent-text); box-shadow: none; }
@@ -209,8 +218,9 @@
 	.dates { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; padding-left: 12px; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent-text); font: var(--t-footnote); font-weight: 600; }
 
 	@media (max-width: 767px) {
-		.top { flex-direction: column; align-items: stretch; }
-		.finder { flex: none; height: 44px; order: -1; }
+		.top { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+		.end { order: -1; flex-direction: row-reverse; }
+		.finder { flex: 1 1 0; height: 44px; }
 		.chips { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: stretch; gap: 4px; }
 		.chips .cw, .chips .cw :global(.ui-chip) { width: 100%; min-width: 0; }
 		.chips .cw :global(.ui-chip), .chips .cw :global(.main) { height: 100%; }

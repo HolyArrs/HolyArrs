@@ -75,13 +75,12 @@ test('Search now on the season fills each Version with its own pack; History nam
 	await expect(page.getByTestId('title-history').getByTestId('event-version').filter({ hasText: '4K' }).first()).toBeVisible({ timeout: 20_000 });
 	await page.goto('/downloads/history');
 	await expect(page.getByTestId('history-version').filter({ hasText: '4K' }).first()).toBeVisible();
-	// A download's steps fold into one row with a step line; expanding lists each step.
-	const grouped = page.getByTestId('history-row').filter({ has: page.getByTestId('history-steps') }).first();
-	await expect(grouped.getByTestId('history-steps').locator('li')).toHaveCount(3);
-	await expect(grouped.getByTestId('history-steps').locator('[data-state="done"]').first()).toBeVisible();
-	await grouped.getByRole('button', { name: /^Every step \(\d+\)$/ }).click();
-	expect(await grouped.getByTestId('history-trail').locator(':scope > li').count()).toBeGreaterThan(1);
-	await expect(grouped.getByRole('button', { name: 'Hide steps' })).toHaveAttribute('aria-expanded', 'true');
+	// A download's steps fold into one row; picking it shows each step in the details panel.
+	await page.locator('[data-testid="history-row"][data-steps]').first().click();
+	const pane = page.getByTestId('look-pane');
+	await expect(pane.getByTestId('history-steps').locator('li')).toHaveCount(3);
+	await expect(pane.getByTestId('history-steps').locator('[data-state="done"]').first()).toBeVisible();
+	expect(await pane.getByTestId('history-trail').locator(':scope > li').count()).toBeGreaterThan(1);
 });
 
 test('change, add and remove Versions; a busy Version stays', async () => {

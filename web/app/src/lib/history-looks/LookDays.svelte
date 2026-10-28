@@ -1,24 +1,58 @@
 <script lang="ts">
-	// Look 2, Days: a timeline read one day at a time. Each day has a sticky
-	// header with what it held ("2 came in · 1 problem · 40 routine"); rows
-	// sit on a rail with their clock time. Runs of routine work (refreshes,
-	// scans, searches) fold into one quiet line that opens in place.
-	import { onMount, untrack } from 'svelte';
+	// History, day by day. Each day has a sticky header with what it held
+	// ("2 came in · 1 problem · 40 routine"); rows sit on a rail with their
+	// clock time, and runs of routine work fold into one quiet line that
+	// opens in place. On wide screens the picked row's whole story shows in
+	// a details panel on the right (reasons, paths, every step of a
+	// download, the latest Events for the same title); arrow keys or j and k
+	// move through the rows. The panel can be hidden; picking a row shows it
+	// again. Narrower screens open the row in a sheet instead.
+	import { onMount, tick, untrack } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
 	import Icon from '../Icon.svelte';
+	import Button from '../ui/Button.svelte';
 	import EventSheet from '../history-designs/EventSheet.svelte';
+	import VerbMark from '../history-designs/VerbMark.svelte';
 	import StateDot from './StateDot.svelte';
 	import LookFrame from './LookFrame.svelte';
 	import { EventFeed } from './feed.svelte.ts';
+	import { api } from '../api.ts';
+	import { to } from '../paths.ts';
+	import { dateTime } from '../format.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
-	import type { HistoryFilter, HistoryRow } from '../history.ts';
-	import { artOf, burstLine, clock, dayLabel, headVerb, rowTier } from '../history-views.ts';
-	import { byDay, dayItems, dayLine, rowWhy } from '../history-looks.ts';
-	import type { TitleView } from '../types.ts';
+	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
+	import { artOf, burstLine, byWhom, clock, dayLabel, headVerb, rowTier, titleHref, verbOf } from '../history-views.ts';
+	import { byDay, dayItems, dayLine, rowWhy, whenShort, type ArtSize } from '../history-looks.ts';
+	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
-	let { filter, kinds, titleById, empty, onall }: { filter: HistoryFilter; kinds: string[] | undefined; titleById: Map<number, TitleView>; empty: { title: string; text: string }; onall?: () => void } = $props();
+	let {
+		filter,
+		kinds,
+		titleById,
+		empty,
+		onall,
+		size,
+		wide,
+		panel = $bindable(true),
+		panelId,
+		episodeName = $bindable('')
+	}: {
+		filter: HistoryFilter;
+		kinds: string[] | undefined;
+		titleById: Map<number, TitleView>;
+		empty: { title: string; text: string };
+		onall?: () => void;
+		size: ArtSize;
+		/** Wide enough for the details panel beside the days. */
+		wide: boolean;
+		/** The details panel is shown (wide screens). */
+		panel: boolean;
+		panelId: string;
+		/** With an episode filter: the episode, named by the server. */
+		episodeName?: string;
+	} = $props();
 
 	const SIZE = 200;
 	const feed = new EventFeed(SIZE);
@@ -28,6 +62,9 @@
 		untrack(reload);
 	});
 	onMount(() => feed.watch(reload));
+	$effect(() => {
+		episodeName = feed.episode;
+	});
 
 	// A page of routine only (the Routine tab) is not folded: it is what was asked for.
 	const days = $derived.by(() => {
@@ -35,8 +72,58 @@
 		const allQuiet = list.every((d) => d.rows.every((r) => rowTier(r) === 'routine'));
 		return list.map((d) => ({ ...d, items: allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows) }));
 	});
-	let sheet = $state<HistoryRow | null>(null);
 	let open = $state<Record<string, boolean>>({});
+	let sheet = $state<HistoryRow | null>(null);
+	const split = $derived(wide && panel);
+
+	// The rows a person can move through, in order: folded runs only once opened.
+	const shown = $derived(days.flatMap((d) => d.items.flatMap((it) => (it.type === 'row' ? [it.row] : open[it.key] ? it.rows : []))));
+	let pickedKey = $state('');
+	// The first row is picked until a person picks another (or it leaves the page).
+	const picked = $derived(shown.find((r) => r.key === pickedKey) ?? shown[0] ?? null);
+	let list = $state<HTMLElement>();
+
+	function choose(r: HistoryRow) {
+		pickedKey = r.key;
+		if (!wide) sheet = r;
+		else if (!panel) panel = true;
+	}
+	async function move(by: number) {
+		const i = shown.findIndex((r) => r.key === picked?.key);
+		const next = shown[Math.max(0, Math.min(shown.length - 1, i + by))];
+		if (!next) return;
+		pickedKey = next.key;
+		await tick();
+		list?.querySelector<HTMLElement>(`[data-key="${next.key}"]`)?.focus();
+	}
+	function key(e: KeyboardEvent) {
+		if (!split || e.altKey || e.ctrlKey || e.metaKey) return;
+		if (e.key === 'ArrowDown' || e.key === 'j') {
+			e.preventDefault();
+			void move(1);
+		} else if (e.key === 'ArrowUp' || e.key === 'k') {
+			e.preventDefault();
+			void move(-1);
+		}
+	}
+
+	// The latest Events for the picked title, every kind.
+	let more = $state<EventRecord[]>([]);
+	let moreFor = 0;
+	$effect(() => {
+		const id = picked?.head.TitleID ?? 0;
+		// With the page kept to one title, the rows already are its story.
+		if (!split || filter.title || id === moreFor) return;
+		moreFor = id;
+		more = [];
+		if (!id) return;
+		api.get<EventPage>(`/events?title=${id}&limit=8`)
+			.then((p) => {
+				if (moreFor === id) more = p.events;
+			})
+			.catch(() => {});
+	});
+	const others = $derived(filter.title ? [] : more.filter((e) => !picked?.events.some((x) => x.ID === e.ID)).slice(0, 6));
 
 	function unfold(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.base, easing: easeOut });
@@ -44,74 +131,146 @@
 	function fold(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.fast, easing: easeIn });
 	}
+	function paneIn(node: Element): TransitionConfig {
+		return fade(node, { duration: reducedMotion() ? 0 : DUR.fast, easing: easeOut });
+	}
 </script>
 
 {#snippet line(r: HistoryRow)}
 	{@const e = r.head}
 	{@const v = headVerb(r)}
 	{@const t = titleById.get(e.TitleID ?? 0)}
-	<button type="button" class="hit {v.tone}" data-testid="look-row" onclick={() => (sheet = r)}>
+	{@const on = split && picked?.key === r.key}
+	<button type="button" class="hit {v.tone}" class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
 		<time class="clk" datetime={e.At}>{clock(e.At)}</time>
 		<span class="node" aria-hidden="true"><i></i></span>
 		<span class="post" class:square={t?.kind === 'artist'}>{#if e.title_name}<Poster src={artOf(e, titleById)} name={e.title_name} />{:else}<span class="sys"><Icon name="settings" size={14} /></span>{/if}</span>
 		<span class="tx">
-			<span class="top"><span class="nm">{e.title_name ?? 'HolyArrs'}{#if e.episode}<span class="ep">{` ${e.episode}`}</span>{/if}</span><StateDot verb={v} /></span>
+			<span class="top"><span class="nm" data-testid="history-title">{e.title_name ?? 'HolyArrs'}{#if e.episode}<span class="ep" data-testid="history-episode">{` ${e.episode}`}</span>{/if}{#if e.version}<span class="ep" data-testid="history-version">{` · ${e.version}`}</span>{/if}</span><StateDot verb={v} /></span>
 			<span class="sum">{rowWhy(r) || e.Summary}</span>
 		</span>
 	</button>
 {/snippet}
 
 <LookFrame {feed} {empty} {onall} onretry={reload} onmore={() => feed.load(filter, kinds, feed.offset + SIZE, true)}>
-	<div class="days" data-testid="look-days">
-		{#each days as d (d.key)}
-			<section class="day" aria-labelledby="day-{d.key}">
-				<header class="dh">
-					<h2 id="day-{d.key}">{dayLabel(d.key)}</h2>
-					<p class="dl">{dayLine(d.tally)}</p>
-				</header>
-				<ol class="rail">
-					{#each d.items as it (it.key)}
-						{#if it.type === 'row'}
-							<li class="item" class:quiet={it.tier === 'routine'}>{@render line(it.row)}</li>
-						{:else}
-							{@const on = !!open[it.key]}
-							<li class="item fold">
-								<button type="button" class="hit q" aria-expanded={on} onclick={() => (open = { ...open, [it.key]: !on })}>
-									<time class="clk" datetime={it.rows[0].head.At}>{clock(it.rows[0].head.At)}</time>
-									<span class="node" aria-hidden="true"><i></i></span>
-									<span class="qn">{it.rows.length}</span>
-									<span class="tx"><span class="sum q">{burstLine(it.rows.flatMap((r) => r.events), titleById)}</span></span>
-									<span class="chev" class:on aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
-								</button>
-								{#if on}
-									<ol class="inner" in:unfold out:fold>
-										{#each it.rows as r (r.key)}<li class="item quiet">{@render line(r)}</li>{/each}
-									</ol>
-								{/if}
-							</li>
-						{/if}
-					{/each}
-				</ol>
-			</section>
-		{/each}
+	<div class="split size-{size}" class:on={split} class:wide data-testid="look-days" data-size={size} data-panel={wide ? (panel ? 'open' : 'hidden') : undefined}>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="days" bind:this={list} onkeydown={key}>
+			{#each days as d (d.key)}
+				<section class="day" aria-labelledby="day-{d.key}">
+					<header class="dh">
+						<h2 id="day-{d.key}">{dayLabel(d.key)}</h2>
+						<p class="dl">{dayLine(d.tally)}</p>
+					</header>
+					<ol class="rail">
+						{#each d.items as it (it.key)}
+							{#if it.type === 'row'}
+								<li class="item" class:quiet={it.tier === 'routine'}>{@render line(it.row)}</li>
+							{:else}
+								{@const on = !!open[it.key]}
+								<li class="item fold">
+									<button type="button" class="hit q" aria-expanded={on} onclick={() => (open = { ...open, [it.key]: !on })}>
+										<time class="clk" datetime={it.rows[0].head.At}>{clock(it.rows[0].head.At)}</time>
+										<span class="node" aria-hidden="true"><i></i></span>
+										<span class="qn">{it.rows.length}</span>
+										<span class="tx"><span class="sum q">{burstLine(it.rows.flatMap((r) => r.events), titleById)}</span></span>
+										<span class="chev" class:on aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
+									</button>
+									{#if on}
+										<ol class="inner" in:unfold out:fold>
+											{#each it.rows as r (r.key)}<li class="item quiet">{@render line(r)}</li>{/each}
+										</ol>
+									{/if}
+								</li>
+							{/if}
+						{/each}
+					</ol>
+				</section>
+			{/each}
+		</div>
+
+		{#if wide}
+			<aside class="pane" id={panelId} aria-label="Details" data-testid="look-pane" hidden={!panel ? true : undefined} inert={!panel}>
+				{#if picked}
+					{@const e = picked.head}
+					{@const v = headVerb(picked)}
+					{@const t = titleById.get(e.TitleID ?? 0)}
+					{@const href = titleHref(e.TitleID, titleById)}
+					{#key picked.key}
+						<div class="pin" in:paneIn>
+							<div class="ph">
+								{#if e.title_name}<span class="part" class:square={t?.kind === 'artist'}><Poster src={artOf(e, titleById)} name={e.title_name} /></span>{/if}
+								<div class="pw">
+									<VerbMark verb={v} />
+									<h2 class="pt">{e.title_name ?? 'HolyArrs'}</h2>
+									{#if e.episode || e.version}<p class="psub">{[e.episode, e.version].filter(Boolean).join(' · ')}</p>{/if}
+									<p class="psum">{e.Summary}</p>
+								</div>
+							</div>
+							{#if picked.steps.length}
+								<ol class="steps" aria-label="Steps of this download" data-testid="history-steps">
+									{#each picked.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : 'not yet'}</span></li>{/each}
+								</ol>
+							{/if}
+							<dl class="facts">
+								<dt>When</dt><dd><time datetime={e.At}>{dateTime(e.At)}</time></dd>
+								<dt>By</dt><dd>{byWhom(e)}</dd>
+								{#each picked.steps.length ? [] : details(e) as [k, val], i (i)}<dt>{k}</dt><dd class="mono">{val}</dd>{/each}
+							</dl>
+							{#if picked.events.length > 1}
+								<h3 class="h">Every step</h3>
+								<ol class="trail" data-testid="history-trail">
+									{#each picked.events as s (s.ID)}
+										{@const why = details(s)}
+										<li>
+											<div class="tl"><StateDot verb={verbOf(s.Kind)} /><time datetime={s.At} title={dateTime(s.At)}>{whenShort(s.At)}</time></div>
+											<p class="ts">{s.Summary}</p>
+											{#if why.length}<dl class="facts small">{#each why as [k, val], i (i)}<dt>{k}</dt><dd class="mono">{val}</dd>{/each}</dl>{/if}
+										</li>
+									{/each}
+								</ol>
+							{/if}
+							{#if others.length}
+								<h3 class="h">Also for {e.title_name}</h3>
+								<ol class="also">
+									{#each others as o (o.ID)}
+										<li><StateDot verb={verbOf(o.Kind)} /><span class="as">{o.Summary}</span><time datetime={o.At}>{whenShort(o.At)}</time></li>
+									{/each}
+								</ol>
+							{/if}
+							{#if !picked.steps.length && details(e).length === 0}<p class="none">No reasons or paths were kept for this Event.</p>{/if}
+							{#if href && e.title_name}<div class="pact"><Button variant="secondary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button></div>{/if}
+						</div>
+					{/key}
+				{/if}
+			</aside>
+		{/if}
 	</div>
 </LookFrame>
 
-<EventSheet bind:row={sheet} {titleById} />
+{#if !wide}<EventSheet bind:row={sheet} {titleById} />{/if}
 
 <style>
-	.days { display: flex; flex-direction: column; gap: 20px; }
+	/* Poster size: one set of measures per size, used by every row. */
+	.split { --clk: 64px; --art: 26px; --row: 52px; --pane: 0px; --gap: 0px; }
+	.size-s { --art: 18px; --row: 40px; }
+	.size-l { --art: 56px; --row: 96px; }
+	.split.wide.on { --pane: 380px; --gap: 16px; }
+	.split { display: grid; grid-template-columns: minmax(0, 1fr) var(--pane); column-gap: var(--gap); align-items: start; transition: grid-template-columns var(--dur-base) var(--ease-out), column-gap var(--dur-base) var(--ease-out); }
+
+	.days { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 	.dh { position: sticky; top: var(--topbar); z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; padding: 10px 0 8px; background: var(--bg); transition: top var(--bar-glide); }
 	:global(html.bar-hidden) .dh { top: 0; }
 	.dh h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.dl { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.rail { position: relative; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	/* The rail line runs through every dot. */
-	.rail::before { content: ''; position: absolute; top: 18px; bottom: 18px; left: calc(4px + 10px + 64px + 10px + 5px); width: 2px; border-radius: 1px; background: var(--line); }
+	.rail::before { content: ''; position: absolute; top: 18px; bottom: 18px; left: calc(4px + 10px + var(--clk) + 10px + 5px); width: 2px; border-radius: 1px; background: var(--line); }
 	.item + .item { box-shadow: 0 -1px 0 var(--line); }
-	.hit { position: relative; width: 100%; display: grid; grid-template-columns: 64px 12px 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 52px; padding: 6px 10px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
+	.hit { position: relative; width: 100%; display: grid; grid-template-columns: var(--clk) 12px var(--art) minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: var(--row); padding: 6px 10px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
 	.hit:hover { background: var(--surface-2); }
 	.hit:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.hit.on { background: var(--accent-soft); }
 	.clk { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 	.node { display: grid; place-items: center; width: 12px; height: 12px; }
 	.node i { width: 10px; height: 10px; border-radius: 50%; background: var(--info); box-shadow: 0 0 0 3px var(--surface-1); }
@@ -119,10 +278,10 @@
 	.fail .node i { background: var(--fail); }
 	.wait .node i { background: var(--wait); }
 	.idle .node i, .q .node i { width: 6px; height: 6px; background: var(--text-faint); }
-	.post { width: 26px; --poster-ratio: 2 / 3; }
+	.post { width: var(--art); --poster-ratio: 2 / 3; }
 	.post.square { --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 4px; }
-	.sys { display: grid; place-items: center; width: 26px; aspect-ratio: 2 / 3; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); }
+	.sys { display: grid; place-items: center; width: var(--art); aspect-ratio: 2 / 3; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); }
 	.tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; grid-column: 4 / -1; }
 	.top { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-footnote); }
 	.nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font: var(--t-callout); font-weight: 600; }
@@ -130,21 +289,86 @@
 	.ep { color: var(--text-muted); font-weight: 400; }
 	.sum { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
 	.quiet .nm { color: var(--text-muted); font-weight: 500; }
+	/* Small: one line per row, the reason after the name. */
+	.size-s .tx { flex-direction: row; align-items: center; gap: 10px; }
+	.size-s .top { flex: 0 1 auto; }
+	.size-s .sum { flex: 1 1 0; }
+	.size-s .post :global(.poster), .size-s .sys { border-radius: 3px; }
+	.size-s .sys :global(svg) { width: 10px; height: 10px; }
+	/* Large: the poster leads, the reason may take two lines. */
+	.size-l .hit { gap: 14px; padding: 8px 12px; }
+	.size-l .rail::before { left: calc(4px + 12px + var(--clk) + 14px + 5px); }
+	.size-l .post :global(.poster), .size-l .sys { border-radius: 8px; }
+	.size-l .tx { gap: 4px; }
+	.size-l .nm { font: var(--t-headline); }
+	.size-l .sum { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font: var(--t-callout); }
 	/* A folded run: the count where the poster goes, the line, a chevron. */
-	.hit.q { grid-template-columns: 64px 12px 26px minmax(0, 1fr) auto; }
+	.hit.q { min-height: 44px; }
 	.hit.q .tx { grid-column: 4; }
-	.qn { display: grid; place-items: center; height: 22px; border-radius: 6px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.qn { display: grid; place-items: center; justify-self: center; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 6px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.sum.q { color: var(--text-muted); font: var(--t-callout); }
+	.size-l .sum.q { display: block; white-space: nowrap; }
 	.chev { display: grid; color: var(--text-faint); transition: transform var(--dur) var(--ease-out); }
 	.chev.on { transform: rotate(180deg); }
 	.inner { margin: 0 0 4px; padding: 0; list-style: none; }
 	.inner .item { box-shadow: 0 -1px 0 var(--line); }
+
+	/* The details panel: slides out to the right edge when hidden. */
+	.pane { position: sticky; top: calc(var(--topbar) + 12px); min-width: 0; max-height: calc(100dvh - var(--topbar) - 32px); overflow-y: auto; overscroll-behavior: contain; padding: 20px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
+	:global(html.bar-hidden) .pane { top: 12px; max-height: calc(100dvh - 32px); }
+	.pane[hidden] { display: block; visibility: hidden; opacity: 0; translate: 24px 0; padding-inline: 0; overflow: hidden; transition: opacity var(--dur-fast) var(--ease-in), translate var(--dur-fast) var(--ease-in), padding var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-fast); }
+	.pin { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+	.ph { display: flex; gap: 16px; align-items: flex-start; }
+	.part { flex: none; width: 88px; --poster-ratio: 2 / 3; }
+	.part.square { --poster-ratio: 1; }
+	.part :global(.poster) { border-radius: 8px; }
+	.pw { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+	.pt { font: var(--t-title3); letter-spacing: var(--t-title3-track); overflow-wrap: anywhere; }
+	.psub { color: var(--text-muted); font: var(--t-footnote); }
+	.psum { font: var(--t-callout); overflow-wrap: anywhere; }
+	.steps { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; font: var(--t-footnote); }
+	.steps li { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); }
+	.steps li + li::before { content: ''; width: 18px; height: 1px; margin: 0 8px; background: var(--line); }
+	.pip { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-muted); }
+	.steps .done { color: var(--text); }
+	.steps .done .pip { background: var(--ok); box-shadow: none; }
+	.steps .failed { color: var(--fail-text); font-weight: 600; }
+	.steps .failed .pip { background: var(--fail); box-shadow: none; }
+	.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 14px; margin: 0; padding: 14px; border-radius: var(--r-card); background: var(--surface-2); font: var(--t-footnote); }
+	.facts dt { color: var(--text-muted); }
+	.facts dd { margin: 0; overflow-wrap: anywhere; }
+	.facts dd.mono { font-family: var(--font-mono); }
+	.facts.small { margin-top: 8px; padding: 10px; background: var(--surface-1); }
+	.h { font: var(--t-headline); }
+	.trail, .also { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+	.trail { gap: 8px; }
+	.trail li { padding: 10px 12px; border-radius: var(--r-card); background: var(--surface-2); }
+	.tl { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: var(--t-footnote); }
+	.tl time { color: var(--text-muted); white-space: nowrap; }
+	.ts { margin-top: 4px; font: var(--t-footnote); overflow-wrap: anywhere; }
+	.also li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; font: var(--t-footnote); }
+	.also li + li { border-top: 1px solid var(--line); }
+	.as { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+	.also time { color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.pact { display: flex; }
+	.none { color: var(--text-faint); font: var(--t-footnote); }
+	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+	@media (max-width: 1279px) { .split.wide.on { --pane: 340px; } }
 	@media (max-width: 767px) {
-		.rail::before { left: calc(4px + 8px + 54px + 8px + 5px); }
-		.hit, .hit.q { grid-template-columns: 54px 12px 26px minmax(0, 1fr) auto; gap: 8px; padding: 6px 8px; min-height: 56px; }
+		.split { --clk: 54px; }
+		.size-l { --art: 44px; --row: 80px; }
+		.rail::before { left: calc(4px + 8px + var(--clk) + 8px + 5px); }
+		.size-l .rail::before { left: calc(4px + 8px + var(--clk) + 10px + 5px); }
+		.hit { gap: 8px; padding: 6px 8px; min-height: max(var(--row), 48px); }
+		.size-l .hit { gap: 10px; padding: 8px; }
 		.top { flex-direction: column; align-items: stretch; gap: 1px; }
-		.top :global(.st) { align-self: flex-start; }
-		.top :global(.st) { flex: initial; }
+		.top :global(.st) { align-self: flex-start; flex: initial; }
+		.size-s .top { flex-direction: row; align-items: center; gap: 8px; }
+		.size-s .sum { display: none; }
 	}
-	@media (prefers-reduced-motion: reduce) { .hit, .chev, .dh { transition: none; } }
+	@media (prefers-reduced-motion: reduce) {
+		.split, .hit, .chev, .dh, .pane, .pane[hidden] { transition: none; }
+		.pane[hidden] { translate: none; }
+	}
 </style>

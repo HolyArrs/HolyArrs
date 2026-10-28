@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL, byDay, dayItems, dayLine, lookTabs, rowTab, rowWhy, showOf, showParam, tabKinds, tabOf, threads } from './history-looks.ts';
+import { ALL, byDay, dayItems, dayLine, lookTabs, rowTab, rowWhy, showOf, showParam, tabKinds, tabOf, loadArtSize, saveArtSize, loadDetailsOpen, saveDetailsOpen } from './history-looks.ts';
 import { groupDownloads } from './history.ts';
 import type { EventRecord } from './types.ts';
 
@@ -75,16 +75,28 @@ describe('days', () => {
 	});
 });
 
-describe('threads', () => {
-	it('groups by title, newest thread first, with untitled Events together', () => {
-		const list = threads([
-			ev('import_done', '2026-10-27T12:00:00Z', { TitleID: 1, title_name: 'Dune' }),
-			ev('health_broken', '2026-10-27T11:00:00Z'),
-			ev('title_added', '2026-10-27T10:00:00Z', { TitleID: 1, title_name: 'Dune' }),
-			ev('title_added', '2026-10-27T09:00:00Z', { TitleID: 2, title_name: 'Heat' })
-		]);
-		expect(list.map((t) => t.name)).toEqual(['Dune', 'HolyArrs itself', 'Heat']);
-		expect(list[0].rows.length).toBe(2);
-		expect(list[0].tally).toEqual({ came: 1, changes: 1 });
+describe('remembered choices', () => {
+	const mem = () => {
+		const m = new Map<string, string>();
+		return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
+	};
+	it('keeps the poster size per member, medium by default', () => {
+		const s = mem();
+		expect(loadArtSize(1, s)).toBe('m');
+		saveArtSize(1, 'l', s);
+		expect(loadArtSize(1, s)).toBe('l');
+		expect(loadArtSize(2, s)).toBe('m');
+	});
+	it('keeps the details panel open unless hidden', () => {
+		const s = mem();
+		expect(loadDetailsOpen(1, s)).toBe(true);
+		saveDetailsOpen(1, false, s);
+		expect(loadDetailsOpen(1, s)).toBe(false);
+	});
+	it('falls back when storage throws', () => {
+		const bad = { getItem: () => { throw new Error('no'); }, setItem: () => { throw new Error('no'); } };
+		expect(loadArtSize(1, bad)).toBe('m');
+		expect(loadDetailsOpen(1, bad)).toBe(true);
+		expect(() => saveArtSize(1, 's', bad)).not.toThrow();
 	});
 });

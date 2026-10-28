@@ -1,9 +1,9 @@
-// History looks (Downloads > History, ?look=1…5): the status tabs every look
-// shares, like the Downloads table's. Five big tabs answer what a person
-// opens History for (what came in, what went wrong, what changed, what ran
-// in the background); each has small toggle sub-tabs. The kinds a tab asks
-// the server for come from here, and so do the day and title folds the
-// looks lay their rows out with.
+// History (Downloads > History): the status tabs the page shares with the
+// Downloads table. Five big tabs answer what a person opens History for
+// (what came in, what went wrong, what changed, what ran in the background);
+// each has small toggle sub-tabs. The kinds a tab asks the server for come
+// from here, and so do the day folds the timeline lays its rows out with,
+// and the remembered poster size and details panel.
 import { details, groupDownloads, type HistoryRow } from './history.ts';
 import { clock, dayKey, dayLabel, rowTier, type Tier } from './history-views.ts';
 import type { EventRecord } from './types.ts';
@@ -200,32 +200,39 @@ export function whenShort(at: string, now = new Date()): string {
 	return k === dayKey(now.toISOString()) ? clock(at) : `${dayLabel(k, now)}, ${clock(at)}`;
 }
 
-/** A title's thread: every row about it on the page, newest first. */
-export interface Thread {
-	key: string;
-	titleId: number | null;
-	name: string;
-	rows: HistoryRow[];
-	/** How many rows per tab, for the thread's small counts. */
-	tally: Record<string, number>;
+/** Poster size of the History rows: small log rows, medium, or large posters. */
+export type ArtSize = 's' | 'm' | 'l';
+/** The same words the Library's Art size menu uses. */
+export const artLabels: Record<ArtSize, string> = { s: 'Small posters', m: 'Medium posters', l: 'Large posters' };
+
+type Store = Pick<Storage, 'getItem' | 'setItem'> | undefined;
+const key = (what: string, member: number | undefined) => `holyarrs.history-${what}.${member ?? 'me'}`;
+
+/** loadArtSize reads a member's poster size (medium when none is kept). */
+export function loadArtSize(member: number | undefined, store: Store = globalThis.localStorage): ArtSize {
+	try {
+		const v = store?.getItem(key('poster-size', member));
+		return v === 's' || v === 'l' ? v : 'm';
+	} catch {
+		return 'm';
+	}
+}
+export function saveArtSize(member: number | undefined, s: ArtSize, store: Store = globalThis.localStorage) {
+	try {
+		store?.setItem(key('poster-size', member), s);
+	} catch { /* Private windows may refuse. */ }
 }
 
-/** threads groups a page's rows by title (rows with no title share "HolyArrs itself"), newest thread first. */
-export function threads(events: EventRecord[]): Thread[] {
-	const by = new Map<string, Thread>();
-	const out: Thread[] = [];
-	for (const row of groupDownloads(events)) {
-		const id = row.head.TitleID ?? null;
-		const key = id ? `t${id}` : 'none';
-		let t = by.get(key);
-		if (!t) {
-			t = { key, titleId: id, name: row.head.title_name ?? 'HolyArrs itself', rows: [], tally: {} };
-			by.set(key, t);
-			out.push(t);
-		}
-		t.rows.push(row);
-		const tab = rowTab(row);
-		t.tally[tab] = (t.tally[tab] ?? 0) + 1;
+/** loadDetailsOpen reads whether a member keeps the details panel open (open when none is kept). */
+export function loadDetailsOpen(member: number | undefined, store: Store = globalThis.localStorage): boolean {
+	try {
+		return store?.getItem(key('details', member)) !== 'hidden';
+	} catch {
+		return true;
 	}
-	return out;
+}
+export function saveDetailsOpen(member: number | undefined, open: boolean, store: Store = globalThis.localStorage) {
+	try {
+		store?.setItem(key('details', member), open ? 'shown' : 'hidden');
+	} catch { /* Private windows may refuse. */ }
 }
