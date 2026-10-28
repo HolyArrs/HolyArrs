@@ -234,7 +234,7 @@ type CalendarEntry struct {
 	Season      *int   `json:"season,omitempty"`
 	Episode     *int   `json:"episode,omitempty"`
 	EpisodeName string `json:"episode_name,omitempty"`
-	// TMDB is the show's TMDB id, for reading the episode's description.
+	// TMDB is the show's or movie's TMDB id, for reading its description.
 	TMDB string `json:"tmdb,omitempty"`
 	AirDay      string `json:"air_day,omitempty"`
 	Timed       bool   `json:"timed"`
@@ -413,7 +413,7 @@ func Calendar(ctx context.Context, db reader, from, to time.Time, titles ...stri
 			at   *time.Time
 		}{{"cinema", ti.CinemaDate}, {"digital", ti.DigitalDate}, {"physical", ti.PhysicalDate}} {
 			if d.at != nil && !d.at.Before(from) && d.at.Before(to) {
-				e := CalendarEntry{TitleID: ti.ID, Name: ti.Name, Year: ti.Year, Kind: d.kind, Date: *d.at,
+				e := CalendarEntry{TitleID: ti.ID, Name: ti.Name, Year: ti.Year, Kind: d.kind, Date: *d.at, TMDB: ti.SourceIDs["tmdb"],
 					Poster: posterOf(ti), Backdrop: ti.Backdrop}
 				movieDetails(&e, ti, series)
 				out = append(out, e)

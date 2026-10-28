@@ -28,3 +28,18 @@ export function epCode(eps: { season?: number; episode?: number }[]): string {
 	const first = e[0], last = e[e.length - 1];
 	return first.season === last.season && e.length > 1 ? `S${first.season} E${first.episode}–${last.episode}` : `S${first.season} E${first.episode}`;
 }
+
+const movies = $state<Record<string, string>>({});
+const askedMovies = new Set<string>();
+
+/** movieText is a movie's description, read once from the metadata server ('' until then or when there is none). */
+export function movieText(tmdb: string | undefined): string {
+	if (!tmdb) return '';
+	if (!askedMovies.has(tmdb)) {
+		askedMovies.add(tmdb);
+		api.get<{ overview?: string }>(`/metadata/movie/${encodeURIComponent(tmdb)}`)
+			.then((r) => (movies[tmdb] = r.overview?.trim() ?? ''))
+			.catch(() => {});
+	}
+	return movies[tmdb] ?? '';
+}

@@ -11,7 +11,7 @@
 	import FollowWho from './FollowWho.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { epCode, epText } from './ep-text.svelte.ts';
+	import { epCode, epText, movieText } from './ep-text.svelte.ts';
 
 	// Coming Soon's card for rows: the Day view's big backdrop card made row
 	// size, with the name on the art and its badges. Several episodes of one
@@ -104,6 +104,7 @@
 				{/each}
 			{:else}
 				{#if e.kind === 'album' && e.album}<h3 class="ep-name">{e.album}</h3>{/if}
+				{#if e.kind !== 'album' && open}{@const story = movieText(e.tmdb)}{#if story}<p class="ep-text story">{story}</p>{/if}{/if}
 				{#each words.lines as l (l)}<p class="ep-text">{l}</p>{/each}
 			{/if}
 			{#if have}<p class="ep-text have">In the Library</p>{/if}
@@ -153,6 +154,7 @@
 	.ep-num { margin: 0; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	.ep-name { margin: 0; font: var(--t-headline); }
 	.ep-text { margin: 0; color: var(--text-muted); font: var(--t-body); }
+	.ep-text.story { color: var(--text); }
 	.ep-text.none { opacity: .7; }
 	.ep-text.have { color: var(--ok-text, var(--ok)); }
 	.ep-go { align-self: flex-start; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
