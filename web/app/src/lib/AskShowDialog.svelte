@@ -21,6 +21,13 @@
 	let follow = $state(true);
 	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
+	// Single episodes picked, by season (seasons not ticked whole).
+	let epPicks = $state<Record<number, number[]>>({});
+	let openSeason = $state<number | null>(null);
+	type Ep = { number: number; name?: string };
+	let eps = $state<Record<number, Ep[] | 'error'>>({});
+	const pickedEps = $derived(Object.entries(epPicks).filter(([, l]) => l.length).map(([k, l]) => ({ season: Number(k), episodes: [...l].sort((a, b) => a - b) })).sort((a, b) => a.season - b.season));
+	const epCount = $derived(pickedEps.reduce((n, e) => n + e.episodes.length, 0));
 	let busy = $state(false);
 	let error = $state('');
 
@@ -32,6 +39,9 @@
 		picked = s;
 		mode = 'all';
 		chosen = [];
+		epPicks = {};
+		openSeason = null;
+		eps = {};
 		error = '';
 		sheetOpen = true;
 	}
@@ -43,7 +53,28 @@
 
 	function toggle(n: number, on: boolean) {
 		chosen = on ? [...chosen, n].sort((a, b) => a - b) : chosen.filter((x) => x !== n);
+		if (on) epPicks = { ...epPicks, [n]: [] };
 	}
+
+	function toggleEp(season: number, n: number, on: boolean) {
+		const cur = epPicks[season] ?? [];
+		epPicks = { ...epPicks, [season]: on ? [...cur, n] : cur.filter((x) => x !== n) };
+	}
+
+	function expand(n: number) {
+		openSeason = openSeason === n ? null : n;
+		if (openSeason === null || eps[n] || !picked) return;
+		const id = picked.ids.tmdb;
+		if (!id) {
+			eps[n] = 'error';
+			return;
+		}
+		api.get<{ episodes?: Ep[] }>(`/metadata/show/${encodeURIComponent(id)}/seasons/${n}`)
+			.then((r) => (eps[n] = r.episodes ?? []))
+			.catch(() => (eps[n] = 'error'));
+	}
+
+	const summary = $derived([chosen.length ? seasonWords(chosen) : '', epCount ? `${epCount} ${epCount === 1 ? 'episode' : 'episodes'}` : ''].filter(Boolean).join(' + '));
 
 	async function ask(e: SubmitEvent) {
 		e.preventDefault();
@@ -51,7 +82,7 @@
 		busy = true;
 		error = '';
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true, follow } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen, follow });
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true, follow } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen, ...(mode === 'choose' && pickedEps.length ? { episodes: pickedEps } : {}), follow });
 			(sheetOpen = false);
 			onasked(picked, r);
 		} catch (err) {
@@ -77,7 +108,7 @@
 				</label>
 				<label class="checkline">
 					<input type="radio" name="what" checked={mode === 'choose'} onchange={() => (mode = 'choose')} disabled={seasons.length === 0} />
-					<span><b>Choose seasons</b><br /><span class="hint">Pick them below.</span></span>
+					<span><b>Choose seasons or episodes</b><br /><span class="hint">Tick whole seasons, or open one for single episodes.</span></span>
 				</label>
 				<label class="checkline">
 					<input type="radio" name="what" checked={mode === 'future'} onchange={() => (mode = 'future')} />
@@ -85,13 +116,37 @@
 				</label>
 			</fieldset>
 			{#if mode === 'choose'}
-				<fieldset class="seasons">
-					<legend class="sr-only">Seasons</legend>
+				<fieldset class="seasons" data-testid="ask-seasons">
+					<legend class="sr-only">Seasons and episodes</legend>
 					{#each seasons as n (n)}
-						<label class="season">
-							<input type="checkbox" checked={chosen.includes(n)} onchange={(e) => toggle(n, e.currentTarget.checked)} />
-							<span>{seasonName(n)}</span>
-						</label>
+						{@const whole = chosen.includes(n)}
+						{@const list = eps[n]}
+						<div class="row" class:on={whole || (epPicks[n]?.length ?? 0) > 0}>
+							<label class="pickrow">
+								<input type="checkbox" checked={whole} onchange={(e) => toggle(n, e.currentTarget.checked)} />
+								<span class="nm">{seasonName(n)}</span>
+								{#if epPicks[n]?.length}<span class="xs muted">{epPicks[n].length} picked</span>{/if}
+							</label>
+							<button type="button" class="more" aria-expanded={openSeason === n} aria-label={`Episodes of ${seasonName(n)}`} disabled={whole} onclick={() => expand(n)}>{openSeason === n ? 'Hide' : 'Episodes'}</button>
+						</div>
+						{#if openSeason === n && !whole}
+							{#if list === 'error'}
+								<p class="small muted sub">Could not read the episodes. Try again.</p>
+							{:else if !list}
+								<p class="small muted sub">Reading episodes...</p>
+							{:else if list.length === 0}
+								<p class="small muted sub">No episodes listed yet.</p>
+							{:else}
+								{#each list as ep (ep.number)}
+									<div class="row sub" class:on={epPicks[n]?.includes(ep.number)}>
+										<label class="pickrow">
+											<input type="checkbox" checked={epPicks[n]?.includes(ep.number) ?? false} onchange={(e) => toggleEp(n, ep.number, e.currentTarget.checked)} />
+											<span class="nm">{ep.number}. {ep.name || `Episode ${ep.number}`}</span>
+										</label>
+									</div>
+								{/each}
+							{/if}
+						{/if}
 					{/each}
 				</fieldset>
 			{/if}
@@ -104,8 +159,8 @@
 	{/if}
 	{#snippet footer()}
 				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
-				<Button variant="primary" type="submit" form="ask-show-title" disabled={mode === 'choose' && chosen.length === 0} busy={busy}>
-					{mode === 'all' ? 'Ask for all seasons' : mode === 'future' ? 'Ask for future seasons' : chosen.length ? `Ask for ${seasonWords(chosen)}` : 'Pick a season'}
+				<Button variant="primary" type="submit" form="ask-show-title" disabled={mode === 'choose' && chosen.length === 0 && epCount === 0} busy={busy}>
+					{mode === 'all' ? 'Ask for all seasons' : mode === 'future' ? 'Ask for future seasons' : summary ? `Ask for ${summary}` : 'Pick a season or episode'}
 				</Button>
 	{/snippet}
 </Sheet>
@@ -120,11 +175,13 @@
 		margin: var(--s-4) 0 0;
 	}
 	.seasons {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+		display: flex;
+		flex-direction: column;
 		gap: var(--s-2);
+		max-height: 50vh;
+		overflow-y: auto;
 	}
-	.season {
+	.row {
 		display: flex;
 		align-items: center;
 		gap: var(--s-2);
@@ -132,10 +189,32 @@
 		padding: 0 var(--s-3);
 		border: 1px solid var(--line-strong);
 		border-radius: var(--r-btn);
-		cursor: pointer;
 	}
-	.season:has(input:checked) {
+	.row.sub { margin-left: var(--s-4); }
+	p.sub { margin: 0 0 0 var(--s-4); }
+	.row.on {
 		border-color: var(--accent);
 		background: var(--accent-soft);
 	}
+	.pickrow {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		gap: var(--s-2);
+		min-height: 44px;
+		cursor: pointer;
+	}
+	.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.more {
+		min-height: 32px;
+		padding: 0 var(--s-3);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--r-btn);
+		background: transparent;
+		color: inherit;
+		font: var(--t-callout);
+		cursor: pointer;
+	}
+	.more:disabled { opacity: 0.4; cursor: default; }
 </style>
