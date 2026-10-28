@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { albumCounts, albumGroups, askAlbums, askSeasons, baseName, keptByDefault, keptWords, type ArtistAlbum } from './ask-parts.ts';
+import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptWords, type ArtistAlbum } from './ask-parts.ts';
 
 const al = (mbid: string, name: string, date: string, extra: Partial<ArtistAlbum> = {}): ArtistAlbum => ({ mbid, name, type: 'album', secondary_types: [], release_date: date, shelf: 'albums', image: `/art/${mbid}`, ...extra });
 
@@ -51,5 +51,30 @@ describe('season rows', () => {
 		expect(keptWords(2, 2, 'season', '18 episodes')).toBe('All 2 seasons · 18 episodes');
 		expect(keptWords(1, 2, 'season')).toBe('1 of 2 seasons');
 		expect(keptWords(1, 1, 'album')).toBe('1 album');
+	});
+});
+
+describe('episode ticks', () => {
+	const rows = askSeasons({ seasons: [1], episodes: [{ season: 2, episodes: [5, 1, 2, 2, 3, 4] }] }, [{ number: 1, episode_count: 8 }, { number: 2, episode_count: 8 }, { number: 3, episode_count: 0 }]);
+	it('marks a partly asked season', () => {
+		expect(rows.map((r) => r.asked)).toEqual([undefined, [1, 2, 3, 4, 5]]);
+		const [one, two] = rows.map((r) => seasonPick(r, null));
+		expect([one.tick, two.tick]).toEqual(['all', 'some']);
+		expect(askedWords(one)).toBe('all 8 episodes');
+		expect(askedWords(two)).toBe('5 of 8 episodes');
+		expect(picksHead([one, two])).toBe('1 season + 5 episodes · 13 episodes');
+		expect(picksChanged([one, two])).toBe(false);
+	});
+	it('counts a season from its episode list when the count is missing', () => {
+		const p = seasonPick({ number: 3, episodes: 0 }, [{ number: 1 }, { number: 2 }]);
+		expect(p.all).toEqual([1, 2]);
+		expect(askedWords(p)).toBe('all 2 episodes');
+	});
+	it('adds an un-asked episode and drops an asked one', () => {
+		const add = seasonPick(rows[1], null, [1, 2, 3, 4, 5, 6]);
+		const drop = seasonPick(rows[0], null, [1, 2, 3, 4, 5, 6, 7]);
+		expect(picksChanged([drop, add])).toBe(true);
+		expect(picksHead([drop, add])).toBe('13 episodes from 2 seasons');
+		expect(picksHead([seasonPick(rows[0], null, []), seasonPick(rows[1], null, [])]).startsWith('0 of 2')).toBe(true);
 	});
 });

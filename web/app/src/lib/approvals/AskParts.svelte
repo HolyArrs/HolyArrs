@@ -9,7 +9,7 @@
 	import { DUR, easeOut } from '../ui/transitions.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { appPicture } from '../music/music-pages.ts';
-	import { albumCounts, albumGroups, askAlbums, askSeasons, keptWords, type PartsPick } from './ask-parts.ts';
+	import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, picksChanged, picksHead, singleEpisodes, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
 	import { askArtist, musicKinds } from './details.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
@@ -42,10 +42,37 @@
 			const kept = rows.filter((r) => !left.has(r.key));
 			pick = { seasons: null, albums: left.size && kept.length ? kept.flatMap((r) => r.ids) : null, empty: rows.length > 0 && kept.length === 0 };
 		} else {
-			const kept = seasons.filter((s) => !left.has(s.number));
-			pick = { seasons: left.size && kept.length ? kept.map((s) => s.number) : null, albums: null, empty: seasons.length > 0 && kept.length === 0 };
+			const whole = picks.filter((p) => p.tick === 'all').map((p) => p.number);
+			const single = picks.filter((p) => p.tick === 'some').map((p) => ({ season: p.number, episodes: p.ticked }));
+			const changed = picksChanged(picks);
+			pick = {
+				seasons: changed && (whole.length || single.length) ? (singleEpisodes ? whole : [...whole, ...single.map((e) => e.season)].sort((x, y) => x - y)) : null,
+				episodes: changed && single.length && singleEpisodes ? single : null,
+				albums: null,
+				empty: picks.length > 0 && picks.every((p) => p.tick === 'none')
+			};
 		}
 	});
+
+	// The approver's episode ticks, by season (absent: as asked).
+	let ticks = $state<Record<number, number[]>>({});
+	$effect(() => {
+		void a.id;
+		ticks = {};
+	});
+	// A season's episode list: asked when the list opens, or when the season count is missing.
+	const listOf = (s: { number: number; episodes: number }) => (open || !s.episodes ? ctx.episodes(a.tmdb_id, s.number) : null);
+	const picks = $derived(seasons.map((s) => seasonPick(s, listOf(s), ticks[s.number])));
+	function tickSeason(p: SeasonPick) {
+		ticks = { ...ticks, [p.number]: p.tick === 'all' ? [] : [...p.all] };
+	}
+	function tickEpisode(p: SeasonPick, n: number) {
+		const next = p.ticked.includes(n) ? p.ticked.filter((x) => x !== n) : [...p.ticked, n].sort((x, y) => x - y);
+		ticks = { ...ticks, [p.number]: next };
+	}
+	const shortDay = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+	// Approving single episodes needs the server update; until then partly ticked seasons go whole.
+	const singleNote = $derived(editable && !singleEpisodes && picks.some((p) => p.tick === 'some'));
 
 	let open = $state(false);
 	let openSeason = $state(0);
@@ -54,15 +81,13 @@
 	const slideIn = () => ({ duration: reduced() ? 0 : DUR.base, easing: easeOut });
 	const today = new Date().toISOString().slice(0, 10);
 	const keptRows = $derived(rows.filter((r) => !left.has(r.key)));
-	const keptSeasons = $derived(seasons.filter((s) => !left.has(s.number)));
 	const head = $derived.by(() => {
 		if (music) {
 			if (albumsLoading) return 'Loading the albums…';
 			if (!rows.length) return a.album_words ? a.album_words[0].toUpperCase() + a.album_words.slice(1) : 'Every album';
 			return left.size ? `${albumCounts(keptRows)} · ${keptRows.length} of ${rows.length} kept` : albumCounts(rows);
 		}
-		const total = keptSeasons.reduce((n, s) => n + s.episodes, 0);
-		return keptWords(keptSeasons.length, seasons.length, 'season', total ? `${total} episodes` : '');
+		return picksHead(picks);
 	});
 	const listId = $derived(`parts-${a.id}`);
 	const shown = $derived(music ? rows.length > 0 || albumsLoading : seasons.length > 0);
@@ -77,7 +102,8 @@
 		</button>
 		{#if open}
 			<div class="list" id={listId} transition:slide={slideIn()}>
-				{#if editable}<p class="hint">Untick what not to approve.</p>{/if}
+				{#if editable}<p class="hint">{music ? 'Untick what not to approve.' : 'Ticked episodes are added. Tick or untick before approving.'}</p>{/if}
+				{#if singleNote}<p class="hint note" data-testid="single-note">Single-episode picks are saved once the server update lands. Until then a partly ticked season is approved whole.</p>{/if}
 				<ul>
 					{#if music}
 						{#each rows as r (r.key)}
@@ -99,14 +125,16 @@
 							</li>
 						{/each}
 					{:else}
-						{#each seasons as s (s.number)}
+						{#each picks as p, i (p.number)}
+							{@const s = seasons[i]}
 							{@const list = openSeason === s.number ? ctx.episodes(a.tmdb_id, s.number) : null}
-							<li class:off={left.has(s.number)} data-testid="ask-season">
+							{@const words = askedWords(p)}
+							<li class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
 								<div class="line">
-									{#if editable}<input class="tick" type="checkbox" checked={!left.has(s.number)} aria-label="Keep season {s.number}" onchange={() => toggle(s.number)} />{/if}
+									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Season {s.number}: tick every episode" onchange={() => tickSeason(p)} />{/if}
 									<button type="button" class="season" aria-expanded={openSeason === s.number} onclick={() => (openSeason = openSeason === s.number ? 0 : s.number)}>
-										<span class="t">Season {s.number}</span>
-										<span class="y">{left.has(s.number) ? 'Left out' : s.episodes ? `${s.episodes} episodes` : ''}</span>
+										<span class="t">Season {s.number}{#if words}<span class="sub"> · {words}</span>{/if}</span>
+										<span class="y">{p.tick === 'none' ? 'Left out' : p.ticked.length !== p.asked.length || p.tick === 'some' ? `${p.ticked.length} ticked` : ''}</span>
 										<span class="chev" class:up={openSeason === s.number}><Icon name="chevronDown" size={14} /></span>
 									</button>
 								</div>
@@ -119,8 +147,18 @@
 										{:else}
 											<ol class="eps" aria-label="Season {s.number} episodes">
 												{#each list as e (e.number)}
+													{@const on = p.ticked.includes(e.number)}
+													{@const notAsked = !p.asked.includes(e.number)}
 													{@const later = !!e.air_day && e.air_day.slice(0, 10) > today}
-													<li class:later><span class="n">E{e.number}</span><span class="t">{e.name || `Episode ${e.number}`}</span>{#if later && e.air_day}<span class="y">airs {e.air_day.slice(5, 10).replace('-', '/')}</span>{/if}</li>
+													<li class:later class:off={!on} data-testid="ask-episode">
+														<label class="ep">
+															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Episode {e.number}" onchange={() => tickEpisode(p, e.number)} />{/if}
+															<span class="n">E{e.number}</span>
+															<span class="t">{e.name || `Episode ${e.number}`}</span>
+															{#if notAsked}<span class="tag" data-testid="not-asked">not asked</span>{/if}
+															<span class="y">{later ? 'airs ' : ''}{shortDay(e.air_day)}</span>
+														</label>
+													</li>
 												{/each}
 											</ol>
 										{/if}
@@ -151,7 +189,7 @@
 	.list > ul > li + li { border-top: 1px solid var(--line); }
 	.line { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; font: var(--t-footnote); }
 	.off .t, .off .cover { opacity: 0.45; }
-	.off .t { text-decoration: line-through; }
+	.list > ul > li.off > .line .t { text-decoration: line-through; }
 	.tick { width: 18px; height: 18px; flex: none; accent-color: var(--accent-fill); }
 	.cover { width: 32px; height: 32px; flex: none; border-radius: 4px; overflow: hidden; background: var(--surface-3); }
 	.cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -168,5 +206,13 @@
 	.eps .n { flex: none; width: 32px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.eps .t { white-space: normal; overflow-wrap: anywhere; }
 	.eps .later .t { color: var(--text-muted); }
+	.eps li { padding: 0; }
+	.ep { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; }
+	.eps .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.eps li.off .t { opacity: 0.55; text-decoration: none; }
+	.sub { color: var(--text-muted); font-weight: 400; }
+	.tag { flex: none; padding: 1px 6px; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
+	.note { color: var(--warning-text, var(--text-muted)); }
+	@media (max-width: 420px) { .eps .y { font-size: 11px; } .eps .n { width: 28px; } }
 	@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
 </style>

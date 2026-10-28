@@ -361,6 +361,8 @@ export interface Ask {
 	seasons?: number[];
 	/** For a show: "the whole show", "season 2", "seasons 1 and 2". */
 	season_words?: string;
+	/** A show ask's single episodes, by season (seasons not asked whole). */
+	episodes?: { season: number; episodes: number[] }[];
 	future_only?: boolean;
 	/** An artist ask's albums; empty is the whole artist. */
 	albums?: AskAlbum[];

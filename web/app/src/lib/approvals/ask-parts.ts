@@ -147,20 +147,73 @@ export interface SeasonRow {
 	number: number;
 	episodes: number;
 	year?: number;
+	/** The single episodes asked for; absent: the whole season. */
+	asked?: number[];
 }
 
-/** askSeasons lists the seasons a show ask is for: the ones it names, or every regular season of a whole-show ask. */
-export function askSeasons(a: Pick<Ask, 'seasons' | 'future_only'>, seasons: SeasonInfo[]): SeasonRow[] {
+/** askSeasons lists the seasons a show ask is for: the ones it names (whole, or with single episodes), or every regular season of a whole-show ask. */
+export function askSeasons(a: Pick<Ask, 'seasons' | 'future_only'> & Pick<Partial<Ask>, 'episodes'>, seasons: SeasonInfo[]): SeasonRow[] {
 	if (a.future_only) return [];
 	const regular = seasons.filter((s) => s.number > 0);
-	const want = a.seasons?.length ? a.seasons : regular.map((s) => s.number);
+	const single = (a.episodes ?? []).filter((e) => e.episodes?.length);
+	const want = a.seasons?.length || single.length ? [...(a.seasons ?? []), ...single.map((e) => e.season)] : regular.map((s) => s.number);
 	return [...new Set(want)]
 		.sort((x, y) => x - y)
 		.map((n) => {
 			const s = regular.find((x) => x.number === n);
-			return { number: n, episodes: s?.episode_count ?? 0, year: s?.year };
+			const asked = a.seasons?.includes(n) ? undefined : single.find((e) => e.season === n)?.episodes;
+			return { number: n, episodes: s?.episode_count ?? 0, year: s?.year, ...(asked ? { asked: [...new Set(asked)].sort((x, y) => x - y) } : {}) };
 		});
 }
+
+/** The tick state of a season: every episode, some, or none. */
+export type SeasonTick = 'all' | 'some' | 'none';
+
+/** One season as the approver sees it: its episodes, the ones asked for, and the ones ticked. */
+export interface SeasonPick {
+	number: number;
+	/** Every episode number of the season (from the list, else 1…count). */
+	all: number[];
+	/** The episodes the person asked for. */
+	asked: number[];
+	/** The episodes that will be added (ticked). */
+	ticked: number[];
+	tick: SeasonTick;
+}
+
+const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+
+/** seasonPick works out one season's ticks; `ticked` is the approver's own pick (undefined: as asked). */
+export function seasonPick(row: SeasonRow, list: { number: number }[] | null, ticked?: number[]): SeasonPick {
+	const all = list?.length ? list.map((e) => e.number) : range(row.episodes);
+	const asked = row.asked ? row.asked : all;
+	const t = (ticked ?? asked).filter((n) => !all.length || all.includes(n));
+	const tick: SeasonTick = !t.length ? 'none' : all.length && t.length < all.length ? 'some' : 'all';
+	return { number: row.number, all, asked, ticked: t, tick };
+}
+
+/** askedWords says what the person asked of a season: "all 8 episodes", "5 of 8 episodes". */
+export function askedWords(p: Pick<SeasonPick, 'all' | 'asked'>): string {
+	const n = p.all.length;
+	if (!n) return p.asked.length ? `${p.asked.length} episode${p.asked.length === 1 ? '' : 's'}` : '';
+	if (p.asked.length >= n) return n === 1 ? '1 episode' : `all ${n} episodes`;
+	return `${p.asked.length} of ${n} episodes`;
+}
+
+/** picksHead sums the ticks: "All 3 seasons · 16 episodes", "2 of 3 seasons · 18 episodes", "2 seasons + 5 episodes · 21 episodes". */
+export function picksHead(picks: SeasonPick[]): string {
+	const whole = picks.filter((p) => p.tick === 'all');
+	const some = picks.filter((p) => p.tick === 'some');
+	const eps = picks.reduce((n, p) => n + p.ticked.length, 0);
+	const total = eps ? `${eps} episode${eps === 1 ? '' : 's'}` : '';
+	if (!some.length) return keptWords(whole.length, picks.length, 'season', total);
+	const single = some.reduce((n, p) => n + p.ticked.length, 0);
+	const head = [whole.length ? `${whole.length} season${whole.length === 1 ? '' : 's'}` : '', `${single} episode${single === 1 ? '' : 's'}`].filter(Boolean).join(' + ');
+	return whole.length ? `${head} · ${total}` : `${head} from ${some.length === 1 ? `season ${some[0].number}` : `${some.length} seasons`}`;
+}
+
+/** picksChanged says whether the ticks differ from what was asked. */
+export const picksChanged = (picks: SeasonPick[]) => picks.some((p) => p.ticked.length !== p.asked.length || p.ticked.some((n) => !p.asked.includes(n)));
 
 /** keptWords says "3 of 4 seasons · 30 episodes" or "11 of 12 albums" after the approver left some out. */
 export function keptWords(kept: number, all: number, noun: string, extra = ''): string {
@@ -173,8 +226,13 @@ export function keptWords(kept: number, all: number, noun: string, extra = ''): 
 export interface PartsPick {
 	/** Seasons kept (show asks), null when all are. */
 	seasons: number[] | null;
+	/** Single episodes kept in partly ticked seasons (show asks), null when none. */
+	episodes?: { season: number; episodes: number[] }[] | null;
 	/** Album ids kept, every edition of each kept album (artist asks), null when all are. */
 	albums: string[] | null;
 	/** Everything was unticked: nothing to approve. */
 	empty: boolean;
 }
+
+/** singleEpisodes says the server approves single episodes (not only whole seasons). */
+export const singleEpisodes = false;
