@@ -848,7 +848,7 @@
 	.k-episode .dot { background: var(--ok); }
 	.k-album .dot { background: var(--text-muted); }
 
-	.cal-body { display: grid; grid-template-columns: minmax(0, 1fr) 260px; column-gap: 28px; align-items: start; transition: grid-template-columns var(--dur) var(--ease-out), column-gap var(--dur) var(--ease-out); }
+	.cal-body { overflow-x: clip; overflow-clip-margin: 24px; display: grid; grid-template-columns: minmax(0, 1fr) 260px; column-gap: 28px; align-items: start; transition: grid-template-columns var(--dur) var(--ease-out), column-gap var(--dur) var(--ease-out); }
 	/* Month hidden: it slides off to the right and the days take its room. */
 	@media (min-width: 1024px) { .cal-body.month-off { grid-template-columns: minmax(0, 1fr) 0px; column-gap: 0px; } }
 	.cal-body .side { transition: top var(--dur) var(--ease-out), opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }

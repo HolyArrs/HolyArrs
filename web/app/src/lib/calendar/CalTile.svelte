@@ -34,13 +34,13 @@
 	const src = $derived(e.kind === 'album' ? (e.poster ?? null) : entryArt(e));
 	const badges = $derived([chip ? dayChip(g.day, today) : '', groupTag(g)].filter(Boolean));
 	// The time (or Cinema, At home, Out now) first, then each line that has real data; the day is beside the card.
-	const lines = $derived(cardLines(g, look, today));
+	const lines = $derived(cardLines(g, look, today).slice(0, 2));
 	const have = $derived(g.entries.every((x) => itemDot(x, today) === 'have'));
 	let failed = $state(false);
 </script>
 
 <article class="ct" class:album={e.kind === 'album'} class:stacked={n > 1} class:past={g.day < today} data-testid="cal-tile">
-	<div class="stack">
+	<div class="pile">
 		{#if n > 1}<span class="layer l2" aria-hidden="true"></span><span class="layer l1" aria-hidden="true"></span>{/if}
 		<a class="art" href={to(entryHref(e))} aria-label={[entryTitle(e), groupTag(g), ...lines].filter(Boolean).join(', ')}>
 			{#if src && !failed}
@@ -70,12 +70,12 @@
 <style>
 	.ct { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 	.ct.past { opacity: 0.75; }
-	/* Room above every card for a stack's layers, so cards in one row line up. */
-	.stack { position: relative; padding-top: 8px; }
+	/* Every card keeps 8px under its art; a stack's layers peek out there, so all tops line up. */
+	.pile { position: relative; display: flex; flex-direction: column; padding-bottom: 8px; }
 	.layer { position: absolute; border-radius: var(--r-card); background: var(--surface-3); box-shadow: var(--shadow-card); }
-	.l1 { top: 4px; left: 4%; right: 4%; height: 40px; opacity: 0.9; }
-	.l2 { top: 0; left: 8%; right: 8%; height: 40px; opacity: 0.55; }
-	.art { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
+	.l1 { bottom: 4px; left: 4%; right: 4%; height: 40px; opacity: 0.9; }
+	.l2 { bottom: 0; left: 8%; right: 8%; height: 40px; opacity: 0.55; }
+	.art { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card), 0 8px 22px -10px rgb(0 0 0 / 0.22); transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.art > :global(.ui-art-ph) { position: absolute; inset: 0; }
 	.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -87,11 +87,11 @@
 	.tags { display: flex; flex-wrap: wrap; gap: 4px; }
 	.name { color: #fff; font: 700 clamp(17px, 1.6vw, 22px)/1.08 var(--font-display); letter-spacing: -0.02em; text-shadow: 0 2px 12px rgb(0 0 0 / 0.5); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	/* Caption lines, one line each. */
-	.caps { display: flex; flex-direction: column; gap: 1px; min-width: 0; margin-top: -2px; }
-	.cap { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.caps { display: flex; flex-direction: column; gap: 2px; min-width: 0; height: 38px; overflow: hidden; }
+	.cap { color: var(--text-muted); font: var(--t-footnote); line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cap.when { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
 	.have { color: var(--ok-text, var(--ok)); }
-	.bell { position: absolute; top: 16px; right: 8px; }
+	.bell { position: absolute; top: 8px; right: 8px; }
 	.bell.on :global(.ui-ibtn) { color: var(--accent-text); background: color-mix(in srgb, var(--surface-1) 88%, transparent); }
 	.who { display: flex; min-width: 0; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
