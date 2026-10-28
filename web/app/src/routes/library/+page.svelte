@@ -26,8 +26,6 @@
 	import { flip } from 'svelte/animate';
 	import { barOf, detailLabels, flipFrom, loadPosterDetail, needsAttention, savePosterDetail, type PosterDetail } from '#lib/library-poster.ts';
 	import BannerArt from '#lib/ui/BannerArt.svelte';
-	import ArtTile from './ArtTile.svelte';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import ColumnChooser from '#lib/ui/ColumnChooser.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -54,9 +52,6 @@
 
 	type View = 'table' | 'posters' | 'overview';
 
-	/** Banners layout under test (?bv): 0 is today's table. */
-	let bv = $state(0);
-	const bvOn = $derived(bv > 0);
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
 	let error = $state('');
@@ -812,7 +807,7 @@
 
 	<div class="toolbar" role="toolbar" aria-label="Library view">
 		<SegmentedControl label="View" value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} />
-		{#if view !== 'overview' && !(view === 'table' && (phone || bvOn))}<Menu label="Art size" variant="button" text={view === 'posters' ? posterLabels[posterSize].replace(' posters', '') : densityLabels[density]} icon="chevronDown" items={sizeItems} width={200} align="start" />{/if}
+		{#if view !== 'overview' && !(view === 'table' && phone)}<Menu label="Art size" variant="button" text={view === 'posters' ? posterLabels[posterSize].replace(' posters', '') : densityLabels[density]} icon="chevronDown" items={sizeItems} width={200} align="start" />{/if}
 		<Menu label="Sort titles" variant="button" text="{sortLabels[sort.key]} {sort.dir === 'asc' ? '↑' : '↓'}" icon="chevronUpDown" items={sortItems} width={220} align="start" />
 		<span class="filter-btn" class:on={filtersOn > 0}>
 			<Menu label="Filter" variant="button" text={filtersOn ? `Filter · ${filtersOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={280} align="start" />
@@ -823,7 +818,7 @@
 			<input id="find" class="input find" type="search" bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncUrl(); }} placeholder="Search {kindTitle === 'Library' ? 'the Library' : kindTitle}" autocomplete="off" maxlength="256" />
 		</div>
 		<span class="tool-gap"></span>
-		{#if view === 'table' && !bvOn && kind !== 'all' && !phone}<ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} />{/if}
+		{#if view === 'table' && kind !== 'all' && !phone}<ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} />{/if}
 		{#if canManage && shown.length}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}
 	</div>
 
@@ -869,32 +864,6 @@
 						</li>
 					{/each}
 				</ul>
-			{:else if view === 'table' && bvOn}
-				<div class="bv bv{bv}" class:has-select={selecting} bind:this={listEl} bind:clientWidth={listWidth}>
-					{#if bv === 2}
-						<ul class="wc-grid" role="list" aria-label="{kindTitle} titles">
-							{#each entries as e (e.key)}
-								{#if e.type === 'head'}<li class="wc-head">{@render bvHead(e)}</li>{:else}{@render bvCard(e.t)}{/if}
-							{/each}
-						</ul>
-					{:else}
-						<div class="bv-panel">
-							{#if bv === 3 && !phone}
-								<div class="ct ct-h" role="presentation">
-									<span></span>
-									<button type="button" class="h sort" aria-label="Sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
-									<button type="button" class="h sort" aria-label="Sort by year" aria-pressed={sort.key === 'year'} onclick={() => setSort('year')}>Year{#if sort.key === 'year'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
-									<span class="h">Type</span><span class="h">Status</span><span class="h">Progress</span><span class="h">Asked by</span>
-								</div>
-							{/if}
-							<div role="list" aria-label="{kindTitle} titles">
-								{#each entries as e (e.key)}
-									{#if e.type === 'head'}{@render bvHead(e)}{:else}{@render bvEntry(e.t, e.key, rowEntries.findIndex((r) => r.t.id === e.t.id))}{/if}
-								{/each}
-							</div>
-						</div>
-					{/if}
-				</div>
 			{:else}
 				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px" bind:this={listEl} bind:clientWidth={listWidth}>
 					{#if view === 'table' && !phone}
@@ -1054,8 +1023,6 @@
 		{#if railOn && loaded && !error}{@render letterRail()}{/if}
 	</div>
 
-	{#if view === 'table'}<VariantBar options={[{ value: 0, label: 'Banners today' }, { value: 1, label: 'Slim list' }, { value: 2, label: 'Wide cards' }, { value: 3, label: 'Compact table' }]} bind:value={bv} param="bv" storageKey="holyarrs.library.banner-view" label="Banners layout" />{/if}
-
 	{#if selecting}
 		<div class="select-bar" role="toolbar" aria-label="Selected titles" data-testid="select-bar">
 			<span class="count" aria-live="polite">{pickedShown.length} selected</span>
@@ -1091,62 +1058,6 @@
 		</div>
 	</form>
 </dialog>
-
-
-{#snippet bell(t: TitleView)}
-	{#if selecting}<input type="checkbox" class="pick-box" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />
-	{:else}<span class="keep" class:on={t.keep_up_to_date} role="img" aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
-{/snippet}
-{#snippet statusChip(t: TitleView)}
-	{@const ls = libraryState(t)}
-	{#if ls}<span class="bvchip {ls.tone}" data-testid="library-status" data-state={ls.key}><Icon name={ls.icon} size={14} /><span class="bvchip-t">{ls.label}</span></span>{:else}<span class="dash">—</span>{/if}
-{/snippet}
-{#snippet bvHead(e: { id: number; name: string; count: number })}
-	<div class="series-head bv-head"><h2>{e.name}</h2><span>{e.count} in the Library</span>{#if e.id}<a href={to(`/library/collections/${e.id}`)}>Open series</a>{/if}</div>
-{/snippet}
-{#snippet bvEntry(t: TitleView, key: string, ri: number)}
-	{@const who2 = requestedBy(t)}
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-	<div class="entry bv-entry" role="listitem" tabindex={ri === active ? 0 : -1} aria-label="{t.name}{t.year ? `, ${t.year}` : ''}{picked.has(t.id) ? ', selected' : ''}" data-key={key} data-testid="library-row" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id} onkeydown={(ev) => rowKey(ev, t)} onfocus={() => (active = ri)} onclick={(ev) => rowClick(ev, t)}>
-		{#if bv === 1}
-			<div class="sl">
-				<a class="sl-art" href={titleLink(t.id)} tabindex="-1" aria-hidden="true"><ArtTile title={t} width={phone ? 96 : 112} /></a>
-				<span class="sl-bell">{@render bell(t)}</span>
-				<a class="sl-name" href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>
-				<span class="sl-yr">{#if kind === 'all'}{kindLabel[t.kind]}{#if t.year} · {t.year}{/if}{:else}{t.year || '—'}{/if}</span>
-				<span class="sl-st">{@render statusChip(t)}</span>
-				<span class="sl-by" data-testid={who2 ? 'requested-by' : undefined} title={who2 ? `Asked by ${who2}` : undefined}>{who2 ? `Asked by ${who2}` : ''}</span>
-			</div>
-		{:else}
-			{@const p = progressOf(t)}
-			<div class="ct">
-				<span class="ct-bell">{@render bell(t)}</span>
-				<a class="ct-name" href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}{#if phone && who2}<span class="ct-sub">{t.year ? t.year + ' · ' : ''}Asked by {who2}</span>{:else if phone && t.year}<span class="ct-sub">{t.year}</span>{/if}</a>
-				{#if !phone}
-					<span class="ct-c ct-yr">{t.year || '—'}</span>
-					<span class="ct-c ct-kind">{kindLabel[t.kind]}</span>
-				{/if}
-				<span class="ct-st">{@render statusChip(t)}</span>
-				{#if !phone}
-					<span class="ct-prog"><span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span><span class="num-t">{t.kind === 'movie' ? '' : `${p.have}/${p.total}`}</span><span class="sr-only">{progressText(t)}</span></span>
-					<span class="ct-c ct-by" data-testid={who2 ? 'requested-by' : undefined} title={who2}>{who2 || ''}</span>
-				{/if}
-			</div>
-		{/if}
-	</div>
-{/snippet}
-{#snippet bvCard(t: TitleView)}
-	{@const who2 = requestedBy(t)}
-	<li class="wc" data-testid="library-row" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-		<a class="wc-art" href={titleLink(t.id)} aria-label="{t.name}{t.year ? `, ${t.year}` : ''}"><ArtTile title={t} width={phone ? 200 : 400} label /></a>
-		{#if !selecting}<span class="wc-bell">{@render bell(t)}</span>{/if}
-		{#if selecting}<button type="button" class="pick wc-pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>{/if}
-		<div class="wc-foot">
-			<div class="wc-l1"><span class="wc-st">{@render statusChip(t)}</span></div>
-			<p class="wc-l2" title={who2 ? `Asked by ${who2}` : undefined}>{kind === 'all' ? kindLabel[t.kind] + (t.year ? ' · ' : '') : ''}{t.year || ''}{#if who2}<span data-testid="requested-by">{t.year || kind === 'all' ? ' · ' : ''}Asked by {who2}</span>{/if}</p>
-		</div>
-	</li>
-{/snippet}
 
 {#snippet letterRail()}
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -1321,89 +1232,6 @@
 	.empty-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 
 	
-
-	/* Banners layouts (?bv): one row height, fixed columns, no gaps. */
-	.bv-panel { min-width: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); overflow: clip; }
-	.bv-entry { height: 72px; box-sizing: border-box; content-visibility: auto; contain-intrinsic-size: auto 72px; }
-	.bv-entry:first-child { border-top-color: transparent; }
-	.bv .series-head { height: 44px; box-sizing: border-box; padding: 0 16px; align-items: center; }
-	.bvchip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 26px; padding: 0 10px 0 8px; border-radius: 99px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 600; box-sizing: border-box; }
-	.bvchip-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.bvchip.ok :global(svg) { color: var(--ok); }
-	.bvchip.info :global(svg) { color: var(--info); }
-	.bvchip.wait :global(svg) { color: var(--wait); }
-	.bvchip.fail { color: var(--fail-text); }
-	.bvchip.fail :global(svg) { color: var(--fail); }
-	.bvchip.idle { color: var(--text-muted); }
-	.dash { color: var(--text-muted); }
-
-	/* 1 Slim list */
-	.sl { display: grid; grid-template-columns: 112px 28px minmax(0, 1.5fr) 72px minmax(200px, 1fr) minmax(150px, 1fr); align-items: center; gap: 0 16px; height: 72px; padding: 0 20px 0 12px; box-sizing: border-box; }
-	.sl-art { display: block; border-radius: 6px; overflow: hidden; }
-	.sl-bell { display: grid; place-items: center; }
-	.sl-name { color: var(--text); font: var(--t-headline); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.sl-name:hover { text-decoration: underline; text-underline-offset: 3px; }
-	.sl-yr { color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.sl-st { min-width: 0; display: flex; }
-	.sl-by { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-	/* 3 Compact table */
-	.bv3 .bv-entry { height: 48px; contain-intrinsic-size: auto 48px; }
-	.ct { display: grid; grid-template-columns: 28px minmax(0, 1.5fr) 64px 84px minmax(200px, 1fr) 150px minmax(150px, 1fr); align-items: center; gap: 0 16px; height: 48px; padding: 0 20px 0 14px; box-sizing: border-box; }
-	.ct-h { height: 38px; background: var(--surface-1); border-bottom: 1px solid var(--line); }
-	.ct-h .sort { padding: 0; }
-	.ct-bell { display: grid; place-items: center; }
-	.ct-name { color: var(--text); font: var(--t-callout); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.ct-name:hover { text-decoration: underline; text-underline-offset: 3px; }
-	.ct-c { color: var(--text-muted); font: var(--t-callout); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
-	.ct-st { min-width: 0; display: flex; }
-	.ct-prog { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; gap: 8px; }
-	.ct-prog .num-t { text-align: right; }
-	.ct-by { font: var(--t-footnote); }
-	.ct-sub { color: var(--text-muted); font-weight: 400; }
-
-	/* 2 Wide cards */
-	.wc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 20px 16px; margin: 0; padding: 0; list-style: none; }
-	.wc-head { grid-column: 1 / -1; min-width: 0; }
-	.wc-head .series-head { border-radius: var(--r-btn); border-top: 0; }
-	.wc { position: relative; display: flex; flex-direction: column; min-width: 0; border-radius: var(--r-card); background: var(--surface-1); box-shadow: var(--shadow-card); overflow: clip; }
-	.wc.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
-	.wc.last-opened { outline: 2px solid var(--text-muted); outline-offset: 2px; }
-	.wc-art { display: block; text-decoration: none; }
-	.wc-art :global(.tile) { border-radius: 0; }
-	.wc-art:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
-	.wc-pick { aspect-ratio: 16 / 9; border-radius: 0; }
-	.wc-foot { display: flex; flex-direction: column; justify-content: center; gap: 6px; height: 74px; padding: 0 12px; box-sizing: border-box; }
-	.wc-l1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 26px; }
-	.wc-st { min-width: 0; display: flex; }
-	.wc-bell { position: absolute; top: 8px; right: 8px; z-index: 1; display: grid; place-items: center; }
-	.wc-bell .keep { background: rgb(0 0 0 / 55%); color: #fff; backdrop-filter: blur(6px); }
-	.wc-bell .keep.on { background: color-mix(in srgb, var(--ok, #2fa36b) 85%, #000); color: #fff; }
-	.wc-l2 { margin: 0; height: 20px; color: var(--text-muted); font: var(--t-footnote); line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-	@media (max-width: 639px) {
-		.bv-entry { height: 76px; contain-intrinsic-size: auto 76px; }
-		.sl { grid-template-columns: 96px minmax(0, 1fr) 28px; grid-template-areas: 'art name bell' 'art st st' 'art by by'; gap: 3px 12px; height: 76px; padding: 0 12px; }
-		.sl-art { grid-area: art; }
-		.sl-bell { grid-area: bell; }
-		.sl-name { grid-area: name; font: var(--t-callout); font-weight: 600; }
-		.sl-yr { display: none; }
-		.sl-st { grid-area: st; }
-		.sl-st .bvchip { height: 22px; }
-		.sl-by { grid-area: by; font-size: 12px; min-height: 15px; }
-		.bv3 .bv-entry { height: 60px; contain-intrinsic-size: auto 60px; }
-		.ct { grid-template-columns: 28px minmax(0, 1fr) 124px; height: 60px; gap: 0 10px; padding: 0 12px; }
-		.ct-name { display: flex; flex-direction: column; gap: 2px; white-space: normal; line-height: 1.25; }
-		.ct-sub { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		
-		.wc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
-		.wc-foot { padding: 0 8px; height: 66px; gap: 4px; }
-		.wc-l1 { height: 24px; }
-		.wc-l1 .bvchip { height: 24px; padding: 0 8px 0 6px; }
-		.wc-l2 { font-size: 12px; }
-		.bv .series-head { padding: 0 12px; }
-	}
-
 	/* Phones: each row becomes a banner card; posters stay a grid. */
 	@media (max-width: 639px) {
 		.toolbar { position: static; }
