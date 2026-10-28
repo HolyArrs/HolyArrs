@@ -965,13 +965,14 @@
 
 	/* The short banner (dark in both themes): the wide photo or the music video. It zooms out from 1.1 and darkens as it leaves. */
 	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; height: clamp(280px, 44vh, 520px); transition: background-color var(--dur-slow) var(--ease-out); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
-	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
+	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; -webkit-mask-image: linear-gradient(to bottom, #000 45%, rgb(0 0 0 / .55) 72%, transparent 100%); mask-image: linear-gradient(to bottom, #000 45%, rgb(0 0 0 / .55) 72%, transparent 100%); }
+	.hero.full .stage { -webkit-mask-image: none; mask-image: none; }
 	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.art.in { opacity: .82; }
 	.art.soft { filter: blur(56px) saturate(150%); transform: scale(1.3); }
 	.art.soft.in { opacity: .6; }
 	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to top, var(--hero-ink) 0%, color-mix(in srgb, var(--hero-ink) 70%, transparent) 22%, color-mix(in srgb, var(--hero-ink) 20%, transparent) 50%, transparent 72%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
-	.dim { position: absolute; inset: 0; z-index: -1; background: #000; opacity: calc(var(--gone, 0) * .7); pointer-events: none; }
+	.dim { position: absolute; inset: 0; z-index: -1; background: var(--hero-ink); opacity: calc(var(--gone, 0) * .85); pointer-events: none; }
 	.hero.bare { background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, #3a3d44), var(--hero-ink)); }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
 	/* The video covers the banner at the same size; paused, it hides and the banner shows again. */
