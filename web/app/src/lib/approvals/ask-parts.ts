@@ -16,6 +16,8 @@ export interface ArtistAlbum {
 	shelf: string;
 	image: string;
 	upcoming?: boolean;
+	/** The album's place in the Library (its stored tracks), when the artist is in it. */
+	part_id?: number;
 }
 
 /** The music add defaults the whole-artist ask follows. */
@@ -40,7 +42,7 @@ const kindOrder: AlbumKind[] = ['albums', 'singles', 'live', 'compilations', 'ot
 export interface AlbumGroup {
 	key: string;
 	kind: AlbumKind;
-	main: { mbid: string; name: string; year?: number; image: string };
+	main: { mbid: string; name: string; year?: number; image: string; part_id?: number };
 	/** Every edition's id, the main one first. */
 	ids: string[];
 	/** The other editions (deluxe, remaster, anniversary…), oldest first. */
@@ -92,7 +94,7 @@ export function keptByDefault(al: Pick<ArtistAlbum, 'type' | 'secondary_types' |
  * (same name once the edition tag is dropped, same kind) share a row under
  * the oldest plain edition. Rows run by kind, then oldest first.
  */
-export function albumGroups(list: Pick<ArtistAlbum, 'mbid' | 'name' | 'type' | 'secondary_types' | 'release_date' | 'shelf' | 'image'>[]): AlbumGroup[] {
+export function albumGroups(list: (Pick<ArtistAlbum, 'mbid' | 'name' | 'type' | 'secondary_types' | 'release_date' | 'shelf' | 'image'> & { part_id?: number })[]): AlbumGroup[] {
 	const by = new Map<string, (typeof list)[number][]>();
 	for (const al of list) {
 		const key = `${kindOf(al)}|${baseName(al.name)}`;
@@ -109,7 +111,7 @@ export function albumGroups(list: Pick<ArtistAlbum, 'mbid' | 'name' | 'type' | '
 		out.push({
 			key,
 			kind: kindOf(main),
-			main: { mbid: main.mbid, name: main.name, year: yearOf(main.release_date), image: main.image },
+			main: { mbid: main.mbid, name: main.name, year: yearOf(main.release_date), image: main.image, ...(main.part_id ? { part_id: main.part_id } : {}) },
 			ids: [main.mbid, ...rest.map((x) => x.mbid)],
 			editions: rest.map((x) => ({ mbid: x.mbid, name: x.name, year: yearOf(x.release_date) }))
 		});
@@ -228,11 +230,17 @@ export interface PartsPick {
 	seasons: number[] | null;
 	/** Single episodes kept in partly ticked seasons (show asks), null when none. */
 	episodes?: { season: number; episodes: number[] }[] | null;
+	/** Songs kept in partly ticked albums (Library track ids), null when none. */
+	tracks?: { album: string; tracks: number[] }[] | null;
 	/** Album ids kept, every edition of each kept album (artist asks), null when all are. */
 	albums: string[] | null;
 	/** Everything was unticked: nothing to approve. */
 	empty: boolean;
 }
 
-/** singleEpisodes says the server approves single episodes (not only whole seasons). */
-export const singleEpisodes = false;
+/** albumsHead sums the album ticks: "All 3 albums", "2 of 3 albums", "2 albums + 5 songs". */
+export function albumsHead(whole: number, all: number, songs: number, partly: number): string {
+	if (!partly) return keptWords(whole, all, 'album');
+	const s = `${songs} song${songs === 1 ? '' : 's'}`;
+	return whole ? `${whole} album${whole === 1 ? '' : 's'} + ${s}` : `${s} from ${partly === 1 ? '1 album' : `${partly} albums`}`;
+}

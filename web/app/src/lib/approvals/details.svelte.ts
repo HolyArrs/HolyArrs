@@ -62,6 +62,30 @@ export function seasonEpisodes(tmdb: string, season: number): EpisodeInfo[] | nu
 	return eps[k] ?? null;
 }
 
+/** A stored track of an album in the Library. */
+export interface AlbumTrack {
+	id: number;
+	disc: number;
+	number: number;
+	name?: string;
+	length_ms?: number;
+	keep_up_to_date: boolean;
+}
+const tracks = $state<Record<number, AlbumTrack[] | null>>({});
+const askedTracks = new Set<number>();
+
+/** albumTracks is a Library album's stored tracks (null until known), asked once; only albums in the Library have them. */
+export function albumTracks(partId: number): AlbumTrack[] | null {
+	if (!askedTracks.has(partId) && partId > 0) {
+		askedTracks.add(partId);
+		api
+			.get<{ tracks?: AlbumTrack[] }>(`/albums/${partId}/tracks`)
+			.then((r) => (tracks[partId] = Array.isArray(r.tracks) ? r.tracks.filter((t) => !(t as { dropped?: boolean }).dropped) : []))
+			.catch(() => (tracks[partId] = []));
+	}
+	return tracks[partId] ?? null;
+}
+
 /** What the Approvals panel shows of an artist: the round photo, the banner pictures and the albums (release groups). */
 export interface AskArtist {
 	image: string | null;

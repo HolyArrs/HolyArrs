@@ -9,8 +9,8 @@
 	import { DUR, easeOut } from '../ui/transitions.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { appPicture } from '../music/music-pages.ts';
-	import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, picksChanged, picksHead, singleEpisodes, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
-	import { askArtist, musicKinds } from './details.svelte.ts';
+	import { albumCounts, albumGroups, albumsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
+	import { albumTracks, askArtist, musicKinds, type AlbumTrack } from './details.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
 
@@ -39,20 +39,65 @@
 	}
 	$effect(() => {
 		if (music) {
-			const kept = rows.filter((r) => !left.has(r.key));
-			pick = { seasons: null, albums: left.size && kept.length ? kept.flatMap((r) => r.ids) : null, empty: rows.length > 0 && kept.length === 0 };
+			const kept = albumPicks.filter((p) => p.tick !== 'none');
+			const partly = albumPicks.filter((p) => p.tick === 'some');
+			const changed = left.size > 0 || partly.length > 0;
+			pick = {
+				seasons: null,
+				albums: changed && kept.length ? kept.flatMap((p) => p.row.ids) : null,
+				tracks: partly.length ? partly.map((p) => ({ album: p.row.main.mbid, tracks: p.ticked })) : null,
+				empty: rows.length > 0 && kept.length === 0
+			};
 		} else {
 			const whole = picks.filter((p) => p.tick === 'all').map((p) => p.number);
 			const single = picks.filter((p) => p.tick === 'some').map((p) => ({ season: p.number, episodes: p.ticked }));
 			const changed = picksChanged(picks);
 			pick = {
-				seasons: changed && (whole.length || single.length) ? (singleEpisodes ? whole : [...whole, ...single.map((e) => e.season)].sort((x, y) => x - y)) : null,
-				episodes: changed && single.length && singleEpisodes ? single : null,
+				seasons: changed && (whole.length || single.length) ? whole : null,
+				episodes: changed && single.length ? single : null,
 				albums: null,
 				empty: picks.length > 0 && picks.every((p) => p.tick === 'none')
 			};
 		}
 	});
+
+	// The approver's song ticks, by album row (absent: every song); only albums in the Library have stored songs.
+	let songTicks = $state<Record<string, number[]>>({});
+	let openAlbum = $state('');
+	$effect(() => {
+		void a.id;
+		songTicks = {};
+	});
+	type AlbumPick = { row: (typeof rows)[number]; list: AlbumTrack[] | null; ticked: number[]; tick: 'all' | 'some' | 'none' };
+	const albumPicks = $derived(
+		rows.map((r): AlbumPick => {
+			const id = r.main.part_id ?? 0;
+			const list = id && (openAlbum === r.key || songTicks[r.key]) ? albumTracks(id) : null;
+			const all = list?.map((t) => t.id) ?? [];
+			if (left.has(r.key)) return { row: r, list, ticked: [], tick: 'none' };
+			const t = songTicks[r.key]?.filter((x) => all.includes(x));
+			if (!list || !t) return { row: r, list, ticked: all, tick: 'all' };
+			return { row: r, list, ticked: t, tick: !t.length ? 'none' : t.length < all.length ? 'some' : 'all' };
+		})
+	);
+	function tickAlbum(p: AlbumPick) {
+		const next = { ...songTicks };
+		delete next[p.row.key];
+		songTicks = next;
+		const l = new Set(left);
+		if (p.tick === 'all') l.add(p.row.key);
+		else l.delete(p.row.key);
+		left = l;
+	}
+	function tickSong(p: AlbumPick, id: number) {
+		const base = p.tick === 'none' ? [] : p.ticked;
+		const t = base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
+		songTicks = { ...songTicks, [p.row.key]: t };
+		const l = new Set(left);
+		l.delete(p.row.key);
+		left = l;
+	}
+	const songLen = (ms?: number) => (ms ? `${Math.floor(ms / 60000)}:${String(Math.round((ms % 60000) / 1000)).padStart(2, '0')}` : '');
 
 	// The approver's episode ticks, by season (absent: as asked).
 	let ticks = $state<Record<number, number[]>>({});
@@ -71,8 +116,6 @@
 		ticks = { ...ticks, [p.number]: next };
 	}
 	const shortDay = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
-	// Approving single episodes needs the server update; until then partly ticked seasons go whole.
-	const singleNote = $derived(editable && !singleEpisodes && picks.some((p) => p.tick === 'some'));
 
 	let open = $state(false);
 	let openSeason = $state(0);
@@ -85,7 +128,10 @@
 		if (music) {
 			if (albumsLoading) return 'Loading the albums…';
 			if (!rows.length) return a.album_words ? a.album_words[0].toUpperCase() + a.album_words.slice(1) : 'Every album';
-			return left.size ? `${albumCounts(keptRows)} · ${keptRows.length} of ${rows.length} kept` : albumCounts(rows);
+			const partly = albumPicks.filter((p) => p.tick === 'some');
+			if (!left.size && !partly.length) return albumCounts(rows);
+			const whole = albumPicks.filter((p) => p.tick === 'all').length;
+			return albumsHead(whole, rows.length, partly.reduce((n, p) => n + p.ticked.length, 0), partly.length);
 		}
 		return picksHead(picks);
 	});
@@ -103,20 +149,44 @@
 		{#if open}
 			<div class="list" id={listId} transition:slide={slideIn()}>
 				{#if editable}<p class="hint">{music ? 'Untick what not to approve.' : 'Ticked episodes are added. Tick or untick before approving.'}</p>{/if}
-				{#if singleNote}<p class="hint note" data-testid="single-note">Single-episode picks are saved once the server update lands. Until then a partly ticked season is approved whole.</p>{/if}
 				<ul>
 					{#if music}
-						{#each rows as r (r.key)}
-							<li class:off={left.has(r.key)} data-testid="ask-album">
+						{#each albumPicks as p (p.row.key)}
+							{@const r = p.row}
+							<li class:off={p.tick === 'none'} data-testid="ask-album" data-tick={p.tick}>
 								<div class="line">
-									{#if editable}<input class="tick" type="checkbox" checked={!left.has(r.key)} aria-label="Keep {r.main.name}" onchange={() => toggle(r.key)} />{/if}
+									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Keep {r.main.name}" onchange={() => tickAlbum(p)} />{/if}
 									<span class="cover">{#if r.main.image}<img src={r.main.image} alt="" loading="lazy" decoding="async" />{/if}</span>
 									<span class="t">{r.main.name}</span>
 									{#if r.editions.length}
 										<button type="button" class="more" aria-expanded={openEditions === r.key} onclick={() => (openEditions = openEditions === r.key ? '' : r.key)}>{r.editions.length + 1} editions</button>
 									{/if}
-									<span class="y">{r.main.year ?? ''}</span>
+									<span class="y">{p.tick === 'some' ? `${p.ticked.length} of ${p.list?.length ?? 0} songs` : (r.main.year ?? '')}</span>
+									<button type="button" class="open" aria-expanded={openAlbum === r.key} aria-label="Songs of {r.main.name}" onclick={() => (openAlbum = openAlbum === r.key ? '' : r.key)}><span class="chev" class:up={openAlbum === r.key}><Icon name="chevronDown" size={14} /></span></button>
 								</div>
+								{#if openAlbum === r.key}
+									<div transition:slide={slideIn()}>
+										{#if !r.main.part_id || (p.list && !p.list.length)}
+											<p class="hint" data-testid="songs-later">Songs load when the album is added.</p>
+										{:else if p.list === null}
+											<p class="hint">Loading the songs…</p>
+										{:else}
+											<ol class="eps" aria-label="Songs of {r.main.name}">
+												{#each p.list as t (t.id)}
+													{@const on = p.ticked.includes(t.id)}
+													<li class:off={!on} data-testid="ask-song">
+														<label class="ep">
+															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}" onchange={() => tickSong(p, t.id)} />{/if}
+															<span class="n">{t.disc > 1 ? `${t.disc}-` : ''}{t.number}</span>
+															<span class="t">{t.name || `Track ${t.number}`}</span>
+															<span class="y">{songLen(t.length_ms)}</span>
+														</label>
+													</li>
+												{/each}
+											</ol>
+										{/if}
+									</div>
+								{/if}
 								{#if openEditions === r.key}
 									<ul class="eds" transition:slide={slideIn()} aria-label="Editions of {r.main.name}">
 										{#each r.editions as e (e.mbid)}<li><span class="t">{e.name}</span><span class="y">{e.year ?? ''}</span></li>{/each}
@@ -199,6 +269,8 @@
 	.more[aria-expanded='true'] { background: var(--accent-soft); color: var(--accent-text); }
 	.eds { padding: 0 12px 8px 54px; }
 	.eds li { display: flex; gap: 10px; padding: 4px 0; color: var(--text-muted); font: var(--t-caption); }
+	.open { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: inherit; cursor: pointer; }
+	.open:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.season { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 6px; }
 	.eps { padding: 0 12px 8px; }
 	.eps li { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; font: var(--t-footnote); }
@@ -212,7 +284,6 @@
 	.eps li.off .t { opacity: 0.55; text-decoration: none; }
 	.sub { color: var(--text-muted); font-weight: 400; }
 	.tag { flex: none; padding: 1px 6px; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
-	.note { color: var(--warning-text, var(--text-muted)); }
 	@media (max-width: 420px) { .eps .y { font-size: 11px; } .eps .n { width: 28px; } }
 	@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
 </style>

@@ -47,7 +47,7 @@
 	let person = $state(0);
 	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
-	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; seasons?: number[]; albums?: string[]; timer: ReturnType<typeof setTimeout> };
+	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; seasons?: number[]; episodes?: { season: number; episodes: number[] }[]; albums?: string[]; tracks?: { album: string; tracks: number[] }[]; timer: ReturnType<typeof setTimeout> };
 	let pending = $state<Record<number, Pending>>({});
 	const viewOf = (a: Ask): Ask => {
 		const p = pending[a.id];
@@ -79,7 +79,7 @@
 		delete pending[id];
 		try {
 			const path = `/asks/${id}/${p.mode === 'approve' ? 'approve' : 'turn-down'}`;
-			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.langs.length ? { audio_languages: p.langs } : {}), ...(p.seasons?.length ? { seasons: p.seasons } : {}), ...(p.albums?.length ? { albums: p.albums } : {}) } : { note: p.note };
+			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.langs.length ? { audio_languages: p.langs } : {}), ...(p.seasons?.length || p.episodes?.length ? { seasons: p.seasons ?? [] } : {}), ...(p.episodes?.length ? { episodes: p.episodes } : {}), ...(p.albums?.length ? { albums: p.albums } : {}), ...(p.tracks?.length ? { tracks: p.tracks } : {}) } : { note: p.note };
 			const r = await api.post<{ ask: Ask }>(path, body);
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
@@ -94,7 +94,7 @@
 	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '', opt?: DecideOptions) {
 		const ids = list.filter((a) => a.state === 'asked' && !pending[a.id]).map((a) => a.id);
 		if (!ids.length) return;
-		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, albums: opt?.albums, timer: setTimeout(() => void commit(id), UNDO_MS) };
+		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, tracks: opt?.tracks, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		const one = list.length === 1 ? list[0].name : `${ids.length} asks`;
 		const verb = mode === 'approve' ? 'approved' : 'turned down';
@@ -261,7 +261,7 @@
 			if (i >= 0) asks[i] = r.ask;
 			const added =
 				r.ask.kind === 'show'
-					? `${r.ask.name} is approved and added; HolyArrs keeps ${seasonWords(r.ask.seasons)} up to date.`
+					? `${r.ask.name} is approved and added; HolyArrs keeps ${r.ask.season_words ?? seasonWords(r.ask.seasons)} up to date.`
 					: r.ask.kind === 'artist'
 						? `${r.ask.name} is approved and added; HolyArrs keeps ${albumWords(r.ask.albums)} up to date.`
 						: `${r.ask.name} is approved and added; HolyArrs is looking for it.`;
