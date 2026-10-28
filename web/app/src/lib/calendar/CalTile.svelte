@@ -9,9 +9,8 @@
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import FollowWho from './FollowWho.svelte';
-	import Sheet from '#lib/ui/Sheet.svelte';
-	import Button from '#lib/ui/Button.svelte';
-	import { epCode, epText, movieText } from './ep-text.svelte.ts';
+	import CalWindow from './CalWindow.svelte';
+	import { epCode } from './ep-text.svelte.ts';
 
 	// Coming Soon's card for rows: the Day view's big backdrop card made row
 	// size, with the name on the art and its badges. Several episodes of one
@@ -83,37 +82,7 @@
 		{#each lines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === lines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
 	{/snippet}
 	<button type="button" class="caps tap" onclick={() => (open = true)} aria-haspopup="dialog" data-testid="cal-open">{@render capLines()}</button>
-	<Sheet bind:open title={entryTitle(e)} size="md">
-		<div class="ep-win" data-testid="cal-window">
-			{#if (e.still || src) && !failed}
-				<div class="ep-art" class:album={e.kind === 'album'}>
-					<img class="ep-still" src={sized(e.still || src || '', e.kind === 'album' ? 'poster' : 'backdrop', 780)} alt="" />
-					{#if e.kind === 'album' && src}<img class="ep-cover" src={sized(src, 'poster', 300)} alt="" />{/if}
-				</div>
-			{/if}
-			<p class="ep-when">{lines[0]}{#if isEp && groupTag(g)}{' · '}{groupTag(g)}{/if}</p>
-			{#if isEp}
-				{#each g.entries as x (x.item_id ?? x.episode)}
-					{@const t = epText(x.tmdb, x.season, x.episode)}
-					{@const named = !!x.episode_name && !/^Episode \d+$/.test(x.episode_name)}
-					<div class="ep-one">
-						<p class="ep-num">Season {x.season}, Episode {x.episode}</p>
-						{#if named}<h3 class="ep-name">{x.episode_name}</h3>{/if}
-						{#if t}<p class="ep-text">{t}</p>{:else}<p class="ep-text none">No description yet.</p>{/if}
-					</div>
-				{/each}
-			{:else}
-				{#if e.kind === 'album' && e.album}<h3 class="ep-name">{e.album}</h3>{/if}
-				{#if e.kind !== 'album' && open}{@const story = movieText(e.tmdb)}{#if story}<p class="ep-text story">{story}</p>{/if}{/if}
-				{#each words.lines as l (l)}<p class="ep-text">{l}</p>{/each}
-			{/if}
-			{#if have}<p class="ep-text have">In the Library</p>{/if}
-		</div>
-		{#snippet footer()}
-			<Button variant="primary" href={page}>Go to {e.kind === 'album' ? 'album' : e.kind === 'episode' ? 'show' : 'movie'}</Button>
-			<Button onclick={() => (open = false)}>Close</Button>
-		{/snippet}
-	</Sheet>
+	<CalWindow bind:open {g} {today} {look} />
 	{#if mode === 'everyone'}<p class="who"><FollowWho {e} size={16} /></p>{/if}
 </article>
 
@@ -143,21 +112,6 @@
 	.tap { all: unset; display: flex; flex-direction: column; gap: 2px; min-width: 0; height: 38px; overflow: hidden; cursor: pointer; border-radius: 6px; }
 	.tap:hover .cap.when { text-decoration: underline; text-underline-offset: 3px; }
 	.tap:focus-visible { box-shadow: var(--focus-ring); }
-	/* Layout 1: the description in a soft shaded box, always two lines tall so every card in a row lines up. */
-	.ep-win { display: flex; flex-direction: column; gap: 12px; }
-	.ep-art { position: relative; border-radius: 10px; overflow: hidden; }
-	.ep-still { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-	.ep-art.album .ep-still { filter: blur(22px) saturate(140%) brightness(.7); transform: scale(1.2); }
-	.ep-cover { position: absolute; left: 50%; top: 50%; translate: -50% -50%; height: 76%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / .5); }
-	.ep-when { margin: 0; color: var(--text); font: var(--t-subhead); font-weight: 700; font-variant-numeric: tabular-nums; }
-	.ep-one { display: flex; flex-direction: column; gap: 4px; }
-	.ep-num { margin: 0; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
-	.ep-name { margin: 0; font: var(--t-headline); }
-	.ep-text { margin: 0; color: var(--text-muted); font: var(--t-body); }
-	.ep-text.story { color: var(--text); }
-	.ep-text.none { opacity: .7; }
-	.ep-text.have { color: var(--ok-text, var(--ok)); }
-	.ep-go { align-self: flex-start; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.have { color: var(--ok-text, var(--ok)); }
 	.bell { position: absolute; top: 8px; right: 8px; }
 	.bell.on :global(.ui-ibtn) { color: var(--accent-text); background: color-mix(in srgb, var(--surface-1) 88%, transparent); }

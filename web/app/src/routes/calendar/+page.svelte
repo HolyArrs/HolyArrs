@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { getBase } from '#lib/paths.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partOff, partOn } from '#lib/parts.svelte.ts';
@@ -25,6 +24,8 @@
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
 	import FollowWho from '#lib/calendar/FollowWho.svelte';
 	import CalBanner from '#lib/calendar/CalBanner.svelte';
+	import CalListRows from '#lib/calendar/CalListRows.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import { setFollow } from '#lib/follow.ts';
 	import {
@@ -32,12 +33,10 @@
 		entryKey,
 		readMonthHidden,
 		saveMonthHidden,
-		feedLink,
 		shiftMonth,
 		shows,
 		entryHref,
 		weekStart,
-		webcalLink,
 		addDays,
 		entryDay,
 		rangeChunks,
@@ -68,6 +67,8 @@
 	const askedMonth = asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : null;
 	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the
 	// session; the old layout links (?view=2&span=…) land on Cards.
+	// ?lv=1-3 compares compact List layouts; 0 is today's list.
+	let lv = $state(0);
 	let view = $state<CalendarView>(startView(page.url.searchParams.get('view'), readView()));
 	// The days shown run from `start` (today, or the first of a linked month) to the day before `end`.
 	// Six more weeks load as the end comes near; scrolling up past the first day loads a week
@@ -98,14 +99,6 @@
 
 	// The two caption lines under every card and row (?movie=1-6, ?music=1-5, ?channels=all|known).
 	let look = $state<CaptionLook>({ ...DEFAULT_LOOK, region: 'global' });
-
-	// The phone calendar feed.
-	let feed = $state<{ set: boolean; created_at?: string } | null>(null);
-	let feedLoaded = $state(false);
-	let feedError = $state('');
-	let feedNeedsProof = $state(false);
-	let newLink = $state('');
-	let feedBusy = $state(false);
 
 	// Music turned off while picked falls back to All.
 	$effect(() => {
@@ -462,83 +455,6 @@
 		}
 	}
 
-	async function loadFeed() {
-		if (!session.can('manage_library')) {
-			feedLoaded = true;
-			return;
-		}
-		if (session.s.via !== 'api_key' && !session.s.localRecent) {
-			feed = null;
-			feedError = '';
-			feedNeedsProof = true;
-			feedLoaded = true;
-			return;
-		}
-		try {
-			feed = await api.get<{ set: boolean; created_at?: string }>('/calendar/feed-key');
-			feedError = '';
-			feedNeedsProof = false;
-		} catch (e) {
-			if (e instanceof ApiError && e.status === 403) {
-				feed = null;
-				feedError = '';
-				feedNeedsProof = true;
-			} else feedError = message(e);
-		} finally {
-			feedLoaded = true;
-		}
-	}
-
-	async function makeKey() {
-		if (session.s.via !== 'api_key' && !session.s.localRecent) {
-			feedNeedsProof = true;
-			feed = null;
-			return;
-		}
-		if (feed?.set && !confirm('Make a new feed link? The old link stops working on every phone that uses it.')) return;
-		feedBusy = true;
-		try {
-			const r = await api.post<{ path: string }>('/calendar/feed-key');
-			newLink = feedLink(location.origin + getBase(), r.path);
-			await loadFeed();
-		} catch (e) {
-			if (e instanceof ApiError && e.status === 403) {
-				feedNeedsProof = true;
-				feed = null;
-			} else toasts.push(message(e), 'fail');
-		} finally {
-			feedBusy = false;
-		}
-	}
-
-	async function turnOff() {
-		if (session.s.via !== 'api_key' && !session.s.localRecent) {
-			feedNeedsProof = true;
-			feed = null;
-			return;
-		}
-		if (!confirm('Turn the phone calendar feed off? Every phone that uses the link stops getting dates.')) return;
-		try {
-			await api.del('/calendar/feed-key');
-			newLink = '';
-			await loadFeed();
-		} catch (e) {
-			if (e instanceof ApiError && e.status === 403) {
-				feedNeedsProof = true;
-				feed = null;
-			} else toasts.push(message(e), 'fail');
-		}
-	}
-
-	async function copy() {
-		try {
-			await navigator.clipboard.writeText(newLink);
-			toasts.push('Feed link copied.', 'ok');
-		} catch {
-			toasts.push('Copy did not work; select the link and copy it by hand.', 'fail');
-		}
-	}
-
 	const dotWord = { have: 'In the Library', missing: 'Missing', upcoming: 'Coming up' } as const;
 
 	onMount(() => {
@@ -555,7 +471,6 @@
 			u.searchParams.delete('span');
 			replaceState(u, page.state);
 		}
-		void loadFeed();
 		const offs = [live.on('title', load), live.on('resync', load)];
 		return () => {
 			offs.forEach((off) => off());
@@ -688,6 +603,8 @@
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
+<VariantBar param="lv" storageKey="holyarrs.calendar.list-view" label="List layout" bind:value={lv} options={[{ value: 0, label: 'Today' }, { value: 1, label: 'Agenda' }, { value: 2, label: 'Two columns' }, { value: 3, label: 'Table' }]} />
+
 <PageHeader title="Calendar">
 	{#snippet actions()}
 		{@render viewSeg(true)}
@@ -747,6 +664,8 @@
 						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
+					{:else if lv > 0}
+						<CalListRows days={agenda} layout={lv as 1 | 2 | 3} today={todayKey} {look} {follows} {flipping} onfollow={flipFollow} />
 					{:else}
 						<ol class="days" data-testid="cal-list">
 							{#each agenda as d (d.day)}
@@ -790,50 +709,6 @@
 		{@render followsList()}
 	</div>
 </Sheet>
-
-{#if loaded && feedLoaded && feedError}
-	<div class="feed-gap"><LoadError hasData message="Phone calendar could not be loaded." onretry={loadFeed} /></div>
-{/if}
-
-{#if loaded && feedLoaded && feedNeedsProof}
-	<section class="feed" aria-labelledby="h-feed-proof">
-		<h2 id="h-feed-proof">Confirm your password to manage the phone calendar</h2>
-		<p class="muted">The feed status and its controls are protected. Confirm your HolyArrs password in My account, then return here.</p>
-		<div><Button variant="secondary" href={to('/settings/account')}>Open My account</Button></div>
-	</section>
-{/if}
-
-{#if loaded && feed}
-	<section class="feed" aria-labelledby="h-feed" data-testid="cal-feed">
-		<h2 id="h-feed">Phone calendar</h2>
-		<p class="muted">
-			Add these dates and episodes to your phone's calendar with a feed link. The link has its own key: it can only read this calendar, not sign in. Your phone asks for the
-			last week and the next four weeks, and shows each episode at its air time in your time zone.
-		</p>
-		{#if newLink}
-			<div class="field">
-				<label for="feed-link">Your feed link (shown this once)</label>
-				<input id="feed-link" class="input mono" readonly value={newLink} onfocus={(e) => e.currentTarget.select()} />
-				<span class="hint">Copy it now: HolyArrs keeps only a fingerprint of the key and cannot show it again. Making a new link ends this one.</span>
-			</div>
-			<div class="acts">
-				<Button variant="primary" icon="copy" onclick={copy}>Copy link</Button>
-				<Button variant="secondary" href={webcalLink(newLink)}>Open in a calendar app</Button>
-			</div>
-		{:else if feed.set}
-			<p data-testid="feed-state">A feed link is on{feed.created_at ? `, made ${date(feed.created_at)}` : ''}.</p>
-		{:else}
-			<p data-testid="feed-state">The feed is off.</p>
-		{/if}
-		{#if session.can('settings')}
-			<div class="acts">
-				<Button variant={feed.set ? 'secondary' : 'primary'} onclick={makeKey} disabled={feedBusy} busy={feedBusy}>{feed.set ? 'Make a new link' : 'Make a feed link'}</Button>
-				{#if feed.set}<Button variant="plain" onclick={turnOff}>Turn the feed off</Button>{/if}
-			</div>
-		{/if}
-	</section>
-{/if}
-
 
 <style>
 	.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
@@ -997,10 +872,6 @@
 		.slim .range { flex: 1; text-align: center; }
 	}
 
-	.feed-gap { margin-top: 24px; }
-	.feed { margin-top: 28px; padding: 18px; display: flex; flex-direction: column; gap: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
-	.feed h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
-	.feed p { font: var(--t-callout); }
 	.muted { color: var(--text-muted); }
 	.field { display: flex; flex-direction: column; gap: 6px; }
 	.field label { font: var(--t-subhead); color: var(--text-muted); }
