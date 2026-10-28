@@ -919,8 +919,9 @@
 	.item + .item { border-top: 1px solid var(--line); }
 	/* List rows: the banner fills the row's right side, out to the card's edge (the card's corners round it). */
 	.day { overflow: hidden; }
-	.items { --bw: clamp(170px, 38%, 360px); }
-	.item { position: relative; min-height: 66px; padding-right: calc(var(--bw) + 4px); }
+	/* The banner is wide and reaches in under the words: its faded left half sits behind the text. */
+	.items { --bw: clamp(220px, 64%, 680px); }
+	.item { position: relative; min-height: 66px; padding-right: calc(var(--bw) * 0.45); }
 	.bwrap { position: absolute; top: 0; bottom: 0; right: -12px; width: calc(var(--bw) + 12px); }
 	.item:first-child .bwrap { top: -12px; }
 	.item:last-child .bwrap { bottom: -12px; }

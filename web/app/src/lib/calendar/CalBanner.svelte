@@ -27,13 +27,13 @@
 
 <style>
 	.cal-banner { position: absolute; inset: 0; overflow: hidden; background: var(--surface-2); pointer-events: none;
-		-webkit-mask-image: linear-gradient(to right, transparent, #000 38%); mask-image: linear-gradient(to right, transparent, #000 38%); }
+		-webkit-mask-image: linear-gradient(to right, transparent 0%, rgb(0 0 0 / .18) 22%, rgb(0 0 0 / .55) 42%, #000 62%); mask-image: linear-gradient(to right, transparent 0%, rgb(0 0 0 / .18) 22%, rgb(0 0 0 / .55) 42%, #000 62%); }
 	.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: 0; transform: translateX(10px) scale(1.02);
 		transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	.album .bg { object-position: center 25%; }
 	.bg.in { opacity: 1; transform: none; }
 	/* The logo sits right of centre so the left fade never eats it; a soft shadow keeps it clear on bright art. */
-	.logo { position: absolute; right: 7%; top: 50%; max-width: 46%; max-height: 62%; object-fit: contain; transform: translateY(-50%);
+	.logo { position: absolute; right: 6%; top: 50%; max-width: 30%; max-height: 62%; object-fit: contain; transform: translateY(-50%);
 		filter: drop-shadow(0 1px 6px rgb(0 0 0 / 0.55)); opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.logo.in { opacity: 1; }
 	:global(.item:hover) .bg.in { transform: scale(1.04); }
