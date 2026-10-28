@@ -19,7 +19,9 @@
 	import { dragScroll } from '#lib/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { beforeNavigate, goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
 	import { api, message } from '#lib/api.ts';
 	import { keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -416,6 +418,27 @@
 	});
 	// The banner's main colour tints the slim bar.
 	const tint = $derived(pictureFor('wide', mbid)?.color || pictureFor('artist', mbid)?.color || pictureOf(hero?.image)?.color || '');
+	// The whole window takes the artist's colour (as an album does): the stored
+	// banner sampled once it shows (truer than the stored colour), else the stored one. The banner
+	// fades into it at the bottom, so page and picture read as one.
+	let sampledTint = $state<string | null>(null);
+	$effect(() => {
+		void mbid;
+		sampledTint = null;
+	});
+	const pageTint = $derived(sampledTint || tint ? tintOf(sampledTint || tint) : null);
+	$effect(() => {
+		if (pageTint) paintWindow(pageTint);
+	});
+	let toTinted = false;
+	beforeNavigate((nav) => (toTinted = nav.to?.route.id === page.route.id || !!nav.to?.route.id?.startsWith('/music/album')));
+	onMount(() => () => {
+		if (!toTinted) unpaintWindow();
+	});
+	function heroLoaded(e: Event) {
+		heroIn = true;
+		if (!sampledTint) sampledTint = sampleCover(e.currentTarget as HTMLImageElement);
+	}
 	// The full answer's albums, else the core answer's stored list (drawn with the hero).
 	const released = $derived((data?.albums ?? core?.albums ?? []).filter((a) => !a.upcoming));
 	// The figures of the stats band, the About card and its sheet.
@@ -601,7 +624,7 @@
 {#snippet stageArt()}
 	{#if heroSrc}
 		{#key heroSrc}
-			<img class="art" class:soft={heroSoft} class:in={heroIn} class:under={videoIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
+			<img class="art" class:soft={heroSoft} class:in={heroIn} class:under={videoIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={heroLoaded} onerror={() => { heroIn = false; heroTry++; }} />
 		{/key}
 	{/if}
 {/snippet}
@@ -869,7 +892,7 @@
 
 <svelte:document onfullscreenchange={() => (heroFull = !!heroBox && document.fullscreenElement === heroBox)} />
 
-<div class="artist">
+<div class="artist" class:tinted={!!pageTint} style={pageTint ? `--ar-bg:${pageTint.bg};--ar-soft:${pageTint.soft}` : undefined}>
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this artist" onretry={load}>
 		{#if hero}
@@ -933,19 +956,21 @@
 {/if}
 
 <style>
+	.artist.tinted { --text: #fff; --text-muted: var(--ar-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
+	.artist.tinted .hero { --hero-ink: var(--ar-bg); }
 	.artist { --music-item: max(168px, calc((100vw - 96px) / 7.2)); --gap: 40px; display: flex; flex-direction: column; gap: var(--gap); padding-bottom: 48px; min-width: 0; }
 	h1 { margin: 0; font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-wrap: balance; overflow-wrap: anywhere; }
 	h2 { margin: 0; font: var(--t-title2); }
 	.quiet { margin: 0; color: var(--text-muted); font: var(--t-subhead); }
 
 	/* The short banner (dark in both themes): the wide photo or the music video. It zooms out from 1.1 and darkens as it leaves. */
-	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; height: 240px; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
+	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; height: clamp(280px, 44vh, 520px); transition: background-color var(--dur-slow) var(--ease-out); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
 	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
 	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.art.in { opacity: .82; }
 	.art.soft { filter: blur(56px) saturate(150%); transform: scale(1.3); }
 	.art.soft.in { opacity: .6; }
-	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to top, rgb(7 8 10 / .78) 0%, rgb(7 8 10 / .28) 38%, rgb(7 8 10 / 0) 62%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
+	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to top, var(--hero-ink) 0%, color-mix(in srgb, var(--hero-ink) 70%, transparent) 22%, color-mix(in srgb, var(--hero-ink) 20%, transparent) 50%, transparent 72%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
 	.dim { position: absolute; inset: 0; z-index: -1; background: #000; opacity: calc(var(--gone, 0) * .7); pointer-events: none; }
 	.hero.bare { background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, #3a3d44), var(--hero-ink)); }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
