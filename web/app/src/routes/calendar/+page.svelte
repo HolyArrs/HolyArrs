@@ -921,14 +921,17 @@
 	.day { overflow: hidden; }
 	/* The banner is wide and reaches in under the words: its faded left half sits behind the text. */
 	.items { --bw: clamp(220px, 64%, 680px); }
-	.item { position: relative; min-height: 66px; padding-right: calc(var(--bw) * 0.45); }
+	/* On hover a row grows a little at top and bottom; the rows below move down with it (no overlap). */
+	.item { position: relative; min-height: 66px; padding-right: calc(var(--bw) * 0.45); transition: padding var(--dur) var(--ease-out); }
+	@media (hover: hover) { .item:hover { padding-top: 14px; padding-bottom: 14px; } }
 	.bwrap { position: absolute; top: 0; bottom: 0; right: -12px; width: calc(var(--bw) + 12px); }
 	.item:first-child .bwrap { top: -12px; }
 	.item:last-child .bwrap { bottom: -12px; }
 	.it, .tcol, .row-bell { position: relative; z-index: 1; }
-	.it { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+	/* The words take only their own width, so the bell sits right after them. */
+	.it { display: flex; flex-direction: column; min-width: 0; flex: 0 1 auto; }
 	.who { display: flex; min-width: 0; margin-top: 3px; }
-	.row-bell { flex: none; align-self: center; }
+	.row-bell { flex: none; align-self: center; margin-left: 4px; }
 	.row-bell :global(.ui-ibtn) { color: var(--text-faint); transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.item:hover .row-bell :global(.ui-ibtn), .row-bell :global(.ui-ibtn:focus-visible) { color: var(--text-muted); }
 	.row-bell.on :global(.ui-ibtn) { color: var(--accent-text); }
