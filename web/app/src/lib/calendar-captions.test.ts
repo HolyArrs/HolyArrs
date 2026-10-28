@@ -67,9 +67,9 @@ describe('movie captions', () => {
 	});
 	it('lists the pick, the genre and the studio; the column says Cinema, At home or Out now', () => {
 		const w = rowWords(groupDates([{ ...odyssey, studio: 'Syncopy' }])[0], look(), '2026-10-27');
-		expect(w).toEqual({ title: 'The Odyssey', lines: ['Christopher Nolan · 2h 50m', 'Adventure', 'Syncopy'], when: 'Cinema', quiet: false });
-		expect(rowWords(groupDates([{ ...odyssey, kind: 'digital', date: '2026-11-17T00:00:00Z' }])[0], look(), '2026-10-27').when).toBe('At home');
-		expect(rowWords(groupDates([{ ...odyssey, kind: 'digital', date: '2026-10-01T00:00:00Z' }])[0], look({ movie: 1 }), '2026-10-27')).toMatchObject({ when: 'Out now', lines: ['Adventure · 2h 50m'] });
+		expect(w).toEqual({ title: 'The Odyssey', lines: ['Christopher Nolan · 2h 50m', 'Adventure', 'Syncopy'], when: 'In theaters', quiet: false });
+		expect(rowWords(groupDates([{ ...odyssey, kind: 'digital', date: '2026-11-17T00:00:00Z' }])[0], look(), '2026-10-27').when).toBe('Streaming');
+		expect(rowWords(groupDates([{ ...odyssey, kind: 'digital', date: '2026-10-01T00:00:00Z' }])[0], look({ movie: 1 }), '2026-10-27')).toMatchObject({ when: 'Streaming', lines: ['Adventure · 2h 50m'] });
 	});
 	it('says where it is out', () => {
 		expect(whereOut({ ...odyssey, home_date: undefined })).toBe('In cinemas');
@@ -94,9 +94,9 @@ describe('music captions', () => {
 		expect(musicCaption(album({ album_type: 'single', tracks: 1 }), 5)).toBe('New single');
 	});
 	it('puts the artist first, then the album and the pick', () => {
-		expect(rowWords(groupDates([album()])[0], look(), '2026-10-27')).toEqual({ title: 'Remi Wolf', lines: ['Big Ideas', '3rd album · 12 songs'], when: 'Out now', quiet: false });
+		expect(rowWords(groupDates([album()])[0], look(), '2026-10-27')).toEqual({ title: 'Remi Wolf', lines: ['Big Ideas', '3rd album · 12 songs'], when: 'Album', quiet: false });
 		expect(rowWords(groupDates([album({ date: '2026-11-20T00:00:00Z', album_type: 'ep' })])[0], look(), '2026-10-27').when).toBe('EP');
-		expect(cardLines(groupDates([album()])[0], look(), '2026-10-27')).toEqual(['Out now', 'Remi Wolf', '3rd album · 12 songs']);
+		expect(cardLines(groupDates([album()])[0], look(), '2026-10-27')).toEqual(['Album', 'Remi Wolf', '3rd album · 12 songs']);
 	});
 });
 

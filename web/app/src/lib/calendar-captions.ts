@@ -250,12 +250,12 @@ export function rowWords(g: CalGroup, look: CaptionLook, today: string): RowWord
 	}
 	if (e.kind === 'album') {
 		const pick = g.entries.length > 1 ? `${g.entries.length} releases` : musicCaption(e, look.music);
-		return { title: e.name, lines: [e.album ?? '', pick].filter(Boolean), when: out(e.date) ? 'Out now' : cap(kindOf(e.album_type)), quiet: false };
+		return { title: e.name, lines: [e.album ?? '', pick].filter(Boolean), when: cap(kindOf(e.album_type)), quiet: false };
 	}
 	const pick = movieCaption(e, look.movie);
 	const genre = e.genres?.[0] ?? '';
 	const lines = [pick, pick.includes(genre) ? '' : genre, e.studio ?? ''].filter(Boolean);
-	return { title: e.name, lines, when: e.kind === 'cinema' ? 'Cinema' : out(e.date) ? 'Out now' : 'At home', quiet: false };
+	return { title: e.name, lines, when: e.kind === 'cinema' ? 'In theaters' : 'Streaming', quiet: false };
 }
 
 /**
