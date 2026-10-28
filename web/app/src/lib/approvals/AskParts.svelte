@@ -258,7 +258,7 @@
 	.list { border-top: 1px solid var(--line); }
 	.hint { padding: 8px 12px 0; color: var(--text-muted); font: var(--t-footnote); }
 	ul, ol { margin: 0; padding: 0; list-style: none; }
-	.list > ul { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0; }
+	.list > ul { max-height: 520px; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0; }
 	.list > ul > li + li { border-top: 1px solid var(--line); }
 	.line { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; font: var(--t-footnote); }
 	.off .t, .off .cover { opacity: 0.45; }
@@ -282,7 +282,13 @@
 	.eps .t { white-space: normal; overflow-wrap: anywhere; }
 	.eps .later .t { color: var(--text-muted); }
 	.eps li { padding: 0; }
-	.ep { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; }
+	/* Songs and episodes: slim 28px lines, two columns when there is room, so a whole album fits at a glance. */
+	.ep { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; min-height: 28px; cursor: pointer; }
+	.eps { columns: 2 260px; column-gap: 24px; }
+	.eps li { break-inside: avoid; }
+	.eps li + li { border-top: 0; }
+	.eps .tick { width: 15px; height: 15px; }
+	.eps .n { width: 22px; }
 	.eps .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.eps li.off .t { opacity: 0.55; text-decoration: none; }
 	.sub { color: var(--text-muted); font-weight: 400; }
