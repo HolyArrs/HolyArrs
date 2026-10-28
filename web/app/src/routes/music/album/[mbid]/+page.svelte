@@ -140,10 +140,10 @@
 	// its main colour until it arrives; the preload asks the same address.
 	const heroCover = $derived(coverFor(cover, 260, undefined, true).src);
 	const coverTint = $derived(pictureOf(cover)?.color || null);
-	// The page colour: the stored cover colour when the answer carried it,
-	// else sampled from the cover once it shows (lib/music/album-tint.ts).
+	// The page colour: sampled from the cover once it shows (truer than the
+	// stored colour, which can miss a blue cover), else the stored one (lib/music/album-tint.ts).
 	let sampled = $state<string | null>(null);
-	const tint = $derived(coverTint || sampled ? tintOf(coverTint || sampled) : null);
+	const tint = $derived(sampled || coverTint ? tintOf(sampled || coverTint) : null);
 	const tintStyle = $derived(tint ? `--al-bg:${tint.bg};--al-band:${tint.band};--al-soft:${tint.soft}` : '');
 	// The whole window (side menu, top bar, page) takes the colour while the
 	// album shows; between two albums it keeps the last colour until the next
@@ -159,7 +159,7 @@
 	});
 	function coverLoaded(e: Event) {
 		coverIn = true;
-		if (!coverTint) sampled = sampleCover(e.currentTarget as HTMLImageElement);
+		sampled = sampleCover(e.currentTarget as HTMLImageElement);
 	}
 	const songs = $derived.by(() => {
 		const n = list.length;

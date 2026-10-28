@@ -422,9 +422,14 @@
 	// banner sampled once it shows (truer than the stored colour), else the stored one. The banner
 	// fades into it at the bottom, so page and picture read as one.
 	let sampledTint = $state<string | null>(null);
+	// The first colour worked out for an artist is kept (per browser), so the
+	// page opens in the same colour every visit whichever banner loads.
+	const tintKey = (id: string) => `holyarrs.artist-tint.${id}`;
 	$effect(() => {
-		void mbid;
-		sampledTint = null;
+		const id = mbid;
+		let kept: string | null = null;
+		try { kept = localStorage.getItem(tintKey(id)); } catch {}
+		sampledTint = kept;
 	});
 	const pageTint = $derived(sampledTint || tint ? tintOf(sampledTint || tint) : null);
 	$effect(() => {
@@ -437,7 +442,9 @@
 	});
 	function heroLoaded(e: Event) {
 		heroIn = true;
-		if (!sampledTint) sampledTint = sampleCover(e.currentTarget as HTMLImageElement);
+		if (sampledTint) return;
+		sampledTint = sampleCover(e.currentTarget as HTMLImageElement);
+		if (sampledTint) try { localStorage.setItem(tintKey(mbid), sampledTint); } catch {}
 	}
 	// The full answer's albums, else the core answer's stored list (drawn with the hero).
 	const released = $derived((data?.albums ?? core?.albums ?? []).filter((a) => !a.upcoming));
