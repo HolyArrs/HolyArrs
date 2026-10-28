@@ -976,6 +976,9 @@
 	.hero.bare { background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, #3a3d44), var(--hero-ink)); }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
 	/* The video covers the banner at the same size; paused, it hides and the banner shows again. */
+	/* The video carries the same bottom fade itself (a playing video can skip its parent's mask). */
+	.clip { -webkit-mask-image: linear-gradient(to bottom, #000 45%, rgb(0 0 0 / .55) 72%, transparent 100%); mask-image: linear-gradient(to bottom, #000 45%, rgb(0 0 0 / .55) 72%, transparent 100%); }
+	.hero.full .clip { -webkit-mask-image: none; mask-image: none; }
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
 	.clip.in { opacity: 1; }
 	.art.under { opacity: 0; transition-duration: 900ms; }
