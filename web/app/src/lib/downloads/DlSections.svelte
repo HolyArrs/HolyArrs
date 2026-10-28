@@ -171,37 +171,34 @@
 		if (fitted || !grid || rows.length === 0) return;
 		void tick().then(fitAll);
 	});
-	// A grip sits on the right edge of its column. Dragging it moves that edge
-	// with the pointer: the column grows by what its right-hand neighbour
-	// gives up, so nothing else moves. Time, the last one, grows into the
-	// Title instead (the bin stays at the far right).
-	function resize(k: Col, w0: Record<Col, number>, d: number) {
-		const right = COLS.slice(COLS.indexOf(k) + 1);
-		const w = { ...w0 };
-		if (d >= 0) {
-			// Growing: the columns to the right give up space in turn (down to
-			// their minimum), then the Title (down to MIN_TITLE).
-			let need = Math.min(Math.round(d), LIM[k][1] - w0[k]);
-			let got = 0;
-			for (const x of right) {
-				const take = Math.min(need - got, w[x] - LIM[x][0]);
-				w[x] -= take;
-				got += take;
-			}
-			const used = COLS.reduce((n, x) => n + w[x], 0);
-			got += Math.max(0, Math.min(need - got, room() - used));
-			w[k] = w0[k] + got;
+	// A grip sits on every header boundary (Title|Progress, Progress|Status,
+	// Status|Size, Size|Time). Dragging it moves that boundary with the
+	// pointer: the column on its left grows by what the one on its right gives
+	// up. The Title is the flexible column (it takes what is left), so the
+	// Title|Progress boundary only changes Progress. At a limit the boundary stops.
+	type Edge = 'title' | Col;
+	const RIGHT: Record<string, Col> = { title: 'bar', bar: 'st', st: 'size', size: 'time' };
+	function resize(k: Edge, w0: Record<Col, number>, d: number) {
+		const r = RIGHT[k];
+		if (!r) return;
+		const used = COLS.reduce((n, x) => n + w0[x], 0);
+		const titleW = room() + MIN_TITLE - used;
+		// How far the boundary may move: left (negative) and right (positive).
+		let lo: number, hi: number;
+		if (k === 'title') {
+			lo = Math.max(MIN_TITLE - titleW, w0[r] - LIM[r][1]);
+			hi = w0[r] - LIM[r][0];
 		} else {
-			// Shrinking: the right-hand neighbour takes the space, so the edges
-			// to its right stay put; the last column gives it to the Title.
-			const give = Math.min(Math.round(-d), w0[k] - LIM[k][0]);
-			w[k] = w0[k] - give;
-			const next = right[0];
-			if (next) w[next] = clamp(next, w0[next] + give);
+			const l = k as Col;
+			lo = Math.max(LIM[l][0] - w0[l], w0[r] - LIM[r][1]);
+			hi = Math.min(LIM[l][1] - w0[l], w0[r] - LIM[r][0]);
 		}
+		const s = Math.round(Math.max(Math.min(0, lo), Math.min(Math.max(0, hi), d)));
+		const w = { ...w0, [r]: w0[r] - s };
+		if (k !== 'title') w[k as Col] = w0[k as Col] + s;
 		widths = w;
 	}
-	function grab(e: PointerEvent, k: Col) {
+	function grab(e: PointerEvent, k: Edge) {
 		if (e.button !== 0) return;
 		e.preventDefault();
 		const x0 = e.clientX;
@@ -221,7 +218,7 @@
 		el.addEventListener('pointerup', up);
 		el.addEventListener('pointercancel', up);
 	}
-	function nudge(e: KeyboardEvent, k: Col) {
+	function nudge(e: KeyboardEvent, k: Edge) {
 		const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
 		if (!d) return;
 		e.preventDefault();
@@ -229,8 +226,10 @@
 		save();
 	}
 	// Double-click auto-fits that column, as in a spreadsheet.
-	function fitOne(k: Col) {
-		widths[k] = fitOf(k);
+	// On the Title|Progress boundary it fits Progress; elsewhere the column on the left.
+	function fitOne(k: Edge) {
+		const c: Col = k === 'title' ? 'bar' : k;
+		widths[c] = fitOf(c);
 		save();
 	}
 	function resetAll() {
@@ -241,13 +240,14 @@
 		}
 		fitAll();
 	}
-	// Title is the flexible column and has no grip; it takes what is left.
-	const HEADS: { key: string; label: string; size?: Col; num?: boolean }[] = [
-		{ key: 'title', label: 'Title' },
+	// Each header carries the grip of the boundary on its right edge; Time has
+	// none (the bin column after it stays put).
+	const HEADS: { key: string; label: string; size?: Edge; num?: boolean }[] = [
+		{ key: 'title', label: 'Title', size: 'title' },
 		{ key: 'bar', label: 'Progress', size: 'bar' },
 		{ key: 'status', label: 'Status', size: 'st' },
 		{ key: 'size', label: 'Size', size: 'size', num: true },
-		{ key: 'time', label: 'Time', size: 'time', num: true }
+		{ key: 'time', label: 'Time', num: true }
 	];
 	const sub2 = (r: DownloadRow) => (manyWords(r.kind) && r.covers ? r.covers : r.name);
 </script>
@@ -319,7 +319,7 @@
 			<div class="dline chead" data-testid="dl-colhead">
 				<span></span><span></span>
 				{#each HEADS as h (h.key)}
-					<span class="ch" class:end={h.num} data-col={h.key}>{h.label}{#if h.size}{@const k = h.size}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[k]} aria-valuemin={LIM[k][0]} aria-valuemax={LIM[k][1]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={k} onpointerdown={(e) => grab(e, k)} ondblclick={() => fitOne(k)} onkeydown={(e) => nudge(e, k)}></span>{/if}</span>
+					<span class="ch" class:end={h.num} data-col={h.key}>{h.label}{#if h.size}{@const k = h.size}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[RIGHT[k]]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={k} onpointerdown={(e) => grab(e, k)} ondblclick={() => fitOne(k)} onkeydown={(e) => nudge(e, k)}></span>{/if}</span>
 				{/each}
 				<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
 			</div>
