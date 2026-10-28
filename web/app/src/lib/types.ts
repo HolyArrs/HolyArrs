@@ -755,6 +755,8 @@ export interface CalendarEntry {
 	season?: number;
 	episode?: number;
 	episode_name?: string;
+	/** The show's TMDB id, for reading the episode's description. */
+	tmdb?: string;
 	air_day?: string;
 	timed?: boolean;
 	runtime?: number;

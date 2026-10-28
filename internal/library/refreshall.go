@@ -234,6 +234,8 @@ type CalendarEntry struct {
 	Season      *int   `json:"season,omitempty"`
 	Episode     *int   `json:"episode,omitempty"`
 	EpisodeName string `json:"episode_name,omitempty"`
+	// TMDB is the show's TMDB id, for reading the episode's description.
+	TMDB string `json:"tmdb,omitempty"`
 	AirDay      string `json:"air_day,omitempty"`
 	Timed       bool   `json:"timed"`
 	Runtime     int    `json:"runtime,omitempty"` // minutes
@@ -547,7 +549,7 @@ func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]Cal
 			return nil, store.ErrNotFound
 		}
 		e := CalendarEntry{TitleID: t.ID, Name: t.Name, Year: t.Year, Kind: "episode", ItemID: it.ID, Season: it.Numbers.Season, Episode: it.Numbers.Episode,
-			KeepUpToDate: it.KeepUpToDate, Poster: posterOf(t), Backdrop: t.Backdrop, Still: it.Still}
+			KeepUpToDate: it.KeepUpToDate, Poster: posterOf(t), Backdrop: t.Backdrop, Still: it.Still, TMDB: t.SourceIDs["tmdb"]}
 		if it.Name != nil && !strings.EqualFold(*it.Name, "TBA") {
 			e.EpisodeName = *it.Name
 		}

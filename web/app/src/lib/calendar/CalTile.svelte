@@ -9,6 +9,8 @@
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import FollowWho from './FollowWho.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import { epCode, epText } from './ep-text.svelte.ts';
 
 	// Coming Soon's card for rows: the Day view's big backdrop card made row
 	// size, with the name on the art and its badges. Several episodes of one
@@ -19,8 +21,10 @@
 		chip = false,
 		mode = 'library',
 		look = { ...DEFAULT_LOOK, region: 'global' },
-		onfollow
+		onfollow,
+		ep = 0
 	}: {
+		/** Episode words (layouts being compared): 0 today, 1 description under the card, 2 a window on click. */ ep?: number;
 		g: CalGroup;
 		today: string;
 		/** Put the day ("Wed 28") on the art. */ chip?: boolean;
@@ -37,6 +41,15 @@
 	const lines = $derived(cardLines(g, look, today).slice(0, 2));
 	const have = $derived(g.entries.every((x) => itemDot(x, today) === 'have'));
 	let failed = $state(false);
+	// Episode layouts: the episode number joins the time on the first line,
+	// then the episode's name; layout 1 adds its description under the card,
+	// layout 2 opens a window with it.
+	const isEp = $derived(ep > 0 && e.kind === 'episode');
+	const code = $derived(isEp ? epCode(g.entries) : '');
+	const epLines = $derived(isEp ? [[lines[0], code].filter(Boolean).join(' · '), n > 1 ? `${n} episodes` : e.episode_name || lines[1] || ''] : lines);
+	const blurb = $derived(isEp ? epText(e.tmdb, e.season, e.episode) : '');
+	let open = $state(false);
+
 </script>
 
 <article class="ct" class:album={e.kind === 'album'} class:stacked={n > 1} class:past={g.day < today} data-testid="cal-tile">
@@ -61,9 +74,31 @@
 			</span>
 		{/if}
 	</div>
-	<div class="caps">
-		{#each lines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === lines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
-	</div>
+	{#snippet capLines()}
+		{#each epLines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === epLines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
+	{/snippet}
+	{#if isEp && ep === 2}
+		<button type="button" class="caps tap" onclick={() => (open = true)} aria-haspopup="dialog" data-testid="cal-ep-open">{@render capLines()}</button>
+	{:else}
+		<div class="caps">{@render capLines()}</div>
+	{/if}
+	{#if isEp && ep === 1}<p class="blurb" class:none={!blurb} data-testid="cal-ep-blurb">{blurb || 'No description yet.'}</p>{/if}
+	{#if isEp && ep === 2}
+		<Sheet bind:open title={entryTitle(e)} size="md">
+			<div class="ep-win">
+				{#if e.still || src}<img class="ep-still" src={sized(e.still || src || '', 'backdrop', 780)} alt="" />{/if}
+				<p class="ep-when">{epLines[0]}</p>
+				{#each g.entries as x (x.item_id ?? x.episode)}
+					{@const t = epText(x.tmdb, x.season, x.episode)}
+					<div class="ep-one">
+						<h3 class="ep-name">{epCode([x])}{#if x.episode_name} · {x.episode_name}{/if}</h3>
+						{#if t}<p class="ep-text">{t}</p>{:else}<p class="ep-text none">No description yet.</p>{/if}
+					</div>
+				{/each}
+				<a class="ep-go" href={to(entryHref(e))}>Open {entryTitle(e)}</a>
+			</div>
+		</Sheet>
+	{/if}
 	{#if mode === 'everyone'}<p class="who"><FollowWho {e} size={16} /></p>{/if}
 </article>
 
@@ -90,6 +125,20 @@
 	.caps { display: flex; flex-direction: column; gap: 2px; min-width: 0; height: 38px; overflow: hidden; }
 	.cap { color: var(--text-muted); font: var(--t-footnote); line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cap.when { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+	.tap { all: unset; display: flex; flex-direction: column; gap: 2px; min-width: 0; height: 38px; overflow: hidden; cursor: pointer; border-radius: 6px; }
+	.tap:hover .cap.when { text-decoration: underline; text-underline-offset: 3px; }
+	.tap:focus-visible { box-shadow: var(--focus-ring); }
+	/* Layout 1: the description in a soft shaded box, always two lines tall so every card in a row lines up. */
+	.blurb { margin: 0; padding: 8px 10px; height: calc(2 * 17px + 16px); box-sizing: border-box; border-radius: 8px; background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); line-height: 17px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.blurb.none { opacity: .6; }
+	.ep-win { display: flex; flex-direction: column; gap: 12px; }
+	.ep-still { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; }
+	.ep-when { margin: 0; color: var(--text); font: var(--t-subhead); font-weight: 700; font-variant-numeric: tabular-nums; }
+	.ep-one { display: flex; flex-direction: column; gap: 4px; }
+	.ep-name { margin: 0; font: var(--t-headline); }
+	.ep-text { margin: 0; color: var(--text-muted); font: var(--t-body); }
+	.ep-text.none { opacity: .7; }
+	.ep-go { align-self: flex-start; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.have { color: var(--ok-text, var(--ok)); }
 	.bell { position: absolute; top: 8px; right: 8px; }
 	.bell.on :global(.ui-ibtn) { color: var(--accent-text); background: color-mix(in srgb, var(--surface-1) 88%, transparent); }
