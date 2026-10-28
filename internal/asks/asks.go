@@ -536,6 +536,18 @@ type ApproveOptions struct {
 	// only part of the ask; empty approves all of it.
 	Seasons []int    `json:"seasons"`
 	Albums  []string `json:"albums"`
+	// Episodes (show asks) keeps single episodes of seasons the ask is
+	// for, besides the whole Seasons; with Seasons it is the final pick.
+	Episodes []domain.AskEpisodes `json:"episodes"`
+	// Tracks (artist asks) keeps only some songs of albums already in the
+	// Library: album MusicBrainz id and the Library track ids to keep.
+	Tracks []AlbumTracks `json:"tracks"`
+}
+
+// AlbumTracks are the songs of one album an approver keeps.
+type AlbumTracks struct {
+	Album  string  `json:"album"`
+	Tracks []int64 `json:"tracks"`
 }
 
 // Approve says yes to an ask: the movie is added with the chosen Library
@@ -604,8 +616,8 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		before = cur
 		a = cur
 		a.State, a.TitleID, a.DecidedBy, a.DecidedAt, a.Note, a.AutoApproved = domain.AskApproved, nil, &by.UserID, &now, strings.TrimSpace(opt.Note), auto
-		if len(opt.Seasons) > 0 {
-			a.Seasons = narrowed.Seasons
+		if len(opt.Seasons) > 0 || len(opt.Episodes) > 0 {
+			a.Seasons, a.Episodes = narrowed.Seasons, narrowed.Episodes
 		}
 		if len(opt.Albums) > 0 {
 			a.Albums = narrowed.Albums
@@ -637,7 +649,9 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	case "show":
 		tid, err = s.addShowForAsk(ctx, a, set, opt, by)
 	case "artist":
-		tid, err = s.addArtistForAsk(ctx, a, set, opt, by)
+		if tid, err = s.addArtistForAsk(ctx, a, set, opt, by); err == nil {
+			err = s.keepTracks(ctx, tid, opt.Tracks, by)
+		}
 	default:
 		tid, err = s.addForAsk(ctx, a, set, opt, by)
 	}
@@ -917,7 +931,7 @@ func label(a domain.Ask) string {
 	if a.Year != nil {
 		l += " (" + strconv.Itoa(*a.Year) + ")"
 	}
-	if a.Kind == "show" && len(a.Seasons) > 0 {
+	if a.Kind == "show" && !wholeShow(a) && !a.FutureOnly {
 		l += ", " + askSeasonWords(a)
 	}
 	if a.Kind == "artist" {

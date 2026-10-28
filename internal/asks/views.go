@@ -35,6 +35,8 @@ type View struct {
 	Ref         string `json:"ref"`     // the id it is added by (tmdb:1399, tvmaze:82)
 	Seasons     []int  `json:"seasons"` // asked-for seasons of a show; empty: the whole show
 	SeasonWords string `json:"season_words,omitempty"`
+	// Episodes are single episodes asked for, by season (seasons not asked whole).
+	Episodes []domain.AskEpisodes `json:"episodes"`
 	// FutureOnly: the show's future seasons only.
 	FutureOnly bool `json:"future_only"`
 	// Albums are the albums of an artist asked for; empty: the whole artist.
@@ -84,6 +86,10 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 			AutoApproved: a.AutoApproved, AvailableAt: a.AvailableAt, People: []Asker{}}
 		if v.Seasons == nil {
 			v.Seasons = []int{}
+		}
+		v.Episodes = a.Episodes
+		if v.Episodes == nil {
+			v.Episodes = []domain.AskEpisodes{}
 		}
 		if a.Kind == "show" {
 			v.SeasonWords = askSeasonWords(a)

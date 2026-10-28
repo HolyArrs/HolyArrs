@@ -84,7 +84,7 @@ func askError(w http.ResponseWriter, err error) {
 	case errors.Is(err, asks.ErrNotYours), errors.Is(err, asks.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, asks.ErrNoteLength), errors.Is(err, asks.ErrPerWeek), errors.Is(err, asks.ErrEmail), errors.Is(err, asks.ErrDiscordID),
-		errors.Is(err, asks.ErrNoSuchSeason), errors.Is(err, asks.ErrShowWhoAsked), errors.Is(err, asks.ErrNotAskedPart):
+		errors.Is(err, asks.ErrNoSuchSeason), errors.Is(err, asks.ErrBadEpisode), errors.Is(err, asks.ErrNotAlbumTrack), errors.Is(err, asks.ErrShowWhoAsked), errors.Is(err, asks.ErrNotAskedPart):
 		fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, asks.ErrNoSuchAlbum), errors.Is(err, library.ErrCopyChoice):
 		fail(w, http.StatusBadRequest, err.Error())
@@ -206,6 +206,8 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		ID      string `json:"id"`      // "tmdb:693134"; for a show also tvdb:, tvmaze:, imdb:; for an artist mbid:
 		Kind    string `json:"kind"`    // movie (default), show or artist
 		Seasons []int  `json:"seasons"` // a show's seasons; empty or missing: the whole show
+		// Episodes asks for single episodes of other seasons: [{"season": 2, "episodes": [1, 2, 5]}].
+		Episodes []domain.AskEpisodes `json:"episodes"`
 		// FutureOnly asks a show for its future seasons only (no seasons list).
 		FutureOnly bool     `json:"future_only"`
 		Albums     []string `json:"albums"` // an artist's albums (MusicBrainz ids); empty or missing: the whole artist
@@ -235,24 +237,24 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	var err error
 	switch body.Kind {
 	case "", "movie":
-		if !ok || src != "tmdb" || num == "" || len(num) > 12 || strings.Trim(num, "0123456789") != "" || len(body.Seasons) > 0 || len(body.Albums) > 0 || body.FutureOnly {
+		if !ok || src != "tmdb" || num == "" || len(num) > 12 || strings.Trim(num, "0123456789") != "" || len(body.Seasons) > 0 || len(body.Episodes) > 0 || len(body.Albums) > 0 || body.FutureOnly {
 			fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
 		res, err = a.s.Asks.Ask(r.Context(), a.person(r), num)
 	case "show":
 		if !ok || num == "" || len(num) > 20 || (src != "tmdb" && src != "tvdb" && src != "tvmaze" && src != "imdb") || len(body.Seasons) > 200 || len(body.Albums) > 0 ||
-			(body.FutureOnly && len(body.Seasons) > 0) {
+			len(body.Episodes) > 200 || (body.FutureOnly && (len(body.Seasons) > 0 || len(body.Episodes) > 0)) || tooManyEpisodes(body.Episodes) {
 			fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
 		if body.FutureOnly {
 			res, err = a.s.Asks.AskShowFutureOnly(r.Context(), a.person(r), src+":"+num)
 		} else {
-			res, err = a.s.Asks.AskShow(r.Context(), a.person(r), src+":"+num, body.Seasons)
+			res, err = a.s.Asks.AskShowParts(r.Context(), a.person(r), src+":"+num, body.Seasons, body.Episodes)
 		}
 	case "artist":
-		if !ok || (src != "mbid" && src != "musicbrainz") || !metadata.ValidMBID(num) || len(body.Seasons) > 0 || len(body.Albums) > 500 || body.FutureOnly {
+		if !ok || (src != "mbid" && src != "musicbrainz") || !metadata.ValidMBID(num) || len(body.Seasons) > 0 || len(body.Episodes) > 0 || len(body.Albums) > 500 || body.FutureOnly {
 			fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
@@ -302,7 +304,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	a.answerAsk(w, r, code, res.Ask.ID, map[string]any{"joined": res.Joined, "already": res.Already})
 }
 
-const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional); any ask may add "follow": false to leave the title off your calendar`
+const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "episodes": [{"season": 2, "episodes": [1, 2, 5]}] adds single episodes of other seasons; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional); any ask may add "follow": false to leave the title off your calendar`
 
 func (a *API) askLimit(w http.ResponseWriter, r *http.Request) {
 	l, err := a.s.Asks.LimitOf(r.Context(), a.person(r))
@@ -336,7 +338,7 @@ func (a *API) approveAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var opt asks.ApproveOptions
-	if r.ContentLength != 0 && !decode(w, r, &opt, `send {} or any of library_folder_id, pick_rules_id, audio_languages, seasons, albums, note`) {
+	if r.ContentLength != 0 && !decode(w, r, &opt, `send {} or any of library_folder_id, pick_rules_id, audio_languages, seasons, episodes, albums, note`) {
 		return
 	}
 	if _, err := a.s.Asks.Approve(r.Context(), v.ID, a.person(r), opt); err != nil {
@@ -811,4 +813,14 @@ func (a *API) openArtistAsks(ctx context.Context, mbid string, me int64) ([]askB
 		out = append(out, b)
 	}
 	return out, rows.Err()
+}
+
+// tooManyEpisodes caps single episodes per season in an ask.
+func tooManyEpisodes(eps []domain.AskEpisodes) bool {
+	for _, e := range eps {
+		if len(e.Episodes) > 500 {
+			return true
+		}
+	}
+	return false
 }

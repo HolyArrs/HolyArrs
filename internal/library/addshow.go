@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -389,6 +390,54 @@ func (s *Service) SetSeason(ctx context.Context, titleID int64, number int, keep
 	word := map[bool]string{true: "on", false: "off"}[keep]
 	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventSeasonChanged, TitleID: &titleID,
 		Summary: fmt.Sprintf("%s season %d: Keep up to date %s", t.Name, number, word), Data: map[string]any{"season": number, "keep_up_to_date": keep},
+		GroupKey: groupKey(titleID)})
+	return nil
+}
+
+// KeepEpisodes keeps single episodes of one season up to date. A season
+// not kept yet is switched on with only these episodes; in a kept season
+// the episodes are switched on too.
+func (s *Service) KeepEpisodes(ctx context.Context, titleID int64, number int, episodes []int, by domain.Actor) error {
+	if len(episodes) == 0 {
+		return nil
+	}
+	var t domain.Title
+	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+			return err
+		}
+		if t.Kind != "show" {
+			return ErrNotShow
+		}
+		var partID int64
+		var keep bool
+		if err := tx.QueryRow("SELECT id, keep_up_to_date FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", titleID, number).Scan(&partID, &keep); errors.Is(err, sql.ErrNoRows) {
+			return ErrNoSuchSeason
+		} else if err != nil {
+			return err
+		}
+		ts, who := store.FormatTime(s.now()), actorText(by)
+		if !keep {
+			if _, err := tx.Exec("UPDATE parts SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE id = ?", ts, who, partID); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'episode' AND keep_up_to_date = 1", ts, who, partID); err != nil {
+				return err
+			}
+		}
+		args := []any{ts, who, partID}
+		for _, n := range episodes {
+			args = append(args, n)
+		}
+		_, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'episode' AND json_extract(numbers, '$.episode') IN ("+
+			strings.TrimSuffix(strings.Repeat("?,", len(episodes)), ",")+")", args...)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventSeasonChanged, TitleID: &titleID,
+		Summary: fmt.Sprintf("%s season %d: Keep up to date on for %d episodes", t.Name, number, len(episodes)), Data: map[string]any{"season": number, "episodes": episodes},
 		GroupKey: groupKey(titleID)})
 	return nil
 }

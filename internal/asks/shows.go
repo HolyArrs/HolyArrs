@@ -27,22 +27,32 @@ var errAskedMeanwhile = errors.New("asked for at the same moment")
 // too); a show already in the Library is asked only for the seasons it
 // does not keep up to date yet.
 func (s *Service) AskShow(ctx context.Context, p Person, id string, seasons []int) (Result, error) {
-	return s.askShow(ctx, p, strings.TrimSpace(id), seasons, false, false)
+	return s.askShow(ctx, p, strings.TrimSpace(id), seasons, nil, false, false)
+}
+
+// AskShowParts asks for whole seasons and single episodes of others (for
+// example season 1 whole and episodes 1, 2 and 5 of season 2). Both empty
+// is the whole show.
+func (s *Service) AskShowParts(ctx context.Context, p Person, id string, seasons []int, eps []domain.AskEpisodes) (Result, error) {
+	return s.askShow(ctx, p, strings.TrimSpace(id), seasons, eps, false, false)
 }
 
 // AskShowFutureOnly asks for a show's future seasons only: the seasons and
 // episodes that air from now on, not the ones already out.
 func (s *Service) AskShowFutureOnly(ctx context.Context, p Person, id string) (Result, error) {
-	return s.askShow(ctx, p, strings.TrimSpace(id), nil, true, false)
+	return s.askShow(ctx, p, strings.TrimSpace(id), nil, nil, true, false)
 }
 
 // fits says whether an open ask o gives what a new ask wants: its seasons
 // cover them, and a future-only ask only fits another future-only ask.
-func fits(o domain.Ask, want []int, futureOnly bool) bool {
-	return covers(o.Seasons, want) && (futureOnly || !o.FutureOnly)
+func fits(o domain.Ask, want []int, wantEps []domain.AskEpisodes, futureOnly bool) bool {
+	if futureOnly || o.FutureOnly {
+		return o.FutureOnly && futureOnly || (futureOnly && wholeShow(o))
+	}
+	return coversParts(o, want, wantEps)
 }
 
-func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []int, futureOnly, retried bool) (Result, error) {
+func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []int, asked []domain.AskEpisodes, futureOnly, retried bool) (Result, error) {
 	db := s.Store.Read()
 	defs, err := library.ReadShowDefaults(ctx, db)
 	if err != nil {
@@ -68,24 +78,28 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 	if err != nil {
 		return Result{}, err
 	}
+	eps, err := pickEpisodes(asked, want, sh.Seasons)
+	if err != nil {
+		return Result{}, err
+	}
 	if futureOnly {
-		want = []int{}
+		want, eps = []int{}, []domain.AskEpisodes{}
 	}
 	open, err := openShowAsks(ctx, db, sh.IDs)
 	if err != nil {
 		return Result{}, err
 	}
 	for _, o := range open {
-		if fits(o, want, futureOnly) {
+		if fits(o, want, eps, futureOnly) {
 			return s.join(ctx, p, o.ID)
 		}
 	}
 	for _, o := range open {
 		if o.State == domain.AskAsked && !futureOnly {
-			res, err := s.joinWider(ctx, p, o, want)
+			res, err := s.joinWider(ctx, p, o, want, eps)
 			if errors.Is(err, ErrNotOpen) && !retried {
 				// Decided between the look and the write: look again.
-				return s.askShow(ctx, p, id, seasons, futureOnly, true)
+				return s.askShow(ctx, p, id, seasons, asked, futureOnly, true)
 			}
 			return res, err
 		}
@@ -103,18 +117,24 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 			return Result{}, &InLibraryError{TitleID: tid, Show: true}
 		}
 	} else if tid != 0 {
-		missing, err := notKept(ctx, db, tid, want)
+		missing := []int{}
+		if len(want) > 0 || len(eps) == 0 {
+			if missing, err = notKept(ctx, db, tid, want); err != nil {
+				return Result{}, err
+			}
+		}
+		missingEps, err := episodesNotKept(ctx, db, tid, eps)
 		if err != nil {
 			return Result{}, err
 		}
-		if len(missing) == 0 {
-			ready, err := showReady(ctx, db, tid, want, s.now())
+		if len(missing) == 0 && len(missingEps) == 0 {
+			ready, err := showReady(ctx, db, tid, want, eps, s.now())
 			if err != nil {
 				return Result{}, err
 			}
 			return Result{}, &InLibraryError{TitleID: tid, Ready: ready, Show: true}
 		}
-		want = missing
+		want, eps = missing, missingEps
 	}
 	if never, err := library.ShowOnNeverAdd(ctx, db, sh.IDs); err != nil {
 		return Result{}, err
@@ -131,7 +151,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 			ids[k] = v
 		}
 	}
-	a := domain.Ask{Kind: "show", TMDBID: ids["tmdb"], Ref: id, SourceIDs: ids, Seasons: want, FutureOnly: futureOnly, Name: sh.Name, Poster: sh.Poster,
+	a := domain.Ask{Kind: "show", TMDBID: ids["tmdb"], Ref: id, SourceIDs: ids, Seasons: want, Episodes: eps, FutureOnly: futureOnly, Name: sh.Name, Poster: sh.Poster,
 		State: domain.AskAsked, AskedBy: p.UserID, AskedAt: now}
 	if sh.Year > 0 {
 		y := sh.Year
@@ -147,7 +167,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 			return err
 		}
 		for _, o := range open {
-			if fits(o, want, futureOnly) || (o.State == domain.AskAsked && !futureOnly) {
+			if fits(o, want, eps, futureOnly) || (o.State == domain.AskAsked && !futureOnly) {
 				return errAskedMeanwhile
 			}
 		}
@@ -161,7 +181,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 		return err
 	})
 	if errors.Is(err, errAskedMeanwhile) && !retried {
-		return s.askShow(ctx, p, id, seasons, futureOnly, true)
+		return s.askShow(ctx, p, id, seasons, asked, futureOnly, true)
 	}
 	if err != nil {
 		return Result{}, err
@@ -252,8 +272,8 @@ func openShowAsks(ctx context.Context, q store.Lister, ids map[string]string) ([
 // widens it to the seasons p asked for too. Asking for more seasons is a
 // new ask for p: it counts as one against p's show limit, checked inside
 // the write before anything changes.
-func (s *Service) joinWider(ctx context.Context, p Person, o domain.Ask, want []int) (Result, error) {
-	return s.joinWiderWith(ctx, p, o, KindShows, func(a *domain.Ask) { a.Seasons, a.FutureOnly = widen(a.Seasons, want), false },
+func (s *Service) joinWider(ctx context.Context, p Person, o domain.Ask, want []int, wantEps []domain.AskEpisodes) (Result, error) {
+	return s.joinWiderWith(ctx, p, o, KindShows, func(a *domain.Ask) { widenParts(a, want, wantEps); a.FutureOnly = false },
 		func(a domain.Ask) map[string]any { return map[string]any{"seasons": askSeasonWords(a)} })
 }
 
@@ -367,27 +387,37 @@ func notKept(ctx context.Context, db querier, titleID int64, want []int) ([]int,
 // showReady says whether every aired episode of the seasons (empty: every
 // season but specials) has a file in the main Version, with at least one
 // aired.
-func showReady(ctx context.Context, db querier, titleID int64, seasons []int, now time.Time) (bool, error) {
-	if len(seasons) == 0 {
+func showReady(ctx context.Context, db querier, titleID int64, seasons []int, eps []domain.AskEpisodes, now time.Time) (bool, error) {
+	if len(seasons) == 0 && len(eps) == 0 {
 		var err error
 		if seasons, err = regularSeasons(ctx, db, titleID); err != nil {
 			return false, err
 		}
 	}
-	if len(seasons) == 0 {
+	if len(seasons) == 0 && len(eps) == 0 {
 		return false, nil
 	}
-	marks := strings.TrimSuffix(strings.Repeat("?,", len(seasons)), ",")
 	args := []any{titleID}
-	for _, n := range seasons {
-		args = append(args, n)
+	var or []string
+	if len(seasons) > 0 {
+		or = append(or, "p.number IN ("+strings.TrimSuffix(strings.Repeat("?,", len(seasons)), ",")+")")
+		for _, n := range seasons {
+			args = append(args, n)
+		}
+	}
+	for _, e := range eps {
+		or = append(or, "(p.number = ? AND json_extract(i.numbers, '$.episode') IN ("+strings.TrimSuffix(strings.Repeat("?,", len(e.Episodes)), ",")+"))")
+		args = append(args, e.Season)
+		for _, n := range e.Episodes {
+			args = append(args, n)
+		}
 	}
 	args = append(args, store.FormatTime(now))
 	var aired, ready int
 	err := db.QueryRowContext(ctx, `SELECT count(*), coalesce(sum(CASE WHEN s.state IN ('in_library', 'better_wanted') THEN 1 ELSE 0 END), 0)
 		FROM items i JOIN parts p ON p.id = i.part_id
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
-		WHERE i.title_id = ? AND i.kind = 'episode' AND i.dropped_at IS NULL AND p.number IN (`+marks+`) AND i.air_date IS NOT NULL AND i.air_date <= ?`,
+		WHERE i.title_id = ? AND i.kind = 'episode' AND i.dropped_at IS NULL AND (`+strings.Join(or, " OR ")+`) AND i.air_date IS NOT NULL AND i.air_date <= ?`,
 		args...).Scan(&aired, &ready)
 	return aired > 0 && aired == ready, err
 }
@@ -401,7 +431,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 	}
 	if tid == 0 {
 		o := library.ShowAddOptions{LibraryFolderID: opt.LibraryFolderID, PickRulesID: opt.PickRulesID, Seasons: "all", WhyAdded: "ask"}
-		if len(a.Seasons) > 0 {
+		if !wholeShow(a) {
 			o.Seasons = "none"
 		}
 		if a.FutureOnly {
@@ -420,7 +450,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 			tid = dup.TitleID
 		case err != nil:
 			return 0, err
-		case len(a.Seasons) == 0:
+		case wholeShow(a):
 			return tid, nil
 		}
 	}
@@ -439,7 +469,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 		}
 	}
 	seasons := a.Seasons
-	if len(seasons) == 0 {
+	if wholeShow(a) {
 		if seasons, err = regularSeasons(ctx, db, tid); err != nil {
 			return 0, err
 		}
@@ -454,6 +484,11 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 			return 0, err
 		}
 		if err := s.Library.SetSeason(ctx, tid, n, true, by.actor()); err != nil && !errors.Is(err, library.ErrNoSuchSeason) {
+			return 0, err
+		}
+	}
+	for _, e := range a.Episodes {
+		if err := s.Library.KeepEpisodes(ctx, tid, e.Season, e.Episodes, by.actor()); err != nil && !errors.Is(err, library.ErrNoSuchSeason) {
 			return 0, err
 		}
 	}
@@ -472,7 +507,7 @@ func (s *Service) readyShows(ctx context.Context) ([]domain.Ask, error) {
 		if a.FutureOnly {
 			continue // keeps up with what airs; there is no "all in" moment
 		}
-		ok, err := showReady(ctx, s.Store.Read(), *a.TitleID, a.Seasons, s.now())
+		ok, err := showReady(ctx, s.Store.Read(), *a.TitleID, a.Seasons, a.Episodes, s.now())
 		if err != nil {
 			return nil, err
 		}
@@ -504,6 +539,9 @@ func seasonWords(seasons []int) string {
 func askSeasonWords(a domain.Ask) string {
 	if a.FutureOnly {
 		return "future seasons only"
+	}
+	if len(a.Episodes) > 0 {
+		return partsWords(a.Seasons, a.Episodes)
 	}
 	return seasonWords(a.Seasons)
 }

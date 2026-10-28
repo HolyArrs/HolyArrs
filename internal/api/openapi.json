@@ -1056,6 +1056,13 @@
           "decided_by": {
             "$ref": "#/components/schemas/Who"
           },
+          "episodes": {
+            "description": "A show ask's single episodes, by season, in seasons not asked for whole. No seasons and no episodes is the whole show.",
+            "items": {
+              "$ref": "#/components/schemas/AskEpisodes"
+            },
+            "type": "array"
+          },
           "future_only": {
             "description": "A show's future seasons only: seasons and episodes that air from now on.",
             "type": "boolean"
@@ -1171,6 +1178,26 @@
             "type": "boolean"
           }
         },
+        "type": "object"
+      },
+      "AskEpisodes": {
+        "description": "Single episodes of one season.",
+        "properties": {
+          "episodes": {
+            "items": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "season": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "season",
+          "episodes"
+        ],
         "type": "object"
       },
       "AskKindLimit": {
@@ -7950,6 +7977,13 @@
                     },
                     "type": "array"
                   },
+                  "episodes": {
+                    "description": "A show's single episodes of other seasons, such as [{\"season\": 2, \"episodes\": [1, 2, 5]}].",
+                    "items": {
+                      "$ref": "#/components/schemas/AskEpisodes"
+                    },
+                    "type": "array"
+                  },
                   "future_only": {
                     "description": "A show's future seasons only: seasons and episodes that air from now on.",
                     "type": "boolean"
@@ -8243,6 +8277,20 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "albums": {
+                    "description": "Artist asks: the album ids approved; left out approves all.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "episodes": {
+                    "description": "Show asks: single episodes approved in seasons the ask touches; may add episodes not asked for or leave asked ones out.",
+                    "items": {
+                      "$ref": "#/components/schemas/AskEpisodes"
+                    },
+                    "type": "array"
+                  },
                   "library_folder_id": {
                     "type": "integer"
                   },
@@ -8252,6 +8300,36 @@
                   },
                   "pick_rules_id": {
                     "type": "integer"
+                  },
+                  "seasons": {
+                    "description": "Show asks: the seasons approved whole (any season the ask touches; for a whole-show ask, any season). With episodes it is the final pick; both left out approves the ask as asked.",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "tracks": {
+                    "description": "Artist asks: keep only some songs of albums already in the Library (album MusicBrainz id, Library track ids); the album's other songs are switched off.",
+                    "items": {
+                      "properties": {
+                        "album": {
+                          "type": "string"
+                        },
+                        "tracks": {
+                          "items": {
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "album",
+                        "tracks"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
                   }
                 },
                 "type": "object"

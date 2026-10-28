@@ -586,11 +586,21 @@ type Ask struct {
 	// Seasons are the seasons asked for; empty is the whole show (and
 	// always empty for movies).
 	Seasons []int `db:"seasons,json"`
+	// Episodes are single episodes asked for, by season, in seasons not
+	// asked for whole. A show ask with no Seasons and no Episodes is the
+	// whole show.
+	Episodes []AskEpisodes `db:"episodes,json"`
 	// FutureOnly asks a show for the seasons and episodes still to air.
 	FutureOnly bool `db:"future_only"`
 	// Albums are the albums of an artist asked for; empty is the whole
 	// artist (and always empty for movies and shows).
 	Albums []AskAlbum `db:"albums,json"`
+}
+
+// AskEpisodes are the episodes of one season asked for (episode numbers).
+type AskEpisodes struct {
+	Season   int   `json:"season"`
+	Episodes []int `json:"episodes"`
 }
 
 // AskAlbum is one album asked for: its MusicBrainz release-group id, name
