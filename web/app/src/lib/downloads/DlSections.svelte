@@ -107,21 +107,41 @@
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.fast, easing: easeIn });
 	}
 	// Column widths, the same for every row of both sections; each person's own,
-	// kept in this browser. The Title takes what is left (at least MIN_TITLE).
-	type Col = 'bar' | 'st' | 'size' | 'time';
-	const DEF: Record<Col, number> = { bar: 140, st: 120, size: 150, time: 64 };
-	const LIM: Record<Col, [number, number]> = { bar: [44, 600], st: [28, 400], size: [56, 400], time: [36, 240] };
+	// kept in this browser. Every column (the Title too) has its own width, as in
+	// a desktop table: dragging a column's right edge changes only that column and
+	// moves the ones after it. The columns need not fill the table: room left over
+	// sits before the bin; more than fits scrolls sideways inside the table box.
+	type Col = 'title' | 'bar' | 'st' | 'size' | 'time';
+	const COLS: Col[] = ['title', 'bar', 'st', 'size', 'time'];
+	const DEF: Record<Col, number> = { title: 420, bar: 140, st: 120, size: 150, time: 64 };
+	const MAX: Record<Col, number> = { title: 3000, bar: 1200, st: 1200, size: 1200, time: 800 };
+	/** Fallback minimums (the label plus padding) when no header is on the page to measure. */
+	const MINF: Record<Col, number> = { title: 44, bar: 70, st: 56, size: 42, time: 46 };
 	const KEY = 'holyarrs.downloads.columns';
-	const MIN_TITLE = 120;
-	const COLS: Col[] = ['bar', 'st', 'size', 'time'];
-	const DATA: Record<Col, string> = { bar: 'bar', st: 'status', size: 'size', time: 'time' };
-	const clamp = (k: Col, v: number) => Math.round(Math.max(LIM[k][0], Math.min(LIM[k][1], v)));
+	const DATA: Record<Col, string> = { title: 'title', bar: 'bar', st: 'status', size: 'size', time: 'time' };
+	/** FIXED is the toggle, poster and bin columns; GAPS the gaps between nine columns. */
+	const FIXED = 24 + 32 + 32;
+	const GAPS = 8;
+	let grid = $state<HTMLElement>();
+	let gap = $state(10);
+	const textW = (n: Node) => {
+		const r = document.createRange();
+		r.selectNodeContents(n);
+		return r.getBoundingClientRect().width;
+	};
+	/** minOf is a column's header label plus padding: any column shrinks to its own name. */
+	function minOf(k: Col): number {
+		const l = grid?.querySelector<HTMLElement>(`.chead [data-col="${DATA[k]}"] .lbl`);
+		const w = l ? textW(l) : 0;
+		return w > 0 ? Math.ceil(w) + 14 : MINF[k];
+	}
+	const clamp = (k: Col, v: number) => Math.round(Math.max(minOf(k), Math.min(MAX[k], v)));
 	/** The saved widths, or null: none saved, so the columns fit their content. */
 	function stored(): Record<Col, number> | null {
 		try {
 			const v = JSON.parse(localStorage.getItem(KEY) ?? 'null');
-			if (!v || typeof v !== 'object') return null;
-			return Object.fromEntries(COLS.map((k) => [k, typeof v[k] === 'number' ? clamp(k, v[k]) : DEF[k]])) as Record<Col, number>;
+			if (!v || typeof v !== 'object' || typeof v.title !== 'number') return null;
+			return Object.fromEntries(COLS.map((k) => [k, typeof v[k] === 'number' ? Math.max(MINF[k], Math.min(MAX[k], Math.round(v[k]))) : DEF[k]])) as Record<Col, number>;
 		} catch {
 			return null;
 		}
@@ -130,7 +150,8 @@
 	let widths = $state<Record<Col, number>>(saved ?? { ...DEF });
 	// Auto-fit runs once after the rows render when nothing is saved (and again after Reset columns).
 	let fitted = $state(!!saved);
-	let grid = $state<HTMLElement>();
+	/** inner is the full width of the columns; the table box is at least this wide. */
+	const inner = $derived(COLS.reduce((n, k) => n + widths[k], FIXED) + GAPS * gap);
 	function save() {
 		try {
 			localStorage.setItem(KEY, JSON.stringify(widths));
@@ -138,32 +159,30 @@
 			/* private window: the widths last for this visit */
 		}
 	}
-	/** room is the most the four columns may add up to, leaving the Title MIN_TITLE. */
-	const room = () => (grid?.querySelector('.dlrows, .chead')?.clientWidth ?? 1200) - (24 + 32 + 32 + 7 * 10) - MIN_TITLE;
+	/** box is the visible width of the table box. */
+	const box = () => grid?.querySelector<HTMLElement>('.tw')?.clientWidth ?? 1200;
 	/** fitOf is the widest cell of a column (the header label too) plus padding. */
 	function fitOf(k: Col): number {
 		if (!grid) return DEF[k];
-		if (k === 'bar') return DEF.bar; // a bar has no content width of its own
+		if (k === 'bar') return clamp(k, DEF.bar); // a bar has no content width of its own
 		let w = 0;
 		for (const el of grid.querySelectorAll<HTMLElement>(`.dline [data-col="${DATA[k]}"]`)) {
 			if (el.classList.contains('hs')) continue; // History's status spans two columns
-			const tx = el.classList.contains('ch') ? el.firstChild : el.querySelector('.tx');
-			let cw = el.scrollWidth;
-			if (tx) {
-				const r = document.createRange();
-				r.selectNodeContents(tx);
-				cw = r.getBoundingClientRect().width + (el.classList.contains('st') ? 14 : 0);
+			if (k === 'title' && !el.classList.contains('ch')) {
+				for (const t of el.querySelectorAll('.tt, .rel')) w = Math.max(w, textW(t));
+				continue;
 			}
-			w = Math.max(w, cw);
+			const tx = el.classList.contains('ch') ? el.querySelector('.lbl') : el.querySelector('.tx');
+			w = Math.max(w, tx ? textW(tx) + (el.classList.contains('st') ? 14 : 0) : el.scrollWidth);
 		}
-		return clamp(k, Math.ceil(w) + 12);
+		return clamp(k, Math.ceil(w) + 14);
 	}
 	function fitAll() {
 		const next = { ...widths };
-		for (const k of COLS) next[k] = fitOf(k);
-		// Too wide for the Title's minimum: the Size column (the widest) gives way.
-		const over = COLS.reduce((n, k) => n + next[k], 0) - room();
-		if (over > 0) next.size = clamp('size', next.size - over);
+		for (const k of COLS) if (k !== 'title') next[k] = fitOf(k);
+		// The Title starts with the room the others leave.
+		const rest = box() - FIXED - GAPS * gap - (next.bar + next.st + next.size + next.time);
+		next.title = clamp('title', Math.max(rest, Math.min(fitOf('title'), 320)));
 		widths = next;
 		fitted = true;
 	}
@@ -171,38 +190,25 @@
 		if (fitted || !grid || rows.length === 0) return;
 		void tick().then(fitAll);
 	});
-	// A grip sits on every header boundary (Title|Progress, Progress|Status,
-	// Status|Size, Size|Time). Dragging it moves that boundary with the
-	// pointer: the column on its left grows by what the one on its right gives
-	// up. The Title is the flexible column (it takes what is left), so the
-	// Title|Progress boundary only changes Progress. At a limit the boundary stops.
-	type Edge = 'title' | Col;
-	const RIGHT: Record<string, Col> = { title: 'bar', bar: 'st', st: 'size', size: 'time' };
-	function resize(k: Edge, w0: Record<Col, number>, d: number) {
-		const r = RIGHT[k];
-		if (!r) return;
-		const used = COLS.reduce((n, x) => n + w0[x], 0);
-		const titleW = room() + MIN_TITLE - used;
-		// How far the boundary may move: left (negative) and right (positive).
-		let lo: number, hi: number;
-		if (k === 'title') {
-			lo = Math.max(MIN_TITLE - titleW, w0[r] - LIM[r][1]);
-			hi = w0[r] - LIM[r][0];
-		} else {
-			const l = k as Col;
-			lo = Math.max(LIM[l][0] - w0[l], w0[r] - LIM[r][1]);
-			hi = Math.min(LIM[l][1] - w0[l], w0[r] - LIM[r][0]);
-		}
-		const s = Math.round(Math.max(Math.min(0, lo), Math.min(Math.max(0, hi), d)));
-		const w = { ...w0, [r]: w0[r] - s };
-		if (k !== 'title') w[k as Col] = w0[k as Col] + s;
-		widths = w;
+	$effect(() => {
+		if (!grid) return;
+		gap = parseFloat(getComputedStyle(grid).getPropertyValue('--gap')) || 10;
+	});
+	// Queue and History scroll sideways together, so their columns stay lined up.
+	function sync(e: Event) {
+		const x = (e.currentTarget as HTMLElement).scrollLeft;
+		for (const t of grid?.querySelectorAll<HTMLElement>('.tw') ?? []) if (t.scrollLeft !== x) t.scrollLeft = x;
 	}
-	function grab(e: PointerEvent, k: Edge) {
+	// A grip sits on every column's right edge. Dragging it changes that column
+	// only; the columns after it move along. It stops at the column's own name.
+	function resize(k: Col, w0: number, d: number) {
+		widths[k] = clamp(k, w0 + d);
+	}
+	function grab(e: PointerEvent, k: Col) {
 		if (e.button !== 0) return;
 		e.preventDefault();
 		const x0 = e.clientX;
-		const w0 = { ...widths };
+		const w0 = widths[k];
 		const el = e.currentTarget as HTMLElement;
 		el.setPointerCapture(e.pointerId);
 		el.classList.add('drag');
@@ -218,18 +224,16 @@
 		el.addEventListener('pointerup', up);
 		el.addEventListener('pointercancel', up);
 	}
-	function nudge(e: KeyboardEvent, k: Edge) {
+	function nudge(e: KeyboardEvent, k: Col) {
 		const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
 		if (!d) return;
 		e.preventDefault();
-		resize(k, { ...widths }, d * (e.shiftKey ? 40 : 10));
+		resize(k, widths[k], d * (e.shiftKey ? 40 : 10));
 		save();
 	}
 	// Double-click auto-fits that column, as in a spreadsheet.
-	// On the Title|Progress boundary it fits Progress; elsewhere the column on the left.
-	function fitOne(k: Edge) {
-		const c: Col = k === 'title' ? 'bar' : k;
-		widths[c] = fitOf(c);
+	function fitOne(k: Col) {
+		widths[k] = fitOf(k);
 		save();
 	}
 	function resetAll() {
@@ -240,14 +244,12 @@
 		}
 		fitAll();
 	}
-	// Each header carries the grip of the boundary on its right edge; Time has
-	// none (the bin column after it stays put).
-	const HEADS: { key: string; label: string; size?: Edge; num?: boolean }[] = [
+	const HEADS: { key: string; label: string; size: Col; num?: boolean }[] = [
 		{ key: 'title', label: 'Title', size: 'title' },
 		{ key: 'bar', label: 'Progress', size: 'bar' },
 		{ key: 'status', label: 'Status', size: 'st' },
 		{ key: 'size', label: 'Size', size: 'size', num: true },
-		{ key: 'time', label: 'Time', num: true }
+		{ key: 'time', label: 'Time', size: 'time', num: true }
 	];
 	const sub2 = (r: DownloadRow) => (manyWords(r.kind) && r.covers ? r.covers : r.name);
 </script>
@@ -282,7 +284,7 @@
 	</div>
 {/snippet}
 
-<div class="dlgrid" bind:this={grid} style="--c-bar: {widths.bar}px; --c-st: {widths.st}px; --c-size: {widths.size}px; --c-time: {widths.time}px">
+<div class="dlgrid" bind:this={grid} style="--c-title: {widths.title}px; --c-bar: {widths.bar}px; --c-st: {widths.st}px; --c-size: {widths.size}px; --c-time: {widths.time}px; --c-in: {inner}px">
 <div class="strip" data-testid="dl-strip">
 	<span class="sp"><span class="k">Speed</span><b data-testid="dl-speed">{bytes(sum.speed)}/s</b>
 		<svg class="spark" viewBox="0 0 64 18" width="64" height="18" aria-hidden="true">{#if spark}<path d={spark} />{/if}</svg>
@@ -316,11 +318,13 @@
 		{#if queue.length === 0}
 			<p class="none">Nothing in the queue.</p>
 		{:else}
-			<div class="dline chead" data-testid="dl-colhead">
+			<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
+				<div class="dline chead" data-testid="dl-colhead">
 				<span></span><span></span>
 				{#each HEADS as h (h.key)}
-					<span class="ch" class:end={h.num} data-col={h.key}><span class="lbl" title={h.label}>{h.label}</span>{#if h.size}{@const k = h.size}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[RIGHT[k]]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={k} onpointerdown={(e) => grab(e, k)} ondblclick={() => fitOne(k)} onkeydown={(e) => nudge(e, k)}></span>{/if}</span>
+					<span class="ch" class:end={h.num} data-col={h.key}><span class="lbl" title={h.label}>{h.label}</span><!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[h.size]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={h.size} onpointerdown={(e) => grab(e, h.size)} ondblclick={() => fitOne(h.size)} onkeydown={(e) => nudge(e, h.size)}></span></span>
 				{/each}
+				<span></span>
 				<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
 			</div>
 			<ul class="dlrows" data-testid="dl-queue">
@@ -341,6 +345,7 @@
 					</li>
 				{/each}
 			</ul>
+			</div></div>
 		{/if}
 	</section>
 {/if}
@@ -351,7 +356,8 @@
 		{#if found.length === 0}
 			<p class="none">{q.trim() ? 'Nothing matches.' : 'Nothing finished yet.'}</p>
 		{:else}
-			<ul class="dlrows" data-testid="dl-history">
+			<div class="tw" onscroll={sync}><div class="tin">
+				<ul class="dlrows" data-testid="dl-history">
 				{#each found as r (r.id)}
 					{@const s = historyStatus(r, importOf.get(r.id))}
 					<li class="drow" class:open={openId === r.id} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
@@ -366,6 +372,7 @@
 					</li>
 				{/each}
 			</ul>
+			</div></div>
 		{/if}
 		<div class="foot">
 			<label class="find"><Icon name="search" size={14} /><input type="search" placeholder="Search History" aria-label="Search History" bind:value={q} /></label>
@@ -404,11 +411,13 @@
 	.none { padding: 10px 0; color: var(--text-muted); font: var(--t-callout); }
 
 	/* One column grid for every row of both sections. */
-	.dlgrid { --gap: 10px; }
-	.dlrows { container-type: inline-size; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+	.dlgrid { --gap: 10px; min-width: 0; }
+	.tw { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+	.tin { min-width: var(--c-in); }
+	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 	.drow { display: block; border-bottom: 1px solid var(--line); }
 	.drow.open { background: var(--surface-2); }
-	.dline { display: grid; grid-template-columns: 24px 32px minmax(0, 1fr) var(--c-bar) var(--c-st) var(--c-size) var(--c-time) 32px; align-items: center; column-gap: var(--gap); height: 48px; }
+	.dline { display: grid; grid-template-columns: 24px 32px var(--c-title) var(--c-bar) var(--c-st) var(--c-size) var(--c-time) minmax(0, 1fr) 32px; align-items: center; column-gap: var(--gap); height: 48px; }
 	.dline:hover { background: var(--surface-2); }
 
 	.tg { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
@@ -486,6 +495,7 @@
 	@media (max-width: 767px) {
 		.dlgrid { --gap: 8px; }
 		.chead { display: none; }
+		.tin { min-width: 0; }
 		.dline { grid-template-columns: 24px 28px minmax(0, 1fr) 88px 52px 32px; grid-template-areas: 'tg post nm nm nm del' '. post bar st time del'; row-gap: 4px; height: auto; min-height: 62px; padding: 6px 0; }
 		.tg { grid-area: tg; }
 		.post { grid-area: post; align-self: start; }
