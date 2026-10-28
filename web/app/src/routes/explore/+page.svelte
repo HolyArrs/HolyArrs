@@ -66,8 +66,8 @@
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
 	import GenreBanner from '#lib/ui/GenreBanner.svelte';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import { GENRES } from '#lib/explore.ts';
+	import { fetchMusicGenre, musicCardHref, type MusicCardData } from '#lib/music/music-trending.ts';
 	import MusicGenreTiles from '#lib/ui/MusicGenreTiles.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
@@ -365,8 +365,8 @@
 		void api.post('/explore/strip/counts', { event: 'open', categories: [stripKey(t)] }).catch(() => {});
 	}
 
-	// The genre banner (layouts compared with the bar: 0 is today's page).
-	let bannerLayout = $state(0);
+	// The genre banner: the words on the left, the picks in a row on the right.
+	const bannerLayout: number = 2;
 	const bannerNorm = (n: string) => n.toLowerCase().replace(/\s*&\s*/g, ' & ');
 	/** The household's favourite genre: the most common among Library titles (asked for ones included). */
 	const favourite = $derived.by(() => {
@@ -417,6 +417,30 @@
 		);
 	});
 	const bannerPicks = $derived(bannerCards.map(live).filter((c) => (c.kind === 'movie' || c.kind === 'show') && c.image && !ownedMark(c, ownedTitle(c, owned), who) && c.titleId === undefined).slice(0, 7));
+	// Music: the household's top music genre (first of the genre tiles the
+	// music rows answer, built from the Library's artists) and its albums and
+	// artists not in the Library yet, from the app's own genre page answer.
+	let musicPicks = $state<MusicCardData[]>([]);
+	let musicPicksFor = '';
+	const musicFav = $derived(type === 'music' ? (musicGenres[0] ?? null) : null);
+	$effect(() => {
+		const g = musicFav;
+		if (!g) return;
+		const slug = g.href.split('/music/genre/')[1]?.split('?')[0] ?? '';
+		if (!slug || musicPicksFor === slug) return;
+		musicPicksFor = slug;
+		musicPicks = [];
+		void fetchMusicGenre(decodeURIComponent(slug), 'US', api, gone.signal).then(
+			(a) => {
+				if (musicPicksFor !== slug) return;
+				const seen = new Set<string>();
+				musicPicks = [...(a.hero ? [a.hero] : []), ...a.rows.flatMap((r) => r.items ?? [])]
+					.filter((c) => (c.kind === 'album' || c.kind === 'artist') && c.image && !c.title_id && !seen.has(c.key) && (seen.add(c.key), true))
+					.slice(0, 7);
+			},
+			() => {}
+		);
+	});
 	const bannerOn = $derived(bannerLayout > 0 && !genreOn && type !== 'music' && !!favourite && bannerPicks.length >= 5);
 
 	// Hero badges: why the featured title shows (New season, Picked for you).
@@ -704,6 +728,17 @@
 		{/if}
 	</div>
 	<MetadataNotice />
+	{#if type === 'music' && musicFav && musicPicks.length >= 4}
+		<div class="music-banner">
+			<GenreBanner layout={2} name={`Your ${musicFav.name}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to(musicFav.href)} art={[musicPicks[0]?.image ?? musicFav.art].filter(Boolean)} square>
+				{#snippet picks()}
+					{#each musicPicks as c (c.key)}
+						<PosterCard title={c.name} href={to(musicCardHref(c))} image={c.image} kind={c.kind === 'artist' ? 'artist' : undefined} subtitle={c.artist} shape={c.kind === 'artist' ? 'round' : 'square'} />
+					{/each}
+				{/snippet}
+			</GenreBanner>
+		</div>
+	{/if}
 	{#if type === 'music'}<MusicTrendingRows bind:genres={musicGenres} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
 
 	{#if type === 'music'}
@@ -821,7 +856,6 @@
 </div>
 
 <QuickAsk bind:this={flow} onadded={() => void load()} />
-<VariantBar param="genre" storageKey="holyarrs.explore.genre-banner" label="Genre banner layout" bind:value={bannerLayout} options={[{ value: 0, label: 'Today' }, { value: 1, label: 'Banner over art' }, { value: 2, label: 'Banner and picks' }]} />
 
 <style>
 	.explore { container: explore / inline-size; /* One size for every title row, measured on Netflix (2026-10-20): 279px cards at a 1536px window, sized from the window like Netflix (whose page has no sidebar), so cards match it; never under 200px. */

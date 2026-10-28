@@ -15,6 +15,7 @@
 		art = [],
 		layout = 1,
 		count = 0,
+		square = false,
 		picks
 	}: {
 		name: string;
@@ -25,13 +26,15 @@
 		art?: string[];
 		layout?: 1 | 2;
 		count?: number;
+		/** Square picks (music covers) instead of posters. */
+		square?: boolean;
 		/** The posters, rendered by the page so they match every other row. */
 		picks: Snippet;
 	} = $props();
 	const bg = $derived(art[0] ?? '');
 </script>
 
-<section class="gb l{layout}" aria-label={eyebrow} data-testid="genre-banner" data-layout={layout}>
+<section class="gb l{layout}" class:square aria-label={eyebrow} data-testid="genre-banner" data-layout={layout}>
 	<div class="art" aria-hidden="true">
 		{#if bg}<img src={bg} alt="" loading="lazy" decoding="async" />{/if}
 		<span class="veil"></span>
@@ -66,11 +69,14 @@
 	/* Layout 1: words top-left, the picks run along the bottom over the art. */
 	.l1 { min-height: 520px; grid-template-rows: 1fr auto; padding: 40px 36px 28px; gap: 28px; }
 	/* Layout 2: words left, the picks in a glass panel on the right, two rows. */
-	.l2 { min-height: 420px; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: end; padding: 40px 36px; gap: 32px; }
-	.l2 .veil { background: linear-gradient(90deg, rgb(0 0 0 / .82), rgb(0 0 0 / .5) 50%, rgb(0 0 0 / .25)); }
-	.l2 .picks { flex-wrap: wrap; overflow: visible; max-height: none; justify-content: flex-start; --pick: calc((100% - 16px) / 3); }
-	.l2 .picks > :global(*:nth-child(n + 7)) { display: none; }
-	@container (max-width: 900px) { .l2 { grid-template-columns: 1fr; } .l2 .picks { flex-wrap: nowrap; overflow-x: auto; --pick: 140px; } .l2 .picks > :global(*:nth-child(n + 7)) { display: block; } }
+	/* Layout 2: words centred on the left, one row of four picks on the right, no gaps. */
+	.l2 { min-height: 0; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); align-items: center; padding: 32px 36px; gap: 32px; }
+	.l2 .veil { background: linear-gradient(90deg, rgb(0 0 0 / .86), rgb(0 0 0 / .6) 45%, rgb(0 0 0 / .3)); }
+	.l2 .picks { flex-wrap: nowrap; overflow: visible; --pick: calc((100% - 24px) / 4); }
+	.l2 .picks > :global(*:nth-child(n + 5)) { display: none; }
+	/* The pictures carry the names; the captions under them sat on busy art and could not be read. */
+	.l2 .picks :global(.t), .l2 .picks :global(.s) { display: none; }
+	@container (max-width: 900px) { .l2 { grid-template-columns: 1fr; } .l2 .picks { overflow-x: auto; --pick: 140px; } .l2 .picks > :global(*:nth-child(n + 5)) { display: block; } }
 	@media (max-width: 767px) {
 		.l1 { min-height: 0; padding: 26px 16px 18px; gap: 20px; }
 		.l2 { min-height: 0; padding: 26px 16px 18px; gap: 20px; }
