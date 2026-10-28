@@ -136,9 +136,9 @@ describe('music on the calendar', () => {
 		expect(entryHref(al)).toBe('/library/9/albums/3');
 		expect(entryHref({ ...al, kind: 'cinema' })).toBe('/library/9');
 		expect(entryKey(al)).toBe('a3');
-		expect(albumHave(al)).toBe('1 of 4 tracks in the Library');
-		expect(albumHave({ tracks: 4, have: 4 })).toBe('every track in the Library');
-		expect(albumHave({ tracks: 4, have: 0 })).toBe('no track in the Library yet');
+		expect(albumHave(al)).toBe('1 of 4 songs in your Library');
+		expect(albumHave({ tracks: 4, have: 4 })).toBe('In your Library');
+		expect(albumHave({ tracks: 4, have: 0 })).toBe('Not in your Library yet');
 	});
 	it('filters by movies, shows or music', () => {
 		expect(shows(al, 'music')).toBe(true);

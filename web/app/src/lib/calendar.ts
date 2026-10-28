@@ -35,8 +35,8 @@ export function albumHave(e: Pick<CalendarEntry, 'tracks' | 'have'>): string {
 	const n = e.tracks ?? 0;
 	const h = e.have ?? 0;
 	if (!n) return '';
-	if (h === 0) return 'no track in the Library yet';
-	return h >= n ? 'every track in the Library' : `${h} of ${n} tracks in the Library`;
+	if (h === 0) return 'Not in your Library yet';
+	return h >= n ? 'In your Library' : `${h} of ${n} songs in your Library`;
 }
 
 /** entryDay is the local day an entry falls on: an episode with an air time

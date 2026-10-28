@@ -103,6 +103,6 @@ describe('music captions', () => {
 describe('the choices', () => {
 	it('reads the address, then what was kept, else the defaults', () => {
 		expect(lookFrom(new URLSearchParams('movie=2&music=9&channels=known'), { music: 4 }, 'US')).toEqual({ movie: 2, music: 4, channels: 'known', region: 'US' });
-		expect(lookFrom(new URLSearchParams(''), null, 'global')).toEqual({ movie: 6, music: 5, channels: 'all', region: 'global' });
+		expect(lookFrom(new URLSearchParams(''), null, 'global')).toEqual({ movie: 1, music: 5, channels: 'known', region: 'global' });
 	});
 });

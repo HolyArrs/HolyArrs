@@ -28,7 +28,7 @@ export const MUSIC_LOOKS = [
 	{ value: 4, label: 'Genre · songs' },
 	{ value: 5, label: 'Which release' }
 ];
-export const DEFAULT_LOOK: Omit<CaptionLook, 'region'> = { movie: 6, music: 5, channels: 'all' };
+export const DEFAULT_LOOK: Omit<CaptionLook, 'region'> = { movie: 1, music: 5, channels: 'known' };
 
 /** lookFrom reads the choices from the address, then from what was kept, else the defaults. */
 export function lookFrom(q: Pick<URLSearchParams, 'get'>, kept: Partial<CaptionLook> | null, region: string): CaptionLook {

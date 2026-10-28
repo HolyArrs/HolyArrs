@@ -26,7 +26,6 @@
 	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
 	import FollowWho from '#lib/calendar/FollowWho.svelte';
-	import CaptionBar from '#lib/calendar/CaptionBar.svelte';
 	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import { setFollow } from '#lib/follow.ts';
 	import {
@@ -39,6 +38,7 @@
 		entryArt,
 		entryIcon,
 		albumHave,
+		weekStart,
 		webcalLink,
 		addDays,
 		entryDay,
@@ -131,6 +131,13 @@
 	const rangeName = $derived(
 		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
 	);
+	// The heading names the week in view (the day at the top of the page), not every day loaded.
+	const viewWeek = $derived.by(() => {
+		const s = weekStart(active ? new Date(active + 'T00:00:00') : start);
+		const e = addDays(s, 6);
+		const f = (d: Date, y: boolean) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
+		return { long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
+	});
 
 	// The small month: starts on the first week's month, pages on its own, and follows the day in view.
 	let pickYear = $state(untrack(() => start.getFullYear()));
@@ -159,9 +166,6 @@
 	const clearFilters = () => pickFollows('library');
 	// Following nothing yet: the calendar opens on the Whole Library with one line saying how to follow.
 	const followNothing = $derived(loaded && myFollows === 0 && follows === 'library');
-	const rangeShort = $derived(
-		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${addDays(end, -1).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
-	);
 	// The slim bar shows once the controls above have scrolled away, and stays.
 	let headEnd = $state<HTMLElement>();
 	let pastHead = $state(false);
@@ -608,12 +612,12 @@
 	<div class="range-nav">
 		<IconButton icon="chevronLeft" label="Week before" variant="tinted" onclick={() => go(-1)} />
 		{#if primary}
-			<h2 class="range" aria-live="polite" data-testid="cal-month">{rangeName}</h2>
+			<h2 class="range" aria-live="polite" data-testid="cal-month">{viewWeek.long}</h2>
 		{:else if short && narrow}
 			<!-- In the slim bar the dates also open the small month (on phones, where it is not beside the days). -->
-			<button type="button" class="range range-btn" aria-label="Pick a day, {rangeName}" aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>{rangeShort}</button>
+			<button type="button" class="range range-btn" aria-label="Pick a day, {viewWeek.long}" aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>{viewWeek.short}</button>
 		{:else}
-			<span class="range">{short ? rangeShort : rangeName}</span>
+			<span class="range">{short ? viewWeek.short : viewWeek.long}</span>
 		{/if}
 		<IconButton icon="chevronRight" label="Week after" variant="tinted" onclick={() => go(1)} />
 	</div>
@@ -760,7 +764,6 @@
 	</div>
 {/if}
 
-<CaptionBar bind:look />
 
 <Sheet bind:open={sheetOpen} title="Pick a day" placement="bottom">
 	<div class="sheet-mini">
