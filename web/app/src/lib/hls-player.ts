@@ -10,6 +10,21 @@ import { to } from './paths.ts';
 export const HLS_VERSION = '1.7.3';
 export const hlsScript = `/vendor/hls-${HLS_VERSION}.min.js`;
 
+/**
+ * BUFFER caps how far ahead hls.js reads. maxBufferLength alone did not hold:
+ * hls.js grows the goal toward maxMaxBufferLength (600 s by default) whenever
+ * maxBufferSize (60 MB) is not reached, keeps an unlimited back buffer, and
+ * fetches the next fragment early. Every limit is set so a hero or row video
+ * reads about 20 s ahead and drops what it has played.
+ */
+export const BUFFER = {
+	maxBufferLength: 20,
+	maxMaxBufferLength: 30,
+	maxBufferSize: 15 * 1000 * 1000,
+	backBufferLength: 10,
+	startFragPrefetch: false
+} as const;
+
 let loading: Promise<typeof HlsType> | null = null;
 function loadHls(): Promise<typeof HlsType> {
 	loading ??= (import(/* @vite-ignore */ to(hlsScript)) as Promise<{ default: typeof HlsType }>).then((m) => m.default);
@@ -30,7 +45,7 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	}
 	const Hls = await loadHls();
 	if (!Hls.isSupported()) throw new Error('no MediaSource');
-	const hls = new Hls({ startPosition: start, maxBufferLength: 20, capLevelToPlayerSize: false, enableWorker: true, abrEwmaDefaultEstimate: 8_000_000 });
+	const hls = new Hls({ startPosition: start, ...BUFFER, capLevelToPlayerSize: false, enableWorker: true, abrEwmaDefaultEstimate: 8_000_000 });
 	// YouTube's stream mixes H.264, VP9 and AV1 at the same sizes; switching
 	// codec mid-play stalls the picture, so only H.264 stays. The cap is what
 	// the player shows right now (its box, or the screen in full screen) and

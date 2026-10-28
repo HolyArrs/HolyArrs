@@ -50,7 +50,7 @@
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
@@ -178,12 +178,14 @@
 			void api.get<{ following: boolean }>(`/titles/${id}/follow`).then((r) => want === mbid && (following = r.following)).catch(() => {});
 		};
 		// All at once: the hero, the shelves, the similar artists, the artwork and the ask state.
-		const coreAsk = api.get<ArtistCoreData>(`/music/artists/${want}?part=core`).then((c) => {
-			if (want !== mbid) return;
+		const fullRead = askAgainOnce(() => api.get<ArtistPageData>(full));
+		// The full answer holds the core: the quick core part is asked only when the full one is slow.
+		const coreAsk = coreIfSlow(fullRead, () => api.get<ArtistCoreData>(`/music/artists/${want}?part=core`)).then((c) => {
+			if (!c || want !== mbid) return;
 			if (!data) core = c;
 			askFollow(c.title_id);
 		});
-		const fullAsk = askAgainOnce(() => api.get<ArtistPageData>(full)).then((d) => {
+		const fullAsk = fullRead.then((d) => {
 			if (want !== mbid) return;
 			// An incomplete answer (slow source) is shown, then asked again quietly and merged in, keeping what is on screen.
 			void reaskWhileIncomplete(d, () => api.get<ArtistPageData>(full), (v) => {
@@ -699,7 +701,7 @@
 		<div class="stage" aria-hidden="true">
 			{@render stageArt()}
 			{#if heroVideo}
-				<video class="clip" class:in={videoIn || heroFull} style:--crop={heroFull ? 1 : crop} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; findBars(); }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
+				<video class="clip" class:in={videoIn || heroFull} style:--crop={heroFull ? 1 : crop} bind:this={videoEl} muted playsinline disablepictureinpicture preload="metadata" onplaying={() => { videoIn = true; videoPaused = false; findBars(); }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
 			{/if}
 		</div>
 		<div class="shade" aria-hidden="true"></div>

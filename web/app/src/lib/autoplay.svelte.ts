@@ -1,7 +1,7 @@
 // The app-wide "Autoplay trailers" setting and the trailer sources a
 // player tries in order: our own <video> on the direct stream, then the
 // privacy-enhanced YouTube embed, then nothing (Layer 1 pictures stay).
-import { api } from './api.ts';
+import { api, ApiError } from './api.ts';
 import { session } from './session.svelte.ts';
 import { autoplayPref, browserConditions, finePointer, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
 import { prefetchQueue } from './trailer-prefetch.ts';
@@ -186,6 +186,8 @@ export function prefetchTrailer(kind: 'movie' | 'show', tmdb: string) {
 }
 
 const streams = new Map<string, Promise<Stream | null>>();
+/** The answer for a title with no trailer (kept, unlike a failed ask). */
+const NONE = Symbol('no trailer') as unknown as Stream;
 
 const fresh = (s: Stream | null | undefined) => !!s?.url && Date.parse(s.expires_at) > Date.now() + 60_000;
 
@@ -274,11 +276,14 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
 		p = api
 			.get<Stream>(`/trailer/${kind}/${encodeURIComponent(tmdb)}?language=${lang()}`, ctl.signal)
 			.then((s) => (fresh(s) ? s : null))
-			.catch(() => null)
+			// A 404 means the title has no trailer: remembered for the session so
+			// a second player does not ask again. Other failures may be asked again.
+			.catch((e) => (e instanceof ApiError && e.status === 404 ? NONE : null))
 			.finally(() => clearTimeout(t));
 		p.then((s) => {
 			if (!s) streams.delete(k);
 		});
+		p = p.then((s) => (s === NONE ? null : s));
 		streams.set(k, p);
 	}
 	return p;

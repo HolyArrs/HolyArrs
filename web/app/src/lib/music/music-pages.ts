@@ -388,3 +388,17 @@ export function initialsOf(name?: string): string {
 	const words = (name ?? '').split(/\s+/).map((w) => w.replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean);
 	return words.slice(0, 2).map((w) => [...w][0].toUpperCase()).join('');
 }
+
+/** How long the full page answer gets before the quick core part is asked too. */
+export const CORE_AFTER_MS = 250;
+
+/**
+ * coreIfSlow asks the quick core part only when the full answer (which holds the
+ * core) has not come within `after` ms, so a fast or kept page costs one request.
+ */
+export function coreIfSlow<T>(full: Promise<unknown>, askCore: () => Promise<T>, after = CORE_AFTER_MS, wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<T | null> {
+	let done = false;
+	const settle = () => (done = true);
+	full.then(settle, settle);
+	return wait(after).then(() => (done ? null : askCore()));
+}

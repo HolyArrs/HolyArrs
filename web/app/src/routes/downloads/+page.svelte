@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
@@ -132,7 +133,7 @@
 
 	onMount(() => {
 		void load();
-		void api.get<{ titles: TitleView[] }>('/titles').then((r) => (titles = r.titles)).catch(() => {});
+		void libraryTitles().then((r) => (titles = r)).catch(() => {});
 		// The remove defaults are a settings read; without that permission the server's own defaults stand (no 403 in the console).
 		if (session.can('settings')) api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
 		if (session.can('manage_library'))

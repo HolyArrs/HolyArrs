@@ -8,6 +8,7 @@
 // 2026-10-27): a title's metadata and lookup, a Library title and then its
 // metadata, kept 30 s even when the server sends no max-age.
 import { api } from './api.ts';
+import { DWELL_MS, fastEnough, mainPicture, preloadPicture } from './smart-preload.ts';
 
 const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ARTIST = new RegExp(`/music/artist/(${ID})(?:[/?#]|$)`, 'i');
@@ -18,8 +19,8 @@ const LINKS = 'a[href*="/music/artist/"], a[href*="/music/album/"], a[href*="/ti
 
 /** An answer fetched ahead is kept at least this long for its page. */
 export const KEEP = 30_000;
-/** A mouse rests this long on a link before its page is fetched. */
-export const DWELL = 80;
+/** A mouse or focus rests this long on a link before its page is fetched (smart-preload.ts). */
+export const DWELL = DWELL_MS;
 /** Cards on screen fetched ahead after a page opens. */
 export const VIEW_CARDS = 6;
 /** Fetches running at once; the rest wait their turn. */
@@ -29,17 +30,18 @@ export const PER_MINUTE = 40;
 /** An address fetched within this long is not fetched again. */
 export const FRESH = 60_000;
 
-/** The addresses a music page link's page asks first: an artist's core and
- * full answer, an album's core answer (it needs the artist). Others: none. */
+/** The addresses a music page link's page asks first: an artist's full
+ * answer (it holds the core, and the page asks the core only when the full one
+ * is slow), an album's full answer (with its artist, as the page asks it). Others: none. */
 export function musicPrefetchURLs(href: string | null | undefined): string[] {
 	if (!href) return [];
 	let m = ARTIST.exec(href);
-	if (m) return [`/music/artists/${m[1]}?part=core`, `/music/artists/${m[1]}?similar=0`];
+	if (m) return [`/music/artists/${m[1]}?similar=0`];
 	m = ALBUM.exec(href);
 	if (!m) return [];
 	const q = href.indexOf('?');
 	const artist = (q < 0 ? '' : (new URLSearchParams(href.slice(q + 1).split('#')[0]).get('artist') ?? '')).toLowerCase();
-	return artist ? [`/music/albums/${m[1].toLowerCase()}?part=core&artist=${artist}`] : [];
+	return artist ? [`/music/albums/${m[1].toLowerCase()}?artist=${artist}&similar=0`] : [];
 }
 
 /** The addresses any page link's page asks first: music pages as above, a
@@ -60,6 +62,8 @@ type Get = (path: string) => Promise<unknown>;
 /** Fetch one address ahead; a Library title then fetches its metadata too, as its page will. */
 function warmPage(path: string): Promise<unknown> {
 	const answer = api.warm<{ kind?: string; ids?: { tmdb?: string } }>(path, KEEP);
+	// The page's main picture too, when it is one of ours.
+	answer.then((a) => void preloadPicture(mainPicture(a)), () => {});
 	if (/^\/titles\/[0-9]+$/.test(path))
 		answer.then(
 			(t) => {
@@ -162,7 +166,7 @@ export function prefetchMusicOnScreen(): void {
 	if (typeof window === 'undefined') return;
 	scans.forEach(clearTimeout);
 	ahead.newPage();
-	if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+	if (!fastEnough()) return;
 	scans = [700, 2500].map((ms) => setTimeout(() => ahead.view(onScreen()), ms));
 }
 
@@ -171,7 +175,7 @@ export function forgetMusicPrefetch(): void {
 	ahead.forget();
 }
 
-/** Hover (mouse, 80 ms) and touch on any music page link, for the whole app. Returns the cleanup. */
+/** Hover (mouse, 150 ms), focus (150 ms) and touch on any music page link, for the whole app. Returns the cleanup. */
 export function installMusicPrefetch(): () => void {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const link = (e: Event) => (e.target as Element | null)?.closest?.('a[href]')?.getAttribute('href') ?? null;
@@ -179,12 +183,27 @@ export function installMusicPrefetch(): () => void {
 		if (e.pointerType !== 'mouse') return;
 		clearTimeout(timer);
 		const href = link(e);
-		if (href && pagePrefetchURLs(href).length) timer = setTimeout(() => ahead.hover(href), DWELL);
+		if (href && pagePrefetchURLs(href).length && fastEnough()) timer = setTimeout(() => ahead.hover(href), DWELL);
+	};
+	// Keyboard focus counts as a rest too.
+	const focus = (e: FocusEvent) => {
+		clearTimeout(timer);
+		const href = link(e);
+		if (href && pagePrefetchURLs(href).length && fastEnough()) timer = setTimeout(() => ahead.hover(href), DWELL);
+	};
+	// Leaving the link (not moving inside it) stops the wait.
+	const out = (e: PointerEvent) => {
+		const a = (e.target as Element | null)?.closest?.('a[href]');
+		if (!a || !a.contains(e.relatedTarget as Node | null)) clearTimeout(timer);
 	};
 	const touch = (e: TouchEvent) => ahead.hover(link(e));
 	window.addEventListener('pointerover', over, { capture: true, passive: true });
 	window.addEventListener('touchstart', touch, { capture: true, passive: true });
+	window.addEventListener('focusin', focus, { capture: true });
+	window.addEventListener('pointerout', out, { capture: true, passive: true });
 	return () => {
+		window.removeEventListener('focusin', focus, { capture: true });
+		window.removeEventListener('pointerout', out, { capture: true });
 		clearTimeout(timer);
 		scans.forEach(clearTimeout);
 		window.removeEventListener('pointerover', over, { capture: true });

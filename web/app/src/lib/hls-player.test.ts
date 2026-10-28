@@ -88,3 +88,14 @@ describe('holdStart', () => {
 		expect(v.currentTime).toBe(0.5);
 	});
 });
+
+describe('BUFFER', () => {
+	it('caps every hls.js limit that lets the buffer grow past about 20 s', async () => {
+		const { BUFFER } = await import('./hls-player.ts');
+		expect(BUFFER.maxBufferLength).toBe(20);
+		expect(BUFFER.maxMaxBufferLength).toBeLessThanOrEqual(30);
+		expect(BUFFER.maxBufferSize).toBeLessThanOrEqual(15_000_000);
+		expect(BUFFER.backBufferLength).toBeLessThanOrEqual(10);
+		expect(BUFFER.startFragPrefetch).toBe(false);
+	});
+});

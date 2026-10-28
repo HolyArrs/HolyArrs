@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { libraryTitles } from '#lib/owned.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
@@ -178,10 +179,10 @@
 			// The server takes up to a year a query; a longer stretch is asked in pieces.
 			const [parts, t] = await Promise.all([
 				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`))),
-				api.get<{ titles: TitleView[] }>('/titles')
+				libraryTitles()
 			]);
 			if (n !== asks) return;
-			movies = new Map(t.titles.filter((x) => x.kind === 'movie').map((x) => [x.id, movieFacts(x)]));
+			movies = new Map(t.filter((x) => x.kind === 'movie').map((x) => [x.id, movieFacts(x)]));
 			const seen = new Set<string>();
 			entries = parts.flatMap((c) => c.dates ?? []).filter((e) => !seen.has(entryKey(e)) && !!seen.add(entryKey(e)));
 			if (parts[0]) {
@@ -192,7 +193,7 @@
 					follows = startFollows(readFollows(), myFollows, people);
 				}
 			}
-			libraryEmpty = t.titles.length === 0;
+			libraryEmpty = t.length === 0;
 			error = '';
 			await tick();
 			holdPlace();

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -184,7 +185,7 @@
 	const quick = (c: ExploreCard, act: 'add' | 'ask') => void flow?.open(c, act);
 	async function loadTitles() {
 		try {
-			titles = (await api.get<{ titles: TitleView[] }>('/titles')).titles ?? [];
+			titles = (await ownedLibrary()).titles;
 		} catch {
 			/* owned marks wait for the Library */
 		}

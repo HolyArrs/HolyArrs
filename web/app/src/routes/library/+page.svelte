@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
@@ -755,9 +756,9 @@
 	});
 	async function load() {
 		try {
-			const [library, me] = await Promise.all([api.get<{ titles: TitleView[] }>('/titles'), api.get<{ id?: number }>('/auth/me')]);
-			titles = library.titles;
-			myId = me.id;
+			// My id comes from the session (the layout already read /auth/me).
+			titles = await libraryTitles();
+			myId = session.s.id;
 			error = '';
 			loadRevision++;
 		} catch (e) {
@@ -834,7 +835,8 @@
 	{/if}
 	{#if searchError && !error}<p class="search-error" role="alert"><Icon name="alert" size={16} />{plainReason(searchError).text}</p>{/if}
 
-	<div class:has-rail={railOn} class="with-rail">
+	<!-- The rail column is kept while loading too, so the cards do not narrow when it appears. -->
+	<div class:has-rail={railOn || (!loaded && sort.key === 'name' && !grouped)} class="with-rail">
 		<div class="content">
 			<PageLoader loading={!loaded} label="Loading the Library" onretry={retryLoad}>
 			{#if error}

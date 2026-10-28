@@ -45,6 +45,8 @@ export function createSession(client: Client = defaultClient) {
 	let generation = 0;
 	const s = $state<{
 		state: SessionState;
+		/** My account number (from /auth/me); undefined until signed in. */
+		id: number | undefined;
 		name: string;
 		via: string;
 		role: Role;
@@ -64,6 +66,7 @@ export function createSession(client: Client = defaultClient) {
 		minPassword: number;
 	}>({
 		state: 'unknown',
+		id: undefined,
 		name: '',
 		via: '',
 		role: 'member',
@@ -113,6 +116,7 @@ export function createSession(client: Client = defaultClient) {
 
 	function apply(me: Me) {
 		client.setCsrf(me.csrf ?? '');
+		s.id = me.id;
 		s.name = me.name;
 		s.via = me.via;
 		s.role = me.role ?? 'member';
@@ -130,6 +134,7 @@ export function createSession(client: Client = defaultClient) {
 	async function signedOutState(expected: number) {
 		if (expected !== generation) return;
 		client.setCsrf('');
+		s.id = undefined;
 		s.name = '';
 		s.via = '';
 		s.perms = [];

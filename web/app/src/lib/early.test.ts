@@ -48,8 +48,7 @@ describe('app.html boot requests', () => {
 	it('asks an album page exactly as the page does', () => {
 		expect(boot({ url: `/music/album/${B}?artist=${A.toUpperCase()}` }).asked).toEqual([
 			'/api/v1/auth/me',
-			...musicPrefetchURLs(`/music/album/${B}?artist=${A}`).map((p) => '/api/v1' + p),
-			`/api/v1/music/albums/${B}?artist=${A}&similar=0`
+			...musicPrefetchURLs(`/music/album/${B}?artist=${A}`).map((p) => '/api/v1' + p)
 		]);
 		// A bare album link has no artist: only the full answer.
 		expect(boot({ url: `/music/album/${B}` }).asked).toEqual(['/api/v1/auth/me', `/api/v1/music/albums/${B}?artist=&similar=0`]);
@@ -77,7 +76,6 @@ describe('app.html boot requests', () => {
 	it('keeps the URL base the server put before /brand/', () => {
 		expect(boot({ url: '/holyarrs/music/artist/' + A, icon: '/holyarrs/brand/favicon.svg' }).asked).toEqual([
 			'/holyarrs/api/v1/auth/me',
-			`/holyarrs/api/v1/music/artists/${A}?part=core`,
 			`/holyarrs/api/v1/music/artists/${A}?similar=0`
 		]);
 	});

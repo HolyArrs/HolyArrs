@@ -146,7 +146,8 @@
 	<section class="top" data-testid="top-services-row" data-row="top_services">
 		<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
 		{#key `${row?.service ?? ''}|${type}|${genre?.id ?? ''}`}
-			<Shelf {title} subtitle={source || undefined} {tools} href={seeAll} item={ranked ? 'calc(var(--explore-item, 180px) / 0.68)' : 'var(--explore-item, 180px)'} items={cards} key={(c) => c.key} placeholder="poster">
+			<!-- While loading, the source line and the chips keep their space so nothing below moves when they arrive. -->
+			<Shelf {title} subtitle={source || (loading ? ' ' : undefined)} {tools} href={seeAll} item={ranked ? 'calc(var(--explore-item, 180px) / 0.68)' : 'var(--explore-item, 180px)'} items={cards} key={(c) => c.key} placeholder="poster">
 				{#snippet card(raw: Ranked)}
 					{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
 					{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
@@ -171,6 +172,9 @@
 	.top { position: relative; }
 	.top-tools { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
+	/* One chip tall even before the services arrive. */
+	.chips { min-height: 36px; }
+	@media (pointer: coarse) { .chips { min-height: 48px; } }
 	.chips::-webkit-scrollbar { display: none; }
 	.chips :global(.ui-chip) { flex: none; }
 	/* The column is the poster (68%, the same width as the other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */

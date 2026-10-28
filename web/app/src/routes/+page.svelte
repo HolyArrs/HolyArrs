@@ -118,7 +118,7 @@
 			first,
 			manager ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
-			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),
+			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100') : Promise.resolve(null),
 			manager ? api.get<Health>('/health') : Promise.resolve(null),
 			admin && manager ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
 			session.can('ask') || approver ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null)

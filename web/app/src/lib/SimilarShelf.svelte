@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
 	import { api } from './api.ts';
 	import { to } from './paths.ts';
 	import { artName, similarTitles } from './title-page.ts';
@@ -21,8 +22,8 @@
 	$effect(() => {
 		void id;
 		let live = true;
-		api.get<{ titles: TitleView[] }>('/titles')
-			.then((r) => { if (live) all = r.titles ?? []; })
+		libraryTitles()
+			.then((r) => { if (live) all = r; })
 			.catch(() => { /* A side shelf: hidden when the list cannot be read. */ });
 		return () => { live = false; };
 	});

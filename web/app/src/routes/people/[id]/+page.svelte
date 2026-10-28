@@ -40,6 +40,10 @@
 	let bioOpen = $state(false);
 	// Awards, death date and the Wikipedia bio (Wikidata via the metadata server).
 	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
+	// The hero waits for the wiki facts (awards, bio) a short moment, so its words do not move when they land.
+	let wikiDone = $state(false);
+	let wikiWaited = $state(false);
+	const WIKI_WAIT_MS = 600;
 	const bio = $derived(wiki.bio?.extract || data?.person.biography || '');
 	// Follow state of the Coming soon movies not in the Library, by TMDB id.
 	let loadRevision = 0;
@@ -136,8 +140,10 @@
 	});
 	onMount(() => {
 		void load();
-		void loadWikiFacts(api.get, 'person', id).then((f) => (wiki = f));
+		void loadWikiFacts(api.get, 'person', id).then((f) => (wiki = f)).finally(() => (wikiDone = true));
+		const waited = setTimeout(() => (wikiWaited = true), WIKI_WAIT_MS);
 		if (session.can('ask') && !session.can('manage_library')) void api.get<AskLimit>('/asks/limit').then((r) => (limit = r)).catch(() => {});
+		return () => clearTimeout(waited);
 	});
 
 	// Where this person was opened from is in the top bar (layout), like every page.
@@ -168,8 +174,8 @@
 <div class="person">
 {#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />
 {:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
-<PageLoader loading={!data && !error} label="Loading this person" onretry={load}>
-{#if data}
+<PageLoader loading={(!data || !(wikiDone || wikiWaited)) && !error} label="Loading this person" onretry={load}>
+{#if data && (wikiDone || wikiWaited)}
 	<header class="hero" data-hero>
 		{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />{/if}
 		<div class="shade" aria-hidden="true"></div>

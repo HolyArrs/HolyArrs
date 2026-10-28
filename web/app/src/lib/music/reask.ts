@@ -29,7 +29,9 @@ export function sleep(ms: number, signal: AbortSignal): Promise<void> {
  * reaskWhileIncomplete hands `first` to take, then while the answer is incomplete asks
  * again after each pause and hands every answer on. `pending` says another try is still
  * coming (a page shows its skeleton there, not "not known yet"). A failed re-ask keeps
- * what is shown. Answers how many re-asks it made.
+ * what is shown. When `same` says an answer brought nothing new over the last one,
+ * the source is stuck: asking stops and what is there is shown as final.
+ * Answers how many re-asks it made.
  */
 export async function reaskWhileIncomplete<T>(
 	first: T,
@@ -37,7 +39,8 @@ export async function reaskWhileIncomplete<T>(
 	take: (v: T, pending: boolean) => void,
 	signal: AbortSignal,
 	waits: number[] = REASK_MS,
-	wait: (ms: number, signal: AbortSignal) => Promise<void> = sleep
+	wait: (ms: number, signal: AbortSignal) => Promise<void> = sleep,
+	same?: (prev: T, next: T) => boolean
 ): Promise<number> {
 	let last = first;
 	let tries = 0;
@@ -58,8 +61,10 @@ export async function reaskWhileIncomplete<T>(
 			continue;
 		}
 		if (signal.aborted) return tries;
+		const stuck = !!same && isIncomplete(next) && same(last, next);
 		last = next;
-		take(next, isIncomplete(next) && tries < waits.length);
+		take(next, isIncomplete(next) && tries < waits.length && !stuck);
+		if (stuck) return tries;
 	}
 	return tries;
 }
@@ -78,4 +83,10 @@ export function keepShown<T extends object>(shown: T | null, next: T, lists: (ke
 		if (Array.isArray(a) && (!Array.isArray(b) || b.length < a.length)) out[k] = a;
 	}
 	return out;
+}
+
+/** sameLists says two answers hold lists of the same lengths (nothing new arrived). */
+export function sameLists<T extends object>(lists: (keyof T)[]): (a: T, b: T) => boolean {
+	const n = (v: unknown) => (Array.isArray(v) ? v.length : -1);
+	return (a, b) => lists.every((k) => n(a[k]) === n(b[k]));
 }

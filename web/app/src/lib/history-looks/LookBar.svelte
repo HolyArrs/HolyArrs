@@ -194,6 +194,8 @@
 	.chips .cw:nth-last-child(-n + 2)[data-tip]::after { left: auto; right: 0; }
 	@keyframes tip-in { from { opacity: 0; translate: 0 -2px; } }
 	@media (hover: none) { .cw[data-tip]:hover::after { display: none; } }
+	/* Counts keep one width per digit, so a count changing does not move the chips after it. */
+	.cw :global(.n) { font-variant-numeric: tabular-nums; }
 	.cw.zero { opacity: 0.5; }
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
 	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }

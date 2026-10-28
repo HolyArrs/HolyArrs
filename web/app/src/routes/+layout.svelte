@@ -7,7 +7,7 @@
 	import '../app.css';
 	import { onMount, tick, type Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { afterNavigate, beforeNavigate, goto, onNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto, onNavigate, preloadCode } from '$app/navigation';
 	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/loader.ts';
 	import Icon from '#lib/Icon.svelte';
 	import ToastList from '#lib/ToastList.svelte';
@@ -28,6 +28,7 @@
 	import { installArtistVideoPrefetch } from '#lib/music/artist-video-prefetch.ts';
 	import { installHeroPrefetch } from '#lib/title-details.ts';
 	import { installHeroAhead } from '#lib/hero-prefetch.ts';
+	import { idlePages, installRowAhead } from '#lib/smart-preload.ts';
 	import { preloadHero } from '#lib/tmdb-image.ts';
 	import AppShell from '#lib/ui/AppShell.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
@@ -169,6 +170,11 @@
 	onMount(() => installHeroPrefetch(preloadHero));
 	// Music heroes on hover and focus, title heroes on focus, and the next card in a row.
 	onMount(() => installHeroAhead(preloadHero));
+	// The next row's pictures when a row comes into view (lib/smart-preload.ts).
+	onMount(() => installRowAhead());
+	// Once a page settles: the code of the side menu's places, on idle (fast connections only).
+	let stopIdle: (() => void) | undefined;
+	const menuPaths = () => [...new Set([...document.querySelectorAll<HTMLAnchorElement>('nav a[href^="/"]')].map((a) => a.getAttribute('href') ?? '').filter((h) => h && !h.includes('?')))];
 	onMount(() => {
 		void session.load();
 		readLibraryResumeLinks();
@@ -227,6 +233,8 @@
 	afterNavigate((nav) => {
 		arrived(nav.type);
 		prefetchMusicOnScreen();
+		stopIdle?.();
+		stopIdle = idlePages(menuPaths(), (p) => preloadCode(p as Parameters<typeof preloadCode>[0]));
 		// The new page's hero (if any) decides the bar's glass; it may load in a moment after.
 		for (const t of [0, 250, 800, 2000]) setTimeout(checkHero, t);
 

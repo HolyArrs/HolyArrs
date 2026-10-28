@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
+	import { session } from '#lib/session.svelte.ts';
 	// History: everything HolyArrs did, day by day. The tab bar (All · Came in
 	// · Problems · Changes · Routine, with sub-tabs, counts and a title finder)
 	// keeps its place in the address (&show=). On wide screens a picked row's
@@ -90,14 +92,10 @@
 		const fit = () => (wide = mq.matches);
 		fit();
 		mq.addEventListener('change', fit);
-		void api
-			.get<{ titles: TitleView[] }>('/titles')
-			.then((r) => (titles = r.titles))
+		void libraryTitles()
+			.then((r) => (titles = r))
 			.catch(() => {});
-		void api
-			.get<{ id?: number }>('/auth/me')
-			.then((me) => (myId = me.id))
-			.catch(() => {});
+		myId = session.s.id;
 		// Member names for "Added to the Library by Maya" (only admins may list them).
 		void api
 			.get<{ users: { id: number; name: string }[] }>('/users')

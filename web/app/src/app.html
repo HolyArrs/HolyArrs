@@ -51,10 +51,9 @@
 						}
 					} else if ((m = new RegExp('^/music/artist/' + id + '$').exec(path))) {
 						var artist = m[1].toLowerCase();
-						asks.push('/music/artists/' + artist + '?part=core', '/music/artists/' + artist + '?similar=0');
+						asks.push('/music/artists/' + artist + '?similar=0');
 					} else if ((m = new RegExp('^/music/album/' + id + '$').exec(path))) {
 						var album = m[1].toLowerCase(), by = (q.get('artist') || '').toLowerCase();
-						if (by) asks.push('/music/albums/' + album + '?part=core&artist=' + by);
 						asks.push('/music/albums/' + album + '?artist=' + by + '&similar=0');
 					} else if ((m = /^\/title\/(movie|show)\/([1-9][0-9]*)$/.exec(path))) {
 						// lib/title-details.ts loadDetails: the metadata answer draws the hero, the lookup adds Library and ask facts.

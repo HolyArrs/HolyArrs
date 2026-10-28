@@ -12,12 +12,12 @@ const flush = async () => {
 };
 
 describe('musicPrefetchURLs', () => {
-	it('names the artist page core and full answers', () => {
-		expect(musicPrefetchURLs(`/music/artist/${A}`)).toEqual([`/music/artists/${A}?part=core`, `/music/artists/${A}?similar=0`]);
-		expect(musicPrefetchURLs(`/app/music/artist/${A}?tab=library`)).toHaveLength(2);
+	it('names the artist page full answer only (it holds the core)', () => {
+		expect(musicPrefetchURLs(`/music/artist/${A}`)).toEqual([`/music/artists/${A}?similar=0`]);
+		expect(musicPrefetchURLs(`/app/music/artist/${A}?tab=library`)).toHaveLength(1);
 	});
-	it('names the album core answer, lowercased like the page, only with an artist', () => {
-		expect(musicPrefetchURLs(`/music/album/${B.toUpperCase()}?artist=${A.toUpperCase()}`)).toEqual([`/music/albums/${B}?part=core&artist=${A}`]);
+	it('names the album full answer, lowercased like the page, only with an artist', () => {
+		expect(musicPrefetchURLs(`/music/album/${B.toUpperCase()}?artist=${A.toUpperCase()}`)).toEqual([`/music/albums/${B}?artist=${A}&similar=0`]);
 		expect(musicPrefetchURLs(`/music/album/${B}`)).toEqual([]);
 	});
 	it('ignores other links', () => {
@@ -51,12 +51,12 @@ describe('createMusicPrefetch', () => {
 		const get = vi.fn(() => new Promise<unknown>(() => {}));
 		let t = 0;
 		const p = createMusicPrefetch(get, () => t);
-		expect(p.hover(`/music/artist/${A}`)).toBe(2);
+		expect(p.hover(`/music/artist/${A}`)).toBe(1);
 		t = 30_000;
 		expect(p.hover(`/music/artist/${A}`)).toBe(0);
-		expect(get).toHaveBeenCalledTimes(2);
+		expect(get).toHaveBeenCalledTimes(1);
 		t = 61_000;
-		expect(p.hover(`/music/artist/${A}`)).toBe(2);
+		expect(p.hover(`/music/artist/${A}`)).toBe(1);
 	});
 
 	it('runs a few at a time and puts hovers first', async () => {
@@ -68,7 +68,7 @@ describe('createMusicPrefetch', () => {
 		p.hover(`/music/album/${B}?artist=${A}`);
 		done.shift()?.();
 		await flush();
-		expect(get).toHaveBeenLastCalledWith(`/music/albums/${B}?part=core&artist=${A}`);
+		expect(get).toHaveBeenLastCalledWith(`/music/albums/${B}?artist=${A}&similar=0`);
 	});
 
 	it('takes only the first cards on screen per page', () => {
@@ -77,10 +77,11 @@ describe('createMusicPrefetch', () => {
 		const links = ['/title/movie/1', ...Array.from({ length: 10 }, (_, i) => artist(i))];
 		p.view(links);
 		p.view(links);
-		expect(p.running() + p.pending()).toBe(VIEW_CARDS * 2);
+		// The title link names two addresses, each artist one.
+		expect(p.running() + p.pending()).toBe(VIEW_CARDS + 1);
 		p.newPage();
 		p.view([artist(20)]);
-		expect(p.running() + p.pending()).toBe(VIEW_CARDS * 2 + 2);
+		expect(p.running() + p.pending()).toBe(VIEW_CARDS + 2);
 	});
 
 	it('stops at the per-minute cap', () => {
@@ -91,7 +92,7 @@ describe('createMusicPrefetch', () => {
 		for (let i = 0; i < PER_MINUTE; i++) n += p.hover(artist(i));
 		expect(n).toBe(PER_MINUTE);
 		t = 60_000;
-		expect(p.hover(artist(500))).toBe(2);
+		expect(p.hover(artist(500))).toBe(1);
 	});
 
 	it('asks again after a failure, and after forget', async () => {
@@ -104,6 +105,6 @@ describe('createMusicPrefetch', () => {
 		const q = createMusicPrefetch(ok, () => 0);
 		q.hover(`/music/artist/${A}`);
 		q.forget();
-		expect(q.hover(`/music/artist/${A}`)).toBe(2);
+		expect(q.hover(`/music/artist/${A}`)).toBe(1);
 	});
 });

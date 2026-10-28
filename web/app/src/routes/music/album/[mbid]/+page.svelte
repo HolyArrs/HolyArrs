@@ -22,8 +22,8 @@
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureOf } from '#lib/pictures.ts';
-	import { keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
-	import { albumHref, appPicture, artistHref, askAgainOnce, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
+	import { keepShown, reaskWhileIncomplete, sameLists } from '#lib/music/reask.ts';
+	import { albumHref, appPicture, artistHref, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { followHint, followLabel, followPath, setFollow } from '#lib/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
@@ -72,14 +72,15 @@
 		const full = `/music/albums/${mbid}?artist=${artist}&similar=0`;
 		fromCache = api.has(full) || (!!artist && api.has(`/music/albums/${mbid}?part=core&artist=${artist}`));
 		// All at once: the hero, the tracks, the similar artists and the ask state.
-		void askAgainOnce(() => api.get<AlbumPageData>(full)).then((d) => {
+		const fullRead = askAgainOnce(() => api.get<AlbumPageData>(full));
+		void fullRead.then((d) => {
 			if (!still()) return;
 			// An incomplete answer is shown, then asked again quietly and merged in, keeping what is on screen.
 			void reaskWhileIncomplete(d, () => api.get<AlbumPageData>(full), (v, pending) => {
 				if (!still() || stop.signal.aborted) return;
 				data = keepShown(data, v, ['tracks', 'editions', 'more_by']);
 				reasking = pending;
-			}, stop.signal);
+			}, stop.signal, undefined, undefined, sameLists<AlbumPageData>(['tracks', 'editions', 'more_by']));
 			// A bare album link learns its artist from the full answer: ask the nearby albums now.
 			const found = d.artist?.mbid;
 			if (!artist && found) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${found}`).then((r) => still() && (near = withCover(r.near))).catch(() => still() && (near = []));
@@ -89,7 +90,8 @@
 			if (still()) busy = false;
 		});
 		// The quick core and nearby parts need the artist; a bare album link waits for the full answer instead.
-		if (artist) void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
+		// The full answer holds the core: it is asked only when the full one is slow.
+		if (artist) void coreIfSlow(fullRead, () => api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`)).then((c) => c && still() && !data && (core = c)).catch(() => {});
 		// A bare album link has no artist: skip the artist calls instead of asking for /music/artists/.
 		if (!artist) similar = [];
 		else void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = withCover(r.similar))).catch(() => still() && (similar = []));

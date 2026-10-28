@@ -98,9 +98,10 @@
 	async function loadOwned(id: number) {
 		ownedFor = id;
 		try {
+			// Both asks go out together (one round trip, not two in a row).
+			const events = api.get<{ events?: typeof ownedEvents }>(`/events?title=${id}&limit=8`).catch(() => ({ events: [] }));
 			owned = await api.get<TitleView>(`/titles/${id}`);
-			const h = await api.get<{ events?: typeof ownedEvents }>(`/events?title=${id}&limit=8`).catch(() => ({ events: [] }));
-			ownedEvents = h.events ?? [];
+			ownedEvents = (await events).events ?? [];
 		} catch {
 			owned = null;
 		}

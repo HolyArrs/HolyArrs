@@ -4,6 +4,7 @@
 </script>
 
 <script lang="ts">
+	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
 	import { page } from '$app/state';
@@ -76,7 +77,7 @@
 	import { whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SkRail } from '#lib/ui/sk/index.ts';
+	import { SkCard, SkRail } from '#lib/ui/sk/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -421,6 +422,8 @@
 	// music rows answer, built from the Library's artists) and its albums and
 	// artists not in the Library yet, from the app's own genre page answer.
 	let musicPicks = $state<MusicCardData[]>([]);
+	/** The picks are on their way: the banner keeps its place (placeholders) so the rows below never jump. */
+	let musicPicksPending = $state(false);
 	let musicPicksFor = '';
 	const musicFav = $derived(type === 'music' ? (musicGenres[0] ?? null) : null);
 	$effect(() => {
@@ -430,6 +433,7 @@
 		if (!slug || musicPicksFor === slug) return;
 		musicPicksFor = slug;
 		musicPicks = [];
+		musicPicksPending = true;
 		void fetchMusicGenre(decodeURIComponent(slug), 'US', api, gone.signal).then(
 			(a) => {
 				if (musicPicksFor !== slug) return;
@@ -439,7 +443,7 @@
 					.slice(0, 7);
 			},
 			() => {}
-		);
+		).finally(() => musicPicksFor === slug && (musicPicksPending = false));
 	});
 	const bannerOn = $derived(bannerLayout > 0 && !genreOn && type !== 'music' && !!favourite && bannerPicks.length >= 5);
 
@@ -601,7 +605,10 @@
 	async function load() {
 		busy = true;
 		try {
-			titles = (await api.get<{ titles: TitleView[] }>('/titles')).titles ?? [];
+			const o = await ownedLibrary();
+			titles = o.titles;
+			// The genre banner reads Library genres; an answer without them borrows the full list.
+			if (o.light && type !== 'music' && !o.titles.some((t) => t.genres?.length)) titles = await libraryTitles();
 		} catch {
 			/* owned marks wait for the Library */
 		}
@@ -728,10 +735,13 @@
 		{/if}
 	</div>
 	<MetadataNotice />
-	{#if type === 'music' && musicFav && musicPicks.length >= 4}
+	{#if type === 'music' && musicFav && (musicPicksPending || musicPicks.length >= 4)}
 		<div class="music-banner">
 			<GenreBanner layout={2} name={`Your ${musicFav.name}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to(musicFav.href)} art={[musicPicks[0]?.image ?? musicFav.art].filter(Boolean)} square>
 				{#snippet picks()}
+					{#if musicPicksPending && musicPicks.length === 0}
+						{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<div class="pick-sk"><SkCard /></div>{/each}
+					{/if}
 					{#each musicPicks as c (c.key)}
 						<PosterCard title={c.name} href={to(musicCardHref(c))} image={c.image} kind={c.kind === 'artist' ? 'artist' : undefined} subtitle={c.artist} shape={c.kind === 'artist' ? 'round' : 'square'} />
 					{/each}
@@ -877,6 +887,7 @@
 	@media (max-width: 359px) {
 		.types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	}
+	.pick-sk { --poster-ratio: 1; }
 	.genre-pick { pointer-events: auto; margin-left: 8px; display: flex; align-items: center; }
 	/* Genres matches the tab pill: same height, type and glass. */
 	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; font: 600 14px/1 var(--font-ui); background: var(--surface-2); color: var(--text); }

@@ -200,10 +200,7 @@
 			tab = stageLook > 0 && approver ? 'waiting' : firstTab(asks);
 		});
 		void refreshInbox();
-		api
-			.get<{ id?: number }>('/auth/me')
-			.then((me) => (myId = me.id))
-			.catch(() => {});
+		myId = session.s.id;
 		if (session.can('manage_library')) {
 			api
 				.get<{ library_folders: LibraryFolder[] }>('/library-folders')
