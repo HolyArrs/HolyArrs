@@ -1,20 +1,25 @@
-// The compact content styles Luis is comparing on every settings page
-// (?look=1…5, picked with the shared VariantBar). 0 is today's style.
-// The styles themselves live in settings-looks.css, keyed on data-look.
-export const LOOKS = [
-	{ value: 0, label: 'Now' },
-	{ value: 1, label: '1 Panels' },
-	{ value: 2, label: '2 Rows' },
-	{ value: 3, label: '3 Form' },
-	{ value: 4, label: '4 Grid' },
-	{ value: 5, label: '5 Groups' }
+// The settings side menu views Luis is comparing (?menu=1…5, picked with
+// the shared VariantBar). No parameter shows view 1.
+export const MENUS = [
+	{ value: 1, label: '1 Lines' },
+	{ value: 2, label: '2 Text' },
+	{ value: 3, label: '3 Dots' },
+	{ value: 4, label: '4 Tiles' },
+	{ value: 5, label: '5 Folds' }
 ];
 
-/** lookFrom reads ?look= the way the bar does: 1…5, anything else is today's style. */
-export function lookFrom(v: string | null): number {
-	const n = Number(v);
-	return Number.isInteger(n) && n >= 1 && n <= 5 ? n : 0;
+/** menuView turns the bar's value into a view: 0 (no pick) is view 1. */
+export function menuView(v: number): number {
+	return Number.isInteger(v) && v >= 1 && v <= 5 ? v : 1;
 }
 
-/** Looks that drop the coloured icon tile next to a section title; the others draw a quiet glyph. */
-export const NO_TILE = new Set([1, 3, 4]);
+/** One quiet colour per settings group, for the dots in view 3. */
+export const GROUP_DOT: Record<string, string> = {
+	general: '#8e8e93',
+	library: '#0a7aff',
+	copies: '#2fb350',
+	people: '#a550d8',
+	linked: '#f58b00',
+	system: '#5f6168',
+	account: '#8e8e93'
+};

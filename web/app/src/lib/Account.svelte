@@ -19,6 +19,35 @@
 	import { setFollow } from './follow.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { autoplayPref, setAutoplayPref, type AutoplayPref } from './trailer.ts';
+	import { profile, loadProfile, saveDisplayName } from './account/profile.svelte.ts';
+	import { displayNameError, roleWord, shownName } from './account/profile.ts';
+
+	// Display name: edited inline; Save is on once it differs.
+	let nameDraft = $state('');
+	let nameEditing = $state(false);
+	let nameBusy = $state(false);
+	let nameError = $state('');
+	const nameProblem = $derived(displayNameError(nameDraft));
+	function startName() {
+		nameDraft = profile.displayName;
+		nameError = '';
+		nameEditing = true;
+	}
+	async function saveName(e: SubmitEvent) {
+		e.preventDefault();
+		if (nameProblem) return void (nameError = nameProblem);
+		nameBusy = true;
+		nameError = '';
+		try {
+			await saveDisplayName(nameDraft);
+			nameEditing = false;
+			toasts.push('Display name saved.', 'ok');
+		} catch (err) {
+			nameError = message(err);
+		} finally {
+			nameBusy = false;
+		}
+	}
 
 	// Where Alerts reach this person (email, Discord).
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
@@ -61,6 +90,7 @@
 	let tgBusy = $state(false);
 	let tgError = $state('');
 	onMount(() => {
+		void loadProfile();
 		void session.loadWays().then(() => {
 			if (page.url.searchParams.get('sso') === 'finish') void finishOIDCLink();
 		});
@@ -109,7 +139,6 @@
 		return method;
 	}
 	const viaShort: Record<string, string> = { session: 'Password or linked account', api_key: 'API key', local_network: 'Local network' };
-	const roleWord: Record<string, string> = { owner: 'Owner', admin: 'Admin', member: 'Member' };
 
 	// Password
 	let current = $state('');
@@ -326,34 +355,77 @@
 {/if}
 
 <SettingsCard id="profile-me" title="Profile" description="How you show up across HolyArrs." icon="user">
-	<div class="field">
-		<span class="label">Picture</span>
-		<div class="pfp">
-			<Avatar name={personName(session.s.name, 'You')} src={preview || session.s.avatar} size={44} label="Your profile picture" />
-			<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" bind:this={avatarInput} onchange={pickAvatar} disabled={avatarBusy} aria-label="Choose a profile picture" />
-			{#if picked}
-				<Button size="sm" variant="primary" type="button" onclick={saveAvatar} busy={avatarBusy}>Save</Button>
-				<Button size="sm" variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>Cancel</Button>
+	<div class="pfp">
+		<Avatar name={shownName(profile.displayName, personName(session.s.name, 'You'))} src={preview || session.s.avatar} size={44} label="Your profile picture" />
+		<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" bind:this={avatarInput} onchange={pickAvatar} disabled={avatarBusy} aria-label="Choose a profile picture" />
+		{#if picked}
+			<Button size="sm" variant="primary" type="button" onclick={saveAvatar} busy={avatarBusy}>Save</Button>
+			<Button size="sm" variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>Cancel</Button>
+		{:else}
+			<Button size="sm" type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? 'Change picture' : 'Add picture'}</Button>
+			{#if session.s.avatar}<Button size="sm" variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>Remove</Button>{/if}
+		{/if}
+		<span class="hint" title="JPEG, PNG or WebP up to 5 MB; cropped to a square.">Up to 5 MB.</span>
+	</div>
+	<div class="boxes" data-testid="profile-boxes">
+		<div class="box wide" data-testid="box-display-name">
+			<span class="label" id="dn-label">Display name</span>
+			{#if nameEditing}
+				<form class="dn" onsubmit={saveName} novalidate>
+					<input class="input" aria-labelledby="dn-label" bind:value={nameDraft} maxlength="64" autocomplete="nickname" placeholder={session.s.name} />
+					<Button size="sm" variant="primary" type="submit" busy={nameBusy} disabled={nameBusy || nameDraft.trim() === profile.displayName || !!nameProblem}>Save</Button>
+					<Button size="sm" variant="plain" type="button" onclick={() => (nameEditing = false)} disabled={nameBusy}>Cancel</Button>
+				</form>
+				{#if nameError || nameProblem}<p class="form-error" role="alert">{nameError || nameProblem}</p>{/if}
 			{:else}
-				<Button size="sm" type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? 'Change' : 'Upload'}</Button>
-				{#if session.s.avatar}<Button size="sm" variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>Remove</Button>{/if}
+				<div class="line">
+					<span class="value">{profile.displayName || session.s.name}</span>
+					<Button size="sm" variant="plain" type="button" onclick={startName} data-testid="edit-display-name">Edit</Button>
+				</div>
 			{/if}
 		</div>
-		<span class="hint">JPEG, PNG or WebP up to 5 MB; cropped to a square.</span>
-	</div>
-	<div class="field">
-		<span class="label">Name</span>
-		<span class="value">{personName(session.s.name, 'You')}</span>
-		<span class="hint">Shown in the sidebar and on Users.</span>
-	</div>
-	<div class="field">
-		<span class="label">Role</span>
-		<span class="value">{roleWord[session.s.role] ?? session.s.role}</span>
-	</div>
-	<div class="field">
-		<span class="label">Signed in</span>
-		<span class="value">{viaShort[session.s.via] ?? session.s.via}{#if session.s.authMethod} · {authMethodWord(session.s.authMethod)}{/if}</span>
-		<span class="hint" title={via[session.s.via] ?? session.s.via}>How this visit signed in.</span>
+		<div class="box" data-testid="box-username">
+			<span class="label">Username</span>
+			<div class="line">
+				<span class="value">{session.s.name}</span>
+				<span class="lock" title="You sign in with this name, so it does not change here." role="img" aria-label="Locked: you sign in with this name"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+			</div>
+		</div>
+		<div class="box" data-testid="box-role">
+			<span class="label">Role</span>
+			<div class="line">
+				<span class="value">{roleWord(session.s.role)}</span>
+				<span class="lock" title="Ask an owner to change your role" role="img" aria-label="Locked: ask an owner to change your role"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+			</div>
+		</div>
+		<div class="box" data-testid="box-sign-in">
+			<span class="label">Sign-in method</span>
+			<div class="line"><span class="value" title={via[session.s.via] ?? session.s.via}>{session.s.authMethod ? authMethodWord(session.s.authMethod) : (viaShort[session.s.via] ?? session.s.via)}</span></div>
+		</div>
+		<div class="box" class:wide={pwOpen} data-testid="box-password">
+			<span class="label">Password</span>
+			{#if pwOpen}
+				<Confirm action="password" onCancel={() => (pwOpen = false)}>
+					<form class="pw" onsubmit={changePassword} novalidate>
+						<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
+						<label class="sr-only" for="pw-current">Current password</label>
+						<input id="pw-current" class="input" type="password" placeholder="Current password" bind:value={current} autocomplete="current-password" />
+						<label class="sr-only" for="pw-new">New password</label>
+						<input id="pw-new" class="input" type="password" placeholder="New password (at least {MIN_LENGTH})" bind:value={next} autocomplete="new-password" />
+						<label class="sr-only" for="pw-again">Confirm new password</label>
+						<input id="pw-again" class="input" type="password" placeholder="Confirm new password" bind:value={again} autocomplete="new-password" />
+						{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
+						<div class="row acts">
+							<Button size="sm" variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>Change password</Button>
+							<Button size="sm" variant="plain" type="button" onclick={() => (pwOpen = false)}>Cancel</Button>
+						</div>
+						<span class="hint">Signs out your other devices.</span>
+					</form>
+				</Confirm>
+			{:else}
+				<div class="line"><Button size="sm" type="button" onclick={() => (pwOpen = true)} data-testid="change-password">Change password</Button></div>
+			{/if}
+		</div>
 	</div>
 </SettingsCard>
 
@@ -421,31 +493,7 @@
 	</div>
 </SettingsCard>
 
-<SettingsCard id="security-me" title="Security" description="Password, two-factor sign-in and linked sign-ins." icon="shield">
-	<div class="field">
-		<span class="label">Password</span>
-		{#if pwOpen}
-			<Confirm action="password" onCancel={() => (pwOpen = false)}>
-				<form class="pw" onsubmit={changePassword} novalidate>
-					<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
-					<label class="sr-only" for="pw-current">Current password</label>
-					<input id="pw-current" class="input" type="password" placeholder="Current password" bind:value={current} autocomplete="current-password" />
-					<label class="sr-only" for="pw-new">New password</label>
-					<input id="pw-new" class="input" type="password" placeholder="New password (at least {MIN_LENGTH})" bind:value={next} autocomplete="new-password" />
-					<label class="sr-only" for="pw-again">New password again</label>
-					<input id="pw-again" class="input" type="password" placeholder="New password again" bind:value={again} autocomplete="new-password" />
-					{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
-					<div class="row acts">
-						<Button size="sm" variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>Change password</Button>
-						<Button size="sm" variant="plain" type="button" onclick={() => (pwOpen = false)}>Cancel</Button>
-					</div>
-				</form>
-			</Confirm>
-		{:else}
-			<div><Button size="sm" type="button" onclick={() => (pwOpen = true)} data-testid="change-password">Change</Button></div>
-		{/if}
-		<span class="hint">Signs out your other devices.</span>
-	</div>
+<SettingsCard id="security-me" title="Security" description="Two-factor sign-in and linked sign-ins." icon="shield">
 	<div class="field" id="twofactor-me">
 		<span class="label">Two-factor <span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? 'On' : 'Off'}</span></span>
 		<div class="tf">
@@ -534,10 +582,31 @@
 <SaveBar dirty={alertsDirty} form="alerts-form" saving={tgBusy} ondiscard={() => (targets = JSON.parse(savedTargets))} />
 
 <style>
-	.acct { display: flex; flex-direction: column; gap: 16px; }
+	/* Grid like every settings page: Profile and Devices span both columns, the rest pair up. */
+	.acct { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
 	.acct > :global(*) { margin: 0; }
+	.acct > :global(:is(#profile-me, #sessions-me, .notice)) { grid-column: 1 / -1; }
 	.pfp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-	.value { font: var(--t-callout); color: var(--text); overflow-wrap: anywhere; }
+	.value { font: var(--t-callout); font-weight: 400; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
+	/* Profile: each field in its own labelled box. */
+	.boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+	.box {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+		padding: 8px 12px 9px;
+		border-radius: 10px;
+		background: var(--surface-2);
+		transition: background var(--dur-fast) var(--ease-out);
+	}
+	.box.wide { grid-column: 1 / -1; }
+	.box .label { font: var(--t-footnote); font-weight: 500; color: var(--text-muted); }
+	.line { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+	.line .value { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.lock { flex: none; display: grid; place-items: center; width: 24px; height: 24px; color: var(--text-faint); cursor: help; }
+	.dn { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+	.dn .input { flex: 1 1 200px; min-width: 0; min-height: 34px; }
 	code { font-family: var(--font-mono); color: var(--text); }
 	.acts { gap: 8px; flex-wrap: wrap; align-items: center; }
 	.pw, .tf, .tf-form { display: flex; flex-direction: column; gap: 8px; width: min(100%, 360px); min-width: 0; }
@@ -554,7 +623,13 @@
 	.follows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; min-width: 0; }
 	.follows li { display: flex; align-items: center; gap: 10px; min-height: 36px; }
 	.follows li a { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	@media (prefers-reduced-motion: reduce) { .box { transition: none; } }
+	@media (max-width: 760px) {
+		.acct { grid-template-columns: minmax(0, 1fr); }
+	}
 	@media (max-width: 600px) {
+		.boxes { grid-template-columns: minmax(0, 1fr); }
+		.dn .input { flex-basis: 100%; min-height: 40px; }
 		.six { max-width: none; flex: 1; }
 		.acts > :global(.ui-btn) { min-height: 40px; }
 	}

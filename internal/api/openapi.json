@@ -3442,6 +3442,21 @@
         },
         "type": "object"
       },
+      "MyProfile": {
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "username"
+        ],
+        "type": "object"
+      },
       "NamingSettings": {
         "description": "Naming settings. On PUT and on the example, fields left out keep their saved value; empty show and music patterns take their default.",
         "properties": {
@@ -16485,6 +16500,83 @@
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/my/profile": {
+      "get": {
+        "description": "The display name I chose (empty shows my username) and my username.",
+        "operationId": "getMyProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfile"
+                }
+              }
+            },
+            "description": "My profile."
+          }
+        },
+        "summary": "My display name",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Up to 64 characters; empty goes back to my username. The username and role do not change here.",
+        "operationId": "putMyProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "display_name": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "display_name"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfile"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too long or not plain text."
+          }
+        },
+        "summary": "Set my display name",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/needs-decision": {

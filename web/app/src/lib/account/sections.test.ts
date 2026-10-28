@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { needsConfirm } from './sections.ts';
-import { LOOKS, NO_TILE, lookFrom } from '../ui/settings-looks.ts';
+import { MENUS, menuView, GROUP_DOT } from '../ui/settings-looks.ts';
 
 describe('needsConfirm', () => {
 	it('asks before a password change or a link without a recent local sign-in', () => {
@@ -17,17 +17,16 @@ describe('needsConfirm', () => {
 	});
 });
 
-describe('settings looks', () => {
-	it('offers today plus five looks', () => {
-		expect(LOOKS.map((l) => l.value)).toEqual([0, 1, 2, 3, 4, 5]);
+describe('settings menu views', () => {
+	it('offers five views', () => {
+		expect(MENUS.map((m) => m.value)).toEqual([1, 2, 3, 4, 5]);
 	});
-	it('reads ?look= safely', () => {
-		expect(lookFrom('3')).toBe(3);
-		expect(lookFrom('9')).toBe(0);
-		expect(lookFrom(null)).toBe(0);
-		expect(lookFrom('x')).toBe(0);
+	it('shows view 1 when nothing valid is picked', () => {
+		expect(menuView(3)).toBe(3);
+		expect(menuView(0)).toBe(1);
+		expect(menuView(9)).toBe(1);
 	});
-	it('drops the icon tile in at least three looks', () => {
-		expect(NO_TILE.size).toBeGreaterThanOrEqual(3);
+	it('gives every group a dot colour', () => {
+		for (const g of ['general', 'library', 'copies', 'people', 'linked', 'system']) expect(GROUP_DOT[g]).toMatch(/^#/);
 	});
 });

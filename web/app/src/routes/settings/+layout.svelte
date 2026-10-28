@@ -7,7 +7,6 @@
 	import Icon from '#lib/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
-	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import { filterSections, grouped, sectionFor, sections as all, visible } from '#lib/settings.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -16,11 +15,16 @@
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { pageState, stateWords } from '#lib/settings-status.ts';
 	import VariantBar from '#lib/ui/VariantBar.svelte';
-	import { LOOKS } from '#lib/ui/settings-looks.ts';
+	import { MENUS, menuView, GROUP_DOT } from '#lib/ui/settings-looks.ts';
 	import '#lib/ui/settings-looks.css';
+	import { profile, loadProfile, shownName } from '#lib/account/profile.svelte.ts';
+	import { roleWord } from '#lib/account/profile.ts';
 
-	// ?look=1…5 restyles every settings page's content (Luis is comparing compact styles); 0 is today's.
-	let look = $state(0);
+	// ?menu=1…5 picks the side menu's look (Luis is comparing); no pick is view 1.
+	let menuPick = $state(0);
+	const view = $derived(menuView(menuPick));
+	// View 5: which groups are folded shut (the current page's group always opens).
+	let shut = $state<Record<string, boolean>>({});
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
@@ -64,6 +68,7 @@
 
 	onMount(() => {
 		void refreshSettingsStatus();
+		void loadProfile();
 	});
 
 	// A search result links to page#field: scroll to that field, open its
@@ -103,7 +108,7 @@
 <svelte:window onhashchange={() => location.hash && highlight(decodeURIComponent(location.hash.slice(1)))} />
 
 <div class="settings-shell" class:home={current === '/settings'}>
-	<nav class="settings-nav" aria-label="Settings sections">
+	<nav class="settings-nav" aria-label="Settings sections" data-menu={view} data-testid="settings-nav">
 		<div class="nav-find">
 			<Icon name="search" size={15} />
 			<label class="sr-only" for="settings-nav-find">Find a settings page</label>
@@ -112,35 +117,51 @@
 
 		{#if !find.trim()}
 			{#if account}
-				<a class="nav-account" href={to(account.href)} aria-current={currentSection?.href === account.href ? 'page' : undefined}>
-					<Avatar name={session.s.name || 'Me'} src={session.s.avatar} size={30} />
-					<span class="who"><b>{session.s.name || 'My account'}</b><span>My account, password and devices</span></span>
-					<Icon name="chevronRight" size={14} />
+				<a class="nav-account" href={to(account.href)} aria-current={currentSection?.href === account.href ? 'page' : undefined} data-testid="nav-account">
+					<Avatar name={shownName(profile.displayName, session.s.name) || 'Me'} src={session.s.avatar} size={32} />
+					<span class="who"><b>{shownName(profile.displayName, session.s.name) || 'My account'}</b><span>{roleWord(session.s.role)}</span></span>
 				</a>
 			{/if}
 		{/if}
 
 		{#each shown as { group, items } (group.id)}
-			<div class="nav-group" role="group" aria-labelledby="settings-nav-{group.id}">
-				<h2 id="settings-nav-{group.id}">{group.label}</h2>
-				<ul class="nav-section">
-					{#each items as section (section.href)}
-						<li>
-							<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined} onclick={() => (find = '')}>
-								<SettingsTile icon={section.icon} tint={section.tint} size="xs" />
-								<span class="label">{section.label}</span>
-								{#if flagged(section.href)}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
-							</a>
-						</li>
-					{/each}
-				</ul>
+			{@const open = view !== 5 || !!find.trim() || currentSection?.group === group.id || !shut[group.id]}
+			<div class="nav-group" class:folded={!open} role="group" aria-labelledby="settings-nav-{group.id}" style:--dot={GROUP_DOT[group.id]}>
+				{#if view === 5}
+					<h2 id="settings-nav-{group.id}">
+						<button type="button" class="fold" aria-expanded={open} onclick={() => (shut = { ...shut, [group.id]: open })}>
+							<Icon name="chevronRight" size={12} /><span>{group.label}</span>
+						</button>
+					</h2>
+				{:else}
+					<h2 id="settings-nav-{group.id}">{group.label}</h2>
+				{/if}
+				{#if open}
+					<ul class="nav-section">
+						{#each items as section (section.href)}
+							<li>
+								<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined} onclick={() => (find = '')}>
+									{#if view === 1 || view === 5}
+										<span class="glyph"><Icon name={section.icon} size={16} /></span>
+									{:else if view === 3}
+										<span class="dot" aria-hidden="true"></span>
+									{:else if view === 4}
+										<span class="gtile" aria-hidden="true"><Icon name={section.icon} size={13} stroke={2.1} /></span>
+									{/if}
+									<span class="label">{section.label}</span>
+									{#if flagged(section.href)}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
+								</a>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</div>
 		{/each}
 		{#if find.trim() && account && filterSections([account], find).length}
 			<ul class="nav-section found-account">
 				<li>
 					<a class="nav-row" href={to(account.href)} onclick={() => (find = '')}>
-						<SettingsTile icon="user" tint="gray" size="xs" />
+						<span class="glyph"><Icon name="user" size={16} /></span>
 						<span class="label">My account</span>
 					</a>
 				</li>
@@ -165,10 +186,10 @@
 				{/if}
 			</div>
 		{/if}
-		<div class="settings-content" data-look={look || undefined}>{@render children()}</div>
+		<div class="settings-content">{@render children()}</div>
 	</div>
 </div>
-<VariantBar options={LOOKS} bind:value={look} param="look" storageKey="holyarrs.settings.look" label="Settings content styles" />
+<VariantBar options={MENUS} bind:value={menuPick} param="menu" storageKey="holyarrs.settings.menu" label="Settings menu views" />
 
 <style>
 	.settings-shell {
@@ -177,8 +198,8 @@
 		gap: clamp(24px, 3vw, 44px);
 		align-items: start;
 	}
-	/* The side menu, in the manner of a phone's Settings app: a search box,
-	   a profile card, then rounded grouped sections with colour tiles. */
+	/* The side menu: a search box, the profile entry, then grouped rows
+	   (five views under ?menu=1…5). */
 	.settings-nav {
 		position: sticky;
 		top: calc(var(--topbar) + 8px);
@@ -210,68 +231,112 @@
 	}
 	.nav-find input::placeholder { color: var(--text-muted); }
 	.nav-find input:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent); }
+	/* The profile entry: avatar, name, role. Flat, no card. */
 	.nav-account {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		margin-bottom: 4px;
-		padding: 4px 8px;
-		border-radius: 12px;
-		background: var(--surface-1);
-		box-shadow: 0 0 0 1px var(--line);
+		margin: 2px 0 10px;
+		padding: 6px 8px;
+		border-radius: 10px;
 		color: var(--text);
 		transition: background var(--dur-fast) var(--ease-out);
 	}
 	.nav-account:hover { background: var(--surface-2); }
-	.nav-account[aria-current='page'] { box-shadow: 0 0 0 2px var(--accent); }
+	.nav-account[aria-current='page'] { background: var(--accent-soft); }
 	.nav-account:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.who { flex: 1; min-width: 0; display: grid; }
-	.who b { font: var(--t-headline); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.who span { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.nav-account > :global(.icon:last-child) { flex: none; color: var(--text-faint); }
-	.nav-group { margin-top: 4px; }
+	.who b { font: var(--t-callout); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.who span { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* Groups: a small muted heading over flat rows (no rounded white panels). */
+	.nav-group { margin-top: 10px; }
 	.nav-group h2 {
-		padding: 0 10px 1px;
+		padding: 0 8px 2px;
 		font: var(--t-caption);
-		line-height: 13px;
-		font-weight: 600;
-		letter-spacing: 0.01em;
+		line-height: 16px;
+		font-weight: 500;
 		color: var(--text-muted);
 	}
-	.nav-section {
-		margin: 0;
-		padding: 2px;
-		list-style: none;
-		border-radius: 10px;
-		background: var(--surface-1);
-		box-shadow: 0 0 0 1px var(--line);
-	}
+	.nav-section { margin: 0; padding: 0; list-style: none; }
 	.found-account { margin-top: 8px; }
 	.nav-row {
 		position: relative;
 		display: flex;
 		align-items: center;
 		gap: 9px;
-		min-height: 23px;
-		padding: 1px 8px 1px 3px;
+		min-height: 28px;
+		padding: 2px 8px;
 		border-radius: 7px;
 		color: var(--text);
 		font: var(--t-callout);
 		font-size: 13.5px;
-		font-weight: 500;
+		font-weight: 400;
 		transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 	}
 	.nav-row .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.nav-row:hover { background: var(--surface-2); }
-	.nav-row[aria-current='page'] { background: var(--accent-fill); color: var(--text-on-red); font-weight: 600; }
-	.nav-row[aria-current='page'] :global(.tile) { box-shadow: 0 0 0 1px rgb(255 255 255 / 55%); }
 	.nav-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-	.flag { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fail); box-shadow: 0 0 0 2px var(--surface-1); }
-	.nav-row[aria-current='page'] .flag { background: #fff; box-shadow: none; }
+	.nav-row[aria-current='page'] { color: var(--accent-text); font-weight: 500; }
+	.glyph { flex: none; display: grid; place-items: center; width: 18px; color: var(--text-muted); transition: color var(--dur-fast) var(--ease-out); }
+	.nav-row[aria-current='page'] .glyph { color: var(--accent-text); }
+	.flag { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
 	.nav-none { padding: 10px 8px; color: var(--text-muted); font: var(--t-footnote); }
 	.nav-none a { color: var(--accent-text); font-weight: 600; }
+
+	/* 1 Lines: line icons, the current row gets a soft accent wash. */
+	[data-menu='1'] .nav-row[aria-current='page'],
+	[data-menu='5'] .nav-row[aria-current='page'] { background: var(--accent-soft); }
+	/* 2 Text: words only; a thin accent bar marks the current page. */
+	[data-menu='2'] .nav-row { padding-left: 12px; }
+	[data-menu='2'] .nav-row[aria-current='page']::before {
+		content: '';
+		position: absolute;
+		left: 2px;
+		top: 6px;
+		bottom: 6px;
+		width: 2px;
+		border-radius: 2px;
+		background: var(--accent);
+	}
+	[data-menu='2'] .nav-group h2 { padding-left: 12px; font-weight: 600; color: var(--text); }
+	/* 3 Dots: one small tinted dot per group. */
+	.dot { flex: none; width: 6px; height: 6px; margin: 0 4px 0 2px; border-radius: 50%; background: var(--dot); opacity: 0.85; }
+	[data-menu='3'] .nav-row[aria-current='page'] { background: color-mix(in srgb, var(--dot) 12%, transparent); color: var(--text); }
+	/* 4 Tiles: neutral grey tiles; the current one turns accent. */
+	.gtile {
+		flex: none;
+		display: grid;
+		place-items: center;
+		width: 20px;
+		height: 20px;
+		border-radius: 6px;
+		background: var(--surface-3);
+		color: var(--text-muted);
+		transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+	}
+	.nav-row[aria-current='page'] .gtile { background: var(--accent-fill); color: var(--text-on-red); }
+	[data-menu='4'] .nav-row[aria-current='page'] { color: var(--text); font-weight: 600; }
+	/* 5 Folds: each group opens and shuts; the current group stays open. */
+	.fold {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		width: 100%;
+		min-height: 24px;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+	.fold:hover { color: var(--text); }
+	.fold:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
+	.fold :global(.icon) { transition: transform var(--dur-fast) var(--ease-out); transform: rotate(90deg); }
+	.folded .fold :global(.icon) { transform: none; }
+	[data-menu='5'] .nav-group { margin-top: 4px; }
 	@media (prefers-reduced-motion: reduce) {
-		.nav-row, .nav-account, .nav-find input { transition: none; }
+		.nav-row, .nav-account, .nav-find input, .glyph, .gtile, .fold :global(.icon) { transition: none; }
 	}
 	.settings-workspace { min-width: 0; max-width: 820px; }
 	.settings-content { width: 100%; min-width: 0; }
@@ -297,7 +362,7 @@
 	@media (prefers-reduced-motion: reduce) {
 		.settings-content :global(.flash-target) { animation: none; background: var(--accent-soft); box-shadow: 0 0 0 6px var(--accent-soft); }
 	}
-	@media (min-height: 1000px) { .nav-row { min-height: 28px; } .nav-group { margin-top: 10px; } }
+	@media (min-height: 1000px) { .nav-row { min-height: 30px; } .nav-group { margin-top: 14px; } }
 	@media (pointer: coarse) { .nav-row { min-height: 40px; } }
 	/* Tablets: the list becomes one menu button named after the group. */
 	@media (max-width: 1023px) {
