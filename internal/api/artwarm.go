@@ -49,6 +49,7 @@ func (a *API) warmArtItems(list []nameKey) {
 		return
 	}
 	a.warmPictureRecords(list)
+	a.wantPackages(list)
 	w := &a.artWarm
 	if w.do == nil && (a.s.Library == nil || a.s.Library.Artwork == nil) {
 		return

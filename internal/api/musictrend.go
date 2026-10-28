@@ -519,6 +519,10 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string, fet
 			}
 		}
 	}
+	if !known && a.s.Packages != nil {
+		// Every artist and album a kept package lists is known.
+		known = kind == "album" && a.s.Packages.HasAlbum(mbid) || kind != "album" && a.s.Packages.Covers(mbid)
+	}
 	lib := a.s.Library
 	if !known || lib == nil || lib.Artwork == nil || (fetch && missed && time.Since(miss.at) < artMissWait(miss.n)) {
 		return artFile{}

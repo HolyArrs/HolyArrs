@@ -30,6 +30,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/mediaserver"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/migrate"
+	"github.com/CoderLuii/holyarrs/internal/musicsync"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/source"
@@ -97,6 +98,9 @@ type Server struct {
 	// artist hero a photo.
 	MusicControl func(ctx context.Context) (metadata.Control, error)
 	ArtistVideos func(ctx context.Context, mbid string) ([]metadata.ArtistVideo, error)
+	// Packages is the local copy of the metadata server's artist packages
+	// (internal/musicsync): music pages answer from it first. nil: none.
+	Packages *musicsync.Sync
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.

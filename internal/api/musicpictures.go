@@ -97,6 +97,11 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 				continue
 			}
 			seen[k] = true
+			if pe, ok := a.packagePictures(l.kind, id); ok {
+				// A kept package's records answer without asking the server.
+				c.m[k] = pe
+				continue
+			}
 			e, known := c.m[k]
 			if known && e.fresh(l.kind, now) {
 				continue
@@ -206,7 +211,9 @@ func (a *API) pictureRecord(kind, mbid string) *metadata.PictureRecord {
 	e, ok := c.m[owner+"|"+strings.ToLower(mbid)]
 	c.mu.Unlock()
 	if !ok {
-		return nil
+		if e, ok = a.packagePictures(owner, mbid); !ok {
+			return nil
+		}
 	}
 	switch kind {
 	case "album":
@@ -375,4 +382,24 @@ func etagMatch(h, tag string) bool {
 		}
 	}
 	return false
+}
+
+// packagePictures is the records a kept artist package has for an artist
+// or album (kind "artist" or "album"), stamped now.
+func (a *API) packagePictures(kind, mbid string) (picEntry, bool) {
+	p := a.s.Packages
+	if p == nil {
+		return picEntry{}, false
+	}
+	switch kind {
+	case "artist":
+		if pics, ok := p.ArtistPictures(mbid); ok {
+			return picEntry{artist: pics, at: time.Now()}, true
+		}
+	case "album":
+		if cover, ok := p.AlbumCover(mbid); ok {
+			return picEntry{album: metadata.AlbumPictures{Cover: cover}, at: time.Now()}, true
+		}
+	}
+	return picEntry{}, false
 }

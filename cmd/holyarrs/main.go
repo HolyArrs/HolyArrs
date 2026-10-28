@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/CoderLuii/holyarrs/internal/music"
+	"github.com/CoderLuii/holyarrs/internal/musicsync"
 	"io"
 	"log"
 	"net"
@@ -636,7 +637,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if pictures != nil {
 		serverDeezer, serverDeezerAlbum, serverBio = nil, nil, nil
 	}
-	a := api.New(api.Server{Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
+	// Artist packages are copied to disk on a schedule (no credential sent);
+	// the hosted music source answers from them first.
+	pkgs := &musicsync.Sync{Store: s, Source: hosted.Service}
+	hosted.Service.SetLocalMusic(pkgs)
+	a := api.New(api.Server{Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err

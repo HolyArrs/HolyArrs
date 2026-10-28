@@ -125,6 +125,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
 	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
 	startBackdropDark(ctx)
+	a.startMusicSync(ctx)
 	go supervisor.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
 	if a.musicTplOn() {
 		// The music catalog bundle is read once at start, so the first music
