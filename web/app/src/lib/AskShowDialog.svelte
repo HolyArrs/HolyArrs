@@ -190,7 +190,10 @@
 		border: 1px solid var(--line-strong);
 		border-radius: var(--r-btn);
 	}
-	.row.sub { margin-left: var(--s-4); }
+	/* Episodes: slim list rows under their season (one thin line between, no boxes). */
+	.row.sub { margin: calc(var(--s-2) * -1) 0 0 var(--s-4); min-height: 36px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
+	.row.sub .nm { font: var(--t-subhead); }
+	.row.sub.on { background: var(--accent-soft); border-color: var(--line); }
 	p.sub { margin: 0 0 0 var(--s-4); }
 	.row.on {
 		border-color: var(--accent);
