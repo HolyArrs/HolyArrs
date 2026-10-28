@@ -65,6 +65,9 @@
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
+	import GenreBanner from '#lib/ui/GenreBanner.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import { GENRES } from '#lib/explore.ts';
 	import MusicGenreTiles from '#lib/ui/MusicGenreTiles.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
@@ -361,6 +364,61 @@
 		stripShown.flush();
 		void api.post('/explore/strip/counts', { event: 'open', categories: [stripKey(t)] }).catch(() => {});
 	}
+
+	// The genre banner (layouts compared with the bar: 0 is today's page).
+	let bannerLayout = $state(0);
+	const bannerNorm = (n: string) => n.toLowerCase().replace(/\s*&\s*/g, ' & ');
+	/** The household's favourite genre: the most common among Library titles (asked for ones included). */
+	const favourite = $derived.by(() => {
+		if (type === 'music') return null;
+		const tally = new Map<string, { n: number; kind: 'movies' | 'shows'; id: number; name: string }>();
+		for (const t of titles) {
+			const k = t.kind === 'movie' ? 'movies' : t.kind === 'show' ? 'shows' : null;
+			if (!k || (type !== 'all' && type !== k)) continue;
+			const list = GENRES[k === 'movies' ? 'movie' : 'show'];
+			for (const gn of t.genres ?? []) {
+				const g = list.find((x) => bannerNorm(x.name) === bannerNorm(gn) || bannerNorm(x.name).split(' & ').includes(bannerNorm(gn)));
+				if (!g) continue;
+				const key = `${k}:${g.id}`;
+				const e = tally.get(key) ?? { n: 0, kind: k, id: g.id, name: g.name };
+				e.n++;
+				tally.set(key, e);
+			}
+		}
+		// Movies and shows count as one genre by name: the larger side opens its page.
+		const byName = new Map<string, { n: number; best: { n: number; kind: 'movies' | 'shows'; id: number; name: string } }>();
+		for (const e of tally.values()) {
+			const cur = byName.get(e.name) ?? { n: 0, best: e };
+			cur.n += e.n;
+			if (e.n > cur.best.n) cur.best = e;
+			byName.set(e.name, cur);
+		}
+		const top = [...byName.values()].sort((a, b) => b.n - a.n)[0];
+		return top && top.n >= 2 ? { ...top.best, count: top.n } : null;
+	});
+	let bannerCards = $state<ExploreCard[]>([]);
+	let bannerFor = '';
+	$effect(() => {
+		const f = favourite;
+		if (bannerLayout === 0 || !f || !headLoaded) return;
+		const key = `${f.kind}:${f.id}`;
+		if (bannerFor === key) return;
+		bannerFor = key;
+		bannerCards = [];
+		// The app's own genre answer (the genre page's), never an outside call.
+		api.get<GenreAnswer>(genrePath(f.kind, f.id), gone.signal).then(
+			(a) => {
+				if (bannerFor !== key) return;
+				const got = [...(a.hero ?? []).map((d) => ({ ...discoverCard(d, 'banner'), wide: d.backdrop ?? null })), ...a.rows.flatMap((r) => serverRow(r).cards)];
+				const seen = new Set<string>();
+				bannerCards = got.filter((c) => (seen.has(cardIdentity(c)) ? false : (seen.add(cardIdentity(c)), true)));
+			},
+			() => {}
+		);
+	});
+	const bannerPicks = $derived(bannerCards.map(live).filter((c) => (c.kind === 'movie' || c.kind === 'show') && c.image && !ownedMark(c, ownedTitle(c, owned), who) && c.titleId === undefined).slice(0, 7));
+	const bannerOn = $derived(bannerLayout > 0 && !genreOn && type !== 'music' && !!favourite && bannerPicks.length >= 5);
+
 	// Hero badges: why the featured title shows (New season, Picked for you).
 	let heroGenres = $state<Record<string, string[]>>({});
 	let taste = $state<string[]>([]);
@@ -677,6 +735,29 @@
 					{/snippet}
 				</ExploreHero>
 			{/if}
+			{#if bannerOn && favourite}
+				<GenreBanner
+					layout={bannerLayout === 2 ? 2 : 1}
+					name={`Your ${favourite.name}`}
+					eyebrow="Picked from your library"
+					line={`${favourite.count} in your library so far. ${bannerPicks.length} more you could ask for.`}
+					count={favourite.count}
+					href={to(`/explore?type=${favourite.kind}&genre=${favourite.id}`)}
+					art={bannerPicks.map((c) => c.wide ?? c.image ?? '').filter(Boolean)}
+				>
+					{#snippet picks()}
+						{#each bannerPicks as c (c.key)}
+							{@const act = cardAction(c, { manage, ask: mayAsk })}
+							<PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} typed row="banner" fresh={c.fresh} actionOnHover vtName={undefined}
+								preview={cardTmdb(c) ? { kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined} followTmdb={followsByTmdb(c)}>
+								{#snippet action()}
+									{#if act && cardTmdb(c)}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />{/if}
+								{/snippet}
+							</PosterCard>
+						{/each}
+					{/snippet}
+				</GenreBanner>
+			{/if}
 			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} onopen={stripOpened} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
@@ -740,6 +821,7 @@
 </div>
 
 <QuickAsk bind:this={flow} onadded={() => void load()} />
+<VariantBar param="genre" storageKey="holyarrs.explore.genre-banner" label="Genre banner layout" bind:value={bannerLayout} options={[{ value: 0, label: 'Today' }, { value: 1, label: 'Banner over art' }, { value: 2, label: 'Banner and picks' }]} />
 
 <style>
 	.explore { container: explore / inline-size; /* One size for every title row, measured on Netflix (2026-10-20): 279px cards at a 1536px window, sized from the window like Netflix (whose page has no sidebar), so cards match it; never under 200px. */
