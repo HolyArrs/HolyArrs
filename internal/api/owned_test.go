@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
 // route: GET /api/v1/titles/owned
@@ -121,5 +122,37 @@ func TestKeptKeysBounded(t *testing.T) {
 	var n int
 	if err := st.Read().QueryRow("SELECT count(*) FROM lookup_cache WHERE key LIKE 'extras|%'").Scan(&n); err != nil || n != keptPerPrefix {
 		t.Fatalf("kept %d %v", n, err)
+	}
+}
+
+// A bogus name cannot change what another caller gets for a person.
+func TestWikiNameCannotPoison(t *testing.T) {
+	_, st, _ := setup(t)
+	a := New(Server{Store: st, Version: "test", WikiPerson: func(_ context.Context, id, name string) (metadata.WikiEntity, error) {
+		return metadata.WikiEntity{Born: "by " + name}, nil
+	}})
+	get := func(q string) WikiFacts {
+		req := httptest.NewRequest("GET", "/api/v1/wiki/person/5"+q, nil)
+		req.SetPathValue("kind", "person")
+		req.SetPathValue("id", "5")
+		rec := httptest.NewRecorder()
+		a.wikiFacts(rec, req)
+		var v WikiFacts
+		_ = json.Unmarshal(rec.Body.Bytes(), &v)
+		return v
+	}
+	if v := get("?name=Bogus"); v.Born != "by Bogus" {
+		t.Fatalf("named %+v", v)
+	}
+	if v := get(""); v.Born != "by " {
+		t.Fatalf("shared answer poisoned: %+v", v)
+	}
+	// A fresh process reads the disk copy: still the name-free one.
+	wikiFactsCache.mu.Lock()
+	wikiFactsCache.seen = map[string]wikiEntry{}
+	wikiFactsCache.mu.Unlock()
+	b := New(Server{Store: st, Version: "test"})
+	if k, ok := loadKept[WikiFacts](context.Background(), b, "wiki|person:5"); !ok || k.v.Born != "by " {
+		t.Fatalf("disk %+v %v", k, ok)
 	}
 }

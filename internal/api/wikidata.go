@@ -66,13 +66,16 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		name = ""
 	}
 	key := kind + ":" + id + ":" + name
-	// The kept copy on disk is keyed without the caller's name, so a
-	// caller cannot grow lookup_cache with names.
+	// Only name-free answers are kept on disk, so a caller can neither grow
+	// lookup_cache with names nor poison the shared copy.
 	c := wikiFactsCache
 	c.mu.Lock()
 	e, ok := c.seen[key]
 	c.mu.Unlock()
-	if !ok {
+	// Only the name-free answer is shared on disk: a caller's name (which
+	// can steer the photo lookup) never decides what another caller gets.
+	disk := name == ""
+	if !ok && disk {
 		if k, found := loadKept[WikiFacts](r.Context(), a, "wiki|"+kind+":"+id); found {
 			e, ok = wikiEntry(k), true
 			c.mu.Lock()
@@ -84,12 +87,14 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		// Kept answers are served at once; an old one is refreshed in the
 		// background for the next view.
 		if time.Since(e.at) >= 6*time.Hour {
-			refreshOnce("wiki|"+kind+":"+id, func(ctx context.Context) {
+			refreshOnce("wiki|"+key, func(ctx context.Context) {
 				if v, settled := a.fetchWiki(ctx, kind, id, name); settled {
 					c.mu.Lock()
 					c.seen[key] = wikiEntry{v: v, at: time.Now()}
 					c.mu.Unlock()
-					keepOnDisk(ctx, a, "wiki|"+kind+":"+id, v)
+					if disk {
+						keepOnDisk(ctx, a, "wiki|"+kind+":"+id, v)
+					}
 				}
 			})
 		}
@@ -109,7 +114,9 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 	}
 	c.seen[key] = wikiEntry{v: v, at: time.Now()}
 	c.mu.Unlock()
-	keepOnDisk(r.Context(), a, "wiki|"+kind+":"+id, v)
+	if disk {
+		keepOnDisk(r.Context(), a, "wiki|"+kind+":"+id, v)
+	}
 	writeJSON(w, http.StatusOK, v)
 }
 
