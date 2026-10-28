@@ -532,6 +532,10 @@ type ApproveOptions struct {
 	// movie or show (base codes such as en or ja); empty leaves the
 	// Version as it is. Music asks ignore them.
 	AudioLanguages []string `json:"audio_languages"`
+	// Seasons (show asks) and Albums (artist asks, MusicBrainz ids) approve
+	// only part of the ask; empty approves all of it.
+	Seasons []int    `json:"seasons"`
+	Albums  []string `json:"albums"`
 }
 
 // Approve says yes to an ask: the movie is added with the chosen Library
@@ -555,6 +559,10 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	if a.Kind == "artist" {
 		opt.AudioLanguages = nil
 	} else if err := library.CheckAudioLanguages(a.Kind, opt.AudioLanguages); err != nil {
+		return a, err
+	}
+	narrowed, err := s.narrow(ctx, a, opt)
+	if err != nil {
 		return a, err
 	}
 	set, err := ReadSettings(ctx, db)
@@ -596,6 +604,12 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		before = cur
 		a = cur
 		a.State, a.TitleID, a.DecidedBy, a.DecidedAt, a.Note, a.AutoApproved = domain.AskApproved, nil, &by.UserID, &now, strings.TrimSpace(opt.Note), auto
+		if len(opt.Seasons) > 0 {
+			a.Seasons = narrowed.Seasons
+		}
+		if len(opt.Albums) > 0 {
+			a.Albums = narrowed.Albums
+		}
 		return store.Update(tx, "asks", &a, by.actor())
 	})
 	if errors.Is(err, store.ErrNotFound) {
