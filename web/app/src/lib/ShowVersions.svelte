@@ -37,7 +37,8 @@
 		if (!folders.length) folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
 	}
 
-	async function openAdd() {
+	/** Opens the add-a-Version form (also from the title page's More menu). */
+	export async function openAdd() {
 		editing = null;
 		vError = '';
 		try {
@@ -203,4 +204,7 @@
 	.path {
 		overflow-wrap: anywhere;
 	}
+	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
+	.modal::backdrop { background: var(--scrim); }
+	.modal-actions { justify-content: flex-end; margin-top: var(--s-6); }
 </style>

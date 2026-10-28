@@ -19,6 +19,7 @@
 	import ShowPage from '#lib/ShowPage.svelte';
 	import CopyControls from '#lib/CopyControls.svelte';
 	import ArtistPage from '#lib/ArtistPage.svelte';
+	import TitlePage from '#lib/TitlePage.svelte';
 	import { goto } from '$app/navigation';
 	import { deleteSummary, type RemovePlan } from '#lib/organise.ts';
 	import { groupLabel, kindTone } from '#lib/history.ts';
@@ -52,6 +53,10 @@
 		return target && (target === library || target.startsWith(`${library}?`)) ? target : library;
 	});
 	let title = $state<TitleView | null>(null);
+	// A movie or show with a TMDB id opens the one title page (lib/TitlePage.svelte), the same page
+	// New & Popular, Explore and search open; its Library tab and More menu hold the manager tools.
+	// The page below stays only for titles without a TMDB id.
+	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb;
 
 	// Who asked, as the server lets this reader see it.
 	let askedBy = $state<AskedByAnswer>({ titles: {}, sees_all: false });
@@ -248,8 +253,8 @@
 	async function load(which: 'all' | 'title' | 'releases' = 'all') {
 		try {
 			if (which !== 'releases') title = await api.get<TitleView>(`/titles/${id}`);
-			// A show's or artist's page reads its own parts and history.
-			if (title?.kind === 'show' || title?.kind === 'artist') {
+			// The shared title page, a show's or an artist's page reads its own parts and history.
+			if (shared(title) || title?.kind === 'show' || title?.kind === 'artist') {
 				error = '';
 				return;
 			}
@@ -507,7 +512,7 @@
 	}
 </script>
 
-<svelte:head><title>{title?.name ?? 'Title'} · HolyArrs</title></svelte:head>
+<svelte:head>{#if !shared(title)}<title>{title?.name ?? 'Title'} · HolyArrs</title>{/if}</svelte:head>
 
 {#if blocked}
 	<EmptyState icon="shield" title="This title is not available on this account.">
@@ -523,7 +528,9 @@
 {:else}
 <PageLoader loading={!title} label="Loading the title" onretry={() => load()}>
 {#if title}
-{#if title.kind === 'show'}
+{#if shared(title)}
+	{#key title.id}<TitlePage kind={title.kind} tmdb={String(title.ids.tmdb)} libraryId={title.id} />{/key}
+{:else if title.kind === 'show'}
 	<ShowPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}
 	<ArtistPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
