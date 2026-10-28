@@ -128,7 +128,7 @@
 
 <svelte:head><title>Parts and controls · HolyArrs</title></svelte:head>
 
-<PageHeader title="Parts and controls" subtitle="Turn parts on and off, and restart one piece without stopping the rest." />
+<PageHeader title="Parts and controls" />
 
 {#if !allowed}
 	<p class="notice warn">Only the owner and admins can use these controls.</p>

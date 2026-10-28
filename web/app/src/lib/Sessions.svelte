@@ -78,7 +78,7 @@
 						>
 					</span>
 					{#if !s.current}
-						<Button variant="plain" type="button" disabled={busy} onclick={() => endOne(s)} aria-label="Sign out {s.device}, last used {ago(s.last_used_at)}"
+						<Button size="sm" variant="secondary" type="button" disabled={busy} onclick={() => endOne(s)} aria-label="Sign out {s.device}, last used {ago(s.last_used_at)}"
 							>Sign out</Button>
 					{/if}
 				</li>
@@ -88,8 +88,8 @@
 			<button type="button" class="more" onclick={() => (all = true)} data-testid="sessions-all">Show all {rows.length} devices</button>
 		{/if}
 		{#if mine ? others(rows) > 0 : rows.length > 0}
-			<div class="row" style="margin-top: var(--s-3)">
-				<Button type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
+			<div class="all-row">
+				<Button size="sm" variant="secondary" type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
 					>{mine ? 'Sign out all other devices' : `Sign ${name || 'them'} out everywhere`}</Button>
 			</div>
 		{/if}
@@ -103,10 +103,13 @@
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
-		min-height: 64px;
-		padding: var(--s-3) 0;
-		border-bottom: 1px solid var(--line);
+		min-height: 52px;
+		padding: 8px 0;
+		border-top: 1px solid var(--line);
 	}
+	.sessions li:first-child { border-top: 0; }
+	.sessions .grow { flex: 1; }
+	.all-row { display: flex; justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--line); }
 	.sessions .grow {
 		min-width: 0;
 		overflow-wrap: anywhere;
@@ -121,13 +124,6 @@
 		font-weight: var(--weight-semibold);
 	}
 	@media (max-width: 600px) {
-		.sessions li {
-			align-items: flex-start;
-			flex-direction: column;
-		}
-		.sessions li > :global(.ui-btn) {
-			width: 100%;
-			min-height: 44px;
-		}
+		.sessions li > :global(.ui-btn) { flex: none; }
 	}
 </style>

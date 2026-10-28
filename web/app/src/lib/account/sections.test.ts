@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { needsConfirm } from './sections.ts';
-import { MENUS, menuView, GROUP_DOT } from '../ui/settings-looks.ts';
 
 describe('needsConfirm', () => {
 	it('asks before a password change or a link without a recent local sign-in', () => {
@@ -17,16 +16,3 @@ describe('needsConfirm', () => {
 	});
 });
 
-describe('settings menu views', () => {
-	it('offers five views', () => {
-		expect(MENUS.map((m) => m.value)).toEqual([1, 2, 3, 4, 5]);
-	});
-	it('shows view 1 when nothing valid is picked', () => {
-		expect(menuView(3)).toBe(3);
-		expect(menuView(0)).toBe(1);
-		expect(menuView(9)).toBe(1);
-	});
-	it('gives every group a dot colour', () => {
-		for (const g of ['general', 'library', 'copies', 'people', 'linked', 'system']) expect(GROUP_DOT[g]).toMatch(/^#/);
-	});
-});

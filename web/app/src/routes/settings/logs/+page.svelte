@@ -49,7 +49,7 @@
 
 <svelte:head><title>Logs · HolyArrs</title></svelte:head>
 
-<PageHeader title="Logs" subtitle="What HolyArrs wrote to its log, newest first. Keys, tokens, passwords and links with sign-in details are always hidden.">
+<PageHeader title="Logs">
 	{#snippet actions()}
 		<AdminLinkButton href={to(`/api/v1/logs/download`)} download>Download the log</AdminLinkButton>
 	{/snippet}

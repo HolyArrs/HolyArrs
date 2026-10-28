@@ -114,7 +114,7 @@
 
 <svelte:head><title>Sources · HolyArrs</title></svelte:head>
 
-<PageHeader title="Sources" subtitle="Where HolyArrs looks for Releases: Torznab and Newznab feeds, plain rss feeds, and bridges such as Jackett or Prowlarr for sites that need their own rules.">
+<PageHeader title="Sources">
 	{#snippet actions()}
 		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Source</Button>{/if}
 	{/snippet}

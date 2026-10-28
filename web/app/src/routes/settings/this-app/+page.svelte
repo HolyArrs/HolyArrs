@@ -223,7 +223,7 @@
 
 <svelte:head><title>This app · HolyArrs</title></svelte:head>
 
-<PageHeader title="This app" subtitle="Which HolyArrs this is, whether a newer one is out, and where it keeps its files." />
+<PageHeader title="This app" />
 
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>

@@ -93,7 +93,7 @@
 
 <svelte:head><title>Search settings · HolyArrs</title></svelte:head>
 
-<PageHeader title="Search" subtitle="How HolyArrs looks for Releases by itself." />
+<PageHeader title="Search" />
 
 {#if !loaded}
 	<SkSettings rows={3} />

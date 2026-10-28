@@ -94,7 +94,7 @@
 
 <svelte:head><title>Movies and TV defaults · HolyArrs</title></svelte:head>
 
-<PageHeader title="Movies and TV defaults" subtitle="What a new movie or show gets. The add dialog starts from these, and you can still change them there for one title." />
+<PageHeader title="Movies and TV defaults" />
 
 <PageLoader loading={loading && !form && !loadError} label="Loading title defaults">
 {#if !form}

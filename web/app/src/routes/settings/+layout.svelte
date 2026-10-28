@@ -14,17 +14,9 @@
 	import { offPartName } from '#lib/parts.ts';
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { pageState, stateWords } from '#lib/settings-status.ts';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
-	import { MENUS, menuView, GROUP_DOT } from '#lib/ui/settings-looks.ts';
 	import '#lib/ui/settings-looks.css';
 	import { profile, loadProfile, shownName } from '#lib/account/profile.svelte.ts';
 	import { roleWord } from '#lib/account/profile.ts';
-
-	// ?menu=1…5 picks the side menu's look (Luis is comparing); no pick is view 1.
-	let menuPick = $state(0);
-	const view = $derived(menuView(menuPick));
-	// View 5: which groups are folded shut (the current page's group always opens).
-	let shut = $state<Record<string, boolean>>({});
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
@@ -108,7 +100,7 @@
 <svelte:window onhashchange={() => location.hash && highlight(decodeURIComponent(location.hash.slice(1)))} />
 
 <div class="settings-shell" class:home={current === '/settings'}>
-	<nav class="settings-nav" aria-label="Settings sections" data-menu={view} data-testid="settings-nav">
+	<nav class="settings-nav" aria-label="Settings sections" data-testid="settings-nav">
 		<div class="nav-find">
 			<Icon name="search" size={15} />
 			<label class="sr-only" for="settings-nav-find">Find a settings page</label>
@@ -125,36 +117,19 @@
 		{/if}
 
 		{#each shown as { group, items } (group.id)}
-			{@const open = view !== 5 || !!find.trim() || currentSection?.group === group.id || !shut[group.id]}
-			<div class="nav-group" class:folded={!open} role="group" aria-labelledby="settings-nav-{group.id}" style:--dot={GROUP_DOT[group.id]}>
-				{#if view === 5}
-					<h2 id="settings-nav-{group.id}">
-						<button type="button" class="fold" aria-expanded={open} onclick={() => (shut = { ...shut, [group.id]: open })}>
-							<Icon name="chevronRight" size={12} /><span>{group.label}</span>
-						</button>
-					</h2>
-				{:else}
-					<h2 id="settings-nav-{group.id}">{group.label}</h2>
-				{/if}
-				{#if open}
+			<div class="nav-group" role="group" aria-labelledby="settings-nav-{group.id}">
+				<h2 id="settings-nav-{group.id}">{group.label}</h2>
 					<ul class="nav-section">
 						{#each items as section (section.href)}
 							<li>
 								<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined} onclick={() => (find = '')}>
-									{#if view === 1 || view === 5}
 										<span class="glyph"><Icon name={section.icon} size={16} /></span>
-									{:else if view === 3}
-										<span class="dot" aria-hidden="true"></span>
-									{:else if view === 4}
-										<span class="gtile" aria-hidden="true"><Icon name={section.icon} size={13} stroke={2.1} /></span>
-									{/if}
 									<span class="label">{section.label}</span>
 									{#if flagged(section.href)}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
 								</a>
 							</li>
 						{/each}
 					</ul>
-				{/if}
 			</div>
 		{/each}
 		{#if find.trim() && account && filterSections([account], find).length}
@@ -189,7 +164,6 @@
 		<div class="settings-content">{@render children()}</div>
 	</div>
 </div>
-<VariantBar options={MENUS} bind:value={menuPick} param="menu" storageKey="holyarrs.settings.menu" label="Settings menu views" />
 
 <style>
 	.settings-shell {
@@ -198,8 +172,7 @@
 		gap: clamp(24px, 3vw, 44px);
 		align-items: start;
 	}
-	/* The side menu: a search box, the profile entry, then grouped rows
-	   (five views under ?menu=1…5). */
+	/* The side menu: a search box, the profile entry, then grouped rows. */
 	.settings-nav {
 		position: sticky;
 		top: calc(var(--topbar) + 8px);
@@ -283,60 +256,10 @@
 	.nav-none { padding: 10px 8px; color: var(--text-muted); font: var(--t-footnote); }
 	.nav-none a { color: var(--accent-text); font-weight: 600; }
 
-	/* 1 Lines: line icons, the current row gets a soft accent wash. */
-	[data-menu='1'] .nav-row[aria-current='page'],
-	[data-menu='5'] .nav-row[aria-current='page'] { background: var(--accent-soft); }
-	/* 2 Text: words only; a thin accent bar marks the current page. */
-	[data-menu='2'] .nav-row { padding-left: 12px; }
-	[data-menu='2'] .nav-row[aria-current='page']::before {
-		content: '';
-		position: absolute;
-		left: 2px;
-		top: 6px;
-		bottom: 6px;
-		width: 2px;
-		border-radius: 2px;
-		background: var(--accent);
-	}
-	[data-menu='2'] .nav-group h2 { padding-left: 12px; font-weight: 600; color: var(--text); }
-	/* 3 Dots: one small tinted dot per group. */
-	.dot { flex: none; width: 6px; height: 6px; margin: 0 4px 0 2px; border-radius: 50%; background: var(--dot); opacity: 0.85; }
-	[data-menu='3'] .nav-row[aria-current='page'] { background: color-mix(in srgb, var(--dot) 12%, transparent); color: var(--text); }
-	/* 4 Tiles: neutral grey tiles; the current one turns accent. */
-	.gtile {
-		flex: none;
-		display: grid;
-		place-items: center;
-		width: 20px;
-		height: 20px;
-		border-radius: 6px;
-		background: var(--surface-3);
-		color: var(--text-muted);
-		transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
-	}
-	.nav-row[aria-current='page'] .gtile { background: var(--accent-fill); color: var(--text-on-red); }
-	[data-menu='4'] .nav-row[aria-current='page'] { color: var(--text); font-weight: 600; }
-	/* 5 Folds: each group opens and shuts; the current group stays open. */
-	.fold {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		width: 100%;
-		min-height: 24px;
-		padding: 0;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		cursor: pointer;
-	}
-	.fold:hover { color: var(--text); }
-	.fold:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
-	.fold :global(.icon) { transition: transform var(--dur-fast) var(--ease-out); transform: rotate(90deg); }
-	.folded .fold :global(.icon) { transform: none; }
-	[data-menu='5'] .nav-group { margin-top: 4px; }
+	/* The current row gets a soft accent wash. */
+	.nav-row[aria-current='page'] { background: var(--accent-soft); }
 	@media (prefers-reduced-motion: reduce) {
-		.nav-row, .nav-account, .nav-find input, .glyph, .gtile, .fold :global(.icon) { transition: none; }
+		.nav-row, .nav-account, .nav-find input, .glyph { transition: none; }
 	}
 	.settings-workspace { min-width: 0; max-width: 820px; }
 	.settings-content { width: 100%; min-width: 0; }
@@ -348,10 +271,14 @@
 	/* Section pages: every group is a SettingsCard (or a list card shaped like
 	   one), stacked with one rhythm. */
 	.settings-content > :global(:is(.ui-settings, .sc-form, .card, div[data-testid], ul.card) + :is(.ui-settings, .sc-form, .card, div[data-testid], ul, p, section)) { margin-top: 16px; }
-	.settings-content :global(.sc-form > .ui-settings + .ui-settings) { margin-top: 16px; }
+	.settings-content :global(.sc-form > .ui-settings + .ui-settings) { margin-top: 0; }
 	.settings-content :global(.card) { border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); padding: 18px 20px; }
 	.settings-content :global(.card .h2) { font: var(--t-headline); font-size: 17px; letter-spacing: normal; }
-	.settings-content :global(.sc-form) { display: block; }
+	/* A form of cards keeps the grid: cards pair up at equal height; anything else spans. */
+	.settings-content :global(.sc-form) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+	.settings-content :global(.sc-form > :not(.ui-settings)) { grid-column: 1 / -1; }
+	.settings-content :global(.sc-form > section.ui-settings:last-of-type:nth-of-type(odd)) { grid-column: 1 / -1; }
+	@media (max-width: 760px) { .settings-content :global(.sc-form) { grid-template-columns: minmax(0, 1fr); } }
 	.settings-content :global(.ui-settings .h2) { font: var(--t-headline); font-size: 16px; letter-spacing: normal; }
 	/* The field a search result pointed at. */
 	.settings-content :global(.flash-target) { border-radius: 10px; animation: flash 2.2s var(--ease-out); }

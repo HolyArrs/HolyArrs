@@ -172,7 +172,7 @@
 
 <svelte:head><title>Naming and files · HolyArrs</title></svelte:head>
 
-<PageHeader title="Naming and files" subtitle="How movie, episode and track files and folders are named, and how HolyArrs looks after the disk." />
+<PageHeader title="Naming and files" />
 
 {#if !loaded}
 	<SkSettings rows={4} />

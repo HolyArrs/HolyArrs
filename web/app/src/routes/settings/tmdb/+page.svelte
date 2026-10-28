@@ -23,7 +23,7 @@
 
 <svelte:head><title>Metadata · HolyArrs</title></svelte:head>
 
-<PageHeader title="Metadata" subtitle="Movie, show and music names, dates and pictures come from the HolyArrs metadata server. Nothing to set up." />
+<PageHeader title="Metadata" />
 
 {#if !loaded}
 	<SkSettings rows={2} />

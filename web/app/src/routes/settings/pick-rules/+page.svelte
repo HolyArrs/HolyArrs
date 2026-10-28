@@ -75,7 +75,7 @@
 
 <svelte:head><title>Pick rules · HolyArrs</title></svelte:head>
 
-<PageHeader title="Pick rules" subtitle="Pick rules choose which Release HolyArrs takes for a title, such as 1080p or 4K.">
+<PageHeader title="Pick rules">
 	{#snippet actions()}
 		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>New Pick rules</Button>{/if}
 	{/snippet}

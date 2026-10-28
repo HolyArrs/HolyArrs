@@ -201,7 +201,7 @@
 
 <svelte:head><title>Outside lists · HolyArrs</title></svelte:head>
 
-<PageHeader title="Outside lists" subtitle="TMDB and Trakt lists whose movies HolyArrs adds by itself, on a timer. Movies on the Never-add list are always skipped.">
+<PageHeader title="Outside lists">
 	{#snippet actions()}
 		{#if !formOpen && loaded && !error}<Button icon="plus" variant="primary" type="button" onclick={() => openForm()}>Add a list</Button>{/if}
 	{/snippet}

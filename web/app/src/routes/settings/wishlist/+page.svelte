@@ -87,7 +87,7 @@
 
 <svelte:head><title>Wishlist rules · HolyArrs</title></svelte:head>
 
-<PageHeader title="Wishlist rules" subtitle="How many movies, shows and albums people may ask for, and what an approved ask gets." />
+<PageHeader title="Wishlist rules" />
 
 {#if !loaded}
 	<SkSettings rows={3} />

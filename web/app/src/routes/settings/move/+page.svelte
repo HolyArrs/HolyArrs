@@ -281,7 +281,7 @@
 
 <svelte:head><title>Move from other apps · HolyArrs</title></svelte:head>
 
-<PageHeader title="Move from other apps" subtitle="Bring a setup over from the apps HolyArrs replaces. Read them, look at the plan, try it, then move. Media files are never moved or renamed, and the old apps are never changed." />
+<PageHeader title="Move from other apps" />
 
 {#if !loaded}
 	<SkSettings rows={2} />

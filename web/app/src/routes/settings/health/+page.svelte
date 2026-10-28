@@ -90,7 +90,7 @@
 
 <svelte:head><title>Health checks · HolyArrs</title></svelte:head>
 
-<PageHeader title="Health checks" subtitle="HolyArrs checks its folders, free space, Sources, Downloaders and backups by itself, and tells you when one breaks.">
+<PageHeader title="Health checks">
 	{#snippet actions()}
 		<Button type="button" onclick={runNow} disabled={running} aria-busy={running}>Check again</Button>
 	{/snippet}

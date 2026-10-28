@@ -10,6 +10,7 @@
 	import Icon from './Icon.svelte';
 	import Sessions from './Sessions.svelte';
 	import Confirm from './account/Confirm.svelte';
+	import { needsConfirm } from './account/sections.ts';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -208,6 +209,7 @@
 			const r = await api.post<{ backup_codes: string[] }>('/auth/two-factor/enable', { code: code.trim() });
 			codes = r.backup_codes;
 			setup = null;
+			tfOpen = false;
 			code = '';
 			await session.load();
 			toasts.push('Two-factor sign-in is on.', 'ok');
@@ -230,6 +232,7 @@
 				toasts.push('New backup codes made. The old ones no longer work.', 'ok');
 			} else {
 				codes = [];
+				tfOpen = false;
 				await session.load();
 				toasts.push('Two-factor sign-in is off.', 'ok');
 			}
@@ -241,6 +244,12 @@
 	}
 
 	let offMode = $state<'off' | 'codes'>('codes');
+	// Two-factor opens below its row; setting up goes straight on when no re-confirm is needed.
+	let tfOpen = $state(false);
+	function openTwoFactor() {
+		tfOpen = true;
+		if (!session.s.twoFactor && !needsConfirm('two-factor', { localRecent: session.s.localRecent, via: session.s.via })) void startTwoFactor();
+	}
 
 	async function copyCodes() {
 		try {
@@ -347,7 +356,7 @@
 	}
 </script>
 
-<PageHeader title="My account" subtitle="Profile, sign-in and the devices you use." />
+<PageHeader title="My account" />
 <div class="acct">
 
 {#if session.s.mustTwoFactor}
@@ -430,148 +439,159 @@
 </SettingsCard>
 
 <SettingsCard id="preferences-me" title="Preferences" description="Kept for you; trailers only on this device." icon="appearance">
-	<div class="field">
-		<span class="label">Trailers</span>
-		<SegmentedControl label="Play trailers" options={[{ value: 'auto', label: 'Auto' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} />
-		<span class="hint" title="Auto follows your system (reduced motion, data saver). Always plays them anyway; Never turns them off.">Auto follows reduced motion and data saver.</span>
+	<div class="srow">
+		<div class="txt"><span class="label">Trailers</span><span class="hint" title="Auto follows your system (reduced motion, data saver). Always plays them anyway; Never turns them off.">Auto follows reduced motion and data saver.</span></div>
+		<div class="ctl"><SegmentedControl size="sm" label="Play trailers" options={[{ value: 'auto', label: 'Auto' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
 	</div>
 	{#if session.can('ask')}
-		<div class="field" id="asked-by-me">
-			<span class="label">Name on my asks</span>
-			<label class="switch">
-				<input type="checkbox" checked={showMyName} onchange={(e) => setShowMyName(e.currentTarget.checked)} data-testid="show-my-name" />
-				<span class="sw" aria-hidden="true"></span><span class="sr-only">{ASKED.personalLabel}</span>
-			</label>
-			<span class="hint" title={ASKED.personalHelp}>{ASKED.personalLabel}.</span>
+		<div class="srow" id="asked-by-me">
+			<div class="txt"><span class="label">Name on my asks</span><span class="hint" title={ASKED.personalHelp}>{ASKED.personalLabel}.</span></div>
+			<div class="ctl">
+				<label class="switch">
+					<input type="checkbox" checked={showMyName} onchange={(e) => setShowMyName(e.currentTarget.checked)} data-testid="show-my-name" />
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">{ASKED.personalLabel}</span>
+				</label>
+			</div>
 		</div>
 	{/if}
-	<div class="field" id="recommendations-me">
-		<span class="label">Recommendations</span>
-		<div><Button size="sm" variant="plain" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset</Button></div>
-		<span class="hint" title="Explore's category strip learns from the categories you open. This stays on this server.">Explore learns from what you open.</span>
-	</div>
-</SettingsCard>
-
-<SettingsCard id="alerts-me" title="Alerts" description="Asks always show on your Wishlist; add email or Discord too." icon="bell">
-	<form id="alerts-form" class="rows" onsubmit={saveTargets} novalidate>
-		<div class="field">
-			<label for="tg-email">Email</label>
-			<input id="tg-email" class="input" type="email" bind:value={targets.email} autocomplete="email" />
-			<span class="hint">When the owner set up email.</span>
-		</div>
-		<div class="field">
-			<label for="tg-discord">Discord user id</label>
-			<input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" />
-			<span class="hint" title="In Discord turn on Developer Mode, then right-click your name and Copy User ID. Discord Alerts then name you.">Developer Mode, then Copy User ID.</span>
-		</div>
-		<div class="field">
-			<span class="label">New episodes</span>
-			<label class="switch">
-				<input type="checkbox" bind:checked={targets.new_episodes} data-testid="new-episodes" />
-				<span class="sw" aria-hidden="true"></span><span class="sr-only">New episodes of shows I asked for</span>
-			</label>
-			<span class="hint">Of shows you asked for; at most hourly.</span>
-		</div>
-		{#if tgError}<p class="form-error" role="alert">{tgError}</p>{/if}
-	</form>
-	<div class="field" id="follows-me">
-		<span class="label">Following</span>
-		{#if follows.length}
-			<ul class="follows" data-testid="follows">
-				{#each follows as f (f.title_id)}
-					<li>
-						<a href={to(`/library/${f.title_id}`)}>{f.name}{#if f.year}&nbsp;({f.year}){/if}</a>
-						<span class="xs muted">{f.kind === 'artist' ? 'Artist' : 'Show'}</span>
-						<Button size="sm" variant="plain" onclick={() => unfollow(f)}>Unfollow</Button>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<span class="value muted">Nothing yet</span>
-		{/if}
-		<span class="hint">Follow from a title page.</span>
+	<div class="srow" id="recommendations-me">
+		<div class="txt"><span class="label">Recommendations</span><span class="hint" title="Explore's category strip learns from the categories you open. This stays on this server.">Explore learns from what you open.</span></div>
+		<div class="ctl"><Button size="sm" variant="secondary" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset</Button></div>
 	</div>
 </SettingsCard>
 
 <SettingsCard id="security-me" title="Security" description="Two-factor sign-in and linked sign-ins." icon="shield">
-	<div class="field" id="twofactor-me">
-		<span class="label">Two-factor <span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? 'On' : 'Off'}</span></span>
-		<div class="tf">
-			{#if codes.length}
-				<div class="fresh" role="status">
-					<p class="small"><b>Backup codes.</b> Each works once. Shown only now.</p>
-					<ul class="codes mono">
-						{#each codes as c (c)}<li>{c}</li>{/each}
-					</ul>
-					<div class="row acts">
-						<Button size="sm" icon="copy" type="button" onclick={copyCodes}>Copy</Button>
-						<Button size="sm" variant="plain" type="button" onclick={() => (codes = [])}>Done</Button>
-					</div>
-				</div>
+	<div class="srow" id="twofactor-me">
+		<div class="txt"><span class="label">Two-factor</span><span class="hint">A six-digit code from your phone after the password.</span></div>
+		<div class="ctl">
+			<span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? 'On' : 'Off'}</span>
+			{#if !tfOpen && !setup}
+				<Button size="sm" variant="secondary" type="button" onclick={openTwoFactor} busy={tfBusy} data-testid="two-factor-open">{session.s.twoFactor ? 'Manage' : 'Set up'}</Button>
 			{/if}
-			<Confirm action="two-factor">
-				{#if session.s.twoFactor}
-					<form class="tf-form" onsubmit={(e) => withCode(offMode === 'off' ? '/auth/two-factor/disable' : '/auth/two-factor/backup-codes', e)}>
-						<fieldset class="modes">
-							<legend class="sr-only">With a code from your app or a backup code</legend>
-							<label class="checkline"><input type="radio" bind:group={offMode} value="codes" /> New backup codes</label>
-							<label class="checkline"><input type="radio" bind:group={offMode} value="off" /> Turn off</label>
-						</fieldset>
-						<div class="row acts">
-							<label class="sr-only" for="off-code">Code</label>
-							<input id="off-code" class="input mono six" placeholder="Code" bind:value={offCode} autocomplete="one-time-code" inputmode="text" maxlength="11" />
-							<Button size="sm" variant={offMode === 'off' ? 'destructive' : 'secondary'} type="submit" disabled={tfBusy || !offCode.trim()} busy={tfBusy}>
-								{offMode === 'off' ? 'Turn off' : 'Make codes'}
-							</Button>
-						</div>
-					</form>
-				{:else if setup}
-					<ol class="steps small">
-						<li>
-							Add an account in your authenticator app (<a class="ul" href={setup.uri}>open in the app</a>) or type:
-							<code class="key">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</code>
-						</li>
-						<li>Type the six-digit code it shows.</li>
-					</ol>
-					<form class="row acts" onsubmit={enable}>
-						<label class="sr-only" for="tf-code">Six-digit code</label>
-						<input id="tf-code" class="input mono six" bind:value={code} autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="123456" />
-						<Button size="sm" variant="primary" type="submit" disabled={tfBusy || code.trim().length !== 6} busy={tfBusy}>Turn on</Button>
-						<Button size="sm" variant="plain" type="button" onclick={() => (setup = null)}>Cancel</Button>
-					</form>
-				{:else}
-					<div><Button size="sm" variant="primary" type="button" onclick={startTwoFactor} busy={tfBusy}>Set up</Button></div>
-				{/if}
-			</Confirm>
-			{#if tfError}<p class="form-error" role="alert">{tfError}</p>{/if}
 		</div>
-		<span class="hint">A six-digit code from your phone after the password.</span>
+		{#if codes.length || tfOpen || setup || tfError}
+			<div class="tf below">
+				{#if codes.length}
+					<div class="fresh" role="status">
+						<p class="small"><b>Backup codes.</b> Each works once. Shown only now.</p>
+						<ul class="codes mono">
+							{#each codes as c (c)}<li>{c}</li>{/each}
+						</ul>
+						<div class="row acts">
+							<Button size="sm" icon="copy" type="button" onclick={copyCodes}>Copy</Button>
+							<Button size="sm" variant="secondary" type="button" onclick={() => (codes = [])}>Done</Button>
+						</div>
+					</div>
+				{/if}
+				{#if tfOpen || setup}
+					<Confirm action="two-factor" onCancel={() => (tfOpen = false)}>
+						{#if session.s.twoFactor}
+							<form class="tf-form" onsubmit={(e) => withCode(offMode === 'off' ? '/auth/two-factor/disable' : '/auth/two-factor/backup-codes', e)}>
+								<fieldset class="modes">
+									<legend class="sr-only">With a code from your app or a backup code</legend>
+									<label class="checkline"><input type="radio" bind:group={offMode} value="codes" /> New backup codes</label>
+									<label class="checkline"><input type="radio" bind:group={offMode} value="off" /> Turn off</label>
+								</fieldset>
+								<div class="row acts">
+									<label class="sr-only" for="off-code">Code</label>
+									<input id="off-code" class="input mono six" placeholder="Code" bind:value={offCode} autocomplete="one-time-code" inputmode="text" maxlength="11" />
+									<Button size="sm" variant={offMode === 'off' ? 'destructive' : 'secondary'} type="submit" disabled={tfBusy || !offCode.trim()} busy={tfBusy}>
+										{offMode === 'off' ? 'Turn off' : 'Make codes'}
+									</Button>
+									<Button size="sm" variant="secondary" type="button" onclick={() => (tfOpen = false)}>Cancel</Button>
+								</div>
+							</form>
+						{:else if setup}
+							<ol class="steps small">
+								<li>
+									Add an account in your authenticator app (<a class="ul" href={setup.uri}>open in the app</a>) or type:
+									<code class="key">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</code>
+								</li>
+								<li>Type the six-digit code it shows.</li>
+							</ol>
+							<form class="row acts" onsubmit={enable}>
+								<label class="sr-only" for="tf-code">Six-digit code</label>
+								<input id="tf-code" class="input mono six" bind:value={code} autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="123456" />
+								<Button size="sm" variant="primary" type="submit" disabled={tfBusy || code.trim().length !== 6} busy={tfBusy}>Turn on</Button>
+								<Button size="sm" variant="secondary" type="button" onclick={() => { setup = null; tfOpen = false; }}>Cancel</Button>
+							</form>
+						{:else}
+							<div class="row acts"><Button size="sm" variant="primary" type="button" onclick={startTwoFactor} busy={tfBusy}>Continue</Button></div>
+						{/if}
+					</Confirm>
+				{/if}
+				{#if tfError}<p class="form-error" role="alert">{tfError}</p>{/if}
+			</div>
+		{/if}
 	</div>
 	{#if hasLinkWay}
-		<div class="field" id="linked-me">
-			<span class="label">Linked sign-ins</span>
-			{#if linkOpen}
-				<Confirm action="link" onCancel={() => (linkOpen = false)}>
-					<div class="row acts">
-						{#if session.s.ways.includes('oidc')}
-							<Button size="sm" type="button" onclick={startOIDCLink} busy={linkBusy}>Single sign-on</Button>
-						{/if}
-						{#if session.s.ways.includes('forward_auth')}
-							<Button size="sm" type="button" onclick={linkForwardAuth} busy={linkBusy}>Trusted proxy</Button>
-						{/if}
-						<Button size="sm" variant="plain" type="button" onclick={() => (linkOpen = false)}>Cancel</Button>
-					</div>
-				</Confirm>
-			{:else}
-				<div><Button size="sm" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button></div>
+		<div class="srow" id="linked-me">
+			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="HolyArrs matches the provider's stable account id and never links accounts by email address.">Matched by account id, never by email.</span></div>
+			<div class="ctl">{#if !linkOpen}<Button size="sm" variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			{#if linkOpen || linkError}
+				<div class="below">
+					{#if linkOpen}
+						<Confirm action="link" onCancel={() => (linkOpen = false)}>
+							<div class="row acts">
+								{#if session.s.ways.includes('oidc')}
+									<Button size="sm" type="button" onclick={startOIDCLink} busy={linkBusy}>Single sign-on</Button>
+								{/if}
+								{#if session.s.ways.includes('forward_auth')}
+									<Button size="sm" type="button" onclick={linkForwardAuth} busy={linkBusy}>Trusted proxy</Button>
+								{/if}
+								<Button size="sm" variant="secondary" type="button" onclick={() => (linkOpen = false)}>Cancel</Button>
+							</div>
+						</Confirm>
+					{/if}
+					{#if linkError}<p class="form-error" role="alert">{linkError}</p>{/if}
+				</div>
 			{/if}
-			<span class="hint" title="HolyArrs matches the provider's stable account id and never links accounts by email address.">Matched by account id, never by email.</span>
-			{#if linkError}<p class="form-error" role="alert">{linkError}</p>{/if}
 		</div>
 	{/if}
 	{#if session.s.role === 'owner'}
-		<p class="hint owner">Locked out? Run <code>holyarrs reset-owner</code> on the HolyArrs machine.</p>
+		<div class="srow">
+			<div class="txt"><span class="label">Locked out?</span><span class="hint">Run this on the HolyArrs machine.</span></div>
+			<div class="ctl"><code class="cmd">holyarrs reset-owner</code></div>
+		</div>
 	{/if}
+</SettingsCard>
+
+<SettingsCard id="alerts-me" title="Alerts" description="Asks always show on your Wishlist; add email or Discord too." icon="bell">
+	<form id="alerts-form" class="rows" onsubmit={saveTargets} novalidate>
+		<div class="srow">
+			<div class="txt"><label for="tg-email">Email</label><span class="hint">When the owner set up email.</span></div>
+			<div class="ctl"><input id="tg-email" class="input" type="email" bind:value={targets.email} autocomplete="email" /></div>
+		</div>
+		<div class="srow">
+			<div class="txt"><label for="tg-discord">Discord user id</label><span class="hint" title="In Discord turn on Developer Mode, then right-click your name and Copy User ID. Discord Alerts then name you.">Developer Mode, then Copy User ID.</span></div>
+			<div class="ctl"><input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" /></div>
+		</div>
+		<div class="srow">
+			<div class="txt"><span class="label">New episodes</span><span class="hint">Of shows you asked for; at most hourly.</span></div>
+			<div class="ctl">
+				<label class="switch">
+					<input type="checkbox" bind:checked={targets.new_episodes} data-testid="new-episodes" />
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">New episodes of shows I asked for</span>
+				</label>
+			</div>
+		</div>
+		{#if tgError}<p class="form-error" role="alert">{tgError}</p>{/if}
+	</form>
+	<div class="srow" id="follows-me">
+		<div class="txt"><span class="label">Following</span><span class="hint">Follow from a title page.</span></div>
+		<div class="ctl"><span class="chip">{follows.length ? follows.length : 'None'}</span></div>
+		{#if follows.length}
+			<ul class="follows below" data-testid="follows">
+				{#each follows as f (f.title_id)}
+					<li>
+						<a href={to(`/library/${f.title_id}`)}>{f.name}{#if f.year}&nbsp;({f.year}){/if}</a>
+						<span class="xs muted">{f.kind === 'artist' ? 'Artist' : 'Show'}</span>
+						<Button size="sm" variant="secondary" onclick={() => unfollow(f)}>Unfollow</Button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</div>
 </SettingsCard>
 
 <SettingsCard id="sessions-me" title="Devices" description="Where you are signed in. Sign out any you don't know." icon="tv">
@@ -582,10 +602,10 @@
 <SaveBar dirty={alertsDirty} form="alerts-form" saving={tgBusy} ondiscard={() => (targets = JSON.parse(savedTargets))} />
 
 <style>
-	/* Grid like every settings page: Profile and Devices span both columns, the rest pair up. */
-	.acct { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+	/* Profile full width; Preferences and Security pair up; Alerts (with its inputs) and Devices full width. */
+	.acct { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
 	.acct > :global(*) { margin: 0; }
-	.acct > :global(:is(#profile-me, #sessions-me, .notice)) { grid-column: 1 / -1; }
+	.acct > :global(:is(#profile-me, #alerts-me, #sessions-me, .notice)) { grid-column: 1 / -1; }
 	.pfp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 	.value { font: var(--t-callout); font-weight: 400; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
 	/* Profile: each field in its own labelled box. */
@@ -609,7 +629,8 @@
 	.dn .input { flex: 1 1 200px; min-width: 0; min-height: 34px; }
 	code { font-family: var(--font-mono); color: var(--text); }
 	.acts { gap: 8px; flex-wrap: wrap; align-items: center; }
-	.pw, .tf, .tf-form { display: flex; flex-direction: column; gap: 8px; width: min(100%, 360px); min-width: 0; }
+	.pw, .tf, .tf-form { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+	.pw, .tf-form { width: min(100%, 360px); }
 	.rows { display: contents; }
 	.six { max-width: 140px; }
 	.modes { border: 0; padding: 0; margin: 0; display: flex; gap: 16px; flex-wrap: wrap; }
@@ -618,10 +639,9 @@
 	.codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 2px 12px; margin: 8px 0; list-style: none; padding: 0; }
 	.steps { margin: 0 0 0 var(--s-5); display: grid; gap: 6px; list-style: decimal; }
 	.key { display: block; margin-top: 6px; padding: 8px 10px; background: var(--surface-2); border-radius: var(--r-sm); overflow-wrap: anywhere; }
-	.label .chip { margin-left: 6px; vertical-align: middle; }
-	.owner { margin: 0; }
+	.cmd { font-size: 13px; padding: 4px 8px; border-radius: 6px; background: var(--surface-2); white-space: nowrap; }
 	.follows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; min-width: 0; }
-	.follows li { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+	.follows li { display: flex; align-items: center; gap: 10px; min-height: 44px; border-top: 1px solid var(--line); }
 	.follows li a { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	@media (prefers-reduced-motion: reduce) { .box { transition: none; } }
 	@media (max-width: 760px) {

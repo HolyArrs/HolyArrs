@@ -235,7 +235,7 @@
 
 <svelte:head><title>Downloaders · HolyArrs</title></svelte:head>
 
-<PageHeader title="Downloaders" subtitle="The apps that download torrents or Usenet releases for HolyArrs.">
+<PageHeader title="Downloaders">
 	{#snippet actions()}
 		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Downloader</Button>{/if}
 	{/snippet}

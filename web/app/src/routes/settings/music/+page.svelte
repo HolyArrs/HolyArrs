@@ -57,7 +57,7 @@
 
 <svelte:head><title>Music defaults · HolyArrs</title></svelte:head>
 
-<PageHeader title="Music defaults" subtitle="What a new artist gets, which Pressing an album follows, and where artist and album details come from." />
+<PageHeader title="Music defaults" />
 
 {#if !loaded}
 	<SkSettings rows={3} />

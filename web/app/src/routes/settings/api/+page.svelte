@@ -47,7 +47,7 @@
 
 <svelte:head><title>API for other apps · HolyArrs</title></svelte:head>
 
-<PageHeader title="API for other apps" subtitle="Scripts, dashboards and other apps talk to HolyArrs through its API with a key of their own.">
+<PageHeader title="API for other apps">
 	{#snippet actions()}
 		<AdminLinkButton href={to(`/api/v1/openapi.json`)} target="_blank" rel="noopener">The OpenAPI file</AdminLinkButton>
 	{/snippet}

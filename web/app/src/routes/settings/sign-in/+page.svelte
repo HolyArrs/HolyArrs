@@ -330,7 +330,7 @@
 
 <svelte:head><title>Sign-in · HolyArrs</title></svelte:head>
 
-<PageHeader title="Sign-in and security" subtitle="Who can open HolyArrs, how they sign in, and keys for scripts and other apps." />
+<PageHeader title="Sign-in and security" />
 
 {#if !loaded}
 	<SkSettings rows={3} />

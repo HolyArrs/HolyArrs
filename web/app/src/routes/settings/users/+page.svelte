@@ -290,7 +290,7 @@
 
 <svelte:head><title>Users · HolyArrs</title></svelte:head>
 
-<PageHeader title="Users and roles" subtitle="Invite family and friends, and choose what each one may do." />
+<PageHeader title="Users and roles" />
 
 {#if !loaded}
 	<SkSettings rows={3} />

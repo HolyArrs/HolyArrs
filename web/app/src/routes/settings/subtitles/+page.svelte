@@ -183,7 +183,7 @@
 
 <svelte:head><title>Subtitles · HolyArrs</title></svelte:head>
 
-<PageHeader title="Subtitles" subtitle="Which subtitles every movie and show should have, how good a match must be, and where HolyArrs looks." />
+<PageHeader title="Subtitles" />
 
 {#if !loaded}
 	<SkSettings rows={2} />

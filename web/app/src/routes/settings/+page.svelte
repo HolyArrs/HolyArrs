@@ -34,7 +34,7 @@
 
 <svelte:head><title>Settings · HolyArrs</title></svelte:head>
 
-<PageHeader title="Settings" subtitle="Everything HolyArrs can be set to, in six groups, with your own account at the end." />
+<PageHeader title="Settings" />
 
 <div class="find">
 	<Icon name="search" size={17} />

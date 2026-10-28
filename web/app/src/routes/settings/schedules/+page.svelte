@@ -124,7 +124,7 @@
 
 <svelte:head><title>Schedules · HolyArrs</title></svelte:head>
 
-<PageHeader title="Schedules" subtitle="Everything HolyArrs does on a timer: when it last ran, when it runs next, and how often." />
+<PageHeader title="Schedules" />
 
 {#if safeMode}<p class="notice warn">Safe mode: only the core runs. Schedules outside the core wait for a normal start.</p>{/if}
 

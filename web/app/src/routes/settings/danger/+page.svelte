@@ -55,7 +55,7 @@
 
 <svelte:head><title>Danger zone · HolyArrs</title></svelte:head>
 
-<PageHeader title="Danger zone" subtitle="These stop HolyArrs for everyone in your household. Each one asks first." />
+<PageHeader title="Danger zone" />
 
 {#if !allowed}
 	<p class="notice warn">Only the owner and admins can use these controls.</p>

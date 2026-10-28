@@ -113,7 +113,7 @@
 
 <svelte:head><title>Media servers · HolyArrs</title></svelte:head>
 
-<PageHeader title="Media servers" subtitle="After HolyArrs imports, renames or deletes a movie's files, it tells Plex, Jellyfin or Emby to look at that movie's folder again, so the change shows up without waiting for the server's own scan. Nothing is read back.">
+<PageHeader title="Media servers">
 	{#snippet actions()}
 		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a media server</Button>{/if}
 	{/snippet}

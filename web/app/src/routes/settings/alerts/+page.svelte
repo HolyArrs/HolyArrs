@@ -160,7 +160,7 @@
 
 <svelte:head><title>Alerts · HolyArrs</title></svelte:head>
 
-<PageHeader title="Alerts" subtitle="Messages sent out of HolyArrs through Discord, email or a webhook: to the people who asked when a movie is approved, turned down or ready, and to the staff when someone asks and when HolyArrs sends, imports, renames, adds or deletes a movie or show, a health check breaks or something needs a decision. Messages about a show name its episodes, such as Copper Valley S01E02.">
+<PageHeader title="Alerts">
 	{#snippet actions()}
 		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add an Alert</Button>{/if}
 	{/snippet}

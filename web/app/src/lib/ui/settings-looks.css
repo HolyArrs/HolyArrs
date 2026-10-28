@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The one settings content style (Grid, picked by Luis 2026-10-27): every
  * settings page lays its SettingsCards (.ui-settings) out as a dense
  * two-column grid of small cards; one column on narrow panes.
@@ -10,8 +10,10 @@
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px;
-	align-items: start;
+	align-items: stretch;
 }
+/* No lonely half rows: a last card left alone spans the full width. */
+.settings-content > section.ui-settings:last-of-type:nth-of-type(odd) { grid-column: 1 / -1; }
 .settings-content > :not(.ui-settings),
 .settings-content .acct > :not(.ui-settings) { grid-column: 1 / -1; }
 .settings-content > .ui-settings + .ui-settings { margin-top: 0 !important; }
@@ -61,10 +63,36 @@
 .settings-content .ui-settings ul > li > label.switch > span:not(.sw) { min-width: 0; }
 .settings-content .ui-settings ul > li > label.switch br { display: none; }
 
+/* The one settings row: label and a one-line hint on the left, the control
+   on the right (same column in every card), thin divider between rows. */
+.settings-content .srow {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	column-gap: 16px;
+	box-sizing: border-box;
+	min-height: 52px;
+	padding: 7px 0;
+	border-top: 1px solid var(--line);
+}
+.settings-content .srow:first-child { border-top: 0; }
+.settings-content .ui-settings .body:has(> .srow, > form > .srow) { gap: 0; padding-top: 2px; padding-bottom: 4px; }
+.settings-content .srow > .txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.settings-content .srow > .txt > :is(.label, label) { font: var(--t-callout); font-weight: 400; color: var(--text); }
+.settings-content .srow > .txt > .hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
+.settings-content .srow > .ctl { justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.settings-content .srow > .ctl > .input { width: 260px; min-height: 32px; height: 32px; padding-block: 0; }
+.settings-content .srow > .ctl .ui-btn,
+.settings-content .srow > .ctl .ui-seg button { min-height: 32px; }
+.settings-content .srow > .below { grid-column: 1 / -1; padding-top: 8px; min-width: 0; }
+.settings-content .srow .switch { margin: 0; min-height: 32px; }
+.settings-content .srow > .txt > label { display: block; margin: 0; }
+
 @media (max-width: 760px) {
 	.settings-content { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
+	.settings-content .srow > .ctl > .input { width: min(260px, 46vw); }
 	.settings-content .ui-btn.md { min-height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {

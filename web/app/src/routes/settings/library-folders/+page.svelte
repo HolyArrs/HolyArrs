@@ -106,7 +106,7 @@
 
 <svelte:head><title>Library folders · HolyArrs</title></svelte:head>
 
-<PageHeader title="Library folders" subtitle="Where finished movies and show episodes are placed. HolyArrs checks each folder: that it exists, that it can write there, and whether files can be hardlinked from your Downloaders.">
+<PageHeader title="Library folders">
 	{#snippet actions()}
 		{#if !adding}<Button icon="plus" variant="primary" type="button" onclick={() => (adding = true)}>Add a folder</Button>{/if}
 	{/snippet}

@@ -18,7 +18,7 @@
 
 <svelte:head><title>Appearance · HolyArrs</title></svelte:head>
 
-<PageHeader title="Appearance" subtitle="How HolyArrs looks in this browser. Each person and each browser picks their own." />
+<PageHeader title="Appearance" />
 
 <SettingsCard id="theme-card" title="Theme" description="Light, dark, or follow this device. The change shows straight away and is kept in this browser." icon="appearance">
 	<div id="theme" tabindex="-1">

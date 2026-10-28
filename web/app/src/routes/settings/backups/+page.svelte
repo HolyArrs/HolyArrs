@@ -113,7 +113,7 @@
 
 <svelte:head><title>Backups · HolyArrs</title></svelte:head>
 
-<PageHeader title="Backups and restore" subtitle="HolyArrs saves both of its databases on a schedule, and before every update. Media files are never in a backup.">
+<PageHeader title="Backups and restore">
 	{#snippet actions()}
 		{#if loaded && !missing}
 		<Button icon="archive" variant="primary" type="button" onclick={makeNow} disabled={making} aria-busy={making}>Make a backup now</Button>
