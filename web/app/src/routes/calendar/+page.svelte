@@ -566,13 +566,14 @@
 
 <svelte:window onscroll={onScroll} onwheel={onWheel} ontouchstart={onTouchStart} ontouchmove={onTouchMove} />
 
-{#snippet item(e: CalendarEntry)}
+{#snippet item(e: CalendarEntry, prevWhen = '')}
 	{@const dot = itemDot(e, todayKey)}
 	{@const w = rowWords({ key: entryKey(e), day: entryDay(e), lead: e, entries: [e] }, look, todayKey)}
 	{@const lines = w.lines.length ? w.lines : ['']}
 	<li class="item k-{e.kind}" data-testid="cal-item">
 		<!-- The time column (TV-guide style): the air time, or Cinema, At home, Out now; a quiet All day without a time. -->
-		<span class="tcol" class:quiet={w.quiet} data-testid="cal-when">{w.when}</span>
+		<!-- A time repeated from the row above is left blank, TV-guide style, so the eye sees when it changes. -->
+		<span class="tcol" class:quiet={w.quiet} class:same={w.when === prevWhen} data-testid="cal-when">{w.when}</span>
 		{@render art(e)}
 		<div class="it">
 			<span class="when-phone" class:quiet={w.quiet} aria-hidden="true">{w.when}</span>
@@ -667,20 +668,24 @@
 {/snippet}
 
 
+{#snippet viewSeg(primary: boolean)}
+	<SegmentedControl
+		label="Cards or list"
+		testid={primary ? 'cal-view' : undefined}
+		value={view}
+		onchange={(v) => pickView(v as CalendarView)}
+		options={[
+			{ value: 'cards', label: 'Cards' },
+			{ value: 'list', label: 'List' }
+		]}
+	/>
+{/snippet}
+
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
 <PageHeader title="Calendar">
 	{#snippet actions()}
-		<SegmentedControl
-			label="Cards or list"
-			testid="cal-view"
-			value={view}
-			onchange={(v) => pickView(v as CalendarView)}
-			options={[
-				{ value: 'cards', label: 'Cards' },
-				{ value: 'list', label: 'List' }
-			]}
-		/>
+		{@render viewSeg(true)}
 		<span class="wide-only">{@render todayBtn('md')}</span>
 		<span class="phone-only"><IconButton icon="calendarDay" label="Pick a day" variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
 	{/snippet}
@@ -699,6 +704,9 @@
 <div class="slim-wrap" class:on={barOn} inert={!barOn} data-testid="cal-slim">
 	<div class="slim" role="toolbar" aria-label="Calendar controls">
 		{@render rangeNav(false, true)}
+		<!-- Cards or List stays at hand in the bar once the header has scrolled away. -->
+		<span class="wide-only slim-view">{@render viewSeg(false)}</span>
+		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? 'Show as a list' : 'Show as cards'} variant="tinted" onclick={() => pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">{@render followsMenu()}</span>
 		{@render todayBtn('sm')}
@@ -745,7 +753,7 @@
 									</div>
 									<div class="items">
 										<p class="sr-only">{date(d.day + 'T12:00:00')}{d.day === todayKey ? ', today' : ''}</p>
-										<ul>{#each d.items as e (entryKey(e))}{@render item(e)}{/each}</ul>
+										<ul>{#each d.items as e, i (entryKey(e))}{@render item(e, i ? rowWords({ key: entryKey(d.items[i - 1]), day: entryDay(d.items[i - 1]), lead: d.items[i - 1], entries: [d.items[i - 1]] }, look, todayKey).when : '')}{/each}</ul>
 									</div>
 								</li>
 							{/each}
@@ -849,7 +857,7 @@
 	.slim { display: flex; align-items: center; gap: 12px; padding: 8px var(--gutter); background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
 		opacity: 0; visibility: hidden; transform: translateY(-8px); transition: opacity var(--dur-fast) var(--ease-in), transform var(--dur-fast) var(--ease-in), visibility 0s linear var(--dur-fast); }
 	.slim-wrap.on .slim { opacity: 1; visibility: visible; transform: none; transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out), visibility 0s; }
-	.slim .range-nav { margin-right: auto; }
+	.slim .slim-view { margin-right: auto; }
 	.slim .range { min-width: 0; font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.range-btn { padding: 4px 8px; border-radius: var(--r-sm); color: var(--text); transition: background var(--dur-fast) var(--ease-out); }
 	.range-btn:hover { background: var(--surface-2); }
@@ -906,8 +914,10 @@
 	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; min-height: 1lh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.sub.first { color: var(--text); }
 	/* The time column: one width for every row, so times line up down the page. */
-	.tcol { flex: none; width: 84px; padding-top: 1px; font: 700 18px/1.2 var(--font-display); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
-	.tcol.quiet { color: var(--text-muted); font-weight: 500; font-size: 15px; }
+	/* One size for times and words (8 PM, In theaters, Streaming, Album), wide enough for the longest. */
+	.tcol { flex: none; width: 92px; padding-top: 2px; font: 700 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
+	.tcol.quiet { color: var(--text-muted); font-weight: 500; }
+	.tcol.same { visibility: hidden; }
 	.when-phone { display: none; }
 	/* Phones: the time sits above the title as a small bold line instead of a column. */
 	@media (max-width: 640px) {
