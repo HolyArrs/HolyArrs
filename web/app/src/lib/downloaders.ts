@@ -227,7 +227,7 @@ export function episodeStateWords(state: string): { text: string; tone: Tone } {
 		case 'better_wanted':
 			return { text: 'In the Library', tone: 'ok' };
 		case 'needs_a_decision':
-			return { text: 'Needs a decision', tone: 'fail' };
+			return { text: 'Review', tone: 'fail' };
 		case 'importing':
 			return { text: 'Importing', tone: 'wait' };
 		case 'downloading':

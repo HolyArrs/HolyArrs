@@ -74,12 +74,13 @@ export const ALL_HINT = 'Everything not finished yet: waiting, on its way, or ne
 const SUBS: Record<string, Sub> = {
 	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.', empty: 'Nothing is queued.' },
 	paused: { key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.', empty: 'Nothing is paused.' },
-	downloading: { key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'], hint: 'Taking in data, or stalled while it keeps trying.', empty: 'Nothing is downloading.' },
+	downloading: { key: 'downloading', label: 'Downloading', stages: ['downloading'], hint: 'Taking in data right now.', empty: 'Nothing is downloading.' },
+	stalled: { key: 'stalled', label: 'Stalled', stages: ['stalled'], hint: 'Slow or stuck; the Downloader keeps trying.', empty: 'Nothing is stalled.' },
 	importing: { key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.', empty: 'Nothing is importing.' },
 	done: { key: 'done', label: 'Done', stages: ['done'], hint: 'Finished and in your Library.', empty: 'Nothing finished yet.' },
 	seeding: { key: 'seeding', label: 'Seeding', stages: ['seeding'], hint: 'In your Library; the torrent is still being shared.', empty: 'Nothing is seeding.' },
 	failed: { key: 'failed', label: 'Failed', stages: ['failed'], hint: 'Failed, removed outside HolyArrs, or the files did not match.', empty: 'Nothing failed.' },
-	decide: { key: 'decide', label: 'Needs a decision', stages: ['decide'], hint: 'HolyArrs could not finish it on its own and needs you to choose.', empty: 'Nothing needs a decision.' }
+	decide: { key: 'decide', label: 'Review', stages: ['decide'], hint: 'HolyArrs could not finish it on its own and needs you to choose.', empty: 'Nothing to review.' }
 };
 
 export const TABS: Tab[] = [
@@ -91,7 +92,7 @@ export const TABS: Tab[] = [
 		stages: ['downloading', 'stalled', 'importing'],
 		hint: 'On its way: downloading now, or being checked and filed into your Library.',
 		empty: 'Nothing on its way right now.',
-		subs: [SUBS.downloading, SUBS.importing]
+		subs: [SUBS.downloading, SUBS.stalled, SUBS.importing]
 	},
 	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'No problems. Everything is moving.', subs: [SUBS.failed, SUBS.decide] },
 	{
@@ -166,7 +167,7 @@ export function statusWord(r: RowBits): string {
 		case 'seeding':
 			return 'Seeding';
 		case 'decide':
-			return 'Needs a decision';
+			return 'Review';
 		case 'failed':
 			return 'Failed';
 	}

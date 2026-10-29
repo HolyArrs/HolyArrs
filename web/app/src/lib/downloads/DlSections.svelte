@@ -17,7 +17,8 @@
 	import Menu from '../ui/Menu.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
-	import IconButton from '../ui/IconButton.svelte';
+	import Popover from '../ui/Popover.svelte';
+	import { tip } from './tip.ts';
 	import { demoDetails, fileExtras, isProblem, sampleFiles, sampleHeader, sampleLog, samplePeers, sampleRatio, sampleServers, sampleStory, sampleSwarm, sampleTrackers, fileTree } from './sampleDetails.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
@@ -26,7 +27,7 @@
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { manyWords, rowName, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
-	import { ALL, counts, pick, showOf, stageOf, statusWord, subCounts, tabsFor, type Stage } from './status-tabs.ts';
+	import { ALL, counts, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
@@ -72,24 +73,9 @@
 	let findOpen = $state(false);
 	const searched = $derived(q.trim() ? typed.filter((r) => matches(r, q)) : typed);
 	// The left rail: a status, a source (Usenet or Torrent); the Type filter is its Categories.
-	let railOn = $state('all');
 	let srcOn = $state<'' | 'usenet' | 'torrent'>('');
-	const RAIL: { key: string; label: string; short: string; stages: Stage[] | null }[] = [
-		{ key: 'all', label: 'All', short: 'All', stages: null },
-		{ key: 'active', label: 'Active', short: 'Act', stages: ['downloading', 'importing', 'seeding'] },
-		{ key: 'downloading', label: 'Downloading', short: 'Down', stages: ['downloading'] },
-		{ key: 'seeding', label: 'Seeding', short: 'Seed', stages: ['seeding'] },
-		{ key: 'done', label: 'Done', short: 'Done', stages: ['done'] },
-		{ key: 'paused', label: 'Paused', short: 'Hold', stages: ['paused', 'queued'] },
-		{ key: 'stalled', label: 'Stalled', short: 'Slow', stages: ['stalled'] },
-		{ key: 'problems', label: 'Problems', short: 'Err', stages: ['failed', 'decide'] }
-	];
 	const bySource = $derived(srcOn ? searched.filter((r) => protocolOf(r) === srcOn) : searched);
-	const railCounts = $derived(RAIL.map((c) => ({ ...c, count: c.stages ? bySource.filter((r) => c.stages!.includes(stageOf(r))).length : bySource.length })));
-	const rows = $derived.by(() => {
-		const c = RAIL.find((x) => x.key === railOn);
-		return c?.stages ? bySource.filter((r) => c.stages!.includes(stageOf(r))) : bySource;
-	});
+	const rows = $derived(bySource);
 	const kindCount = (k: string) => everyRow.filter((r) => (r.kind ?? 'movie') === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
 	function slashKey(e: KeyboardEvent) {
@@ -140,7 +126,6 @@
 		filesOpen = n;
 	}
 	const start = showOf(page.url.searchParams.get('show'));
-	if (start.show === 'problems') railOn = 'problems';
 	let show = $state(start.show);
 	let sub = $state(start.sub);
 	function remember() {
@@ -155,7 +140,7 @@
 	}
 	const tabs = $derived(tabsFor(rows, torrent));
 	const tally = $derived(counts(rows, tabs));
-	const on: string = ALL;
+	const on = $derived(tabs.some((c) => c.key === show) ? show : ALL);
 	const onTab = $derived(tabs.find((c) => c.key === on));
 	const subs = $derived(subCounts(rows, onTab));
 	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
@@ -211,7 +196,7 @@
 	try {
 		const v = typeof localStorage === 'undefined' ? null : JSON.parse(localStorage.getItem(RAIL_KEY) ?? 'null');
 		if (v && typeof v === 'object') {
-			if (Number.isFinite(v.w)) railW = Math.max(100, Math.min(360, Math.round(v.w)));
+			if (Number.isFinite(v.w)) railW = Math.max(120, Math.min(360, Math.round(v.w)));
 			if (v.open === false) railOpen = false;
 		}
 	} catch {
@@ -226,7 +211,6 @@
 	}
 	let narrow = $state(false);
 	const railShown = $derived(railOpen || narrow);
-	const compactRail = $derived(railW < 150 && !narrow);
 	function railDown(e: PointerEvent) {
 		if (e.button !== 0) return;
 		e.preventDefault();
@@ -234,11 +218,20 @@
 		el.setPointerCapture(e.pointerId);
 		const x0 = e.clientX;
 		const w0 = railW;
-		const mv = (m: PointerEvent) => (railW = Math.max(100, Math.min(360, Math.round(w0 + (m.clientX - x0)))));
+		let raw = w0;
+		const mv = (m: PointerEvent) => {
+			raw = Math.round(w0 + (m.clientX - x0));
+			railW = Math.max(100, Math.min(360, raw));
+		};
 		const up = () => {
 			el.removeEventListener('pointermove', mv);
 			el.removeEventListener('pointerup', up);
 			el.removeEventListener('pointercancel', up);
+			// Under about 120px the rail snaps to the icon strip.
+			if (raw < 120) {
+				railW = Math.max(120, w0);
+				railOpen = false;
+			}
 			saveRail();
 		};
 		el.addEventListener('pointermove', mv);
@@ -249,13 +242,16 @@
 		if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
 			e.preventDefault();
 			e.stopPropagation();
-			railW = Math.max(100, Math.min(360, railW + (e.key === 'ArrowRight' ? 16 : -16)));
+			railW = Math.max(120, Math.min(360, railW + (e.key === 'ArrowRight' ? 16 : -16)));
 			saveRail();
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
 			setRail(false);
 		}
 	}
+	const TAB_ICON: Record<string, 'download' | 'clock' | 'downloader' | 'alert' | 'check'> = { active: 'download', waiting: 'clock', progress: 'downloader', problems: 'alert', done: 'check' };
+	const KIND_ICON: Record<string, 'film' | 'tv' | 'music'> = { movie: 'film', show: 'tv', artist: 'music' };
+	const SRC_ICON: Record<string, 'archive' | 'upload'> = { usenet: 'archive', torrent: 'upload' };
 	function setRail(open: boolean) {
 		railOpen = open;
 		saveRail();
@@ -367,7 +363,7 @@
 	const wMin = (id: ColId) => Math.max(layout.widths[id], MINW[id] ?? 0);
 	const vis = $derived.by(() => {
 		if (phone || room <= 0) return visAll;
-		const need = (c: ColId[]) => 32 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
+		const need = (c: ColId[]) => 48 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
 		let cur = [...visAll];
 		for (const d of DROP) {
 			if (need(cur) <= room) break;
@@ -382,7 +378,12 @@
 	let room = $state(0);
 	let titleMin = $state(MIN_W);
 	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
-	const tW = $derived(vis.includes('title') ? fitTitle(layout, room - 32, FIXED + (vis.length + 3) * gap, Math.min(titleMin, 220)) : 0);
+	const tW = $derived.by(() => {
+		if (!vis.includes('title')) return 0;
+		if (layout.titleSet || room <= 0) return layout.widths.title;
+		const rest = vis.reduce((n, id) => (id === 'title' ? n : n + wMin(id)), 48 + FIXED + (vis.length + 3) * gap);
+		return Math.max(TITLE_MIN, Math.min(layout.widths.title, Math.floor(room - rest)));
+	});
 	const wOf = (id: ColId) => (id === 'title' ? tW : wMin(id));
 	// Until a person sets the Title width, it flexes and takes whatever room is left.
 	const tpl = $derived(`8px 32px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
@@ -949,53 +950,63 @@
 <div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
 <div class="strip hdr" data-testid="dl-strip">
 	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
-		<IconButton icon="plus" label="Add (coming soon)" size="sm" disabled data-testid="tb-add" />
-		<IconButton icon="play" label="Resume (coming soon)" size="sm" disabled data-testid="tb-resume" />
-		<IconButton icon="pause" label="Pause (coming soon)" size="sm" disabled data-testid="tb-pause" />
-		<IconButton icon="trash" label={openRow?.can_act ? 'Remove' : 'Remove (open a download first)'} size="sm" disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove" />
-		<span class="div" aria-hidden="true"></span>
-		<span class="all"><IconButton icon="play" label="Resume all (coming soon)" size="sm" disabled data-testid="tb-resume-all" /><i aria-hidden="true">all</i></span>
-		<span class="all"><IconButton icon="pause" label="Pause all (coming soon)" size="sm" disabled data-testid="tb-pause-all" /><i aria-hidden="true">all</i></span>
-		<IconButton icon="refresh" label="Retry all problems (coming soon)" size="sm" disabled class="retry" data-testid="dl-retry-all" />
+		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={18} /></button></span>
+		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={18} /></button></span><Menu label="More start actions" icon="chevronDown" width={170} items={[{ label: 'Start all', icon: 'play', disabled: true, hint: 'Coming soon' }]} /></span>
+		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={18} /></button></span><Menu label="More pause actions" icon="chevronDown" width={170} items={[{ label: 'Pause all', icon: 'pause', disabled: true, hint: 'Coming soon' }]} /></span>
+		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={18} /></button></span>
+		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={18} /></button></span>
 	</div>
 	<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
 		<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
 		<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
 		{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
 	</div>
-	<div class="stats" data-testid="dl-stats">
-	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><span class="gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} /></span></span>
-	<span class="tl"><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
-	<span class="tg2" data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
-	{#if problems}<button type="button" class="need" onclick={() => (railOn = 'problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
-	</div>
 </div>
-<div class="body" style="--rail: {railShown ? railW : 22}px">
-<nav class="rail" class:compact={compactRail} class:shut={!railOpen} aria-label="Downloads filters" data-testid="dl-rail">
-	{#if railOpen}
-	<button type="button" class="rhide" aria-label="Hide filters" title="Hide filters" onclick={() => setRail(false)} data-testid="rail-hide"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
+<div class="body" style="--rail: {railShown ? railW : 52}px">
+<nav class="rail" class:shut={!railShown} aria-label="Downloads filters" data-testid="dl-rail">
+	{#if railShown}
+	<button type="button" class="rhide" aria-label="Hide filters" use:tip={'Hide filters'} onclick={() => setRail(false)} data-testid="rail-hide"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
 	<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
-		{#each railCounts as c (c.key)}
-			<button type="button" class="ri" class:on={railOn === c.key} class:zero={c.count === 0} aria-pressed={railOn === c.key} data-testid="rail-item" title={c.label} data-key={c.key} data-count={c.count} onclick={() => (railOn = c.key)}><span class="lb">{c.label}</span><span class="sh" aria-hidden="true">{c.short}</span><b>{c.count}</b></button>
+		{#each tally as c (c.key)}
+			{@const t = tabs.find((x) => x.key === c.key)}
+			<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b>{c.count}</b></button>
+			{#if t}
+				{#each subCounts(rows, t) as x (x.key)}
+					<button type="button" class="ri sub" class:on={on === c.key && subOn === x.key} class:zero={x.count === 0} aria-pressed={on === c.key && subOn === x.key} data-testid="rail-sub" data-key="{c.key}.{x.key}" data-count={x.count} onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }}><span class="lb">{x.label}</span><b>{x.count}</b></button>
+				{/each}
+			{/if}
 		{/each}
 	</div>
 	<div class="rg" role="group" aria-label="Categories" data-testid="dl-type-filter">
 		<p class="rh">Categories</p>
 		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-			<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} title={t.label} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="lb">{t.label}</span><span class="sh" aria-hidden="true">{t.key === 'movie' ? 'Mov' : t.key === 'show' ? 'TV' : 'Mus'}</span><b>{kindCount(t.key)}</b></button>
+			<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="lb">{t.label}</span><b>{kindCount(t.key)}</b></button>
 		{/each}
 	</div>
 	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
 		<p class="rh">Sources</p>
 		{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-			<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} title={t.label} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="lb">{t.label}</span><span class="sh" aria-hidden="true">{t.key === 'usenet' ? 'NZB' : 'Tor'}</span><b>{srcCount(t.key)}</b></button>
+			<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="lb">{t.label}</span><b>{srcCount(t.key)}</b></button>
 		{/each}
 	</div>
 	{:else}
-	<button type="button" class="rshow" aria-label="Show filters" title="Show filters" onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
+	<button type="button" class="rshow" aria-label="Show filters" use:tip={{ text: 'Show filters', side: 'right' }} onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
+	<div class="ics" role="group" aria-label="Filters" data-testid="rail-icons">
+		{#each tally as c (c.key)}
+			<button type="button" class="ic" class:on={on === c.key && !subOn} aria-pressed={on === c.key && !subOn} aria-label="{c.label}, {c.count}" use:tip={{ text: `${c.label} · ${c.count}`, side: 'right' }} data-testid="rail-icon" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={18} /><b class="bd">{c.count}</b></button>
+		{/each}
+		<hr />
+		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
+			<button type="button" class="ic" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} aria-label="{t.label}, {kindCount(t.key)}" use:tip={{ text: `${t.label} · ${kindCount(t.key)}`, side: 'right' }} data-testid="rail-icon-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={18} /><b class="bd">{kindCount(t.key)}</b></button>
+		{/each}
+		<hr />
+		{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
+			<button type="button" class="ic" class:on={srcOn === t.key} aria-pressed={srcOn === t.key} aria-label="{t.label}, {srcCount(t.key)}" use:tip={{ text: `${t.label} · ${srcCount(t.key)}`, side: 'right' }} data-testid="rail-icon-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={18} /><b class="bd">{srcCount(t.key)}</b></button>
+		{/each}
+	</div>
 	{/if}
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-	<div class="rz" role="separator" aria-orientation="vertical" aria-label="Resize filters" aria-valuenow={railOpen ? railW : 0} tabindex="0" class:fixed={!railOpen} onpointerdown={(e) => railOpen && railDown(e)} ondblclick={() => setRail(!railOpen)} onkeydown={railKey} data-testid="rail-handle"><i aria-hidden="true"></i></div>
+	<div class="rz" role="separator" aria-orientation="vertical" aria-label="Resize filters" aria-valuenow={railShown ? railW : 0} tabindex="0" class:fixed={!railShown} onpointerdown={(e) => railShown && railOpen && railDown(e)} ondblclick={() => setRail(!railOpen)} onkeydown={railKey} data-testid="rail-handle"><i aria-hidden="true"></i></div>
 </nav>
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -1018,13 +1029,37 @@
 {/if}
 </div>
 </div>
-<div class="sbar" data-testid="dl-statusbar">
-	<span data-testid="sb-free"><span class="k">Free space</span><b>{demoDetails ? bytes(sampleHeader.free) : '–'}</b></span>
-	<span data-testid="sb-health"><i class="dot" class:ok={demoDetails} aria-hidden="true"></i><b>{demoDetails ? 'Connected' : 'Not reported'}</b></span>
-	<span data-testid="sb-down" class="sd"><b>↓ {bytes(sum.speed)}/s</b>{#if demoDetails}<span class="k">{bytes(sampleHeader.sessionDown)} this session</span>{/if}</span>
-	<span data-testid="sb-up" class="sd up"><b>↑ {bytes(sum.up)}/s</b>{#if demoDetails}<span class="k">{bytes(sampleHeader.sessionUp)} this session</span>{/if}</span>
-	{#if demoDetails}<span class="note" data-testid="sb-sample" title="The Downloader is not connected yet; these are made-up values.">Sample data</span><span class="wide k" data-testid="sb-totals">Today {bytes(sampleHeader.today)} · Month {bytes(sampleHeader.month)} · All time {bytes(sampleHeader.all)}</span>{/if}
-</div>
+<div class="sbar" data-testid="dl-statusbar"><div class="sbi">
+	<span class="health" data-testid="sb-health"><i class="dot" class:ok={demoDetails} aria-hidden="true"></i><b>{demoDetails ? 'Connected' : 'Not reported'}</b></span>
+	<span class="s-free" data-testid="sb-free"><span class="k">Free space</span><b>{demoDetails ? bytes(sampleHeader.free) : '–'}</b></span>
+	<span class="sd" data-testid="sb-down"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b></span>
+	<span class="sd up" data-testid="sb-up"><b data-testid="dl-up">↑ {bytes(sum.up)}/s</b></span>
+	<span class="gr s-gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} width={96} height={20} /></span>
+	<span class="s-tl"><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
+	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
+	<span class="grow"></span>
+	{#if demoDetails}
+		<span class="s-ts k" data-testid="sb-session">↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)} this session</span>
+		<span class="s-tw k" data-testid="sb-totals">Today {bytes(sampleHeader.today)} · Month {bytes(sampleHeader.month)} · All time {bytes(sampleHeader.all)}</span>
+		<span class="s-ts note" data-testid="sb-sample" title="The Downloader is not connected yet; these are made-up values.">Sample data</span>
+	{/if}
+	<span class="smore" data-testid="sb-more"><Popover label="More status" icon="more" placement="above" align="end" width={280}>
+		{#snippet children()}
+			<ul class="mo">
+				<li class="m-free"><span class="k">Free space</span> {demoDetails ? bytes(sampleHeader.free) : '–'}</li>
+				<li class="m-gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} width={120} height={22} /></li>
+				<li class="m-tl"><span class="k">Time left</span> {sum.eta ? duration(sum.eta) : '–'}</li>
+				{#if demoDetails}
+					<li class="m-ts"><span class="k">This session</span> ↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)}</li>
+					<li class="m-tw"><span class="k">Today</span> {bytes(sampleHeader.today)}</li>
+					<li class="m-tw"><span class="k">This month</span> {bytes(sampleHeader.month)}</li>
+					<li class="m-tw"><span class="k">All time</span> {bytes(sampleHeader.all)}</li>
+					<li class="m-ts note">Sample data</li>
+				{/if}
+			</ul>
+		{/snippet}
+	</Popover></span>
+</div></div>
 </div>
 
 {#if ghost}<div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[ghost.id].label}</div>{/if}
@@ -1207,12 +1242,7 @@
 	.ri.zero:not(.on) { opacity: 0.72; }
 	.ri:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tbg { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-	.tbg .div { width: 1px; height: 20px; margin: 0 6px; background: var(--line-strong, var(--line)); }
-	.tbg .all { display: inline-flex; align-items: center; }
-	.tbg .all i { margin-left: -4px; color: var(--text-muted); font: var(--t-caption); font-style: normal; }
-	.sbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; padding: 8px 14px; border-top: 1px solid var(--line); }
-	.sbar > span { display: inline-flex; align-items: center; gap: 6px; }
-	.sbar .wide { margin-left: auto; }
+	.sbar { flex: none; border-top: 1px solid var(--line); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 	.gen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 10px; }
@@ -1243,7 +1273,7 @@
 	.pv { display: inline-block; min-width: 34px; margin-left: 6px; text-align: right; }
 	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.hdr { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px 16px; margin: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); background: none; container-type: inline-size; }
+	.hdr { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 16px; margin: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); background: none; }
 	.col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
 	.drow.sel > .dline { position: relative; z-index: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface-1)); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
@@ -1268,11 +1298,7 @@
 	.pcl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pb { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: start; gap: 16px; flex: 1 1 auto; min-height: 0; padding: 12px; overflow: auto; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	.hdr .find { justify-self: center; margin-left: 0; width: min(320px, 100%); }
 	.hdr .find input { width: 100%; min-width: 0; flex: 1 1 auto; }
-	.stats { display: flex; align-items: center; justify-content: flex-end; gap: 6px 16px; flex-wrap: nowrap; min-width: 0; white-space: nowrap; font: var(--t-callout); font-variant-numeric: tabular-nums; }
-	.stats > span { display: inline-flex; align-items: center; gap: 6px; }
-	.stats .need { margin-left: 0; }
 	.rz { position: absolute; top: 0; right: -4px; bottom: 0; z-index: 6; width: 9px; cursor: col-resize; touch-action: none; }
 	.rz.fixed { cursor: pointer; }
 	.rz i { position: absolute; top: 50%; left: 3px; width: 3px; height: 38px; margin-top: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
@@ -1287,14 +1313,41 @@
 	.rhide:hover, .rshow:hover { background: var(--surface-3); color: var(--text); }
 	.rhide:focus-visible, .rshow:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.rail.shut { padding: 10px 0; overflow: hidden; }
-	.ri .sh { display: none; }
-	.rail.compact .ri { padding: 0 6px; gap: 4px; }
-	.rail.compact .ri .lb { display: none; }
-	.rail.compact .ri .sh { display: inline; }
-	.rail.compact .rh { display: none; }
-	@container (max-width: 1250px) { .stats .tg2 { display: none; } }
-	@container (max-width: 1050px) { .stats .tl { display: none; } }
-	@container (max-width: 900px) { .stats .gr { display: none; } }
+	.hdr .find { justify-self: center; width: min(320px, 100%); min-width: 0; }
+	.hdr .find input { width: 100%; min-width: 0; flex: 1 1 auto; }
+	.tbn { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.tbn:hover:not(:disabled) { background: var(--surface-3); }
+	.tbn:disabled { opacity: 0.45; cursor: not-allowed; }
+	.tbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.tw2 { display: inline-flex; }
+	.split { display: inline-flex; align-items: center; }
+	.split :global(button[aria-haspopup]) { width: 20px; min-width: 0; height: 32px; padding: 0; margin-left: -4px; }
+	.ri { overflow: hidden; }
+	.ri .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+	.ri.sub { padding-left: 24px; min-height: 28px; color: var(--text-muted); }
+	.ri.sub.on { color: var(--accent-text, var(--text)); }
+	.ri b { flex: none; }
+	.ics { display: grid; justify-items: center; gap: 4px; }
+	.ics hr { width: 28px; height: 1px; margin: 4px 0; border: 0; background: var(--line); }
+	.ic { position: relative; display: grid; place-items: center; width: 40px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text-muted); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.ic:hover { background: var(--surface-3); color: var(--text); }
+	.ic.on { background: var(--surface-1); color: var(--accent-text, var(--text)); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 10px rgb(0 0 0 / 0.08); }
+	.ic:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.ic .bd { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 10px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.sbar { container: sb / inline-size; }
+	.sbi { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 6px 14px; min-width: 0; }
+	.sbi > span { display: inline-flex; align-items: center; gap: 6px; }
+	.sbi .grow { flex: 1 1 0; }
+	.sbi .health { order: -1; }
+	.sbi .need { margin-left: 0; }
+	.sbi > .smore { display: none; }
+	.mo { list-style: none; margin: 0; padding: 4px; display: grid; gap: 6px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.m-free, .m-gr, .m-tl, .m-ts, .m-tw { display: none; }
+	@container sb (max-width: 1500px) { .sbi > .s-tw { display: none; } .sbi > .smore { display: inline-flex; } .m-tw { display: block; } }
+	@container sb (max-width: 1250px) { .sbi > .s-ts { display: none; } .m-ts { display: block; } }
+	@container sb (max-width: 900px) { .sbi > .s-free { display: none; } .m-free { display: block; } }
+	@container sb (max-width: 720px) { .sbi > .s-gr { display: none; } .m-gr { display: block; } }
+	@container sb (max-width: 560px) { .sbi > .s-tl { display: none; } .m-tl { display: block; } }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -1369,10 +1422,7 @@
 		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
 		.pt { flex-basis: 100%; }
 		.hdr { grid-template-columns: minmax(0, 1fr); }
-		.stats { justify-content: flex-start; flex-wrap: wrap; }
-		.hdr .find { justify-self: stretch; width: auto; }
-		.sbar .wide { display: none; }
-		.gen { grid-template-columns: minmax(0, 1fr); }
+			.gen { grid-template-columns: minmax(0, 1fr); }
 		.t2 .c-size, .t2 .c-rem, .t2 .c-av, .t2 .c-cl, .t2 .c-msg { display: none; }
 		.t2 .c-name { max-width: 140px; }
 	}
@@ -1381,8 +1431,6 @@
 		.rail.shut { padding: 8px; overflow-x: auto; }
 		.rail.shut::before { content: none; }
 		.rail .ri .lb { display: inline; }
-		.rail .ri .sh { display: none; }
-		.rail.compact .rh { display: block; }
 		.body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
 		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 		.rail::-webkit-scrollbar { display: none; }

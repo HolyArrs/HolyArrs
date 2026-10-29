@@ -57,13 +57,13 @@ describe('the tabs', () => {
 			}
 		}
 	});
-	it('sub-tabs: none on Active; Queued · Paused, Downloading · Importing, Failed · Needs a decision, Done · Seeding · Failed', () => {
+	it('sub-tabs: none on Active; Queued · Paused, Downloading · Stalled · Importing, Failed · Review, Done · Seeding · Failed', () => {
 		const tabs = tabsFor(rows, true);
 		expect(tabs.map((t) => subCounts(rows, t).map((s) => `${s.label} ${s.count}`))).toEqual([
 			[],
 			['Queued 1', 'Paused 1'],
-			['Downloading 2', 'Importing 3'],
-			['Failed 3', 'Needs a decision 1'],
+			['Downloading 1', 'Stalled 1', 'Importing 3'],
+			['Failed 3', 'Review 1'],
 			['Done 2', 'Seeding 1', 'Failed 3']
 		]);
 	});
@@ -89,7 +89,7 @@ describe('the tabs', () => {
 
 describe('statusWord', () => {
 	it('follows the sub-tab words', () => {
-		expect(rows.map((x) => statusWord(x))).toEqual(['Queued', 'Downloading', 'Importing', 'Stalled', 'Paused', 'Importing', 'Importing', 'Done', 'Seeding', 'Failed', 'Removed', 'Failed', 'Needs a decision', 'Failed']);
+		expect(rows.map((x) => statusWord(x))).toEqual(['Queued', 'Downloading', 'Importing', 'Stalled', 'Paused', 'Importing', 'Importing', 'Done', 'Seeding', 'Failed', 'Removed', 'Failed', 'Review', 'Failed']);
 	});
 });
 
