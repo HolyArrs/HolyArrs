@@ -208,12 +208,17 @@
 			}
 		} catch (e) {
 			error = message(e);
+			goTo = null;
 		} finally {
 			loaded = true;
 			if (n === asks) {
 				fetching = false;
 				// The rows draw once loaded is set; then the page goes to today, below the bars.
-				if (toTodayOnce && !error) void tick().then(() => atToday() && (toTodayOnce = false));
+				if (toTodayOnce && !error) {
+					// One go: with nothing on or after today the page simply stays where it is.
+					toTodayOnce = false;
+					void tick().then(atToday);
+				}
 			}
 		}
 	}
@@ -230,6 +235,7 @@
 		const t = addDays(new Date((active ?? todayKey) + 'T00:00:00'), 7 * n);
 		const day = ymd(t < earliest ? earliest : t >= latest ? addDays(latest, -1) : t);
 		const row = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= day);
+		if (!row && day >= firstDay && day < lastDay) return toasts.push('No more dates after this.', 'ok');
 		if (row && day >= firstDay && day < lastDay) {
 			active = row.dataset.day ?? day;
 			goRow(row);
@@ -249,7 +255,8 @@
 		const m = /^(\d{4})-(\d{2})$/.exec(nav.to?.url.searchParams.get('month') ?? '');
 		if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) {
 			toTodayOnce = false;
-			jump(new Date(Number(m[1]), Number(m[2]) - 1, 1));
+			const at = new Date(Number(m[1]), Number(m[2]) - 1, 1);
+			jump(at < earliest ? earliest : at >= latest ? addDays(latest, -7 * REACH) : at);
 			window.scrollTo({ top: 0, behavior: 'instant' });
 			return;
 		}
@@ -272,6 +279,7 @@
 		if (row) goRow(row);
 		else {
 			// Today is not loaded (a linked month): load the past year to six weeks ahead, then go to today.
+			if (start.getTime() === earliest.getTime() && end.getTime() === addDays(today0, 7 * REACH).getTime()) return void atToday();
 			start = earliest;
 			end = addDays(today0, 7 * REACH);
 			anchor = null;
@@ -315,15 +323,12 @@
 	// after (scrollTop moves by what was added), so nothing jumps.
 	let anchor: { day: string; top: number } | null = null;
 	function notePlace() {
-		const rows = document.querySelectorAll<HTMLElement>('.cal-main [data-day]');
-		for (const r of rows) {
-			const b = r.getBoundingClientRect();
-			if (b.bottom > 0) {
-				anchor = { day: r.dataset.day ?? '', top: b.top };
-				return;
-			}
-		}
-		anchor = null;
+		// The first row that starts below the top bar and the date bar (rows differ in height
+		// between views, so a row half hidden under the bars is a poor mark); else the one under them.
+		const line = narrow ? 112 : 136;
+		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
+		const r = rows.find((x) => x.getBoundingClientRect().top >= line - 8) ?? rows.find((x) => x.getBoundingClientRect().bottom > line);
+		anchor = r ? { day: r.dataset.day ?? '', top: r.getBoundingClientRect().top } : null;
 	}
 	function holdPlace() {
 		if (!anchor) return;
@@ -420,7 +425,26 @@
 	}
 
 	// Cards or List: in the address and kept for the session.
+	// Cards or List keeps the same day under the bars: the height is held while the views swap
+	// (so the page cannot shrink and scroll up, which would bring the top bar back), then the
+	// day at the top is put back where it was.
 	function pickView(v: CalendarView) {
+		if (v === view) return;
+		const main = document.querySelector<HTMLElement>('.cal-main');
+		if (main) main.style.minHeight = `${main.offsetHeight}px`;
+		notePlace();
+		const was = anchor;
+		anchor = null;
+		// The old view may stay a moment while it fades out: wait until only the new one is left.
+		let tries = 0;
+		const settle = () => {
+			if (document.querySelectorAll('.cal-main .view-in').length > 1 && tries++ < 40) return void requestAnimationFrame(settle);
+			anchor = was;
+			holdPlace();
+			rebaseBar();
+			if (main) main.style.minHeight = '';
+		};
+		void tick().then(settle);
 		view = v;
 		saveView(v);
 		const u = new URL(page.url.href);
