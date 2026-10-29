@@ -6,7 +6,7 @@
 	import { dlScope } from '#lib/search-field.svelte.ts';
 	import { replaceState } from '$app/navigation';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { tabsLook, tabsOf } from '#lib/downloads/tabsLook.svelte.ts';
+	import { subLook, subOf } from '#lib/downloads/subLook.svelte.ts';
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -208,15 +208,16 @@
 			busy = 0;
 		}
 	}
-	// A switch for how the status tabs look (?tabs=1..5); the URL is the saved copy, the store is what both sides read.
-	const LOOKS = [{ value: '1', label: '1 \u00b7 Underline' }, { value: '2', label: '2 \u00b7 Pill' }, { value: '3', label: '3 \u00b7 Badges' }, { value: '4', label: '4 \u00b7 Titles' }, { value: '5', label: '5 \u00b7 Toolbar' }];
-	tabsLook.value = tabsOf(page.url.searchParams.get('tabs'));
+	// A switch for how the sub-statuses look (?sub=a..g); the URL is the saved copy, the store is what both sides read.
+	const LOOKS = [{ value: 'a', label: 'a \u00b7 Expand' }, { value: 'b', label: 'b \u00b7 Attach' }, { value: 'c', label: 'c \u00b7 Filter' }, { value: 'd', label: 'd \u00b7 Tray' }, { value: 'e', label: 'e \u00b7 Split' }, { value: 'f', label: 'f \u00b7 Menu' }, { value: 'g', label: 'g \u00b7 Underline' }];
+	subLook.value = subOf(page.url.searchParams.get('sub'));
 	$effect(() => {
-		const pick = tabsLook.value;
+		const pick = subLook.value;
 		const u = new URL(location.href);
+		u.searchParams.delete('tabs');
 		u.searchParams.delete('rail');
-		if ((u.searchParams.get('tabs') ?? '1') === pick && u.href === location.href) return;
-		u.searchParams.set('tabs', pick);
+		if ((u.searchParams.get('sub') ?? 'a') === pick && u.href === location.href) return;
+		u.searchParams.set('sub', pick);
 		try { replaceState(u, page.state); } catch { /* router not ready */ }
 	});
 	// The top bar's search field filters this page while it is open.
@@ -248,7 +249,7 @@
 {/if}
 </PageLoader>
 
-<div class="railbar" data-testid="tabs-look"><SegmentedControl options={LOOKS} bind:value={tabsLook.value} label="Tabs look" size="sm" announce={(l) => `Showing ${l}`} /></div>
+<div class="railbar" data-testid="sub-look"><SegmentedControl options={LOOKS} bind:value={subLook.value} label="Sub-status look" size="sm" announce={(l) => `Showing ${l}`} /></div>
 
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}

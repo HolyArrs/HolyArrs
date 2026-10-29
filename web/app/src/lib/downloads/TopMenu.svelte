@@ -7,19 +7,26 @@
 	// kept inside the screen (flipped above when there is no room below). Arrow keys,
 	// Home and End move; Escape and an outside click close it and give the focus back.
 	type Item = { label: string; hint?: string; disabled?: boolean; onselect?: () => void };
-	let { label, items, tight = false }: { label: string; items: Item[]; tight?: boolean } = $props();
+	let { label, items, tight = false, text = '', bare = false }: { label: string; items: Item[]; tight?: boolean; text?: string; bare?: boolean } = $props();
 
 	let btn = $state<HTMLButtonElement>();
+	let anchor = $state<HTMLElement>();
+	/** Opens the menu under any element (the picked pill, say). */
+	export function show(el: HTMLElement) {
+		anchor = el;
+		panel?.showPopover();
+	}
 	let panel = $state<HTMLElement>();
 	let open = $state(false);
 	const id = `dlm-${Math.random().toString(36).slice(2, 8)}`;
 
 	function place() {
-		if (!btn || !panel) return;
+		const at = anchor ?? btn;
+		if (!at || !panel) return;
 		const pad = 8;
 		const vw = document.documentElement.clientWidth;
 		const vh = document.documentElement.clientHeight;
-		const a = btn.getBoundingClientRect();
+		const a = at.getBoundingClientRect();
 		const m = panel.getBoundingClientRect();
 		let left = a.left;
 		let top = a.bottom + 4;
@@ -57,7 +64,7 @@
 	}
 </script>
 
-<button type="button" class="caret" class:tight bind:this={btn} popovertarget={id} aria-haspopup="menu" aria-expanded={open} aria-controls={id} aria-label={label} data-testid="dl-menu-caret"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
+{#if !bare}<button type="button" class="caret" class:tight class:txt={!!text} bind:this={btn} popovertarget={id} aria-haspopup="menu" aria-expanded={open} aria-controls={id} aria-label={label} data-testid="dl-menu-caret">{#if text}<span>{text}</span>{/if}<Icon name="chevronDown" size={14} stroke={2.2} /></button>{/if}
 <div {id} popover="auto" role="menu" tabindex="-1" aria-label={label} bind:this={panel} ontoggle={toggled} onkeydown={keys} class="tm" data-testid="dl-menu">
 	{#each items as it (it.label)}
 		<button type="button" role="menuitem" class="mi2" aria-disabled={it.disabled ? 'true' : undefined} tabindex="-1" onclick={() => pick(it)}><span class="t">{it.label}</span>{#if it.hint}<span class="h">{it.hint}</span>{/if}</button>
@@ -66,6 +73,7 @@
 
 <style>
 	.caret { display: grid; place-items: center; width: 24px; height: 34px; margin-left: -6px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text-muted); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.caret.txt { width: auto; padding: 0 6px; gap: 4px; margin-left: 0; font: 600 11px/1 var(--font-ui); color: var(--text); }
 	.caret.tight { height: 28px; margin-left: -4px; }
 	.caret.tight { height: 28px; margin-left: -4px; }
 	.caret:hover { background: var(--surface-3); color: var(--text); }

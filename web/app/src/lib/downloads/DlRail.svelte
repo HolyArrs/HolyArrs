@@ -194,7 +194,7 @@
 	.gh .chv { display: grid; place-items: center; width: 24px; height: 24px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.gh:hover .chv, .gh:focus-visible .chv { opacity: 1; }
 	@media (hover: none) { .gh .chv { opacity: 1; } }
-	.gh[aria-expanded='false'] .chv { transform: rotate(-90deg); }
+	.gh[aria-expanded='false'] .chv { transform: rotate(-90deg); opacity: 1; }
 	.gh:hover { color: var(--text); }
 	.gh:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ic .bd { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 10px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
