@@ -578,7 +578,7 @@
 	.showing { position: absolute; z-index: 1; top: 18px; left: var(--gutter); padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); color: #fff; font: var(--t-footnote); font-weight: 600; text-decoration: none; }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
 	.cline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; margin-top: calc(var(--gap) * -1 - 52px); position: relative; z-index: 1; }
-	.photo { display: grid; place-items: center; width: 240px; aspect-ratio: 16 / 9; height: auto; border-radius: var(--r-card); overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3, var(--surface-2))); box-shadow: var(--shadow-card), 0 18px 40px rgb(0 0 0 / .35); transition: transform var(--dur) var(--ease-out); }
+	.photo { display: grid; place-items: center; width: 150px; aspect-ratio: 2 / 3; height: auto; border-radius: var(--r-card); overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3, var(--surface-2))); box-shadow: var(--shadow-card), 0 18px 40px rgb(0 0 0 / .35); transition: transform var(--dur) var(--ease-out); }
 	.photo:hover { transform: scale(1.02); }
 	.photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
 	.initials { color: #fff; font: 700 40px/1 var(--font-display); }
@@ -592,7 +592,7 @@
 	:global(html.bar-hidden) .slimwrap { transform: translateY(calc(-1 * var(--topbar))); }
 	.slim { --tint: #3a3d44; position: absolute; top: 0; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 var(--gutter); box-sizing: border-box; background: color-mix(in srgb, var(--tint) 45%, #0b0c0f); color: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / .22); opacity: 0; translate: 0 -8px; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
 	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
-	.s-photo { width: 64px; height: 36px; border-radius: 8px; object-fit: cover; object-position: center 20%; }
+	.s-photo { width: 32px; height: 48px; border-radius: 6px; object-fit: cover; object-position: center 20%; }
 	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
 	@media (prefers-reduced-motion: reduce) { .slim, .slimwrap { transition: none; translate: none; } }
 	.own { display: inline-flex; align-items: center; gap: 6px; }
@@ -658,7 +658,7 @@
 	.ab-frame.on { opacity: 1; scale: 1.12; }
 	.ab-still::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 60%); }
 	.ab-still figcaption { position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 16px; color: #fff; }
-	.ab-face { flex: none; width: 112px; height: 63px; border-radius: 10px; object-position: center 20%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
+	.ab-face { flex: none; width: 64px; height: 96px; border-radius: 10px; object-position: center 20%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
 	.ab-still figcaption span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.ab-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
 	.ab-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
@@ -715,7 +715,7 @@
 		.ab-side { position: static; }
 		.ab-still { aspect-ratio: 16 / 10; }
 		.ab-still figcaption { left: 16px; right: 16px; bottom: 14px; }
-		.ab-face { width: 80px; height: 45px; }
+		.ab-face { width: 48px; height: 72px; }
 		.ab-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.ab-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.ab-figs p:nth-child(3) { border-left: 0; }
@@ -725,7 +725,7 @@
 		.ap { --gap: 32px; }
 		.banner { height: 200px; margin-top: calc(var(--s-4) * -1); }
 		.cline { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 12px; margin-top: calc(var(--gap) * -1 - 56px); }
-		.photo { width: 200px; height: auto; }
+		.photo { width: 112px; height: auto; }
 		.c-words { align-items: center; padding: 0; }
 		.c-words h1 { font-size: clamp(28px, 8.4vw, 36px); }
 		.acts { padding: 0; }
