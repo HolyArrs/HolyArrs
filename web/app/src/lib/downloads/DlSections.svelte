@@ -17,7 +17,7 @@
 	import Menu from '../ui/Menu.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
-	import { ago, duration, percent } from '../format.ts';
+	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../motion.ts';
@@ -85,6 +85,18 @@
 	}
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
+	// ?card=a|b|c picks the expanded row's layout (c, the big poster, is the default).
+	const card = $derived((['a', 'b'].includes(page.url.searchParams.get('card') ?? '') ? page.url.searchParams.get('card') : 'c') as 'a' | 'b' | 'c');
+	const TABS = ['Info', 'Files', 'Peers', 'Log'] as const;
+	let xtabOn = $state<Record<number, (typeof TABS)[number]>>({});
+	const tabOf = (id: number) => xtabOn[id] ?? 'Info';
+	let filesOpen = $state(new Set<number>());
+	function toggleFiles(id: number) {
+		const n = new Set(filesOpen);
+		if (n.has(id)) n.delete(id);
+		else n.add(id);
+		filesOpen = n;
+	}
 	const start = showOf(page.url.searchParams.get('show'));
 	let show = $state(start.show);
 	let sub = $state(start.sub);
@@ -536,20 +548,69 @@
 	</div>
 {/snippet}
 
+{#snippet btns(r: DownloadRow, files: boolean)}
+	<div class="xbt" data-testid="dl-actions">
+		<button type="button" class="xbn" disabled title="Coming soon">Pause</button>
+		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
+		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
+	</div>
+	{#if files && filesOpen.has(r.id)}<p class="nr" data-testid="dl-files">Not reported yet</p>{/if}
+{/snippet}
+
 {#snippet panel(r: DownloadRow)}
 	{@const ds = decisionsOf(r)}
-	<div class="x" id="dlx-{r.id}" data-testid="dl-panel" in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
+	{@const sizeWord = r.size ? bytes(r.size) : 'Not reported yet'}
+	{@const im = importOf.get(r.id)}
+	{@const simple = [
+		{ label: 'Source', value: im?.Plan?.[0]?.source_file || 'Not reported yet' },
+		{ label: 'Downloader', value: r.downloader || 'Not reported yet' },
+		{ label: 'Folder', value: im?.Plan?.find((p) => p.target_path)?.target_path || 'Not reported yet' },
+		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
+		{ label: 'Requested by', value: 'Not reported yet' }
+	]}
+	{#if card === 'c'}
+	<div class="x" id="dlx-{r.id}" data-testid="dl-panel" data-card="c" in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
 		<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster" in:grow={{ from: small(r.id), dur: DUR.base, ease: easeOut }} out:grow={{ from: small(r.id), dur: DUR.fast, ease: easeIn }}><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
 		<div class="xb">
 		<dl class="kv">
-			{#each facts(r, importOf.get(r.id)) as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
+			{#each facts(r, im) as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
 		</dl>
 		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
+		{@render btns(r, false)}
 		{#if r.can_act && !inHistory(r)}
 			<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
 		{/if}
 		</div>
 	</div>
+	{:else}
+	<div class="x cd" id="dlx-{r.id}" data-testid="dl-panel" data-card={card} in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
+		<div class="xh">
+			{#if card === 'a'}<span class="thumb" class:square={r.kind === 'artist'}><Poster src={poster(r, titles)} name={r.title || r.name} /></span>{/if}
+			<p class="xt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
+		</div>
+		{#if card === 'b'}
+			<div class="xtabs" role="tablist" aria-label="Details">
+				{#each TABS as t (t)}
+					{#if t !== 'Peers' || protocolOf(r) === 'torrent'}
+						<button type="button" role="tab" class="xtab" class:on={tabOf(r.id) === t} aria-selected={tabOf(r.id) === t} onclick={() => (xtabOn[r.id] = t)}>{t}</button>
+					{/if}
+				{/each}
+			</div>
+			{#if tabOf(r.id) === 'Info'}
+				<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
+			{:else}
+				<p class="nr">Not reported yet</p>
+			{/if}
+		{:else}
+			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
+		{/if}
+		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
+		{@render btns(r, card === 'a')}
+		{#if r.can_act && !inHistory(r)}
+			<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
+		{/if}
+	</div>
+	{/if}
 {/snippet}
 
 <svelte:window onpointerdown={outside} />
@@ -759,6 +820,24 @@
 	.kv dt { color: var(--text-muted); }
 	.kv dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 	.dp { margin-top: 10px; }
+	.cd { display: block; }
+	.xh { display: flex; align-items: center; gap: 10px; min-width: 0; }
+	.thumb { flex: none; width: 32px; height: 48px; overflow: hidden; border-radius: 4px; --poster-ratio: 2 / 3; }
+	.thumb.square { height: 32px; --poster-ratio: 1; }
+	.thumb :global(.poster) { border-radius: 4px; }
+	.xt { display: grid; gap: 2px; margin: 0; min-width: 0; font: var(--t-footnote); }
+	.xt b { font-weight: 600; overflow-wrap: anywhere; }
+	.xt span { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.cd .kv, .cd .xtabs { margin-top: 10px; }
+	.nr { margin: 8px 0 0; color: var(--text-muted); font: var(--t-footnote); }
+	.xtabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; width: max-content; max-width: 100%; border-radius: var(--r-btn); background: var(--surface-2); }
+	.xtab { min-height: 28px; padding: 0 12px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
+	.xtab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+	.xtab:focus-visible, .xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+	.xbn { min-height: 32px; padding: 0 14px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
+	.xbn:hover:not(:disabled) { background: var(--surface-3); }
+	.xbn:disabled { opacity: 0.5; cursor: not-allowed; }
 	.xa { margin: 8px 0 0; }
 	.lk { min-height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: none; color: var(--accent-text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 
