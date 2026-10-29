@@ -132,6 +132,33 @@
 		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
 		return [known ? `Known for ${known}` : p.department, born ? `Born ${born}` : '', p.birthplace ? `From ${p.birthplace}` : wiki.birth_place ? `From ${wiki.birth_place}` : '', died ? `Died ${died}` : ''].filter(Boolean) as string[];
 	});
+	// The About sheet: three layouts Luis is comparing (switch inside the sheet).
+	const ABOUT_VIEWS = [{ value: 'profile', label: 'Profile' }, { value: 'dossier', label: 'Dossier' }, { value: 'career', label: 'Career' }];
+	let aboutView = $state('profile');
+	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
+	const about = $derived.by(() => {
+		const p = data?.person;
+		if (!p) return null;
+		const born = p.birthday || wiki.born || '';
+		const died = p.deathday || wiki.died || '';
+		const end = died ? new Date(`${died}T00:00:00Z`) : new Date();
+		const b = born.length === 10 ? new Date(`${born}T00:00:00Z`) : null;
+		const age = b ? end.getUTCFullYear() - b.getUTCFullYear() - (end < new Date(Date.UTC(end.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate())) ? 1 : 0) : 0;
+		const rows = [
+			{ k: 'Born', v: longDate(born), sub: age && !died ? `${age} years old` : '' },
+			{ k: 'From', v: p.birthplace || wiki.birth_place || '', sub: '' },
+			{ k: 'Died', v: longDate(died), sub: age && died ? `aged ${age}` : '' },
+			{ k: 'Known for', v: data?.known_for?.[0]?.name ?? '', sub: data?.known_for?.[0]?.year ? String(data.known_for[0].year) : '' },
+			{ k: 'Work', v: p.department ?? '', sub: yearsLine }
+		].filter((x) => x.v);
+		const wins = wiki.awards.filter((a) => a.won);
+		const noms = wiki.awards.length - wins.length;
+		const awards = [...wiki.awards].sort((x, y) => Number(y.won) - Number(x.won) || y.year - x.year).slice(0, 8);
+		const paras = (bio || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
+		const span = decades.map((g) => ({ label: g.label, n: g.movies.length }));
+		const most = Math.max(1, ...span.map((x) => x.n));
+		return { rows, wins: wins.length, noms, awards, paras, span, most, still: reel[1] || hero || '', wikiUrl: wiki.bio?.url ?? '' };
+	});
 	const decades = $derived.by(() => {
 		const g = byDecade(movies);
 		if (sort !== 'popular') return g;
@@ -364,8 +391,62 @@
 			</button>
 		</section>
 		<Sheet bind:open={aboutOpen} title="About {data.person.name}" size="lg">
-			{#if facts.length}<p class="s-facts">{facts.join(' · ')}</p>{/if}
-			<p class="s-bio">{bio}</p>
+			{#if about}
+			<div class="ab ab-{aboutView}" data-testid="person-about-sheet">
+				<div class="ab-switch"><SegmentedControl label="About layout" value={aboutView} options={ABOUT_VIEWS} onchange={(v) => (aboutView = v)} /></div>
+				{#if aboutView !== 'dossier' && about.still}
+					<figure class="ab-still">
+						<img src={about.still} alt="" decoding="async" />
+						<figcaption>
+							{#if photo}<img class="ab-face" src={photo} alt="" />{/if}
+							<span><b>{data.person.name}</b>{#if lead}<small>{lead}</small>{/if}</span>
+						</figcaption>
+					</figure>
+				{/if}
+
+				{#if aboutView === 'career'}
+					<div class="ab-figs">
+						{#if data.stats?.films}<p><b>{data.stats.films}</b><span>films</span></p>{/if}
+						{#if data.stats?.shows}<p><b>{data.stats.shows}</b><span>shows</span></p>{/if}
+						{#if yearsLine}<p><b>{yearsLine}</b><span>on screen</span></p>{/if}
+						{#if about.wins || about.noms}<p><b>{about.wins}</b><span>{about.wins === 1 ? 'win' : 'wins'} · {about.noms} more nominations</span></p>{/if}
+					</div>
+					{#if about.span.length > 1}
+						<section class="ab-sec"><h3>By decade</h3>
+							<ol class="ab-bars">{#each [...about.span].reverse() as d (d.label)}<li><span class="bar" style:--h={d.n / about.most}><i></i></span><b>{d.n}</b><small>{d.label}</small></li>{/each}</ol>
+						</section>
+					{/if}
+				{/if}
+
+				<div class="ab-body">
+					{#if aboutView === 'dossier'}
+						<aside class="ab-side">
+							<span class="ab-round">{#if photo}<img src={photo} alt="" />{/if}</span>
+							<h3 class="ab-name">{data.person.name}</h3>
+							<dl class="ab-dl">{#each about.rows as x (x.k)}<div><dt>{x.k}</dt><dd>{x.v}{#if x.sub}<small>{x.sub}</small>{/if}</dd></div>{/each}</dl>
+						</aside>
+					{:else if aboutView === 'profile'}
+						<dl class="ab-tiles">{#each about.rows as x (x.k)}<div><dt>{x.k}</dt><dd>{x.v}</dd>{#if x.sub}<small>{x.sub}</small>{/if}</div>{/each}</dl>
+					{/if}
+					<div class="ab-main">
+						{#if about.paras.length}
+							<section class="ab-sec"><h3>Story</h3>
+								<div class="ab-bio">{#each about.paras as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>
+							</section>
+						{/if}
+						{#if about.awards.length}
+							<section class="ab-sec"><h3>Awards</h3>
+								<ul class="ab-awards">{#each about.awards as a, i (i)}<li class:won={a.won}><span class="ab-yr">{a.year || ''}</span><span class="ab-aw"><b>{a.name}</b>{#if a.for_work}<small>{a.for_work}</small>{/if}</span><span class="ab-tag">{a.won ? 'Won' : 'Nominated'}</span></li>{/each}</ul>
+							</section>
+						{/if}
+						{#if aboutView === 'career' && about.rows.length}
+							<section class="ab-sec"><h3>Details</h3><dl class="ab-dl">{#each about.rows as x (x.k)}<div><dt>{x.k}</dt><dd>{x.v}{#if x.sub}<small>{x.sub}</small>{/if}</dd></div>{/each}</dl></section>
+						{/if}
+						{#if about.wikiUrl}<a class="ab-src" href={about.wikiUrl} target="_blank" rel="noopener noreferrer">Read more on Wikipedia</a>{/if}
+					</div>
+				</div>
+			</div>
+			{/if}
 		</Sheet>
 	{/if}
 
@@ -381,7 +462,6 @@
 			<ul class="grid">{#each allDecade.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}</ul>
 		</Sheet>
 	{/if}
-	{#if !data.complete}<p class="attribution">This list may not be complete.</p>{/if}
 	</div>
 {:else if data && (wikiDone || wikiWaited)}
 	<header class="hero" data-hero>
@@ -438,7 +518,6 @@
 		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
 	</section>
 
-	{#if !data.complete}<p class="attribution">This list may not be complete.</p>{/if}
 {/if}
 </PageLoader>
 <VariantBar options={VIEWS} bind:value={view} param="look" storageKey="holyarrs.people-look-2" label="People page layout" />
@@ -544,7 +623,73 @@
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.circles li { flex: none; }
 	@media (max-width: 1000px) { .songs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
+	/* About sheet (Profile / Dossier / Career). */
+	.ab { display: flex; flex-direction: column; gap: 28px; }
+	.ab-switch { display: flex; justify-content: center; }
+	.ab-still { position: relative; margin: 0; aspect-ratio: 21 / 9; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; isolation: isolate; animation: ab-in var(--dur-slow) var(--ease-out); }
+	.ab-still > img { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+	.ab-still::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 60%); }
+	.ab-still figcaption { position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 16px; color: #fff; }
+	.ab-face { flex: none; width: 64px; height: 64px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
+	.ab-still figcaption span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+	.ab-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
+	.ab-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
+	.ab-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0; }
+	.ab-tiles div { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 14px; background: var(--surface-1); border: 1px solid var(--line, var(--border)); }
+	.ab-tiles dt, .ab-dl dt, .ab-sec h3 { margin: 0; color: var(--text-muted); font: 700 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; }
+	.ab-tiles dd { margin: 0; color: var(--text); font: 600 16px/1.3 var(--font-ui); }
+	.ab-tiles small, .ab-dl small { color: var(--text-muted); font: var(--t-footnote); }
+	.ab-body { display: flex; flex-direction: column; gap: 28px; }
+	.ab-dossier .ab-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 36px; align-items: start; }
+	.ab-side { position: sticky; top: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+	.ab-round { width: 168px; height: 168px; border-radius: 50%; overflow: hidden; background: var(--surface-2); box-shadow: 0 14px 36px rgb(0 0 0 / .3); }
+	.ab-round img { width: 100%; height: 100%; object-fit: cover; }
+	.ab-name { margin: 0; font: 800 24px/1.1 var(--font-display); letter-spacing: -.02em; color: var(--text); }
+	.ab-dl { display: flex; flex-direction: column; width: 100%; margin: 0; text-align: left; }
+	.ab-dl div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line, var(--border)); }
+	.ab-dl dt { padding-top: 3px; }
+	.ab-dl dd { display: flex; flex-direction: column; gap: 2px; margin: 0; color: var(--text); font: 600 15px/1.35 var(--font-ui); }
+	.ab-main { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+	.ab-sec { display: flex; flex-direction: column; gap: 14px; }
+	.ab-bio { display: flex; flex-direction: column; gap: 14px; max-width: 68ch; }
+	.ab-bio p { margin: 0; color: var(--text); font: var(--t-body); line-height: 1.65; }
+	.ab-bio p.lead { font: 500 19px/1.55 var(--font-ui); }
+	.ab-bio p.lead::first-letter { float: left; margin: 4px 10px 0 0; font: 800 58px/.8 var(--font-display); color: var(--text); }
+	.ab-awards { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+	.ab-awards li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line, var(--border)); }
+	.ab-yr { color: var(--text-muted); font: 600 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.ab-aw { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	.ab-aw b { color: var(--text); font: 600 15px/1.3 var(--font-ui); }
+	.ab-aw small { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ab-tag { padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: 700 12px/1 var(--font-ui); }
+	.won .ab-tag { background: #f5c518; color: #111; }
+	.ab-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0; border-block: 1px solid var(--line, var(--border)); }
+	.ab-figs p { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0; padding: 22px 8px; text-align: center; }
+	.ab-figs p + p { border-left: 1px solid var(--line, var(--border)); }
+	.ab-figs b { color: var(--text); font: 800 28px/1 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+	.ab-figs span { color: var(--text-muted); font: var(--t-footnote); }
+	.ab-bars { display: flex; align-items: flex-end; gap: 10px; height: 150px; margin: 0; padding: 0; list-style: none; }
+	.ab-bars li { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+	.ab-bars .bar { display: flex; align-items: flex-end; width: 100%; max-width: 56px; height: 100%; }
+	.ab-bars i { display: block; width: 100%; height: calc(var(--h) * 100%); min-height: 4px; border-radius: 8px 8px 3px 3px; background: linear-gradient(to top, color-mix(in srgb, var(--text) 30%, transparent), var(--text)); transform-origin: bottom; animation: ab-grow var(--dur-slow) var(--ease-out) both; }
+	.ab-bars b { color: var(--text); font: 700 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.ab-bars small { color: var(--text-muted); font: 600 11px/1 var(--font-ui); }
+	.ab-src { align-self: flex-start; color: var(--text-muted); font: 600 14px/1 var(--font-ui); text-decoration: underline; text-underline-offset: 3px; }
+	@keyframes ab-in { from { opacity: 0; translate: 0 8px; } }
+	@keyframes ab-grow { from { scale: 1 0; } }
+	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } }
 	@media (max-width: 767px) {
+		.ab-dossier .ab-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+		.ab-side { position: static; }
+		.ab-still { aspect-ratio: 16 / 10; }
+		.ab-still figcaption { left: 16px; right: 16px; bottom: 14px; }
+		.ab-face { width: 48px; height: 48px; }
+		.ab-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.ab-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.ab-figs p:nth-child(3) { border-left: 0; }
+		.ab-figs p:nth-child(n + 3) { border-top: 1px solid var(--line, var(--border)); }
+		.ab-bars { gap: 6px; height: 120px; }
+		.ab-bio p.lead { font-size: 17px; }
 		.ap { --gap: 32px; }
 		.banner { height: 200px; margin-top: calc(var(--s-4) * -1); }
 		.cline { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 12px; margin-top: calc(var(--gap) * -1 - 56px); }
