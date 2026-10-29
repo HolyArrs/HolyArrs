@@ -23,7 +23,6 @@
 	import { loadWikiFacts, type WikiFacts } from '#lib/wiki-facts.ts';
 	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -194,7 +193,7 @@
 	// photo line, slim bar, figures, numbered list, About card), made for movies:
 	// 1 the Known-for still, 2 the Known-for trailers playing muted, 3 a slow reel of Known-for stills.
 	const VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'A1 · Still' }, { value: 2, label: 'A2 · Trailers' }, { value: 3, label: 'A3 · Reel' }];
-	let view = $state(0);
+	const view: number = 2;
 	const photo = $derived(data?.person.profile || wiki.image || '');
 	const yearsLine = $derived.by(() => {
 		const st = data?.stats;
@@ -203,7 +202,15 @@
 	const lead = $derived([data?.person.department, ...facts.filter((f) => !f.startsWith('Known for'))].filter(Boolean).join(' · '));
 	const top = $derived((data?.known_for ?? []).slice(0, 10));
 	// Under the name: only what they do and since when; the rest lives in About.
-	const quiet = $derived([data?.person.department === 'Acting' ? 'Actor' : data?.person.department, data?.stats?.first_year ? `Since ${data.stats.first_year}` : ''].filter(Boolean).join(' · '));
+	const roleWords = $derived.by(() => {
+		const all = [...(data?.known_for ?? []), ...movies].flatMap((m) => m.roles ?? []);
+		const acts = all.includes('Actor'), directs = all.includes('Director');
+		const dept = data?.person.department;
+		const order = dept === 'Directing' ? ['Director', 'Actor'] : ['Actor', 'Director'];
+		const got = order.filter((w) => (w === 'Actor' ? acts : directs));
+		return got.length ? got.join(' · ') : dept === 'Acting' ? 'Actor' : dept ?? '';
+	});
+	const quiet = $derived([roleWords, data?.stats?.first_year ? `Since ${data.stats.first_year}` : ''].filter(Boolean).join(' · '));
 	const reel = $derived((data?.known_for ?? []).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
 	let aboutOpen = $state(false);
 	let allDecade = $state<{ label: string; movies: PersonMovie[] } | null>(null);
@@ -349,11 +356,9 @@
 				{#each top as m, i (m.ids.tmdb)}
 					{@const o = owned(m)}
 					<li class="kf-item" style:--i={i}>
-						<a class="kf-pic" href={href(m)} aria-label={m.name}>
-							{#if m.backdrop || m.poster}<img src={m.backdrop || m.poster} alt="" loading="lazy" decoding="async" />{/if}
-						</a>
+						<span class="kf-pic">{@render filmCard(m)}</span>
 						<span class="kf-n" aria-hidden="true">{i + 1}</span>
-							<span class="kf-words"><a class="kf-name" href={href(m)}>{m.name}</a><span class="kf-sub">{[m.year, roleLine(m)].filter(Boolean).join(' · ')}</span></span>
+							<span class="kf-words"><span class="kf-sub">{[m.year, roleLine(m)].filter(Boolean).join(' · ')}</span></span>
 						<span class="kf-end">{#if o}<span class="kf-state" class:have={o.state === 'available'}>{o.state === 'available' ? 'In Library' : 'Requested'}</span>{:else if action && !m.never_add && !done[m.ids.tmdb]}<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} size="sm" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />{/if}</span>
 					</li>
 				{/each}
@@ -524,7 +529,6 @@
 
 {/if}
 </PageLoader>
-<VariantBar options={VIEWS} bind:value={view} param="look" storageKey="holyarrs.people-look-2" label="People page layout" />
 </div>
 
 <style>
@@ -574,8 +578,8 @@
 	.showing { position: absolute; z-index: 1; top: 18px; left: var(--gutter); padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); color: #fff; font: var(--t-footnote); font-weight: 600; text-decoration: none; }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
 	.cline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; margin-top: calc(var(--gap) * -1 - 52px); position: relative; z-index: 1; }
-	.photo { display: grid; place-items: center; width: 152px; height: 152px; border-radius: 50%; overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3, var(--surface-2))); box-shadow: var(--shadow-card), 0 18px 40px rgb(0 0 0 / .35); transition: transform var(--dur) var(--ease-out); }
-	.photo:hover { transform: scale(1.03); }
+	.photo { display: grid; place-items: center; width: 240px; aspect-ratio: 16 / 9; height: auto; border-radius: var(--r-card); overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3, var(--surface-2))); box-shadow: var(--shadow-card), 0 18px 40px rgb(0 0 0 / .35); transition: transform var(--dur) var(--ease-out); }
+	.photo:hover { transform: scale(1.02); }
 	.photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
 	.initials { color: #fff; font: 700 40px/1 var(--font-display); }
 	.c-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-bottom: 8px; }
@@ -588,7 +592,7 @@
 	:global(html.bar-hidden) .slimwrap { transform: translateY(calc(-1 * var(--topbar))); }
 	.slim { --tint: #3a3d44; position: absolute; top: 0; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 var(--gutter); box-sizing: border-box; background: color-mix(in srgb, var(--tint) 45%, #0b0c0f); color: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / .22); opacity: 0; translate: 0 -8px; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
 	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
-	.s-photo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+	.s-photo { width: 64px; height: 36px; border-radius: 8px; object-fit: cover; object-position: center 20%; }
 	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
 	@media (prefers-reduced-motion: reduce) { .slim, .slimwrap { transition: none; translate: none; } }
 	.own { display: inline-flex; align-items: center; gap: 6px; }
@@ -628,27 +632,22 @@
 	/* Known for, Apple TV style: wide stills with a numbered line, like an episode list. */
 	.kf-list { margin: 0; padding: 0; list-style: none; }
 	.kf-item { position: relative; min-width: 0; animation: ab-in var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i) * 35ms); }
-	.kf-pic { position: relative; display: block; overflow: hidden; border-radius: 12px; background: var(--surface-2); box-shadow: 0 10px 28px rgb(0 0 0 / .28); isolation: isolate; }
-	.kf-pic img { width: 100%; height: 100%; object-fit: cover; transition: scale var(--dur-slow) var(--ease-out); }
-	.kf-item:hover .kf-pic img { scale: 1.05; }
-	.kf-pic:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.kf-pic { position: relative; display: block; min-width: 0; }
+	.kf-pic :global(.ui-wide) { width: 100%; }
 	.kf-words { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-	.kf-name { color: var(--text); font: 700 16px/1.25 var(--font-display); letter-spacing: -.01em; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.kf-name:hover { text-decoration: underline; }
-	.kf-sub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.kf-sub { color: var(--text-muted); font: 500 15px/1.35 var(--font-ui); white-space: normal !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.kf-state { padding: 5px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: 700 12px/1 var(--font-ui); white-space: nowrap; }
 	.kf-state.have { background: rgb(52 199 89 / 18%); color: #9df5b4; }
 	/* Episodes */
-	.kf-eps .kf-item { display: grid; grid-template-columns: 168px 28px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px; border-radius: 16px; transition: background var(--dur-fast) var(--ease-out); }
+	.kf-eps .kf-item { display: grid; grid-template-columns: 240px 28px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px; border-radius: 16px; transition: background var(--dur-fast) var(--ease-out); }
 	.kf-eps .kf-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 20px; }
 	.kf-eps .kf-item:hover { background: var(--surface-1); }
-	.kf-eps .kf-pic { aspect-ratio: 16 / 9; }
 	.kf-eps .kf-n { grid-column: 2; grid-row: 1; color: var(--text-muted); font: 800 22px/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; }
 	.kf-eps .kf-pic { grid-column: 1; grid-row: 1; }
 	/* Top 10 */
 	/* Stills */
 	@media (max-width: 1000px) { .kf-eps .kf-list { grid-template-columns: minmax(0, 1fr); } }
-	@media (prefers-reduced-motion: reduce) { .kf-item { animation: none; } .kf-item:hover .kf-pic img { scale: none; } }
+	@media (prefers-reduced-motion: reduce) { .kf-item { animation: none; } }
 	.c-line { display: flex; flex-wrap: wrap; align-items: baseline; }
 	/* About sheet (Profile / Dossier / Career), an Apple TV-style dark window in the person's tint. */
 	:global(.ui-sheet:has(.ab)) { --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--ap-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--ap-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
@@ -659,7 +658,7 @@
 	.ab-frame.on { opacity: 1; scale: 1.12; }
 	.ab-still::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 60%); }
 	.ab-still figcaption { position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 16px; color: #fff; }
-	.ab-face { flex: none; width: 64px; height: 64px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
+	.ab-face { flex: none; width: 112px; height: 63px; border-radius: 10px; object-position: center 20%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
 	.ab-still figcaption span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.ab-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
 	.ab-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
@@ -716,7 +715,7 @@
 		.ab-side { position: static; }
 		.ab-still { aspect-ratio: 16 / 10; }
 		.ab-still figcaption { left: 16px; right: 16px; bottom: 14px; }
-		.ab-face { width: 48px; height: 48px; }
+		.ab-face { width: 80px; height: 45px; }
 		.ab-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.ab-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.ab-figs p:nth-child(3) { border-left: 0; }
@@ -726,7 +725,7 @@
 		.ap { --gap: 32px; }
 		.banner { height: 200px; margin-top: calc(var(--s-4) * -1); }
 		.cline { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 12px; margin-top: calc(var(--gap) * -1 - 56px); }
-		.photo { width: 112px; height: 112px; }
+		.photo { width: 200px; height: auto; }
 		.c-words { align-items: center; padding: 0; }
 		.c-words h1 { font-size: clamp(28px, 8.4vw, 36px); }
 		.acts { padding: 0; }
