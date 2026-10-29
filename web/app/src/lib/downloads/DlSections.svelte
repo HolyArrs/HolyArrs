@@ -8,7 +8,7 @@
 	// (through the page's Remove dialog).
 	import { tick } from 'svelte';
 	import { page } from '$app/state';
-	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, quality, fitTitle, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
+	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, quality, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
 	import { replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
@@ -174,6 +174,9 @@
 		}
 	}
 	let colEl = $state<HTMLElement>();
+	// Phones have no top bar: the tab strip carries a magnifier that opens the same scoped search.
+	let psOpen = $state(false);
+	let psEl = $state<HTMLInputElement>();
 	// The rail's parent groups fold; which ones are open is kept in this browser.
 	const GROUPS_KEY = 'holyarrs.downloads.groups';
 	let groups = $state<Record<string, boolean>>({});
@@ -474,12 +477,6 @@
 		if (e.button !== 0) return;
 		e.preventDefault();
 		e.stopPropagation();
-		// Until now the Title took the spare room; from the first drag it keeps the width it has, so only the dragged column changes.
-		if (!layout.titleSet) {
-			const th = grid?.querySelector<HTMLElement>('.chead [data-col="title"]');
-			if (th) layout.widths.title = Math.round(th.getBoundingClientRect().width);
-			layout.titleSet = true;
-		}
 		const x0 = e.clientX;
 		const w0 = wOf(id);
 		const el = e.currentTarget as HTMLElement;
@@ -887,7 +884,7 @@
 					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<tr class:sel={sel[`${r.id}:f`] === t.key} class:off={pr === 'Skip'} tabindex="0" onclick={() => (sel[`${r.id}:f`] = t.key)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:f`] = t.key; }} data-testid="dl-filerow">
 						<td class="c-chk">{#if !t.dir}<input type="checkbox" checked={pr !== 'Skip'} aria-label="Download {t.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.checked ? 'Normal' : 'Skip')} />{/if}</td>
-						<td class="c-name"><span class="fnm" style="padding-left: {t.depth * 14}px">{#if t.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${t.key}`]} aria-label="{closed[`${r.id}|${t.key}`] ? 'Expand' : 'Collapse'} {t.name}" aria-expanded={!closed[`${r.id}|${t.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${t.key}`] = !closed[`${r.id}|${t.key}`]; }}><Icon name="chevronDown" size={12} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={t.key}>{t.name}</span></span></td>
+						<td class="c-name"><span class="fnm" style="padding-left: {t.depth * 14}px">{#if t.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${t.key}`]} aria-label="{closed[`${r.id}|${t.key}`] ? 'Expand' : 'Collapse'} {t.name}" aria-expanded={!closed[`${r.id}|${t.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${t.key}`] = !closed[`${r.id}|${t.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={t.key}>{t.name}</span></span></td>
 						<td class="c-num c-size">{bytes(t.size)}</td>
 						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
 						<td class="c-prio">{#if !t.dir}<select class="pick" aria-label="Priority of {t.name}" value={pr} onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.value)}>{#each PRIOS as o (o)}<option value={o}>{o}</option>{/each}</select>{/if}</td>
@@ -979,15 +976,22 @@
 <div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
 <div class="strip hdr" data-testid="dl-strip">
 	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
-		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={18} /></button></span>
-		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={18} /></button></span><Menu label="More start actions" icon="chevronDown" width={170} items={[{ label: 'Start all', icon: 'play', disabled: true, hint: 'Coming soon' }]} /></span>
-		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={18} /></button></span><Menu label="More pause actions" icon="chevronDown" width={170} items={[{ label: 'Pause all', icon: 'pause', disabled: true, hint: 'Coming soon' }]} /></span>
-		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={18} /></button></span>
-		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={18} /></button></span>
+		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={16} /></button></span>
+		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={16} /></button></span><Menu label="More start actions" icon="chevronDown" width={170} items={[{ label: 'Start all', icon: 'play', disabled: true, hint: 'Coming soon' }]} /></span>
+		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={16} /></button></span><Menu label="More pause actions" icon="chevronDown" width={170} items={[{ label: 'Pause all', icon: 'pause', disabled: true, hint: 'Coming soon' }]} /></span>
+		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={16} /></button></span>
+		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={16} /></button></span>
 	</div>
 </div>
 <div class="body" style="--rail: {railShown ? railW : 52}px">
 <nav class="rail" class:shut={!railShown} aria-label="Downloads filters" data-testid="dl-rail">
+	<div class="psearch" class:open={psOpen || !!dlScope.term} data-testid="dl-psearch">
+		<button type="button" class="psb" aria-label="Search downloads" aria-expanded={psOpen || !!dlScope.term} onclick={() => { psOpen = true; tick().then(() => psEl?.focus()); }} data-testid="dl-psearch-btn"><Icon name="search" size={16} /></button>
+		{#if psOpen || dlScope.term}
+			<input type="search" bind:this={psEl} bind:value={dlScope.term} placeholder="Search downloads" aria-label="Search downloads" onblur={() => { if (!dlScope.term) psOpen = false; }} onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); dlScope.term = ''; psOpen = false; } }} data-testid="dl-psearch-input" />
+			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
+		{/if}
+	</div>
 	{#if railShown}
 	<button type="button" class="rhide" aria-label="Hide filters" use:tip={'Hide filters'} onclick={() => setRail(false)} data-testid="rail-hide"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
 	<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
@@ -997,9 +1001,9 @@
 			{@const open = groupOpen(c.key, c.key === on)}
 			<div class="pr">
 				{#if subsOf.length}
-					<button type="button" class="gch" class:shut={!open} aria-expanded={open} aria-label="{open ? 'Fold' : 'Unfold'} {c.label}" onclick={() => flipGroup(c.key, open)} data-testid="rail-fold" data-key={c.key}><Icon name="chevronDown" size={12} stroke={2.4} /></button>
+					<button type="button" class="gch" class:shut={!open} aria-expanded={open} aria-label="{open ? 'Fold' : 'Unfold'} {c.label}" onclick={() => flipGroup(c.key, open)} data-testid="rail-fold" data-key={c.key}><Icon name="chevronDown" size={14} stroke={2.4} /></button>
 				{:else}<span class="gch sp0" aria-hidden="true"></span>{/if}
-				<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={15} /><span class="lb">{c.label}</span><b>{c.count}</b></button>
+				<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={16} /><span class="lb">{c.label}</span><b>{c.count}</b></button>
 			</div>
 			{#if open}
 				{#each subsOf as x (x.key)}
@@ -1009,18 +1013,18 @@
 		{/each}
 	</div>
 	<div class="rg" role="group" aria-label="Library" data-testid="dl-type-filter">
-		<button type="button" class="rh" aria-expanded={libOpen} onclick={() => flipGroup('library', libOpen)} data-testid="rail-fold" data-key="library"><Icon name="chevronDown" size={11} stroke={2.4} />Library</button>
+		<button type="button" class="rh" aria-expanded={libOpen} onclick={() => flipGroup('library', libOpen)} data-testid="rail-fold" data-key="library"><Icon name="chevronDown" size={14} stroke={2.4} />Library</button>
 		{#if libOpen}
 			{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-				<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={15} /><span class="lb">{t.label}</span><b>{kindCount(t.key)}</b></button>
+				<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={16} /><span class="lb">{t.label}</span><b>{kindCount(t.key)}</b></button>
 			{/each}
 		{/if}
 	</div>
 	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
-		<button type="button" class="rh" aria-expanded={srcOpen} onclick={() => flipGroup('sources', srcOpen)} data-testid="rail-fold" data-key="sources"><Icon name="chevronDown" size={11} stroke={2.4} />Sources</button>
+		<button type="button" class="rh" aria-expanded={srcOpen} onclick={() => flipGroup('sources', srcOpen)} data-testid="rail-fold" data-key="sources"><Icon name="chevronDown" size={14} stroke={2.4} />Sources</button>
 		{#if srcOpen}
 			{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-				<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={15} /><span class="lb">{t.label}</span><b>{srcCount(t.key)}</b></button>
+				<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={16} /><span class="lb">{t.label}</span><b>{srcCount(t.key)}</b></button>
 			{/each}
 		{/if}
 	</div>
@@ -1028,15 +1032,15 @@
 	<button type="button" class="rshow" aria-label="Show filters" use:tip={{ text: 'Show filters', side: 'right' }} onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
 	<div class="ics" role="group" aria-label="Filters" data-testid="rail-icons">
 		{#each tally as c (c.key)}
-			<button type="button" class="ic" class:on={on === c.key && !subOn} aria-pressed={on === c.key && !subOn} aria-label="{c.label}, {c.count}" use:tip={{ text: `${c.label} · ${c.count}`, side: 'right' }} data-testid="rail-icon" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={18} /><b class="bd">{c.count}</b></button>
+			<button type="button" class="ic" class:on={on === c.key && !subOn} aria-pressed={on === c.key && !subOn} aria-label="{c.label}, {c.count}" use:tip={{ text: `${c.label} · ${c.count}`, side: 'right' }} data-testid="rail-icon" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={16} /><b class="bd">{c.count}</b></button>
 		{/each}
 		<hr />
 		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-			<button type="button" class="ic" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} aria-label="{t.label}, {kindCount(t.key)}" use:tip={{ text: `${t.label} · ${kindCount(t.key)}`, side: 'right' }} data-testid="rail-icon-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={18} /><b class="bd">{kindCount(t.key)}</b></button>
+			<button type="button" class="ic" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} aria-label="{t.label}, {kindCount(t.key)}" use:tip={{ text: `${t.label} · ${kindCount(t.key)}`, side: 'right' }} data-testid="rail-icon-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={16} /><b class="bd">{kindCount(t.key)}</b></button>
 		{/each}
 		<hr />
 		{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-			<button type="button" class="ic" class:on={srcOn === t.key} aria-pressed={srcOn === t.key} aria-label="{t.label}, {srcCount(t.key)}" use:tip={{ text: `${t.label} · ${srcCount(t.key)}`, side: 'right' }} data-testid="rail-icon-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={18} /><b class="bd">{srcCount(t.key)}</b></button>
+			<button type="button" class="ic" class:on={srcOn === t.key} aria-pressed={srcOn === t.key} aria-label="{t.label}, {srcCount(t.key)}" use:tip={{ text: `${t.label} · ${srcCount(t.key)}`, side: 'right' }} data-testid="rail-icon-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={16} /><b class="bd">{srcCount(t.key)}</b></button>
 		{/each}
 	</div>
 	{/if}
@@ -1259,7 +1263,7 @@
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 	.listbox .tw { overflow: visible; }
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
-	.rail { position: relative; display: grid; align-content: start; gap: 14px; overflow-x: hidden; overflow-y: auto; padding: 10px 8px; border-right: 1px solid var(--line); min-width: 0; }
+	.rail { position: relative; display: grid; align-content: start; gap: 14px; overflow-x: hidden; overflow-y: auto; padding: 10px var(--dl-gutter); border-right: 1px solid var(--line); min-width: 0; }
 	.rg { display: grid; gap: 2px; }
 	.rh { margin: 0 8px 2px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.ri { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-footnote); cursor: pointer; text-align: left; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
@@ -1301,7 +1305,7 @@
 	.pv { display: inline-block; min-width: 34px; margin-left: 6px; text-align: right; }
 	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px 10px; border-bottom: 1px solid var(--line); background: none; }
+	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); background: none; }
 	.col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
 	.drow.sel > .dline { position: relative; z-index: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface-1)); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
@@ -1314,7 +1318,7 @@
 	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
-	.ph { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; padding: 3px 10px; border-bottom: 1px solid var(--line); min-width: 0; }
+	.ph { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); min-width: 0; }
 	.dpane.shut .ph { border-bottom: 0; }
 	.pt { flex: 0 1 300px; min-width: 0; margin: 0; }
 	.pt b, .pt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1324,7 +1328,7 @@
 	.dpane.shut .pcl :global(svg) { transform: rotate(180deg); }
 	.pcl:hover { background: var(--surface-3); color: var(--text); }
 	.pcl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pb { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 8px 10px; overflow: auto; }
+	.pb { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 8px var(--dl-gutter); overflow: auto; }
 	.pb .big { width: 56px; height: 84px; }
 	.pb .big.square { height: 56px; }
 	.pb .kv { gap: 2px 12px; font: var(--t-caption); }
@@ -1374,7 +1378,7 @@
 	.ic:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ic .bd { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 10px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.sbar { container: sb / inline-size; }
-	.sbi { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px 14px; padding: 3px 12px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.3; }
+	.sbi { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px 14px; padding: 3px var(--dl-gutter); min-width: 0; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.3; }
 	.sbi > span { display: inline-flex; align-items: center; gap: 6px; }
 	.sbi .grow { flex: 1 1 0; }
 	.sbi .health { order: -1; }
@@ -1416,6 +1420,18 @@
 	.rh:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ri:active, .ic:active, .tbn:active:not(:disabled), .gch:active:not(.sp0), .pcl:active { transform: scale(0.97); }
 	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
+	.app { --dl-gutter: 10px; --dl-icon: 16px; --dl-icon-sm: 14px; }
+	.app :global(svg.icon) { width: var(--dl-icon); height: var(--dl-icon); }
+	.gch :global(svg.icon), .rh :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
+	.psearch { display: none; }
+	.ri:active, .gch:active:not(.sp0), .rh:active, .xtab:active, .xbn:active, .psb:active { transform: scale(0.97); }
+	.grip:active::after { background: var(--accent); width: 2px; }
+	.rz:active i { opacity: 1; }
+	.dv:active i { opacity: 1; }
+	.psb, .psx { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text); cursor: pointer; }
+	.psb:hover, .psx:hover { background: var(--surface-3); }
+	.psb:focus-visible, .psx:focus-visible, .psearch input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.psearch input { width: 150px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -1470,6 +1486,7 @@
 		.picker { display: none; }
 	}
 	@media (max-width: 767px) {
+		.psearch { display: flex; flex: none; align-items: center; gap: 2px; }
 		.dv { display: none; }
 		.dpane { background: var(--surface-1); }
 		.dpane { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom)); z-index: 40; height: min(64dvh, 520px) !important; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.32); }

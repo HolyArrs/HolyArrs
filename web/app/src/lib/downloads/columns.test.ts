@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLUMNS, IDS, defaults, fitTitle, dump, load, move, moveVisible, normalize, quality, toggle, visible } from './columns.ts';
+import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, toggle, visible } from './columns.ts';
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
@@ -63,15 +63,13 @@ describe('columns', () => {
 	});
 });
 
-describe('fitTitle', () => {
-	it('gives way while unset, never under the minimum, and not once set', () => {
+describe('Title width', () => {
+	it('is only kept once the Title itself is sized', () => {
 		const l = defaults();
-		const others = 52 + 84 + 64 + 66 + 130 + 90 + 80 + 130 + 90;
-		expect(fitTitle(l, 2000, 0, 44)).toBe(310);
-		expect(fitTitle(l, others + 200, 0, 44)).toBe(200);
-		expect(fitTitle(l, others + 10, 0, 44)).toBe(44);
-		expect(fitTitle({ ...l, titleSet: true }, others + 200, 0, 44)).toBe(310);
+		expect(l.titleSet).toBeFalsy();
+		l.widths.size = 200;
+		expect(load(dump(l), null).titleSet).toBe(false);
 		expect(load(dump({ ...l, titleSet: true }), null).titleSet).toBe(true);
-		expect(load(null, JSON.stringify({ title: 500 })).titleSet).toBe(true);
+		expect(load(null, JSON.stringify({ title: 500 })).widths.title).toBe(500);
 	});
 });

@@ -123,21 +123,11 @@ export function load(raw: string | null, oldRaw: string | null): Layout {
 		if (o && typeof o === 'object') {
 			const map: [string, ColId][] = [['title', 'title'], ['bar', 'progress'], ['st', 'status'], ['size', 'size'], ['time', 'time']];
 			for (const [from, to] of map) d.widths[to] = width(o[from], d.widths[to]);
-			if (d.widths.title !== COL.title.width) d.titleSet = true;
 		}
 	} catch {
 		/* nothing usable */
 	}
 	return d;
-}
-
-/** fitTitle is the Title width shown: the set width, or while unset, as much of
- *  the default as fits `room` (the table box) after the other columns, never under `min`. */
-export function fitTitle(l: Layout, room: number, fixed: number, min: number): number {
-	const w = l.widths.title;
-	if (l.titleSet || room <= 0) return w;
-	const rest = visible(l).reduce((n, id) => (id === 'title' ? n : n + l.widths[id]), fixed);
-	return Math.max(min, Math.min(w, Math.floor(room - rest)));
 }
 
 export function dump(l: Layout): string {
