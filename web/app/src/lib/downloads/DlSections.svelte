@@ -17,8 +17,8 @@
 	import Menu from '../ui/Menu.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
-	import { cardLook } from './cardLook.svelte.ts';
-	import { demoDetails, fileExtras, isProblem, sampleFiles, sampleHeader, sampleLog, samplePeers, sampleRatio, sampleServers, sampleStory, sampleSwarm } from './sampleDetails.ts';
+	import IconButton from '../ui/IconButton.svelte';
+	import { demoDetails, fileExtras, isProblem, sampleFiles, sampleHeader, sampleLog, samplePeers, sampleRatio, sampleServers, sampleStory, sampleSwarm, sampleTrackers, fileTree } from './sampleDetails.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
@@ -26,7 +26,7 @@
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { manyWords, rowName, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
-	import { ALL, counts, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { ALL, counts, pick, showOf, stageOf, statusWord, subCounts, tabsFor, type Stage } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
@@ -70,7 +70,28 @@
 	let q = $state('');
 	let findEl = $state<HTMLInputElement>();
 	let findOpen = $state(false);
-	const rows = $derived(q.trim() ? typed.filter((r) => matches(r, q)) : typed);
+	const searched = $derived(q.trim() ? typed.filter((r) => matches(r, q)) : typed);
+	// The left rail: a status, a source (Usenet or Torrent); the Type filter is its Categories.
+	let railOn = $state('all');
+	let srcOn = $state<'' | 'usenet' | 'torrent'>('');
+	const RAIL: { key: string; label: string; stages: Stage[] | null }[] = [
+		{ key: 'all', label: 'All', stages: null },
+		{ key: 'active', label: 'Active', stages: ['downloading', 'importing', 'seeding'] },
+		{ key: 'downloading', label: 'Downloading', stages: ['downloading'] },
+		{ key: 'seeding', label: 'Seeding', stages: ['seeding'] },
+		{ key: 'done', label: 'Done', stages: ['done'] },
+		{ key: 'paused', label: 'Paused', stages: ['paused', 'queued'] },
+		{ key: 'stalled', label: 'Stalled', stages: ['stalled'] },
+		{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'] }
+	];
+	const bySource = $derived(srcOn ? searched.filter((r) => protocolOf(r) === srcOn) : searched);
+	const railCounts = $derived(RAIL.map((c) => ({ ...c, count: c.stages ? bySource.filter((r) => c.stages!.includes(stageOf(r))).length : bySource.length })));
+	const rows = $derived.by(() => {
+		const c = RAIL.find((x) => x.key === railOn);
+		return c?.stages ? bySource.filter((r) => c.stages!.includes(stageOf(r))) : bySource;
+	});
+	const kindCount = (k: string) => everyRow.filter((r) => (r.kind ?? 'movie') === k).length;
+	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
 	function slashKey(e: KeyboardEvent) {
 		if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
 		const t = e.target as HTMLElement;
@@ -90,15 +111,21 @@
 	}
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
-	// ?card=a|b|c picks the expanded row's layout (c, the big poster, is the default).
-	const card = $derived(cardLook.value);
 	let menuId = $state(0);
 	const ACTIONS: { label: string; torrent?: boolean }[] = [
 		{ label: 'Check again' }, { label: 'Ask trackers again', torrent: true }, { label: 'Move' }, { label: 'Rename' },
 		{ label: 'Limit upload', torrent: true }, { label: 'Stop sharing at a ratio', torrent: true }, { label: 'Copy link' }, { label: 'Export' }
 	];
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-	const TABS = ['Info', 'Files', 'Peers', 'Log'] as const;
+	const TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
+	// Sample state for the Files, Peers and Trackers tables (the page only; nothing is sent anywhere).
+	let sel = $state<Record<string, string>>({});
+	let prio = $state<Record<string, string>>({});
+	let closed = $state<Record<string, boolean>>({});
+	const PRIOS = ['Skip', 'Normal', 'High', 'Max'];
+	const prioOf = (r: DownloadRow, key: string, i: number) => prio[`${r.id}|${key}`] ?? fileExtras(r, i).priority;
+	const savePath = (r: DownloadRow, im: ImportRecord | undefined) => im?.Plan?.find((x) => x.target_path)?.target_path || `/data/downloads/${r.kind === 'show' ? 'shows' : r.kind === 'artist' ? 'music' : 'movies'}/${(r.name || r.title || 'download').replace(/\.(mkv|nzb|torrent)$/i, '')}`;
+	const flagsOf = (p: { progress: number; down: number; up: number }) => `${p.progress >= 1 ? 'S ' : ''}${p.down > 0 ? 'D ' : ''}${p.up > 0 ? 'U ' : ''}E`.trim();
 	let xtabOn = $state<Record<number, (typeof TABS)[number]>>({});
 	const tabOf = (id: number) => xtabOn[id] ?? 'Info';
 	let filesOpen = $state(new Set<number>());
@@ -109,6 +136,7 @@
 		filesOpen = n;
 	}
 	const start = showOf(page.url.searchParams.get('show'));
+	if (start.show === 'problems') railOn = 'problems';
 	let show = $state(start.show);
 	let sub = $state(start.sub);
 	function remember() {
@@ -123,7 +151,7 @@
 	}
 	const tabs = $derived(tabsFor(rows, torrent));
 	const tally = $derived(counts(rows, tabs));
-	const on = $derived(tabs.some((c) => c.key === show) ? show : ALL);
+	const on: string = ALL;
 	const onTab = $derived(tabs.find((c) => c.key === on));
 	const subs = $derived(subCounts(rows, onTab));
 	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
@@ -146,6 +174,7 @@
 	const newest = (a: DownloadRow, b: DownloadRow) => (b.finished_at || b.updated_at).localeCompare(a.finished_at || a.updated_at);
 	const list = $derived(isDone ? [...shown].sort(newest) : shown);
 	const sum = $derived(totals(allQueue));
+	const openRow = $derived(everyRow.find((r) => r.id === openId));
 	const problems = $derived(allQueue.filter((r) => barTone(r) === 'bad').length);
 	const done = $derived(historyTotals(typed.filter(inHistory)));
 
@@ -586,20 +615,7 @@
 				<ol class="lg">{#each st.steps as x, i (i)}<li class:bad={x.bad}>{x.text}</li>{/each}</ol>
 			</section>
 		{/if}
-		{#if protocolOf(r) === 'torrent'}
-			{@const sw = sampleSwarm(r)}
-			<section class="dep" data-testid="dl-swarm" aria-label="Swarm">
-				<h4>Swarm</h4>
-				<dl class="kv">
-					<dt>Seeds</dt><dd>{sw.seedsOn} connected of {sw.seedsOf}</dd>
-					<dt>Peers</dt><dd>{sw.peersOn} connected of {sw.peersOf}</dd>
-					<dt>Next tracker check</dt><dd>in {mmss(sw.nextCheck)}</dd>
-					<dt>Private</dt><dd>{sw.private ? 'Yes' : 'No'}</dd>
-					<dt>Wasted</dt><dd>{bytes(sw.wasted)}</dd>
-				</dl>
-				<ul class="fl src">{#each sw.sources as src (src.name)}<li><span class="fn">{src.name}</span><span class="fs st-{src.state}">{src.message}</span></li>{/each}</ul>
-			</section>
-		{:else}
+		{#if protocolOf(r) !== 'torrent'}
 			<section class="dep" data-testid="dl-servers" aria-label="Servers">
 				<h4>Supplied by</h4>
 				<ul class="fl">{#each sampleServers(r) as sv (sv.name)}<li><span class="fn">{sv.name}</span><span class="fs">{bytes(sv.bytes)} · {sv.missing} missing</span></li>{/each}</ul>
@@ -608,39 +624,106 @@
 	{/if}
 {/snippet}
 
-{#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[])}
+{#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[], im: ImportRecord | undefined)}
+	{@const tor = protocolOf(r) === 'torrent'}
+	{@const tab = TABS.includes(tabOf(r.id)) && (tor || (tabOf(r.id) !== 'Peers' && tabOf(r.id) !== 'Trackers')) ? tabOf(r.id) : 'Info'}
 	<div class="xtabs" role="tablist" aria-label="Details">
 		{#each TABS as t (t)}
-			{#if t !== 'Peers' || protocolOf(r) === 'torrent'}
-				<button type="button" role="tab" class="xtab" class:on={tabOf(r.id) === t} aria-selected={tabOf(r.id) === t} onclick={() => (xtabOn[r.id] = t)}>{t}</button>
+			{#if tor || (t !== 'Peers' && t !== 'Trackers')}
+				<button type="button" role="tab" class="xtab" class:on={tab === t} aria-selected={tab === t} onclick={() => (xtabOn[r.id] = t)} data-testid="dl-tab-{t.toLowerCase()}">{t}</button>
 			{/if}
 		{/each}
 	</div>
-	{#if tabOf(r.id) === 'Info'}
-		<dl class="kv">
-			{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
-			{#if demoDetails}
-				{#if r.speed}<dt>Speed</dt><dd>{bytes(r.speed)}/s{r.up_speed ? ` down · ${bytes(r.up_speed)}/s up` : ''}</dd>{/if}
-				{#if r.eta}<dt>Time left</dt><dd>{duration(r.eta)}</dd>{/if}
-				{#if protocolOf(r) === 'torrent'}<dt>Seeds / peers</dt><dd>{r.seeds ?? 0} / {r.peers ?? 0}</dd><dt>Share ratio</dt><dd>{sampleRatio(r)}</dd>{/if}
-			{/if}
-		</dl>
+	{#if tab === 'Info'}
+		{#if demoDetails}
+			{@const sw = sampleSwarm(r)}
+			<div class="gen" data-testid="dl-info">
+				<dl class="kv">
+					<dt class="gh">Transfer</dt><dd class="gh"></dd>
+					<dt>Downloaded</dt><dd>{bytes((r.size || 0) * percent(r.progress) / 100)} of {bytes(r.size || 0)}</dd>
+					<dt>Speed</dt><dd>{r.speed ? `${bytes(r.speed)}/s down` : '–'}{r.up_speed ? ` · ${bytes(r.up_speed)}/s up` : ''}</dd>
+					<dt>Time left</dt><dd>{r.eta ? duration(r.eta) : '∞'}</dd>
+					{#if tor}
+						<dt>Share ratio</dt><dd>{sampleRatio(r)}</dd>
+						<dt>Seeds</dt><dd>{sw.seedsOn} connected of {sw.seedsOf}</dd>
+						<dt>Peers</dt><dd>{sw.peersOn} connected of {sw.peersOf}</dd>
+						<dt>Wasted</dt><dd>{bytes(sw.wasted)}</dd>
+					{/if}
+				</dl>
+				<dl class="kv">
+					<dt class="gh">Properties</dt><dd class="gh"></dd>
+					<dt>Size</dt><dd>{bytes(r.size || 0)}</dd>
+					<dt>Added</dt><dd>{dateTime(r.started_at) || '–'}</dd>
+					<dt>Done</dt><dd>{dateTime(r.finished_at) || '–'}</dd>
+					<dt>Save path</dt><dd>{savePath(r, im)}</dd>
+					{#if tor}
+						<dt>Next tracker check</dt><dd>in {mmss(sw.nextCheck)}</dd>
+						<dt>Private</dt><dd>{sw.private ? 'Yes' : 'No'}</dd>
+					{/if}
+					{#each simple.filter((f) => f.label === 'Downloader' || f.label === 'Requested by') as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
+				</dl>
+			</div>
+		{:else}
+			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
+		{/if}
 	{:else if !demoDetails}
 		<p class="nr">Not reported yet</p>
-	{:else if tabOf(r.id) === 'Files'}
-		<ul class="fl" data-testid="dl-filelist">
-			{#each sampleFiles(r) as f, i (f.name)}
-				{@const fx = fileExtras(r, i)}
-				<li><span class="fn" title={f.name}>{f.name}</span><span class="fs">{bytes(f.size)} · {Math.floor(f.size ? (f.done / f.size) * 100 : 0)}%{protocolOf(r) === 'torrent' ? ` · ${fx.priority} · avail ${fx.availability.toFixed(1)}` : ''}</span></li>
-			{/each}
-		</ul>
-	{:else if tabOf(r.id) === 'Peers'}
-		<ul class="fl pr" data-testid="dl-peerlist">
-			{#each samplePeers(r) as p (p.ip + p.client)}
-				<li><span class="fn">{p.ip} · {p.client}</span><span class="fs">{Math.floor(p.progress * 100)}% · ↓ {bytes(p.down)}/s · ↑ {bytes(p.up)}/s</span></li>
-			{/each}
-			{#if !samplePeers(r).length}<li class="nr">No peers connected</li>{/if}
-		</ul>
+	{:else if tab === 'Files'}
+		{@const rowsT = fileTree(sampleFiles(r), (k) => !!closed[`${r.id}|${k}`])}
+		<div class="tblw" data-testid="dl-filetable"><table class="t2">
+			<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Total size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th><th class="c-num c-av">Availability</th></tr></thead>
+			<tbody>
+				{#each rowsT as t (t.key)}
+					{@const pc = t.size ? Math.floor((t.done / t.size) * 100) : 0}
+					{@const pr = t.dir ? '' : prioOf(r, t.key, t.i)}
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+					<tr class:sel={sel[`${r.id}:f`] === t.key} class:off={pr === 'Skip'} tabindex="0" onclick={() => (sel[`${r.id}:f`] = t.key)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:f`] = t.key; }} data-testid="dl-filerow">
+						<td class="c-chk">{#if !t.dir}<input type="checkbox" checked={pr !== 'Skip'} aria-label="Download {t.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.checked ? 'Normal' : 'Skip')} />{/if}</td>
+						<td class="c-name"><span class="nm" style="padding-left: {t.depth * 14}px">{#if t.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${t.key}`]} aria-label="{closed[`${r.id}|${t.key}`] ? 'Expand' : 'Collapse'} {t.name}" aria-expanded={!closed[`${r.id}|${t.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${t.key}`] = !closed[`${r.id}|${t.key}`]; }}><Icon name="chevronDown" size={12} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={t.key}>{t.name}</span></span></td>
+						<td class="c-num c-size">{bytes(t.size)}</td>
+						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
+						<td class="c-prio">{#if !t.dir}<select class="pick" aria-label="Priority of {t.name}" value={pr} onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.value)}>{#each PRIOS as o (o)}<option value={o}>{o}</option>{/each}</select>{/if}</td>
+						<td class="c-num c-rem">{bytes(Math.max(0, t.size - t.done))}</td>
+						<td class="c-num c-av">{t.dir ? '' : fileExtras(r, t.i).availability.toFixed(2)}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table></div>
+	{:else if tab === 'Peers'}
+		<div class="tblw" data-testid="dl-peertable"><table class="t2">
+			<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
+			<tbody>
+				{#each samplePeers(r) as p (p.ip + p.client)}
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+					<tr class:sel={sel[`${r.id}:p`] === p.ip} tabindex="0" onclick={() => (sel[`${r.id}:p`] = p.ip)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:p`] = p.ip; }} data-testid="dl-peerrow">
+						<td class="c-name"><span class="fn">{p.ip}</span></td>
+						<td class="c-cl"><span class="fn">{p.client}</span></td>
+						<td class="c-prog"><span class="pbar"><i style="width: {Math.floor(p.progress * 100)}%"></i></span><span class="pv">{Math.floor(p.progress * 100)}%</span></td>
+						<td class="c-num">{bytes(p.down)}/s</td>
+						<td class="c-num">{bytes(p.up)}/s</td>
+						<td class="c-fl">{flagsOf(p)}</td>
+					</tr>
+				{/each}
+				{#if !samplePeers(r).length}<tr><td colspan="6" class="nr">No peers connected</td></tr>{/if}
+			</tbody>
+		</table></div>
+	{:else if tab === 'Trackers'}
+		<div class="tblw" data-testid="dl-trackertable"><table class="t2">
+			<thead><tr><th class="c-name">Source</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
+			<tbody>
+				{#each sampleTrackers(r) as t (t.source)}
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+					<tr class:sel={sel[`${r.id}:t`] === t.source} tabindex="0" onclick={() => (sel[`${r.id}:t`] = t.source)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:t`] = t.source; }} data-testid="dl-trackerrow">
+						<td class="c-name"><span class="fn">{t.source}</span></td>
+						<td><span class="st-{t.state}">{t.status}</span></td>
+						<td class="c-num">{t.peers}</td>
+						<td class="c-num">{t.seeds}</td>
+						<td class="c-msg"><span class="fn">{t.message}</span></td>
+						<td class="c-num">{t.next ? mmss(t.next) : '–'}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table></div>
 	{:else}
 		<ol class="lg" data-testid="dl-log">
 			{#each sampleLog(r) as l, i (i)}<li class:bad={l.bad}><time>{l.at}</time> {l.text}</li>{/each}
@@ -659,27 +742,11 @@
 		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
 		{ label: 'Requested by', value: 'Not reported yet' }
 	]}
-	{#if card === 'c'}
-	<div class="x" id="dlx-{r.id}" data-testid="dl-panel" data-card="c" in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
-		<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster" in:grow={{ from: small(r.id), dur: DUR.base, ease: easeOut }} out:grow={{ from: small(r.id), dur: DUR.fast, ease: easeIn }}><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
-		<div class="xb">
-		<dl class="kv">
-			{#each facts(r, im) as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
-		</dl>
-		{@render depth(r)}
-		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
-		{@render btns(r, false)}
-		{#if r.can_act && !inHistory(r)}
-			<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
-		{/if}
-		</div>
-	</div>
-	{:else if card === 'd'}
 	<div class="x" id="dlx-{r.id}" data-testid="dl-panel" data-card="d" in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
 		<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
 		<div class="xb">
 		<p class="xt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
-		<div class="xd">{@render tabsView(r, simple)}</div>
+		<div class="xd">{@render tabsView(r, simple, im)}</div>
 		{@render depth(r)}
 		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 		{@render btns(r, false)}
@@ -688,25 +755,6 @@
 		{/if}
 		</div>
 	</div>
-	{:else}
-	<div class="x cd" id="dlx-{r.id}" data-testid="dl-panel" data-card={card} in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
-		<div class="xh">
-			{#if card === 'a'}<span class="thumb" class:square={r.kind === 'artist'}><Poster src={poster(r, titles)} name={r.title || r.name} /></span>{/if}
-			<p class="xt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
-		</div>
-		{#if card === 'b'}
-			{@render tabsView(r, simple)}
-		{:else}
-			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
-		{/if}
-		{@render depth(r)}
-		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
-		{@render btns(r, card === 'a')}
-		{#if r.can_act && !inHistory(r)}
-			<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
-		{/if}
-	</div>
-	{/if}
 {/snippet}
 
 <svelte:window onpointerdown={outside} />
@@ -716,48 +764,44 @@
 	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><SpeedGraph speed={sum.speed} up={sum.up} {history} /></span>
 	<span><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
 	<span data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
-	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
+	{#if problems}<button type="button" class="need" onclick={() => (railOn = 'problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
 	<button type="button" class="retry" disabled title="Coming soon" data-testid="dl-retry-all">Retry all problems<span class="soon">Coming soon</span></button>
 </div>
-{#if demoDetails}
-<div class="strip sub" data-testid="dl-strip-more">
-	<span data-testid="dl-session"><span class="k">This session</span><b>↓ {bytes(sampleHeader.sessionDown)}</b><b class="up">↑ {bytes(sampleHeader.sessionUp)}</b></span>
-	<span data-testid="dl-free"><span class="k">Free space</span><b>{bytes(sampleHeader.free)}</b></span>
-	<label class="lim" title="Coming soon"><span class="k">Speed limit</span><input type="range" min="0" max="100" value="100" disabled aria-label="Speed limit (coming soon)" /><b>None</b></label>
-	<span data-testid="dl-alltime"><span class="k">Today</span><b>{bytes(sampleHeader.today)}</b><span class="k">Month</span><b>{bytes(sampleHeader.month)}</b><span class="k">All time</span><b>{bytes(sampleHeader.all)}</b></span>
-</div>
-{/if}
-
-<div class="tops">
-<div class="chips" role="group" aria-label="Show" data-testid="table-filter">
-	{#each tally as c (c.key)}
-		<span class="cw" class:zero={c.count === 0} data-testid="status-chip" data-key={c.key} data-count={c.count} title={c.hint}>
-			<Chip label={c.label} count={c.count} note={c.seeding ? `${c.seeding} seeding` : undefined} selected={on === c.key} onclick={() => choose(c.key)} />
-		</span>
-	{/each}
-</div>
-<div class="tr">
-<div class="types" role="group" aria-label="Type" data-testid="dl-type-filter">
-	{#each KIND_TABS as t (t.key)}
-		<button type="button" class="ty" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} data-key={t.key || 'all'} onclick={() => (kindOn = t.key)}>{t.label}</button>
-	{/each}
-</div>
-</div>
-<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
-	<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
-	<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
-	{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
-</div>
-</div>
-{#if subs.length}
-	<div class="chips subs" role="group" aria-label="{onTab?.label ?? ''}: show" data-testid="table-subfilter" in:xIn out:xOut>
-		{#each subs as s (s.key)}
-			<span class="cw sm" class:zero={s.count === 0} data-testid="status-subchip" data-key={s.key} data-count={s.count} title={s.hint}>
-				<Chip label={s.label} count={s.count} selected={subOn === s.key} onclick={() => chooseSub(s.key)} />
-			</span>
+<div class="app" data-testid="dl-app">
+<nav class="rail" aria-label="Downloads filters" data-testid="dl-rail">
+	<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
+		{#each railCounts as c (c.key)}
+			<button type="button" class="ri" class:on={railOn === c.key} class:zero={c.count === 0} aria-pressed={railOn === c.key} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => (railOn = c.key)}><span>{c.label}</span><b>{c.count}</b></button>
 		{/each}
 	</div>
-{/if}
+	<div class="rg" role="group" aria-label="Categories" data-testid="dl-type-filter">
+		<p class="rh">Categories</p>
+		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
+			<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span>{t.label}</span><b>{kindCount(t.key)}</b></button>
+		{/each}
+	</div>
+	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
+		<p class="rh">Sources</p>
+		{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
+			<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span>{t.label}</span><b>{srcCount(t.key)}</b></button>
+		{/each}
+	</div>
+</nav>
+<div class="pane">
+<div class="tb" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
+	<IconButton icon="plus" label="Add (coming soon)" size="sm" disabled data-testid="tb-add" />
+	<IconButton icon="play" label="Resume (coming soon)" size="sm" disabled data-testid="tb-resume" />
+	<IconButton icon="pause" label="Pause (coming soon)" size="sm" disabled data-testid="tb-pause" />
+	<IconButton icon="trash" label={openRow?.can_act ? 'Remove' : 'Remove (open a download first)'} size="sm" disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove" />
+	<span class="div" aria-hidden="true"></span>
+	<span class="all"><IconButton icon="play" label="Resume all (coming soon)" size="sm" disabled data-testid="tb-resume-all" /><i aria-hidden="true">all</i></span>
+	<span class="all"><IconButton icon="pause" label="Pause all (coming soon)" size="sm" disabled data-testid="tb-pause-all" /><i aria-hidden="true">all</i></span>
+	<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
+		<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
+		<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
+		{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
+	</div>
+</div>
 
 {#if list.length}
 	<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
@@ -769,11 +813,15 @@
 {:else}
 	<p class="none" data-testid="dl-empty">{q.trim() ? 'Nothing matches.' : ((subOn ? onTab?.subs.find((x) => x.key === subOn)?.empty : onTab?.empty) ?? 'Nothing here.')}</p>
 {/if}
-{#if isDone}
-	<div class="foot">
-		<span class="tot" data-testid="dl-totals">{bytes(done.today)} today · {bytes(done.month)} this month</span>
-	</div>
-{/if}
+<div class="sbar" data-testid="dl-statusbar">
+	<span data-testid="sb-free"><span class="k">Free space</span><b>{demoDetails ? bytes(sampleHeader.free) : '–'}</b></span>
+	<span data-testid="sb-health"><i class="dot" class:ok={demoDetails} aria-hidden="true"></i><b>{demoDetails ? 'Connected' : 'Not reported'}</b></span>
+	<span data-testid="sb-down" class="sd"><b>↓ {bytes(sum.speed)}/s</b>{#if demoDetails}<span class="k">{bytes(sampleHeader.sessionDown)} this session</span>{/if}</span>
+	<span data-testid="sb-up" class="sd up"><b>↑ {bytes(sum.up)}/s</b>{#if demoDetails}<span class="k">{bytes(sampleHeader.sessionUp)} this session</span>{/if}</span>
+	{#if demoDetails}<span class="wide k" data-testid="sb-totals">Today {bytes(sampleHeader.today)} · Month {bytes(sampleHeader.month)} · All time {bytes(sampleHeader.all)}</span>{/if}
+</div>
+</div>
+</div>
 
 {#if ghost}<div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[ghost.id].label}</div>{/if}
 
@@ -933,7 +981,6 @@
 	.xt { display: grid; gap: 2px; margin: 0; min-width: 0; font: var(--t-footnote); }
 	.xt b { font-weight: 600; overflow-wrap: anywhere; }
 	.xt span { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.cd .kv, .cd .xtabs { margin-top: 10px; }
 	.nr { margin: 8px 0 0; color: var(--text-muted); font: var(--t-footnote); }
 	.xtabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; width: max-content; max-width: 100%; border-radius: var(--r-btn); background: var(--surface-2); }
 	.xtab { min-height: 28px; padding: 0 12px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
@@ -946,11 +993,61 @@
 	.fl li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
 	.fn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fs { flex: none; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.pr .fs { white-space: nowrap; }
 	.lg { list-style: none; padding: 0; margin: 0; display: grid; gap: 3px; font: var(--t-caption); min-width: 0; max-height: 220px; overflow: auto; }
 	.lg li { overflow-wrap: anywhere; }
 	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 	.lg .bad { color: var(--fail); }
+	.app { display: grid; grid-template-columns: 188px minmax(0, 1fr); min-width: 0; border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.1); overflow: clip; }
+	.rail { display: grid; align-content: start; gap: 14px; padding: 12px 8px; border-right: 1px solid var(--line); background: var(--surface-2); min-width: 0; }
+	.rg { display: grid; gap: 2px; }
+	.rh { margin: 0 8px 2px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
+	.ri { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-footnote); cursor: pointer; text-align: left; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+	.ri b { color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.ri:hover { background: var(--surface-3); }
+	.ri.on { background: var(--surface-1); color: var(--accent, var(--text)); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 10px rgb(0 0 0 / 0.08); }
+	.ri.on b { color: inherit; }
+	.ri.zero:not(.on) { opacity: 0.72; }
+	.ri:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pane { display: flex; flex-direction: column; min-width: 0; min-height: 360px; }
+	.pane > .tw, .pane > .none { flex: 1 1 auto; }
+	.tb { display: flex; align-items: center; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); min-width: 0; }
+	.tb .div { width: 1px; height: 20px; margin: 0 6px; background: var(--line-strong, var(--line)); }
+	.tb .all { display: inline-flex; align-items: center; }
+	.tb .all i { margin-left: -4px; color: var(--text-muted); font: var(--t-caption); font-style: normal; }
+	.tb .find { margin-left: auto; }
+	.sbar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; padding: 8px 14px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 86%, transparent); backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.sbar > span { display: inline-flex; align-items: center; gap: 6px; }
+	.sbar .wide { margin-left: auto; }
+	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
+	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+	.gen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 10px; }
+	.gen .kv { margin: 0; }
+	.gh { color: var(--text); font-weight: 600; }
+	.tblw { margin-top: 10px; max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+	.t2 { width: 100%; border-collapse: collapse; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.t2 th { position: sticky; top: 0; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; text-align: left; white-space: nowrap; }
+	.t2 td { padding: 5px 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); white-space: nowrap; }
+	.t2 tr:last-child td { border-bottom: 0; }
+	.t2 .c-num { text-align: right; }
+	.t2 .c-chk { width: 28px; padding-right: 0; }
+	.t2 .c-name { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+	.t2 .c-msg { max-width: 160px; }
+	.t2 tbody tr { cursor: default; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+	.t2 tbody tr:hover { background: var(--surface-2); }
+	.t2 tbody tr.sel td { position: relative; z-index: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface-1)); color: var(--accent-text, var(--text)); box-shadow: 0 6px 8px -6px rgb(0 0 0 / 0.4), 0 -6px 8px -6px rgb(0 0 0 / 0.25); }
+	.t2 tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent), 0 6px 8px -6px rgb(0 0 0 / 0.4), 0 -6px 8px -6px rgb(0 0 0 / 0.25); }
+	.t2 tbody tr.off { opacity: 0.55; }
+	.t2 tbody tr:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.nm { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
+	.fold { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--text-muted); cursor: pointer; }
+	.fold.sp0 { cursor: default; }
+	.fold :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
+	.fold.shut :global(svg) { transform: rotate(-90deg); }
+	.pbar { display: inline-block; vertical-align: middle; width: 56px; height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+	.pbar i { display: block; height: 100%; background: var(--ok); }
+	.pv { display: inline-block; min-width: 34px; margin-left: 6px; text-align: right; }
+	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
+	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -967,9 +1064,7 @@
 	.retry { display: inline-flex; align-items: baseline; gap: 8px; min-height: 28px; padding: 0 10px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; }
 	.retry:disabled { opacity: 0.6; cursor: not-allowed; }
 	.strip.sub { margin-top: -4px; font: var(--t-footnote); color: var(--text-muted); }
-	.strip.sub b { color: var(--text); }
 	.lim { display: inline-flex; align-items: center; gap: 8px; }
-	.lim input { width: 110px; }
 	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 	.xbn { min-height: 32px; padding: 0 14px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.xbn:hover:not(:disabled) { background: var(--surface-3); }
@@ -979,7 +1074,6 @@
 
 	.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 10px; }
 	.tr { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-	.tr .types { margin-bottom: 0; }
 	.find { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px 0 10px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text-muted); }
 	.find:focus-within { box-shadow: var(--focus-ring); }
 	.fi { display: grid; place-items: center; width: 18px; height: 24px; padding: 0; border: 0; background: none; color: inherit; cursor: default; }
@@ -1011,11 +1105,22 @@
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
 		.x[data-card='d'] { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-		.lim input { width: 80px; }
+		.app { grid-template-columns: minmax(0, 1fr); }
+		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+		.rail::-webkit-scrollbar { display: none; }
+		.rg { display: flex; gap: 4px; flex: none; }
+		.rh { display: none; }
+		.ri { flex: none; gap: 6px; min-height: 32px; white-space: nowrap; }
+		.tb { flex-wrap: wrap; }
+		.tb .find { margin-left: 0; }
+		.sbar { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom)); }
+		.sbar .wide { display: none; }
+		.gen { grid-template-columns: minmax(0, 1fr); }
+		.t2 .c-size, .t2 .c-rem, .t2 .c-av, .t2 .c-cl, .t2 .c-msg { display: none; }
+		.t2 .c-name { max-width: 140px; }
 		.mi { gap: 8px; }
 		.fl li { flex-direction: column; gap: 0; }
 		.fs { white-space: normal; }
-		.pr .fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
 		.find:not(.open) { padding: 0 7px; }
 		.find:not(.open) input, .find:not(.open) .kb { display: none; }

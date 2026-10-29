@@ -4,8 +4,6 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { replaceState } from '$app/navigation';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -20,7 +18,6 @@
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
 	import DlSections from '#lib/downloads/DlSections.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';
-	import { cardLook, lookOf } from '#lib/downloads/cardLook.svelte.ts';
 	import { addSample, inHistory, totals } from '#lib/downloads/sections.ts';
 
 	let rows = $state<DownloadRow[]>([]);
@@ -30,16 +27,6 @@
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
 	let openId = $state(0);
-	// Floating A/B/C switch for the opened card's layout (?card=a|b|c, c is the default).
-	const CARDS = [{ value: 'a', label: 'A · Facts' }, { value: 'b', label: 'B · Tabs' }, { value: 'c', label: 'C · Poster' }, { value: 'd', label: 'D · Poster+Tabs' }];
-	cardLook.value = lookOf(page.url.searchParams.get('card'));
-	$effect(() => {
-		const pick = cardLook.value;
-		const u = new URL(location.href);
-		if ((u.searchParams.get('card') ?? 'c') === pick) return;
-		u.searchParams.set('card', pick);
-		try { replaceState(u, page.state); } catch { /* router not ready */ }
-	});
 	// A torrent Downloader brings the Seeding sub-tab under Done.
 	let torrent = $state(false);
 	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
@@ -236,8 +223,6 @@
 {/if}
 </PageLoader>
 
-<div class="cardbar" data-testid="card-look"><SegmentedControl options={CARDS} bind:value={cardLook.value} label="Opened card layout" size="sm" announce={(l) => `Showing ${l}`} /></div>
-
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}
 		<form id="remove-form" onsubmit={remove}>
@@ -265,8 +250,6 @@
 </Sheet>
 
 <style>
-	.cardbar { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
-	@media (max-width: 767px) { .cardbar { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 16px); } }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.raw { color: var(--text-muted); font: var(--t-footnote); }

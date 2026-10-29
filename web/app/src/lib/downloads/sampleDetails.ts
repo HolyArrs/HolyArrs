@@ -224,3 +224,53 @@ export const sampleHeader = {
 	sessionDown: 18.4 * 2 ** 30, sessionUp: 6.1 * 2 ** 30,
 	free: 1.82 * 2 ** 40, today: 12.6 * 2 ** 30, month: 214 * 2 ** 30, all: 3.7 * 2 ** 40
 };
+
+export interface TreeRow { key: string; name: string; depth: number; dir: boolean; size: number; done: number; i: number }
+
+/** fileTree turns the flat file list into folder rows and file rows, hiding what sits inside a closed folder. */
+export function fileTree(files: SampleFile[], closed: (key: string) => boolean): TreeRow[] {
+	const dirs = new Map<string, { size: number; done: number; order: number }>();
+	files.forEach((f) => {
+		const parts = f.name.split('/');
+		for (let d = 1; d < parts.length; d++) {
+			const key = parts.slice(0, d).join('/');
+			const e = dirs.get(key) ?? { size: 0, done: 0, order: dirs.size };
+			e.size += f.size;
+			e.done += f.done;
+			dirs.set(key, e);
+		}
+	});
+	const out: TreeRow[] = [];
+	const seen = new Set<string>();
+	files.forEach((f, i) => {
+		const parts = f.name.split('/');
+		for (let d = 1; d < parts.length; d++) {
+			const key = parts.slice(0, d).join('/');
+			if (seen.has(key)) continue;
+			seen.add(key);
+			if (parts.slice(0, d - 1).some((_, k) => closed(parts.slice(0, k + 1).join('/')))) continue;
+			const e = dirs.get(key)!;
+			out.push({ key, name: parts[d - 1], depth: d - 1, dir: true, size: e.size, done: e.done, i: -1 });
+		}
+		for (let k = 1; k < parts.length; k++) if (closed(parts.slice(0, k).join('/'))) return;
+		out.push({ key: f.name, name: parts[parts.length - 1], depth: parts.length - 1, dir: false, size: f.size, done: f.done, i });
+	});
+	return out;
+}
+
+export interface SampleTracker { source: string; status: string; state: 'working' | 'updating' | 'error'; peers: number; seeds: number; message: string; next: number }
+
+/** sampleTrackers: one row per source, with its status and the countdown to its next check. */
+export function sampleTrackers(r: DownloadRow): SampleTracker[] {
+	const rand = rng(r.id + 51);
+	const sw = sampleSwarm(r);
+	return sw.sources.map((x, i) => ({
+		source: `${x.name.toLowerCase().replace(/ /g, '-')}.invalid`,
+		status: x.state === 'working' ? 'Working' : x.state === 'updating' ? 'Updating' : 'Error',
+		state: x.state,
+		peers: x.state === 'error' ? 0 : Math.round(sw.peersOf * (0.4 + rand() * 0.6)),
+		seeds: x.state === 'error' ? 0 : Math.round(sw.seedsOf * (0.4 + rand() * 0.6)),
+		message: x.message.replace(/^[A-Za-z]+: /, ''),
+		next: x.state === 'error' ? 0 : Math.max(30, sw.nextCheck - i * 400)
+	}));
+}
