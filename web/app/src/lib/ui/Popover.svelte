@@ -159,7 +159,7 @@
 	.trigger:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.icon { width: 36px; height: 36px; justify-content: center; border-radius: 50%; color: var(--text-muted); }
 	.icon:hover, .icon[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
-	.button { min-height: 36px; padding: 0 12px 0 14px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-headline); font-size: 15px; }
+	.button { flex: none; white-space: nowrap; min-height: 36px; padding: 0 12px 0 14px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-headline); font-size: 15px; }
 	.button:hover { background: var(--surface-3); }
 	.row { width: 100%; min-height: 44px; padding: 6px 8px; border-radius: var(--r-btn); text-align: left; }
 	.row:hover, .row[aria-expanded='true'] { background: var(--surface-3); }
