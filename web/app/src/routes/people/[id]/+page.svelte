@@ -320,7 +320,7 @@
 		</div>
 		{#if view === 2 && !clipDone && sources.length && nowShowing}
 			{#key nowShowing.ids.tmdb}
-				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable corner onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), (clipDone = true))} onfail={() => ((clipOn = false), nextClip())} /></div>
+				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), (clipDone = true))} onfail={() => ((clipOn = false), nextClip())} /></div>
 			{/key}
 		{/if}
 		<div class="b-shade" aria-hidden="true"></div>
@@ -573,7 +573,7 @@
 	.banner.playing .clip { opacity: 1; }
 	/* The trailer sits above the banner shades, so it carries its own fade; its buttons go top right like the artist page. */
 	.clip::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--ink) 60%, transparent) 0%, transparent 45%), linear-gradient(to bottom, rgb(7 8 10 / .35), transparent 25%); }
-	.clip :global(.ctl) { top: 16px; bottom: auto; right: var(--gutter); opacity: 1; visibility: visible; pointer-events: auto; }
+	.clip :global(.ctl) { top: 52px; bottom: auto; right: clamp(20px, 4vw, 56px); pointer-events: auto; }
 	.clip :global(video), .clip :global(iframe) { width: 100%; height: 100%; object-fit: cover; }
 	.b-shade { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--ink) 60%, transparent) 0%, color-mix(in srgb, var(--ink) 25%, transparent) 35%, transparent 60%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
 	.dim { position: absolute; inset: 0; z-index: 0; background: var(--ink); opacity: calc(var(--gone, 0) * .85); pointer-events: none; }
@@ -715,6 +715,7 @@
 	@keyframes ab-grow { from { scale: 1 0; } }
 	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 	@media (max-width: 767px) {
+		.clip :global(.ctl) { top: 44px; right: 16px; }
 		.kf-eps .kf-list { grid-template-columns: minmax(0, 1fr); }
 		.kf-eps .kf-item { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 6px; }
 		.ab-dossier .ab-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
