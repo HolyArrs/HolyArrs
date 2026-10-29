@@ -24,6 +24,7 @@
 	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import HeroMotion from '#lib/ui/HeroMotion.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
@@ -228,6 +229,15 @@
 	let nameEl: HTMLElement | undefined = $state();
 	let gone = $state(0);
 	let slimOn = $state(false);
+	// Top bar + slim bar colour: 1 Apple TV (one neutral glass), 2 Spotify (one solid tint band), 3 HolyArrs (one tinted glass).
+	const BAR_VIEWS = [{ value: 1, label: 'Apple TV' }, { value: 2, label: 'Spotify' }, { value: 3, label: 'HolyArrs' }];
+	let barView = $state(3);
+	$effect(() => {
+		const c = document.documentElement.classList;
+		c.add(`pbar-${barView || 3}`);
+		c.toggle('pbar-slim', slimOn);
+		return () => c.remove(`pbar-${barView || 3}`, 'pbar-slim');
+	});
 	function measure() {
 		if (heroBox) {
 			const r = heroBox.getBoundingClientRect();
@@ -349,6 +359,7 @@
 		<div class="acts">{@render mainAct()}<ActionButton icon="info" label="About {data.person.name}" caption="About" onclick={() => (aboutOpen = true)} /></div>
 	</div>
 
+	<VariantBar options={BAR_VIEWS} bind:value={barView} param="bar" storageKey="person-bar" label="Bar colour" />
 	<div class="slimwrap">
 		<div class="slim" class:on={slimOn} style:--tint={tint?.bg} aria-hidden={!slimOn} inert={!slimOn} data-testid="person-slim-bar">
 			{@render mainAct()}
@@ -606,6 +617,14 @@
 	.slimwrap { position: sticky; top: var(--topbar); z-index: 25; height: 0; margin-bottom: calc(var(--gap) * -1); transition: transform var(--bar-glide); }
 	:global(html.bar-hidden) .slimwrap { transform: translateY(calc(-1 * var(--topbar))); }
 	.slim { --tint: #3a3d44; position: absolute; top: 0; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 var(--gutter); box-sizing: border-box; background: color-mix(in srgb, var(--tint) 45%, #0b0c0f); color: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / .22); opacity: 0; translate: 0 -8px; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
+	/* Bar colour views: the top bar and the slim bar always read as one surface. */
+	:global(html.pbar-1 .ui-topbar), :global(html.pbar-1[data-tint] .ui-topbar) { background-color: rgb(20 21 25 / .72); border-bottom-color: transparent; -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px); }
+	:global(html.pbar-1) .slim { background: rgb(20 21 25 / .72); -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px); box-shadow: inset 0 -.5px 0 rgb(255 255 255 / .12); }
+	:global(html.pbar-2 .ui-topbar), :global(html.pbar-2[data-tint] .ui-topbar) { background-color: var(--tint-bg, #1b1c20); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+	:global(html.pbar-2) .slim { background: var(--tint-bg, #1b1c20); box-shadow: 0 10px 24px rgb(0 0 0 / .3); }
+	:global(html.pbar-3 .ui-topbar), :global(html.pbar-3[data-tint] .ui-topbar) { background-color: color-mix(in srgb, var(--tint-bg, #1b1c20) 74%, transparent); -webkit-backdrop-filter: saturate(170%) blur(28px); backdrop-filter: saturate(170%) blur(28px); }
+	:global(html.pbar-3.pbar-slim .ui-topbar), :global(html.pbar-3.pbar-slim[data-tint] .ui-topbar) { border-bottom-color: transparent; }
+	:global(html.pbar-3) .slim { background: color-mix(in srgb, var(--tint-bg, #1b1c20) 74%, transparent); -webkit-backdrop-filter: saturate(170%) blur(28px); backdrop-filter: saturate(170%) blur(28px); box-shadow: inset 0 -.5px 0 rgb(255 255 255 / .1), 0 12px 28px rgb(0 0 0 / .22); }
 	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
 	.s-photo { width: 32px; height: 48px; border-radius: 6px; object-fit: cover; object-position: center 20%; }
 	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
