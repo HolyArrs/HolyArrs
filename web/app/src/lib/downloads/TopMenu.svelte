@@ -7,7 +7,7 @@
 	// kept inside the screen (flipped above when there is no room below). Arrow keys,
 	// Home and End move; Escape and an outside click close it and give the focus back.
 	type Item = { label: string; hint?: string; disabled?: boolean; onselect?: () => void };
-	let { label, items }: { label: string; items: Item[] } = $props();
+	let { label, items, tight = false }: { label: string; items: Item[]; tight?: boolean } = $props();
 
 	let btn = $state<HTMLButtonElement>();
 	let panel = $state<HTMLElement>();
@@ -57,7 +57,7 @@
 	}
 </script>
 
-<button type="button" class="caret" bind:this={btn} popovertarget={id} aria-haspopup="menu" aria-expanded={open} aria-controls={id} aria-label={label} data-testid="dl-menu-caret"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
+<button type="button" class="caret" class:tight bind:this={btn} popovertarget={id} aria-haspopup="menu" aria-expanded={open} aria-controls={id} aria-label={label} data-testid="dl-menu-caret"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
 <div {id} popover="auto" role="menu" tabindex="-1" aria-label={label} bind:this={panel} ontoggle={toggled} onkeydown={keys} class="tm" data-testid="dl-menu">
 	{#each items as it (it.label)}
 		<button type="button" role="menuitem" class="mi2" aria-disabled={it.disabled ? 'true' : undefined} tabindex="-1" onclick={() => pick(it)}><span class="t">{it.label}</span>{#if it.hint}<span class="h">{it.hint}</span>{/if}</button>
@@ -66,6 +66,8 @@
 
 <style>
 	.caret { display: grid; place-items: center; width: 24px; height: 34px; margin-left: -6px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text-muted); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.caret.tight { height: 28px; margin-left: -4px; }
+	.caret.tight { height: 28px; margin-left: -4px; }
 	.caret:hover { background: var(--surface-3); color: var(--text); }
 	.caret:active { transform: scale(0.96); }
 	.caret:focus-visible { outline: none; box-shadow: var(--focus-ring); }

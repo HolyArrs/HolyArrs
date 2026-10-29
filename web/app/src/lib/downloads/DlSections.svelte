@@ -880,67 +880,38 @@
 {#snippet statusRow(c: (typeof tally)[number])}
 	{@const t = tabs.find((x) => x.key === c.key)}
 	{@const subsOf = t ? subCounts(rows, t) : []}
-	{@const open = groupOpen(c.key, c.key === on)}
-	<div class="pr" data-key={c.key}>
-		{#if subsOf.length}
-			<button type="button" class="gch" class:shut={!open} aria-expanded={open} aria-label="{open ? 'Fold' : 'Unfold'} {c.label}" onclick={() => flipGroup(c.key, open)} data-testid="rail-fold" data-key={c.key}><Icon name="chevronDown" size={14} stroke={2.4} /></button>
-		{:else}<span class="gch sp0" aria-hidden="true"></span>{/if}
-		<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="ico"><Icon name={TAB_ICON[c.key]} size={16} /></span><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
-	</div>
-	{#if open && subsOf.length}
-		<div class="subs">
+	<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="ico"><Icon name={TAB_ICON[c.key]} size={16} /></span><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
+	{#if railLook.value === 'b' && on === c.key && subsOf.length}
+		<div class="subs" data-testid="rail-subs">
 			{#each subsOf as x (x.key)}
-				<button type="button" class="ri sub" class:on={on === c.key && subOn === x.key} class:zero={x.count === 0} aria-pressed={on === c.key && subOn === x.key} data-testid="rail-sub" data-key="{c.key}.{x.key}" data-count={x.count} onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }}><span class="lb">{x.label}</span><b class="n">{x.count}</b></button>
+				<button type="button" class="ri sub" class:on={subOn === x.key} class:zero={x.count === 0} aria-pressed={subOn === x.key} data-testid="rail-sub" data-key="{c.key}.{x.key}" data-count={x.count} onclick={() => chooseSub(x.key)}><span class="lb">{x.label}</span><b class="n">{x.count}</b></button>
 			{/each}
 		</div>
 	{/if}
 {/snippet}
 
 {#snippet gHead(key: string, label: string, open: boolean)}
-	<button type="button" class="gh" aria-expanded={open} onclick={() => flipGroup(key, open)} data-testid="rail-fold" data-key={key}><span class="gch sp0"><Icon name="chevronDown" size={14} stroke={2.4} /></span><span class="lb">{label}</span></button>
+	<button type="button" class="gh" aria-expanded={open} onclick={() => flipGroup(key, open)} data-testid="rail-fold" data-key={key}><span class="lb">{label}</span><span class="chv" aria-hidden="true"><Icon name="chevronDown" size={14} stroke={2.4} /></span></button>
 {/snippet}
 
 {#snippet kindRows()}
 	{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-		<div class="pr"><span class="gch sp0" aria-hidden="true"></span><button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="ico"><Icon name={KIND_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{kindCount(t.key)}</b></button></div>
+		<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="ico"><Icon name={KIND_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{kindCount(t.key)}</b></button>
 	{/each}
 {/snippet}
 
 {#snippet srcRows()}
 	{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-		<div class="pr"><span class="gch sp0" aria-hidden="true"></span><button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="ico"><Icon name={SRC_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{srcCount(t.key)}</b></button></div>
+		<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="ico"><Icon name={SRC_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{srcCount(t.key)}</b></button>
 	{/each}
 {/snippet}
 
 {#snippet railBody()}
-	{@const look = railLook.value}
 	{@const stOpen = groupOpen('status', true)}
-	{#if look === 'c'}
-		<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
-			{@render gHead('status', 'Status', stOpen)}
-			{#if stOpen}
-				<div class="chips">
-					{#each tally as c (c.key)}
-						<button type="button" class="chip" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
-					{/each}
-				</div>
-				{#if onTab && subs.length}
-					<div class="subs flat">
-						{#each subs as x (x.key)}
-							<button type="button" class="ri sub" class:on={subOn === x.key} class:zero={x.count === 0} aria-pressed={subOn === x.key} data-testid="rail-sub" data-key="{on}.{x.key}" data-count={x.count} onclick={() => chooseSub(x.key)}><span class="lb">{x.label}</span><b class="n">{x.count}</b></button>
-						{/each}
-					</div>
-				{/if}
-			{/if}
-		</div>
-	{:else if look === 'b'}
+	{#if railLook.value !== 'c'}
 		<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
 			{@render gHead('status', 'Status', stOpen)}
 			{#if stOpen}{#each tally as c (c.key)}{@render statusRow(c)}{/each}{/if}
-		</div>
-	{:else}
-		<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
-			{#each tally as c (c.key)}{@render statusRow(c)}{/each}
 		</div>
 	{/if}
 	<div class="rg" role="group" aria-label="Library" data-testid="dl-type-filter">
@@ -1116,10 +1087,12 @@
 	{:else}
 	<button type="button" class="rshow" aria-label="Show filters" use:tip={{ text: 'Show filters', side: 'right' }} onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
 	<div class="ics va-{railLook.value}" role="group" aria-label="Filters" data-testid="rail-icons">
+		{#if railLook.value !== 'c'}
 		{#each tally as c (c.key)}
 			<button type="button" class="ic" class:on={on === c.key && !subOn} aria-pressed={on === c.key && !subOn} aria-label="{c.label}, {c.count}" use:tip={{ text: `${c.label} · ${c.count}`, side: 'right' }} data-testid="rail-icon" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={16} /><b class="bd">{c.count}</b></button>
 		{/each}
 		<hr />
+		{/if}
 		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
 			<button type="button" class="ic" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} aria-label="{t.label}, {kindCount(t.key)}" use:tip={{ text: `${t.label} · ${kindCount(t.key)}`, side: 'right' }} data-testid="rail-icon-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={16} /><b class="bd">{kindCount(t.key)}</b></button>
 		{/each}
@@ -1133,6 +1106,25 @@
 	<div class="rz" role="separator" aria-orientation="vertical" aria-label="Resize filters" aria-valuenow={railShown ? railW : 0} tabindex="0" class:fixed={!railShown} onpointerdown={(e) => railShown && railOpen && railDown(e)} ondblclick={() => setRail(!railOpen)} onkeydown={railKey} data-testid="rail-handle"><i aria-hidden="true"></i></div>
 </nav>
 <div class="col" bind:this={colEl}>
+{#if railLook.value === 'a' && onTab && subs.length}
+	<div class="seg" role="group" aria-label="{onTab.label}: show" data-testid="dl-subseg">
+		<button type="button" class="sg" class:on={!subOn} aria-pressed={!subOn} onclick={() => choose(on)} data-testid="dl-subseg-all">All<b>{tally.find((x) => x.key === on)?.count ?? 0}</b></button>
+		{#each subs as x (x.key)}
+			<button type="button" class="sg" class:on={subOn === x.key} aria-pressed={subOn === x.key} onclick={() => chooseSub(x.key)} data-testid="dl-subseg-item" data-key={x.key}>{x.label}<b>{x.count}</b></button>
+		{/each}
+	</div>
+{:else if railLook.value === 'c'}
+	<div class="tabrow" role="tablist" aria-label="Status" data-testid="dl-tabrow">
+		{#each tally as c (c.key)}
+			{@const t = tabs.find((x) => x.key === c.key)}
+			{@const so = t ? subCounts(rows, t) : []}
+			<div class="tab2" class:on={on === c.key}>
+				<button type="button" role="tab" class="tb2" aria-selected={on === c.key} class:zero={c.count === 0} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span>{#if on === c.key && subOn}<span class="cur">{so.find((x) => x.key === subOn)?.label}</span>{/if}<b class="n">{c.count}</b></button>
+				{#if so.length}<TopMenu tight label="{c.label}: filter" items={[{ label: 'All', hint: String(c.count), onselect: () => choose(c.key) }, ...so.map((x) => ({ label: x.label, hint: String(x.count), onselect: () => { if (on !== c.key) choose(c.key); chooseSub(x.key); } }))]} />{/if}
+			</div>
+		{/each}
+	</div>
+{/if}
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
 {#if list.length}
@@ -1219,8 +1211,6 @@
 	.ty:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pm { display: inline-grid; place-items: center; width: 14px; height: 14px; margin-right: 6px; vertical-align: 1px; border-radius: 3px; background: var(--surface-3); color: var(--text-muted); font-size: 9px; font-weight: 700; line-height: 1; }
 	.kt { display: inline-block; box-sizing: border-box; height: 16px; margin-right: 6px; padding: 0 5px; vertical-align: 1px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-3); color: var(--text); font: var(--t-caption); font-size: 11px; line-height: 14px; font-weight: 600; white-space: nowrap; }
-	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
-	.subs { gap: 6px; margin-top: -4px; }
 	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
 	.cw.zero { opacity: 0.72; }
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
@@ -1356,7 +1346,6 @@
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 	.gen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 10px; }
 	.gen .kv { margin: 0; }
-	.gh { color: var(--text); font-weight: 600; }
 	.tblw { margin-top: 10px; max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
 	.t2 { width: 100%; border-collapse: collapse; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.t2 th { position: sticky; top: 0; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; text-align: left; white-space: nowrap; }
@@ -1484,56 +1473,53 @@
 	.psb:hover, .psx:hover { background: var(--surface-3); }
 	.psb:focus-visible, .psx:focus-visible, .psearch input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.psearch input { width: 150px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); }
+	/* Every rail row is three columns: a 16px icon, a left-aligned label, a right-aligned tabular count. No chevron sits in the icon column. */
 	.rail .rg { display: grid; gap: 2px; padding: 0 var(--dl-gutter); }
-	.pr { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; min-width: 0; }
-	.gch { display: grid; place-items: center; width: 24px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
-	.gch.sp0 { cursor: default; }
-	.gch :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
-	.gch.shut :global(svg) { transform: rotate(-90deg); }
-	.gch:hover:not(.sp0) { background: var(--surface-3); color: var(--text); }
-	.gch:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.ri, .chip { border: 0; color: var(--text); font: var(--t-footnote); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
-	.ri { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; height: 28px; min-width: 0; padding: 0 8px; border-radius: 6px; background: none; overflow: hidden; }
+	.ri { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; height: 28px; min-width: 0; padding: 0 8px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; cursor: pointer; overflow: hidden; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.ri .ico { display: grid; place-items: center; color: var(--text-muted); }
-	.ri .lb, .chip .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-	.ri .n, .chip .n { min-width: 2ch; text-align: right; color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.ri .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+	.ri .n, .tb2 .n, .sg b { min-width: 2ch; text-align: right; color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.ri:hover { background: var(--surface-3); }
 	.ri.zero:not(.on) { opacity: 0.72; }
-	.ri:focus-visible, .chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.ri:active, .chip:active, .gch:active:not(.sp0), .gh:active { transform: scale(0.97); }
-	.subs { display: grid; gap: 2px; margin-left: 24px; }
-	.ri.sub { grid-template-columns: minmax(0, 1fr) auto; padding-left: 32px; color: var(--text-muted); }
-	.gh { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; width: 100%; min-height: 26px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: 600 11px/1.3 var(--font-ui); text-align: left; cursor: pointer; }
-	.gh .gch { height: 26px; }
-	.gh[aria-expanded='false'] .gch :global(svg) { transform: rotate(-90deg); }
+	.ri.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
+	.ri.on .ico { color: var(--accent-text, var(--text)); }
+	.ri.on .n { color: var(--text); }
+	.ri:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.ri:active, .gh:active, .sg:active, .tb2:active { transform: scale(0.97); }
+	/* Group headers: small caps, the fold chevron at the right end, shown on hover or focus. */
+	.gh { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; width: 100%; min-height: 26px; margin-top: 6px; padding: 0 0 0 8px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: 600 10px/1.3 var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; text-align: left; cursor: pointer; }
+	.gh .chv { display: grid; place-items: center; width: 24px; height: 24px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.gh:hover .chv, .gh:focus-visible .chv { opacity: 1; }
+	@media (hover: none) { .gh .chv { opacity: 1; } }
+	.gh[aria-expanded='false'] .chv { transform: rotate(-90deg); }
 	.gh:hover { color: var(--text); }
 	.gh:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0 4px; }
-	.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: var(--r-pill); background: var(--surface-2); }
-	.chip:hover { background: var(--surface-3); }
-	.chip :global(svg) { color: var(--text-muted); }
-	.chip.on { background: var(--text); color: var(--bg); }
-	.chip.on :global(svg), .chip.on .n { color: inherit; opacity: 0.8; }
-	.chip.zero:not(.on) { opacity: 0.72; }
-	.subs.flat { margin-left: 0; }
-	.subs.flat .ri.sub { padding-left: 8px; }
-	/* A: a clean list, a soft fill on the picked row. */
-	.va-a .ri.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
-	.va-a .ri.on .ico, .va-a .ri.on .n { color: var(--text); }
-	.va-a .gh { margin-top: 6px; font-size: 12px; }
-	/* B: grouped sections, small-caps headers, a guide line beside the sub-statuses. */
-	.va-b .gh { margin-top: 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
-	.va-b .subs { margin-left: 24px; padding-left: 0; border-left: 1px solid var(--line); margin-left: 35px; }
-	.va-b .ri.sub { padding-left: 14px; }
-	.va-b .ri.on { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text, var(--text)); font-weight: 600; box-shadow: inset 2px 0 0 var(--accent); }
-	.va-b .ri.on .ico, .va-b .ri.on .n { color: inherit; }
-	/* C: status chips, then a compact list. */
-	.va-c .gh { margin-top: 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
-	.va-c .ri.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
-	.ics.va-b .ic.on { box-shadow: inset 2px 0 0 var(--accent); }
-	.ics.va-c .ic { border-radius: 999px; }
-	.ics.va-c .ic.on { background: var(--text); color: var(--bg); }
-	.gch :global(svg.icon), .gh :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon), .sbi :global(.ui-ibtn svg) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
+	/* B: only the picked parent shows its children, under its label, with a thin guide line and smaller type. */
+	.subs { position: relative; display: grid; gap: 2px; }
+	.subs::before { content: ''; position: absolute; left: 15px; top: 2px; bottom: 2px; width: 1px; background: var(--line); }
+	.ri.sub { grid-template-columns: minmax(0, 1fr) auto; padding-left: 32px; font-size: 11px; color: var(--text-muted); }
+	.ri.sub.on { color: var(--text); }
+	/* A: sub-statuses as a text segmented control at the top of the list. */
+	.seg { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; padding: 4px var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+	.seg::-webkit-scrollbar { display: none; }
+	.sg { display: inline-flex; align-items: baseline; gap: 6px; flex: none; height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; align-items: center; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.sg:hover { background: var(--surface-3); color: var(--text); }
+	.sg.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
+	.sg:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* C: status is the tab row across the top of the list, each tab with a sub-filter menu. */
+	.tabrow { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 2px; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+	.tabrow::-webkit-scrollbar { display: none; }
+	.tab2 { display: inline-flex; align-items: center; flex: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+	.tab2.on { border-bottom-color: var(--accent); }
+	.tb2 { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 6px 0 8px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+	.tb2:hover { color: var(--text); background: var(--surface-2); }
+	.tab2.on .tb2 { color: var(--text); font-weight: 600; }
+	.tb2 .cur { color: var(--accent-text, var(--text)); font-weight: 500; }
+	.tb2 .cur::before { content: '\203a\00a0'; color: var(--text-muted); }
+	.tb2.zero { opacity: 0.72; }
+	.tb2:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.ics .ic.on { box-shadow: inset 2px 0 0 var(--accent); }
+	.chv :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon), .sbi :global(.ui-ibtn svg) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
 	.tbn :global(svg.icon) { width: 20px; height: 20px; }
 	.tbn { width: 34px; height: 34px; }
 	.split :global(.caret) { height: 34px; }
@@ -1605,16 +1591,12 @@
 	}
 	@media (max-width: 1099px) {
 		.rail .rg { display: flex; flex: none; align-items: center; gap: 4px; padding: 0; }
-		.pr { display: flex; }
-		.gch:not(.sp0) { display: none; }
-		.gh .gch { display: none; }
-		.gh { display: inline-flex; width: auto; padding: 0 4px; }
-		.ri { display: inline-flex; flex: none; gap: 6px; width: auto; white-space: nowrap; }
-		.subs, .subs.flat { display: flex; margin: 0; gap: 4px; border: 0; }
-		.va-b .subs { border: 0; margin: 0; }
-		.ri.sub, .va-b .ri.sub, .subs.flat .ri.sub { padding-left: 8px; }
-		.chips { flex-wrap: nowrap; padding: 0; }
-		.chip { flex: none; }
+		.ri { display: inline-grid; flex: none; width: auto; white-space: nowrap; }
+		.gh { display: inline-flex; width: auto; margin: 0; padding: 0 4px; }
+		.gh .chv { display: none; }
+		.subs { display: flex; gap: 4px; }
+		.subs::before { content: none; }
+		.ri.sub { padding-left: 8px; }
 		.rz, .rhide, .rshow { display: none; }
 		.rail.shut { padding: 8px; overflow-x: auto; }
 		.rail.shut::before { content: none; }

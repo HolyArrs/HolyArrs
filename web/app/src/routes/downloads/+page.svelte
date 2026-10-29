@@ -209,7 +209,7 @@
 		}
 	}
 	// A switch for the left rail's look (?rail=a|b|c); the URL is the saved copy, the store is what both sides read.
-	const LOOKS = [{ value: 'a', label: 'A \u00b7 List' }, { value: 'b', label: 'B \u00b7 Grouped' }, { value: 'c', label: 'C \u00b7 Chips' }];
+	const LOOKS = [{ value: 'a', label: 'A \u00b7 Flat groups' }, { value: 'b', label: 'B \u00b7 Reveal on select' }, { value: 'c', label: 'C \u00b7 Tabs + slim rail' }];
 	railLook.value = railOf(page.url.searchParams.get('rail'));
 	$effect(() => {
 		const pick = railLook.value;
