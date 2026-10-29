@@ -42,15 +42,25 @@ func (h *speedHistory) last(n int) []SpeedSample {
 	return append([]SpeedSample{}, b...)
 }
 
-// sampleSpeeds reads the total speeds once a second from the database (no outside calls).
-func (a *API) sampleSpeeds() {
+// StartSpeedHistory reads the total speeds once a second from the database (no outside calls)
+// until ctx ends. The program starts it once; tests do not.
+func (a *API) StartSpeedHistory(ctx context.Context) {
+	go a.sampleSpeeds(ctx)
+}
+
+func (a *API) sampleSpeeds(ctx context.Context) {
 	if a.s.Store == nil {
 		return
 	}
 	t := time.NewTicker(time.Second)
 	defer t.Stop()
-	for range t.C {
-		ctx, cancel := context.WithTimeout(context.Background(), 800*time.Millisecond)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+		ctx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
 		var s SpeedSample
 		err := a.s.Store.Read().QueryRowContext(ctx, "SELECT COALESCE(SUM(speed),0), COALESCE(SUM(up_speed),0) FROM downloads WHERE state = 'downloading'").Scan(&s.Down, &s.Up)
 		cancel()

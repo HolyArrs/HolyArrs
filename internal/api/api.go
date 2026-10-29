@@ -254,9 +254,7 @@ func New(s Server) *API {
 				}
 			}}
 	}
-	a := &API{s: s}
-	go a.sampleSpeeds()
-	return a
+	return &API{s: s}
 }
 
 // actor is the signed-in person; without sign-in (tests) it is the owner.
