@@ -16,7 +16,8 @@
 	import Chip from '../ui/Chip.svelte';
 	import Menu from '../ui/Menu.svelte';
 	import TopMenu from './TopMenu.svelte';
-	import { railLook } from './railLook.svelte.ts';
+	import DlRail from './DlRail.svelte';
+	import { tabsLook } from './tabsLook.svelte.ts';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
 	import Popover from '../ui/Popover.svelte';
@@ -179,94 +180,7 @@
 	// Phones have no top bar: the tab strip carries a magnifier that opens the same scoped search.
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
-	// The rail's parent groups fold; which ones are open is kept in this browser.
-	const GROUPS_KEY = 'holyarrs.downloads.groups';
-	let groups = $state<Record<string, boolean>>({});
-	try {
-		const g = typeof localStorage === 'undefined' ? null : JSON.parse(localStorage.getItem(GROUPS_KEY) ?? 'null');
-		if (g && typeof g === 'object') for (const [k, v] of Object.entries(g)) if (typeof v === 'boolean') groups[k] = v;
-	} catch {
-		/* private window or unreadable: the defaults */
-	}
-	/** Open: what was saved, else only the group that holds the picked filter (Library and Sources start open). */
-	const groupOpen = (k: string, dflt: boolean) => groups[k] ?? dflt;
-	const libOpen = $derived(groupOpen('library', true));
-	const srcOpen = $derived(groupOpen('sources', true));
-	function flipGroup(k: string, now: boolean) {
-		groups[k] = !now;
-		try {
-			localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
-		} catch {
-			/* private window: it lasts for this visit */
-		}
-	}
-	// The left rail: its width (or hidden) is kept in this browser.
-	const RAIL_KEY = 'holyarrs.downloads.rail';
-	let railW = $state(196);
-	let railOpen = $state(true);
-	try {
-		const v = typeof localStorage === 'undefined' ? null : JSON.parse(localStorage.getItem(RAIL_KEY) ?? 'null');
-		if (v && typeof v === 'object') {
-			if (Number.isFinite(v.w)) railW = Math.max(160, Math.min(360, Math.round(v.w)));
-			if (v.open === false) railOpen = false;
-		}
-	} catch {
-		/* private window or unreadable: the default rail */
-	}
-	function saveRail() {
-		try {
-			localStorage.setItem(RAIL_KEY, JSON.stringify({ w: Math.round(railW), open: railOpen }));
-		} catch {
-			/* private window: it lasts for this visit */
-		}
-	}
-	let narrow = $state(false);
-	const railShown = $derived(railOpen || narrow);
-	function railDown(e: PointerEvent) {
-		if (e.button !== 0) return;
-		e.preventDefault();
-		const el = e.currentTarget as HTMLElement;
-		el.setPointerCapture(e.pointerId);
-		const x0 = e.clientX;
-		const w0 = railW;
-		let raw = w0;
-		const mv = (m: PointerEvent) => {
-			raw = Math.round(w0 + (m.clientX - x0));
-			railW = Math.max(100, Math.min(360, raw));
-		};
-		const up = () => {
-			el.removeEventListener('pointermove', mv);
-			el.removeEventListener('pointerup', up);
-			el.removeEventListener('pointercancel', up);
-			// Under 160px the labels would be cut, so the rail snaps to the icon strip.
-			if (raw < 160) {
-				railW = Math.max(160, w0);
-				railOpen = false;
-			}
-			saveRail();
-		};
-		el.addEventListener('pointermove', mv);
-		el.addEventListener('pointerup', up);
-		el.addEventListener('pointercancel', up);
-	}
-	function railKey(e: KeyboardEvent) {
-		if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-			e.preventDefault();
-			e.stopPropagation();
-			railW = Math.max(160, Math.min(360, railW + (e.key === 'ArrowRight' ? 16 : -16)));
-			saveRail();
-		} else if (e.key === 'Enter') {
-			e.preventDefault();
-			setRail(false);
-		}
-	}
-	const TAB_ICON: Record<string, 'download' | 'clock' | 'downloader' | 'alert' | 'check'> = { active: 'download', waiting: 'clock', progress: 'downloader', problems: 'alert', done: 'check' };
-	const KIND_ICON: Record<string, 'film' | 'tv' | 'music'> = { movie: 'film', show: 'tv', artist: 'music' };
-	const SRC_ICON: Record<string, 'usenet' | 'torrent'> = { usenet: 'usenet', torrent: 'torrent' };
-	function setRail(open: boolean) {
-		railOpen = open;
-		saveRail();
-	}
+	let railPx = $state(196);
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	function dragDown(e: PointerEvent) {
 		if (e.button !== 0 || !paneOpen) return;
@@ -302,6 +216,16 @@
 	let rowFocus = $state(0);
 	/** One tab stop for the whole list: the row that was focused last, else the open one, else the first. */
 	const tabRow = $derived(list.some((r) => r.id === rowFocus) ? rowFocus : list.some((r) => r.id === openId) ? openId : (list[0]?.id ?? 0));
+	/** Left and Right move between the status tabs. */
+	function tabKey(e: KeyboardEvent) {
+		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+		const i = tally.findIndex((c) => c.key === on);
+		const n = tally[Math.max(0, Math.min(tally.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)))];
+		if (!n) return;
+		e.preventDefault();
+		choose(n.key);
+		tick().then(() => document.querySelector<HTMLElement>(`[role="tab"][data-key="${n.key}"]`)?.focus());
+	}
 	function slashKey(e: KeyboardEvent) {
 		if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || dlScope.off) return;
 		const t = e.target as HTMLElement | null;
@@ -479,7 +403,6 @@
 		const ro = new ResizeObserver(() => {
 			room = (listEl ?? g).clientWidth;
 			phone = matchMedia('(max-width: 640px)').matches;
-			narrow = matchMedia('(max-width: 1099px)').matches;
 			titleMin = minOf('title');
 		});
 		ro.observe(g);
@@ -877,51 +800,21 @@
 	</div>
 {/snippet}
 
-{#snippet statusRow(c: (typeof tally)[number])}
-	{@const t = tabs.find((x) => x.key === c.key)}
-	{@const subsOf = t ? subCounts(rows, t) : []}
-	<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="ico"><Icon name={TAB_ICON[c.key]} size={16} /></span><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
-	{#if railLook.value === 'b' && on === c.key && subsOf.length}
-		<div class="subs" data-testid="rail-subs">
-			{#each subsOf as x (x.key)}
-				<button type="button" class="ri sub" class:on={subOn === x.key} class:zero={x.count === 0} aria-pressed={subOn === x.key} data-testid="rail-sub" data-key="{c.key}.{x.key}" data-count={x.count} onclick={() => chooseSub(x.key)}><span class="lb">{x.label}</span><b class="n">{x.count}</b></button>
+{#snippet tabBtns()}
+	{#each tally as c (c.key)}
+		<button type="button" role="tab" class="tab" class:on={on === c.key} class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)} onkeydown={tabKey}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
+	{/each}
+{/snippet}
+
+{#snippet subSwitch(cls: string)}
+	{#if onTab && subs.length}
+		<div class="seg {cls}" role="group" aria-label="{onTab.label}: show" data-testid="dl-subseg">
+			<button type="button" class="sg" class:on={!subOn} aria-pressed={!subOn} onclick={() => choose(on)} data-testid="dl-subseg-all">All<b>{tally.find((x) => x.key === on)?.count ?? 0}</b></button>
+			{#each subs as x (x.key)}
+				<button type="button" class="sg" class:on={subOn === x.key} aria-pressed={subOn === x.key} onclick={() => chooseSub(x.key)} data-testid="dl-subseg-item" data-key={x.key}>{x.label}<b>{x.count}</b></button>
 			{/each}
 		</div>
 	{/if}
-{/snippet}
-
-{#snippet gHead(key: string, label: string, open: boolean)}
-	<button type="button" class="gh" aria-expanded={open} onclick={() => flipGroup(key, open)} data-testid="rail-fold" data-key={key}><span class="lb">{label}</span><span class="chv" aria-hidden="true"><Icon name="chevronDown" size={14} stroke={2.4} /></span></button>
-{/snippet}
-
-{#snippet kindRows()}
-	{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-		<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="ico"><Icon name={KIND_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{kindCount(t.key)}</b></button>
-	{/each}
-{/snippet}
-
-{#snippet srcRows()}
-	{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-		<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="ico"><Icon name={SRC_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{srcCount(t.key)}</b></button>
-	{/each}
-{/snippet}
-
-{#snippet railBody()}
-	{@const stOpen = groupOpen('status', true)}
-	{#if railLook.value !== 'c'}
-		<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
-			{@render gHead('status', 'Status', stOpen)}
-			{#if stOpen}{#each tally as c (c.key)}{@render statusRow(c)}{/each}{/if}
-		</div>
-	{/if}
-	<div class="rg" role="group" aria-label="Library" data-testid="dl-type-filter">
-		{@render gHead('library', 'Library', libOpen)}
-		{#if libOpen}{@render kindRows()}{/if}
-	</div>
-	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
-		{@render gHead('sources', 'Sources', srcOpen)}
-		{#if srcOpen}{@render srcRows()}{/if}
-	</div>
 {/snippet}
 
 {#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[], im: ImportRecord | undefined)}
@@ -1064,16 +957,6 @@
 <div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
 <h1 class="sr">Downloads</h1>
 <div class="strip hdr" data-testid="dl-strip">
-	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
-		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={20} /></button></span>
-		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={20} /></button></span><TopMenu label="More start actions" items={[{ label: 'Start all', hint: 'Coming soon', disabled: true }]} /></span>
-		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={20} /></button></span><TopMenu label="More pause actions" items={[{ label: 'Pause all', hint: 'Coming soon', disabled: true }]} /></span>
-		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={20} /></button></span>
-		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={20} /></button></span>
-	</div>
-</div>
-<div class="body" style="--rail: {railShown ? railW : 52}px">
-<nav class="rail va-{railLook.value}" class:shut={!railShown} aria-label="Downloads filters" data-testid="dl-rail" data-look={railLook.value}>
 	<div class="psearch" class:open={psOpen || !!dlScope.term} data-testid="dl-psearch">
 		<button type="button" class="psb" aria-label="Search downloads" aria-expanded={psOpen || !!dlScope.term} onclick={() => { psOpen = true; tick().then(() => psEl?.focus()); }} data-testid="dl-psearch-btn"><Icon name="search" size={16} /></button>
 		{#if psOpen || dlScope.term}
@@ -1081,49 +964,31 @@
 			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
 		{/if}
 	</div>
-	{#if railShown}
-	<button type="button" class="rhide" aria-label="Hide filters" use:tip={'Hide filters'} onclick={() => setRail(false)} data-testid="rail-hide"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
-	{@render railBody()}
-	{:else}
-	<button type="button" class="rshow" aria-label="Show filters" use:tip={{ text: 'Show filters', side: 'right' }} onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
-	<div class="ics va-{railLook.value}" role="group" aria-label="Filters" data-testid="rail-icons">
-		{#if railLook.value !== 'c'}
-		{#each tally as c (c.key)}
-			<button type="button" class="ic" class:on={on === c.key && !subOn} aria-pressed={on === c.key && !subOn} aria-label="{c.label}, {c.count}" use:tip={{ text: `${c.label} · ${c.count}`, side: 'right' }} data-testid="rail-icon" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={16} /><b class="bd">{c.count}</b></button>
-		{/each}
-		<hr />
-		{/if}
-		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-			<button type="button" class="ic" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} aria-label="{t.label}, {kindCount(t.key)}" use:tip={{ text: `${t.label} · ${kindCount(t.key)}`, side: 'right' }} data-testid="rail-icon-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={16} /><b class="bd">{kindCount(t.key)}</b></button>
-		{/each}
-		<hr />
-		{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-			<button type="button" class="ic" class:on={srcOn === t.key} aria-pressed={srcOn === t.key} aria-label="{t.label}, {srcCount(t.key)}" use:tip={{ text: `${t.label} · ${srcCount(t.key)}`, side: 'right' }} data-testid="rail-icon-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={16} /><b class="bd">{srcCount(t.key)}</b></button>
-		{/each}
+	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
+		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={20} /></button></span>
+		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={20} /></button></span><TopMenu label="More start actions" items={[{ label: 'Start all', hint: 'Coming soon', disabled: true }]} /></span>
+		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={20} /></button></span><TopMenu label="More pause actions" items={[{ label: 'Pause all', hint: 'Coming soon', disabled: true }]} /></span>
+		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={20} /></button></span>
+		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={20} /></button></span>
 	</div>
-	{/if}
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-	<div class="rz" role="separator" aria-orientation="vertical" aria-label="Resize filters" aria-valuenow={railShown ? railW : 0} tabindex="0" class:fixed={!railShown} onpointerdown={(e) => railShown && railOpen && railDown(e)} ondblclick={() => setRail(!railOpen)} onkeydown={railKey} data-testid="rail-handle"><i aria-hidden="true"></i></div>
-</nav>
+	{#if tabsLook.value === '5'}<div class="tabs t5" role="tablist" aria-label="Status" data-testid="dl-tabrow">{@render tabBtns()}</div>{/if}
+</div>
+<div class="body" style="--rail: {railPx}px">
+<DlRail bind:kindOn bind:srcOn {kindCount} {srcCount} bind:px={railPx} />
 <div class="col" bind:this={colEl}>
-{#if railLook.value === 'a' && onTab && subs.length}
-	<div class="seg" role="group" aria-label="{onTab.label}: show" data-testid="dl-subseg">
-		<button type="button" class="sg" class:on={!subOn} aria-pressed={!subOn} onclick={() => choose(on)} data-testid="dl-subseg-all">All<b>{tally.find((x) => x.key === on)?.count ?? 0}</b></button>
-		{#each subs as x (x.key)}
-			<button type="button" class="sg" class:on={subOn === x.key} aria-pressed={subOn === x.key} onclick={() => chooseSub(x.key)} data-testid="dl-subseg-item" data-key={x.key}>{x.label}<b>{x.count}</b></button>
-		{/each}
-	</div>
-{:else if railLook.value === 'c'}
-	<div class="tabrow" role="tablist" aria-label="Status" data-testid="dl-tabrow">
-		{#each tally as c (c.key)}
-			{@const t = tabs.find((x) => x.key === c.key)}
-			{@const so = t ? subCounts(rows, t) : []}
-			<div class="tab2" class:on={on === c.key}>
-				<button type="button" role="tab" class="tb2" aria-selected={on === c.key} class:zero={c.count === 0} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span>{#if on === c.key && subOn}<span class="cur">{so.find((x) => x.key === subOn)?.label}</span>{/if}<b class="n">{c.count}</b></button>
-				{#if so.length}<TopMenu tight label="{c.label}: filter" items={[{ label: 'All', hint: String(c.count), onselect: () => choose(c.key) }, ...so.map((x) => ({ label: x.label, hint: String(x.count), onselect: () => { if (on !== c.key) choose(c.key); chooseSub(x.key); } }))]} />{/if}
-			</div>
-		{/each}
-	</div>
+{#if tabsLook.value === '1'}
+	<div class="tabs t1" role="tablist" aria-label="Status" data-testid="dl-tabrow">{@render tabBtns()}</div>
+	{@render subSwitch('')}
+{:else if tabsLook.value === '2'}
+	<div class="tabrow" data-testid="dl-tabrow"><div class="tabs t2" role="tablist" aria-label="Status">{@render tabBtns()}</div>{@render subSwitch('inline')}</div>
+{:else if tabsLook.value === '3'}
+	<div class="tabs t3" role="tablist" aria-label="Status" data-testid="dl-tabrow">{@render tabBtns()}</div>
+	{@render subSwitch('quiet')}
+{:else if tabsLook.value === '4'}
+	<div class="tabs t4" role="tablist" aria-label="Status" data-testid="dl-tabrow">{@render tabBtns()}</div>
+	{@render subSwitch('')}
+{:else}
+	{@render subSwitch('')}
 {/if}
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
@@ -1339,7 +1204,6 @@
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 	.listbox .tw { overflow: visible; }
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
-	.rail { position: relative; display: grid; align-content: start; gap: 14px; overflow-x: hidden; overflow-y: auto; padding: 10px 0; border-right: 1px solid var(--line); min-width: 0; }
 	.tbg { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 	.sbar { flex: none; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
@@ -1410,33 +1274,12 @@
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	.rz { position: absolute; top: 0; right: -4px; bottom: 0; z-index: 6; width: 9px; cursor: col-resize; touch-action: none; }
-	.rz.fixed { cursor: pointer; }
-	.rz i { position: absolute; top: 50%; left: 3px; width: 3px; height: 38px; margin-top: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
-	.rz:hover i, .rz:focus-visible i, .rail:hover .rz i { opacity: 0.6; }
-	.rz:hover i, .rz:focus-visible i { opacity: 1; }
-	.rz:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.rhide, .rshow { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
-	.rhide { justify-self: end; margin: -4px 0 -8px; }
-	.rhide :global(svg) { transform: rotate(90deg); }
-	.rshow :global(svg) { transform: none; }
-	.rshow { margin: 0 auto; }
-	.rhide:hover, .rshow:hover { background: var(--surface-3); color: var(--text); }
-	.rhide:focus-visible, .rshow:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.rail.shut { padding: 10px 0; overflow: hidden; }
 	.tbn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.tbn:hover:not(:disabled) { background: var(--surface-3); }
 	.tbn:disabled { opacity: 0.45; cursor: not-allowed; }
 	.tbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tw2 { display: inline-flex; }
 	.split { display: inline-flex; align-items: center; }
-	.ics { display: grid; justify-items: center; gap: 4px; }
-	.ics hr { width: 28px; height: 1px; margin: 4px 0; border: 0; background: var(--line); }
-	.ic { position: relative; display: grid; place-items: center; width: 40px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text-muted); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.ic:hover { background: var(--surface-3); color: var(--text); }
-	.ic.on { background: var(--surface-1); color: var(--accent-text, var(--text)); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 10px rgb(0 0 0 / 0.08); }
-	.ic:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.ic .bd { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 10px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.sbar { container: sb / inline-size; }
 	.sbi { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px 14px; padding: 3px var(--dl-gutter); min-width: 0; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.3; }
 	.sbi > span { display: inline-flex; align-items: center; gap: 6px; }
@@ -1467,59 +1310,57 @@
 	.app :global(svg.icon), .app :global(.ui-ibtn svg) { width: var(--dl-icon); height: var(--dl-icon); }
 	.psearch { display: none; }
 	.grip:active::after { background: var(--accent); width: 2px; }
-	.rz:active i { opacity: 1; }
 	.dv:active i { opacity: 1; }
 	.psb, .psx { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text); cursor: pointer; }
 	.psb:hover, .psx:hover { background: var(--surface-3); }
 	.psb:focus-visible, .psx:focus-visible, .psearch input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.psearch input { width: 150px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); }
-	/* Every rail row is three columns: a 16px icon, a left-aligned label, a right-aligned tabular count. No chevron sits in the icon column. */
-	.rail .rg { display: grid; gap: 2px; padding: 0 var(--dl-gutter); }
-	.ri { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; height: 28px; min-width: 0; padding: 0 8px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; cursor: pointer; overflow: hidden; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
-	.ri .ico { display: grid; place-items: center; color: var(--text-muted); }
-	.ri .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-	.ri .n, .tb2 .n, .sg b { min-width: 2ch; text-align: right; color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
-	.ri:hover { background: var(--surface-3); }
-	.ri.zero:not(.on) { opacity: 0.72; }
-	.ri.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
-	.ri.on .ico { color: var(--accent-text, var(--text)); }
-	.ri.on .n { color: var(--text); }
-	.ri:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.ri:active, .gh:active, .sg:active, .tb2:active { transform: scale(0.97); }
-	/* Group headers: small caps, the fold chevron at the right end, shown on hover or focus. */
-	.gh { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; width: 100%; min-height: 26px; margin-top: 6px; padding: 0 0 0 8px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: 600 10px/1.3 var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; text-align: left; cursor: pointer; }
-	.gh .chv { display: grid; place-items: center; width: 24px; height: 24px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
-	.gh:hover .chv, .gh:focus-visible .chv { opacity: 1; }
-	@media (hover: none) { .gh .chv { opacity: 1; } }
-	.gh[aria-expanded='false'] .chv { transform: rotate(-90deg); }
-	.gh:hover { color: var(--text); }
-	.gh:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* B: only the picked parent shows its children, under its label, with a thin guide line and smaller type. */
-	.subs { position: relative; display: grid; gap: 2px; }
-	.subs::before { content: ''; position: absolute; left: 15px; top: 2px; bottom: 2px; width: 1px; background: var(--line); }
-	.ri.sub { grid-template-columns: minmax(0, 1fr) auto; padding-left: 32px; font-size: 11px; color: var(--text-muted); }
-	.ri.sub.on { color: var(--text); }
-	/* A: sub-statuses as a text segmented control at the top of the list. */
-	.seg { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; padding: 4px var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+	/* The five status tabs. One gutter, one height system; the sub-switch is the text segmented control. */
+	.tabs { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+	.tabs::-webkit-scrollbar { display: none; }
+	.tab { display: inline-flex; align-items: center; flex: none; gap: 6px; border: 0; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.tab .n { color: inherit; opacity: 0.7; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.tab:hover { color: var(--text); }
+	.tab.on { color: var(--text); font-weight: 600; }
+	.tab.zero:not(.on) { opacity: 0.72; }
+	.tab:active { transform: scale(0.97); }
+	.tab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.seg { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; min-height: 34px; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 	.seg::-webkit-scrollbar { display: none; }
-	.sg { display: inline-flex; align-items: baseline; gap: 6px; flex: none; height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; align-items: center; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.sg { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.sg b { min-width: 2ch; text-align: right; color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.sg:hover { background: var(--surface-3); color: var(--text); }
 	.sg.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
+	.sg:active { transform: scale(0.97); }
 	.sg:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* C: status is the tab row across the top of the list, each tab with a sub-filter menu. */
-	.tabrow { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 2px; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+	/* 1: underline tabs, the sub-switch on a slim row beneath. */
+	.t1 { padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); }
+	.t1 .tab { height: 36px; padding: 0 10px; margin-bottom: -1px; border-bottom: 2px solid transparent; }
+	.t1 .tab.on { border-bottom-color: var(--accent); }
+	/* 2: a segmented pill group, the sub-switch inline to its right. */
+	.tabrow { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; min-height: 40px; padding: 4px var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 	.tabrow::-webkit-scrollbar { display: none; }
-	.tab2 { display: inline-flex; align-items: center; flex: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-	.tab2.on { border-bottom-color: var(--accent); }
-	.tb2 { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 6px 0 8px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
-	.tb2:hover { color: var(--text); background: var(--surface-2); }
-	.tab2.on .tb2 { color: var(--text); font-weight: 600; }
-	.tb2 .cur { color: var(--accent-text, var(--text)); font-weight: 500; }
-	.tb2 .cur::before { content: '\203a\00a0'; color: var(--text-muted); }
-	.tb2.zero { opacity: 0.72; }
-	.tb2:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.ics .ic.on { box-shadow: inset 2px 0 0 var(--accent); }
-	.chv :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon), .sbi :global(.ui-ibtn svg) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
+	.tabrow .seg { min-height: 0; padding: 0; border: 0; overflow: visible; flex: none; }
+	.t2 { flex: none; padding: 2px; border-radius: 999px; background: var(--surface-2); }
+	.t2 .tab { height: 28px; padding: 0 12px; border-radius: 999px; }
+	.t2 .tab.on { background: var(--text); color: var(--bg); }
+	/* 3: text tabs with small count badges, the sub-switch a quiet row above the columns. */
+	.t3 { padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); }
+	.t3 .tab { height: 36px; padding: 0 10px; }
+	.t3 .tab .n { min-width: 18px; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--surface-3); text-align: center; font-size: 11px; line-height: 18px; opacity: 1; }
+	.t3 .tab.on .n { background: var(--text); color: var(--bg); }
+	.seg.quiet { min-height: 28px; padding: 0 var(--dl-gutter); font-size: 11px; }
+	.seg.quiet .sg { height: 22px; padding: 0 8px; font-size: 11px; }
+	/* 4: large title-style tabs, the sub-switch underneath. */
+	.t4 { padding: 2px var(--dl-gutter) 0; gap: 4px; }
+	.t4 .tab { height: 44px; padding: 0 12px 0 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+	.t4 .tab .n { font-size: 13px; font-weight: 600; }
+	.t4 .tab.on { color: var(--text); }
+	/* 5: the tabs sit in the toolbar row, between the actions and the edge. */
+	.t5 { flex: 1 1 auto; justify-content: center; }
+	.t5 .tab { height: 30px; padding: 0 12px; border-radius: 6px; }
+	.t5 .tab:hover { background: var(--surface-2); }
+	.t5 .tab.on { background: var(--surface-3); }
 	.tbn :global(svg.icon) { width: 20px; height: 20px; }
 	.tbn { width: 34px; height: 34px; }
 	.split :global(.caret) { height: 34px; }
@@ -1590,19 +1431,7 @@
 		.t2 .c-name { max-width: 140px; }
 	}
 	@media (max-width: 1099px) {
-		.rail .rg { display: flex; flex: none; align-items: center; gap: 4px; padding: 0; }
-		.ri { display: inline-grid; flex: none; width: auto; white-space: nowrap; }
-		.gh { display: inline-flex; width: auto; margin: 0; padding: 0 4px; }
-		.gh .chv { display: none; }
-		.subs { display: flex; gap: 4px; }
-		.subs::before { content: none; }
-		.ri.sub { padding-left: 8px; }
-		.rz, .rhide, .rshow { display: none; }
-		.rail.shut { padding: 8px; overflow-x: auto; }
-		.rail.shut::before { content: none; }
 		.body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px var(--dl-gutter); border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
-		.rail::-webkit-scrollbar { display: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bar i, .tg :global(svg), .bin, .cw, .post { transition: none; }
