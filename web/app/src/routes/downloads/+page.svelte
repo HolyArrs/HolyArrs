@@ -4,9 +4,6 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { dlScope } from '#lib/search-field.svelte.ts';
-	import { replaceState } from '$app/navigation';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { subLook, subOf } from '#lib/downloads/subLook.svelte.ts';
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -210,18 +207,6 @@
 			busy = 0;
 		}
 	}
-	// A switch for how the sub-statuses look (?sub=a..g); the URL is the saved copy, the store is what both sides read.
-	const LOOKS = [{ value: 'a', label: 'a \u00b7 Expand' }, { value: 'b', label: 'b \u00b7 Attach' }, { value: 'c', label: 'c \u00b7 Filter' }, { value: 'd', label: 'd \u00b7 Tray' }, { value: 'e', label: 'e \u00b7 Split' }, { value: 'f', label: 'f \u00b7 Menu' }, { value: 'g', label: 'g \u00b7 Underline' }];
-	subLook.value = subOf(page.url.searchParams.get('sub'));
-	$effect(() => {
-		const pick = subLook.value;
-		const u = new URL(location.href);
-		u.searchParams.delete('tabs');
-		u.searchParams.delete('rail');
-		if ((u.searchParams.get('sub') ?? 'a') === pick && u.href === location.href) return;
-		u.searchParams.set('sub', pick);
-		try { replaceState(u, page.state); } catch { /* router not ready */ }
-	});
 	// The top bar's search field filters this page while it is open.
 	$effect(() => {
 		dlScope.on = true;
@@ -251,8 +236,6 @@
 {/if}
 </PageLoader>
 
-<div class="railbar" data-testid="sub-look"><SegmentedControl options={LOOKS} bind:value={subLook.value} label="Sub-status look" size="sm" announce={(l) => `Showing ${l}`} /></div>
-
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}
 		<form id="remove-form" onsubmit={remove}>
@@ -280,8 +263,6 @@
 </Sheet>
 
 <style>
-	.railbar { position: fixed; z-index: 30; left: 0; right: 0; bottom: 44px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 4px; border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 78%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
-	@media (max-width: 767px) { .railbar { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 40px); } }
 	.pad { padding: var(--s-6) var(--gutter); }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }

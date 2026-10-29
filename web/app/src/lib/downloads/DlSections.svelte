@@ -17,7 +17,6 @@
 	import Menu from '../ui/Menu.svelte';
 	import TopMenu from './TopMenu.svelte';
 	import DlRail from './DlRail.svelte';
-	import { subLook } from './subLook.svelte.ts';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
 	import Popover from '../ui/Popover.svelte';
@@ -112,26 +111,12 @@
 		else n.add(id);
 		filesOpen = n;
 	}
-	// With a ?sub look in the address and no tab named, open on the last-used parent (kept for this visit), else Waiting,
-	// so the first screen shows sub-options. Changing the look keeps the tab and sub-option, since this component stays.
-	const LAST_KEY = 'holyarrs.downloads.lastshow';
-	const lastShow = (() => {
-		try {
-			return sessionStorage.getItem(LAST_KEY) || '';
-		} catch {
-			return '';
-		}
-	})();
-	const askedShow = page.url.searchParams.get('show');
-	const start = showOf(askedShow ?? (page.url.searchParams.has('sub') ? lastShow || 'waiting' : null));
+	const start = showOf(page.url.searchParams.get('show'));
+	// For comparing highlight styles for now (?hl=1|2|3): 1 raised pill, 2 soft red tint, 3 dark fill.
+	const hl = ['2', '3'].includes(page.url.searchParams.get('hl') ?? '') ? page.url.searchParams.get('hl') : '1';
 	let show = $state(start.show);
 	let sub = $state(start.sub);
 	function remember() {
-		try {
-			sessionStorage.setItem(LAST_KEY, sub ? `${show}.${sub}` : show);
-		} catch {
-			/* nothing kept */
-		}
 		try {
 			const u = new URL(location.href);
 			if (show === ALL) u.searchParams.delete('show');
@@ -152,6 +137,8 @@
 		show = k;
 		sub = '';
 		remember();
+		// On a narrow row the picked pill, once open, is scrolled into view inside the row.
+		setTimeout(() => document.querySelector('.pw.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }), 220);
 	}
 	// A sub-tab is a toggle: a second click clears it.
 	function chooseSub(k: string) {
@@ -197,67 +184,6 @@
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
 	let railPx = $state(196);
-	let fMenu = $state<TopMenu>();
-	// The pill group: one indicator slides between pills (translateX plus scaleX of a fixed-size block), the pills
-	// to its right glide when sub-options open (FLIP). Nothing animates a width, margin or left.
-	let tabsEl = $state<HTMLElement>();
-	let indEl = $state<HTMLElement>();
-	let indReady = false;
-	let selAt = 0;
-	let prevLefts = new Map<string, number>();
-	const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-	function placeInd(animate: boolean) {
-		if (!tabsEl || !indEl) return;
-		const tw = tabsEl.querySelector<HTMLElement>('.tw.on');
-		if (!tw) {
-			indEl.style.opacity = '0';
-			return;
-		}
-		const wide = subLook.value === 'a' || subLook.value === 'e';
-		const target = wide ? tw : (tw.querySelector<HTMLElement>('.tab') ?? tw);
-		const rr = tabsEl.getBoundingClientRect();
-		const r = target.getBoundingClientRect();
-		if (!r.width) return;
-		indEl.style.transition = animate && indReady && !calm() ? '' : 'none';
-		indEl.style.opacity = '1';
-		indEl.style.transform = `translateX(${(r.left - rr.left).toFixed(2)}px) scaleX(${(r.width / 100).toFixed(4)})`;
-		indReady = true;
-	}
-	$effect.pre(() => {
-		void [on, subOn, subLook.value];
-		if (!tabsEl) return;
-		prevLefts = new Map([...tabsEl.querySelectorAll<HTMLElement>('.tw')].map((el) => [el.dataset.key ?? '', el.getBoundingClientRect().left]));
-	});
-	$effect(() => {
-		void [on, subOn, subLook.value, tally.length];
-		if (!tabsEl) return;
-		selAt = performance.now();
-		tick().then(() => {
-			placeInd(true);
-			if (calm()) return;
-			for (const el of tabsEl!.querySelectorAll<HTMLElement>('.tw')) {
-				const dx = (prevLefts.get(el.dataset.key ?? '') ?? el.getBoundingClientRect().left) - el.getBoundingClientRect().left;
-				if (Math.abs(dx) < 1) continue;
-				el.style.transition = 'none';
-				el.style.transform = `translateX(${dx}px)`;
-				requestAnimationFrame(() =>
-					requestAnimationFrame(() => {
-						el.style.transition = 'transform 220ms var(--ease-out)';
-						el.style.transform = '';
-					})
-				);
-			}
-		});
-	});
-	$effect(() => {
-		if (!tabsEl) return;
-		// A resize or a changed count moves the pills without a pick: put the indicator there at once.
-		const ro = new ResizeObserver(() => {
-			if (performance.now() - selAt > 450) placeInd(false);
-		});
-		ro.observe(tabsEl);
-		return () => ro.disconnect();
-	});
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	function dragDown(e: PointerEvent) {
 		if (e.button !== 0 || !paneOpen) return;
@@ -824,7 +750,7 @@
 		{#each vis as id (id)}
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} data-col={id} data-testid="dl-head" onpointerdown={(e) => headDown(e, id)} title="Drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if id === 'status' && subLook.value === 'c' && onTab && subs.length}<span class="sf" onpointerdown={(e) => e.stopPropagation()} role="presentation">{@render subFilter()}</span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} data-col={id} data-testid="dl-head" onpointerdown={(e) => headDown(e, id)} title="Drag to move · right-click for columns"><span class="lbl">{c.label}</span><!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -880,49 +806,25 @@
 	</div>
 {/snippet}
 
-{#snippet subFilter()}
-	<TopMenu tight text={subOn ? (subs.find((x) => x.key === subOn)?.label ?? 'All') : 'All'} label="Filter {onTab?.label ?? ''}" items={[{ label: 'All', hint: String(tally.find((x) => x.key === on)?.count ?? 0), onselect: () => choose(on) }, ...subs.map((x) => ({ label: x.label, hint: String(x.count), onselect: () => chooseSub(x.key) }))]} />
-{/snippet}
-
-{#snippet subBtns(c: (typeof tally)[number], so: ReturnType<typeof subCounts>, open: boolean)}
-	<button type="button" class="stab" class:on={!subOn} aria-pressed={!subOn} tabindex="-1" data-nav onclick={() => choose(c.key)} data-testid={open ? 'dl-subseg-all' : undefined}>All<b>{c.count}</b></button>
-	{#each so as x (x.key)}
-		<button type="button" class="stab" class:on={subOn === x.key} aria-pressed={subOn === x.key} tabindex="-1" data-nav onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }} data-testid={open ? 'dl-subseg-item' : undefined} data-key={x.key}>{x.label}<b>{x.count}</b></button>
-	{/each}
-{/snippet}
-
 {#snippet pills()}
-	{@const look = subLook.value}
 	{#each tally as c (c.key)}
 		{@const t = tabs.find((x) => x.key === c.key)}
 		{@const so = t ? subCounts(rows, t) : []}
 		{@const open = on === c.key && so.length > 0}
-		<div class="tw" class:on={on === c.key} class:open={open && (look === 'a' || look === 'b' || look === 'd')} class:hasparts={look === 'e' && so.length > 0} data-key={c.key}>
-			<button type="button" role="tab" class="tab" class:on={on === c.key} class:zero={c.count === 0} aria-selected={on === c.key} aria-haspopup={look === 'f' && so.length ? 'menu' : undefined} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={(e) => { if (look === 'f' && so.length && on === c.key) fMenu?.show(e.currentTarget); else choose(c.key); }}><span class="lb">{c.label}</span>{#if !(look === 'e' && so.length)}<b class="n">{c.count}</b>{/if}{#if look === 'f' && so.length}<span class="more" aria-hidden="true">&hellip;</span>{/if}</button>
-			{#if look === 'e' && so.length}
-				<span class="parts" role="group" aria-label="{c.label}: parts">{#each so as x, i (x.key)}{#if i}<span class="dotsep" aria-hidden="true">&middot;</span>{/if}<button type="button" class="part" class:on={on === c.key && subOn === x.key} aria-pressed={on === c.key && subOn === x.key} tabindex="-1" data-nav use:tip={`${x.label} ${x.count}`} aria-label="{x.label} {x.count}" onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }} data-testid="dl-part" data-key={x.key}>{x.count}</button>{/each}</span>
-			{:else if (look === 'a' || look === 'b') && so.length}
+		<div class="pw" class:on={on === c.key} class:open data-key={c.key}>
+			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
+			{#if so.length}
 				<div class="subwrap" inert={!open}>
-					<div class="subin" role="group" aria-label="{c.label}: show" data-testid={open ? 'dl-subseg' : undefined}>{@render subBtns(c, so, open)}</div>
-				</div>
-			{:else if look === 'd' && so.length}
-				<div class="tray" inert={!open}>
-					<div class="trayin" role="group" aria-label="{c.label}: show" data-testid={open ? 'dl-subseg' : undefined}>{@render subBtns(c, so, open)}</div>
+					<div class="subin" role="group" aria-label="{c.label}: show" data-testid={open ? 'dl-subseg' : undefined}>
+						<button type="button" class="stab" class:on={!subOn} aria-pressed={open && !subOn} tabindex="-1" data-nav onclick={() => choose(c.key)} data-testid={open ? 'dl-subseg-all' : undefined}>All<b>{c.count}</b></button>
+						{#each so as x (x.key)}
+							<button type="button" class="stab" class:on={open && subOn === x.key} aria-pressed={open && subOn === x.key} tabindex="-1" data-nav onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }} data-testid={open ? 'dl-subseg-item' : undefined} data-key={x.key}>{x.label}<b>{x.count}</b></button>
+						{/each}
+					</div>
 				</div>
 			{/if}
 		</div>
 	{/each}
-{/snippet}
-
-{#snippet underSubs()}
-	{#if onTab && subs.length}
-		<div class="utabs" role="group" aria-label="{onTab.label}: show" data-testid="dl-subseg">
-			<button type="button" class="utab" class:on={!subOn} aria-pressed={!subOn} tabindex="-1" data-nav onclick={() => choose(on)} data-testid="dl-subseg-all">All<b>{tally.find((x) => x.key === on)?.count ?? 0}</b></button>
-			{#each subs as x (x.key)}
-				<button type="button" class="utab" class:on={subOn === x.key} aria-pressed={subOn === x.key} tabindex="-1" data-nav onclick={() => chooseSub(x.key)} data-testid="dl-subseg-item" data-key={x.key}>{x.label}<b>{x.count}</b></button>
-			{/each}
-		</div>
-	{/if}
 {/snippet}
 
 {#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[], im: ImportRecord | undefined)}
@@ -1084,11 +986,7 @@
 <DlRail bind:kindOn bind:srcOn {kindCount} {srcCount} bind:px={railPx} />
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow r-{subLook.value}" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs t2 s-{subLook.value}" role="tablist" aria-label="Status" bind:this={tabsEl}><span class="ind" bind:this={indEl} aria-hidden="true"></span>{@render pills()}</div>{#if subLook.value === 'g'}{@render underSubs()}{/if}</div>
-{#if subLook.value === 'f'}<TopMenu bind:this={fMenu} bare label="{onTab?.label ?? 'Status'}: show" items={[{ label: 'All', hint: String(tally.find((x) => x.key === on)?.count ?? 0), onselect: () => choose(on) }, ...subs.map((x) => ({ label: x.label, hint: String(x.count), onselect: () => chooseSub(x.key) }))]} />{/if}
-{#if subLook.value === 'c'}
-	<div class="hint" data-testid="dl-subhint"><span>{#if onTab && subs.length}{subOn ? `Showing ${subs.find((x) => x.key === subOn)?.label}` : `Showing ${subs.map((x) => x.label).join(' and ')}`}{:else}&nbsp;{/if}</span>{#if onTab && subs.length}<span class="hf">{@render subFilter()}</span>{/if}</div>
-{/if}
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs hl-{hl}" role="tablist" aria-label="Status">{@render pills()}</div></div>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
 {#if list.length}
@@ -1400,77 +1298,33 @@
 	.psb:hover, .psx:hover { background: var(--surface-3); }
 	.psb:focus-visible, .psx:focus-visible, .psearch input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.psearch input { width: 150px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); }
-	/* The pill group of status tabs: one height system, the sub-statuses beside or inside the picked pill. */
-	.tabrow { display: flex; flex: none; align-items: center; height: 44px; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+	/* The status pills: the picked pill carries its own background and opens to hold its sub-options. */
+	.tabrow { display: flex; flex: none; align-items: center; height: 44px; min-width: 0; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.tabrow::-webkit-scrollbar { display: none; }
-	.tabs.t2 { position: relative; display: flex; flex: none; width: max-content; align-items: center; gap: 2px; padding: 2px; border-radius: 999px; background: var(--surface-2); overflow: visible; outline: none; }
-	.tw { position: relative; z-index: 1; display: inline-flex; align-items: center; flex: none; border-radius: 999px; will-change: transform; }
-	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.tabs { display: flex; flex: none; align-items: center; gap: 2px; width: max-content; padding: 2px; border-radius: 999px; background: var(--surface-2); }
+	.pw { display: flex; align-items: center; flex: none; border-radius: 999px; background: transparent; transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+	.pw.on { background: var(--hl-bg); box-shadow: var(--hl-shadow, none); }
+	.tab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out); }
 	.tab .n { color: inherit; opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tab:hover { color: var(--text); }
-	.tab.on { color: var(--bg); }
-	.tab.zero:not(.on) { opacity: 0.72; }
-	.tab:active, .stab:active { transform: scale(0.97); }
+	.pw.on .tab { color: var(--hl-fg); }
+	.tab.zero:not([aria-selected='true']) { opacity: 0.72; }
 	.tab:focus-visible, .stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.ind { position: absolute; left: 0; top: 2px; z-index: 0; width: 100px; height: 28px; border-radius: 999px; background: var(--text); transform-origin: 0 50%; will-change: transform; pointer-events: none; transition: transform 260ms var(--ease-out), opacity 120ms var(--ease-out); }
-	.subwrap { display: none; }
-	.tw.open .subwrap { display: flex; animation: subin 220ms var(--ease-out) both; }
-	@keyframes subin { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
-	.subin { display: flex; align-items: center; gap: 2px; flex: none; white-space: nowrap; }
-	.stab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: none; font: var(--t-footnote); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
-	.stab b { min-width: 2ch; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-	/* a: the picked pill grows in place and holds its sub-options. */
-	.s-a .tw.on .tab { background: none; color: var(--bg); }
-	.s-a .subin { margin: 0 4px 0 2px; padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--bg) 32%, transparent); }
-	.s-a .stab { color: color-mix(in srgb, var(--bg) 78%, transparent); }
-	.s-a .stab b { color: inherit; opacity: 0.8; }
-	.s-a .stab:hover { color: var(--bg); }
-	.s-a .stab.on { background: color-mix(in srgb, var(--bg) 24%, transparent); color: var(--bg); }
-	/* b: smaller, quieter sub-pills slide out after the picked pill, behind a hairline. */
-	.s-b .subin { margin-left: 6px; padding: 0 4px 0 6px; border-left: 1px solid var(--line-strong, var(--line)); }
-	.s-b .stab { height: 22px; padding: 0 8px; font-size: 11px; color: var(--text-muted); }
-	.s-b .stab b { color: inherit; }
-	.s-b .stab:hover { color: var(--text); background: var(--surface-3); }
-	.s-b .stab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
-	/* c: clean pills; a small filter in the Status column header and a hint line beneath (always there, so nothing jumps). */
-	.hint { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 8px; height: 24px; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-caption); }
-	.hint .hf { display: none; }
-	.sf { display: inline-flex; align-items: center; margin-left: 4px; }
-	/* d: a second row of small pills under the picked pill (the room is always reserved, so nothing jumps). */
-	.tabrow.r-d { height: 80px; align-items: flex-start; padding-top: 8px; }
-	.tw { position: relative; }
-	.tray { position: absolute; left: 0; top: calc(100% + 8px); z-index: 2; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity 160ms var(--ease-out), transform 200ms var(--ease-out), visibility 0s linear 200ms; }
-	.tw.open .tray { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-	.trayin { display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; box-shadow: 0 2px 8px rgb(0 0 0 / 0.1); }
-	.s-d .stab { height: 22px; padding: 0 9px; font-size: 11px; color: var(--text-muted); }
-	.s-d .stab b { color: inherit; }
-	.s-d .stab:hover { background: var(--surface-3); color: var(--text); }
-	.s-d .stab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
-	/* e: the parts of a pill show as tiny counts you can point at and click. */
-	.s-e .tw.on .tab { background: none; color: var(--bg); }
-	.s-e .tw.hasparts .tab { padding-right: 4px; }
-	.parts { display: inline-flex; align-items: center; padding-right: 8px; font-size: 11px; }
-	.dotsep { opacity: 0.5; padding: 0 1px; }
-	.part { height: 20px; min-width: 18px; padding: 0 4px; border: 0; border-radius: 6px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: 600 11px/1 var(--font-ui); font-variant-numeric: tabular-nums; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.part:hover { background: var(--surface-3); color: var(--text); }
-	.s-e .tw.on .part { color: color-mix(in srgb, var(--bg) 80%, transparent); }
-	.s-e .tw.on .part:hover { background: color-mix(in srgb, var(--bg) 22%, transparent); color: var(--bg); }
-	.part.on { background: color-mix(in srgb, var(--bg) 30%, transparent); color: var(--bg); }
-	.part:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* f: the picked pill, pressed again, opens its sub-options in a menu; a quiet ... shows on hover or focus. */
-	.more { margin-left: 2px; letter-spacing: 1px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
-	.tab:hover .more, .tab:focus-visible .more { opacity: 0.8; }
-	/* g: the picked pill's sub-options follow the group as quiet underlined text on the same line. */
-	.utabs { display: flex; flex: none; align-items: center; gap: 14px; margin-left: 14px; animation: subin 220ms var(--ease-out) both; }
-	.utab { position: relative; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 2px; border: 0; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out); }
-	.utab b { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; opacity: 0.75; }
-	.utab::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1px; height: 2px; border-radius: 1px; background: transparent; transition: background var(--dur-fast) var(--ease-out); }
-	.utab:hover { color: var(--text); }
-	.utab.on { color: var(--text); font-weight: 600; }
-	.utab.on::after { background: var(--accent); }
-	.utab:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
-	@media (prefers-reduced-motion: reduce) { .tray, .part, .more, .utab, .utab::after, .ind { transition: none; } .tw.open .subwrap, .utabs { animation: none; } }
-	@media (prefers-reduced-motion: reduce) { .tw, .tab, .stab { transition: none; } }
+	.subwrap { display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 200ms var(--ease-out), opacity 200ms var(--ease-out); }
+	.pw.open .subwrap { grid-template-columns: 1fr; opacity: 1; }
+	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; }
+	.pw.open .subin { padding: 0 2px 0 6px; margin-right: 2px; border-left: 1px solid var(--hl-line); }
+	.stab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--hl-sub); font: var(--t-footnote); white-space: nowrap; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.stab b { color: inherit; opacity: 0.8; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.stab:hover { color: var(--hl-fg); }
+	.stab.on { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); }
+	/* 1: a raised pill on the track, like a segmented control; the picked sub-option is tinted red. */
+	.hl-1 { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 2px 8px rgb(0 0 0 / 0.06); --hl-line: var(--line); --hl-sub: color-mix(in srgb, var(--text) 72%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: var(--accent-text); }
+	/* 2: a soft red tint with red text. */
+	.hl-2 { --hl-bg: var(--accent-soft); --hl-fg: var(--accent-text); --hl-line: color-mix(in srgb, var(--accent-text) 25%, transparent); --hl-sub: color-mix(in srgb, var(--accent-text) 75%, transparent); --hl-sub-on-bg: color-mix(in srgb, var(--accent-text) 16%, transparent); --hl-sub-on-fg: var(--accent-text); }
+	/* 3: the text colour, softened. */
+	.hl-3 { --hl-bg: color-mix(in srgb, var(--text) 85%, transparent); --hl-fg: var(--bg); --hl-line: color-mix(in srgb, var(--bg) 32%, transparent); --hl-sub: color-mix(in srgb, var(--bg) 78%, transparent); --hl-sub-on-bg: color-mix(in srgb, var(--bg) 24%, transparent); --hl-sub-on-fg: var(--bg); }
+	@media (prefers-reduced-motion: reduce) { .pw, .tab, .stab, .subwrap { transition: none; } }
 	.tbn :global(svg.icon) { width: 20px; height: 20px; }
 	.tbn { width: 34px; height: 34px; }
 	.split :global(.caret) { height: 34px; }
@@ -1502,8 +1356,6 @@
 
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
 	@media (max-width: 640px) {
-		.hint .hf { display: inline-flex; }
-		.sf { display: none; }
 		.dlgrid { --gap: 8px; }
 		.chead { display: none; }
 		.tin { min-width: 0; }
