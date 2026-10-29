@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The header strip's speed graph: the last 60 seconds of total download
+	// The header strip's speed graph: the last 15 minutes of total download
 	// speed (a filled area with a thin top line and a tick at the peak) and
 	// upload speed (a thin line), both on one scale. A reading is
 	// taken every second, easing from the last one toward the newest poll, and
@@ -7,7 +7,9 @@
 	// hidden; with reduced motion it steps once a second without sliding.
 	import { onMount } from 'svelte';
 	import { reducedMotion } from '../motion.ts';
-	import { stepToward, SPAN } from './sections.ts';
+	import { stepToward } from './sections.ts';
+	// The graph shows the server's whole buffer: 15 minutes, a reading a second.
+	const SPAN = 900;
 
 	let { speed, up = 0, width = 120, height = 28, history = [] }: { speed: number; up?: number; width?: number; height?: number; history?: { down: number; up: number }[] } = $props();
 
@@ -39,7 +41,7 @@
 		c.clearRect(0, 0, width, height);
 		if (pts.length < 2) return;
 		const top = Math.max(...pts, ...ups) || 1;
-		const step = width / (SPAN - 1);
+		const step = width / (Math.max(60, pts.length) - 1); // fits the whole history, at least a minute wide
 		const shift = reducedMotion() ? 0 : Math.min(1, (now - at) / 1000) * step;
 		const x0 = width - (pts.length - 1) * step - shift;
 		const y = (v: number) => height - 1 - (v / top) * (height - 4);

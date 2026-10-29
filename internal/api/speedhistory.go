@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// speedKeep is how many one-second readings of total speed are remembered.
-const speedKeep = 120
+// speedKeep is how many one-second readings of total speed are remembered: 15 minutes.
+const speedKeep = 900
 
 // SpeedSample is one second of total download and upload speed.
 type SpeedSample struct {
@@ -61,5 +61,5 @@ func (a *API) sampleSpeeds() {
 }
 
 func (a *API) speedHistory(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"samples": a.speeds.last(60)})
+	writeJSON(w, http.StatusOK, map[string]any{"samples": a.speeds.last(0)})
 }
