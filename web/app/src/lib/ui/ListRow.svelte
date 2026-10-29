@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { press } from '../motion.ts';
+	import { coverFor } from '../music/music-pages.ts';
 
 	// For work screens: leading art or icon, title, subtitle, trailing status
 	// and actions. Only the main area is a link, so trailing buttons stay separate.
@@ -33,7 +34,7 @@
 <div class="ui-row">
 	{#snippet body()}
 		{#if leading}{@render leading()}
-		{:else if image}<span class="art {art}"><img src={image} alt="" loading="lazy" /></span>
+		{:else if image}<span class="art {art}"><img src={coverFor(image, 80).src} alt="" loading="lazy" decoding="async" /></span>
 		{:else if icon}<span class="ic"><Icon name={icon} size={18} /></span>{/if}
 		<span class="text">
 			<span class="t">{title}</span>

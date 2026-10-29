@@ -259,6 +259,8 @@ export const withCover = <T extends { image?: string | null }>(list: readonly T[
 
 const caa = /^(https?:\/\/(?:www\.)?coverartarchive\.org\/release(?:-group)?\/[^/]+\/(?:front|back|\d+))(?:-(?:250|500|1200))?(?:\.jpg)?$/;
 const proxied = /\/api\/v1\/(?:music-trending\/art\/album\/[^/?]+|albums\/\d+\/cover)(?:\?.*)?$/;
+// Library pictures and artist photos keep a 250 px thumbnail copy only (Poster's rule).
+const thumbOnly = /\/api\/v1\/(?:artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)|music-trending\/art\/artist\/[^/?]+)(?:\?(?!.*size=).*)?$/;
 
 const deezer = /^(https?:\/\/[a-z0-9-]+\.dzcdn\.net\/images\/(?:cover|artist)\/[0-9a-f]+\/)\d+x\d+(-.*)?$/;
 const itunes = /^(https?:\/\/[a-z0-9-]+\.mzstatic\.com\/image\/thumb\/.+\/)\d+x\d+(bb|cc)?(\.(?:jpg|png|webp))$/;
@@ -291,7 +293,9 @@ export function coverSize(css: number, ratio = globalThis.devicePixelRatio || 1,
  * stay as they are. */
 export function coverFor(src: string | null | undefined, css: number, ratio = globalThis.devicePixelRatio || 1, hero = false): { src: string | null } {
 	const at = src ? coverAt(src) : null;
-	return { src: at ? at(coverSize(css, ratio, hero)) : (src ?? null) };
+	if (at) return { src: at(coverSize(css, ratio, hero)) };
+	if (src && !hero && thumbOnly.test(src) && coverSize(css, ratio) === 250) return { src: `${src}${src.includes('?') ? '&' : '?'}size=250` };
+	return { src: src ?? null };
 }
 
 /** owned is the card's status pill for an album's Library state. */

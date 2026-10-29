@@ -24,6 +24,8 @@ describe('music pages', () => {
 		const dz = 'https://cdn-images.dzcdn.net/images/cover/ab12/';
 		expect(coverFor(`${dz}1000x1000-000000-80-0-0.jpg`, 464, 1).src).toBe(`${dz}500x500-000000-80-0-0.jpg`);
 		expect(coverFor('/api/v1/music-trending/art/artist/abc', 200)).toEqual({ src: '/api/v1/music-trending/art/artist/abc' });
+		expect(coverFor('/api/v1/music-trending/art/artist/abc', 44, 2).src).toBe('/api/v1/music-trending/art/artist/abc?size=250');
+		expect(coverFor('/api/v1/artwork/ab12.jpg', 32, 2).src).toBe('/api/v1/artwork/ab12.jpg?size=250');
 	});
 	it('links artists and albums by MusicBrainz id', () => {
 		expect(artistHref('abc')).toMatch(/\/music\/artist\/abc$/);

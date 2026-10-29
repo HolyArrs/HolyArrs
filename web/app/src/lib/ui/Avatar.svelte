@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
+	import { coverFor } from '../music/music-pages.ts';
 	// A person's round picture, or their initials when they have none (or it fails to load).
 	let { name, src = null, size = 32, label }: { name: string; src?: string | null; size?: number; label?: string } = $props();
 	let failed = $state(false);
@@ -12,7 +13,7 @@
 
 <span class="ui-avatar" style="--av: {size}px" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : 'true'}>
 	{#if src && !failed}
-		<img {src} alt="" decoding="async" onerror={() => (failed = true)} />
+		<img src={coverFor(src, size).src} alt="" decoding="async" onerror={() => (failed = true)} />
 	{:else}
 		<ArtPlaceholder {name} shape="circle" />
 	{/if}

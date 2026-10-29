@@ -8,7 +8,7 @@
 	import { slide } from 'svelte/transition';
 	import { DUR, easeOut } from '../ui/transitions.ts';
 	import Icon from '#lib/Icon.svelte';
-	import { appPicture } from '../music/music-pages.ts';
+	import { appPicture, coverFor } from '../music/music-pages.ts';
 	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
 	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, storedParts, type AlbumSong } from './details.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
@@ -159,7 +159,7 @@
 								<!-- The whole row opens and closes the song list; the tick and the buttons keep their own job. -->
 								<div class="line rowtap" role="button" tabindex="-1" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openAlbum = openAlbum === r.key ? '' : r.key; }} onkeydown={() => {}}>
 									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Keep {r.main.name}" onchange={() => tickAlbum(p)} />{/if}
-									<span class="cover">{#if r.main.image}<img src={r.main.image} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}</span>
+									<span class="cover">{#if r.main.image}<img src={coverFor(r.main.image, 32).src} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}</span>
 									<span class="t">{r.main.name}</span>
 									{#if r.editions.length}
 										<button type="button" class="more" aria-expanded={openEditions === r.key} onclick={() => (openEditions = openEditions === r.key ? '' : r.key)}>{r.editions.length + 1} editions</button>
