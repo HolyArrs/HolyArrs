@@ -99,10 +99,11 @@
 	.art > :global(.ui-art-ph) { position: absolute; inset: 0; }
 	.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 	.album .bg { filter: blur(22px) saturate(140%) brightness(0.7); transform: scale(1.2); }
-	.cover { position: absolute; right: 6%; top: 50%; translate: 0 -50%; height: 70%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.5); }
+	/* An album fills the card: the square cover runs the full height on the right, its own blurred colour behind the name on the left. */
+	.cover { position: absolute; right: 0; top: 0; height: 100%; aspect-ratio: 1; object-fit: cover; box-shadow: -16px 0 32px rgb(0 0 0 / 0.35); }
 	.scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.75), rgb(0 0 0 / 0.08) 60%, transparent); pointer-events: none; }
 	.on-art { position: absolute; left: 6%; right: 6%; bottom: 8%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-	.album .on-art { right: 46%; }
+	.album .on-art { right: calc(56.25% + 12px); }
 	.tags { display: flex; flex-wrap: wrap; gap: 4px; }
 	.name { color: #fff; font: 700 clamp(17px, 1.6vw, 22px)/1.08 var(--font-display); letter-spacing: -0.02em; text-shadow: 0 2px 12px rgb(0 0 0 / 0.5); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	/* Caption lines, one line each. */

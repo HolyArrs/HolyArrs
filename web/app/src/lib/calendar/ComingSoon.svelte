@@ -58,11 +58,16 @@
 									{#if vids.length}<div class="grid" data-testid="cal-day-grid">{#each vids as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} />{/each}</div>{/if}
 									{#if albums.length}<ul class="shelf" aria-label="Music">{#each albums as e (e.part_id ?? e.title_id + (e.album ?? ''))}<li><AlbumCover {e} {today} /></li>{/each}</ul>{/if}
 								{:else if mix === 1}
-									{@const vids = gs.filter((g) => g.lead.kind !== 'album')}
+									{@const shows = gs.filter((g) => g.lead.kind === 'episode')}
+									{@const films = gs.filter((g) => g.lead.kind !== 'episode' && g.lead.kind !== 'album')}
 									{@const albums = gs.filter((g) => g.lead.kind === 'album').flatMap((g) => g.entries)}
+									{@const kinds = [shows.length, films.length, albums.length].filter(Boolean).length}
 									<div class="mix" data-testid="cal-day-grid">
-										{#each vids as g (g.key)}<div class="w"><CalTile {g} {today} {mode} {look} {onfollow} /></div>{/each}
-										{#if vids.length && albums.length}<p class="mlabel">Music</p>{/if}
+										{#if kinds > 1 && shows.length}<p class="mlabel">TV shows</p>{/if}
+										{#each shows as g (g.key)}<div class="w"><CalTile {g} {today} {mode} {look} {onfollow} /></div>{/each}
+										{#if kinds > 1 && films.length}<p class="mlabel">Movies</p>{/if}
+										{#each films as g (g.key)}<div class="w"><CalTile {g} {today} {mode} {look} {onfollow} /></div>{/each}
+										{#if kinds > 1 && albums.length}<p class="mlabel">Music</p>{/if}
 										{#each albums as e (e.part_id ?? e.title_id + (e.album ?? ''))}<div class="s"><AlbumCover {e} {today} /></div>{/each}
 									</div>
 								{:else}
