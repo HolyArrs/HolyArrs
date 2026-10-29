@@ -69,6 +69,9 @@ describe('the tabs', () => {
 		]);
 		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('Stalled');
 		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('Seeding');
+		// The parent pill itself means all of its parts, so there is no "All" sub-option.
+		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('All');
+		expect(pick(rows, tabs, 'waiting')).toEqual(pick(rows, tabs, 'waiting', ''));
 	});
 	it('every tab and sub-tab has a short hint and an empty-state title', () => {
 		expect(ALL_HINT).toMatch(/^[A-Z].+\.$/);

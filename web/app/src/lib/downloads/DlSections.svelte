@@ -40,6 +40,7 @@
 		rows: everyRow,
 		importOf,
 		titles,
+		titlesReady = true,
 		busy,
 		samples,
 		history = [],
@@ -53,6 +54,8 @@
 		rows: DownloadRow[];
 		importOf: Map<number, ImportRecord>;
 		titles: Map<number, TitleView>;
+		/** False while the Library titles (the posters) are still on their way: posters show a plain tile, not initials. */
+		titlesReady?: boolean;
 		busy: number;
 		/** Recent total-speed readings, oldest first. */
 		samples: number[];
@@ -113,7 +116,7 @@
 	}
 	const start = showOf(page.url.searchParams.get('show'));
 	// For comparing highlight styles for now (?hl=1|2|3): 1 raised pill, 2 soft red tint, 3 dark fill.
-	const hl = ['2', '3'].includes(page.url.searchParams.get('hl') ?? '') ? page.url.searchParams.get('hl') : '1';
+	const hl = $derived(['2', '3'].includes(page.url.searchParams.get('hl') ?? '') ? page.url.searchParams.get('hl') : '1');
 	let show = $state(start.show);
 	let sub = $state(start.sub);
 	function remember() {
@@ -221,6 +224,13 @@
 	const tabRow = $derived(list.some((r) => r.id === rowFocus) ? rowFocus : list.some((r) => r.id === openId) ? openId : (list[0]?.id ?? 0));
 	/** Left and Right move across the pills and the sub-options that are open, and pick as they go. */
 	function navKey(e: KeyboardEvent) {
+		// Escape clears a picked sub-option back to its parent pill.
+		if (e.key === 'Escape' && subOn) {
+			e.preventDefault();
+			chooseSub(subOn);
+			(e.currentTarget as HTMLElement).querySelector<HTMLElement>('.pw.on .tab')?.focus();
+			return;
+		}
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
 		const root = e.currentTarget as HTMLElement;
 		const list = [...root.querySelectorAll<HTMLElement>('[data-nav]')].filter((el) => !el.closest('[inert]'));
@@ -671,7 +681,7 @@
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
 	{#if id === 'poster'}
-		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
+		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name : ''} /></span>
 	{:else if id === 'kind'}
 		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{KIND_WORD[r.kind ?? 'movie']}</span></span>
 	{:else if id === 'proto'}
@@ -816,7 +826,6 @@
 			{#if so.length}
 				<div class="subwrap" inert={!open}>
 					<div class="subin" role="group" aria-label="{c.label}: show" data-testid={open ? 'dl-subseg' : undefined}>
-						<button type="button" class="stab" class:on={!subOn} aria-pressed={open && !subOn} tabindex="-1" data-nav onclick={() => choose(c.key)} data-testid={open ? 'dl-subseg-all' : undefined}>All<b>{c.count}</b></button>
 						{#each so as x (x.key)}
 							<button type="button" class="stab" class:on={open && subOn === x.key} aria-pressed={open && subOn === x.key} tabindex="-1" data-nav onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }} data-testid={open ? 'dl-subseg-item' : undefined} data-key={x.key}>{x.label}<b>{x.count}</b></button>
 						{/each}
@@ -946,7 +955,7 @@
 		</div>
 		{#if paneOpen}
 		<div class="pb" data-testid="dl-panel" data-card="d">
-			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
+			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name : ''} /></span>
 			<div class="xb">
 				{@render tabsView(r, simple, im)}
 				{@render depth(r)}

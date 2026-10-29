@@ -24,7 +24,7 @@
 	let imports = $state<ImportRecord[]>([]);
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
-	// The poster pictures come from the Library titles; the rows wait for them, so no row first shows initials.
+	// The poster pictures come from the Library titles; until they arrive the rows show plain poster tiles (no initials).
 	let titlesReady = $state(false);
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
@@ -222,7 +222,7 @@
 
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>
 
-<PageLoader loading={!loaded || !titlesReady} label="Loading Downloads">
+<PageLoader loading={!loaded} label="Loading Downloads">
 {#if error && allRows.length === 0}
 	<div class="pad"><LoadError hasData={false} message="Downloads could not be loaded." onretry={load} /></div>
 {:else if allRows.length === 0}
@@ -232,7 +232,7 @@
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
 {/if}
 </PageLoader>
 
