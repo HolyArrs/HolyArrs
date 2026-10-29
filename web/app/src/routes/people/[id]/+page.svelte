@@ -354,12 +354,9 @@
 			<h2>Known for</h2>
 			<ol class="kf-list">
 				{#each top as m, i (m.ids.tmdb)}
-					{@const o = owned(m)}
 					<li class="kf-item" style:--i={i}>
 						<span class="kf-pic">{@render filmCard(m)}</span>
 						<span class="kf-n" aria-hidden="true">{i + 1}</span>
-							<span class="kf-words"><span class="kf-sub">{[m.year, roleLine(m)].filter(Boolean).join(' · ')}</span></span>
-						<span class="kf-end">{#if o}<span class="kf-state" class:have={o.state === 'available'}>{o.state === 'available' ? 'In Library' : 'Requested'}</span>{:else if action && !m.never_add && !done[m.ids.tmdb]}<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} size="sm" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />{/if}</span>
 					</li>
 				{/each}
 			</ol>
@@ -570,12 +567,15 @@
 	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
 	.stage .art { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.stage .art.in { opacity: .85; }
-	.clip { position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
+	.clip { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.banner.playing .clip { opacity: 1; }
+	/* The trailer sits above the banner shades, so it carries its own fade; its buttons go top right like the artist page. */
+	.clip::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--ink) 60%, transparent) 0%, transparent 45%), linear-gradient(to bottom, rgb(7 8 10 / .35), transparent 25%); }
+	.clip :global(.ctl) { top: 16px; bottom: auto; right: var(--gutter); opacity: 1; visibility: visible; pointer-events: auto; }
 	.clip :global(video), .clip :global(iframe) { width: 100%; height: 100%; object-fit: cover; }
 	.b-shade { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--ink) 60%, transparent) 0%, color-mix(in srgb, var(--ink) 25%, transparent) 35%, transparent 60%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
 	.dim { position: absolute; inset: 0; z-index: 0; background: var(--ink); opacity: calc(var(--gone, 0) * .85); pointer-events: none; }
-	.showing { position: absolute; z-index: 1; top: 18px; left: var(--gutter); padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); color: #fff; font: var(--t-footnote); font-weight: 600; text-decoration: none; }
+	.showing { position: absolute; z-index: 3; top: 18px; left: var(--gutter); padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); color: #fff; font: var(--t-footnote); font-weight: 600; text-decoration: none; }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
 	.cline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; margin-top: calc(var(--gap) * -1 - 52px); position: relative; z-index: 1; }
 	.photo { display: grid; place-items: center; width: 150px; aspect-ratio: 2 / 3; height: auto; border-radius: var(--r-card); overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3, var(--surface-2))); box-shadow: var(--shadow-card), 0 18px 40px rgb(0 0 0 / .35); transition: transform var(--dur) var(--ease-out); }
@@ -641,19 +641,15 @@
 	.kf-item { position: relative; min-width: 0; animation: ab-in var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i) * 35ms); }
 	.kf-pic { position: relative; display: block; min-width: 0; }
 	.kf-pic :global(.ui-wide) { width: 100%; }
-	.kf-words { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-	.kf-sub { color: var(--text-muted); font: 500 15px/1.35 var(--font-ui); white-space: normal !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.kf-state { padding: 5px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: 700 12px/1 var(--font-ui); white-space: nowrap; }
-	.kf-state.have { background: rgb(52 199 89 / 18%); color: #9df5b4; }
 	/* Episodes */
-	.kf-eps .kf-item { display: grid; grid-template-columns: 240px 28px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px; border-radius: 16px; transition: background var(--dur-fast) var(--ease-out); }
-	.kf-eps .kf-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 20px; }
+	.kf-eps .kf-item { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 14px; padding: 10px; border-radius: 16px; transition: background var(--dur-fast) var(--ease-out); }
+	.kf-eps .kf-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px 16px; }
 	.kf-eps .kf-item:hover { background: var(--surface-1); }
-	.kf-eps .kf-n { grid-column: 2; grid-row: 1; color: var(--text-muted); font: 800 22px/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; }
-	.kf-eps .kf-pic { grid-column: 1; grid-row: 1; }
+	.kf-eps .kf-n { grid-column: 1; grid-row: 1; color: var(--text-muted); font: 800 22px/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; }
+	.kf-eps .kf-pic { grid-column: 2; grid-row: 1; }
 	/* Top 10 */
 	/* Stills */
-	@media (max-width: 1000px) { .kf-eps .kf-list { grid-template-columns: minmax(0, 1fr); } }
+	
 	@media (prefers-reduced-motion: reduce) { .kf-item { animation: none; } }
 	.c-line { display: flex; flex-wrap: wrap; align-items: baseline; }
 	/* About sheet (Profile / Dossier / Career), an Apple TV-style dark window in the person's tint. */
@@ -717,7 +713,8 @@
 	@keyframes ab-grow { from { scale: 1 0; } }
 	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 	@media (max-width: 767px) {
-		.kf-eps .kf-item { grid-template-columns: 112px 22px minmax(0, 1fr) auto; gap: 10px; padding: 6px; }
+		.kf-eps .kf-list { grid-template-columns: minmax(0, 1fr); }
+		.kf-eps .kf-item { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 6px; }
 		.ab-dossier .ab-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 		.ab-side { position: static; }
 		.ab-still { aspect-ratio: 16 / 10; }
