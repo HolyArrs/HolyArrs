@@ -62,7 +62,6 @@
 		<a class="art" href={page} onclick={show} aria-haspopup="dialog" aria-label={[entryTitle(e), groupTag(g), ...lines].filter(Boolean).join(', ')}>
 			{#if src && !failed}
 				<img class="bg" src={sized(src, e.kind === 'album' ? 'poster' : 'backdrop', 400)} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
-				{#if e.kind === 'album'}<span class="vinyl" aria-hidden="true"></span><img class="cover" src={sized(src, 'poster', 140)} alt="" loading="lazy" decoding="async" />{/if}
 			{:else}
 				<ArtPlaceholder name={entryTitle(e)} shape="wide" />
 			{/if}
@@ -98,29 +97,10 @@
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.art > :global(.ui-art-ph) { position: absolute; inset: 0; }
 	.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-	.album .bg { filter: blur(22px) saturate(140%) brightness(0.7); transform: scale(1.2); }
-	/* An album fills the card: the square cover runs the full height on the right, its own blurred colour behind the name on the left. */
-	.cover { position: absolute; right: 0; top: 0; height: 100%; aspect-ratio: 1; object-fit: cover; box-shadow: -16px 0 32px rgb(0 0 0 / 0.35); }
-	/* Album frames Luis is comparing (html[data-aframe], set by the calendar page): 1 Vinyl, 2 Poster, 3 Sleeve. */
-	.vinyl { display: none; }
-	/* 1 Vinyl: the cover on the left, a record sliding out of the sleeve to the right. */
-	:global(html[data-aframe='1']) .album .cover { right: auto; left: 0; z-index: 1; box-shadow: 16px 0 32px rgb(0 0 0 / 0.45); }
-	:global(html[data-aframe='1']) .album .vinyl { display: block; position: absolute; top: 4%; left: calc(56.25% * 0.42); height: 92%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #d9d9d9 0 5%, #111 5.5% 16%, transparent 16.5%), repeating-radial-gradient(circle, #151515 0 2px, #1d1d1d 2px 4px); box-shadow: 0 10px 30px rgb(0 0 0 / .5); transition: translate var(--dur-slow) var(--ease-out); }
-	:global(html[data-aframe='1']) .album .art:hover .vinyl { translate: 14% 0; }
-	:global(html[data-aframe='1']) .album .on-art { left: calc(56.25% + 18px); right: 6%; }
-	:global(html[data-aframe='1']) .album .scrim { background: linear-gradient(to left, rgb(0 0 0 / .7), transparent 60%); }
-	/* 2 Poster: the cover fills the whole card (centred crop), no blur, the name on a deep fade. */
-	:global(html[data-aframe='2']) .album .bg { filter: none; transform: none; object-position: center 30%; }
-	:global(html[data-aframe='2']) .album .cover { display: none; }
-	:global(html[data-aframe='2']) .album .on-art { right: 6%; }
-	/* 3 Sleeve: the cover on the left with a thin white sleeve edge, a calm dark panel of its colour on the right. */
-	:global(html[data-aframe='3']) .album .bg { filter: blur(40px) saturate(120%) brightness(0.35); transform: scale(1.4); }
-	:global(html[data-aframe='3']) .album .cover { right: auto; left: 0; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .12), 2px 0 0 rgb(255 255 255 / .18), 18px 0 40px rgb(0 0 0 / .45); }
-	:global(html[data-aframe='3']) .album .on-art { left: calc(56.25% + 18px); right: 6%; }
-	:global(html[data-aframe='3']) .album .scrim { background: none; }
+	/* An album: its cover fills the card (a centred crop), no blur, the name on the fade like every card. */
+	.album .bg { object-position: center 30%; }
 	.scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.75), rgb(0 0 0 / 0.08) 60%, transparent); pointer-events: none; }
 	.on-art { position: absolute; left: 6%; right: 6%; bottom: 8%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-	.album .on-art { right: calc(56.25% + 12px); }
 	.tags { display: flex; flex-wrap: wrap; gap: 4px; }
 	.name { color: #fff; font: 700 clamp(17px, 1.6vw, 22px)/1.08 var(--font-display); letter-spacing: -0.02em; text-shadow: 0 2px 12px rgb(0 0 0 / 0.5); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	/* Caption lines, one line each. */
