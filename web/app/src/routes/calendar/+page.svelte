@@ -801,6 +801,10 @@
 		opacity: 0; visibility: hidden; transform: translateY(-8px); transition: opacity var(--dur-fast) var(--ease-in), transform var(--dur-fast) var(--ease-in), visibility 0s linear var(--dur-fast); }
 	.slim-wrap.on .slim { opacity: 1; visibility: visible; transform: none; transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out), visibility 0s; }
 	.slim .slim-view { margin-right: auto; }
+	/* One line, never squeezed: each control keeps its size; on narrower screens the extras step out (Cards or List first, then the kinds). */
+	@media (min-width: 1024px) { .slim > :global(*) { flex: none; } .slim .range { overflow: visible; } }
+	@media (max-width: 1320px) { .slim .slim-view { display: none; } .slim .slim-seg { margin-right: auto; } }
+	@media (min-width: 1024px) and (max-width: 1080px) { .slim .slim-seg { display: none; } .slim :global(.range-nav) { margin-right: auto; } }
 	.slim .range { min-width: 0; font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.range-btn { padding: 4px 8px; border-radius: var(--r-sm); color: var(--text); transition: background var(--dur-fast) var(--ease-out); }
 	.range-btn:hover { background: var(--surface-2); }
@@ -919,6 +923,8 @@
 		.phone-only { display: inline-flex; }
 		.wide-only { display: none; }
 		.slim { gap: 8px; }
+		/* No room for the which-dates button beside the dates and Today; it stays in the controls above. */
+		.slim > .phone-only:last-child { display: none; }
 		.slim .range-nav { flex: 1; }
 		.slim .range { flex: 1; text-align: center; }
 	}
