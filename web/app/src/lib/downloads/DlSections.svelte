@@ -115,8 +115,6 @@
 		filesOpen = n;
 	}
 	const start = showOf(page.url.searchParams.get('show'));
-	// For comparing highlight styles for now (?hl=1|2|3): 1 raised pill, 2 soft red tint, 3 dark fill.
-	const hl = $derived(['2', '3'].includes(page.url.searchParams.get('hl') ?? '') ? page.url.searchParams.get('hl') : '1');
 	let show = $state(start.show);
 	let sub = $state(start.sub);
 	function remember() {
@@ -995,7 +993,7 @@
 <DlRail bind:kindOn bind:srcOn {kindCount} {srcCount} bind:px={railPx} />
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs hl-{hl}" role="tablist" aria-label="Status">{@render pills()}</div></div>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div></div>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
 {#if list.length}
@@ -1327,12 +1325,11 @@
 	.stab b { color: inherit; opacity: 0.8; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.stab:hover { color: var(--hl-fg); }
 	.stab.on { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); }
-	/* 1: a raised pill on the track, like a segmented control; the picked sub-option is tinted red. */
-	.hl-1 { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 2px 8px rgb(0 0 0 / 0.06); --hl-line: var(--line); --hl-sub: color-mix(in srgb, var(--text) 72%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: var(--accent-text); }
-	/* 2: a soft red tint with red text. */
-	.hl-2 { --hl-bg: var(--accent-soft); --hl-fg: var(--accent-text); --hl-line: color-mix(in srgb, var(--accent-text) 25%, transparent); --hl-sub: color-mix(in srgb, var(--accent-text) 75%, transparent); --hl-sub-on-bg: color-mix(in srgb, var(--accent-text) 16%, transparent); --hl-sub-on-fg: var(--accent-text); }
-	/* 3: the text colour, softened. */
-	.hl-3 { --hl-bg: color-mix(in srgb, var(--text) 85%, transparent); --hl-fg: var(--bg); --hl-line: color-mix(in srgb, var(--bg) 32%, transparent); --hl-sub: color-mix(in srgb, var(--bg) 78%, transparent); --hl-sub-on-bg: color-mix(in srgb, var(--bg) 24%, transparent); --hl-sub-on-fg: var(--bg); }
+	/* The picked pill is raised on the track like a segmented control; its picked sub-option is tinted red. */
+	.tabs { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); --hl-line: var(--line-strong); --hl-sub: color-mix(in srgb, var(--text) 72%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
+	/* Dark: the red words are lightened so they read on the grey pill (4.5:1 or more). */
+	:global(:root[data-theme='dark']) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); }
+	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); } }
 	@media (prefers-reduced-motion: reduce) { .pw, .tab, .stab, .subwrap { transition: none; } }
 	.tbn :global(svg.icon) { width: 20px; height: 20px; }
 	.tbn { width: 34px; height: 34px; }
