@@ -152,11 +152,12 @@
 	.glow { position: absolute; inset: -6px; border-radius: 999px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent), 0 0 28px color-mix(in srgb, var(--accent) 22%, transparent); opacity: 0; pointer-events: none; }
 	.ic { position: absolute; z-index: 1; left: 15px; display: grid; color: var(--text-muted); pointer-events: none; }
 	input { flex: 1; min-width: 0; height: 44px; padding: 0 64px 0 42px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: var(--text); font: var(--t-body); }
-	.scope { position: absolute; z-index: 1; left: 40px; display: inline-flex; align-items: center; gap: 2px; height: 24px; padding: 0 3px 0 9px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); color: var(--accent-text, var(--text)); font: 600 12px/1 var(--font-ui); }
-	.scope button { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
-	.scope button:hover { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+	.scope { position: absolute; z-index: 1; left: 40px; display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 3px 0 12px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); font: var(--t-subhead); font-size: 13px; transition: background var(--dur-fast) var(--ease-out); }
+	.scope:hover { background: var(--surface-3); }
+	.scope button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; opacity: 0.75; cursor: pointer; }
+	.scope button:hover { opacity: 1; background: rgb(127 127 127 / 18%); }
 	.scope button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	input.scoped { padding-left: 128px; }
+	input.scoped { padding-left: 164px; }
 	input::placeholder { color: var(--text-muted); }
 	input::-webkit-search-cancel-button { display: none; }
 	input:focus-visible { outline: none; box-shadow: var(--focus-ring); }

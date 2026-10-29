@@ -15,6 +15,8 @@
 	import Icon from '../Icon.svelte';
 	import Chip from '../ui/Chip.svelte';
 	import Menu from '../ui/Menu.svelte';
+	import TopMenu from './TopMenu.svelte';
+	import { railLook } from './railLook.svelte.ts';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
 	import Popover from '../ui/Popover.svelte';
@@ -260,7 +262,7 @@
 	}
 	const TAB_ICON: Record<string, 'download' | 'clock' | 'downloader' | 'alert' | 'check'> = { active: 'download', waiting: 'clock', progress: 'downloader', problems: 'alert', done: 'check' };
 	const KIND_ICON: Record<string, 'film' | 'tv' | 'music'> = { movie: 'film', show: 'tv', artist: 'music' };
-	const SRC_ICON: Record<string, 'archive' | 'upload'> = { usenet: 'archive', torrent: 'upload' };
+	const SRC_ICON: Record<string, 'usenet' | 'torrent'> = { usenet: 'usenet', torrent: 'torrent' };
 	function setRail(open: boolean) {
 		railOpen = open;
 		saveRail();
@@ -745,7 +747,7 @@
 		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{KIND_WORD[r.kind ?? 'movie']}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
-		<span class="pcell" class:ph data-col="proto">{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} title="{p === 'torrent' ? 'Torrent' : 'Usenet'} · {dlName(r)}" role="img" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download"><Icon name={p === 'torrent' ? 'upload' : 'archive'} size={14} /></span>{/if}</span>
+		<span class="pcell" class:ph data-col="proto">{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} use:tip={`${p === 'torrent' ? 'Torrent' : 'Usenet'} · ${dlName(r)}`} role="img" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download"><Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} /></span>{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
 			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
@@ -872,6 +874,82 @@
 				<button type="button" role="tab" class="xtab" class:on={tab === t} aria-selected={tab === t} onclick={() => { xtabOn[r.id] = t; paneOpen = true; }} data-testid="dl-tab-{t.toLowerCase()}">{t}</button>
 			{/if}
 		{/each}
+	</div>
+{/snippet}
+
+{#snippet statusRow(c: (typeof tally)[number])}
+	{@const t = tabs.find((x) => x.key === c.key)}
+	{@const subsOf = t ? subCounts(rows, t) : []}
+	{@const open = groupOpen(c.key, c.key === on)}
+	<div class="pr" data-key={c.key}>
+		{#if subsOf.length}
+			<button type="button" class="gch" class:shut={!open} aria-expanded={open} aria-label="{open ? 'Fold' : 'Unfold'} {c.label}" onclick={() => flipGroup(c.key, open)} data-testid="rail-fold" data-key={c.key}><Icon name="chevronDown" size={14} stroke={2.4} /></button>
+		{:else}<span class="gch sp0" aria-hidden="true"></span>{/if}
+		<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="ico"><Icon name={TAB_ICON[c.key]} size={16} /></span><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
+	</div>
+	{#if open && subsOf.length}
+		<div class="subs">
+			{#each subsOf as x (x.key)}
+				<button type="button" class="ri sub" class:on={on === c.key && subOn === x.key} class:zero={x.count === 0} aria-pressed={on === c.key && subOn === x.key} data-testid="rail-sub" data-key="{c.key}.{x.key}" data-count={x.count} onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }}><span class="lb">{x.label}</span><b class="n">{x.count}</b></button>
+			{/each}
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet gHead(key: string, label: string, open: boolean)}
+	<button type="button" class="gh" aria-expanded={open} onclick={() => flipGroup(key, open)} data-testid="rail-fold" data-key={key}><span class="gch sp0"><Icon name="chevronDown" size={14} stroke={2.4} /></span><span class="lb">{label}</span></button>
+{/snippet}
+
+{#snippet kindRows()}
+	{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
+		<div class="pr"><span class="gch sp0" aria-hidden="true"></span><button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="ico"><Icon name={KIND_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{kindCount(t.key)}</b></button></div>
+	{/each}
+{/snippet}
+
+{#snippet srcRows()}
+	{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
+		<div class="pr"><span class="gch sp0" aria-hidden="true"></span><button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="ico"><Icon name={SRC_ICON[t.key]} size={16} /></span><span class="lb">{t.label}</span><b class="n">{srcCount(t.key)}</b></button></div>
+	{/each}
+{/snippet}
+
+{#snippet railBody()}
+	{@const look = railLook.value}
+	{@const stOpen = groupOpen('status', true)}
+	{#if look === 'c'}
+		<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
+			{@render gHead('status', 'Status', stOpen)}
+			{#if stOpen}
+				<div class="chips">
+					{#each tally as c (c.key)}
+						<button type="button" class="chip" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
+					{/each}
+				</div>
+				{#if onTab && subs.length}
+					<div class="subs flat">
+						{#each subs as x (x.key)}
+							<button type="button" class="ri sub" class:on={subOn === x.key} class:zero={x.count === 0} aria-pressed={subOn === x.key} data-testid="rail-sub" data-key="{on}.{x.key}" data-count={x.count} onclick={() => chooseSub(x.key)}><span class="lb">{x.label}</span><b class="n">{x.count}</b></button>
+						{/each}
+					</div>
+				{/if}
+			{/if}
+		</div>
+	{:else if look === 'b'}
+		<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
+			{@render gHead('status', 'Status', stOpen)}
+			{#if stOpen}{#each tally as c (c.key)}{@render statusRow(c)}{/each}{/if}
+		</div>
+	{:else}
+		<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
+			{#each tally as c (c.key)}{@render statusRow(c)}{/each}
+		</div>
+	{/if}
+	<div class="rg" role="group" aria-label="Library" data-testid="dl-type-filter">
+		{@render gHead('library', 'Library', libOpen)}
+		{#if libOpen}{@render kindRows()}{/if}
+	</div>
+	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
+		{@render gHead('sources', 'Sources', srcOpen)}
+		{#if srcOpen}{@render srcRows()}{/if}
 	</div>
 {/snippet}
 
@@ -1016,15 +1094,15 @@
 <h1 class="sr">Downloads</h1>
 <div class="strip hdr" data-testid="dl-strip">
 	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
-		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={16} /></button></span>
-		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={16} /></button></span><Menu label="More start actions" icon="chevronDown" width={170} items={[{ label: 'Start all', icon: 'play', disabled: true, hint: 'Coming soon' }]} /></span>
-		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={16} /></button></span><Menu label="More pause actions" icon="chevronDown" width={170} items={[{ label: 'Pause all', icon: 'pause', disabled: true, hint: 'Coming soon' }]} /></span>
-		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={16} /></button></span>
-		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={16} /></button></span>
+		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={20} /></button></span>
+		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={20} /></button></span><TopMenu label="More start actions" items={[{ label: 'Start all', hint: 'Coming soon', disabled: true }]} /></span>
+		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={20} /></button></span><TopMenu label="More pause actions" items={[{ label: 'Pause all', hint: 'Coming soon', disabled: true }]} /></span>
+		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={20} /></button></span>
+		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={20} /></button></span>
 	</div>
 </div>
 <div class="body" style="--rail: {railShown ? railW : 52}px">
-<nav class="rail" class:shut={!railShown} aria-label="Downloads filters" data-testid="dl-rail">
+<nav class="rail va-{railLook.value}" class:shut={!railShown} aria-label="Downloads filters" data-testid="dl-rail" data-look={railLook.value}>
 	<div class="psearch" class:open={psOpen || !!dlScope.term} data-testid="dl-psearch">
 		<button type="button" class="psb" aria-label="Search downloads" aria-expanded={psOpen || !!dlScope.term} onclick={() => { psOpen = true; tick().then(() => psEl?.focus()); }} data-testid="dl-psearch-btn"><Icon name="search" size={16} /></button>
 		{#if psOpen || dlScope.term}
@@ -1034,43 +1112,10 @@
 	</div>
 	{#if railShown}
 	<button type="button" class="rhide" aria-label="Hide filters" use:tip={'Hide filters'} onclick={() => setRail(false)} data-testid="rail-hide"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
-	<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
-		{#each tally as c (c.key)}
-			{@const t = tabs.find((x) => x.key === c.key)}
-			{@const subsOf = t ? subCounts(rows, t) : []}
-			{@const open = groupOpen(c.key, c.key === on)}
-			<div class="pr">
-				{#if subsOf.length}
-					<button type="button" class="gch" class:shut={!open} aria-expanded={open} aria-label="{open ? 'Fold' : 'Unfold'} {c.label}" onclick={() => flipGroup(c.key, open)} data-testid="rail-fold" data-key={c.key}><Icon name="chevronDown" size={14} stroke={2.4} /></button>
-				{:else}<span class="gch sp0" aria-hidden="true"></span>{/if}
-				<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={16} /><span class="lb">{c.label}</span><b>{c.count}</b></button>
-			</div>
-			{#if open}
-				{#each subsOf as x (x.key)}
-					<button type="button" class="ri sub" class:on={on === c.key && subOn === x.key} class:zero={x.count === 0} aria-pressed={on === c.key && subOn === x.key} data-testid="rail-sub" data-key="{c.key}.{x.key}" data-count={x.count} onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }}><span class="lb">{x.label}</span><b>{x.count}</b></button>
-				{/each}
-			{/if}
-		{/each}
-	</div>
-	<div class="rg" role="group" aria-label="Library" data-testid="dl-type-filter">
-		<button type="button" class="rh" aria-expanded={libOpen} onclick={() => flipGroup('library', libOpen)} data-testid="rail-fold" data-key="library"><Icon name="chevronDown" size={14} stroke={2.4} />Library</button>
-		{#if libOpen}
-			{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-				<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={16} /><span class="lb">{t.label}</span><b>{kindCount(t.key)}</b></button>
-			{/each}
-		{/if}
-	</div>
-	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
-		<button type="button" class="rh" aria-expanded={srcOpen} onclick={() => flipGroup('sources', srcOpen)} data-testid="rail-fold" data-key="sources"><Icon name="chevronDown" size={14} stroke={2.4} />Sources</button>
-		{#if srcOpen}
-			{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-				<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={16} /><span class="lb">{t.label}</span><b>{srcCount(t.key)}</b></button>
-			{/each}
-		{/if}
-	</div>
+	{@render railBody()}
 	{:else}
 	<button type="button" class="rshow" aria-label="Show filters" use:tip={{ text: 'Show filters', side: 'right' }} onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
-	<div class="ics" role="group" aria-label="Filters" data-testid="rail-icons">
+	<div class="ics va-{railLook.value}" role="group" aria-label="Filters" data-testid="rail-icons">
 		{#each tally as c (c.key)}
 			<button type="button" class="ic" class:on={on === c.key && !subOn} aria-pressed={on === c.key && !subOn} aria-label="{c.label}, {c.count}" use:tip={{ text: `${c.label} · ${c.count}`, side: 'right' }} data-testid="rail-icon" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={16} /><b class="bd">{c.count}</b></button>
 		{/each}
@@ -1305,15 +1350,6 @@
 	.listbox .tw { overflow: visible; }
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
 	.rail { position: relative; display: grid; align-content: start; gap: 14px; overflow-x: hidden; overflow-y: auto; padding: 10px 0; border-right: 1px solid var(--line); min-width: 0; }
-	.rg { display: grid; gap: 2px; }
-	.rh { margin: 0 8px 2px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
-	.ri { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-footnote); cursor: pointer; text-align: left; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
-	.ri b { color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
-	.ri:hover { background: var(--surface-3); }
-	.ri.on { background: var(--surface-1); color: var(--accent, var(--text)); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 10px rgb(0 0 0 / 0.08); }
-	.ri.on b { color: inherit; }
-	.ri.zero:not(.on) { opacity: 0.72; }
-	.ri:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tbg { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 	.sbar { flex: none; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
@@ -1399,18 +1435,12 @@
 	.rhide:hover, .rshow:hover { background: var(--surface-3); color: var(--text); }
 	.rhide:focus-visible, .rshow:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.rail.shut { padding: 10px 0; overflow: hidden; }
-	.tbn { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.tbn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.tbn:hover:not(:disabled) { background: var(--surface-3); }
 	.tbn:disabled { opacity: 0.45; cursor: not-allowed; }
 	.tbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tw2 { display: inline-flex; }
 	.split { display: inline-flex; align-items: center; }
-	.split :global(button[aria-haspopup]) { width: 24px; min-width: 24px; height: 28px; padding: 0; margin-left: -4px; }
-	.ri { overflow: hidden; }
-	.ri .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-	.ri.sub { padding-left: calc(var(--dl-gutter) + 28px); height: 28px; min-height: 28px; color: var(--text-muted); }
-	.ri.sub.on { color: var(--accent-text, var(--text)); }
-	.ri b { flex: none; }
 	.ics { display: grid; justify-items: center; gap: 4px; }
 	.ics hr { width: 28px; height: 1px; margin: 4px 0; border: 0; background: var(--line); }
 	.ic { position: relative; display: grid; place-items: center; width: 40px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text-muted); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
@@ -1443,32 +1473,10 @@
 	.pcell { justify-content: center; }
 	.pm { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); }
 	.bar.paused i { background: var(--text-muted); }
-	.gch { flex: none; display: grid; place-items: center; width: 24px; height: 28px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--text-muted); cursor: pointer; }
-	.gch.sp0 { cursor: default; }
-	.gch :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
-	.gch.shut :global(svg) { transform: rotate(-90deg); }
-	.gch:hover:not(.sp0) { background: var(--surface-3); color: var(--text); }
-	.gch:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pr { display: flex; align-items: center; min-width: 0; }
-	.pr .ri { flex: 1 1 auto; min-width: 0; }
-	.ri { gap: 6px; height: 28px; min-height: 28px; padding: 0 var(--dl-gutter); }
-	.pr .gch { margin-left: calc(var(--dl-gutter) - 8px); }
-	.pr .ri, .pr .gch.sp0 + .ri { padding-left: 4px; }
-	.pr .gch.sp0 + .ri { padding-left: 4px; }
-	.ri :global(svg) { flex: none; color: var(--text-muted); }
-	.ri.on :global(svg) { color: inherit; }
-	.rh { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 24px; margin: 4px 0 0; padding: 2px var(--dl-gutter); border: 0; border-radius: 5px; background: none; color: var(--text-muted); font: 600 11px/1.3 var(--font-ui); text-align: left; cursor: pointer; }
-	.rh :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
-	.rh[aria-expanded='false'] :global(svg) { transform: rotate(-90deg); }
-	.rh:hover { color: var(--text); background: var(--surface-3); }
-	.rh:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.ri:active, .ic:active, .tbn:active:not(:disabled), .gch:active:not(.sp0), .pcl:active { transform: scale(0.97); }
 	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
 	.app { --dl-gutter: 10px; --dl-icon: 16px; --dl-icon-sm: 14px; }
 	.app :global(svg.icon), .app :global(.ui-ibtn svg) { width: var(--dl-icon); height: var(--dl-icon); }
-	.gch :global(svg.icon), .rh :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon), .sbi :global(.ui-ibtn svg) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
 	.psearch { display: none; }
-	.ri:active, .gch:active:not(.sp0), .rh:active, .xtab:active, .xbn:active, .psb:active { transform: scale(0.97); }
 	.grip:active::after { background: var(--accent); width: 2px; }
 	.rz:active i { opacity: 1; }
 	.dv:active i { opacity: 1; }
@@ -1476,6 +1484,59 @@
 	.psb:hover, .psx:hover { background: var(--surface-3); }
 	.psb:focus-visible, .psx:focus-visible, .psearch input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.psearch input { width: 150px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); }
+	.rail .rg { display: grid; gap: 2px; padding: 0 var(--dl-gutter); }
+	.pr { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; min-width: 0; }
+	.gch { display: grid; place-items: center; width: 24px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
+	.gch.sp0 { cursor: default; }
+	.gch :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
+	.gch.shut :global(svg) { transform: rotate(-90deg); }
+	.gch:hover:not(.sp0) { background: var(--surface-3); color: var(--text); }
+	.gch:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.ri, .chip { border: 0; color: var(--text); font: var(--t-footnote); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.ri { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; height: 28px; min-width: 0; padding: 0 8px; border-radius: 6px; background: none; overflow: hidden; }
+	.ri .ico { display: grid; place-items: center; color: var(--text-muted); }
+	.ri .lb, .chip .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+	.ri .n, .chip .n { min-width: 2ch; text-align: right; color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.ri:hover { background: var(--surface-3); }
+	.ri.zero:not(.on) { opacity: 0.72; }
+	.ri:focus-visible, .chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.ri:active, .chip:active, .gch:active:not(.sp0), .gh:active { transform: scale(0.97); }
+	.subs { display: grid; gap: 2px; margin-left: 24px; }
+	.ri.sub { grid-template-columns: minmax(0, 1fr) auto; padding-left: 32px; color: var(--text-muted); }
+	.gh { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; width: 100%; min-height: 26px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: 600 11px/1.3 var(--font-ui); text-align: left; cursor: pointer; }
+	.gh .gch { height: 26px; }
+	.gh[aria-expanded='false'] .gch :global(svg) { transform: rotate(-90deg); }
+	.gh:hover { color: var(--text); }
+	.gh:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0 4px; }
+	.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: var(--r-pill); background: var(--surface-2); }
+	.chip:hover { background: var(--surface-3); }
+	.chip :global(svg) { color: var(--text-muted); }
+	.chip.on { background: var(--text); color: var(--bg); }
+	.chip.on :global(svg), .chip.on .n { color: inherit; opacity: 0.8; }
+	.chip.zero:not(.on) { opacity: 0.72; }
+	.subs.flat { margin-left: 0; }
+	.subs.flat .ri.sub { padding-left: 8px; }
+	/* A: a clean list, a soft fill on the picked row. */
+	.va-a .ri.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
+	.va-a .ri.on .ico, .va-a .ri.on .n { color: var(--text); }
+	.va-a .gh { margin-top: 6px; font-size: 12px; }
+	/* B: grouped sections, small-caps headers, a guide line beside the sub-statuses. */
+	.va-b .gh { margin-top: 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+	.va-b .subs { margin-left: 24px; padding-left: 0; border-left: 1px solid var(--line); margin-left: 35px; }
+	.va-b .ri.sub { padding-left: 14px; }
+	.va-b .ri.on { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text, var(--text)); font-weight: 600; box-shadow: inset 2px 0 0 var(--accent); }
+	.va-b .ri.on .ico, .va-b .ri.on .n { color: inherit; }
+	/* C: status chips, then a compact list. */
+	.va-c .gh { margin-top: 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+	.va-c .ri.on { background: var(--surface-3); color: var(--text); font-weight: 600; }
+	.ics.va-b .ic.on { box-shadow: inset 2px 0 0 var(--accent); }
+	.ics.va-c .ic { border-radius: 999px; }
+	.ics.va-c .ic.on { background: var(--text); color: var(--bg); }
+	.gch :global(svg.icon), .gh :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon), .sbi :global(.ui-ibtn svg) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
+	.tbn :global(svg.icon) { width: 20px; height: 20px; }
+	.tbn { width: 34px; height: 34px; }
+	.split :global(.caret) { height: 34px; }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -1543,16 +1604,23 @@
 		.t2 .c-name { max-width: 140px; }
 	}
 	@media (max-width: 1099px) {
+		.rail .rg { display: flex; flex: none; align-items: center; gap: 4px; padding: 0; }
+		.pr { display: flex; }
+		.gch:not(.sp0) { display: none; }
+		.gh .gch { display: none; }
+		.gh { display: inline-flex; width: auto; padding: 0 4px; }
+		.ri { display: inline-flex; flex: none; gap: 6px; width: auto; white-space: nowrap; }
+		.subs, .subs.flat { display: flex; margin: 0; gap: 4px; border: 0; }
+		.va-b .subs { border: 0; margin: 0; }
+		.ri.sub, .va-b .ri.sub, .subs.flat .ri.sub { padding-left: 8px; }
+		.chips { flex-wrap: nowrap; padding: 0; }
+		.chip { flex: none; }
 		.rz, .rhide, .rshow { display: none; }
 		.rail.shut { padding: 8px; overflow-x: auto; }
 		.rail.shut::before { content: none; }
-		.rail .ri .lb { display: inline; }
 		.body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
 		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px var(--dl-gutter); border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 		.rail::-webkit-scrollbar { display: none; }
-		.rg { display: flex; gap: 4px; flex: none; }
-		.rh { display: none; }
-		.ri { flex: none; gap: 6px; min-height: 32px; white-space: nowrap; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bar i, .tg :global(svg), .bin, .cw, .post { transition: none; }
