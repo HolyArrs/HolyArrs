@@ -522,6 +522,15 @@
 	const listenWords = $derived(listen ? `${shortCount(listen.n)} ${listen.unit}` : '');
 	// One sentence or two of the bio for the About card; the full text is in its sheet.
 	const bioLine = $derived(hero?.bio?.extract ? hero.bio.extract.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ') : '');
+	// About stills: the wide photo and the square photo take turns with a slow zoom, like the people page.
+	const aboutStills = $derived([wideFace && !wideFailed ? wideFace : '', picture && !photoFailed ? picture : ''].filter((x, i, a): x is string => !!x && a.indexOf(x) === i));
+	let still = $state(0);
+	$effect(() => {
+		const n = aboutStills.length;
+		if (n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const t = setInterval(() => (still = (still + 1) % n), 7000);
+		return () => clearInterval(t);
+	});
 	const genres = $derived((data?.genres ?? []).slice(0, 4).join(', '));
 	// "0 of 113 tracks · 48 missing" said once, even when progress and status repeat a part.
 	const libLine = $derived(lib?.staff ? [...new Set([lib.progress, lib.status].filter(Boolean).flatMap((x) => String(x).split(' · ')))].join(' · ') : '');
@@ -906,12 +915,13 @@
 	{@const img = wideFace && !wideFailed ? wideFace : picture}
 	<section class="block about">
 		<h2>About</h2>
-		<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {hero?.name}: read more" onclick={() => (aboutOpen = true)} data-testid="artist-about">
-			{#if img}<img src={img} alt="" loading="lazy" decoding="async" />{:else}<span class="a-none" aria-hidden="true">{initialsOf(hero?.name ?? '')}</span>{/if}
+		<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {hero?.name}: read more" onclick={() => (aboutOpen = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="artist-about">
+			{#if aboutStills.length}{#each aboutStills as src, i (src)}<img class="ab-frame" class:on={i === still % aboutStills.length} {src} alt="" loading="lazy" decoding="async" />{/each}<span class="a-glow" aria-hidden="true"></span>{:else if img}<img class="ab-frame on" src={img} alt="" loading="lazy" decoding="async" />{:else}<span class="a-none" aria-hidden="true">{initialsOf(hero?.name ?? '')}</span>{/if}
 			{#if listen?.rank}<span class="disc" aria-hidden="true"><b>#{listen.rank}</b><small>in the world</small></span>{/if}
 			<span class="a-foot">
-				{#if listenWords}<span class="a-lis">{listenWords}</span>{/if}
+				{#if listenWords || catalog?.span || genres}<span class="a-lis">{[listenWords, catalog?.span, genres.split(', ').slice(0, 2).join(', ')].filter(Boolean).join(' · ')}</span>{/if}
 				{#if bioLine}<span class="a-bio">{bioLine}</span>{:else}<span class="a-bio">{hero?.name}</span>{/if}
+				<span class="a-more">More about {hero?.name}</span>
 			</span>
 		</button>
 	</section>
@@ -991,7 +1001,15 @@
 {#if hero}
 	<Sheet bind:open={aboutOpen} title="About {hero.name}" size="lg">
 		<div class="sheet" data-testid="artist-about-sheet">
-			{#if wideFace && !wideFailed}<img class="sh-photo" src={wideFace} alt="" decoding="async" />{:else if picture && !photoFailed}<img class="sh-photo" src={picture} alt="" decoding="async" />{/if}
+			{#if aboutStills.length}
+				<figure class="sh-still">
+					{#each aboutStills as src, i (src)}<img class="ab-frame" class:on={i === still % aboutStills.length} {src} alt="" decoding="async" />{/each}
+					<figcaption>
+						{#if picture && !photoFailed}<img class="sh-face" src={picture} alt="" />{/if}
+						<span><b>{hero.name}</b><small>{[hero.type ? artistKind(hero.type) : '', hero.country ? countryName(hero.country) : '', catalog?.span].filter(Boolean).join(' · ')}</small></span>
+					</figcaption>
+				</figure>
+			{/if}
 			<div class="sh-cols">
 				<div class="sh-figs">
 					{#if listen}
@@ -1003,7 +1021,7 @@
 					{#if data?.total}<p class="fig"><b>{data.have ?? 0} of {data.total}</b><span>on HolyArrs</span></p>{/if}
 				</div>
 				<div class="sh-words">
-					{#if hero.bio?.extract}<p class="sh-bio">{hero.bio.extract}</p>{/if}
+					{#if hero.bio?.extract}<h3 class="sh-h">Story</h3><div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
 					<dl class="kv">
 						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
 						{#if genres}<div><dt>Genres</dt><dd>{genres}</dd></div>{/if}
@@ -1146,34 +1164,54 @@
 
 	/* About: the photo card with its "#N in the world" disc and two lines of the bio; it opens the sheet. */
 	.about { scroll-margin-top: 80px; }
-	.acard { position: relative; display: block; width: 100%; height: clamp(280px, 30vw, 420px); padding: 0; border: 0; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; color: #fff; text-align: left; cursor: pointer; isolation: isolate; box-shadow: var(--shadow-card); transition: translate var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
+	.acard { position: relative; display: block; width: 100%; height: clamp(300px, 32vw, 440px); padding: 0; border: 0; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; color: #fff; text-align: left; cursor: pointer; isolation: isolate; box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 24px 60px rgb(0 0 0 / .4); transition: translate var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
 	.acard:hover { translate: 0 var(--lift); }
 	.acard:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.acard img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; transition: scale var(--dur-slow) var(--ease-out); }
-	.acard:hover img { scale: 1.03; }
-	.acard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(7 8 10 / .86) 0%, rgb(7 8 10 / .4) 36%, rgb(7 8 10 / 0) 60%); }
+	.ab-frame { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; scale: 1.02; transition: opacity 1.2s var(--ease-out), scale 8s linear; }
+	.ab-frame.on { opacity: 1; scale: 1.12; }
+	.acard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, color-mix(in srgb, var(--ar-bg, #000) 70%, #000) 0%, color-mix(in srgb, var(--ar-bg, #000) 35%, transparent) 45%, transparent 75%), linear-gradient(to right, rgb(0 0 0 / .35), transparent 60%); }
+	.a-glow { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(60% 50% at var(--mx, 70%) var(--my, 20%), rgb(255 255 255 / .1), transparent 70%); opacity: 0; transition: opacity var(--dur) var(--ease-out); }
+	.acard:hover .a-glow { opacity: 1; }
 	.a-none { position: absolute; inset: 0; z-index: -2; display: grid; place-items: center; font-size: 64px; font-weight: 700; color: rgb(255 255 255 / .5); }
 	.disc { position: absolute; top: 20px; left: 20px; display: grid; place-content: center; justify-items: center; width: 92px; height: 92px; border-radius: 50%; background: var(--accent-fill); color: var(--text-on-red); box-shadow: 0 8px 24px rgb(0 0 0 / .3); text-align: center; }
 	.disc b { font: 800 26px/1 var(--font-display); }
 	.disc small { margin-top: 3px; font: 600 11px/1.1 var(--font-ui); }
-	.a-foot { position: absolute; left: 24px; right: 24px; bottom: 22px; display: flex; flex-direction: column; gap: 6px; }
-	.a-lis { font: 700 17px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.a-bio { max-width: 72ch; color: rgb(255 255 255 / .86); font: var(--t-callout); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-	@media (prefers-reduced-motion: reduce) { .acard:hover, .acard:hover img, .song:hover { translate: none; scale: none; } }
+	.a-foot { position: absolute; left: 28px; right: 28px; bottom: 26px; display: flex; flex-direction: column; gap: 8px; }
+	.a-lis { font: 700 12px/1.3 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; opacity: .8; font-variant-numeric: tabular-nums; }
+	.a-bio { max-width: 64ch; color: rgb(255 255 255 / .9); font: 500 19px/1.45 var(--font-ui); text-shadow: 0 1px 12px rgb(0 0 0 / .35); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.a-more { align-self: flex-start; margin-top: 6px; padding: 9px 16px; border-radius: 999px; background: rgb(255 255 255 / 14%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%); backdrop-filter: blur(20px) saturate(160%); font: 600 14px/1 var(--font-ui); transition: background var(--dur-fast) var(--ease-out); }
+	.acard:hover .a-more { background: rgb(255 255 255 / 24%); }
+	@media (prefers-reduced-motion: reduce) { .acard:hover, .song:hover { translate: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 
-	/* The About sheet: the photo on top, then the figures beside the full bio and facts. */
-	.sheet { display: flex; flex-direction: column; gap: 22px; }
-	.sh-photo { width: 100%; height: clamp(180px, 34vh, 320px); object-fit: cover; object-position: center 25%; border-radius: var(--r-card); background: var(--surface-2); }
-	.sh-cols { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 32px; align-items: start; }
-	.sh-figs { display: flex; flex-direction: column; gap: 16px; }
-	.fig { display: flex; flex-direction: column; gap: 2px; margin: 0; font-variant-numeric: tabular-nums; }
-	.fig b { font: 700 26px/1.1 var(--font-display); color: var(--text); }
-	.fig span { color: var(--text-muted); font: var(--t-footnote); }
-	.sh-words { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-	.sh-bio { margin: 0; font: var(--t-body); line-height: 1.6; white-space: pre-line; }
-	.kv { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px 24px; }
-	.kv dt { color: var(--text-muted); font: var(--t-footnote); text-transform: uppercase; letter-spacing: .05em; }
-	.kv dd { margin: 2px 0 0; font: var(--t-callout); }
+	/* The About sheet: an Apple TV-style dark window in the artist's colour, a zooming still with the face, glass tiles, the story. */
+	:global(.ui-sheet:has(.sheet[data-testid='artist-about-sheet'])) { --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tint-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--tint-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
+	.sheet { display: flex; flex-direction: column; gap: 24px; }
+	.sh-still { position: relative; margin: 0; aspect-ratio: 21 / 9; border-radius: 18px; overflow: hidden; background: #1c1d21; isolation: isolate; box-shadow: 0 20px 50px rgb(0 0 0 / .45); }
+	.sh-still::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 60%); }
+	.sh-still figcaption { position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 16px; color: #fff; }
+	.sh-face { flex: none; width: 76px; height: 76px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
+	.sh-still figcaption span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+	.sh-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
+	.sh-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
+	.sh-cols { display: flex; flex-direction: column; gap: 24px; }
+	.sh-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+	.fig, .kv div { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 16px 18px; border-radius: 16px; background: rgb(255 255 255 / 7%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%), inset 0 1px 0 rgb(255 255 255 / 10%); backdrop-filter: blur(24px) saturate(160%); font-variant-numeric: tabular-nums; min-width: 0; }
+	.fig b { order: 2; font: 800 26px/1.1 var(--font-display); letter-spacing: -.02em; color: var(--text); }
+	.fig span, .kv dt { order: 1; color: var(--text-muted); font: 600 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
+	.sh-words { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+	.kv { order: -1; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+	.kv dd { order: 2; margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-display); overflow-wrap: anywhere; }
+	.sh-h { margin: 8px 0 0; font: 700 20px/1.2 var(--font-display); letter-spacing: -.01em; }
+	.sh-bio { display: flex; flex-direction: column; gap: 14px; max-width: 72ch; }
+	.sh-bio p { margin: 0; color: rgb(235 235 245 / .82); font: 400 16px/1.6 var(--font-ui); }
+	.sh-bio p.lead { color: #fff; font: 500 19px/1.55 var(--font-ui); }
+	@media (max-width: 767px) {
+		.sh-still { aspect-ratio: 4 / 3; }
+		.sh-face { width: 56px; height: 56px; }
+		.sh-figs, .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.a-bio { font-size: 16px; }
+		.a-foot { left: 18px; right: 18px; bottom: 18px; }
+	}
 
 	/* Loading. */
 	.sk-songs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
