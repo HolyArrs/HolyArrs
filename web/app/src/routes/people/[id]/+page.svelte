@@ -259,6 +259,8 @@
 	let clipOn = $state(false);
 	// One trailer, then the banner settles back on the turning stills.
 	let clipDone = $state(false);
+	// Trailers open on studio cards and logos; the banner joins a few seconds in.
+	const TRAILER_SKIP = 8;
 	// Paused: the stills come back under the buttons.
 	let clipHeld = $state(false);
 	$effect(() => {
@@ -322,7 +324,7 @@
 		</div>
 		{#if view === 2 && !clipDone && sources.length && nowShowing}
 			{#key nowShowing.ids.tmdb}
-				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onpause={(v) => (clipHeld = v)} onended={() => ((clipOn = false), (clipDone = true))} onfail={() => ((clipOn = false), nextClip())} /></div>
+				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable start={TRAILER_SKIP} onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onpause={(v) => (clipHeld = v)} onended={() => ((clipOn = false), (clipDone = true))} onfail={() => ((clipOn = false), nextClip())} /></div>
 			{/key}
 		{/if}
 		<div class="b-shade" aria-hidden="true"></div>
