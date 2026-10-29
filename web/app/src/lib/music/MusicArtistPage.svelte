@@ -76,8 +76,6 @@
 	let confirmAll = $state(false);
 	let askingAll = $state(false);
 	let aboutOpen = $state(false);
-	// Trying three About layouts side by side; the switch at the top of the sheet picks one.
-	let aboutView = $state<'glass' | 'headline' | 'editorial'>('glass');
 	let error = $state('');
 	let errorNet = $state(false);
 	let busy = $state(false);
@@ -1010,67 +1008,30 @@
 
 {#if hero}
 	<Sheet bind:open={aboutOpen} title="About {hero.name}" size="lg">
-		<div class="sheet v-{aboutView}" data-testid="artist-about-sheet">
-			<div class="sh-switch" role="radiogroup" aria-label="Layout">
-				{#each [['glass', 'Glass'], ['headline', 'Headline'], ['editorial', 'Editorial']] as [k, l] (k)}<button type="button" role="radio" aria-checked={aboutView === k} class:on={aboutView === k} onclick={() => (aboutView = k as typeof aboutView)}>{l}</button>{/each}
-			</div>
+		<div class="sheet" data-testid="artist-about-sheet">
 			{#if aboutStills.length || picture}
 				<figure class="sh-still">
 					{#each aboutStills.length ? aboutStills : [picture] as src, i (src)}<img class="ab-frame" class:on={i === still % Math.max(1, aboutStills.length)} {src} alt="" decoding="async" />{/each}
-					{#if aboutView === 'headline' && listen}
-						<div class="hl">
-							{#if listen.rank}<span class="hl-rank">#{listen.rank} in the world</span>{/if}
-							<b class="hl-n">{fullCount(listen.n)}</b>
-							<span class="hl-u">{listen.unit}{#if listen.today} · <em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em> today{/if}</span>
-						</div>
-					{:else}
-						<figcaption>
-							{#if picture && !photoFailed}<img class="sh-face" src={picture} alt="" />{/if}
-							<span><b>{hero.name}</b><small>{[hero.type ? artistKind(hero.type) : '', hero.country ? countryName(hero.country) : '', catalog?.span].filter(Boolean).join(' · ')}</small></span>
-						</figcaption>
-						{#if aboutView === 'glass'}
-							<div class="glass">
-								{#if listen}<p><span>{listen.unit}</span><b>{shortCount(listen.n)}</b></p>{/if}
-								{#if listen?.rank}<p><span>In the world</span><b>#{listen.rank}{#if listen.today} <em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em>{/if}</b></p>{/if}
-								{#if catalog?.albums || smallCount}<p><span>Albums · singles</span><b>{catalog?.albums ?? 0} · {smallCount}</b></p>{/if}
-								{#if data?.total}<p><span>On HolyArrs</span><b>{data.have ?? 0} of {data.total}</b></p>{/if}
+					<div class="hl">
+						{#if listen?.rank}<span class="hl-rank">#{listen.rank} in the world</span>{/if}
+						<div class="hl-row">
+							<div class="hl-who">
+								<span class="hl-name">{#if picture && !photoFailed}<img class="hl-face" src={picture} alt="" />{/if}{hero.name}<small>{[hero.type ? artistKind(hero.type) : '', catalog?.span].filter(Boolean).join(' · ')}</small></span>
+								{#if listen}<b class="hl-n">{fullCount(listen.n)}</b><span class="hl-u">{listen.unit}{#if listen.today} · <em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em> today{/if}</span>{/if}
 							</div>
-						{/if}
-					{/if}
+							<div class="tiles">
+								{#if catalog?.albums}<p><span>{catalog.albums === 1 ? 'Album' : 'Albums'}</span><b>{catalog.albums}</b></p>{/if}
+								{#if smallCount}<p><span>Singles & EPs</span><b>{smallCount}</b></p>{/if}
+								{#if hero.country}<p><span>From</span><b>{countryName(hero.country)}</b></p>{/if}
+							</div>
+						</div>
+					</div>
 				</figure>
 			{/if}
-			{#if aboutView === 'editorial' && listen}
-				<div class="strip">
-					<p><b>{shortCount(listen.n)}</b><span>{listen.unit}</span></p>
-					{#if listen.rank}<p><b>#{listen.rank}</b><span>in the world</span></p>{/if}
-					{#if listen.today}<p><b class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</b><span>today</span></p>{/if}
-				</div>
-			{/if}
-			{#if aboutView === 'glass'}
-				<div class="v-body">
-					{#if hero.bio?.extract}<div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
-					{#if genres}<div class="chips">{#each genres.split(', ') as g (g)}<span>{g}</span>{/each}</div>{/if}
-				</div>
-			{:else if aboutView === 'headline'}
-				<div class="v-body">
-					{#if hero.bio?.extract}<div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
-					{#if genres}<div class="chips">{#each genres.split(', ') as g (g)}<span>{g}</span>{/each}</div>{/if}
-					<p class="meta">{#each [hero.country ? countryName(hero.country) : '', hero.type ? artistKind(hero.type) : '', catalog?.since ? `Since ${catalog.since}${hero.status === 'ended' ? '' : ', still active'}` : '', catalog?.albums || smallCount ? `${catalog?.albums ?? 0} albums · ${smallCount} singles & EPs` : '', data?.total ? `${data.have ?? 0} of ${data.total} on HolyArrs` : ''].filter(Boolean) as m (m)}<span>{m}</span>{/each}</p>
-				</div>
-			{:else}
-				<div class="ed">
-					{#if hero.bio?.extract}<div class="ed-story">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
-					<dl>
-						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
-						{#if catalog?.since}<div><dt>Active</dt><dd>{catalog.since} – {hero.status === 'ended' ? (catalog.span?.split('–')[1] ?? '') : 'now'}</dd></div>{/if}
-						{#if genres}<div><dt>Sound</dt><dd>{genres.split(', ').slice(0, 3).join(', ')}</dd></div>{/if}
-						{#if catalog?.albums}<div><dt>Albums</dt><dd>{catalog.albums}</dd></div>{/if}
-						{#if smallCount}<div><dt>Singles & EPs</dt><dd>{smallCount}</dd></div>{/if}
-						{#if data?.total}<div><dt>On HolyArrs</dt><dd>{data.have ?? 0} of {data.total}</dd></div>{/if}
-						{#if lib?.nextRelease}<div><dt>Next album</dt><dd>{lib.nextRelease}</dd></div>{/if}
-					</dl>
-				</div>
-			{/if}
+			<div class="v-body">
+				{#if hero.bio?.extract}<div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
+				{#if genres}<div class="chips">{#each genres.split(', ') as g (g)}<span>{g}</span>{/each}</div>{/if}
+			</div>
 		</div>
 	</Sheet>
 {/if}
@@ -1224,71 +1185,39 @@
 	@media (prefers-reduced-motion: reduce) { .acard:hover, .song:hover { translate: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 
 	/* The About sheet: an Apple TV-style dark window in the artist's colour, a zooming still with the face, glass tiles, the story. */
-	:global(.ui-sheet:has(.sheet[data-testid='artist-about-sheet'])) { --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tint-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--tint-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
+	:global(.ui-sheet:has(.sheet[data-testid='artist-about-sheet'])) { --w: 1040px; max-height: min(92dvh, 980px); --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tint-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--tint-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
 	.sheet { display: flex; flex-direction: column; gap: 24px; }
 	.sh-still { position: relative; margin: 0; aspect-ratio: 21 / 9; border-radius: 18px; overflow: hidden; background: #1c1d21; isolation: isolate; box-shadow: 0 20px 50px rgb(0 0 0 / .45); }
 	.sh-still::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 60%); }
-	.sh-still figcaption { position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 16px; color: #fff; }
-	.sh-face { flex: none; width: 76px; height: 76px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
-	.sh-still figcaption span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-	.sh-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
-	.sh-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
-	/* Layout switch (trial): one small pill group at the top right. */
-	.sh-switch { align-self: flex-end; display: inline-flex; gap: 2px; padding: 3px; margin: -8px 0 -12px; border-radius: 999px; background: rgb(255 255 255 / 8%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); }
-	.sh-switch button { height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: 600 12px/1 var(--font-ui); cursor: pointer; }
-	.sh-switch button.on { background: rgb(255 255 255 / 16%); color: #fff; }
 	.chg { font-style: normal; }
 	.v-body { display: flex; flex-direction: column; gap: 20px; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 	.chips span { padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / 9%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); font: 600 13px/1 var(--font-ui); text-transform: capitalize; }
-	/* Glass: the figures sit on the photo in one frosted strip; no gaps between them. */
-	.v-glass .sh-still { aspect-ratio: 16 / 9; }
-	.v-glass .sh-still figcaption { bottom: 108px; }
-	.glass { position: absolute; left: 16px; right: 16px; bottom: 16px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border-radius: 18px; background: rgb(255 255 255 / 10%); backdrop-filter: blur(28px) saturate(160%); -webkit-backdrop-filter: blur(28px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%), inset 0 1px 0 rgb(255 255 255 / 20%); }
-	.glass p { margin: 0; display: flex; flex-direction: column; gap: 4px; padding: 14px 18px; min-width: 0; }
-	.glass p + p { border-left: 1px solid rgb(255 255 255 / 12%); }
-	.glass span { font: 600 11px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: rgb(255 255 255 / .62); }
-	.glass b { font: 700 20px/1.15 var(--font-display); letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.glass em { font: 700 13px/1 var(--font-ui); }
-	/* Headline: the listener count is the title of the photo. */
-	.v-headline .sh-still { aspect-ratio: 16 / 9; }
-	.hl { position: absolute; left: 28px; right: 28px; top: 22px; bottom: 24px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; color: #fff; }
-	.hl-rank { position: absolute; top: 0; left: 0; padding: 8px 13px; border-radius: 999px; background: rgb(255 255 255 / 16%); backdrop-filter: blur(20px); font: 700 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
-	.hl-n { font: 800 clamp(40px, 7vw, 76px)/.95 var(--font-display); letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+	/* The photo is the centrepiece: the listener count is its title, the name sits small above it. */
+	.sheet .sh-still { aspect-ratio: 16 / 9; }
+	.hl { position: absolute; inset: 22px 26px 24px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; }
+	.hl-rank { position: absolute; top: 0; left: 0; padding: 8px 13px; border-radius: 999px; background: rgb(255 255 255 / 16%); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font: 700 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.hl-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+	.hl-who { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+	.hl-face { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 6px 18px rgb(0 0 0 / .4); }
+	.hl-name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; font: 700 18px/1.2 var(--font-display); }
+	.hl-name small { font: 600 13px/1.2 var(--font-ui); color: rgb(255 255 255 / .7); }
+	.hl-n { font: 800 clamp(40px, 6.4vw, 76px)/.95 var(--font-display); letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
 	.hl-u { font: 600 15px/1.3 var(--font-ui); color: rgb(255 255 255 / .78); }
-	.meta { margin: 0; padding-top: 18px; border-top: 1px solid rgb(255 255 255 / 10%); display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
-	/* Editorial: a ruled strip of three figures, the story like a magazine, facts as a ledger beside it. */
-	.strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border-block: 1px solid rgb(255 255 255 / 12%); margin-top: -4px; }
-	.strip p { margin: 0; padding: 18px 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-	.strip p + p { padding-left: 22px; border-left: 1px solid rgb(255 255 255 / 12%); }
-	.strip b { font: 800 28px/1.05 var(--font-display); letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
-	.strip span { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
-	.ed { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 40px; }
-	.ed-story { display: flex; flex-direction: column; gap: 14px; }
-	.ed-story p { margin: 0; color: rgb(235 235 245 / .84); font: 400 17px/1.7 var(--font-ui); }
-	.ed-story p.lead::first-letter { float: left; font: 800 66px/.82 var(--font-display); padding: 6px 10px 0 0; color: #fff; }
-	.ed-story p.lead { color: #fff; }
-	.ed dl { margin: 0; display: flex; flex-direction: column; }
-	.ed dl div { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 13px 0; border-bottom: 1px solid rgb(255 255 255 / 10%); }
-	.ed dl div:first-child { padding-top: 0; }
-	.ed dt { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); white-space: nowrap; }
-	.ed dd { margin: 0; text-align: right; font: 600 14px/1.35 var(--font-ui); text-transform: capitalize; }
+	/* Small glass cards, one figure each. */
+	.tiles { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(104px, auto); gap: 10px; }
+	.tiles p { margin: 0; display: flex; flex-direction: column; gap: 5px; padding: 13px 16px; min-width: 0; border-radius: 14px; background: rgb(255 255 255 / 12%); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%), inset 0 1px 0 rgb(255 255 255 / 16%); }
+	.tiles span { font: 600 11px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: rgb(255 255 255 / .62); white-space: nowrap; }
+	.tiles b { font: 700 19px/1.15 var(--font-display); letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.sh-bio { display: flex; flex-direction: column; gap: 14px; max-width: 72ch; }
 	.sh-bio p { margin: 0; color: rgb(235 235 245 / .82); font: 400 16px/1.6 var(--font-ui); }
 	.sh-bio p.lead { color: #fff; font: 500 19px/1.55 var(--font-ui); }
 	@media (max-width: 767px) {
 		.sh-still { aspect-ratio: 4 / 3; }
-		.sh-face { width: 56px; height: 56px; }
-		.v-glass .sh-still, .v-headline .sh-still { aspect-ratio: 4 / 5; }
-		.glass { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-		.glass p:nth-child(odd) { border-left: 0; }
-		.glass p:nth-child(n+3) { border-top: 1px solid rgb(255 255 255 / 12%); }
-		.v-glass .sh-still figcaption { bottom: 176px; }
-		.glass b { font-size: 17px; }
-		.strip b { font-size: 21px; }
-		.strip p + p { padding-left: 12px; }
-		.ed { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-		.hl { left: 18px; right: 18px; }
+		.sheet .sh-still { aspect-ratio: 4 / 5; }
+		.hl { inset: 16px 18px 18px; }
+		.hl-row { flex-direction: column; align-items: stretch; gap: 14px; }
+		.tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: auto; }
 		.a-bio { font-size: 16px; }
 		.a-foot { left: 18px; right: 18px; bottom: 18px; }
 	}
