@@ -205,7 +205,7 @@
 	try {
 		const v = typeof localStorage === 'undefined' ? null : JSON.parse(localStorage.getItem(RAIL_KEY) ?? 'null');
 		if (v && typeof v === 'object') {
-			if (Number.isFinite(v.w)) railW = Math.max(120, Math.min(360, Math.round(v.w)));
+			if (Number.isFinite(v.w)) railW = Math.max(160, Math.min(360, Math.round(v.w)));
 			if (v.open === false) railOpen = false;
 		}
 	} catch {
@@ -236,9 +236,9 @@
 			el.removeEventListener('pointermove', mv);
 			el.removeEventListener('pointerup', up);
 			el.removeEventListener('pointercancel', up);
-			// Under about 120px the rail snaps to the icon strip.
-			if (raw < 120) {
-				railW = Math.max(120, w0);
+			// Under 160px the labels would be cut, so the rail snaps to the icon strip.
+			if (raw < 160) {
+				railW = Math.max(160, w0);
 				railOpen = false;
 			}
 			saveRail();
@@ -251,7 +251,7 @@
 		if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
 			e.preventDefault();
 			e.stopPropagation();
-			railW = Math.max(120, Math.min(360, railW + (e.key === 'ArrowRight' ? 16 : -16)));
+			railW = Math.max(160, Math.min(360, railW + (e.key === 'ArrowRight' ? 16 : -16)));
 			saveRail();
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
@@ -292,6 +292,39 @@
 		savePane();
 	}
 	/** Up and Down move the selected row; the pane follows. Escape clears it. */
+	/** The row that has the focus (or holds it inside), if any. */
+	const focusedRow = () => {
+		const el = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('[data-dl-id]');
+		return el ? everyRow.find((r) => r.id === Number(el.dataset.dlId)) : undefined;
+	};
+	let rowFocus = $state(0);
+	/** One tab stop for the whole list: the row that was focused last, else the open one, else the first. */
+	const tabRow = $derived(list.some((r) => r.id === rowFocus) ? rowFocus : list.some((r) => r.id === openId) ? openId : (list[0]?.id ?? 0));
+	function slashKey(e: KeyboardEvent) {
+		if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || dlScope.off) return;
+		const t = e.target as HTMLElement | null;
+		if (!t || t.closest('input, textarea, select, [contenteditable="true"]')) return;
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		if (matchMedia('(max-width: 767px)').matches) {
+			psOpen = true;
+			tick().then(() => psEl?.focus());
+		} else document.getElementById('q')?.focus();
+	}
+	$effect(() => {
+		window.addEventListener('keydown', slashKey, true);
+		return () => window.removeEventListener('keydown', slashKey, true);
+	});
+	function trNav(e: KeyboardEvent) {
+		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+		const tr = e.currentTarget as HTMLElement;
+		const next = (e.key === 'ArrowDown' ? tr.nextElementSibling : tr.previousElementSibling) as HTMLElement | null;
+		if (!next) return;
+		e.preventDefault();
+		e.stopPropagation();
+		next.focus();
+		next.click();
+	}
 	function listKey(e: KeyboardEvent) {
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Escape' && e.key !== 'Delete') return;
 		const t = e.target as HTMLElement | null;
@@ -304,18 +337,22 @@
 			return;
 		}
 		if (e.key === 'Delete') {
-			if (!openRow || t.closest('button, a')) return;
+			if (t.closest('button, a')) return;
+			const target = focusedRow();
+			if (!target) return;
 			e.preventDefault();
-			if (openRow.can_act) onremove(openRow);
+			if (target.can_act) onremove(target);
 			else toasts.push('This download cannot be removed from here.', 'info');
 			return;
 		}
 		if (!list.length) return;
 		e.preventDefault();
-		const i = list.findIndex((r) => r.id === openId);
+		const from = focusedRow()?.id ?? openId;
+		const i = list.findIndex((r) => r.id === from);
 		const n = i < 0 ? 0 : Math.max(0, Math.min(list.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)));
 		const r = list[n];
 		openId = r.id;
+		rowFocus = r.id;
 		tick().then(() => {
 			const row = grid?.querySelector<HTMLElement>(`[data-dl-id="${r.id}"] > .dline`);
 			row?.focus({ preventScroll: true });
@@ -680,8 +717,10 @@
 	function rowKey(e: KeyboardEvent, id: number) {
 		if (e.target !== e.currentTarget) return;
 		if (e.key === ' ') {
+			// Until pausing exists, Space opens and closes the pane.
 			e.preventDefault();
-			toasts.push('Pausing is not available yet.', 'info');
+			if (openId === id) openId = 0;
+			else toggle(id);
 			return;
 		}
 		if (e.key !== 'Enter') return;
@@ -725,7 +764,7 @@
 	{:else if id === 'status'}
 		{#if hist}
 			{@const s = historyStatus(r, importOf.get(r.id))}
-			<span class="st" class:ph class:bad={s.bad} data-col="status" title={s.text}><span class="tx">{s.text}</span></span>
+			<span class="st" class:ph class:bad={s.bad} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx">{s.text}</span></span>
 		{:else}
 			{@const t = barTone(r)}
 			{@const more = statusDetail(r, importOf.get(r.id))}
@@ -757,14 +796,14 @@
 
 {#snippet bin(r: DownloadRow)}
 	<span class="del" data-col="bin">
-		<button type="button" class="bin" aria-label="Remove {who(r)}" title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} disabled={!r.can_act || busy === r.id} onclick={() => onremove(r)} data-testid="dl-remove"><Icon name="trash" size={16} /></button>
+		<button type="button" class="bin" tabindex={tabRow === r.id ? 0 : -1} aria-label="Remove {who(r)}" title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} disabled={!r.can_act || busy === r.id} onclick={() => onremove(r)} data-testid="dl-remove"><Icon name="trash" size={16} /></button>
 	</span>
 {/snippet}
 
 {#snippet row(r: DownloadRow, hist: boolean)}
 	<li class="drow" class:sel={openId === r.id} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-		<div class="dline" class:hist tabindex="0" aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
+		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => (rowFocus = r.id)} aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
 			{@render lead(r)}
 			{#each cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
 			<span class="spare"></span>
@@ -878,11 +917,11 @@
 		<div class="tblw" data-testid="dl-filetable"><table class="t2">
 			<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Total size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th><th class="c-num c-av">Availability</th></tr></thead>
 			<tbody>
-				{#each rowsT as t (t.key)}
+				{#each rowsT as t, ri (t.key)}
 					{@const pc = t.size ? Math.floor((t.done / t.size) * 100) : 0}
 					{@const pr = t.dir ? '' : prioOf(r, t.key, t.i)}
 					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-					<tr class:sel={sel[`${r.id}:f`] === t.key} class:off={pr === 'Skip'} tabindex="0" onclick={() => (sel[`${r.id}:f`] = t.key)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:f`] = t.key; }} data-testid="dl-filerow">
+					<tr class:sel={sel[`${r.id}:f`] === t.key} class:off={pr === 'Skip'} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:f`] = t.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:f`] = t.key; }} data-testid="dl-filerow">
 						<td class="c-chk">{#if !t.dir}<input type="checkbox" checked={pr !== 'Skip'} aria-label="Download {t.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.checked ? 'Normal' : 'Skip')} />{/if}</td>
 						<td class="c-name"><span class="fnm" style="padding-left: {t.depth * 14}px">{#if t.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${t.key}`]} aria-label="{closed[`${r.id}|${t.key}`] ? 'Expand' : 'Collapse'} {t.name}" aria-expanded={!closed[`${r.id}|${t.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${t.key}`] = !closed[`${r.id}|${t.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={t.key}>{t.name}</span></span></td>
 						<td class="c-num c-size">{bytes(t.size)}</td>
@@ -898,9 +937,9 @@
 		<div class="tblw" data-testid="dl-peertable"><table class="t2">
 			<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
 			<tbody>
-				{#each samplePeers(r) as p (p.ip + p.client)}
+				{#each samplePeers(r) as p, ri (p.ip + p.client)}
 					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-					<tr class:sel={sel[`${r.id}:p`] === p.ip} tabindex="0" onclick={() => (sel[`${r.id}:p`] = p.ip)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:p`] = p.ip; }} data-testid="dl-peerrow">
+					<tr class:sel={sel[`${r.id}:p`] === p.ip} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:p`] = p.ip)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:p`] = p.ip; }} data-testid="dl-peerrow">
 						<td class="c-name"><span class="fn">{p.ip}</span></td>
 						<td class="c-cl"><span class="fn">{p.client}</span></td>
 						<td class="c-prog"><span class="pbar"><i style="width: {Math.floor(p.progress * 100)}%"></i></span><span class="pv">{Math.floor(p.progress * 100)}%</span></td>
@@ -916,9 +955,9 @@
 		<div class="tblw" data-testid="dl-trackertable"><table class="t2">
 			<thead><tr><th class="c-name">Source</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
 			<tbody>
-				{#each sampleTrackers(r) as t (t.source)}
+				{#each sampleTrackers(r) as t, ri (t.source)}
 					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-					<tr class:sel={sel[`${r.id}:t`] === t.source} tabindex="0" onclick={() => (sel[`${r.id}:t`] = t.source)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:t`] = t.source; }} data-testid="dl-trackerrow">
+					<tr class:sel={sel[`${r.id}:t`] === t.source} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:t`] = t.source)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:t`] = t.source; }} data-testid="dl-trackerrow">
 						<td class="c-name"><span class="fn">{t.source}</span></td>
 						<td><span class="st-{t.state}">{t.status}</span></td>
 						<td class="c-num">{t.peers}</td>
@@ -974,6 +1013,7 @@
 
 <div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px">
 <div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
+<h1 class="sr">Downloads</h1>
 <div class="strip hdr" data-testid="dl-strip">
 	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
 		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={16} /></button></span>
@@ -1179,7 +1219,8 @@
 
 	.st { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); }
 	.st .tx { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+	.st .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+	.st.paused .dot { background: var(--text-muted); }
 	.st.queued .dot { background: var(--info); }
 	.st.held .dot { background: var(--wait); }
 	.st.bad .dot { background: var(--fail); }
@@ -1216,7 +1257,7 @@
 	.pf { display: flex; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) / 2 - 4px); width: 8px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
+	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) / 2 - 6px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
 	.grip:focus-visible { outline: none; }
@@ -1263,7 +1304,7 @@
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 	.listbox .tw { overflow: visible; }
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
-	.rail { position: relative; display: grid; align-content: start; gap: 14px; overflow-x: hidden; overflow-y: auto; padding: 10px var(--dl-gutter); border-right: 1px solid var(--line); min-width: 0; }
+	.rail { position: relative; display: grid; align-content: start; gap: 14px; overflow-x: hidden; overflow-y: auto; padding: 10px 0; border-right: 1px solid var(--line); min-width: 0; }
 	.rg { display: grid; gap: 2px; }
 	.rh { margin: 0 8px 2px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.ri { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-footnote); cursor: pointer; text-align: left; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
@@ -1296,7 +1337,7 @@
 	.t2 tbody tr.off { opacity: 0.55; }
 	.t2 tbody tr:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.fnm { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
-	.fold { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--text-muted); cursor: pointer; }
+	.fold { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--text-muted); cursor: pointer; }
 	.fold.sp0 { cursor: default; }
 	.fold :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
 	.fold.shut :global(svg) { transform: rotate(-90deg); }
@@ -1350,7 +1391,7 @@
 	.rz:hover i, .rz:focus-visible i, .rail:hover .rz i { opacity: 0.6; }
 	.rz:hover i, .rz:focus-visible i { opacity: 1; }
 	.rz:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.rhide, .rshow { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
+	.rhide, .rshow { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
 	.rhide { justify-self: end; margin: -4px 0 -8px; }
 	.rhide :global(svg) { transform: rotate(90deg); }
 	.rshow :global(svg) { transform: none; }
@@ -1364,10 +1405,10 @@
 	.tbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tw2 { display: inline-flex; }
 	.split { display: inline-flex; align-items: center; }
-	.split :global(button[aria-haspopup]) { width: 18px; min-width: 0; height: 28px; padding: 0; margin-left: -4px; }
+	.split :global(button[aria-haspopup]) { width: 24px; min-width: 24px; height: 28px; padding: 0; margin-left: -4px; }
 	.ri { overflow: hidden; }
 	.ri .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-	.ri.sub { padding-left: 24px; min-height: 28px; color: var(--text-muted); }
+	.ri.sub { padding-left: calc(var(--dl-gutter) + 28px); height: 28px; min-height: 28px; color: var(--text-muted); }
 	.ri.sub.on { color: var(--accent-text, var(--text)); }
 	.ri b { flex: none; }
 	.ics { display: grid; justify-items: center; gap: 4px; }
@@ -1402,7 +1443,7 @@
 	.pcell { justify-content: center; }
 	.pm { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); }
 	.bar.paused i { background: var(--text-muted); }
-	.gch { flex: none; display: grid; place-items: center; width: 20px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--text-muted); cursor: pointer; }
+	.gch { flex: none; display: grid; place-items: center; width: 24px; height: 28px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--text-muted); cursor: pointer; }
 	.gch.sp0 { cursor: default; }
 	.gch :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
 	.gch.shut :global(svg) { transform: rotate(-90deg); }
@@ -1410,10 +1451,13 @@
 	.gch:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pr { display: flex; align-items: center; min-width: 0; }
 	.pr .ri { flex: 1 1 auto; min-width: 0; }
-	.ri { gap: 6px; min-height: 26px; }
+	.ri { gap: 6px; height: 28px; min-height: 28px; padding: 0 var(--dl-gutter); }
+	.pr .gch { margin-left: calc(var(--dl-gutter) - 8px); }
+	.pr .ri, .pr .gch.sp0 + .ri { padding-left: 4px; }
+	.pr .gch.sp0 + .ri { padding-left: 4px; }
 	.ri :global(svg) { flex: none; color: var(--text-muted); }
 	.ri.on :global(svg) { color: inherit; }
-	.rh { display: flex; align-items: center; gap: 4px; width: 100%; margin: 4px 0 0; padding: 2px 6px; border: 0; border-radius: 5px; background: none; color: var(--text-muted); font: 600 11px/1.3 var(--font-ui); text-align: left; cursor: pointer; }
+	.rh { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 24px; margin: 4px 0 0; padding: 2px var(--dl-gutter); border: 0; border-radius: 5px; background: none; color: var(--text-muted); font: 600 11px/1.3 var(--font-ui); text-align: left; cursor: pointer; }
 	.rh :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
 	.rh[aria-expanded='false'] :global(svg) { transform: rotate(-90deg); }
 	.rh:hover { color: var(--text); background: var(--surface-3); }
@@ -1421,8 +1465,8 @@
 	.ri:active, .ic:active, .tbn:active:not(:disabled), .gch:active:not(.sp0), .pcl:active { transform: scale(0.97); }
 	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
 	.app { --dl-gutter: 10px; --dl-icon: 16px; --dl-icon-sm: 14px; }
-	.app :global(svg.icon) { width: var(--dl-icon); height: var(--dl-icon); }
-	.gch :global(svg.icon), .rh :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
+	.app :global(svg.icon), .app :global(.ui-ibtn svg) { width: var(--dl-icon); height: var(--dl-icon); }
+	.gch :global(svg.icon), .rh :global(svg.icon), .pm :global(svg.icon), .pcl :global(svg.icon), .fold :global(svg.icon), .rhide :global(svg.icon), .rshow :global(svg.icon), .psx :global(svg.icon), .sbi :global(svg.icon), .sbi :global(.ui-ibtn svg) { width: var(--dl-icon-sm); height: var(--dl-icon-sm); }
 	.psearch { display: none; }
 	.ri:active, .gch:active:not(.sp0), .rh:active, .xtab:active, .xbn:active, .psb:active { transform: scale(0.97); }
 	.grip:active::after { background: var(--accent); width: 2px; }
@@ -1504,7 +1548,7 @@
 		.rail.shut::before { content: none; }
 		.rail .ri .lb { display: inline; }
 		.body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px var(--dl-gutter); border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 		.rail::-webkit-scrollbar { display: none; }
 		.rg { display: flex; gap: 4px; flex: none; }
 		.rh { display: none; }
