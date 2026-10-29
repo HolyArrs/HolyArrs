@@ -24,7 +24,6 @@
 	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
-	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import HeroMotion from '#lib/ui/HeroMotion.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
@@ -462,7 +461,7 @@
 	{#if data.often_with?.length}
 		<section class="block">
 			<h2>Often works with</h2>
-			<ul class="circles">{#each data.often_with as p (p.id)}<li><PersonCircle name={p.name} image={p.profile ?? ''} href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)} size={128} /></li>{/each}</ul>
+			<ul class="circles">{#each data.often_with as p (p.id)}<li><a class="mate" href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)}><span class="mate-pic">{#if p.profile}<img src={p.profile} alt="" loading="lazy" decoding="async" />{:else}<span class="initials">{p.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span><span class="mate-name">{p.name}</span></a></li>{/each}</ul>
 		</section>
 	{/if}
 
@@ -628,6 +627,13 @@
 	.s-bio { margin: 0; font: var(--t-body); line-height: 1.6; white-space: pre-line; }
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.circles li { flex: none; }
+	.mate { display: flex; flex-direction: column; gap: 8px; width: 132px; color: var(--text); text-decoration: none; }
+	.mate-pic { display: grid; place-items: center; aspect-ratio: 2 / 3; border-radius: var(--r-card); overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3, var(--surface-2))); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out); }
+	.mate-pic img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+	.mate:hover .mate-pic { transform: translateY(-2px) scale(1.02); }
+	.mate:focus-visible { outline: none; } .mate:focus-visible .mate-pic { box-shadow: var(--focus-ring); }
+	.mate-name { font: 600 14px/1.25 var(--font-ui); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	@media (prefers-reduced-motion: reduce) { .mate:hover .mate-pic { transform: none; } }
 	@media (max-width: 1000px) { .songs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
 	/* Known for, Apple TV style: wide stills with a numbered line, like an episode list. */
 	.kf-list { margin: 0; padding: 0; list-style: none; }
