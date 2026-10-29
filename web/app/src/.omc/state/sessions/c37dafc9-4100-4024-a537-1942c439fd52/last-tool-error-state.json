@@ -1,7 +1,0 @@
-{
-  "tool_name": "PowerShell",
-  "tool_input_preview": "{\"command\":\"cd C:\\\\HolyForge\\\\coderluii\\\\cl\\\\holyarrs\\\\worktrees\\\\apple-direction\\\\web\\\\app; (Get-Content grow-probe.mjs -Raw) -replace \\\"const btn = p.locator\\\\('\\\\[data-testid=\\\\\\\"title-hero\\\\\\\"\\\\] ...",
-  "error": "Exit code 1\nInvoke-Expression : At line:1 char:459\r\n+ ... ta-testid=\\\"title-hero\\\"\\] button.expand, \\[data-testid=\\\"explore-her ...\r\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\nUnexpected token 'title-hero\\\"\\] button.expand, \r\n\\[data-testid=\\\"explore-hero\\\"\\] button.expand'\\).first\\(\\);\"' in expression \r\nor statement.\r\nAt line:1 char:550\r\n+ ... [data-testid=\\\"explore-hero\\\"\\] button.expand'\\).first\\(\\);\", \"const  ...\r\n+                                            ...",
-  "timestamp": "2026-10-20T22:46:54.360Z",
-  "retry_count": 1
-}

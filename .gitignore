@@ -5,7 +5,7 @@ bin/
 *.db-shm
 
 # Local agent state and publication-only private material.
-/.omc/
+.omc/
 /.omx/
 /.claude/
 /.codex/
