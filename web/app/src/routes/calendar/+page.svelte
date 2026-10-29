@@ -723,9 +723,11 @@
 	.sheet-filters > :global(.ui-seg) { width: 100%; }
 
 	/* The slim bar under the app's top bar. */
+	/* The top bar and the date bar are one solid band, so nothing shows through either. */
+	:global(html:has(.slim-wrap.on) .ui-topbar) { background-color: var(--bg); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	.slim-wrap { position: sticky; top: var(--topbar); z-index: 20; height: 0; margin-inline: calc(-1 * var(--gutter)); transition: transform var(--bar-glide); }
 	:global(html.bar-hidden) .slim-wrap { transform: translateY(calc(-1 * var(--topbar))); }
-	.slim { display: flex; align-items: center; gap: 12px; padding: 8px var(--gutter); background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
+	.slim { display: flex; align-items: center; gap: 12px; padding: 8px var(--gutter); background: var(--bg); border-bottom: 1px solid var(--line); box-shadow: 0 10px 24px rgb(0 0 0 / .25);
 		opacity: 0; visibility: hidden; transform: translateY(-8px); transition: opacity var(--dur-fast) var(--ease-in), transform var(--dur-fast) var(--ease-in), visibility 0s linear var(--dur-fast); }
 	.slim-wrap.on .slim { opacity: 1; visibility: visible; transform: none; transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out), visibility 0s; }
 	.slim .slim-view { margin-right: auto; }
