@@ -50,7 +50,7 @@
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
@@ -76,6 +76,8 @@
 	let confirmAll = $state(false);
 	let askingAll = $state(false);
 	let aboutOpen = $state(false);
+	// Trying three About layouts side by side; the switch at the top of the sheet picks one.
+	let aboutView = $state<'glass' | 'headline' | 'editorial'>('glass');
 	let error = $state('');
 	let errorNet = $state(false);
 	let busy = $state(false);
@@ -702,7 +704,7 @@
 {/snippet}
 
 {#snippet photo(size: number)}
-	{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width={size} height={size} fetchpriority="high" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width={size} height={size} onerror={() => (wideFailed = true)} />{:else}<div class="photo initials" aria-hidden="true">{initialsOf(hero?.name ?? '')}</div>{/if}
+	{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width={size} height={size} fetchpriority="high" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width={size} height={size} onerror={() => (wideFailed = true)} />{:else}<div class="photo none" aria-hidden="true" data-testid="artist-photo-placeholder"><ArtPlaceholder name={hero?.name ?? ''} shape="circle" /></div>{/if}
 {/snippet}
 
 {#snippet stageArt()}
@@ -924,7 +926,7 @@
 	<section class="block about">
 		<h2>About</h2>
 		<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {hero?.name}: read more" onclick={() => (aboutOpen = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="artist-about">
-			{#if aboutStills.length}{#each aboutStills as src, i (src)}<img class="ab-frame" class:on={i === still % aboutStills.length} {src} alt="" loading="lazy" decoding="async" />{/each}<span class="a-glow" aria-hidden="true"></span>{:else if img}<img class="ab-frame on" src={img} alt="" loading="lazy" decoding="async" />{:else}<span class="a-none" aria-hidden="true">{initialsOf(hero?.name ?? '')}</span>{/if}
+			{#if aboutStills.length}{#each aboutStills as src, i (src)}<img class="ab-frame" class:on={i === still % aboutStills.length} {src} alt="" loading="lazy" decoding="async" />{/each}<span class="a-glow" aria-hidden="true"></span>{:else if img}<img class="ab-frame on" src={img} alt="" loading="lazy" decoding="async" />{:else}<span class="a-none" aria-hidden="true"><ArtPlaceholder name={hero?.name ?? ''} shape="wide" /></span>{/if}
 			{#if listen?.rank}<span class="disc" aria-hidden="true"><b>#{listen.rank}</b><small>in the world</small></span>{/if}
 			<span class="a-foot">
 				{#if listenWords || catalog?.span || genres}<span class="a-lis">{[listenWords, catalog?.span, genres.split(', ').slice(0, 2).join(', ')].filter(Boolean).join(' · ')}</span>{/if}
@@ -1008,30 +1010,67 @@
 
 {#if hero}
 	<Sheet bind:open={aboutOpen} title="About {hero.name}" size="lg">
-		<div class="sheet" data-testid="artist-about-sheet">
-			{#if aboutStills.length}
+		<div class="sheet v-{aboutView}" data-testid="artist-about-sheet">
+			<div class="sh-switch" role="radiogroup" aria-label="Layout">
+				{#each [['glass', 'Glass'], ['headline', 'Headline'], ['editorial', 'Editorial']] as [k, l] (k)}<button type="button" role="radio" aria-checked={aboutView === k} class:on={aboutView === k} onclick={() => (aboutView = k as typeof aboutView)}>{l}</button>{/each}
+			</div>
+			{#if aboutStills.length || picture}
 				<figure class="sh-still">
-					{#each aboutStills as src, i (src)}<img class="ab-frame" class:on={i === still % aboutStills.length} {src} alt="" decoding="async" />{/each}
-					<figcaption>
-						{#if picture && !photoFailed}<img class="sh-face" src={picture} alt="" />{/if}
-						<span><b>{hero.name}</b><small>{[hero.type ? artistKind(hero.type) : '', hero.country ? countryName(hero.country) : '', catalog?.span].filter(Boolean).join(' · ')}</small></span>
-					</figcaption>
+					{#each aboutStills.length ? aboutStills : [picture] as src, i (src)}<img class="ab-frame" class:on={i === still % Math.max(1, aboutStills.length)} {src} alt="" decoding="async" />{/each}
+					{#if aboutView === 'headline' && listen}
+						<div class="hl">
+							{#if listen.rank}<span class="hl-rank">#{listen.rank} in the world</span>{/if}
+							<b class="hl-n">{fullCount(listen.n)}</b>
+							<span class="hl-u">{listen.unit}{#if listen.today} · <em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em> today{/if}</span>
+						</div>
+					{:else}
+						<figcaption>
+							{#if picture && !photoFailed}<img class="sh-face" src={picture} alt="" />{/if}
+							<span><b>{hero.name}</b><small>{[hero.type ? artistKind(hero.type) : '', hero.country ? countryName(hero.country) : '', catalog?.span].filter(Boolean).join(' · ')}</small></span>
+						</figcaption>
+						{#if aboutView === 'glass'}
+							<div class="glass">
+								{#if listen}<p><span>{listen.unit}</span><b>{shortCount(listen.n)}</b></p>{/if}
+								{#if listen?.rank}<p><span>In the world</span><b>#{listen.rank}{#if listen.today} <em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em>{/if}</b></p>{/if}
+								{#if catalog?.albums || smallCount}<p><span>Albums · singles</span><b>{catalog?.albums ?? 0} · {smallCount}</b></p>{/if}
+								{#if data?.total}<p><span>On HolyArrs</span><b>{data.have ?? 0} of {data.total}</b></p>{/if}
+							</div>
+						{/if}
+					{/if}
 				</figure>
 			{/if}
-			<div class="sh-cols">
-				<!-- Four cards at most, like a person's About: the main figure on top, the rest as a small line under it. -->
-				<div class="sh-figs">
-					{#if listen}
-						<p class="fig"><span>{listen.unit}</span><b>{fullCount(listen.n)}</b>{#if listen.rank || listen.today}<small>{#if listen.rank}#{listen.rank} in the world{/if}{#if listen.rank && listen.today} · {/if}{#if listen.today}<em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em> today{/if}</small>{/if}</p>
-					{/if}
-					{#if catalog?.albums || smallCount}<p class="fig"><span>Releases</span><b>{catalog?.albums ?? 0} {catalog?.albums === 1 ? 'album' : 'albums'}</b><small>{[`${smallCount} singles & EPs`, data?.total ? `${data.have ?? 0} of ${data.total} on HolyArrs` : '', lib?.nextRelease ? `next: ${lib.nextRelease}` : ''].filter(Boolean).join(' · ')}</small></p>{/if}
-					{#if hero.country}<p class="fig"><span>From</span><b>{countryName(hero.country)}</b>{#if hero.type}<small>{artistKind(hero.type)}</small>{/if}</p>{/if}
-					{#if genres || catalog?.since}<p class="fig"><span>{genres ? 'Sound' : 'Active'}</span><b>{genres || `Since ${catalog?.since}`}</b><small>{[genres && catalog?.since ? `Since ${catalog.since}` : '', hero.status ? (hero.status === 'ended' ? 'no longer active' : 'still active') : ''].filter(Boolean).join(' · ')}</small></p>{/if}
+			{#if aboutView === 'editorial' && listen}
+				<div class="strip">
+					<p><b>{shortCount(listen.n)}</b><span>{listen.unit}</span></p>
+					{#if listen.rank}<p><b>#{listen.rank}</b><span>in the world</span></p>{/if}
+					{#if listen.today}<p><b class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</b><span>today</span></p>{/if}
 				</div>
-				<div class="sh-words">
-					{#if hero.bio?.extract}<h3 class="sh-h">Story</h3><div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
+			{/if}
+			{#if aboutView === 'glass'}
+				<div class="v-body">
+					{#if hero.bio?.extract}<div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
+					{#if genres}<div class="chips">{#each genres.split(', ') as g (g)}<span>{g}</span>{/each}</div>{/if}
 				</div>
-			</div>
+			{:else if aboutView === 'headline'}
+				<div class="v-body">
+					{#if hero.bio?.extract}<div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
+					{#if genres}<div class="chips">{#each genres.split(', ') as g (g)}<span>{g}</span>{/each}</div>{/if}
+					<p class="meta">{#each [hero.country ? countryName(hero.country) : '', hero.type ? artistKind(hero.type) : '', catalog?.since ? `Since ${catalog.since}${hero.status === 'ended' ? '' : ', still active'}` : '', catalog?.albums || smallCount ? `${catalog?.albums ?? 0} albums · ${smallCount} singles & EPs` : '', data?.total ? `${data.have ?? 0} of ${data.total} on HolyArrs` : ''].filter(Boolean) as m (m)}<span>{m}</span>{/each}</p>
+				</div>
+			{:else}
+				<div class="ed">
+					{#if hero.bio?.extract}<div class="ed-story">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
+					<dl>
+						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
+						{#if catalog?.since}<div><dt>Active</dt><dd>{catalog.since} – {hero.status === 'ended' ? (catalog.span?.split('–')[1] ?? '') : 'now'}</dd></div>{/if}
+						{#if genres}<div><dt>Sound</dt><dd>{genres.split(', ').slice(0, 3).join(', ')}</dd></div>{/if}
+						{#if catalog?.albums}<div><dt>Albums</dt><dd>{catalog.albums}</dd></div>{/if}
+						{#if smallCount}<div><dt>Singles & EPs</dt><dd>{smallCount}</dd></div>{/if}
+						{#if data?.total}<div><dt>On HolyArrs</dt><dd>{data.have ?? 0} of {data.total}</dd></div>{/if}
+						{#if lib?.nextRelease}<div><dt>Next album</dt><dd>{lib.nextRelease}</dd></div>{/if}
+					</dl>
+				</div>
+			{/if}
 		</div>
 	</Sheet>
 {/if}
@@ -1089,7 +1128,8 @@
 	.c-photo { --photo: 136px; display: block; }
 	.photo { width: var(--photo); height: var(--photo); border-radius: 50%; object-fit: cover; flex: none; background: #1c1d21; box-shadow: 0 12px 32px rgb(0 0 0 / .35), 0 0 0 4px var(--bg); }
 	.photo.crop { object-position: 50% 22%; }
-	.photo.initials { display: grid; place-items: center; color: rgb(255 255 255 / .9); font-size: 48px; font-weight: 700; }
+	/* No photo after every source: the shared placeholder, as on every other picture slot. */
+	.photo.none { position: relative; overflow: hidden; }
 	.c-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-bottom: 8px; }
 	.c-words h1 { font-size: clamp(30px, 3vw, 40px); color: var(--text); }
 	.c-line { margin: 0; color: var(--text-muted); font: 600 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
@@ -1172,7 +1212,7 @@
 	.acard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, color-mix(in srgb, var(--ar-bg, #000) 70%, #000) 0%, color-mix(in srgb, var(--ar-bg, #000) 35%, transparent) 45%, transparent 75%), linear-gradient(to right, rgb(0 0 0 / .35), transparent 60%); }
 	.a-glow { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(60% 50% at var(--mx, 70%) var(--my, 20%), rgb(255 255 255 / .1), transparent 70%); opacity: 0; transition: opacity var(--dur) var(--ease-out); }
 	.acard:hover .a-glow { opacity: 1; }
-	.a-none { position: absolute; inset: 0; z-index: -2; display: grid; place-items: center; font-size: 64px; font-weight: 700; color: rgb(255 255 255 / .5); }
+	.a-none { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
 	.disc { position: absolute; top: 20px; left: 20px; display: grid; place-content: center; justify-items: center; width: 92px; height: 92px; border-radius: 50%; background: var(--accent-fill); color: var(--text-on-red); box-shadow: 0 8px 24px rgb(0 0 0 / .3); text-align: center; }
 	.disc b { font: 800 26px/1 var(--font-display); }
 	.disc small { margin-top: 3px; font: 600 11px/1.1 var(--font-ui); }
@@ -1193,22 +1233,62 @@
 	.sh-still figcaption span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.sh-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
 	.sh-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
-	.sh-cols { display: flex; flex-direction: column; gap: 24px; }
-	.sh-figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-	.fig { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 16px 18px; border-radius: 16px; background: rgb(255 255 255 / 7%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%), inset 0 1px 0 rgb(255 255 255 / 10%); backdrop-filter: blur(24px) saturate(160%); font-variant-numeric: tabular-nums; min-width: 0; }
-	.fig b { font: 700 18px/1.25 var(--font-display); letter-spacing: -.01em; color: var(--text); overflow-wrap: anywhere; }
-	.fig span { color: var(--text-muted); font: 600 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
-	.fig small { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
-	.fig em { font-style: normal; font-weight: 700; }
-	.sh-words { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-	.sh-h { margin: 8px 0 0; font: 700 20px/1.2 var(--font-display); letter-spacing: -.01em; }
+	/* Layout switch (trial): one small pill group at the top right. */
+	.sh-switch { align-self: flex-end; display: inline-flex; gap: 2px; padding: 3px; margin: -8px 0 -12px; border-radius: 999px; background: rgb(255 255 255 / 8%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); }
+	.sh-switch button { height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: 600 12px/1 var(--font-ui); cursor: pointer; }
+	.sh-switch button.on { background: rgb(255 255 255 / 16%); color: #fff; }
+	.chg { font-style: normal; }
+	.v-body { display: flex; flex-direction: column; gap: 20px; }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+	.chips span { padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / 9%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); font: 600 13px/1 var(--font-ui); text-transform: capitalize; }
+	/* Glass: the figures sit on the photo in one frosted strip; no gaps between them. */
+	.v-glass .sh-still { aspect-ratio: 16 / 9; }
+	.v-glass .sh-still figcaption { bottom: 108px; }
+	.glass { position: absolute; left: 16px; right: 16px; bottom: 16px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border-radius: 18px; background: rgb(255 255 255 / 10%); backdrop-filter: blur(28px) saturate(160%); -webkit-backdrop-filter: blur(28px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%), inset 0 1px 0 rgb(255 255 255 / 20%); }
+	.glass p { margin: 0; display: flex; flex-direction: column; gap: 4px; padding: 14px 18px; min-width: 0; }
+	.glass p + p { border-left: 1px solid rgb(255 255 255 / 12%); }
+	.glass span { font: 600 11px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: rgb(255 255 255 / .62); }
+	.glass b { font: 700 20px/1.15 var(--font-display); letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.glass em { font: 700 13px/1 var(--font-ui); }
+	/* Headline: the listener count is the title of the photo. */
+	.v-headline .sh-still { aspect-ratio: 16 / 9; }
+	.hl { position: absolute; left: 28px; right: 28px; top: 22px; bottom: 24px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; color: #fff; }
+	.hl-rank { position: absolute; top: 0; left: 0; padding: 8px 13px; border-radius: 999px; background: rgb(255 255 255 / 16%); backdrop-filter: blur(20px); font: 700 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.hl-n { font: 800 clamp(40px, 7vw, 76px)/.95 var(--font-display); letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+	.hl-u { font: 600 15px/1.3 var(--font-ui); color: rgb(255 255 255 / .78); }
+	.meta { margin: 0; padding-top: 18px; border-top: 1px solid rgb(255 255 255 / 10%); display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	/* Editorial: a ruled strip of three figures, the story like a magazine, facts as a ledger beside it. */
+	.strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border-block: 1px solid rgb(255 255 255 / 12%); margin-top: -4px; }
+	.strip p { margin: 0; padding: 18px 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+	.strip p + p { padding-left: 22px; border-left: 1px solid rgb(255 255 255 / 12%); }
+	.strip b { font: 800 28px/1.05 var(--font-display); letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+	.strip span { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
+	.ed { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 40px; }
+	.ed-story { display: flex; flex-direction: column; gap: 14px; }
+	.ed-story p { margin: 0; color: rgb(235 235 245 / .84); font: 400 17px/1.7 var(--font-ui); }
+	.ed-story p.lead::first-letter { float: left; font: 800 66px/.82 var(--font-display); padding: 6px 10px 0 0; color: #fff; }
+	.ed-story p.lead { color: #fff; }
+	.ed dl { margin: 0; display: flex; flex-direction: column; }
+	.ed dl div { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 13px 0; border-bottom: 1px solid rgb(255 255 255 / 10%); }
+	.ed dl div:first-child { padding-top: 0; }
+	.ed dt { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); white-space: nowrap; }
+	.ed dd { margin: 0; text-align: right; font: 600 14px/1.35 var(--font-ui); text-transform: capitalize; }
 	.sh-bio { display: flex; flex-direction: column; gap: 14px; max-width: 72ch; }
 	.sh-bio p { margin: 0; color: rgb(235 235 245 / .82); font: 400 16px/1.6 var(--font-ui); }
 	.sh-bio p.lead { color: #fff; font: 500 19px/1.55 var(--font-ui); }
 	@media (max-width: 767px) {
 		.sh-still { aspect-ratio: 4 / 3; }
 		.sh-face { width: 56px; height: 56px; }
-		.sh-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.v-glass .sh-still, .v-headline .sh-still { aspect-ratio: 4 / 5; }
+		.glass { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.glass p:nth-child(odd) { border-left: 0; }
+		.glass p:nth-child(n+3) { border-top: 1px solid rgb(255 255 255 / 12%); }
+		.v-glass .sh-still figcaption { bottom: 176px; }
+		.glass b { font-size: 17px; }
+		.strip b { font-size: 21px; }
+		.strip p + p { padding-left: 12px; }
+		.ed { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+		.hl { left: 18px; right: 18px; }
 		.a-bio { font-size: 16px; }
 		.a-foot { left: 18px; right: 18px; bottom: 18px; }
 	}
@@ -1253,8 +1333,6 @@
 		.disc b { font-size: 21px; }
 		.disc small { font-size: 10px; }
 		.a-foot { left: 16px; right: 16px; bottom: 16px; }
-		.sh-cols { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-		.sh-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 		.sk-songs { grid-template-columns: minmax(0, 1fr); }
 	}
 </style>
