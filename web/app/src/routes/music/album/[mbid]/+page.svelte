@@ -307,7 +307,7 @@
 						{:else}
 							<ActionButton primary icon="user" label="Open artist" href={artistHref(hero.artist.mbid)} />
 						{/if}
-						{#if titleId}<ActionButton icon="bell" label={followLabel(following)} title={followHint('artist', following, false)} pressed={following} busy={followBusy} onclick={flipFollow} data-testid="follow" />{:else}<ActionButton icon="copy" label="Copy album link" caption="Copy link" onclick={() => copy(albumLink, 'album link')} />{/if}
+						{#if titleId}<ActionButton icon="bell" label={followLabel(following)} title={followHint('artist', following, false)} pressed={following} busy={followBusy} onclick={flipFollow} data-testid="follow" />{/if}
 					</div>
 					{#if status && data}<span class="pill {status.state}" data-testid="album-state">{status.label}{#if data.part_id && data.tracks.length} · {haveCount} of {data.tracks.length} tracks{/if}</span>{/if}
 				</div>
