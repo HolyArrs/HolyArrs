@@ -19,6 +19,8 @@
 	import SpeedGraph from './SpeedGraph.svelte';
 	import Popover from '../ui/Popover.svelte';
 	import { tip } from './tip.ts';
+	import { dlScope } from '../search-field.svelte.ts';
+	import { toasts } from '../toasts.svelte.ts';
 	import { demoDetails, fileExtras, isProblem, sampleFiles, sampleHeader, sampleLog, samplePeers, sampleRatio, sampleServers, sampleStory, sampleSwarm, sampleTrackers, fileTree } from './sampleDetails.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
@@ -27,7 +29,7 @@
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { manyWords, rowName, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
-	import { ALL, counts, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { ALL, counts, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
@@ -68,9 +70,8 @@
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => (r.kind ?? 'movie') === kindOn) : everyRow);
 	// The search narrows every tab too, so the tab counts follow it.
-	let q = $state('');
-	let findEl = $state<HTMLInputElement>();
-	let findOpen = $state(false);
+	// The search is the top bar's field, scoped to this page (search-field.svelte.ts).
+	const q = $derived(dlScope.term);
 	const searched = $derived(q.trim() ? typed.filter((r) => matches(r, q)) : typed);
 	// The left rail: a status, a source (Usenet or Torrent); the Type filter is its Categories.
 	let srcOn = $state<'' | 'usenet' | 'torrent'>('');
@@ -78,23 +79,6 @@
 	const rows = $derived(bySource);
 	const kindCount = (k: string) => everyRow.filter((r) => (r.kind ?? 'movie') === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
-	function slashKey(e: KeyboardEvent) {
-		if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
-		const t = e.target as HTMLElement;
-		if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
-		e.preventDefault();
-		e.stopImmediatePropagation(); // on this page "/" is the Downloads search, not the app search
-		findOpen = true;
-		tick().then(() => findEl?.focus());
-	}
-	$effect(() => {
-		window.addEventListener('keydown', slashKey, true);
-		return () => window.removeEventListener('keydown', slashKey, true);
-	});
-	function clearFind() {
-		q = '';
-		findEl?.focus();
-	}
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	let menuId = $state(0);
@@ -178,6 +162,7 @@
 	try {
 		const v = typeof localStorage === 'undefined' ? null : Number(localStorage.getItem(PANE_KEY));
 		if (v && Number.isFinite(v)) paneH = Math.max(120, Math.min(900, Math.round(v)));
+		else if (typeof innerHeight !== 'undefined') paneH = Math.max(150, Math.round(innerHeight * 0.3));
 	} catch {
 		/* private window: the default height */
 	}
@@ -189,6 +174,27 @@
 		}
 	}
 	let colEl = $state<HTMLElement>();
+	// The rail's parent groups fold; which ones are open is kept in this browser.
+	const GROUPS_KEY = 'holyarrs.downloads.groups';
+	let groups = $state<Record<string, boolean>>({});
+	try {
+		const g = typeof localStorage === 'undefined' ? null : JSON.parse(localStorage.getItem(GROUPS_KEY) ?? 'null');
+		if (g && typeof g === 'object') for (const [k, v] of Object.entries(g)) if (typeof v === 'boolean') groups[k] = v;
+	} catch {
+		/* private window or unreadable: the defaults */
+	}
+	/** Open: what was saved, else only the group that holds the picked filter (Library and Sources start open). */
+	const groupOpen = (k: string, dflt: boolean) => groups[k] ?? dflt;
+	const libOpen = $derived(groupOpen('library', true));
+	const srcOpen = $derived(groupOpen('sources', true));
+	function flipGroup(k: string, now: boolean) {
+		groups[k] = !now;
+		try {
+			localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+		} catch {
+			/* private window: it lasts for this visit */
+		}
+	}
 	// The left rail: its width (or hidden) is kept in this browser.
 	const RAIL_KEY = 'holyarrs.downloads.rail';
 	let railW = $state(196);
@@ -284,7 +290,7 @@
 	}
 	/** Up and Down move the selected row; the pane follows. Escape clears it. */
 	function listKey(e: KeyboardEvent) {
-		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Escape') return;
+		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Escape' && e.key !== 'Delete') return;
 		const t = e.target as HTMLElement | null;
 		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], [role="dialog"], .mn')) return;
 		if (e.key === 'Escape') {
@@ -292,6 +298,13 @@
 				openId = 0;
 				e.preventDefault();
 			}
+			return;
+		}
+		if (e.key === 'Delete') {
+			if (!openRow || t.closest('button, a')) return;
+			e.preventDefault();
+			if (openRow.can_act) onremove(openRow);
+			else toasts.push('This download cannot be removed from here.', 'info');
 			return;
 		}
 		if (!list.length) return;
@@ -356,7 +369,7 @@
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 52, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
 	const DROP: ColId[] = ['quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
@@ -372,21 +385,22 @@
 		return cur;
 	});
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
-	const PHONE: ColId[] = ['title', 'progress', 'status', 'time'];
+	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'time'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
-	const FIXED = 8 + 32 + 32;
+	const FIXED = 8 + 32;
 	let room = $state(0);
 	let titleMin = $state(MIN_W);
 	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
 	const tW = $derived.by(() => {
 		if (!vis.includes('title')) return 0;
-		if (layout.titleSet || room <= 0) return layout.widths.title;
-		const rest = vis.reduce((n, id) => (id === 'title' ? n : n + wMin(id)), 48 + FIXED + (vis.length + 3) * gap);
+		if (room <= 0) return layout.widths.title;
+		// A Title nobody has sized takes what is left (with a little slack); a sized one only gives way when the room is short.
+		const rest = vis.reduce((n, id) => (id === 'title' ? n : n + wMin(id)), (layout.titleSet ? 0 : 48) + FIXED + (vis.length + 3) * gap);
 		return Math.max(TITLE_MIN, Math.min(layout.widths.title, Math.floor(room - rest)));
 	});
 	const wOf = (id: ColId) => (id === 'title' ? tW : wMin(id));
 	// Until a person sets the Title width, it flexes and takes whatever room is left.
-	const tpl = $derived(`8px 32px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
+	const tpl = $derived(`8px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
 	/** inner is the full width of the columns; the table box is at least this wide. */
 	const inner = $derived(vis.reduce((n, id) => n + wOf(id), FIXED) + (vis.length + 3) * gap);
 	const textW = (n: Node) => {
@@ -400,7 +414,7 @@
 		const w = l ? textW(l) : 0;
 		return w > 0 ? Math.ceil(w) + 14 : MIN_W;
 	}
-	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), Math.min(MAX_W, v)));
+	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), MINW[id] ?? 0, Math.min(MAX_W, v)));
 	/** fitOf is the widest cell of a column (the header label too) plus padding. */
 	function fitOf(id: ColId): number {
 		if (!grid) return COL[id].width;
@@ -460,6 +474,12 @@
 		if (e.button !== 0) return;
 		e.preventDefault();
 		e.stopPropagation();
+		// Until now the Title took the spare room; from the first drag it keeps the width it has, so only the dragged column changes.
+		if (!layout.titleSet) {
+			const th = grid?.querySelector<HTMLElement>('.chead [data-col="title"]');
+			if (th) layout.widths.title = Math.round(th.getBoundingClientRect().width);
+			layout.titleSet = true;
+		}
 		const x0 = e.clientX;
 		const w0 = wOf(id);
 		const el = e.currentTarget as HTMLElement;
@@ -661,11 +681,17 @@
 		toggle(id);
 	}
 	function rowKey(e: KeyboardEvent, id: number) {
-		if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+		if (e.target !== e.currentTarget) return;
+		if (e.key === ' ') {
+			e.preventDefault();
+			toasts.push('Pausing is not available yet.', 'info');
+			return;
+		}
+		if (e.key !== 'Enter') return;
 		e.preventDefault();
 		toggle(id);
-	}
-	const dash = '—';
+		tick().then(() => document.querySelector<HTMLElement>('.dpane [role="tab"][aria-selected="true"]')?.focus());
+	}	const dash = '—';
 	/** The Downloader's own configured name (as in the details); its kind goes in the tooltip. */
 	const dlName = (r: DownloadRow) => r.downloader || (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || dash;
 	const dlKind = (r: DownloadRow) => (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || '';
@@ -674,27 +700,30 @@
 
 {#snippet lead(r: DownloadRow)}
 	<span class="tg" aria-hidden="true"></span>
-	<span class="post" class:square={r.kind === 'artist'}><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
-{/snippet}
-
-{#snippet proto(r: DownloadRow)}
-	{@const p = protocolOf(r)}
-	{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} title="{p === 'torrent' ? 'Torrent' : 'Usenet'} · {dlName(r)}{dlKind(r) && dlKind(r) !== dlName(r) ? ` (${dlKind(r)})` : ''}" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download">{p === 'torrent' ? 'T' : 'U'}</span>{/if}
 {/snippet}
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
-	{#if id === 'title'}
+	{#if id === 'poster'}
+		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
+	{:else if id === 'kind'}
+		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{KIND_WORD[r.kind ?? 'movie']}</span></span>
+	{:else if id === 'proto'}
+		{@const p = protocolOf(r)}
+		<span class="pcell" class:ph data-col="proto">{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} title="{p === 'torrent' ? 'Torrent' : 'Usenet'} · {dlName(r)}" role="img" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download"><Icon name={p === 'torrent' ? 'upload' : 'archive'} size={14} /></span>{/if}</span>
+	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}>{@render proto(r)}{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
-			<span class="rel" title={r.name}><span class="kt" data-testid="dl-kind">{KIND_WORD[r.kind ?? 'movie']}</span>{sub2(r)}</span>
+			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
+			<span class="rel" title={r.name}>{sub2(r)}</span>
 		</span>
 	{:else if id === 'progress'}
-		{#if hist}
+		{#if hist && stageOf(r) !== 'failed'}
 			{@const s = historyStatus(r, importOf.get(r.id))}
 			<span class="hic" class:ph class:bad={s.bad} data-col="progress"><span class="ic" aria-hidden="true">{s.bad ? '!' : '✓'}</span></span>
 		{:else}
-			{@const pct = percent(r.progress)}
-			<span class="bar {barTone(r)}" class:ph data-col="progress" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>
+			{@const raw = percent(r.progress)}
+			{@const pct = stageOf(r) === 'importing' ? raw : Math.min(99, raw)}
+			{@const tone = stageOf(r) === 'paused' ? 'paused' : barTone(r)}
+			<span class="bar {tone}" class:ph data-col="progress" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>
 		{/if}
 	{:else if id === 'status'}
 		{#if hist}
@@ -750,7 +779,7 @@
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={headMenu}>
-		<span></span><span></span>
+		<span></span>
 		{#each vis as id (id)}
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -956,11 +985,6 @@
 		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={18} /></button></span>
 		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={18} /></button></span>
 	</div>
-	<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
-		<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
-		<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
-		{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
-	</div>
 </div>
 <div class="body" style="--rail: {railShown ? railW : 52}px">
 <nav class="rail" class:shut={!railShown} aria-label="Downloads filters" data-testid="dl-rail">
@@ -969,25 +993,36 @@
 	<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
 		{#each tally as c (c.key)}
 			{@const t = tabs.find((x) => x.key === c.key)}
-			<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b>{c.count}</b></button>
-			{#if t}
-				{#each subCounts(rows, t) as x (x.key)}
+			{@const subsOf = t ? subCounts(rows, t) : []}
+			{@const open = groupOpen(c.key, c.key === on)}
+			<div class="pr">
+				{#if subsOf.length}
+					<button type="button" class="gch" class:shut={!open} aria-expanded={open} aria-label="{open ? 'Fold' : 'Unfold'} {c.label}" onclick={() => flipGroup(c.key, open)} data-testid="rail-fold" data-key={c.key}><Icon name="chevronDown" size={12} stroke={2.4} /></button>
+				{:else}<span class="gch sp0" aria-hidden="true"></span>{/if}
+				<button type="button" class="ri" class:on={on === c.key && !subOn} class:zero={c.count === 0} aria-pressed={on === c.key && !subOn} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><Icon name={TAB_ICON[c.key]} size={15} /><span class="lb">{c.label}</span><b>{c.count}</b></button>
+			</div>
+			{#if open}
+				{#each subsOf as x (x.key)}
 					<button type="button" class="ri sub" class:on={on === c.key && subOn === x.key} class:zero={x.count === 0} aria-pressed={on === c.key && subOn === x.key} data-testid="rail-sub" data-key="{c.key}.{x.key}" data-count={x.count} onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }}><span class="lb">{x.label}</span><b>{x.count}</b></button>
 				{/each}
 			{/if}
 		{/each}
 	</div>
-	<div class="rg" role="group" aria-label="Categories" data-testid="dl-type-filter">
-		<p class="rh">Categories</p>
-		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-			<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="lb">{t.label}</span><b>{kindCount(t.key)}</b></button>
-		{/each}
+	<div class="rg" role="group" aria-label="Library" data-testid="dl-type-filter">
+		<button type="button" class="rh" aria-expanded={libOpen} onclick={() => flipGroup('library', libOpen)} data-testid="rail-fold" data-key="library"><Icon name="chevronDown" size={11} stroke={2.4} />Library</button>
+		{#if libOpen}
+			{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
+				<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><Icon name={KIND_ICON[t.key]} size={15} /><span class="lb">{t.label}</span><b>{kindCount(t.key)}</b></button>
+			{/each}
+		{/if}
 	</div>
 	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
-		<p class="rh">Sources</p>
-		{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-			<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="lb">{t.label}</span><b>{srcCount(t.key)}</b></button>
-		{/each}
+		<button type="button" class="rh" aria-expanded={srcOpen} onclick={() => flipGroup('sources', srcOpen)} data-testid="rail-fold" data-key="sources"><Icon name="chevronDown" size={11} stroke={2.4} />Sources</button>
+		{#if srcOpen}
+			{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
+				<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><Icon name={SRC_ICON[t.key]} size={15} /><span class="lb">{t.label}</span><b>{srcCount(t.key)}</b></button>
+			{/each}
+		{/if}
 	</div>
 	{:else}
 	<button type="button" class="rshow" aria-label="Show filters" use:tip={{ text: 'Show filters', side: 'right' }} onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
@@ -1031,18 +1066,13 @@
 </div>
 <div class="sbar" data-testid="dl-statusbar"><div class="sbi">
 	<span class="health" data-testid="sb-health"><i class="dot" class:ok={demoDetails} aria-hidden="true"></i><b>{demoDetails ? 'Connected' : 'Not reported'}</b></span>
-	<span class="s-free" data-testid="sb-free"><span class="k">Free space</span><b>{demoDetails ? bytes(sampleHeader.free) : '–'}</b></span>
+	<span class="s-free" data-testid="sb-free"><span class="k">Free</span><b>{demoDetails ? bytes(sampleHeader.free) : '–'}</b></span>
 	<span class="sd" data-testid="sb-down"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b></span>
 	<span class="sd up" data-testid="sb-up"><b data-testid="dl-up">↑ {bytes(sum.up)}/s</b></span>
-	<span class="gr s-gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} width={96} height={20} /></span>
-	<span class="s-tl"><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
-	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
+	<span class="gr s-gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} width={84} height={14} /></span>
+	<span class="s-tl"><span class="k">Left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
+	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems}<span class="nw"> need{problems === 1 ? 's' : ''} you</span></button>{/if}
 	<span class="grow"></span>
-	{#if demoDetails}
-		<span class="s-ts k" data-testid="sb-session">↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)} this session</span>
-		<span class="s-tw k" data-testid="sb-totals">Today {bytes(sampleHeader.today)} · Month {bytes(sampleHeader.month)} · All time {bytes(sampleHeader.all)}</span>
-		<span class="s-ts note" data-testid="sb-sample" title="The Downloader is not connected yet; these are made-up values.">Sample data</span>
-	{/if}
 	<span class="smore" data-testid="sb-more"><Popover label="More status" icon="more" placement="above" align="end" width={280}>
 		{#snippet children()}
 			<ul class="mo">
@@ -1050,11 +1080,9 @@
 				<li class="m-gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} width={120} height={22} /></li>
 				<li class="m-tl"><span class="k">Time left</span> {sum.eta ? duration(sum.eta) : '–'}</li>
 				{#if demoDetails}
-					<li class="m-ts"><span class="k">This session</span> ↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)}</li>
-					<li class="m-tw"><span class="k">Today</span> {bytes(sampleHeader.today)}</li>
-					<li class="m-tw"><span class="k">This month</span> {bytes(sampleHeader.month)}</li>
-					<li class="m-tw"><span class="k">All time</span> {bytes(sampleHeader.all)}</li>
-					<li class="m-ts note">Sample data</li>
+					<li data-testid="sb-session"><span class="k">This session</span> ↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)}</li>
+					<li data-testid="sb-totals"><span class="k">Today</span> {bytes(sampleHeader.today)} · <span class="k">Month</span> {bytes(sampleHeader.month)} · <span class="k">All time</span> {bytes(sampleHeader.all)}</li>
+					<li class="note" data-testid="sb-sample" title="The Downloader is not connected yet; these are made-up values.">Sample data</li>
 				{/if}
 			</ul>
 		{/snippet}
@@ -1117,14 +1145,14 @@
 	.tin { min-width: var(--c-in); }
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 	.drow { display: block; border-bottom: 1px solid var(--line); }
-	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: 48px; }
+	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: 44px; }
 	.drow > .dline { cursor: pointer; }
 	.drow > .dline:hover { background: var(--surface-2); }
 	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 
 	.bin:focus-visible, .lk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-	.post { width: 28px; height: 42px; justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
+	.post { width: 26px; height: 39px; justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
 	.post.square { height: 28px; --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 3px; }
 
@@ -1242,7 +1270,7 @@
 	.ri.zero:not(.on) { opacity: 0.72; }
 	.ri:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tbg { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-	.sbar { flex: none; border-top: 1px solid var(--line); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.sbar { flex: none; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 	.gen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 10px; }
@@ -1273,7 +1301,7 @@
 	.pv { display: inline-block; min-width: 34px; margin-left: 6px; text-align: right; }
 	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.hdr { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 16px; margin: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); background: none; }
+	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px 10px; border-bottom: 1px solid var(--line); background: none; }
 	.col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
 	.drow.sel > .dline { position: relative; z-index: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface-1)); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
@@ -1286,7 +1314,7 @@
 	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
-	.ph { display: flex; align-items: center; gap: 4px 16px; flex-wrap: wrap; padding: 6px 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+	.ph { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; padding: 3px 10px; border-bottom: 1px solid var(--line); min-width: 0; }
 	.dpane.shut .ph { border-bottom: 0; }
 	.pt { flex: 0 1 300px; min-width: 0; margin: 0; }
 	.pt b, .pt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1296,9 +1324,22 @@
 	.dpane.shut .pcl :global(svg) { transform: rotate(180deg); }
 	.pcl:hover { background: var(--surface-3); color: var(--text); }
 	.pcl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pb { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: start; gap: 16px; flex: 1 1 auto; min-height: 0; padding: 12px; overflow: auto; }
+	.pb { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 8px 10px; overflow: auto; }
+	.pb .big { width: 56px; height: 84px; }
+	.pb .big.square { height: 56px; }
+	.pb .kv { gap: 2px 12px; font: var(--t-caption); }
+	.pb .xtab { min-height: 24px; padding: 0 9px; font: var(--t-caption); font-weight: 500; }
+	.pb .t2 { font: var(--t-caption); }
+	.pb .t2 th { padding: 3px 8px; }
+	.pb .t2 td { padding: 2px 8px; }
+	.pb .tblw { margin-top: 6px; }
+	.pb .gen { gap: 6px 20px; margin-top: 6px; }
+	.pb .dep { margin-top: 8px; padding: 6px 10px; }
+	.pb .dep h4 { margin-bottom: 4px; }
+	.pb .lg { font: var(--t-caption); }
+	.pb .xbt { margin-top: 6px; }
+	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	.hdr .find input { width: 100%; min-width: 0; flex: 1 1 auto; }
 	.rz { position: absolute; top: 0; right: -4px; bottom: 0; z-index: 6; width: 9px; cursor: col-resize; touch-action: none; }
 	.rz.fixed { cursor: pointer; }
 	.rz i { position: absolute; top: 50%; left: 3px; width: 3px; height: 38px; margin-top: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
@@ -1313,15 +1354,13 @@
 	.rhide:hover, .rshow:hover { background: var(--surface-3); color: var(--text); }
 	.rhide:focus-visible, .rshow:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.rail.shut { padding: 10px 0; overflow: hidden; }
-	.hdr .find { justify-self: center; width: min(320px, 100%); min-width: 0; }
-	.hdr .find input { width: 100%; min-width: 0; flex: 1 1 auto; }
-	.tbn { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.tbn { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.tbn:hover:not(:disabled) { background: var(--surface-3); }
 	.tbn:disabled { opacity: 0.45; cursor: not-allowed; }
 	.tbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tw2 { display: inline-flex; }
 	.split { display: inline-flex; align-items: center; }
-	.split :global(button[aria-haspopup]) { width: 20px; min-width: 0; height: 32px; padding: 0; margin-left: -4px; }
+	.split :global(button[aria-haspopup]) { width: 18px; min-width: 0; height: 28px; padding: 0; margin-left: -4px; }
 	.ri { overflow: hidden; }
 	.ri .lb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; }
 	.ri.sub { padding-left: 24px; min-height: 28px; color: var(--text-muted); }
@@ -1335,19 +1374,48 @@
 	.ic:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ic .bd { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 10px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.sbar { container: sb / inline-size; }
-	.sbi { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 6px 14px; min-width: 0; }
+	.sbi { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px 14px; padding: 3px 12px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.3; }
 	.sbi > span { display: inline-flex; align-items: center; gap: 6px; }
 	.sbi .grow { flex: 1 1 0; }
 	.sbi .health { order: -1; }
 	.sbi .need { margin-left: 0; }
-	.sbi > .smore { display: none; }
+	.sbi > .smore { display: inline-flex; }
 	.mo { list-style: none; margin: 0; padding: 4px; display: grid; gap: 6px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.m-free, .m-gr, .m-tl, .m-ts, .m-tw { display: none; }
-	@container sb (max-width: 1500px) { .sbi > .s-tw { display: none; } .sbi > .smore { display: inline-flex; } .m-tw { display: block; } }
-	@container sb (max-width: 1250px) { .sbi > .s-ts { display: none; } .m-ts { display: block; } }
+	.m-free, .m-gr, .m-tl { display: none; }
 	@container sb (max-width: 900px) { .sbi > .s-free { display: none; } .m-free { display: block; } }
 	@container sb (max-width: 720px) { .sbi > .s-gr { display: none; } .m-gr { display: block; } }
 	@container sb (max-width: 560px) { .sbi > .s-tl { display: none; } .m-tl { display: block; } }
+	@container sb (max-width: 560px) { .sbi > .s-free { display: none; } .m-free { display: block; } }
+	@container sb (max-width: 520px) { .sbi > .s-gr { display: none; } .m-gr { display: block; } }
+	@container sb (max-width: 460px) { .sbi > .s-tl { display: none; } .m-tl { display: block; } .need .nw { display: none; } }
+	.sbi .smore :global(button) { width: 22px; height: 22px; min-width: 0; padding: 0; }
+	.sbi .smore :global(svg) { width: 14px; height: 14px; }
+	.sbi .need { min-height: 20px; padding: 0 6px; font: inherit; font-weight: 600; }
+	.sbi .k { font: inherit; }
+	.mo li.note { color: var(--text-muted); }
+	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }
+	.kcell .kt { width: 100%; margin: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pcell { justify-content: center; }
+	.pm { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); }
+	.bar.paused i { background: var(--text-muted); }
+	.gch { flex: none; display: grid; place-items: center; width: 20px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--text-muted); cursor: pointer; }
+	.gch.sp0 { cursor: default; }
+	.gch :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
+	.gch.shut :global(svg) { transform: rotate(-90deg); }
+	.gch:hover:not(.sp0) { background: var(--surface-3); color: var(--text); }
+	.gch:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pr { display: flex; align-items: center; min-width: 0; }
+	.pr .ri { flex: 1 1 auto; min-width: 0; }
+	.ri { gap: 6px; min-height: 26px; }
+	.ri :global(svg) { flex: none; color: var(--text-muted); }
+	.ri.on :global(svg) { color: inherit; }
+	.rh { display: flex; align-items: center; gap: 4px; width: 100%; margin: 4px 0 0; padding: 2px 6px; border: 0; border-radius: 5px; background: none; color: var(--text-muted); font: 600 11px/1.3 var(--font-ui); text-align: left; cursor: pointer; }
+	.rh :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
+	.rh[aria-expanded='false'] :global(svg) { transform: rotate(-90deg); }
+	.rh:hover { color: var(--text); background: var(--surface-3); }
+	.rh:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.ri:active, .ic:active, .tbn:active:not(:disabled), .gch:active:not(.sp0), .pcl:active { transform: scale(0.97); }
+	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -1372,15 +1440,6 @@
 
 	.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 10px; }
 	.tr { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-	.find { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px 0 10px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text-muted); }
-	.find:focus-within { box-shadow: var(--focus-ring); }
-	.fi { display: grid; place-items: center; width: 18px; height: 24px; padding: 0; border: 0; background: none; color: inherit; cursor: default; }
-	.find input { width: 170px; border: 0; background: none; color: var(--text); font: var(--t-footnote); outline: none; }
-	.find input::-webkit-search-cancel-button { display: none; }
-	.fx { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: var(--surface-3); color: var(--text-muted); font-size: 10px; cursor: pointer; }
-	.fx:hover { color: var(--text); }
-	.fx:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.kb { display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; color: var(--text-muted); font: var(--t-caption); }
 	.tot { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
@@ -1391,6 +1450,7 @@
 		.dline { grid-template-columns: 8px 28px minmax(0, 1fr) 88px 52px 32px; grid-template-areas: 'tg post nm nm nm del' '. post bar st time del'; row-gap: 4px; height: auto; min-height: 62px; padding: 6px 0; }
 		.dline > [data-col] { display: none; }
 		.dline > .ph { display: none; }
+		.dline > [data-col='poster'] { display: block; grid-area: post; align-self: start; }
 		.dline > [data-col='title'] { display: flex; grid-area: nm; }
 		.dline > [data-col='progress'] { display: flex; grid-area: bar; }
 		.dline > [data-col='status'] { display: flex; grid-area: st; }
@@ -1406,11 +1466,6 @@
 		.fl li { flex-direction: column; gap: 0; }
 		.fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
-		.find:not(.open) { padding: 0 7px; }
-		.find:not(.open) input, .find:not(.open) .kb { display: none; }
-		.find .fi { cursor: pointer; }
-		.find.open input { width: 120px; }
-		.kb { display: none; }
 		.strip { gap: 4px 14px; }
 		.picker { display: none; }
 	}

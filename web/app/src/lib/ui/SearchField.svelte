@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import Icon from '../Icon.svelte';
 	import { appPath, to } from '../paths.ts';
-	import { registerField, rememberReturn, searchField, searchHooks } from '../search-field.svelte.ts';
+	import { dlScope, registerField, rememberReturn, searchField, searchHooks } from '../search-field.svelte.ts';
 	import { api } from '../api.ts';
 	import { createSuggest, live, step, suggestHref, SUGGEST_MIN, type SuggestAnswer } from '../live-search.ts';
 	import GlassDropdown from './GlassDropdown.svelte';
@@ -17,6 +17,16 @@
 	let el = $state<HTMLInputElement>();
 	$effect(() => (el ? registerField(el) : undefined));
 	const onSearch = () => appPath(page.url.pathname).startsWith('/search');
+	// On Downloads the field searches that list (a chip says so); removing the chip searches all of HolyArrs again.
+	const scoped = $derived(dlScope.on && !dlScope.off && appPath(page.url.pathname).startsWith('/downloads'));
+	const shown = $derived(scoped ? dlScope.term : searchField.term);
+	function leaveScope() {
+		searchField.term = dlScope.term;
+		dlScope.term = '';
+		dlScope.off = true;
+		el?.focus();
+		if (searchField.term.trim()) typed();
+	}
 
 	function open(q: string) {
 		if (onSearch()) return;
@@ -58,17 +68,20 @@
 		else open(w);
 	}
 	function typed() {
+		if (scoped) return;
 		open(searchField.term);
 		waiting = [...searchField.term.trim()].length >= SUGGEST_MIN && live.on !== false && !answer;
 		suggest.type(searchField.term);
 	}
 	function submitted(e: SubmitEvent) {
 		e.preventDefault();
+		if (scoped) return;
 		close();
 		if (onSearch()) searchHooks.submit?.();
 		else open(searchField.term);
 	}
 	function focused() {
+		if (scoped) return;
 		if (!searchField.term.trim()) open('');
 	}
 	function keyed(e: KeyboardEvent) {
@@ -85,6 +98,12 @@
 			return;
 		}
 		if (e.key !== 'Escape') return;
+		if (scoped) {
+			e.preventDefault();
+			if (dlScope.term) dlScope.term = '';
+			else el?.blur();
+			return;
+		}
 		if (answer) {
 			e.preventDefault();
 			close();
@@ -117,9 +136,10 @@
 	<span class="glow" aria-hidden="true"></span>
 	<span class="ic" aria-hidden="true"><Icon name="search" size={18} /></span>
 	<label class="sr-only" for={id}>Search for a title, an artist or a person</label>
-	<input {id} bind:this={el} type="search" bind:value={searchField.term} oninput={typed} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder="Shows, movies and people" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
-	{#if searchField.term && !one}
-		<button type="button" class="clear" aria-label="Clear the search" onclick={() => { searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
+	<input {id} class:scoped bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) dlScope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder={scoped ? 'Search downloads' : 'Shows, movies and people'} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
+	{#if scoped}<span class="scope" data-testid="dl-scope-chip">Downloads<button type="button" aria-label="Search all of HolyArrs instead" title="Search all of HolyArrs" onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
+	{#if shown && !one}
+		<button type="button" class="clear" aria-label="Clear the search" onclick={() => { if (scoped) dlScope.term = ''; else searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
 	{:else if !here}
 		<kbd class="hint" aria-hidden="true">{searchKey}</kbd>
 	{/if}
@@ -132,6 +152,11 @@
 	.glow { position: absolute; inset: -6px; border-radius: 999px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent), 0 0 28px color-mix(in srgb, var(--accent) 22%, transparent); opacity: 0; pointer-events: none; }
 	.ic { position: absolute; z-index: 1; left: 15px; display: grid; color: var(--text-muted); pointer-events: none; }
 	input { flex: 1; min-width: 0; height: 44px; padding: 0 64px 0 42px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: var(--text); font: var(--t-body); }
+	.scope { position: absolute; z-index: 1; left: 40px; display: inline-flex; align-items: center; gap: 2px; height: 24px; padding: 0 3px 0 9px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--surface-1)); color: var(--accent-text, var(--text)); font: 600 12px/1 var(--font-ui); }
+	.scope button { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
+	.scope button:hover { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+	.scope button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	input.scoped { padding-left: 128px; }
 	input::placeholder { color: var(--text-muted); }
 	input::-webkit-search-cancel-button { display: none; }
 	input:focus-visible { outline: none; box-shadow: var(--focus-ring); }

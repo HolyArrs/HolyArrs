@@ -3,8 +3,8 @@ import { COLUMNS, IDS, defaults, fitTitle, dump, load, move, moveVisible, normal
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
-	it('defaults show seven columns in order', () => {
-		expect(visible(defaults())).toEqual(['title', 'progress', 'status', 'speed', 'time', 'size', 'quality']);
+	it('defaults show ten columns in order', () => {
+		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'speed', 'time', 'size', 'quality']);
 		expect(defaults().widths).toMatchObject({ title: 310, progress: 66, status: 130, size: 130, time: 80, speed: 90, quality: 90 });
 	});
 	it('never shows a column the Downloaders do not send', () => {
@@ -25,7 +25,7 @@ describe('columns', () => {
 		l.hidden = toggle(l, 'quality');
 		l.widths.title = 400;
 		const back = load(dump(l), null);
-		expect(visible(back)).toEqual(['title', 'status', 'progress', 'speed', 'time', 'size']);
+		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'speed', 'time', 'size']);
 		expect(back.widths.title).toBe(400);
 		back.hidden = toggle(back, 'quality');
 		expect(visible(back)).toContain('quality');
@@ -42,8 +42,8 @@ describe('columns', () => {
 	it('normalize drops unknown ids and adds new ones in their default spot', () => {
 		const n = normalize({ order: ['size', 'nope', 'title'] as never, hidden: [], widths: { title: 99999 } as never });
 		expect(n.order.length).toBe(IDS.length);
-		expect(n.order[0]).toBe('size');
-		expect(n.order.indexOf('progress')).toBe(n.order.indexOf('title') + 1);
+		expect(n.order.indexOf('size')).toBeLessThan(n.order.indexOf('title'));
+		expect(n.order.indexOf('proto')).toBe(n.order.indexOf('title') + 1);
 		expect(n.widths.title).toBe(3000);
 	});
 	it('move and moveVisible', () => {
@@ -66,7 +66,7 @@ describe('columns', () => {
 describe('fitTitle', () => {
 	it('gives way while unset, never under the minimum, and not once set', () => {
 		const l = defaults();
-		const others = 66 + 130 + 90 + 80 + 130 + 90;
+		const others = 52 + 84 + 64 + 66 + 130 + 90 + 80 + 130 + 90;
 		expect(fitTitle(l, 2000, 0, 44)).toBe(310);
 		expect(fitTitle(l, others + 200, 0, 44)).toBe(200);
 		expect(fitTitle(l, others + 10, 0, 44)).toBe(44);

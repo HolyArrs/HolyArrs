@@ -3,6 +3,7 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
+	import { dlScope } from '#lib/search-field.svelte.ts';
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -204,6 +205,17 @@
 			busy = 0;
 		}
 	}
+	// The top bar's search field filters this page while it is open.
+	$effect(() => {
+		dlScope.on = true;
+		dlScope.off = false;
+		dlScope.term = '';
+		return () => {
+			dlScope.on = false;
+			dlScope.off = false;
+			dlScope.term = '';
+		};
+	});
 </script>
 
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>

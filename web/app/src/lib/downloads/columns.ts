@@ -3,7 +3,10 @@
 // (versioned, so an older saved shape still loads). Pure, so it can be tested.
 
 export type ColId =
+	| 'poster'
+	| 'kind'
 	| 'title'
+	| 'proto'
 	| 'progress'
 	| 'status'
 	| 'speed'
@@ -35,7 +38,10 @@ export interface ColDef {
 }
 
 export const COLUMNS: ColDef[] = [
+	{ id: 'poster', label: 'Poster', on: true, width: 52 },
+	{ id: 'kind', label: 'Type', on: true, width: 84 },
 	{ id: 'title', label: 'Title', on: true, width: 310 },
+	{ id: 'proto', label: 'Source', on: true, width: 64 },
 	{ id: 'progress', label: 'Progress', on: true, width: 66 },
 	{ id: 'status', label: 'Status', on: true, width: 130 },
 	{ id: 'speed', label: 'Speed', on: true, width: 90, num: true },
@@ -49,7 +55,7 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true, missing: true },
 	{ id: 'requested', label: 'Requested by', on: false, width: 120, missing: true },
 	{ id: 'downloader', label: 'Downloader', on: false, width: 120 },
-	{ id: 'source', label: 'Source', on: false, width: 120, missing: true },
+	{ id: 'source', label: 'Indexer', on: false, width: 120, missing: true },
 	{ id: 'category', label: 'Category', on: false, width: 100, missing: true }
 ];
 
