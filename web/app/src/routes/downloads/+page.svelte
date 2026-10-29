@@ -10,7 +10,6 @@
 	import { decisionName, manyWords, removeBody, removeStart, rowName, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -209,16 +208,16 @@
 
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>
 
-<PageHeader title="Downloads" />
-
 <PageLoader loading={!loaded} label="Loading Downloads">
 {#if error && allRows.length === 0}
-	<LoadError hasData={false} message="Downloads could not be loaded." onretry={load} />
+	<div class="pad"><LoadError hasData={false} message="Downloads could not be loaded." onretry={load} /></div>
 {:else if allRows.length === 0}
+	<div class="pad">
 	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
+	</div>
 {:else}
-	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
+	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
 	<DlSections rows={allRows} {importOf} titles={titleById} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
 {/if}
 </PageLoader>
@@ -250,6 +249,7 @@
 </Sheet>
 
 <style>
+	.pad { padding: var(--s-6) var(--gutter); }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.raw { color: var(--text-muted); font: var(--t-footnote); }

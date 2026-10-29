@@ -462,7 +462,7 @@
 			/>
 		{/snippet}
 		{#snippet tabbar()}<TabBar items={tabs} />{/snippet}
-		<main id="main" tabindex="-1">
+		<main id="main" tabindex="-1" class:bleed={path === '/downloads' || path.startsWith('/downloads/')}>
 			{#if offHere}
 				<section class="part-off" role="status" data-testid="part-off"><h1>This part is off</h1><p>{offHere} {offHere.includes(' and ') ? 'are' : 'is'} turned off, so this page is hidden. Nothing is deleted: everything comes back when it is turned on again.</p><p class="muted">The owner or an admin can turn it on again.</p></section>
 			{:else}{@render children()}{/if}
@@ -505,6 +505,8 @@
 	main { min-width: 0; padding: var(--s-6) var(--gutter) var(--s-16); outline: none; view-transition-name: page; }
 	/* Focus lands on main after a page change (for screen readers); it never draws a ring around the page. */
 	main:focus, main:focus-visible { outline: none; box-shadow: none; }
+	/* The Downloads app fills everything under the top bar, edge to edge. */
+	main.bleed { padding: 0; }
 	.part-off { max-width: 40rem; margin: var(--s-8) auto; padding: var(--s-6); border: 1px solid var(--line); border-radius: var(--r-card); }
 	.part-off p { margin-top: var(--s-3); }
 	.who { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; color: var(--text-muted); }
@@ -521,5 +523,6 @@
 	.more-theme :global(.ui-seg) { width: 100%; }
 	@media (max-width: 767px) {
 		main { padding: var(--s-4) var(--gutter) calc(var(--tabbar) + var(--s-8) + env(safe-area-inset-bottom)); }
+		main.bleed { padding: 0; }
 	}
 </style>
