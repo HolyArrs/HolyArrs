@@ -154,10 +154,30 @@
 		library: base.length
 	});
 	function pickFollows(f: Follows) {
+		if (f !== follows) keepDay();
 		follows = f;
 		saveFollows(f);
 	}
 	const clearFilters = () => pickFollows('library');
+	// A filter change keeps the date in view: the day at the top is noted, and after the list
+	// changes that day (or the next one with something on it, else the last before it) goes back
+	// under the bars. The page never jumps to today; the Today button is for that.
+	function keepDay() {
+		const line = narrow ? 112 : 136;
+		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
+		const was = rows.find((x) => x.getBoundingClientRect().bottom > line + 8)?.dataset.day;
+		if (!was || window.scrollY < 4) return;
+		const main = document.querySelector<HTMLElement>('.cal-main');
+		if (main) main.style.minHeight = `${main.offsetHeight}px`;
+		void tick().then(() => {
+			const now = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
+			const row = now.find((x) => (x.dataset.day ?? '') >= was) ?? now.at(-1);
+			if (main) main.style.minHeight = '';
+			if (!row) return;
+			window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - line, behavior: 'instant' });
+			rebaseBar();
+		});
+	}
 	// Following nothing yet: the calendar opens on the Whole Library with one line saying how to follow.
 	const followNothing = $derived(loaded && myFollows === 0 && follows === 'library');
 	// The slim bar shows once the controls above have scrolled away, and stays.
@@ -599,7 +619,7 @@
 		label="Movies, shows or music"
 		testid={primary ? 'cal-titles' : undefined}
 		value={which}
-		onchange={(v) => (which = v as TitlesShown)}
+		onchange={(v) => (keepDay(), (which = v as TitlesShown))}
 		options={[
 			{ value: 'all', label: 'All' },
 			{ value: 'movies', label: 'Movies' },
