@@ -30,6 +30,7 @@
 	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '#lib/autoplay.svelte.ts';
 	import { HERO_DELAY } from '#lib/trailer.ts';
+	import { fromHandoff, openTheater } from '#lib/theater.svelte.ts';
 
 	const id = page.params.id ?? '';
 	const SORT_KEY = 'holyarrs.people.sort';
@@ -317,7 +318,7 @@
 		</div>
 		{#if view === 2 && sources.length && nowShowing}
 			{#key nowShowing.ids.tmdb}
-				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), nextClip())} onfail={() => ((clipOn = false), nextClip())} /></div>
+				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable corner onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), nextClip())} onfail={() => ((clipOn = false), nextClip())} /></div>
 			{/key}
 		{/if}
 		<div class="b-shade" aria-hidden="true"></div>
@@ -565,7 +566,7 @@
 	.ap { --gap: 40px; display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
 	.ap.tinted { --text: #fff; --bg: var(--ap-bg); --text-muted: var(--ap-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
 	.ap h1 { font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-wrap: balance; overflow-wrap: anywhere; }
-	.banner { --ink: var(--ap-bg, #07080a); position: relative; isolation: isolate; overflow: hidden; height: clamp(300px, 48vh, 560px); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--ink); color: #fff; -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); }
+	.banner { --ink: var(--ap-bg, #07080a); position: relative; isolation: isolate; overflow: hidden; height: clamp(280px, 44vh, 520px); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--ink); color: #fff; -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); }
 	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
 	.stage .art { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.stage .art.in { opacity: .85; }
