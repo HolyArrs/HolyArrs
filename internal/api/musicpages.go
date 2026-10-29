@@ -1484,6 +1484,12 @@ func (a *API) artistSimilar(w http.ResponseWriter, r *http.Request) {
 	}
 	list := a.similarArtists(metadata.MemberLookup(r.Context()), mbid, n)
 	a.warmMusicArt(ArtistPageView{Similar: list})
+	if len(list) == 0 && a.similarPending(mbid) {
+		// The server is still getting the list: the page asks again.
+		w.Header().Set("Cache-Control", "no-store")
+		a.writeMusicJSON(w, r, map[string]any{"similar": list, "incomplete": true})
+		return
+	}
 	w.Header().Set("Cache-Control", "private, max-age=300")
 	a.writeMusicJSON(w, r, map[string]any{"similar": list})
 }

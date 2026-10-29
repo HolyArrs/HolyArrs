@@ -196,7 +196,15 @@
 				askFollow(data.title_id);
 			}, stop.signal, gapWaits(d));
 		});
-		void api.get<{ similar: PageArtist[] }>(`/music/artists/${want}?part=similar`).then((r) => want === mbid && (similar = withCover(r.similar))).catch(() => want === mbid && (similar = []));
+		// The server may still be getting the similar artists (incomplete): the row keeps its placeholder and is asked again, then hides if none came.
+		const simPath = `/music/artists/${want}?part=similar`;
+		void api.get<{ similar: PageArtist[]; incomplete?: boolean }>(simPath).then((r) => {
+			if (want !== mbid) return;
+			void reaskWhileIncomplete(r, () => api.get<{ similar: PageArtist[]; incomplete?: boolean }>(simPath), (v, pending) => {
+				if (want !== mbid || stop.signal.aborted) return;
+				similar = pending && !v.similar.length ? null : withCover(v.similar);
+			}, stop.signal);
+		}).catch(() => want === mbid && (similar = []));
 		void api.get<ArtistMoreData>(`/music/artists/${want}?part=more`).then((r) => want === mbid && (more = { ...r, appears_on: withCover(r.appears_on) })).catch(() => want === mbid && (more = { essential: [], appears_on: [] }));
 		// A cold artist's art may still be on its way (the server fetches it
 		// right then): an answer with no wide photo is asked again over about

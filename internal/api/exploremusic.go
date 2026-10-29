@@ -1,9 +1,10 @@
 package api
 
 import (
-	"net/url"
 	"context"
+	"errors"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -103,8 +104,25 @@ type musicGenreEntry struct {
 type musicSimilarEntry struct {
 	list []metadata.SimilarArtist
 	ok   bool
-	at   time.Time
-	done chan struct{}
+	// pending: the metadata server was still getting the list (202); it
+	// is asked again after similarPendingAgain, not kept as a miss.
+	pending bool
+	at      time.Time
+	done    chan struct{}
+}
+
+// similarPendingAgain is how long a "still getting it" answer is kept
+// before the server is asked again.
+var similarPendingAgain = 5 * time.Second
+
+// similarPending reports a similar list the server is still getting (or
+// one being asked right now).
+func (a *API) similarPending(id string) bool {
+	c := &a.musicx
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	e := c.similar[id]
+	return e != nil && (e.done != nil || e.pending)
 }
 
 // musicExplore keeps artists' genres and similar lists between requests.
@@ -225,7 +243,7 @@ func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadat
 	entries := map[string]*musicSimilarEntry{}
 	for _, id := range seeds {
 		e := c.similar[id]
-		fresh := e != nil && (e.done == nil) && ((e.ok && time.Since(e.at) < musicSimilarTTL) || (!e.ok && time.Since(e.at) < time.Hour))
+		fresh := e != nil && (e.done == nil) && ((e.ok && time.Since(e.at) < musicSimilarTTL) || (!e.ok && !e.pending && time.Since(e.at) < time.Hour) || (e.pending && time.Since(e.at) < similarPendingAgain))
 		if e == nil || (!fresh && e.done == nil) {
 			if len(c.similar) >= musicCacheMax {
 				c.similar = map[string]*musicSimilarEntry{}
@@ -269,6 +287,7 @@ func (a *API) fetchSimilar(id string, e *musicSimilarEntry) {
 	c := &a.musicx
 	c.mu.Lock()
 	e.list, e.ok, e.at = list, err == nil, time.Now()
+	e.pending = errors.Is(err, metadata.ErrServicePending)
 	done := e.done
 	e.done = nil
 	c.mu.Unlock()
