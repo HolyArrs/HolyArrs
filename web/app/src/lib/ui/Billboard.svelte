@@ -206,7 +206,7 @@
 		{/if}
 		{#if sources.length}
 			{#key resumeRun}
-			<TrailerPlayer {sources} {title} sharp pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), (finished = true), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
+			<TrailerPlayer {sources} {title} sharp pausable top start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), (finished = true), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
 			{/key}
 		{/if}
 		<div class="shade" class:playing></div>
@@ -288,7 +288,7 @@
 	.actions :global(.ui-actmenu.round .ui-pop > .trigger) { width: var(--hero-btn); }
 	.actions :global(.ui-ibtn) { width: var(--hero-btn); height: var(--hero-btn); }
 	.ui-billboard :global(.ui-trailer + .shade) { z-index: 1; }
-	.ui-billboard :global(.ctl) { z-index: 4; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
+	.ui-billboard :global(.ctl) { z-index: 4; }
 	@media (max-width: 767px) {
 		.ui-billboard { --hero-r: 16px; height: auto; min-height: min(560px, 120vw); }
 		.content { width: 100%; padding: 64px var(--gutter) 24px; }

@@ -23,10 +23,13 @@
 		onexpand,
 		start = 0,
 		sharp = false,
-		corner = false
+		corner = false,
+		top = false
 	}: {
 		/** Full screen from a small expand button in the corner (hover cards); a click on the picture is left to the card's link. */
 		corner?: boolean;
+		/** Big heroes: the buttons sit top right with their tips below, the same spot on every page. */
+		top?: boolean;
 		sources: TrailerSource[];
 		title: string;
 		/** Loop (hover cards); the hero ends and shows its pictures again. */
@@ -569,21 +572,21 @@
 	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" bind:this={expandBtn} onclick={expand}></button>
 {/if}
 {#if controls}
-	<div class="ctl" class:on={shown} data-testid="trailer-sound" role="group" aria-label="Trailer controls" bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
+	<div class="ctl" class:on={shown} class:top data-testid="trailer-sound" role="group" aria-label="Trailer controls" bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
 		{#if shown && pausable}
-			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide="above" data-act="pause" />
+			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="pause" />
 		{/if}
 		{#if shown && hasAudio()}
-			<IconButton icon={heard ? 'sound' : 'soundOff'} label={heard ? 'Turn sound off' : 'Turn sound on'} variant="glass" size="md" tipSide="above" data-act="sound" />
+			<IconButton icon={heard ? 'sound' : 'soundOff'} label={heard ? 'Turn sound off' : 'Turn sound on'} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="sound" />
 		{:else if done && sources.length > 0}
-			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" data-act="replay" />
+			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="replay" />
 		{/if}
 		{#if onexpand && shown && !corner}
 			<!-- Heroes: a click on the picture opens full screen too; this is the visible way in. -->
-			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide="above" data-act="expand" data-testid="trailer-expand" />
+			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="expand" data-testid="trailer-expand" />
 		{/if}
 		{#if onexpand && shown && corner}
-			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide="above" class="expand corner" bind:node={expandBtn} data-testid="trailer-expand" />
+			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide={top ? 'below' : 'above'} class="expand corner" bind:node={expandBtn} data-testid="trailer-expand" />
 		{/if}
 	</div>
 {/if}
@@ -607,5 +610,7 @@
 	.expand { position: absolute; inset: 0; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; }
 	.expand:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--on-art); }
 	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; gap: 8px; }
+	.ctl.top { top: 16px; bottom: auto; right: var(--gutter, 24px); }
+	@media (max-width: 767px) { .ctl.top { top: 12px; right: 16px; } }
 	@media (prefers-reduced-motion: reduce) { .ui-trailer { transition: none; } }
 </style>

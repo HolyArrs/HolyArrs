@@ -708,9 +708,9 @@
 		<div class="dim" aria-hidden="true"></div>
 		{#if heroVideo && videoIn}
 			<div class="vctl" data-testid="artist-hero-video-controls">
-				<button type="button" onclick={togglePause} aria-label={videoPaused ? 'Play video' : 'Pause video'}><Icon name={videoPaused ? 'play' : 'pause'} size={16} /></button>
-				<button type="button" onclick={toggleMute} aria-label={videoMuted ? 'Turn sound on' : 'Turn sound off'}><Icon name={videoMuted ? 'soundOff' : 'sound'} size={16} /></button>
-				{#if !heroFull}<button type="button" onclick={fullScreen} aria-label="Full screen"><Icon name="expand" size={16} /></button>{/if}
+				<IconButton icon={videoPaused ? 'play' : 'pause'} label={videoPaused ? 'Play the video' : 'Pause the video'} variant="glass" size="md" tipSide="below" onclick={togglePause} />
+				<IconButton icon={videoMuted ? 'soundOff' : 'sound'} label={videoMuted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="below" onclick={toggleMute} />
+				{#if !heroFull}<IconButton icon="expand" label="Play full screen" variant="glass" size="md" tipSide="below" onclick={fullScreen} />{/if}
 			</div>
 			{#if heroFull}<button type="button" class="vexit" onclick={fullScreen} aria-label="Exit full screen" data-testid="artist-hero-video-exit" {@attach (n) => n.focus()}><Icon name="x" size={20} /></button>{/if}
 		{/if}
@@ -1049,10 +1049,11 @@
 	.hero.paused .art.in.under { opacity: .82; }
 	.hero.paused .art.soft.in.under { opacity: .6; }
 	@media (prefers-reduced-motion: reduce) { .clip, .art { transition: none; } }
-	.vctl { position: absolute; top: 16px; right: var(--gutter); z-index: 2; display: flex; gap: 8px; }
-	.vctl button, .vexit { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
-	.vctl button:hover, .vexit:hover { background: rgb(255 255 255 / 26%); }
-	.vctl button:focus-visible, .vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+	.vctl { position: absolute; top: 16px; right: var(--gutter); z-index: 4; display: flex; gap: 8px; }
+	@media (max-width: 767px) { .vctl { top: 12px; right: 16px; } }
+	.vexit { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.vexit:hover { background: rgb(255 255 255 / 26%); }
+	.vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	/* Full screen: the video alone, fit whole on black, with exit, pause and sound. */
 	.hero.full { height: auto; background: #000; -webkit-mask-image: none; mask-image: none; }
 	.hero.full .stage { scale: 1; }
