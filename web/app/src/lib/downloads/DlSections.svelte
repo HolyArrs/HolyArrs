@@ -819,7 +819,7 @@
 		{@const t = tabs.find((x) => x.key === c.key)}
 		{@const so = t ? subCounts(rows, t) : []}
 		{@const open = on === c.key && so.length > 0}
-		<div class="pw" class:on={on === c.key} class:open data-key={c.key}>
+		<div class="pw" class:on={on === c.key} class:open class:leaf={on === c.key && !subOn} data-key={c.key}>
 			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
 			{#if so.length}
 				<div class="subwrap" inert={!open}>
@@ -1325,6 +1325,8 @@
 	.stab b { color: inherit; opacity: 0.8; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.stab:hover { color: var(--hl-fg); }
 	.stab.on { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); }
+	/* No sub-option picked: the parent itself carries the red inner highlight. */
+	.pw.leaf .tab { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); box-shadow: inset 0 0 0 2px var(--hl-bg); }
 	/* The picked pill is raised on the track like a segmented control; its picked sub-option is tinted red. */
 	.tabs { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); --hl-line: var(--line-strong); --hl-sub: color-mix(in srgb, var(--text) 72%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
 	/* Dark: the red words are lightened so they read on the grey pill (4.5:1 or more). */
