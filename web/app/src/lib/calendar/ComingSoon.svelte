@@ -6,6 +6,8 @@
 	import CalTile from './CalTile.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import CalEmpty from './CalEmpty.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { onDestroy } from 'svelte';
 
 	// Cards: one day per row. A big date stamp on the left (the
 	// day name over a large number, once per day) and a large backdrop card
@@ -24,6 +26,28 @@
 
 	const months = $derived(monthGroups(entries));
 	const at = (day: string) => new Date(day + 'T00:00:00');
+
+	// Only the days near the screen get their real cards; the rest hold plain boxes of exactly the
+	// same size (same grid, picture ratio and caption height), so the page is just as tall and
+	// scrolling never jumps, but a year of days costs a few dozen cards instead of hundreds.
+	// A day keeps its cards once drawn.
+	const drawn = new SvelteSet<string>();
+	const io = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(
+		(es) => {
+			for (const e of es) if (e.isIntersecting) {
+				const d = (e.target as HTMLElement).dataset.day;
+				if (d) drawn.add(d);
+				io?.unobserve(e.target);
+			}
+		},
+		{ rootMargin: '1200px 0px' }
+	);
+	function near(node: HTMLElement) {
+		if (!io) return void (node.dataset.day && drawn.add(node.dataset.day));
+		io.observe(node);
+		return { destroy: () => io.unobserve(node) };
+	}
+	onDestroy(() => io?.disconnect());
 </script>
 
 
@@ -37,7 +61,7 @@
 				<ol class="rows">
 					{#each m.days as d (d.day)}
 						{@const gs = groupDates(d.items)}
-						<li class="row" data-day={d.day} class:today={d.day === today} class:past={d.day < today}>
+						<li class="row" use:near data-day={d.day} class:today={d.day === today} class:past={d.day < today}>
 							<div class="stamp">
 								<span class="dow">{at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
 								<span class="big">{at(d.day).getDate()}</span>
@@ -48,7 +72,11 @@
 							<div class="day">
 								<h4 class="count">{thingCount(d.items.length)}</h4>
 								<div class="grid" data-testid="cal-day-grid">
-									{#each gs as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} />{/each}
+									{#if drawn.has(d.day)}
+										{#each gs as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} />{/each}
+									{:else}
+										{#each gs as g (g.key)}<div class="ph" aria-hidden="true"><span class="pa"></span><span class="pc"></span></div>{/each}
+									{/if}
 								</div>
 							</div>
 												</li>
@@ -70,6 +98,10 @@
 	.day { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 	.count { font: var(--t-title3); letter-spacing: var(--t-title3-track); color: var(--text-muted); line-height: 24px; }
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 20px; }
+	/* The stand-in for a card not drawn yet: CalTile's exact box (picture, its 8px foot, the 6px gap, two caption lines). */
+	.ph { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+	.pa { display: block; aspect-ratio: 16 / 9; margin-bottom: 8px; border-radius: var(--r-card); background: var(--surface-1); }
+	.pc { display: block; height: 38px; }
 	.stamp { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 	.dow { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 	.big { margin-top: 4px; font: 700 64px/0.95 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
