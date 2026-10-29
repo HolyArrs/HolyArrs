@@ -70,9 +70,24 @@ export function showBar() {
 /** installScrollBar starts the one passive listener; the returned function stops it. */
 export function installScrollBar(): () => void {
 	let queued = false;
+	// Which way the person last asked to go (wheel, swipe, keys). While it is up, the page moving
+	// down by itself (days added above, pictures loading) never hides the bar.
+	let goingUp = false;
+	let touchY = 0;
+	const onWheel = (e: WheelEvent) => e.deltaY && (goingUp = e.deltaY < 0);
+	const onTouchStart = (e: TouchEvent) => (touchY = e.touches[0]?.clientY ?? 0);
+	const onTouchMove = (e: TouchEvent) => {
+		const y = e.touches[0]?.clientY ?? 0;
+		if (Math.abs(y - touchY) > 4) (goingUp = y > touchY), (touchY = y);
+	};
+	const onKey = (e: KeyboardEvent) => {
+		if (['ArrowUp', 'PageUp', 'Home'].includes(e.key)) goingUp = true;
+		else if (['ArrowDown', 'PageDown', 'End', ' '].includes(e.key)) goingUp = false;
+	};
 	const run = () => {
 		queued = false;
-		const next = nextBar(st, window.scrollY);
+		let next = nextBar(st, window.scrollY);
+		if (goingUp && next.hidden && (!st.hidden || window.scrollY < st.anchor)) next = { hidden: false, anchor: window.scrollY };
 		st = next.hidden && blocked() ? { hidden: false, anchor: window.scrollY } : next;
 		apply(st.hidden);
 		checkHero();
@@ -82,10 +97,18 @@ export function installScrollBar(): () => void {
 	};
 	const onFocus = (e: FocusEvent) => e.target instanceof HTMLElement && e.target.closest('.ui-topbar') && showBar();
 	window.addEventListener('scroll', onScroll, { passive: true });
+	window.addEventListener('wheel', onWheel, { passive: true });
+	window.addEventListener('touchstart', onTouchStart, { passive: true });
+	window.addEventListener('touchmove', onTouchMove, { passive: true });
+	window.addEventListener('keydown', onKey);
 	document.addEventListener('focusin', onFocus);
 	checkHero();
 	return () => {
 		window.removeEventListener('scroll', onScroll);
+		window.removeEventListener('wheel', onWheel);
+		window.removeEventListener('touchstart', onTouchStart);
+		window.removeEventListener('touchmove', onTouchMove);
+		window.removeEventListener('keydown', onKey);
 		document.removeEventListener('focusin', onFocus);
 		apply(false);
 	};

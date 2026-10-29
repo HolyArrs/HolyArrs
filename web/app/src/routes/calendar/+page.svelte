@@ -4,7 +4,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { replaceState } from '$app/navigation';
+	import { afterNavigate, replaceState } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -76,10 +76,27 @@
 	const REACH = 6;
 	const earliest = addDays(today0, -365);
 	const latest = addDays(today0, 366);
-	// Three weeks before today load with the first answer, so scrolling up finds days already there.
+	// Scrolling up adds three weeks at a time. Their answer is asked ahead in the background
+	// (`early`), so when the top is reached the days go in at once instead of after a wait.
 	const AHEAD = 21;
-	let start = $state(askedMonth ?? addDays(today0, -AHEAD));
-	let toTodayOnce = !askedMonth;
+	let start = $state(askedMonth ?? today0);
+	const early = new Map<string, Promise<CalendarAnswer>>();
+	const calGet = (from: string, to: string) => {
+		const k = `${from}|${to}`;
+		const p = early.get(k) ?? api.get<CalendarAnswer>(`/calendar?from=${from}&to=${to}`);
+		early.delete(k);
+		return p;
+	};
+	function askEarly() {
+		if (start <= earliest) return;
+		const to = addDays(start, -AHEAD);
+		const from = to < earliest ? earliest : to;
+		const r = { from: ymd(addDays(from, -1)), to: ymd(addDays(end, 1)) };
+		for (const c of rangeChunks(r.from, r.to)) {
+			const k = `${c.from}|${c.to}`;
+			if (!early.has(k)) early.set(k, api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`).catch(() => ({ dates: null })));
+		}
+	}
 	let end = $state(addDays(askedMonth ?? today0, 7 * REACH));
 	let entries = $state<CalendarEntry[]>([]);
 	let libraryEmpty = $state(false);
@@ -183,7 +200,7 @@
 			const r = range;
 			// The server takes up to a year a query; a longer stretch is asked in pieces.
 			const [parts, t] = await Promise.all([
-				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`))),
+				Promise.all(rangeChunks(r.from, r.to).map((c) => calGet(c.from, c.to))),
 				libraryTitles()
 			]);
 			if (n !== asks) return;
@@ -211,21 +228,10 @@
 			error = message(e);
 		} finally {
 			loaded = true;
-			// The first answer opens at today (the rows draw once loaded is set); the weeks before it wait above.
-			if (toTodayOnce && n === asks) {
-				toTodayOnce = false;
-				void tick().then(() => {
-					const row = todayRow();
-					if (!row || row === document.querySelector('.cal-main [data-day]')) return;
-					guard();
-					// Below the top bar and the date bar, not under them.
-					window.scrollTo({ top: row.getBoundingClientRect().top + scrollY - (narrow ? 112 : 136), behavior: 'instant' });
-					rebaseBar();
-				});
-			}
 			if (n === asks) {
 				fetching = false;
 				backing = false;
+				askEarly();
 			}
 		}
 	}
@@ -238,6 +244,15 @@
 		pickMonth = start.getMonth();
 	}
 	const go = (n: number) => jump(addDays(start, 7 * n));
+	// Calendar picked again (side menu) while it already shows: start over at today and the top.
+	afterNavigate((nav) => {
+		if (nav.type !== 'link' || nav.from?.route.id !== nav.to?.route.id || nav.to?.url.searchParams.get('month')) return;
+		if (start.getTime() === today0.getTime() && window.scrollY === 0) return;
+		clearTimeout(backTimer);
+		guard();
+		jump(today0);
+		window.scrollTo({ top: 0, behavior: 'instant' });
+	});
 	// Each new range (the arrows, Today, more weeks, the small month) is loaded once.
 	let started = $state(false);
 	$effect(() => {
