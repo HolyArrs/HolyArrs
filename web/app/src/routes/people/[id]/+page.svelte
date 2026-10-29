@@ -24,7 +24,6 @@
 	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import HeroMotion from '#lib/ui/HeroMotion.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
@@ -166,9 +165,6 @@
 		const t = setInterval(() => (still = (still + 1) % n), 6000);
 		return () => clearInterval(t);
 	});
-	// Filmography layouts Luis is comparing: 0 today (decade rows), 1 one grid, 2 posters, 3 timeline.
-	const FILM_VIEWS = [{ value: 0, label: 'Rows' }, { value: 1, label: 'Grid' }, { value: 2, label: 'Posters' }, { value: 3, label: 'Timeline' }];
-	let filmView = $state(0);
 	const decades = $derived.by(() => {
 		const g = byDecade(movies);
 		if (sort !== 'popular') return g;
@@ -401,44 +397,11 @@
 		</div>
 		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
 	</section>
-	<VariantBar options={FILM_VIEWS} bind:value={filmView} param="films" storageKey="person-films" label="Filmography layout" />
-	{#if filmView === 1}
-		<ul class="fv-grid">
-			{#each decades as g (g.label)}
-				<li class="fv-dec"><h3>{g.label}</h3><span>{g.movies.length}</span></li>
-				{#each g.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}
-			{/each}
-		</ul>
-	{:else if filmView === 2}
-		<ul class="fv-posters">
-			{#each decades as g (g.label)}
-				<li class="fv-dec"><h3>{g.label}</h3><span>{g.movies.length}</span></li>
-				{#each g.movies as m (m.ids.tmdb)}
-					{@const o = owned(m)}
-					<li class="fv-p"><a href={href(m)}><span class="fv-pic">{#if m.poster || m.backdrop}<img src={m.poster || m.backdrop} alt="" loading="lazy" decoding="async" />{:else}<b>{m.name.slice(0, 2)}</b>{/if}{#if o}<i class="fv-dot" class:have={o.state === 'available'} title={o.state === 'available' ? 'In Library' : 'Requested'}></i>{/if}</span><span class="fv-n">{m.name}</span><span class="fv-s">{[roleLine(m), m.year].filter(Boolean).join(' · ')}</span></a></li>
-				{/each}
-			{/each}
-		</ul>
-	{:else if filmView === 3}
-		<div class="fv-time">
-			{#each decades as g (g.label)}
-				<section class="fv-tdec"><h3>{g.label}</h3>
-					<ol>
-						{#each g.movies as m (m.ids.tmdb)}
-							{@const o = owned(m)}
-							<li><span class="fv-y">{m.year || '—'}</span><a class="fv-th" href={href(m)} aria-label={m.name}>{#if m.backdrop || m.poster}<img src={m.backdrop || m.poster} alt="" loading="lazy" decoding="async" />{/if}</a><span class="fv-w"><a href={href(m)}>{m.name}</a><small>{roleLine(m)}</small></span><span class="fv-e">{#if o}<span class="kf-state" class:have={o.state === 'available'}>{o.state === 'available' ? 'In Library' : 'Requested'}</span>{:else if action && !m.title_id && !m.ask && !m.never_add && !done[m.ids.tmdb]}<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} size="sm" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />{/if}</span></li>
-						{/each}
-					</ol>
-				</section>
-			{/each}
-		</div>
-	{:else}
 	{#each decades as g (g.label)}
 		<Shelf title={g.label} item="var(--title-item)" items={g.movies.slice(0, 12)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1} onseeall={g.movies.length > 12 ? () => (allDecade = g) : undefined}>
 			{#snippet card(m: PersonMovie)}{@render filmCard(m)}{/snippet}
 		</Shelf>
 	{/each}
-	{/if}
 
 	{#if bio || facts.length}
 		<section class="block">
@@ -652,45 +615,6 @@
 	/* The top bar and the slim bar read as one solid band in the person's colour. */
 	:global(html.pbar .ui-topbar), :global(html.pbar[data-tint] .ui-topbar) { background-color: var(--tint-bg, #1b1c20); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	:global(html.pbar) .slim { background: var(--tint-bg, #1b1c20); box-shadow: 0 10px 24px rgb(0 0 0 / .3); }
-	/* Filmography layouts. */
-	.fv-grid, .fv-posters { display: grid; gap: 24px 16px; margin: 0; padding: 0; list-style: none; }
-	.fv-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-	.fv-posters { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px 18px; }
-	.fv-dec { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin-top: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
-	.fv-dec:first-child { margin-top: 0; }
-	.fv-dec h3 { margin: 0; font: 800 26px/1 var(--font-display); letter-spacing: -.02em; }
-	.fv-dec span { color: var(--text-muted); font: 600 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.fv-p a { display: flex; flex-direction: column; gap: 4px; color: var(--text); text-decoration: none; min-width: 0; }
-	.fv-pic { position: relative; display: grid; place-items: center; aspect-ratio: 2 / 3; overflow: hidden; border-radius: var(--r-card, 12px); background: var(--surface-2); box-shadow: var(--shadow-card); margin-bottom: 6px; }
-	.fv-pic img { width: 100%; height: 100%; object-fit: cover; transition: scale var(--dur-slow) var(--ease-out); }
-	.fv-pic b { color: var(--text-muted); font: 800 34px/1 var(--font-display); }
-	.fv-p a:hover img { scale: 1.05; }
-	.fv-dot { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; border-radius: 50%; background: #f5a623; box-shadow: 0 0 0 2px rgb(0 0 0 / .4); }
-	.fv-dot.have { background: #34c759; }
-	.fv-n, .fv-s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.fv-n { font: 700 14px/1.25 var(--font-ui); }
-	.fv-s { color: var(--text-muted); font: var(--t-footnote); }
-	.fv-time { display: flex; flex-direction: column; gap: 28px; }
-	.fv-tdec { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 20px; align-items: start; }
-	.fv-tdec h3 { position: sticky; top: calc(var(--topbar) + 80px); margin: 0; font: 800 30px/1 var(--font-display); letter-spacing: -.02em; }
-	.fv-tdec ol { margin: 0; padding: 0; list-style: none; border-left: 1px solid var(--line); }
-	.fv-tdec li { display: grid; grid-template-columns: 52px 128px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 8px 12px; border-radius: 12px; transition: background var(--dur-fast) var(--ease-out); }
-	.fv-tdec li:hover { background: var(--surface-1); }
-	.fv-y { color: var(--text-muted); font: 700 15px/1 var(--font-display); font-variant-numeric: tabular-nums; }
-	.fv-th { display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px; background: var(--surface-2); }
-	.fv-th img { width: 100%; height: 100%; object-fit: cover; }
-	.fv-w { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-	.fv-w a { color: var(--text); font: 700 16px/1.25 var(--font-display); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.fv-w a:hover { text-decoration: underline; }
-	.fv-w small { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	@media (max-width: 767px) {
-		.fv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; }
-		.fv-posters { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 10px; }
-		.fv-tdec { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-		.fv-tdec h3 { position: static; font-size: 24px; }
-		.fv-tdec ol { border-left: 0; }
-		.fv-tdec li { grid-template-columns: 40px 88px minmax(0, 1fr) auto; gap: 10px; padding: 6px 4px; }
-	}
 	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
 	.s-photo { width: 32px; height: 48px; border-radius: 6px; object-fit: cover; object-position: center 20%; }
 	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
