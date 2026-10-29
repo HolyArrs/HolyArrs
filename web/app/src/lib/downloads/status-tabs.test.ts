@@ -32,20 +32,21 @@ describe('stageOf', () => {
 });
 
 describe('the tabs', () => {
-	it('are Active · Waiting · In progress · Problems · Done; Active is the three unfinished tabs together', () => {
+	it('are All · Waiting · In progress · Problems · Done; All is the unfinished tabs together', () => {
 		const tabs = tabsFor(rows, true);
 		const c = counts(rows, tabs);
-		expect(c.map((x) => `${x.label} ${x.count}`)).toEqual(['Active 11', 'Waiting 2', 'In progress 5', 'Problems 4', 'Done 6']);
+		expect(c.map((x) => `${x.label} ${x.count}`)).toEqual(['All 11', 'Waiting 2', 'In progress 5', 'Problems 4', 'Done 3']);
 		expect(sorted(ids(pick(rows, tabs, 'active')))).toEqual(sorted(['waiting', 'progress', 'problems'].flatMap((k) => ids(pick(rows, tabs, k)))));
-		expect(c.find((x) => x.key === 'done')).toMatchObject({ seeding: 1 });
-		expect(c.some((x) => x.label === 'All')).toBe(false);
+		expect(c.some((x) => x.label === 'Active')).toBe(false);
 	});
-	it('Done holds finished and failed downloads; with Active it covers every row', () => {
+	it('Done holds finished and seeding downloads; with All it covers every row', () => {
 		const tabs = tabsFor(rows, true);
-		expect(sorted(ids(pick(rows, tabs, 'done')))).toEqual([8, 9, 10, 11, 12, 14]);
+		expect(sorted(ids(pick(rows, tabs, 'done')))).toEqual([8, 9, 11]);
 		expect(new Set([...ids(pick(rows, tabs, 'active')), ...ids(pick(rows, tabs, 'done'))]).size).toBe(rows.length);
+		// A failed download is only under Problems, a stalled one counts as Downloading, a seeding one as Done.
+		expect(ids(pick(rows, tabs, 'done'))).not.toContain(10);
 	});
-	it("each tab's sub-tabs split that tab, with or without the Seeding sub-tab", () => {
+	it("each tab's sub-tabs split that tab", () => {
 		for (const torrent of [true, false]) {
 			for (const data of [rows, rows.filter((x) => x.state !== 'seeding')]) {
 				const tabs = tabsFor(data, torrent);
@@ -57,22 +58,17 @@ describe('the tabs', () => {
 			}
 		}
 	});
-	it('sub-tabs: none on Active; Queued · Paused, Downloading · Stalled · Importing, Failed · Review, Done · Seeding · Failed', () => {
+	it('sub-tabs: none on All or Done; Queued · Paused, Downloading · Importing, Failed · Review', () => {
 		const tabs = tabsFor(rows, true);
 		expect(tabs.map((t) => subCounts(rows, t).map((s) => `${s.label} ${s.count}`))).toEqual([
 			[],
 			['Queued 1', 'Paused 1'],
-			['Downloading 1', 'Stalled 1', 'Importing 3'],
+			['Downloading 2', 'Importing 3'],
 			['Failed 3', 'Review 1'],
-			['Done 2', 'Seeding 1', 'Failed 3']
+			[]
 		]);
-	});
-	it('the Seeding sub-tab shows only with a torrent Downloader or a seeding row', () => {
-		const calm = rows.filter((x) => x.state !== 'seeding');
-		const doneSubs = (data: R[], torrent: boolean) => tabsFor(data, torrent).find((t) => t.key === 'done')?.subs.map((s) => s.key);
-		expect(doneSubs(calm, false)).toEqual(['done', 'failed']);
-		expect(doneSubs(calm, true)).toEqual(['done', 'seeding', 'failed']);
-		expect(doneSubs(rows, false)).toEqual(['done', 'seeding', 'failed']);
+		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('Stalled');
+		expect(tabs.flatMap((t) => t.subs.map((x) => x.label))).not.toContain('Seeding');
 	});
 	it('every tab and sub-tab has a short hint and an empty-state title', () => {
 		expect(ALL_HINT).toMatch(/^[A-Z].+\.$/);
@@ -101,6 +97,9 @@ describe('showOf', () => {
 		expect(showOf('finished')).toEqual({ show: ALL, sub: '' });
 		expect(showOf(null)).toEqual({ show: ALL, sub: '' });
 		expect(showOf('all')).toEqual({ show: 'active', sub: '' });
-		expect(showOf('done.seeding')).toEqual({ show: 'done', sub: 'seeding' });
+		expect(showOf('done.seeding')).toEqual({ show: 'done', sub: '' });
+		expect(showOf('progress.stalled')).toEqual({ show: 'progress', sub: 'downloading' });
+		expect(showOf('done.failed')).toEqual({ show: 'problems', sub: 'failed' });
+		expect(showOf('seeding')).toEqual({ show: 'done', sub: '' });
 	});
 });

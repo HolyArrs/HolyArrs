@@ -1,6 +1,6 @@
-// The status tabs on the Downloads table: All · Waiting · In progress · Done ·
-// Problems, with small toggle sub-tabs under the picked one. Pure, so it can
-// be tested.
+// The status tabs on the Downloads table: All · Waiting · In progress ·
+// Problems · Done, with sub-statuses under Waiting, In progress and Problems
+// (All and Done have none). Pure, so it can be tested.
 //
 // The words mean the same thing for a torrent and a Usenet download:
 // Downloading is bytes coming in (a stalled download is still trying);
@@ -8,6 +8,9 @@
 // unpack, waiting to import, and putting the files in the Library); Seeding
 // is a finished torrent the Downloader still shares. ("Active" is not used:
 // in torrent Downloaders it also counts finished torrents still seeding.)
+// Stalled and Seeding are one-word row statuses only: a stalled download
+// counts under In progress > Downloading, a seeding one under Done, and a
+// failed one only under Problems.
 import type { DownloadRow } from '../downloaders.ts';
 
 export type Stage = 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
@@ -61,8 +64,6 @@ export interface Tab {
 	stages: Stage[];
 	hint: string;
 	empty: string;
-	/** Show the seeding sub-count on this tab ("Done 12 · 4 seeding"). */
-	seedCount?: boolean;
 	/** The small toggle tabs under this one when it is picked. */
 	subs: Sub[];
 }
@@ -74,17 +75,14 @@ export const ALL_HINT = 'Everything not finished yet: waiting, on its way, or ne
 const SUBS: Record<string, Sub> = {
 	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.', empty: 'Nothing is queued.' },
 	paused: { key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.', empty: 'Nothing is paused.' },
-	downloading: { key: 'downloading', label: 'Downloading', stages: ['downloading'], hint: 'Taking in data right now.', empty: 'Nothing is downloading.' },
-	stalled: { key: 'stalled', label: 'Stalled', stages: ['stalled'], hint: 'Slow or stuck; the Downloader keeps trying.', empty: 'Nothing is stalled.' },
+	downloading: { key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'], hint: 'Taking in data, or stalled while it keeps trying.', empty: 'Nothing is downloading.' },
 	importing: { key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.', empty: 'Nothing is importing.' },
-	done: { key: 'done', label: 'Done', stages: ['done'], hint: 'Finished and in your Library.', empty: 'Nothing finished yet.' },
-	seeding: { key: 'seeding', label: 'Seeding', stages: ['seeding'], hint: 'In your Library; the torrent is still being shared.', empty: 'Nothing is seeding.' },
 	failed: { key: 'failed', label: 'Failed', stages: ['failed'], hint: 'Failed, removed outside HolyArrs, or the files did not match.', empty: 'Nothing failed.' },
 	decide: { key: 'decide', label: 'Review', stages: ['decide'], hint: 'HolyArrs could not finish it on its own and needs you to choose.', empty: 'Nothing to review.' }
 };
 
 export const TABS: Tab[] = [
-	{ key: 'active', label: 'Active', stages: ['queued', 'paused', 'downloading', 'stalled', 'importing', 'failed', 'decide'], hint: ALL_HINT, empty: 'Nothing is downloading or waiting.', subs: [] },
+	{ key: 'active', label: 'All', stages: ['queued', 'paused', 'downloading', 'stalled', 'importing', 'failed', 'decide'], hint: ALL_HINT, empty: 'Nothing is downloading or waiting.', subs: [] },
 	{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: "In your Downloader's line, or paused by you.", empty: 'Nothing waiting.', subs: [SUBS.queued, SUBS.paused] },
 	{
 		key: 'progress',
@@ -92,25 +90,22 @@ export const TABS: Tab[] = [
 		stages: ['downloading', 'stalled', 'importing'],
 		hint: 'On its way: downloading now, or being checked and filed into your Library.',
 		empty: 'Nothing on its way right now.',
-		subs: [SUBS.downloading, SUBS.stalled, SUBS.importing]
+		subs: [SUBS.downloading, SUBS.importing]
 	},
 	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'No problems. Everything is moving.', subs: [SUBS.failed, SUBS.decide] },
 	{
 		key: 'done',
 		label: 'Done',
-		stages: ['done', 'seeding', 'failed'],
-		seedCount: true,
-		hint: 'Finished: in your Library, still sharing, or failed.',
+		stages: ['done', 'seeding'],
+		hint: 'Finished: in your Library, or still being shared.',
 		empty: 'Nothing finished yet.',
-		subs: [SUBS.done, SUBS.seeding, SUBS.failed]
+		subs: []
 	}
 ];
 
-/** tabsFor is the tabs as shown: the Seeding sub-tab only with a torrent
- *  Downloader or a seeding row; without it Done takes any seeding rows. */
-export function tabsFor(rows: RowBits[], torrent: boolean): Tab[] {
-	if (torrent || rows.some((r) => stageOf(r) === 'seeding')) return TABS;
-	return TABS.map((t) => (t.key === 'done' ? { ...t, subs: [{ ...SUBS.done, stages: ['done', 'seeding'] }, SUBS.failed] } : t));
+/** tabsFor is the tabs as shown. They are the same for every Downloader (Seeding is only a row word), so the arguments are kept for the callers. */
+export function tabsFor(_rows?: RowBits[], _torrent?: boolean): Tab[] {
+	return TABS;
 }
 
 /** pick filters rows to one tab (and one sub-tab); unknown keys show all. */
@@ -127,8 +122,6 @@ export interface Counted {
 	label: string;
 	count: number;
 	hint: string;
-	/** Rows of this tab that are seeding, when the tab shows that sub-count. */
-	seeding?: number;
 }
 
 /** counts gives every tab with its row count. */
@@ -137,7 +130,6 @@ export function counts(rows: RowBits[], tabs: Tab[]): Counted[] {
 	const out: Counted[] = [];
 	for (const t of tabs) {
 		const k: Counted = { key: t.key, label: t.label, count: stages.filter((s) => t.stages.includes(s)).length, hint: t.hint };
-		if (t.seedCount) k.seeding = stages.filter((s) => s === 'seeding').length;
 		out.push(k);
 	}
 	return out;
@@ -174,10 +166,24 @@ export function statusWord(r: RowBits): string {
 	return r.phase === 'removed' ? 'Removed' : 'Done';
 }
 
-/** showOf reads ?show= : a tab key, or tab.sub; anything else (the old "all" too) is Active. */
+/** The values older links used, mapped to the nearest group now. */
+const LEGACY: Record<string, string> = {
+	all: 'active',
+	stalled: 'progress.downloading',
+	'progress.stalled': 'progress.downloading',
+	seeding: 'done',
+	'done.seeding': 'done',
+	'done.done': 'done',
+	failed: 'problems.failed',
+	'done.failed': 'problems.failed',
+	decide: 'problems.decide'
+};
+
+/** showOf reads ?show= : a tab key, or tab.sub; an old value maps to the nearest group, anything else is All. */
 export function showOf(v: string | null | undefined, tabs: Tab[] = TABS): { show: string; sub: string } {
-	const [a = '', b = ''] = (v ?? '').split('.');
+	const raw = v ?? '';
+	const [a = '', b = ''] = (LEGACY[raw] ?? raw).split('.');
 	const t = tabs.find((x) => x.key === a);
 	if (!t) return { show: ALL, sub: '' };
-	return { show: t.key, sub: t.subs.some((s) => s.key === b) ? b : '' };
+	return { show: t.key, sub: t.subs.some((x) => x.key === b) ? b : '' };
 }
