@@ -50,7 +50,7 @@
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, listening, changeWords, fullCount, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
@@ -887,8 +887,8 @@
 {/snippet}
 
 {#snippet statsBand()}
-	<!-- Where concerts would be: line one is listening, line two the releases and what is on HolyArrs. -->
-	{#if data && (listen || catalog?.albums || smallCount || data.total)}
+	<!-- Where concerts would be: listening, and the ask-for-missing button. -->
+	{#if data && (listen || (missing?.count && mayAsk && !manage && !titleId && !allAsked))}
 		{@const up = (listen?.today ?? 0) > 0}
 		<section class="stats" data-testid="artist-stats" aria-label="Listening and releases">
 			{#if listen}
@@ -898,12 +898,6 @@
 					{#if listen.today}<span class="chg" class:up class:down={!up}>{changeWords(listen.today)}</span>{/if}
 				</p>
 			{/if}
-			<p class="st2">
-				{#if catalog?.albums}<span>{catalog.albums} {catalog.albums === 1 ? 'album' : 'albums'}</span>{/if}
-				{#if catalog && smallCount}<span>{smallCount} {smallReleasesWord(catalog).replace('Single', 'single')}</span>{/if}
-				{#if catalog?.since}<span>since {catalog.since}</span>{/if}
-				{#if data.total}<span class="own"><Icon name="library" size={14} />{data.have ?? 0} of {data.total} on HolyArrs</span>{/if}
-			</p>
 			{#if missing?.count && mayAsk && !manage && !titleId && !allAsked}
 				<div class="st-ask">
 					{#if confirmAll}
@@ -1160,8 +1154,6 @@
 	.stats p > span + span::before { content: '·'; margin: 0 14px; color: var(--text-faint); }
 	.st1 { font: 500 20px/1.35 var(--font-ui); color: var(--text-muted); }
 	.st1 b { color: var(--text); font-weight: 700; }
-	.st2 { font: var(--t-subhead); color: var(--text-muted); }
-	.st2 :global(svg) { color: var(--text-muted); }
 	.chg.up { color: var(--ok-text); font-weight: 600; }
 	.chg.down { color: var(--fail-text); font-weight: 600; }
 	/* On the artist colour, light tones that read on any deep page colour. */
