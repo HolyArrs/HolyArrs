@@ -135,6 +135,13 @@
 	});
 	// The About sheet: three layouts Luis is comparing (switch inside the sheet).
 	let aboutView = $state<string>('profile');
+	// The figures, folded small: three takes Luis is comparing (?info=1|2|3). Born and From live in About now.
+	const INFO_VIEWS = [{ value: '1', label: 'Line' }, { value: '2', label: 'Pills' }, { value: '3', label: 'Strip' }];
+	let infoView = $state(1);
+	onMount(() => {
+		const v = Number(new URL(location.href).searchParams.get('info'));
+		if (v >= 1 && v <= 3) infoView = v;
+	});
 	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
 	const about = $derived.by(() => {
 		const p = data?.person;
@@ -203,6 +210,16 @@
 	const lead = $derived([data?.person.department, ...facts.filter((f) => !f.startsWith('Known for'))].filter(Boolean).join(' · '));
 	const top = $derived((data?.known_for ?? []).slice(0, 10));
 	const reel = $derived((data?.known_for ?? []).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
+	const figList = $derived(
+		[
+			data?.stats?.films ? { n: String(data.stats.films), w: data.stats.films === 1 ? 'film' : 'films' } : null,
+			data?.stats?.shows ? { n: String(data.stats.shows), w: data.stats.shows === 1 ? 'show' : 'shows' } : null,
+			yearsLine ? { n: yearsLine, w: '' } : null,
+			about?.wins ? { n: String(about.wins), w: about.wins === 1 ? 'award' : 'awards', gold: true } : null,
+			data?.library?.length ? { n: String(data.library.length), w: 'in Library' } : null,
+			data?.asked?.length ? { n: String(data.asked.length), w: 'asked for' } : null
+		].filter(Boolean) as { n: string; w: string; gold?: boolean }[]
+	);
 	let aboutOpen = $state(false);
 	let allDecade = $state<{ label: string; movies: PersonMovie[] } | null>(null);
 
@@ -321,7 +338,12 @@
 		<span class="photo">{#if photo}<img src={photo} alt="" fetchpriority="high" />{:else}<span class="initials">{data.person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span>
 		<div class="c-words">
 			<h1 bind:this={nameEl}>{data.person.name}</h1>
-			{#if lead}<p class="c-line">{lead}</p>{/if}
+			{#if infoView === 1}
+				<p class="c-line">{#if data.person.department}<span>{data.person.department}</span>{/if}{#each figList as x (x.n + x.w)}<span class:gold={x.gold}><b>{x.n}</b>{x.w ? ` ${x.w}` : ''}</span>{/each}</p>
+			{:else}
+				{#if data.person.department}<p class="c-line">{data.person.department}</p>{/if}
+				{#if infoView === 2}<ul class="pills">{#each figList as x (x.n + x.w)}<li class:gold={x.gold}><b>{x.n}</b>{x.w ? ` ${x.w}` : ''}</li>{/each}</ul>{/if}
+			{/if}
 		</div>
 		<div class="acts">{@render mainAct()}<ActionButton icon="info" label="About {data.person.name}" caption="About" onclick={() => (aboutOpen = true)} /></div>
 	</div>
@@ -334,14 +356,10 @@
 		</div>
 	</div>
 
-	<section class="figs" aria-label="At a glance" data-testid="person-stats">
-		{#if data.stats?.films}<p><b>{data.stats.films}</b><span>{data.stats.films === 1 ? 'Film' : 'Films'}</span></p>{/if}
-		{#if data.stats?.shows}<p><b>{data.stats.shows}</b><span>{data.stats.shows === 1 ? 'Show' : 'Shows'}</span></p>{/if}
-		{#if yearsLine}<p><b>{yearsLine}</b><span>On screen</span></p>{/if}
-		{#if about?.wins || about?.noms}<p class="gold"><b>{about?.wins ?? 0}</b><span>{about?.wins === 1 ? 'Award' : 'Awards'}{about?.noms ? ` · ${about.noms} nominations` : ''}</span></p>{/if}
-		{#if data.library?.length}<p><b>{data.library.length}</b><span>In your Library</span></p>{/if}
-		{#if data.asked?.length}<p><b>{data.asked.length}</b><span>Asked for</span></p>{/if}
-	</section>
+	{#if infoView === 3 && figList.length}
+		<section class="strip" aria-label="At a glance" data-testid="person-stats">{#each figList as x (x.n + x.w)}<p class:gold={x.gold}><b>{x.n}</b>{#if x.w}<span>{x.w}</span>{/if}</p>{/each}</section>
+	{/if}
+	<div class="infopick"><SegmentedControl label="Figures layout" value={String(infoView)} options={INFO_VIEWS} onchange={(v) => (infoView = Number(v))} /></div>
 
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
 		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
@@ -655,14 +673,20 @@
 	/* Stills */
 	@media (max-width: 1000px) { .kf-eps .kf-list { grid-template-columns: minmax(0, 1fr); } }
 	@media (prefers-reduced-motion: reduce) { .kf-item { animation: none; } .kf-item:hover .kf-pic img { scale: none; } }
-	/* Figures: one row of glass tiles, the same family as the About facts. */
-	.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-	.figs p { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0; margin: 0; padding: 20px 12px; border-radius: 16px; text-align: center; background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line, var(--border)), inset 0 1px 0 rgb(255 255 255 / 8%); backdrop-filter: blur(24px) saturate(160%); animation: ab-in var(--dur-slow) var(--ease-out) both; }
-	.figs p:nth-child(2) { animation-delay: 40ms; } .figs p:nth-child(3) { animation-delay: 80ms; } .figs p:nth-child(4) { animation-delay: 120ms; } .figs p:nth-child(5) { animation-delay: 160ms; } .figs p:nth-child(6) { animation-delay: 200ms; }
-	.figs b { color: var(--text); font: 800 30px/1 var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.figs span { color: var(--text-muted); font: 600 12px/1.3 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
-	.figs .gold b { color: #f5c518; }
-	@media (prefers-reduced-motion: reduce) { .figs p { animation: none; } }
+	/* Compact figures: Line (in the words under the name), Pills, Strip. */
+	.c-line { display: flex; flex-wrap: wrap; align-items: baseline; }
+	.c-line > span + span::before { content: '·'; margin: 0 8px; opacity: .55; }
+	.c-line b { color: var(--text); font-weight: 700; }
+	.c-line .gold b, .pills .gold b, .strip .gold b { color: #f5c518; }
+	.pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+	.pills li { padding: 6px 12px; border-radius: 999px; background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line, var(--border)); backdrop-filter: blur(20px) saturate(160%); color: var(--text-muted); font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.pills b { color: var(--text); }
+	.strip { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: calc(var(--gap) * -.5); padding: 12px 8px; border-radius: 14px; background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line, var(--border)); backdrop-filter: blur(24px) saturate(160%); }
+	.strip p { display: flex; align-items: baseline; gap: 6px; margin: 0; padding: 2px 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.strip p + p { border-left: 1px solid var(--line, var(--border)); }
+	.strip b { color: var(--text); font: 800 18px/1 var(--font-display); }
+	.strip span { color: var(--text-muted); font: 600 13px/1 var(--font-ui); }
+	.infopick { display: flex; justify-content: center; margin-top: calc(var(--gap) * -.6); }
 	/* About sheet (Profile / Dossier / Career), an Apple TV-style dark window in the person's tint. */
 	:global(.ui-sheet:has(.ab)) { --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--ap-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--ap-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
 	.ab { display: flex; flex-direction: column; gap: 28px; }
@@ -724,9 +748,9 @@
 	@keyframes ab-grow { from { scale: 1 0; } }
 	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 	@media (max-width: 767px) {
+		.c-line, .pills { justify-content: center; }
+		.strip p { padding: 6px 12px; }
 		.kf-eps .kf-item { grid-template-columns: 112px 22px minmax(0, 1fr) auto; gap: 10px; padding: 6px; }
-		.figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-		.figs b { font-size: 24px; }
 		.ab-dossier .ab-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 		.ab-side { position: static; }
 		.ab-still { aspect-ratio: 16 / 10; }
