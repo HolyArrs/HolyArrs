@@ -21,10 +21,11 @@
 		mode = 'library',
 		look = { ...DEFAULT_LOOK, region: 'global' },
 		onfollow,
-		mix = false
-	}: { entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; look?: CaptionLook; onfollow?: (e: CalendarEntry, on: boolean) => void; mix?: boolean } = $props();
-	// mix (a layout Luis is trying): one six-column grid per day; shows and movies take two
-	// columns, then a quiet Music line and album covers one column each, all on the same edges.
+		mix = 0
+	}: { entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; look?: CaptionLook; onfollow?: (e: CalendarEntry, on: boolean) => void; mix?: 0 | 1 | 2 } = $props();
+	// mix (layouts Luis is trying): 1 one six-column grid per day, shows and movies two columns,
+	// then a quiet Music line and album covers one column each, on the same edges; 2 the day's
+	// shows and movies as today, then its albums as one shelf of covers that scrolls sideways.
 
 	const months = $derived(monthGroups(entries));
 	const at = (day: string) => new Date(day + 'T00:00:00');
@@ -51,7 +52,12 @@
 							<!-- Every card of the day, all one size, wrapping onto more rows when a row is full. -->
 							<div class="day">
 								<h4 class="count">{thingCount(d.items.length)}</h4>
-								{#if mix}
+								{#if mix === 2}
+									{@const vids = gs.filter((g) => g.lead.kind !== 'album')}
+									{@const albums = gs.filter((g) => g.lead.kind === 'album').flatMap((g) => g.entries)}
+									{#if vids.length}<div class="grid" data-testid="cal-day-grid">{#each vids as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} />{/each}</div>{/if}
+									{#if albums.length}<ul class="shelf" aria-label="Music">{#each albums as e (e.part_id ?? e.title_id + (e.album ?? ''))}<li><AlbumCover {e} {today} /></li>{/each}</ul>{/if}
+								{:else if mix === 1}
 									{@const vids = gs.filter((g) => g.lead.kind !== 'album')}
 									{@const albums = gs.filter((g) => g.lead.kind === 'album').flatMap((g) => g.entries)}
 									<div class="mix" data-testid="cal-day-grid">
@@ -89,6 +95,8 @@
 	.mix .s { min-width: 0; }
 	.mlabel { grid-column: 1 / -1; margin: 4px 0 -6px; color: var(--text-muted); font: 700 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; }
 	@container (max-width: 900px) { .mix { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+	.shelf { display: flex; gap: 18px; margin: 0; padding: 0 0 6px; list-style: none; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
+	.shelf li { flex: none; width: 176px; scroll-snap-align: start; }
 	.stamp { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 	.dow { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 	.big { margin-top: 4px; font: 700 64px/0.95 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
@@ -101,6 +109,8 @@
 		.row + .row { padding-top: 24px; }
 		.grid { gap: 16px; }
 		.mix { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+		.shelf { gap: 12px; }
+		.shelf li { width: 140px; }
 		.day { gap: 12px; }
 		.stamp { top: calc(var(--topbar) + 8px); align-items: center; }
 		.dow { font-size: 11px; letter-spacing: 0.04em; }

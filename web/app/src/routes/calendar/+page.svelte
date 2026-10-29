@@ -100,8 +100,8 @@
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
 	let which = $state<TitlesShown>(titlesFromAddress(askedTitles));
-	// The All layout Luis is comparing: 0 today's cards, 1 the mixed grid (covers under wide cards).
-	const MIX_VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'Mixed grid' }];
+	// The All layout Luis is comparing: 0 today's cards, 1 the mixed grid, 2 a music shelf under each day.
+	const MIX_VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'Mixed grid' }, { value: 2, label: 'Music shelf' }];
 	let mixView = $state(0);
 
 	// The two caption lines under every card and row (?movie=1-6, ?music=1-5, ?channels=all|known).
@@ -711,7 +711,7 @@
 					{:else if view === 'cards' && which === 'music'}
 						<MusicCal entries={shown} today={todayKey} />
 					{:else if view === 'cards'}
-						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} mix={which === 'all' && mixView === 1} />
+						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} mix={which === 'all' ? (mixView as 0 | 1 | 2) : 0} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
 					{:else}
