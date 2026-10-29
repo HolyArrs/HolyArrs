@@ -18,7 +18,7 @@
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
 	import { cardLook } from './cardLook.svelte.ts';
-	import { demoDetails, sampleFiles, sampleLog, samplePeers, sampleRatio } from './sampleDetails.ts';
+	import { demoDetails, fileExtras, isProblem, sampleFiles, sampleHeader, sampleLog, samplePeers, sampleRatio, sampleServers, sampleStory, sampleSwarm } from './sampleDetails.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
@@ -92,6 +92,12 @@
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	// ?card=a|b|c picks the expanded row's layout (c, the big poster, is the default).
 	const card = $derived(cardLook.value);
+	let menuId = $state(0);
+	const ACTIONS: { label: string; torrent?: boolean }[] = [
+		{ label: 'Check again' }, { label: 'Ask trackers again', torrent: true }, { label: 'Move' }, { label: 'Rename' },
+		{ label: 'Limit upload', torrent: true }, { label: 'Stop sharing at a ratio', torrent: true }, { label: 'Copy link' }, { label: 'Export' }
+	];
+	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 	const TABS = ['Info', 'Files', 'Peers', 'Log'] as const;
 	let xtabOn = $state<Record<number, (typeof TABS)[number]>>({});
 	const tabOf = (id: number) => xtabOn[id] ?? 'Info';
@@ -558,8 +564,48 @@
 		<button type="button" class="xbn" disabled title="Coming soon">Pause</button>
 		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
 		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
+		<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>
 	</div>
+	{#if menuId === r.id}
+		<ul class="mn" data-testid="dl-more-menu">
+			{#each ACTIONS.filter((a) => !a.torrent || protocolOf(r) === 'torrent') as a (a.label)}
+				<li><button type="button" class="mi" disabled title="Coming soon">{a.label}<span class="soon">Coming soon</span></button></li>
+			{/each}
+		</ul>
+	{/if}
 	{#if files && filesOpen.has(r.id)}<p class="nr" data-testid="dl-files">Not reported yet</p>{/if}
+{/snippet}
+
+{#snippet depth(r: DownloadRow)}
+	{#if demoDetails}
+		{#if isProblem(r)}
+			{@const st = sampleStory(r)}
+			<section class="dep story" data-testid="dl-story" aria-label="What happened">
+				<h4>What happened</h4>
+				<dl class="kv">{#each st.facts as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
+				<ol class="lg">{#each st.steps as x, i (i)}<li class:bad={x.bad}>{x.text}</li>{/each}</ol>
+			</section>
+		{/if}
+		{#if protocolOf(r) === 'torrent'}
+			{@const sw = sampleSwarm(r)}
+			<section class="dep" data-testid="dl-swarm" aria-label="Swarm">
+				<h4>Swarm</h4>
+				<dl class="kv">
+					<dt>Seeds</dt><dd>{sw.seedsOn} connected of {sw.seedsOf}</dd>
+					<dt>Peers</dt><dd>{sw.peersOn} connected of {sw.peersOf}</dd>
+					<dt>Next tracker check</dt><dd>in {mmss(sw.nextCheck)}</dd>
+					<dt>Private</dt><dd>{sw.private ? 'Yes' : 'No'}</dd>
+					<dt>Wasted</dt><dd>{bytes(sw.wasted)}</dd>
+				</dl>
+				<ul class="fl src">{#each sw.sources as src (src.name)}<li><span class="fn">{src.name}</span><span class="fs st-{src.state}">{src.message}</span></li>{/each}</ul>
+			</section>
+		{:else}
+			<section class="dep" data-testid="dl-servers" aria-label="Servers">
+				<h4>Supplied by</h4>
+				<ul class="fl">{#each sampleServers(r) as sv (sv.name)}<li><span class="fn">{sv.name}</span><span class="fs">{bytes(sv.bytes)} · {sv.missing} missing</span></li>{/each}</ul>
+			</section>
+		{/if}
+	{/if}
 {/snippet}
 
 {#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[])}
@@ -583,8 +629,9 @@
 		<p class="nr">Not reported yet</p>
 	{:else if tabOf(r.id) === 'Files'}
 		<ul class="fl" data-testid="dl-filelist">
-			{#each sampleFiles(r) as f (f.name)}
-				<li><span class="fn" title={f.name}>{f.name}</span><span class="fs">{bytes(f.size)} · {Math.floor(f.size ? (f.done / f.size) * 100 : 0)}%</span></li>
+			{#each sampleFiles(r) as f, i (f.name)}
+				{@const fx = fileExtras(r, i)}
+				<li><span class="fn" title={f.name}>{f.name}</span><span class="fs">{bytes(f.size)} · {Math.floor(f.size ? (f.done / f.size) * 100 : 0)}%{protocolOf(r) === 'torrent' ? ` · ${fx.priority} · avail ${fx.availability.toFixed(1)}` : ''}</span></li>
 			{/each}
 		</ul>
 	{:else if tabOf(r.id) === 'Peers'}
@@ -619,6 +666,7 @@
 		<dl class="kv">
 			{#each facts(r, im) as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
 		</dl>
+		{@render depth(r)}
 		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 		{@render btns(r, false)}
 		{#if r.can_act && !inHistory(r)}
@@ -632,6 +680,7 @@
 		<div class="xb">
 		<p class="xt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
 		<div class="xd">{@render tabsView(r, simple)}</div>
+		{@render depth(r)}
 		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 		{@render btns(r, false)}
 		{#if r.can_act && !inHistory(r)}
@@ -650,6 +699,7 @@
 		{:else}
 			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
 		{/if}
+		{@render depth(r)}
 		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 		{@render btns(r, card === 'a')}
 		{#if r.can_act && !inHistory(r)}
@@ -667,7 +717,16 @@
 	<span><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
 	<span data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
 	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
+	<button type="button" class="retry" disabled title="Coming soon" data-testid="dl-retry-all">Retry all problems<span class="soon">Coming soon</span></button>
 </div>
+{#if demoDetails}
+<div class="strip sub" data-testid="dl-strip-more">
+	<span data-testid="dl-session"><span class="k">This session</span><b>↓ {bytes(sampleHeader.sessionDown)}</b><b class="up">↑ {bytes(sampleHeader.sessionUp)}</b></span>
+	<span data-testid="dl-free"><span class="k">Free space</span><b>{bytes(sampleHeader.free)}</b></span>
+	<label class="lim" title="Coming soon"><span class="k">Speed limit</span><input type="range" min="0" max="100" value="100" disabled aria-label="Speed limit (coming soon)" /><b>None</b></label>
+	<span data-testid="dl-alltime"><span class="k">Today</span><b>{bytes(sampleHeader.today)}</b><span class="k">Month</span><b>{bytes(sampleHeader.month)}</b><span class="k">All time</span><b>{bytes(sampleHeader.all)}</b></span>
+</div>
+{/if}
 
 <div class="tops">
 <div class="chips" role="group" aria-label="Show" data-testid="table-filter">
@@ -892,6 +951,25 @@
 	.lg li { overflow-wrap: anywhere; }
 	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 	.lg .bad { color: var(--fail); }
+	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
+	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
+	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
+	.story { border-color: color-mix(in srgb, var(--fail) 40%, var(--line)); }
+	.src { margin-top: 8px; }
+	.st-working { color: var(--ok); }
+	.st-updating { color: var(--info); }
+	.st-error { color: var(--fail); }
+	.more { min-width: 36px; padding: 0 10px; }
+	.mn { list-style: none; margin: 6px 0 0; padding: 4px; display: grid; gap: 2px; width: max-content; max-width: 100%; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 6px 18px rgb(0 0 0 / 0.14); }
+	.mi { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; }
+	.mi:disabled { opacity: 0.6; cursor: not-allowed; }
+	.soon { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
+	.retry { display: inline-flex; align-items: baseline; gap: 8px; min-height: 28px; padding: 0 10px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; }
+	.retry:disabled { opacity: 0.6; cursor: not-allowed; }
+	.strip.sub { margin-top: -4px; font: var(--t-footnote); color: var(--text-muted); }
+	.strip.sub b { color: var(--text); }
+	.lim { display: inline-flex; align-items: center; gap: 8px; }
+	.lim input { width: 110px; }
 	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 	.xbn { min-height: 32px; padding: 0 14px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.xbn:hover:not(:disabled) { background: var(--surface-3); }
@@ -933,6 +1011,8 @@
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
 		.x[data-card='d'] { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+		.lim input { width: 80px; }
+		.mi { gap: 8px; }
 		.fl li { flex-direction: column; gap: 0; }
 		.fs { white-space: normal; }
 		.pr .fs { white-space: normal; }

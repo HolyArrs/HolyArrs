@@ -5,6 +5,7 @@
 // Pure, so it can be tested.
 import type { DownloadRow } from '../downloaders.ts';
 import { stageOf } from './status-tabs.ts';
+import { size as bytes } from './size.ts';
 
 export const demoDetails = import.meta.env.VITE_DEMO_DETAILS === '1';
 
@@ -122,3 +123,104 @@ export function sampleLog(r: DownloadRow, now = Date.now()): SampleLine[] {
 	}
 	return out;
 }
+
+// ---- The live-review additions: sample values for the opened card and the header. ----
+
+const MB = 2 ** 20;
+const dur = (s: number) => (s >= 3600 ? `${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min` : s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`);
+
+export interface Story { facts: { label: string; value: string }[]; steps: { text: string; bad?: boolean }[] }
+
+/** isProblem: the rows whose opened card tells the full story. */
+export const isProblem = (r: DownloadRow) => stageOf(r) === 'failed' || stageOf(r) === 'decide';
+
+/** sampleStory: what went wrong and what was tried, for a problem row. */
+export function sampleStory(r: DownloadRow): Story {
+	const rand = rng(r.id + 21);
+	const size = r.size || 1.4 * 2 ** 30;
+	const secs = Math.round(600 + rand() * 2400);
+	const avg = Math.round(size * clamp(r.progress || 0.7) / secs);
+	if (isTorrent(r)) {
+		const missing = Math.round(4 + rand() * 40);
+		return {
+			facts: [
+				{ label: 'Missing', value: `${missing} of ${Math.round(size / (4 * MB)).toLocaleString('en-US')} pieces` },
+				{ label: 'Source', value: 'Sample Tracker A (sample.tracker.invalid)' },
+				{ label: 'Average speed', value: `${bytes(avg)}/s` },
+				{ label: 'Time taken', value: dur(secs) }
+			],
+			steps: [
+				{ text: 'Checked the files again: all pieces that exist are good' },
+				{ text: 'Asked the trackers again: 0 seeds have the missing pieces', bad: true },
+				{ text: 'Waited 30 min for new peers: none had them', bad: true },
+				{ text: 'HolyArrs will look for another copy' }
+			]
+		};
+	}
+	const missing = Math.round(8 + rand() * 30);
+	const blocks = Math.round(4 + rand() * 8);
+	return {
+		facts: [
+			{ label: 'Missing', value: `${missing} articles of ${Math.round(size / 716_800).toLocaleString('en-US')}` },
+			{ label: 'Source', value: 'Sample Index 1 (sample.index.invalid)' },
+			{ label: 'Server', value: 'Sample News 1 (priority 1), then Sample News 2' },
+			{ label: 'Average speed', value: `${bytes(avg)}/s` },
+			{ label: 'Time taken', value: dur(secs) }
+		],
+		steps: [
+			{ text: `Par2 verify: ${missing + 6} blocks damaged or missing` },
+			{ text: `Par2 repair: ${blocks} recovery blocks available, ${missing + 6} needed`, bad: true },
+			{ text: 'Unpack skipped: the files are not complete', bad: true },
+			{ text: 'HolyArrs will look for another copy' }
+		]
+	};
+}
+
+export interface SwarmInfo {
+	seedsOn: number; seedsOf: number; peersOn: number; peersOf: number;
+	nextCheck: number; private: boolean; wasted: number;
+	sources: { name: string; state: 'working' | 'updating' | 'error'; message: string }[];
+}
+
+/** sampleSwarm: the torrent depth: connected of swarm, tracker check, sources. */
+export function sampleSwarm(r: DownloadRow): SwarmInfo {
+	const rand = rng(r.id + 31);
+	const seedsOn = r.seeds ?? Math.round(rand() * 6);
+	const peersOn = r.peers ?? Math.round(rand() * 14);
+	const priv = rand() < 0.4;
+	return {
+		seedsOn, seedsOf: seedsOn + Math.round(8 + rand() * 90),
+		peersOn, peersOf: peersOn + Math.round(5 + rand() * 60),
+		nextCheck: Math.round(120 + rand() * 1500),
+		private: priv,
+		wasted: Math.round(rand() * 24 * MB),
+		sources: [
+			{ name: 'Sample Tracker A', state: 'working', message: 'Working: announced OK' },
+			{ name: 'Sample Tracker B', state: rand() < 0.5 ? 'updating' : 'working', message: 'Updating: announcing now' },
+			...(priv ? [] : [{ name: 'Sample Tracker C', state: 'error' as const, message: 'Error: connection timed out' }])
+		]
+	};
+}
+
+const PRIORITY = ['High', 'Normal', 'Normal', 'Low'];
+/** fileExtras: each sample file's priority and how much of it the swarm has. */
+export function fileExtras(r: DownloadRow, i: number) {
+	const rand = rng(r.id * 13 + i);
+	return { priority: i === 0 ? 'Normal' : PRIORITY[Math.floor(rand() * 4)], availability: i === 0 ? 1 + Math.round(rand() * 8) / 10 : 1 };
+}
+
+/** sampleServers: how much each news server supplied (usenet). */
+export function sampleServers(r: DownloadRow): { name: string; bytes: number; missing: number }[] {
+	const rand = rng(r.id + 41);
+	const got = (r.size || 1.4 * 2 ** 30) * clamp(r.progress);
+	const first = Math.round(got * (0.7 + rand() * 0.2));
+	return [
+		{ name: 'Sample News 1', bytes: first, missing: Math.round(rand() * 20) },
+		{ name: 'Sample News 2', bytes: Math.round(got - first), missing: Math.round(rand() * 6) }
+	];
+}
+
+export const sampleHeader = {
+	sessionDown: 18.4 * 2 ** 30, sessionUp: 6.1 * 2 ** 30,
+	free: 1.82 * 2 ** 40, today: 12.6 * 2 ** 30, month: 214 * 2 ** 30, all: 3.7 * 2 ** 40
+};
