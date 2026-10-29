@@ -120,6 +120,8 @@
 	const base = $derived(pool.filter((e) => entryDay(e) >= firstDay && entryDay(e) < lastDay && shows(e, which)));
 	const shown = $derived(base.filter(filterOk));
 	const filteredOut = $derived(shown.length === 0 && base.length > 0);
+	// Dates from today on under the other filters, for the empty page's one line (said once the year has loaded).
+	const soonCount = $derived(base.filter((e) => entryDay(e) >= todayKey).length);
 	const agenda = $derived(byDay(shown));
 	const range = $derived({ from: ymd(addDays(start, -1)), to: ymd(addDays(end, 1)) });
 	const rangeName = $derived(
@@ -479,6 +481,9 @@
 	// Near the end, the next six weeks load.
 	function more() {
 		if (fetching || end >= latest) return;
+		// Nothing shows under the filters: the end stays in view, so six weeks at a time would load
+		// again and again (and the count under the empty page would keep changing). Ask once to the end.
+		if (filteredOut) return void (end = latest);
 		const to = addDays(end, 7 * REACH);
 		end = to > latest ? latest : to;
 	}
@@ -721,7 +726,7 @@
 					{#if filteredOut}
 						<!-- The filters hide every date in these weeks: say so, and offer them all. -->
 						<div class="filtered-out" data-testid="cal-filtered-out">
-							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text="{base.length === 1 ? 'One date in the Library falls' : `${base.length} dates in the Library fall`} in {rangeName}." action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
+							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text={end < latest || fetching ? 'Looking further ahead…' : `${soonCount === 1 ? 'One date' : `${soonCount || 'No'} dates`} in the Library ${soonCount === 1 ? 'is' : 'are'} coming up this year.`} action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
 						</div>
 					{:else if view === 'cards' && which === 'music'}
 						<MusicCal entries={shown} today={todayKey} />
