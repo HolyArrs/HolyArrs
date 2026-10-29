@@ -133,8 +133,7 @@
 		return [known ? `Known for ${known}` : p.department, born ? `Born ${born}` : '', p.birthplace ? `From ${p.birthplace}` : wiki.birth_place ? `From ${wiki.birth_place}` : '', died ? `Died ${died}` : ''].filter(Boolean) as string[];
 	});
 	// The About sheet: three layouts Luis is comparing (switch inside the sheet).
-	const ABOUT_VIEWS = [{ value: 'profile', label: 'Profile' }, { value: 'dossier', label: 'Dossier' }, { value: 'career', label: 'Career' }];
-	let aboutView = $state('profile');
+	let aboutView = $state<string>('profile');
 	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
 	const about = $derived.by(() => {
 		const p = data?.person;
@@ -162,7 +161,7 @@
 	let still = $state(0);
 	$effect(() => {
 		const n = about?.stills.length ?? 0;
-		if (!aboutOpen || n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		if (!view || n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const t = setInterval(() => (still = (still + 1) % n), 6000);
 		return () => clearInterval(t);
 	});
@@ -388,19 +387,20 @@
 	{#if bio || facts.length}
 		<section class="block">
 			<h2>About</h2>
-			<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {data.person.name}: read more" onclick={() => (aboutOpen = true)} data-testid="person-about">
-				{#if reel[1] || hero}<img src={reel[1] || hero} alt="" loading="lazy" decoding="async" />{/if}
+			<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {data.person.name}: read more" onclick={() => (aboutOpen = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="person-about">
+				{#each about?.stills ?? [] as src, i (src)}<img class="ab-frame" class:on={i === still % (about?.stills.length || 1)} {src} alt="" loading="lazy" decoding="async" />{/each}
+				<span class="a-glow" aria-hidden="true"></span>
 				{#if wiki.badges[0]}<span class="disc" aria-hidden="true"><b>{wiki.badges[0].split(' ')[0]}</b><small>{wiki.badges[0].split(' ').slice(1).join(' ')}</small></span>{/if}
 				<span class="a-foot">
 					<span class="a-lis">{[data.stats?.films ? `${data.stats.films} films` : '', yearsLine].filter(Boolean).join(' · ')}</span>
 					<span class="a-bio">{bio || data.person.name}</span>
+					<span class="a-more">More about {data.person.name.split(' ')[0]}</span>
 				</span>
 			</button>
 		</section>
 		<Sheet bind:open={aboutOpen} title="About {data.person.name}" size="lg">
 			{#if about}
 			<div class="ab ab-{aboutView}" data-testid="person-about-sheet">
-				<div class="ab-switch"><SegmentedControl label="About layout" value={aboutView} options={ABOUT_VIEWS} onchange={(v) => (aboutView = v)} /></div>
 				{#if aboutView !== 'dossier' && about.stills.length}
 					<figure class="ab-still">
 						{#each about.stills as src, i (src)}<img class="ab-frame" class:on={i === still % about.stills.length} {src} alt="" decoding="async" loading={i ? 'lazy' : 'eager'} />{/each}
@@ -614,17 +614,20 @@
 	.state { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	.state.have { color: #9df5b4; }
 	.acard { position: relative; display: block; width: 100%; height: clamp(280px, 30vw, 420px); padding: 0; border: 0; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; color: #fff; text-align: left; cursor: pointer; isolation: isolate; box-shadow: var(--shadow-card); transition: translate var(--dur-slow) var(--ease-out); }
-	.acard img { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; transition: scale var(--dur-slow) var(--ease-out); }
-	.acard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .8), rgb(0 0 0 / 0) 65%); }
+	.acard { box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 24px 60px rgb(0 0 0 / .4); }
+	.acard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, color-mix(in srgb, var(--ap-bg, #000) 70%, #000) 0%, color-mix(in srgb, var(--ap-bg, #000) 35%, transparent) 45%, transparent 75%), linear-gradient(to right, rgb(0 0 0 / .35), transparent 60%); }
+	.a-glow { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(60% 50% at var(--mx, 70%) var(--my, 20%), rgb(255 255 255 / .1), transparent 70%); opacity: 0; transition: opacity var(--dur) var(--ease-out); }
+	.acard:hover .a-glow { opacity: 1; }
+	.a-more { align-self: flex-start; margin-top: 6px; padding: 9px 16px; border-radius: 999px; background: rgb(255 255 255 / 14%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%); backdrop-filter: blur(20px) saturate(160%); font: 600 14px/1 var(--font-ui); transition: background var(--dur-fast) var(--ease-out); }
+	.acard:hover .a-more { background: rgb(255 255 255 / 24%); }
 	.acard:hover { translate: 0 -2px; }
-	.acard:hover img { scale: 1.03; }
 	.acard:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.disc { position: absolute; top: 20px; left: 20px; display: grid; place-content: center; justify-items: center; width: 92px; height: 92px; border-radius: 50%; background: #f5c518; color: #111; box-shadow: 0 8px 24px rgb(0 0 0 / .3); text-align: center; }
 	.disc b { font: 800 26px/1 var(--font-display); }
 	.disc small { font: 600 11px/1.1 var(--font-ui); max-width: 70px; }
 	.a-foot { position: absolute; left: 28px; right: 28px; bottom: 26px; display: flex; flex-direction: column; gap: 8px; }
 	.a-lis { font: 700 13px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
-	.a-bio { font: 600 20px/1.4 var(--font-ui); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 72ch; }
+	.a-bio { font: 500 19px/1.45 var(--font-ui); color: rgb(255 255 255 / .9); text-shadow: 0 1px 12px rgb(0 0 0 / .35); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 72ch; }
 	.s-facts { margin: 0 0 12px; color: var(--text-muted); font: var(--t-subhead); }
 	.s-bio { margin: 0; font: var(--t-body); line-height: 1.6; white-space: pre-line; }
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
@@ -648,7 +651,8 @@
 	.ab-tiles div:hover { background: rgb(255 255 255 / 11%); translate: 0 -1px; }
 	.ab-tiles dt, .ab-dl dt { margin: 0; color: var(--text-muted); font: 600 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
 	.ab-sec h3 { margin: 0; color: var(--text); font: 700 20px/1.2 var(--font-display); letter-spacing: -.01em; }
-	.ab-tiles dd { margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-display); letter-spacing: -.01em; }
+	.ab-tiles div { min-width: 0; }
+	.ab-tiles dd { overflow-wrap: anywhere; text-wrap: balance; margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-display); letter-spacing: -.01em; }
 	.ab-tiles small, .ab-dl small { color: var(--text-muted); font: var(--t-footnote); }
 	.ab-body { display: flex; flex-direction: column; gap: 28px; }
 	.ab-dossier .ab-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 36px; align-items: start; }
