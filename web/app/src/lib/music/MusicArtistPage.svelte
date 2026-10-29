@@ -533,6 +533,8 @@
 	// About stills: the wide photo and the square photo take turns with a slow zoom, like the people page.
 	const aboutStills = $derived([wideFace && !wideFailed ? wideFace : '', picture && !photoFailed ? picture : ''].filter((x, i, a): x is string => !!x && a.indexOf(x) === i));
 	let still = $state(0);
+	// The About photos: the wide stills, else the one portrait.
+	const shots = $derived(aboutStills.length ? aboutStills : picture ? [picture] : []);
 	$effect(() => {
 		const n = aboutStills.length;
 		if (n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1009,29 +1011,34 @@
 {#if hero}
 	<Sheet bind:open={aboutOpen} title="About {hero.name}" size="lg">
 		<div class="sheet" data-testid="artist-about-sheet">
-			{#if aboutStills.length || picture}
-				<figure class="sh-still">
-					{#each aboutStills.length ? aboutStills : [picture] as src, i (src)}<img class="ab-frame" class:on={i === still % Math.max(1, aboutStills.length)} {src} alt="" decoding="async" />{/each}
-					<div class="hl">
-						{#if listen?.rank}<span class="hl-rank">#{listen.rank} in the world</span>{/if}
-						<div class="hl-row">
-							<div class="hl-who">
-								<span class="hl-name">{#if picture && !photoFailed}<img class="hl-face" src={picture} alt="" />{/if}{hero.name}<small>{[hero.type ? artistKind(hero.type) : '', catalog?.span].filter(Boolean).join(' · ')}</small></span>
-								{#if listen}<b class="hl-n">{fullCount(listen.n)}</b><span class="hl-u">{listen.unit}{#if listen.today} · <em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em> today{/if}</span>{/if}
-							</div>
-							<div class="tiles">
-								{#if catalog?.albums}<p><span>{catalog.albums === 1 ? 'Album' : 'Albums'}</span><b>{catalog.albums}</b></p>{/if}
-								{#if smallCount}<p><span>Singles & EPs</span><b>{smallCount}</b></p>{/if}
-								{#if hero.country}<p><span>From</span><b>{countryName(hero.country)}</b></p>{/if}
-							</div>
-						</div>
+				{#if shots.length}
+					<figure class="col-photo">
+						{#each shots as src, i (src)}<img class:on={i === still % shots.length} {src} alt="" decoding="async" />{/each}
+						{#if shots.length > 1}
+							<button type="button" class="col-nav prev" aria-label="Previous photo" onclick={() => (still = (still - 1 + shots.length) % shots.length)}><Icon name="chevronLeft" size={20} /></button>
+							<button type="button" class="col-nav next" aria-label="Next photo" onclick={() => (still = (still + 1) % shots.length)}><Icon name="chevronRight" size={20} /></button>
+						{/if}
+					</figure>
+				{/if}
+				<div class="col">
+					<aside class="col-side">
+						{#if listen?.rank}<span class="col-disc"><b>#{listen.rank}</b><small>in the world</small></span>{/if}
+						{#if listen}<p class="col-big"><b>{fullCount(listen.n)}</b><span>{listen.unit}</span></p>{/if}
+						{#if listen?.today}<p class="col-big"><b class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</b><span>today</span></p>{/if}
+						<dl class="col-list">
+							{#if catalog?.albums}<div><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt><dd>{catalog.albums}</dd></div>{/if}
+							{#if smallCount}<div><dt>Singles & EPs</dt><dd>{smallCount}</dd></div>{/if}
+							{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
+							{#if catalog?.since}<div><dt>Active</dt><dd>{catalog.since} – {hero.status === 'ended' ? (catalog.span?.split('–')[1] ?? '') : 'now'}</dd></div>{/if}
+							{#if hero.type}<div><dt>Kind</dt><dd>{artistKind(hero.type)}</dd></div>{/if}
+						</dl>
+					</aside>
+					<div class="col-main">
+						{#if hero.bio?.extract}<div class="col-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p>{t}</p>{/each}</div>{/if}
+						<p class="col-by">{#if picture && !photoFailed}<img src={picture} alt="" />{/if}{hero.name}</p>
+						{#if genres}<div class="chips">{#each genres.split(', ') as g (g)}<span>{g}</span>{/each}</div>{/if}
 					</div>
-				</figure>
-			{/if}
-			<div class="v-body">
-				{#if hero.bio?.extract}<div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
-				{#if genres}<div class="chips">{#each genres.split(', ') as g (g)}<span>{g}</span>{/each}</div>{/if}
-			</div>
+				</div>
 		</div>
 	</Sheet>
 {/if}
@@ -1187,37 +1194,38 @@
 	/* The About sheet: an Apple TV-style dark window in the artist's colour, a zooming still with the face, glass tiles, the story. */
 	:global(.ui-sheet:has(.sheet[data-testid='artist-about-sheet'])) { --w: 1040px; max-height: min(92dvh, 980px); --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tint-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--tint-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
 	.sheet { display: flex; flex-direction: column; gap: 24px; }
-	.sh-still { position: relative; margin: 0; aspect-ratio: 21 / 9; border-radius: 18px; overflow: hidden; background: #1c1d21; isolation: isolate; box-shadow: 0 20px 50px rgb(0 0 0 / .45); }
-	.sh-still::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 60%); }
 	.chg { font-style: normal; }
-	.v-body { display: flex; flex-direction: column; gap: 20px; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 	.chips span { padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / 9%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); font: 600 13px/1 var(--font-ui); text-transform: capitalize; }
 	/* The photo is the centrepiece: the listener count is its title, the name sits small above it. */
-	.sheet .sh-still { aspect-ratio: 16 / 9; }
-	.hl { position: absolute; inset: 22px 26px 24px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; }
-	.hl-rank { position: absolute; top: 0; left: 0; padding: 8px 13px; border-radius: 999px; background: rgb(255 255 255 / 16%); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font: 700 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
-	.hl-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-	.hl-who { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-	.hl-face { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 6px 18px rgb(0 0 0 / .4); }
-	.hl-name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; font: 700 18px/1.2 var(--font-display); }
-	.hl-name small { font: 600 13px/1.2 var(--font-ui); color: rgb(255 255 255 / .7); }
-	.hl-n { font: 800 clamp(40px, 6.4vw, 76px)/.95 var(--font-display); letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
-	.hl-u { font: 600 15px/1.3 var(--font-ui); color: rgb(255 255 255 / .78); }
 	/* Small glass cards, one figure each. */
-	.tiles { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(104px, auto); gap: 10px; }
-	.tiles p { margin: 0; display: flex; flex-direction: column; gap: 5px; padding: 13px 16px; min-width: 0; border-radius: 14px; background: rgb(255 255 255 / 12%); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%), inset 0 1px 0 rgb(255 255 255 / 16%); }
-	.tiles span { font: 600 11px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: rgb(255 255 255 / .62); white-space: nowrap; }
-	.tiles b { font: 700 19px/1.15 var(--font-display); letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.sh-bio { display: flex; flex-direction: column; gap: 14px; max-width: 72ch; }
-	.sh-bio p { margin: 0; color: rgb(235 235 245 / .82); font: 400 16px/1.6 var(--font-ui); }
-	.sh-bio p.lead { color: #fff; font: 500 19px/1.55 var(--font-ui); }
+	/* Trial side-column About: the photo whole on black, a figures column at left, the story at right. */
+	.col-photo { position: relative; margin: 0; height: clamp(260px, 44vh, 420px); border-radius: 18px; overflow: hidden; background: #000; }
+	.col-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .6s var(--ease-out); }
+	.col-photo img.on { opacity: 1; }
+	.col-nav { position: absolute; top: 50%; translate: 0 -50%; width: 40px; height: 40px; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgb(0 0 0 / .45); color: #fff; cursor: pointer; backdrop-filter: blur(12px); }
+	.col-nav:hover { background: rgb(0 0 0 / .7); }
+	.col-nav.prev { left: 14px; } .col-nav.next { right: 14px; }
+	.col { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+	.col-side { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+	.col-disc { display: grid; place-content: center; justify-items: center; width: 84px; height: 84px; border-radius: 50%; background: var(--accent-fill); color: var(--text-on-red); text-align: center; }
+	.col-disc b { font: 800 24px/1 var(--font-display); }
+	.col-disc small { font: 600 10px/1.1 var(--font-ui); margin-top: 2px; }
+	.col-big { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+	.col-big b { font: 800 30px/1 var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+	.col-big span { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); text-transform: capitalize; }
+	.col-list { margin: 6px 0 0; display: flex; flex-direction: column; gap: 14px; }
+	.col-list div { display: flex; flex-direction: column; gap: 2px; }
+	.col-list dt { order: 2; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
+	.col-list dd { order: 1; margin: 0; font: 700 14px/1.3 var(--font-ui); }
+	.col-main { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+	.col-bio { display: flex; flex-direction: column; gap: 14px; }
+	.col-bio p { margin: 0; color: rgb(235 235 245 / .8); font: 500 16px/1.65 var(--font-ui); max-width: 68ch; }
+	.col-by { margin: 0; display: flex; align-items: center; gap: 10px; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }
+	.col-by img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
 	@media (max-width: 767px) {
-		.sh-still { aspect-ratio: 4 / 3; }
-		.sheet .sh-still { aspect-ratio: 4 / 5; }
-		.hl { inset: 16px 18px 18px; }
-		.hl-row { flex-direction: column; align-items: stretch; gap: 14px; }
-		.tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: auto; }
+		.col { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+		.col-list { flex-direction: row; flex-wrap: wrap; gap: 14px 28px; }
 		.a-bio { font-size: 16px; }
 		.a-foot { left: 18px; right: 18px; bottom: 18px; }
 	}
