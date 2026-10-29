@@ -27,6 +27,8 @@
 	let imports = $state<ImportRecord[]>([]);
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
+	// The poster pictures come from the Library titles; the rows wait for them, so no row first shows initials.
+	let titlesReady = $state(false);
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
 	let openId = $state(0);
@@ -140,7 +142,7 @@
 
 	onMount(() => {
 		void load();
-		void libraryTitles().then((r) => (titles = r)).catch(() => {});
+		void libraryTitles().then((r) => (titles = r)).catch(() => {}).finally(() => (titlesReady = true));
 		// The remove defaults are a settings read; without that permission the server's own defaults stand (no 403 in the console).
 		if (session.can('settings')) api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
 		if (session.can('manage_library'))
@@ -235,7 +237,7 @@
 
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>
 
-<PageLoader loading={!loaded} label="Loading Downloads">
+<PageLoader loading={!loaded || !titlesReady} label="Loading Downloads">
 {#if error && allRows.length === 0}
 	<div class="pad"><LoadError hasData={false} message="Downloads could not be loaded." onretry={load} /></div>
 {:else if allRows.length === 0}

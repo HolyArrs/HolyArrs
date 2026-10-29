@@ -112,10 +112,26 @@
 		else n.add(id);
 		filesOpen = n;
 	}
-	const start = showOf(page.url.searchParams.get('show'));
+	// With a ?sub look in the address and no tab named, open on the last-used parent (kept for this visit), else Waiting,
+	// so the first screen shows sub-options. Changing the look keeps the tab and sub-option, since this component stays.
+	const LAST_KEY = 'holyarrs.downloads.lastshow';
+	const lastShow = (() => {
+		try {
+			return sessionStorage.getItem(LAST_KEY) || '';
+		} catch {
+			return '';
+		}
+	})();
+	const askedShow = page.url.searchParams.get('show');
+	const start = showOf(askedShow ?? (page.url.searchParams.has('sub') ? lastShow || 'waiting' : null));
 	let show = $state(start.show);
 	let sub = $state(start.sub);
 	function remember() {
+		try {
+			sessionStorage.setItem(LAST_KEY, sub ? `${show}.${sub}` : show);
+		} catch {
+			/* nothing kept */
+		}
 		try {
 			const u = new URL(location.href);
 			if (show === ALL) u.searchParams.delete('show');
@@ -182,6 +198,66 @@
 	let psEl = $state<HTMLInputElement>();
 	let railPx = $state(196);
 	let fMenu = $state<TopMenu>();
+	// The pill group: one indicator slides between pills (translateX plus scaleX of a fixed-size block), the pills
+	// to its right glide when sub-options open (FLIP). Nothing animates a width, margin or left.
+	let tabsEl = $state<HTMLElement>();
+	let indEl = $state<HTMLElement>();
+	let indReady = false;
+	let selAt = 0;
+	let prevLefts = new Map<string, number>();
+	const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+	function placeInd(animate: boolean) {
+		if (!tabsEl || !indEl) return;
+		const tw = tabsEl.querySelector<HTMLElement>('.tw.on');
+		if (!tw) {
+			indEl.style.opacity = '0';
+			return;
+		}
+		const wide = subLook.value === 'a' || subLook.value === 'e';
+		const target = wide ? tw : (tw.querySelector<HTMLElement>('.tab') ?? tw);
+		const rr = tabsEl.getBoundingClientRect();
+		const r = target.getBoundingClientRect();
+		if (!r.width) return;
+		indEl.style.transition = animate && indReady && !calm() ? '' : 'none';
+		indEl.style.opacity = '1';
+		indEl.style.transform = `translateX(${(r.left - rr.left).toFixed(2)}px) scaleX(${(r.width / 100).toFixed(4)})`;
+		indReady = true;
+	}
+	$effect.pre(() => {
+		void [on, subOn, subLook.value];
+		if (!tabsEl) return;
+		prevLefts = new Map([...tabsEl.querySelectorAll<HTMLElement>('.tw')].map((el) => [el.dataset.key ?? '', el.getBoundingClientRect().left]));
+	});
+	$effect(() => {
+		void [on, subOn, subLook.value, tally.length];
+		if (!tabsEl) return;
+		selAt = performance.now();
+		tick().then(() => {
+			placeInd(true);
+			if (calm()) return;
+			for (const el of tabsEl!.querySelectorAll<HTMLElement>('.tw')) {
+				const dx = (prevLefts.get(el.dataset.key ?? '') ?? el.getBoundingClientRect().left) - el.getBoundingClientRect().left;
+				if (Math.abs(dx) < 1) continue;
+				el.style.transition = 'none';
+				el.style.transform = `translateX(${dx}px)`;
+				requestAnimationFrame(() =>
+					requestAnimationFrame(() => {
+						el.style.transition = 'transform 220ms var(--ease-out)';
+						el.style.transform = '';
+					})
+				);
+			}
+		});
+	});
+	$effect(() => {
+		if (!tabsEl) return;
+		// A resize or a changed count moves the pills without a pick: put the indicator there at once.
+		const ro = new ResizeObserver(() => {
+			if (performance.now() - selAt > 450) placeInd(false);
+		});
+		ro.observe(tabsEl);
+		return () => ro.disconnect();
+	});
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	function dragDown(e: PointerEvent) {
 		if (e.button !== 0 || !paneOpen) return;
@@ -1008,7 +1084,7 @@
 <DlRail bind:kindOn bind:srcOn {kindCount} {srcCount} bind:px={railPx} />
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow r-{subLook.value}" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs t2 s-{subLook.value}" role="tablist" aria-label="Status">{@render pills()}</div>{#if subLook.value === 'g'}{@render underSubs()}{/if}</div>
+<div class="tabrow r-{subLook.value}" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs t2 s-{subLook.value}" role="tablist" aria-label="Status" bind:this={tabsEl}><span class="ind" bind:this={indEl} aria-hidden="true"></span>{@render pills()}</div>{#if subLook.value === 'g'}{@render underSubs()}{/if}</div>
 {#if subLook.value === 'f'}<TopMenu bind:this={fMenu} bare label="{onTab?.label ?? 'Status'}: show" items={[{ label: 'All', hint: String(tally.find((x) => x.key === on)?.count ?? 0), onselect: () => choose(on) }, ...subs.map((x) => ({ label: x.label, hint: String(x.count), onselect: () => chooseSub(x.key) }))]} />{/if}
 {#if subLook.value === 'c'}
 	<div class="hint" data-testid="dl-subhint"><span>{#if onTab && subs.length}{subOn ? `Showing ${subs.find((x) => x.key === subOn)?.label}` : `Showing ${subs.map((x) => x.label).join(' and ')}`}{:else}&nbsp;{/if}</span>{#if onTab && subs.length}<span class="hf">{@render subFilter()}</span>{/if}</div>
@@ -1327,22 +1403,23 @@
 	/* The pill group of status tabs: one height system, the sub-statuses beside or inside the picked pill. */
 	.tabrow { display: flex; flex: none; align-items: center; height: 44px; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 	.tabrow::-webkit-scrollbar { display: none; }
-	.tabs.t2 { display: flex; flex: none; width: max-content; align-items: center; gap: 2px; padding: 2px; border-radius: 999px; background: var(--surface-2); overflow: visible; outline: none; }
-	.tw { display: inline-flex; align-items: center; flex: none; border-radius: 999px; transition: background var(--dur-base, 200ms) var(--ease-out); }
-	.tab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.tabs.t2 { position: relative; display: flex; flex: none; width: max-content; align-items: center; gap: 2px; padding: 2px; border-radius: 999px; background: var(--surface-2); overflow: visible; outline: none; }
+	.tw { position: relative; z-index: 1; display: inline-flex; align-items: center; flex: none; border-radius: 999px; will-change: transform; }
+	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.tab .n { color: inherit; opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tab:hover { color: var(--text); }
-	.tab.on { background: var(--text); color: var(--bg); font-weight: 600; }
+	.tab.on { color: var(--bg); }
 	.tab.zero:not(.on) { opacity: 0.72; }
 	.tab:active, .stab:active { transform: scale(0.97); }
 	.tab:focus-visible, .stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.subwrap { display: flex; max-width: 0; overflow: hidden; opacity: 0; visibility: hidden; transition: max-width 260ms var(--ease-out), opacity 160ms var(--ease-out), visibility 0s linear 260ms; }
-	.tw.open .subwrap { max-width: 360px; opacity: 1; visibility: visible; transition-delay: 0s; }
+	.ind { position: absolute; left: 0; top: 2px; z-index: 0; width: 100px; height: 28px; border-radius: 999px; background: var(--text); transform-origin: 0 50%; will-change: transform; pointer-events: none; transition: transform 260ms var(--ease-out), opacity 120ms var(--ease-out); }
+	.subwrap { display: none; }
+	.tw.open .subwrap { display: flex; animation: subin 220ms var(--ease-out) both; }
+	@keyframes subin { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 	.subin { display: flex; align-items: center; gap: 2px; flex: none; white-space: nowrap; }
 	.stab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: none; font: var(--t-footnote); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.stab b { min-width: 2ch; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 	/* a: the picked pill grows in place and holds its sub-options. */
-	.s-a .tw.on { background: var(--text); }
 	.s-a .tw.on .tab { background: none; color: var(--bg); }
 	.s-a .subin { margin: 0 4px 0 2px; padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--bg) 32%, transparent); }
 	.s-a .stab { color: color-mix(in srgb, var(--bg) 78%, transparent); }
@@ -1370,7 +1447,6 @@
 	.s-d .stab:hover { background: var(--surface-3); color: var(--text); }
 	.s-d .stab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
 	/* e: the parts of a pill show as tiny counts you can point at and click. */
-	.s-e .tw.on { background: var(--text); }
 	.s-e .tw.on .tab { background: none; color: var(--bg); }
 	.s-e .tw.hasparts .tab { padding-right: 4px; }
 	.parts { display: inline-flex; align-items: center; padding-right: 8px; font-size: 11px; }
@@ -1385,7 +1461,7 @@
 	.more { margin-left: 2px; letter-spacing: 1px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.tab:hover .more, .tab:focus-visible .more { opacity: 0.8; }
 	/* g: the picked pill's sub-options follow the group as quiet underlined text on the same line. */
-	.utabs { display: flex; flex: none; align-items: center; gap: 14px; margin-left: 14px; }
+	.utabs { display: flex; flex: none; align-items: center; gap: 14px; margin-left: 14px; animation: subin 220ms var(--ease-out) both; }
 	.utab { position: relative; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 2px; border: 0; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; transition: color var(--dur-fast) var(--ease-out); }
 	.utab b { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; opacity: 0.75; }
 	.utab::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1px; height: 2px; border-radius: 1px; background: transparent; transition: background var(--dur-fast) var(--ease-out); }
@@ -1393,8 +1469,8 @@
 	.utab.on { color: var(--text); font-weight: 600; }
 	.utab.on::after { background: var(--accent); }
 	.utab:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
-	@media (prefers-reduced-motion: reduce) { .tray, .part, .more, .utab, .utab::after { transition: none; } }
-	@media (prefers-reduced-motion: reduce) { .subwrap, .tw, .tab, .stab { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .tray, .part, .more, .utab, .utab::after, .ind { transition: none; } .tw.open .subwrap, .utabs { animation: none; } }
+	@media (prefers-reduced-motion: reduce) { .tw, .tab, .stab { transition: none; } }
 	.tbn :global(svg.icon) { width: 20px; height: 20px; }
 	.tbn { width: 34px; height: 34px; }
 	.split :global(.caret) { height: 34px; }
