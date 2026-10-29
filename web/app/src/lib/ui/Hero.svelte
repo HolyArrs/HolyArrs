@@ -3,6 +3,7 @@
 	import Badge from './Badge.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
+	import { tmdbSized } from '../library-art.ts';
 
 	// Title page hero: full-bleed backdrop (the darkened poster when there is none),
 	// legibility gradient, title or logo art, meta line, badges, status,
@@ -54,7 +55,7 @@
 
 <div class="ui-hero">
 	<div class="bg" class:blur={!backdrop && !!poster} use:viewTransitionName={vtName}>
-		{#if art}<img src={art} alt="" decoding="async" />{/if}
+		{#if art}{@const big = tmdbSized(art, 'backdrop', 1280, 1)}{@const small = tmdbSized(art, 'backdrop', 780, 1)}<img src={big} srcset={big !== art ? `${small} 780w, ${big} 1280w` : undefined} sizes="100vw" alt="" decoding="async" />{/if}
 	</div>
 	<div class="shade" aria-hidden="true"></div>
 	<div class="content">
@@ -66,7 +67,7 @@
 				{/each}
 			</nav>
 		{/if}
-		{#if logo}<h1 class="logo"><img src={logo} alt={title} /></h1>{:else}<h1>{title}</h1>{/if}
+		{#if logo}<h1 class="logo"><img src={tmdbSized(logo, 'logo', 500, 1)} alt={title} /></h1>{:else}<h1>{title}</h1>{/if}
 		{#if meta.length}<p class="meta">{meta.join(' · ')}</p>{/if}
 		{#if badges.length || status}
 			<div class="badges">

@@ -121,3 +121,26 @@ export function savePosterSize(member: number | undefined, s: PosterSize, store:
 		store?.setItem(key('poster-size', member), s);
 	} catch { /* Private windows may refuse. */ }
 }
+
+/** The sizes TMDB keeps for each kind of picture (largest last; 'original' is past the end). */
+export const TMDB_SIZES = {
+	poster: [92, 154, 185, 342, 500, 780],
+	profile: [45, 185, 632],
+	backdrop: [300, 780, 1280],
+	logo: [92, 154, 185, 300, 500]
+} as const;
+export type TmdbKind = keyof typeof TMDB_SIZES;
+
+/**
+ * tmdbSized points a TMDB picture at the smallest size of its kind that covers
+ * css x ratio pixels across (profile's top size is a height, h632). Other
+ * pictures are left as they are.
+ */
+export function tmdbSized(url: string | null | undefined, kind: TmdbKind, css: number, ratio = globalThis.devicePixelRatio || 1): string {
+	const m = url ? anyTmdb.exec(url) : null;
+	if (!m || !(css > 0)) return url ?? '';
+	const sizes = TMDB_SIZES[kind];
+	const need = css * ratio;
+	const w = sizes.find((s) => s >= need) ?? sizes[sizes.length - 1];
+	return `${m[1]}/${kind === 'profile' && w === 632 ? 'h632' : `w${w}`}/${m[2]}`;
+}

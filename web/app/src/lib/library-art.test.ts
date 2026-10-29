@@ -80,3 +80,17 @@ describe('posterSrc', () => {
 	it('sharpens large posters on 2x screens', () => expect(posterSrc(u, 232, 2)).toContain('/w780/'));
 	it('uses the original on 3x screens', () => expect(posterSrc(u, 232, 3)).toContain('/original/'));
 });
+
+import { tmdbSized } from './library-art.ts';
+import { describe as d2, it as i2, expect as e2 } from 'vitest';
+d2('tmdbSized', () => {
+	const u = 'https://image.tmdb.org/t/p/original/abc.jpg';
+	i2('picks the smallest size of the kind that covers the slot', () => {
+		e2(tmdbSized(u, 'profile', 92, 2)).toContain('/w185/');
+		e2(tmdbSized(u, 'profile', 400, 2)).toContain('/h632/');
+		e2(tmdbSized(u, 'poster', 44, 2)).toContain('/w92/');
+		e2(tmdbSized(u, 'backdrop', 375, 2)).toContain('/w780/');
+		e2(tmdbSized(u, 'logo', 420, 1)).toContain('/w500/');
+		e2(tmdbSized('/x.png', 'logo', 420, 1)).toBe('/x.png');
+	});
+});

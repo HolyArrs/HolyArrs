@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { coverFor } from '../music/music-pages.ts';
+	import { tmdbSized } from '../library-art.ts';
 	// A song line: 56 tall, 44 px art, title and artist, the explicit "E",
 	// and one action: Ask album (HolyArrs asks for albums, it does not play).
 	let { title, artist, image = null, explicit = false, href, askHref }: { title: string; artist: string; image?: string | null; explicit?: boolean; href: string; askHref: string } = $props();
@@ -7,7 +8,7 @@
 
 <div class="ui-song" data-testid="song-line">
 	<a class="main" {href}>
-		<span class="art">{#if image}<img src={coverFor(image, 44).src} alt="" loading="lazy" decoding="async" />{/if}</span>
+		<span class="art">{#if image}<img src={tmdbSized(coverFor(image, 44).src, 'poster', 44)} alt="" loading="lazy" decoding="async" />{/if}</span>
 		<span class="words">
 			<span class="title">{title}</span>
 			<span class="by">{#if explicit}<span class="e" aria-label="Explicit">E</span>{/if}{artist}</span>

@@ -4,6 +4,7 @@
 	import { api } from '../api.ts';
 	import { loadWikiFacts } from '../wiki-facts.ts';
 	import { pictureOf } from '../pictures.ts';
+	import { tmdbSized } from '../library-art.ts';
 
 	// A person in a cast and crew shelf: round photo (initials fallback), name, role.
 	let { name, role, image, href, size = 96, needsArt = false }: { name: string; role?: string; image?: string | null; href?: string; size?: number; /** Artist rows: no photo, no circle (its list item is left out too). */ needsArt?: boolean } = $props();
@@ -44,7 +45,7 @@
 <svelte:element this={href ? 'a' : 'div'} class="ui-person" class:gone href={href} aria-label={href ? label : undefined} style="--size: {size}px" use:press={'card'}>
 	<span class="ph" class:sk={!!shown && !loaded} style:background={tint} use:nearView>
 		{#if !shown || !loaded}<ArtPlaceholder {name} shape="circle" loading={!!shown && !loaded} color={tint} />{/if}
-		{#if shown}{#key shown}<img src={shown} class:in={loaded} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (shown === backup ? (backupFailed = true) : (failed = true), (loaded = false))} />{/key}{/if}
+		{#if shown}{#key shown}<img src={tmdbSized(shown, 'profile', size)} class:in={loaded} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (shown === backup ? (backupFailed = true) : (failed = true), (loaded = false))} />{/key}{/if}
 	</span>
 	<span class="n" aria-hidden={href ? 'true' : undefined}>{name}</span>
 	{#if role}<span class="r" aria-hidden={href ? 'true' : undefined}>{role}</span>{/if}
