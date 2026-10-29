@@ -72,22 +72,27 @@ export function installScrollBar(): () => void {
 	let queued = false;
 	// Which way the person last asked to go (wheel, swipe, keys). While it is up, the page moving
 	// down by itself (days added above, pictures loading) never hides the bar.
+	// The wish counts for a short while only, so a scrollbar drag or a link later is read plainly.
 	let goingUp = false;
+	let wishAt = 0;
+	const wish = (up: boolean) => ((goingUp = up), (wishAt = performance.now()));
 	let touchY = 0;
-	const onWheel = (e: WheelEvent) => e.deltaY && (goingUp = e.deltaY < 0);
+	const onWheel = (e: WheelEvent) => e.deltaY && wish(e.deltaY < 0);
 	const onTouchStart = (e: TouchEvent) => (touchY = e.touches[0]?.clientY ?? 0);
 	const onTouchMove = (e: TouchEvent) => {
 		const y = e.touches[0]?.clientY ?? 0;
-		if (Math.abs(y - touchY) > 4) (goingUp = y > touchY), (touchY = y);
+		if (Math.abs(y - touchY) > 4) wish(y > touchY), (touchY = y);
 	};
 	const onKey = (e: KeyboardEvent) => {
-		if (['ArrowUp', 'PageUp', 'Home'].includes(e.key)) goingUp = true;
-		else if (['ArrowDown', 'PageDown', 'End', ' '].includes(e.key)) goingUp = false;
+		const t = e.target;
+		if (e.defaultPrevented || (t instanceof HTMLElement && t.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'))) return;
+		if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) || (e.key === ' ' && e.shiftKey)) wish(true);
+		else if (['ArrowDown', 'PageDown', 'End', ' '].includes(e.key)) wish(false);
 	};
 	const run = () => {
 		queued = false;
 		let next = nextBar(st, window.scrollY);
-		if (goingUp && next.hidden && (!st.hidden || window.scrollY < st.anchor)) next = { hidden: false, anchor: window.scrollY };
+		if (goingUp && performance.now() - wishAt < 600 && next.hidden && (!st.hidden || window.scrollY < st.anchor)) next = { hidden: false, anchor: window.scrollY };
 		st = next.hidden && blocked() ? { hidden: false, anchor: window.scrollY } : next;
 		apply(st.hidden);
 		checkHero();

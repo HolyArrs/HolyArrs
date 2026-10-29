@@ -69,34 +69,17 @@
 	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the
 	// session; the old layout links (?view=2&span=…) land on Cards.
 	let view = $state<CalendarView>(startView(page.url.searchParams.get('view'), readView()));
-	// The days shown run from `start` (today, or the first of a linked month) to the day before `end`.
-	// Six more weeks load as the end comes near; scrolling up past the first day loads a week
-	// before it. Both stop a year from today.
+	// The days shown run from `start` (a year back, or the first of a linked month) to the day
+	// before `end`. Six more weeks load as the end comes near. Both stop a year from today.
 	const today0 = addDays(now, 0);
 	const REACH = 6;
 	const earliest = addDays(today0, -365);
 	const latest = addDays(today0, 366);
-	// Scrolling up adds three weeks at a time. Their answer is asked ahead in the background
-	// (`early`), so when the top is reached the days go in at once instead of after a wait.
-	const AHEAD = 21;
-	let start = $state(askedMonth ?? today0);
-	const early = new Map<string, Promise<CalendarAnswer>>();
-	const calGet = (from: string, to: string) => {
-		const k = `${from}|${to}`;
-		const p = early.get(k) ?? api.get<CalendarAnswer>(`/calendar?from=${from}&to=${to}`);
-		early.delete(k);
-		return p;
-	};
-	function askEarly() {
-		if (start <= earliest) return;
-		const to = addDays(start, -AHEAD);
-		const from = to < earliest ? earliest : to;
-		const r = { from: ymd(addDays(from, -1)), to: ymd(addDays(end, 1)) };
-		for (const c of rangeChunks(r.from, r.to)) {
-			const k = `${c.from}|${c.to}`;
-			if (!early.has(k)) early.set(k, api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`).catch(() => ({ dates: null })));
-		}
-	}
+	// The whole past year loads with the first answer (one quick ask), and the page opens at
+	// today with that year above it, so scrolling up glides like scrolling down: nothing is
+	// ever slipped in above the person. A linked month starts at that month instead.
+	let start = $state(askedMonth ?? earliest);
+	let toTodayOnce = !askedMonth;
 	let end = $state(addDays(askedMonth ?? today0, 7 * REACH));
 	let entries = $state<CalendarEntry[]>([]);
 	let libraryEmpty = $state(false);
@@ -199,7 +182,7 @@
 			const r = range;
 			// The server takes up to a year a query; a longer stretch is asked in pieces.
 			const [parts, t] = await Promise.all([
-				Promise.all(rangeChunks(r.from, r.to).map((c) => calGet(c.from, c.to))),
+				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`))),
 				libraryTitles()
 			]);
 			if (n !== asks) return;
@@ -229,7 +212,8 @@
 			loaded = true;
 			if (n === asks) {
 				fetching = false;
-				askEarly();
+				// The rows draw once loaded is set; then the page goes to today, below the bars.
+				if (toTodayOnce && !error) void tick().then(() => atToday() && (toTodayOnce = false));
 			}
 		}
 	}
@@ -241,14 +225,39 @@
 		pickYear = start.getFullYear();
 		pickMonth = start.getMonth();
 	}
-	const go = (n: number) => jump(addDays(start, 7 * n));
+	// The arrows move a week from the day in view (the whole stretch is loaded, so it glides).
+	const go = (n: number) => {
+		const t = addDays(new Date((active ?? todayKey) + 'T00:00:00'), 7 * n);
+		const day = ymd(t < earliest ? earliest : t >= latest ? addDays(latest, -1) : t);
+		const row = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= day);
+		if (row && day >= firstDay && day < lastDay) {
+			active = row.dataset.day ?? day;
+			goRow(row);
+		} else void pickDay(day);
+	};
+	// Today's row just below the top bar and the date bar, at once.
+	function atToday(): boolean {
+		const row = todayRow();
+		if (!row) return false;
+		window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - (narrow ? 112 : 136), behavior: 'instant' });
+		rebaseBar();
+		return true;
+	}
 	// Calendar picked again (side menu) while it already shows: start over at today and the top.
 	afterNavigate((nav) => {
-		if (nav.type !== 'link' || nav.from?.route.id !== nav.to?.route.id || nav.to?.url.searchParams.get('month')) return;
-		if (start.getTime() === today0.getTime() && window.scrollY === 0) return;
-		guard();
-		jump(today0);
-		window.scrollTo({ top: 0, behavior: 'instant' });
+		if (nav.type !== 'link' || nav.from?.route.id !== nav.to?.route.id) return;
+		const m = /^(\d{4})-(\d{2})$/.exec(nav.to?.url.searchParams.get('month') ?? '');
+		if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) {
+			toTodayOnce = false;
+			jump(new Date(Number(m[1]), Number(m[2]) - 1, 1));
+			window.scrollTo({ top: 0, behavior: 'instant' });
+			return;
+		}
+		if (start.getTime() === earliest.getTime() && end.getTime() === addDays(today0, 7 * REACH).getTime()) return void atToday();
+		start = earliest;
+		end = addDays(today0, 7 * REACH);
+		anchor = null;
+		toTodayOnce = true;
 	});
 	// Each new range (the arrows, Today, more weeks, the small month) is loaded once.
 	let started = $state(false);
@@ -257,15 +266,16 @@
 		void range.to;
 		if (started) untrack(() => void load());
 	});
-	// Today glides to today's row when it is loaded, else reloads from today. Either way no
-	// older weeks load while the page moves, or they would push today away again.
+	// Today glides to today's row when it is loaded, else loads the usual stretch and opens there.
 	function toToday() {
-		guard();
 		const row = firstDay <= todayKey ? todayRow() : undefined;
-		if (row) row.scrollIntoView({ block: 'start', behavior: glideScroll() });
+		if (row) goRow(row);
 		else {
-			jump(new Date());
-			window.scrollTo({ top: 0, behavior: glideScroll() });
+			// Today is not loaded (a linked month): load the past year to six weeks ahead, then go to today.
+			start = earliest;
+			end = addDays(today0, 7 * REACH);
+			anchor = null;
+			toTodayOnce = true;
 		}
 	}
 	const todayRow = () => [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= todayKey);
@@ -300,9 +310,9 @@
 	// A day not loaded yet (from the small month) loads first, then the page glides to it.
 	let goTo: string | null = null;
 
-	// Older days go in above the ones on screen. The row at the top of the screen is noted
-	// before they load and put back where it was after (scrollTop moves by what was added),
-	// so nothing jumps.
+	// When days go in above the ones on screen (a far day picked in the small month, a live
+	// update), the row at the top of the screen is noted before and put back where it was
+	// after (scrollTop moves by what was added), so nothing jumps.
 	let anchor: { day: string; top: number } | null = null;
 	function notePlace() {
 		const rows = document.querySelectorAll<HTMLElement>('.cal-main [data-day]');
@@ -333,21 +343,11 @@
 		notePlace();
 		start = to;
 	}
-	// gliding stays on until the page has stopped moving for a moment.
-	let gliding = false;
-	let glideTimer: ReturnType<typeof setTimeout> | undefined;
-	function guard() {
-		gliding = true;
-		clearTimeout(glideTimer);
-		glideTimer = setTimeout(() => (gliding = false), 600);
-	}
-	// Earlier weeks come only when asked (the button above the first day), so scrolling up
-	// stops at the top like scrolling down glides: nothing is slipped in above the person.
-	// They go in under the button, where the person is looking.
-	function back() {
-		if (fetching || start <= earliest) return;
-		const to = addDays(start, -AHEAD);
-		start = to < earliest ? earliest : to;
+	// Glide to a row; a long way (more than two screens) goes at once, since a long glide stalls.
+	function goRow(row: HTMLElement) {
+		const far = Math.abs(row.getBoundingClientRect().top) > 2 * innerHeight;
+		row.scrollIntoView({ block: 'start', behavior: far ? 'instant' : glideScroll() });
+		if (far) rebaseBar();
 	}
 	// A day picked in the small month: glide to its row (instant under reduced motion).
 	async function pickDay(day: string) {
@@ -355,21 +355,24 @@
 		sheetOpen = false;
 		if (fromSheet) await tick();
 		const at = new Date(day + 'T00:00:00');
-		if (day < firstDay || day >= lastDay) {
+		if (day < firstDay) {
+			const to = at < earliest ? earliest : at;
+			if (to >= start) return;
 			goTo = day;
-			if (day < firstDay) earlier(at < earliest ? earliest : at);
-			else {
-				const to = addDays(at, 7);
-				end = to > latest ? latest : to;
-			}
+			earlier(to);
+			return;
+		}
+		if (day >= lastDay) {
+			const to = addDays(at, 7) > latest ? latest : addDays(at, 7);
+			if (to <= end) return;
+			goTo = day;
+			end = to;
 			return;
 		}
 		const row = document.querySelector<HTMLElement>(`.cal-main [data-day="${day}"]`);
 		if (!row) return;
 		active = day;
-		// No loading above while the page glides to the day, or the rows would move under it.
-		guard();
-		row.scrollIntoView({ block: 'start', behavior: glideScroll() });
+		goRow(row);
 	}
 	// The day at the top of the page, for the small month (which pages along when the month changes).
 	function follow() {
@@ -405,12 +408,7 @@
 		away = b.bottom < (narrow ? 96 : 120) || b.top > innerHeight;
 	}
 	let ticking = false;
-	let lastY = 0;
 	function onScroll() {
-		const y = window.scrollY;
-		const up = y < lastY;
-		lastY = y;
-		if (gliding) guard();
 		if (headEnd) pastHead = headEnd.getBoundingClientRect().top < (narrow ? 44 : 56);
 		if (ticking) return;
 		ticking = true;
@@ -491,7 +489,8 @@
 			u.searchParams.delete('span');
 			replaceState(u, page.state);
 		}
-		const offs = [live.on('title', load), live.on('resync', load)];
+		const again = () => (notePlace(), void load());
+		const offs = [live.on('title', again), live.on('resync', again)];
 		return () => {
 			offs.forEach((off) => off());
 			mq.removeEventListener('change', fit);
@@ -672,9 +671,6 @@
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
 	<div class="cal-body" class:barred={barOn} class:month-off={monthHidden}>
 		<div class="cal-main">
-			{#if loaded && start > earliest && !filteredOut}
-				<div class="earlier"><Button variant="secondary" icon="calendar" busy={fetching} onclick={back} data-testid="cal-earlier">Earlier weeks</Button></div>
-			{/if}
 			{#key view}
 				<div class="view-in" data-view={view}>
 					{#if filteredOut}
@@ -740,7 +736,6 @@
 	.month-btn .chev { display: inline-flex; color: var(--text-muted); transition: transform var(--dur) var(--ease-out); }
 	.month-btn .chev.off { transform: rotate(180deg); }
 	.cal-main { min-width: 0; }
-	.earlier { display: flex; justify-content: center; margin: 0 0 20px; }
 	.side { position: sticky; top: calc(var(--topbar) + 16px); padding: 14px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.phone-only { display: none; }
 	.sheet-mini, .sheet-filters { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 12px; }
