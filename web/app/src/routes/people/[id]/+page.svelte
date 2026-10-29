@@ -24,6 +24,7 @@
 	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
 	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import HeroMotion from '#lib/ui/HeroMotion.svelte';
@@ -291,6 +292,10 @@
 <div class="person">
 {#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />
 {:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
+{#snippet mainAct()}
+	<ActionButton icon="film" label="Go to the filmography" caption="Filmography" primary onclick={() => document.getElementById('films-title')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })} />
+{/snippet}
+
 <PageLoader loading={(!data || !(wikiDone || wikiWaited)) && !error} label="Loading this person" onretry={load}>
 {#if data && (wikiDone || wikiWaited) && view}
 	<div class="ap" class:tinted={!!tint} style={tint ? `--ap-bg:${tint.bg};--ap-soft:${tint.soft}` : undefined}>
@@ -318,11 +323,12 @@
 			<h1 bind:this={nameEl}>{data.person.name}</h1>
 			{#if lead}<p class="c-line">{lead}</p>{/if}
 		</div>
-		<div class="acts"><a class="go" href="#films-title">Filmography</a></div>
+		<div class="acts">{@render mainAct()}<ActionButton icon="info" label="About {data.person.name}" caption="About" onclick={() => (aboutOpen = true)} /></div>
 	</div>
 
 	<div class="slimwrap">
 		<div class="slim" class:on={slimOn} style:--tint={tint?.bg} aria-hidden={!slimOn} inert={!slimOn} data-testid="person-slim-bar">
+			{@render mainAct()}
 			{#if photo}<img class="s-photo" src={photo} alt="" />{/if}
 			<span class="slim-name">{data.person.name}</span>
 		</div>
@@ -577,13 +583,14 @@
 	.showing { position: absolute; z-index: 1; top: 18px; left: var(--gutter); padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); color: #fff; font: var(--t-footnote); font-weight: 600; text-decoration: none; }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
 	.cline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; margin-top: calc(var(--gap) * -1 - 52px); position: relative; z-index: 1; }
-	.photo { display: grid; place-items: center; width: 136px; height: 136px; border-radius: 50%; overflow: hidden; background: #1c1d21; box-shadow: 0 12px 32px rgb(0 0 0 / .35), 0 0 0 4px var(--bg); }
-	.photo img { width: 100%; height: 100%; object-fit: cover; }
+	.photo { display: grid; place-items: center; width: 152px; height: 152px; border-radius: 50%; overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3, var(--surface-2))); box-shadow: var(--shadow-card), 0 18px 40px rgb(0 0 0 / .35); transition: transform var(--dur) var(--ease-out); }
+	.photo:hover { transform: scale(1.03); }
+	.photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
 	.initials { color: #fff; font: 700 40px/1 var(--font-display); }
 	.c-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-bottom: 8px; }
 	.c-words h1 { margin: 0; font-size: clamp(30px, 3vw, 40px); color: var(--text); }
 	.c-line { margin: 0; color: var(--text-muted); font: 600 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.acts { padding-bottom: 8px; }
+	.acts { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; }
 	.go { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; background: var(--text); color: var(--bg); font: 600 15px/1 var(--font-ui); text-decoration: none; }
 	.go:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.slimwrap { position: sticky; top: var(--topbar); z-index: 25; height: 0; margin-bottom: calc(var(--gap) * -1); transition: transform var(--bar-glide); }
