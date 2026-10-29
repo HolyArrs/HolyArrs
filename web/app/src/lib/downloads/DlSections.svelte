@@ -74,15 +74,15 @@
 	// The left rail: a status, a source (Usenet or Torrent); the Type filter is its Categories.
 	let railOn = $state('all');
 	let srcOn = $state<'' | 'usenet' | 'torrent'>('');
-	const RAIL: { key: string; label: string; stages: Stage[] | null }[] = [
-		{ key: 'all', label: 'All', stages: null },
-		{ key: 'active', label: 'Active', stages: ['downloading', 'importing', 'seeding'] },
-		{ key: 'downloading', label: 'Downloading', stages: ['downloading'] },
-		{ key: 'seeding', label: 'Seeding', stages: ['seeding'] },
-		{ key: 'done', label: 'Done', stages: ['done'] },
-		{ key: 'paused', label: 'Paused', stages: ['paused', 'queued'] },
-		{ key: 'stalled', label: 'Stalled', stages: ['stalled'] },
-		{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'] }
+	const RAIL: { key: string; label: string; short: string; stages: Stage[] | null }[] = [
+		{ key: 'all', label: 'All', short: 'All', stages: null },
+		{ key: 'active', label: 'Active', short: 'Act', stages: ['downloading', 'importing', 'seeding'] },
+		{ key: 'downloading', label: 'Downloading', short: 'Down', stages: ['downloading'] },
+		{ key: 'seeding', label: 'Seeding', short: 'Seed', stages: ['seeding'] },
+		{ key: 'done', label: 'Done', short: 'Done', stages: ['done'] },
+		{ key: 'paused', label: 'Paused', short: 'Hold', stages: ['paused', 'queued'] },
+		{ key: 'stalled', label: 'Stalled', short: 'Slow', stages: ['stalled'] },
+		{ key: 'problems', label: 'Problems', short: 'Err', stages: ['failed', 'decide'] }
 	];
 	const bySource = $derived(srcOn ? searched.filter((r) => protocolOf(r) === srcOn) : searched);
 	const railCounts = $derived(RAIL.map((c) => ({ ...c, count: c.stages ? bySource.filter((r) => c.stages!.includes(stageOf(r))).length : bySource.length })));
@@ -204,6 +204,62 @@
 		}
 	}
 	let colEl = $state<HTMLElement>();
+	// The left rail: its width (or hidden) is kept in this browser.
+	const RAIL_KEY = 'holyarrs.downloads.rail';
+	let railW = $state(196);
+	let railOpen = $state(true);
+	try {
+		const v = typeof localStorage === 'undefined' ? null : JSON.parse(localStorage.getItem(RAIL_KEY) ?? 'null');
+		if (v && typeof v === 'object') {
+			if (Number.isFinite(v.w)) railW = Math.max(100, Math.min(360, Math.round(v.w)));
+			if (v.open === false) railOpen = false;
+		}
+	} catch {
+		/* private window or unreadable: the default rail */
+	}
+	function saveRail() {
+		try {
+			localStorage.setItem(RAIL_KEY, JSON.stringify({ w: Math.round(railW), open: railOpen }));
+		} catch {
+			/* private window: it lasts for this visit */
+		}
+	}
+	let narrow = $state(false);
+	const railShown = $derived(railOpen || narrow);
+	const compactRail = $derived(railW < 150 && !narrow);
+	function railDown(e: PointerEvent) {
+		if (e.button !== 0) return;
+		e.preventDefault();
+		const el = e.currentTarget as HTMLElement;
+		el.setPointerCapture(e.pointerId);
+		const x0 = e.clientX;
+		const w0 = railW;
+		const mv = (m: PointerEvent) => (railW = Math.max(100, Math.min(360, Math.round(w0 + (m.clientX - x0)))));
+		const up = () => {
+			el.removeEventListener('pointermove', mv);
+			el.removeEventListener('pointerup', up);
+			el.removeEventListener('pointercancel', up);
+			saveRail();
+		};
+		el.addEventListener('pointermove', mv);
+		el.addEventListener('pointerup', up);
+		el.addEventListener('pointercancel', up);
+	}
+	function railKey(e: KeyboardEvent) {
+		if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+			e.preventDefault();
+			e.stopPropagation();
+			railW = Math.max(100, Math.min(360, railW + (e.key === 'ArrowRight' ? 16 : -16)));
+			saveRail();
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			setRail(false);
+		}
+	}
+	function setRail(open: boolean) {
+		railOpen = open;
+		saveRail();
+	}
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	function dragDown(e: PointerEvent) {
 		if (e.button !== 0 || !paneOpen) return;
@@ -366,6 +422,7 @@
 		const ro = new ResizeObserver(() => {
 			room = (listEl ?? g).clientWidth;
 			phone = matchMedia('(max-width: 640px)').matches;
+			narrow = matchMedia('(max-width: 1099px)').matches;
 			titleMin = minOf('title');
 		});
 		ro.observe(g);
@@ -378,7 +435,7 @@
 		const fit = () => {
 			const small = innerWidth <= 767;
 			const tab = small ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar')) || 56) : 0;
-			appH = Math.max(420, Math.floor(innerHeight - appEl!.getBoundingClientRect().top - tab - 8));
+			appH = Math.max(420, Math.floor(innerHeight - appEl!.getBoundingClientRect().top - tab));
 		};
 		fit();
 		const ro = new ResizeObserver(fit);
@@ -901,35 +958,44 @@
 		<span class="all"><IconButton icon="pause" label="Pause all (coming soon)" size="sm" disabled data-testid="tb-pause-all" /><i aria-hidden="true">all</i></span>
 		<IconButton icon="refresh" label="Retry all problems (coming soon)" size="sm" disabled class="retry" data-testid="dl-retry-all" />
 	</div>
-	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><SpeedGraph speed={sum.speed} up={sum.up} {history} /></span>
-	<span><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
-	<span data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
-	{#if problems}<button type="button" class="need" onclick={() => (railOn = 'problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
 	<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
 		<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
 		<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
 		{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
 	</div>
+	<div class="stats" data-testid="dl-stats">
+	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><span class="gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} /></span></span>
+	<span class="tl"><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
+	<span class="tg2" data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
+	{#if problems}<button type="button" class="need" onclick={() => (railOn = 'problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
+	</div>
 </div>
-<div class="body">
-<nav class="rail" aria-label="Downloads filters" data-testid="dl-rail">
+<div class="body" style="--rail: {railShown ? railW : 22}px">
+<nav class="rail" class:compact={compactRail} class:shut={!railOpen} aria-label="Downloads filters" data-testid="dl-rail">
+	{#if railOpen}
+	<button type="button" class="rhide" aria-label="Hide filters" title="Hide filters" onclick={() => setRail(false)} data-testid="rail-hide"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
 	<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
 		{#each railCounts as c (c.key)}
-			<button type="button" class="ri" class:on={railOn === c.key} class:zero={c.count === 0} aria-pressed={railOn === c.key} data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => (railOn = c.key)}><span>{c.label}</span><b>{c.count}</b></button>
+			<button type="button" class="ri" class:on={railOn === c.key} class:zero={c.count === 0} aria-pressed={railOn === c.key} data-testid="rail-item" title={c.label} data-key={c.key} data-count={c.count} onclick={() => (railOn = c.key)}><span class="lb">{c.label}</span><span class="sh" aria-hidden="true">{c.short}</span><b>{c.count}</b></button>
 		{/each}
 	</div>
 	<div class="rg" role="group" aria-label="Categories" data-testid="dl-type-filter">
 		<p class="rh">Categories</p>
 		{#each KIND_TABS.filter((t) => t.key) as t (t.key)}
-			<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span>{t.label}</span><b>{kindCount(t.key)}</b></button>
+			<button type="button" class="ri" class:on={kindOn === t.key} class:zero={kindCount(t.key) === 0} aria-pressed={kindOn === t.key} data-testid="rail-kind" data-key={t.key} data-count={kindCount(t.key)} title={t.label} onclick={() => (kindOn = kindOn === t.key ? '' : t.key)}><span class="lb">{t.label}</span><span class="sh" aria-hidden="true">{t.key === 'movie' ? 'Mov' : t.key === 'show' ? 'TV' : 'Mus'}</span><b>{kindCount(t.key)}</b></button>
 		{/each}
 	</div>
 	<div class="rg" role="group" aria-label="Sources" data-testid="dl-source-filter">
 		<p class="rh">Sources</p>
 		{#each [{ key: 'usenet', label: 'Usenet' }, { key: 'torrent', label: 'Torrent' }] as t (t.key)}
-			<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span>{t.label}</span><b>{srcCount(t.key)}</b></button>
+			<button type="button" class="ri" class:on={srcOn === t.key} class:zero={srcCount(t.key) === 0} aria-pressed={srcOn === t.key} data-testid="rail-source" data-key={t.key} data-count={srcCount(t.key)} title={t.label} onclick={() => (srcOn = srcOn === t.key ? '' : (t.key as 'usenet' | 'torrent'))}><span class="lb">{t.label}</span><span class="sh" aria-hidden="true">{t.key === 'usenet' ? 'NZB' : 'Tor'}</span><b>{srcCount(t.key)}</b></button>
 		{/each}
 	</div>
+	{:else}
+	<button type="button" class="rshow" aria-label="Show filters" title="Show filters" onclick={() => setRail(true)} data-testid="rail-show"><Icon name="chevronRight" size={14} stroke={2.2} /></button>
+	{/if}
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+	<div class="rz" role="separator" aria-orientation="vertical" aria-label="Resize filters" aria-valuenow={railOpen ? railW : 0} tabindex="0" class:fixed={!railOpen} onpointerdown={(e) => railOpen && railDown(e)} ondblclick={() => setRail(!railOpen)} onkeydown={railKey} data-testid="rail-handle"><i aria-hidden="true"></i></div>
 </nav>
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -1125,12 +1191,12 @@
 	.lg li { overflow-wrap: anywhere; }
 	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 	.lg .bad { color: var(--fail); }
-	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.1); overflow: clip; }
-	.body { display: grid; grid-template-columns: 196px minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
+	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; overflow: clip; }
+	.body { display: grid; grid-template-columns: var(--rail, 196px) minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 	.listbox .tw { overflow: visible; }
-	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--surface-1); }
-	.rail { display: grid; align-content: start; gap: 14px; overflow-y: auto; padding: 12px 8px; border-right: 1px solid var(--line); background: var(--surface-2); min-width: 0; }
+	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
+	.rail { position: relative; display: grid; align-content: start; gap: 14px; overflow-x: hidden; overflow-y: auto; padding: 10px 8px; border-right: 1px solid var(--line); min-width: 0; }
 	.rg { display: grid; gap: 2px; }
 	.rh { margin: 0 8px 2px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.ri { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-footnote); cursor: pointer; text-align: left; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
@@ -1144,8 +1210,7 @@
 	.tbg .div { width: 1px; height: 20px; margin: 0 6px; background: var(--line-strong, var(--line)); }
 	.tbg .all { display: inline-flex; align-items: center; }
 	.tbg .all i { margin-left: -4px; color: var(--text-muted); font: var(--t-caption); font-style: normal; }
-	.hdr .find { margin-left: auto; }
-	.sbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; padding: 8px 14px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 86%, transparent); backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.sbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; padding: 8px 14px; border-top: 1px solid var(--line); }
 	.sbar > span { display: inline-flex; align-items: center; gap: 6px; }
 	.sbar .wide { margin-left: auto; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
@@ -1178,18 +1243,18 @@
 	.pv { display: inline-block; min-width: 34px; margin-left: 6px; text-align: right; }
 	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.hdr { flex: none; margin: 0; gap: 8px 20px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-1); }
+	.hdr { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px 16px; margin: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); background: none; container-type: inline-size; }
 	.col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
 	.drow.sel > .dline { position: relative; z-index: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface-1)); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
 	.drow.sel > .dline:hover { background: color-mix(in srgb, var(--accent) 18%, var(--surface-1)); }
 	.drow.sel .tt { color: var(--accent-text, var(--text)); }
-	.dv { flex: none; position: relative; height: 9px; border-top: 1px solid var(--line); background: var(--surface-2); cursor: row-resize; touch-action: none; }
+	.dv { flex: none; position: relative; height: 9px; border-top: 1px solid var(--line); cursor: row-resize; touch-action: none; }
 	.dv.fixed { cursor: default; }
 	.dv i { position: absolute; left: 50%; top: 3px; width: 38px; height: 3px; margin-left: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0.6; }
 	.dv:hover i, .dv:focus-visible i { opacity: 1; }
 	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: var(--surface-1); box-shadow: 0 -8px 16px -10px rgb(0 0 0 / 0.3); }
+	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
 	.ph { display: flex; align-items: center; gap: 4px 16px; flex-wrap: wrap; padding: 6px 12px; border-bottom: 1px solid var(--line); min-width: 0; }
 	.dpane.shut .ph { border-bottom: 0; }
@@ -1203,6 +1268,33 @@
 	.pcl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pb { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: start; gap: 16px; flex: 1 1 auto; min-height: 0; padding: 12px; overflow: auto; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
+	.hdr .find { justify-self: center; margin-left: 0; width: min(320px, 100%); }
+	.hdr .find input { width: 100%; min-width: 0; flex: 1 1 auto; }
+	.stats { display: flex; align-items: center; justify-content: flex-end; gap: 6px 16px; flex-wrap: nowrap; min-width: 0; white-space: nowrap; font: var(--t-callout); font-variant-numeric: tabular-nums; }
+	.stats > span { display: inline-flex; align-items: center; gap: 6px; }
+	.stats .need { margin-left: 0; }
+	.rz { position: absolute; top: 0; right: -4px; bottom: 0; z-index: 6; width: 9px; cursor: col-resize; touch-action: none; }
+	.rz.fixed { cursor: pointer; }
+	.rz i { position: absolute; top: 50%; left: 3px; width: 3px; height: 38px; margin-top: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+	.rz:hover i, .rz:focus-visible i, .rail:hover .rz i { opacity: 0.6; }
+	.rz:hover i, .rz:focus-visible i { opacity: 1; }
+	.rz:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.rhide, .rshow { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
+	.rhide { justify-self: end; margin: -4px 0 -8px; }
+	.rhide :global(svg) { transform: rotate(90deg); }
+	.rshow :global(svg) { transform: none; }
+	.rshow { margin: 0 auto; }
+	.rhide:hover, .rshow:hover { background: var(--surface-3); color: var(--text); }
+	.rhide:focus-visible, .rshow:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.rail.shut { padding: 10px 0; overflow: hidden; }
+	.ri .sh { display: none; }
+	.rail.compact .ri { padding: 0 6px; gap: 4px; }
+	.rail.compact .ri .lb { display: none; }
+	.rail.compact .ri .sh { display: inline; }
+	.rail.compact .rh { display: none; }
+	@container (max-width: 1250px) { .stats .tg2 { display: none; } }
+	@container (max-width: 1050px) { .stats .tl { display: none; } }
+	@container (max-width: 900px) { .stats .gr { display: none; } }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -1271,17 +1363,26 @@
 	}
 	@media (max-width: 767px) {
 		.dv { display: none; }
+		.dpane { background: var(--surface-1); }
 		.dpane { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom)); z-index: 40; height: min(64dvh, 520px) !important; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.32); }
 		.dpane.shut { height: auto !important; }
 		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
 		.pt { flex-basis: 100%; }
-		.hdr .find { margin-left: 0; }
+		.hdr { grid-template-columns: minmax(0, 1fr); }
+		.stats { justify-content: flex-start; flex-wrap: wrap; }
+		.hdr .find { justify-self: stretch; width: auto; }
 		.sbar .wide { display: none; }
 		.gen { grid-template-columns: minmax(0, 1fr); }
 		.t2 .c-size, .t2 .c-rem, .t2 .c-av, .t2 .c-cl, .t2 .c-msg { display: none; }
 		.t2 .c-name { max-width: 140px; }
 	}
 	@media (max-width: 1099px) {
+		.rz, .rhide, .rshow { display: none; }
+		.rail.shut { padding: 8px; overflow-x: auto; }
+		.rail.shut::before { content: none; }
+		.rail .ri .lb { display: inline; }
+		.rail .ri .sh { display: none; }
+		.rail.compact .rh { display: block; }
 		.body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
 		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 		.rail::-webkit-scrollbar { display: none; }
