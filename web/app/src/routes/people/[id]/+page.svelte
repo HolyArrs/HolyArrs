@@ -334,41 +334,20 @@
 		</div>
 	</div>
 
-	<section class="stats" aria-label="At a glance" data-testid="person-stats">
-		<p class="st1">
-			{#if data.stats?.films}<span><b>{data.stats.films}</b> {data.stats.films === 1 ? 'film' : 'films'}</span>{/if}
-			{#if data.stats?.shows}<span><b>{data.stats.shows}</b> {data.stats.shows === 1 ? 'show' : 'shows'}</span>{/if}
-			{#if yearsLine}<span><b>{yearsLine}</b></span>{/if}
-		</p>
-		{#if data.library?.length || data.asked?.length || wiki.badges.length}
-			<p class="st2">
-				{#each wiki.badges.slice(0, 2) as c (c)}<span class="award">{c}</span>{/each}
-				{#if data.library?.length}<span class="own"><Icon name="library" size={14} />{data.library.length} in your Library</span>{/if}
-				{#if data.asked?.length}<span>{data.asked.length} asked for</span>{/if}
-			</p>
-		{/if}
+	<section class="figs" aria-label="At a glance" data-testid="person-stats">
+		{#if data.stats?.films}<p><b>{data.stats.films}</b><span>{data.stats.films === 1 ? 'Film' : 'Films'}</span></p>{/if}
+		{#if data.stats?.shows}<p><b>{data.stats.shows}</b><span>{data.stats.shows === 1 ? 'Show' : 'Shows'}</span></p>{/if}
+		{#if yearsLine}<p><b>{yearsLine}</b><span>On screen</span></p>{/if}
+		{#if about?.wins || about?.noms}<p class="gold"><b>{about?.wins ?? 0}</b><span>{about?.wins === 1 ? 'Award' : 'Awards'}{about?.noms ? ` · ${about.noms} nominations` : ''}</span></p>{/if}
+		{#if data.library?.length}<p><b>{data.library.length}</b><span>In your Library</span></p>{/if}
+		{#if data.asked?.length}<p><b>{data.asked.length}</b><span>Asked for</span></p>{/if}
 	</section>
 
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
 		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
 	{/if}
 
-	{#if top.length}
-		<section class="block" data-testid="person-top">
-			<h2>Known for</h2>
-			<ol class="songs">
-				{#each top as m, i (m.ids.tmdb)}
-					{@const o = owned(m)}
-					<li class="song">
-						<span class="num">{i + 1}</span>
-						<a class="thumb" href={href(m)} tabindex="-1" aria-hidden="true">{#if m.poster || m.backdrop}<img src={m.poster || m.backdrop} alt="" loading="lazy" />{/if}</a>
-						<span class="s-words"><a class="s-name" href={href(m)}>{m.name}</a><span class="s-sub">{roleLine(m)}</span></span>
-						<span class="s-end">{#if o}<span class="state" class:have={o.state === 'available'}>{o.state === 'available' ? 'In Library' : 'Requested'}</span>{:else if action && !m.never_add && !done[m.ids.tmdb]}<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} size="sm" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />{/if}</span>
-					</li>
-				{/each}
-			</ol>
-		</section>
-	{/if}
+	{@render row('Known for', data.known_for, 'person-known')}
 
 	{@render row('Coming soon', data.coming_soon, 'person-soon')}
 	{@render row('In your Library', data.library, 'person-library')}
@@ -640,6 +619,14 @@
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.circles li { flex: none; }
 	@media (max-width: 1000px) { .songs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
+	/* Figures: one row of glass tiles, the same family as the About facts. */
+	.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+	.figs p { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0; margin: 0; padding: 20px 12px; border-radius: 16px; text-align: center; background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line, var(--border)), inset 0 1px 0 rgb(255 255 255 / 8%); backdrop-filter: blur(24px) saturate(160%); animation: ab-in var(--dur-slow) var(--ease-out) both; }
+	.figs p:nth-child(2) { animation-delay: 40ms; } .figs p:nth-child(3) { animation-delay: 80ms; } .figs p:nth-child(4) { animation-delay: 120ms; } .figs p:nth-child(5) { animation-delay: 160ms; } .figs p:nth-child(6) { animation-delay: 200ms; }
+	.figs b { color: var(--text); font: 800 30px/1 var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.figs span { color: var(--text-muted); font: 600 12px/1.3 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
+	.figs .gold b { color: #f5c518; }
+	@media (prefers-reduced-motion: reduce) { .figs p { animation: none; } }
 	/* About sheet (Profile / Dossier / Career), an Apple TV-style dark window in the person's tint. */
 	:global(.ui-sheet:has(.ab)) { --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--ap-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--ap-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
 	.ab { display: flex; flex-direction: column; gap: 28px; }
@@ -701,6 +688,8 @@
 	@keyframes ab-grow { from { scale: 1 0; } }
 	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 	@media (max-width: 767px) {
+		.figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.figs b { font-size: 24px; }
 		.ab-dossier .ab-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 		.ab-side { position: static; }
 		.ab-still { aspect-ratio: 16 / 10; }
