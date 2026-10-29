@@ -192,7 +192,6 @@
 
 	type CalendarAnswer = { dates: CalendarEntry[] | null; my_follows?: number; people?: number };
 	let asks = 0;
-	let backing = false;
 	async function load() {
 		const n = ++asks;
 		fetching = true;
@@ -230,7 +229,6 @@
 			loaded = true;
 			if (n === asks) {
 				fetching = false;
-				backing = false;
 				askEarly();
 			}
 		}
@@ -248,7 +246,6 @@
 	afterNavigate((nav) => {
 		if (nav.type !== 'link' || nav.from?.route.id !== nav.to?.route.id || nav.to?.url.searchParams.get('month')) return;
 		if (start.getTime() === today0.getTime() && window.scrollY === 0) return;
-		clearTimeout(backTimer);
 		guard();
 		jump(today0);
 		window.scrollTo({ top: 0, behavior: 'instant' });
@@ -344,26 +341,13 @@
 		clearTimeout(glideTimer);
 		glideTimer = setTimeout(() => (gliding = false), 600);
 	}
-	// Scrolling up near the first day loads the week before it.
+	// Earlier weeks come only when asked (the button above the first day), so scrolling up
+	// stops at the top like scrolling down glides: nothing is slipped in above the person.
+	// They go in under the button, where the person is looking.
 	function back() {
-		// One week at a time: a burst of wheel ticks at the top asks once, not once per tick.
-		if (fetching || backing || gliding || start <= earliest) return;
-		backing = true;
+		if (fetching || start <= earliest) return;
 		const to = addDays(start, -AHEAD);
-		earlier(to < earliest ? earliest : to);
-	}
-	const nearFirst = () => {
-		const first = document.querySelector<HTMLElement>('.cal-main [data-day]');
-		return !!first && first.getBoundingClientRect().top > -4 * innerHeight;
-	};
-	// At the very top the page cannot scroll, so an upward wheel or swipe asks instead.
-	function onWheel(e: WheelEvent) {
-		if (e.deltaY < 0 && window.scrollY <= 2 && loaded) back();
-	}
-	let touchY = 0;
-	const onTouchStart = (e: TouchEvent) => (touchY = e.touches[0]?.clientY ?? 0);
-	function onTouchMove(e: TouchEvent) {
-		if (window.scrollY <= 2 && (e.touches[0]?.clientY ?? 0) - touchY > 40 && loaded) back();
+		start = to < earliest ? earliest : to;
 	}
 	// A day picked in the small month: glide to its row (instant under reduced motion).
 	async function pickDay(day: string) {
@@ -420,7 +404,6 @@
 		const b = row.getBoundingClientRect();
 		away = b.bottom < (narrow ? 96 : 120) || b.top > innerHeight;
 	}
-	let backTimer: ReturnType<typeof setTimeout> | undefined;
 	let ticking = false;
 	let lastY = 0;
 	function onScroll() {
@@ -433,11 +416,6 @@
 		ticking = true;
 		requestAnimationFrame(() => {
 			ticking = false;
-			// Older weeks wait until the scroll has settled, so a moving page is never pushed back.
-			if (up && loaded && nearFirst()) {
-				clearTimeout(backTimer);
-				backTimer = setTimeout(back, 80);
-			}
 			follow();
 			checkToday();
 		});
@@ -527,7 +505,7 @@
 	});
 </script>
 
-<svelte:window onscroll={onScroll} onwheel={onWheel} ontouchstart={onTouchStart} ontouchmove={onTouchMove} />
+<svelte:window onscroll={onScroll} />
 
 {#snippet item(e: CalendarEntry, prevWhen = '')}
 	{@const dot = itemDot(e, todayKey)}
@@ -694,6 +672,9 @@
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
 	<div class="cal-body" class:barred={barOn} class:month-off={monthHidden}>
 		<div class="cal-main">
+			{#if loaded && start > earliest && !filteredOut}
+				<div class="earlier"><Button variant="secondary" icon="calendar" busy={fetching} onclick={back} data-testid="cal-earlier">Earlier weeks</Button></div>
+			{/if}
 			{#key view}
 				<div class="view-in" data-view={view}>
 					{#if filteredOut}
@@ -759,6 +740,7 @@
 	.month-btn .chev { display: inline-flex; color: var(--text-muted); transition: transform var(--dur) var(--ease-out); }
 	.month-btn .chev.off { transform: rotate(180deg); }
 	.cal-main { min-width: 0; }
+	.earlier { display: flex; justify-content: center; margin: 0 0 20px; }
 	.side { position: sticky; top: calc(var(--topbar) + 16px); padding: 14px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.phone-only { display: none; }
 	.sheet-mini, .sheet-filters { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 12px; }
