@@ -71,8 +71,14 @@ func TestMusicPages(t *testing.T) {
 		t.Fatalf("bare album page %+v", bare)
 	}
 	do(t, "GET", u+"/albums/f0000000-0000-0000-0000-0000000000ff", "", 404)
-	do(t, "GET", u+"/albums/"+apiAlbum+"?artist=nope", "", 400)
-	do(t, "GET", u+"/albums/"+apiSoon+"?artist="+apiAlbum, "", 404)
+	// A wrong, bad or missing ?artist= never blocks the page: the album names its own artist.
+	for _, q := range []string{"?artist=nope", "?artist=" + apiAlbum, "?artist=f0000000-0000-0000-0000-0000000000ee", ""} {
+		var m AlbumPageView
+		_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum+q, "", 200), &m)
+		if m.Name != "First Light" || m.Artist.MBID != apiArtist {
+			t.Fatalf("mismatched link %q: %+v", q, m)
+		}
+	}
 	var al AlbumPageView
 	_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum+"?artist="+apiArtist, "", 200), &al)
 	if al.Name != "First Light" || al.Artist.Name != "Lab Band" || len(al.Tracks) != 2 || al.LengthMS != 360000 || len(al.Editions) != 2 ||

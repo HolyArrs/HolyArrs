@@ -43,7 +43,6 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { to } from '#lib/paths.ts';
-	import { plainReason } from '#lib/plain.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { releaseWords } from '#lib/music/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
@@ -51,7 +50,7 @@
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
@@ -78,6 +77,7 @@
 	let askingAll = $state(false);
 	let aboutOpen = $state(false);
 	let error = $state('');
+	let errorNet = $state(false);
 	let busy = $state(false);
 	// The answer was already kept by the app (fetched ahead or seen within a minute): no loader hold.
 	let fromCache = $state(false);
@@ -221,8 +221,8 @@
 			if (want !== mbid) return;
 			busy = false;
 			// The shelves failing shows the error; the core failing alone is quiet (the full answer has the hero too).
-			if (f.status === 'rejected') error = message(f.reason);
-			else if (c.status === 'rejected' && !data) error = message(c.reason);
+			const bad = f.status === 'rejected' ? f.reason : c.status === 'rejected' && !data ? c.reason : null;
+			if (bad) ({ text: error, network: errorNet } = musicLoadError(bad, 'artist'));
 		});
 	}
 
@@ -936,7 +936,7 @@
 		</section>
 		<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="160px" /></div>
 	{:else}
-		<LoadError hasData={true} message={plainReason(error).text} onretry={load} {busy} />
+		<LoadError hasData={true} message={error} network={errorNet} onretry={load} {busy} />
 	{/if}
 {/snippet}
 
@@ -962,7 +962,7 @@
 <svelte:document onfullscreenchange={() => (heroFull = !!heroBox && document.fullscreenElement === heroBox)} />
 
 <div class="artist" class:tinted={!!pageTint} style={pageTint ? `--ar-bg:${pageTint.bg};--ar-soft:${pageTint.soft}` : undefined}>
-	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
+	{#if error && !hero}<LoadError hasData={false} message={error} network={errorNet} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this artist" onretry={load}>
 		{#if hero}
 			{@render bannerHero()}

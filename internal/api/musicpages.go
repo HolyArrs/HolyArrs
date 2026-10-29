@@ -989,8 +989,11 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	mbid := strings.ToLower(r.PathValue("mbid"))
 	artist := strings.ToLower(r.URL.Query().Get("artist"))
-	if !metadata.ValidMBID(mbid) || (artist != "" && !metadata.ValidMBID(artist)) {
-		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
+	if artist != "" && !metadata.ValidMBID(artist) {
+		artist = "" // a bad ?artist= never blocks the page: the album names its own artist
+	}
+	if !metadata.ValidMBID(mbid) {
+		fail(w, http.StatusBadRequest, "That album link is not valid.")
 		return
 	}
 	if !a.musicPageOpen(w) {
@@ -1007,7 +1010,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	if artist == "" {
 		// A bare album link: find the artist from the album itself.
 		if artist = a.albumArtistOf(ctx, mbid); artist == "" {
-			fail(w, http.StatusNotFound, "no album with that id, or its artist is unknown")
+			fail(w, http.StatusNotFound, "We could not find this album.")
 			return
 		}
 	}
@@ -1028,7 +1031,10 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		return art, err
 	}), by)
 	if errors.Is(err, metadata.ErrArtistNotFound) {
-		fail(w, http.StatusNotFound, "no artist with that id")
+		if a.albumWithRealArtist(ctx, w, r, mbid, artist) {
+			return
+		}
+		fail(w, http.StatusNotFound, "We could not find this album.")
 		return
 	}
 	// A slow or failing source never fails the page: the album is drawn
@@ -1059,7 +1065,10 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		me = &x
 	}
 	if me == nil {
-		fail(w, http.StatusNotFound, "that album is not by that artist")
+		if a.albumWithRealArtist(ctx, w, r, mbid, artist) {
+			return
+		}
+		fail(w, http.StatusNotFound, "We could not find this album.")
 		return
 	}
 	if kid && me.Explicit {
@@ -1351,6 +1360,23 @@ func (a *API) albumArtistOf(ctx context.Context, mbid string) string {
 		}
 	}
 	return ""
+}
+
+// albumWithRealArtist answers the album page again for the artist the album
+// itself names, when the link's artist is wrong. False when there is no other artist.
+func (a *API) albumWithRealArtist(ctx context.Context, w http.ResponseWriter, r *http.Request, mbid, artist string) bool {
+	real := a.albumArtistOf(ctx, mbid)
+	if real == "" || real == artist {
+		return false
+	}
+	q := r.URL.Query()
+	q.Set("artist", real)
+	r2 := r.Clone(r.Context())
+	u := *r.URL
+	u.RawQuery = q.Encode()
+	r2.URL = &u
+	a.albumPage(w, r2)
+	return true
 }
 
 // musicPageGate checks the person, the id and that music is on.

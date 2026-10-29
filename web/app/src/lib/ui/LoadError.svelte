@@ -8,8 +8,9 @@
 		hasData,
 		message = 'Could not load this.',
 		onretry,
-		busy = false
-	}: { hasData: boolean; message?: string; onretry?: () => void; busy?: boolean } = $props();
+		busy = false,
+		network = false
+	}: { hasData: boolean; message?: string; onretry?: () => void; busy?: boolean; network?: boolean } = $props();
 </script>
 
 {#if hasData}
@@ -22,7 +23,7 @@
 	<div class="ui-loaderr full" role="alert">
 		<span class="ic"><Icon name="alert" size={26} /></span>
 		<h2>{message}</h2>
-		<p>Check the connection, then try again.</p>
+		<p>{network ? 'Check the connection, then try again.' : 'Try again in a moment.'}</p>
 		{#if onretry}<Button variant="secondary" icon="refresh" {busy} onclick={onretry}>Try again</Button>{/if}
 	</div>
 {/if}

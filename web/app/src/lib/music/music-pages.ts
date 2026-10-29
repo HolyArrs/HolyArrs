@@ -192,6 +192,25 @@ export interface ArtistPageData {
 	gap?: PageGap;
 }
 
+/**
+ * musicLoadError turns a failed music page load into calm words. `network` is true only when
+ * HolyArrs itself could not be reached, the one case where "check the connection" is true.
+ */
+export function musicLoadError(e: unknown, thing: 'album' | 'artist'): { text: string; network: boolean } {
+	const status = typeof e === 'object' && e && 'status' in e ? Number((e as { status: unknown }).status) : -1;
+	if (status === 0) return { text: 'HolyArrs is not answering.', network: true };
+	if (status === 404) return { text: `We could not find this ${thing}.`, network: false };
+	if (status === 400) return { text: `That ${thing} link is not valid.`, network: false };
+	if (status === 401 || status === 403) return { text: `You cannot open this ${thing}.`, network: false };
+	return { text: `This ${thing} is taking longer than usual to load.`, network: false };
+}
+
+/** albumArtistFix is the artist to put in the address when the album named a different one than the link did, else ''. */
+export function albumArtistFix(linkArtist: string, found: string | undefined): string {
+	const real = (found ?? '').toLowerCase();
+	return real && real !== linkArtist.toLowerCase() ? real : '';
+}
+
 /** PageGap is the metadata server's word on an item it is still getting. */
 export interface PageGap {
 	state: 'fetching' | 'queued';

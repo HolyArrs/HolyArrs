@@ -17,14 +17,13 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { to } from '#lib/paths.ts';
-	import { plainReason } from '#lib/plain.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureOf } from '#lib/pictures.ts';
 	import GapNotice from '#lib/music/GapNotice.svelte';
 	import { gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView } from '#lib/music/reask.ts';
-	import { albumHref, appPicture, artistHref, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
+	import { albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { followHint, followLabel, followPath, setFollow } from '#lib/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
@@ -41,6 +40,7 @@
 	let data = $state<AlbumPageData | null>(null);
 	let similar = $state<PageArtist[] | null>(null);
 	let error = $state('');
+	let errorNet = $state(false);
 	let busy = $state(false);
 	let lookup = $state<LookupArtist | null>(null);
 	let coverIn = $state(false);
@@ -82,11 +82,19 @@
 				data = keepShown(data, v, ['tracks', 'editions', 'more_by']);
 				reasking = pending;
 			}, stop.signal, gapWaits(d, TRACK_REASK_MS), undefined, (a, b) => (a.tracks.length ? sameLists<AlbumPageData>(['tracks', 'editions', 'more_by'])(a, b) : sameTracks(a, b)));
+			// A link with a missing or wrong artist is mended quietly: the address takes the album's real artist.
+			const fix = albumArtistFix(artist, d.artist?.mbid);
+			if (fix && artist && typeof history !== 'undefined') {
+				const u = new URL(location.href);
+				u.searchParams.set('artist', fix);
+				try { history.replaceState(history.state, '', u); } catch { /* the address stays as it was */ }
+			}
 			// A bare album link learns its artist from the full answer: ask the nearby albums now.
 			const found = d.artist?.mbid;
 			if (!artist && found) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${found}`).then((r) => still() && (near = withCover(r.near))).catch(() => still() && (near = []));
 		}).catch((e) => {
-			if (still()) error = message(e);
+			if (!still()) return;
+			({ text: error, network: errorNet } = musicLoadError(e, 'album'));
 		}).finally(() => {
 			if (still()) busy = false;
 		});
@@ -275,12 +283,12 @@
 
 {#snippet albumCard(a: PageAlbum)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} kind="artist" shape="square" music needsArt
+	<PosterCard title={a.name} href={albumHref(a.mbid, data?.artist?.mbid || artist)} image={c.src} kind="artist" shape="square" music needsArt
 		subtitle={[albumYear(a.release_date), kindWord(a)].filter(Boolean).join(' · ')} badges={a.explicit ? ['E'] : undefined} owned={owned(a)} />
 {/snippet}
 
 <div class="album" class:tinted={!!tint} style={tintStyle} data-tint={tint?.bg ?? ''}>
-	{#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
+	{#if error && !data}<LoadError hasData={false} message={error} network={errorNet} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this album" onretry={load}>
 		{#if hero && !(error && !data)}
 			<header class="hero" data-hero>
