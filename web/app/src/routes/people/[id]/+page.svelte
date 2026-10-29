@@ -259,6 +259,8 @@
 	let clipOn = $state(false);
 	// One trailer, then the banner settles back on the turning stills.
 	let clipDone = $state(false);
+	// Paused: the stills come back under the buttons.
+	let clipHeld = $state(false);
 	$effect(() => {
 		const m = top[clip % Math.max(1, top.length)];
 		sources = [];
@@ -310,17 +312,17 @@
 <PageLoader loading={(!data || !(wikiDone || wikiWaited)) && !error} label="Loading this person" onretry={load}>
 {#if data && (wikiDone || wikiWaited) && view}
 	<div class="ap" class:tinted={!!tint} style={tint ? `--ap-bg:${tint.bg};--ap-soft:${tint.soft}` : undefined}>
-	<header class="banner" bind:this={heroBox} style:--gone={gone.toFixed(3)} class:playing={clipOn} data-hero data-testid="person-banner">
+	<header class="banner" bind:this={heroBox} style:--gone={gone.toFixed(3)} class:playing={clipOn} class:held={clipHeld} data-hero data-testid="person-banner">
 		<div class="stage" aria-hidden="true">
 			{#if reel.length}
-				<HeroMotion pictures={reel} position="center 25%" onload={() => (heroIn = true)} />
+				<HeroMotion pictures={reel} paused={clipOn && !clipHeld} position="center 25%" onload={() => (heroIn = true)} />
 			{:else if hero}
 				<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} />
 			{/if}
 		</div>
 		{#if view === 2 && !clipDone && sources.length && nowShowing}
 			{#key nowShowing.ids.tmdb}
-				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), (clipDone = true))} onfail={() => ((clipOn = false), nextClip())} /></div>
+				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onpause={(v) => (clipHeld = v)} onended={() => ((clipOn = false), (clipDone = true))} onfail={() => ((clipOn = false), nextClip())} /></div>
 			{/key}
 		{/if}
 		<div class="b-shade" aria-hidden="true"></div>
@@ -571,6 +573,8 @@
 	.stage .art.in { opacity: .85; }
 	.clip { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.banner.playing .clip { opacity: 1; }
+	.clip :global(video), .clip :global(iframe), .clip::after { transition: opacity var(--dur-slow) var(--ease-out); }
+	.banner.held .clip :global(video), .banner.held .clip :global(iframe), .banner.held .clip::after { opacity: 0; }
 	/* The trailer sits above the banner shades, so it carries its own fade; its buttons go top right like the artist page. */
 	.clip::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--ink) 60%, transparent) 0%, transparent 45%), linear-gradient(to bottom, rgb(7 8 10 / .35), transparent 25%); }
 	.clip :global(.ctl) { top: 52px; bottom: auto; right: clamp(20px, 4vw, 56px); pointer-events: auto; }

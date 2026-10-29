@@ -19,6 +19,7 @@
 		onfail,
 		onended,
 		onplaying,
+		onpause,
 		onexpand,
 		start = 0,
 		sharp = false,
@@ -37,6 +38,8 @@
 		onfail?: () => void;
 		onended?: () => void;
 		onplaying?: () => void;
+		/** The pause button was pressed (true) or play pressed again (false). */
+		onpause?: (paused: boolean) => void;
 		/** Clicking the playing trailer opens it full screen: the source, the time played and where it sits. */
 		onexpand?: (o: TheaterHandoff) => void;
 		/** Seconds to start from (a hero carrying on where the full-screen player left off). */
@@ -445,6 +448,7 @@
 		e?.preventDefault();
 		e?.stopPropagation();
 		paused = !paused;
+		onpause?.(paused);
 		const lv = live();
 		if (lv) {
 			if (paused) lv.pause();
