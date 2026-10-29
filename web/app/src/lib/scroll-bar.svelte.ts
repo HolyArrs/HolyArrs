@@ -54,6 +54,12 @@ export function checkHero() {
 	document.documentElement.classList.toggle('over-hero', over);
 }
 
+/** rebaseBar keeps the bar as it is and counts from the current place, after the page itself moved (content added above). */
+export function rebaseBar() {
+	if (typeof window === 'undefined') return;
+	st = { hidden: topBar.hidden, anchor: window.scrollY };
+}
+
 /** showBar brings the bar back at once (Ctrl K, focus) and restarts the run from here. */
 export function showBar() {
 	if (typeof window === 'undefined') return;

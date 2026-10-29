@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { rebaseBar } from '#lib/scroll-bar.svelte.ts';
 	import { libraryTitles } from '#lib/owned.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
@@ -292,6 +293,8 @@
 		const moved = row.getBoundingClientRect().top - a.top;
 		if (Math.abs(moved) > 0.5) {
 			window.scrollBy({ top: moved, behavior: 'instant' });
+			// The page moved, not the person: the top bar starts counting again from here.
+			rebaseBar();
 		}
 	}
 	function earlier(to: Date) {
@@ -381,6 +384,7 @@
 		const b = row.getBoundingClientRect();
 		away = b.bottom < (narrow ? 96 : 120) || b.top > innerHeight;
 	}
+	let backTimer: ReturnType<typeof setTimeout> | undefined;
 	let ticking = false;
 	let lastY = 0;
 	function onScroll() {
@@ -393,7 +397,11 @@
 		ticking = true;
 		requestAnimationFrame(() => {
 			ticking = false;
-			if (up && loaded && nearFirst()) back();
+			// Older weeks wait until the scroll has settled, so a moving page is never pushed back.
+			if (up && loaded && nearFirst()) {
+				clearTimeout(backTimer);
+				backTimer = setTimeout(back, 180);
+			}
 			follow();
 			checkToday();
 		});
