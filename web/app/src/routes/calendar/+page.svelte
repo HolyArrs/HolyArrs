@@ -172,6 +172,7 @@
 
 	type CalendarAnswer = { dates: CalendarEntry[] | null; my_follows?: number; people?: number };
 	let asks = 0;
+	let backing = false;
 	async function load() {
 		const n = ++asks;
 		fetching = true;
@@ -207,7 +208,10 @@
 			error = message(e);
 		} finally {
 			loaded = true;
-			if (n === asks) fetching = false;
+			if (n === asks) {
+				fetching = false;
+				backing = false;
+			}
 		}
 	}
 
@@ -312,7 +316,9 @@
 	}
 	// Scrolling up near the first day loads the week before it.
 	function back() {
-		if (fetching || gliding || start <= earliest) return;
+		// One week at a time: a burst of wheel ticks at the top asks once, not once per tick.
+		if (fetching || backing || gliding || start <= earliest) return;
+		backing = true;
 		const to = addDays(start, -7);
 		earlier(to < earliest ? earliest : to);
 	}
