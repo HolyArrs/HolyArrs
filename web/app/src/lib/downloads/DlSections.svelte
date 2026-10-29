@@ -203,6 +203,10 @@
 	// Dragging a column's right edge changes that column only; dragging its name
 	// moves it; right-click a name, or ⋯ → Columns, opens the picker.
 	let grid = $state<HTMLElement>();
+	let appEl = $state<HTMLElement>();
+	let listEl = $state<HTMLElement>();
+	let appH = $state(0);
+	let phone = $state(false);
 	let gap = $state(10);
 	let layout = $state<Layout>(typeof localStorage === 'undefined' ? defaults() : readLayout());
 	function readLayout(): Layout {
@@ -219,7 +223,23 @@
 			/* private window: the layout lasts for this visit */
 		}
 	}
-	const vis = $derived(visible(layout));
+	const visAll = $derived(visible(layout));
+	/** The least width each number column needs to show its text whole. */
+	const MINW: Partial<Record<ColId, number>> = { progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
+	/** Columns drop out, least important first, when the list is too narrow for all of them. */
+	const DROP: ColId[] = ['quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
+	const TITLE_MIN = 220;
+	const wMin = (id: ColId) => Math.max(layout.widths[id], MINW[id] ?? 0);
+	const vis = $derived.by(() => {
+		if (phone || room <= 0) return visAll;
+		const need = (c: ColId[]) => 32 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
+		let cur = [...visAll];
+		for (const d of DROP) {
+			if (need(cur) <= room) break;
+			cur = cur.filter((x) => x !== d);
+		}
+		return cur;
+	});
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
 	const PHONE: ColId[] = ['title', 'progress', 'status', 'time'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
@@ -227,9 +247,10 @@
 	let room = $state(0);
 	let titleMin = $state(MIN_W);
 	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
-	const tW = $derived(vis.includes('title') ? fitTitle(layout, room, FIXED + (vis.length + 3) * gap, titleMin) : 0);
-	const wOf = (id: ColId) => (id === 'title' ? tW : layout.widths[id]);
-	const tpl = $derived(`24px 32px ${vis.map((id) => `${wOf(id)}px`).join(' ')} minmax(0, 1fr) 32px`);
+	const tW = $derived(vis.includes('title') ? fitTitle(layout, room - 32, FIXED + (vis.length + 3) * gap, Math.min(titleMin, 220)) : 0);
+	const wOf = (id: ColId) => (id === 'title' ? tW : wMin(id));
+	// Until a person sets the Title width, it flexes and takes whatever room is left.
+	const tpl = $derived(`24px 32px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
 	/** inner is the full width of the columns; the table box is at least this wide. */
 	const inner = $derived(vis.reduce((n, id) => n + wOf(id), FIXED) + (vis.length + 3) * gap);
 	const textW = (n: Node) => {
@@ -264,11 +285,30 @@
 		gap = parseFloat(getComputedStyle(grid).getPropertyValue('--gap')) || 10;
 		const g = grid;
 		const ro = new ResizeObserver(() => {
-			room = g.clientWidth;
+			room = (listEl ?? g).clientWidth;
+			phone = matchMedia('(max-width: 640px)').matches;
 			titleMin = minOf('title');
 		});
 		ro.observe(g);
+		if (listEl) ro.observe(listEl);
 		return () => ro.disconnect();
+	});
+	// The app fills the column down to the bottom of the screen; the list scrolls inside it.
+	$effect(() => {
+		if (!appEl) return;
+		const fit = () => {
+			const small = innerWidth <= 767;
+			const tab = small ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar')) || 56) : 0;
+			appH = Math.max(420, Math.floor(innerHeight - appEl!.getBoundingClientRect().top - tab - 8));
+		};
+		fit();
+		const ro = new ResizeObserver(fit);
+		ro.observe(document.body);
+		window.addEventListener('resize', fit);
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', fit);
+		};
 	});
 	// Every table box scrolls sideways together, so the columns stay lined up.
 	function sync(e: Event) {
@@ -679,7 +719,7 @@
 					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<tr class:sel={sel[`${r.id}:f`] === t.key} class:off={pr === 'Skip'} tabindex="0" onclick={() => (sel[`${r.id}:f`] = t.key)} onkeydown={(e) => { if (e.key === 'Enter') sel[`${r.id}:f`] = t.key; }} data-testid="dl-filerow">
 						<td class="c-chk">{#if !t.dir}<input type="checkbox" checked={pr !== 'Skip'} aria-label="Download {t.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.checked ? 'Normal' : 'Skip')} />{/if}</td>
-						<td class="c-name"><span class="nm" style="padding-left: {t.depth * 14}px">{#if t.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${t.key}`]} aria-label="{closed[`${r.id}|${t.key}`] ? 'Expand' : 'Collapse'} {t.name}" aria-expanded={!closed[`${r.id}|${t.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${t.key}`] = !closed[`${r.id}|${t.key}`]; }}><Icon name="chevronDown" size={12} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={t.key}>{t.name}</span></span></td>
+						<td class="c-name"><span class="fnm" style="padding-left: {t.depth * 14}px">{#if t.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${t.key}`]} aria-label="{closed[`${r.id}|${t.key}`] ? 'Expand' : 'Collapse'} {t.name}" aria-expanded={!closed[`${r.id}|${t.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${t.key}`] = !closed[`${r.id}|${t.key}`]; }}><Icon name="chevronDown" size={12} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={t.key}>{t.name}</span></span></td>
 						<td class="c-num c-size">{bytes(t.size)}</td>
 						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
 						<td class="c-prio">{#if !t.dir}<select class="pick" aria-label="Priority of {t.name}" value={pr} onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.value)}>{#each PRIOS as o (o)}<option value={o}>{o}</option>{/each}</select>{/if}</td>
@@ -760,14 +800,29 @@
 <svelte:window onpointerdown={outside} />
 
 <div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px">
-<div class="strip" data-testid="dl-strip">
+<div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
+<div class="strip hdr" data-testid="dl-strip">
 	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><SpeedGraph speed={sum.speed} up={sum.up} {history} /></span>
 	<span><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
 	<span data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
 	{#if problems}<button type="button" class="need" onclick={() => (railOn = 'problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
-	<button type="button" class="retry" disabled title="Coming soon" data-testid="dl-retry-all">Retry all problems<span class="soon">Coming soon</span></button>
+	<IconButton icon="refresh" label="Retry all problems (coming soon)" size="sm" disabled class="retry" data-testid="dl-retry-all" />
 </div>
-<div class="app" data-testid="dl-app">
+<div class="tb" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
+	<IconButton icon="plus" label="Add (coming soon)" size="sm" disabled data-testid="tb-add" />
+	<IconButton icon="play" label="Resume (coming soon)" size="sm" disabled data-testid="tb-resume" />
+	<IconButton icon="pause" label="Pause (coming soon)" size="sm" disabled data-testid="tb-pause" />
+	<IconButton icon="trash" label={openRow?.can_act ? 'Remove' : 'Remove (open a download first)'} size="sm" disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove" />
+	<span class="div" aria-hidden="true"></span>
+	<span class="all"><IconButton icon="play" label="Resume all (coming soon)" size="sm" disabled data-testid="tb-resume-all" /><i aria-hidden="true">all</i></span>
+	<span class="all"><IconButton icon="pause" label="Pause all (coming soon)" size="sm" disabled data-testid="tb-pause-all" /><i aria-hidden="true">all</i></span>
+	<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
+		<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
+		<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
+		{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
+	</div>
+</div>
+<div class="body">
 <nav class="rail" aria-label="Downloads filters" data-testid="dl-rail">
 	<div class="rg" role="group" aria-label="Status" data-testid="table-filter">
 		{#each railCounts as c (c.key)}
@@ -787,22 +842,7 @@
 		{/each}
 	</div>
 </nav>
-<div class="pane">
-<div class="tb" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
-	<IconButton icon="plus" label="Add (coming soon)" size="sm" disabled data-testid="tb-add" />
-	<IconButton icon="play" label="Resume (coming soon)" size="sm" disabled data-testid="tb-resume" />
-	<IconButton icon="pause" label="Pause (coming soon)" size="sm" disabled data-testid="tb-pause" />
-	<IconButton icon="trash" label={openRow?.can_act ? 'Remove' : 'Remove (open a download first)'} size="sm" disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove" />
-	<span class="div" aria-hidden="true"></span>
-	<span class="all"><IconButton icon="play" label="Resume all (coming soon)" size="sm" disabled data-testid="tb-resume-all" /><i aria-hidden="true">all</i></span>
-	<span class="all"><IconButton icon="pause" label="Pause all (coming soon)" size="sm" disabled data-testid="tb-pause-all" /><i aria-hidden="true">all</i></span>
-	<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
-		<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
-		<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
-		{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
-	</div>
-</div>
-
+<div class="listbox" bind:this={listEl} data-testid="dl-listbox">
 {#if list.length}
 	<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
 		{@render header()}
@@ -813,13 +853,14 @@
 {:else}
 	<p class="none" data-testid="dl-empty">{q.trim() ? 'Nothing matches.' : ((subOn ? onTab?.subs.find((x) => x.key === subOn)?.empty : onTab?.empty) ?? 'Nothing here.')}</p>
 {/if}
+</div>
+</div>
 <div class="sbar" data-testid="dl-statusbar">
 	<span data-testid="sb-free"><span class="k">Free space</span><b>{demoDetails ? bytes(sampleHeader.free) : '–'}</b></span>
 	<span data-testid="sb-health"><i class="dot" class:ok={demoDetails} aria-hidden="true"></i><b>{demoDetails ? 'Connected' : 'Not reported'}</b></span>
 	<span data-testid="sb-down" class="sd"><b>↓ {bytes(sum.speed)}/s</b>{#if demoDetails}<span class="k">{bytes(sampleHeader.sessionDown)} this session</span>{/if}</span>
 	<span data-testid="sb-up" class="sd up"><b>↑ {bytes(sum.up)}/s</b>{#if demoDetails}<span class="k">{bytes(sampleHeader.sessionUp)} this session</span>{/if}</span>
 	{#if demoDetails}<span class="wide k" data-testid="sb-totals">Today {bytes(sampleHeader.today)} · Month {bytes(sampleHeader.month)} · All time {bytes(sampleHeader.all)}</span>{/if}
-</div>
 </div>
 </div>
 
@@ -997,8 +1038,12 @@
 	.lg li { overflow-wrap: anywhere; }
 	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 	.lg .bad { color: var(--fail); }
-	.app { display: grid; grid-template-columns: 188px minmax(0, 1fr); min-width: 0; border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.1); overflow: clip; }
-	.rail { display: grid; align-content: start; gap: 14px; padding: 12px 8px; border-right: 1px solid var(--line); background: var(--surface-2); min-width: 0; }
+	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.1); overflow: clip; }
+	.body { display: grid; grid-template-columns: 196px minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
+	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+	.listbox .tw { overflow: visible; }
+	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--surface-1); }
+	.rail { display: grid; align-content: start; gap: 14px; overflow-y: auto; padding: 12px 8px; border-right: 1px solid var(--line); background: var(--surface-2); min-width: 0; }
 	.rg { display: grid; gap: 2px; }
 	.rh { margin: 0 8px 2px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.ri { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-footnote); cursor: pointer; text-align: left; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
@@ -1008,14 +1053,12 @@
 	.ri.on b { color: inherit; }
 	.ri.zero:not(.on) { opacity: 0.72; }
 	.ri:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pane { display: flex; flex-direction: column; min-width: 0; min-height: 360px; }
-	.pane > .tw, .pane > .none { flex: 1 1 auto; }
 	.tb { display: flex; align-items: center; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); min-width: 0; }
 	.tb .div { width: 1px; height: 20px; margin: 0 6px; background: var(--line-strong, var(--line)); }
 	.tb .all { display: inline-flex; align-items: center; }
 	.tb .all i { margin-left: -4px; color: var(--text-muted); font: var(--t-caption); font-style: normal; }
 	.tb .find { margin-left: auto; }
-	.sbar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; padding: 8px 14px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 86%, transparent); backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.sbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; padding: 8px 14px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 86%, transparent); backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.sbar > span { display: inline-flex; align-items: center; gap: 6px; }
 	.sbar .wide { margin-left: auto; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
@@ -1038,7 +1081,7 @@
 	.t2 tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent), 0 6px 8px -6px rgb(0 0 0 / 0.4), 0 -6px 8px -6px rgb(0 0 0 / 0.25); }
 	.t2 tbody tr.off { opacity: 0.55; }
 	.t2 tbody tr:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.nm { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
+	.fnm { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
 	.fold { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--text-muted); cursor: pointer; }
 	.fold.sp0 { cursor: default; }
 	.fold :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
@@ -1048,6 +1091,7 @@
 	.pv { display: inline-block; min-width: 34px; margin-left: 6px; text-align: right; }
 	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.hdr { flex: none; margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-1); }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -1061,8 +1105,6 @@
 	.mi { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; }
 	.mi:disabled { opacity: 0.6; cursor: not-allowed; }
 	.soon { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
-	.retry { display: inline-flex; align-items: baseline; gap: 8px; min-height: 28px; padding: 0 10px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; }
-	.retry:disabled { opacity: 0.6; cursor: not-allowed; }
 	.strip.sub { margin-top: -4px; font: var(--t-footnote); color: var(--text-muted); }
 	.lim { display: inline-flex; align-items: center; gap: 8px; }
 	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -1105,19 +1147,6 @@
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
 		.x[data-card='d'] { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-		.app { grid-template-columns: minmax(0, 1fr); }
-		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
-		.rail::-webkit-scrollbar { display: none; }
-		.rg { display: flex; gap: 4px; flex: none; }
-		.rh { display: none; }
-		.ri { flex: none; gap: 6px; min-height: 32px; white-space: nowrap; }
-		.tb { flex-wrap: wrap; }
-		.tb .find { margin-left: 0; }
-		.sbar { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom)); }
-		.sbar .wide { display: none; }
-		.gen { grid-template-columns: minmax(0, 1fr); }
-		.t2 .c-size, .t2 .c-rem, .t2 .c-av, .t2 .c-cl, .t2 .c-msg { display: none; }
-		.t2 .c-name { max-width: 140px; }
 		.mi { gap: 8px; }
 		.fl li { flex-direction: column; gap: 0; }
 		.fs { white-space: normal; }
@@ -1129,6 +1158,20 @@
 		.kb { display: none; }
 		.strip { gap: 4px 14px; }
 		.picker { display: none; }
+	}
+	@media (max-width: 767px) {
+		.body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+		.rail { display: flex; gap: 6px; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+		.rail::-webkit-scrollbar { display: none; }
+		.rg { display: flex; gap: 4px; flex: none; }
+		.rh { display: none; }
+		.ri { flex: none; gap: 6px; min-height: 32px; white-space: nowrap; }
+		.tb { flex-wrap: wrap; }
+		.tb .find { margin-left: 0; }
+		.sbar .wide { display: none; }
+		.gen { grid-template-columns: minmax(0, 1fr); }
+		.t2 .c-size, .t2 .c-rem, .t2 .c-av, .t2 .c-cl, .t2 .c-msg { display: none; }
+		.t2 .c-name { max-width: 140px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bar i, .tg :global(svg), .bin, .cw, .post { transition: none; }
