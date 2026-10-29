@@ -76,7 +76,10 @@
 	const REACH = 6;
 	const earliest = addDays(today0, -365);
 	const latest = addDays(today0, 366);
-	let start = $state(askedMonth ?? today0);
+	// Three weeks before today load with the first answer, so scrolling up finds days already there.
+	const AHEAD = 21;
+	let start = $state(askedMonth ?? addDays(today0, -AHEAD));
+	let toTodayOnce = !askedMonth;
 	let end = $state(addDays(askedMonth ?? today0, 7 * REACH));
 	let entries = $state<CalendarEntry[]>([]);
 	let libraryEmpty = $state(false);
@@ -208,6 +211,18 @@
 			error = message(e);
 		} finally {
 			loaded = true;
+			// The first answer opens at today (the rows draw once loaded is set); the weeks before it wait above.
+			if (toTodayOnce && n === asks) {
+				toTodayOnce = false;
+				void tick().then(() => {
+					const row = todayRow();
+					if (!row || row === document.querySelector('.cal-main [data-day]')) return;
+					guard();
+					// Below the top bar and the date bar, not under them.
+					window.scrollTo({ top: row.getBoundingClientRect().top + scrollY - (narrow ? 112 : 136), behavior: 'instant' });
+					rebaseBar();
+				});
+			}
 			if (n === asks) {
 				fetching = false;
 				backing = false;
@@ -319,12 +334,12 @@
 		// One week at a time: a burst of wheel ticks at the top asks once, not once per tick.
 		if (fetching || backing || gliding || start <= earliest) return;
 		backing = true;
-		const to = addDays(start, -7);
+		const to = addDays(start, -AHEAD);
 		earlier(to < earliest ? earliest : to);
 	}
 	const nearFirst = () => {
 		const first = document.querySelector<HTMLElement>('.cal-main [data-day]');
-		return !!first && first.getBoundingClientRect().top > -2 * innerHeight;
+		return !!first && first.getBoundingClientRect().top > -4 * innerHeight;
 	};
 	// At the very top the page cannot scroll, so an upward wheel or swipe asks instead.
 	function onWheel(e: WheelEvent) {
@@ -406,7 +421,7 @@
 			// Older weeks wait until the scroll has settled, so a moving page is never pushed back.
 			if (up && loaded && nearFirst()) {
 				clearTimeout(backTimer);
-				backTimer = setTimeout(back, 180);
+				backTimer = setTimeout(back, 80);
 			}
 			follow();
 			checkToday();
