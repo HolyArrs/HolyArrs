@@ -15,7 +15,6 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import MusicCal from '#lib/calendar/MusicCal.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -728,9 +727,7 @@
 						<div class="filtered-out" data-testid="cal-filtered-out">
 							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text={end < latest || fetching ? 'Looking further ahead…' : `${soonCount === 1 ? 'One date' : `${soonCount || 'No'} dates`} in the Library ${soonCount === 1 ? 'is' : 'are'} coming up this year.`} action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
 						</div>
-					{:else if view === 'cards' && which === 'music'}
-						<MusicCal entries={shown} today={todayKey} />
-					{:else if view === 'cards'}
+										{:else if view === 'cards'}
 						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
