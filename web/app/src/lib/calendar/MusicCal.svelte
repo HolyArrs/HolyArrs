@@ -1,9 +1,7 @@
 <script lang="ts">
 	import type { CalendarEntry } from '#lib/types.ts';
-	import { to } from '#lib/paths.ts';
-	import { entryDay, entryHref, itemDot } from '#lib/calendar.ts';
-	import { sized } from '#lib/tmdb-image.ts';
-	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import { entryDay } from '#lib/calendar.ts';
+	import AlbumCover from './AlbumCover.svelte';
 
 	// The calendar for music only (Fridays): one heading per release day and a grid of square
 	// covers, like new releases. Each day keeps data-day so the page's scrolling (today, the
@@ -20,16 +18,8 @@
 	});
 	const at = (day: string) => new Date(day + 'T00:00:00');
 	const dayName = (day: string) => at(day).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
-	const kindWord = (e: CalendarEntry) => (e.album_type ? e.album_type[0].toUpperCase() + e.album_type.slice(1).toLowerCase() : 'Album');
 	const title = (e: CalendarEntry) => e.album ?? e.name;
-	const have = (e: CalendarEntry) => itemDot(e, today) === 'have';
-	let failed = $state<string[]>([]);
 </script>
-
-{#snippet cover(e: CalendarEntry, size: number)}
-	{@const src = e.poster ? sized(e.poster, 'poster', size) : ''}
-	{#if src && !failed.includes(src)}<img {src} alt="" loading="lazy" decoding="async" onerror={() => (failed = [...failed, src])} />{:else}<ArtPlaceholder name={title(e)} shape="square" />{/if}
-{/snippet}
 
 <div class="mc" data-testid="cal-music">
 	{#each days as d (d.day)}
@@ -40,12 +30,7 @@
 			</header>
 				<ul class="covers">
 					{#each d.list as e (e.part_id ?? e.title_id + title(e))}
-						<li>
-							<a href={to(entryHref(e))}>
-								<span class="pic">{@render cover(e, 400)}<i class="kind">{kindWord(e)}</i>{#if have(e)}<i class="have" title="In Library"></i>{/if}</span>
-								<b>{title(e)}</b>
-								<small>{e.name}</small>
-							</a>
+						<li><AlbumCover {e} {today} />
 						</li>
 					{/each}
 				</ul>
@@ -60,19 +45,9 @@
 	.dh span { color: var(--text-muted); font: 600 14px/1 var(--font-ui); }
 	.today .dh h3 { color: var(--accent); }
 	.past { opacity: .7; }
-	a { color: var(--text); text-decoration: none; }
 
 	/* Fridays: a grid of square covers. */
 	.covers { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 24px 18px; margin: 0; padding: 0; list-style: none; }
-	.covers a { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-	.pic { position: relative; display: block; aspect-ratio: 1; margin-bottom: 8px; overflow: hidden; border-radius: 10px; background: var(--surface-2); box-shadow: var(--shadow-card); }
-	.pic img { width: 100%; height: 100%; object-fit: cover; transition: scale var(--dur-slow) var(--ease-out); }
-	.covers a:hover img { scale: 1.04; }
-	.kind { position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; border-radius: 999px; background: rgb(0 0 0 / .55); backdrop-filter: blur(10px); color: #fff; font: 700 11px/1.2 var(--font-ui); font-style: normal; }
-	.have { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; border-radius: 50%; background: #34c759; box-shadow: 0 0 0 2px rgb(0 0 0 / .4); }
-	.covers b { font: 700 14px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.covers small { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
 	@media (max-width: 767px) {
 		.mc { gap: 28px; }
 		.dh h3 { font-size: 21px; }

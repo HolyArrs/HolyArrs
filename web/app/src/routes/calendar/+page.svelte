@@ -16,6 +16,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import MusicCal from '#lib/calendar/MusicCal.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -99,6 +100,9 @@
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
 	let which = $state<TitlesShown>(titlesFromAddress(askedTitles));
+	// The All layout Luis is comparing: 0 today's cards, 1 the mixed grid (covers under wide cards).
+	const MIX_VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'Mixed grid' }];
+	let mixView = $state(0);
 
 	// The two caption lines under every card and row (?movie=1-6, ?music=1-5, ?channels=all|known).
 	let look = $state<CaptionLook>({ ...DEFAULT_LOOK, region: 'global' });
@@ -530,6 +534,7 @@
 </script>
 
 <svelte:window onscroll={onScroll} />
+{#if which === 'all' && view === 'cards'}<VariantBar options={MIX_VIEWS} bind:value={mixView} param="mix" storageKey="cal-mix-view" label="All layout" />{/if}
 
 {#snippet item(e: CalendarEntry, prevWhen = '')}
 	{@const dot = itemDot(e, todayKey)}
@@ -706,7 +711,7 @@
 					{:else if view === 'cards' && which === 'music'}
 						<MusicCal entries={shown} today={todayKey} />
 					{:else if view === 'cards'}
-						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
+						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} mix={which === 'all' && mixView === 1} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
 					{:else}

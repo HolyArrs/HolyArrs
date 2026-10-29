@@ -6,6 +6,7 @@
 	import CalTile from './CalTile.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import CalEmpty from './CalEmpty.svelte';
+	import AlbumCover from './AlbumCover.svelte';
 
 	// Cards: one day per row. A big date stamp on the left (the
 	// day name over a large number, once per day) and a large backdrop card
@@ -19,8 +20,11 @@
 		onlater,
 		mode = 'library',
 		look = { ...DEFAULT_LOOK, region: 'global' },
-		onfollow
-	}: { entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; look?: CaptionLook; onfollow?: (e: CalendarEntry, on: boolean) => void } = $props();
+		onfollow,
+		mix = false
+	}: { entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; look?: CaptionLook; onfollow?: (e: CalendarEntry, on: boolean) => void; mix?: boolean } = $props();
+	// mix (a layout Luis is trying): one six-column grid per day; shows and movies take two
+	// columns, then a quiet Music line and album covers one column each, all on the same edges.
 
 	const months = $derived(monthGroups(entries));
 	const at = (day: string) => new Date(day + 'T00:00:00');
@@ -47,9 +51,19 @@
 							<!-- Every card of the day, all one size, wrapping onto more rows when a row is full. -->
 							<div class="day">
 								<h4 class="count">{thingCount(d.items.length)}</h4>
+								{#if mix}
+									{@const vids = gs.filter((g) => g.lead.kind !== 'album')}
+									{@const albums = gs.filter((g) => g.lead.kind === 'album').flatMap((g) => g.entries)}
+									<div class="mix" data-testid="cal-day-grid">
+										{#each vids as g (g.key)}<div class="w"><CalTile {g} {today} {mode} {look} {onfollow} /></div>{/each}
+										{#if vids.length && albums.length}<p class="mlabel">Music</p>{/if}
+										{#each albums as e (e.part_id ?? e.title_id + (e.album ?? ''))}<div class="s"><AlbumCover {e} {today} /></div>{/each}
+									</div>
+								{:else}
 								<div class="grid" data-testid="cal-day-grid">
 									{#each gs as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} />{/each}
 								</div>
+								{/if}
 							</div>
 												</li>
 					{/each}
@@ -70,6 +84,11 @@
 	.day { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 	.count { font: var(--t-title3); letter-spacing: var(--t-title3-track); color: var(--text-muted); line-height: 24px; }
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 20px; }
+	.mix { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; align-items: start; }
+	.mix .w { grid-column: span 2; min-width: 0; }
+	.mix .s { min-width: 0; }
+	.mlabel { grid-column: 1 / -1; margin: 4px 0 -6px; color: var(--text-muted); font: 700 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; }
+	@container (max-width: 900px) { .mix { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 	.stamp { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 	.dow { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 	.big { margin-top: 4px; font: 700 64px/0.95 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
@@ -81,6 +100,7 @@
 		.row { grid-template-columns: 46px minmax(0, 1fr); gap: 12px; }
 		.row + .row { padding-top: 24px; }
 		.grid { gap: 16px; }
+		.mix { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
 		.day { gap: 12px; }
 		.stamp { top: calc(var(--topbar) + 8px); align-items: center; }
 		.dow { font-size: 11px; letter-spacing: 0.04em; }
