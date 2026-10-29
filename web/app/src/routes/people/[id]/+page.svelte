@@ -257,11 +257,13 @@
 	let clip = $state(0);
 	let sources = $state<TrailerSource[]>([]);
 	let clipOn = $state(false);
+	// One trailer, then the banner settles back on the turning stills.
+	let clipDone = $state(false);
 	$effect(() => {
 		const m = top[clip % Math.max(1, top.length)];
 		sources = [];
 		clipOn = false;
-		if (view !== 2 || !m) return;
+		if (view !== 2 || !m || clipDone) return;
 		const ctl = new AbortController();
 		const t = setTimeout(() => {
 			if (!autoplayHere()) return;
@@ -310,15 +312,15 @@
 	<div class="ap" class:tinted={!!tint} style={tint ? `--ap-bg:${tint.bg};--ap-soft:${tint.soft}` : undefined}>
 	<header class="banner" bind:this={heroBox} style:--gone={gone.toFixed(3)} class:playing={clipOn} data-hero data-testid="person-banner">
 		<div class="stage" aria-hidden="true">
-			{#if view === 3 && reel.length}
+			{#if reel.length}
 				<HeroMotion pictures={reel} position="center 25%" onload={() => (heroIn = true)} />
 			{:else if hero}
 				<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} />
 			{/if}
 		</div>
-		{#if view === 2 && sources.length && nowShowing}
+		{#if view === 2 && !clipDone && sources.length && nowShowing}
 			{#key nowShowing.ids.tmdb}
-				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable corner onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), nextClip())} onfail={() => ((clipOn = false), nextClip())} /></div>
+				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable corner onexpand={(o) => nowShowing && openTheater({ kind: 'movie', tmdb: nowShowing.ids.tmdb, title: nowShowing.name, ...fromHandoff(o), from: 'hero' })} onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), (clipDone = true))} onfail={() => ((clipOn = false), nextClip())} /></div>
 			{/key}
 		{/if}
 		<div class="b-shade" aria-hidden="true"></div>
