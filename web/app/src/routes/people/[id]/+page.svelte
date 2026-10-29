@@ -135,6 +135,9 @@
 	});
 	// The About sheet: three layouts Luis is comparing (switch inside the sheet).
 	let aboutView = $state<string>('profile');
+	// Known for: three Apple TV-style takes on the ranked list Luis is comparing.
+	const KNOWN_VIEWS = [{ value: 'eps', label: 'Episodes' }, { value: 'top', label: 'Top 10' }, { value: 'stills', label: 'Stills' }];
+	let knownView = $state<string>('eps');
 	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
 	const about = $derived.by(() => {
 		const p = data?.person;
@@ -347,7 +350,28 @@
 		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
 	{/if}
 
-	{@render row('Known for', data.known_for, 'person-known')}
+
+	{#if top.length}
+		<section class="block kf kf-{knownView}" data-testid="person-top">
+			<div class="kf-head"><h2>Known for</h2><SegmentedControl label="Known for layout" value={knownView} options={KNOWN_VIEWS} onchange={(v) => (knownView = v)} /></div>
+			<ol class="kf-list">
+				{#each top as m, i (m.ids.tmdb)}
+					{@const o = owned(m)}
+					<li class="kf-item" style:--i={i}>
+						<a class="kf-pic" href={href(m)} aria-label={m.name}>
+							{#if knownView === 'top' ? m.poster || m.backdrop : m.backdrop || m.poster}<img src={knownView === 'top' ? m.poster || m.backdrop : m.backdrop || m.poster} alt="" loading="lazy" decoding="async" />{/if}
+							{#if knownView === 'stills'}<span class="kf-over"><b>{m.name}</b><small>{roleLine(m)}</small></span>{/if}
+						</a>
+						<span class="kf-n" aria-hidden="true">{i + 1}</span>
+						{#if knownView !== 'stills'}
+							<span class="kf-words"><a class="kf-name" href={href(m)}>{m.name}</a><span class="kf-sub">{[m.year, roleLine(m)].filter(Boolean).join(' · ')}</span></span>
+						{/if}
+						<span class="kf-end">{#if o}<span class="kf-state" class:have={o.state === 'available'}>{o.state === 'available' ? 'In Library' : 'Requested'}</span>{:else if action && !m.never_add && !done[m.ids.tmdb]}<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} size="sm" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />{/if}</span>
+					</li>
+				{/each}
+			</ol>
+		</section>
+	{/if}
 
 	{@render row('Coming soon', data.coming_soon, 'person-soon')}
 	{@render row('In your Library', data.library, 'person-library')}
@@ -579,12 +603,6 @@
 	.s-photo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
 	@media (prefers-reduced-motion: reduce) { .slim, .slimwrap { transition: none; translate: none; } }
-	.stats { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 16px; border-block: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; }
-	.stats p { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; }
-	.stats p > span + span::before { content: '·'; margin: 0 12px; opacity: .6; }
-	.st1 { font: 500 20px/1.35 var(--font-ui); color: var(--text-muted); }
-	.st1 b { color: var(--text); font-weight: 700; }
-	.st2 { font: var(--t-subhead); color: var(--text-muted); }
 	.own { display: inline-flex; align-items: center; gap: 6px; }
 	.award { color: #f5c518; }
 	.songs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 0 24px; margin: 0; padding: 0; list-style: none; }
@@ -619,6 +637,48 @@
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.circles li { flex: none; }
 	@media (max-width: 1000px) { .songs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
+	/* Known for, Apple TV style: Episodes (wide stills with a numbered line), Top 10 (big numerals beside posters), Stills (numbered landscape cards). */
+	.kf-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+	.kf-head h2 { margin: 0; }
+	.kf-list { margin: 0; padding: 0; list-style: none; }
+	.kf-item { position: relative; min-width: 0; animation: ab-in var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i) * 35ms); }
+	.kf-pic { position: relative; display: block; overflow: hidden; border-radius: 12px; background: var(--surface-2); box-shadow: 0 10px 28px rgb(0 0 0 / .28); isolation: isolate; }
+	.kf-pic img { width: 100%; height: 100%; object-fit: cover; transition: scale var(--dur-slow) var(--ease-out); }
+	.kf-item:hover .kf-pic img { scale: 1.05; }
+	.kf-pic:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.kf-words { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+	.kf-name { color: var(--text); font: 700 16px/1.25 var(--font-display); letter-spacing: -.01em; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.kf-name:hover { text-decoration: underline; }
+	.kf-sub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.kf-state { padding: 5px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: 700 12px/1 var(--font-ui); white-space: nowrap; }
+	.kf-state.have { background: rgb(52 199 89 / 18%); color: #9df5b4; }
+	/* Episodes */
+	.kf-eps .kf-item { display: grid; grid-template-columns: 168px 28px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px; border-radius: 16px; transition: background var(--dur-fast) var(--ease-out); }
+	.kf-eps .kf-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 20px; }
+	.kf-eps .kf-item:hover { background: var(--surface-1); }
+	.kf-eps .kf-pic { aspect-ratio: 16 / 9; }
+	.kf-eps .kf-n { grid-column: 2; grid-row: 1; color: var(--text-muted); font: 800 22px/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; }
+	.kf-eps .kf-pic { grid-column: 1; grid-row: 1; }
+	/* Top 10 */
+	.kf-top .kf-list { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x mandatory; scrollbar-width: none; grid-template-columns: none; }
+	.kf-top .kf-item { flex: none; display: grid; grid-template-columns: auto 132px; grid-template-rows: auto auto auto; align-items: end; column-gap: 0; row-gap: 8px; padding: 0 14px 0 0; scroll-snap-align: start; background: none !important; }
+	.kf-top .kf-n { grid-column: 1; grid-row: 1; margin-right: -14px; color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--text) 55%, transparent); font: 900 132px/.78 var(--font-display); letter-spacing: -.06em; text-align: right; z-index: 0; }
+	.kf-top .kf-pic { grid-column: 2; grid-row: 1; aspect-ratio: 2 / 3; z-index: 1; }
+	.kf-top .kf-words { grid-column: 2; grid-row: 2; }
+	.kf-top .kf-end { grid-column: 2; grid-row: 3; }
+	.kf-top .kf-name { font-size: 14px; }
+	/* Stills */
+	.kf-stills .kf-list { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+	.kf-stills .kf-item { display: block; padding: 0; background: none !important; }
+	.kf-stills .kf-pic { aspect-ratio: 16 / 9; }
+	.kf-stills .kf-pic::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / .78), transparent 60%); pointer-events: none; }
+	.kf-over { position: absolute; left: 16px; right: 56px; bottom: 14px; z-index: 1; display: flex; flex-direction: column; gap: 2px; color: #fff; }
+	.kf-over b { font: 700 17px/1.2 var(--font-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.kf-over small { font: var(--t-footnote); opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.kf-stills .kf-n { position: absolute; top: 10px; left: 10px; z-index: 2; display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 999px; background: rgb(0 0 0 / .45); backdrop-filter: blur(16px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .2); color: #fff; font: 800 14px/1 var(--font-display); }
+	.kf-stills .kf-end { position: absolute; right: 12px; bottom: 12px; z-index: 2; }
+	@media (max-width: 1000px) { .kf-eps .kf-list { grid-template-columns: minmax(0, 1fr); } }
+	@media (prefers-reduced-motion: reduce) { .kf-item { animation: none; } .kf-item:hover .kf-pic img { scale: none; } }
 	/* Figures: one row of glass tiles, the same family as the About facts. */
 	.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
 	.figs p { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0; margin: 0; padding: 20px 12px; border-radius: 16px; text-align: center; background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line, var(--border)), inset 0 1px 0 rgb(255 255 255 / 8%); backdrop-filter: blur(24px) saturate(160%); animation: ab-in var(--dur-slow) var(--ease-out) both; }
@@ -688,6 +748,10 @@
 	@keyframes ab-grow { from { scale: 1 0; } }
 	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 	@media (max-width: 767px) {
+		.kf-eps .kf-item { grid-template-columns: 112px 22px minmax(0, 1fr) auto; gap: 10px; padding: 6px; }
+		.kf-top .kf-item { grid-template-columns: auto 104px; }
+		.kf-top .kf-n { font-size: 104px; }
+		.kf-stills .kf-list { grid-template-columns: minmax(0, 1fr); }
 		.figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.figs b { font-size: 24px; }
 		.ab-dossier .ab-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
@@ -712,9 +776,6 @@
 		:global(html.bar-hidden) .slimwrap { transform: none; }
 		.slim { height: 56px; gap: 12px; }
 		.slim-name { font-size: 18px; }
-		.stats { padding: 22px 8px; }
-		.st1 { font-size: 17px; }
-		.stats p > span + span::before { margin: 0 8px; }
 		.song { grid-template-columns: 24px 40px minmax(0, 1fr) auto; gap: 10px; padding: 0 4px; height: 72px; }
 		.thumb { width: 40px; height: 60px; }
 		.num { width: 24px; }
