@@ -1019,25 +1019,17 @@
 				</figure>
 			{/if}
 			<div class="sh-cols">
+				<!-- Four cards at most, like a person's About: the main figure on top, the rest as a small line under it. -->
 				<div class="sh-figs">
 					{#if listen}
-						<p class="fig"><b>{fullCount(listen.n)}</b><span>{listen.unit}</span></p>
-						{#if listen.rank}<p class="fig"><b>#{listen.rank}</b><span>in the world</span></p>{/if}
-						{#if listen.today}<p class="fig"><b class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</b><span>today</span></p>{/if}
+						<p class="fig"><span>{listen.unit}</span><b>{fullCount(listen.n)}</b>{#if listen.rank || listen.today}<small>{#if listen.rank}#{listen.rank} in the world{/if}{#if listen.rank && listen.today} · {/if}{#if listen.today}<em class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</em> today{/if}</small>{/if}</p>
 					{/if}
-					{#if catalog?.albums || smallCount}<p class="fig"><b>{catalog?.albums ?? 0} · {smallCount}</b><span>{catalog?.albums === 1 ? 'album' : 'albums'} · singles & EPs</span></p>{/if}
-					{#if data?.total}<p class="fig"><b>{data.have ?? 0} of {data.total}</b><span>on HolyArrs</span></p>{/if}
+					{#if catalog?.albums || smallCount}<p class="fig"><span>Releases</span><b>{catalog?.albums ?? 0} {catalog?.albums === 1 ? 'album' : 'albums'}</b><small>{[`${smallCount} singles & EPs`, data?.total ? `${data.have ?? 0} of ${data.total} on HolyArrs` : '', lib?.nextRelease ? `next: ${lib.nextRelease}` : ''].filter(Boolean).join(' · ')}</small></p>{/if}
+					{#if hero.country}<p class="fig"><span>From</span><b>{countryName(hero.country)}</b>{#if hero.type}<small>{artistKind(hero.type)}</small>{/if}</p>{/if}
+					{#if genres || catalog?.since}<p class="fig"><span>{genres ? 'Sound' : 'Active'}</span><b>{genres || `Since ${catalog?.since}`}</b><small>{[genres && catalog?.since ? `Since ${catalog.since}` : '', hero.status ? (hero.status === 'ended' ? 'no longer active' : 'still active') : ''].filter(Boolean).join(' · ')}</small></p>{/if}
 				</div>
 				<div class="sh-words">
 					{#if hero.bio?.extract}<h3 class="sh-h">Story</h3><div class="sh-bio">{#each hero.bio.extract.split(/\n+/).filter(Boolean) as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>{/if}
-					<dl class="kv">
-						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
-						{#if genres}<div><dt>Genres</dt><dd>{genres}</dd></div>{/if}
-						{#if catalog?.since}<div><dt>Since</dt><dd>{catalog.since}</dd></div>{/if}
-						{#if hero.type}<div><dt>Kind</dt><dd>{artistKind(hero.type)}</dd></div>{/if}
-						{#if hero.status}<div><dt>Active</dt><dd>{hero.status === 'ended' ? 'No longer active' : 'Still active'}</dd></div>{/if}
-						{#if lib?.nextRelease}<div><dt>Next album</dt><dd>{lib.nextRelease}</dd></div>{/if}
-					</dl>
 				</div>
 			</div>
 		</div>
@@ -1202,13 +1194,13 @@
 	.sh-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
 	.sh-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
 	.sh-cols { display: flex; flex-direction: column; gap: 24px; }
-	.sh-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-	.fig, .kv div { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 16px 18px; border-radius: 16px; background: rgb(255 255 255 / 7%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%), inset 0 1px 0 rgb(255 255 255 / 10%); backdrop-filter: blur(24px) saturate(160%); font-variant-numeric: tabular-nums; min-width: 0; }
-	.fig b { order: 2; font: 800 26px/1.1 var(--font-display); letter-spacing: -.02em; color: var(--text); }
-	.fig span, .kv dt { order: 1; color: var(--text-muted); font: 600 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
+	.sh-figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+	.fig { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 16px 18px; border-radius: 16px; background: rgb(255 255 255 / 7%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%), inset 0 1px 0 rgb(255 255 255 / 10%); backdrop-filter: blur(24px) saturate(160%); font-variant-numeric: tabular-nums; min-width: 0; }
+	.fig b { font: 700 18px/1.25 var(--font-display); letter-spacing: -.01em; color: var(--text); overflow-wrap: anywhere; }
+	.fig span { color: var(--text-muted); font: 600 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
+	.fig small { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.fig em { font-style: normal; font-weight: 700; }
 	.sh-words { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-	.kv { order: -1; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
-	.kv dd { order: 2; margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-display); overflow-wrap: anywhere; }
 	.sh-h { margin: 8px 0 0; font: 700 20px/1.2 var(--font-display); letter-spacing: -.01em; }
 	.sh-bio { display: flex; flex-direction: column; gap: 14px; max-width: 72ch; }
 	.sh-bio p { margin: 0; color: rgb(235 235 245 / .82); font: 400 16px/1.6 var(--font-ui); }
@@ -1216,7 +1208,7 @@
 	@media (max-width: 767px) {
 		.sh-still { aspect-ratio: 4 / 3; }
 		.sh-face { width: 56px; height: 56px; }
-		.sh-figs, .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.sh-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.a-bio { font-size: 16px; }
 		.a-foot { left: 18px; right: 18px; bottom: 18px; }
 	}
@@ -1263,7 +1255,6 @@
 		.a-foot { left: 16px; right: 16px; bottom: 16px; }
 		.sh-cols { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 		.sh-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-		.fig b { font-size: 21px; }
 		.sk-songs { grid-template-columns: minmax(0, 1fr); }
 	}
 </style>
