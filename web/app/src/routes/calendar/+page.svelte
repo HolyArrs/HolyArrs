@@ -15,6 +15,8 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import MusicCal from '#lib/calendar/MusicCal.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -98,6 +100,9 @@
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
 	let which = $state<TitlesShown>(titlesFromAddress(askedTitles));
+	// Music-only calendar layouts Luis is comparing: 0 today's cards, 1 Fridays, 2 Shelves, 3 Radar.
+	const MUSIC_VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'Fridays' }, { value: 2, label: 'Shelves' }, { value: 3, label: 'Radar' }];
+	let musicView = $state(0);
 
 	// The two caption lines under every card and row (?movie=1-6, ?music=1-5, ?channels=all|known).
 	let look = $state<CaptionLook>({ ...DEFAULT_LOOK, region: 'global' });
@@ -529,6 +534,7 @@
 </script>
 
 <svelte:window onscroll={onScroll} />
+{#if which === 'music' && view === 'cards'}<VariantBar options={MUSIC_VIEWS} bind:value={musicView} param="mview" storageKey="cal-music-view" label="Music calendar layout" />{/if}
 
 {#snippet item(e: CalendarEntry, prevWhen = '')}
 	{@const dot = itemDot(e, todayKey)}
@@ -702,6 +708,8 @@
 						<div class="filtered-out" data-testid="cal-filtered-out">
 							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text="{base.length === 1 ? 'One date in the Library falls' : `${base.length} dates in the Library fall`} in {rangeName}." action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
 						</div>
+					{:else if view === 'cards' && which === 'music' && musicView}
+						<MusicCal entries={shown} today={todayKey} layout={musicView as 1 | 2 | 3} />
 					{:else if view === 'cards'}
 						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
