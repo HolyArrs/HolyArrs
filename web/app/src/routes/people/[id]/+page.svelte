@@ -157,7 +157,14 @@
 		const paras = (bio || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
 		const span = decades.map((g) => ({ label: g.label, n: g.movies.length }));
 		const most = Math.max(1, ...span.map((x) => x.n));
-		return { rows, wins: wins.length, noms, awards, paras, span, most, still: reel[1] || hero || '', wikiUrl: wiki.bio?.url ?? '' };
+		return { rows, wins: wins.length, noms, awards, paras, span, most, stills: reel.length ? reel : hero ? [hero] : [], wikiUrl: wiki.bio?.url ?? '' };
+	});
+	let still = $state(0);
+	$effect(() => {
+		const n = about?.stills.length ?? 0;
+		if (!aboutOpen || n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const t = setInterval(() => (still = (still + 1) % n), 6000);
+		return () => clearInterval(t);
 	});
 	const decades = $derived.by(() => {
 		const g = byDecade(movies);
@@ -394,9 +401,9 @@
 			{#if about}
 			<div class="ab ab-{aboutView}" data-testid="person-about-sheet">
 				<div class="ab-switch"><SegmentedControl label="About layout" value={aboutView} options={ABOUT_VIEWS} onchange={(v) => (aboutView = v)} /></div>
-				{#if aboutView !== 'dossier' && about.still}
+				{#if aboutView !== 'dossier' && about.stills.length}
 					<figure class="ab-still">
-						<img src={about.still} alt="" decoding="async" />
+						{#each about.stills as src, i (src)}<img class="ab-frame" class:on={i === still % about.stills.length} {src} alt="" decoding="async" loading={i ? 'lazy' : 'eager'} />{/each}
 						<figcaption>
 							{#if photo}<img class="ab-face" src={photo} alt="" />{/if}
 							<span><b>{data.person.name}</b>{#if lead}<small>{lead}</small>{/if}</span>
@@ -623,11 +630,13 @@
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.circles li { flex: none; }
 	@media (max-width: 1000px) { .songs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
-	/* About sheet (Profile / Dossier / Career). */
+	/* About sheet (Profile / Dossier / Career), an Apple TV-style dark window in the person's tint. */
+	:global(.ui-sheet:has(.ab)) { --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--ap-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--ap-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
 	.ab { display: flex; flex-direction: column; gap: 28px; }
 	.ab-switch { display: flex; justify-content: center; }
-	.ab-still { position: relative; margin: 0; aspect-ratio: 21 / 9; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; isolation: isolate; animation: ab-in var(--dur-slow) var(--ease-out); }
-	.ab-still > img { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+	.ab-still { position: relative; margin: 0; aspect-ratio: 21 / 9; border-radius: 18px; box-shadow: 0 20px 50px rgb(0 0 0 / .45); overflow: hidden; background: #1c1d21; isolation: isolate; animation: ab-in var(--dur-slow) var(--ease-out); }
+	.ab-frame { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; scale: 1.02; transition: opacity 1.2s var(--ease-out), scale 7s linear; }
+	.ab-frame.on { opacity: 1; scale: 1.12; }
 	.ab-still::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 60%); }
 	.ab-still figcaption { position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 16px; color: #fff; }
 	.ab-face { flex: none; width: 64px; height: 64px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(255 255 255 / .85), 0 8px 24px rgb(0 0 0 / .4); }
@@ -635,9 +644,11 @@
 	.ab-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
 	.ab-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
 	.ab-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0; }
-	.ab-tiles div { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 14px; background: var(--surface-1); border: 1px solid var(--line, var(--border)); }
-	.ab-tiles dt, .ab-dl dt, .ab-sec h3 { margin: 0; color: var(--text-muted); font: 700 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; }
-	.ab-tiles dd { margin: 0; color: var(--text); font: 600 16px/1.3 var(--font-ui); }
+	.ab-tiles div { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: rgb(255 255 255 / 7%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%), inset 0 1px 0 rgb(255 255 255 / 10%); backdrop-filter: blur(24px) saturate(160%); transition: background var(--dur-fast) var(--ease-out), translate var(--dur-fast) var(--ease-out); }
+	.ab-tiles div:hover { background: rgb(255 255 255 / 11%); translate: 0 -1px; }
+	.ab-tiles dt, .ab-dl dt { margin: 0; color: var(--text-muted); font: 600 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
+	.ab-sec h3 { margin: 0; color: var(--text); font: 700 20px/1.2 var(--font-display); letter-spacing: -.01em; }
+	.ab-tiles dd { margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-display); letter-spacing: -.01em; }
 	.ab-tiles small, .ab-dl small { color: var(--text-muted); font: var(--t-footnote); }
 	.ab-body { display: flex; flex-direction: column; gap: 28px; }
 	.ab-dossier .ab-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 36px; align-items: start; }
@@ -652,8 +663,8 @@
 	.ab-main { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 	.ab-sec { display: flex; flex-direction: column; gap: 14px; }
 	.ab-bio { display: flex; flex-direction: column; gap: 14px; max-width: 68ch; }
-	.ab-bio p { margin: 0; color: var(--text); font: var(--t-body); line-height: 1.65; }
-	.ab-bio p.lead { font: 500 19px/1.55 var(--font-ui); }
+	.ab-bio p { margin: 0; color: rgb(235 235 245 / .82); font: 400 16px/1.6 var(--font-ui); }
+	.ab-bio p.lead { color: #fff; font: 500 19px/1.55 var(--font-ui); }
 	.ab-bio p.lead::first-letter { float: left; margin: 4px 10px 0 0; font: 800 58px/.8 var(--font-display); color: var(--text); }
 	.ab-awards { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
 	.ab-awards li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line, var(--border)); }
@@ -677,7 +688,7 @@
 	.ab-src { align-self: flex-start; color: var(--text-muted); font: 600 14px/1 var(--font-ui); text-decoration: underline; text-underline-offset: 3px; }
 	@keyframes ab-in { from { opacity: 0; translate: 0 8px; } }
 	@keyframes ab-grow { from { scale: 1 0; } }
-	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } }
+	@media (prefers-reduced-motion: reduce) { .ab-still, .ab-bars i { animation: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
 	@media (max-width: 767px) {
 		.ab-dossier .ab-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 		.ab-side { position: static; }
