@@ -5,7 +5,7 @@
 	import { appPath, to } from '../paths.ts';
 	import { registerField, rememberReturn, searchField, searchHooks } from '../search-field.svelte.ts';
 	import { api } from '../api.ts';
-	import { createSuggest, step, suggestHref, type SuggestAnswer } from '../live-search.ts';
+	import { createSuggest, live, step, suggestHref, SUGGEST_MIN, type SuggestAnswer } from '../live-search.ts';
 	import GlassDropdown from './GlassDropdown.svelte';
 
 	// The one search field (spec: top bar, centre). Typing or Enter anywhere
@@ -27,11 +27,14 @@
 	// Live search: the glass dropdown under the field (shared by every page).
 	let answer = $state<SuggestAnswer | null>(null);
 	let active = $state(-1);
+	// Words typed and their suggestions on the way: the panel is already open with loading rows.
+	let waiting = $state(false);
 	const listId = $derived(`${id}-suggest`);
 	const suggest = createSuggest(
 		(q, signal) => api.get<SuggestAnswer>(`/search/suggest?q=${encodeURIComponent(q)}${kindParam()}`, signal),
 		(a) => {
 			answer = a && (a.completions.length || a.items.length) ? a : null;
+			waiting = false;
 			active = -1;
 		}
 	);
@@ -56,6 +59,7 @@
 	}
 	function typed() {
 		open(searchField.term);
+		waiting = [...searchField.term.trim()].length >= SUGGEST_MIN && live.on !== false && !answer;
 		suggest.type(searchField.term);
 	}
 	function submitted(e: SubmitEvent) {
@@ -120,7 +124,7 @@
 		<kbd class="hint" aria-hidden="true">{searchKey}</kbd>
 	{/if}
 	{#if one}<button type="button" class="close" aria-label={searchField.term ? 'Clear the search' : 'Close Search'} title={searchField.term ? 'Clear the search' : 'Close Search'} data-testid="search-close" onclick={clearOrClose}><Icon name="x" size={16} /></button>{/if}
-	{#if answer}<GlassDropdown {answer} {active} id={listId} onpick={pick} onword={word} />{/if}
+	{#if answer || waiting}<GlassDropdown {answer} {active} id={listId} onpick={pick} onword={word} />{/if}
 </form>
 
 <style>

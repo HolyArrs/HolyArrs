@@ -3,6 +3,7 @@
 	import { appPicture, coverFor } from '../music/music-pages.ts';
 	import { pictureOf } from '../pictures.ts';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
+	import { SkTrackRow } from './sk/index.ts';
 	// No art yet, or it failed: the row shows the one placeholder every
 	// picture uses (initials, on the picture's own colour when known).
 	let failed = $state<string[]>([]);
@@ -11,16 +12,20 @@
 	// field. Word completions first, then rich rows with 44 px art (round for
 	// artists and people), a "Type · detail" subline and the state chip.
 	// `active` indexes completions then rows; the field owns the keys.
-	let { answer, active, id, onpick, onword }: { answer: SuggestAnswer; active: number; id: string; onpick: (href: string) => void; onword: (w: string) => void } = $props();
-	const words = $derived(answer.completions);
+	// `answer` null means the words are being looked up: the panel opens at once with loading
+	// rows (the album track list's), and the suggestions fill in place when they come.
+	let { answer, active, id, onpick, onword }: { answer: SuggestAnswer | null; active: number; id: string; onpick: (href: string) => void; onword: (w: string) => void } = $props();
+	const words = $derived(answer?.completions ?? []);
+	const items = $derived(answer?.items ?? []);
 </script>
 
-<div class="glass" {id} role="listbox" aria-label="Suggestions" data-testid="search-suggest">
+<div class="glass" {id} role="listbox" aria-label="Suggestions" aria-busy={!answer || undefined} data-testid="search-suggest">
+	{#if !answer}<div class="wait" data-testid="suggest-loading">{#each [0, 1, 2, 3] as i (i)}<SkTrackRow height={56} />{/each}</div>{/if}
 	{#each words as w, i (w)}
 		<div id="{id}-{i}" role="option" tabindex="-1" aria-selected={active === i} class="word" class:on={active === i} data-testid="suggest-word" onpointerdown={(e) => e.preventDefault()} onclick={() => onword(w)} onkeydown={(e) => e.key === 'Enter' && onword(w)}>{w}</div>
 	{/each}
-	{#if words.length && answer.items.length}<div class="rule" role="presentation"></div>{/if}
-	{#each answer.items as r, j (r.kind + r.name + (r.sub ?? '') + j)}
+	{#if words.length && items.length}<div class="rule" role="presentation"></div>{/if}
+	{#each items as r, j (r.kind + r.name + (r.sub ?? '') + j)}
 		{@const i = words.length + j}
 		{@const src = r.art ? coverFor(appPicture(r.art), 44).src : null}
 		<a id="{id}-{i}" role="option" aria-selected={active === i} class="row" class:on={active === i} href={suggestHref(r)} data-testid="suggest-row" data-kind={r.kind} tabindex="-1" onpointerdown={(e) => e.preventDefault()} onclick={(e) => { e.preventDefault(); onpick(suggestHref(r)); }}>
@@ -42,6 +47,7 @@
 	.rule { height: 1px; margin: 6px 8px; background: color-mix(in srgb, var(--text) 12%, transparent); }
 	.row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 8px; border-radius: 6px; color: var(--text); text-decoration: none; }
 	@media (hover: hover) { .word:not(.on):hover, .row:not(.on):hover { background: color-mix(in srgb, var(--text) 7%, transparent); } }
+	.wait :global(.sk-track) { border-bottom: 0; padding: 0 8px; }
 	.on { background: var(--accent-fill); color: var(--text-on-red, #fff); }
 	.on .sub { color: inherit; opacity: 1; }
 	.art { position: relative; flex: none; width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: var(--surface-3); }
