@@ -330,11 +330,27 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 		return nil, nil, nil, tile, true
 	}
 	sh := a.musicShelvesOf(ctx, region, now)
-	c := &rowtpl.Ctx{B: b, Kind: kindOfKey(key), Key: key, Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName, HasArt: a.tplHasArt(b)}
-	if sh != nil {
-		c.Neighbor = sh.Neighbor
+	tl := a.musicTplLib(ctx, member, lib, acts, b, now)
+	hasArt := a.tplHasArt(b)
+	build := func(m int64) ([]int, []rowtpl.Row) {
+		c := &rowtpl.Ctx{B: b, Kind: kindOfKey(key), Key: key, Region: strings.ToLower(region), Now: now, Member: m, Lib: tl, Blocks: tplBlocks(sh), CountryName: countryName, HasArt: hasArt}
+		if sh != nil {
+			c.Neighbor = sh.Neighbor
+		}
+		spot := rowtpl.Spotlight(c)
+		return spot, rowtpl.Build(c)
 	}
-	spot := rowtpl.Spotlight(c)
+	// The tile count is taken without a member; the member's daily mix can
+	// fold rows together and leave fewer. Then take the page without the
+	// member's mix, and when it is still short, the note (never a
+	// near-empty page).
+	spot, built := build(member)
+	if len(built) < rowtpl.MinPageRows && member != 0 {
+		spot, built = build(0)
+	}
+	if len(built) < rowtpl.MinPageRows {
+		return nil, nil, nil, tile, true
+	}
 	for k, i := range spot {
 		card := tplCard(b.Items[i])
 		if k == 0 {
@@ -343,7 +359,7 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 			alts = append(alts, card)
 		}
 	}
-	for _, r := range rowtpl.Build(c) {
+	for _, r := range built {
 		row := MusicRow{ID: "tpl:" + r.ID, Type: "tpl_" + strings.ToLower(r.Template), Title: r.Title, Reason: r.Reason, Shape: r.Shape}
 		for _, i := range r.Items {
 			row.Items = append(row.Items, tplCard(b.Items[i]))
