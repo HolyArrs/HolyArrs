@@ -17,6 +17,8 @@
 	import Menu from '../ui/Menu.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
+	import { cardLook } from './cardLook.svelte.ts';
+	import { demoDetails, sampleFiles, sampleLog, samplePeers, sampleRatio } from './sampleDetails.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
@@ -35,6 +37,7 @@
 		titles,
 		busy,
 		samples,
+		history = [],
 		torrent = false,
 		decisionsOf,
 		openId = $bindable(0),
@@ -48,6 +51,8 @@
 		busy: number;
 		/** Recent total-speed readings, oldest first. */
 		samples: number[];
+		/** The server's speed readings since the app started. */
+		history?: { down: number; up: number }[];
 		/** A torrent Downloader brings the Seeding sub-tab under Done. */
 		torrent?: boolean;
 		decisionsOf: (r: DownloadRow) => Decision[];
@@ -86,7 +91,7 @@
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	// ?card=a|b|c picks the expanded row's layout (c, the big poster, is the default).
-	const card = $derived((['a', 'b'].includes(page.url.searchParams.get('card') ?? '') ? page.url.searchParams.get('card') : 'c') as 'a' | 'b' | 'c');
+	const card = $derived(cardLook.value);
 	const TABS = ['Info', 'Files', 'Peers', 'Log'] as const;
 	let xtabOn = $state<Record<number, (typeof TABS)[number]>>({});
 	const tabOf = (id: number) => xtabOn[id] ?? 'Info';
@@ -102,10 +107,10 @@
 	let sub = $state(start.sub);
 	function remember() {
 		try {
-			const u = new URL(page.url.href);
+			const u = new URL(location.href);
 			if (show === ALL) u.searchParams.delete('show');
 			else u.searchParams.set('show', sub ? `${show}.${sub}` : show);
-			if (u.href !== page.url.href) replaceState(u, page.state);
+			if (u.href !== location.href) replaceState(u, page.state);
 		} catch {
 			/* the router is not ready yet; the next pick writes it */
 		}
@@ -557,6 +562,45 @@
 	{#if files && filesOpen.has(r.id)}<p class="nr" data-testid="dl-files">Not reported yet</p>{/if}
 {/snippet}
 
+{#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[])}
+	<div class="xtabs" role="tablist" aria-label="Details">
+		{#each TABS as t (t)}
+			{#if t !== 'Peers' || protocolOf(r) === 'torrent'}
+				<button type="button" role="tab" class="xtab" class:on={tabOf(r.id) === t} aria-selected={tabOf(r.id) === t} onclick={() => (xtabOn[r.id] = t)}>{t}</button>
+			{/if}
+		{/each}
+	</div>
+	{#if tabOf(r.id) === 'Info'}
+		<dl class="kv">
+			{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
+			{#if demoDetails}
+				{#if r.speed}<dt>Speed</dt><dd>{bytes(r.speed)}/s{r.up_speed ? ` down · ${bytes(r.up_speed)}/s up` : ''}</dd>{/if}
+				{#if r.eta}<dt>Time left</dt><dd>{duration(r.eta)}</dd>{/if}
+				{#if protocolOf(r) === 'torrent'}<dt>Seeds / peers</dt><dd>{r.seeds ?? 0} / {r.peers ?? 0}</dd><dt>Share ratio</dt><dd>{sampleRatio(r)}</dd>{/if}
+			{/if}
+		</dl>
+	{:else if !demoDetails}
+		<p class="nr">Not reported yet</p>
+	{:else if tabOf(r.id) === 'Files'}
+		<ul class="fl" data-testid="dl-filelist">
+			{#each sampleFiles(r) as f (f.name)}
+				<li><span class="fn" title={f.name}>{f.name}</span><span class="fs">{bytes(f.size)} · {Math.floor(f.size ? (f.done / f.size) * 100 : 0)}%</span></li>
+			{/each}
+		</ul>
+	{:else if tabOf(r.id) === 'Peers'}
+		<ul class="fl pr" data-testid="dl-peerlist">
+			{#each samplePeers(r) as p (p.ip + p.client)}
+				<li><span class="fn">{p.ip} · {p.client}</span><span class="fs">{Math.floor(p.progress * 100)}% · ↓ {bytes(p.down)}/s · ↑ {bytes(p.up)}/s</span></li>
+			{/each}
+			{#if !samplePeers(r).length}<li class="nr">No peers connected</li>{/if}
+		</ul>
+	{:else}
+		<ol class="lg" data-testid="dl-log">
+			{#each sampleLog(r) as l, i (i)}<li class:bad={l.bad}><time>{l.at}</time> {l.text}</li>{/each}
+		</ol>
+	{/if}
+{/snippet}
+
 {#snippet panel(r: DownloadRow)}
 	{@const ds = decisionsOf(r)}
 	{@const sizeWord = r.size ? bytes(r.size) : 'Not reported yet'}
@@ -582,6 +626,19 @@
 		{/if}
 		</div>
 	</div>
+	{:else if card === 'd'}
+	<div class="x" id="dlx-{r.id}" data-testid="dl-panel" data-card="d" in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
+		<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
+		<div class="xb">
+		<p class="xt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
+		<div class="xd">{@render tabsView(r, simple)}</div>
+		{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
+		{@render btns(r, false)}
+		{#if r.can_act && !inHistory(r)}
+			<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
+		{/if}
+		</div>
+	</div>
 	{:else}
 	<div class="x cd" id="dlx-{r.id}" data-testid="dl-panel" data-card={card} in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
 		<div class="xh">
@@ -589,18 +646,7 @@
 			<p class="xt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
 		</div>
 		{#if card === 'b'}
-			<div class="xtabs" role="tablist" aria-label="Details">
-				{#each TABS as t (t)}
-					{#if t !== 'Peers' || protocolOf(r) === 'torrent'}
-						<button type="button" role="tab" class="xtab" class:on={tabOf(r.id) === t} aria-selected={tabOf(r.id) === t} onclick={() => (xtabOn[r.id] = t)}>{t}</button>
-					{/if}
-				{/each}
-			</div>
-			{#if tabOf(r.id) === 'Info'}
-				<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
-			{:else}
-				<p class="nr">Not reported yet</p>
-			{/if}
+			{@render tabsView(r, simple)}
 		{:else}
 			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
 		{/if}
@@ -617,7 +663,7 @@
 
 <div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px">
 <div class="strip" data-testid="dl-strip">
-	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><SpeedGraph speed={sum.speed} up={sum.up} /></span>
+	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><SpeedGraph speed={sum.speed} up={sum.up} {history} /></span>
 	<span><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
 	<span data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
 	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
@@ -834,6 +880,18 @@
 	.xtab { min-height: 28px; padding: 0 12px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.xtab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
 	.xtab:focus-visible, .xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.xb > .xt { margin-bottom: 8px; }
+	.xd .xtabs, .xd .kv, .xd .fl, .xd .lg, .xd .nr { margin-top: 8px; }
+	.xd .xtabs { margin-top: 0; }
+	.fl { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font: var(--t-footnote); min-width: 0; }
+	.fl li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
+	.fn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.fs { flex: none; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.pr .fs { white-space: nowrap; }
+	.lg { list-style: none; padding: 0; margin: 0; display: grid; gap: 3px; font: var(--t-caption); min-width: 0; max-height: 220px; overflow: auto; }
+	.lg li { overflow-wrap: anywhere; }
+	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+	.lg .bad { color: var(--fail); }
 	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 	.xbn { min-height: 32px; padding: 0 14px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 	.xbn:hover:not(:disabled) { background: var(--surface-3); }
@@ -874,6 +932,10 @@
 		.x { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 4px 8px 12px calc(24px + var(--gap)); }
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
+		.x[data-card='d'] { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+		.fl li { flex-direction: column; gap: 0; }
+		.fs { white-space: normal; }
+		.pr .fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
 		.find:not(.open) { padding: 0 7px; }
 		.find:not(.open) input, .find:not(.open) .kb { display: none; }

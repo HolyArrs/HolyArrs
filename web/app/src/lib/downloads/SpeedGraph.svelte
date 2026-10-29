@@ -9,13 +9,20 @@
 	import { reducedMotion } from '../motion.ts';
 	import { stepToward, SPAN } from './sections.ts';
 
-	let { speed, up = 0, width = 120, height = 28 }: { speed: number; up?: number; width?: number; height?: number } = $props();
+	let { speed, up = 0, width = 120, height = 28, history = [] }: { speed: number; up?: number; width?: number; height?: number; history?: { down: number; up: number }[] } = $props();
 
 	let canvas = $state<HTMLCanvasElement>();
 	let peak = $state(0);
 	const pts: number[] = [];
 	const ups: number[] = [];
 	let at = 0;
+	// The server's readings since the app started: drawn on first paint, then live ones follow.
+	// svelte-ignore state_referenced_locally
+	for (const h of history.slice(-SPAN)) {
+		pts.push(Math.max(0, h.down || 0));
+		ups.push(Math.max(0, h.up || 0));
+	}
+	peak = pts.length ? Math.max(...pts) : 0;
 
 	function color(name: string, fallback: string) {
 		return (canvas && getComputedStyle(canvas).getPropertyValue(name).trim()) || fallback;
@@ -84,7 +91,10 @@
 			cancelAnimationFrame(raf);
 			if (!document.hidden && !reducedMotion()) raf = requestAnimationFrame(loop);
 		};
-		sample();
+		if (pts.length) {
+			at = performance.now();
+			draw(at);
+		} else sample();
 		start();
 		const tickId = setInterval(sample, 1000);
 		document.addEventListener('visibilitychange', start);

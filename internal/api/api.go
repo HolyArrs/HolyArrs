@@ -204,6 +204,8 @@ type API struct {
 	ctl      musicControl
 	// artistVideos keeps each artist's music videos (see music_video.go).
 	artistVideos artistVideoCache
+	// speeds is the rolling total-speed history (speedhistory.go).
+	speeds speedHistory
 }
 
 // New makes the API.
@@ -252,7 +254,9 @@ func New(s Server) *API {
 				}
 			}}
 	}
-	return &API{s: s}
+	a := &API{s: s}
+	go a.sampleSpeeds()
+	return a
 }
 
 // actor is the signed-in person; without sign-in (tests) it is the owner.

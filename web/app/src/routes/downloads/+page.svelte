@@ -20,6 +20,7 @@
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
 	import DlSections from '#lib/downloads/DlSections.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';
+	import { cardLook, lookOf } from '#lib/downloads/cardLook.svelte.ts';
 	import { addSample, inHistory, totals } from '#lib/downloads/sections.ts';
 
 	let rows = $state<DownloadRow[]>([]);
@@ -30,12 +31,13 @@
 	let settings = $state<DownloaderSettings | null>(null);
 	let openId = $state(0);
 	// Floating A/B/C switch for the opened card's layout (?card=a|b|c, c is the default).
-	const CARDS = [{ value: 'a', label: 'A · Facts' }, { value: 'b', label: 'B · Tabs' }, { value: 'c', label: 'C · Poster' }];
-	let cardPick = $state(['a', 'b'].includes(page.url.searchParams.get('card') ?? '') ? page.url.searchParams.get('card')! : 'c');
+	const CARDS = [{ value: 'a', label: 'A · Facts' }, { value: 'b', label: 'B · Tabs' }, { value: 'c', label: 'C · Poster' }, { value: 'd', label: 'D · Poster+Tabs' }];
+	cardLook.value = lookOf(page.url.searchParams.get('card'));
 	$effect(() => {
-		const u = new URL(page.url.href);
-		if ((u.searchParams.get('card') ?? 'c') === cardPick) return;
-		u.searchParams.set('card', cardPick);
+		const pick = cardLook.value;
+		const u = new URL(location.href);
+		if ((u.searchParams.get('card') ?? 'c') === pick) return;
+		u.searchParams.set('card', pick);
 		try { replaceState(u, page.state); } catch { /* router not ready */ }
 	});
 	// A torrent Downloader brings the Seeding sub-tab under Done.
@@ -89,6 +91,8 @@
 
 	// The speed graph: one reading of the Queue's total speed per load, kept here.
 	let samples = $state<number[]>([]);
+	// The server's speed history since the app started, read once so the graph is full on first paint.
+	let history = $state<{ down: number; up: number }[] | null>(null);
 
 	// When the open row goes away (its decision was settled), its details close.
 	$effect(() => {
@@ -115,10 +119,12 @@
 
 	async function load() {
 		try {
-			const [d, i] = await Promise.all([
+			const [d, i, h] = await Promise.all([
 				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
-				api.get<{ imports: ImportRecord[] }>('/imports?limit=100')
+				api.get<{ imports: ImportRecord[] }>('/imports?limit=100'),
+				history ? Promise.resolve(null) : api.get<{ samples: { down: number; up: number }[] }>('/downloads/speeds').catch(() => ({ samples: [] }))
 			]);
+			if (h) history = h.samples;
 			rows = d.downloads;
 			imports = i.imports;
 			samples = addSample(samples, totals(d.downloads.filter((r) => !inHistory(r))).speed);
@@ -226,11 +232,11 @@
 	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
 {:else}
 	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {busy} {samples} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
 {/if}
 </PageLoader>
 
-<div class="cardbar" data-testid="card-look"><SegmentedControl options={CARDS} bind:value={cardPick} label="Opened card layout" size="sm" announce={(l) => `Showing ${l}`} /></div>
+<div class="cardbar" data-testid="card-look"><SegmentedControl options={CARDS} bind:value={cardLook.value} label="Opened card layout" size="sm" announce={(l) => `Showing ${l}`} /></div>
 
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}
