@@ -31,9 +31,7 @@
 		<div class="ep-win" data-testid="cal-window">
 			{#if (e.still || src) && !failed}
 				<div class="ep-art" class:album={e.kind === 'album'}>
-					<img class="ep-still" src={sized(e.still || src || '', e.kind === 'album' ? 'poster' : 'backdrop', 780)} alt="" />
-					{#if e.kind === 'album' && src}<img class="ep-cover" src={sized(src, 'poster', 300)} alt="" />{/if}
-				</div>
+					<img class="ep-still" src={sized(e.still || src || '', e.kind === 'album' ? 'poster' : 'backdrop', 780)} alt="" />				</div>
 			{/if}
 			<p class="ep-when" class:tag={e.kind === 'album'}>{lines[0]}{#if isEp && groupTag(g)}{' · '}{groupTag(g)}{/if}</p>
 			{#if isEp}
@@ -64,8 +62,8 @@
 	.ep-win { display: flex; flex-direction: column; gap: 12px; }
 	.ep-art { position: relative; border-radius: 10px; overflow: hidden; }
 	.ep-still { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-	.ep-art.album .ep-still { filter: blur(22px) saturate(140%) brightness(.7); transform: scale(1.2); }
-	.ep-cover { position: absolute; left: 50%; top: 50%; translate: -50% -50%; height: 76%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / .5); }
+	/* An album shows its cover sharp and filling the frame, the same as its card. */
+	.ep-art.album .ep-still { object-position: center 30%; }
 	.ep-art.album { aspect-ratio: 16 / 9; box-shadow: 0 20px 50px rgb(0 0 0 / .35); }
 	.ep-when.tag { align-self: flex-start; padding: 5px 10px; border-radius: 999px; background: var(--surface-2); font: 700 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
 	.ep-artist { margin: 0; color: var(--text); font: 700 20px/1.25 var(--font-display); letter-spacing: -.01em; }
