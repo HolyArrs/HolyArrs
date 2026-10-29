@@ -156,7 +156,7 @@
 		const paras = (bio || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
 		const span = decades.map((g) => ({ label: g.label, n: g.movies.length }));
 		const most = Math.max(1, ...span.map((x) => x.n));
-		return { rows, wins: wins.length, noms, awards, paras, span, most, stills: reel.length ? reel : hero ? [hero] : [], wikiUrl: wiki.bio?.url ?? '' };
+		return { rows, wins: wins.length, noms, awards, paras, span, most, stills: aboutStills, wikiUrl: wiki.bio?.url ?? '' };
 	});
 	let still = $state(0);
 	$effect(() => {
@@ -212,6 +212,14 @@
 	});
 	const quiet = $derived([roleWords, data?.stats?.first_year ? `Since ${data.stats.first_year}` : ''].filter(Boolean).join(' · '));
 	const reel = $derived((data?.known_for ?? []).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
+	// About starts half way through the stills (more of them when there are), so it never shows the banner's picture.
+	const aboutStills = $derived.by(() => {
+		const all = (data?.known_for ?? []).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 12);
+		const rest = all.slice(reel.length);
+		if (rest.length) return rest;
+		const h = Math.ceil(reel.length / 2);
+		return reel.length > 1 ? [...reel.slice(h), ...reel.slice(0, h)] : reel;
+	});
 	let aboutOpen = $state(false);
 	let allDecade = $state<{ label: string; movies: PersonMovie[] } | null>(null);
 
