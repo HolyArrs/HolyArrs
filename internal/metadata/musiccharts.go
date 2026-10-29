@@ -75,7 +75,8 @@ func (s *Service) musicGet(ctx context.Context, path string, q url.Values, out a
 	defer resp.Body.Close()
 	switch {
 	case resp.StatusCode == http.StatusAccepted:
-		return ErrServicePending
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 16<<10))
+		return pendingFrom(b)
 	case resp.StatusCode == http.StatusNotFound:
 		return ErrNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:

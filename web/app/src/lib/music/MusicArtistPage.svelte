@@ -23,7 +23,8 @@
 	import { page } from '$app/state';
 	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
 	import { api, message } from '#lib/api.ts';
-	import { keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
+	import { gapWaits, keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
+	import GapNotice from '#lib/music/GapNotice.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -193,7 +194,7 @@
 				data = keepShown(data, v, ['albums', 'top', 'related']);
 				follows = new Map(data.albums.filter((a) => a.upcoming).map((a) => [a.mbid, !!a.following]));
 				askFollow(data.title_id);
-			}, stop.signal);
+			}, stop.signal, gapWaits(d));
 		});
 		void api.get<{ similar: PageArtist[] }>(`/music/artists/${want}?part=similar`).then((r) => want === mbid && (similar = withCover(r.similar))).catch(() => want === mbid && (similar = []));
 		void api.get<ArtistMoreData>(`/music/artists/${want}?part=more`).then((r) => want === mbid && (more = { ...r, appears_on: withCover(r.appears_on) })).catch(() => want === mbid && (more = { essential: [], appears_on: [] }));
@@ -788,7 +789,9 @@
 
 {#snippet kindRows()}
 	<!-- The discography: one row per kind of release. -->
-	{#if rows.length}
+	{#if !rows.length && data?.gap}
+		<GapNotice gap={data.gap} />
+	{:else if rows.length}
 		<div class="rows" data-testid="discography">
 			{#each rows as r (r.shelf)}
 				<Shelf title={r.title} item="var(--music-item)" items={r.albums} key={(a) => a.mbid} placeholder="square" lines={2}>

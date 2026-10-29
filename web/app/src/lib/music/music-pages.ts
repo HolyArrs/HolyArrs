@@ -187,6 +187,16 @@ export interface ArtistPageData {
 	kid: boolean;
 	/** What "Ask for all missing" asks: released items the Library does not keep. */
 	missing?: { count: number; size_bytes: number; albums: string[] };
+	incomplete?: boolean;
+	/** The server is still getting this artist (or it waits in line): its words show in place of the content. */
+	gap?: PageGap;
+}
+
+/** PageGap is the metadata server's word on an item it is still getting. */
+export interface PageGap {
+	state: 'fetching' | 'queued';
+	position?: number;
+	message: string;
 }
 
 /** PageCredit is a release on another artist's page or a neighbour's top album. */
@@ -244,6 +254,7 @@ export interface AlbumPageData extends PageAlbum {
 	similar: PageArtist[];
 	kid: boolean;
 	incomplete?: boolean;
+	gap?: PageGap;
 }
 
 /** artistHref opens an artist's page. */

@@ -29,6 +29,37 @@ var (
 	ErrServicePending = errors.New("metadata service is still fetching this; try again shortly")
 )
 
+// PendingError is ErrServicePending with what the server said about the wait:
+// state ("fetching" or "queued"), the place in line and the words to show.
+// errors.Is(err, ErrServicePending) holds for it.
+type PendingError struct {
+	State    string `json:"state"`
+	Position int    `json:"position"`
+	Message  string `json:"message"`
+}
+
+func (e *PendingError) Error() string   { return ErrServicePending.Error() }
+func (e *PendingError) Is(t error) bool { return t == ErrServicePending }
+
+// pendingFrom reads a 202 body into a PendingError; a body with no wait
+// fields is plain ErrServicePending.
+func pendingFrom(body []byte) error {
+	var p PendingError
+	if json.Unmarshal(body, &p) != nil || p.State == "" && p.Message == "" {
+		return ErrServicePending
+	}
+	if p.State != "queued" {
+		p.State = "fetching"
+	}
+	if p.Position < 0 {
+		p.Position = 0
+	}
+	if len(p.Message) > 200 {
+		p.Message = p.Message[:200]
+	}
+	return &p
+}
+
 // ServiceOptions requires the caller's address-policy HTTP client. The command
 // layer supplies it so metadata does not depend on the release-source package.
 type ServiceOptions struct {
@@ -363,7 +394,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 				if json.Unmarshal(body, &partial) == nil {
 					out = partial
 				}
-				return out, ErrServicePending
+				return out, pendingFrom(body)
 			}
 			pending++
 			attempt--

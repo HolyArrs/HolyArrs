@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { keepShown, reaskWhileIncomplete, REASK_MS, sleep } from './reask.ts';
+import { GAP_REASK_MS, gapWaits, keepShown, reaskWhileIncomplete, REASK_MS, sleep } from './reask.ts';
 
 type A = { tracks: number[]; incomplete?: boolean };
 const now = () => Promise.resolve();
@@ -103,5 +103,13 @@ describe('song list state', () => {
 		expect(n).toBe(TRACK_REASK_MS.length);
 		expect(seen[0]).toBe(true);
 		expect(seen[seen.length - 1]).toBe(false);
+	});
+});
+
+describe('gapWaits', () => {
+	it('keeps asking for minutes while the server says it is still getting the item', () => {
+		expect(gapWaits({ gap: { state: 'queued' } })).toBe(GAP_REASK_MS);
+		expect(GAP_REASK_MS.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(120000);
+		expect(gapWaits({})).toBe(REASK_MS);
 	});
 });

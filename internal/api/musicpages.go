@@ -102,6 +102,9 @@ type ArtistPageView struct {
 	// Incomplete: the music source did not answer in time; the page shows
 	// what is known and asks again.
 	Incomplete bool `json:"incomplete,omitempty"`
+	// Gap: the metadata server is still fetching this artist (or is queued);
+	// the page shows its message in place of the content and asks again.
+	Gap *PageGap `json:"gap,omitempty"`
 	// Missing is what "Ask for all missing" asks: the released albums,
 	// EPs and singles the Library does not keep, and about how big.
 	Missing PageMissing `json:"missing"`
@@ -167,6 +170,27 @@ type AlbumPageView struct {
 	Similar    []PageArtist  `json:"similar"`
 	Kid        bool          `json:"kid"`
 	Incomplete bool          `json:"incomplete,omitempty"`
+	Gap        *PageGap      `json:"gap,omitempty"`
+}
+
+// PageGap is the metadata server's word on an item it is still getting:
+// state "fetching" or "queued", the place in line, and the words to show.
+type PageGap struct {
+	State    string `json:"state"`
+	Position int    `json:"position,omitempty"`
+	Message  string `json:"message"`
+}
+
+// gapOf reads a still-fetching answer out of err; nil when err is not one.
+func gapOf(err error) *PageGap {
+	var p *metadata.PendingError
+	if errors.As(err, &p) {
+		return &PageGap{State: p.State, Position: p.Position, Message: p.Message}
+	}
+	if errors.Is(err, metadata.ErrServicePending) {
+		return &PageGap{State: "fetching", Message: "Getting this from the server…"}
+	}
+	return nil
 }
 
 // pageTags are an artist's genres and linked artists (one MusicBrainz call,
@@ -655,14 +679,18 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	var dz metadata.DeezerProfile
 	var bio *metadata.WikiSummary
 	var store []metadata.MusicStoreAlbum
+	var storeGap *PageGap
 	side, cancel := context.WithTimeout(ctx, max(time.Until(by), musicSideFloor))
 	defer cancel()
 	if a.s.MusicDiscography != nil && len(art.Albums) == 0 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if d, err := a.s.MusicDiscography(side, mbid); err == nil {
+			d, err := a.s.MusicDiscography(side, mbid)
+			if err == nil {
 				store = d.Albums
+			} else {
+				storeGap = gapOf(err)
 			}
 		}()
 	}
@@ -688,6 +716,15 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	v.Incomplete = incomplete
+	if incomplete {
+		v.Gap = gapOf(err)
+		if v.Gap == nil && len(art.Albums) == 0 && len(store) == 0 {
+			v.Gap = storeGap
+		}
+		if v.Gap != nil {
+			v.Incomplete = true
+		}
+	}
 	byName := map[string]PageAlbum{}
 	kept := albums[:0]
 	for _, al := range albums {
@@ -1043,6 +1080,11 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	if incomplete || psErr != nil && len(ps) == 0 {
 		v.Incomplete = true
+		if len(ps) == 0 {
+			if v.Gap = gapOf(psErr); v.Gap == nil {
+				v.Gap = gapOf(err)
+			}
+		}
 	}
 	main := mainPressing(ps)
 	// Deezer's album: label and explicit marks per track.

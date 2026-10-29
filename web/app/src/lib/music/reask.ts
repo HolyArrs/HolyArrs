@@ -9,6 +9,12 @@ import { isFilling, isIncomplete } from '../api.ts';
 /** The pauses before each quiet re-ask. */
 export const REASK_MS = [2500, 3500, 5000, 7000];
 
+/** The pauses while the server still gets the item or holds it in line: every 2 s for about 3 minutes, then the page gives up. */
+export const GAP_REASK_MS: number[] = Array.from({ length: 90 }, () => 2000);
+
+/** gapWaits: the pauses to use for a first answer, the long ones when it says the server is still getting it. */
+export const gapWaits = (first: { gap?: unknown } | null | undefined, normal: number[] = REASK_MS): number[] => (first?.gap ? GAP_REASK_MS : normal);
+
 /** sleep waits ms, or rejects at once when signal aborts. */
 export function sleep(ms: number, signal: AbortSignal): Promise<void> {
 	return new Promise((resolve, reject) => {
