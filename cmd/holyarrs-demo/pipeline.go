@@ -394,27 +394,6 @@ func (w *world) activity(ctx context.Context) error {
 				}
 				return w.grab(ctx, slot, rel, name, payload{Files: []string{name + ".mkv", "Sample/" + strings.ToLower(dotted(m.Name)) + "-sample.mkv", name + ".nfo"}})
 			}})
-		case planDecide:
-			name := movieRelease(m, e.Quality)
-			// A disc image and an nfo: no video to place (an archive-only torrent is failed as a fake, 4.3.5).
-			files := []string{name + ".iso", name + ".nfo"}
-			if n%2 == 0 {
-				files = []string{"Contact.1997.1080p.BluRay.x264-AMIABLE.mkv", name + ".nfo"}
-			}
-			cases = append(cases, kase{"decide " + name, ago(time.Duration(n%3+1)*day + 5*time.Hour), func() error {
-				slot, err := w.slotOf(ctx, id, "Main")
-				if err != nil {
-					return err
-				}
-				rel, err := w.releaseFor(ctx, []int64{slot}, name, 8*gb, "chosen", 30)
-				if err != nil {
-					return err
-				}
-				if err := w.chooseAuto(ctx, id, slot, rel, name, 4); err != nil {
-					return err
-				}
-				return w.grab(ctx, slot, rel, name, payload{Files: files})
-			}})
 		case planFailed:
 			name := movieRelease(m, e.Quality)
 			cases = append(cases, kase{"failed " + name, ago(2*day + 3*time.Hour), func() error {

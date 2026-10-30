@@ -161,7 +161,7 @@ func TestSeedAddsThroughTheAppAndResets(t *testing.T) {
 		"550":     "in_library",       // adopted low, upgraded by a grab and import
 		"329":     "in_library",       // grabbed and imported
 		"496243":  "held",             // a Release held until its wait ends
-		"274":     "needs_a_decision", // the download held no video
+		"274":     "wanted",           // no download is seeded (no fake Review rows)
 		"280":     "wanted",           // two Releases turned down by hand
 		"545611":  "failed",           // the download failed; a search is queued
 		"1003596": "not_out_yet",      // upcoming

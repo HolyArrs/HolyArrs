@@ -521,6 +521,7 @@ var Screens = map[string]Owner{
 	"/downloads":                     Core,
 	"/downloads/history":             Core,
 	"/downloads/decide":              Media,
+	"/downloads/turned-down":         Core,
 	"/library":                       Media,
 	"/library/[id]":                  ByTitle,
 	"/library/[id]/albums/[album]":   music,

@@ -91,7 +91,7 @@ func TestShowcaseCatalog(t *testing.T) {
 			}
 		}
 	}
-	for _, p := range []string{planDownloading, planQueued, planPaused, planStalled, planFailed, planDecide, planGone, planGrab, planUpgrade} {
+	for _, p := range []string{planDownloading, planQueued, planPaused, planStalled, planFailed, planGone, planGrab, planUpgrade} {
 		if plans[p] == 0 {
 			t.Errorf("no movie shows plan %q", p)
 		}

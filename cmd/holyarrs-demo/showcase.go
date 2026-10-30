@@ -290,7 +290,8 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 // showcaseClearDownloads removes every download from the showcase: active
 // ones through the Downloader manager (their Slots go back to wanted), the
 // rest (finished, failed, imported) as rows, and then the stand-in
-// Downloader. The Downloads page then shows only what a real Downloader
+// Downloader, and moves Slots that wait on a decision back to wanted. The
+// Downloads page then shows only what a real Downloader
 // reports. Titles, files, asks and accounts stay.
 func (w *world) showcaseClearDownloads(ctx context.Context) error {
 	db := w.s.Read()
@@ -319,7 +320,44 @@ func (w *world) showcaseClearDownloads(ctx context.Context) error {
 			w.say("   Downloader %d: %v", d.ID, err)
 		}
 	}
-	w.say("== cleared: %d active downloads removed, %d download rows deleted, %d stand-in Downloaders removed", len(active), rows, len(ds))
+	// Slots left waiting on a decision about a seeded download go back to
+	// wanted (better_wanted when a copy is kept), as the page's own "Stop"
+	// choice would move them, so no Review rows remain.
+	var decided int
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		r, err := tx.Query("SELECT id, file_id IS NOT NULL FROM slots WHERE state = ?", string(domain.SlotNeedsADecision))
+		if err != nil {
+			return err
+		}
+		type slot struct {
+			id   int64
+			copy bool
+		}
+		var ss []slot
+		for r.Next() {
+			var x slot
+			if err := r.Scan(&x.id, &x.copy); err != nil {
+				r.Close()
+				return err
+			}
+			ss = append(ss, x)
+		}
+		r.Close()
+		for _, x := range ss {
+			to := domain.SlotWanted
+			if x.copy {
+				to = domain.SlotBetterWanted
+			}
+			if err := store.MoveSlotTx(tx, x.id, to, "showcase: no stand-in downloads", w.by); err != nil {
+				return err
+			}
+			decided++
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	w.say("== cleared: %d active downloads removed, %d download rows deleted, %d stand-in Downloaders removed, %d decisions cleared", len(active), rows, len(ds), decided)
 	return nil
 }
 

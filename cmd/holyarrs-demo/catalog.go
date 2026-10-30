@@ -13,7 +13,6 @@ const (
 	planGrab     = "grab"     // missing, then grabbed and imported (History)
 	planUpgrade  = "upgrade"  // a low file, then a better copy grabbed and imported over it
 	planHeld     = "held"     // missing, with a Release held until its wait is over
-	planDecide   = "decide"   // grabbed, but the download needs a decision
 	planTurned   = "turned"   // missing, with Releases turned down by hand
 	planFailed   = "failed"   // grabbed, the download failed, still missing
 	planUpcoming = "upcoming" // not out yet (found by name: the newest match)
@@ -65,7 +64,7 @@ var demoMovies = []movieEntry{
 	{"496243", "Parasite", planHeld, "web1080", ""},
 	{"244786", "Whiplash", planHave, "webrip1080", ""},
 	{"76341", "Mad Max: Fury Road", planHave, "bluray1080", "want"},
-	{"274", "The Silence of the Lambs", planDecide, "bluray1080", ""},
+	{"274", "The Silence of the Lambs", planMissing, "", ""},
 	{"769", "GoodFellas", planHave, "bluray1080", ""},
 	{"807", "Se7en", planUpgrade, "hdtv720", ""},
 	{"280", "Terminator 2: Judgment Day", planTurned, "", ""},
@@ -76,7 +75,7 @@ var demoMovies = []movieEntry{
 	{"872585", "Oppenheimer", planHave, "web2160", ""},
 	{"545611", "Everything Everywhere All at Once", planFailed, "web1080", ""},
 	{"419430", "Get Out", planMissing, "", ""},
-	{"329865", "Arrival", planDecide, "web1080", ""},
+	{"329865", "Arrival", planMissing, "", ""},
 	{"354912", "Coco", planTurned, "", ""},
 	{"324857", "Spider-Man: Into the Spider-Verse", planHave, "web1080", ""},
 	{"361743", "Top Gun: Maverick", planGrab, "web2160", ""},

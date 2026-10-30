@@ -51,8 +51,8 @@ var showcaseMovieList = []showcaseMovie{
 	{TMDB: "348", Name: "Alien", Scenario: "stalled at 31% (no progress for 9 hours)", Plan: planStalled, Progress: 0.31},
 	{TMDB: "545611", Name: "Everything Everywhere All at Once", Scenario: "failed download", Plan: planFailed},
 	{TMDB: "98", Name: "Gladiator", Scenario: "failed download", Plan: planFailed},
-	{TMDB: "274", Name: "The Silence of the Lambs", Scenario: "import needs a decision (disc image, no video)", Plan: planDecide},
-	{TMDB: "329865", Name: "Arrival", Scenario: "import needs a decision (disc image, no video)", Plan: planDecide},
+	{TMDB: "274", Name: "The Silence of the Lambs", Scenario: "wanted, nothing downloaded", Plan: planMissing},
+	{TMDB: "329865", Name: "Arrival", Scenario: "wanted, nothing downloaded", Plan: planMissing},
 	{TMDB: "329", Name: "Jurassic Park", Scenario: "grabbed and imported (History)", Plan: planGrab, Quality: "bluray1080"},
 	{TMDB: "807", Name: "Se7en", Scenario: "720p replaced by a 1080p copy (History)", Plan: planUpgrade, Quality: "hdtv720"},
 	// Better copy wanted.
