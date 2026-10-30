@@ -203,3 +203,46 @@ func safeFileName(n string) string {
 	}
 	return n
 }
+
+// SaveBase is where a client puts torrents: its default folder and each
+// category's own folder ("" when the category follows the default).
+type SaveBase struct {
+	Default    string
+	Categories map[string]string
+}
+
+// TorrentFolders is the optional part of a torrent engine that says where
+// it saves, so a hand-picked folder can be kept inside it.
+type TorrentFolders interface {
+	SaveBase(ctx context.Context) (SaveBase, error)
+}
+
+// SaveBase reads the default save folder and the categories.
+func (q *Qbittorrent) SaveBase(ctx context.Context) (SaveBase, error) {
+	out := SaveBase{Categories: map[string]string{}}
+	b, err := q.call(ctx, http.MethodGet, "app/preferences", nil)
+	if err != nil {
+		return out, err
+	}
+	var p struct {
+		SavePath string `json:"save_path"`
+	}
+	if err := json.Unmarshal(b, &p); err != nil {
+		return out, fmt.Errorf("qbittorrent app/preferences: %w", err)
+	}
+	out.Default = p.SavePath
+	b, err = q.call(ctx, http.MethodGet, "torrents/categories", nil)
+	if err != nil {
+		return out, err
+	}
+	var cats map[string]struct {
+		SavePath string `json:"savePath"`
+	}
+	if err := json.Unmarshal(b, &cats); err != nil {
+		return out, fmt.Errorf("qbittorrent torrents/categories: %w", err)
+	}
+	for name, c := range cats {
+		out.Categories[name] = c.SavePath
+	}
+	return out, nil
+}

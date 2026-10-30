@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // Hand steering of a torrent Downloader from the Downloads screen, the way
@@ -78,18 +80,34 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "add 500 torrents at most at once")
 		return
 	}
+	var dr domain.Downloader
+	if err := store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
+		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		return
+	}
+	// Lines split on LF only; a CR or any other control character left in a
+	// line refuses the add.
+	links := []string{}
 	for _, l := range b.Links {
-		l = strings.TrimSpace(l)
+		l = strings.Trim(l, " 	")
 		if l == "" {
 			continue
 		}
-		low := strings.ToLower(l)
-		if !strings.HasPrefix(low, "magnet:") && !strings.HasPrefix(low, "http://") && !strings.HasPrefix(low, "https://") && !validHash(low) {
-			fail(w, http.StatusBadRequest, "each line is a magnet link, an http(s) link to a .torrent file, or an info hash")
+		if err := checkLink(r.Context(), l, dr.AllowLocal); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		links = append(links, l)
 	}
-	b.Category, b.SavePath = strings.TrimSpace(b.Category), strings.TrimSpace(b.SavePath)
+	b.Links = links
+	b.Category, b.SavePath, err = a.clientFolder(r.Context(), id, b.Category, b.SavePath, true)
+	if folderError(w, err) {
+		return
+	}
+	if err != nil {
+		itemError(w, err)
+		return
+	}
 	var out downloader.AddOutcome
 	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
 		t, ok := e.(downloader.TorrentAdder)

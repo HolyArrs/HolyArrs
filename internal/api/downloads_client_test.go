@@ -58,6 +58,10 @@ func (f *allClient) server(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`[{"index":0,"name":"linux.iso","size":5000,"progress":0.5,"priority":1}]`))
 		case "torrents/trackers":
 			_, _ = w.Write([]byte(`[{"url":"http://t.lab/announce?passkey=x","tier":0,"status":2}]`))
+		case "app/preferences":
+			_, _ = w.Write([]byte(`{"save_path":"/data/downloads"}`))
+		case "torrents/categories":
+			_, _ = w.Write([]byte(`{"linux":{"name":"linux","savePath":"/data/linux"},"music":{"name":"music","savePath":""}}`))
 		case "sync/torrentPeers":
 			_, _ = w.Write([]byte(`{"peers":{}}`))
 		}

@@ -119,7 +119,7 @@
 		</div>
 		<label class="fl">
 			<span class="lb">Save in <span class="opt">optional</span></span>
-			<input type="text" bind:value={savePath} placeholder="The Downloader's own folder" spellcheck="false" data-testid="dl-add-path" />
+			<input type="text" bind:value={savePath} placeholder="A subfolder, like tv/new (full paths need settings access)" spellcheck="false" data-testid="dl-add-path" />
 		</label>
 		<label class="ck"><input type="checkbox" bind:checked={paused} data-testid="dl-add-paused" /><span>Add paused</span></label>
 		{#if error}<p class="err" role="alert">{error}</p>{/if}

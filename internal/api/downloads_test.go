@@ -25,6 +25,7 @@ type dl41 struct {
 	dlID, slotID, relID int64
 	mu                  sync.Mutex
 	deleted             []string
+	api                 *API
 }
 
 // seed41 makes one movie with a Slot in slotState, its Release, a fake
@@ -106,7 +107,8 @@ func seed41(t *testing.T, slotState domain.SlotState, dlState string) *dl41 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	x.srv = httptest.NewServer(New(Server{Store: s, Queue: x.q, Live: live.NewHub(live.Options{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"}).Handler())
+	x.api = New(Server{Store: s, Queue: x.q, Live: live.NewHub(live.Options{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
+	x.srv = httptest.NewServer(x.api.Handler())
 	t.Cleanup(x.srv.Close)
 	return x
 }
