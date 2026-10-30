@@ -40,6 +40,7 @@ func (a *API) downloadControlRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloads/pause-all", a.allAct(true))
 	m.HandleFunc("POST /api/v1/downloads/resume-all", a.allAct(false))
 	m.HandleFunc("PUT /api/v1/downloaders/{id}/speed-limit", a.speedLimit)
+	a.clientItemRoutes(m)
 }
 
 func asController(e downloader.Engine, f func(downloader.Controller) error) error {
@@ -98,7 +99,7 @@ func (a *API) downloadSwarm(w http.ResponseWriter, r *http.Request) {
 		Trackers []downloader.Tracker `json:"trackers"`
 		Peers    []downloader.Peer    `json:"peers"`
 	}{}
-	err := a.manager().Control(r.Context(), id, func(e downloader.Engine, ext string) error {
+	err := a.manager().Inspect(r.Context(), id, func(e downloader.Engine, ext string) error {
 		return asTorrent(e, func(t downloader.TorrentController) error {
 			var err error
 			if out.Trackers, err = t.Trackers(r.Context(), ext); err != nil {
@@ -180,7 +181,9 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	rows.Close()
-	if dr.Protocol == "torrent" && d.ExternalID != "" && isActiveDownload(d.State) {
+	// Read live whenever the client may still hold it: seeding and
+	// finished torrents too.
+	if dr.Protocol == "torrent" && d.ExternalID != "" && downloader.Inspectable(d.State) {
 		err := a.manager().ControlEngine(ctx, dr, func(e downloader.Engine) error {
 			return asInspector(e, func(t downloader.TorrentInspector) error {
 				p, err := t.Properties(ctx, d.ExternalID)
@@ -190,7 +193,7 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 				return err
 			})
 		})
-		if err != nil && !errors.Is(err, downloader.ErrNotSupported) {
+		if err != nil && !errors.Is(err, downloader.ErrNotSupported) && (isActiveDownload(d.State) || !errors.Is(err, downloader.ErrNotFound)) {
 			out.TorrentErr = err.Error()
 		}
 	}
@@ -212,7 +215,7 @@ func (a *API) downloadFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var files []downloader.TorrentFile
-	err := a.manager().Control(r.Context(), id, func(e downloader.Engine, ext string) error {
+	err := a.manager().Inspect(r.Context(), id, func(e downloader.Engine, ext string) error {
 		return asInspector(e, func(t downloader.TorrentInspector) error {
 			var err error
 			files, err = t.TorrentFiles(r.Context(), ext)
@@ -250,7 +253,9 @@ func (a *API) setDownloadFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := a.manager().Control(r.Context(), id, func(e downloader.Engine, ext string) error {
-		return asInspector(e, func(t downloader.TorrentInspector) error { return t.SetFilePriority(r.Context(), ext, in.Indexes, in.Priority) })
+		return asInspector(e, func(t downloader.TorrentInspector) error {
+			return t.SetFilePriority(r.Context(), ext, in.Indexes, in.Priority)
+		})
 	})
 	if err != nil {
 		clientControlError(w, err)

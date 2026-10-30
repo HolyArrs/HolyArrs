@@ -264,6 +264,16 @@ var Routes = map[string]Owner{
 	"POST /api/v1/downloads/pause-all":                            Core,
 	"POST /api/v1/downloads/resume-all":                           Core,
 	"PUT /api/v1/downloaders/{id}/speed-limit":                    Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/pause": Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/resume": Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/top": Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/recheck": Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/reannounce": Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/remove": Core,
+	"GET /api/v1/downloaders/{id}/items/{hash}/detail": Core,
+	"GET /api/v1/downloaders/{id}/items/{hash}/swarm": Core,
+	"GET /api/v1/downloaders/{id}/items/{hash}/files": Core,
+	"PUT /api/v1/downloaders/{id}/items/{hash}/files": Core,
 	"GET /api/v1/imports":                                        Core,
 
 	// Parts and the controls.

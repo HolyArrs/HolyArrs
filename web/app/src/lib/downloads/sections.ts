@@ -108,6 +108,8 @@ export function matches(r: Pick<DownloadRow, 'name' | 'title' | 'covers' | 'albu
 /** historyStatus is a History row's text and whether it reads as a failure. */
 export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { text: string; bad: boolean } {
 	const s = stageOf(r);
+	// A client item has no import: its word is the client's own state.
+	if (r.client_item) return { text: statusWord(r), bad: s === 'failed' };
 	if (s === 'failed') {
 		const why = failReason(im) ?? statusDetail(r, im);
 		return { text: why ? `Failed: ${why}` : 'Failed', bad: true };

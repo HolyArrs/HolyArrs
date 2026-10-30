@@ -165,6 +165,57 @@ func (m *Manager) Control(ctx context.Context, downloadID int64, call func(e Eng
 	return err
 }
 
+// Inspect is Control for reading only: it also reaches a finished or
+// seeding torrent the client still holds (anything but cleaned up or gone).
+func (m *Manager) Inspect(ctx context.Context, downloadID int64, call func(e Engine, id string) error) error {
+	var d domain.Download
+	if err := store.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
+		return err
+	}
+	if !Inspectable(d.State) {
+		return ErrNotActive
+	}
+	if d.ExternalID == "" {
+		return ErrNotFound
+	}
+	var dr domain.Downloader
+	if err := store.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+		return err
+	}
+	return m.ControlEngine(ctx, dr, func(e Engine) error { return call(e, d.ExternalID) })
+}
+
+// Inspectable says the client may still hold a Download in this state.
+func Inspectable(state string) bool {
+	return state != "cleaned" && state != "vanished" && state != ""
+}
+
+// ErrNoDownloader is a Downloader id that is unknown or removed.
+var ErrNoDownloader = errors.New("no such Downloader")
+
+// ControlItem runs a call on one item of a Downloader addressed by its own
+// id in the client (a torrent's info hash), whether HolyArrs sent it or
+// not. It never touches HolyArrs' download records; when write is true a
+// sync follows so the new state shows.
+func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash string, write bool, call func(e Engine, id string) error) error {
+	h, err := qbitHash(hash)
+	if err != nil {
+		return ErrNotFound
+	}
+	var dr domain.Downloader
+	if err := store.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
+		return ErrNoDownloader
+	}
+	if dr.Protocol != "torrent" {
+		return ErrNotSupported
+	}
+	err = m.ControlEngine(ctx, dr, func(e Engine) error { return call(e, h) })
+	if err == nil && write {
+		m.Poke()
+	}
+	return err
+}
+
 // Downloaders lists the Downloaders in use, in priority order.
 func (m *Manager) Downloaders(ctx context.Context) ([]domain.Downloader, error) {
 	ds, err := store.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 ORDER BY priority, name")

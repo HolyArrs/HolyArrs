@@ -200,6 +200,24 @@ export interface DownloadRow extends DownloadView {
 	artwork?: string;
 	/** A seeding torrent's share ratio, when the Downloader reports one. */
 	ratio?: number;
+	/** Read straight from the client's own list: no HolyArrs download id; addressed by downloader_id and hash. */
+	client_item?: boolean;
+	/** HolyArrs did not send it (a torrent added in the client by hand or by another app). */
+	outside?: boolean;
+	downloader_id?: number;
+	hash?: string;
+	/** The client's own category for it. */
+	category?: string;
+}
+
+/** rowPath is the API path of a row's client controls: a HolyArrs download by its id, a client item by Downloader and hash. */
+export function rowPath(r: Pick<DownloadRow, 'id' | 'client_item' | 'downloader_id' | 'hash'>): string {
+	return r.client_item && r.hash ? `/downloaders/${r.downloader_id}/items/${r.hash}` : `/downloads/${r.id}`;
+}
+
+/** kindOf is a row's library type; a client item HolyArrs does not know has none. */
+export function kindOf(r: Pick<DownloadRow, 'kind' | 'client_item'>): 'movie' | 'show' | 'artist' | '' {
+	return r.kind || (r.client_item ? '' : 'movie');
 }
 
 /** EpisodeLine is one episode (or track) a download covers, with where its

@@ -34,7 +34,7 @@
 	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
-	import { manyWords, rowName, type Decision, type DownloadRow } from '../downloaders.ts';
+	import { kindOf, manyWords, rowName, rowPath, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
 	import { ALL, counts, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
@@ -84,7 +84,7 @@
 
 	// The Type filter (All, Movies, TV shows, Music) narrows every tab and total.
 	let kindOn = $state<KindKey>('');
-	const typed = $derived(kindOn ? everyRow.filter((r) => (r.kind ?? 'movie') === kindOn) : everyRow);
+	const typed = $derived(kindOn ? everyRow.filter((r) => kindOf(r) === kindOn) : everyRow);
 	// The search narrows every tab too, so the tab counts follow it.
 	// The search is the Downloads search field (DlFind), scoped to this page (search-field.svelte.ts).
 	const q = $derived(dlScope.term);
@@ -93,7 +93,7 @@
 	let srcOn = $state<'' | 'usenet' | 'torrent'>('');
 	const bySource = $derived(srcOn ? searched.filter((r) => protocolOf(r) === srcOn) : searched);
 	const rows = $derived(bySource);
-	const kindCount = (k: string) => everyRow.filter((r) => (r.kind ?? 'movie') === k).length;
+	const kindCount = (k: string) => everyRow.filter((r) => kindOf(r) === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
@@ -104,7 +104,12 @@
 	];
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-	const TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
+	// The detail tabs follow the download's kind: a torrent has peers and
+	// trackers, a Usenet job servers and its repair and unpack steps.
+	const TORRENT_TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
+	const USENET_TABS = ['Info', 'Files', 'Servers', 'Repair and unpack', 'Log'] as const;
+	type PaneTab = (typeof TORRENT_TABS)[number] | (typeof USENET_TABS)[number];
+	const tabsOf = (r: DownloadRow): readonly PaneTab[] => (protocolOf(r) === 'torrent' ? TORRENT_TABS : USENET_TABS);
 	// Selection and folder state for the Files, Peers and Trackers tables.
 	let sel = $state<Record<string, string>>({});
 	let closed = $state<Record<string, boolean>>({});
@@ -124,19 +129,22 @@
 	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string };
 	let det = $state<Det>({ id: 0 });
 	let filesBusy = $state(false);
-	const LIVE = ['sent', 'queued', 'downloading', 'stalled', 'paused'];
+	// The client is read live for as long as it may hold the torrent: while
+	// it downloads, and when it is finished or seeding too.
+	const live = (r: DownloadRow) => !!r.client_item || (r.phase !== 'removed' && r.phase !== 'vanished');
 	async function readDetail(r: DownloadRow, tab: string) {
 		const id = r.id;
+		const path = rowPath(r);
 		const next: Det = det.id === id ? { ...det } : { id };
 		try {
-			next.detail = await api.get<Detail>(`/downloads/${id}/detail`);
+			next.detail = await api.get<Detail>(`${path}/detail`);
 		} catch {
 			next.detail = undefined;
 		}
-		if (protocolOf(r) === 'torrent' && LIVE.includes(r.state)) {
+		if (protocolOf(r) === 'torrent' && live(r)) {
 			if (tab === 'Files') {
 				try {
-					next.files = (await api.get<{ files: TFile[] }>(`/downloads/${id}/files`)).files ?? [];
+					next.files = (await api.get<{ files: TFile[] }>(`${path}/files`)).files ?? [];
 					next.filesErr = undefined;
 				} catch (e) {
 					next.files = undefined;
@@ -145,7 +153,7 @@
 			}
 			if (tab === 'Peers' || tab === 'Trackers') {
 				try {
-					const sw = await api.get<{ trackers: Tracker[]; peers: Peer[] }>(`/downloads/${id}/swarm`);
+					const sw = await api.get<{ trackers: Tracker[]; peers: Peer[] }>(`${path}/swarm`);
 					next.trackers = sw.trackers ?? [];
 					next.peers = sw.peers ?? [];
 					next.swarmErr = undefined;
@@ -161,7 +169,7 @@
 		if (!indexes.length) return;
 		filesBusy = true;
 		try {
-			await api.put(`/downloads/${r.id}/files`, { indexes, priority });
+			await api.put(`${rowPath(r)}/files`, { indexes, priority });
 			await readDetail(r, 'Files');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
@@ -188,11 +196,11 @@
 	const sumOf = (k: keyof ClientStatus) => reporting.reduce((n, c) => n + (Number(c.status?.[k]) || 0), 0);
 	const freeAll = $derived(reporting.map((c) => c.status?.free_space ?? 0).filter((n) => n > 0));
 	const health = $derived(!clientsRead ? 'Not reported' : !clients.length ? 'Not connected' : reporting.length === clients.length ? 'Connected' : reporting.length ? `${reporting.length} of ${clients.length} connected` : 'Not connected');
-	const tabNow = (r: DownloadRow) => {
+	const tabNow = (r: DownloadRow): PaneTab => {
 		const t = tabOf(r.id);
-		return protocolOf(r) === 'torrent' || (t !== 'Peers' && t !== 'Trackers') ? t : 'Info';
+		return tabsOf(r).includes(t) ? t : 'Info';
 	};
-	let xtabOn = $state<Record<number, (typeof TABS)[number]>>({});
+	let xtabOn = $state<Record<number, PaneTab>>({});
 	const tabOf = (id: number) => xtabOn[id] ?? 'Info';
 	let filesOpen = $state(new Set<number>());
 	function toggleFiles(id: number) {
@@ -803,15 +811,15 @@
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
 	{#if id === 'poster'}
-		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name : ''} /></span>
+		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady && !(r.client_item && !r.title) ? r.title || r.name : ''} /></span>
 	{:else if id === 'kind'}
-		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{KIND_WORD[r.kind ?? 'movie']}</span></span>
+		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : r.category || dash}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
 		<span class="pcell" class:ph data-col="proto">{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} use:tip={`${p === 'torrent' ? 'Torrent' : 'Usenet'} · ${dlName(r)}`} role="img" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download"><Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} /></span>{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
+			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
 			<span class="rel" title={r.name}>{sub2(r)}</span>
 		</span>
 	{:else if id === 'progress'}
@@ -908,13 +916,10 @@
 {/snippet}
 
 {#snippet tabStrip(r: DownloadRow)}
-	{@const tor = protocolOf(r) === 'torrent'}
 	{@const tab = tabNow(r)}
 	<div class="xtabs" role="tablist" aria-label="Details">
-		{#each TABS as t (t)}
-			{#if tor || (t !== 'Peers' && t !== 'Trackers')}
-				<button type="button" role="tab" class="xtab" class:on={tab === t} aria-selected={tab === t} onclick={() => { xtabOn[r.id] = t; paneOpen = true; }} data-testid="dl-tab-{t.toLowerCase()}">{t}</button>
-			{/if}
+		{#each tabsOf(r) as t (t)}
+			<button type="button" role="tab" class="xtab" class:on={tab === t} aria-selected={tab === t} onclick={() => { xtabOn[r.id] = t; paneOpen = true; }} data-testid="dl-tab-{t.toLowerCase().replaceAll(' ', '-')}">{t}</button>
 		{/each}
 	</div>
 {/snippet}
@@ -1050,9 +1055,15 @@
 				</tbody>
 			</table></div>
 		{/if}
+	{:else if tab === 'Servers'}
+		<p class="nr" data-testid="dl-servers-none">No server detail reported yet</p>
+	{:else if tab === 'Repair and unpack'}
+		<p class="nr" data-testid="dl-repair-none">No repair or unpack steps reported yet</p>
 	{:else}
 		{@const log = d?.log ?? []}
-		{#if log.length}
+		{#if r.outside}
+			<p class="nr" data-testid="dl-log-outside">Not from HolyArrs — no history here</p>
+		{:else if log.length}
 			<ol class="lg" data-testid="dl-log">
 				{#each log as l, i (i)}<li class:bad={/fail|error|stall|vanish/i.test(l.kind)}><time>{dateTime(l.at)}</time> {l.summary}</li>{/each}
 			</ol>
@@ -1081,12 +1092,12 @@
 		</div>
 		{#if paneOpen}
 		<div class="pb" data-testid="dl-panel" data-card="d">
-			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name : ''} /></span>
+			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady && !(r.client_item && !r.title) ? r.title || r.name : ''} /></span>
 			<div class="xb">
 				{@render tabsView(r, simple)}
 				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 				{@render btns(r, false)}
-				{#if r.can_act && !watch && !inHistory(r)}
+				{#if r.can_act && !watch && !inHistory(r) && !r.client_item}
 					<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
 				{/if}
 			</div>

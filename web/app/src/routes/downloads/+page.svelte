@@ -8,7 +8,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { decisionName, manyWords, removeBody, removeStart, rowName, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { decisionName, manyWords, removeBody, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -76,6 +76,7 @@
 		...decisions.items.filter((d) => !(d.download_id && rowIds.has(d.download_id))).map(decisionRow)
 	]);
 	function decisionsOf(r: DownloadRow): Decision[] {
+		if (r.client_item) return [];
 		return r.id < 0 ? decisions.items.filter((d) => d.slot_id === -r.id) : (decisionsByDownload.get(r.id) ?? []);
 	}
 
@@ -104,13 +105,26 @@
 		if (allRows.some((r) => r.id === id)) openId = id;
 	});
 
+	// A client item (a torrent HolyArrs did not send, or one older than the
+	// list) has no download id: it gets a stable stand-in id for this visit,
+	// below every decision row's.
+	const clientIds = new Map<string, number>();
+	let nextClientId = -1_000_000_000;
+	function withId(r: DownloadRow): DownloadRow {
+		if (!r.client_item || !r.hash) return r;
+		const key = `${r.downloader_id}:${r.hash}`;
+		let id = clientIds.get(key);
+		if (id === undefined) clientIds.set(key, (id = nextClientId--));
+		return { ...r, id };
+	}
+
 	async function load() {
 		try {
 			const [d, i] = await Promise.all([
 				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
 				watch ? Promise.resolve({ imports: [] as ImportRecord[] }) : api.get<{ imports: ImportRecord[] }>('/imports?limit=100')
 			]);
-			rows = d.downloads;
+			rows = d.downloads.map(withId);
 			imports = i.imports;
 			error = '';
 		} catch (e) {
@@ -198,9 +212,10 @@
 		if (!target) return;
 		busy = target.id;
 		try {
-			await api.post(`/downloads/${target.id}/remove`, removeBody(choice));
+			if (target.client_item) await api.post(`${rowPath(target)}/remove`, { delete_files: choice.delete_files });
+			else await api.post(`/downloads/${target.id}/remove`, removeBody(choice));
 			removeOpen = false;
-			toasts.push(choice.turn_down && choice.search_again ? 'Removed. HolyArrs looks for the next Release.' : 'Removed.', 'ok');
+			toasts.push(!target.client_item && choice.turn_down && choice.search_again ? 'Removed. HolyArrs looks for the next Release.' : 'Removed.', 'ok');
 			await load();
 		} catch (err) {
 			removeError = message(err);
@@ -213,7 +228,7 @@
 	async function act(r: DownloadRow, action: 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce') {
 		busy = r.id;
 		try {
-			await api.post(`/downloads/${r.id}/${action}`);
+			await api.post(`${rowPath(r)}/${action}`);
 			toasts.push(DONE[action], 'ok');
 			await load();
 		} catch (e) {
@@ -316,6 +331,7 @@
 				<input type="checkbox" bind:checked={choice.delete_files} />
 				<span><b>Delete its files</b><br /><span class="hint">Off: {target.downloader || 'the Downloader'} keeps what it fetched.</span></span>
 			</label>
+			{#if !target.client_item}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.turn_down} />
 				<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks it again for {manyWords(target.kind) ? `these ${manyWords(target.kind)?.many}` : 'this movie'}.</span></span>
@@ -324,6 +340,7 @@
 				<input type="checkbox" bind:checked={choice.search_again} disabled={!choice.turn_down} />
 				<span><b>Search again</b><br /><span class="hint">Look for the next Release straight away. Without it the {manyWords(target.kind) ? `${manyWords(target.kind)?.many} wait` : 'movie waits'} for the next feed check.</span></span>
 			</label>
+			{/if}
 			{#if removeError}<p class="form-error" role="alert">{removeError}</p>{/if}
 		</form>
 	{/if}

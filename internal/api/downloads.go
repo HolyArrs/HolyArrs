@@ -60,6 +60,15 @@ type DownloadRow struct {
 	Episodes []EpisodeLine `json:"episodes,omitempty"`
 	Covers   string        `json:"covers,omitempty"`
 	Album    string        `json:"album,omitempty"`
+	// Client items: a torrent read straight from the client's own list.
+	// ClientItem rows have no HolyArrs download id (ID 0) and are addressed
+	// by DownloaderID and Hash; Outside says HolyArrs never sent it.
+	ClientItem   bool    `json:"client_item,omitempty"`
+	Outside      bool    `json:"outside,omitempty"`
+	DownloaderID int64   `json:"downloader_id,omitempty"`
+	Hash         string  `json:"hash,omitempty"`
+	Category     string  `json:"category,omitempty"`
+	Ratio        float64 `json:"ratio,omitempty"`
 }
 
 // DownloadTotals are the bytes per second moving across every active download.
@@ -262,10 +271,14 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows := make([]DownloadRow, 0, len(ds))
+	shown := map[clientKey]bool{}
 	type dlInfo struct{ name, kind, protocol string }
 	names := map[int64]dlInfo{}
 	for _, d := range ds {
 		row := DownloadRow{DownloadView: downloadView(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID}
+		if d.ExternalID != "" {
+			shown[clientKey{d.DownloaderID, strings.ToLower(d.ExternalID)}] = true
+		}
 		n, ok := names[d.DownloaderID]
 		if !ok {
 			_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name, adapter, protocol FROM downloaders WHERE id = ?", d.DownloaderID).Scan(&n.name, &n.kind, &n.protocol)
@@ -325,6 +338,11 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			row.Text = t
 		}
 		rows = append(rows, row)
+	}
+	// Managers see everything in their torrent clients, as the client's own
+	// screen does: the torrents HolyArrs did not send come after its own.
+	if manage {
+		rows = append(rows, a.clientRows(r.Context(), shown)...)
 	}
 	var total DownloadTotals
 	for _, row := range rows {

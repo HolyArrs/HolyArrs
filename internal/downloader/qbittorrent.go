@@ -227,6 +227,8 @@ type qbitTorrent struct {
 	NumLeechs   int     `json:"num_leechs"`
 	ETA         int64   `json:"eta"`
 	State       string  `json:"state"`
+	AddedOn     int64   `json:"added_on"`
+	Ratio       float64 `json:"ratio"`
 }
 
 func (t qbitTorrent) job() Job {
@@ -235,7 +237,8 @@ func (t qbitTorrent) job() Job {
 		eta = 0
 	}
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
-		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State}
+		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
+		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0)}
 }
 
 // qbitState maps qBittorrent's state words onto ours.
@@ -276,6 +279,11 @@ func (q *Qbittorrent) List(ctx context.Context, category string) ([]Job, error) 
 		f.Set("category", category)
 	}
 	return q.info(ctx, f)
+}
+
+// ListAll returns every torrent in the client, in one torrents/info call.
+func (q *Qbittorrent) ListAll(ctx context.Context) ([]Job, error) {
+	return q.info(ctx, url.Values{})
 }
 
 // Get returns one torrent with its files.

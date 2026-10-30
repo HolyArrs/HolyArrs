@@ -68,6 +68,8 @@ type Job struct {
 	State       string  // one of the State constants
 	Detail      string  // the engine's own state word, for reasons
 	Files       []File
+	AddedAt     int64   // unix seconds the client took it; 0 when unknown
+	Ratio       float64 // share ratio (torrents)
 }
 
 // Health is what an engine says about itself.
@@ -84,4 +86,11 @@ type Engine interface {
 	List(ctx context.Context, category string) ([]Job, error)
 	Get(ctx context.Context, id string) (Job, error) // with Files
 	Remove(ctx context.Context, id string, deleteFiles bool) error
+}
+
+// AllLister is the optional part of a torrent engine that lists every item
+// in the client, whatever its category, for the Downloads screen. It only
+// reads; nothing it returns becomes a HolyArrs download.
+type AllLister interface {
+	ListAll(ctx context.Context) ([]Job, error)
 }

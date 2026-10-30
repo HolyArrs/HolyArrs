@@ -11331,6 +11331,541 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/downloaders/{id}/items/{hash}/detail": {
+      "get": {
+        "description": "The client's own detail of any torrent it holds, by info hash. The log is always empty: a torrent HolyArrs did not send has no history here.",
+        "operationId": "clientItemDetail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader": {
+                      "type": "string"
+                    },
+                    "log": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "requested_by": {
+                      "type": "string"
+                    },
+                    "torrent": {
+                      "type": "object"
+                    },
+                    "torrent_error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "A client item's Info, read live from the torrent Downloader",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/files": {
+      "get": {
+        "description": "Read live from the torrent Downloader, by info hash.",
+        "operationId": "clientItemFiles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "files": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "A client item's files with their priority",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Priority 0 skips the files; 1 is normal, 6 high, 7 maximum.",
+        "operationId": "setClientItemFiles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "indexes": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "priority": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "description": "No file indexes, or a priority that is not 0, 1, 6 or 7."
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Set which files of a client item to fetch",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/pause": {
+      "post": {
+        "description": "Works on any torrent in the client, HolyArrs' own or not; no HolyArrs download record is read or changed. Done is read back from the client.",
+        "operationId": "clientItemPause",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Pause one item in a torrent Downloader, by its info hash",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/reannounce": {
+      "post": {
+        "description": "Works on any torrent in the client, HolyArrs' own or not; no HolyArrs download record is read or changed. Done is read back from the client.",
+        "operationId": "clientItemReannounce",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Ask the trackers again one item in a torrent Downloader, by its info hash",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/recheck": {
+      "post": {
+        "description": "Works on any torrent in the client, HolyArrs' own or not; no HolyArrs download record is read or changed. Done is read back from the client.",
+        "operationId": "clientItemRecheck",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Check again one item in a torrent Downloader, by its info hash",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/remove": {
+      "post": {
+        "description": "Takes the torrent out of the client, with its files when delete_files is true. No Release is turned down and nothing is searched again.",
+        "operationId": "clientItemRemove",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "delete_files": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "400": {
+            "description": "The body is not {\"delete_files\": true or false}."
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Remove one item from a torrent Downloader, by its info hash",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/resume": {
+      "post": {
+        "description": "Works on any torrent in the client, HolyArrs' own or not; no HolyArrs download record is read or changed. Done is read back from the client.",
+        "operationId": "clientItemResume",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Resume one item in a torrent Downloader, by its info hash",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/swarm": {
+      "get": {
+        "description": "Read live from the torrent Downloader. Tracker addresses keep only scheme and host.",
+        "operationId": "clientItemSwarm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "peers": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "trackers": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "A client item's trackers and peers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/top": {
+      "post": {
+        "description": "Works on any torrent in the client, HolyArrs' own or not; no HolyArrs download record is read or changed. Done is read back from the client.",
+        "operationId": "clientItemTop",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, the hash is not one torrent info hash, or the client does not have it."
+          },
+          "409": {
+            "description": "The Downloader is not a torrent client, or does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Move to the top one item in a torrent Downloader, by its info hash",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/pause": {
       "post": {
         "description": "HolyArrs sends nothing new to it; downloads already there are still followed.",
