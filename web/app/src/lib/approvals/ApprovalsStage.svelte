@@ -28,7 +28,7 @@
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
 
-	let { ctx, single = null, embedded = false }: { ctx: ApprovalsCtx; /** One ask only, filling its box (the cards' window): no list, no tabs. */ single?: Ask | null; /** Under the desktop toolbar, which already has the tabs and the type filter. */ embedded?: boolean } = $props();
+	let { ctx, single = null, embedded = false, choose: startChoosing = false }: { ctx: ApprovalsCtx; /** Open straight into What to get (the cards' window). */ choose?: boolean; /** One ask only, filling its box (the cards' window): no list, no tabs. */ single?: Ask | null; /** Under the desktop toolbar, which already has the tabs and the type filter. */ embedded?: boolean } = $props();
 
 	const waiting = (a: Ask) => ctx.approver && a.state === 'asked' && !ctx.isPending(a.id);
 	const list = $derived(single ? [ctx.viewed.find((a) => a.id === single.id) ?? single] : [...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
@@ -125,6 +125,14 @@
 		await tick();
 		frame?.querySelector<HTMLElement>('.sheet')?.focus({ preventScroll: true });
 	}
+	// The cards' window opens straight into What to get, once per ask.
+	let autoFor = 0;
+	$effect(() => {
+		const a = picked;
+		if (!startChoosing || !a || autoFor === a.id || !waiting(a)) return;
+		autoFor = a.id;
+		setTimeout(() => void choose(), 120);
+	});
 	const changed = $derived(!!(pick.seasons || pick.episodes || pick.albums || pick.songs));
 	function approveChosen() {
 		if (!picked || pick.empty) return;
@@ -250,7 +258,7 @@
 						{/if}
 					</div>
 					<footer class="sh-f">
-						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Getting your picks, not all that was asked' : picked.kind === 'movie' ? `Getting ${picked.name}` : `Getting ${count(picked) || 'everything asked'}`}</span>
+						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Getting only what you ticked' : picked.kind === 'movie' ? `Getting the movie` : `Getting ${(count(picked) || 'everything asked').toLowerCase()}`}</span>
 						<button type="button" class="act ghost" onclick={() => (choosing = false)}>Back</button>
 						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />Approve</button>
 					</footer>
@@ -366,25 +374,33 @@
 
 	/* The sheet rises inside the frame. */
 	.sheet { position: absolute; left: 14px; right: 14px; top: var(--sheet-top, 180px); z-index: 4; display: flex; flex-direction: column; max-height: calc(100% - var(--sheet-top, 180px) - 14px); border-radius: 20px; background: color-mix(in srgb, var(--bg) 84%, transparent); color: var(--text); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
-	.sh-h { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px 20px; }
-	.sh-h h3 { font: var(--t-title3); }
+	.sh-h { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 6px 16px; }
+	.sh-h h3 { font: var(--t-headline); }
+	/* The picker, slimmer inside the sheet: one hairline box, shorter rows, the sheet does the scrolling. */
+	.sheet :global(.parts) { background: none; box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; }
+	.sheet :global(.head) { min-height: 38px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
+	.sheet :global(.line) { min-height: 36px; gap: 10px; }
+	.sheet :global(.cover) { width: 26px; height: 26px; }
+	.sheet :global(.list > ul) { max-height: none; }
+	.sheet :global(.season) { min-height: 36px; }
 	.sheet:focus { outline: none; }
 	.x { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--surface-2); cursor: pointer; }
 	.x:hover { background: var(--surface-3); }
-	.sh-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px 12px; display: flex; flex-direction: column; gap: 16px; }
+	.sh-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 10px; display: flex; flex-direction: column; gap: 12px; }
 	.one { display: flex; align-items: center; gap: 14px; padding: 10px; border-radius: 14px; background: var(--surface-2); }
 	.one-pic { width: 44px; border-radius: 6px; overflow: hidden; --poster-ratio: 2 / 3; }
 	.one div { flex: 1; display: flex; flex-direction: column; font: var(--t-callout); }
 	.one div span { color: var(--text-muted); font: var(--t-footnote); }
 	.rules { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 	.rl { margin-right: 6px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
-	.rule { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: var(--surface-2); font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
+	.rule { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--surface-2); font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
 	.rule:hover { background: var(--surface-3); }
 	.rule[aria-checked='true'] { background: var(--text); color: var(--bg); }
 	.dim { opacity: 0.6; font-weight: 400; }
-	.sh-f { display: flex; align-items: center; gap: 8px; padding: 12px 14px 14px 20px; border-top: 1px solid var(--line); }
+	.sh-f { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-top: 1px solid var(--line); }
 	.sum { flex: 1; color: var(--text-muted); font: var(--t-footnote); }
-	.sh-f .act.primary { background: var(--text); color: var(--bg); height: 44px; }
+	.sh-f .act.primary { background: var(--text); color: var(--bg); height: 40px; padding: 0 18px; font: var(--t-subhead); font-weight: 600; }
+	.sh-f .act.ghost { height: 40px; font: var(--t-subhead); }
 
 	.swap { position: absolute; inset: 0; }
 	.calm { position: relative; height: 100%; background: radial-gradient(120% 90% at 80% 0%, #24262d 0%, transparent 60%), linear-gradient(160deg, #18191e, #0b0b0c 75%); color: rgb(255 255 255 / 0.66); }

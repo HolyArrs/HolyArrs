@@ -221,13 +221,12 @@
 				{@const life = lifecycle(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" class:answered={!waiting(a)} animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 14, duration: 420, delay: Math.min(i, 8) * 45, easing: cubicOut }} out:fade={{ duration: 220 }}>
+				<li class="bc" class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 14, duration: 420, delay: Math.min(i, 8) * 45, easing: cubicOut }} out:fade={{ duration: 220 }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban" aria-hidden="true">
-						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" onload={(e) => e.currentTarget.classList.add('in')} />{:else}<span class="ban-img soft" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
+						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else}<span class="ban-img soft" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
 						<span class="ban-kind">{kindOf(a)}</span>
-						<span class="ban-more">Details<Icon name="chevronRight" size={13} /></span>
 					</div>
 					<span class="cover" aria-hidden="true">{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}</span>
 					<div class="body">
@@ -272,7 +271,7 @@
 				<button type="button" class="nav" aria-label="The next ask" disabled={at >= list.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
 			</div>
 		{/if}
-		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} /></div>
+		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} choose /></div>
 	{/if}
 </dialog>
 
@@ -309,22 +308,22 @@
 	/* Business cards, portrait: the title's banner art on top, the poster overlapping it,
 	   the few facts that matter, the answers at the foot. 12px inner padding, 20px corners. */
 	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
-	.bc { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 20px; background: var(--surface-1); transition: transform 300ms var(--ez), border-color 220ms var(--ease-out), box-shadow 300ms var(--ease-out); }
-	.bc:hover { transform: translateY(-3px); border-color: var(--line-strong, var(--line)); box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.6); }
+	.bc { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -16px rgb(0 0 0 / 0.25); transition: transform 300ms var(--ez), box-shadow 300ms var(--ease-out); }
+	.bc:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--line-strong, var(--line)), 0 2px 4px rgb(0 0 0 / 0.08), 0 24px 48px -24px rgb(0 0 0 / 0.55); }
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.open:focus-visible { box-shadow: none; }
-	.bc:has(.open:focus-visible) { border-color: transparent; box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
-	.ban { position: relative; height: 128px; overflow: hidden; background: var(--surface-3); }
+	.bc:has(.open:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
+	.ban { position: relative; height: 150px; overflow: hidden; background: var(--surface-3); border-radius: 20px 20px 0 0; }
 	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms var(--ease-out); }
-	img.ban-img { opacity: 0; }
-	img.ban-img:global(.in) { opacity: 1; }
+	img.ban-img { animation: ban-in 600ms var(--ease-out) both; }
+	@keyframes ban-in { from { opacity: 0; } }
 	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
 	.bc:hover .ban-img:not(.soft) { transform: scale(1.08); }
-	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0%, transparent 35%, transparent 55%, var(--surface-1) 100%); }
+	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0%, transparent 30%, transparent 72%, var(--surface-1) 100%); }
 	.ban-kind { position: absolute; top: 10px; left: 10px; z-index: 1; padding: 3px 9px; border-radius: 999px; background: rgb(12 12 14 / 0.55); color: #fff; font: 600 11px/1.3 var(--font-ui); letter-spacing: 0.04em; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-	.ban-more { position: absolute; top: 10px; right: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 2px; padding: 3px 6px 3px 10px; border-radius: 999px; background: rgb(255 255 255 / 0.9); color: #0b0b0c; font: 600 11px/1.3 var(--font-ui); opacity: 0; transform: translateY(-4px); transition: opacity 220ms var(--ease-out), transform 260ms var(--ez); }
-	.bc:hover .ban-more, .bc:has(.open:focus-visible) .ban-more { opacity: 1; transform: none; }
-	.cover { position: relative; z-index: 0; display: block; width: 72px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; margin: -54px 0 0 14px; border-radius: 8px; overflow: hidden; background: var(--surface-3); box-shadow: 0 0 0 3px var(--surface-1), 0 14px 28px -12px rgb(0 0 0 / 0.7); transition: transform 300ms var(--ez); }
+	.cover { position: relative; z-index: 0; display: block; width: 72px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; margin: -60px 0 0 14px; border-radius: 8px; overflow: hidden; background: var(--surface-3); box-shadow: 0 0 0 3px var(--surface-1), 0 14px 28px -12px rgb(0 0 0 / 0.7); transition: transform 300ms var(--ez); }
+	/* Square music art ends on the same line as a 2:3 poster (both 48px below the banner). */
+	.bc.music .cover { width: 84px; aspect-ratio: 1; --poster-ratio: 1; margin-top: -36px; }
 	.cover img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
 	.bc:hover .cover { transform: translateY(-2px) rotate(-1.5deg); }
 	.body { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 0; min-width: 0; }
@@ -387,8 +386,9 @@
 		.it { flex: 1; width: auto; }
 		.approve-all { justify-content: center; height: 48px; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-		.ban { height: 84px; }
+		.ban { height: 96px; }
 		.cover { width: 56px; margin: -40px 0 0 10px; }
+		.bc.music .cover { width: 60px; margin-top: -32px; }
 		.body { padding: 10px 10px 0; }
 		.title { font: var(--t-headline); }
 		.who { font: var(--t-caption); }
