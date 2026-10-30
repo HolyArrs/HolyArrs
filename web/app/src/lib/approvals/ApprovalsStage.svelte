@@ -24,7 +24,7 @@
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
 
-	let { ctx, single = null }: { ctx: ApprovalsCtx; /** One ask only, filling its box (the shelves' window): no list, no tabs. */ single?: Ask | null } = $props();
+	let { ctx, single = null, embedded = false }: { ctx: ApprovalsCtx; /** One ask only, filling its box (the cards' window): no list, no tabs. */ single?: Ask | null; /** Under the desktop toolbar, which already has the tabs and the type filter. */ embedded?: boolean } = $props();
 
 	const waiting = (a: Ask) => ctx.approver && a.state === 'asked' && !ctx.isPending(a.id);
 	const list = $derived(single ? [ctx.viewed.find((a) => a.id === single.id) ?? single] : [...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
@@ -161,7 +161,7 @@
 
 {#snippet artistArt()}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/snippet}
 
-<div class="desk" class:single data-testid={single ? 'ask-window-stage' : 'approvals-desk'}>
+<div class="desk" class:embedded class:single data-testid={single ? 'ask-window-stage' : 'approvals-desk'}>
 	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
 		{#if picked}
 			{#key picked.id}
@@ -175,7 +175,7 @@
 					{pictures}
 					position="60% 25%"
 					art={music && artistBg ? artistArt : undefined}
-					top={single ? undefined : tabsTop}
+					top={single || embedded ? undefined : tabsTop}
 				>
 					{#snippet heading()}<h2 class="bb-name" id="stage-title">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
@@ -242,11 +242,13 @@
 
 	{#if !single}
 	<aside class="inbox" aria-label="Asks">
+		{#if !embedded}
 		<div class="types" role="group" aria-label="Type">
 			{#each types as t (t.k)}
 				<button type="button" class="ty" aria-pressed={ctx.kind === t.k} title={t.label} onclick={() => ctx.setKind(t.k)}><Icon name={t.icon} size={15} /><span>{t.label}</span></button>
 			{/each}
 		</div>
+		{/if}
 		<ul class="rows">
 			{#each list as a (a.id)}
 				{@const w = ctx.who(a)}
@@ -270,6 +272,7 @@
 
 <style>
 	/* The desk fills the screen under the page title without scrolling the page. */
+	.desk.embedded { --h: clamp(480px, calc(100dvh - var(--topbar, 56px) - 220px), 1120px); }
 	.desk.single { --h: 100%; grid-template-columns: minmax(0, 1fr); height: 100%; }
 	.desk.single .frame { border-radius: 0; box-shadow: none; }
 	.desk.single .frame :global(.ui-billboard) { border-radius: 0; }
