@@ -104,7 +104,8 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 		let body: BodyInit | undefined;
 		if (opts.raw !== undefined) {
 			body = opts.raw;
-			headers['Content-Type'] = 'application/octet-stream';
+			// A FormData upload gets its multipart boundary from the browser.
+			if (!(typeof FormData !== 'undefined' && opts.raw instanceof FormData)) headers['Content-Type'] = 'application/octet-stream';
 		} else if (opts.body !== undefined) {
 			body = JSON.stringify(opts.body);
 			headers['Content-Type'] = 'application/json';

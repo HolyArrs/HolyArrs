@@ -12073,6 +12073,42 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/torrents": {
+      "post": {
+        "description": "Adds magnet or http links and uploaded .torrent files to one torrent Downloader, into a category and folder, started or paused. Torrents the client already holds count as duplicates and are not sent. Answers how many were added, failed, are still being fetched, or were already there.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Not a torrent Downloader"
+          },
+          "413": {
+            "description": "Too large"
+          }
+        },
+        "summary": "Add torrents",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloads": {
       "get": {
         "description": "The newest Download records as stored (the Downloads screen uses /downloads/view).",

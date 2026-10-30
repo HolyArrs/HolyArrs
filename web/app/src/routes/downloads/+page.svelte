@@ -19,6 +19,7 @@
 	import DlSections from '#lib/downloads/DlSections.svelte';
 	import ConfirmMatch from '#lib/downloads/ConfirmMatch.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';
+	import AddTorrents from '#lib/downloads/AddTorrents.svelte';
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
 	const watch = $derived(!session.can('manage_library'));
@@ -35,6 +36,9 @@
 	let openId = $state(0);
 	// A torrent Downloader brings the Seeding sub-tab under Done.
 	let torrent = $state(false);
+	// The torrent Downloaders a manager can add torrents to by hand.
+	let torrentClients = $state<{ id: number; name: string; category: string }[]>([]);
+	let addOpen = $state(false);
 	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 	// Imports belong to their download's row.
 	const importOf = $derived(byDownload(imports));
@@ -158,7 +162,10 @@
 		if (session.can('manage_library'))
 			api
 				.get<{ downloaders: DownloaderView[] }>('/downloaders')
-				.then((r) => (torrent = r.downloaders.some((d) => d.protocol === 'torrent')))
+				.then((r) => {
+					torrentClients = r.downloaders.filter((d) => d.protocol === 'torrent').map((d) => ({ id: d.id, name: d.name, category: d.category }));
+					torrent = torrentClients.length > 0;
+				})
 				.catch(() => {});
 		if (!watch) void refreshDecisions();
 		// The live stream (/live) is for managers only: a watcher never subscribes.
@@ -318,14 +325,16 @@
 	{:else}
 	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 	{/if}
-	{#if !watch}<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>{/if}
+	{#if !watch}<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a>{#if torrentClients.length}<button type="button" class="addlk" onclick={() => (addOpen = true)} data-testid="dl-add-empty">Add a torrent</button>{/if}</p>{/if}
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} {watch} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} {watch} />
 {/if}
 </PageLoader>
+
+<AddTorrents bind:open={addOpen} clients={torrentClients} ondone={() => void load()} />
 
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}
@@ -387,6 +396,7 @@
 	.matchpad:empty { display: none; }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
+	.addlk { display: inline-flex; align-items: center; min-height: 44px; margin-left: 20px; background: none; border: 0; padding: 0; color: var(--accent-text); font: var(--t-callout); font-weight: 500; cursor: pointer; }
 	.raw { color: var(--text-muted); font: var(--t-footnote); }
 	.raw summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
 	.raw summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }

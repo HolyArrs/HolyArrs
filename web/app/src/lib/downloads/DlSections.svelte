@@ -57,6 +57,7 @@
 		onact,
 		onall,
 		onlimit,
+		onadd,
 		watch = false
 	}: {
 		rows: DownloadRow[];
@@ -79,6 +80,8 @@
 		onall?: (pause: boolean) => void;
 		/** Opens the speed limit. */
 		onlimit?: () => void;
+		/** Opens the Add sheet (managers with a torrent Downloader only). */
+		onadd?: () => void;
 		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
 		watch?: boolean;
 	} = $props();
@@ -306,6 +309,7 @@
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
 	const barActs = $derived([
+		...(onadd ? [{ key: 'add', icon: 'plus' as const, label: 'Add', hint: 'Add torrents by link or file', disabled: false, run: () => onadd?.() }] : []),
 		{ key: 'start', icon: 'play' as const, label: 'Start', hint: canStart ? 'Start' : 'Start (select a paused download)', disabled: !canStart, run: () => openRow && onact?.(openRow, 'resume'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
 		{ key: 'pause', icon: 'pause' as const, label: 'Pause', hint: canPause ? 'Pause' : 'Pause (select a download)', disabled: !canPause, run: () => openRow && onact?.(openRow, 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }] },
 		{ key: 'remove', icon: 'trash' as const, label: 'Remove', hint: openRow?.can_act ? 'Remove' : 'Remove (select a download first)', disabled: !openRow?.can_act || busy === openRow?.id, run: () => openRow && onremove(openRow) },

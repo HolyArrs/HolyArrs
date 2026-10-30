@@ -125,19 +125,43 @@ func (q *Qbittorrent) call(ctx context.Context, method, path string, form url.Va
 }
 
 func (q *Qbittorrent) do(ctx context.Context, method, path string, form url.Values, okCodes ...int) ([]byte, error) {
+	_, b, err := q.doRaw(ctx, method, path, form, "", nil, okCodes...)
+	return b, err
+}
+
+// callRaw is call for a body that is not a plain form (a multipart upload);
+// it also hands back the status, since some answers differ only by it.
+func (q *Qbittorrent) callRaw(ctx context.Context, path, ctype string, payload []byte, okCodes ...int) (int, []byte, error) {
+	code, b, err := q.doRaw(ctx, http.MethodPost, path, nil, ctype, payload, okCodes...)
+	if errors.Is(err, ErrAuth) && q.user != "" {
+		if err := q.signIn(ctx); err != nil {
+			return 0, nil, err
+		}
+		return q.doRaw(ctx, http.MethodPost, path, nil, ctype, payload, okCodes...)
+	}
+	if errors.Is(err, ErrAuth) && q.key != "" {
+		return 0, nil, ErrQbitKeyRefused
+	}
+	return code, b, err
+}
+
+func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.Values, ctype string, payload []byte, okCodes ...int) (int, []byte, error) {
 	var body io.Reader
 	u := q.base + "/api/v2/" + path
-	if method == http.MethodGet && len(form) > 0 {
+	if payload != nil {
+		body = strings.NewReader(string(payload))
+	} else if method == http.MethodGet && len(form) > 0 {
 		u += "?" + form.Encode()
 	} else if form != nil {
 		body = strings.NewReader(form.Encode())
+		ctype = "application/x-www-form-urlencoded"
 	}
 	req, err := http.NewRequestWithContext(ctx, method, u, body)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if body != nil && ctype != "" {
+		req.Header.Set("Content-Type", ctype)
 	}
 	if q.key != "" {
 		req.Header.Set("Authorization", "Bearer "+q.key)
@@ -151,25 +175,26 @@ func (q *Qbittorrent) do(ctx context.Context, method, path string, form url.Valu
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		return nil, fmt.Errorf("qbittorrent %s: %w", path, err)
+		return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, err)
 	}
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	code := resp.StatusCode
 	switch {
-	case resp.StatusCode >= 200 && resp.StatusCode < 300: // 5.x answers 202 to add
-		return b, nil
-	case resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized:
-		return nil, ErrAuth
+	case code >= 200 && code < 300: // 5.x answers 202 to add
+		return code, b, nil
+	case code == http.StatusForbidden || code == http.StatusUnauthorized:
+		return code, nil, ErrAuth
 	}
 	for _, c := range okCodes {
-		if resp.StatusCode == c {
-			return b, nil
+		if code == c {
+			return code, b, nil
 		}
 	}
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, ErrNotFound
+	if code == http.StatusNotFound {
+		return code, nil, ErrNotFound
 	}
-	return nil, fmt.Errorf("qbittorrent %s: %s", path, resp.Status)
+	return code, nil, fmt.Errorf("qbittorrent %s: %s", path, resp.Status)
 }
 
 // Health asks for the app version.

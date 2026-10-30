@@ -412,6 +412,7 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/downloads/matches/run":                         PermManageLibrary,
 	"POST /api/v1/downloads/matches/{id}/pick":                   PermManageLibrary,
 	"GET /api/v1/downloaders/{id}/items/{hash}/detail":           PermManageLibrary,
+	"POST /api/v1/downloaders/{id}/torrents":                     PermManageLibrary,
 	"GET /api/v1/downloaders/{id}/items/{hash}/swarm":            PermManageLibrary,
 	"GET /api/v1/downloaders/{id}/items/{hash}/files":            PermManageLibrary,
 	"PUT /api/v1/downloaders/{id}/items/{hash}/files":            PermManageLibrary,

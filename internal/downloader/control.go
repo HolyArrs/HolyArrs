@@ -216,6 +216,24 @@ func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash stri
 	return err
 }
 
+// ControlTorrentClient runs a call on a torrent Downloader as a whole (an
+// add, or one action on many of its items). Like ControlItem it never
+// touches HolyArrs' download records; when write is true a sync follows.
+func (m *Manager) ControlTorrentClient(ctx context.Context, downloaderID int64, write bool, call func(e Engine) error) error {
+	var dr domain.Downloader
+	if err := store.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
+		return ErrNoDownloader
+	}
+	if dr.Protocol != "torrent" {
+		return ErrNotSupported
+	}
+	err := m.ControlEngine(ctx, dr, call)
+	if err == nil && write {
+		m.Poke()
+	}
+	return err
+}
+
 // Downloaders lists the Downloaders in use, in priority order.
 func (m *Manager) Downloaders(ctx context.Context) ([]domain.Downloader, error) {
 	ds, err := store.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 ORDER BY priority, name")
