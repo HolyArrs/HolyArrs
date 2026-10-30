@@ -1,9 +1,9 @@
 <script lang="ts">
-	// Approvals on a desktop. One toolbar the Downloads way: the status tabs as a
-	// pill group on the left; on the right a capsule with the type filter and,
-	// next to it, the view switch (Cards or Stage). Cards are business cards:
-	// the cover and everything that matters inside the card, with Approve and
-	// Turn down. A card opens a window with that ask on the Stage.
+	// Approvals for approvers. One toolbar the Downloads way: the status tabs as a
+	// pill group on the left, the type filter in a capsule on the right. Cards are
+	// business cards: the cover and everything that matters inside the card, with
+	// Approve and Turn down. A card opens a window with that ask (trailer banner,
+	// What to get).
 	import { tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, fly } from 'svelte/transition';
@@ -40,41 +40,6 @@
 		{ k: 'show', label: 'TV shows', icon: 'tv' },
 		{ k: 'artist', label: 'Music', icon: 'music' }
 	];
-	const views: { k: 'cards' | 'stage'; label: string; icon: IconName }[] = [
-		{ k: 'cards', label: 'Cards', icon: 'grid' },
-		{ k: 'stage', label: 'Stage', icon: 'sidebar' }
-	];
-
-	// The Stage needs a wide screen; narrower ones always show cards.
-	let wide = $state(true);
-	$effect(() => {
-		const q = matchMedia('(min-width: 1024px)');
-		const sync = () => (wide = q.matches);
-		sync();
-		q.addEventListener('change', sync);
-		return () => q.removeEventListener('change', sync);
-	});
-
-	// The view, remembered per member.
-	const viewKey = $derived(`holyarrs.approvals-view.${ctx.me ?? 'me'}`);
-	let view = $state<'cards' | 'stage'>('cards');
-	$effect(() => {
-		try {
-			view = localStorage.getItem(viewKey) === 'stage' ? 'stage' : 'cards';
-		} catch {
-			/* storage blocked: cards */
-		}
-	});
-	const shownView = $derived(wide ? view : 'cards');
-	function setView(v: 'cards' | 'stage') {
-		view = v;
-		try {
-			localStorage.setItem(viewKey, v);
-		} catch {
-			/* storage blocked */
-		}
-	}
-
 	// The raised plate slides to the picked item in each group (as on Downloads).
 	function plate(node: HTMLElement, _key: unknown) {
 		const place = () => {
@@ -201,7 +166,7 @@
 			{/each}
 		</div>
 		<div class="right">
-			{#if shownView === 'cards' && ctx.tab === 'waiting' && list.filter(waiting).length > 1}
+			{#if ctx.tab === 'waiting' && list.filter(waiting).length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(list.filter(waiting))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
 			{/if}
 			<div class="cap">
@@ -211,22 +176,10 @@
 						<button type="button" class="it" aria-pressed={ctx.kind === t.k} onclick={() => ctx.setKind(t.k)}><span class="ic"><Icon name={t.icon} size={18} /></span><span class="lb">{t.label}</span></button>
 					{/each}
 				</div>
-				{#if wide}
-				<span class="vr" aria-hidden="true"></span>
-				<div class="seg" role="group" aria-label="View" use:plate={view}>
-					<span class="plate" aria-hidden="true"></span>
-					{#each views as v (v.k)}
-						<button type="button" class="it" aria-pressed={view === v.k} title="{v.label} view" onclick={() => setView(v.k)}><span class="ic"><Icon name={v.icon} size={18} /></span><span class="lb">{v.label}</span></button>
-					{/each}
-				</div>
-				{/if}
 			</div>
 		</div>
 	</div>
 
-	{#if shownView === 'stage'}
-		<div in:fade={{ duration: ms(260) }}><ApprovalsStage {ctx} embedded /></div>
-	{:else}
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each list as a, i (a.id)}
 				{@const w = ctx.who(a)}
@@ -273,7 +226,6 @@
 				</li>
 			{/each}
 		</ul>
-	{/if}
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->

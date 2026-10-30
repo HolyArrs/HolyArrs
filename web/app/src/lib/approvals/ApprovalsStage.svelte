@@ -1,58 +1,53 @@
 <script lang="ts">
-	// Approvals on a desktop (design-notes/approvals-stage.md): the picked ask
-	// as a big banner (Explore's Billboard: moving backdrop, a muted trailer by
-	// itself) with the status tabs built in, and the inbox list on the right.
-	// "Choose what to get" lifts the title into the corner and raises a sheet
-	// inside the same frame: the seasons and episodes (or albums and songs) to
-	// keep, the Pick rule, then Approve. Every ask carries its life-cycle line.
+	// One ask in the cards' window (ApprovalsDesktop): the trailer as a big
+	// banner (Explore's Billboard; for music, the artist's video over the
+	// photo), type · year · what was asked, who asked and their note, then
+	// Approve / Choose what to get / Turn down. "Choose what to get" lifts the
+	// title into the corner and raises the What to get sheet inside the same
+	// frame: the two-pane picker (seasons and episodes, or albums and songs),
+	// the Pick rule, then Approve. The life-cycle line runs along the edge.
 	import { tick } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { flip } from 'svelte/animate';
 	import { cubicOut } from 'svelte/easing';
 	import Billboard from '../ui/Billboard.svelte';
 	import TrailerPlayer from '../ui/TrailerPlayer.svelte';
 	import { artistVideo, autoplayHere, loadUISettings } from '../autoplay.svelte.ts';
 	import { heroVideoStart, pickedSources, type HeroVideo } from '../music/hero-video.ts';
 	import Poster from '../Poster.svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon from '../Icon.svelte';
 	import Avatar from '../ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
 	import AskParts from './AskParts.svelte';
 	import { ago, dateTime } from '../format.ts';
 	import { to } from '../paths.ts';
-	import { kindWord, type ApprovalsCtx } from './approvals.ts';
+	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
-	import { askSummary, inboxTabs } from './inbox.ts';
 	import { lifecycle } from './lifecycle.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
 
-	let { ctx, single = null, embedded = false, choose: startChoosing = false }: { ctx: ApprovalsCtx; /** Open straight into What to get (the cards' window). */ choose?: boolean; /** One ask only, filling its box (the cards' window): no list, no tabs. */ single?: Ask | null; /** Under the desktop toolbar, which already has the tabs and the type filter. */ embedded?: boolean } = $props();
+	let { ctx, single, choose: startChoosing = false }: { ctx: ApprovalsCtx; /** The ask this window shows. */ single: Ask; /** Open straight into What to get. */ choose?: boolean } = $props();
 
-	// Reduced motion: Svelte transitions and the list's reflow run in no time.
+	// Reduced motion: Svelte transitions run in no time.
 	const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const ms = (d: number) => (reduced() ? 0 : d);
 	const waiting = (a: Ask) => ctx.approver && a.state === 'asked' && !ctx.isPending(a.id);
-	const list = $derived(single ? [ctx.viewed.find((a) => a.id === single.id) ?? single] : [...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
-
-	// The picked ask: the newest one waiting unless one was clicked; it stays put while the list changes.
-	let pickedId = $state(0);
-	const picked = $derived(list.find((a) => a.id === pickedId) ?? list.find(waiting) ?? list[0] ?? null);
+	const picked = $derived(ctx.viewed.find((a) => a.id === single.id) ?? single);
 	$effect(() => {
-		for (const a of list.slice(0, 12)) ctx.want(a);
+		ctx.want(picked);
 	});
 
-	const d = $derived(picked ? ctx.details(picked) : null);
-	const music = $derived(picked?.kind === 'artist');
-	const artistBg = $derived(picked && music ? (askArtist(picked)?.backgrounds[0] ?? artistPhoto(picked) ?? '') : '');
-	const pictures = $derived(!picked || music ? [] : d?.backdrop ? [to(d.backdrop)] : picked.poster ? [to(picked.poster)] : []);
+	const d = $derived(ctx.details(picked));
+	const music = $derived(picked.kind === 'artist');
+	const artistBg = $derived(music ? (askArtist(picked)?.backgrounds[0] ?? artistPhoto(picked) ?? '') : '');
+	const pictures = $derived(music ? [] : d?.backdrop ? [to(d.backdrop)] : picked.poster ? [to(picked.poster)] : []);
 	// Music: the artist's music video plays muted over the photo, as on the artist page (same Autoplay setting).
 	let mvideo = $state<HeroVideo | null>(null);
 	$effect(() => {
 		const a = picked;
 		mvideo = null;
-		if (!a || a.kind !== 'artist') return;
+		if (a.kind !== 'artist') return;
 		const id = artistIdOf(a);
 		if (!id) return;
 		const ctl = new AbortController();
@@ -64,41 +59,10 @@
 		});
 		return () => ctl.abort();
 	});
-	const year = $derived(d?.year ?? picked?.year ?? null);
+	const year = $derived(d?.year ?? picked.year ?? null);
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
 	const count = (a: Ask) => askedFor(a, { seasons: ctx.info(a)?.seasons.length });
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
-
-	// What an empty tab says.
-	const calm: Record<string, { icon: IconName; title: string; text: string }> = {
-		waiting: { icon: 'check', title: 'You’re all caught up', text: 'New asks land here the moment someone asks.' },
-		approved: { icon: 'download', title: 'Nothing on its way', text: 'Approved asks wait here while HolyArrs gets them.' },
-		declined: { icon: 'declined', title: 'Nothing turned down', text: 'Asks you say no to stay here, with your reason.' },
-		done: { icon: 'film', title: 'Nothing finished yet', text: 'Asks move here once they’re in the Library.' },
-		failed: { icon: 'alert', title: 'Nothing needs a look', text: 'Asks that HolyArrs couldn’t finish show up here.' }
-	};
-
-	// Status tabs, built into the banner.
-	const tabs = $derived(inboxTabs.filter((t) => ctx.approver || t.tab !== 'failed'));
-	const types: { k: 'all' | 'movie' | 'show' | 'artist'; label: string; icon: IconName }[] = [
-		{ k: 'all', label: 'Everything', icon: 'grid' },
-		{ k: 'movie', label: 'Movies', icon: 'film' },
-		{ k: 'show', label: 'Shows', icon: 'tv' },
-		{ k: 'artist', label: 'Music', icon: 'music' }
-	];
-
-	// The underline under the picked tab slides to the next one.
-	let tabsEl = $state<HTMLElement>();
-	let ink = $state({ x: 0, w: 0 });
-	$effect(() => {
-		void ctx.tab;
-		void ctx.counts;
-		void picked?.id;
-		void tick().then(() => {
-			const on = tabsEl?.querySelector<HTMLElement>('[aria-pressed="true"]');
-			if (on) ink = { x: on.offsetLeft + 12, w: on.offsetWidth - 24 };
-		});
-	});
 
 	// Choose what to get: the title lifts into the corner, the sheet rises inside the frame.
 	let choosing = $state(false);
@@ -108,14 +72,14 @@
 	let sheetTop = $state(180);
 	let pick = $state<PartsPick>({ seasons: null, albums: null, empty: false });
 	let rulesId = $state(0);
-	const rules = $derived(picked ? ctx.rulesFor(picked) : []);
+	const rules = $derived(ctx.rulesFor(picked));
 	$effect(() => {
-		void picked?.id;
+		void picked.id;
 		choosing = false;
 		rulesId = 0;
 	});
 	$effect(() => {
-		if (choosing && picked && !waiting(picked)) choosing = false;
+		if (choosing && !waiting(picked)) choosing = false;
 	});
 	async function choose() {
 		const content = frame?.querySelector<HTMLElement>('.ui-billboard .content');
@@ -132,13 +96,13 @@
 	let autoFor = 0;
 	$effect(() => {
 		const a = picked;
-		if (!startChoosing || !a || autoFor === a.id || !waiting(a)) return;
+		if (!startChoosing || autoFor === a.id || !waiting(a)) return;
 		autoFor = a.id;
 		setTimeout(() => void choose(), 120);
 	});
 	const changed = $derived(!!(pick.seasons || pick.episodes || pick.albums || pick.songs));
 	function approveChosen() {
-		if (!picked || pick.empty) return;
+		if (pick.empty) return;
 		ctx.approveWith(picked, {
 			rulesId,
 			langs: [],
@@ -155,56 +119,25 @@
 		if (e.key === 'Escape' && choosing) {
 			e.preventDefault();
 			choosing = false;
-			return;
 		}
-		// ↑ and ↓ move through the list (not while typing or choosing).
-		if ((e.key !== 'ArrowDown' && e.key !== 'ArrowUp') || choosing || e.metaKey || e.ctrlKey || e.altKey) return;
-		if (single) return;
-		if (e.target instanceof Element && e.target.closest('input, textarea, select, video, [contenteditable], [role="group"], [role="radiogroup"], .sheet')) return;
-		const i = list.findIndex((a) => a.id === picked?.id);
-		const next = list[Math.min(Math.max(i + (e.key === 'ArrowDown' ? 1 : -1), 0), list.length - 1)];
-		if (!next || next.id === picked?.id) return;
-		e.preventDefault();
-		pickedId = next.id;
-		void tick().then(() => document.querySelector<HTMLElement>(`[data-row="${next.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }));
 	}
 </script>
 
 <svelte:window onkeydown={keys} />
 
-{#snippet tabsTop()}{@render tabBar()}{/snippet}
-
-{#snippet tabBar()}
-<div class="tabbar">
-							<div class="tabs" role="group" aria-label="Show asks that are" bind:this={tabsEl}>
-								{#each tabs as t (t.tab)}
-									<button type="button" class="tab" class:wait={t.tab === 'waiting'} aria-pressed={ctx.tab === t.tab} data-tab={t.tab} onclick={() => ctx.setTab(t.tab)}>
-										{t.label}{#if ctx.counts[t.tab]}<span class="n">{ctx.counts[t.tab]}</span>{/if}
-									</button>
-								{/each}
-								<span class="ink" aria-hidden="true" style:transform="translateX({ink.x}px)" style:width="{ink.w}px"></span>
-							</div>
-						</div>
-{/snippet}
-
-<!-- The life-cycle line; only the banner's edge bar is a progress bar, rows draw it as decoration. -->
-{#snippet line(a: Ask, cls = '', bar = true)}
+<!-- The life-cycle line along the banner's bottom edge. -->
+{#snippet line(a: Ask)}
 	{@const life = lifecycle(a)}
-	{#if bar}
-		<span class="life {cls} tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
-	{:else}
-		<span class="life {cls} tone-{life.tone}" aria-hidden="true"><span class="fill" style:width="{life.pct}%"></span></span>
-	{/if}
+	<span class="life edge tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 {/snippet}
 
 {#snippet artistArt()}
 	{#if artistBg}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/if}
-	{#if mvideo && picked}<div class="mv">{#key mvideo.key}<TrailerPlayer sources={pickedSources(mvideo.key, mvideo)} title={picked.name} sharp pausable top repeat start={heroVideoStart(mvideo)} />{/key}</div>{/if}
+	{#if mvideo}<div class="mv">{#key mvideo.key}<TrailerPlayer sources={pickedSources(mvideo.key, mvideo)} title={picked.name} sharp pausable top repeat start={heroVideoStart(mvideo)} />{/key}</div>{/if}
 {/snippet}
 
-<div class="desk" class:embedded class:single data-testid={single ? 'ask-window-stage' : 'approvals-desk'}>
+<div class="desk" data-testid="ask-window-stage">
 	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
-		{#if picked}
 			{#key picked.id}
 			<div class="swap" in:fade={{ duration: ms(520) }} out:fade={{ duration: ms(360) }}>
 				<Billboard
@@ -216,7 +149,6 @@
 					{pictures}
 					position="60% 25%"
 					art={music && (artistBg || mvideo) ? artistArt : undefined}
-					top={single || embedded ? undefined : tabsTop}
 				>
 					{#snippet heading()}<h2 class="bb-name" id="stage-title">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
@@ -246,7 +178,7 @@
 				</Billboard>
 			</div>
 			{/key}
-			{@render line(picked, 'edge')}
+			{@render line(picked)}
 
 			{#if choosing}
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
@@ -277,55 +209,14 @@
 					</footer>
 				</section>
 			{/if}
-		{:else}
-			<div class="calm">
-				<div class="calm-top">{@render tabBar()}</div>
-				<div class="calm-in" in:fade={{ duration: ms(400) }}>
-					<span class="calm-ic"><Icon name={calm[ctx.tab].icon} size={26} /></span>
-					<h2>{calm[ctx.tab].title}</h2>
-					<p>{calm[ctx.tab].text}</p>
-				</div>
-			</div>
-		{/if}
 	</div>
-
-	{#if !single}
-	<aside class="inbox" aria-label="Asks">
-		{#if !embedded}
-		<div class="types" role="group" aria-label="Type">
-			{#each types as t (t.k)}
-				<button type="button" class="ty" aria-pressed={ctx.kind === t.k} title={t.label} onclick={() => ctx.setKind(t.k)}><Icon name={t.icon} size={15} /><span>{t.label}</span></button>
-			{/each}
-		</div>
-		{/if}
-		<ul class="rows">
-			{#each list as a (a.id)}
-				{@const w = ctx.who(a)}
-				<li animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 8, duration: ms(300), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
-					<button type="button" class="row" data-row={a.id} class:on={picked?.id === a.id} class:unread={waiting(a)} aria-current={picked?.id === a.id ? 'true' : undefined} aria-controls="stage-title" onclick={() => (pickedId = a.id)}>
-						<span class="pic">{#if a.kind === 'artist' && artistPhoto(a)}<img src={artistPhoto(a)} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.kind === 'artist' ? null : a.poster} name={a.name} />{/if}</span>
-						<span class="txt">
-							<strong>{a.name}</strong>
-							<span class="who"><Avatar name={w.name} src={w.avatar} size={16} />{w.name}{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="dot">·</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span>
-						</span>
-						{@render line(a, 'row-line', false)}
-					</button>
-				</li>
-			{:else}
-				<li class="none">Nothing here right now.</li>
-			{/each}
-		</ul>
-	</aside>
-	{/if}
 </div>
 
 <style>
-	/* The desk fills the screen under the page title without scrolling the page. */
-	.desk.embedded { --h: clamp(480px, calc(100dvh - var(--topbar, 56px) - 220px), 1120px); }
-	.desk.single { --h: 100%; grid-template-columns: minmax(0, 1fr); height: 100%; }
-	.desk.single .frame { border-radius: 0; box-shadow: none; }
-	.desk.single .frame :global(.ui-billboard) { border-radius: 0; }
-	.desk { --h: clamp(520px, calc(100dvh - var(--topbar, 56px) - 156px), 1180px); display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+	/* The desk fills its window box. */
+	.desk { --h: 100%; display: grid; grid-template-columns: minmax(0, 1fr); height: 100%; }
+	.desk .frame { border-radius: 0; box-shadow: none; }
+	.desk .frame :global(.ui-billboard) { border-radius: 0; }
 	button { font: inherit; color: inherit; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
@@ -350,16 +241,6 @@
 	.said { flex-basis: 100%; max-width: 520px; padding-left: 12px; border-left: 2px solid rgb(255 255 255 / 0.45); color: rgb(255 255 255 / 0.9); font: italic 400 15px/1.45 var(--font-ui) !important; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.sep { margin: 0 8px; opacity: 0.6; }
 
-	/* Tabs as a glass control at the top of the banner. */
-	.tabbar { display: flex; justify-content: flex-start; }
-	.tabs { position: relative; display: inline-flex; align-items: center; height: auto; gap: 4px; }
-	.tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: rgb(255 255 255 / 0.62); font: 600 15px/1 var(--font-ui); letter-spacing: -0.01em; text-shadow: 0 1px 12px rgb(0 0 0 / 0.55) !important; cursor: pointer; transition: color 260ms var(--ease-out); }
-	.tab:hover { color: rgb(255 255 255 / 0.9); }
-	.tab[aria-pressed='true'] { color: #fff; }
-	.n { color: rgb(255 255 255 / 0.5); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.tab.wait .n { color: var(--wait); }
-	.ink { position: absolute; left: 0; bottom: 2px; height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px rgb(255 255 255 / 0.5); transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), width 420ms cubic-bezier(0.22, 1, 0.36, 1); }
-
 	/* Answers on the art. */
 	.acts { display: flex; flex-wrap: wrap; gap: 10px; transition: opacity 220ms var(--ease-out), transform 300ms var(--ease-out); }
 	.acts.gone { opacity: 0; transform: translateY(8px); pointer-events: none; }
@@ -374,7 +255,7 @@
 	.act.ghost { background: none; color: var(--text-muted); height: 44px; }
 	.act.ghost:hover { color: var(--text); background: var(--surface-2); }
 
-	/* The life-cycle line: along the banner's bottom edge and under each row. */
+	/* The life-cycle line along the banner's bottom edge. */
 	.life { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgb(127 127 127 / 0.08); overflow: hidden; pointer-events: none; }
 	.life.edge { z-index: 3; height: 4px; background: rgb(255 255 255 / 0.12); }
 	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1), background 400ms var(--ease-out); }
@@ -419,34 +300,6 @@
 	.sh-f .act.ghost { height: 40px; font: var(--t-subhead); }
 
 	.swap { position: absolute; inset: 0; }
-	.calm { position: relative; height: 100%; background: radial-gradient(120% 90% at 80% 0%, #24262d 0%, transparent 60%), linear-gradient(160deg, #18191e, #0b0b0c 75%); color: rgb(255 255 255 / 0.66); }
-	.calm-top { position: absolute; top: clamp(14px, 2vw, 24px); left: clamp(20px, 2vw, 40px); }
-	.calm-in { display: grid; place-content: center; justify-items: center; gap: 8px; height: 100%; text-align: center; padding: 24px; }
-	.calm-ic { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 6px; border-radius: 50%; background: rgb(255 255 255 / 0.08); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); }
-	.calm h2 { color: #fff; font: var(--t-title2); }
-	.calm p { max-width: 340px; font: var(--t-callout); }
-
-	/* The inbox on the right. */
-	.inbox { display: flex; flex-direction: column; gap: 10px; height: var(--h); min-width: 0; }
-	.types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 3px; border-radius: 12px; background: var(--surface-2); }
-	.ty { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: var(--t-caption); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
-	.ty[aria-pressed='true'] { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 0.18); }
-	.rows { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; list-style: none; border-radius: 20px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); scrollbar-width: thin; }
-	.row { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 10px 13px; border: 0; border-radius: 14px; background: none; text-align: left; cursor: pointer; overflow: hidden; transition: background 200ms var(--ease-out), transform 160ms var(--ease-out); }
-	.row:hover { background: var(--surface-2); }
-	.row:active { transform: scale(0.99); }
-	.row.on { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--line-strong, var(--line)); }
-	.row.on::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 16px; width: 3px; border-radius: 0 3px 3px 0; background: var(--text); }
-	.pic { flex: none; width: 42px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; border-radius: 6px; overflow: hidden; background: var(--surface-3); box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.5); transition: transform 300ms var(--ease-out); }
-	.pic img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
-	.row:hover .pic, .row.on .pic { transform: scale(1.05); }
-	.txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-	.txt strong { font: var(--t-subhead); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.unread .txt strong { font-weight: 700; }
-	.who { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font: var(--t-caption); white-space: nowrap; overflow: hidden; }
-	.dot { opacity: 0.6; }
-	.row-line { left: 12px; right: 12px; bottom: 4px; height: 2px; border-radius: 2px; }
-	.none { padding: 30px 12px; color: var(--text-muted); font: var(--t-callout); text-align: center; }
 
 	@media (max-width: 767px) {
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
@@ -454,12 +307,11 @@
 	}
 	/* Touch screens: every small control gets a full finger-sized target. */
 	@media (pointer: coarse) {
-		.rule, .ty { min-height: 44px; }
+		.rule { min-height: 44px; }
 		.x { width: 44px; height: 44px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.frame :global(.ui-billboard .content), .fill, .acts, .row, .pic, .act, .ink { transition: none; }
+		.frame :global(.ui-billboard .content), .fill, .acts, .act { transition: none; }
 		.tone-go .fill, .artist-bg { animation: none; }
-		.row:hover .pic, .row.on .pic { transform: none; }
 	}
 </style>

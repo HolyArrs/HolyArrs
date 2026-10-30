@@ -189,7 +189,7 @@
 						{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Season {s.number}: every episode" onchange={() => tickSeason(p)} />{/if}
 						<button type="button" class="sp-open" aria-pressed={openSeason === s.number} onclick={() => (openSeason = s.number)}>
 							<span class="sp-num">{s.number === 0 ? 'SP' : s.number}</span>
-							<span class="sp-t"><span class="sp-n">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span><span class="sp-s">{p.tick === 'none' ? 'Left out' : `${p.ticked.length || s.episodes} of ${s.episodes || p.all.length} episodes`}</span></span>
+							<span class="sp-t"><span class="sp-n">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span><span class="sp-s">{p.tick === 'none' ? 'Left out' : !(s.episodes || p.all.length) ? 'Not out yet' : `${p.ticked.length || s.episodes} of ${s.episodes || p.all.length} episodes`}</span></span>
 							<Icon name="chevronRight" size={14} />
 						</button>
 					</li>
