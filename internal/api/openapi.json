@@ -12167,8 +12167,13 @@
     },
     "/api/v1/downloads/matches": {
       "get": {
-        "responses": {},
-        "summary": "",
+        "description": "Torrents added outside HolyArrs that could not be matched to one title for sure, with their looked-up choices, and how many torrents are linked, unsure, not media or skipped.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Confirm match list",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "read"
@@ -12176,8 +12181,13 @@
     },
     "/api/v1/downloads/matches/run": {
       "post": {
-        "responses": {},
-        "summary": "",
+        "description": "Reads every torrent Downloader and matches outside torrents with no link yet in the background, one lookup at a time.",
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        },
+        "summary": "Match now",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
@@ -12185,6 +12195,7 @@
     },
     "/api/v1/downloads/matches/{id}/pick": {
       "post": {
+        "description": "Picks one of the listed choices (added without searching and linked by info hash), or marks the torrent not media, or skips it.",
         "parameters": [
           {
             "in": "path",
@@ -12195,8 +12206,18 @@
             }
           }
         ],
-        "responses": {},
-        "summary": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Answer a Confirm match entry",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
