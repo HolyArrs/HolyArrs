@@ -134,7 +134,12 @@
 		openId = a.id;
 		from = el;
 		await tick();
-		if (win && !win.open) win.showModal();
+		if (!win) return;
+		// The window grows out of the card it came from.
+		const card = (el.closest('.bc') ?? el).getBoundingClientRect();
+		win.style.setProperty('--ox', `${card.left + card.width / 2 - innerWidth / 2}px`);
+		win.style.setProperty('--oy', `${card.top + card.height / 2 - innerHeight / 2}px`);
+		if (!win.open) win.showModal();
 	}
 	function hide() {
 		if (win?.open) win.close();
@@ -190,17 +195,18 @@
 		<div in:fade={{ duration: 260 }}><ApprovalsStage {ctx} embedded /></div>
 	{:else}
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: 260 }}>
-			{#each list as a (a.id)}
+			{#each list as a, i (a.id)}
 				{@const w = ctx.who(a)}
 				{@const life = lifecycle(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" class:answered={!waiting(a)} animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 10, duration: 320, easing: cubicOut }} out:fade={{ duration: 220 }}>
+				<li class="bc" class:answered={!waiting(a)} animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 14, duration: 420, delay: Math.min(i, 8) * 45, easing: cubicOut }} out:fade={{ duration: 220 }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban" aria-hidden="true">
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" onload={(e) => e.currentTarget.classList.add('in')} />{:else}<span class="ban-img soft" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
 						<span class="ban-kind">{kindOf(a)}</span>
+						<span class="ban-more">Details<Icon name="chevronRight" size={13} /></span>
 					</div>
 					<span class="cover" aria-hidden="true">{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}</span>
 					<div class="body">
@@ -278,7 +284,8 @@
 	.bc { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 20px; background: var(--surface-1); transition: transform 300ms var(--ez), border-color 220ms var(--ease-out), box-shadow 300ms var(--ease-out); }
 	.bc:hover { transform: translateY(-3px); border-color: var(--line-strong, var(--line)); box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.6); }
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
-	.open:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+	.open:focus-visible { box-shadow: none; }
+	.bc:has(.open:focus-visible) { border-color: transparent; box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
 	.ban { position: relative; height: 128px; overflow: hidden; background: var(--surface-3); }
 	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms var(--ease-out); }
 	img.ban-img { opacity: 0; }
@@ -287,6 +294,8 @@
 	.bc:hover .ban-img:not(.soft) { transform: scale(1.08); }
 	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0%, transparent 35%, transparent 55%, var(--surface-1) 100%); }
 	.ban-kind { position: absolute; top: 10px; left: 10px; z-index: 1; padding: 3px 9px; border-radius: 999px; background: rgb(12 12 14 / 0.55); color: #fff; font: 600 11px/1.3 var(--font-ui); letter-spacing: 0.04em; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+	.ban-more { position: absolute; top: 10px; right: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 2px; padding: 3px 6px 3px 10px; border-radius: 999px; background: rgb(255 255 255 / 0.9); color: #0b0b0c; font: 600 11px/1.3 var(--font-ui); opacity: 0; transform: translateY(-4px); transition: opacity 220ms var(--ease-out), transform 260ms var(--ez); }
+	.bc:hover .ban-more, .bc:has(.open:focus-visible) .ban-more { opacity: 1; transform: none; }
 	.cover { position: relative; z-index: 0; display: block; width: 72px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; margin: -54px 0 0 14px; border-radius: 8px; overflow: hidden; background: var(--surface-3); box-shadow: 0 0 0 3px var(--surface-1), 0 14px 28px -12px rgb(0 0 0 / 0.7); transition: transform 300ms var(--ez); }
 	.cover img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
 	.bc:hover .cover { transform: translateY(-2px) rotate(-1.5deg); }
@@ -323,13 +332,13 @@
 
 	/* The window: one ask on the Stage. */
 	.win { width: min(1180px, calc(100vw - 48px)); max-width: none; height: min(760px, calc(100dvh - 48px)); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 24px; background: #0b0b0c; overflow: hidden; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 50px 120px -30px rgb(0 0 0 / 0.85); }
-	.win[open] { animation: win-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+	.win[open] { animation: win-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 	.win::backdrop { background: rgb(0 0 0 / 0.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade-in 300ms var(--ease-out) both; }
 	.win-in { height: 100%; }
 	.close { position: absolute; top: 18px; right: 18px; z-index: 10; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgb(20 20 24 / 0.55); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); cursor: pointer; transition: background 200ms var(--ease-out); }
 	.close:hover { background: rgb(20 20 24 / 0.8); }
 	.win :global(.ctl.top) { right: 68px !important; }
-	@keyframes win-in { from { opacity: 0; transform: translateY(16px) scale(0.98); } }
+	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.3); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }
 	/* Phones: the tabs swipe, the filter fills the width, one card per row, the window fills the screen. */
 	@media (max-width: 767px) {

@@ -10,6 +10,9 @@
 	import { flip } from 'svelte/animate';
 	import { cubicOut } from 'svelte/easing';
 	import Billboard from '../ui/Billboard.svelte';
+	import TrailerPlayer from '../ui/TrailerPlayer.svelte';
+	import { artistVideo, autoplayHere, loadUISettings } from '../autoplay.svelte.ts';
+	import { heroVideoStart, pickedSources, type HeroVideo } from '../music/hero-video.ts';
 	import Poster from '../Poster.svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import Avatar from '../ui/Avatar.svelte';
@@ -18,7 +21,7 @@
 	import { ago, dateTime } from '../format.ts';
 	import { to } from '../paths.ts';
 	import { kindWord, type ApprovalsCtx } from './approvals.ts';
-	import { artistPhoto, askArtist } from './details.svelte.ts';
+	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
 	import { askSummary, inboxTabs } from './inbox.ts';
 	import { lifecycle } from './lifecycle.ts';
 	import type { PartsPick } from './ask-parts.ts';
@@ -40,6 +43,23 @@
 	const music = $derived(picked?.kind === 'artist');
 	const artistBg = $derived(picked && music ? (askArtist(picked)?.backgrounds[0] ?? artistPhoto(picked) ?? '') : '');
 	const pictures = $derived(!picked || music ? [] : d?.backdrop ? [to(d.backdrop)] : picked.poster ? [to(picked.poster)] : []);
+	// Music: the artist's music video plays muted over the photo, as on the artist page (same Autoplay setting).
+	let mvideo = $state<HeroVideo | null>(null);
+	$effect(() => {
+		const a = picked;
+		mvideo = null;
+		if (!a || a.kind !== 'artist') return;
+		const id = artistIdOf(a);
+		if (!id) return;
+		const ctl = new AbortController();
+		void loadUISettings().then(() => {
+			if (ctl.signal.aborted || !autoplayHere()) return;
+			void artistVideo(id, ctl.signal).then((v) => {
+				if (!ctl.signal.aborted && v?.proxy_url) mvideo = v;
+			});
+		});
+		return () => ctl.abort();
+	});
 	const year = $derived(d?.year ?? picked?.year ?? null);
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
 	const count = (a: Ask) => (a.kind === 'movie' ? '' : (askSummary(a, ctx.info(a)).line.split(' · ').at(-1) ?? ''));
@@ -159,7 +179,10 @@
 	<span class="life {cls} tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 {/snippet}
 
-{#snippet artistArt()}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/snippet}
+{#snippet artistArt()}
+	{#if artistBg}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/if}
+	{#if mvideo && picked}<div class="mv">{#key mvideo.key}<TrailerPlayer sources={pickedSources(mvideo.key, mvideo)} title={picked.name} sharp pausable top repeat start={heroVideoStart(mvideo)} />{/key}</div>{/if}
+{/snippet}
 
 <div class="desk" class:embedded class:single data-testid={single ? 'ask-window-stage' : 'approvals-desk'}>
 	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
@@ -174,7 +197,7 @@
 					title={picked.name}
 					{pictures}
 					position="60% 25%"
-					art={music && artistBg ? artistArt : undefined}
+					art={music && (artistBg || mvideo) ? artistArt : undefined}
 					top={single || embedded ? undefined : tabsTop}
 				>
 					{#snippet heading()}<h2 class="bb-name" id="stage-title">{picked.name}</h2>{/snippet}
@@ -285,6 +308,7 @@
 	.frame :global(.ui-billboard) { height: 100%; min-height: 0; margin: 0; border-radius: 24px; }
 	/* Trailers ship letterboxed (wide films in a 16:9 file); the tall frame would show the bands, so zoom past them. */
 	.frame :global(.ui-billboard .art video), .frame :global(.ui-billboard .art iframe) { scale: 1.34; }
+	.mv { position: absolute; inset: 0; }
 	.artist-bg { position: absolute; inset: 0; background-size: cover; background-position: center 25%; animation: drift 30s ease-in-out infinite alternate; }
 	@keyframes drift { to { transform: scale(1.08) translate(-1.5%, -1%); } }
 
