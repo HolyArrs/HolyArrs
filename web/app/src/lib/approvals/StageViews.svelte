@@ -41,11 +41,11 @@
 	let look = $state(0);
 	const lookOptions = [
 		{ value: 0, label: 'Now' },
-		{ value: 1, label: 'Conversation' },
-		{ value: 2, label: 'Spotlight' },
-		{ value: 3, label: 'Board' },
-		{ value: 4, label: 'Tickets' },
-		{ value: 5, label: 'Ledger' }
+		{ value: 1, label: 'Inbox' },
+		{ value: 2, label: 'Ticket rows' },
+		{ value: 3, label: 'Ticket wall' },
+		{ value: 4, label: 'Ledger + ticket' },
+		{ value: 5, label: 'By day' }
 	];
 	function setView(v: InboxView) {
 		view = v;
@@ -106,17 +106,24 @@
 	let fullId = $state(0);
 	const fullAsk = $derived(ctx.viewed.find((a) => a.id === fullId) ?? null);
 	let opener: HTMLElement | null = null;
+	// The ask opens in a window over the page (the browser's top layer, so no bar
+	// covers its close button). Esc, the close button or a click outside closes it.
+	let win: HTMLDialogElement | undefined = $state();
 	async function openFull(a: Ask, el?: HTMLElement | null) {
 		fullId = a.id;
 		opener = el ?? null;
 		fullOpen = true;
 		await tick();
+		if (win && !win.open) win.showModal();
 		document.getElementById('stage-full-title')?.focus({ preventScroll: true });
 	}
 	async function closeFull() {
+		if (win?.open) win.close();
+		else closed();
+	}
+	function closed() {
 		fullOpen = false;
-		await tick();
-		if (opener?.isConnected) opener.focus();
+		if (opener?.isConnected) opener.focus({ preventScroll: true });
 	}
 	$effect(() => {
 		if (fullOpen && fullAsk && fullAsk.state !== 'asked' && ctx.tab === 'waiting') void closeFull();
@@ -236,7 +243,6 @@
 	const emptyWord = $derived(ctx.tab === 'waiting' ? 'Inbox clear' : `Nothing ${inboxTabs.find((t) => t.tab === ctx.tab)?.label.toLowerCase()}`);
 </script>
 
-<svelte:window onkeydown={(e) => fullOpen && e.key === 'Escape' && !document.querySelector('dialog[open]') && void closeFull()} />
 
 {#snippet chooseBox(x: Ask)}
 	{#if ctx.choosable}<input class="tick" type="checkbox" aria-label="Choose {x.name}" checked={ctx.isChosen(x.id)} onchange={() => ctx.toggleChosen(x.id)} />{/if}
@@ -316,9 +322,7 @@
 		</div>
 	</div>
 
-	{#if look === 3}
-		<LookViews {ctx} {look} {line} open={pick} />
-	{:else if oneByOne}
+	{#if oneByOne}
 		<FocusView ctx={focusCtx} />
 	{:else if ctx.shown.length === 0}
 		<div class="calm" data-testid="calm">
@@ -464,12 +468,18 @@
 
 <VariantBar options={lookOptions} bind:value={look} storageKey="holyarrs.approvals-look" label="Approvals layout" />
 
-{#if fullOpen && fullAsk}
-	<div class="full" role="dialog" aria-modal="true" aria-label={fullAsk.name} data-testid="ask-full">
-		<div class="full-bar"><button class="back" type="button" onclick={() => void closeFull()}><Icon name="back" size={20} />Asks</button></div>
-		{#key fullAsk.id}<AskPanel {ctx} a={fullAsk} headingId="stage-full-title" />{/key}
-	</div>
-{/if}
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+<dialog class="win" bind:this={win} aria-label={fullAsk?.name ?? 'Ask'} data-testid="ask-full" onclose={closed} onclick={(e) => e.target === win && void closeFull()}>
+	{#if fullOpen && fullAsk}
+		<div class="win-in">
+			<div class="win-bar">
+				<span class="win-t">{fullAsk.name}</span>
+				<button class="win-x" type="button" aria-label="Close" onclick={() => void closeFull()}><Icon name="x" size={18} /></button>
+			</div>
+			<div class="win-body">{#key fullAsk.id}<AskPanel {ctx} a={fullAsk} headingId="stage-full-title" />{/key}</div>
+		</div>
+	{/if}
+</dialog>
 
 <style>
 	/* One size per element: --thumb for list pictures, --lw for the list column. */
@@ -606,13 +616,25 @@
 	.calm h2 { font: var(--t-headline); color: var(--text); }
 	.muted { color: var(--text-muted); }
 
-	/* Full screen ask (below 1024 px, and options in one-by-one review). */
-	.full { position: fixed; inset: 0; z-index: 60; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px calc(var(--tabbar, 0px) + 24px + env(safe-area-inset-bottom, 0px)); background: var(--bg); animation: slide-in var(--dur) var(--ease-out) both; }
-	.full-bar { position: sticky; top: 0; z-index: 2; display: flex; margin: 0 -16px 12px; padding: calc(6px + env(safe-area-inset-top, 0px)) 8px 6px; background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line); }
-	.back { min-height: 44px; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border: 0; background: none; border-radius: 10px; color: var(--accent-text); font: var(--t-headline); cursor: pointer; }
-	.back:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	@media (min-width: 768px) { .full :global(.panel) { max-width: 720px; margin: 0 auto; } }
-	@keyframes slide-in { from { transform: translateX(24px); opacity: 0; } }
+	/* The ask window: a large sheet over a dimmed page; full screen on phones. */
+	.win { width: min(960px, calc(100vw - 48px)); max-width: none; height: min(880px, calc(100dvh - 48px)); max-height: none; margin: auto; padding: 0; border: 0; border-radius: var(--r-modal); background: var(--bg); color: var(--text); box-shadow: 0 0 0 1px var(--line), var(--shadow-modal); overflow: hidden; }
+	.win[open] { animation: win-in var(--dur) var(--ease-out) both; }
+	.win::backdrop { background: rgb(0 0 0 / 0.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fade-in var(--dur) var(--ease-out) both; }
+	.win-in { display: flex; flex-direction: column; height: 100%; }
+	.win-bar { flex: none; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 10px 0 20px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 85%, transparent); }
+	.win-t { flex: 1; min-width: 0; font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.win-x { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.win-x:hover { background: var(--surface-3); }
+	.win-x:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.win-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px 32px; }
+	@keyframes win-in { from { opacity: 0; transform: translateY(12px) scale(0.985); } }
+	@keyframes fade-in { from { opacity: 0; } }
+	@media (max-width: 767px) {
+		.win { width: 100vw; height: 100dvh; border-radius: 0; }
+		.win-bar { padding-top: env(safe-area-inset-top, 0px); min-height: calc(52px + env(safe-area-inset-top, 0px)); }
+		.win-x { width: 44px; height: 44px; }
+		.win-body { padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+	}
 
 	@media (max-width: 1023px) {
 		.split { grid-template-columns: minmax(0, 1fr); }
@@ -642,6 +664,6 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.split, .list, .thumb, .row, .cw, .lhead { transition: none; }
-		.stage-in, .full { animation: none; }
+		.stage-in, .win[open], .win::backdrop { animation: none; }
 	}
 </style>
