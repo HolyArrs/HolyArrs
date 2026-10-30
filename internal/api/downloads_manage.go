@@ -93,13 +93,14 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		if l == "" {
 			continue
 		}
-		if err := checkLink(r.Context(), l, dr.AllowLocal); err != nil {
+		if err := checkLink(l); err != nil {
 			fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		links = append(links, l)
 	}
 	b.Links = links
+	b.AllowLocal = dr.AllowLocal
 	b.Category, b.SavePath, err = a.clientFolder(r.Context(), id, b.Category, b.SavePath, true)
 	if folderError(w, err) {
 		return

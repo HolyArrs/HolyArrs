@@ -30,6 +30,9 @@ type AddBatch struct {
 	Category string
 	SavePath string
 	Paused   bool
+	// AllowLocal is the Downloader's local network setting: links and magnet
+	// addresses may point at this machine or the local network.
+	AllowLocal bool
 }
 
 // AddOutcome says how a hand-made add went. Pending are http links the
@@ -39,8 +42,11 @@ type AddOutcome struct {
 	Failed     int `json:"failed"`
 	Pending    int `json:"pending"`
 	Duplicates int `json:"duplicates"`
-	// Bad names the uploaded files that were not torrents.
+	// Bad names the uploaded files and links that were not torrents.
 	Bad []string `json:"bad,omitempty"`
+	// Dropped counts magnet addresses left out because they point at this
+	// machine, the local network or a metadata service.
+	Dropped int `json:"dropped,omitempty"`
 }
 
 // TorrentAdder is the optional part of a torrent engine that adds torrents a
@@ -101,6 +107,23 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 		l = strings.TrimSpace(l)
 		if l == "" {
 			continue
+		}
+		low := strings.ToLower(l)
+		if strings.HasPrefix(low, "http://") || strings.HasPrefix(low, "https://") {
+			// HolyArrs fetches the file and uploads it; the client never gets the address.
+			data, err := fetchTorrentLink(ctx, l, b.AllowLocal)
+			if err != nil {
+				out.Bad = append(out.Bad, linkName(l))
+				out.Failed++
+				continue
+			}
+			b.Files = append(b.Files, TorrentUpload{Name: linkName(l), Data: data})
+			continue
+		}
+		if strings.HasPrefix(low, "magnet:") {
+			var n int
+			l, n = safeMagnet(ctx, l, b.AllowLocal)
+			out.Dropped += n
 		}
 		if h := linkHash(l); h != "" {
 			if have[h] || seen[h] {
@@ -171,14 +194,7 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 		out.Failed += n
 	case text == "Ok." || text == "":
 		// Before 5.2 there are no counts: http links are fetched later, the rest is in.
-		for _, l := range links {
-			if linkHash(l) == "" {
-				out.Pending++
-			} else {
-				out.Added++
-			}
-		}
-		out.Added += len(files)
+		out.Added += len(links) + len(files)
 	default:
 		var c struct {
 			Success int `json:"success_count"`
@@ -245,4 +261,14 @@ func (q *Qbittorrent) SaveBase(ctx context.Context) (SaveBase, error) {
 		out.Categories[name] = c.SavePath
 	}
 	return out, nil
+}
+
+// linkName is a fetched link's file name for messages: its host and last
+// path part, never its query (which may hold a key).
+func linkName(l string) string {
+	u, err := url.Parse(l)
+	if err != nil {
+		return "link"
+	}
+	return u.Host + "/" + safeFileName(u.Path)
 }

@@ -3,8 +3,8 @@ package api
 import (
 	"bytes"
 	"context"
-	"errors"
 	"encoding/json"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"strings"
@@ -87,25 +87,13 @@ func TestSubfolderAndLinkGuards(t *testing.T) {
 	if joinFolder(`D:\dl`, "tv/new") != `D:\dl\tv\new` || joinFolder("/data/", "tv") != "/data/tv" {
 		t.Fatal("join")
 	}
-	ctx := context.Background()
-	for _, bad := range []string{"magnet:?xt=urn:btih:" + outHash + "\r\nx", "https://a.test/x\n", "ftp://a.test/x", "javascript:alert(1)", "https://user@1.1.1.1/x", "magnet:"} {
-		if err := checkLink(ctx, bad, true); err == nil {
+	for _, bad := range []string{"magnet:?xt=urn:btih:" + outHash + "\r\nx", "https://a.test/x\n", "ftp://a.test/x", "javascript:alert(1)", "https://user@1.1.1.1/x", "magnet:", "https://a.test/a b"} {
+		if err := checkLink(bad); err == nil {
 			t.Errorf("link %q passed", bad)
 		}
 	}
-	for _, local := range []string{"http://127.0.0.1/x.torrent", "http://10.10.25.25:8080/x.torrent", "http://[::1]/x", "http://169.254.169.254/latest"} {
-		if err := checkLink(ctx, local, false); err == nil {
-			t.Errorf("private link %q passed", local)
-		}
-	}
-	if err := checkLink(ctx, "http://10.10.25.25/x.torrent", true); err != nil {
-		t.Fatalf("local allowed: %v", err)
-	}
-	if err := checkLink(ctx, "http://169.254.169.254/latest", true); err == nil {
-		t.Fatal("metadata address passed with local network on")
-	}
 	for _, ok := range []string{outHash, strings.Repeat("a", 64), "magnet:?xt=urn:btih:" + outHash, "https://1.1.1.1/x.torrent"} {
-		if err := checkLink(ctx, ok, false); err != nil {
+		if err := checkLink(ok); err != nil {
 			t.Errorf("%q: %v", ok, err)
 		}
 	}
@@ -139,14 +127,19 @@ func TestClientFolderWithoutSettings(t *testing.T) {
 	}
 }
 
-// The route refuses CR/LF inside a link, private http links and traversal.
+// The route refuses CR/LF inside a link; a private http link is fetched by
+// HolyArrs under the Downloader's policy, refused, and never reaches the client.
 func TestAddTorrentsRouteRefusals(t *testing.T) {
 	x, f, base := manageBase(t)
 	do(t, "POST", base+"/torrents", `{"links":["magnet:?xt=urn:btih:`+outHash+`\r\nhttp://127.0.0.1/x"]}`, 400)
-	// The seeded Downloader may use the local network; with that off a private link is refused.
+	do(t, "POST", base+"/torrents", `{"links":["magnet:?xt=urn:btih:`+outHash+`\u0001"]}`, 400)
 	exec41(t, x.s, "UPDATE downloaders SET allow_local_network = 0")
-	do(t, "POST", base+"/torrents", `{"links":["http://192.168.1.10/x.torrent"]}`, 400)
-	if strings.Contains(f.saw(), "torrents/add") {
-		t.Fatalf("refused links reached the client: %s", f.saw())
+	var out struct {
+		Failed int
+		Bad    []string
+	}
+	_ = json.Unmarshal(do(t, "POST", base+"/torrents", `{"links":["http://192.168.1.10/x.torrent"]}`, 200), &out)
+	if out.Failed != 1 || len(out.Bad) != 1 || strings.Contains(f.saw(), "torrents/add") {
+		t.Fatalf("private link %+v, calls %s", out, f.saw())
 	}
 }

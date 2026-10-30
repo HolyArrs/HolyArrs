@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -13,7 +12,6 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
-	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -116,12 +114,10 @@ func hasControl(s string) bool {
 }
 
 var errLink = errors.New("each line is a magnet link, an http(s) link to a .torrent file, or an info hash")
-var errLocalLink = errors.New("that link points at this machine or the local network; turn on local network access for this Downloader to allow it")
 
-// checkLink accepts a magnet link, an http(s) link or a 40/64-hex hash.
-// An http(s) link must reach a public address unless the Downloader may
-// use the local network; a cloud metadata address is never allowed.
-func checkLink(ctx context.Context, l string, allowLocal bool) error {
+// checkLink accepts a magnet link, an http(s) link or a 40/64-hex hash, as
+// written: no control characters or spaces inside.
+func checkLink(l string) error {
 	if hasControl(l) || strings.ContainsAny(l, " \t") {
 		return errLink
 	}
@@ -142,30 +138,11 @@ func checkLink(ctx context.Context, l string, allowLocal bool) error {
 	default:
 		return errLink
 	}
-	host := u.Hostname()
-	if host == "" || u.User != nil {
+	if u.Hostname() == "" || u.User != nil {
 		return errLink
 	}
-	var ips []net.IP
-	if ip := net.ParseIP(host); ip != nil {
-		ips = []net.IP{ip}
-	} else {
-		addrs, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-		if err != nil || len(addrs) == 0 {
-			return errors.New("could not look up " + host)
-		}
-		for _, a := range addrs {
-			ips = append(ips, a.IP)
-		}
-	}
-	for _, ip := range ips {
-		if !source.NotMetadata(ip) {
-			return errLocalLink
-		}
-		if !allowLocal && !source.PublicOnly(ip) {
-			return errLocalLink
-		}
-	}
+	// The address itself is checked when HolyArrs fetches the file (every
+	// dialled address, redirects included); the client never gets it.
 	return nil
 }
 
@@ -184,7 +161,7 @@ func isHex(s string, n int) bool {
 // folderError answers a refused folder, category or link.
 func folderError(w http.ResponseWriter, err error) bool {
 	switch {
-	case errors.Is(err, errFolder), errors.Is(err, errCategory), errors.Is(err, errLink), errors.Is(err, errLocalLink):
+	case errors.Is(err, errFolder), errors.Is(err, errCategory), errors.Is(err, errLink):
 		fail(w, http.StatusBadRequest, err.Error())
 		return true
 	}

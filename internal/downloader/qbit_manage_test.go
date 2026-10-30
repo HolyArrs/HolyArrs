@@ -110,14 +110,14 @@ func TestQbitAddTorrentsOldServer(t *testing.T) {
 	f := &manageFake{answers: map[string]string{"torrents/info": `[]`, "torrents/add": "Ok."}}
 	q := NewQbittorrent(f.start(t), nil)
 	out, err := q.AddTorrents(context.Background(), AddBatch{
-		Links: []string{"magnet:?xt=urn:btih:" + hashA, "", "https://example.test/x.torrent"}, Files: []TorrentUpload{{Name: `C:\dl\a.torrent`, Data: []byte(tinyTorrent)}},
+		Links: []string{"magnet:?xt=urn:btih:" + hashA, ""}, Files: []TorrentUpload{{Name: `C:\dl\a.torrent`, Data: []byte(tinyTorrent)}},
 		Category: "linux", SavePath: "/data/linux", Paused: true,
 	})
-	if err != nil || out.Added != 2 || out.Pending != 1 || out.Failed != 0 || out.Duplicates != 0 {
+	if err != nil || out.Added != 2 || out.Failed != 0 || out.Duplicates != 0 {
 		t.Fatalf("%+v %v", out, err)
 	}
 	got := f.last("torrents/add")
-	for _, want := range []string{"category=linux", "savepath=/data/linux", "stopped=true", "paused=true", "file=a.torrent:d", "urls=magnet:?xt=urn:btih:" + hashA + "\nhttps://example.test/x.torrent"} {
+	for _, want := range []string{"category=linux", "savepath=/data/linux", "stopped=true", "paused=true", "file=a.torrent:d", "urls=magnet:?xt=urn:btih:" + hashA} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("add call %q lacks %q", got, want)
 		}
@@ -134,7 +134,7 @@ func TestQbitAddTorrentsNewServer(t *testing.T) {
 	f := &manageFake{answers: map[string]string{"torrents/info": `[]`, "torrents/add": `{"success_count":1,"failure_count":1,"pending_count":1,"added_torrent_ids":["x"]}`}}
 	q := NewQbittorrentKey(f.start(t), "k", nil)
 	ctx := context.Background()
-	out, err := q.AddTorrents(ctx, AddBatch{Links: []string{"magnet:?xt=urn:btih:" + hashA, "https://example.test/a.torrent", "magnet:?xt=urn:btih:" + strings.Repeat("b", 40)}})
+	out, err := q.AddTorrents(ctx, AddBatch{Links: []string{"magnet:?xt=urn:btih:" + hashA, "magnet:?xt=urn:btih:" + strings.Repeat("d", 40), "magnet:?xt=urn:btih:" + strings.Repeat("b", 40)}})
 	if err != nil || out.Added != 1 || out.Failed != 1 || out.Pending != 1 {
 		t.Fatalf("%+v %v", out, err)
 	}
@@ -213,5 +213,66 @@ func TestQbitBulkActions(t *testing.T) {
 	}
 	if n := f.count("torrents/bottomPrio"); n != 2 {
 		t.Fatalf("a queue move was sent %d times", n)
+	}
+}
+
+// http(s) .torrent links are fetched by HolyArrs under the Downloader's
+// policy and uploaded as files; the client never sees the address.
+func TestQbitAddFetchesLinksItself(t *testing.T) {
+	src := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/a.torrent":
+			_, _ = w.Write([]byte(tinyTorrent))
+		case "/big.torrent":
+			_, _ = w.Write([]byte(strings.Repeat("d", int(addFetchMax)+10)))
+		case "/away":
+			http.Redirect(w, r, "http://127.0.0.2:9/a.torrent", http.StatusFound)
+		case "/text":
+			_, _ = w.Write([]byte("not a torrent"))
+		}
+	}))
+	t.Cleanup(src.Close)
+	f := &manageFake{answers: map[string]string{"torrents/info": `[]`, "torrents/add": "Ok."}}
+	q := NewQbittorrent(f.start(t), nil)
+	ctx := context.Background()
+	// With local network access the lab-local source is reachable.
+	out, err := q.AddTorrents(ctx, AddBatch{Links: []string{src.URL + "/a.torrent?key=secret"}, AllowLocal: true})
+	if err != nil || out.Added != 1 || !strings.Contains(f.last("torrents/add"), "file=a.torrent:d") || strings.Contains(f.last("torrents/add"), "urls=") {
+		t.Fatalf("fetched %+v %v %q", out, err, f.last("torrents/add"))
+	}
+	for _, bad := range []string{"/big.torrent", "/away", "/text"} {
+		out, err = q.AddTorrents(ctx, AddBatch{Links: []string{src.URL + bad}, AllowLocal: true})
+		if err != nil || out.Failed != 1 || len(out.Bad) != 1 || strings.Contains(out.Bad[0], "key=") {
+			t.Fatalf("%s: %+v %v", bad, out, err)
+		}
+	}
+	// Without it the dial itself is refused, whatever a name resolves to
+	// (a rebinding name ends at a refused address the same way).
+	before := f.count("torrents/add")
+	for _, l := range []string{src.URL + "/a.torrent", strings.Replace(src.URL, "127.0.0.1", "localhost", 1) + "/a.torrent"} {
+		out, err = q.AddTorrents(ctx, AddBatch{Links: []string{l}})
+		if err != nil || out.Failed != 1 {
+			t.Fatalf("%s without local access: %+v %v", l, out, err)
+		}
+	}
+	if f.count("torrents/add") != before {
+		t.Fatal("a refused link reached the client")
+	}
+}
+
+func TestSafeMagnetDropsLocalAddresses(t *testing.T) {
+	ctx := context.Background()
+	m := "magnet:?xt=urn:btih:" + hashA + "&tr=http%3A%2F%2F10.0.0.5%2Fannounce&tr=udp%3A%2F%2F1.1.1.1%3A80&xs=http%3A%2F%2F127.0.0.1%2Fx.torrent&ws=http%3A%2F%2Fmetadata.google.internal%2F&x.pe=192.168.1.2%3A6881&x.pe=8.8.8.8%3A6881&dn=x"
+	got, n := safeMagnet(ctx, m, false)
+	if n != 4 || strings.Contains(got, "10.0.0.5") || strings.Contains(got, "127.0.0.1") || strings.Contains(got, "metadata") || strings.Contains(got, "192.168") ||
+		!strings.Contains(got, "1.1.1.1") || !strings.Contains(got, "8.8.8.8") || linkHash(got) != hashA {
+		t.Fatalf("%d %s", n, got)
+	}
+	got, n = safeMagnet(ctx, m, true)
+	if n != 1 || !strings.Contains(got, "10.0.0.5") || strings.Contains(got, "metadata") {
+		t.Fatalf("local allowed: %d %s", n, got)
+	}
+	if _, n := safeMagnet(ctx, "magnet:?xt=urn:btih:"+hashA, false); n != 0 {
+		t.Fatal("plain magnet changed")
 	}
 }
