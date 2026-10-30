@@ -41,7 +41,7 @@
 	const pictures = $derived(!picked || music ? [] : d?.backdrop ? [to(d.backdrop)] : picked.poster ? [to(picked.poster)] : []);
 	const year = $derived(d?.year ?? picked?.year ?? null);
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
-	const count = (a: Ask) => (a.kind === 'movie' ? '' : askSummary(a, ctx.info(a)).line);
+	const count = (a: Ask) => (a.kind === 'movie' ? '' : (askSummary(a, ctx.info(a)).line.split(' · ').at(-1) ?? ''));
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
 
 	// Status tabs, built into the banner.
@@ -53,10 +53,25 @@
 		{ k: 'artist', label: 'Music', icon: 'music' }
 	];
 
+	// The underline under the picked tab slides to the next one.
+	let tabsEl = $state<HTMLElement>();
+	let ink = $state({ x: 0, w: 0 });
+	$effect(() => {
+		void ctx.tab;
+		void ctx.counts;
+		void picked?.id;
+		void tick().then(() => {
+			const on = tabsEl?.querySelector<HTMLElement>('[aria-selected="true"]');
+			if (on) ink = { x: on.offsetLeft + 12, w: on.offsetWidth - 24 };
+		});
+	});
+
 	// Choose what to get: the title lifts into the corner, the sheet rises inside the frame.
 	let choosing = $state(false);
 	let frame = $state<HTMLElement>();
 	let lift = $state(0);
+	// Where the sheet starts: just under the lifted title block.
+	let sheetTop = $state(180);
 	let pick = $state<PartsPick>({ seasons: null, albums: null, empty: false });
 	let rulesId = $state(0);
 	const rules = $derived(picked ? ctx.rulesFor(picked) : []);
@@ -72,6 +87,9 @@
 		const content = frame?.querySelector<HTMLElement>('.ui-billboard .content');
 		// How far the title travels: from where it sits to just under the tabs.
 		lift = content ? Math.max(content.offsetTop - 64, 0) : 0;
+		// The sheet starts 20 px under the lifted meta line (the block keeps 72 % of its size).
+		const meta = content?.querySelector<HTMLElement>('.meta');
+		sheetTop = meta ? Math.round(64 + (meta.offsetTop + meta.offsetHeight) * 0.72 + 20) : 180;
 		choosing = true;
 		await tick();
 		frame?.querySelector<HTMLElement>('.sheet')?.focus({ preventScroll: true });
@@ -108,7 +126,7 @@
 {#snippet artistArt()}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/snippet}
 
 <div class="desk" data-testid="approvals-desk">
-	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px">
+	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
 		{#if picked}
 			{#key picked.id}
 				<Billboard
@@ -122,13 +140,14 @@
 					art={music && artistBg ? artistArt : undefined}
 				>
 					{#snippet top()}
-						<div class="bar">
-							<div class="tabs" role="tablist" aria-label="Show asks that are">
+						<div class="tabbar">
+							<div class="tabs" role="tablist" aria-label="Show asks that are" bind:this={tabsEl}>
 								{#each tabs as t (t.tab)}
-									<button type="button" role="tab" class="tab" aria-selected={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)}>
-										<span>{t.label}</span>{#if ctx.counts[t.tab]}<span class="n">{ctx.counts[t.tab]}</span>{/if}
+									<button type="button" role="tab" class="tab" class:wait={t.tab === 'waiting'} aria-selected={ctx.tab === t.tab} data-tab={t.tab} onclick={() => ctx.setTab(t.tab)}>
+										{t.label}{#if ctx.counts[t.tab]}<span class="n">{ctx.counts[t.tab]}</span>{/if}
 									</button>
 								{/each}
+								<span class="ink" aria-hidden="true" style:transform="translateX({ink.x}px)" style:width="{ink.w}px"></span>
 							</div>
 						</div>
 					{/snippet}
@@ -146,7 +165,7 @@
 						{:else if ctx.isPending(picked.id)}
 							<p class="state">Sending your answer…</p>
 						{:else}
-							<p class="state">{lifecycle(picked).label}{#if ctx.decided(picked)} · {ctx.decided(picked)}{/if}</p>
+							<p class="state">{ctx.decided(picked) || lifecycle(picked).label}{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>getting it now{/if}</p>
 						{/if}
 					{/snippet}
 				</Billboard>
@@ -168,7 +187,7 @@
 						{#if rules.length}
 							<div class="rules" role="radiogroup" aria-label="Pick rule">
 								<span class="rl">Pick rule</span>
-								<button type="button" role="radio" class="rule" aria-checked={rulesId === 0} onclick={() => (rulesId = 0)}>{ctx.defaultRule(picked) || 'Default'}<span class="dim">default</span></button>
+								<button type="button" role="radio" class="rule" aria-checked={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">· default</span>{:else}Default rule{/if}</button>
 								{#each rules as r (r.id)}
 									<button type="button" role="radio" class="rule" aria-checked={rulesId === r.id} onclick={() => (rulesId = r.id)}>{r.name}</button>
 								{/each}
@@ -215,32 +234,36 @@
 
 <style>
 	/* The desk fills the screen under the page title without scrolling the page. */
-	.desk { --h: clamp(520px, calc(100dvh - var(--topbar, 56px) - 150px), 880px); display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+	.desk { --h: clamp(520px, calc(100dvh - var(--topbar, 56px) - 156px), 1180px); display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
 	button { font: inherit; color: inherit; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* The frame: Billboard at a fixed height; nothing in it changes the frame's size. */
 	.frame { position: relative; height: var(--h); border-radius: 24px; overflow: hidden; isolation: isolate; box-shadow: 0 0 0 1px var(--line), 0 40px 80px -40px rgb(0 0 0 / 0.7); }
 	.frame :global(.ui-billboard) { height: 100%; min-height: 0; margin: 0; border-radius: 24px; }
+	/* Trailers ship letterboxed (wide films in a 16:9 file); the tall frame would show the bands, so zoom past them. */
+	.frame :global(.ui-billboard .art video), .frame :global(.ui-billboard .art iframe) { scale: 1.34; }
 	.artist-bg { position: absolute; inset: 0; background-size: cover; background-position: center 25%; animation: drift 30s ease-in-out infinite alternate; }
 	@keyframes drift { to { transform: scale(1.08) translate(-1.5%, -1%); } }
 
 	/* The title block lifts and shrinks into the corner; the frame stays. */
 	.frame :global(.ui-billboard .content) { transform-origin: left top; transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms var(--ease-out); }
-	.frame.choosing :global(.ui-billboard .content) { transform: translateY(calc(-1 * var(--lift))) scale(0.62); }
+	.frame.choosing :global(.ui-billboard .content) { transform: translateY(calc(-1 * var(--lift))) scale(0.72); }
 	.frame.choosing :global(.ui-billboard .shade) { opacity: 1; background: linear-gradient(to bottom, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.35) 40%, rgb(0 0 0 / 0.75)); }
-	.facts { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+	.facts { display: flex; flex-wrap: nowrap; align-items: center; gap: 0; white-space: nowrap; }
 	.facts span + span::before { content: '·'; margin: 0 10px; opacity: 0.6; }
 	.state { color: rgb(255 255 255 / 0.85); font: var(--t-callout); }
+	.sep { margin: 0 8px; opacity: 0.6; }
 
 	/* Tabs as a glass control at the top of the banner. */
-	.bar { display: flex; justify-content: flex-start; height: auto; }
-	.tabs { display: inline-flex; align-items: center; height: auto; min-height: 42px; box-sizing: border-box; gap: 2px; padding: 4px; border-radius: var(--r-pill); background: rgb(20 20 24 / 0.42); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6); }
-	.tab { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: none; color: rgb(255 255 255 / 0.78); font: var(--t-subhead); font-weight: 600; text-shadow: none !important; cursor: pointer; transition: background 220ms var(--ease-out), color 220ms var(--ease-out); }
-	.tab:hover { color: #fff; background: rgb(255 255 255 / 0.1); }
-	.tab[aria-selected='true'] { background: rgb(255 255 255 / 0.92); color: #0b0b0c; }
-	.n { min-width: 20px; padding: 0 6px; border-radius: var(--r-pill); background: rgb(255 255 255 / 0.16); font: var(--t-caption); font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
-	.tab[aria-selected='true'] .n { background: var(--accent); color: #fff; }
+	.tabbar { display: flex; justify-content: flex-start; }
+	.tabs { position: relative; display: inline-flex; align-items: center; height: auto; gap: 4px; }
+	.tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: rgb(255 255 255 / 0.62); font: 600 15px/1 var(--font-ui); letter-spacing: -0.01em; text-shadow: 0 1px 12px rgb(0 0 0 / 0.55) !important; cursor: pointer; transition: color 260ms var(--ease-out); }
+	.tab:hover { color: rgb(255 255 255 / 0.9); }
+	.tab[aria-selected='true'] { color: #fff; }
+	.n { color: rgb(255 255 255 / 0.5); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.tab.wait .n { color: var(--wait); }
+	.ink { position: absolute; left: 0; bottom: 2px; height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px rgb(255 255 255 / 0.5); transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), width 420ms cubic-bezier(0.22, 1, 0.36, 1); }
 
 	/* Answers on the art. */
 	.acts { display: flex; flex-wrap: wrap; gap: 10px; transition: opacity 220ms var(--ease-out), transform 300ms var(--ease-out); }
@@ -257,7 +280,7 @@
 	.act.ghost:hover { color: var(--text); background: var(--surface-2); }
 
 	/* The life-cycle line: along the banner's bottom edge and under each row. */
-	.life { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgb(127 127 127 / 0.18); overflow: hidden; pointer-events: none; }
+	.life { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgb(127 127 127 / 0.08); overflow: hidden; pointer-events: none; }
 	.life.edge { z-index: 3; height: 4px; background: rgb(255 255 255 / 0.12); }
 	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1), background 400ms var(--ease-out); }
 	.tone-wait .fill { background: var(--wait); }
@@ -268,7 +291,7 @@
 	@keyframes flow { to { background-position: -200% 0; } }
 
 	/* The sheet rises inside the frame. */
-	.sheet { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 4; display: flex; flex-direction: column; max-height: calc(100% - 150px); border-radius: 20px; background: color-mix(in srgb, var(--bg) 84%, transparent); color: var(--text); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
+	.sheet { position: absolute; left: 14px; right: 14px; top: var(--sheet-top, 180px); z-index: 4; display: flex; flex-direction: column; max-height: calc(100% - var(--sheet-top, 180px) - 14px); border-radius: 20px; background: color-mix(in srgb, var(--bg) 84%, transparent); color: var(--text); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 	.sh-h { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px 20px; }
 	.sh-h h3 { font: var(--t-title3); }
 	.sheet:focus { outline: none; }
@@ -297,11 +320,12 @@
 	.types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 3px; border-radius: 12px; background: var(--surface-2); }
 	.ty { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 30px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: var(--t-caption); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
 	.ty[aria-pressed='true'] { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 0.18); }
-	.rows { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 4px; list-style: none; border-radius: 20px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); scrollbar-width: thin; }
+	.rows { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; list-style: none; border-radius: 20px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); scrollbar-width: thin; }
 	.row { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 10px 13px; border: 0; border-radius: 14px; background: none; text-align: left; cursor: pointer; overflow: hidden; transition: background 200ms var(--ease-out), transform 160ms var(--ease-out); }
 	.row:hover { background: var(--surface-2); }
 	.row:active { transform: scale(0.99); }
-	.row.on { background: color-mix(in srgb, var(--accent) 13%, var(--surface-2)); }
+	.row.on { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--line-strong, var(--line)); }
+	.row.on::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 16px; width: 3px; border-radius: 0 3px 3px 0; background: var(--text); }
 	.pic { flex: none; width: 42px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; border-radius: 6px; overflow: hidden; background: var(--surface-3); box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.5); transition: transform 300ms var(--ease-out); }
 	.pic img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
 	.row:hover .pic, .row.on .pic { transform: scale(1.05); }
@@ -314,7 +338,7 @@
 	.none { padding: 30px 12px; color: var(--text-muted); font: var(--t-callout); text-align: center; }
 
 	@media (prefers-reduced-motion: reduce) {
-		.frame :global(.ui-billboard .content), .fill, .acts, .row, .pic, .act { transition: none; }
+		.frame :global(.ui-billboard .content), .fill, .acts, .row, .pic, .act, .ink { transition: none; }
 		.tone-go .fill, .artist-bg { animation: none; }
 	}
 </style>
