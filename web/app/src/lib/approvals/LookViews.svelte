@@ -105,6 +105,9 @@
 	let seg = $state<'waiting' | 'answered'>('waiting');
 	const segList = $derived(seg === 'waiting' ? open_ : all.filter((a) => !waiting(a)).slice(0, 40));
 
+	// 11 Desk: the people waiting, once each, for the faces in the header.
+	const waiters = $derived([...new Map(open_.map((a) => [ctx.who(a).id, ctx.who(a)])).values()]);
+
 	// 10 Tracker: where each ask is on its way.
 	const steps = ['Asked', 'Approved', 'Getting it', 'Ready'];
 	const stepOf = (a: Ask) => (a.state === 'asked' ? 0 : a.state === 'available' ? 3 : askTab(a) === 'approved' ? 2 : 1);
@@ -399,50 +402,66 @@
 	</div>
 {:else if look === 11}
 	<!-- 11 Desk: one list that reads the same at 1 ask and at 20. Front: poster,
-	     title, who asked, when, the answer. Details open in place under the row. -->
+	     title, who asked, when, the answer. Details open in place, lit by the art. -->
 	<div class="desk" data-look="desk">
-		<header class="dk-top">
-			<div>
-				<h2>{open_.length ? `${plural(open_.length, 'ask')} waiting on you` : 'You’re all caught up'}</h2>
-				<p class="muted">{open_.length ? `Oldest waits ${oldestWait}. Answered this week: ${answeredWeek}.` : `Answered this week: ${answeredWeek}. New asks land here the moment someone asks.`}</p>
+		<header class="dk-hero">
+			{#if open_[0] && art(open_[0])}{@render fill(open_[0], 'dk-hero-bg')}{/if}
+			<div class="dk-sum">
+				<span class="dk-eyebrow">{open_.length ? 'Waiting on you' : 'All caught up'}</span>
+				<p class="dk-line"><span class="dk-num">{open_.length}</span><span class="dk-words">{open_.length === 1 ? 'ask to answer' : open_.length ? 'asks to answer' : 'nobody is waiting'}{#if oldestWait}<span class="muted">The oldest has waited {oldestWait}.</span>{:else}<span class="muted">New asks land here the moment someone asks.</span>{/if}</span></p>
 			</div>
-			{#if ctx.tab === 'waiting' && shown.filter(waiting).length > 1}
-				<Button variant="primary" icon="check" type="button" onclick={() => ctx.approve(shown.filter(waiting))}>Approve all {shown.filter(waiting).length}</Button>
-			{/if}
+			<div class="dk-side">
+				{#if waiters.length}
+					<span class="faces" aria-label="Asked by {waiters.map((w) => w.name).join(', ')}">
+						{#each waiters.slice(0, 5) as w (w.id)}<span class="face"><Avatar name={w.name} src={w.avatar} size={34} /></span>{/each}
+						{#if waiters.length > 5}<span class="face more-n">+{waiters.length - 5}</span>{/if}
+					</span>
+				{/if}
+				<span class="muted dk-week">{answeredWeek} answered this week</span>
+				{#if ctx.tab === 'waiting' && shown.filter(waiting).length > 1}
+					<Button variant="primary" icon="check" type="button" onclick={() => ctx.approve(shown.filter(waiting))}>Approve all {shown.filter(waiting).length}</Button>
+				{/if}
+			</div>
 		</header>
 		<ul class="dk-list">
-			{#each shown as a (a.id)}
+			{#each shown as a, i (a.id)}
 				{@const on = openRow === a.id}
 				{@const w = ctx.who(a)}
-				<li class="dk" class:on class:answered={!waiting(a)} animate:flip={{ duration: 240 }}>
+				<li class="dk" class:on class:answered={!waiting(a)} style="--i: {i}" animate:flip={{ duration: 300 }} out:slide={{ duration: 260 }}>
+					{#if art(a)}{@render fill(a, 'dk-glow')}{/if}
 					<div class="dk-row">
 						<button class="dk-hit" type="button" aria-expanded={on} onclick={() => (openRow = on ? 0 : a.id)}>
-							{@render pic(a, 'dk-pic')}
+							<span class="dk-art">{@render pic(a, 'dk-pic')}{#if waiting(a)}<span class="dk-dot" aria-hidden="true"></span>{/if}</span>
 							<span class="dk-t">
-								<strong>{a.name}{#if a.year}<span class="yr">{a.year}</span>{/if}</strong>
-								<span class="muted">{kindWord(a.kind)}{a.kind !== 'movie' ? ` · ${line(a)}` : ''}</span>
+								<span class="dk-kind">{kindWord(a.kind)}{a.year ? ` · ${a.year}` : ''}</span>
+								<strong>{a.name}</strong>
+								{#if a.kind !== 'movie'}<span class="muted">{line(a)}</span>{/if}
 							</span>
 						</button>
-						<span class="dk-who"><Avatar name={w.name} src={w.avatar} size={28} /><span><strong>{w.name}</strong>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<time class="muted" datetime={a.asked_at} title={dateTime(a.asked_at)}>asked {ago(a.asked_at)}</time></span></span>
+						<span class="dk-who"><Avatar name={w.name} src={w.avatar} size={32} /><span><strong>{w.name}{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</strong><time class="muted" datetime={a.asked_at} title={dateTime(a.asked_at)}>asked {ago(a.asked_at)}</time></span></span>
 						<span class="dk-act">
 							{#if waiting(a)}
-								<Button size="md" icon="x" type="button" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}>Turn down</Button>
-								<Button size="md" variant="primary" icon="check" type="button" data-testid="ask-approve" onclick={() => ctx.approve([a])}>Approve</Button>
-							{:else}{@render answer(a, 'sm')}{/if}
+								<button type="button" class="dk-b no" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={16} /><span>Turn down</span></button>
+								<button type="button" class="dk-b yes" data-testid="ask-approve" onclick={() => ctx.approve([a])}><Icon name="check" size={16} /><span>Approve</span></button>
+							{:else if ctx.isPending(a.id)}<span class="sending">Sending your answer…</span>
+							{:else}<StatusPill kind={ctx.pill(a).kind} label={ctx.pill(a).label} />{/if}
 						</span>
 						<button class="caret dk-caret" type="button" aria-expanded={on} aria-label="{on ? 'Hide' : 'Show'} details for {a.name}" onclick={() => (openRow = on ? 0 : a.id)}><Icon name="chevronDown" size={16} /></button>
 					</div>
 					{#if on}
-						<div class="dk-more" transition:slide={{ duration: 220 }}>
-							{@render facts(a)}
-							<div class="dk-more-act">
-								<Button size="sm" type="button" onclick={(e: MouseEvent) => open(a, e.currentTarget as HTMLElement)}>Choose seasons, folder and rules</Button>
+						<div class="dk-more" transition:slide={{ duration: 260 }}>
+							<span class="dk-more-art">{@render pic(a, 'dk-big')}</span>
+							<div class="dk-more-txt">
+								{@render facts(a)}
+								<div class="dk-more-act">
+									<Button size="sm" type="button" onclick={(e: MouseEvent) => open(a, e.currentTarget as HTMLElement)}>Choose seasons, folder and rules</Button>
+								</div>
 							</div>
 						</div>
 					{/if}
 				</li>
 			{:else}
-				<li>{@render empty(ctx.tab === 'waiting' ? 'Nobody is waiting on you.' : 'Nothing here right now.')}</li>
+				<li class="dk-empty">{@render empty(ctx.tab === 'waiting' ? 'Nobody is waiting on you.' : 'Nothing here right now.')}</li>
 			{/each}
 		</ul>
 	</div>
@@ -714,31 +733,65 @@
 	.steps.no li:nth-child(n + 3) { opacity: 0.35; }
 	.tr-act { display: flex; justify-content: flex-end; font: var(--t-footnote); }
 
-	/* 11 Desk */
-	.desk { max-width: 1100px; }
-	.dk-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-	.dk-top h2 { font: var(--t-title2); }
-	.dk-top p { margin-top: 2px; font: var(--t-footnote); }
-	.dk-list { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
-	.dk + .dk { border-top: 1px solid var(--line); }
-	.dk-row { display: grid; grid-template-columns: minmax(0, 1fr) 230px auto 32px; align-items: center; gap: 16px; padding: 10px 12px 10px 14px; transition: background var(--dur-fast) var(--ease-out); }
-	.dk-row:hover, .dk.on .dk-row { background: var(--surface-2); }
-	.dk-hit { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; border-radius: 8px; }
-	.dk-pic { width: 44px; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); }
-	.dk-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-	.dk-t strong { font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* 11 Desk: depth from the art itself. A hero lit by the newest poster, rows that
+	   carry a faint glow of their own poster, posters with real shadow, soft glass
+	   edges, and motion only where something changes. */
+	.desk { max-width: 1120px; }
+	.dk-hero { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 18px; padding: 26px 28px; border-radius: var(--r-modal, 20px); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line), 0 1px 0 rgb(255 255 255 / 0.04) inset; }
+	.dk-hero-bg { position: absolute; inset: -60px; z-index: -1; filter: blur(70px) saturate(1.5); opacity: 0.42; transform: scale(1.1); }
+	.dk-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, var(--surface-1) 25%, color-mix(in srgb, var(--surface-1) 40%, transparent)); }
+	.dk-eyebrow { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+	.dk-line { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+	.dk-num { font-size: 56px; font-weight: 700; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+	.dk-words { display: flex; flex-direction: column; font: var(--t-title3); }
+	.dk-words .muted { font: var(--t-footnote); }
+	.dk-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+	.faces { display: flex; }
+	.face { display: inline-flex; margin-left: -10px; border-radius: 50%; box-shadow: 0 0 0 3px var(--surface-1); }
+	.face:first-child { margin-left: 0; }
+	.more-n { display: grid; place-items: center; width: 34px; height: 34px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-weight: 700; }
+	.dk-week { font: var(--t-footnote); }
+
+	.dk-list { display: flex; flex-direction: column; gap: 8px; }
+	.dk { position: relative; isolation: isolate; overflow: hidden; border-radius: 16px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); transition: box-shadow var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); animation: dk-in 420ms var(--ease-out) both; animation-delay: calc(min(var(--i), 8) * 40ms); }
+	.dk:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px var(--line-strong, var(--line)), 0 10px 30px -12px rgb(0 0 0 / 0.35); }
+	.dk.on { box-shadow: 0 0 0 1px var(--line-strong, var(--line)), 0 18px 44px -18px rgb(0 0 0 / 0.45); }
+	.dk-glow { position: absolute; inset: 0 auto 0 -40px; width: 340px; z-index: -1; filter: blur(42px) saturate(1.6); opacity: 0.22; transition: opacity var(--dur) var(--ease-out); mask-image: linear-gradient(90deg, #000 30%, transparent); }
+	.dk:hover .dk-glow, .dk.on .dk-glow { opacity: 0.34; }
+	.dk.answered .dk-glow { opacity: 0.08; }
+	.dk-row { display: grid; grid-template-columns: minmax(0, 1fr) 220px auto 36px; align-items: center; gap: 18px; padding: 12px 14px 12px 12px; }
+	.dk-hit { display: flex; align-items: center; gap: 16px; min-width: 0; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; border-radius: 10px; }
+	.dk-art { position: relative; flex: none; }
+	.dk-pic { width: 54px; border-radius: 8px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 8px 20px -6px rgb(0 0 0 / 0.5); transition: transform var(--dur) var(--ease-out); }
+	.dk-hit:hover .dk-pic { transform: scale(1.04) rotate(-1deg); }
+	.dk-dot { position: absolute; right: -3px; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--wait); box-shadow: 0 0 0 3px var(--surface-1); }
+	.dk-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+	.dk-kind { color: var(--text-muted); font: var(--t-caption); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+	.dk-t strong { font: var(--t-title3); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.dk-t .muted { font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.dk-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
-	.dk-who > span { display: flex; flex-direction: column; min-width: 0; font: var(--t-subhead); }
-	.dk-who strong { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.dk-who > span { display: flex; flex-direction: column; min-width: 0; }
+	.dk-who strong { display: inline-flex; align-items: center; gap: 6px; font: var(--t-subhead); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.dk-who time { font: var(--t-caption); }
 	.dk-act { display: flex; justify-content: flex-end; gap: 8px; }
-	.dk.answered .dk-hit, .dk.answered .dk-who { opacity: 0.7; }
-	.dk-caret { transform: rotate(-90deg); }
+	.dk-b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 0 16px; border: 0; border-radius: var(--r-pill); font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+	.dk-b:active { transform: scale(0.96); }
+	.dk-b.no { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+	.dk-b.no:hover { background: color-mix(in srgb, var(--text) 12%, transparent); }
+	.dk-b.yes { background: var(--accent); color: var(--text-on-red, #fff); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent); }
+	.dk-b.yes:hover { box-shadow: 0 8px 22px -6px color-mix(in srgb, var(--accent) 85%, transparent); transform: translateY(-1px); }
+	.dk.answered .dk-hit, .dk.answered .dk-who { opacity: 0.66; }
+	.dk-caret { transform: rotate(-90deg); width: 32px; height: 32px; border-radius: 50%; }
+	.dk-caret:hover { background: var(--surface-2); color: var(--text); }
 	.dk.on .dk-caret { transform: none; color: var(--text); }
-	.dk-more { padding: 4px 58px 18px 72px; background: var(--surface-2); }
+	.dk-more { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 24px; padding: 6px 24px 22px 12px; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+	.dk-big { width: 120px; margin-top: 16px; border-radius: 12px; box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); }
+	.dk-more-txt { padding-top: 16px; }
 	.dk-more .facts { max-width: 560px; }
-	.dk-more-act { margin-top: 12px; }
+	.dk-more-act { margin-top: 14px; }
+	.dk-empty { border-radius: 16px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	@keyframes dk-in { from { opacity: 0; transform: translateY(8px); } }
+	@media (prefers-reduced-motion: reduce) { .dk, .dk-pic, .dk-b { animation: none; transition: none; } }
 
 	/* Sheets: side (3), rising over art (6), review window (9). */
 	.sheet { padding: 0; border: 0; color: var(--text); background: var(--bg); box-shadow: 0 0 0 1px var(--line), var(--shadow-modal); overflow: hidden; }
@@ -800,12 +853,14 @@
 		.tr-act :global(.answer) { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
 		.post-pic { width: 52px; }
 		.pr-pic { display: none; }
-		.dk-top { flex-direction: column; align-items: stretch; }
-		.dk-row { grid-template-columns: minmax(0, 1fr) 32px; gap: 8px 10px; }
-		.dk-who { grid-column: 1; padding-left: 58px; }
+		.dk-hero { flex-direction: column; align-items: stretch; padding: 20px; }
+		.dk-num { font-size: 44px; }
+		.dk-row { grid-template-columns: minmax(0, 1fr) 36px; gap: 10px; padding: 12px; }
+		.dk-who { grid-column: 1; padding-left: 70px; }
 		.dk-act { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
 		.dk-caret { grid-row: 1; grid-column: 2; }
-		.dk-more { padding: 4px 14px 16px; }
+		.dk-more { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+		.dk-more-art { display: none; }
 		.sheet.side { width: 100vw; border-radius: 0; }
 		.sheet.review { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; margin: 0; }
 		.sheet.rise { width: 100vw; }
