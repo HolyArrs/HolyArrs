@@ -1,6 +1,6 @@
 <script lang="ts">
 	// 3 Focus: one ask at a time, big. Backdrop, poster, story, facts and what
-	// was asked, with Approve / Approve with options / Turn down. The rest wait
+	// was asked, with Approve / Choose what to add / Turn down. The rest wait
 	// in a strip below. Keys: ← → move, A approves, D turns down.
 	import Poster from '../Poster.svelte';
 	import Avatar from '../ui/Avatar.svelte';
@@ -118,10 +118,10 @@
 				<div class="decide">
 					{#if can}
 						<button class="act yes" type="button" data-testid="ask-approve" onclick={approve}><Icon name="check" size={20} />Approve<kbd>A</kbd></button>
-						<button class="act opt" type="button" onclick={() => a && ctx.withOptions(a)}><Icon name="sparkle" size={18} />Approve with options</button>
+						<button class="act opt" type="button" onclick={() => a && ctx.withOptions(a)}><Icon name="sparkle" size={18} />Choose what to add</button>
 						<button class="act no" type="button" data-testid="ask-decline" onclick={turnDown}><Icon name="x" size={20} />Turn down<kbd>D</kbd></button>
 					{:else if ctx.isPending(a.id)}
-						<span class="bar-line">Sending in a moment…</span>
+						<span class="bar-line">Sending…</span>
 					{:else}
 						<button class="act opt" type="button" onclick={(e) => a && ctx.review(a, e.currentTarget)}>Review</button>
 					{/if}

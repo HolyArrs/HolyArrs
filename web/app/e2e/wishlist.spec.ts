@@ -115,7 +115,7 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await expect(confirmTakeBack).toBeHidden();
 	await expect(confirmTakeBack.getByTestId('take-back-error')).toHaveCount(0);
 	await expect(ask).toHaveCount(0);
-	await expect(kim.getByText('Took back the ask for Copper Lighthouse.')).toBeVisible();
+	await expect(kim.getByText('Took back Copper Lighthouse.')).toBeVisible();
 	await expect(kim.getByRole('heading', { level: 1 })).toBeFocused();
 	// Asked again, it is back on the Wishlist for the owner to approve.
 	const again = await askButton(kim, 'copper', 'Copper Lighthouse');
@@ -139,14 +139,14 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	const ask = own.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');
 	await noSidewaysScroll(own);
-	// The row's Approve is one tap with Undo; Review holds Approve with options.
+	// The row's Approve is one tap with Undo; Review holds Choose what to add.
 	await ask.getByRole('button', { name: 'Review Copper Lighthouse' }).click();
-	await own.getByRole('button', { name: 'Approve with options' }).click();
+	await own.getByRole('button', { name: 'Choose what to add' }).click();
 	const dialog = own.getByRole('dialog', { name: /^Approve Copper Lighthouse/ });
 	await expect(dialog.getByLabel('Library folder')).toBeVisible();
 	await dialog.getByLabel('Note (optional)').fill('Friday night pick');
 	await noSidewaysScroll(own);
-	await dialog.getByRole('button', { name: 'Approve and add' }).click();
+	await dialog.getByRole('button', { name: 'Approve' }).click();
 	await expect(dialog).toBeHidden();
 
 	await own.getByRole('button', { name: /^Approved/ }).click();
@@ -187,7 +187,7 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await own.getByRole('button', { name: /^Declined/ }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Turned down');
 	// A turn down is sent after its few seconds of Undo.
-	await expect(ask.getByText('Sending in a moment…')).toHaveCount(0, { timeout: 15_000 });
+	await expect(ask.getByText('Sending…')).toHaveCount(0, { timeout: 15_000 });
 
 	await kim.goto('/wishlist');
 	await kim.getByRole('button', { name: /^Declined/ }).click();

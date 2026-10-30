@@ -23,7 +23,7 @@ describe('lifecycle', () => {
 		expect(lifecycle(ask('approved', 7), -1).pct).toBe(lo);
 	});
 	it('a broken progress number (NaN) reads as no progress, not an empty line', () => {
-		expect(lifecycle(ask('approved', 7), Number.NaN)).toMatchObject({ pct: STAGE_WEIGHT.getting, label: 'Approved · getting it' });
+		expect(lifecycle(ask('approved', 7), Number.NaN)).toMatchObject({ pct: STAGE_WEIGHT.getting, label: 'Approved · looking for it' });
 	});
 	it('in the Library is full and green', () => {
 		expect(lifecycle(ask('available', 7))).toMatchObject({ stage: 'ready', pct: 100, tone: 'ok' });

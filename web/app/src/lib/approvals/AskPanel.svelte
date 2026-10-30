@@ -50,7 +50,7 @@
 		noteOpen = false;
 	});
 	const waiting = $derived(ctx.approver && a.state === 'asked' && !ctx.isPending(a.id));
-	const ruleWords = $derived(rulesId ? (rules.find((r) => r.id === rulesId)?.name ?? 'Default rule') : 'Default rule');
+	const ruleWords = $derived(rulesId ? (rules.find((r) => r.id === rulesId)?.name ?? 'Default pick rules') : 'Default pick rules');
 	const some = $derived(!!(parts.seasons || parts.episodes || parts.albums || parts.songs));
 	function approve(e: SubmitEvent) {
 		e.preventDefault();
@@ -108,7 +108,7 @@
 		{#if a.state !== 'asked'}<div><StatusPill kind={ctx.pill(a).kind} label={ctx.pill(a).label} /></div>{/if}
 		{#if a.note}<p class="note">“{a.note}”</p>{/if}
 		{#if a.state === 'approved'}<p class="muted small">{ctx.approvedLine(a)}</p>{/if}
-		{#if ctx.isPending(a.id)}<p class="muted small">Sending in a moment…</p>{/if}
+		{#if ctx.isPending(a.id)}<p class="muted small">Sending…</p>{/if}
 
 		{#if waiting}
 			<form class="decide" onsubmit={approve}>

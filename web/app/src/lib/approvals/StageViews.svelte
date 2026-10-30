@@ -81,7 +81,7 @@
 		for (const x of ctx.shown) ctx.want(x);
 	});
 
-	// Full screen (phones and tablets, and Approve with options in one-by-one review).
+	// Full screen (phones and tablets, and Choose what to add in one-by-one review).
 	let fullOpen = $state(false);
 	let fullId = $state(0);
 	const fullAsk = $derived(ctx.viewed.find((a) => a.id === fullId) ?? null);
@@ -259,7 +259,7 @@
 		<div class="calm" data-testid="calm">
 			<Icon name="inbox" size={28} />
 			<h2>{emptyWord}</h2>
-			<p class="muted">{ctx.tab === 'waiting' ? 'Nothing waits for an answer.' : 'Pick another tab above.'}</p>
+			<p class="muted">{ctx.tab === 'waiting' ? 'You're all caught up.' : 'Pick another tab above.'}</p>
 		</div>
 	{:else}
 		{#if ctx.choosable}
@@ -271,9 +271,9 @@
 				{/if}
 				{#if split && ctx.shown.length > 1}
 					<span class="stepper">
-						<IconButton icon="chevronLeft" size="sm" label="The ask before" onclick={() => step(-1)} />
+						<IconButton icon="chevronLeft" size="sm" label="Previous ask" onclick={() => step(-1)} />
 						<span class="count">{Math.max(ordered.findIndex((a) => a.id === picked?.id), 0) + 1} of {ctx.shown.length}</span>
-						<IconButton icon="chevronRight" size="sm" label="The next ask" onclick={() => step(1)} />
+						<IconButton icon="chevronRight" size="sm" label="Next ask" onclick={() => step(1)} />
 					</span>
 				{:else}
 					<span class="count">{ctx.shown.length} {ctx.shown.length === 1 ? 'ask' : 'asks'}</span>

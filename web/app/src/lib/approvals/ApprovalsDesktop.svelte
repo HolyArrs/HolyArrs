@@ -60,10 +60,10 @@
 
 	// What an empty tab says.
 	const calm: Record<string, { title: string; text: string }> = {
-		waiting: { title: 'You’re all caught up', text: 'New asks land here the moment someone asks.' },
-		approved: { title: 'Nothing on its way', text: 'Approved asks wait here while HolyArrs gets them.' },
-		declined: { title: 'Nothing turned down', text: 'Asks you say no to stay here, with your reason.' },
-		done: { title: 'Nothing finished yet', text: 'Asks move here once they’re in the Library.' },
+		waiting: { title: 'You’re all caught up', text: 'New asks show up here.' },
+		approved: { title: 'Nothing on the way', text: 'Approved asks stay here while HolyArrs finds and downloads them.' },
+		declined: { title: 'Nothing turned down', text: 'Asks you turn down stay here, with your reason if you gave one.' },
+		done: { title: 'Nothing finished yet', text: "Asks move here once they're in the Library." },
 		failed: { title: 'Nothing needs a look', text: 'Asks that HolyArrs couldn’t finish show up here.' }
 	};
 
@@ -220,7 +220,7 @@
 						{:else}
 							<span class="said" role="status" aria-live="polite">
 								{#if ctx.isPending(a.id)}
-									<span class="state">Sending your answer…</span>
+									<span class="state">Sending…</span>
 								{:else}
 									<span class="state tone-{life.tone}"><span class="dot"></span>{ctx.decided(a) || life.label}</span>
 								{/if}
@@ -249,9 +249,9 @@
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
 		{#if list.length > 1 && at >= 0}
 			<div class="steps-nav">
-				<button type="button" class="nav" aria-label="The ask before" disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
+				<button type="button" class="nav" aria-label="Previous ask" disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
 				<span class="pos">{at + 1} of {list.length}</span>
-				<button type="button" class="nav" aria-label="The next ask" disabled={at >= list.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
+				<button type="button" class="nav" aria-label="Next ask" disabled={at >= list.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
 			</div>
 		{/if}
 		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} choose /></div>

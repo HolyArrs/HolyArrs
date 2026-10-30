@@ -195,9 +195,9 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await openApprovals(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Lantern Street' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by max');
-	// The row's Approve is one tap with Undo; Review holds Approve with options.
+	// The row's Approve is one tap with Undo; Review holds Choose what to add.
 	await ask.getByRole('button', { name: 'Review Lantern Street' }).click();
-	await phone.getByRole('button', { name: 'Approve with options' }).click();
+	await phone.getByRole('button', { name: 'Choose what to add' }).click();
 	const dialog = phone.getByRole('dialog', { name: /^Approve Lantern Street/ });
 	await expect(dialog).toContainText('for seasons 1 and 2');
 	await expect(dialog.getByLabel('Library folder')).toContainText('Shows');
@@ -205,7 +205,7 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await expect(dialog).toContainText('keeps seasons 1 and 2 up to date');
 	await dialog.getByLabel('Note (optional)').fill('Seasons 1 and 2 coming up');
 	await noSidewaysScroll(phone);
-	await dialog.getByRole('button', { name: 'Approve and add' }).click();
+	await dialog.getByRole('button', { name: 'Approve' }).click();
 	await expect(dialog).toBeHidden();
 	await phone.getByRole('button', { name: /^Approved/ }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Approved');

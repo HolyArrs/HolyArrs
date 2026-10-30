@@ -86,7 +86,7 @@
 			void refreshInbox();
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
-			toasts.push(`${a?.name ?? 'The ask'} could not be ${p.mode === 'approve' ? 'approved' : 'turned down'}. ${message(err)}`, 'fail');
+			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'turn down'} ${a?.name ?? 'the ask'}. ${message(err)} Try again.`, 'fail');
 		}
 	}
 
@@ -97,9 +97,9 @@
 		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		// Words follow the asks actually decided (some in the list may be answered already).
-		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'The ask') : `${ids.length} asks`;
-		const verb = mode === 'approve' ? 'approved' : 'turned down';
-		toasts.push(`${one} ${ids.length === 1 ? 'is' : 'are'} ${verb}.`, 'ok', {
+		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'the ask') : `${ids.length} asks`;
+		const verb = mode === 'approve' ? 'Approved' : 'Turned down';
+		toasts.push(`${verb} ${one}`, 'ok', {
 			ms: UNDO_MS,
 			action: {
 				label: 'Undo',
@@ -122,7 +122,7 @@
 	let declineWhy = $state('');
 	let whyBox = $state<HTMLTextAreaElement>();
 	// One-tap reasons for the people who asked; the box stays free to type.
-	const reasons = ['Already have it', 'Not for kids', 'Not out yet', 'Too big right now'];
+	const reasons = ['Already have it', 'Not for kids', 'Not out yet', 'Not enough space right now'];
 	function askDecline(list: Ask[]) {
 		declineList = list;
 		declineWhy = '';
@@ -278,11 +278,11 @@
 			if (i >= 0) asks[i] = r.ask;
 			const added =
 				r.ask.kind === 'show'
-					? `${r.ask.name} is approved and added; HolyArrs keeps ${r.ask.season_words ?? seasonWords(r.ask.seasons)} up to date.`
+					? `Approved ${r.ask.name}. HolyArrs will keep ${r.ask.season_words ?? seasonWords(r.ask.seasons)} up to date.`
 					: r.ask.kind === 'artist'
-						? `${r.ask.name} is approved and added; HolyArrs keeps ${albumWords(r.ask.albums)} up to date.`
-						: `${r.ask.name} is approved and added; HolyArrs is looking for it.`;
-			toasts.push(mode === 'approve' ? added : `${r.ask.name} is turned down.`, 'ok');
+						? `Approved ${r.ask.name}. HolyArrs will keep ${albumWords(r.ask.albums)} up to date.`
+						: `Approved ${r.ask.name}. Looking for it now.`;
+			toasts.push(mode === 'approve' ? added : `Turned down ${r.ask.name}.`, 'ok');
 			void refreshInbox();
 			return '';
 		} catch (err) {
@@ -310,7 +310,7 @@
 		takingBack = new Set([...takingBack, a.id]);
 		try {
 			await api.del(`/asks/${a.id}`);
-			toasts.push(`Took back the ask for ${a.name}.`);
+			toasts.push(`Took back ${a.name}.`);
 			await load();
 			focusAfterTakeBack = () => {
 				const rows = document.querySelectorAll<HTMLElement>('[data-testid="ask"]');
@@ -369,7 +369,7 @@
 	/** approvedLine says what happens after approval. */
 	function approvedLine(a: Ask) {
 		if (a.kind === 'show') return `HolyArrs keeps ${what(a)} up to date and looks for the episodes.`;
-		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date. Looking for music Releases comes in a later version.`;
+		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date. HolyArrs can't look for music downloads yet.`;
 		return 'HolyArrs is looking for it.';
 	}
 
@@ -532,27 +532,27 @@
 <div class="workspace">
 	<div class="main-col">
 		{#if error}
-			<LoadError hasData={false} message="Your Wishlist could not be loaded. {error}" onretry={load} />
+			<LoadError hasData={false} message="Couldn't load your Wishlist. {error}" onretry={load} />
 		{:else}
-		<PageLoader loading={!loaded} label="Loading Wishlist">
+		<PageLoader loading={!loaded} label="Loading your Wishlist…">
 		{#if asks.length === 0}
 			<EmptyState
 				icon="wish"
 				title="Nothing on the Wishlist yet"
 				text={session.can('ask')
-					? 'Find a movie, a show or an artist in Search and press Ask. It shows up here, and you hear when it is approved and when it is ready.'
-					: 'Your account may not ask for movies, shows or music yet; ask the owner.'}
+					? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
+					: "Your account can't ask for titles yet. Check with the owner."}
 				action={{ label: 'Search', href: to('/search') }}
 			/>
 		{:else if shown.length === 0}
 			<EmptyState
 				compact
 				icon="check"
-				title={tab === 'waiting' ? 'Nothing waits for approval.' : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
+				title={tab === 'waiting' ? "You're all caught up." : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
 			/>
 		{:else}
 			{@render bulkBar()}
-			<ul class="asks" aria-label="Wishlist requests">
+			<ul class="asks" aria-label="Wishlist asks">
 				{#each shown as a, i (a.id)}
 					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask">
 						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${a.poster}")`}></div>{/if}
@@ -588,7 +588,7 @@
 										<IconButton icon="x" variant="tinted" label="Turn down {a.name}" data-testid="ask-decline" onclick={() => askDecline([a])} />
 									</span>
 								{/if}
-								{#if pending[a.id]}<span class="muted pending">Sending in a moment…</span>{/if}
+								{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
 								<button
 									class="inspect"
 									class:on={selected?.id === a.id}
@@ -620,7 +620,7 @@
 
 	<div class="side-col">
 		{#if loaded && !error && selected}
-			<aside id="wishlist-review" class="review" class:mobile-open={reviewOpen} aria-label="Selected Wishlist item">
+			<aside id="wishlist-review" class="review" class:mobile-open={reviewOpen} aria-label="Ask details">
 				<div class="review-close"><Button variant="plain" size="sm" icon="x" type="button" aria-label="Close review" onclick={() => void closeReview()}>Close</Button></div>
 				<div class="review-head">
 					<div class="review-art"><Poster src={selected.poster} name={selected.name} /></div>
@@ -639,7 +639,7 @@
 				{#if selected.state === 'approved'}<p class="line muted">{approvedLine(selected)}</p>{/if}
 				{#if approver && selected.state === 'asked'}
 					<div class="review-actions">
-						<Button variant="primary" icon="check" full type="button" onclick={() => selected && open(selected, 'approve')}>Approve with options</Button>
+						<Button variant="primary" icon="check" full type="button" onclick={() => selected && open(selected, 'approve')}>Choose what to add</Button>
 						<Button icon="x" full type="button" onclick={() => selected && open(selected, 'turn_down')}>Turn down</Button>
 					</div>
 				{/if}
@@ -652,16 +652,16 @@
 {:else}
 	<div class="variant" data-inbox={stageLook}>
 		{#if error}
-			<LoadError hasData={false} message="Your Wishlist could not be loaded. {error}" onretry={load} />
+			<LoadError hasData={false} message="Couldn't load your Wishlist. {error}" onretry={load} />
 		{:else}
-			<PageLoader loading={!loaded} label="Loading Wishlist">
+			<PageLoader loading={!loaded} label="Loading your Wishlist…">
 				{#if asks.length === 0}
 					<EmptyState
 						icon="wish"
 						title="Nothing on the Wishlist yet"
 						text={session.can('ask')
-							? 'Find a movie, a show or an artist in Search and press Ask. It shows up here, and you hear when it is approved and when it is ready.'
-							: 'Your account may not ask for movies, shows or music yet; ask the owner.'}
+							? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
+							: "Your account can't ask for titles yet. Check with the owner."}
 						action={{ label: 'Search', href: to('/search') }}
 					/>
 				{:else}
@@ -699,7 +699,7 @@
 
 <Sheet
 	bind:open={decideOpen}
-	title={picked ? `${mode === 'approve' ? 'Approve' : 'Turn down'} ${picked.name}${year(picked)}` : 'Decide'}
+	title={picked ? `${mode === 'approve' ? 'Approve' : 'Turn down'} ${picked.name}${year(picked)}` : 'Approve or turn down'}
 	description={picked ? `${askedBy(picked)}${what(picked) ? `, for ${what(picked)}` : ''}.` : undefined}
 >
 	{#if picked}
@@ -725,15 +725,15 @@
 				</div>
 			{/if}
 			<div class="field">
-				<label for="ap-note">{mode === 'approve' ? 'Note (optional)' : 'Why (sent to the people who asked)'}</label>
+				<label for="ap-note">{mode === 'approve' ? 'Note (optional)' : 'Reason (the person who asked sees it)'}</label>
 				<textarea id="ap-note" class="input" rows="3" maxlength="500" bind:value={note}></textarea>
 			</div>
 			{#if mode === 'approve'}
 				<p class="hint">
 					{picked.kind === 'show'
-						? `Approving adds the show to the Library and keeps ${what(picked)} up to date; HolyArrs looks for the episodes at the next feed check and each night.`
+						? `Approving adds the show to the Library and keeps ${what(picked)} up to date. HolyArrs looks for episodes soon and again each night.`
 						: picked.kind === 'artist'
-							? `Approving adds the artist to the Library with ${what(picked)} kept up to date. HolyArrs does not look for music Releases yet.`
+							? `Approving adds the artist to the Library with ${what(picked)} kept up to date. HolyArrs can't look for music downloads yet.`
 							: 'Approving adds the movie to the Library and starts looking for it.'}
 				</p>
 			{/if}
@@ -741,7 +741,7 @@
 			<div class="decide-actions">
 				<Button variant="plain" type="button" onclick={() => (decideOpen = false)}>Cancel</Button>
 				<Button variant={mode === 'approve' ? 'primary' : 'destructive'} type="submit" {busy}>
-					{mode === 'approve' ? 'Approve and add' : 'Turn down'}
+					{mode === 'approve' ? 'Approve' : 'Turn down'}
 				</Button>
 			</div>
 		</form>
@@ -752,12 +752,12 @@
 	bind:open={declineOpen}
 	size="sm"
 	title={declineList.length === 1 ? `Turn down ${declineList[0].name}${year(declineList[0])}?` : `Turn down ${declineList.length} asks?`}
-	description="You can undo it for a few seconds."
+	description="You can undo this for a few seconds."
 >
 	<form class="decide" onsubmit={confirmDecline}>
 		<div class="field">
-			<label for="dc-why">Why (optional, the people who asked see it)</label>
-			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="A few words help them understand" bind:this={whyBox} bind:value={declineWhy} data-testid="decline-why"></textarea>
+			<label for="dc-why">Reason (optional, the person who asked sees it)</label>
+			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="For example: we already have it" bind:this={whyBox} bind:value={declineWhy} data-testid="decline-why"></textarea>
 			<div class="why-chips" role="group" aria-label="Quick reasons">
 				{#each reasons as why (why)}
 					<button type="button" class="why-chip" aria-pressed={hasWhy(why)} onclick={() => tapWhy(why)}>{why}</button>

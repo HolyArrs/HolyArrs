@@ -213,9 +213,9 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await openApprovals(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Moss Choir' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by ivy');
-	// The row's Approve is one tap with Undo; Review holds Approve with options.
+	// The row's Approve is one tap with Undo; Review holds Choose what to add.
 	await ask.getByRole('button', { name: 'Review Moss Choir' }).click();
-	await phone.getByRole('button', { name: 'Approve with options' }).click();
+	await phone.getByRole('button', { name: 'Choose what to add' }).click();
 	const dialog = phone.getByRole('dialog', { name: /^Approve Moss Choir/ });
 	await expect(dialog).toContainText('for Fern Hymns');
 	await expect(dialog.getByLabel('Library folder')).toContainText('Music');
@@ -223,7 +223,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(dialog).toContainText('with Fern Hymns kept up to date');
 	await dialog.getByLabel('Note (optional)').fill('Enjoy the hymns');
 	await noSidewaysScroll(phone);
-	await dialog.getByRole('button', { name: 'Approve and add' }).click();
+	await dialog.getByRole('button', { name: 'Approve' }).click();
 	await expect(dialog).toBeHidden(slow);
 	await phone.getByRole('button', { name: /^Approved/ }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Approved');

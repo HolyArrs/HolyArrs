@@ -13,8 +13,8 @@ export const inboxTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', label: 'Waiting' },
 	{ tab: 'approved', label: 'Approved' },
 	{ tab: 'declined', label: 'Turned down' },
-	{ tab: 'done', label: 'Done' },
-	{ tab: 'failed', label: 'Failed' }
+	{ tab: 'done', label: 'In the Library' },
+	{ tab: 'failed', label: 'Needs a look' }
 ];
 
 /** A season as the metadata answer lists it. */

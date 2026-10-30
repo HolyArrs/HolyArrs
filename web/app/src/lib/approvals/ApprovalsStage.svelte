@@ -166,13 +166,13 @@
 						{#if waiting(picked)}
 							<div class="acts" class:gone={choosing}>
 								<button type="button" class="act primary" data-testid="ask-approve" onclick={() => ctx.approve([picked])}><Icon name="check" size={20} />Approve</button>
-								<button type="button" class="act glass" onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to get</button>
+								<button type="button" class="act glass" onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to add</button>
 								<button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Turn down</button>
 							</div>
 						{:else}
 							<div role="status" aria-live="polite">
 								{#if ctx.isPending(picked.id)}
-									<p class="state">Sending your answer…</p>
+									<p class="state">Sending…</p>
 								{:else}
 									<p class="state">{ctx.decided(picked) || lifecycle(picked).label}{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>getting it now{/if}</p>
 								{/if}
@@ -187,8 +187,8 @@
 			{#if choosing}
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
-						<h3 id="sheet-h">What to get</h3>
-						<button type="button" class="x" aria-label="Back to the banner" onclick={() => (choosing = false)}><Icon name="x" size={18} /></button>
+						<h3 id="sheet-h">What to add</h3>
+						<button type="button" class="x" aria-label="Close" onclick={() => (choosing = false)}><Icon name="x" size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
@@ -197,9 +197,9 @@
 							<AskParts {ctx} a={picked} editable unfolded layout="split" bind:pick />
 						{/if}
 						{#if rules.length}
-							<div class="rules" role="group" aria-label="Pick rule">
-								<span class="rl">Pick rule</span>
-								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">· default</span>{:else}Default rule{/if}</button>
+							<div class="rules" role="group" aria-label="Pick rules">
+								<span class="rl">Pick rules</span>
+								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">· default</span>{:else}Default pick rules{/if}</button>
 								{#each rules as r (r.id)}
 									<button type="button" class="rule" aria-pressed={rulesId === r.id} onclick={() => (rulesId = r.id)}>{r.name}</button>
 								{/each}
@@ -207,7 +207,7 @@
 						{/if}
 					</div>
 					<footer class="sh-f">
-						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Getting only what you ticked' : picked.kind === 'movie' ? `Getting the movie` : `Getting ${(count(picked) || 'everything asked').toLowerCase()}`}</span>
+						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Approving adds only what you ticked' : picked.kind === 'movie' ? `Approving adds the movie` : `Approving adds ${(count(picked) || 'everything they asked for').toLowerCase()}`}</span>
 						<button type="button" class="act ghost" onclick={() => (choosing = false)}>Back</button>
 						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />Approve</button>
 					</footer>
