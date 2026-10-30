@@ -30,6 +30,9 @@
 
 	let { ctx, single = null, embedded = false, choose: startChoosing = false }: { ctx: ApprovalsCtx; /** Open straight into What to get (the cards' window). */ choose?: boolean; /** One ask only, filling its box (the cards' window): no list, no tabs. */ single?: Ask | null; /** Under the desktop toolbar, which already has the tabs and the type filter. */ embedded?: boolean } = $props();
 
+	// Reduced motion: Svelte transitions and the list's reflow run in no time.
+	const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const ms = (d: number) => (reduced() ? 0 : d);
 	const waiting = (a: Ask) => ctx.approver && a.state === 'asked' && !ctx.isPending(a.id);
 	const list = $derived(single ? [ctx.viewed.find((a) => a.id === single.id) ?? single] : [...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
 
@@ -92,7 +95,7 @@
 		void ctx.counts;
 		void picked?.id;
 		void tick().then(() => {
-			const on = tabsEl?.querySelector<HTMLElement>('[aria-selected="true"]');
+			const on = tabsEl?.querySelector<HTMLElement>('[aria-pressed="true"]');
 			if (on) ink = { x: on.offsetLeft + 12, w: on.offsetWidth - 24 };
 		});
 	});
@@ -156,13 +159,14 @@
 		}
 		// ↑ and ↓ move through the list (not while typing or choosing).
 		if ((e.key !== 'ArrowDown' && e.key !== 'ArrowUp') || choosing || e.metaKey || e.ctrlKey || e.altKey) return;
-		if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
+		if (single) return;
+		if (e.target instanceof Element && e.target.closest('input, textarea, select, video, [contenteditable], [role="group"], [role="radiogroup"], .sheet')) return;
 		const i = list.findIndex((a) => a.id === picked?.id);
 		const next = list[Math.min(Math.max(i + (e.key === 'ArrowDown' ? 1 : -1), 0), list.length - 1)];
 		if (!next || next.id === picked?.id) return;
 		e.preventDefault();
 		pickedId = next.id;
-		void tick().then(() => document.querySelector<HTMLElement>(`[data-row="${next.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+		void tick().then(() => document.querySelector<HTMLElement>(`[data-row="${next.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }));
 	}
 </script>
 
@@ -172,9 +176,9 @@
 
 {#snippet tabBar()}
 <div class="tabbar">
-							<div class="tabs" role="tablist" aria-label="Show asks that are" bind:this={tabsEl}>
+							<div class="tabs" role="group" aria-label="Show asks that are" bind:this={tabsEl}>
 								{#each tabs as t (t.tab)}
-									<button type="button" role="tab" class="tab" class:wait={t.tab === 'waiting'} aria-selected={ctx.tab === t.tab} data-tab={t.tab} onclick={() => ctx.setTab(t.tab)}>
+									<button type="button" class="tab" class:wait={t.tab === 'waiting'} aria-pressed={ctx.tab === t.tab} data-tab={t.tab} onclick={() => ctx.setTab(t.tab)}>
 										{t.label}{#if ctx.counts[t.tab]}<span class="n">{ctx.counts[t.tab]}</span>{/if}
 									</button>
 								{/each}
@@ -183,9 +187,14 @@
 						</div>
 {/snippet}
 
-{#snippet line(a: Ask, cls = '')}
+<!-- The life-cycle line; only the banner's edge bar is a progress bar, rows draw it as decoration. -->
+{#snippet line(a: Ask, cls = '', bar = true)}
 	{@const life = lifecycle(a)}
-	<span class="life {cls} tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
+	{#if bar}
+		<span class="life {cls} tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
+	{:else}
+		<span class="life {cls} tone-{life.tone}" aria-hidden="true"><span class="fill" style:width="{life.pct}%"></span></span>
+	{/if}
 {/snippet}
 
 {#snippet artistArt()}
@@ -197,7 +206,7 @@
 	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
 		{#if picked}
 			{#key picked.id}
-			<div class="swap" in:fade={{ duration: 520 }} out:fade={{ duration: 360 }}>
+			<div class="swap" in:fade={{ duration: ms(520) }} out:fade={{ duration: ms(360) }}>
 				<Billboard
 					label="{picked.name}, asked by {ctx.who(picked).name}"
 					testid="ask-banner"
@@ -224,10 +233,14 @@
 								<button type="button" class="act glass" onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to get</button>
 								<button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Turn down</button>
 							</div>
-						{:else if ctx.isPending(picked.id)}
-							<p class="state">Sending your answer…</p>
 						{:else}
-							<p class="state">{ctx.decided(picked) || lifecycle(picked).label}{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>getting it now{/if}</p>
+							<div role="status" aria-live="polite">
+								{#if ctx.isPending(picked.id)}
+									<p class="state">Sending your answer…</p>
+								{:else}
+									<p class="state">{ctx.decided(picked) || lifecycle(picked).label}{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>getting it now{/if}</p>
+								{/if}
+							</div>
 						{/if}
 					{/snippet}
 				</Billboard>
@@ -236,7 +249,7 @@
 			{@render line(picked, 'edge')}
 
 			{#if choosing}
-				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: 420, easing: cubicOut, opacity: 0 }}>
+				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
 						<h3 id="sheet-h">What to get</h3>
 						<button type="button" class="x" aria-label="Back to the banner" onclick={() => (choosing = false)}><Icon name="x" size={18} /></button>
@@ -248,11 +261,11 @@
 							<AskParts {ctx} a={picked} editable unfolded layout="split" bind:pick />
 						{/if}
 						{#if rules.length}
-							<div class="rules" role="radiogroup" aria-label="Pick rule">
+							<div class="rules" role="group" aria-label="Pick rule">
 								<span class="rl">Pick rule</span>
-								<button type="button" role="radio" class="rule" aria-checked={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">· default</span>{:else}Default rule{/if}</button>
+								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">· default</span>{:else}Default rule{/if}</button>
 								{#each rules as r (r.id)}
-									<button type="button" role="radio" class="rule" aria-checked={rulesId === r.id} onclick={() => (rulesId = r.id)}>{r.name}</button>
+									<button type="button" class="rule" aria-pressed={rulesId === r.id} onclick={() => (rulesId = r.id)}>{r.name}</button>
 								{/each}
 							</div>
 						{/if}
@@ -267,7 +280,7 @@
 		{:else}
 			<div class="calm">
 				<div class="calm-top">{@render tabBar()}</div>
-				<div class="calm-in" in:fade={{ duration: 400 }}>
+				<div class="calm-in" in:fade={{ duration: ms(400) }}>
 					<span class="calm-ic"><Icon name={calm[ctx.tab].icon} size={26} /></span>
 					<h2>{calm[ctx.tab].title}</h2>
 					<p>{calm[ctx.tab].text}</p>
@@ -288,14 +301,14 @@
 		<ul class="rows">
 			{#each list as a (a.id)}
 				{@const w = ctx.who(a)}
-				<li animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 8, duration: 300, easing: cubicOut }} out:fade={{ duration: 220 }}>
+				<li animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 8, duration: ms(300), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<button type="button" class="row" data-row={a.id} class:on={picked?.id === a.id} class:unread={waiting(a)} aria-current={picked?.id === a.id ? 'true' : undefined} aria-controls="stage-title" onclick={() => (pickedId = a.id)}>
 						<span class="pic">{#if a.kind === 'artist' && artistPhoto(a)}<img src={artistPhoto(a)} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.kind === 'artist' ? null : a.poster} name={a.name} />{/if}</span>
 						<span class="txt">
 							<strong>{a.name}</strong>
 							<span class="who"><Avatar name={w.name} src={w.avatar} size={16} />{w.name}{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="dot">·</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span>
 						</span>
-						{@render line(a, 'row-line')}
+						{@render line(a, 'row-line', false)}
 					</button>
 				</li>
 			{:else}
@@ -342,7 +355,7 @@
 	.tabs { position: relative; display: inline-flex; align-items: center; height: auto; gap: 4px; }
 	.tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: rgb(255 255 255 / 0.62); font: 600 15px/1 var(--font-ui); letter-spacing: -0.01em; text-shadow: 0 1px 12px rgb(0 0 0 / 0.55) !important; cursor: pointer; transition: color 260ms var(--ease-out); }
 	.tab:hover { color: rgb(255 255 255 / 0.9); }
-	.tab[aria-selected='true'] { color: #fff; }
+	.tab[aria-pressed='true'] { color: #fff; }
 	.n { color: rgb(255 255 255 / 0.5); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.tab.wait .n { color: var(--wait); }
 	.ink { position: absolute; left: 0; bottom: 2px; height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px rgb(255 255 255 / 0.5); transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), width 420ms cubic-bezier(0.22, 1, 0.36, 1); }
@@ -384,7 +397,7 @@
 	.sheet :global(.list > ul) { max-height: none; }
 	.sheet :global(.season) { min-height: 36px; }
 	.sheet:focus { outline: none; }
-	.x { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--surface-2); cursor: pointer; }
+	.x { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--surface-2); cursor: pointer; }
 	.x:hover { background: var(--surface-3); }
 	.sh-body { flex: 1; min-height: 0; overflow: hidden; padding: 0 16px 10px; display: flex; flex-direction: column; gap: 10px; }
 	.sh-body > :global(.split) { flex: 1; min-height: 0; }
@@ -396,9 +409,9 @@
 	.one div span { color: var(--text-muted); font: var(--t-footnote); }
 	.rules { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 	.rl { margin-right: 6px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
-	.rule { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--surface-2); font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
+	.rule { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--surface-2); font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
 	.rule:hover { background: var(--surface-3); }
-	.rule[aria-checked='true'] { background: var(--text); color: var(--bg); }
+	.rule[aria-pressed='true'] { background: var(--text); color: var(--bg); }
 	.dim { opacity: 0.6; font-weight: 400; }
 	.sh-f { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-top: 1px solid var(--line); }
 	.sum { flex: 1; color: var(--text-muted); font: var(--t-footnote); }
@@ -416,7 +429,7 @@
 	/* The inbox on the right. */
 	.inbox { display: flex; flex-direction: column; gap: 10px; height: var(--h); min-width: 0; }
 	.types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 3px; border-radius: 12px; background: var(--surface-2); }
-	.ty { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 30px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: var(--t-caption); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
+	.ty { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: var(--t-caption); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
 	.ty[aria-pressed='true'] { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 0.18); }
 	.rows { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; list-style: none; border-radius: 20px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); scrollbar-width: thin; }
 	.row { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 10px 13px; border: 0; border-radius: 14px; background: none; text-align: left; cursor: pointer; overflow: hidden; transition: background 200ms var(--ease-out), transform 160ms var(--ease-out); }
@@ -439,8 +452,14 @@
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
 		.act { height: 46px; padding: 0 18px; }
 	}
+	/* Touch screens: every small control gets a full finger-sized target. */
+	@media (pointer: coarse) {
+		.rule, .ty { min-height: 44px; }
+		.x { width: 44px; height: 44px; }
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.frame :global(.ui-billboard .content), .fill, .acts, .row, .pic, .act, .ink { transition: none; }
 		.tone-go .fill, .artist-bg { animation: none; }
+		.row:hover .pic, .row.on .pic { transform: none; }
 	}
 </style>

@@ -129,6 +129,20 @@
 		// The reason box takes focus, so the sheet opens ready to type (no ring on its close button).
 		void tick().then(() => setTimeout(() => whyBox?.focus({ preventScroll: true }), 60));
 	}
+	// A reason chip adds its words to what is typed; tapping it again takes them out.
+	const hasWhy = (why: string) => declineWhy.includes(why);
+	function tapWhy(why: string) {
+		const text = declineWhy.trim();
+		if (hasWhy(why)) {
+			declineWhy = text
+				.split(/\.\s*/)
+				.map((s) => s.trim())
+				.filter((s) => s && s !== why)
+				.join('. ');
+			if (declineWhy === text) declineWhy = text.replace(why, '').replace(/\s{2,}/g, ' ').trim();
+		} else declineWhy = text ? `${text.replace(/\.$/, '')}. ${why}` : why;
+		whyBox?.focus({ preventScroll: true });
+	}
 	function confirmDecline(e: SubmitEvent) {
 		e.preventDefault();
 		act(declineList, 'turn_down', declineWhy.trim());
@@ -745,7 +759,7 @@
 			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="A few words help them understand" bind:this={whyBox} bind:value={declineWhy} data-testid="decline-why"></textarea>
 			<div class="why-chips" role="group" aria-label="Quick reasons">
 				{#each reasons as why (why)}
-					<button type="button" class="why-chip" aria-pressed={declineWhy === why} onclick={() => (declineWhy = declineWhy === why ? '' : why)}>{why}</button>
+					<button type="button" class="why-chip" aria-pressed={hasWhy(why)} onclick={() => tapWhy(why)}>{why}</button>
 				{/each}
 			</div>
 		</div>

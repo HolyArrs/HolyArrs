@@ -24,6 +24,9 @@
 
 	let { ctx }: { ctx: ApprovalsCtx } = $props();
 
+	// Reduced motion: Svelte transitions and the cards' reflow run in no time.
+	const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const ms = (d: number) => (reduced() ? 0 : d);
 	const waiting = (a: Ask) => ctx.approver && a.state === 'asked' && !ctx.isPending(a.id);
 	const tabs = $derived(inboxTabs.filter((t) => ctx.approver || t.tab !== 'failed'));
 	const list = $derived([...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
@@ -75,7 +78,7 @@
 	// The raised plate slides to the picked item in each group (as on Downloads).
 	function plate(node: HTMLElement, _key: unknown) {
 		const place = () => {
-			const on = node.querySelector<HTMLElement>('[aria-pressed="true"], [aria-selected="true"]');
+			const on = node.querySelector<HTMLElement>('[aria-pressed="true"]');
 			if (!on) return node.style.setProperty('--io', '0');
 			node.style.setProperty('--ix', `${on.offsetLeft}px`);
 			node.style.setProperty('--iw', `${on.offsetWidth}px`);
@@ -115,11 +118,16 @@
 		if (approving.has(a.id)) return;
 		approving = new Set(approving).add(a.id);
 		setTimeout(() => {
+			// Focus goes on to the next card, so the keyboard doesn't fall back to the page top.
+			const card = document.querySelector<HTMLElement>(`.bc[data-ask="${a.id}"]`);
+			const after = card?.nextElementSibling?.querySelector<HTMLElement>('.open') ?? null;
+			const had = !!card?.contains(document.activeElement);
 			ctx.approve([a]);
 			const next = new Set(approving);
 			next.delete(a.id);
 			approving = next;
-		}, 560);
+			if (had && after) void tick().then(() => after.isConnected && after.focus({ preventScroll: true }));
+		}, ms(560));
 	}
 
 	// The window: one ask on the Stage.
@@ -160,13 +168,17 @@
 	});
 	// ← and → (or the arrows) move to the ask before or after, without closing the window.
 	const at = $derived(list.findIndex((a) => a.id === openId));
+	// "2 of 9: Name", read out when stepping.
+	let said = $state('');
 	function step(by: number) {
 		const next = list[at + by];
-		if (next) openId = next.id;
+		if (!next) return;
+		openId = next.id;
+		said = `${at + by + 1} of ${list.length}: ${next.name}`;
 	}
 	function winKeys(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-		if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
+		if (e.target instanceof Element && e.target.closest('input, textarea, select, video, [contenteditable], .sheet, [role="group"], button[aria-pressed]')) return;
 		if (win?.querySelector('.frame.choosing') || document.querySelectorAll('dialog[open]').length > 1) return;
 		e.preventDefault();
 		step(e.key === 'ArrowRight' ? 1 : -1);
@@ -182,15 +194,15 @@
 
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tabs" role="tablist" aria-label="Status" use:plate={[ctx.tab, ctx.counts]}>
+		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.tab, ctx.counts]}>
 			<span class="plate" aria-hidden="true"></span>
 			{#each tabs as t (t.tab)}
-				<button type="button" role="tab" class="tab" class:zero={!ctx.counts[t.tab]} aria-selected={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'waiting' && ctx.counts[t.tab]}>{ctx.counts[t.tab] ?? 0}</span></button>
+				<button type="button" class="tab" class:zero={!ctx.counts[t.tab]} aria-pressed={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'waiting' && ctx.counts[t.tab]}>{ctx.counts[t.tab] ?? 0}</span></button>
 			{/each}
 		</div>
 		<div class="right">
 			{#if shownView === 'cards' && ctx.tab === 'waiting' && list.filter(waiting).length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: 200 }} onclick={() => ctx.approve(list.filter(waiting))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(list.filter(waiting))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
 			{/if}
 			<div class="cap">
 				<div class="seg" role="group" aria-label="Type" use:plate={ctx.kind}>
@@ -213,15 +225,15 @@
 	</div>
 
 	{#if shownView === 'stage'}
-		<div in:fade={{ duration: 260 }}><ApprovalsStage {ctx} embedded /></div>
+		<div in:fade={{ duration: ms(260) }}><ApprovalsStage {ctx} embedded /></div>
 	{:else}
-		<ul class="cards" aria-label="Asks" in:fade={{ duration: 260 }}>
+		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each list as a, i (a.id)}
 				{@const w = ctx.who(a)}
 				{@const life = lifecycle(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 14, duration: 420, delay: Math.min(i, 8) * 45, easing: cubicOut }} out:fade={{ duration: 220 }}>
+				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban" aria-hidden="true">
@@ -238,15 +250,19 @@
 						{#if waiting(a)}
 							<button type="button" class="b no" aria-label="Turn down {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Turn down</span></button>
 							<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
-						{:else if ctx.isPending(a.id)}
-							<span class="state">Sending your answer…</span>
 						{:else}
-							<span class="state tone-{life.tone}"><span class="dot"></span>{ctx.decided(a) || life.label}</span>
+							<span class="said" role="status" aria-live="polite">
+								{#if ctx.isPending(a.id)}
+									<span class="state">Sending your answer…</span>
+								{:else}
+									<span class="state tone-{life.tone}"><span class="dot"></span>{ctx.decided(a) || life.label}</span>
+								{/if}
+							</span>
 						{/if}
 					</div>
 					<span class="life tone-{approving.has(a.id) ? 'ok' : life.tone}" aria-hidden="true"><span class="fill" style:width="{approving.has(a.id) ? 100 : life.pct}%"></span></span>
 					{#if approving.has(a.id)}
-						<span class="done" role="status" in:fade={{ duration: 180 }}><span class="done-ic" in:fly={{ y: 6, duration: 320, easing: cubicOut }}><Icon name="check" size={22} /></span>Approved</span>
+						<span class="done" role="status" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>Approved</span>
 					{/if}
 				</li>
 			{:else}
@@ -261,7 +277,7 @@
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-label={openAsk?.name ?? 'Ask'} oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
+<dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
 		{#if list.length > 1 && at >= 0}
@@ -272,6 +288,7 @@
 			</div>
 		{/if}
 		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} choose /></div>
+		<span class="vh" aria-live="polite">{said}</span>
 	{/if}
 </dialog>
 
@@ -287,8 +304,8 @@
 	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.tabs .plate { border-radius: 10px; }
 	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); font-weight: 500; white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out); }
-	.tab:hover, .tab[aria-selected='true'] { color: var(--text); }
-	.tab.zero:not([aria-selected='true']) { opacity: 0.7; }
+	.tab:hover, .tab[aria-pressed='true'] { color: var(--text); }
+	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
 	.n { opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
 	.cap { display: flex; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
@@ -337,6 +354,7 @@
 	.b.no { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 	.b.no:hover { background: color-mix(in srgb, var(--text) 13%, transparent); }
 	.b.yes { background: var(--text); color: var(--bg); }
+	.said { grid-column: 1 / -1; display: flex; }
 	.state { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; color: var(--text-muted); font: var(--t-footnote); }
 	.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 	.state.tone-wait .dot { background: var(--wait); }
@@ -366,11 +384,13 @@
 	.close { position: absolute; top: 18px; right: 18px; z-index: 10; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgb(20 20 24 / 0.55); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); cursor: pointer; transition: background 200ms var(--ease-out); }
 	.close:hover { background: rgb(20 20 24 / 0.8); }
 	.steps-nav { position: absolute; top: 18px; left: 18px; z-index: 10; display: flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; background: rgb(20 20 24 / 0.55); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: #fff; }
-	.nav { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer; transition: background 200ms var(--ease-out); }
+	.nav { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer; transition: background 200ms var(--ease-out); }
 	.nav:hover:not(:disabled) { background: rgb(255 255 255 / 0.16); }
 	.nav:disabled { opacity: 0.35; cursor: default; }
 	.pos { min-width: 52px; text-align: center; font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.win :global(.ctl.top) { right: 68px !important; }
+	.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+	@media (pointer: coarse) { .nav { width: 44px; height: 44px; } }
 	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.3); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }
 	/* Phones: the tabs swipe, the filter fills the width, one card per row, the window fills the screen. */
@@ -401,6 +421,7 @@
 		.win :global(.ctl.top) { right: 64px !important; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.plate, .bc, .cover, .fill, .it, .win[open], .win::backdrop { transition: none; animation: none; }
+		.plate, .bc, .cover, .fill, .it, .win[open], .win::backdrop, .ban-img, img.ban-img { transition: none; animation: none; }
+		.bc:hover, .bc:hover .cover, .bc:hover .ban-img:not(.soft) { transform: none; }
 	}
 </style>

@@ -92,6 +92,16 @@
 		else l.delete(p.row.key);
 		left = l;
 	}
+	// All or None for one album: every song kept, or the album left out.
+	function setAlbum(p: AlbumPick, on: boolean) {
+		const next = { ...songTicks };
+		delete next[p.row.key];
+		songTicks = next;
+		const l = new Set(left);
+		if (on) l.delete(p.row.key);
+		else l.add(p.row.key);
+		left = l;
+	}
 	function tickSong(p: AlbumPick, id: string) {
 		const base = p.tick === 'none' ? [] : p.ticked;
 		const t = base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
@@ -156,31 +166,36 @@
 {#if shown && layout === 'split'}
 	<!-- Two panes that fill their box: seasons or albums on the left, the open one's episodes or songs on the right. -->
 	<div class="split" data-testid="ask-parts">
-		<div class="sp-left" role="listbox" aria-label={music ? 'Albums' : 'Seasons'}>
+		<!-- A plain list: each row's tick sits beside a real button that opens that season or album. -->
+		<ul class="sp-left" aria-label={music ? 'Albums' : 'Seasons'}>
 			{#if music}
 				{#each albumPicks as p (p.row.key)}
 					{@const r = p.row}
 					{@const first = albumPicks.find((x) => x.row.kind === r.kind) === p}
-					{#if first}<p class="sp-kind">{kindLabel[r.kind] ?? r.kind}</p>{/if}
-					<div class="sp-row" class:on={openAlbum === r.key} class:off={p.tick === 'none'} role="option" aria-selected={openAlbum === r.key} tabindex="0" onclick={(e) => { if (!(e.target as HTMLElement).closest('input')) openAlbum = r.key; }} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), (openAlbum = r.key))} data-testid="ask-album" data-tick={p.tick}>
+					{#if first}<li class="sp-kind" aria-hidden="true">{kindLabel[r.kind] ?? r.kind}</li>{/if}
+					<li class="sp-row" class:on={openAlbum === r.key} class:off={p.tick === 'none'} data-testid="ask-album" data-tick={p.tick}>
 						{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Keep {r.main.name}" onchange={() => tickAlbum(p)} />{/if}
-						<span class="sp-cov">{#if r.main.image}<img src={coverFor(r.main.image, 64).src} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />{/if}</span>
-						<span class="sp-t"><span class="sp-n">{r.main.name}</span><span class="sp-s">{r.main.year ?? ''}{p.list?.length ? ` · ${p.tick === 'all' ? p.list.length : p.ticked.length} of ${p.list.length} songs` : ''}</span></span>
-						<Icon name="chevronRight" size={14} />
-					</div>
+						<button type="button" class="sp-open" aria-pressed={openAlbum === r.key} onclick={() => (openAlbum = r.key)}>
+							<span class="sp-cov">{#if r.main.image}<img src={coverFor(r.main.image, 64).src} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />{/if}</span>
+							<span class="sp-t"><span class="sp-n">{r.main.name}</span><span class="sp-s">{r.main.year ?? ''}{p.list?.length ? ` · ${p.tick === 'all' ? p.list.length : p.ticked.length} of ${p.list.length} songs` : ''}</span></span>
+							<Icon name="chevronRight" size={14} />
+						</button>
+					</li>
 				{/each}
 			{:else}
 				{#each picks as p, i (p.number)}
 					{@const s = seasons[i]}
-					<div class="sp-row" class:on={openSeason === s.number} class:off={p.tick === 'none'} role="option" aria-selected={openSeason === s.number} tabindex="0" onclick={(e) => { if (!(e.target as HTMLElement).closest('input')) openSeason = s.number; }} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), (openSeason = s.number))} data-testid="ask-season" data-tick={p.tick}>
+					<li class="sp-row" class:on={openSeason === s.number} class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
 						{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Season {s.number}: every episode" onchange={() => tickSeason(p)} />{/if}
-						<span class="sp-num">{s.number === 0 ? 'SP' : s.number}</span>
-						<span class="sp-t"><span class="sp-n">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span><span class="sp-s">{p.tick === 'none' ? 'Left out' : `${p.ticked.length || s.episodes} of ${s.episodes || p.all.length} episodes`}</span></span>
-						<Icon name="chevronRight" size={14} />
-					</div>
+						<button type="button" class="sp-open" aria-pressed={openSeason === s.number} onclick={() => (openSeason = s.number)}>
+							<span class="sp-num">{s.number === 0 ? 'SP' : s.number}</span>
+							<span class="sp-t"><span class="sp-n">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span><span class="sp-s">{p.tick === 'none' ? 'Left out' : `${p.ticked.length || s.episodes} of ${s.episodes || p.all.length} episodes`}</span></span>
+							<Icon name="chevronRight" size={14} />
+						</button>
+					</li>
 				{/each}
 			{/if}
-		</div>
+		</ul>
 		<div class="sp-right">
 			{#if music}
 				{@const p = albumPicks.find((x) => x.row.key === openAlbum)}
@@ -188,8 +203,8 @@
 					<header class="sp-h">
 						<span class="sp-ht">{p.row.main.name}</span>
 						{#if editable && p.list?.length}
-							<button type="button" class="sp-a" onclick={() => { if (p.tick !== 'all') tickAlbum(p.tick === 'none' ? p : { ...p, tick: 'none' }); }}>All</button>
-							<button type="button" class="sp-a" onclick={() => { if (p.tick !== 'none') tickAlbum({ ...p, tick: 'all' }); }}>None</button>
+							<button type="button" class="sp-a" aria-label="Tick every song on {p.row.main.name}" onclick={() => setAlbum(p, true)}>All</button>
+							<button type="button" class="sp-a" aria-label="Untick every song on {p.row.main.name}" onclick={() => setAlbum(p, false)}>None</button>
 						{/if}
 					</header>
 					{#if p.list === null}<p class="hint">Loading the songs…</p>
@@ -219,8 +234,8 @@
 					<header class="sp-h">
 						<span class="sp-ht">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span>
 						{#if editable && p.all.length}
-							<button type="button" class="sp-a" onclick={() => (ticks = { ...ticks, [p.number]: [...p.all] })}>All</button>
-							<button type="button" class="sp-a" onclick={() => (ticks = { ...ticks, [p.number]: [] })}>None</button>
+							<button type="button" class="sp-a" aria-label="Tick every episode in {s.number === 0 ? 'Specials' : `Season ${s.number}`}" onclick={() => (ticks = { ...ticks, [p.number]: [...p.all] })}>All</button>
+							<button type="button" class="sp-a" aria-label="Untick every episode in {s.number === 0 ? 'Specials' : `Season ${s.number}`}" onclick={() => (ticks = { ...ticks, [p.number]: [] })}>None</button>
 						{/if}
 					</header>
 					{#if list === null}<p class="hint">Loading season {s.number}…</p>
@@ -261,7 +276,8 @@
 							{@const r = p.row}
 							<li class:off={p.tick === 'none'} data-testid="ask-album" data-tick={p.tick}>
 								<!-- The whole row opens and closes the song list; the tick and the buttons keep their own job. -->
-								<div class="line rowtap" role="button" tabindex="-1" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openAlbum = openAlbum === r.key ? '' : r.key; }} onkeydown={() => {}}>
+								<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+								<div class="line rowtap" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openAlbum = openAlbum === r.key ? '' : r.key; }}>
 									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Keep {r.main.name}" onchange={() => tickAlbum(p)} />{/if}
 									<span class="cover">{#if r.main.image}<img src={coverFor(r.main.image, 32).src} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}</span>
 									<span class="t">{r.main.name}</span>
@@ -307,7 +323,8 @@
 							{@const list = openSeason === s.number ? listOf(s) : null}
 							{@const words = askedWords(p)}
 							<li class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
-								<div class="line rowtap" role="button" tabindex="-1" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openSeason = openSeason === s.number ? 0 : s.number; }} onkeydown={() => {}}>
+								<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+								<div class="line rowtap" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openSeason = openSeason === s.number ? 0 : s.number; }}>
 									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Season {s.number}: tick every episode" onchange={() => tickSeason(p)} />{/if}
 									<button type="button" class="season" aria-expanded={openSeason === s.number} onclick={() => (openSeason = openSeason === s.number ? 0 : s.number)}>
 										<span class="t">Season {s.number}{#if words}<span class="sub"> · {words}</span>{/if}</span>
@@ -357,10 +374,14 @@
 	.sp-left { padding: 6px; border-right: 1px solid var(--line); background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
 	.sp-kind { margin: 8px 8px 4px; color: var(--text-muted); font: var(--t-caption); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 	.sp-kind:first-child { margin-top: 2px; }
-	.sp-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 8px; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: background 160ms var(--ease-out), color 160ms var(--ease-out); }
+	.sp-row { display: flex; align-items: center; min-height: 44px; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: background 160ms var(--ease-out), color 160ms var(--ease-out); }
 	.sp-row:hover { background: var(--surface-2); }
 	.sp-row.on { background: var(--surface-1); color: var(--text); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgb(0 0 0 / 0.08); }
-	.sp-row:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.sp-row:has(.sp-open:focus-visible) { box-shadow: var(--focus-ring); }
+	.sp-row .tick { width: 18px; height: 18px; margin: 0 0 0 8px; }
+	/* The row's open button fills the rest of the row, so clicking anywhere past the tick opens it. */
+	.sp-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; align-self: stretch; padding: 4px 8px; border: 0; border-radius: inherit; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+	.sp-open:focus-visible { outline: none; }
 	.sp-row.off .sp-t { opacity: 0.5; }
 	.sp-cov { flex: none; width: 34px; height: 34px; border-radius: 6px; overflow: hidden; background: var(--surface-3); }
 	.sp-cov img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -371,8 +392,10 @@
 	.sp-right { display: flex; flex-direction: column; }
 	.sp-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 	.sp-ht { flex: 1; min-width: 0; font: var(--t-subhead); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.sp-a { min-height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-caption); font-weight: 600; cursor: pointer; }
+	.sp-a { min-height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-caption); font-weight: 600; cursor: pointer; }
 	.sp-a:hover { background: var(--surface-3); }
+	.sp-a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (pointer: coarse) { .sp-a { min-height: 44px; } }
 	.sp-list { margin: 0; padding: 4px 6px 8px; list-style: none; columns: 2 280px; column-gap: 12px; }
 	.sp-list li { break-inside: avoid; }
 	.sp-item { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 6px; border-radius: 8px; font: var(--t-footnote); cursor: pointer; }
