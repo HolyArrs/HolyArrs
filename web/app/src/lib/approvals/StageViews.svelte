@@ -20,6 +20,8 @@
 	import AskPanel from './AskPanel.svelte';
 	import FocusView from './FocusView.svelte';
 	import ApprovalsStage from './ApprovalsStage.svelte';
+	import ApprovalsReels from './ApprovalsReels.svelte';
+	import VariantBar from '../ui/VariantBar.svelte';
 	import { ago, dateTime } from '../format.ts';
 	import { kindWord, personGroups, type ApprovalsCtx } from './approvals.ts';
 	import { type GroupBy } from './inbox.ts';
@@ -28,6 +30,13 @@
 	import type { Ask } from '../types.ts';
 
 	let { ctx }: { ctx: ApprovalsCtx } = $props();
+
+	// Desktop layouts Luis is comparing on the pill bar (?view=1): the Stage, or Reels.
+	let look = $state(0);
+	const looks = [
+		{ value: 0, label: 'Stage' },
+		{ value: 1, label: 'Reels' }
+	];
 
 	// Poster size and whether the list shows, remembered per member.
 	let size = $state<InboxSize>('m');
@@ -231,7 +240,8 @@
 
 {#if wide && ctx.approver}
 	<!-- Desktop: the Stage (design-notes/approvals-stage.md). Phones keep the list below. -->
-	<ApprovalsStage {ctx} />
+	{#if look === 1}<ApprovalsReels {ctx} open={(a, el) => void openFull(a, el)} />{:else}<ApprovalsStage {ctx} />{/if}
+	<VariantBar options={looks} bind:value={look} storageKey="holyarrs.approvals-desk" label="Approvals layout" />
 {:else}
 <div class="stage size-{size}" class:collapsed={split && !listOpen} data-testid="approvals-stage" data-size={size} data-list={split ? (listOpen ? 'open' : 'hidden') : undefined}>
 	<div class="sbar">
