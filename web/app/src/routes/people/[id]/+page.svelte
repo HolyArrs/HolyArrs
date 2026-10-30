@@ -117,13 +117,38 @@
 		return [who, m.year ? String(m.year) : ''].filter(Boolean).join(' · ');
 	};
 
-	const hero = $derived(data?.known_for?.find((m) => m.backdrop)?.backdrop ?? null);
+
+	// A credit shows only with a real picture (poster or backdrop). Pictures that fail or hang are dropped too.
+	const ART_WAIT_MS = 8000;
+	let artState = $state<Record<string, 'ok' | 'bad'>>({});
+	const probing = new Set<string>();
+	const artOf = (m: PersonMovie) => m.backdrop || m.poster || '';
+	function probe(m: PersonMovie) {
+		const k = m.ids.tmdb, src = artOf(m);
+		if (!src || probing.has(k)) return;
+		probing.add(k);
+		const img = new Image();
+		let settled = false;
+		const end = (ok: boolean) => { if (settled) return; settled = true; clearTimeout(t); artState = { ...artState, [k]: ok ? 'ok' : 'bad' }; };
+		const t = setTimeout(() => end(false), ART_WAIT_MS);
+		img.onload = () => end(img.naturalWidth > 0);
+		img.onerror = () => end(false);
+		img.src = src;
+	}
+	const withArt = (list: PersonMovie[] | undefined) => (list ?? []).filter((m) => artOf(m) && artState[m.ids.tmdb] !== 'bad');
+	$effect(() => {
+		for (const m of [...(data?.known_for ?? []), ...(data?.coming_soon ?? []), ...(data?.library ?? []), ...(data?.asked ?? []), ...movies]) probe(m);
+	});
+	const shownMovies = $derived(withArt(movies));
+	const stats = $derived(data?.stats && role === 'all' && !busy ? { ...data.stats, films: shownMovies.length } : data?.stats);
+
+	const hero = $derived(withArt(data?.known_for).find((m) => m.backdrop)?.backdrop ?? null);
 	let heroIn = $state(false);
 	$effect(() => {
 		void hero;
 		heroIn = false;
 	});
-	const chips = $derived(personChips(data?.stats, data?.library?.length ?? 0, data?.asked?.length ?? 0));
+	const chips = $derived(personChips(stats, withArt(data?.library).length, withArt(data?.asked).length));
 	const facts = $derived.by(() => {
 		const p = data?.person;
 		if (!p) return [];
@@ -166,7 +191,7 @@
 		return () => clearInterval(t);
 	});
 	const decades = $derived.by(() => {
-		const g = byDecade(movies);
+		const g = byDecade(shownMovies);
 		if (sort !== 'popular') return g;
 		return g.sort((a, b) => (a.label === 'Coming soon' ? 1 : b.label === 'Coming soon' ? -1 : b.label.localeCompare(a.label)));
 	});
@@ -200,7 +225,7 @@
 		return st?.first_year ? `${st.first_year}–${st.active ? 'now' : st.last_year}` : '';
 	});
 	const lead = $derived([data?.person.department, ...facts.filter((f) => !f.startsWith('Known for'))].filter(Boolean).join(' · '));
-	const top = $derived((data?.known_for ?? []).slice(0, 10));
+	const top = $derived(withArt(data?.known_for).slice(0, 10));
 	// Under the name: only what they do and since when; the rest lives in About.
 	const roleWords = $derived.by(() => {
 		const all = [...(data?.known_for ?? []), ...movies].flatMap((m) => m.roles ?? []);
@@ -211,10 +236,10 @@
 		return got.length ? got.join(' · ') : dept === 'Acting' ? 'Actor' : dept ?? '';
 	});
 	const quiet = $derived([roleWords, data?.stats?.first_year ? `Since ${data.stats.first_year}` : ''].filter(Boolean).join(' · '));
-	const reel = $derived((data?.known_for ?? []).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
+	const reel = $derived(withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
 	// About starts half way through the stills (more of them when there are), so it never shows the banner's picture.
 	const aboutStills = $derived.by(() => {
-		const all = (data?.known_for ?? []).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 12);
+		const all = withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 12);
 		const rest = all.slice(reel.length);
 		if (rest.length) return rest;
 		const h = Math.ceil(reel.length / 2);
@@ -311,8 +336,8 @@
 {/snippet}
 
 {#snippet row(title: string, list: PersonMovie[] | undefined, anchor: string)}
-	{#if list?.length}
-		<Shelf {title} {anchor} item="var(--title-item)" items={list} key={(m) => m.ids.tmdb} placeholder="wide" lines={1}>
+	{#if withArt(list).length}
+		<Shelf {title} {anchor} item="var(--title-item)" items={withArt(list)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1}>
 			{#snippet card(m: PersonMovie)}{@render filmCard(m)}{/snippet}
 		</Shelf>
 	{/if}
@@ -395,7 +420,7 @@
 				<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
 			</div>
 		</div>
-		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
+		{#if !shownMovies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
 	</section>
 	{#each decades as g (g.label)}
 		<Shelf title={g.label} item="var(--title-item)" items={g.movies.slice(0, 12)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1} onseeall={g.movies.length > 12 ? () => (allDecade = g) : undefined}>
@@ -411,7 +436,7 @@
 				<span class="a-glow" aria-hidden="true"></span>
 				{#if wiki.badges[0]}<span class="disc" aria-hidden="true"><b>{wiki.badges[0].split(' ')[0]}</b><small>{wiki.badges[0].split(' ').slice(1).join(' ')}</small></span>{/if}
 				<span class="a-foot">
-					<span class="a-lis">{[data.stats?.films ? `${data.stats.films} films` : '', yearsLine].filter(Boolean).join(' · ')}</span>
+					<span class="a-lis">{[stats?.films ? `${stats.films} films` : '', yearsLine].filter(Boolean).join(' · ')}</span>
 					<span class="a-bio">{bio || data.person.name}</span>
 					<span class="a-more">More about {data.person.name.split(' ')[0]}</span>
 				</span>
@@ -432,7 +457,7 @@
 
 				{#if aboutView === 'career'}
 					<div class="ab-figs">
-						{#if data.stats?.films}<p><b>{data.stats.films}</b><span>films</span></p>{/if}
+						{#if stats?.films}<p><b>{stats.films}</b><span>films</span></p>{/if}
 						{#if data.stats?.shows}<p><b>{data.stats.shows}</b><span>shows</span></p>{/if}
 						{#if yearsLine}<p><b>{yearsLine}</b><span>on screen</span></p>{/if}
 						{#if about.wins || about.noms}<p><b>{about.wins}</b><span>{about.wins === 1 ? 'win' : 'wins'} · {about.noms} more nominations</span></p>{/if}
@@ -541,7 +566,7 @@
 				{#each g.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}
 			</ul>
 		{/each}
-		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
+		{#if !shownMovies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
 	</section>
 
 {/if}
