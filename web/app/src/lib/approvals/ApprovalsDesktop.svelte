@@ -13,6 +13,7 @@
 	import Avatar from '../ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
 	import ApprovalsStage from './ApprovalsStage.svelte';
+	import VariantBar from '../ui/VariantBar.svelte';
 	import { ago, dateTime } from '../format.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistPhoto, askArtist } from './details.svelte.ts';
@@ -40,6 +41,16 @@
 		{ k: 'show', label: 'TV shows', icon: 'tv' },
 		{ k: 'artist', label: 'Music', icon: 'music' }
 	];
+	// Card frames Luis is comparing on the pill bar (?view=0…4): the same card, five frames.
+	let look = $state(0);
+	const looks = [
+		{ value: 0, label: 'Now' },
+		{ value: 1, label: 'Full art' },
+		{ value: 2, label: 'Inset' },
+		{ value: 3, label: 'Glass' },
+		{ value: 4, label: 'Clean edge' }
+	];
+
 	// The raised plate slides to the picked item in each group (as on Downloads).
 	function plate(node: HTMLElement, _key: unknown) {
 		const place = () => {
@@ -180,7 +191,7 @@
 		</div>
 	</div>
 
-		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
+		<ul class="cards look-{look}" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each list as a, i (a.id)}
 				{@const w = ctx.who(a)}
 				{@const life = lifecycle(a)}
@@ -227,6 +238,8 @@
 			{/each}
 		</ul>
 </div>
+
+<VariantBar options={looks} bind:value={look} storageKey="holyarrs.approvals-frame" label="Card frame" />
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
@@ -321,6 +334,42 @@
 	.tone-off .fill { background: rgb(127 127 127 / 0.45); }
 	.tone-bad .fill { background: var(--fail, #e5484d); }
 	.answered .ban-img { filter: saturate(0.7); }
+	/* Frame trials (pill bar). 1 Full art: the art fills the card and fades to dark; text on the art. */
+	.look-1 .bc { padding-top: 92px; background: #0b0b0c; color: #fff; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -16px rgb(0 0 0 / 0.6); }
+	.look-1 .ban { position: absolute; inset: 0; z-index: -1; height: auto; border-radius: inherit; }
+	.look-1 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.25) 0%, transparent 18%, rgb(0 0 0 / 0.55) 48%, rgb(0 0 0 / 0.92) 72%); }
+	.look-1 .cover { margin-top: 0; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.18), 0 14px 28px -12px rgb(0 0 0 / 0.8); }
+	.look-1 .bc.music .cover { margin-top: 12px; }
+	.look-1 .title { color: #fff; }
+	.look-1 .wants, .look-1 .who { color: rgb(255 255 255 / 0.72); }
+	.look-1 .who b { color: #fff; }
+	.look-1 .b.no { background: rgb(255 255 255 / 0.14); color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+	.look-1 .b.yes { background: #fff; color: #0b0b0c; }
+	.look-1 .state { color: rgb(255 255 255 / 0.75); }
+	/* 2 Inset: the banner is its own rounded picture inside the card, a clean edge and no fade. */
+	.look-2 .bc { padding: 8px 8px 0; }
+	.look-2 .ban { height: 142px; border-radius: 13px; }
+	.look-2 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.22), transparent 35%); }
+	.look-2 .cover { margin-left: 12px; box-shadow: 0 0 0 4px var(--surface-1), 0 14px 28px -12px rgb(0 0 0 / 0.55); }
+	.look-2 .body { padding: 12px 6px 0; }
+	.look-2 .foot { padding: 14px 6px 14px; }
+	/* 3 Glass: the art, blurred, is the card itself; the facts sit on frosted glass. */
+	.look-3 .bc { background: transparent; }
+	.look-3 .ban { position: absolute; inset: 0; z-index: -1; height: auto; border-radius: inherit; }
+	.look-3 .ban-img { filter: blur(26px) saturate(1.5); transform: scale(1.3); }
+	.look-3 .bc:hover .ban-img:not(.soft) { transform: scale(1.35); }
+	.look-3 .ban::after { background: color-mix(in srgb, var(--surface-1) 62%, transparent); }
+	.look-3 .ban-kind { display: none; }
+	.look-3 .cover { margin-top: 16px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.2), 0 18px 36px -14px rgb(0 0 0 / 0.6); }
+	.look-3 .bc.music .cover { margin-top: 28px; }
+	.look-3 .b.no { background: color-mix(in srgb, var(--surface-1) 55%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+	/* 4 Clean edge: no fade at all, a hard line under the banner, a firmer border, tighter corners. */
+	.look-4 .bc { border-radius: 14px; box-shadow: 0 0 0 1.5px var(--line-strong, var(--line)); }
+	.look-4 .bc:hover { box-shadow: 0 0 0 1.5px var(--text), 0 18px 36px -20px rgb(0 0 0 / 0.5); }
+	.look-4 .ban { border-radius: 14px 14px 0 0; border-bottom: 1.5px solid var(--line-strong, var(--line)); }
+	.look-4 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.22), transparent 30%); }
+	.look-4 .cover { border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line-strong, var(--line)), 0 10px 22px -12px rgb(0 0 0 / 0.5); }
+	.look-4 .b { border-radius: 8px; }
 	.done { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--surface-1) 78%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text); font: var(--t-headline); }
 	.done-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ok); color: #fff; box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--ok) 80%, transparent); }
 	.calm { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 64px 20px; border-radius: 18px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); color: var(--text-muted); text-align: center; }
