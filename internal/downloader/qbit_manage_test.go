@@ -297,3 +297,27 @@ func TestSafeMagnetAllowlist(t *testing.T) {
 		t.Fatalf("v2: %s %d %v", got, n, err)
 	}
 }
+
+func TestTrackerOddLiterals(t *testing.T) {
+	for _, h := range []string{"2130706433", "0x7f.1", "127.1", "017700000001", "0x7f000001", "tracker%2eexample.com", "host.123", "a.b.0x10"} {
+		if trackerAllowed("http://"+h+"/announce", false) {
+			t.Errorf("%s passed without local access", h)
+		}
+	}
+	for _, h := range []string{"tracker.example.com", "1e100.net", "t1.example.org"} {
+		if !trackerAllowed("udp://"+h+":80", false) {
+			t.Errorf("%s refused", h)
+		}
+	}
+}
+
+func TestPeersRefuseMetadataWithLocal(t *testing.T) {
+	m := "magnet:?xt=urn:btih:" + hashA + "&ws=http%3A%2F%2F169.254.169.254%2F&xs=http%3A%2F%2Fmetadata.google.internal%2Fx&as=http%3A%2F%2Ffd00%3Aec2%3A%3A254%2F&x.pe=169.254.169.254%3A80&ws=http%3A%2F%2F192.168.1.5%2Fs&x.pe=192.168.1.2%3A6881"
+	got, n, err := safeMagnet(m, true)
+	if err != nil || n != 4 {
+		t.Fatalf("%d %v %s", n, err, got)
+	}
+	if strings.Contains(got, "169.254") || strings.Contains(got, "metadata") || !strings.Contains(got, "192.168.1.5") || !strings.Contains(got, "192.168.1.2") {
+		t.Fatalf("kept %s", got)
+	}
+}

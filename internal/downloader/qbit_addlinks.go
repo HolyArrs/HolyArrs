@@ -85,7 +85,7 @@ func safeMagnet(link string, allowLocal bool) (string, int, error) {
 				continue
 			}
 		case "ws", "xs", "as", "x.pe":
-			if !allowLocal {
+			if !allowLocal || !peerAllowed(k, v) {
 				dropped++
 				continue
 			}
@@ -130,7 +130,87 @@ func trackerAllowed(v string, allowLocal bool) bool {
 		}
 		return allowLocal || source.PublicOnly(ip)
 	}
+	if !allowLocal && oddHost(host) {
+		return false
+	}
 	if !allowLocal && (host == "localhost" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".local")) {
+		return false
+	}
+	return true
+}
+
+// oddHost is a host that is not a plain public name: a percent sign, labels
+// that are all digits or hex numbers (127.1, 2130706433, 0x7f.1, 017700000001,
+// which some resolvers read as addresses), or no alphabetic last label.
+func oddHost(host string) bool {
+	if strings.Contains(host, "%") {
+		return true
+	}
+	labels := strings.Split(host, ".")
+	numeric := true
+	for _, l := range labels {
+		if !numberLabel(l) {
+			numeric = false
+		}
+	}
+	if numeric {
+		return true
+	}
+	tld := labels[len(labels)-1]
+	if tld == "" || numberLabel(tld) {
+		return true
+	}
+	for _, c := range tld {
+		if c >= 'a' && c <= 'z' {
+			return false
+		}
+	}
+	return true
+}
+
+// numberLabel is a label that reads as a decimal, octal or 0x hex number.
+func numberLabel(l string) bool {
+	if l == "" {
+		return true
+	}
+	if h, ok := strings.CutPrefix(l, "0x"); ok {
+		for _, c := range h {
+			if !strings.ContainsRune("0123456789abcdef", c) {
+				return false
+			}
+		}
+		return true
+	}
+	for _, c := range l {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// peerAllowed checks a web seed, source or peer pair when local network
+// access is on: cloud metadata targets stay refused anyway.
+func peerAllowed(k, v string) bool {
+	var host string
+	if k == "x.pe" {
+		h, _, err := net.SplitHostPort(v)
+		if err != nil {
+			return false
+		}
+		host = h
+	} else {
+		u, err := url.Parse(v)
+		if err != nil || u.Hostname() == "" {
+			return false
+		}
+		host = u.Hostname()
+	}
+	host = strings.TrimSuffix(strings.ToLower(host), ".")
+	if metadataName(host) {
+		return false
+	}
+	if ip := net.ParseIP(host); ip != nil && !source.NotMetadata(ip) {
 		return false
 	}
 	return true
