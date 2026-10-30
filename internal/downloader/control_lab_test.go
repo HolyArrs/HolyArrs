@@ -95,3 +95,47 @@ func TestLabQbitControls(t *testing.T) {
 	after, _ := q.Status(ctx)
 	t.Logf("status after: %+v", after)
 }
+
+// Runs against the lab SABnzbd (it has no Usenet server, so only the
+// whole-client controls are checked): HOLYARRS_LAB_SAB_KEY=... HOLYARRS_LAB_SAB=http://10.10.25.25:18707
+// go test -tags lab -run LabSabControls ./internal/downloader/
+func TestLabSabControls(t *testing.T) {
+	key := os.Getenv("HOLYARRS_LAB_SAB_KEY")
+	if key == "" {
+		t.Skip("HOLYARRS_LAB_SAB_KEY not set")
+	}
+	base := os.Getenv("HOLYARRS_LAB_SAB")
+	if base == "" {
+		base = "http://10.10.25.25:18707"
+	}
+	s := NewSabnzbd(base, key, nil)
+	ctx := context.Background()
+	st, err := s.Status(ctx)
+	if err != nil {
+		t.Fatalf("status: %v", err)
+	}
+	t.Logf("status before: %+v", st)
+	defer func() { _ = s.ResumeAll(context.Background()); _ = s.SetSpeedLimit(context.Background(), 0, 0) }()
+	if err := s.PauseAll(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ = s.Status(ctx); !st.Paused {
+		t.Fatal("pause all: client not paused")
+	}
+	if err := s.ResumeAll(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ = s.Status(ctx); st.Paused {
+		t.Fatal("resume all: client still paused")
+	}
+	if err := s.SetSpeedLimit(ctx, 5<<20, 0); err != nil {
+		t.Fatal(err)
+	}
+	st, _ = s.Status(ctx)
+	if st.SpeedLimit < 4<<20 || st.SpeedLimit > 6<<20 {
+		t.Fatalf("speed limit read back %d, want about %d", st.SpeedLimit, 5<<20)
+	}
+	if err := s.SetSpeedLimit(ctx, 0, 0); err != nil {
+		t.Fatal(err)
+	}
+}
