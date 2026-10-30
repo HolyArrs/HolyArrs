@@ -50,7 +50,8 @@
 		{ value: 7, label: 'Pick and act' },
 		{ value: 8, label: 'People' },
 		{ value: 9, label: 'Review window' },
-		{ value: 10, label: 'Tracker' }
+		{ value: 10, label: 'Tracker' },
+		{ value: 11, label: 'Desk' }
 	];
 	function setView(v: InboxView) {
 		view = v;

@@ -397,6 +397,55 @@
 			{/each}
 		</ul>
 	</div>
+{:else if look === 11}
+	<!-- 11 Desk: one list that reads the same at 1 ask and at 20. Front: poster,
+	     title, who asked, when, the answer. Details open in place under the row. -->
+	<div class="desk" data-look="desk">
+		<header class="dk-top">
+			<div>
+				<h2>{open_.length ? `${plural(open_.length, 'ask')} waiting on you` : 'You’re all caught up'}</h2>
+				<p class="muted">{open_.length ? `Oldest waits ${oldestWait}. Answered this week: ${answeredWeek}.` : `Answered this week: ${answeredWeek}. New asks land here the moment someone asks.`}</p>
+			</div>
+			{#if ctx.tab === 'waiting' && shown.filter(waiting).length > 1}
+				<Button variant="primary" icon="check" type="button" onclick={() => ctx.approve(shown.filter(waiting))}>Approve all {shown.filter(waiting).length}</Button>
+			{/if}
+		</header>
+		<ul class="dk-list">
+			{#each shown as a (a.id)}
+				{@const on = openRow === a.id}
+				{@const w = ctx.who(a)}
+				<li class="dk" class:on class:answered={!waiting(a)} animate:flip={{ duration: 240 }}>
+					<div class="dk-row">
+						<button class="dk-hit" type="button" aria-expanded={on} onclick={() => (openRow = on ? 0 : a.id)}>
+							{@render pic(a, 'dk-pic')}
+							<span class="dk-t">
+								<strong>{a.name}{#if a.year}<span class="yr">{a.year}</span>{/if}</strong>
+								<span class="muted">{kindWord(a.kind)}{a.kind !== 'movie' ? ` · ${line(a)}` : ''}</span>
+							</span>
+						</button>
+						<span class="dk-who"><Avatar name={w.name} src={w.avatar} size={28} /><span><strong>{w.name}</strong>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<time class="muted" datetime={a.asked_at} title={dateTime(a.asked_at)}>asked {ago(a.asked_at)}</time></span></span>
+						<span class="dk-act">
+							{#if waiting(a)}
+								<Button size="md" icon="x" type="button" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}>Turn down</Button>
+								<Button size="md" variant="primary" icon="check" type="button" data-testid="ask-approve" onclick={() => ctx.approve([a])}>Approve</Button>
+							{:else}{@render answer(a, 'sm')}{/if}
+						</span>
+						<button class="caret dk-caret" type="button" aria-expanded={on} aria-label="{on ? 'Hide' : 'Show'} details for {a.name}" onclick={() => (openRow = on ? 0 : a.id)}><Icon name="chevronDown" size={16} /></button>
+					</div>
+					{#if on}
+						<div class="dk-more" transition:slide={{ duration: 220 }}>
+							{@render facts(a)}
+							<div class="dk-more-act">
+								<Button size="sm" type="button" onclick={(e: MouseEvent) => open(a, e.currentTarget as HTMLElement)}>Choose seasons, folder and rules</Button>
+							</div>
+						</div>
+					{/if}
+				</li>
+			{:else}
+				<li>{@render empty(ctx.tab === 'waiting' ? 'Nobody is waiting on you.' : 'Nothing here right now.')}</li>
+			{/each}
+		</ul>
+	</div>
 {:else if look === 10}
 	<!-- 10 Tracker: every ask shows where it is on its way. -->
 	<ul class="trk" data-look="tracker">
@@ -665,6 +714,32 @@
 	.steps.no li:nth-child(n + 3) { opacity: 0.35; }
 	.tr-act { display: flex; justify-content: flex-end; font: var(--t-footnote); }
 
+	/* 11 Desk */
+	.desk { max-width: 1100px; }
+	.dk-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+	.dk-top h2 { font: var(--t-title2); }
+	.dk-top p { margin-top: 2px; font: var(--t-footnote); }
+	.dk-list { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+	.dk + .dk { border-top: 1px solid var(--line); }
+	.dk-row { display: grid; grid-template-columns: minmax(0, 1fr) 230px auto 32px; align-items: center; gap: 16px; padding: 10px 12px 10px 14px; transition: background var(--dur-fast) var(--ease-out); }
+	.dk-row:hover, .dk.on .dk-row { background: var(--surface-2); }
+	.dk-hit { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; border-radius: 8px; }
+	.dk-pic { width: 44px; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); }
+	.dk-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	.dk-t strong { font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.dk-t .muted { font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.dk-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+	.dk-who > span { display: flex; flex-direction: column; min-width: 0; font: var(--t-subhead); }
+	.dk-who strong { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.dk-who time { font: var(--t-caption); }
+	.dk-act { display: flex; justify-content: flex-end; gap: 8px; }
+	.dk.answered .dk-hit, .dk.answered .dk-who { opacity: 0.7; }
+	.dk-caret { transform: rotate(-90deg); }
+	.dk.on .dk-caret { transform: none; color: var(--text); }
+	.dk-more { padding: 4px 58px 18px 72px; background: var(--surface-2); }
+	.dk-more .facts { max-width: 560px; }
+	.dk-more-act { margin-top: 12px; }
+
 	/* Sheets: side (3), rising over art (6), review window (9). */
 	.sheet { padding: 0; border: 0; color: var(--text); background: var(--bg); box-shadow: 0 0 0 1px var(--line), var(--shadow-modal); overflow: hidden; }
 	.sheet::backdrop { background: rgb(0 0 0 / 0.5); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
@@ -725,6 +800,12 @@
 		.tr-act :global(.answer) { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
 		.post-pic { width: 52px; }
 		.pr-pic { display: none; }
+		.dk-top { flex-direction: column; align-items: stretch; }
+		.dk-row { grid-template-columns: minmax(0, 1fr) 32px; gap: 8px 10px; }
+		.dk-who { grid-column: 1; padding-left: 58px; }
+		.dk-act { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+		.dk-caret { grid-row: 1; grid-column: 2; }
+		.dk-more { padding: 4px 14px 16px; }
 		.sheet.side { width: 100vw; border-radius: 0; }
 		.sheet.review { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; margin: 0; }
 		.sheet.rise { width: 100vw; }
