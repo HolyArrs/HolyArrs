@@ -15,7 +15,8 @@
 	import ApprovalsStage from './ApprovalsStage.svelte';
 	import { ago, dateTime } from '../format.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
-	import { artistPhoto } from './details.svelte.ts';
+	import { artistPhoto, askArtist } from './details.svelte.ts';
+	import { to } from '../paths.ts';
 	import { askSummary, inboxTabs } from './inbox.ts';
 	import { lifecycle } from './lifecycle.ts';
 	import type { Ask } from '../types.ts';
@@ -86,6 +87,13 @@
 		ro.observe(node);
 		return { update: () => void tick().then(place), destroy: () => ro.disconnect() };
 	}
+
+	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
+	const banner = (a: Ask) => {
+		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] ?? '';
+		const d = ctx.details(a);
+		return d?.backdrop ? to(d.backdrop) : '';
+	};
 
 	// What the ask is for, in words that fit a card.
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
@@ -177,25 +185,29 @@
 				{@const w = ctx.who(a)}
 				{@const life = lifecycle(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
+				{@const wide = banner(a)}
 				<li class="bc" class:answered={!waiting(a)} animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 10, duration: 320, easing: cubicOut }} out:fade={{ duration: 220 }}>
-					<button type="button" class="cover" aria-label="Open {a.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}>
-						{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}
-					</button>
+					<!-- The whole card opens the window; the answers sit above this layer. -->
+					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
+					<div class="ban" aria-hidden="true">
+						{#if wide}<span class="ban-img" style:background-image={`url("${wide}")`}></span>{:else}<span class="ban-img soft" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
+						<span class="ban-kind">{kindOf(a)}</span>
+					</div>
+					<span class="cover" aria-hidden="true">{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}</span>
 					<div class="body">
-						<span class="eyebrow">{kindOf(a)}{a.year ? ` · ${a.year}` : ''}</span>
-						<button type="button" class="title" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}>{a.name}</button>
-						<span class="wants">{wants(a)}</span>
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><span><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if} asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
-						<div class="foot">
-							{#if waiting(a)}
-								<button type="button" class="b no" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} />Turn down</button>
-								<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
-							{:else if ctx.isPending(a.id)}
-								<span class="state">Sending your answer…</span>
-							{:else}
-								<span class="state tone-{life.tone}"><span class="dot"></span>{ctx.decided(a) || life.label}</span>
-							{/if}
-						</div>
+						<h3 class="title">{a.name}</h3>
+						<span class="wants">{a.year ? `${a.year} · ` : ''}{wants(a)}</span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><span><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
+					</div>
+					<div class="foot">
+						{#if waiting(a)}
+							<button type="button" class="b no" aria-label="Turn down {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Turn down</span></button>
+							<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
+						{:else if ctx.isPending(a.id)}
+							<span class="state">Sending your answer…</span>
+						{:else}
+							<span class="state tone-{life.tone}"><span class="dot"></span>{ctx.decided(a) || life.label}</span>
+						{/if}
 					</div>
 					<span class="life tone-{approving.has(a.id) ? 'ok' : life.tone}" aria-hidden="true"><span class="fill" style:width="{approving.has(a.id) ? 100 : life.pct}%"></span></span>
 					{#if approving.has(a.id)}
@@ -247,42 +259,51 @@
 	.it:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.it:active { transform: scale(0.97); }
 	.vr { width: 1px; height: 26px; margin: 0 4px; background: var(--line); }
-	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 52px; padding: 0 20px; border: 0; border-radius: 14px; background: var(--text); color: var(--bg); font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform 160ms var(--ease-out); }
+	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 52px; padding: 0 18px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
+	.approve-all:hover { background: var(--surface-2); }
 	.approve-all:active { transform: scale(0.96); }
 
-	/* Business cards: the cover on the left, every fact inside the card. */
-	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(400px, 100%), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-	.bc { position: relative; isolation: isolate; overflow: hidden; display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: stretch; gap: 16px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface-1); transition: border-color 220ms var(--ease-out), background 220ms var(--ease-out), transform 260ms var(--ez); }
-	.bc:hover { border-color: var(--line-strong, var(--line)); background: color-mix(in srgb, var(--surface-2) 60%, var(--surface-1)); transform: translateY(-1px); }
-	.cover { display: block; width: 96px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--surface-3); cursor: pointer; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06); transition: transform 300ms var(--ez); }
+	/* Business cards, portrait: the title's banner art on top, the poster overlapping it,
+	   the few facts that matter, the answers at the foot. 12px inner padding, 20px corners. */
+	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+	.bc { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 20px; background: var(--surface-1); transition: transform 300ms var(--ez), border-color 220ms var(--ease-out), box-shadow 300ms var(--ease-out); }
+	.bc:hover { transform: translateY(-3px); border-color: var(--line-strong, var(--line)); box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.6); }
+	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
+	.open:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+	.ban { position: relative; height: 128px; overflow: hidden; background: var(--surface-3); }
+	.ban-img { position: absolute; inset: 0; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1); }
+	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
+	.bc:hover .ban-img:not(.soft) { transform: scale(1.08); }
+	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.25), transparent 40%, color-mix(in srgb, var(--surface-1) 85%, transparent) 100%); }
+	.ban-kind { position: absolute; top: 10px; left: 10px; z-index: 1; padding: 3px 9px; border-radius: 999px; background: rgb(12 12 14 / 0.55); color: #fff; font: 600 11px/1.3 var(--font-ui); letter-spacing: 0.04em; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+	.cover { position: relative; z-index: 0; display: block; width: 72px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; margin: -54px 0 0 14px; border-radius: 8px; overflow: hidden; background: var(--surface-3); box-shadow: 0 0 0 3px var(--surface-1), 0 14px 28px -12px rgb(0 0 0 / 0.7); transition: transform 300ms var(--ez); }
 	.cover img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
-	.body { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 2px 0 0; }
-	.eyebrow { color: var(--text-muted); font: 600 11px/1.4 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
-	.title { max-width: 100%; padding: 0; border: 0; background: none; text-align: left; font: var(--t-title3); letter-spacing: -0.01em; line-height: 1.2; cursor: pointer; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; border-radius: 4px; }
-	.title:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); }
-	.wants { color: var(--text); font: var(--t-callout); opacity: 0.85; }
-	.who { display: inline-flex; align-items: center; gap: 7px; margin-top: 4px; color: var(--text-muted); font: var(--t-footnote); }
+	.bc:hover .cover { transform: translateY(-2px) rotate(-1.5deg); }
+	.body { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 0; min-width: 0; }
+	.title { font: var(--t-title3); letter-spacing: -0.01em; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.wants { color: var(--text-muted); font: var(--t-footnote); }
+	.who { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; color: var(--text-muted); font: var(--t-footnote); }
 	.who b { color: var(--text); font-weight: 600; }
-	.foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; width: 100%; margin-top: auto; }
-	.b { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform 140ms var(--ease-out), background 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+	.foot { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding: 14px 14px 16px; }
+	.b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform 140ms var(--ease-out), background 200ms var(--ease-out); }
 	.b:active { transform: scale(0.96); }
-	.b.no { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
-	.b.no:hover { background: color-mix(in srgb, var(--text) 12%, transparent); }
-	.b.yes { background: var(--text); color: var(--bg); box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.6); }
-	.b.yes:hover { transform: translateY(-1px); }
-	.state { display: inline-flex; align-items: center; gap: 7px; margin-right: auto; color: var(--text-muted); font: var(--t-footnote); }
+	.b.no { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+	.b.no:hover { background: color-mix(in srgb, var(--text) 13%, transparent); }
+	.b.yes { background: var(--text); color: var(--bg); }
+	.state { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; color: var(--text-muted); font: var(--t-footnote); }
 	.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 	.state.tone-wait .dot { background: var(--wait); }
 	.state.tone-go .dot { background: var(--accent); }
 	.state.tone-ok .dot { background: var(--ok); }
 	.state.tone-bad .dot { background: var(--fail, #e5484d); }
-	.life { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; overflow: hidden; background: rgb(127 127 127 / 0.1); }
+	.life { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 3px; overflow: hidden; background: rgb(127 127 127 / 0.1); }
 	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.tone-wait .fill { background: var(--wait); }
 	.tone-go .fill { background: var(--accent); }
 	.tone-ok .fill { background: var(--ok); }
 	.tone-off .fill { background: rgb(127 127 127 / 0.45); }
 	.tone-bad .fill { background: var(--fail, #e5484d); }
+	.answered .ban-img { filter: saturate(0.7); }
 	.done { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--surface-1) 78%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text); font: var(--t-headline); }
 	.done-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ok); color: #fff; box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--ok) 80%, transparent); }
 	.calm { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 64px 20px; border-radius: 18px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); color: var(--text-muted); text-align: center; }
@@ -311,20 +332,16 @@
 		.cap .seg { flex: 1; }
 		.it { flex: 1; width: auto; }
 		.approve-all { justify-content: center; height: 48px; }
-		.cards { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-		.bc { grid-template-columns: 72px minmax(0, 1fr); padding: 12px 12px 14px; border-radius: 20px; }
-		.cover { width: 72px; }
+		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+		.ban { height: 84px; }
+		.cover { width: 56px; margin: -40px 0 0 10px; }
+		.body { padding: 10px 10px 0; }
 		.title { font: var(--t-headline); }
-		.wants { font: var(--t-footnote); }
 		.who { font: var(--t-caption); }
-		/* Phone grid: the cover spans the text rows on the left; the answers fill the row under both. */
-		.bc { grid-template-rows: auto auto auto 1fr auto; row-gap: 3px; column-gap: 12px; }
-		.cover { grid-column: 1; grid-row: 1 / 5; align-self: start; }
-		.body { display: contents; }
-		.eyebrow, .title, .wants, .who { grid-column: 2; }
-		.foot { grid-column: 1 / -1; grid-row: 5; display: grid; grid-template-columns: 1fr 1fr; padding-top: 10px; }
-		.b { justify-content: center; height: 44px; }
-		.state { grid-column: 1 / -1; margin: 0; }
+		.foot { padding: 12px 10px 14px; gap: 6px; }
+		.foot { grid-template-columns: 40px minmax(0, 1fr); }
+		.b { height: 40px; padding: 0 8px; font: var(--t-footnote); font-weight: 600; }
+		.b.no .bl { display: none; }
 		.win { width: 100vw; height: 100dvh; border-radius: 0; }
 		.close { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; width: 44px; height: 44px; }
 		.win :global(.ctl.top) { right: 64px !important; }
