@@ -11331,6 +11331,45 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/downloaders/{id}/bulk": {
+      "post": {
+        "description": "Runs one action on many torrents of one torrent Downloader in one call: start, pause, check again, ask trackers again, queue top, bottom, up or down, force start on or off, or remove (with or without files). Removing torrents HolyArrs did not send needs the settings permission.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Queue off or not a torrent Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Act on many torrents",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/items/{hash}/detail": {
       "get": {
         "description": "The client's own detail of any torrent it holds, by info hash. The log is always empty: a torrent HolyArrs did not send has no history here.",

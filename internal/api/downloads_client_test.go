@@ -131,7 +131,7 @@ func TestDownloadsViewKnownHash(t *testing.T) {
 	var out viewRows
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=1", "", 200), &out)
 	for _, r := range out.Downloads {
-		if r.Hash == outHash {
+		if r.Hash == outHash && r.ClientItem {
 			t.Fatalf("shown twice: %+v", r)
 		}
 	}

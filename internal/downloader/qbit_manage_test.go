@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -92,7 +93,7 @@ const tinyTorrent = "d4:infod6:lengthi1e4:name1:a12:piece lengthi16384e6:pieces2
 func TestLinkHash(t *testing.T) {
 	for in, want := range map[string]string{
 		"magnet:?xt=urn:btih:" + strings.ToUpper(hashA) + "&dn=x": hashA,
-		"magnet:?xt=urn:btih:MFQWCYLBMFQWCYLBMFQWCYLBMFQWCYLB":     "6161616161616161616161616161616161616161",
+		"magnet:?xt=urn:btih:MFQWCYLBMFQWCYLBMFQWCYLBMFQWCYLB":    "6161616161616161616161616161616161616161",
 		hashA:                                  hashA,
 		"https://example.test/file.torrent":    "",
 		"magnet:?dn=no-hash":                   "",
@@ -169,5 +170,48 @@ func TestQbitAddTorrentsDuplicatesAndBadFiles(t *testing.T) {
 	out, err = q.AddTorrents(ctx, AddBatch{Links: []string{two, "magnet:?xt=urn:btih:" + two}})
 	if err != nil || out.Added != 1 || out.Duplicates != 1 {
 		t.Fatalf("repeat: %+v %v", out, err)
+	}
+}
+
+func TestQbitBulkActions(t *testing.T) {
+	f := &manageFake{}
+	q := NewQbittorrent(f.start(t), nil)
+	ctx := context.Background()
+	b := strings.Repeat("b", 40)
+	hs := []string{strings.ToUpper(hashA), b, hashA}
+	want := map[string]string{
+		BulkStart: "torrents/start?hashes=" + hashA + "%7C" + b, BulkPause: "torrents/stop?hashes=" + hashA + "%7C" + b,
+		BulkRecheck: "torrents/recheck?hashes=" + hashA + "%7C" + b, BulkReannounce: "torrents/reannounce?hashes=" + hashA + "%7C" + b,
+		BulkTop: "torrents/topPrio?hashes=" + hashA + "%7C" + b, BulkBottom: "torrents/bottomPrio?hashes=" + hashA + "%7C" + b,
+		BulkUp: "torrents/increasePrio?hashes=" + hashA + "%7C" + b, BulkDown: "torrents/decreasePrio?hashes=" + hashA + "%7C" + b,
+		BulkForce: "torrents/setForceStart?hashes=" + hashA + "%7C" + b + "&value=true", BulkUnforce: "torrents/setForceStart?hashes=" + hashA + "%7C" + b + "&value=false",
+	}
+	for _, a := range BulkActions {
+		if err := q.Bulk(ctx, a, hs); err != nil {
+			t.Fatalf("%s: %v", a, err)
+		}
+		path := strings.SplitN(want[a], "?", 2)[0]
+		if got := f.last(path); got != want[a] {
+			t.Fatalf("%s: %q, want %q", a, got, want[a])
+		}
+	}
+	if err := q.RemoveMany(ctx, []string{hashA}, true); err != nil || f.last("torrents/delete") != "torrents/delete?deleteFiles=true&hashes="+hashA {
+		t.Fatalf("remove %v %q", err, f.last("torrents/delete"))
+	}
+	if err := q.Bulk(ctx, BulkStart, []string{"all"}); !errors.Is(err, errBadHash) {
+		t.Fatalf("all: %v", err)
+	}
+	if err := q.Bulk(ctx, "explode", hs); !errors.Is(err, ErrBulkAction) {
+		t.Fatalf("unknown: %v", err)
+	}
+	if err := q.Bulk(ctx, BulkStart, nil); err == nil {
+		t.Fatal("empty selection passed")
+	}
+	f.codes = map[string]int{"torrents/bottomPrio": 409}
+	if err := q.Bulk(ctx, BulkBottom, hs); !errors.Is(err, ErrQueueOff) {
+		t.Fatalf("queue off: %v", err)
+	}
+	if n := f.count("torrents/bottomPrio"); n != 2 {
+		t.Fatalf("a queue move was sent %d times", n)
 	}
 }

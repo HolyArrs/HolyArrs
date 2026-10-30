@@ -289,6 +289,11 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			names[d.DownloaderID] = n
 		}
 		row.Downloader, row.DownloaderKind, row.Protocol = n.name, n.kind, n.protocol
+		// A torrent of HolyArrs' own is also addressed by Downloader and hash,
+		// so a selection can act on it together with outside torrents.
+		if h := strings.ToLower(d.ExternalID); n.protocol == "torrent" && validHash(h) {
+			row.DownloaderID, row.Hash = d.DownloaderID, h
+		}
 		if d.ReleaseID != nil {
 			_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name, size FROM releases WHERE id = ?", *d.ReleaseID).Scan(&row.Name, &row.Size)
 		}

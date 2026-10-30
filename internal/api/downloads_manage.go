@@ -1,12 +1,14 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 )
 
@@ -15,6 +17,7 @@ import (
 // these routes add or change is the client's, never a HolyArrs download.
 func (a *API) clientManageRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloaders/{id}/torrents", a.addTorrents)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/bulk", a.bulkItems)
 }
 
 // addTorrentsMax caps one add: qBittorrent itself takes 64 MiB a request.
@@ -119,4 +122,100 @@ func validHash(s string) bool {
 		}
 	}
 	return true
+}
+
+// bulkIn is one action on many torrents of one Downloader.
+type bulkIn struct {
+	Action      string   `json:"action"`
+	Hashes      []string `json:"hashes"`
+	DeleteFiles bool     `json:"delete_files"`
+}
+
+const bulkHelp = `body is {"action": "start", "pause", "recheck", "reannounce", "top", "bottom", "up", "down", "force", "unforce" or "remove", "hashes": [info hash...], "delete_files": false}`
+
+// bulkItems runs one action on many torrents of one Downloader, in one call
+// to the client. Removing a torrent HolyArrs did not send needs the settings
+// permission, as for one torrent.
+func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		return
+	}
+	var in bulkIn
+	if !decode(w, r, &in, bulkHelp) {
+		return
+	}
+	if !a.bulkHashesOK(w, in.Hashes) {
+		return
+	}
+	known := in.Action == "remove"
+	for _, k := range downloader.BulkActions {
+		known = known || k == in.Action
+	}
+	if !known {
+		fail(w, http.StatusBadRequest, bulkHelp)
+		return
+	}
+	if in.Action == "remove" && !a.mayRemoveOutside(r.Context(), id, in.Hashes) {
+		fail(w, http.StatusForbidden, "removing a torrent HolyArrs did not send needs the settings permission")
+		return
+	}
+	err = a.onBulk(r, id, func(t downloader.TorrentBulk) error {
+		if in.Action == "remove" {
+			return t.RemoveMany(r.Context(), in.Hashes, in.DeleteFiles)
+		}
+		return t.Bulk(r.Context(), in.Action, in.Hashes)
+	})
+	if errors.Is(err, downloader.ErrQueueOff) {
+		fail(w, http.StatusConflict, err.Error())
+		return
+	}
+	if err != nil {
+		itemError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
+}
+
+// bulkHashesOK checks a selection: 1 to 1000 info hashes.
+func (a *API) bulkHashesOK(w http.ResponseWriter, hashes []string) bool {
+	if len(hashes) == 0 || len(hashes) > 1000 {
+		fail(w, http.StatusBadRequest, "hashes needs 1 to 1000 info hashes")
+		return false
+	}
+	for _, h := range hashes {
+		if !validHash(strings.ToLower(h)) {
+			fail(w, http.StatusBadRequest, "hashes are 40-character info hashes")
+			return false
+		}
+	}
+	return true
+}
+
+// mayRemoveOutside says the person may remove these torrents: any of them
+// that HolyArrs did not send needs the settings permission and an
+// admin-scoped key.
+func (a *API) mayRemoveOutside(ctx context.Context, downloaderID int64, hashes []string) bool {
+	who, ok := auth.From(ctx)
+	if !ok || (who.Has(auth.PermSettings) && who.HasScope(auth.ScopeAdmin)) {
+		return true
+	}
+	for _, h := range hashes {
+		if a.outsideHash(ctx, downloaderID, h) {
+			return false
+		}
+	}
+	return true
+}
+
+// onBulk runs a call on a torrent Downloader that acts on many torrents.
+func (a *API) onBulk(r *http.Request, id int64, call func(t downloader.TorrentBulk) error) error {
+	return a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
+		t, ok := e.(downloader.TorrentBulk)
+		if !ok {
+			return downloader.ErrNotSupported
+		}
+		return call(t)
+	})
 }

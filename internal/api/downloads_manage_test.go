@@ -55,3 +55,19 @@ func TestAddTorrentsRoute(t *testing.T) {
 	}
 	do(t, "POST", strings.Replace(base, "/downloaders/", "/downloaders/9", 1)+"/torrents", `{"links":["`+outHash+`"]}`, 404)
 }
+
+// route: POST /api/v1/downloaders/{id}/bulk
+func TestBulkRoute(t *testing.T) {
+	_, f, base := manageBase(t)
+	hs := `["` + outHash + `","` + strings.ToUpper(seedHash) + `"]`
+	for _, a := range []string{"start", "pause", "recheck", "reannounce", "top", "bottom", "up", "down", "force", "unforce"} {
+		do(t, "POST", base+"/bulk", `{"action":"`+a+`","hashes":`+hs+`}`, 200)
+	}
+	do(t, "POST", base+"/bulk", `{"action":"remove","hashes":`+hs+`,"delete_files":true}`, 200)
+	if !strings.Contains(f.saw(), "torrents/delete?deleteFiles=true&hashes="+outHash+"%7C"+seedHash) || !strings.Contains(f.saw(), "torrents/setForceStart?hashes="+outHash+"%7C"+seedHash+"&value=true") {
+		t.Fatalf("calls %s", f.saw())
+	}
+	do(t, "POST", base+"/bulk", `{"action":"explode","hashes":`+hs+`}`, 400)
+	do(t, "POST", base+"/bulk", `{"action":"start","hashes":["all"]}`, 400)
+	do(t, "POST", base+"/bulk", `{"action":"start","hashes":[]}`, 400)
+}

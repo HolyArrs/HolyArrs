@@ -278,6 +278,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/downloaders/{id}/items/{hash}/files": Core,
 	"PUT /api/v1/downloaders/{id}/items/{hash}/files": Core,
 	"POST /api/v1/downloaders/{id}/torrents": Core,
+	"POST /api/v1/downloaders/{id}/bulk": Core,
 	"GET /api/v1/imports":                                        Core,
 
 	// Parts and the controls.
