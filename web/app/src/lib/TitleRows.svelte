@@ -117,7 +117,7 @@
 {#snippet card({ c: raw, item }: Pair)}
 	{@const c = flow ? flow.live(raw) : raw}
 	{@const act = flow?.action(c) ?? null}
-	<WideCard cover title={c.name} href={hrefOf(item)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year, titleId: c.titleId }} followTmdb={followsByTmdb(c)}>
+	<WideCard cover title={c.name} href={hrefOf(item)} image={c.wide} poster={c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year, titleId: c.titleId }} followTmdb={followsByTmdb(c)}>
 		{#snippet growAction()}
 			{#if act}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />{/if}
 		{/snippet}

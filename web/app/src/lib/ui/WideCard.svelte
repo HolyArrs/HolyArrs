@@ -22,6 +22,7 @@
 		title,
 		href,
 		image,
+		poster,
 		subtitle,
 		meta,
 		badges = [],
@@ -67,6 +68,8 @@
 		title: string;
 		href?: string;
 		image?: string | null;
+		/** A portrait poster, used only when there is no landscape picture (cropped around its centre). */
+		poster?: string | null;
 		subtitle?: string;
 		meta?: string;
 		badges?: string[];
@@ -172,7 +175,9 @@
 	let pickFailed = $state(false);
 	// Title cards follow the card template: titled art, else logo, else name (all on the art).
 	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? null }, { art: pickFailed, logo: logoFailed }) : null);
-	const src = $derived(tpl ? tpl.image : (image ?? null));
+	const src = $derived((tpl ? tpl.image : image) || poster || null);
+	/** The shown picture is portrait (a poster): crop around its centre, not its top. */
+	let tall = $state(false);
 	// The card's rendered width picks the picture size (the grown card loads its own w1280).
 	let cw = $state(0);
 	$effect(() => {
@@ -209,7 +214,7 @@
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, strip && freshLabel(strip)].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !src || failed || !loaded}<ArtPlaceholder name={title} shape="wide" loading={!!src && !failed && near() && !loaded} />{/if}
-			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={artError} />{/key}{/if}
+			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} class:tall alt="" loading="lazy" decoding="async" use:whenLoaded={(e) => { tall = !!e && e.naturalHeight > e.naturalWidth; loaded = true; }} onerror={artError} />{/key}{/if}
 			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
 				<span class="name" class:lifted={!!strip} aria-hidden="true">
@@ -258,6 +263,7 @@
 	.hit:focus-visible { outline: none; }
 	.hit:focus-visible .art { box-shadow: var(--focus-ring); }
 	.art { position: relative; display: block; container: art / inline-size; aspect-ratio: var(--wide-ratio); margin-bottom: 8px; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+	img.tall { object-position: center 30%; }
 	img:not(.logo) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	img.in:not(.logo) { opacity: 1; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {

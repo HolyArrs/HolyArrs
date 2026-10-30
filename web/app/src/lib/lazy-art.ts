@@ -40,12 +40,12 @@ export function nearView(node: Element, near: () => void) {
 }
 
 /** whenLoaded calls done once the picture has loaded, also when it came from the cache before the listener. */
-export function whenLoaded(img: HTMLImageElement, done: () => void) {
+export function whenLoaded(img: HTMLImageElement, done: (img?: HTMLImageElement) => void) {
 	if (img.complete && img.naturalWidth > 0) {
-		done();
+		done(img);
 		return {};
 	}
-	const on = () => done();
+	const on = () => done(img);
 	img.addEventListener('load', on, { once: true });
 	return { destroy: () => img.removeEventListener('load', on) };
 }

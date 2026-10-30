@@ -298,9 +298,10 @@
 		browseArt = { ...browseArt, [t]: {} };
 		try {
 			// The same tiles Search's Browse grid shows: its first answer, then its Genres section.
-			const [a, more] = await Promise.all([api.get<BrowseAnswer>(browsePath(t)), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'genres')).catch(() => null)]);
+			// Worlds is read too: it holds the pictures the combined TV genres fall back on.
+			const [a, more, worlds] = await Promise.all([api.get<BrowseAnswer>(browsePath(t)), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'genres')).catch(() => null), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'worlds')).catch(() => null)]);
 			const art: Record<string, string> = {};
-			for (const x of [...(a.tiles ?? []), ...(more?.tiles ?? [])]) {
+			for (const x of [...(a.tiles ?? []), ...(more?.tiles ?? []), ...(worlds?.tiles ?? [])]) {
 				if (x.mood || !x.backdrop) continue;
 				const src = fitTile(x.backdrop, 130, false);
 				art[`id:${x.genre}`] ??= src;
@@ -312,7 +313,25 @@
 			// No art: the tiles keep their colour.
 		}
 	}
-	const genreTiles = $derived(genres.map((g) => ({ key: String(g.id), name: g.name, href: '', art: browseArt[type]?.[`id:${g.id}`] ?? browseArt[type]?.[`name:${g.name.toLowerCase()}`] ?? '', hue: 0, tint: tileHue(g.name) })));
+	// Genres Browse has no tile of their own (TMDB's combined TV genres) borrow a
+	// picture from the closest Browse tiles, tried in order.
+	const genreArtAlias: Record<string, string[]> = {
+		'action & adventure': ['action', 'adventure', 'treasure hunts'],
+		'sci-fi & fantasy': ['sci-fi', 'science fiction', 'fantasy', 'space', 'fantasy worlds', 'parallel worlds'],
+		'science fiction': ['sci-fi', 'space'],
+		fantasy: ['fantasy worlds', 'medieval'],
+		'war & politics': ['war', 'politics', 'world war ii', 'cold war'],
+		war: ['world war ii', 'cold war'],
+		'tv movie': ['drama'],
+		history: ['victorian era', 'ancient worlds', 'medieval'],
+	};
+	function genreArt(art: Record<string, string> | undefined, id: number, name: string): string {
+		if (!art) return '';
+		const n = name.toLowerCase();
+		for (const k of [`id:${id}`, `name:${n}`, ...(genreArtAlias[n] ?? []).map((a) => `name:${a}`)]) if (art[k]) return art[k];
+		return '';
+	}
+	const genreTiles = $derived(genres.map((g) => ({ key: String(g.id), name: g.name, href: '', art: genreArt(browseArt[type], g.id, g.name), hue: 0, tint: tileHue(g.name) })));
 	// The picker spans from the left edge of the type pills to the Genres button's right edge.
 	let typesBox = $state<HTMLElement>();
 	let pickW = $state(340);

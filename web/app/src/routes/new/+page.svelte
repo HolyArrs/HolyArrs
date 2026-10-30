@@ -255,7 +255,7 @@
 	{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 	{@const preview = cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined}
 	<div class="logo-wrap">
-		<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={rowType} {preview}
+		<WideCard cover title={c.name} href={cardHref(c)} image={c.wide} poster={c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={rowType} {preview}
 			growService={c.streaming ? { name: c.streaming.name, logo: logo(c.streaming.service) } : null}
 			growContext={contextLine({ state: mark?.state, label: mark?.label, mine: c.mine, fresh: c.fresh }, { rowType, rowTitle, fresh: c.fresh, streaming: c.streaming })}
 			followTmdb={followsByTmdb(c)}>
