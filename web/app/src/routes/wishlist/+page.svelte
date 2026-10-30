@@ -96,9 +96,10 @@
 		if (!ids.length) return;
 		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
-		const one = list.length === 1 ? list[0].name : `${ids.length} asks`;
+		// Words follow the asks actually decided (some in the list may be answered already).
+		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'The ask') : `${ids.length} asks`;
 		const verb = mode === 'approve' ? 'approved' : 'turned down';
-		toasts.push(`${one} ${ids.length === 1 && list.length === 1 ? 'is' : 'are'} ${verb}.`, 'ok', {
+		toasts.push(`${one} ${ids.length === 1 ? 'is' : 'are'} ${verb}.`, 'ok', {
 			ms: UNDO_MS,
 			action: {
 				label: 'Undo',

@@ -97,8 +97,12 @@
 	$effect(() => {
 		const a = picked;
 		if (!startChoosing || autoFor === a.id || !waiting(a)) return;
-		autoFor = a.id;
-		setTimeout(() => void choose(), 120);
+		// Cleared when the window steps on first, so the sheet never opens on the next ask unasked.
+		const t = setTimeout(() => {
+			autoFor = a.id;
+			void choose();
+		}, 120);
+		return () => clearTimeout(t);
 	});
 	const changed = $derived(!!(pick.seasons || pick.episodes || pick.albums || pick.songs));
 	function approveChosen() {

@@ -84,6 +84,13 @@
 		if (approving.has(a.id)) return;
 		approving = new Set(approving).add(a.id);
 		setTimeout(() => {
+			// Answered elsewhere meanwhile (Approve all, the window): only clear the beat.
+			if (!waiting(a)) {
+				const next = new Set(approving);
+				next.delete(a.id);
+				approving = next;
+				return;
+			}
 			// Focus goes on to the next card, so the keyboard doesn't fall back to the page top.
 			const card = document.querySelector<HTMLElement>(`.bc[data-ask="${a.id}"]`);
 			const after = card?.nextElementSibling?.querySelector<HTMLElement>('.open') ?? null;
@@ -117,20 +124,28 @@
 	function hide() {
 		if (win?.open) win.close();
 	}
-	let wasWaiting = false;
+	// Only an answer to the same ask moves on; stepping to an answered ask must not.
+	let wasWaiting = 0;
+	let advance: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
+		const id = openId;
 		const w = !!openAsk && waiting(openAsk);
-		if (wasWaiting && !w && win?.open) {
+		if (wasWaiting === id && id && !w && win?.open) {
 			// Answered here: go on to the next one still waiting, or close when none is left.
-			const gone = openId;
-			setTimeout(() => {
-				if (openId !== gone) return;
-				const next = list.find((x) => x.id !== gone && waiting(x));
+			clearTimeout(advance);
+			advance = setTimeout(() => {
+				if (openId !== id || !win?.open) return;
+				const next = list.find((x) => x.id !== id && waiting(x));
 				if (next) openId = next.id;
 				else hide();
-			}, 650);
+			}, ms(650));
 		}
-		wasWaiting = w;
+		wasWaiting = w ? id : 0;
+	});
+	$effect(() => () => clearTimeout(advance));
+	// The ask left the list (filter, tab or a refresh): don't leave an empty window open.
+	$effect(() => {
+		if (openId && !openAsk && win?.open) hide();
 	});
 	// ← and → (or the arrows) move to the ask before or after, without closing the window.
 	const at = $derived(list.findIndex((a) => a.id === openId));
@@ -168,7 +183,7 @@
 		</div>
 		<div class="right">
 			{#if ctx.tab === 'waiting' && list.filter(waiting).length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(list.filter(waiting))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(list.filter((x) => waiting(x) && !approving.has(x.id)))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
 			{/if}
 			<div class="cap">
 				<div class="seg" role="group" aria-label="Type" use:plate={ctx.kind}>

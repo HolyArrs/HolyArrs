@@ -23,6 +23,6 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, progress?: number)
 	if (!a.title_id) return { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Stopped: needs a look' };
 	const lo = STAGE_WEIGHT.getting;
 	const hi = STAGE_WEIGHT.getting_end;
-	const p = progress === undefined ? 0 : Math.min(Math.max(progress, 0), 1);
+	const p = progress === undefined || !Number.isFinite(progress) ? 0 : Math.min(Math.max(progress, 0), 1);
 	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: p > 0 ? `Getting it · ${Math.round(p * 100)}%` : 'Approved · getting it' };
 }
