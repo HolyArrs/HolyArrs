@@ -254,7 +254,7 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 	if n := l.count(t, "SELECT count(*) FROM sources WHERE name = 'Nyaa' AND state = 'disabled' AND secret_ref IS NULL"); n != 1 {
 		t.Fatal("source not paused")
 	}
-	if n := l.count(t, "SELECT count(*) FROM downloaders WHERE state = 'disabled' AND category = 'holyarrs' AND username = 'admin'"); n != 1 {
+	if n := l.count(t, "SELECT count(*) FROM downloaders WHERE state = 'disabled' AND category = 'holyarrs' AND username = ''"); n != 1 {
 		t.Fatal("downloader not paused")
 	}
 	if n := l.count(t, "SELECT count(*) FROM alerts WHERE enabled = 0 AND kind = 'discord'"); n != 1 {

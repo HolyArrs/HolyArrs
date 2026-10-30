@@ -163,7 +163,7 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		name: f.name.trim(),
 		kind: f.kind,
 		url: f.url.trim(),
-		username: f.kind === 'qbittorrent' || f.kind === 'transmission' || f.kind === 'nzbget' ? f.username.trim() : '',
+		username: f.kind === 'transmission' || f.kind === 'nzbget' ? f.username.trim() : '',
 		secret: f.secret,
 		category: f.category.trim(),
 		priority: Number(f.priority) || 1,

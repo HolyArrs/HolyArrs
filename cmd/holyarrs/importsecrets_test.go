@@ -32,8 +32,7 @@ indexers:
     allow_local_network: true
 qbittorrent:
   address: http://127.0.0.1:18708
-  username: lab
-  password: your-qbit-word-4
+  api_key: your-qbit-key-4
   allow_local_network: true
 radarr:
   address: http://127.0.0.1:18702
@@ -43,7 +42,7 @@ holyarrs:
   owner_api_key: your-owner-key-6
 `
 
-var cliValues = []string{"your-tvdb-key-1", "your-trakt-id-2", "your-feed-key-3", "your-qbit-word-4", "your-radarr-key-5", "your-owner-key-6", "18799", "18708", "18702", "18730"}
+var cliValues = []string{"your-tvdb-key-1", "your-trakt-id-2", "your-feed-key-3", "your-qbit-key-4", "your-radarr-key-5", "your-owner-key-6", "18799", "18708", "18702", "18730"}
 
 // configDir makes a config folder with a database and a master key, as a
 // first start leaves it.

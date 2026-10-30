@@ -12,22 +12,19 @@
 		up: string;
 		/** Time until everything finishes, short ("25m"). */
 		eta: string;
+		/** Free space as words; empty when no Downloader reports it (the pill hides). */
 		free: string;
-		/** The whole disk as words ("4 TB"). */
-		disk: string;
-		/** Free space as a share of the disk, 0..1. */
-		freeShare: number | null;
+		/** Downloaded today, or else this session; empty hides the pill. */
 		today: string;
-		used: string;
+		session?: string;
 		review: number;
 		onreview: () => void;
 		more: Snippet;
 	}
-	let { down, up, eta, free, disk, freeShare, today, used, review, onreview, more }: Props = $props();
+	let { down, up, eta, free, today, session = '', review, onreview, more }: Props = $props();
 
 	const time = $derived(timeWords(eta));
 	const timeTip = $derived(eta ? `${eta} left until everything finishes` : 'Nothing is downloading');
-	const freePct = $derived(freeShare == null ? null : Math.round(Math.min(1, Math.max(0, freeShare)) * 100));
 </script>
 
 {#snippet num(text: string)}{#key text}<b class="tk">{text}</b>{/key}{/snippet}
@@ -40,12 +37,10 @@
 	</span>
 	<!-- Storage: free words over a thin free-space meter, today, time left. -->
 	<span class="t" role="group" aria-label="Storage">
-		<span class="sg mp" data-testid="sb-free" title="{used} used">
-			<span class="ml"><span class="n">{@render num(free)}</span> <span class="sl">free of {disk}</span></span>
-			{#if freePct != null}<span class="mtr" role="meter" aria-label="Disk space free" aria-valuemin={0} aria-valuemax={100} aria-valuenow={freePct} data-testid="dl-meter"><i style="width: {freePct}%"></i></span>{/if}
-		</span>
-		<span class="sg x k1" data-testid="sb-today"><span class="sl">Today</span><span class="n">{@render num(today)}</span></span>
-		<span class="sg x k2" title={timeTip} data-testid="sb-time"><span class="sr-only">Time left: </span><span class="n tm">{@render num(time)}</span></span>
+		{#if free}<span class="sg mp" data-testid="sb-free"><span class="ml"><span class="n">{@render num(free)}</span> <span class="sl">free</span></span></span>{/if}
+		{#if today}<span class="sg x k1" data-testid="sb-today"><span class="sl">Today</span><span class="n">{@render num(today)}</span></span>
+		{:else if session}<span class="sg x k1" data-testid="sb-today"><span class="sl">Session</span><span class="n">{@render num(session)}</span></span>{/if}
+		{#if eta}<span class="sg x k2" title={timeTip} data-testid="sb-time"><span class="sr-only">Time left: </span><span class="n tm">{@render num(time)}</span></span>{/if}
 	</span>
 	{#if review}<button type="button" class="rv x" onclick={onreview} data-testid="dl-need" title="Open Problems › Review"><i aria-hidden="true"></i>{reviewWord(review)}</button>{/if}
 	<span class="mr x" data-testid="sb-more">{@render more()}</span>
@@ -73,8 +68,6 @@
 	/* Free words over a thin meter (the free part in green). */
 	.mp { flex-direction: column; justify-content: center; align-items: stretch; gap: 3px; }
 	.ml { line-height: 1; }
-	.mtr { display: block; height: 3px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
-	.mtr i { display: block; height: 100%; border-radius: inherit; background: var(--ok); transition: width 600ms var(--ease-out); }
 
 	/* The review call: its own red pill at track height, after the two tracks. */
 	.rv { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); font: var(--t-footnote); font-weight: 600; cursor: pointer; transition: background-color 160ms var(--ease-out); }
@@ -88,7 +81,7 @@
 	/* Numbers tick: the new value settles in from just below. */
 	.tk { display: inline-block; animation: tick 220ms var(--ease-out, ease-out); }
 	@keyframes tick { from { opacity: 0.4; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-	@media (prefers-reduced-motion: reduce) { .tk { animation: none; } .sg, .rv, .mtr i { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .tk { animation: none; } .sg, .rv { transition: none; } }
 
 	/* Narrower rows drop the lesser pills (they stay in the More menu) so the
 	   status never runs past the row's right edge. */

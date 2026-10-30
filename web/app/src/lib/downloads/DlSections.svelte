@@ -27,7 +27,8 @@
 	import { dlScope } from '../search-field.svelte.ts';
 	import { dlTop } from '../dl-top.svelte.ts';
 	import { toasts } from '../toasts.svelte.ts';
-	import { demoDetails, fileExtras, isProblem, sampleFiles, sampleHeader, sampleLog, samplePeers, sampleRatio, sampleServers, sampleStory, sampleSwarm, sampleTrackers, fileTree } from './sampleDetails.ts';
+	import { fileTree } from './filetree.ts';
+	import { api, message } from '../api.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
@@ -104,14 +105,89 @@
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 	const TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
-	// Sample state for the Files, Peers and Trackers tables (the page only; nothing is sent anywhere).
+	// Selection and folder state for the Files, Peers and Trackers tables.
 	let sel = $state<Record<string, string>>({});
-	let prio = $state<Record<string, string>>({});
 	let closed = $state<Record<string, boolean>>({});
-	const PRIOS = ['Skip', 'Normal', 'High', 'Max'];
-	const prioOf = (r: DownloadRow, key: string, i: number) => prio[`${r.id}|${key}`] ?? fileExtras(r, i).priority;
-	const savePath = (r: DownloadRow, im: ImportRecord | undefined) => im?.Plan?.find((x) => x.target_path)?.target_path || `/data/downloads/${r.kind === 'show' ? 'shows' : r.kind === 'artist' ? 'music' : 'movies'}/${(r.name || r.title || 'download').replace(/\.(mkv|nzb|torrent)$/i, '')}`;
-	const flagsOf = (p: { progress: number; down: number; up: number }) => `${p.progress >= 1 ? 'S ' : ''}${p.down > 0 ? 'D ' : ''}${p.up > 0 ? 'U ' : ''}E`.trim();
+	// qBittorrent's file priorities: 0 skip, 1 normal, 6 high, 7 maximum.
+	const PRIOS: { v: number; label: string }[] = [{ v: 0, label: 'Skip' }, { v: 1, label: 'Normal' }, { v: 6, label: 'High' }, { v: 7, label: 'Max' }];
+	const flagsOf = (p: { progress: number; speed: number; up_speed: number }) => `${p.progress >= 1 ? 'S ' : ''}${p.speed > 0 ? 'D ' : ''}${p.up_speed > 0 ? 'U' : ''}`.trim() || '–';
+	const TRACKER_WORD: Record<string, string> = { working: 'Working', not_contacted: 'Not contacted yet', not_working: 'Not working', error: 'Error', unreachable: 'Unreachable', disabled: 'Off' };
+
+	// The open download's real detail, read from the server (and through it
+	// from the torrent client) while its pane is open. Nothing is made up:
+	// what is not reported shows as a dash or an empty table.
+	type TorrentDetail = { size: number; downloaded: number; uploaded: number; wasted: number; speed: number; up_speed: number; eta: number; ratio: number; seeds: number; seeds_total: number; peers: number; peers_total: number; added_at?: string; done_at?: string; save_path: string; private?: boolean };
+	type Detail = { downloader: string; requested_by: string; torrent?: TorrentDetail; torrent_error?: string; log: { at: string; kind: string; summary: string }[] };
+	type TFile = { index: number; name: string; size: number; progress: number; priority: number };
+	type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number };
+	type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
+	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string };
+	let det = $state<Det>({ id: 0 });
+	let filesBusy = $state(false);
+	const LIVE = ['sent', 'queued', 'downloading', 'stalled', 'paused'];
+	async function readDetail(r: DownloadRow, tab: string) {
+		const id = r.id;
+		const next: Det = det.id === id ? { ...det } : { id };
+		try {
+			next.detail = await api.get<Detail>(`/downloads/${id}/detail`);
+		} catch {
+			next.detail = undefined;
+		}
+		if (protocolOf(r) === 'torrent' && LIVE.includes(r.state)) {
+			if (tab === 'Files') {
+				try {
+					next.files = (await api.get<{ files: TFile[] }>(`/downloads/${id}/files`)).files ?? [];
+					next.filesErr = undefined;
+				} catch (e) {
+					next.files = undefined;
+					next.filesErr = message(e);
+				}
+			}
+			if (tab === 'Peers' || tab === 'Trackers') {
+				try {
+					const sw = await api.get<{ trackers: Tracker[]; peers: Peer[] }>(`/downloads/${id}/swarm`);
+					next.trackers = sw.trackers ?? [];
+					next.peers = sw.peers ?? [];
+					next.swarmErr = undefined;
+				} catch (e) {
+					next.trackers = next.peers = undefined;
+					next.swarmErr = message(e);
+				}
+			}
+		}
+		if (openId === id) det = next;
+	}
+	async function setPrio(r: DownloadRow, indexes: number[], priority: number) {
+		if (!indexes.length) return;
+		filesBusy = true;
+		try {
+			await api.put(`/downloads/${r.id}/files`, { indexes, priority });
+			await readDetail(r, 'Files');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			filesBusy = false;
+		}
+	}
+	const fileIndexes = (files: TFile[], key: string) => files.filter((f) => f.name === key || f.name.startsWith(key + '/')).map((f) => f.index);
+
+	// What each Downloader says about itself (speeds, free space, totals).
+	type ClientStatus = { paused: boolean; speed: number; up_speed: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number };
+	type Client = { id: number; name: string; status?: ClientStatus; error?: string };
+	let clients = $state<Client[]>([]);
+	let clientsRead = $state(false);
+	async function readClients() {
+		try {
+			clients = (await api.get<{ clients: Client[] }>('/downloads/clients')).clients ?? [];
+		} catch {
+			clients = [];
+		}
+		clientsRead = true;
+	}
+	const reporting = $derived(clients.filter((c) => c.status && !c.error));
+	const sumOf = (k: keyof ClientStatus) => reporting.reduce((n, c) => n + (Number(c.status?.[k]) || 0), 0);
+	const freeAll = $derived(reporting.map((c) => c.status?.free_space ?? 0).filter((n) => n > 0));
+	const health = $derived(!clientsRead ? 'Not reported' : !clients.length ? 'Not connected' : reporting.length === clients.length ? 'Connected' : reporting.length ? `${reporting.length} of ${clients.length} connected` : 'Not connected');
 	const tabNow = (r: DownloadRow) => {
 		const t = tabOf(r.id);
 		return protocolOf(r) === 'torrent' || (t !== 'Peers' && t !== 'Trackers') ? t : 'Info';
@@ -187,6 +263,21 @@
 	const PANE_KEY = 'holyarrs.downloads.pane';
 	let paneH = $state(260);
 	let paneOpen = $state(true);
+	// Read the open download's detail now and every 3 seconds while it shows.
+	$effect(() => {
+		const r = openRow;
+		if (!r || !paneOpen) return;
+		const tab = tabNow(r);
+		void readDetail(r, tab);
+		const t = setInterval(() => void readDetail(r, tab), 3000);
+		return () => clearInterval(t);
+	});
+	// The Downloaders' own status for the pills, every 5 seconds.
+	$effect(() => {
+		void readClients();
+		const t = setInterval(() => void readClients(), 5000);
+		return () => clearInterval(t);
+	});
 	try {
 		const v = typeof localStorage === 'undefined' ? null : Number(localStorage.getItem(PANE_KEY));
 		if (v && Number.isFinite(v)) paneH = Math.max(120, Math.min(900, Math.round(v)));
@@ -816,25 +907,6 @@
 	{#if files && filesOpen.has(r.id)}<p class="nr" data-testid="dl-files">Not reported yet</p>{/if}
 {/snippet}
 
-{#snippet depth(r: DownloadRow)}
-	{#if demoDetails}
-		{#if isProblem(r)}
-			{@const st = sampleStory(r)}
-			<section class="dep story" data-testid="dl-story" aria-label="What happened">
-				<h4>What happened</h4>
-				<dl class="kv">{#each st.facts as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
-				<ol class="lg">{#each st.steps as x, i (i)}<li class:bad={x.bad}>{x.text}</li>{/each}</ol>
-			</section>
-		{/if}
-		{#if protocolOf(r) !== 'torrent'}
-			<section class="dep" data-testid="dl-servers" aria-label="Servers">
-				<h4>Supplied by</h4>
-				<ul class="fl">{#each sampleServers(r) as sv (sv.name)}<li><span class="fn">{sv.name}</span><span class="fs">{bytes(sv.bytes)} · {sv.missing} missing</span></li>{/each}</ul>
-			</section>
-		{/if}
-	{/if}
-{/snippet}
-
 {#snippet tabStrip(r: DownloadRow)}
 	{@const tor = protocolOf(r) === 'torrent'}
 	{@const tab = tabNow(r)}
@@ -867,103 +939,126 @@
 	{/each}
 {/snippet}
 
-{#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[], im: ImportRecord | undefined)}
+{#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[])}
 	{@const tor = protocolOf(r) === 'torrent'}
 	{@const tab = tabNow(r)}
+	{@const d = det.id === r.id ? det.detail : undefined}
+	{@const t = d?.torrent}
 	{#if tab === 'Info'}
-		{#if demoDetails}
-			{@const sw = sampleSwarm(r)}
+		{#if tor}
+			{@const speed = t?.speed ?? r.speed ?? 0}
+			{@const up = t?.up_speed ?? r.up_speed ?? 0}
+			{@const eta = t?.eta ?? r.eta ?? 0}
 			<div class="gen" data-testid="dl-info">
 				<dl class="kv">
 					<dt class="gh">Transfer</dt><dd class="gh"></dd>
-					<dt>Downloaded</dt><dd>{bytes((r.size || 0) * percent(r.progress) / 100)} of {bytes(r.size || 0)}</dd>
-					<dt>Speed</dt><dd>{r.speed ? `${bytes(r.speed)}/s down` : '–'}{r.up_speed ? ` · ${bytes(r.up_speed)}/s up` : ''}</dd>
-					<dt>Time left</dt><dd>{r.eta ? duration(r.eta) : '∞'}</dd>
-					{#if tor}
-						<dt>Share ratio</dt><dd>{sampleRatio(r)}</dd>
-						<dt>Seeds</dt><dd>{sw.seedsOn} connected of {sw.seedsOf}</dd>
-						<dt>Peers</dt><dd>{sw.peersOn} connected of {sw.peersOf}</dd>
-						<dt>Wasted</dt><dd>{bytes(sw.wasted)}</dd>
-					{/if}
+					<dt>Downloaded</dt><dd>{t ? `${bytes(t.downloaded)} of ${bytes(t.size)}` : r.size ? `${bytes((r.size * percent(r.progress)) / 100)} of ${bytes(r.size)}` : '–'}</dd>
+					<dt>Speed</dt><dd>{speed ? `${bytes(speed)}/s down` : '–'}{up ? ` · ${bytes(up)}/s up` : ''}</dd>
+					<dt>Time left</dt><dd>{eta ? duration(eta) : '–'}</dd>
+					<dt>Share ratio</dt><dd>{t ? t.ratio.toFixed(2) : '–'}</dd>
+					<dt>Seeds</dt><dd>{t ? `${t.seeds} connected of ${t.seeds_total}` : '–'}</dd>
+					<dt>Peers</dt><dd>{t ? `${t.peers} connected of ${t.peers_total}` : '–'}</dd>
+					<dt>Wasted</dt><dd>{t ? bytes(t.wasted) : '–'}</dd>
 				</dl>
 				<dl class="kv">
 					<dt class="gh">Properties</dt><dd class="gh"></dd>
-					<dt>Size</dt><dd>{bytes(r.size || 0)}</dd>
-					<dt>Added</dt><dd>{dateTime(r.started_at) || '–'}</dd>
-					<dt>Done</dt><dd>{dateTime(r.finished_at) || '–'}</dd>
-					<dt>Save path</dt><dd>{savePath(r, im)}</dd>
-					{#if tor}
-						<dt>Next tracker check</dt><dd>in {mmss(sw.nextCheck)}</dd>
-						<dt>Private</dt><dd>{sw.private ? 'Yes' : 'No'}</dd>
-					{/if}
-					{#each simple.filter((f) => f.label === 'Downloader' || f.label === 'Requested by') as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
+					<dt>Size</dt><dd>{t?.size || r.size ? bytes(t?.size || r.size || 0) : '–'}</dd>
+					<dt>Added</dt><dd>{dateTime(t?.added_at ?? r.started_at) || '–'}</dd>
+					<dt>Done</dt><dd>{dateTime(t?.done_at ?? r.finished_at) || '–'}</dd>
+					<dt>Save path</dt><dd>{t?.save_path || '–'}</dd>
+					<dt>Private</dt><dd>{t?.private == null ? '–' : t.private ? 'Yes' : 'No'}</dd>
+					<dt>Downloader</dt><dd>{d?.downloader || r.downloader || '–'}</dd>
+					<dt>Requested by</dt><dd>{d?.requested_by || '–'}</dd>
 				</dl>
 			</div>
+			{#if d?.torrent_error}<p class="nr" data-testid="dl-info-error">{d.torrent_error}</p>{/if}
 		{:else}
-			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}</dl>
+			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.label === 'Requested by' ? d?.requested_by || '–' : f.value}</dd>{/each}</dl>
 		{/if}
-	{:else if !demoDetails}
-		<p class="nr">Not reported yet</p>
 	{:else if tab === 'Files'}
-		{@const rowsT = fileTree(sampleFiles(r), (k) => !!closed[`${r.id}|${k}`])}
-		<div class="tblw" data-testid="dl-filetable"><table class="t2">
-			<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Total size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th><th class="c-num c-av">Availability</th></tr></thead>
-			<tbody>
-				{#each rowsT as t, ri (t.key)}
-					{@const pc = t.size ? Math.floor((t.done / t.size) * 100) : 0}
-					{@const pr = t.dir ? '' : prioOf(r, t.key, t.i)}
-					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-					<tr class:sel={sel[`${r.id}:f`] === t.key} class:off={pr === 'Skip'} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:f`] = t.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:f`] = t.key; }} data-testid="dl-filerow">
-						<td class="c-chk">{#if !t.dir}<input type="checkbox" checked={pr !== 'Skip'} aria-label="Download {t.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.checked ? 'Normal' : 'Skip')} />{/if}</td>
-						<td class="c-name"><span class="fnm" style="padding-left: {t.depth * 14}px">{#if t.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${t.key}`]} aria-label="{closed[`${r.id}|${t.key}`] ? 'Expand' : 'Collapse'} {t.name}" aria-expanded={!closed[`${r.id}|${t.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${t.key}`] = !closed[`${r.id}|${t.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={t.key}>{t.name}</span></span></td>
-						<td class="c-num c-size">{bytes(t.size)}</td>
-						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-						<td class="c-prio">{#if !t.dir}<select class="pick" aria-label="Priority of {t.name}" value={pr} onclick={(e) => e.stopPropagation()} onchange={(e) => (prio[`${r.id}|${t.key}`] = e.currentTarget.value)}>{#each PRIOS as o (o)}<option value={o}>{o}</option>{/each}</select>{/if}</td>
-						<td class="c-num c-rem">{bytes(Math.max(0, t.size - t.done))}</td>
-						<td class="c-num c-av">{t.dir ? '' : fileExtras(r, t.i).availability.toFixed(2)}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table></div>
+		{@const files = det.id === r.id ? det.files : undefined}
+		{#if !tor || !files}
+			<p class="nr" data-testid="dl-files-none">{tor && det.id === r.id && det.filesErr ? det.filesErr : '–'}</p>
+		{:else if !files.length}
+			<p class="nr" data-testid="dl-files-none">No files yet (the client is still fetching the torrent's metadata)</p>
+		{:else}
+			{@const rowsT = fileTree(files.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!closed[`${r.id}|${k}`])}
+			<div class="tblw" data-testid="dl-filetable"><table class="t2">
+				<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Total size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th></tr></thead>
+				<tbody>
+					{#each rowsT as x, ri (x.key)}
+						{@const pc = x.size ? Math.floor((x.done / x.size) * 100) : 0}
+						{@const f = x.dir ? undefined : files[x.i]}
+						{@const kids = x.dir ? files.filter((y) => y.name.startsWith(x.key + '/')) : []}
+						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
+						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+						<tr class:sel={sel[`${r.id}:f`] === x.key} class:off={skipped} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:f`] = x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:f`] = x.key; }} data-testid="dl-filerow">
+							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
+							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${x.key}`]} aria-label="{closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${x.key}`] = !closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
+							<td class="c-num c-size">{bytes(x.size)}</td>
+							<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
+							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
+							<td class="c-num c-rem">{bytes(Math.max(0, x.size - x.done))}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table></div>
+		{/if}
 	{:else if tab === 'Peers'}
-		<div class="tblw" data-testid="dl-peertable"><table class="t2">
-			<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
-			<tbody>
-				{#each samplePeers(r) as p, ri (p.ip + p.client)}
-					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-					<tr class:sel={sel[`${r.id}:p`] === p.ip} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:p`] = p.ip)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:p`] = p.ip; }} data-testid="dl-peerrow">
-						<td class="c-name"><span class="fn">{p.ip}</span></td>
-						<td class="c-cl"><span class="fn">{p.client}</span></td>
-						<td class="c-prog"><span class="pbar"><i style="width: {Math.floor(p.progress * 100)}%"></i></span><span class="pv">{Math.floor(p.progress * 100)}%</span></td>
-						<td class="c-num">{bytes(p.down)}/s</td>
-						<td class="c-num">{bytes(p.up)}/s</td>
-						<td class="c-fl">{flagsOf(p)}</td>
-					</tr>
-				{/each}
-				{#if !samplePeers(r).length}<tr><td colspan="6" class="nr">No peers connected</td></tr>{/if}
-			</tbody>
-		</table></div>
+		{@const peers = det.id === r.id ? det.peers : undefined}
+		{#if !peers}
+			<p class="nr">{det.id === r.id && det.swarmErr ? det.swarmErr : '–'}</p>
+		{:else}
+			<div class="tblw" data-testid="dl-peertable"><table class="t2">
+				<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
+				<tbody>
+					{#each peers as p, ri (p.address)}
+						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+						<tr class:sel={sel[`${r.id}:p`] === p.address} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:p`] = p.address)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:p`] = p.address; }} data-testid="dl-peerrow">
+							<td class="c-name"><span class="fn">{p.address}</span></td>
+							<td class="c-cl"><span class="fn">{p.client || '–'}</span></td>
+							<td class="c-prog"><span class="pbar"><i style="width: {Math.floor(p.progress * 100)}%"></i></span><span class="pv">{Math.floor(p.progress * 100)}%</span></td>
+							<td class="c-num">{bytes(p.speed)}/s</td>
+							<td class="c-num">{bytes(p.up_speed)}/s</td>
+							<td class="c-fl">{flagsOf(p)}</td>
+						</tr>
+					{/each}
+					{#if !peers.length}<tr><td colspan="6" class="nr">No peers connected</td></tr>{/if}
+				</tbody>
+			</table></div>
+		{/if}
 	{:else if tab === 'Trackers'}
-		<div class="tblw" data-testid="dl-trackertable"><table class="t2">
-			<thead><tr><th class="c-name">Source</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
-			<tbody>
-				{#each sampleTrackers(r) as t, ri (t.source)}
-					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-					<tr class:sel={sel[`${r.id}:t`] === t.source} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:t`] = t.source)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:t`] = t.source; }} data-testid="dl-trackerrow">
-						<td class="c-name"><span class="fn">{t.source}</span></td>
-						<td><span class="st-{t.state}">{t.status}</span></td>
-						<td class="c-num">{t.peers}</td>
-						<td class="c-num">{t.seeds}</td>
-						<td class="c-msg"><span class="fn">{t.message}</span></td>
-						<td class="c-num">{t.next ? mmss(t.next) : '–'}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table></div>
+		{@const trs = det.id === r.id ? det.trackers : undefined}
+		{#if !trs}
+			<p class="nr">{det.id === r.id && det.swarmErr ? det.swarmErr : '–'}</p>
+		{:else}
+			<div class="tblw" data-testid="dl-trackertable"><table class="t2">
+				<thead><tr><th class="c-name">Source</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
+				<tbody>
+					{#each trs as x, ri (x.url + x.tier)}
+						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+						<tr class:sel={sel[`${r.id}:t`] === x.url} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:t`] = x.url)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:t`] = x.url; }} data-testid="dl-trackerrow">
+							<td class="c-name"><span class="fn">{x.url}</span></td>
+							<td><span class="st-{x.status === 'working' ? 'working' : x.status === 'not_contacted' ? 'updating' : 'error'}">{TRACKER_WORD[x.status] ?? x.status}</span></td>
+							<td class="c-num">{x.peers}</td>
+							<td class="c-num">{x.seeds}</td>
+							<td class="c-msg"><span class="fn">{x.message || '–'}</span></td>
+							<td class="c-num">{x.next_check ? mmss(x.next_check) : '–'}</td>
+						</tr>
+					{/each}
+					{#if !trs.length}<tr><td colspan="6" class="nr">No trackers</td></tr>{/if}
+				</tbody>
+			</table></div>
+		{/if}
 	{:else}
-		<ol class="lg" data-testid="dl-log">
-			{#each sampleLog(r) as l, i (i)}<li class:bad={l.bad}><time>{l.at}</time> {l.text}</li>{/each}
-		</ol>
+		{@const log = d?.log ?? []}
+		{#if log.length}
+			<ol class="lg" data-testid="dl-log">
+				{#each log as l, i (i)}<li class:bad={/fail|error|stall|vanish/i.test(l.kind)}><time>{dateTime(l.at)}</time> {l.summary}</li>{/each}
+			</ol>
+		{:else}
+			<p class="nr" data-testid="dl-log-none">Nothing logged yet</p>
+		{/if}
 	{/if}
 {/snippet}
 
@@ -976,7 +1071,7 @@
 		{ label: 'Downloader', value: r.downloader || 'Not reported yet' },
 		{ label: 'Folder', value: im?.Plan?.find((p) => p.target_path)?.target_path || 'Not reported yet' },
 		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
-		{ label: 'Requested by', value: 'Not reported yet' }
+		{ label: 'Requested by', value: '–' }
 	]}
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="ph">
@@ -988,8 +1083,7 @@
 		<div class="pb" data-testid="dl-panel" data-card="d">
 			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name : ''} /></span>
 			<div class="xb">
-				{@render tabsView(r, simple, im)}
-				{@render depth(r)}
+				{@render tabsView(r, simple)}
 				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 				{@render btns(r, false)}
 				{#if r.can_act && !watch && !inHistory(r)}
@@ -1019,7 +1113,7 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div><DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={demoDetails ? bytes(sampleHeader.free) : '–'} disk={demoDetails ? bytes(sampleHeader.disk) : '–'} freeShare={demoDetails && sampleHeader.disk ? sampleHeader.free / sampleHeader.disk : null} today={demoDetails ? bytes(sampleHeader.today) : '–'} used={demoDetails ? bytes(sampleHeader.disk - sampleHeader.free) : '–'} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div><DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
 {#if list.length}
@@ -1042,16 +1136,16 @@
 </div>
 {#snippet morePop()}<Popover label="More status" icon="more" placement="below" align="end" width={280}>{#snippet children()}
 	<ul class="mo">
-		<li><i class="dot" class:ok={demoDetails} aria-hidden="true"></i> {demoDetails ? 'Connected' : 'Not reported'}</li>
-		{#if demoDetails}
-			<li data-testid="sb-session"><span class="k">This session</span> ↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)}</li>
-			<li data-testid="sb-totals"><span class="k">Today</span> {bytes(sampleHeader.today)} · <span class="k">Month</span> {bytes(sampleHeader.month)} · <span class="k">All time</span> {bytes(sampleHeader.all)}</li>
-			<li class="note" data-testid="sb-sample" title="The Downloader is not connected yet; these are made-up values.">Sample data</li>
+		<li><i class="dot" class:ok={health === 'Connected'} aria-hidden="true"></i> {health}</li>
+		{#each clients.filter((c) => c.error) as c (c.id)}<li class="note">{c.name}: {c.error}</li>{/each}
+		{#if sumOf('session_down') || sumOf('session_up')}<li data-testid="sb-session"><span class="k">This session</span> ↓ {bytes(sumOf('session_down'))} · ↑ {bytes(sumOf('session_up'))}</li>{/if}
+		{#if sumOf('day_down') || sumOf('month_down') || sumOf('all_time_down')}
+			<li data-testid="sb-totals">{#if sumOf('day_down')}<span class="k">Today</span> {bytes(sumOf('day_down'))} · {/if}{#if sumOf('month_down')}<span class="k">Month</span> {bytes(sumOf('month_down'))} · {/if}<span class="k">All time</span> {sumOf('all_time_down') ? bytes(sumOf('all_time_down')) : '–'}</li>
 		{/if}
 	</ul>
 {/snippet}</Popover>{/snippet}
 <!-- Connection health stays readable for screen readers and tests. -->
-<div class="vh"><span data-testid="sb-health">{demoDetails ? 'Connected' : 'Not reported'}</span></div>
+<div class="vh"><span data-testid="sb-health">{health}</span></div>
 </div>
 
 {#if ghost}<div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[ghost.id].label}</div>{/if}
@@ -1208,7 +1302,6 @@
 	.xtab.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
 	.xtab:focus-visible, .xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.fl { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font: var(--t-footnote); min-width: 0; }
-	.fl li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
 	.fn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fs { flex: none; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.lg { list-style: none; padding: 0; margin: 0; display: grid; gap: 3px; font: var(--t-caption); min-width: 0; max-height: 220px; overflow: auto; }
@@ -1269,7 +1362,6 @@
 	.pb .tblw { margin-top: 6px; }
 	.pb .gen { gap: 6px 20px; margin-top: 6px; }
 	.pb .dep { margin-top: 8px; padding: 6px 10px; }
-	.pb .dep h4 { margin-bottom: 4px; }
 	.pb .lg { font: var(--t-caption); }
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
@@ -1323,8 +1415,6 @@
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); } }
 	@media (prefers-reduced-motion: reduce) { .pw, .tab, .stab, .subwrap { transition: none; } }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
-	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
-	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
 	.story { border-color: color-mix(in srgb, var(--fail) 40%, var(--line)); }
 	.src { margin-top: 8px; }
 	.st-working { color: var(--ok); }
@@ -1368,7 +1458,6 @@
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
 		.mi { gap: 8px; }
-		.fl li { flex-direction: column; gap: 0; }
 		.fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
 		.strip { gap: 4px 14px; }

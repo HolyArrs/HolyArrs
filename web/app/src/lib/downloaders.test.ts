@@ -94,6 +94,15 @@ describe('downloaders', () => {
 		expect(body.path_map).toHaveLength(1);
 		expect(body.username).toBe('');
 	});
+
+	it('sends qBittorrent with its API key only, never a sign-in name', () => {
+		const f = emptyForm('qbittorrent');
+		f.username = 'admin';
+		f.secret = 'your-typed-key';
+		const body = formBody(f);
+		expect(body.username).toBe('');
+		expect(body.secret).toBe('your-typed-key');
+	});
 });
 
 describe('the Downloads screen', () => {

@@ -48,8 +48,7 @@ indexers:
     allow_local_network: yes
 qbittorrent:
   address: http://127.0.0.1:18708
-  username: admin
-  password: "your-qbit-word-9"
+  api_key: "your-qbit-key-9"
   allow_local_network: true
 sabnzbd:
   address: http://127.0.0.1:18707

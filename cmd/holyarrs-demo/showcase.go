@@ -46,6 +46,8 @@ type showcaseOptions struct {
 	Live    bool   // music part only, while the backend runs (no stop check, no config lock)
 	Init    bool   // mark the runtime folder as the showcase's and stop
 	Agent   bool   // add or update the agents' test account from stdin, while the backend runs
+	// ClearDownloads removes every download and the stand-in Downloader, then stops.
+	ClearDownloads bool
 }
 
 func parseShowcase(args []string) (showcaseOptions, error) {
@@ -58,9 +60,10 @@ func parseShowcase(args []string) (showcaseOptions, error) {
 	fs.StringVar(&o.Runtime, "runtime", def, "the showcase runtime folder (config, movies, shows, music, downloads)")
 	fs.StringVar(&o.AppURL, "app-url", "http://127.0.0.1:18728", "the showcase backend; it must be stopped")
 	fs.BoolVar(&o.Reset, "reset", false, "wipe every title, ask and stand-in download in the showcase, then seed again")
-	fs.BoolVar(&o.Live, "live", false, "seed only the music part (folders, members, artists, activity, asks) while the showcase backend runs; not with -reset or -init")
+	fs.BoolVar(&o.Live, "live", false, "seed only the music part (folders, members, artists, asks) while the showcase backend runs; not with -reset or -init")
 	fs.BoolVar(&o.Init, "init", false, "mark the runtime folder as the showcase's ("+showcaseMarker+") and stop")
 	fs.BoolVar(&o.Agent, "agent", false, "add or update the agents' test account (an admin) from \"name:\" and \"password:\" lines on stdin, then stop; the backend may run")
+	fs.BoolVar(&o.ClearDownloads, "clear-downloads", false, "remove every download (active ones through the Downloader manager) and the stand-in Downloader, then stop; the backend must be stopped")
 	if err := fs.Parse(args); err != nil {
 		return o, err
 	}
@@ -154,6 +157,12 @@ func showcaseCommand(ctx context.Context, o showcaseOptions, out io.Writer) erro
 	defer w.Close()
 	// A failed download stays failed in the showcase: no search after it.
 	w.dm.OnFailed = nil
+	if o.ClearDownloads {
+		if o.Reset || o.Live {
+			return errors.New("-clear-downloads runs on its own")
+		}
+		return w.showcaseClearDownloads(ctx)
+	}
 	if o.Reset {
 		if err := w.showcaseWipe(ctx); err != nil {
 			return fmt.Errorf("reset: %w", err)
@@ -278,6 +287,42 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 	})
 }
 
+// showcaseClearDownloads removes every download from the showcase: active
+// ones through the Downloader manager (their Slots go back to wanted), the
+// rest (finished, failed, imported) as rows, and then the stand-in
+// Downloader. The Downloads page then shows only what a real Downloader
+// reports. Titles, files, asks and accounts stay.
+func (w *world) showcaseClearDownloads(ctx context.Context) error {
+	db := w.s.Read()
+	active, err := store.Select[domain.Download](ctx, db, "downloads", "state IN ('sent', 'queued', 'downloading', 'stalled', 'paused') ORDER BY id")
+	if err != nil {
+		return err
+	}
+	for _, d := range active {
+		if err := w.dm.Remove(ctx, d.ID, downloader.RemoveChoice{}, w.by, "showcase: no stand-in downloads"); err != nil {
+			w.say("   download %d: %v", d.ID, err)
+		}
+	}
+	var rows int64
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		res, err := tx.Exec("DELETE FROM downloads")
+		if err == nil {
+			rows, _ = res.RowsAffected()
+		}
+		return err
+	}); err != nil {
+		return err
+	}
+	ds, _ := store.Select[domain.Downloader](ctx, db, "downloaders", "name = ? AND removed = 0", standInDownloader)
+	for _, d := range ds {
+		if err := downloader.Remove(ctx, w.s, d.ID, w.by); err != nil {
+			w.say("   Downloader %d: %v", d.ID, err)
+		}
+	}
+	w.say("== cleared: %d active downloads removed, %d download rows deleted, %d stand-in Downloaders removed", len(active), rows, len(ds))
+	return nil
+}
+
 const (
 	standInDownloader = "Showcase stand-in (no real downloads)"
 	standInSource     = "Showcase stand-in indexer (disabled)"
@@ -308,11 +353,10 @@ func (w *world) showcaseSeed(ctx context.Context, musicOnly bool) error {
 		{"shows", w.showcaseShows},
 		{"artists", w.showcaseArtists},
 		{"posters", w.posters},
-		{"activity", w.showcaseActivity},
 		{"asks", w.showcaseAsks},
 	}
 	for _, st := range steps {
-		if musicOnly && !map[string]bool{"library folders": true, "members": true, "artists": true, "activity": true, "asks": true}[st.name] {
+		if musicOnly && !map[string]bool{"library folders": true, "members": true, "artists": true, "asks": true}[st.name] {
 			continue
 		}
 		w.say("== %s", st.name)
@@ -362,9 +406,9 @@ func (w *world) showcaseFolders(ctx context.Context) error {
 	return nil
 }
 
-// standIns adds a disabled indexer and a Downloader at a closed local port,
-// so Releases and Downloads have something to belong to. Neither can reach
-// anything: nothing is searched for or downloaded.
+// standIns adds a disabled indexer at a closed local port so Releases have
+// something to belong to. It reaches nothing. The showcase adds no
+// Downloader and no downloads: the Downloads page shows only real data.
 func (w *world) standIns(ctx context.Context) error {
 	db := w.s.Read()
 	var n int
@@ -378,18 +422,6 @@ func (w *world) standIns(ctx context.Context) error {
 			return err
 		}
 		w.say("   added the stand-in indexer (disabled)")
-	}
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM downloaders WHERE name = ? AND removed = 0", standInDownloader).Scan(&n); err != nil {
-		return err
-	}
-	if n == 0 {
-		d := &domain.Downloader{Name: standInDownloader, Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:9", Category: "showcase",
-			Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "downloaders", d, w.by); return err }); err != nil {
-			return err
-		}
-		w.m.Downloaders = append(w.m.Downloaders, d.ID)
-		w.say("   added the stand-in Downloader at a closed port")
 	}
 	return nil
 }
@@ -812,180 +844,6 @@ func safeName(s string) string {
 		}
 		return r
 	}, s), ". ")
-}
-
-// showcaseActivity makes the grabs, imports, failed and unfinished
-// downloads through the app's own pick, Downloader and import code with the
-// stand-in Downloader.
-func (w *world) showcaseActivity(ctx context.Context) error {
-	ds, err := store.Select[domain.Downloader](ctx, w.s.Read(), "downloaders", "name = ? AND removed = 0", standInDownloader)
-	if err != nil || len(ds) == 0 {
-		w.skip("activity: no stand-in Downloader")
-		return err
-	}
-	w.dm.Sleep = func(context.Context, time.Duration) error { return nil }
-	if _, err := w.dm.Check(ctx, ds[0]); err != nil {
-		return fmt.Errorf("stand-in Downloader: %w", err)
-	}
-	gb := int64(1 << 30)
-	now := time.Now().UTC()
-	var stalled []int64
-	for _, e := range showcaseMovieList {
-		id := w.m.Titles["movie:"+e.TMDB]
-		key := "activity movie " + e.TMDB
-		if id == 0 || w.m.Steps[key] || e.Plan == "" {
-			continue
-		}
-		var t domain.Title
-		if err := store.Get(ctx, w.s.Read(), "titles", id, &t); err != nil {
-			return err
-		}
-		m := movieFromTitle(t)
-		q := e.Quality
-		if q == "" || e.Plan == planGone {
-			q = "bluray1080"
-		}
-		name := movieRelease(m, q)
-		var p payload
-		switch e.Plan {
-		case planGrab:
-			p = payload{Files: []string{name + ".mkv", name + ".nfo"}}
-		case planUpgrade:
-			name = movieRelease(m, "bluray1080")
-			p = payload{Files: []string{name + ".mkv"}}
-		case planFailed:
-			p = payload{Fail: true}
-		case planDecide:
-			p = payload{Files: []string{name + ".iso", name + ".nfo"}}
-		case planDownloading, planQueued, planPaused, planStalled:
-			st := map[string]string{planDownloading: downloader.StateDownloading, planQueued: downloader.StateQueued,
-				planPaused: downloader.StatePaused, planStalled: downloader.StateDownloading}[e.Plan]
-			p = payload{State: st, Progress: e.Progress, Speed: map[bool]int64{true: 6 << 20, false: 0}[e.Plan == planDownloading]}
-		default:
-			continue
-		}
-		slot, err := w.slotOf(ctx, id, "Main")
-		if err != nil {
-			w.skip("%s: no slot: %v", t.Name, err)
-			continue
-		}
-		rel, err := w.releaseFor(ctx, []int64{slot}, name, 9*gb, "chosen", 40)
-		if err != nil {
-			return err
-		}
-		if err := w.chooseAuto(ctx, id, slot, rel, name, 6); err != nil {
-			w.skip("%s: choose: %v", t.Name, err)
-			continue
-		}
-		if e.Plan == planStalled {
-			// Sent nine hours ago and never moved since.
-			w.dm.Now = func() time.Time { return now.Add(-9 * time.Hour) }
-		}
-		if err := w.grab(ctx, slot, rel, name, p); err != nil {
-			w.skip("%s: %v", t.Name, err)
-		}
-		w.dm.Now = nil
-		if e.Plan == planStalled {
-			stalled = append(stalled, id)
-		}
-		w.m.Steps[key] = true
-		w.say("   %-48s %s", t.Name, e.Scenario)
-	}
-	if len(stalled) > 0 {
-		w.dm.StallAfter, w.dm.ActAfter = time.Hour, 60*24*time.Hour
-		if _, err := w.dm.SyncOnce(ctx); err != nil {
-			w.say("   stall check: %v", err)
-		}
-		w.dm.StallAfter, w.dm.ActAfter = 0, 0
-	}
-	// Episodes and an album downloading now.
-	for _, ep := range showcaseEpisodeDownloads {
-		id := w.m.Titles["show:"+ep.TMDB]
-		key := fmt.Sprintf("activity episode %s S%02dE%02d", ep.TMDB, ep.Season, ep.Episode)
-		if id == 0 || w.m.Steps[key] {
-			continue
-		}
-		var t domain.Title
-		if err := store.Get(ctx, w.s.Read(), "titles", id, &t); err != nil {
-			return err
-		}
-		slots, err := w.episodeSlots(ctx, id, ep.Season, ep.Episode)
-		if err != nil || len(slots) == 0 {
-			w.skip("%s S%02dE%02d: no wanted episode (%v)", t.Name, ep.Season, ep.Episode, err)
-			w.m.Steps[key] = true
-			continue
-		}
-		name := fmt.Sprintf("%s.S%02dE%02d.%s", dotted(t.Name), ep.Season, ep.Episode, qualityTags["web1080"])
-		rel, err := w.releaseFor(ctx, slots, name, 3*gb, "chosen", 30)
-		if err != nil {
-			return err
-		}
-		if err := w.chooseAuto(ctx, id, slots[0], rel, name, 5); err != nil {
-			w.skip("%s: choose: %v", name, err)
-			continue
-		}
-		if err := w.grab(ctx, slots[0], rel, name, payload{State: ep.State, Progress: ep.Progress, Speed: 4 << 20}); err != nil {
-			w.skip("%s: %v", name, err)
-		}
-		w.m.Steps[key] = true
-		w.say("   %-48s S%02dE%02d %s %.0f%%", t.Name, ep.Season, ep.Episode, ep.State, ep.Progress*100)
-	}
-	for _, e := range showcaseArtistList {
-		id := w.m.Titles["artist:"+e.MBID]
-		key := "activity album " + e.MBID
-		if id == 0 || !e.Downloading || w.m.Steps[key] {
-			continue
-		}
-		w.m.Steps[key] = true
-		var partID int64
-		var album string
-		if err := w.s.Read().QueryRowContext(ctx, `SELECT p.id, p.name FROM parts p WHERE p.title_id = ? AND p.kind = 'album' AND p.keep_up_to_date = 1
-			AND EXISTS (SELECT 1 FROM items i WHERE i.part_id = p.id AND i.kind = 'track') ORDER BY p.release_date DESC LIMIT 1`, id).Scan(&partID, &album); err != nil {
-			w.skip("%s: no kept album to download: %v", e.Name, err)
-			continue
-		}
-		slots, err := w.albumSlots(ctx, partID)
-		if err != nil || len(slots) == 0 {
-			w.skip("%s %s: no wanted tracks (%v)", e.Name, album, err)
-			continue
-		}
-		name := dotted(e.Name) + "-" + dotted(album) + "-WEB-FLAC-2024"
-		rel, err := w.releaseFor(ctx, slots, name, gb/2, "chosen", 30)
-		if err != nil {
-			return err
-		}
-		if _, err := w.sr.Choose(ctx, rel, 0, true, w.by); err != nil {
-			w.skip("%s: choose album: %v", name, err)
-			continue
-		}
-		if err := w.grab(ctx, slots[0], rel, name, payload{State: downloader.StateDownloading, Progress: 0.71, Speed: 9 << 20}); err != nil {
-			w.skip("%s: %v", name, err)
-		}
-		w.say("   %-48s %s downloading 71%%", e.Name, album)
-	}
-	for _, p := range w.eng.made {
-		w.m.Paths = append(w.m.Paths, p)
-	}
-	w.eng.made = nil
-	return nil
-}
-
-func (w *world) albumSlots(ctx context.Context, partID int64) ([]int64, error) {
-	rows, err := w.s.Read().QueryContext(ctx, `SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
-		WHERE i.part_id = ? AND v.is_main = 1 AND s.state IN ('wanted', 'better_wanted') ORDER BY i.id`, partID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		out = append(out, id)
-	}
-	return out, rows.Err()
 }
 
 // showcaseAsks makes the Wishlist: asks waiting for approval (a member's

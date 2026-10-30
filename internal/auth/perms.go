@@ -395,6 +395,9 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/downloads/{id}/recheck":                         PermManageLibrary,
 	"POST /api/v1/downloads/{id}/reannounce":                      PermManageLibrary,
 	"GET /api/v1/downloads/{id}/swarm":                            PermManageLibrary,
+	"GET /api/v1/downloads/{id}/detail":                           PermManageLibrary,
+	"GET /api/v1/downloads/{id}/files":                            PermManageLibrary,
+	"PUT /api/v1/downloads/{id}/files":                            PermManageLibrary,
 	"GET /api/v1/downloads/clients":                               PermManageLibrary,
 	"POST /api/v1/downloads/pause-all":                            PermManageLibrary,
 	"POST /api/v1/downloads/resume-all":                           PermManageLibrary,
@@ -543,6 +546,9 @@ var ScopeNotes = map[string]string{
 // RoutePerms give them (see RouteScope).
 var RouteScopes = map[string]string{
 	"GET /api/v1/downloads/{id}/swarm":                            ScopeAdmin,
+	"GET /api/v1/downloads/{id}/detail":                           ScopeAdmin,
+	"GET /api/v1/downloads/{id}/files":                            ScopeAdmin,
+	"PUT /api/v1/downloads/{id}/files":                            ScopeAdmin,
 	"GET /api/v1/downloaders/{id}/attempts":                      ScopeAdmin,
 	"GET /api/v1/explore/title-stats":                            ScopeAdmin,
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": ScopeAdmin,

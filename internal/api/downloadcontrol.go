@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
@@ -32,6 +33,9 @@ func (a *API) downloadControlRoutes(m *http.ServeMux) {
 		return asTorrent(e, func(t downloader.TorrentController) error { return t.Reannounce(ctx, id) })
 	}))
 	m.HandleFunc("GET /api/v1/downloads/{id}/swarm", a.downloadSwarm)
+	m.HandleFunc("GET /api/v1/downloads/{id}/detail", a.downloadDetail)
+	m.HandleFunc("GET /api/v1/downloads/{id}/files", a.downloadFiles)
+	m.HandleFunc("PUT /api/v1/downloads/{id}/files", a.setDownloadFiles)
 	m.HandleFunc("GET /api/v1/downloads/clients", a.downloadClients)
 	m.HandleFunc("POST /api/v1/downloads/pause-all", a.allAct(true))
 	m.HandleFunc("POST /api/v1/downloads/resume-all", a.allAct(false))
@@ -109,6 +113,150 @@ func (a *API) downloadSwarm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+func asInspector(e downloader.Engine, f func(downloader.TorrentInspector) error) error {
+	t, ok := e.(downloader.TorrentInspector)
+	if !ok {
+		return downloader.ErrNotSupported
+	}
+	return f(t)
+}
+
+// DownloadLogLine is one thing HolyArrs did or saw for a download.
+type DownloadLogLine struct {
+	At      time.Time `json:"at"`
+	Kind    string    `json:"kind"`
+	Summary string    `json:"summary"`
+}
+
+// DownloadDetailView is the Info and Log of one download: what HolyArrs
+// knows, plus the torrent client's own detail while it still has it.
+type DownloadDetailView struct {
+	Downloader  string                    `json:"downloader"`
+	RequestedBy string                    `json:"requested_by"`
+	Torrent     *downloader.TorrentDetail `json:"torrent,omitempty"`
+	TorrentErr  string                    `json:"torrent_error,omitempty"`
+	Log         []DownloadLogLine         `json:"log"`
+}
+
+// downloadDetail reads one download's Info and Log. The client part is
+// left out when the client is not asked (finished, usenet) or fails.
+func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
+	id, ok := idIn(w, r, "download")
+	if !ok {
+		return
+	}
+	ctx := r.Context()
+	db := a.s.Store.Read()
+	var d domain.Download
+	if err := store.Get(ctx, db, "downloads", id, &d); err != nil {
+		clientControlError(w, err)
+		return
+	}
+	out := DownloadDetailView{Log: []DownloadLogLine{}}
+	var dr domain.Downloader
+	if store.Get(ctx, db, "downloaders", d.DownloaderID, &dr) == nil {
+		out.Downloader = dr.Name
+	}
+	switch d.StartedBy.Kind {
+	case "user":
+		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", d.StartedBy.ID).Scan(&out.RequestedBy)
+	case "":
+	default:
+		out.RequestedBy = "HolyArrs"
+	}
+	rows, err := a.s.Store.ReadEvents().QueryContext(ctx, "SELECT at, kind, summary FROM events WHERE download_id = ? ORDER BY at, id LIMIT 200", id)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	for rows.Next() {
+		var l DownloadLogLine
+		var at string
+		if rows.Scan(&at, &l.Kind, &l.Summary) == nil {
+			l.At, _ = time.Parse(store.TimeLayout, at)
+			out.Log = append(out.Log, l)
+		}
+	}
+	rows.Close()
+	if dr.Protocol == "torrent" && d.ExternalID != "" && isActiveDownload(d.State) {
+		err := a.manager().ControlEngine(ctx, dr, func(e downloader.Engine) error {
+			return asInspector(e, func(t downloader.TorrentInspector) error {
+				p, err := t.Properties(ctx, d.ExternalID)
+				if err == nil {
+					out.Torrent = &p
+				}
+				return err
+			})
+		})
+		if err != nil && !errors.Is(err, downloader.ErrNotSupported) {
+			out.TorrentErr = err.Error()
+		}
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func isActiveDownload(state string) bool {
+	switch state {
+	case "sent", "queued", "downloading", "stalled", "paused":
+		return true
+	}
+	return false
+}
+
+// downloadFiles lists a torrent's files with their priority.
+func (a *API) downloadFiles(w http.ResponseWriter, r *http.Request) {
+	id, ok := idIn(w, r, "download")
+	if !ok {
+		return
+	}
+	var files []downloader.TorrentFile
+	err := a.manager().Control(r.Context(), id, func(e downloader.Engine, ext string) error {
+		return asInspector(e, func(t downloader.TorrentInspector) error {
+			var err error
+			files, err = t.TorrentFiles(r.Context(), ext)
+			return err
+		})
+	})
+	if err != nil {
+		clientControlError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"files": files})
+}
+
+// setDownloadFiles sets which files of a torrent to fetch and how soon.
+func (a *API) setDownloadFiles(w http.ResponseWriter, r *http.Request) {
+	id, ok := idIn(w, r, "download")
+	if !ok {
+		return
+	}
+	var in struct {
+		Indexes  []int `json:"indexes"`
+		Priority int   `json:"priority"`
+	}
+	if !decode(w, r, &in, `body is {"indexes": [file index...], "priority": 0 (skip), 1 (normal), 6 (high) or 7 (maximum)}`) {
+		return
+	}
+	if len(in.Indexes) == 0 || len(in.Indexes) > 10000 {
+		fail(w, http.StatusBadRequest, "indexes needs 1 to 10000 file indexes")
+		return
+	}
+	switch in.Priority {
+	case 0, 1, 6, 7:
+	default:
+		fail(w, http.StatusBadRequest, downloader.ErrFilePriority.Error())
+		return
+	}
+	err := a.manager().Control(r.Context(), id, func(e downloader.Engine, ext string) error {
+		return asInspector(e, func(t downloader.TorrentInspector) error { return t.SetFilePriority(r.Context(), ext, in.Indexes, in.Priority) })
+	})
+	if err != nil {
+		clientControlError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 // ClientView is one Downloader with what it says about itself.

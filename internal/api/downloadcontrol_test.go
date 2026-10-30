@@ -31,7 +31,7 @@ func controlSeed(t *testing.T) (*dl41, *fakeClient) {
 		_ = r.ParseForm()
 		path := strings.TrimPrefix(r.URL.Path, "/api/v2/")
 		f.mu.Lock()
-		f.calls = append(f.calls, path+"="+r.Form.Get("hashes")+r.Form.Get("limit"))
+		f.calls = append(f.calls, path+"="+r.Form.Get("hashes")+r.Form.Get("limit")+r.Form.Get("id")+r.Form.Get("priority"))
 		f.mu.Unlock()
 		switch path {
 		case "sync/maindata":
@@ -42,6 +42,10 @@ func controlSeed(t *testing.T) (*dl41, *fakeClient) {
 			_, _ = w.Write([]byte(`{"peers":{}}`))
 		case "torrents/info":
 			_, _ = w.Write([]byte(`[]`))
+		case "torrents/properties":
+			_, _ = w.Write([]byte(`{"total_size":2000,"total_downloaded":500,"share_ratio":0.25,"seeds":1,"seeds_total":5,"peers":2,"peers_total":8,"addition_date":1700000000,"save_path":"/downloads","is_private":false}`))
+		case "torrents/files":
+			_, _ = w.Write([]byte(`[{"index":0,"name":"Movie/movie.mkv","size":1900,"progress":0.25,"priority":1},{"index":1,"name":"Movie/sample.mkv","size":100,"progress":0,"priority":0}]`))
 		}
 	}))
 	t.Cleanup(qb.Close)
@@ -109,4 +113,38 @@ func TestDownloadClientsAndAll(t *testing.T) {
 			t.Fatalf("missing %s in %s", w, got)
 		}
 	}
+}
+
+// route: GET /api/v1/downloads/{id}/detail
+// route: GET /api/v1/downloads/{id}/files
+// route: PUT /api/v1/downloads/{id}/files
+func TestDownloadDetailAndFiles(t *testing.T) {
+	x, f := controlSeed(t)
+	base := x.srv.URL + "/api/v1/downloads/" + itoa(x.dlID)
+	var d DownloadDetailView
+	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
+	if d.Torrent == nil || d.Torrent.Downloaded != 500 || d.Torrent.SeedsTotal != 5 || d.Torrent.SavePath != "/downloads" || d.Downloader == "" || d.Log == nil {
+		t.Fatalf("detail %+v", d)
+	}
+	var fs struct {
+		Files []map[string]any `json:"files"`
+	}
+	_ = json.Unmarshal(do(t, "GET", base+"/files", "", 200), &fs)
+	if len(fs.Files) != 2 || fs.Files[1]["priority"] != float64(0) {
+		t.Fatalf("files %+v", fs)
+	}
+	do(t, "PUT", base+"/files", `{"indexes":[1],"priority":3}`, 400)
+	do(t, "PUT", base+"/files", `{"indexes":[],"priority":1}`, 400)
+	do(t, "PUT", base+"/files", `{"indexes":[0,1],"priority":6}`, 200)
+	if got := f.saw(); !strings.Contains(got, "torrents/filePrio=0|16") {
+		t.Fatalf("calls %s", got)
+	}
+	do(t, "GET", x.srv.URL+"/api/v1/downloads/999/detail", "", 404)
+	exec41(t, x.s, "UPDATE downloads SET state = 'cleaned'")
+	d = DownloadDetailView{}
+	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
+	if d.Torrent != nil {
+		t.Fatalf("a finished download asks the client: %+v", d)
+	}
+	do(t, "GET", base+"/files", "", 409)
 }

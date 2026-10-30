@@ -11821,6 +11821,61 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/downloads/{id}/detail": {
+      "get": {
+        "description": "What HolyArrs knows about the download, its own log lines, and the torrent client's detail while the download is active.",
+        "operationId": "downloadDetail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader": {
+                      "type": "string"
+                    },
+                    "log": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "requested_by": {
+                      "type": "string"
+                    },
+                    "torrent": {
+                      "type": "object"
+                    },
+                    "torrent_error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "No such download."
+          }
+        },
+        "summary": "One download's Info and Log",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/downloads/{id}/edition": {
       "put": {
         "description": "Records the checked movie edition for a finished download. confirm must be true. retry queues the current waiting movie import after every constraint is rechecked.",
@@ -11878,6 +11933,123 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/{id}/files": {
+      "get": {
+        "description": "Read live from the torrent Downloader.",
+        "operationId": "downloadFiles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "files": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "A torrent's files with their priority",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Priority 0 skips the files; 1 is normal, 6 high, 7 maximum.",
+        "operationId": "setDownloadFiles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "indexes": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "priority": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "description": "No file indexes, or a priority that is not 0, 1, 6 or 7."
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Set which files of a torrent to fetch",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/downloads/{id}/mark-failed": {

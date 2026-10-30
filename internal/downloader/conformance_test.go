@@ -192,14 +192,14 @@ func checkJob(t *testing.T, j Job) {
 }
 
 func qbitHarness(t *testing.T) conformance {
-	const pw = "lab-test-pw" // test-only
+	const pw = "lab-test-key" // test-only
 	f, u := startFake(t)
-	f.user, f.pass = "holyarrs", pw
+	f.key = pw
 	return conformance{
 		name:    "qbittorrent",
-		engine:  NewQbittorrentLogin(u, "holyarrs", pw, nil),
-		badKey:  NewQbittorrentLogin(u, "holyarrs", "wrong", nil),
-		at:      func(base string) Engine { return NewQbittorrentLogin(base, "holyarrs", pw, nil) },
+		engine:  NewQbittorrentKey(u, pw, nil),
+		badKey:  NewQbittorrentKey(u, "wrong", nil),
+		at:      func(base string) Engine { return NewQbittorrentKey(base, pw, nil) },
 		secret:  pw,
 		release: AddRequest{URL: "magnet:?xt=urn:btih:" + hash, Name: "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS", Category: "holyarrs", SavePath: "/downloads", InfoHash: hash},
 		unknown: "0000000000000000000000000000000000000000",

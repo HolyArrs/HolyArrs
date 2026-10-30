@@ -11,8 +11,6 @@ import { defineConfig } from 'vite';
 const showcaseSite = '.svelte-kit/showcase/site';
 
 export default defineConfig({
-	// The preview fills the Files, Peers and Log tabs with sample values (sampleDetails.ts).
-	define: { 'import.meta.env.VITE_DEMO_DETAILS': '"1"' },
 	plugins: [
 		sveltekit({
 			adapter: adapter({ pages: showcaseSite, assets: showcaseSite, fallback: 'index.html', strict: true }),

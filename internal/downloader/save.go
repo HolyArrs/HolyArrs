@@ -25,13 +25,14 @@ var (
 	ErrPathMap  = errors.New("each path map needs both paths, each starting with / or a drive letter")
 	ErrUsername = errors.New("the sign-in name must be at most 100 characters")
 	ErrKeyNeed  = errors.New("SABnzbd needs its API key (SABnzbd: Config > General)")
+	ErrQbitKey  = errors.New("qBittorrent needs its API key (qBittorrent 5.2 or newer: Options > Web UI > API key)")
 	ErrKeyAgain = errors.New("the address changed to another host; type the key or password again so it is never sent to a new host by itself")
 	ErrNoVault  = errors.New("keys cannot be stored: the secrets vault is not open")
 	ErrBusy     = errors.New("this Downloader still has active downloads; pause it and let them finish first (its category and address cannot change, and it cannot be removed, while they run)")
 )
 
-// Input is what a person sets on a Downloader. Secret is the SABnzbd API key
-// or the qBittorrent, Transmission, NZBGet or Deluge password; empty keeps the stored one, ClearSecret
+// Input is what a person sets on a Downloader. Secret is the SABnzbd or
+// qBittorrent API key or the Transmission, NZBGet or Deluge password; empty keeps the stored one, ClearSecret
 // removes it. Nil fields keep what is stored (or the default when new).
 type Input struct {
 	Name        string           `json:"name"`
@@ -90,6 +91,9 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 			return ErrUsername
 		}
 		d.Username = strings.TrimSpace(*in.Username)
+	}
+	if d.Adapter == "qbittorrent" {
+		d.Username = "" // qBittorrent signs in with its API key only
 	}
 	if in.Category != nil {
 		c := strings.TrimSpace(*in.Category)
@@ -174,6 +178,9 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 	if d.Adapter == "sabnzbd" && in.Secret == "" {
 		return d, ErrKeyNeed
 	}
+	if d.Adapter == "qbittorrent" && in.Secret == "" {
+		return d, ErrQbitKey
+	}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, d.Name, 0); err != nil {
 			return err
@@ -231,6 +238,9 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		if in.ClearSecret {
 			if d.Adapter == "sabnzbd" && in.Secret == "" {
 				return ErrKeyNeed
+			}
+			if d.Adapter == "qbittorrent" && in.Secret == "" {
+				return ErrQbitKey
 			}
 			if err := dropSecret(tx, &d); err != nil {
 				return err

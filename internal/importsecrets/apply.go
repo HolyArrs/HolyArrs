@@ -465,7 +465,7 @@ func (r *run) importCreated(table string, id int64) bool {
 
 func (r *run) downloaders() {
 	q := r.f.QBittorrent
-	r.downloaderItem("qbittorrent", "qbittorrent", "qBittorrent", q.Address, q.Username, q.Password, q.AllowLocalNetwork, true)
+	r.downloaderItem("qbittorrent", "qbittorrent", "qBittorrent", q.Address, "", q.APIKey, q.AllowLocalNetwork, false)
 	s := r.f.SABnzbd
 	r.downloaderItem("sabnzbd", "sabnzbd", "SABnzbd", s.Address, "", s.APIKey, s.AllowLocalNetwork, false)
 	if !empty(s.NZBKey) {

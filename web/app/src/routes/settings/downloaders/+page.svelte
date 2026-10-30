@@ -112,7 +112,7 @@
 	}
 
 	function hasUsername(kind: DownloaderForm['kind']): boolean {
-		return kind === 'qbittorrent' || kind === 'transmission' || kind === 'nzbget';
+		return kind === 'transmission' || kind === 'nzbget';
 	}
 
 	function addressPlaceholder(kind: DownloaderForm['kind']): string {
@@ -246,6 +246,33 @@
 	(one minute, then twice as long each time, up to 30 minutes) and the next one is used. Every Downloader is checked once a minute.
 </p>
 
+{#snippet moreFields()}
+<div class="two">
+	<Field id="dl-cat" label="Category">
+		<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
+		<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
+	</Field>
+	<Field id="dl-prio" label="Priority" hint="1 to 50; 1 is used first.">
+		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
+	</Field>
+</div>
+<details class="more" open={form.path_map.length > 0}>
+	<summary>Different folder names</summary>
+	<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
+	{#each form.path_map as p, i (i)}
+		<div class="two">
+			<Field id="pm-theirs-{i}" label="Downloader's path">
+				<input id="pm-theirs-{i}" class="input mono" bind:value={p.theirs} placeholder="/data/downloads" />
+			</Field>
+			<Field id="pm-ours-{i}" label="HolyArrs' path">
+				<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
+			</Field>
+		</div>
+	{/each}
+	<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>Add a path pair</Button>
+</details>
+{/snippet}
+
 {#if editing}
 	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a Downloader' : `Change ${editing.name}`}>
 		<SettingsCard title={isNew ? 'Add a Downloader' : `Change ${editing.name}`}>
@@ -278,38 +305,20 @@
 					</Field>
 				</div>
 			{:else}
-				<Field id="dl-secret" label={form.kind === 'sabnzbd' ? 'API key' : 'Password'}>
-					<input id="dl-secret" class="input" class:mono={form.kind === 'sabnzbd'} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} />
-					<span class="hint">{form.kind === 'sabnzbd' ? 'In SABnzbd under Config, General.' : 'The Deluge Web UI password.'} Kept encrypted. Moving the address to another host needs it again.</span>
+				{@const key = form.kind === 'sabnzbd' || form.kind === 'qbittorrent'}
+				<Field id="dl-secret" label={key ? 'API key' : 'Password'}>
+					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} data-testid="dl-secret" />
+					<span class="hint">{form.kind === 'sabnzbd' ? 'In SABnzbd under Config, General.' : form.kind === 'qbittorrent' ? 'qBittorrent 5.2 or newer: Options, Web UI, API key.' : 'The Deluge Web UI password.'} Kept encrypted, never shown again. Moving the address to another host needs it again.</span>
 				</Field>
 			{/if}
 			{#if form.kind === 'deluge'}
 				<p class="notice">The Deluge Web UI must already be connected to the intended daemon, and that daemon must have the Label plugin enabled.</p>
 			{/if}
-			<div class="two">
-				<Field id="dl-cat" label="Category">
-					<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
-					<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
-				</Field>
-				<Field id="dl-prio" label="Priority" hint="1 to 50; 1 is used first.">
-					<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
-				</Field>
-			</div>
-			<details class="more" open={form.path_map.length > 0}>
-				<summary>Different folder names</summary>
-				<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
-				{#each form.path_map as p, i (i)}
-					<div class="two">
-						<Field id="pm-theirs-{i}" label="Downloader's path">
-							<input id="pm-theirs-{i}" class="input mono" bind:value={p.theirs} placeholder="/data/downloads" />
-						</Field>
-						<Field id="pm-ours-{i}" label="HolyArrs' path">
-							<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
-						</Field>
-					</div>
-				{/each}
-				<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>Add a path pair</Button>
-			</details>
+			{#if form.kind === 'qbittorrent'}
+				<details class="more"><summary>More options</summary>{@render moreFields()}</details>
+			{:else}
+				{@render moreFields()}
+			{/if}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
 				<span><b>May reach the local network</b><br /><span class="hint">On: it may run on this machine or your home network (the usual case). Off: only addresses on the internet.</span></span>
@@ -317,6 +326,8 @@
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">Test connection</Button>{/if}
+				{#if !isNew && editing && results[editing.id]}<span class="small" class:muted={results[editing.id].ok} role="status">{results[editing.id].text}</span>{/if}
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Downloader</Button>
 			</div>
 		</SettingsCard>
@@ -346,7 +357,7 @@
 				<p class="small" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>
 				<p class="xs muted">
 					{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'torrents'} · priority {d.priority} · category {d.category}
-					{#if d.secret} · {d.kind === 'sabnzbd' ? 'key' : 'password'} {d.secret}{/if}
+					{#if d.secret} · {d.kind === 'sabnzbd' || d.kind === 'qbittorrent' ? 'key' : 'password'} {d.secret}{/if}
 					{#if d.allow_local_network} · may reach the local network{/if}
 					· {d.active_downloads} active {d.active_downloads === 1 ? 'download' : 'downloads'}
 					{#if d.checked_at} · checked {ago(d.checked_at)}{/if}

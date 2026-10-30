@@ -7,26 +7,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/source"
 )
 
-// Qbittorrent talks to the qBittorrent Web API v2. Without a sign-in name it
-// relies on the client's trusted-subnet setting; with one it signs in when
-// the client answers 403 and tries once more. A 403 after that is ErrAuth.
+// Qbittorrent talks to the qBittorrent Web API v2 (5.2 or newer). It signs
+// in only with the client's API key, sent as a bearer header; there is no
+// name, password or cookie. A 401 or 403 is ErrAuth.
 type Qbittorrent struct {
-	base       string
-	http       *http.Client
-	user, pass string
-	signInMu   sync.Mutex
+	base string
+	http *http.Client
+	key  string
 }
 
-// NewQbittorrent makes an engine for the Web UI at base (such as http://qbittorrent:8090).
+// NewQbittorrent makes an engine for the Web UI at base (such as
+// http://qbittorrent:8090) with no key; only a client that trusts this
+// machine's address answers it.
 func NewQbittorrent(base string, h *http.Client) *Qbittorrent {
 	if h == nil {
 		h = &http.Client{Timeout: clientTimeout}
@@ -34,42 +33,15 @@ func NewQbittorrent(base string, h *http.Client) *Qbittorrent {
 	return &Qbittorrent{base: strings.TrimRight(base, "/"), http: h}
 }
 
-// NewQbittorrentLogin is NewQbittorrent with a sign-in name and password.
-func NewQbittorrentLogin(base, user, pass string, h *http.Client) *Qbittorrent {
+// NewQbittorrentKey is NewQbittorrent with the client's API key.
+func NewQbittorrentKey(base, key string, h *http.Client) *Qbittorrent {
 	q := NewQbittorrent(base, h)
-	if user != "" {
-		c := *q.http
-		if c.Jar == nil {
-			c.Jar, _ = cookiejar.New(nil)
-		}
-		q.http, q.user, q.pass = &c, user, pass
-	}
+	q.key = strings.TrimSpace(key)
 	return q
 }
 
-// signIn asks for a session cookie; the jar keeps it.
-func (q *Qbittorrent) signIn(ctx context.Context) error {
-	q.signInMu.Lock()
-	defer q.signInMu.Unlock()
-	b, err := q.do(ctx, http.MethodPost, "auth/login", url.Values{"username": {q.user}, "password": {q.pass}})
-	if err != nil {
-		return err
-	}
-	if strings.TrimSpace(string(b)) != "Ok." {
-		return ErrAuth
-	}
-	return nil
-}
-
 func (q *Qbittorrent) call(ctx context.Context, method, path string, form url.Values, okCodes ...int) ([]byte, error) {
-	b, err := q.do(ctx, method, path, form, okCodes...)
-	if errors.Is(err, ErrAuth) && q.user != "" {
-		if err := q.signIn(ctx); err != nil {
-			return nil, err
-		}
-		return q.do(ctx, method, path, form, okCodes...)
-	}
-	return b, err
+	return q.do(ctx, method, path, form, okCodes...)
 }
 
 func (q *Qbittorrent) do(ctx context.Context, method, path string, form url.Values, okCodes ...int) ([]byte, error) {
@@ -87,8 +59,12 @@ func (q *Qbittorrent) do(ctx context.Context, method, path string, form url.Valu
 	if body != nil {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
-	// qBittorrent checks Referer/Origin against its own address for writes.
-	req.Header.Set("Referer", q.base)
+	if q.key != "" {
+		req.Header.Set("Authorization", "Bearer "+q.key)
+	} else {
+		// Without a key, qBittorrent checks Referer/Origin against its own address for writes.
+		req.Header.Set("Referer", q.base)
+	}
 	resp, err := q.http.Do(req)
 	if err != nil {
 		var ue *url.Error

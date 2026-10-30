@@ -255,7 +255,7 @@ func TestFaultBadOutsideServices(t *testing.T) {
 	}
 	links := []*link{
 		{kind: "source", add: "/api/v1/sources", body: `{"name":"Hung Source","format":"torznab","url":"%s/api","api_key":"k-test","allow_local_network":true}`, test: "/api/v1/sources/%d/test"},
-		{kind: "downloader", add: "/api/v1/downloaders", body: `{"name":"Hung Downloader","kind":"qbittorrent","url":"%s","allow_local_network":true}`, test: "/api/v1/downloaders/%d/test"},
+		{kind: "downloader", add: "/api/v1/downloaders", body: `{"name":"Hung Downloader","kind":"qbittorrent","url":"%s","secret":"your-test-key","allow_local_network":true}`, test: "/api/v1/downloaders/%d/test"},
 		{kind: "subtitle_site", add: "/api/v1/subtitle-sites", body: `{"kind":"fake","url":"%s","allow_local_network":true,"limits":{"gap_ms":1,"per_window":100,"window_seconds":3600}}`, test: "/api/v1/subtitle-sites/%d/test"},
 		{kind: "media_server", add: "/api/v1/media-servers", body: `{"name":"Hung Jellyfin","kind":"jellyfin","url":"%s","token":"tk-test","allow_local_network":true}`, test: "/api/v1/media-servers/%d/test"},
 	}

@@ -109,7 +109,7 @@ func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }
 
-const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password), username, category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network`
+const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key only), username (not for qBittorrent), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network`
 
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {
@@ -126,7 +126,8 @@ func downloaderError(w http.ResponseWriter, err error) {
 	case errors.Is(err, store.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such Downloader")
 	case errors.Is(err, downloader.ErrName), errors.Is(err, downloader.ErrAdapter), errors.Is(err, downloader.ErrURL), errors.Is(err, downloader.ErrCategory),
-		errors.Is(err, downloader.ErrPriority), errors.Is(err, downloader.ErrPathMap), errors.Is(err, downloader.ErrUsername), errors.Is(err, downloader.ErrKeyNeed):
+		errors.Is(err, downloader.ErrPriority), errors.Is(err, downloader.ErrPathMap), errors.Is(err, downloader.ErrUsername), errors.Is(err, downloader.ErrKeyNeed),
+		errors.Is(err, downloader.ErrQbitKey):
 		fail(w, http.StatusBadRequest, err.Error())
 	default:
 		internal(w, err)

@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/source"
@@ -42,6 +43,8 @@ type Tracker struct {
 	Message string `json:"message"`
 	Seeds   int    `json:"seeds"`
 	Peers   int    `json:"peers"`
+	// NextCheck is seconds until the next announce; 0 when unknown.
+	NextCheck int64 `json:"next_check"`
 }
 
 // Peer is one connected peer of a torrent.
@@ -74,6 +77,48 @@ type TorrentController interface {
 	Trackers(ctx context.Context, id string) ([]Tracker, error)
 	Peers(ctx context.Context, id string) ([]Peer, error)
 }
+
+// TorrentDetail is what a torrent client says about one torrent. Sizes are
+// bytes, speeds bytes per second, ETA seconds (0 unknown).
+type TorrentDetail struct {
+	Size       int64      `json:"size"`
+	Downloaded int64      `json:"downloaded"`
+	Uploaded   int64      `json:"uploaded"`
+	Wasted     int64      `json:"wasted"`
+	Speed      int64      `json:"speed"`
+	UpSpeed    int64      `json:"up_speed"`
+	ETA        int64      `json:"eta"`
+	Ratio      float64    `json:"ratio"`
+	Seeds      int        `json:"seeds"`
+	SeedsTotal int        `json:"seeds_total"`
+	Peers      int        `json:"peers"`
+	PeersTotal int        `json:"peers_total"`
+	AddedAt    *time.Time `json:"added_at,omitempty"`
+	DoneAt     *time.Time `json:"done_at,omitempty"`
+	SavePath   string     `json:"save_path"`
+	Private    *bool      `json:"private,omitempty"`
+}
+
+// TorrentFile is one file inside a torrent. Priority: 0 skip, 1 normal,
+// 6 high, 7 maximum.
+type TorrentFile struct {
+	Index    int     `json:"index"`
+	Name     string  `json:"name"`
+	Size     int64   `json:"size"`
+	Progress float64 `json:"progress"`
+	Priority int     `json:"priority"`
+}
+
+// TorrentInspector reads one torrent's detail and files and sets which
+// files to fetch.
+type TorrentInspector interface {
+	Properties(ctx context.Context, id string) (TorrentDetail, error)
+	TorrentFiles(ctx context.Context, id string) ([]TorrentFile, error)
+	SetFilePriority(ctx context.Context, id string, indexes []int, priority int) error
+}
+
+// ErrFilePriority is a file priority that is not 0, 1, 6 or 7.
+var ErrFilePriority = errors.New("file priority is 0 (skip), 1 (normal), 6 (high) or 7 (maximum)")
 
 // Retrier tries a failed Usenet job again; the job id may change.
 type Retrier interface {
@@ -276,6 +321,7 @@ func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error
 		Msg    string `json:"msg"`
 		Seeds  int    `json:"num_seeds"`
 		Peers  int    `json:"num_peers"`
+		Next   int64  `json:"next_announce"`
 	}
 	if err := json.Unmarshal(b, &rows); err != nil {
 		return nil, fmt.Errorf("qbittorrent torrents/trackers: %w", err)
@@ -285,7 +331,7 @@ func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error
 		if r.Tier < 0 {
 			continue
 		}
-		out = append(out, Tracker{URL: trackerHost(r.URL), Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: redactURLs(r.Msg), Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0)})
+		out = append(out, Tracker{URL: trackerHost(r.URL), Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: redactURLs(r.Msg), Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0), NextCheck: max(r.Next, 0)})
 	}
 	return out, nil
 }
@@ -323,6 +369,97 @@ func (q *Qbittorrent) Peers(ctx context.Context, id string) ([]Peer, error) {
 		out = append(out, Peer{Address: addr, Client: p.Client, Progress: p.Progress, Speed: p.DLSpeed, UpSpeed: p.UPSpeed, Country: p.Country})
 	}
 	return out, nil
+}
+
+// Properties reads one torrent's detail.
+func (q *Qbittorrent) Properties(ctx context.Context, id string) (TorrentDetail, error) {
+	h, err := qbitHash(id)
+	if err != nil {
+		return TorrentDetail{}, err
+	}
+	b, err := q.call(ctx, http.MethodGet, "torrents/properties", url.Values{"hash": {h}})
+	if err != nil {
+		return TorrentDetail{}, err
+	}
+	var p struct {
+		Size       int64   `json:"total_size"`
+		Downloaded int64   `json:"total_downloaded"`
+		Uploaded   int64   `json:"total_uploaded"`
+		Wasted     int64   `json:"total_wasted"`
+		DLSpeed    int64   `json:"dl_speed"`
+		UPSpeed    int64   `json:"up_speed"`
+		ETA        int64   `json:"eta"`
+		Ratio      float64 `json:"share_ratio"`
+		Seeds      int     `json:"seeds"`
+		SeedsTotal int     `json:"seeds_total"`
+		Peers      int     `json:"peers"`
+		PeersTotal int     `json:"peers_total"`
+		Added      int64   `json:"addition_date"`
+		Done       int64   `json:"completion_date"`
+		SavePath   string  `json:"save_path"`
+		Private    *bool   `json:"is_private"`
+	}
+	if err := json.Unmarshal(b, &p); err != nil {
+		return TorrentDetail{}, fmt.Errorf("qbittorrent torrents/properties: %w", err)
+	}
+	when := func(s int64) *time.Time {
+		if s <= 0 {
+			return nil
+		}
+		t := time.Unix(s, 0).UTC()
+		return &t
+	}
+	eta := p.ETA
+	if eta >= 8640000 || eta < 0 {
+		eta = 0
+	}
+	return TorrentDetail{Size: max(p.Size, 0), Downloaded: max(p.Downloaded, 0), Uploaded: max(p.Uploaded, 0), Wasted: max(p.Wasted, 0),
+		Speed: max(p.DLSpeed, 0), UpSpeed: max(p.UPSpeed, 0), ETA: eta, Ratio: max(p.Ratio, 0),
+		Seeds: max(p.Seeds, 0), SeedsTotal: max(p.SeedsTotal, 0), Peers: max(p.Peers, 0), PeersTotal: max(p.PeersTotal, 0),
+		AddedAt: when(p.Added), DoneAt: when(p.Done), SavePath: p.SavePath, Private: p.Private}, nil
+}
+
+// TorrentFiles lists a torrent's files with their priority; empty before
+// the metadata arrives.
+func (q *Qbittorrent) TorrentFiles(ctx context.Context, id string) ([]TorrentFile, error) {
+	h, err := qbitHash(id)
+	if err != nil {
+		return nil, err
+	}
+	b, err := q.call(ctx, http.MethodGet, "torrents/files", url.Values{"hash": {h}})
+	if err != nil {
+		return nil, err
+	}
+	out := []TorrentFile{}
+	if err := json.Unmarshal(b, &out); err != nil {
+		return nil, fmt.Errorf("qbittorrent torrents/files: %w", err)
+	}
+	return out, nil
+}
+
+// SetFilePriority sets the priority of files by index.
+func (q *Qbittorrent) SetFilePriority(ctx context.Context, id string, indexes []int, priority int) error {
+	h, err := qbitHash(id)
+	if err != nil {
+		return err
+	}
+	switch priority {
+	case 0, 1, 6, 7:
+	default:
+		return ErrFilePriority
+	}
+	if len(indexes) == 0 {
+		return nil
+	}
+	ids := make([]string, len(indexes))
+	for i, n := range indexes {
+		if n < 0 {
+			return ErrNotFound
+		}
+		ids[i] = strconv.Itoa(n)
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/filePrio", url.Values{"hash": {h}, "id": {strings.Join(ids, "|")}, "priority": {strconv.Itoa(priority)}})
+	return err
 }
 
 // --- SABnzbd ---

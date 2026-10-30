@@ -19,10 +19,9 @@ type fakeQbit struct {
 	added    []map[string]string
 	cats     []string
 	deleted  []string
-	refuse   bool   // answer 403 like a client that wants a login
-	user     string // when set, a sign-in with user and pass is needed
-	pass     string
-	signIns  int
+	refuse   bool   // answer 403 like a client that wants a key
+	key      string // when set, every call needs Authorization: Bearer key
+	prio     []string // every filePrio call as "hash|id|priority"
 	addFails bool     // answer Fails. to an add
 	selected []string // every hashes= and hash= value asked for
 }
@@ -58,18 +57,9 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = r.ParseForm()
-	if f.user != "" {
-		if r.URL.Path == "/api/v2/auth/login" {
-			f.signIns++
-			if r.PostForm.Get("username") == f.user && r.PostForm.Get("password") == f.pass {
-				http.SetCookie(w, &http.Cookie{Name: "SID", Value: "lab-session", Path: "/"})
-				_, _ = w.Write([]byte("Ok."))
-				return
-			}
-			_, _ = w.Write([]byte("Fails."))
-			return
-		}
-		if c, err := r.Cookie("SID"); err != nil || c.Value != "lab-session" {
+	if f.key != "" {
+		// Bearer requests never reach the sign-in group, and a wrong key is 403.
+		if r.Header.Get("Authorization") != "Bearer "+f.key || strings.HasPrefix(r.URL.Path, "/api/v2/auth/") {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -127,6 +117,21 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_ = json.NewEncoder(w).Encode(fs)
+	case "/api/v2/torrents/properties":
+		t := f.torrents[r.Form.Get("hash")]
+		if t == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"total_size": t["size"], "total_downloaded": 1000, "total_uploaded": 500, "total_wasted": 7,
+			"dl_speed": t["dlspeed"], "up_speed": 20, "eta": 8640000, "share_ratio": 0.5, "seeds": 3, "seeds_total": 40, "peers": 2, "peers_total": 9,
+			"addition_date": 1700000000, "completion_date": -1, "save_path": t["save_path"], "is_private": true})
+	case "/api/v2/torrents/filePrio":
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		f.prio = append(f.prio, r.PostForm.Get("hash")+"|"+r.PostForm.Get("id")+"|"+r.PostForm.Get("priority"))
 	case "/api/v2/torrents/delete":
 		f.selected = append(f.selected, r.PostForm.Get("hashes"))
 		f.deleted = append(f.deleted, r.PostForm.Get("hashes")+"|"+r.PostForm.Get("deleteFiles"))
@@ -209,22 +214,76 @@ func TestQbitLoginWantedIsAuthError(t *testing.T) {
 	}
 }
 
-func TestQbitSignsInWhenAsked(t *testing.T) {
+func TestQbitSendsKeyAsBearer(t *testing.T) {
 	f, u := startFake(t)
-	f.user, f.pass = "holyarrs", "lab-test-pw"
+	f.key = "lab-test-key" // test-only
 	ctx := context.Background()
-	q := NewQbittorrentLogin(u, "holyarrs", "lab-test-pw", nil)
+	q := NewQbittorrentKey(u, "lab-test-key", nil)
 	if _, err := q.Health(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := q.List(ctx, "holyarrs"); err != nil || f.signIns != 1 {
-		t.Fatalf("list %v, sign-ins %d (the cookie must be kept)", err, f.signIns)
+	if _, err := q.List(ctx, "holyarrs"); err != nil {
+		t.Fatalf("list %v", err)
 	}
-	_, err := NewQbittorrentLogin(u, "holyarrs", "wrong", nil).Health(ctx)
+	_, err := NewQbittorrentKey(u, "wrong", nil).Health(ctx)
 	if !errors.Is(err, ErrAuth) || strings.Contains(err.Error(), "wrong") {
-		t.Fatalf("wrong password: %v", err)
+		t.Fatalf("wrong key: %v", err)
+	}
+	if _, err := NewQbittorrent(u, nil).Health(ctx); !errors.Is(err, ErrAuth) {
+		t.Fatalf("no key: %v", err)
 	}
 }
+
+func TestQbitNeverSignsInWithPassword(t *testing.T) {
+	var paths []string
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if r.Header.Get("Cookie") != "" {
+			t.Errorf("cookie sent: %q", r.Header.Get("Cookie"))
+		}
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer s.Close()
+	_, err := NewQbittorrentKey(s.URL, "k", nil).Health(context.Background())
+	if !errors.Is(err, ErrAuth) || len(paths) != 1 || paths[0] != "/api/v2/app/version" {
+		t.Fatalf("err %v paths %v (no sign-in retry)", err, paths)
+	}
+}
+
+func TestQbitPropertiesFilesAndPriority(t *testing.T) {
+	f, u := startFake(t)
+	f.key = "k"
+	q := NewQbittorrentKey(u, "k", nil)
+	ctx := context.Background()
+	f.set(hash, map[string]any{"size": 4000, "dlspeed": 99, "save_path": "/downloads"})
+	f.files[hash] = []map[string]any{{"index": 0, "name": "a/b.mkv", "size": 3000, "progress": 0.25, "priority": 1}, {"index": 1, "name": "a/c.nfo", "size": 1000, "progress": 0, "priority": 0}}
+	p, err := q.Properties(ctx, hash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Size != 4000 || p.Downloaded != 1000 || p.Speed != 99 || p.ETA != 0 || p.Ratio != 0.5 || p.SeedsTotal != 40 || p.PeersTotal != 9 ||
+		p.AddedAt == nil || p.DoneAt != nil || p.SavePath != "/downloads" || p.Private == nil || !*p.Private || p.Wasted != 7 {
+		t.Fatalf("properties %+v", p)
+	}
+	fs, err := q.TorrentFiles(ctx, hash)
+	if err != nil || len(fs) != 2 || fs[1].Index != 1 || fs[1].Priority != 0 || fs[0].Name != "a/b.mkv" {
+		t.Fatalf("files %+v %v", fs, err)
+	}
+	if err := q.SetFilePriority(ctx, hash, []int{0, 1}, 6); err != nil || len(f.prio) != 1 || f.prio[0] != hash+"|0|1|6" {
+		t.Fatalf("prio %v %v", err, f.prio)
+	}
+	if err := q.SetFilePriority(ctx, hash, []int{0}, 3); !errors.Is(err, ErrFilePriority) {
+		t.Fatalf("bad priority: %v", err)
+	}
+	if err := q.SetFilePriority(ctx, "all", []int{0}, 1); !errors.Is(err, errBadHash) {
+		t.Fatalf("bad hash: %v", err)
+	}
+	if _, err := q.Properties(ctx, "ffffffffffffffffffffffffffffffffffffffff"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing: %v", err)
+	}
+}
+
+var _ TorrentInspector = (*Qbittorrent)(nil)
 
 // A third engine only needs the Engine methods.
 var (

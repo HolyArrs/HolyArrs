@@ -1182,7 +1182,12 @@ func (b *builder) downloaders(s *Snapshot) {
 		}
 		cat := setStr(d.Settings, "movieCategory", "tvCategory", "musicCategory", "category")
 		locked := hasField(d.NeedsReentry, "password", "apiKey")
-		b.addDownloader(from, d.Name, &DownloaderPlan{Adapter: adapter, URL: u, Username: clip(setStr(d.Settings, "username"), 100),
+		user := clip(setStr(d.Settings, "username"), 100)
+		if adapter == "qbittorrent" {
+			// HolyArrs signs in to qBittorrent with its API key only.
+			user, locked = "", true
+		}
+		b.addDownloader(from, d.Name, &DownloaderPlan{Adapter: adapter, URL: u, Username: user,
 			Category: clean64(cat), Priority: d.Priority, NeedsInput: locked})
 	}
 	if d := s.Downloader; d != nil {
@@ -1193,7 +1198,7 @@ func (b *builder) downloaders(s *Snapshot) {
 			b.not(GroupDownloaders, from, string(s.Kind), "no usable address")
 		} else {
 			b.addDownloader(from, map[string]string{"qbittorrent": "qBittorrent", "sabnzbd": "SABnzbd"}[adapter],
-				&DownloaderPlan{Adapter: adapter, URL: u, Username: clip(d.Username, 100), NeedsInput: d.NeedsPassword || adapter == "sabnzbd"})
+				&DownloaderPlan{Adapter: adapter, URL: u, Username: map[bool]string{true: clip(d.Username, 100)}[adapter != "qbittorrent"], NeedsInput: d.NeedsPassword || adapter == "sabnzbd" || adapter == "qbittorrent"})
 		}
 		if d.SavePath != "" || d.CompletePath != "" {
 			b.not(GroupDownloaders, from+".save_path", "download folders", "the Downloader keeps its own folders; HolyArrs reads where each download lands")
@@ -1223,7 +1228,7 @@ func (b *builder) addDownloader(from, name string, d *DownloaderPlan) {
 	it.Detail += "; added paused: check it and resume it yourself"
 	if d.NeedsInput {
 		it.Needs = "your password"
-		if d.Adapter == "sabnzbd" {
+		if d.Adapter == "sabnzbd" || d.Adapter == "qbittorrent" {
 			it.Needs = "your key"
 		}
 		it.Detail = d.Adapter + " at " + d.URL + "; added paused until you type " + it.Needs + " and resume it"
