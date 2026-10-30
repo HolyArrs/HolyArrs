@@ -286,13 +286,14 @@ export function askedByOne(a: Pick<Ask, 'asked_by' | 'people'>, id: number): boo
 	return a.asked_by.id === id || a.people.some((p) => p.id === id);
 }
 
-export type InboxView = 'list' | 'wall';
-/** loadView reads whether a member sees Approvals as a list or a poster wall (the wall when none is kept). */
+export type InboxView = 'rows' | 'list' | 'wall';
+/** loadView reads how a member sees Approvals: wide rows, the list beside the Stage, or the poster wall (rows when none is kept). */
 export function loadView(member: number | undefined, store: Store = globalThis.localStorage): InboxView {
 	try {
-		return store?.getItem(key('view', member)) === 'list' ? 'list' : 'wall';
+		const v = store?.getItem(key('view', member));
+		return v === 'list' || v === 'wall' ? v : 'rows';
 	} catch {
-		return 'wall';
+		return 'rows';
 	}
 }
 export function saveView(member: number | undefined, v: InboxView, store: Store = globalThis.localStorage) {

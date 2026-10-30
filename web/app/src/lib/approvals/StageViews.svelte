@@ -34,7 +34,7 @@
 	let listOpen = $state(true);
 	let groupBy = $state<GroupBy>('type');
 	// The poster wall (posters like Explore, asker on each) or the list beside the Stage.
-	let view = $state<InboxView>('wall');
+	let view = $state<InboxView>('rows');
 	function setView(v: InboxView) {
 		view = v;
 		saveView(ctx.me, v);
@@ -182,6 +182,24 @@
 			: [])
 	]);
 	const sizeItems = $derived<MenuItem[]>([{ kind: 'heading', label: 'Poster size' }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: `${sizeLabels[z]} posters`, checked: size === z, onselect: () => setSize(z) }))]);
+	const tabs = $derived(inboxTabs.filter((t) => ctx.approver || t.tab !== 'failed'));
+	// How the page lays asks out: wide rows (as Seerr's request list), the poster wall, or the list beside the Stage.
+	const viewWords: Record<InboxView, string> = { rows: 'Rows', wall: 'Posters', list: 'List and panel' };
+	const viewPick = $derived<MenuItem[]>([{ kind: 'heading', label: 'Layout' }, ...(['rows', 'wall', 'list'] as const).map((v) => ({ label: viewWords[v], checked: view === v, onselect: () => setView(v) }))]);
+	// Rows sort by when asked or when last changed, newest first unless flipped.
+	type SortBy = 'asked' | 'changed';
+	let sortBy = $state<SortBy>('asked');
+	let oldestFirst = $state(false);
+	const changedAt = (a: Ask) => a.decided_at ?? a.asked_at;
+	const sorted = $derived.by(() => {
+		const at = (a: Ask) => Date.parse(sortBy === 'changed' ? changedAt(a) : a.asked_at) || 0;
+		return [...ctx.shown].sort((x, y) => (oldestFirst ? at(x) - at(y) : at(y) - at(x)));
+	});
+	const statusItems = $derived<MenuItem[]>(tabs.map((t) => ({ label: `${t.label} (${ctx.counts[t.tab]})`, checked: ctx.tab === t.tab, onselect: () => ctx.setTab(t.tab) })));
+	const sortItems = $derived<MenuItem[]>([
+		{ label: 'Newest asks', checked: sortBy === 'asked', onselect: () => (sortBy = 'asked') },
+		{ label: 'Last changed', checked: sortBy === 'changed', onselect: () => (sortBy = 'changed') }
+	]);
 	// The wall keeps one View menu: shelves by, filter and the list switch.
 	const viewItems = $derived<MenuItem[]>([
 		{ kind: 'heading', label: 'Shelves by' },
@@ -189,9 +207,8 @@
 		{ kind: 'separator' },
 		...filterItems,
 		{ kind: 'separator' },
-		{ label: 'Show as a list', icon: 'sidebar', onselect: () => setView('list') }
+		...viewPick
 	]);
-	const tabs = $derived(inboxTabs.filter((t) => ctx.approver || t.tab !== 'failed'));
 	const people = $derived(personGroups(ctx.shown));
 	const types = $derived(
 		(['movie', 'show', 'artist'] as const)
@@ -202,7 +219,8 @@
 	// The picked ask and the stepper follow the list as it is grouped on screen.
 	const ordered = $derived(groups.flatMap((g) => g.asks));
 	const wall = $derived(view === 'wall' && !oneByOne);
-	const split = $derived(wide && !oneByOne && !wall);
+	const rowsView = $derived(view === 'rows' && !oneByOne);
+	const split = $derived(wide && !oneByOne && !wall && !rowsView);
 	const emptyWord = $derived(ctx.tab === 'waiting' ? 'Inbox clear' : `Nothing ${inboxTabs.find((t) => t.tab === ctx.tab)?.label.toLowerCase()}`);
 </script>
 
@@ -250,13 +268,22 @@
 
 <div class="stage size-{size}" class:collapsed={split && !listOpen} data-testid="approvals-stage" data-size={size} data-list={split ? (listOpen ? 'open' : 'hidden') : undefined}>
 	<div class="sbar">
+		{#if rowsView}
+			<Menu label="Status" variant="button" text={`${tabs.find((t) => t.tab === ctx.tab)?.label ?? 'Waiting'} · ${ctx.counts[ctx.tab]}`} icon="chevronDown" items={statusItems} width={220} />
+		{:else}
 		<div class="chips" role="group" aria-label="Show" data-testid="ask-tabs">
 			{#each tabs as t (t.tab)}
 				<span class="cw" class:zero={ctx.counts[t.tab] === 0}><Chip label={t.label} count={ctx.counts[t.tab]} selected={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)} /></span>
 			{/each}
 		</div>
+		{/if}
 		<div class="tools">
-			{#if wall}
+			{#if rowsView}
+				<Menu label="Sort" variant="button" text={sortBy === 'changed' ? 'Last changed' : 'Newest asks'} icon="chevronDown" items={sortItems} width={200} align="end" />
+				<IconButton icon="chevronUpDown" label={oldestFirst ? 'Oldest first' : 'Newest first'} onclick={() => (oldestFirst = !oldestFirst)} />
+				<Menu label="Filter asks" variant="button" text={filterOn ? `Filter · ${filterOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={240} align="end" />
+				<Menu label="Layout" variant="button" text="Rows" icon="chevronDown" items={viewPick} width={200} align="end" />
+			{:else if wall}
 				{#if ctx.choosable && ctx.shown.length > 1}
 					<Button variant={selecting ? 'primary' : 'secondary'} size="md" data-testid="select" onclick={() => { selecting = !selecting; if (!selecting) for (const a of chosen) ctx.toggleChosen(a.id); }}>{selecting ? 'Done' : 'Select'}</Button>
 				{/if}
@@ -264,7 +291,7 @@
 			{:else}
 				<Menu label="Filter asks" variant="button" text={filterOn ? `Filter · ${filterOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={240} align="end" />
 				{#if !oneByOne}<Menu label="Poster size" variant="button" text={sizeLabels[size]} icon="chevronDown" items={sizeItems} width={200} align="end" />{/if}
-				{#if !oneByOne}<Button variant="secondary" size="md" data-testid="view-toggle" onclick={() => setView('wall')}>Posters</Button>{/if}
+				{#if !oneByOne}<Menu label="Layout" variant="button" text="List" icon="chevronDown" items={viewPick} width={200} align="end" />{/if}
 				{#if split}
 					<Button variant="secondary" size="md" icon="sidebar" aria-expanded={listOpen} aria-controls={listId} data-testid="list-toggle" onclick={() => setList(!listOpen)}>{listOpen ? 'Hide list' : 'Show list'}</Button>
 				{/if}
@@ -303,7 +330,39 @@
 			</div>
 		{/if}
 
-		{#if wall}
+		{#if rowsView}
+			<ul class="wrows" aria-label="Asks" data-testid="ask-rows">
+				{#each sorted as x (x.id)}
+					{@const p = ctx.who(x)}
+					<li class="wr" class:chosen={ctx.isChosen(x.id)} class:sending={ctx.isPending(x.id)} data-testid="ask">
+						{#if x.poster}<div class="wr-bg" aria-hidden="true" style:background-image={`url("${x.poster}")`}></div>{/if}
+						{@render chooseBox(x)}
+						<button class="wr-art" type="button" aria-label="Open {x.name}" onclick={(e) => pick(x, e.currentTarget)}>{@render thumb(x, 'cover')}</button>
+						<div class="wr-main">
+							<span class="wr-k">{kindWord(x.kind)}{x.year ? ` · ${x.year}` : ''}</span>
+							<button class="wr-name" type="button" data-row={x.id} data-testid="ask-name" onclick={(e) => pick(x, e.currentTarget)}>{x.name}</button>
+							{#if x.kind !== 'movie'}<span class="wr-line">{line(x)}</span>{/if}
+							{#if notOut(x)}<span class="soon">Not out yet</span>{/if}
+						</div>
+						<dl class="wr-meta">
+							<dt>Status</dt><dd><StatusPill kind={ctx.pill(x).kind} label={ctx.pill(x).label} /></dd>
+							<dt>Asked</dt><dd><span class="who"><Avatar name={p.name} src={p.avatar} size={20} /><span class="wn">{p.name}</span>{#if p.kid}<KidMark label="Kid" size="sm" />{/if}</span> · <time datetime={x.asked_at} title={dateTime(x.asked_at)}>{ago(x.asked_at)}</time></dd>
+							{#if ctx.decided(x)}<dt>Changed</dt><dd>{ctx.decided(x)}{#if x.decided_at} · <time datetime={x.decided_at} title={dateTime(x.decided_at)}>{ago(x.decided_at)}</time>{/if}</dd>{/if}
+						</dl>
+						<div class="wr-act">
+							{#if waiting(x)}
+								<Button size="md" variant="primary" icon="check" type="button" data-testid="ask-approve" onclick={() => ctx.approve([x])}>Approve</Button>
+								<Button size="md" icon="x" type="button" data-testid="ask-decline" onclick={() => ctx.turnDown([x])}>Turn down</Button>
+							{:else if ctx.isPending(x.id)}
+								<span class="sending-word">Sending…</span>
+							{:else}
+								<Button size="md" type="button" onclick={(e: MouseEvent) => pick(x, e.currentTarget as HTMLElement)}>Details</Button>
+							{/if}
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{:else if wall}
 			{@const hero = ctx.tab === 'waiting' ? (ordered.find(waiting) ?? null) : null}
 			{#if hero}
 				{@const hw = ctx.who(hero)}
@@ -506,6 +565,23 @@
 	.hero-note { font: var(--t-callout); color: var(--text); }
 	.hero-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
+	/* Rows: one wide card per ask, as Seerr's request list; poster blurred behind, facts in the middle, answers on the right. */
+	.wrows { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+	.wr { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); transition: opacity var(--dur-fast) var(--ease-out); }
+	.wr.chosen { box-shadow: 0 0 0 2px var(--accent); }
+	.wr-bg { position: absolute; inset: 0; z-index: -1; background-size: cover; background-position: center 30%; filter: blur(24px) saturate(1.3); opacity: 0.28; mask-image: linear-gradient(90deg, #000 0%, transparent 75%); pointer-events: none; }
+	.wr-art { flex: none; width: 72px; padding: 0; border: 0; background: none; border-radius: 8px; overflow: hidden; cursor: pointer; }
+	.wr-art:focus-visible, .wr-name:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.wr-main { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+	.wr-k { color: var(--text-muted); font: var(--t-footnote); }
+	.wr-name { max-width: 100%; padding: 0; border: 0; background: none; color: var(--text); font: var(--t-headline); text-align: left; cursor: pointer; overflow-wrap: anywhere; border-radius: 4px; }
+	.wr-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.wr-line { color: var(--text-muted); font: var(--t-callout); }
+	.wr-meta { flex: 1 1 260px; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px 12px; margin: 0; font: var(--t-footnote); }
+	.wr-meta dt { color: var(--text-muted); }
+	.wr-meta dd { margin: 0; min-width: 0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+	.wr-act { flex: none; display: flex; flex-direction: column; gap: 8px; min-width: 140px; }
+
 	.calm { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 56px 20px; text-align: center; color: var(--text-muted); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	.calm h2 { font: var(--t-headline); color: var(--text); }
 	.muted { color: var(--text-muted); }
@@ -532,6 +608,11 @@
 		.lhead { border-radius: var(--r-card); }
 		.row { padding: 10px; gap: 10px; }
 		.stage { --ask-item: 38vw; }
+		.wr { flex-wrap: wrap; padding: 12px; gap: 12px; }
+		.wr-art { width: 64px; }
+		.wr-meta { order: 3; width: 100%; grid-template-columns: auto minmax(0, 1fr); }
+		.wr-act { order: 4; width: 100%; }
+		.wr-act > :global(*) { flex: 1 1 auto; }
 		.hero { flex-direction: column; align-items: flex-start; gap: 14px; padding: 16px; }
 		.hero-art { width: 120px; }
 		.hero-name { font: var(--t-title2); }
