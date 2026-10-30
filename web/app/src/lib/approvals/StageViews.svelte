@@ -15,6 +15,8 @@
 	import IconButton from '../ui/IconButton.svelte';
 	import Chip from '../ui/Chip.svelte';
 	import Shelf from '../ui/Shelf.svelte';
+	import VariantBar from '../ui/VariantBar.svelte';
+	import LookViews from './LookViews.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 	import StatusPill from '../ui/StatusPill.svelte';
 	import KidMark from './KidMark.svelte';
@@ -35,6 +37,16 @@
 	let groupBy = $state<GroupBy>('type');
 	// The poster wall (posters like Explore, asker on each) or the list beside the Stage.
 	let view = $state<InboxView>('rows');
+	// The five layouts on the pill bar (?view=1…5); 0 is the page as it is.
+	let look = $state(0);
+	const lookOptions = [
+		{ value: 0, label: 'Now' },
+		{ value: 1, label: 'Conversation' },
+		{ value: 2, label: 'Spotlight' },
+		{ value: 3, label: 'Board' },
+		{ value: 4, label: 'Tickets' },
+		{ value: 5, label: 'Ledger' }
+	];
 	function setView(v: InboxView) {
 		view = v;
 		saveView(ctx.me, v);
@@ -114,7 +126,7 @@
 		const i = ctx.shown.findIndex((x) => x.id === a.id);
 		pickedId = a.id;
 		lastAt = Math.max(i, 0);
-		if (!wide || wall) void openFull(a, el);
+		if (!wide || wall || look > 0) void openFull(a, el);
 	}
 	function step(by: number) {
 		const n = ordered.length;
@@ -218,9 +230,9 @@
 	const groups = $derived<{ id: string | number; name: string; asks: Ask[] }[]>(groupBy === 'person' ? people : groupBy === 'date' ? dateGroups(ctx.shown) : types);
 	// The picked ask and the stepper follow the list as it is grouped on screen.
 	const ordered = $derived(groups.flatMap((g) => g.asks));
-	const wall = $derived(view === 'wall' && !oneByOne);
-	const rowsView = $derived(view === 'rows' && !oneByOne);
-	const split = $derived(wide && !oneByOne && !wall && !rowsView);
+	const wall = $derived(view === 'wall' && !oneByOne && !look);
+	const rowsView = $derived(view === 'rows' && !oneByOne && !look);
+	const split = $derived(wide && !oneByOne && !wall && !rowsView && !look);
 	const emptyWord = $derived(ctx.tab === 'waiting' ? 'Inbox clear' : `Nothing ${inboxTabs.find((t) => t.tab === ctx.tab)?.label.toLowerCase()}`);
 </script>
 
@@ -278,7 +290,9 @@
 		</div>
 		{/if}
 		<div class="tools">
-			{#if rowsView}
+			{#if look > 0}
+				<Menu label="Filter asks" variant="button" text={filterOn ? `Filter · ${filterOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={240} align="end" />
+			{:else if rowsView}
 				<Menu label="Sort" variant="button" text={sortBy === 'changed' ? 'Last changed' : 'Newest asks'} icon="chevronDown" items={sortItems} width={200} align="end" />
 				<IconButton icon="chevronUpDown" label={oldestFirst ? 'Oldest first' : 'Newest first'} onclick={() => (oldestFirst = !oldestFirst)} />
 				<Menu label="Filter asks" variant="button" text={filterOn ? `Filter · ${filterOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={240} align="end" />
@@ -302,7 +316,9 @@
 		</div>
 	</div>
 
-	{#if oneByOne}
+	{#if look === 3}
+		<LookViews {ctx} {look} {line} open={pick} />
+	{:else if oneByOne}
 		<FocusView ctx={focusCtx} />
 	{:else if ctx.shown.length === 0}
 		<div class="calm" data-testid="calm">
@@ -311,7 +327,7 @@
 			<p class="muted">{ctx.tab === 'waiting' ? 'Nothing waits for an answer.' : 'Pick another tab above.'}</p>
 		</div>
 	{:else}
-		{#if ctx.choosable && (!wall || selecting)}
+		{#if ctx.choosable && !look && (!wall || selecting)}
 			<div class="lhead" class:on={chosen.length > 0} data-testid="ask-bulk">
 				<label class="all"><input class="tick" type="checkbox" checked={allChosen} indeterminate={chosen.length > 0 && !allChosen} onchange={() => ctx.chooseAll(ctx.shown)} />{chosen.length ? `${chosen.length} chosen` : 'Choose all'}</label>
 				{#if chosen.length}
@@ -330,7 +346,9 @@
 			</div>
 		{/if}
 
-		{#if rowsView}
+		{#if look > 0}
+			<LookViews {ctx} {look} {line} open={pick} />
+		{:else if rowsView}
 			<ul class="wrows" aria-label="Asks" data-testid="ask-rows">
 				{#each sorted as x (x.id)}
 					{@const p = ctx.who(x)}
@@ -443,6 +461,8 @@
 		{/if}
 	{/if}
 </div>
+
+<VariantBar options={lookOptions} bind:value={look} storageKey="holyarrs.approvals-look" label="Approvals layout" />
 
 {#if fullOpen && fullAsk}
 	<div class="full" role="dialog" aria-modal="true" aria-label={fullAsk.name} data-testid="ask-full">
