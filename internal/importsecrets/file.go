@@ -83,7 +83,13 @@ type File struct {
 	Jackett     KeyApp    `json:"jackett"`
 	Prowlarr    KeyApp    `json:"prowlarr"`
 	Indexers    []Indexer `json:"indexers"`
-	QBittorrent KeyApp    `json:"qbittorrent"`
+	QBittorrent struct {
+		Address           string `json:"address"`
+		APIKey            string `json:"api_key"` // qBittorrent 5.2 or newer; used before a user name and password
+		Username          string `json:"username"`
+		Password          string `json:"password"`
+		AllowLocalNetwork bool   `json:"allow_local_network"`
+	} `json:"qbittorrent"`
 	SABnzbd     struct {
 		Address           string `json:"address"`
 		APIKey            string `json:"api_key"`

@@ -7,24 +7,43 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/source"
 )
 
-// Qbittorrent talks to the qBittorrent Web API v2 (5.2 or newer). It signs
-// in only with the client's API key, sent as a bearer header; there is no
-// name, password or cookie. A 401 or 403 is ErrAuth.
+// Qbittorrent talks to the qBittorrent Web API v2. It signs in one of two
+// ways: with the client's API key as a bearer header (5.2 or newer), or with
+// a user name and password through the sign-in action, keeping the session
+// cookie and signing in again once when a call answers 403. A wrong
+// password counts towards qBittorrent's ban on the caller's address, so
+// after a refused sign-in the engine does not try again for a while.
 type Qbittorrent struct {
-	base string
-	http *http.Client
-	key  string
+	base       string
+	http       *http.Client
+	key        string
+	user, pass string
+	signInMu   sync.Mutex
+	refusedAt  time.Time // last refused sign-in; no new try until qbitSignInPause has passed
+	refusedErr error
 }
 
+// qbitSignInPause is how long a refused sign-in is not tried again.
+var qbitSignInPause = 5 * time.Minute
+
+// ErrQbitKeyRefused is a refused API key: wrong, or a qBittorrent older than
+// 5.2, which has no API key and ignores the bearer header.
+var ErrQbitKeyRefused = fmt.Errorf("%w: qBittorrent turned down the API key (it needs qBittorrent 5.2 or newer)", ErrAuth)
+
+// ErrQbitBanned is qBittorrent's ban on this address after failed sign-ins.
+var ErrQbitBanned = fmt.Errorf("%w: qBittorrent has banned this address after failed sign-ins; wait for the ban to end (an hour by default)", ErrAuth)
+
 // NewQbittorrent makes an engine for the Web UI at base (such as
-// http://qbittorrent:8090) with no key; only a client that trusts this
+// http://qbittorrent:8090) with no sign-in; only a client that trusts this
 // machine's address answers it.
 func NewQbittorrent(base string, h *http.Client) *Qbittorrent {
 	if h == nil {
@@ -40,8 +59,69 @@ func NewQbittorrentKey(base, key string, h *http.Client) *Qbittorrent {
 	return q
 }
 
+// NewQbittorrentLogin is NewQbittorrent with a user name and password.
+func NewQbittorrentLogin(base, user, pass string, h *http.Client) *Qbittorrent {
+	q := NewQbittorrent(base, h)
+	if user != "" {
+		c := *q.http
+		c.Jar, _ = cookiejar.New(nil)
+		q.http, q.user, q.pass = &c, user, pass
+	}
+	return q
+}
+
+// signIn asks for a session cookie; the jar keeps it. 204 or 200 "Ok." is
+// a session, 401 or 200 "Fails." wrong details, 403 a ban.
+func (q *Qbittorrent) signIn(ctx context.Context) error {
+	q.signInMu.Lock()
+	defer q.signInMu.Unlock()
+	if !q.refusedAt.IsZero() && time.Since(q.refusedAt) < qbitSignInPause {
+		return q.refusedErr
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, q.base+"/api/v2/auth/login",
+		strings.NewReader(url.Values{"username": {q.user}, "password": {q.pass}}.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Referer", q.base)
+	resp, err := q.http.Do(req)
+	if err != nil {
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			err = ue.Err
+		}
+		return fmt.Errorf("qbittorrent auth/login: %w", err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	text := strings.TrimSpace(string(b))
+	switch {
+	case resp.StatusCode == http.StatusNoContent, resp.StatusCode == http.StatusOK && text != "Fails.":
+		q.refusedAt, q.refusedErr = time.Time{}, nil
+		return nil
+	case resp.StatusCode == http.StatusForbidden:
+		q.refusedAt, q.refusedErr = time.Now(), ErrQbitBanned
+	case resp.StatusCode == http.StatusUnauthorized, resp.StatusCode == http.StatusOK:
+		q.refusedAt, q.refusedErr = time.Now(), ErrAuth
+	default:
+		return fmt.Errorf("qbittorrent auth/login: %s", resp.Status)
+	}
+	return q.refusedErr
+}
+
 func (q *Qbittorrent) call(ctx context.Context, method, path string, form url.Values, okCodes ...int) ([]byte, error) {
-	return q.do(ctx, method, path, form, okCodes...)
+	b, err := q.do(ctx, method, path, form, okCodes...)
+	if errors.Is(err, ErrAuth) && q.user != "" {
+		if err := q.signIn(ctx); err != nil {
+			return nil, err
+		}
+		return q.do(ctx, method, path, form, okCodes...)
+	}
+	if errors.Is(err, ErrAuth) && q.key != "" {
+		return nil, ErrQbitKeyRefused
+	}
+	return b, err
 }
 
 func (q *Qbittorrent) do(ctx context.Context, method, path string, form url.Values, okCodes ...int) ([]byte, error) {

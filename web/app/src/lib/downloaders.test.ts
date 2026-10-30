@@ -95,13 +95,14 @@ describe('downloaders', () => {
 		expect(body.username).toBe('');
 	});
 
-	it('sends qBittorrent with its API key only, never a sign-in name', () => {
+	it('sends qBittorrent with a user name and password, or a key with no name', () => {
 		const f = emptyForm('qbittorrent');
-		f.username = 'admin';
+		f.username = ' admin ';
+		f.secret = 'your-typed-word';
+		expect(formBody(f)).toMatchObject({ username: 'admin', secret: 'your-typed-word' });
+		f.username = '';
 		f.secret = 'your-typed-key';
-		const body = formBody(f);
-		expect(body.username).toBe('');
-		expect(body.secret).toBe('your-typed-key');
+		expect(formBody(f)).toMatchObject({ username: '', secret: 'your-typed-key' });
 	});
 });
 

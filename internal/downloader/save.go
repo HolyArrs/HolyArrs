@@ -25,14 +25,15 @@ var (
 	ErrPathMap  = errors.New("each path map needs both paths, each starting with / or a drive letter")
 	ErrUsername = errors.New("the sign-in name must be at most 100 characters")
 	ErrKeyNeed  = errors.New("SABnzbd needs its API key (SABnzbd: Config > General)")
-	ErrQbitKey  = errors.New("qBittorrent needs its API key (qBittorrent 5.2 or newer: Options > Web UI > API key)")
+	ErrQbitKey  = errors.New("qBittorrent needs an API key (qBittorrent 5.2 or newer: Options > Web UI > API key) or a user name and password")
 	ErrKeyAgain = errors.New("the address changed to another host; type the key or password again so it is never sent to a new host by itself")
 	ErrNoVault  = errors.New("keys cannot be stored: the secrets vault is not open")
 	ErrBusy     = errors.New("this Downloader still has active downloads; pause it and let them finish first (its category and address cannot change, and it cannot be removed, while they run)")
 )
 
-// Input is what a person sets on a Downloader. Secret is the SABnzbd or
-// qBittorrent API key or the Transmission, NZBGet or Deluge password; empty keeps the stored one, ClearSecret
+// Input is what a person sets on a Downloader. Secret is the SABnzbd API
+// key, the qBittorrent API key (no user name) or password (with a user
+// name), or the Transmission, NZBGet or Deluge password; empty keeps the stored one, ClearSecret
 // removes it. Nil fields keep what is stored (or the default when new).
 type Input struct {
 	Name        string           `json:"name"`
@@ -91,9 +92,6 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 			return ErrUsername
 		}
 		d.Username = strings.TrimSpace(*in.Username)
-	}
-	if d.Adapter == "qbittorrent" {
-		d.Username = "" // qBittorrent signs in with its API key only
 	}
 	if in.Category != nil {
 		c := strings.TrimSpace(*in.Category)
@@ -218,6 +216,7 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			return ErrPendingAttempt
 		}
 		oldHost, oldCat := hostOf(d.URL), d.Category
+		oldLogin := d.Username != ""
 		if err := fill(in, &d, false); err != nil {
 			return err
 		}
@@ -245,6 +244,11 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			if err := dropSecret(tx, &d); err != nil {
 				return err
 			}
+		}
+		// qBittorrent's secret is the API key without a user name and the
+		// password with one: switching ways needs the new one typed.
+		if d.Adapter == "qbittorrent" && (d.Username != "") != oldLogin && in.Secret == "" {
+			return ErrQbitKey
 		}
 		if hostOf(d.URL) != oldHost && d.SecretRef != nil && in.Secret == "" {
 			return ErrKeyAgain

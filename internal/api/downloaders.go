@@ -109,7 +109,7 @@ func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }
 
-const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key only), username (not for qBittorrent), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network`
+const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network`
 
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {
@@ -310,6 +310,10 @@ func firstLine(s string) string {
 // holds a key: adapters strip addresses from network errors.
 func explainDownloader(err error) string {
 	switch {
+	case errors.Is(err, downloader.ErrQbitBanned):
+		return "qBittorrent has banned this address after too many wrong passwords. Wait for the ban to end (an hour by default), check the password, then test again."
+	case errors.Is(err, downloader.ErrQbitKeyRefused):
+		return "qBittorrent turned down the API key. Check the key; the API key needs qBittorrent 5.2 or newer, so on an older qBittorrent sign in with user name and password instead."
 	case errors.Is(err, downloader.ErrAuth):
 		return "It turned down the key or sign-in. Check them and test again."
 	case errors.Is(err, downloader.ErrNoCategory):

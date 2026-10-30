@@ -21,6 +21,11 @@ type fakeQbit struct {
 	deleted  []string
 	refuse   bool   // answer 403 like a client that wants a key
 	key      string // when set, every call needs Authorization: Bearer key
+	user     string // when set, a sign-in with user and pass is needed (cookie)
+	pass     string
+	signIns  int
+	banned   bool // sign-in answers 403 like a banned address
+	old      bool // sign-in answers 200 Ok./Fails. like qBittorrent before API 2.14
 	prio     []string // every filePrio call as "hash|id|priority"
 	addFails bool     // answer Fails. to an add
 	selected []string // every hashes= and hash= value asked for
@@ -57,6 +62,31 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = r.ParseForm()
+	if f.user != "" {
+		if r.URL.Path == "/api/v2/auth/login" {
+			f.signIns++
+			switch {
+			case f.banned:
+				w.WriteHeader(http.StatusForbidden)
+			case r.PostForm.Get("username") == f.user && r.PostForm.Get("password") == f.pass:
+				http.SetCookie(w, &http.Cookie{Name: "QBT_SID_8090", Value: "lab-session", Path: "/"})
+				if f.old {
+					_, _ = w.Write([]byte("Ok."))
+				} else {
+					w.WriteHeader(http.StatusNoContent)
+				}
+			case f.old:
+				_, _ = w.Write([]byte("Fails."))
+			default:
+				w.WriteHeader(http.StatusUnauthorized)
+			}
+			return
+		}
+		if c, err := r.Cookie("QBT_SID_8090"); err != nil || c.Value != "lab-session" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
 	if f.key != "" {
 		// Bearer requests never reach the sign-in group, and a wrong key is 403.
 		if r.Header.Get("Authorization") != "Bearer "+f.key || strings.HasPrefix(r.URL.Path, "/api/v2/auth/") {
@@ -247,6 +277,51 @@ func TestQbitNeverSignsInWithPassword(t *testing.T) {
 	_, err := NewQbittorrentKey(s.URL, "k", nil).Health(context.Background())
 	if !errors.Is(err, ErrAuth) || len(paths) != 1 || paths[0] != "/api/v2/app/version" {
 		t.Fatalf("err %v paths %v (no sign-in retry)", err, paths)
+	}
+}
+
+func TestQbitSignsInWithPassword(t *testing.T) {
+	for _, old := range []bool{false, true} {
+		f, u := startFake(t)
+		f.user, f.pass, f.old = "holyarrs", "your-test-word", old
+		ctx := context.Background()
+		q := NewQbittorrentLogin(u, "holyarrs", "your-test-word", nil)
+		if _, err := q.Health(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := q.List(ctx, "holyarrs"); err != nil || f.signIns != 1 {
+			t.Fatalf("old=%v: list %v, sign-ins %d (the cookie must be kept)", old, err, f.signIns)
+		}
+	}
+}
+
+func TestQbitWrongPasswordIsNotRetriedAtOnce(t *testing.T) {
+	f, u := startFake(t)
+	f.user, f.pass = "holyarrs", "your-test-word"
+	ctx := context.Background()
+	q := NewQbittorrentLogin(u, "holyarrs", "wrong", nil)
+	for i := 0; i < 4; i++ {
+		_, err := q.Health(ctx)
+		if !errors.Is(err, ErrAuth) || strings.Contains(err.Error(), "wrong") {
+			t.Fatalf("wrong password: %v", err)
+		}
+	}
+	if f.signIns != 1 {
+		t.Fatalf("%d sign-ins; a refused one must wait (qBittorrent bans after 5)", f.signIns)
+	}
+	f.banned = true
+	_, err := NewQbittorrentLogin(u, "holyarrs", "your-test-word", nil).Health(ctx)
+	if !errors.Is(err, ErrQbitBanned) || !errors.Is(err, ErrAuth) {
+		t.Fatalf("banned: %v", err)
+	}
+}
+
+func TestQbitKeyRefusedSaysVersion(t *testing.T) {
+	f, u := startFake(t)
+	f.key = "k"
+	_, err := NewQbittorrentKey(u, "other", nil).Health(context.Background())
+	if !errors.Is(err, ErrQbitKeyRefused) || !strings.Contains(err.Error(), "5.2") {
+		t.Fatalf("refused key: %v", err)
 	}
 }
 

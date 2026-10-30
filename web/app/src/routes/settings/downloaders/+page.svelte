@@ -103,16 +103,26 @@
 		isNew = false;
 		editing = d;
 		form = formFrom(d);
+		qbitWay = d.username ? 'login' : 'key';
 		formError = '';
+	}
+
+	// qBittorrent signs in with an API key (5.2 or newer) or a user name and password.
+	let qbitWay = $state<'key' | 'login'>('key');
+	function pickWay(w: 'key' | 'login') {
+		qbitWay = w;
+		form.secret = '';
+		if (w === 'key') form.username = '';
 	}
 
 	function pickKind(k: DownloaderForm['kind']) {
 		const fresh = emptyForm(k);
 		form = { ...fresh, url: form.url !== 'http://' ? form.url : fresh.url, allow_local_network: form.allow_local_network };
+		qbitWay = 'key';
 	}
 
 	function hasUsername(kind: DownloaderForm['kind']): boolean {
-		return kind === 'transmission' || kind === 'nzbget';
+		return kind === 'transmission' || kind === 'nzbget' || (kind === 'qbittorrent' && qbitWay === 'login');
 	}
 
 	function addressPlaceholder(kind: DownloaderForm['kind']): string {
@@ -294,14 +304,24 @@
 			<Field id="dl-url" label="Address" hint="The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.">
 				<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
 			</Field>
+			{#if form.kind === 'qbittorrent'}
+				<fieldset class="group" data-testid="dl-qbit-way">
+					<legend class="label">Sign in with</legend>
+					<div class="row kinds">
+						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'key'} onchange={() => pickWay('key')} /><span>API key</span></label>
+						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'login'} onchange={() => pickWay('login')} /><span>Username and password</span></label>
+					</div>
+				</fieldset>
+			{/if}
 			{#if hasUsername(form.kind)}
+				{@const qbit = form.kind === 'qbittorrent'}
 				<div class="two">
-					<Field id="dl-user" label="Sign-in name">
-						<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" />
-						<span class="hint">Leave empty when {kindWords[form.kind]} does not require it from this network.</span>
+					<Field id="dl-user" label={qbit ? 'Username' : 'Sign-in name'}>
+						<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" required={qbit} data-testid="dl-user" />
+						<span class="hint">{qbit ? 'The qBittorrent Web UI user name.' : `Leave empty when ${kindWords[form.kind]} does not require it from this network.`}</span>
 					</Field>
-					<Field id="dl-secret" label="Password" hint="Kept encrypted. Leave as it is to keep the stored one.">
-						<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" />
+					<Field id="dl-secret" label="Password" hint="Kept encrypted, never shown again. Leave as it is to keep the stored one.">
+						<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" required={qbit && isNew} data-testid="dl-secret" />
 					</Field>
 				</div>
 			{:else}
@@ -357,7 +377,7 @@
 				<p class="small" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>
 				<p class="xs muted">
 					{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'torrents'} · priority {d.priority} · category {d.category}
-					{#if d.secret} · {d.kind === 'sabnzbd' || d.kind === 'qbittorrent' ? 'key' : 'password'} {d.secret}{/if}
+					{#if d.secret} · {d.kind === 'sabnzbd' || (d.kind === 'qbittorrent' && !d.username) ? 'key' : 'password'} {d.secret}{/if}
 					{#if d.allow_local_network} · may reach the local network{/if}
 					· {d.active_downloads} active {d.active_downloads === 1 ? 'download' : 'downloads'}
 					{#if d.checked_at} · checked {ago(d.checked_at)}{/if}
