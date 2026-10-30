@@ -74,7 +74,7 @@
 		lift = content ? Math.max(content.offsetTop - 64, 0) : 0;
 		choosing = true;
 		await tick();
-		frame?.querySelector<HTMLElement>('.sheet h3')?.focus({ preventScroll: true });
+		frame?.querySelector<HTMLElement>('.sheet')?.focus({ preventScroll: true });
 	}
 	const changed = $derived(!!(pick.seasons || pick.episodes || pick.albums || pick.songs));
 	function approveChosen() {
@@ -105,6 +105,8 @@
 	<span class="life {cls} tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 {/snippet}
 
+{#snippet artistArt()}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/snippet}
+
 <div class="desk" data-testid="approvals-desk">
 	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px">
 		{#if picked}
@@ -117,10 +119,8 @@
 					title={picked.name}
 					{pictures}
 					position="60% 25%"
+					art={music && artistBg ? artistArt : undefined}
 				>
-					{#snippet art()}
-						{#if music && artistBg}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/if}
-					{/snippet}
 					{#snippet top()}
 						<div class="bar">
 							<div class="tabs" role="tablist" aria-label="Show asks that are">
@@ -154,16 +154,16 @@
 			{@render line(picked, 'edge')}
 
 			{#if choosing}
-				<section class="sheet" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: 420, easing: cubicOut, opacity: 0 }}>
+				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: 420, easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
-						<h3 id="sheet-h" tabindex="-1">What to get</h3>
+						<h3 id="sheet-h">What to get</h3>
 						<button type="button" class="x" aria-label="Back to the banner" onclick={() => (choosing = false)}><Icon name="x" size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
 							<div class="one"><span class="one-pic"><Poster src={picked.poster} name={picked.name} /></span><div><strong>{picked.name}</strong><span>The movie{year ? ` · ${year}` : ''}{d?.runtime ? ` · ${Math.floor(d.runtime / 60) ? `${Math.floor(d.runtime / 60)}h ` : ''}${d.runtime % 60}m` : ''}</span></div><Icon name="check" size={18} /></div>
 						{:else}
-							<AskParts {ctx} a={picked} editable bind:pick />
+							<AskParts {ctx} a={picked} editable unfolded bind:pick />
 						{/if}
 						{#if rules.length}
 							<div class="rules" role="radiogroup" aria-label="Pick rule">
@@ -234,8 +234,8 @@
 	.state { color: rgb(255 255 255 / 0.85); font: var(--t-callout); }
 
 	/* Tabs as a glass control at the top of the banner. */
-	.bar { display: flex; justify-content: flex-start; }
-	.tabs { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--r-pill); background: rgb(20 20 24 / 0.42); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6); }
+	.bar { display: flex; justify-content: flex-start; height: auto; }
+	.tabs { display: inline-flex; align-items: center; height: auto; min-height: 42px; box-sizing: border-box; gap: 2px; padding: 4px; border-radius: var(--r-pill); background: rgb(20 20 24 / 0.42); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6); }
 	.tab { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: none; color: rgb(255 255 255 / 0.78); font: var(--t-subhead); font-weight: 600; text-shadow: none !important; cursor: pointer; transition: background 220ms var(--ease-out), color 220ms var(--ease-out); }
 	.tab:hover { color: #fff; background: rgb(255 255 255 / 0.1); }
 	.tab[aria-selected='true'] { background: rgb(255 255 255 / 0.92); color: #0b0b0c; }
@@ -271,7 +271,7 @@
 	.sheet { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 4; display: flex; flex-direction: column; max-height: calc(100% - 150px); border-radius: 20px; background: color-mix(in srgb, var(--bg) 84%, transparent); color: var(--text); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 	.sh-h { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px 20px; }
 	.sh-h h3 { font: var(--t-title3); }
-	.sh-h h3:focus { outline: none; }
+	.sheet:focus { outline: none; }
 	.x { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--surface-2); cursor: pointer; }
 	.x:hover { background: var(--surface-3); }
 	.sh-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px 12px; display: flex; flex-direction: column; gap: 16px; }

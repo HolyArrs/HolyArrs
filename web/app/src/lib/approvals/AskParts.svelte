@@ -14,7 +14,7 @@
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
 
-	let { ctx, a, editable = false, pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: ApprovalsCtx; a: Ask; editable?: boolean; pick?: PartsPick } = $props();
+	let { ctx, a, editable = false, unfolded = false, pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: ApprovalsCtx; a: Ask; editable?: boolean; /** Open from the start, with the first season's episodes showing (the Approvals Stage). */ unfolded?: boolean; pick?: PartsPick } = $props();
 
 	const music = $derived(a.kind === 'artist');
 	const artist = $derived(music ? askArtist(a) : null);
@@ -124,6 +124,11 @@
 
 	let open = $state(false);
 	let openSeason = $state(0);
+	$effect(() => {
+		if (!unfolded) return;
+		open = true;
+		if (!openSeason && seasons.length) openSeason = seasons[0].number;
+	});
 	let openEditions = $state('');
 	const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const slideIn = () => ({ duration: reduced() ? 0 : DUR.base, easing: easeOut });
