@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -284,7 +285,7 @@ func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error
 		if r.Tier < 0 {
 			continue
 		}
-		out = append(out, Tracker{URL: trackerHost(r.URL), Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: r.Msg, Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0)})
+		out = append(out, Tracker{URL: trackerHost(r.URL), Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: redactURLs(r.Msg), Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0)})
 	}
 	return out, nil
 }
@@ -456,4 +457,13 @@ func trackerHost(raw string) string {
 		return raw
 	}
 	return u.Scheme + "://" + u.Host
+}
+
+// urlish finds address-shaped words in free text (tracker messages can echo
+// the announce address, passkey included).
+var urlish = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9+.-]*://[^\s"'<>]+`)
+
+// redactURLs swaps every address in a message for its trackerHost.
+func redactURLs(msg string) string {
+	return urlish.ReplaceAllStringFunc(msg, trackerHost)
 }

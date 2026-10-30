@@ -18,8 +18,7 @@
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
 	import DlSections from '#lib/downloads/DlSections.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';
-	import { addSample, inHistory, totals } from '#lib/downloads/sections.ts';
-
+	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
 	const watch = $derived(!session.can('manage_library'));
 	let rows = $state<DownloadRow[]>([]);
@@ -80,11 +79,6 @@
 		return r.id < 0 ? decisions.items.filter((d) => d.slot_id === -r.id) : (decisionsByDownload.get(r.id) ?? []);
 	}
 
-	// The speed graph: one reading of the Queue's total speed per load, kept here.
-	let samples = $state<number[]>([]);
-	// The server's speed history since the app started, read once so the graph is full on first paint.
-	let history = $state<{ down: number; up: number }[] | null>(null);
-
 	// When the open row goes away (its decision was settled), its details close.
 	$effect(() => {
 		if (loaded && openId && !allRows.some((r) => r.id === openId)) openId = 0;
@@ -94,6 +88,8 @@
 	let opened = false;
 	$effect(() => {
 		if (opened || !loaded) return;
+		// A watcher has no decisions to wait for: the link opens only a row already in the list.
+		if (watch) opened = true;
 		const q = page.url.searchParams;
 		const dl = Number(q.get('open'));
 		const slot = Number(q.get('slot'));
@@ -102,7 +98,7 @@
 			return;
 		}
 		const d = slot ? decisions.items.find((x) => x.slot_id === slot) : undefined;
-		if (slot && !d && decisions.items.length === 0) return; // the decisions are still loading
+		if (slot && !d && decisions.items.length === 0 && !watch) return; // the decisions are still loading
 		opened = true;
 		const id = dl || (d?.download_id && rowIds.has(d.download_id) ? d.download_id : -slot);
 		if (allRows.some((r) => r.id === id)) openId = id;
@@ -110,15 +106,12 @@
 
 	async function load() {
 		try {
-			const [d, i, h] = await Promise.all([
+			const [d, i] = await Promise.all([
 				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
-				watch ? Promise.resolve({ imports: [] as ImportRecord[] }) : api.get<{ imports: ImportRecord[] }>('/imports?limit=100'),
-				history || watch ? Promise.resolve(null) : api.get<{ samples: { down: number; up: number }[] }>('/downloads/speeds').catch(() => ({ samples: [] }))
+				watch ? Promise.resolve({ imports: [] as ImportRecord[] }) : api.get<{ imports: ImportRecord[] }>('/imports?limit=100')
 			]);
-			if (h) history = h.samples;
 			rows = d.downloads;
 			imports = i.imports;
-			samples = addSample(samples, totals(d.downloads.filter((r) => !inHistory(r))).speed);
 			error = '';
 		} catch (e) {
 			error = message(e);
@@ -129,7 +122,7 @@
 
 	// Live news comes often while something downloads: read again at most
 	// once every 400 ms. While something downloads, a slow poll keeps the
-	// speed graph moving between news.
+	// speeds moving between news.
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	function soon() {
 		if (timer) return;
@@ -150,8 +143,9 @@
 				.then((r) => (torrent = r.downloaders.some((d) => d.protocol === 'torrent')))
 				.catch(() => {});
 		if (!watch) void refreshDecisions();
-		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
-		const decOffs = ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
+		// The live stream (/live) is for managers only: a watcher never subscribes.
+		const offs = watch ? [] : ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
+		const decOffs = watch ? [] : ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
 		const poll = setInterval(() => {
 			if (document.visibilityState === 'visible' && rows.some((r) => r.active)) soon();
 		}, 2000);
@@ -263,21 +257,24 @@
 	async function saveLimit(e: SubmitEvent) {
 		e.preventDefault();
 		limitBusy = true;
+		let failing = '';
 		try {
 			for (const c of clients) {
 				const l = limits[c.id];
+				failing = c.name;
 				await api.put(`/downloaders/${c.id}/speed-limit`, { down: Math.round(Math.max(0, l.down || 0) * MB), up: Math.round(Math.max(0, l.up || 0) * MB) });
 			}
+			failing = '';
 			limitOpen = false;
 			toasts.push('Speed limit saved.', 'ok');
 		} catch (err) {
-			limitError = message(err);
+			limitError = failing ? `${failing}: ${message(err)}` : message(err);
 		} finally {
 			limitBusy = false;
 		}
 	}
 
-	// The top bar's search field filters this page while it is open.
+	// The Downloads search field (DlFind) filters this page while it is open.
 	$effect(() => {
 		dlScope.on = true;
 		dlScope.off = false;
@@ -306,7 +303,7 @@
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} {watch} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} {watch} />
 {/if}
 </PageLoader>
 
@@ -332,7 +329,7 @@
 	{/if}
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (removeOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="remove-form" busy={busy !== 0} disabled={busy !== 0}>Remove</Button>
+		<Button variant="destructive" type="submit" form="remove-form" busy={!!target && busy === target.id} disabled={!!target && busy === target.id}>Remove</Button>
 	{/snippet}
 </Sheet>
 

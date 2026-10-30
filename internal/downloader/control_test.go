@@ -221,3 +221,17 @@ func TestSabStatus(t *testing.T) {
 		t.Fatalf("status %+v", st)
 	}
 }
+
+func TestRedactURLs(t *testing.T) {
+	cases := map[string]string{
+		"announce failed: https://t.example.org/abc123passkey/announce?x=1": "announce failed: https://t.example.org",
+		"two udp://a.example:80/key and http://u:p@b.example/k":             "two udp://a.example:80 and http://b.example",
+		"Not working": "Not working",
+		"":            "",
+	}
+	for in, want := range cases {
+		if got := redactURLs(in); got != want {
+			t.Errorf("redactURLs(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

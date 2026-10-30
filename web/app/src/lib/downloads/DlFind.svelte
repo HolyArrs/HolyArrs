@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '../Icon.svelte';
+	import { escStep } from './keys.ts';
 
 	// The Downloads search: a plain field that filters the list as you type. × and Esc only
 	// clear the words; Ctrl K and "/" focus it (the page's key handler). Quiet glass at rest;
@@ -17,7 +18,7 @@
 	function key(e: KeyboardEvent) {
 		if (e.key !== 'Escape') return;
 		e.preventDefault();
-		if (term) term = '';
+		if (escStep(term) === 'clear') term = '';
 		else el?.blur();
 	}
 </script>

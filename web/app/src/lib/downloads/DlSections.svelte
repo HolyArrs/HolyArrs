@@ -19,7 +19,9 @@
 	import { to } from '../paths.ts';
 	import DlBar from './DlBar.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
-	import SpeedGraph from './SpeedGraph.svelte';
+	import DlStatus from './DlStatus.svelte';
+	import { reviewCount } from './status-views.ts';
+	import { reviewShown, searchShortcut } from './keys.ts';
 	import Popover from '../ui/Popover.svelte';
 	import { tip } from './tip.ts';
 	import { dlScope } from '../search-field.svelte.ts';
@@ -44,8 +46,6 @@
 		titles,
 		titlesReady = true,
 		busy,
-		samples,
-		history = [],
 		torrent = false,
 		decisionsOf,
 		openId = $bindable(0),
@@ -63,10 +63,6 @@
 		/** False while the Library titles (the posters) are still on their way: posters show a plain tile, not initials. */
 		titlesReady?: boolean;
 		busy: number;
-		/** Recent total-speed readings, oldest first. */
-		samples: number[];
-		/** The server's speed readings since the app started. */
-		history?: { down: number; up: number }[];
 		/** A torrent Downloader brings the Seeding sub-tab under Done. */
 		torrent?: boolean;
 		decisionsOf: (r: DownloadRow) => Decision[];
@@ -89,7 +85,7 @@
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => (r.kind ?? 'movie') === kindOn) : everyRow);
 	// The search narrows every tab too, so the tab counts follow it.
-	// The search is the top bar's field, scoped to this page (search-field.svelte.ts).
+	// The search is the Downloads search field (DlFind), scoped to this page (search-field.svelte.ts).
 	const q = $derived(dlScope.term);
 	const searched = $derived(q.trim() ? typed.filter((r) => matches(r, q)) : typed);
 	// The left rail: a status, a source (Usenet or Torrent); the Type filter is its Categories.
@@ -173,7 +169,14 @@
 	// The toolbar's Start and Pause act on the open row; its state comes from the client.
 	const canStart = $derived(!!openRow?.can_act && isPaused(openRow) && busy !== openRow?.id);
 	const canPause = $derived(!!openRow?.can_act && !isPaused(openRow) && busy !== openRow?.id);
-	const problems = $derived(allQueue.filter((r) => barTone(r) === 'bad').length);
+	const toReview = $derived(reviewCount(allQueue));
+	const etaWords = $derived(sum.eta ? duration(sum.eta) : '');
+	/** The review call opens Problems › Review. */
+	function openReview() {
+		choose('problems');
+		sub = 'decide';
+		remember();
+	}
 	const done = $derived(historyTotals(typed.filter(inHistory)));
 
 	function toggle(id: number) {
@@ -264,11 +267,12 @@
 		next.click();
 	}
 	function slashKey(e: KeyboardEvent) {
-		const mod = e.ctrlKey || e.metaKey;
-		const ck = mod && !e.altKey && (e.key === 'k' || e.key === 'K');
-		if (!ck && (e.key !== '/' || mod || e.altKey)) return;
 		const t = e.target as HTMLElement | null;
-		if (!ck && (!t || t.closest('input, textarea, select, [contenteditable="true"]'))) return;
+		const inField = !t || !!t.closest('input, textarea, select, [contenteditable="true"]');
+		// A dialog, sheet or open popover keeps its focus: no stealing it for the search.
+		const box = '[role="dialog"], dialog, [popover]:popover-open';
+		const inDialog = !!t?.closest?.(box) || !!(document.activeElement as HTMLElement | null)?.closest?.(box) || !!document.querySelector('dialog[open]');
+		if (!searchShortcut(e, inField, inDialog)) return;
 		e.preventDefault();
 		e.stopImmediatePropagation();
 		if (matchMedia('(max-width: 767px)').matches) {
@@ -1010,12 +1014,12 @@
 			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
 		{/if}
 	</div>
-	<DlBar bind:kindOn bind:srcOn {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} sideControls={dlTop.controls} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} />
+	<DlBar bind:kindOn bind:srcOn {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} />
 </div>
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div></div>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div><DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={demoDetails ? bytes(sampleHeader.free) : '–'} disk={demoDetails ? bytes(sampleHeader.disk) : '–'} freeShare={demoDetails && sampleHeader.disk ? sampleHeader.free / sampleHeader.disk : null} today={demoDetails ? bytes(sampleHeader.today) : '–'} used={demoDetails ? bytes(sampleHeader.disk - sampleHeader.free) : '–'} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
 {#if list.length}
@@ -1036,30 +1040,18 @@
 {/if}
 </div>
 </div>
-<div class="sbar" data-testid="dl-statusbar"><div class="sbi">
-	<span class="health" data-testid="sb-health"><i class="dot" class:ok={demoDetails} aria-hidden="true"></i><b>{demoDetails ? 'Connected' : 'Not reported'}</b></span>
-	<span class="s-free" data-testid="sb-free"><span class="k">Free</span><b>{demoDetails ? bytes(sampleHeader.free) : '–'}</b></span>
-	<span class="sd" data-testid="sb-down"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b></span>
-	<span class="sd up" data-testid="sb-up"><b data-testid="dl-up">↑ {bytes(sum.up)}/s</b></span>
-	<span class="gr s-gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} width={84} height={14} /></span>
-	<span class="s-tl"><span class="k">Left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
-	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems}<span class="nw"> need{problems === 1 ? 's' : ''} you</span></button>{/if}
-	<span class="grow"></span>
-	<span class="smore" data-testid="sb-more"><Popover label="More status" icon="more" placement="above" align="end" width={280}>
-		{#snippet children()}
-			<ul class="mo">
-				<li class="m-free"><span class="k">Free space</span> {demoDetails ? bytes(sampleHeader.free) : '–'}</li>
-				<li class="m-gr"><SpeedGraph speed={sum.speed} up={sum.up} {history} width={120} height={22} /></li>
-				<li class="m-tl"><span class="k">Time left</span> {sum.eta ? duration(sum.eta) : '–'}</li>
-				{#if demoDetails}
-					<li data-testid="sb-session"><span class="k">This session</span> ↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)}</li>
-					<li data-testid="sb-totals"><span class="k">Today</span> {bytes(sampleHeader.today)} · <span class="k">Month</span> {bytes(sampleHeader.month)} · <span class="k">All time</span> {bytes(sampleHeader.all)}</li>
-					<li class="note" data-testid="sb-sample" title="The Downloader is not connected yet; these are made-up values.">Sample data</li>
-				{/if}
-			</ul>
-		{/snippet}
-	</Popover></span>
-</div></div>
+{#snippet morePop()}<Popover label="More status" icon="more" placement="below" align="end" width={280}>{#snippet children()}
+	<ul class="mo">
+		<li><i class="dot" class:ok={demoDetails} aria-hidden="true"></i> {demoDetails ? 'Connected' : 'Not reported'}</li>
+		{#if demoDetails}
+			<li data-testid="sb-session"><span class="k">This session</span> ↓ {bytes(sampleHeader.sessionDown)} · ↑ {bytes(sampleHeader.sessionUp)}</li>
+			<li data-testid="sb-totals"><span class="k">Today</span> {bytes(sampleHeader.today)} · <span class="k">Month</span> {bytes(sampleHeader.month)} · <span class="k">All time</span> {bytes(sampleHeader.all)}</li>
+			<li class="note" data-testid="sb-sample" title="The Downloader is not connected yet; these are made-up values.">Sample data</li>
+		{/if}
+	</ul>
+{/snippet}</Popover>{/snippet}
+<!-- Connection health stays readable for screen readers and tests. -->
+<div class="vh"><span data-testid="sb-health">{demoDetails ? 'Connected' : 'Not reported'}</span></div>
 </div>
 
 {#if ghost}<div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[ghost.id].label}</div>{/if}
@@ -1092,9 +1084,6 @@
 	.strip b { font-weight: 600; }
 	.sp { gap: 8px; }
 	.up { color: var(--info); }
-	.need { min-height: 28px; padding: 0 8px; margin-left: -8px; border: 0; border-radius: var(--r-btn); background: none; color: var(--fail); font: var(--t-callout); font-weight: 600; cursor: pointer; }
-	.need:hover { background: var(--surface-2); }
-	.need:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	.tops { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0 16px; }
 	.types { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 12px; border-radius: var(--r-btn); background: var(--surface-2); }
@@ -1231,7 +1220,6 @@
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 	.listbox .tw { overflow: visible; }
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
-	.sbar { flex: none; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 	.gen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 10px; }
@@ -1286,25 +1274,7 @@
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	.sbar { container: sb / inline-size; }
-	.sbi { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px 14px; padding: 3px var(--dl-gutter); min-width: 0; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.3; }
-	.sbi > span { display: inline-flex; align-items: center; gap: 6px; }
-	.sbi .grow { flex: 1 1 0; }
-	.sbi .health { order: -1; }
-	.sbi .need { margin-left: 0; }
-	.sbi > .smore { display: inline-flex; }
 	.mo { list-style: none; margin: 0; padding: 4px; display: grid; gap: 6px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.m-free, .m-gr, .m-tl { display: none; }
-	@container sb (max-width: 900px) { .sbi > .s-free { display: none; } .m-free { display: block; } }
-	@container sb (max-width: 720px) { .sbi > .s-gr { display: none; } .m-gr { display: block; } }
-	@container sb (max-width: 560px) { .sbi > .s-tl { display: none; } .m-tl { display: block; } }
-	@container sb (max-width: 560px) { .sbi > .s-free { display: none; } .m-free { display: block; } }
-	@container sb (max-width: 520px) { .sbi > .s-gr { display: none; } .m-gr { display: block; } }
-	@container sb (max-width: 460px) { .sbi > .s-tl { display: none; } .m-tl { display: block; } .need .nw { display: none; } }
-	.sbi .smore :global(button) { width: 22px; height: 22px; min-width: 0; padding: 0; }
-	.sbi .smore :global(svg) { width: 14px; height: 14px; }
-	.sbi .need { min-height: 20px; padding: 0 6px; font: inherit; font-weight: 600; }
-	.sbi .k { font: inherit; }
 	.mo li.note { color: var(--text-muted); }
 	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }
 	.kcell .kt { width: 100%; margin: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1324,6 +1294,9 @@
 	/* The status pills: the picked pill carries its own background and opens to hold its sub-options. */
 	.tabrow { display: flex; flex: none; align-items: center; height: 44px; min-width: 0; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.tabrow::-webkit-scrollbar { display: none; }
+	.mo li .dot { display: inline-block; vertical-align: 1px; }
+	.tabrow { container: tr / inline-size; }
+	.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 	.tabs { display: flex; flex: none; align-items: center; gap: 2px; width: max-content; padding: 2px; border-radius: 999px; background: var(--surface-2); }
 	.pw { display: flex; align-items: center; flex: none; border-radius: 999px; background: transparent; transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.pw.on { background: var(--hl-bg); box-shadow: var(--hl-shadow, none); }

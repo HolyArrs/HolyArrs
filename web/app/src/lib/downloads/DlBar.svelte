@@ -47,6 +47,8 @@
 		{ key: 'torrent', label: 'Torrent', icon: 'torrent' }
 	];
 	type F = { key: string; label: string; icon: IconName };
+	// The accessible name starts with the visible label (WCAG 2.5.3); a longer hint follows it.
+	const nameOf = (a: Act) => (a.hint && a.hint !== a.label ? `${a.label} — ${a.hint}` : a.label);
 
 	const pickKind = (k: string) => (kindOn = kindOn === k ? '' : k);
 	const pickSrc = (k: string) => (srcOn = srcOn === k ? '' : k);
@@ -69,7 +71,17 @@
 		place();
 		const ro = new ResizeObserver(place);
 		ro.observe(node);
-		return { update: () => requestAnimationFrame(place), destroy: () => ro.disconnect() };
+		let frame = 0;
+		return {
+			update: () => {
+				cancelAnimationFrame(frame);
+				frame = requestAnimationFrame(place);
+			},
+			destroy: () => {
+				cancelAnimationFrame(frame);
+				ro.disconnect();
+			}
+		};
 	}
 </script>
 
@@ -77,9 +89,9 @@
 	<span class="aw" data-testid="tb-{a.key}">
 		<span class="tw2" use:tip={a.hint !== a.label ? a.hint : ''}>
 			{#if a.href}
-				<a class="it act stack" href={a.href} aria-label={a.hint} data-testid={a.key === 'turned' ? 'tb-turned-down' : undefined}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
+				<a class="it act stk" href={a.href} aria-label={nameOf(a)} data-testid={a.key === 'turned' ? 'tb-turned-down' : undefined}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
 			{:else}
-				<button type="button" class="it act stack" disabled={a.disabled} aria-label={a.hint} onclick={() => a.run?.()} data-testid={a.key === 'remove' ? 'tb-remove' : `tb-${a.key}-btn`}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
+				<button type="button" class="it act stk" disabled={a.disabled} aria-label={nameOf(a)} onclick={() => a.run?.()} data-testid={a.key === 'remove' ? 'tb-remove' : `tb-${a.key}-btn`}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
 			{/if}
 		</span>
 		{#if a.more}<TopMenu label="More {a.label.toLowerCase()} actions" items={a.more} />{/if}
@@ -92,7 +104,7 @@
 		{#each list as f (f.key)}
 			{@const n = count(f.key)}
 			{@const on = current === f.key}
-			<button type="button" class="it fl stack" class:on class:zero={n === 0} aria-pressed={on} aria-label={f.label} onclick={() => pick(f.key)} data-testid={tid} data-key={f.key} data-count={n}>
+			<button type="button" class="it fl stk" class:on class:zero={n === 0} aria-pressed={on} onclick={() => pick(f.key)} data-testid={tid} data-key={f.key} data-count={n}>
 				<span class="ic"><Icon name={f.icon} size={20} /></span><span class="lb">{f.label}</span>
 			</button>
 		{/each}
@@ -126,15 +138,14 @@
 	/* The glass capsule: 52px tall, 3px inset, so every 44px button sits centred. */
 	.cap { display: flex; flex: none; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.cap > .grp, .cap > .seg { height: 44px; min-height: 0; align-items: stretch; }
-	.dlbar .seg > .it, .dlbar .grp > .aw { margin: 0; } /* the app-wide .stack spacer must not reach in here */
+	.dlbar .seg > .it, .dlbar .grp > .aw { margin: 0; }
 
 	.it { position: relative; z-index: 1; display: inline-flex; align-items: center; flex: none; gap: 6px; padding: 0 10px; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); font: var(--t-footnote); white-space: nowrap; text-decoration: none; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform 180ms var(--ez); }
 	.it .ic { position: relative; display: grid; place-items: center; color: inherit; transition: transform 180ms var(--ez); }
 	.it .lb { display: inline-flex; align-items: center; gap: 4px; }
-	.dlbar .it.stack { display: grid; grid-template-rows: 18px 12px; align-content: center; justify-items: center; gap: 3px; width: 68px; min-width: 0; height: 44px; padding: 0; border-radius: 10px; }
-	.dlbar .it.stack > * { margin: 0; }
-	.dlbar .it.stack .ic { height: 18px; }
-	.dlbar .it.stack .lb { font: 500 11px/1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); transition: color 160ms var(--ease-out); }
+	.dlbar .it.stk { display: grid; grid-template-rows: 18px 12px; align-content: center; justify-items: center; gap: 3px; width: 68px; min-width: 0; height: 44px; padding: 0; border-radius: 10px; }
+	.dlbar .it.stk .ic { height: 18px; }
+	.dlbar .it.stk .lb { font: 500 11px/1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); transition: color 160ms var(--ease-out); }
 	.it:hover:not(:disabled) .lb { color: var(--text); }
 	.dlbar .it:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.dlbar .it:active:not(:disabled) { transform: scale(0.97); }
@@ -170,11 +181,11 @@
 	/* Phones: no sidebar (the tab bar); the page's own magnifier opens the search. */
 	@media (max-width: 767px) {
 		.row { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 20px), transparent); }
-		.dlbar .it.stack { width: 58px; }
+		.dlbar .it.stk { width: 58px; }
 		.row > :global(.dlfind), .sidecap, .dlbar .it.side, .vr.ph { display: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.it, .it .ic, .plate, .dlbar .it.stack .lb { transition: none; }
+		.it, .it .ic, .plate, .dlbar .it.stk .lb { transition: none; }
 		.dlbar .it:active:not(:disabled) { transform: none; }
 	}
 </style>

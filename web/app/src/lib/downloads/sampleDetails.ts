@@ -222,7 +222,7 @@ export function sampleServers(r: DownloadRow): { name: string; bytes: number; mi
 
 export const sampleHeader = {
 	sessionDown: 18.4 * 2 ** 30, sessionUp: 6.1 * 2 ** 30,
-	free: 1.82 * 2 ** 40, today: 12.6 * 2 ** 30, month: 214 * 2 ** 30, all: 3.7 * 2 ** 40
+	free: 1.8e12, disk: 4e12, today: 12.6 * 2 ** 30, month: 214 * 2 ** 30, all: 3.7 * 2 ** 40
 };
 
 export interface TreeRow { key: string; name: string; depth: number; dir: boolean; size: number; done: number; i: number }
