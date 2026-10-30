@@ -21,6 +21,7 @@
 	import FocusView from './FocusView.svelte';
 	import ApprovalsStage from './ApprovalsStage.svelte';
 	import ApprovalsReels from './ApprovalsReels.svelte';
+	import ApprovalsShelves from './ApprovalsShelves.svelte';
 	import VariantBar from '../ui/VariantBar.svelte';
 	import { ago, dateTime } from '../format.ts';
 	import { kindWord, personGroups, type ApprovalsCtx } from './approvals.ts';
@@ -31,11 +32,12 @@
 
 	let { ctx }: { ctx: ApprovalsCtx } = $props();
 
-	// Desktop layouts Luis is comparing on the pill bar (?view=1): the Stage, or Reels.
+	// Desktop layouts Luis is comparing on the pill bar (?view=1…2): Shelves (the default), the Stage, Reels.
 	let look = $state(0);
 	const looks = [
-		{ value: 0, label: 'Stage' },
-		{ value: 1, label: 'Reels' }
+		{ value: 0, label: 'Shelves' },
+		{ value: 1, label: 'Stage' },
+		{ value: 2, label: 'Reels' }
 	];
 
 	// Poster size and whether the list shows, remembered per member.
@@ -240,7 +242,7 @@
 
 {#if wide && ctx.approver}
 	<!-- Desktop: the Stage (design-notes/approvals-stage.md). Phones keep the list below. -->
-	{#if look === 1}<ApprovalsReels {ctx} open={(a, el) => void openFull(a, el)} />{:else}<ApprovalsStage {ctx} />{/if}
+	{#if look === 2}<ApprovalsReels {ctx} open={(a, el) => void openFull(a, el)} />{:else if look === 1}<ApprovalsStage {ctx} />{:else}<ApprovalsShelves {ctx} />{/if}
 	<VariantBar options={looks} bind:value={look} storageKey="holyarrs.approvals-desk" label="Approvals layout" />
 {:else}
 <div class="stage size-{size}" class:collapsed={split && !listOpen} data-testid="approvals-stage" data-size={size} data-list={split ? (listOpen ? 'open' : 'hidden') : undefined}>

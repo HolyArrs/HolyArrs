@@ -24,10 +24,10 @@
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
 
-	let { ctx }: { ctx: ApprovalsCtx } = $props();
+	let { ctx, single = null }: { ctx: ApprovalsCtx; /** One ask only, filling its box (the shelves' window): no list, no tabs. */ single?: Ask | null } = $props();
 
 	const waiting = (a: Ask) => ctx.approver && a.state === 'asked' && !ctx.isPending(a.id);
-	const list = $derived([...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
+	const list = $derived(single ? [ctx.viewed.find((a) => a.id === single.id) ?? single] : [...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
 
 	// The picked ask: the newest one waiting unless one was clicked; it stays put while the list changes.
 	let pickedId = $state(0);
@@ -139,6 +139,8 @@
 
 <svelte:window onkeydown={keys} />
 
+{#snippet tabsTop()}{@render tabBar()}{/snippet}
+
 {#snippet tabBar()}
 <div class="tabbar">
 							<div class="tabs" role="tablist" aria-label="Show asks that are" bind:this={tabsEl}>
@@ -159,7 +161,7 @@
 
 {#snippet artistArt()}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/snippet}
 
-<div class="desk" data-testid="approvals-desk">
+<div class="desk" class:single data-testid={single ? 'ask-window-stage' : 'approvals-desk'}>
 	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
 		{#if picked}
 			{#key picked.id}
@@ -173,8 +175,8 @@
 					{pictures}
 					position="60% 25%"
 					art={music && artistBg ? artistArt : undefined}
+					top={single ? undefined : tabsTop}
 				>
-					{#snippet top()}{@render tabBar()}{/snippet}
 					{#snippet heading()}<h2 class="bb-name" id="stage-title">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
 						<p class="facts"><span>{kindOf(picked)}</span>{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
@@ -238,6 +240,7 @@
 		{/if}
 	</div>
 
+	{#if !single}
 	<aside class="inbox" aria-label="Asks">
 		<div class="types" role="group" aria-label="Type">
 			{#each types as t (t.k)}
@@ -262,10 +265,14 @@
 			{/each}
 		</ul>
 	</aside>
+	{/if}
 </div>
 
 <style>
 	/* The desk fills the screen under the page title without scrolling the page. */
+	.desk.single { --h: 100%; grid-template-columns: minmax(0, 1fr); height: 100%; }
+	.desk.single .frame { border-radius: 0; box-shadow: none; }
+	.desk.single .frame :global(.ui-billboard) { border-radius: 0; }
 	.desk { --h: clamp(520px, calc(100dvh - var(--topbar, 56px) - 156px), 1180px); display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
 	button { font: inherit; color: inherit; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
