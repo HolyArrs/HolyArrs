@@ -14,6 +14,7 @@
 	import Button from '../ui/Button.svelte';
 	import IconButton from '../ui/IconButton.svelte';
 	import Chip from '../ui/Chip.svelte';
+	import Shelf from '../ui/Shelf.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 	import StatusPill from '../ui/StatusPill.svelte';
 	import KidMark from './KidMark.svelte';
@@ -38,6 +39,8 @@
 		view = v;
 		saveView(ctx.me, v);
 	}
+	// On the wall the tick boxes and bulk bar wait for Select, like Photos.
+	let selecting = $state(false);
 	function setGroup(g: GroupBy) {
 		groupBy = g;
 		saveGroupBy(ctx.me, g);
@@ -179,6 +182,15 @@
 			: [])
 	]);
 	const sizeItems = $derived<MenuItem[]>([{ kind: 'heading', label: 'Poster size' }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: `${sizeLabels[z]} posters`, checked: size === z, onselect: () => setSize(z) }))]);
+	// The wall keeps one View menu: shelves by, filter and the list switch.
+	const viewItems = $derived<MenuItem[]>([
+		{ kind: 'heading', label: 'Shelves by' },
+		...(['type', 'person', 'date'] as const).map((g) => ({ label: groupByWords[g], checked: groupBy === g, onselect: () => setGroup(g) })),
+		{ kind: 'separator' },
+		...filterItems,
+		{ kind: 'separator' },
+		{ label: 'Show as a list', icon: 'sidebar', onselect: () => setView('list') }
+	]);
 	const tabs = $derived(inboxTabs.filter((t) => ctx.approver || t.tab !== 'failed'));
 	const people = $derived(personGroups(ctx.shown));
 	const types = $derived(
@@ -244,19 +256,21 @@
 			{/each}
 		</div>
 		<div class="tools">
-			<Menu label="Filter asks" variant="button" text={filterOn ? `Filter · ${filterOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={240} align="end" />
-			{#if !oneByOne}
-				<div class="seg" role="group" aria-label="View" data-testid="view-toggle">
-					<button type="button" class="gb" aria-pressed={view === 'wall'} onclick={() => setView('wall')}>Posters</button>
-					<button type="button" class="gb" aria-pressed={view === 'list'} onclick={() => setView('list')}>List</button>
-				</div>
-			{/if}
-			{#if !oneByOne}<Menu label="Poster size" variant="button" text={sizeLabels[size]} icon="chevronDown" items={sizeItems} width={200} align="end" />{/if}
-			{#if split}
-				<Button variant="secondary" size="md" icon="sidebar" aria-expanded={listOpen} aria-controls={listId} data-testid="list-toggle" onclick={() => setList(!listOpen)}>{listOpen ? 'Hide list' : 'Show list'}</Button>
-			{/if}
-			{#if ctx.approver && ctx.tab === 'waiting' && ctx.shown.length}
-				<Button variant={oneByOne ? 'primary' : 'secondary'} size="md" icon={oneByOne ? 'back' : 'eye'} data-testid="one-by-one" onclick={() => (oneByOne = !oneByOne)}>{oneByOne ? 'Back to the list' : 'Review one by one'}</Button>
+			{#if wall}
+				{#if ctx.choosable && ctx.shown.length > 1}
+					<Button variant={selecting ? 'primary' : 'secondary'} size="md" data-testid="select" onclick={() => { selecting = !selecting; if (!selecting) for (const a of chosen) ctx.toggleChosen(a.id); }}>{selecting ? 'Done' : 'Select'}</Button>
+				{/if}
+				<Menu label="View" variant="button" text={filterOn ? `View · ${filterOn}` : 'View'} icon="chevronDown" items={viewItems} width={240} align="end" />
+			{:else}
+				<Menu label="Filter asks" variant="button" text={filterOn ? `Filter · ${filterOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={240} align="end" />
+				{#if !oneByOne}<Menu label="Poster size" variant="button" text={sizeLabels[size]} icon="chevronDown" items={sizeItems} width={200} align="end" />{/if}
+				{#if !oneByOne}<Button variant="secondary" size="md" data-testid="view-toggle" onclick={() => setView('wall')}>Posters</Button>{/if}
+				{#if split}
+					<Button variant="secondary" size="md" icon="sidebar" aria-expanded={listOpen} aria-controls={listId} data-testid="list-toggle" onclick={() => setList(!listOpen)}>{listOpen ? 'Hide list' : 'Show list'}</Button>
+				{/if}
+				{#if ctx.approver && ctx.tab === 'waiting' && ctx.shown.length}
+					<Button variant={oneByOne ? 'primary' : 'secondary'} size="md" icon={oneByOne ? 'back' : 'eye'} data-testid="one-by-one" onclick={() => (oneByOne = !oneByOne)}>{oneByOne ? 'Back to the list' : 'Review one by one'}</Button>
+				{/if}
 			{/if}
 		</div>
 	</div>
@@ -270,7 +284,7 @@
 			<p class="muted">{ctx.tab === 'waiting' ? 'Nothing waits for an answer.' : 'Pick another tab above.'}</p>
 		</div>
 	{:else}
-		{#if ctx.choosable}
+		{#if ctx.choosable && (!wall || selecting)}
 			<div class="lhead" class:on={chosen.length > 0} data-testid="ask-bulk">
 				<label class="all"><input class="tick" type="checkbox" checked={allChosen} indeterminate={chosen.length > 0 && !allChosen} onchange={() => ctx.chooseAll(ctx.shown)} />{chosen.length ? `${chosen.length} chosen` : 'Choose all'}</label>
 				{#if chosen.length}
@@ -290,44 +304,43 @@
 		{/if}
 
 		{#if wall}
-			<div class="groupby" role="group" aria-label="Group by" data-testid="group-by">
-				<span class="gb-l">Group by</span>
-				{#each ['type', 'person', 'date'] as const as g (g)}
-					<button type="button" class="gb" aria-pressed={groupBy === g} onclick={() => setGroup(g)}>{groupByWords[g]}</button>
-				{/each}
-			</div>
-			<div class="groups">
+			{@const hero = ctx.tab === 'waiting' ? (ordered.find(waiting) ?? null) : null}
+			{#if hero}
+				{@const hw = ctx.who(hero)}
+				<section class="hero" aria-label="Newest ask" data-testid="ask-hero">
+					{#if hero.poster}<div class="hero-bg" aria-hidden="true" style:background-image={`url("${hero.poster}")`}></div>{/if}
+					<button class="hero-art" type="button" aria-label="Open {hero.name}" onclick={(e) => pick(hero, e.currentTarget)}>{@render thumb(hero, 'cover')}</button>
+					<div class="hero-txt">
+						<span class="hero-k">{kindWord(hero.kind)} · {line(hero)}</span>
+						<h2 class="hero-name">{hero.name}</h2>
+						<span class="who hero-who"><Avatar name={hw.name} src={hw.avatar} size={24} /><span>{hw.name} asked <time datetime={hero.asked_at} title={dateTime(hero.asked_at)}>{ago(hero.asked_at)}</time></span>{#if hw.kid}<KidMark label="Kid" size="sm" />{/if}</span>
+						{#if hero.note}<p class="hero-note">&ldquo;{hero.note}&rdquo;</p>{/if}
+						<div class="hero-act">
+							<Button variant="primary" size="lg" icon="check" type="button" data-testid="hero-approve" onclick={() => ctx.approve([hero])}>Approve</Button>
+							<Button size="lg" icon="x" type="button" data-testid="hero-decline" onclick={() => ctx.turnDown([hero])}>Turn down</Button>
+							<Button variant="plain" size="lg" type="button" onclick={(e: MouseEvent) => pick(hero, e.currentTarget as HTMLElement)}>Details</Button>
+						</div>
+					</div>
+				</section>
+			{/if}
+			<div class="shelves" data-testid="ask-wall">
 				{#each groups as g (g.id)}
 					{@const w = groupBy === 'person' ? ctx.who(g.asks[0]) : null}
-					{@const open = g.asks.filter(waiting)}
-					<section class="group" aria-labelledby="w-{g.id}">
-						<header class="gh">
-							{#if w}<Avatar name={w.name} src={w.avatar} size={24} />{/if}
-							<h2 id="w-{g.id}">{w ? w.name : g.name}</h2>
-							{#if w}<KidMark label={w.kid} size="sm" />{/if}
-							<span class="gn">{g.asks.length}</span>
-							{#if ctx.choosable && open.length > 1}
-								<Button size="sm" variant="plain" icon="check" type="button" onclick={() => ctx.approve(open)}>Approve all {open.length}</Button>
-							{/if}
-						</header>
-						<ul class="wall" aria-label="{w ? `${w.name}'s` : g.name} asks" data-testid="ask-wall">
-							{#each g.asks as x (x.id)}
-								{@const p = ctx.who(x)}
-								<li class="tile" class:chosen={ctx.isChosen(x.id)} class:sending={ctx.isPending(x.id)} data-testid="ask">
-									<div class="art">
-										{@render thumb(x, 'cover')}
-										{#if groupBy !== 'person'}<span class="asker" title="Asked by {p.name}"><Avatar name={p.name} src={p.avatar} size={28} /></span>{/if}
-										{#if ctx.choosable}<span class="tick-at">{@render chooseBox(x)}</span>{/if}
-										{#if notOut(x)}<span class="soon at">Not out yet</span>{/if}
-									</div>
-									<button class="name" type="button" data-row={x.id} data-testid="ask-name" onclick={(e) => pick(x, e.currentTarget)}>{x.name}</button>
-									<span class="sub">{#if groupBy !== 'type'}{kindWord(x.kind)} · {/if}{line(x)}</span>
-									<span class="sub">{#if groupBy !== 'person'}{p.name} · {/if}<time datetime={x.asked_at} title={dateTime(x.asked_at)}>{ago(x.asked_at)}</time></span>
-									<div class="tq">{@render quick(x)}</div>
-								</li>
-							{/each}
-						</ul>
-					</section>
+					<Shelf title={`${w ? w.name : g.name} · ${g.asks.length}`} item="var(--ask-item)" items={g.asks} key={(x) => x.id} lines={2}>
+						{#snippet card(x: Ask)}
+							{@const p = ctx.who(x)}
+							<div class="tile" class:chosen={ctx.isChosen(x.id)} class:sending={ctx.isPending(x.id)} data-testid="ask">
+								<div class="art">
+									{@render thumb(x, 'cover')}
+									{#if groupBy !== 'person'}<span class="asker" title="Asked by {p.name}"><Avatar name={p.name} src={p.avatar} size={28} /></span>{/if}
+									{#if selecting}<span class="tick-at">{@render chooseBox(x)}</span>{/if}
+									{#if x.state !== 'asked' || ctx.isPending(x.id)}<span class="pill-at">{@render quick(x)}</span>{/if}
+								</div>
+								<button class="name" type="button" data-row={x.id} data-testid="ask-name" onclick={(e) => (selecting && waiting(x) ? ctx.toggleChosen(x.id) : pick(x, e.currentTarget))}>{x.name}</button>
+								<span class="sub">{#if groupBy !== 'person'}{p.name} · {/if}{notOut(x) ? 'Not out yet' : line(x)}</span>
+							</div>
+						{/snippet}
+					</Shelf>
 				{/each}
 			</div>
 		{:else}
@@ -465,28 +478,33 @@
 	.gb[aria-pressed='true'] { background: var(--accent-fill); color: var(--on-accent, #fff); }
 	.gb:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-	/* The poster wall: Explore's poster grid, one column width per Poster size. */
-	.seg { display: inline-flex; gap: 4px; }
-	.stage { --tile: 160px; }
-	.size-s { --tile: 128px; }
-	.size-l { --tile: 200px; }
-	.wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile), 1fr)); gap: 20px 14px; margin: 0; padding: 0 4px; list-style: none; }
+	/* The poster wall: Explore's shelves and card width, a hero for the newest ask. */
+	.stage { --ask-item: 168px; }
+	.shelves { display: flex; flex-direction: column; gap: 28px; }
 	.tile { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; transition: opacity var(--dur-fast) var(--ease-out); }
-	.tile .art { position: relative; margin-bottom: 6px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); transition: transform var(--dur-fast) var(--ease-out); }
-	.tile:has(.name:hover) .art { transform: translateY(-2px); }
+	.tile .art { position: relative; margin-bottom: 6px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+	.tile:has(.name:hover) .art { transform: scale(1.03); }
 	.tile:has(.name:active) .art { transform: scale(0.98); }
 	.tile.chosen .art { box-shadow: 0 0 0 3px var(--accent); }
 	.cover { display: block; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; border-radius: 10px; overflow: hidden; background: var(--surface-3); }
 	.cover > img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
 	.asker { position: absolute; right: 6px; bottom: 6px; display: inline-flex; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg); }
-	.tick-at { position: absolute; left: 8px; top: 8px; z-index: 1; }
-	.soon.at { position: absolute; left: 6px; bottom: 8px; }
-	.tile .name { min-height: 22px; white-space: nowrap; }
+	.tick-at { position: absolute; left: 8px; top: 8px; z-index: 1; pointer-events: none; }
+	.pill-at { position: absolute; left: 6px; top: 6px; }
+	.tile .name { min-height: 22px; }
 	.sub { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.tq { position: relative; z-index: 1; display: flex; min-height: 32px; margin-top: 6px; }
-	.tq .quick { gap: 8px; }
-	.tile .tick, .asker { z-index: 1; }
 	.tile:has(.name:focus-visible) .art { box-shadow: 0 0 0 2px var(--accent), var(--focus-ring); }
+
+	.hero { position: relative; isolation: isolate; overflow: hidden; display: flex; gap: 24px; align-items: flex-end; margin-bottom: 28px; padding: 24px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.hero-bg { position: absolute; inset: -40px; z-index: -1; background-size: cover; background-position: center 30%; filter: blur(40px) saturate(1.3); opacity: 0.45; }
+	.hero-art { flex: none; width: 180px; padding: 0; border: 0; background: none; border-radius: 12px; overflow: hidden; cursor: pointer; box-shadow: 0 12px 32px rgb(0 0 0 / 0.35); }
+	.hero-art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.hero-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+	.hero-k { color: var(--text-muted); font: var(--t-subhead); }
+	.hero-name { font: var(--t-title1); overflow-wrap: anywhere; }
+	.hero-who { font: var(--t-callout); color: var(--text); }
+	.hero-note { font: var(--t-callout); color: var(--text); }
+	.hero-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
 	.calm { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 56px 20px; text-align: center; color: var(--text-muted); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	.calm h2 { font: var(--t-headline); color: var(--text); }
@@ -513,10 +531,12 @@
 		.tools > :global(*) { flex: 1 1 auto; }
 		.lhead { border-radius: var(--r-card); }
 		.row { padding: 10px; gap: 10px; }
-		.stage { --tile: 104px; }
-		.size-s { --tile: 88px; }
-		.size-l { --tile: 140px; }
-		.wall { gap: 16px 10px; padding: 0; }
+		.stage { --ask-item: 38vw; }
+		.hero { flex-direction: column; align-items: flex-start; gap: 14px; padding: 16px; }
+		.hero-art { width: 120px; }
+		.hero-name { font: var(--t-title2); }
+		.hero-act { width: 100%; }
+		.hero-act > :global(*) { flex: 1 1 auto; }
 		.name { min-height: 32px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
