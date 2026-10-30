@@ -24,8 +24,9 @@ const (
 // allClient is a qBittorrent holding HolyArrs' torrent plus three torrents
 // in other categories; it records every call.
 type allClient struct {
-	mu    sync.Mutex
-	calls []string
+	webapi string // app/webapiVersion; "" answers 2.15.1
+	mu     sync.Mutex
+	calls  []string
 }
 
 func (f *allClient) saw() string {
@@ -65,7 +66,11 @@ func (f *allClient) server(t *testing.T) *httptest.Server {
 		case "sync/torrentPeers":
 			_, _ = w.Write([]byte(`{"peers":{}}`))
 		case "app/webapiVersion":
-			_, _ = w.Write([]byte(`2.15.1`))
+			v := f.webapi
+			if v == "" {
+				v = "2.15.1"
+			}
+			_, _ = w.Write([]byte(v))
 		}
 	}))
 	t.Cleanup(qb.Close)

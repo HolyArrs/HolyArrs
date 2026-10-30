@@ -7,6 +7,7 @@ import (
 	"errors"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -159,5 +160,46 @@ func TestShareLimitsRoute(t *testing.T) {
 		`{"hashes":["all"],"ratio":1,"seeding_minutes":-2,"inactive_minutes":-2}`,
 	} {
 		do(t, "POST", base+"/share-limits", bad, 400)
+	}
+}
+
+// Seeding rules on an outside torrent that may end in a remove (the
+// torrent's own action, or the client's global one) need the settings
+// permission; an explicit stop on 5.2, or clearing every limit, does not.
+func TestShareLimitsOutsideNeedSettings(t *testing.T) {
+	x, f, _ := manageBase(t)
+	var did int64
+	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
+	member := auth.Who{UserID: 7, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary}, Scopes: []string{auth.ScopeWrite}}
+	owner := auth.Who{UserID: 1, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary, auth.PermSettings}, Scopes: []string{auth.ScopeAdmin, auth.ScopeWrite}}
+	call := func(who auth.Who, body string) int {
+		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(auth.ContextWith(context.Background(), who))
+		req.SetPathValue("id", itoa(did))
+		rec := httptest.NewRecorder()
+		x.api.shareLimits(rec, req)
+		return rec.Code
+	}
+	ratio := `{"hashes":["` + outHash + `"],"ratio":2,"seeding_minutes":-2,"inactive_minutes":-2}`
+	stop := `{"hashes":["` + outHash + `"],"ratio":2,"seeding_minutes":-2,"inactive_minutes":-2,"action":"stop"}`
+	clear := `{"hashes":["` + outHash + `"],"ratio":-1,"seeding_minutes":-1,"inactive_minutes":-1}`
+	f.webapi = "2.11.4"
+	if c := call(member, ratio); c != 403 {
+		t.Fatalf("member ratio on 5.1: %d", c)
+	}
+	if c := call(member, stop); c != 409 {
+		t.Fatalf("member stop on 5.1: %d", c)
+	}
+	if c := call(member, clear); c != 200 {
+		t.Fatalf("member clear: %d", c)
+	}
+	f.webapi = "2.15.1"
+	if c := call(member, ratio); c != 403 {
+		t.Fatalf("member default action on 5.2: %d", c)
+	}
+	if c := call(member, stop); c != 200 {
+		t.Fatalf("member stop on 5.2: %d", c)
+	}
+	if c := call(owner, ratio); c != 200 {
+		t.Fatalf("owner: %d", c)
 	}
 }

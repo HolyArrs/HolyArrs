@@ -242,9 +242,9 @@ func (a *API) onBulk(r *http.Request, id int64, call func(t downloader.TorrentBu
 
 const shareHelp = `body is {"hashes": [info hash...], "ratio": -2 (Downloader's rule), -1 (none) or 0 to 9998, "seeding_minutes": -2, -1 or 0 to 525600, "inactive_minutes": -2, -1 or 0 to 525600, "action": "", "stop", "remove", "remove_files" or "super_seed"}`
 
-// shareLimits sets seeding rules on many torrents of one Downloader. An
-// action that removes torrents HolyArrs did not send needs the settings
-// permission, as removing them does.
+// shareLimits sets seeding rules on many torrents of one Downloader. On
+// torrents HolyArrs did not send, rules that may end in a remove need the
+// settings permission, as removing them does.
 func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -270,7 +270,13 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, shareHelp)
 		return
 	}
-	if (l.Action == "remove" || l.Action == "remove_files") && !a.mayRemoveOutside(r.Context(), id, in.Hashes) {
+	// Any limit could trigger a remove: the torrent's own action, or the
+	// client's global one when the action is left on the default (and on
+	// qBittorrent before 5.2, which has no per-torrent action). Only an
+	// explicit stop or super seed (which those clients refuse) or clearing
+	// every limit needs no more than managing the Library.
+	safe := l.Action == "stop" || l.Action == "super_seed" || l.Ratio == -1 && l.SeedingMinutes == -1 && l.InactiveMinutes == -1
+	if !safe && !a.mayRemoveOutside(r.Context(), id, in.Hashes) {
 		fail(w, http.StatusForbidden, "removing a torrent HolyArrs did not send needs the settings permission")
 		return
 	}
