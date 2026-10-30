@@ -40,6 +40,16 @@
 		{ k: 'stage', label: 'Stage', icon: 'sidebar' }
 	];
 
+	// The Stage needs a wide screen; narrower ones always show cards.
+	let wide = $state(true);
+	$effect(() => {
+		const q = matchMedia('(min-width: 1024px)');
+		const sync = () => (wide = q.matches);
+		sync();
+		q.addEventListener('change', sync);
+		return () => q.removeEventListener('change', sync);
+	});
+
 	// The view, remembered per member.
 	const viewKey = $derived(`holyarrs.approvals-view.${ctx.me ?? 'me'}`);
 	let view = $state<'cards' | 'stage'>('cards');
@@ -50,6 +60,7 @@
 			/* storage blocked: cards */
 		}
 	});
+	const shownView = $derived(wide ? view : 'cards');
 	function setView(v: 'cards' | 'stage') {
 		view = v;
 		try {
@@ -135,7 +146,7 @@
 			{/each}
 		</div>
 		<div class="right">
-			{#if view === 'cards' && ctx.tab === 'waiting' && list.filter(waiting).length > 1}
+			{#if shownView === 'cards' && ctx.tab === 'waiting' && list.filter(waiting).length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: 200 }} onclick={() => ctx.approve(list.filter(waiting))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
 			{/if}
 			<div class="cap">
@@ -145,6 +156,7 @@
 						<button type="button" class="it" aria-pressed={ctx.kind === t.k} onclick={() => ctx.setKind(t.k)}><span class="ic"><Icon name={t.icon} size={18} /></span><span class="lb">{t.label}</span></button>
 					{/each}
 				</div>
+				{#if wide}
 				<span class="vr" aria-hidden="true"></span>
 				<div class="seg" role="group" aria-label="View" use:plate={view}>
 					<span class="plate" aria-hidden="true"></span>
@@ -152,11 +164,12 @@
 						<button type="button" class="it" aria-pressed={view === v.k} title="{v.label} view" onclick={() => setView(v.k)}><span class="ic"><Icon name={v.icon} size={18} /></span><span class="lb">{v.label}</span></button>
 					{/each}
 				</div>
+				{/if}
 			</div>
 		</div>
 	</div>
 
-	{#if view === 'stage'}
+	{#if shownView === 'stage'}
 		<div in:fade={{ duration: 260 }}><ApprovalsStage {ctx} embedded /></div>
 	{:else}
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: 260 }}>
@@ -286,6 +299,36 @@
 	.win :global(.ctl.top) { right: 68px !important; }
 	@keyframes win-in { from { opacity: 0; transform: translateY(16px) scale(0.98); } }
 	@keyframes fade-in { from { opacity: 0; } }
+	/* Phones: the tabs swipe, the filter fills the width, one card per row, the window fills the screen. */
+	@media (max-width: 767px) {
+		.desktop { gap: 12px; padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
+		.toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+		.tabs::-webkit-scrollbar { display: none; }
+		.tab { flex: none; padding: 0 14px; font: var(--t-footnote); font-weight: 600; }
+		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+		.cap { width: 100%; }
+		.cap .seg { flex: 1; }
+		.it { flex: 1; width: auto; }
+		.approve-all { justify-content: center; height: 48px; }
+		.cards { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+		.bc { grid-template-columns: 72px minmax(0, 1fr); padding: 12px 12px 14px; border-radius: 20px; }
+		.cover { width: 72px; }
+		.title { font: var(--t-headline); }
+		.wants { font: var(--t-footnote); }
+		.who { font: var(--t-caption); }
+		/* Phone grid: the cover spans the text rows on the left; the answers fill the row under both. */
+		.bc { grid-template-rows: auto auto auto 1fr auto; row-gap: 3px; column-gap: 12px; }
+		.cover { grid-column: 1; grid-row: 1 / 5; align-self: start; }
+		.body { display: contents; }
+		.eyebrow, .title, .wants, .who { grid-column: 2; }
+		.foot { grid-column: 1 / -1; grid-row: 5; display: grid; grid-template-columns: 1fr 1fr; padding-top: 10px; }
+		.b { justify-content: center; height: 44px; }
+		.state { grid-column: 1 / -1; margin: 0; }
+		.win { width: 100vw; height: 100dvh; border-radius: 0; }
+		.close { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; width: 44px; height: 44px; }
+		.win :global(.ctl.top) { right: 64px !important; }
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.plate, .bc, .cover, .fill, .it, .win[open], .win::backdrop { transition: none; animation: none; }
 	}

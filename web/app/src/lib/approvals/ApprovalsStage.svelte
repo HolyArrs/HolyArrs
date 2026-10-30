@@ -384,6 +384,10 @@
 	.row-line { left: 12px; right: 12px; bottom: 4px; height: 2px; border-radius: 2px; }
 	.none { padding: 30px 12px; color: var(--text-muted); font: var(--t-callout); text-align: center; }
 
+	@media (max-width: 767px) {
+		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
+		.act { height: 46px; padding: 0 18px; }
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.frame :global(.ui-billboard .content), .fill, .acts, .row, .pic, .act, .ink { transition: none; }
 		.tone-go .fill, .artist-bg { animation: none; }

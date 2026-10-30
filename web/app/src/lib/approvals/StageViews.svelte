@@ -230,8 +230,8 @@
 	</li>
 {/snippet}
 
-{#if wide && ctx.approver}
-	<!-- Desktop: Cards or the Stage (design-notes/approvals-stage.md). Phones keep the list below. -->
+{#if ctx.approver}
+	<!-- Approvers: Cards (every width) or the Stage (wide screens); design-notes/approvals-stage.md. Members keep the list below. -->
 	<ApprovalsDesktop {ctx} />
 {:else}
 <div class="stage size-{size}" class:collapsed={split && !listOpen} data-testid="approvals-stage" data-size={size} data-list={split ? (listOpen ? 'open' : 'hidden') : undefined}>
