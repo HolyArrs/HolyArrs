@@ -542,6 +542,7 @@ var ScopeNotes = map[string]string{
 // RouteScopes names routes whose scope is not the one the method and
 // RoutePerms give them (see RouteScope).
 var RouteScopes = map[string]string{
+	"GET /api/v1/downloads/{id}/swarm":                            ScopeAdmin,
 	"GET /api/v1/downloaders/{id}/attempts":                      ScopeAdmin,
 	"GET /api/v1/explore/title-stats":                            ScopeAdmin,
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": ScopeAdmin,
@@ -645,7 +646,7 @@ func init() {
 		"GET /api/v1/artists/lookup", "GET /api/v1/artwork/{name}", "GET /api/v1/artwork/tmdb/{size}/{file}", "GET /api/v1/artwork/img/{kind}/{id}/{file}", "GET /api/v1/asks",
 		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/asks/{id}/parts", "GET /api/v1/auth/me",
 		"GET /api/v1/calendar", "GET /api/v1/downloaders",
-		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/downloads/speeds", "GET /api/v1/downloads/clients", "GET /api/v1/downloads/{id}/swarm", "GET /api/v1/events",
+		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/downloads/speeds", "GET /api/v1/downloads/clients", "GET /api/v1/events",
 		"GET /api/v1/health", "GET /api/v1/health/checks",
 		"GET /api/v1/held", "GET /api/v1/imports", "GET /api/v1/jobs", "GET /api/v1/jobs/{id}",
 		"GET /api/v1/library-folders", "GET /api/v1/library-summary", "GET /api/v1/home", "GET /api/v1/media-servers", "GET /api/v1/messages",

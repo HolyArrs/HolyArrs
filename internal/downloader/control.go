@@ -284,7 +284,7 @@ func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error
 		if r.Tier < 0 {
 			continue
 		}
-		out = append(out, Tracker{URL: r.URL, Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: r.Msg, Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0)})
+		out = append(out, Tracker{URL: trackerHost(r.URL), Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: r.Msg, Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0)})
 	}
 	return out, nil
 }
@@ -442,4 +442,18 @@ func (s *Sabnzbd) Retry(ctx context.Context, id string) (string, error) {
 		return r.ID, nil
 	}
 	return id, nil
+}
+
+// trackerHost keeps only scheme and host of a tracker address, so passkeys
+// in the path, query or user part never leave HolyArrs. Entries like
+// "** [DHT] **" are not addresses and pass through.
+func trackerHost(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		if strings.Contains(raw, "://") {
+			return "tracker"
+		}
+		return raw
+	}
+	return u.Scheme + "://" + u.Host
 }
