@@ -71,9 +71,9 @@ export interface Tab {
 	subs: Sub[];
 }
 
-/** ALL is the default tab: everything not yet finished (waiting, in progress and problems). */
+/** ALL is the default tab: every row, finished and seeding ones included. */
 export const ALL = 'active';
-export const ALL_HINT = 'Everything not finished yet: waiting, on its way, or needing you.';
+export const ALL_HINT = 'Everything: waiting, on its way, needing you, or finished.';
 
 const SUBS: Record<string, Sub> = {
 	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.', empty: 'Nothing is queued.' },
@@ -85,23 +85,23 @@ const SUBS: Record<string, Sub> = {
 };
 
 export const TABS: Tab[] = [
-	{ key: 'active', label: 'All', stages: ['queued', 'paused', 'downloading', 'stalled', 'importing', 'failed', 'decide'], hint: ALL_HINT, empty: 'Nothing is downloading or waiting.', subs: [] },
-	{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: "In your Downloader's line, or paused by you.", empty: 'Nothing waiting.', subs: [SUBS.queued, SUBS.paused] },
+	{ key: 'active', label: 'All', stages: ['queued', 'paused', 'downloading', 'stalled', 'importing', 'failed', 'decide', 'done', 'seeding'], hint: ALL_HINT, empty: 'No downloads yet', subs: [] },
+	{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: "In your Downloader's line, or paused by you.", empty: 'Nothing waiting', subs: [SUBS.queued, SUBS.paused] },
 	{
 		key: 'progress',
 		label: 'In progress',
 		stages: ['downloading', 'stalled', 'importing'],
 		hint: 'On its way: downloading now, or being checked and filed into your Library.',
-		empty: 'Nothing on its way right now.',
+		empty: 'Nothing downloading',
 		subs: [SUBS.downloading, SUBS.importing]
 	},
-	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'No problems. Everything is moving.', subs: [SUBS.failed, SUBS.decide] },
+	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'All clear', subs: [SUBS.failed, SUBS.decide] },
 	{
 		key: 'done',
 		label: 'Done',
 		stages: ['done', 'seeding'],
 		hint: 'Finished: in your Library, or still being shared.',
-		empty: 'Nothing finished yet.',
+		empty: 'Nothing finished yet',
 		subs: []
 	}
 ];
@@ -191,4 +191,41 @@ export function showOf(v: string | null | undefined, tabs: Tab[] = TABS): { show
 	const t = tabs.find((x) => x.key === a);
 	if (!t) return { show: ALL, sub: '' };
 	return { show: t.key, sub: t.subs.some((x) => x.key === b) ? b : '' };
+}
+
+export type EmptyGlyph = 'down' | 'clock' | 'check' | 'done' | 'search' | 'filter';
+export type EmptyAction = { label: string; act: 'clear' | 'all' };
+export interface Empty {
+	title: string;
+	text: string;
+	glyph: EmptyGlyph;
+	action?: EmptyAction;
+}
+
+const EMPTY: Record<string, Omit<Empty, 'title'>> = {
+	active: { text: 'Anything HolyArrs or your downloader is fetching shows up here.', glyph: 'down' },
+	waiting: { text: 'Downloads queued or paused show up here.', glyph: 'clock' },
+	progress: { text: 'Active downloads show up here with their speed.', glyph: 'down' },
+	problems: { text: 'Failed downloads and ones that need a decision show up here.', glyph: 'check' },
+	done: { text: 'Completed and seeding downloads show up here.', glyph: 'done' }
+};
+
+const KIND_NOUN: Record<string, string> = { movie: 'movie', show: 'TV show', artist: 'music', usenet: 'Usenet', torrent: 'torrent' };
+
+/** emptyOf is the empty-state card for the list as filtered: a search with
+ *  no hits, a kind filter with no rows, or the tab (or sub-tab) itself. */
+export function emptyOf(tab: string, sub = '', term = '', kind = '', tabs: Tab[] = TABS, source = ''): Empty {
+	const q = term.trim();
+	if (q) return { title: `No matches for “${q}”`, text: '', glyph: 'search', action: { label: 'Clear search', act: 'clear' } };
+	if (kind && KIND_NOUN[kind]) {
+		return { title: `No ${KIND_NOUN[kind]} downloads`, text: '', glyph: 'filter', action: { label: 'Show all', act: 'all' } };
+	}
+	if (source && KIND_NOUN[source]) {
+		return { title: `No ${KIND_NOUN[source]} downloads`, text: '', glyph: 'filter', action: { label: 'Show all', act: 'all' } };
+	}
+	const t = tabs.find((x) => x.key === tab) ?? tabs[0];
+	const s = t.subs.find((x) => x.key === sub);
+	const base = EMPTY[t.key] ?? EMPTY.active;
+	if (s) return { title: s.empty.replace(/\.$/, ''), text: s.hint, glyph: t.key === 'problems' ? 'check' : base.glyph };
+	return { title: t.empty, ...base };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL, ALL_HINT, TABS, counts, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+import { ALL, ALL_HINT, TABS, counts, emptyOf, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 
 type R = { id: number; phase: string; state: string; progress: number; label: string };
 const r = (id: number, phase: string, state = phase, progress = 0): R => ({ id, phase, state, progress, label: phase });
@@ -32,17 +32,20 @@ describe('stageOf', () => {
 });
 
 describe('the tabs', () => {
-	it('are All · Waiting · In progress · Problems · Done; All is the unfinished tabs together', () => {
+	it('are All · Waiting · In progress · Problems · Done; All is every row, Done included', () => {
 		const tabs = tabsFor(rows, true);
 		const c = counts(rows, tabs);
-		expect(c.map((x) => `${x.label} ${x.count}`)).toEqual(['All 11', 'Waiting 2', 'In progress 5', 'Problems 4', 'Done 3']);
-		expect(sorted(ids(pick(rows, tabs, 'active')))).toEqual(sorted(['waiting', 'progress', 'problems'].flatMap((k) => ids(pick(rows, tabs, k)))));
+		expect(c.map((x) => `${x.label} ${x.count}`)).toEqual(['All 14', 'Waiting 2', 'In progress 5', 'Problems 4', 'Done 3']);
+		expect(sorted(ids(pick(rows, tabs, 'active')))).toEqual(sorted(ids(rows)));
+		// Only seeding torrents: All counts them, it is never 0.
+		const seeding = [r(1, 'done', 'seeding', 1), r(2, 'done', 'seeding', 1)];
+		expect(counts(seeding, tabs)[0].count).toBe(2);
 		expect(c.some((x) => x.label === 'Active')).toBe(false);
 	});
 	it('Done holds finished and seeding downloads; with All it covers every row', () => {
 		const tabs = tabsFor(rows, true);
 		expect(sorted(ids(pick(rows, tabs, 'done')))).toEqual([8, 9, 11]);
-		expect(new Set([...ids(pick(rows, tabs, 'active')), ...ids(pick(rows, tabs, 'done'))]).size).toBe(rows.length);
+		expect(ids(pick(rows, tabs, 'active')).length).toBe(rows.length);
 		// A failed download is only under Problems, a stalled one counts as Downloading, a seeding one as Done.
 		expect(ids(pick(rows, tabs, 'done'))).not.toContain(10);
 	});
@@ -77,7 +80,7 @@ describe('the tabs', () => {
 		expect(ALL_HINT).toMatch(/^[A-Z].+\.$/);
 		for (const t of TABS) {
 			expect(t.hint).toMatch(/^[A-Z].{8,90}\.$/);
-			expect(t.empty).toMatch(/^(Nothing|No) .+\.$/);
+			expect(t.empty).toMatch(/^[A-Z][^.]{4,40}$/); // a short heading, no full stop
 		}
 		for (const s of TABS.flatMap((t) => t.subs)) {
 			expect(s.hint).toMatch(/^[A-Z].{8,90}\.$/);
@@ -120,5 +123,20 @@ describe('showOf', () => {
 		expect(showOf('progress.stalled')).toEqual({ show: 'progress', sub: 'downloading' });
 		expect(showOf('done.failed')).toEqual({ show: 'problems', sub: 'failed' });
 		expect(showOf('seeding')).toEqual({ show: 'done', sub: '' });
+	});
+});
+
+describe('emptyOf', () => {
+	it('gives each tab its own calm card', () => {
+		expect(emptyOf('active')).toMatchObject({ title: 'No downloads yet', text: 'Anything HolyArrs or your downloader is fetching shows up here.' });
+		expect(emptyOf('active').action).toBeUndefined();
+		expect(emptyOf('problems')).toMatchObject({ title: 'All clear', glyph: 'check' });
+		expect(emptyOf('done').title).toBe('Nothing finished yet');
+		expect(emptyOf('waiting', 'paused').title).toBe('Nothing is paused');
+	});
+	it('a search or a kind filter with no hits offers the way back', () => {
+		expect(emptyOf('active', '', '  dune ')).toMatchObject({ title: 'No matches for “dune”', action: { act: 'clear' } });
+		expect(emptyOf('done', '', '', 'artist')).toMatchObject({ title: 'No music downloads', action: { act: 'all' } });
+		expect(emptyOf('active', '', '', '', TABS, 'usenet').title).toBe('No Usenet downloads');
 	});
 });

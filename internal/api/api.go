@@ -80,11 +80,11 @@ type Server struct {
 	LiveSearch bool
 	// ExtraArt and ExtraRatings read the server's stored title art and outside ratings
 	// from the metadata server; nil (or a source off there) shows neither.
-	ExtraArt     func(ctx context.Context, kind, id string) (metadata.ServerArt, error)
+	ExtraArt func(ctx context.Context, kind, id string) (metadata.ServerArt, error)
 	// ImageBase is the metadata server's picture origin ("<server>/v1/img");
 	// its sharp artist photo is the first choice for every artist picture.
 	// Empty skips it.
-	ImageBase string
+	ImageBase    string
 	ExtraRatings func(ctx context.Context, kind, id string) (metadata.ServerRatings, error)
 	// WikiTitle and WikiPerson read awards and the Wikipedia bio from the
 	// metadata server; AwardWinners its award-winning TMDB IDs (the Award
@@ -197,7 +197,7 @@ type API struct {
 	// warm fills listed titles' details, extras and trailers ahead.
 	warm titleWarmer
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
-	ahead musicAhead
+	ahead   musicAhead
 	artWarm artWarmer
 	// musicPre stores every engine page's covers ahead (musicpreload.go).
 	musicPre musicPreload
@@ -206,6 +206,8 @@ type API struct {
 	artistVideos artistVideoCache
 	// speeds is the rolling total-speed history (speedhistory.go).
 	speeds speedHistory
+	// match links outside torrents to Library titles (client_match.go).
+	match clientMatch
 }
 
 // New makes the API.

@@ -27,6 +27,7 @@ func (a *API) downloadsRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloads/{id}/remove", a.removeDownload)
 	m.HandleFunc("GET /api/v1/needs-decision", a.needsDecision)
 	a.downloadControlRoutes(m)
+	a.clientMatchRoutes(m)
 	m.HandleFunc("POST /api/v1/needs-decision/{id}/decide", a.decide)
 }
 
@@ -63,8 +64,11 @@ type DownloadRow struct {
 	// Client items: a torrent read straight from the client's own list.
 	// ClientItem rows have no HolyArrs download id (ID 0) and are addressed
 	// by DownloaderID and Hash; Outside says HolyArrs never sent it.
-	ClientItem   bool    `json:"client_item,omitempty"`
-	Outside      bool    `json:"outside,omitempty"`
+	ClientItem bool `json:"client_item,omitempty"`
+	Outside    bool `json:"outside,omitempty"`
+	// Linked says an outside torrent is matched to a Library title (a
+	// client_links row): Title, Kind and Covers come from that link.
+	Linked       bool    `json:"linked,omitempty"`
 	DownloaderID int64   `json:"downloader_id,omitempty"`
 	Hash         string  `json:"hash,omitempty"`
 	Category     string  `json:"category,omitempty"`

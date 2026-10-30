@@ -12165,6 +12165,43 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/downloads/matches": {
+      "get": {
+        "responses": {},
+        "summary": "",
+        "x-holyarrs-part": "",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/downloads/matches/run": {
+      "post": {
+        "responses": {},
+        "summary": "",
+        "x-holyarrs-part": "",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/matches/{id}/pick": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "summary": "",
+        "x-holyarrs-part": "",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloads/pause-all": {
       "post": {
         "description": "Each Downloader that offers controls pauses all its downloads; a Downloader that fails carries an error.",

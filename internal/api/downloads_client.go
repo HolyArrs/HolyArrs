@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -70,9 +71,11 @@ func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []Downlo
 	}
 	wg.Wait()
 	var rows []DownloadRow
+	defer func() { a.matchQueue(context.WithoutCancel(ctx), rows) }()
 	for i, out := range per {
 		if len(out) > 0 {
 			a.knownTitles(ctx, ds[i].ID, out)
+			a.linkedTitles(ctx, ds[i].ID, out)
 			rows = append(rows, out...)
 		}
 	}
@@ -227,6 +230,14 @@ func (a *API) removeItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.ContentLength != 0 && !decode(w, r, &in, `body is {"delete_files": true or false}`) {
 		return
+	}
+	// Removing a torrent HolyArrs did not send is a Downloader owner's call:
+	// it needs the settings permission (and an admin-scoped key).
+	if id, err := strconv.ParseInt(r.PathValue("id"), 10, 64); err == nil && a.outsideHash(r.Context(), id, r.PathValue("hash")) {
+		if who, ok := auth.From(r.Context()); ok && (!who.Has(auth.PermSettings) || !who.HasScope(auth.ScopeAdmin)) {
+			fail(w, http.StatusForbidden, "removing a torrent HolyArrs did not send needs the settings permission")
+			return
+		}
 	}
 	a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {
 		return e.Remove(r.Context(), id, in.DeleteFiles)

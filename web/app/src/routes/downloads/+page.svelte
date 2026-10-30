@@ -17,6 +17,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
 	import DlSections from '#lib/downloads/DlSections.svelte';
+	import ConfirmMatch from '#lib/downloads/ConfirmMatch.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
@@ -25,6 +26,8 @@
 	let imports = $state<ImportRecord[]>([]);
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
+	// Counts the list reads, so the Confirm match banner reads again with them.
+	let reads = $state(0);
 	// The poster pictures come from the Library titles; until they arrive the rows show plain poster tiles (no initials).
 	let titlesReady = $state(false);
 	let error = $state('');
@@ -126,6 +129,7 @@
 			]);
 			rows = d.downloads.map(withId);
 			imports = i.imports;
+			reads++;
 			error = '';
 		} catch (e) {
 			error = message(e);
@@ -318,6 +322,7 @@
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
+	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
 	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} {watch} />
 {/if}
 </PageLoader>
@@ -378,6 +383,8 @@
 	.lim label { display: flex; flex-direction: column; gap: 4px; font: var(--t-subhead); color: var(--text-muted); flex: 1 1 120px; min-width: 0; }
 	.lim input { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-callout); width: 100%; box-sizing: border-box; }
 	.pad { padding: var(--s-6) var(--gutter); }
+	.matchpad { padding: 0 var(--gutter); }
+	.matchpad:empty { display: none; }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.raw { color: var(--text-muted); font: var(--t-footnote); }

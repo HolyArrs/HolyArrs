@@ -40,3 +40,14 @@ export const KIND_TABS: { key: KindKey; label: string }[] = [
 	{ key: 'show', label: 'TV shows' },
 	{ key: 'artist', label: 'Music' }
 ];
+
+/** categoryWords names a client category in plain words: tv_shows reads TV show, movies reads Movie, anything else loses its underscores. */
+export function categoryWords(c: string | undefined): string {
+	const v = (c ?? '').trim();
+	if (!v) return '';
+	const low = v.toLowerCase();
+	if (/(^|[^a-z])(tv|shows?|series|sonarr)([^a-z]|$)/.test(low.replace(/_/g, ' '))) return 'TV show';
+	if (/(^|[^a-z])(movies?|films?|radarr)([^a-z]|$)/.test(low.replace(/_/g, ' '))) return 'Movie';
+	const words = v.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+	return words.charAt(0).toUpperCase() + words.slice(1);
+}

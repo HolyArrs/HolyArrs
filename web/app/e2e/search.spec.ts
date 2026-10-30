@@ -108,7 +108,7 @@ test('the Turned down list: un-refuse one, and the Held list is empty', async ()
 	await expect(row).toContainText('too small for the big screen');
 	await row.getByRole('button', { name: /^Take off the list/ }).click();
 	await expect(row).toHaveCount(0);
-	await expect(page.getByText('Nothing is turned down')).toBeVisible();
+	await expect(page.getByText('Nothing turned down')).toBeVisible();
 
 	await page.locator('#main').getByRole('link', { name: 'Held', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Held' })).toBeVisible();
@@ -124,7 +124,7 @@ test('clear all empties the Turned down list', async () => {
 	await expect(page.getByTestId('listed-release')).toHaveCount(1);
 	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Clear all' }).click();
-	await expect(page.getByText('Nothing is turned down')).toBeVisible();
+	await expect(page.getByText('Nothing turned down')).toBeVisible();
 });
 
 test('Settings > Search: the four settings are saved and a wrong interval is refused', async () => {

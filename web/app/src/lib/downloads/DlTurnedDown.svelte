@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GhostEmpty from './GhostEmpty.svelte';
 	// The Downloads app's Turned down list: the same full-bleed shell as the Downloads page
 	// (a thin toolbar strip, a dense list that scrolls inside, a status bar). Same data and
 	// Undo as the Library's list (ReleaseList); only the look follows Downloads.
@@ -113,7 +114,7 @@
 		{:else if !loaded}
 			<ul class="rows" aria-hidden="true">{#each Array(4) as _, i (i)}<li class="row sk"><Skeleton lines={2} /></li>{/each}</ul>
 		{:else if total === 0}
-			<p class="none" data-testid="td-empty"><Icon name="shield" size={20} /><span><b>Nothing is turned down.</b> Turn a copy down from a movie or show page, or HolyArrs does it when a download turns out wrong.</span></p>
+			<GhostEmpty testid="td-empty" title="Nothing turned down" text="Releases HolyArrs skips or you reject show up here." />
 		{:else}
 			<div class="chead" aria-hidden="true"><span>Name</span><span class="c-for">For</span><span class="c-since">Since</span><span></span></div>
 			<ul class="rows">
@@ -197,8 +198,6 @@
 	.reasons li { padding: 2px 0 2px 10px; border-left: 2px solid var(--line-strong); }
 	.reasons li.fail { border-left-color: var(--fail); }
 	.reasons li.hold, .reasons li.warn { border-left-color: var(--wait); }
-	.none { display: flex; align-items: flex-start; gap: 10px; max-width: 60ch; margin: 0; padding: 24px var(--g); color: var(--text-muted); font: var(--t-footnote); }
-	.none b { color: var(--text); }
 	.msg { padding: 16px var(--g); }
 
 	.sbar { flex: none; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }

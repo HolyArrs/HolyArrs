@@ -24,3 +24,15 @@ describe('size', () => {
 		expect(protocolOf({})).toBe('');
 	});
 });
+
+import { categoryWords } from './size.ts';
+describe('categoryWords', () => {
+	it('reads client categories in plain words', () => {
+		expect(categoryWords('tv_shows')).toBe('TV show');
+		expect(categoryWords('sonarr')).toBe('TV show');
+		expect(categoryWords('movies')).toBe('Movie');
+		expect(categoryWords('radarr')).toBe('Movie');
+		expect(categoryWords('linux_isos')).toBe('Linux isos');
+		expect(categoryWords('')).toBe('');
+	});
+});

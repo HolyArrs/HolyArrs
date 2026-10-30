@@ -20,6 +20,7 @@
 	import DlBar from './DlBar.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import DlStatus from './DlStatus.svelte';
+	import GhostEmpty from './GhostEmpty.svelte';
 	import { reviewCount } from './status-views.ts';
 	import { reviewShown, searchShortcut } from './keys.ts';
 	import Popover from '../ui/Popover.svelte';
@@ -30,13 +31,13 @@
 	import { fileTree } from './filetree.ts';
 	import { api, message } from '../api.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
-	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
+	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { kindOf, manyWords, rowName, rowPath, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
-	import { ALL, counts, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
@@ -813,13 +814,13 @@
 	{#if id === 'poster'}
 		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady && !(r.client_item && !r.title) ? r.title || r.name : ''} /></span>
 	{:else if id === 'kind'}
-		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : r.category || dash}</span></span>
+		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category) || dash}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
 		<span class="pcell" class:ph data-col="proto">{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} use:tip={`${p === 'torrent' ? 'Torrent' : 'Usenet'} · ${dlName(r)}`} role="img" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download"><Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} /></span>{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
+			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && r.linked}<span class="ver" data-testid="dl-linked" title="Added outside HolyArrs, matched to this title">Linked</span>{:else if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
 			<span class="rel" title={r.name}>{sub2(r)}</span>
 		</span>
 	{:else if id === 'progress'}
@@ -845,7 +846,7 @@
 		<span class="num" class:ph data-col="speed">{!hist && moving(r) ? `${bytes(r.speed)}/s` : dash}</span>
 	{:else if id === 'time'}
 		{#if hist}
-			<span class="num" class:ph data-col="time" title={r.finished_at || r.updated_at}>{ago(r.finished_at || r.updated_at)}</span>
+			<span class="num" class:ph data-col="time" title={r.finished_at || (r.client_item ? '' : r.updated_at)}>{r.finished_at ? ago(r.finished_at) : r.client_item ? dash : ago(r.updated_at)}</span>
 		{:else}
 			<span class="num" class:ph data-col="time">{r.active && r.eta ? duration(r.eta) : dash}</span>
 		{/if}
@@ -985,7 +986,7 @@
 		{#if !tor || !files}
 			<p class="nr" data-testid="dl-files-none">{tor && det.id === r.id && det.filesErr ? det.filesErr : '–'}</p>
 		{:else if !files.length}
-			<p class="nr" data-testid="dl-files-none">No files yet (the client is still fetching the torrent's metadata)</p>
+			<GhostEmpty compact testid="dl-files-none" title="No files yet" text="The file list appears once the download has its details." />
 		{:else}
 			{@const rowsT = fileTree(files.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!closed[`${r.id}|${k}`])}
 			<div class="tblw" data-testid="dl-filetable"><table class="t2">
@@ -1028,7 +1029,7 @@
 							<td class="c-fl">{flagsOf(p)}</td>
 						</tr>
 					{/each}
-					{#if !peers.length}<tr><td colspan="6" class="nr">No peers connected</td></tr>{/if}
+					{#if !peers.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-peers-none" title="No peers connected" text="Peers show up here while the torrent is active." /></td></tr>{/if}
 				</tbody>
 			</table></div>
 		{/if}
@@ -1051,24 +1052,24 @@
 							<td class="c-num">{x.next_check ? mmss(x.next_check) : '–'}</td>
 						</tr>
 					{/each}
-					{#if !trs.length}<tr><td colspan="6" class="nr">No trackers</td></tr>{/if}
+					{#if !trs.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
 				</tbody>
 			</table></div>
 		{/if}
 	{:else if tab === 'Servers'}
-		<p class="nr" data-testid="dl-servers-none">No server detail reported yet</p>
+		<GhostEmpty compact testid="dl-servers-none" title="No server details yet" text="Which servers supplied this download shows up here." />
 	{:else if tab === 'Repair and unpack'}
-		<p class="nr" data-testid="dl-repair-none">No repair or unpack steps reported yet</p>
+		<GhostEmpty compact testid="dl-repair-none" title="Nothing to repair" text="Checking, repairing and unpacking steps show up here." />
 	{:else}
 		{@const log = d?.log ?? []}
 		{#if r.outside}
-			<p class="nr" data-testid="dl-log-outside">Not from HolyArrs — no history here</p>
+			<GhostEmpty compact testid="dl-log-outside" title="No history here" text="This torrent was added outside HolyArrs." />
 		{:else if log.length}
 			<ol class="lg" data-testid="dl-log">
 				{#each log as l, i (i)}<li class:bad={/fail|error|stall|vanish/i.test(l.kind)}><time>{dateTime(l.at)}</time> {l.summary}</li>{/each}
 			</ol>
 		{:else}
-			<p class="nr" data-testid="dl-log-none">Nothing logged yet</p>
+			<GhostEmpty compact testid="dl-log-none" title="Nothing logged yet" text="What happens to this download shows up here." />
 		{/if}
 	{/if}
 {/snippet}
@@ -1135,7 +1136,16 @@
 		</ul>
 	</div></div>
 {:else}
-	<p class="none" data-testid="dl-empty">{q.trim() ? 'Nothing matches.' : ((subOn ? onTab?.subs.find((x) => x.key === subOn)?.empty : onTab?.empty) ?? 'Nothing here.')}</p>
+	{@const em = emptyOf(on, subOn, q, kindOn, tabs, srcOn)}
+	<div class="tw" data-testid="dl-tablebox"><div class="tin">{@render header()}</div></div>
+	{#key em.title}
+	<GhostEmpty title={em.title} text={em.text}>
+		{#snippet action()}
+			{#if em.action?.act === 'clear'}<button type="button" data-testid="dl-empty-act" onclick={() => (dlScope.term = '')}>{em.action.label}</button>
+			{:else if em.action?.act === 'all'}<button type="button" data-testid="dl-empty-act" onclick={() => { kindOn = ''; srcOn = ''; }}>{em.action.label}</button>{/if}
+		{/snippet}
+	</GhostEmpty>
+	{/key}
 {/if}
 </div>
 {#if openRow}
@@ -1202,7 +1212,6 @@
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
 	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
 
-	.none { padding: 10px 0; color: var(--text-muted); font: var(--t-callout); }
 
 	/* One column grid for every row of both sections. */
 	.dlgrid { --gap: 10px; min-width: 0; }
@@ -1342,9 +1351,8 @@
 	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); background: none; }
 	.col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
-	.drow.sel > .dline { position: relative; z-index: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface-1)); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
-	.drow.sel > .dline:hover { background: color-mix(in srgb, var(--accent) 18%, var(--surface-1)); }
-	.drow.sel .tt { color: var(--accent-text, var(--text)); }
+	.drow.sel > .dline { position: relative; z-index: 1; background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
+	.drow.sel > .dline:hover { background: var(--surface-2); }
 	.dv { flex: none; position: relative; height: 9px; border-top: 1px solid var(--line); cursor: row-resize; touch-action: none; }
 	.dv.fixed { cursor: default; }
 	.dv i { position: absolute; left: 50%; top: 3px; width: 38px; height: 3px; margin-left: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0.6; }

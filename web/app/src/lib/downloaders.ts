@@ -204,6 +204,8 @@ export interface DownloadRow extends DownloadView {
 	client_item?: boolean;
 	/** HolyArrs did not send it (a torrent added in the client by hand or by another app). */
 	outside?: boolean;
+	/** An outside torrent matched to a Library title: title, kind and covers come from that match. */
+	linked?: boolean;
 	downloader_id?: number;
 	hash?: string;
 	/** The client's own category for it. */
