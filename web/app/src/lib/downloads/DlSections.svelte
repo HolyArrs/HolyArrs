@@ -40,6 +40,7 @@
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
+	import { pickRange, type BulkAction } from './manage.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
@@ -58,6 +59,8 @@
 		onall,
 		onlimit,
 		onadd,
+		onremovemany,
+		onbulk,
 		watch = false
 	}: {
 		rows: DownloadRow[];
@@ -72,7 +75,7 @@
 		/** The row whose details are open (0: none). */
 		openId?: number;
 		onfail: (r: DownloadRow) => void;
-		onremove: (r: DownloadRow) => void;
+		onremove: (r: DownloadRow, withFiles?: boolean) => void;
 		ondone: () => void;
 		/** A client action on one download; the new state comes back from the client. */
 		onact?: (r: DownloadRow, action: ClientAction) => void;
@@ -82,6 +85,10 @@
 		onlimit?: () => void;
 		/** Opens the Add sheet (managers with a torrent Downloader only). */
 		onadd?: () => void;
+		/** Opens the Remove dialog for the selected rows. */
+		onremovemany?: (rows: DownloadRow[], withFiles?: boolean) => void;
+		/** One action on the selected rows (batched per Downloader by the page). */
+		onbulk?: (rows: DownloadRow[], action: BulkAction) => void;
 		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
 		watch?: boolean;
 	} = $props();
@@ -271,6 +278,30 @@
 		openId = id;
 		paneOpen = true;
 	}
+	// The selection: Ctrl or Cmd click toggles a row, Shift click picks a range
+	// from the last picked one, Ctrl+A picks every row in the list.
+	let picked = $state<Set<number>>(new Set());
+	let anchor = 0;
+	const pickedRows = $derived(list.filter((r) => picked.has(r.id)));
+	$effect(() => {
+		// Rows that left the list leave the selection.
+		const ids = new Set(list.map((r) => r.id));
+		if ([...picked].some((id) => !ids.has(id))) picked = new Set([...picked].filter((id) => ids.has(id)));
+	});
+	function pickOne(id: number, on?: boolean) {
+		const n = new Set(picked);
+		if (on ?? !n.has(id)) n.add(id);
+		else n.delete(id);
+		picked = n;
+		anchor = id;
+	}
+	function pickTo(id: number) {
+		picked = new Set([...picked, ...pickRange(list.map((r) => r.id), anchor || id, id)]);
+	}
+	const clearPicked = () => (picked = new Set());
+	const BULK: { action: BulkAction; label: string }[] = [
+		{ action: 'start', label: 'Start' }, { action: 'pause', label: 'Pause' }, { action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' }
+	];
 	// The detail pane under the list: its height is kept in this browser.
 	const PANE_KEY = 'holyarrs.downloads.pane';
 	let paneH = $state(260);
@@ -403,6 +434,19 @@
 		next.click();
 	}
 	function listKey(e: KeyboardEvent) {
+		if (!watch && (e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+			const t = e.target as HTMLElement | null;
+			if (t?.closest('[data-dl-id], .dlrows, [data-testid="dl-listbox"]') && !t.closest('input, textarea, select, [contenteditable="true"]')) {
+				e.preventDefault();
+				picked = new Set(list.map((r) => r.id));
+			}
+			return;
+		}
+		if (e.key === 'Escape' && picked.size && !(e.target as HTMLElement | null)?.closest('input, select, textarea, [role="dialog"]')) {
+			e.preventDefault();
+			clearPicked();
+			return;
+		}
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Escape' && e.key !== 'Delete') return;
 		const t = e.target as HTMLElement | null;
 		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], [role="dialog"], .mn')) return;
@@ -415,10 +459,15 @@
 		}
 		if (e.key === 'Delete') {
 			if (t.closest('button, a')) return;
+			if (pickedRows.length && onremovemany) {
+				e.preventDefault();
+				onremovemany(pickedRows, e.shiftKey);
+				return;
+			}
 			const target = focusedRow();
 			if (!target) return;
 			e.preventDefault();
-			if (target.can_act) onremove(target);
+			if (target.can_act) onremove(target, e.shiftKey);
 			else toasts.push('This download cannot be removed from here.', 'info');
 			return;
 		}
@@ -787,7 +836,19 @@
 	function rowClick(e: MouseEvent, id: number) {
 		const t = e.target as HTMLElement;
 		if (t.closest('button, a, input, label, .grip, [data-col="bin"]')) return;
+		if (!watch && (e.ctrlKey || e.metaKey)) {
+			e.preventDefault();
+			pickOne(id);
+			return;
+		}
+		if (!watch && e.shiftKey) {
+			e.preventDefault();
+			getSelection()?.removeAllRanges();
+			pickTo(id);
+			return;
+		}
 		if ((getSelection()?.toString() ?? '').length > 0) return;
+		anchor = id;
 		toggle(id);
 	}
 	function rowKey(e: KeyboardEvent, id: number) {
@@ -811,7 +872,7 @@
 </script>
 
 {#snippet lead(r: DownloadRow)}
-	<span class="tg" aria-hidden="true"></span>
+	<span class="tg">{#if !watch}<input type="checkbox" class="pk" class:any={picked.size > 0} tabindex="-1" checked={picked.has(r.id)} aria-label="Select {who(r)}" onclick={(e) => { e.stopPropagation(); if (e.shiftKey) { e.preventDefault(); pickTo(r.id); } else pickOne(r.id, e.currentTarget.checked); }} data-testid="dl-pick" />{/if}</span>
 {/snippet}
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
@@ -877,7 +938,7 @@
 {/snippet}
 
 {#snippet row(r: DownloadRow, hist: boolean)}
-	<li class="drow" class:sel={openId === r.id} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
+	<li class="drow" class:sel={openId === r.id} class:picked={picked.has(r.id)} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => (rowFocus = r.id)} aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
 			{@render lead(r)}
@@ -1132,6 +1193,15 @@
 <div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div><DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
+{#if pickedRows.length && !watch}
+	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
+		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
+		{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}
+		<button type="button" class="xbn" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-bulk-remove">Remove</button>
+		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
+		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>
+	</div>
+{/if}
 {#if list.length}
 	<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
 		{@render header()}
@@ -1223,6 +1293,14 @@
 	.tin { min-width: var(--c-in); }
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 	.drow { display: block; border-bottom: 1px solid var(--line); }
+	.tg { position: relative; align-self: stretch; }
+	.pk { position: absolute; left: -2px; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; accent-color: var(--accent); opacity: 0; cursor: pointer; z-index: 2; transition: opacity 120ms var(--ease-out); }
+	.drow:hover .pk, .pk.any, .pk:focus-visible { opacity: 1; }
+	.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+	.selbar { position: sticky; top: 0; left: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px var(--gutter, 12px); background: var(--surface-1); border-bottom: 1px solid var(--line); }
+	.selbar .sn { font: var(--t-footnote); color: var(--text-muted); margin-right: 4px; }
+	.selbar .sn b { color: var(--text); }
+	@media (hover: none) { .pk { opacity: 1; } }
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: 44px; }
 	.drow > .dline { cursor: pointer; }
 	.drow > .dline:hover { background: var(--surface-2); }

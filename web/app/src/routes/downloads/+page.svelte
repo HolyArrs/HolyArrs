@@ -20,6 +20,7 @@
 	import ConfirmMatch from '#lib/downloads/ConfirmMatch.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';
 	import AddTorrents from '#lib/downloads/AddTorrents.svelte';
+	import { BULK_DONE, byClient, type BulkAction } from '#lib/downloads/manage.ts';
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
 	const watch = $derived(!session.can('manage_library'));
@@ -207,30 +208,67 @@
 		}
 	}
 
-	// The Remove dialog.
+	// The Remove dialog: one download, or a selection. Delete files is off
+	// unless asked for (Shift+Delete), except a HolyArrs download follows the
+	// remove defaults in Settings.
 	let removeOpen = $state(false);
-	let target = $state<DownloadRow | null>(null);
+	let targets = $state<DownloadRow[]>([]);
+	const target = $derived(targets.length === 1 ? targets[0] : null);
 	let choice = $state<RemoveChoice>(removeStart(null));
 	let removeError = $state('');
-	function askRemove(r: DownloadRow) {
-		target = r;
-		choice = removeStart(settings);
+	let removeBusy = $state(false);
+	// Torrents HolyArrs did not send are removed only by someone with the settings permission.
+	const blocked = $derived(session.can('settings') ? [] : targets.filter((r) => r.outside));
+	function askRemove(r: DownloadRow, withFiles = false) {
+		askRemoveMany([r], withFiles);
+	}
+	function askRemoveMany(rows: DownloadRow[], withFiles = false) {
+		const ok = rows.filter((r) => r.can_act);
+		if (!ok.length) {
+			toasts.push('These cannot be removed from here.', 'info');
+			return;
+		}
+		targets = ok;
+		const own = ok.length === 1 && !ok[0].client_item;
+		choice = own ? removeStart(settings) : { delete_files: false, turn_down: false, search_again: false };
+		if (withFiles) choice.delete_files = true;
 		removeError = '';
 		removeOpen = true;
 	}
 	async function remove(e: SubmitEvent) {
 		e.preventDefault();
-		if (!target) return;
-		busy = target.id;
+		const list = targets.filter((r) => !blocked.includes(r));
+		if (!list.length) return;
+		removeBusy = true;
+		busy = list.length === 1 ? list[0].id : busy;
+		const bad: string[] = [];
 		try {
-			if (target.client_item) await api.post(`${rowPath(target)}/remove`, { delete_files: choice.delete_files });
-			else await api.post(`/downloads/${target.id}/remove`, removeBody(choice));
-			removeOpen = false;
-			toasts.push(!target.client_item && choice.turn_down && choice.search_again ? 'Removed. HolyArrs looks for the next Release.' : 'Removed.', 'ok');
+			// Client items go in one call per Downloader; HolyArrs' own each through HolyArrs.
+			const outsideRows = list.filter((r) => r.client_item);
+			for (const [id, rows] of byClient(outsideRows)) {
+				try {
+					await api.post(`/downloaders/${id}/bulk`, { action: 'remove', hashes: rows.map((r) => r.hash), delete_files: choice.delete_files });
+				} catch (err) {
+					bad.push(message(err));
+				}
+			}
+			for (const r of list.filter((x) => !x.client_item)) {
+				try {
+					await api.post(`/downloads/${r.id}/remove`, removeBody(list.length === 1 ? choice : { delete_files: choice.delete_files, turn_down: false, search_again: false }));
+				} catch (err) {
+					bad.push(`${who(r)}: ${message(err)}`);
+				}
+			}
+			if (bad.length) {
+				removeError = bad.join(' · ');
+			} else {
+				removeOpen = false;
+				const one = list.length === 1 && !list[0].client_item;
+				toasts.push(one && choice.turn_down && choice.search_again ? 'Removed. HolyArrs looks for the next Release.' : list.length > 1 ? `Removed ${list.length} downloads.` : 'Removed.', 'ok');
+			}
 			await load();
-		} catch (err) {
-			removeError = message(err);
 		} finally {
+			removeBusy = false;
 			busy = 0;
 		}
 	}
@@ -247,6 +285,27 @@
 		} finally {
 			busy = 0;
 		}
+	}
+	// A selection action: one call per torrent Downloader for every row it holds.
+	async function bulk(list: DownloadRow[], action: BulkAction) {
+		const groups = byClient(list);
+		const left = list.length - [...groups.values()].reduce((n, g) => n + g.length, 0);
+		if (!groups.size) {
+			toasts.push('None of these can do that from here.', 'info');
+			return;
+		}
+		const bad: string[] = [];
+		for (const [id, rows] of groups) {
+			try {
+				await api.post(`/downloaders/${id}/bulk`, { action, hashes: rows.map((r) => r.hash) });
+			} catch (e) {
+				bad.push(`${rows[0].downloader || 'Downloader'}: ${message(e)}`);
+			}
+		}
+		const n = list.length - left;
+		if (bad.length) toasts.push(bad.join(' · '), 'fail');
+		else toasts.push(`${BULK_DONE[action]}: ${n} ${n === 1 ? 'download' : 'downloads'}${left ? ` (${left} skipped)` : ''}.`, 'ok');
+		await load();
 	}
 	type ClientStatus = { paused: boolean; speed_limit: number; up_limit: number };
 	type ClientView = { id: number; name: string; protocol: string; controls: boolean; status?: ClientStatus; error?: string };
@@ -330,22 +389,26 @@
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} {watch} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onremovemany={askRemoveMany} {watch} />
 {/if}
 </PageLoader>
 
 <AddTorrents bind:open={addOpen} clients={torrentClients} ondone={() => void load()} />
 
-<Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
-	{#if target}
-		<form id="remove-form" onsubmit={remove}>
-			<p class="who">{who(target)}</p>
-			<details class="raw"><summary>Details</summary><p>{target.name}</p></details>
+<Sheet bind:open={removeOpen} title={targets.length > 1 ? `Remove ${targets.length} downloads?` : 'Remove this download?'} size="sm">
+	{#if targets.length}
+		<form id="remove-form" onsubmit={remove} data-testid="dl-remove-form">
+			{#if target}
+				<p class="who">{who(target)}</p>
+				<details class="raw"><summary>Details</summary><p>{target.name}</p></details>
+			{:else}
+				<ul class="many" data-testid="dl-remove-list">{#each targets.slice(0, 6) as r (r.id)}<li>{who(r)}</li>{/each}{#if targets.length > 6}<li class="hint">and {targets.length - 6} more</li>{/if}</ul>
+			{/if}
 			<label class="checkline">
-				<input type="checkbox" bind:checked={choice.delete_files} />
-				<span><b>Delete its files</b><br /><span class="hint">Off: {target.downloader || 'the Downloader'} keeps what it fetched.</span></span>
+				<input type="checkbox" bind:checked={choice.delete_files} data-testid="dl-remove-files" />
+				<span><b>Also delete files</b><br /><span class="hint">Off: {target?.downloader || 'the Downloader'} keeps what it fetched.</span></span>
 			</label>
-			{#if !target.client_item}
+			{#if target && !target.client_item}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.turn_down} />
 				<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks it again for {manyWords(target.kind) ? `these ${manyWords(target.kind)?.many}` : 'this movie'}.</span></span>
@@ -355,12 +418,14 @@
 				<span><b>Search again</b><br /><span class="hint">Look for the next Release straight away. Without it the {manyWords(target.kind) ? `${manyWords(target.kind)?.many} wait` : 'movie waits'} for the next feed check.</span></span>
 			</label>
 			{/if}
+			{#if blocked.length}<p class="hint" data-testid="dl-remove-blocked">{blocked.length === targets.length ? 'Removing' : `${blocked.length} of these are not from HolyArrs. Removing`} torrents HolyArrs did not send needs settings access{blocked.length === targets.length ? '.' : ', so they stay.'}</p>{/if}
 			{#if removeError}<p class="form-error" role="alert">{removeError}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
+		{@const n = targets.length - blocked.length}
 		<Button variant="plain" onclick={() => (removeOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="remove-form" busy={!!target && busy === target.id} disabled={!!target && busy === target.id}>Remove</Button>
+		<Button variant="destructive" type="submit" form="remove-form" busy={removeBusy} disabled={removeBusy || n === 0} data-testid="dl-remove-confirm">{n > 1 ? `Remove ${n}` : 'Remove'}{choice.delete_files ? ' and delete files' : ''}</Button>
 	{/snippet}
 </Sheet>
 
@@ -401,6 +466,7 @@
 	.raw summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
 	.raw summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.raw p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
+	.many { margin: 0; padding-left: 18px; font: var(--t-callout); display: grid; gap: 2px; }
 	.who { font: var(--t-headline); margin-bottom: 4px; }
 	form { display: flex; flex-direction: column; gap: 14px; }
 	.checkline { display: flex; gap: 12px; align-items: flex-start; font: var(--t-callout); cursor: pointer; }
