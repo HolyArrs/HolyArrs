@@ -22,6 +22,9 @@ func (a *API) clientManageRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloaders/{id}/bulk", a.bulkItems)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/share-limits", a.shareLimits)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/slow-mode", a.slowMode)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/trackers", a.addTrackers)
+	m.HandleFunc("PUT /api/v1/downloaders/{id}/items/{hash}/trackers", a.editTracker)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/trackers/remove", a.removeTrackers)
 }
 
 // addTorrentsMax caps one add: qBittorrent itself takes 64 MiB a request.
@@ -329,4 +332,113 @@ func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "slow_mode": *in.On})
+}
+
+// onTrackers runs a tracker change on one torrent of a torrent Downloader.
+func (a *API) onTrackers(w http.ResponseWriter, r *http.Request, call func(t downloader.TrackerEditor, id string) error) {
+	err := a.onItem(r, true, func(e downloader.Engine, id string) error {
+		t, ok := e.(downloader.TrackerEditor)
+		if !ok {
+			return downloader.ErrNotSupported
+		}
+		return call(t, id)
+	})
+	if errors.Is(err, downloader.ErrTrackerTier) {
+		fail(w, http.StatusConflict, err.Error())
+		return
+	}
+	if err != nil {
+		itemError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// trackerURLsOK checks typed tracker addresses under the Downloader's
+// address policy.
+func (a *API) trackerURLsOK(w http.ResponseWriter, r *http.Request, urls []string) bool {
+	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	var dr domain.Downloader
+	if err := store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
+		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		return false
+	}
+	for _, u := range urls {
+		if !downloader.TrackerAllowed(u, dr.AllowLocal) {
+			fail(w, http.StatusBadRequest, "a tracker is an http, https or udp address on the internet (local ones need the Downloader's local network access): "+trackerShown(u))
+			return false
+		}
+	}
+	return true
+}
+
+// trackerShown is a typed address cut to its start, for an error.
+func trackerShown(u string) string {
+	if len(u) > 60 {
+		return u[:60] + "…"
+	}
+	return u
+}
+
+// addTrackers adds tracker addresses to one torrent.
+func (a *API) addTrackers(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		URLs []string `json:"urls"`
+	}
+	if !decode(w, r, &in, `body is {"urls": [tracker address...]}`) {
+		return
+	}
+	urls := []string{}
+	for _, u := range in.URLs {
+		if u = strings.TrimSpace(u); u != "" {
+			urls = append(urls, u)
+		}
+	}
+	if len(urls) == 0 || len(urls) > 50 {
+		fail(w, http.StatusBadRequest, "urls needs 1 to 50 tracker addresses")
+		return
+	}
+	if !a.trackerURLsOK(w, r, urls) {
+		return
+	}
+	a.onTrackers(w, r, func(t downloader.TrackerEditor, id string) error { return t.AddTrackers(r.Context(), id, urls) })
+}
+
+// editTracker changes one tracker's address or tier, naming it by ref.
+func (a *API) editTracker(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Ref  string `json:"ref"`
+		URL  string `json:"url"`
+		Tier *int   `json:"tier"`
+	}
+	const help = `body is {"ref": tracker ref, "url": new address or "", "tier": 0 to 255 or left out}`
+	if !decode(w, r, &in, help) {
+		return
+	}
+	in.URL = strings.TrimSpace(in.URL)
+	if in.Ref == "" || in.URL == "" && in.Tier == nil || in.Tier != nil && (*in.Tier < 0 || *in.Tier > 255) {
+		fail(w, http.StatusBadRequest, help)
+		return
+	}
+	if in.URL != "" && !a.trackerURLsOK(w, r, []string{in.URL}) {
+		return
+	}
+	a.onTrackers(w, r, func(t downloader.TrackerEditor, id string) error {
+		return t.EditTracker(r.Context(), id, in.Ref, in.URL, in.Tier)
+	})
+}
+
+// removeTrackers removes trackers of one torrent, naming them by ref.
+func (a *API) removeTrackers(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Refs []string `json:"refs"`
+	}
+	if !decode(w, r, &in, `body is {"refs": [tracker ref...]}`) {
+		return
+	}
+	if len(in.Refs) == 0 || len(in.Refs) > 100 {
+		fail(w, http.StatusBadRequest, "refs needs 1 to 100 tracker refs")
+		return
+	}
+	a.onTrackers(w, r, func(t downloader.TrackerEditor, id string) error { return t.RemoveTrackers(r.Context(), id, in.Refs) })
 }

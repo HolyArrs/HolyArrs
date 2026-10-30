@@ -116,3 +116,42 @@ export function checkLimits(l: ShareLimits): string {
 
 /** What the steering sheet edits. */
 export type SteerMode = 'seed';
+
+/** The tracker filter: '' all, host:<name> one tracker host, or p:<problem>. */
+export type TrackerProblem = 'error' | 'warning' | 'announce';
+const PROBLEM_WORD: Record<TrackerProblem, string> = { error: 'Tracker error', warning: 'Tracker warning', announce: 'Not answering' };
+type Tracked = { tracker?: string; tracker_problem?: TrackerProblem };
+
+/** trackerOptions lists the tracker hosts and problems in these rows, with counts. */
+export function trackerOptions(rows: Tracked[]): { key: string; label: string; count: number }[] {
+	const hosts = new Map<string, number>();
+	const probs = new Map<TrackerProblem, number>();
+	for (const r of rows) {
+		if (r.tracker) hosts.set(r.tracker, (hosts.get(r.tracker) ?? 0) + 1);
+		if (r.tracker_problem) probs.set(r.tracker_problem, (probs.get(r.tracker_problem) ?? 0) + 1);
+	}
+	return [
+		...(['error', 'warning', 'announce'] as TrackerProblem[]).filter((p) => probs.has(p)).map((p) => ({ key: `p:${p}`, label: PROBLEM_WORD[p], count: probs.get(p)! })),
+		...[...hosts].sort((a, b) => a[0].localeCompare(b[0])).map(([h, n]) => ({ key: `host:${h}`, label: h, count: n }))
+	];
+}
+
+/** byTracker says a row passes the tracker filter. */
+export function byTracker(r: Tracked, key: string): boolean {
+	if (!key) return true;
+	if (key.startsWith('p:')) return r.tracker_problem === key.slice(2);
+	return key.startsWith('host:') && r.tracker === key.slice(5);
+}
+
+/** splitTrackers reads the Add trackers box: one address per line. */
+export function splitTrackers(text: string): { urls: string[]; bad: string[] } {
+	const urls: string[] = [];
+	const bad: string[] = [];
+	for (const raw of text.split(/\r?\n/)) {
+		const l = raw.trim();
+		if (!l) continue;
+		if (/^(https?|udp):\/\/[^\s|]+$/i.test(l)) urls.push(l);
+		else bad.push(l);
+	}
+	return { urls, bad };
+}

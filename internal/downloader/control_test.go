@@ -145,7 +145,7 @@ func TestQbitStatusTrackersPeers(t *testing.T) {
 		t.Fatalf("status %+v", st)
 	}
 	tr, err := q.Trackers(ctx, hashA)
-	if err != nil || len(tr) != 1 || tr[0].Status != "working" || tr[0].Seeds != 3 || tr[0].Peers != 0 {
+	if err != nil || len(tr) != 2 || !tr[1].Fixed || tr[1].URL != "DHT" || tr[0].Ref == "" || tr[0].Status != "working" || tr[0].Seeds != 3 || tr[0].Peers != 0 {
 		t.Fatalf("trackers %+v %v", tr, err)
 	}
 	ps, err := q.Peers(ctx, hashA)

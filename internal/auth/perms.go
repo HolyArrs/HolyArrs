@@ -416,6 +416,9 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/downloaders/{id}/bulk":                         PermManageLibrary, // removing outside torrents also needs PermSettings (checked in the handler)
 	"POST /api/v1/downloaders/{id}/share-limits":                 PermManageLibrary, // a remove action on outside torrents also needs PermSettings
 	"POST /api/v1/downloaders/{id}/slow-mode":                    PermManageLibrary,
+	"POST /api/v1/downloaders/{id}/items/{hash}/trackers":        PermManageLibrary,
+	"PUT /api/v1/downloaders/{id}/items/{hash}/trackers":         PermManageLibrary,
+	"POST /api/v1/downloaders/{id}/items/{hash}/trackers/remove": PermManageLibrary,
 	"GET /api/v1/downloaders/{id}/items/{hash}/swarm":            PermManageLibrary,
 	"GET /api/v1/downloaders/{id}/items/{hash}/files":            PermManageLibrary,
 	"PUT /api/v1/downloaders/{id}/items/{hash}/files":            PermManageLibrary,

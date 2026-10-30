@@ -40,7 +40,7 @@
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
-	import { limitsWords, pickRange, type BulkAction, type SteerMode } from './manage.ts';
+	import { byTracker, limitsWords, pickRange, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
@@ -106,7 +106,11 @@
 	// The left rail: a status, a source (Usenet or Torrent); the Type filter is its Categories.
 	let srcOn = $state<'' | 'usenet' | 'torrent'>('');
 	const bySource = $derived(srcOn ? searched.filter((r) => protocolOf(r) === srcOn) : searched);
-	const rows = $derived(bySource);
+	// The tracker filter: one tracker host, or a tracker problem; counts follow the other filters.
+	let trackOn = $state('');
+	const trackOpts = $derived(trackerOptions(bySource));
+	const trackKey = $derived(trackOpts.some((o) => o.key === trackOn) ? trackOn : '');
+	const rows = $derived(trackKey ? bySource.filter((r) => byTracker(r, trackKey)) : bySource);
 	const kindCount = (k: string) => everyRow.filter((r) => kindOf(r) === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
 
@@ -140,7 +144,7 @@
 	type TorrentDetail = { size: number; downloaded: number; uploaded: number; wasted: number; speed: number; up_speed: number; eta: number; ratio: number; seeds: number; seeds_total: number; peers: number; peers_total: number; added_at?: string; done_at?: string; save_path: string; private?: boolean };
 	type Detail = { downloader: string; requested_by: string; torrent?: TorrentDetail; torrent_error?: string; log: { at: string; kind: string; summary: string }[] };
 	type TFile = { index: number; name: string; size: number; progress: number; priority: number };
-	type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number };
+	type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number; fixed?: boolean; ref?: string };
 	type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
 	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string };
 	let det = $state<Det>({ id: 0 });
@@ -180,6 +184,47 @@
 			}
 		}
 		if (openId === id) det = next;
+	}
+	// Tracker editing in the Trackers tab: a picked tracker can get a new
+	// address or tier, or go; new ones are added one per line.
+	let trUrl = $state('');
+	let trTier = $state(0);
+	let trAdd = $state('');
+	let trBusy = $state(false);
+	function pickTracker(r: DownloadRow, x: Tracker) {
+		sel[`${r.id}:t`] = x.ref || x.url;
+		trUrl = '';
+		trTier = x.tier;
+	}
+	async function trackerCall(r: DownloadRow, run: () => Promise<unknown>, done: string): Promise<boolean> {
+		trBusy = true;
+		try {
+			await run();
+			toasts.push(done, 'ok');
+			await readDetail(r, 'Trackers');
+			return true;
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+			return false;
+		} finally {
+			trBusy = false;
+		}
+	}
+	const trPath = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${r.hash}/trackers`;
+	async function addTrackers(r: DownloadRow) {
+		const { urls, bad } = splitTrackers(trAdd);
+		if (bad.length) return toasts.push(`Not a tracker address: ${bad[0]}`, 'fail');
+		if (!urls.length) return;
+		if (await trackerCall(r, () => api.post(trPath(r), { urls }), urls.length === 1 ? 'Tracker added.' : `${urls.length} trackers added.`)) trAdd = '';
+	}
+	function saveTracker(r: DownloadRow, x: Tracker) {
+		const url = trUrl.trim();
+		const tier = Number(trTier);
+		if (url && splitTrackers(url).bad.length) return toasts.push('Not a tracker address.', 'fail');
+		void trackerCall(r, () => api.put(trPath(r), { ref: x.ref, url, ...(tier !== x.tier ? { tier } : {}) }), 'Tracker saved.');
+	}
+	function removeTracker(r: DownloadRow, x: Tracker) {
+		void trackerCall(r, () => api.post(`${trPath(r)}/remove`, { refs: [x.ref] }), 'Tracker removed.');
 	}
 	async function setPrio(r: DownloadRow, indexes: number[], priority: number) {
 		if (!indexes.length) return;
@@ -1176,12 +1221,13 @@
 			<p class="nr">{det.id === r.id && det.swarmErr ? det.swarmErr : '–'}</p>
 		{:else}
 			<div class="tblw" data-testid="dl-trackertable"><table class="t2">
-				<thead><tr><th class="c-name">Source</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
+				<thead><tr><th class="c-name">Source</th><th class="c-num c-tier">Tier</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
 				<tbody>
 					{#each trs as x, ri (x.url + x.tier)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-						<tr class:sel={sel[`${r.id}:t`] === x.url} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:t`] = x.url)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:t`] = x.url; }} data-testid="dl-trackerrow">
+						<tr class:sel={sel[`${r.id}:t`] === (x.ref || x.url)} class:fixed={x.fixed} tabindex={ri === 0 ? 0 : -1} onclick={() => pickTracker(r, x)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') pickTracker(r, x); }} data-testid="dl-trackerrow" data-fixed={x.fixed ? 'true' : undefined}>
 							<td class="c-name"><span class="fn">{x.url}</span></td>
+							<td class="c-num c-tier">{x.fixed ? '–' : x.tier}</td>
 							<td><span class="st-{x.status === 'working' ? 'working' : x.status === 'not_contacted' ? 'updating' : 'error'}">{TRACKER_WORD[x.status] ?? x.status}</span></td>
 							<td class="c-num">{x.peers}</td>
 							<td class="c-num">{x.seeds}</td>
@@ -1189,9 +1235,27 @@
 							<td class="c-num">{x.next_check ? mmss(x.next_check) : '–'}</td>
 						</tr>
 					{/each}
-					{#if !trs.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
+					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
 				</tbody>
 			</table></div>
+			{#if !watch && r.downloader_id && r.hash}
+				{@const chosen = trs.find((x) => x.ref && sel[`${r.id}:t`] === x.ref)}
+				<div class="tred" data-testid="dl-tracker-edit">
+					{#if chosen}
+						<p class="tl"><b>{chosen.url}</b> <span class="k">The full address stays hidden</span></p>
+						<div class="trow">
+							<input type="text" class="tfld" placeholder="New address (leave empty to keep it)" bind:value={trUrl} spellcheck="false" aria-label="New tracker address" data-testid="dl-tracker-url" />
+							<input type="number" class="tfld tier" min="0" max="255" bind:value={trTier} aria-label="Tier" data-testid="dl-tracker-tier" />
+							<button type="button" class="xbn" disabled={trBusy} onclick={() => saveTracker(r, chosen)} data-testid="dl-tracker-save">Save</button>
+							<button type="button" class="xbn" disabled={trBusy} onclick={() => removeTracker(r, chosen)} data-testid="dl-tracker-remove">Remove</button>
+						</div>
+					{/if}
+					<div class="trow">
+						<textarea class="tfld" rows="1" placeholder="Add trackers: udp://… or https://…, one per line" bind:value={trAdd} spellcheck="false" aria-label="Add trackers" data-testid="dl-tracker-add-input"></textarea>
+						<button type="button" class="xbn" disabled={trBusy || !trAdd.trim()} onclick={() => addTrackers(r)} data-testid="dl-tracker-add">Add</button>
+					</div>
+				</div>
+			{/if}
 		{/if}
 	{:else if tab === 'Servers'}
 		<GhostEmpty compact testid="dl-servers-none" title="No server details yet" text="Which servers supplied this download shows up here." />
@@ -1265,6 +1329,17 @@
 <div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div><DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
+{#if trackOpts.length}
+	<div class="tfilt" data-testid="dl-tracker-filter">
+		<label><span class="k">Tracker</span>
+			<select class="pick" value={trackKey} onchange={(e) => (trackOn = e.currentTarget.value)} data-testid="dl-tracker-select">
+				<option value="">All ({bySource.length})</option>
+				{#each trackOpts as o (o.key)}<option value={o.key}>{o.label} ({o.count})</option>{/each}
+			</select>
+		</label>
+		{#if trackKey}<button type="button" class="xbn" onclick={() => (trackOn = '')} data-testid="dl-tracker-clear">Show all</button>{/if}
+	</div>
+{/if}
 {#if pickedRows.length && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
@@ -1448,6 +1523,16 @@
 	.help { margin: 6px 6px 0; color: var(--text-muted); font: var(--t-caption); }
 	.pf { display: flex; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.tfilt { display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-width: 0; flex-wrap: wrap; }
+	.tfilt label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+	.tfilt select { max-width: min(320px, 70vw); }
+	.tred { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px; min-width: 0; }
+	.tred .tl { margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font: var(--t-footnote); }
+	.trow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-width: 0; }
+	.tfld { flex: 1 1 200px; min-width: 0; box-sizing: border-box; min-height: 36px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-footnote); resize: vertical; }
+	.tfld.tier { flex: 0 0 72px; }
+	.tfld:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	tr.fixed td { color: var(--text-muted); }
 	.sarr { flex: none; margin-left: 4px; color: var(--accent-text); font-weight: 700; }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

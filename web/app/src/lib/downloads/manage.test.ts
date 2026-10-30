@@ -68,3 +68,24 @@ describe('seeding rules', () => {
 		expect(checkLimits({ ratio: 1, seeding_minutes: 60, inactive_minutes: -1, action: '' })).toBe('');
 	});
 });
+
+import { byTracker, splitTrackers, trackerOptions } from './manage.ts';
+describe('tracker filter', () => {
+	const rows = [{ tracker: 'b.example' }, { tracker: 'a.example', tracker_problem: 'warning' as const }, { tracker_problem: 'announce' as const }, { tracker: 'b.example' }];
+	it('lists problems first, then hosts, with counts', () => {
+		expect(trackerOptions(rows)).toEqual([
+			{ key: 'p:warning', label: 'Tracker warning', count: 1 },
+			{ key: 'p:announce', label: 'Not answering', count: 1 },
+			{ key: 'host:a.example', label: 'a.example', count: 1 },
+			{ key: 'host:b.example', label: 'b.example', count: 2 }
+		]);
+	});
+	it('filters by host or problem', () => {
+		expect(rows.filter((r) => byTracker(r, 'host:b.example'))).toHaveLength(2);
+		expect(rows.filter((r) => byTracker(r, 'p:announce'))).toHaveLength(1);
+		expect(rows.filter((r) => byTracker(r, ''))).toHaveLength(4);
+	});
+	it('reads typed trackers', () => {
+		expect(splitTrackers('udp://a.example:80\n\nhttps://b.example/x\nftp://c\nudp://a|b')).toEqual({ urls: ['udp://a.example:80', 'https://b.example/x'], bad: ['ftp://c', 'udp://a|b'] });
+	});
+});

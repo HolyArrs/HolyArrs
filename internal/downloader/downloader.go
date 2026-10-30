@@ -79,6 +79,9 @@ type Job struct {
 	DoneAt   int64
 	QueuePos int
 	Tracker  string
+	// TrackerProblem says the trackers are not all well: error, warning or
+	// announce (no tracker answered); "" when fine or not reported.
+	TrackerProblem string
 }
 
 // Health is what an engine says about itself.

@@ -206,6 +206,8 @@ export interface DownloadRow extends DownloadView {
 	queue_pos?: number;
 	/** The host of the tracker a client torrent works with now. */
 	tracker?: string;
+	/** Trackers not all well: error, warning, or announce (none answering). */
+	tracker_problem?: 'error' | 'warning' | 'announce';
 	client_hint?: 'checking' | 'moving' | 'errored' | 'missing' | 'idle_seed';
 	limits?: { ratio: number; seeding_minutes: number; inactive_minutes: number; action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed' };
 	/** Read straight from the client's own list: no HolyArrs download id; addressed by downloader_id and hash. */

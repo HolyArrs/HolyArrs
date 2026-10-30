@@ -261,6 +261,10 @@ type qbitTorrent struct {
 	DoneOn      int64    `json:"completion_on"`
 	QueuePos    int      `json:"priority"`
 	Tracker     string   `json:"tracker"`
+	Trackers    int      `json:"trackers_count"`
+	TrackerErr  bool     `json:"has_tracker_error"`
+	TrackerWarn bool     `json:"has_tracker_warning"`
+	OtherErr    bool     `json:"has_other_announce_error"`
 }
 
 func (t qbitTorrent) job() Job {
@@ -271,7 +275,27 @@ func (t qbitTorrent) job() Job {
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
 		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
-		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker)}
+		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker), TrackerProblem: t.problem()}
+}
+
+// problem reads the tracker flags (sent by newer clients) or, without
+// them, a running torrent that has trackers but none working.
+func (t qbitTorrent) problem() string {
+	switch {
+	case t.TrackerErr:
+		return "error"
+	case t.TrackerWarn:
+		return "warning"
+	case t.OtherErr:
+		return "announce"
+	}
+	switch t.State {
+	case "downloading", "stalledDL", "metaDL", "forcedDL", "forcedMetaDL", "uploading", "stalledUP", "forcedUP":
+		if t.Trackers > 0 && t.Tracker == "" {
+			return "announce"
+		}
+	}
+	return ""
 }
 
 // hostOnly keeps a tracker address's host name: the path and query can

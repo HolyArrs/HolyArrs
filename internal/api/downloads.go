@@ -84,6 +84,8 @@ type DownloadRow struct {
 	// queued); Tracker the host of the tracker it works with now.
 	QueuePos int    `json:"queue_pos,omitempty"`
 	Tracker  string `json:"tracker,omitempty"`
+	// TrackerProblem: error, warning or announce (no tracker answered).
+	TrackerProblem string `json:"tracker_problem,omitempty"`
 }
 
 // DownloadTotals are the bytes per second moving across every active download.

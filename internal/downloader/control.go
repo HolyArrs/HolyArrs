@@ -49,6 +49,11 @@ type Tracker struct {
 	Peers   int    `json:"peers"`
 	// NextCheck is seconds until the next announce; 0 when unknown.
 	NextCheck int64 `json:"next_check"`
+	// Fixed marks the client's own peer sources (DHT, PeX, LSD), which are
+	// not trackers and cannot be edited. Ref names a real tracker for edit
+	// and remove without showing its full address (which can hold a passkey).
+	Fixed bool   `json:"fixed,omitempty"`
+	Ref   string `json:"ref,omitempty"`
 }
 
 // Peer is one connected peer of a torrent.
@@ -382,8 +387,8 @@ func (q *Qbittorrent) Status(ctx context.Context) (ClientStatus, error) {
 
 var qbitTrackerStatus = map[int]string{0: "disabled", 1: "not_contacted", 2: "working", 3: "working", 4: "not_working", 5: "error", 6: "unreachable"}
 
-// Trackers lists a torrent's trackers, without the three fixed rows for
-// DHT, peer exchange and local discovery.
+// Trackers lists a torrent's trackers, then the three fixed rows for DHT,
+// peer exchange and local discovery.
 func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error) {
 	h, err := qbitHash(id)
 	if err != nil {
@@ -405,14 +410,24 @@ func (q *Qbittorrent) Trackers(ctx context.Context, id string) ([]Tracker, error
 	if err := json.Unmarshal(b, &rows); err != nil {
 		return nil, fmt.Errorf("qbittorrent torrents/trackers: %w", err)
 	}
-	out := []Tracker{}
+	out, fixed := []Tracker{}, []Tracker{}
 	for _, r := range rows {
 		if r.Tier < 0 {
+			name := fixedSource(r.URL)
+			if name == "" {
+				continue
+			}
+			// The fixed rows' status 0 means the source is off; else it runs.
+			st := "working"
+			if r.Status == 0 {
+				st = "disabled"
+			}
+			fixed = append(fixed, Tracker{URL: name, Tier: -1, Status: st, Message: redactURLs(r.Msg), Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0), Fixed: true})
 			continue
 		}
-		out = append(out, Tracker{URL: trackerHost(r.URL), Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: redactURLs(r.Msg), Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0), NextCheck: max(r.Next, 0)})
+		out = append(out, Tracker{URL: trackerHost(r.URL), Tier: r.Tier, Status: qbitTrackerStatus[r.Status], Message: redactURLs(r.Msg), Seeds: max(r.Seeds, 0), Peers: max(r.Peers, 0), NextCheck: max(r.Next, 0), Ref: trackerRef(r.URL)})
 	}
-	return out, nil
+	return append(out, fixed...), nil
 }
 
 // Peers lists a torrent's connected peers.

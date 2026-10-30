@@ -11905,6 +11905,136 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/items/{hash}/trackers": {
+      "post": {
+        "description": "Adds tracker addresses (http, https or udp; local ones only with the Downloader's local network access) to one torrent of a torrent Downloader.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Not a torrent Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Add trackers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      },
+      "put": {
+        "description": "Changes one tracker's address or tier (0 to 255), named by the ref from the swarm list so its full address never shows. qBittorrent before 5.2 cannot change the tier.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Tier not offered or not a torrent Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Edit a tracker",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/trackers/remove": {
+      "post": {
+        "description": "Removes trackers of one torrent, named by the refs from the swarm list.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Not a torrent Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Remove trackers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/pause": {
       "post": {
         "description": "HolyArrs sends nothing new to it; downloads already there are still followed.",

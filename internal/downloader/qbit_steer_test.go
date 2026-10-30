@@ -98,3 +98,83 @@ func TestJobColumns(t *testing.T) {
 		t.Fatal("unset done date")
 	}
 }
+
+const trackerRows = `[{"url":"** [DHT] **","tier":-1,"status":2},{"url":"** [PeX] **","tier":-1,"status":0},{"url":"https://t.example/abc123/announce","tier":0,"status":2},{"url":"udp://open.example:80","tier":1,"status":4}]`
+
+func TestTrackersFixedRowsAndRefs(t *testing.T) {
+	f, q := steerFake(t, "2.15.1")
+	f.answers["torrents/trackers"] = trackerRows
+	tr, err := q.Trackers(context.Background(), steerA)
+	if err != nil || len(tr) != 4 || tr[0].URL != "https://t.example" || tr[2].URL != "DHT" || tr[2].Status != "working" || tr[3].Status != "disabled" || tr[0].Ref == "" || tr[2].Ref != "" {
+		t.Fatalf("%+v %v", tr, err)
+	}
+}
+
+func TestTrackerEdits52(t *testing.T) {
+	f, q := steerFake(t, "2.15.1")
+	f.answers["torrents/trackers"] = trackerRows
+	ctx := context.Background()
+	if err := q.AddTrackers(ctx, steerA, []string{"udp://a.example:1", "https://b.example/x"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.last("torrents/addTrackers"); got != "torrents/addTrackers?hash="+steerA+"&urls=udp%3A%2F%2Fa.example%3A1%0Ahttps%3A%2F%2Fb.example%2Fx" {
+		t.Fatal(got)
+	}
+	ref := trackerRef("https://t.example/abc123/announce")
+	tier := 3
+	if err := q.EditTracker(ctx, steerA, ref, "", &tier); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.last("torrents/editTracker"); !strings.Contains(got, "tier=3") || !strings.Contains(got, "url=https%3A%2F%2Ft.example%2Fabc123%2Fannounce") || strings.Contains(got, "origUrl") {
+		t.Fatal(got)
+	}
+	if err := q.RemoveTrackers(ctx, steerA, []string{ref, trackerRef("udp://open.example:80")}); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.last("torrents/removeTrackers"); !strings.Contains(got, "urls=https%3A%2F%2Ft.example%2Fabc123%2Fannounce%7Cudp%3A%2F%2Fopen.example%3A80") {
+		t.Fatal(got)
+	}
+	if err := q.RemoveTrackers(ctx, steerA, []string{"nope"}); !errors.Is(err, ErrNotFound) {
+		t.Fatal(err)
+	}
+}
+
+func TestTrackerEdit51(t *testing.T) {
+	f, q := steerFake(t, "2.11.4")
+	f.answers["torrents/trackers"] = trackerRows
+	ref := trackerRef("udp://open.example:80")
+	tier := 2
+	if err := q.EditTracker(context.Background(), steerA, ref, "udp://new.example:80", &tier); !errors.Is(err, ErrTrackerTier) {
+		t.Fatal(err)
+	}
+	if err := q.EditTracker(context.Background(), steerA, ref, "udp://new.example:80", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.last("torrents/editTracker"); !strings.Contains(got, "origUrl=udp%3A%2F%2Fopen.example%3A80") || !strings.Contains(got, "newUrl=udp%3A%2F%2Fnew.example%3A80") || strings.Contains(got, "tier") {
+		t.Fatal(got)
+	}
+}
+
+func TestTrackerAllowedTyped(t *testing.T) {
+	if !TrackerAllowed("udp://tracker.example:80", false) || TrackerAllowed("udp://a.example|udp://b.example", true) || TrackerAllowed("http://127.0.0.1/a", false) || TrackerAllowed("ftp://x.example/", true) {
+		t.Fatal("typed tracker rules")
+	}
+}
+
+func TestTrackerProblem(t *testing.T) {
+	for _, c := range []struct {
+		t    qbitTorrent
+		want string
+	}{
+		{qbitTorrent{TrackerErr: true, TrackerWarn: true}, "error"},
+		{qbitTorrent{TrackerWarn: true}, "warning"},
+		{qbitTorrent{OtherErr: true}, "announce"},
+		{qbitTorrent{State: "stalledDL", Trackers: 2}, "announce"},
+		{qbitTorrent{State: "stoppedDL", Trackers: 2}, ""},
+		{qbitTorrent{State: "uploading", Trackers: 2, Tracker: "https://t.example/a"}, ""},
+	} {
+		if got := c.t.problem(); got != c.want {
+			t.Errorf("%+v: %q", c.t, got)
+		}
+	}
+}

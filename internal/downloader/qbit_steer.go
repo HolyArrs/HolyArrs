@@ -2,6 +2,9 @@ package downloader
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -106,4 +109,137 @@ func (q *Qbittorrent) SetSlowMode(ctx context.Context, on bool) error {
 	}
 	_, err = q.call(ctx, http.MethodPost, "transfer/toggleSpeedLimitsMode", url.Values{})
 	return err
+}
+
+// fixedSource names the client's own peer source behind a fixed tracker
+// row ("" when it is none of them).
+func fixedSource(u string) string {
+	switch {
+	case strings.Contains(u, "DHT"):
+		return "DHT"
+	case strings.Contains(u, "PeX"):
+		return "PeX"
+	case strings.Contains(u, "LSD"):
+		return "LSD"
+	}
+	return ""
+}
+
+// trackerRef names a tracker by a short hash of its full address.
+func trackerRef(u string) string {
+	h := sha256.Sum256([]byte(u))
+	return hex.EncodeToString(h[:8])
+}
+
+// TrackerEditor is the optional part of a torrent engine that adds, edits
+// and removes one torrent's trackers. Edit and remove name trackers by Ref.
+type TrackerEditor interface {
+	AddTrackers(ctx context.Context, id string, urls []string) error
+	EditTracker(ctx context.Context, id, ref, newURL string, tier *int) error
+	RemoveTrackers(ctx context.Context, id string, refs []string) error
+}
+
+// ErrTrackerTier is a tier change on a client that cannot set one.
+var ErrTrackerTier = errors.New("this Downloader cannot change a tracker's tier (it needs qBittorrent 5.2 or newer)")
+
+// trackerURLs reads a torrent's real tracker addresses by Ref.
+func (q *Qbittorrent) trackerURLs(ctx context.Context, h string) (map[string]string, error) {
+	b, err := q.call(ctx, http.MethodGet, "torrents/trackers", url.Values{"hash": {h}})
+	if err != nil {
+		return nil, err
+	}
+	var rows []struct {
+		URL  string `json:"url"`
+		Tier int    `json:"tier"`
+	}
+	if err := json.Unmarshal(b, &rows); err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	for _, r := range rows {
+		if r.Tier >= 0 {
+			out[trackerRef(r.URL)] = r.URL
+		}
+	}
+	return out, nil
+}
+
+// AddTrackers adds tracker addresses to one torrent.
+func (q *Qbittorrent) AddTrackers(ctx context.Context, id string, urls []string) error {
+	h, err := qbitHash(id)
+	if err != nil {
+		return err
+	}
+	if len(urls) == 0 {
+		return nil
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/addTrackers", url.Values{"hash": {h}, "urls": {strings.Join(urls, "\n")}})
+	return err
+}
+
+// EditTracker changes one tracker's address or tier. API 2.13 (5.2) names
+// the old address url and takes a tier; older ones name it origUrl and
+// take no tier.
+func (q *Qbittorrent) EditTracker(ctx context.Context, id, ref, newURL string, tier *int) error {
+	h, err := qbitHash(id)
+	if err != nil {
+		return err
+	}
+	all, err := q.trackerURLs(ctx, h)
+	if err != nil {
+		return err
+	}
+	orig, ok := all[ref]
+	if !ok {
+		return ErrNotFound
+	}
+	if newURL == "" {
+		newURL = orig
+	}
+	f := url.Values{"hash": {h}, "newUrl": {newURL}}
+	if atLeast(q.qbitAPI(ctx), 2, 13, 0) {
+		f.Set("url", orig)
+		if tier != nil {
+			f.Set("tier", strconv.Itoa(*tier))
+		}
+	} else {
+		if tier != nil {
+			return ErrTrackerTier
+		}
+		f.Set("origUrl", orig)
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/editTracker", f)
+	return err
+}
+
+// RemoveTrackers removes trackers of one torrent by Ref.
+func (q *Qbittorrent) RemoveTrackers(ctx context.Context, id string, refs []string) error {
+	h, err := qbitHash(id)
+	if err != nil {
+		return err
+	}
+	all, err := q.trackerURLs(ctx, h)
+	if err != nil {
+		return err
+	}
+	urls := make([]string, 0, len(refs))
+	for _, r := range refs {
+		u, ok := all[r]
+		if !ok {
+			return ErrNotFound
+		}
+		urls = append(urls, u)
+	}
+	if len(urls) == 0 {
+		return nil
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/removeTrackers", url.Values{"hash": {h}, "urls": {strings.Join(urls, "|")}})
+	return err
+}
+
+// TrackerAllowed checks a tracker address someone typed, with the same
+// rules as magnet trackers: http, https or udp, no user info, and without
+// local network access no local, metadata or number-style hosts.
+func TrackerAllowed(v string, allowLocal bool) bool {
+	return !strings.ContainsAny(v, "|\r\n") && trackerAllowed(v, allowLocal)
 }

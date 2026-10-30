@@ -13,6 +13,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/downloader"
 )
 
 func manageBase(t *testing.T) (x *dl41, f *allClient, base string) {
@@ -220,4 +221,33 @@ func TestClientHints(t *testing.T) {
 			t.Errorf("%s: %q", in, got)
 		}
 	}
+}
+
+// route: POST /api/v1/downloaders/{id}/items/{hash}/trackers
+// route: PUT /api/v1/downloaders/{id}/items/{hash}/trackers
+// route: POST /api/v1/downloaders/{id}/items/{hash}/trackers/remove
+func TestTrackerRoutes(t *testing.T) {
+	x, f, base := manageBase(t)
+	item := base + "/items/" + outHash + "/trackers"
+	var sw struct{ Trackers []downloader.Tracker }
+	_ = json.Unmarshal(do(t, "GET", base+"/items/"+outHash+"/swarm", "", 200), &sw)
+	if len(sw.Trackers) != 1 || strings.Contains(sw.Trackers[0].URL, "passkey") || sw.Trackers[0].Ref == "" {
+		t.Fatalf("swarm %+v", sw)
+	}
+	ref := sw.Trackers[0].Ref
+	do(t, "POST", item, `{"urls":["udp://tracker.example:80"," "]}`, 200)
+	do(t, "PUT", item, `{"ref":"`+ref+`","tier":4}`, 200)
+	do(t, "POST", item+"/remove", `{"refs":["`+ref+`"]}`, 200)
+	saw := f.saw()
+	if !strings.Contains(saw, "torrents/addTrackers?hash="+outHash+"&urls=udp%3A%2F%2Ftracker.example%3A80") || !strings.Contains(saw, "torrents/editTracker?") || !strings.Contains(saw, "tier=4") ||
+		!strings.Contains(saw, "torrents/removeTrackers?hash="+outHash+"&urls=http%3A%2F%2Ft.lab%2Fannounce%3Fpasskey%3Dx") {
+		t.Fatalf("calls %s", saw)
+	}
+	do(t, "POST", item+"/remove", `{"refs":["nope"]}`, 404)
+	do(t, "PUT", item, `{"ref":"`+ref+`"}`, 400)
+	do(t, "PUT", item, `{"ref":"`+ref+`","tier":300}`, 400)
+	do(t, "POST", item, `{"urls":[]}`, 400)
+	exec41(t, x.s, "UPDATE downloaders SET allow_local_network = 0")
+	do(t, "POST", item, `{"urls":["http://127.1/announce"]}`, 400)
+	do(t, "POST", item, `{"urls":["ftp://x.example/"]}`, 400)
 }
