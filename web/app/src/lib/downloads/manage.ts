@@ -163,3 +163,20 @@ export function splitTrackers(text: string): { urls: string[]; bad: string[] } {
 	}
 	return { urls, bad };
 }
+
+/** filterFiles keeps the files whose path holds every typed word (any case). */
+export function filterFiles<T extends { name: string }>(files: T[], q: string): T[] {
+	const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+	if (!words.length) return files;
+	return files.filter((f) => {
+		const n = f.name.toLowerCase();
+		return words.every((w) => n.includes(w));
+	});
+}
+
+/** indexesUnder is every file index at or under the picked keys (a file, or a folder and its files), once each. */
+export function indexesUnder(files: { name: string; index: number }[], keys: Iterable<string>): number[] {
+	const out = new Set<number>();
+	for (const k of keys) for (const f of files) if (f.name === k || f.name.startsWith(k + '/')) out.add(f.index);
+	return [...out].sort((a, b) => a - b);
+}

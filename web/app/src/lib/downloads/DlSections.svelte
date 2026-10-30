@@ -40,7 +40,7 @@
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
-	import { byTracker, limitsWords, pickRange, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
+	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
@@ -132,7 +132,36 @@
 	let sel = $state<Record<string, string>>({});
 	let closed = $state<Record<string, boolean>>({});
 	// qBittorrent's file priorities: 0 skip, 1 normal, 6 high, 7 maximum.
-	const PRIOS: { v: number; label: string }[] = [{ v: 0, label: 'Skip' }, { v: 1, label: 'Normal' }, { v: 6, label: 'High' }, { v: 7, label: 'Max' }];
+	const PRIOS: { v: number; label: string }[] = [{ v: 0, label: 'Skip' }, { v: 1, label: 'Normal' }, { v: 6, label: 'High' }, { v: 7, label: 'Maximum' }];
+	// The Files tab: a filter box (Ctrl+F while the tab shows, Esc clears) and
+	// a selection of files and folders (Ctrl or Cmd click, Shift range) that
+	// gets one priority at once.
+	let fq = $state('');
+	let fsel = $state<Set<string>>(new Set());
+	let fAnchor = '';
+	let fqEl = $state<HTMLInputElement>();
+	$effect(() => {
+		// Another download opened: its files start unfiltered and unpicked.
+		void openId;
+		fq = '';
+		fsel = new Set();
+	});
+	function fileClick(e: MouseEvent | KeyboardEvent, r: DownloadRow, keys: string[], key: string) {
+		sel[`${r.id}:f`] = key;
+		if (e.ctrlKey || e.metaKey) {
+			const n = new Set(fsel);
+			if (n.has(key)) n.delete(key);
+			else n.add(key);
+			fsel = n;
+			fAnchor = key;
+		} else if (e.shiftKey && fAnchor && keys.includes(fAnchor)) {
+			const [a, b] = [keys.indexOf(fAnchor), keys.indexOf(key)].sort((x, y) => x - y);
+			fsel = new Set([...fsel, ...keys.slice(a, b + 1)]);
+		} else {
+			fsel = new Set([key]);
+			fAnchor = key;
+		}
+	}
 	const flagsOf = (p: { progress: number; speed: number; up_speed: number }) => `${p.progress >= 1 ? 'S ' : ''}${p.speed > 0 ? 'D ' : ''}${p.up_speed > 0 ? 'U' : ''}`.trim() || '–';
 	const CONN_WORD = { connected: 'Connected', firewalled: 'Firewalled', disconnected: 'Disconnected' } as const;
 	const CONN_HINT = { connected: 'Other peers can reach this Downloader.', firewalled: 'Downloading works, but other peers cannot connect in: open the listening port.', disconnected: 'The Downloader has no network.' } as const;
@@ -538,6 +567,12 @@
 		next.click();
 	}
 	function listKey(e: KeyboardEvent) {
+		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && fqEl && openRow && paneOpen && tabNow(openRow) === 'Files') {
+			e.preventDefault();
+			fqEl.focus();
+			fqEl.select();
+			return;
+		}
 		if (!watch && (e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
 			const t = e.target as HTMLElement | null;
 			if (t?.closest('[data-dl-id], .dlrows, [data-testid="dl-listbox"]') && !t.closest('input, textarea, select, [contenteditable="true"]')) {
@@ -1179,17 +1214,30 @@
 		{:else if !files.length}
 			<GhostEmpty compact testid="dl-files-none" title="No files yet" text="The file list appears once the download has its details." />
 		{:else}
-			{@const rowsT = fileTree(files.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!closed[`${r.id}|${k}`])}
+			{@const shownF = filterFiles(files, fq)}
+			{@const rowsT = fileTree(shownF.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!closed[`${r.id}|${k}`])}
+			{@const keys = rowsT.map((x) => x.key)}
+			<div class="fbar">
+				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
+				{#if fsel.size && !watch}
+					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} picked</span>
+					{#each PRIOS as o (o.v)}<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(r, indexesUnder(files, fsel), o.v)} data-testid="dl-files-prio-{o.v}">{o.label}</button>{/each}
+					<button type="button" class="xbn" onclick={() => (fsel = new Set())} data-testid="dl-files-clear">Clear</button>
+				{/if}
+			</div>
+			{#if !shownF.length}
+				<GhostEmpty compact testid="dl-files-nomatch" title="No files match" text="Try fewer words, or clear the filter." />
+			{:else}
 			<div class="tblw" data-testid="dl-filetable"><table class="t2">
 				<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Total size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th></tr></thead>
 				<tbody>
 					{#each rowsT as x, ri (x.key)}
 						{@const pc = x.size ? Math.floor((x.done / x.size) * 100) : 0}
-						{@const f = x.dir ? undefined : files[x.i]}
+						{@const f = x.dir ? undefined : shownF[x.i]}
 						{@const kids = x.dir ? files.filter((y) => y.name.startsWith(x.key + '/')) : []}
 						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-						<tr class:sel={sel[`${r.id}:f`] === x.key} class:off={skipped} tabindex={ri === 0 ? 0 : -1} onclick={() => (sel[`${r.id}:f`] = x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') sel[`${r.id}:f`] = x.key; }} data-testid="dl-filerow">
+						<tr class:sel={sel[`${r.id}:f`] === x.key || fsel.has(x.key)} class:off={skipped} tabindex={ri === 0 ? 0 : -1} aria-selected={fsel.has(x.key)} onclick={(e) => fileClick(e, r, keys, x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileClick(e, r, keys, x.key); } }} data-testid="dl-filerow">
 							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
 							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${x.key}`]} aria-label="{closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${x.key}`] = !closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
 							<td class="c-num c-size">{bytes(x.size)}</td>
@@ -1200,6 +1248,7 @@
 					{/each}
 				</tbody>
 			</table></div>
+			{/if}
 		{/if}
 	{:else if tab === 'Peers'}
 		{@const peers = det.id === r.id ? det.peers : undefined}
@@ -1532,6 +1581,8 @@
 	.help { margin: 6px 6px 0; color: var(--text-muted); font: var(--t-caption); }
 	.pf { display: flex; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 0 0 8px; min-width: 0; }
+	.fbar .tfld { flex: 1 1 180px; max-width: 320px; }
 	.tfilt { display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-width: 0; flex-wrap: wrap; }
 	.tfilt label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 	.tfilt select { max-width: min(320px, 70vw); }

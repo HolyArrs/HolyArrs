@@ -100,3 +100,22 @@ describe('speed boxes', () => {
 		expect(bytesOf(-3)).toBe(0);
 	});
 });
+
+import { filterFiles, indexesUnder } from './manage.ts';
+describe('files tab', () => {
+	const files = [
+		{ index: 0, name: 'Show/S01/e01.mkv' },
+		{ index: 1, name: 'Show/S01/e02.mkv' },
+		{ index: 2, name: 'Show/Sample/sample.mkv' },
+		{ index: 3, name: 'Show/info.nfo' }
+	];
+	it('filters by every typed word', () => {
+		expect(filterFiles(files, 'mkv s01').map((f) => f.index)).toEqual([0, 1]);
+		expect(filterFiles(files, '  ')).toHaveLength(4);
+		expect(filterFiles(files, 'SAMPLE').map((f) => f.index)).toEqual([2]);
+	});
+	it('collects indexes under folders and files once', () => {
+		expect(indexesUnder(files, ['Show/S01', 'Show/S01/e02.mkv', 'Show/info.nfo'])).toEqual([0, 1, 3]);
+		expect(indexesUnder(files, ['Show/S0'])).toEqual([]);
+	});
+});
