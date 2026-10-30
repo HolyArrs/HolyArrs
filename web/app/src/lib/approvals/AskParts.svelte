@@ -14,7 +14,7 @@
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
 
-	let { ctx, a, editable = false, unfolded = false, pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: ApprovalsCtx; a: Ask; editable?: boolean; /** Open from the start, with the first season's episodes showing (the Approvals Stage). */ unfolded?: boolean; pick?: PartsPick } = $props();
+	let { ctx, a, editable = false, unfolded = false, layout = 'list', pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: ApprovalsCtx; a: Ask; editable?: boolean; /** Open from the start, with the first season's episodes showing (the Approvals Stage). */ unfolded?: boolean; /** How the picks are laid out: rows that open (list), cover tiles, groups by kind, chips, or shelves. */ layout?: 'list' | 'covers' | 'groups' | 'chips' | 'shelves'; pick?: PartsPick } = $props();
 
 	const music = $derived(a.kind === 'artist');
 	const artist = $derived(music ? askArtist(a) : null);
@@ -144,6 +144,38 @@
 		return picksHead(picks);
 	});
 	const listId = $derived(`parts-${a.id}`);
+
+	// The other layouts: the same picks as plain items, grouped by kind (albums) or as one group (seasons).
+	type Item = { key: string; name: string; sub: string; short: string; image: string; on: boolean; some: boolean; toggle: () => void };
+	type Group = { key: string; label: string; items: Item[]; picks: (AlbumPick | SeasonPick)[] };
+	const kindLabel: Record<string, string> = { albums: 'Albums', singles: 'Singles & EPs', live: 'Live', compilations: 'Compilations', other: 'Other' };
+	const groups = $derived.by((): Group[] => {
+		if (music) {
+			const by = new Map<string, Group>();
+			for (const p of albumPicks) {
+				const k = p.row.kind;
+				const g = by.get(k) ?? { key: k, label: kindLabel[k] ?? k, items: [], picks: [] };
+				g.picks.push(p);
+				g.items.push({ key: p.row.key, name: p.row.main.name, sub: p.row.main.year ? String(p.row.main.year) : '', short: '', image: (p.row.main.image ? coverFor(p.row.main.image, 160).src : '') ?? '', on: p.tick !== 'none', some: p.tick === 'some', toggle: () => tickAlbum(p) });
+				by.set(k, g);
+			}
+			return [...by.values()];
+		}
+		const items = picks.map((p, i): Item => ({ key: String(p.number), name: p.number === 0 ? 'Specials' : `Season ${p.number}`, sub: `${seasons[i]?.episodes ?? p.all.length} episodes`, short: p.number === 0 ? 'SP' : String(p.number), image: '', on: p.tick !== 'none', some: p.tick === 'some', toggle: () => tickSeason(p) }));
+		return items.length ? [{ key: 'seasons', label: 'Seasons', items, picks }] : [];
+	});
+	function setAll(g: Group, on: boolean) {
+		for (const p of g.picks) {
+			const isOn = p.tick !== 'none';
+			if (isOn === on && p.tick !== 'some') continue;
+			if ('row' in p) {
+				if (on && p.tick === 'some') tickAlbum(p);
+				if (on !== isOn || (!on && p.tick === 'some')) tickAlbum(p);
+			} else {
+				if (on !== isOn || p.tick === 'some') tickSeason(p);
+			}
+		}
+	}
 	const shown = $derived(music ? rows.length > 0 || albumsLoading : seasons.length > 0);
 </script>
 
@@ -155,6 +187,46 @@
 			{#if !albumsLoading}<span class="chev" class:up={open}><Icon name="chevronDown" size={16} /></span>{/if}
 		</button>
 		{#if open}
+			{#if layout !== 'list'}
+				<!-- Other ways to lay the same picks out (the Approvals sheet's switch). Ticking works the same. -->
+				<div class="alt alt-{layout}" id={listId} transition:slide={slideIn()}>
+					{#each groups as g (g.key)}
+						<section class="grp">
+							{#if layout === 'groups' || layout === 'shelves'}
+								<header class="gh">
+									<span class="gt">{g.label}<span class="gn">{g.items.filter((x) => x.on).length} of {g.items.length}</span></span>
+									{#if editable && layout === 'groups'}
+										<button type="button" class="ga" onclick={() => setAll(g, true)}>All</button>
+										<button type="button" class="ga" onclick={() => setAll(g, false)}>None</button>
+									{/if}
+								</header>
+							{/if}
+							<ul class="items">
+								{#each g.items as it (it.key)}
+									<li>
+										<button type="button" class="it" class:on={it.on} class:some={it.some} aria-pressed={it.on} disabled={!editable} onclick={it.toggle}>
+											{#if layout === 'covers' || layout === 'shelves'}
+												<span class="art" class:tile={!it.image}>
+													{#if it.image}<img src={it.image} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />{:else}<span class="tile-n">{it.short}</span>{/if}
+													<span class="mark" aria-hidden="true"><Icon name={it.on ? 'check' : 'x'} size={12} /></span>
+												</span>
+												<span class="nm">{it.name}</span>
+												<span class="sb">{it.sub}</span>
+											{:else if layout === 'chips'}
+												<span class="cm" aria-hidden="true"><Icon name={it.on ? 'check' : 'plus'} size={12} /></span><span class="nm">{it.name}</span>{#if it.sub}<span class="sb">{it.sub}</span>{/if}
+											{:else}
+												<span class="cb" aria-hidden="true">{#if it.on}<Icon name="check" size={12} />{/if}</span>
+												{#if it.image}<span class="sm"><img src={it.image} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} /></span>{/if}
+												<span class="nm">{it.name}</span><span class="sb">{it.sub}</span>
+											{/if}
+										</button>
+									</li>
+								{/each}
+							</ul>
+						</section>
+					{/each}
+				</div>
+			{:else}
 			<div class="list" id={listId} transition:slide={slideIn()}>
 				<ul>
 					{#if music}
@@ -247,11 +319,57 @@
 					{/if}
 				</ul>
 			</div>
+			{/if}
 		{/if}
 	</div>
 {/if}
 
 <style>
+	/* The other layouts. */
+	.alt { border-top: 1px solid var(--line); padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 14px; }
+	.grp { min-width: 0; }
+	.gh { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+	.gt { flex: 1; display: inline-flex; align-items: baseline; gap: 8px; font: var(--t-footnote); font-weight: 700; }
+	.gn { color: var(--text-muted); font-weight: 500; }
+	.ga { min-height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-caption); font-weight: 600; cursor: pointer; }
+	.ga:hover { background: var(--surface-3); }
+	.items { display: grid; gap: 8px; }
+	.it { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: var(--t-footnote); text-align: left; cursor: pointer; border-radius: 10px; transition: opacity 200ms var(--ease-out), background 200ms var(--ease-out), transform 160ms var(--ease-out); }
+	.it:disabled { cursor: default; }
+	.it:not(.on) { opacity: 0.45; }
+	.it:active:not(:disabled) { transform: scale(0.97); }
+	.it:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+	.sb { flex: none; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	/* Covers and shelves: art first, a check in the corner. */
+	.alt-covers .items { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 12px; }
+	.alt-shelves .items { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+	.alt-shelves .items li { flex: none; width: 112px; scroll-snap-align: start; }
+	.alt-covers .it, .alt-shelves .it { flex-direction: column; align-items: stretch; gap: 3px; }
+	.art { position: relative; display: block; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--surface-3); box-shadow: 0 0 0 1px var(--line); }
+	.art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.art.tile { display: grid; place-items: center; background: linear-gradient(150deg, var(--surface-2), var(--surface-3)); }
+	.tile-n { font: 800 32px/1 var(--font-display, var(--font-ui)); letter-spacing: -0.03em; color: var(--text); }
+	.mark { position: absolute; right: 6px; top: 6px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--text); color: var(--bg); box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); }
+	.it:not(.on) .mark { background: rgb(20 20 24 / 0.6); color: #fff; }
+	.it.on .art { box-shadow: 0 0 0 2px var(--text); }
+	.alt-covers .nm, .alt-shelves .nm { margin-top: 4px; }
+	/* Groups: two columns of compact rows. */
+	.alt-groups .items { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 12px; }
+	.alt-groups .it { min-height: 34px; padding: 0 8px; }
+	.alt-groups .it:hover:not(:disabled) { background: var(--surface-2); }
+	.alt-groups .nm { flex: 1; font-weight: 500; }
+	.cb { display: grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1.5px var(--line-strong, var(--text-muted)); }
+	.it.on .cb { background: var(--text); color: var(--bg); box-shadow: none; }
+	.sm { flex: none; width: 24px; height: 24px; border-radius: 4px; overflow: hidden; }
+	.sm img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	/* Chips: the densest, tap to keep or leave out. */
+	.alt-chips .items { display: flex; flex-wrap: wrap; gap: 6px; }
+	.alt-chips .it { gap: 6px; min-height: 32px; padding: 0 12px 0 8px; border-radius: 999px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+	.alt-chips .it.on { background: var(--text); color: var(--bg); box-shadow: none; opacity: 1; }
+	.alt-chips .it.on .sb { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+	.alt-chips .it:not(.on) { opacity: 0.7; }
+	.cm { display: grid; place-items: center; width: 16px; height: 16px; }
 	.parts { border-radius: var(--r-card); background: var(--surface-2); overflow: hidden; }
 	.head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--text); font: var(--t-subhead); font-weight: 600; text-align: left; cursor: pointer; font-variant-numeric: tabular-nums; }
 	.head:disabled { cursor: default; color: var(--text-muted); }

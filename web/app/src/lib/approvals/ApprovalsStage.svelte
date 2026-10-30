@@ -125,6 +125,33 @@
 		await tick();
 		frame?.querySelector<HTMLElement>('.sheet')?.focus({ preventScroll: true });
 	}
+	// How What to get lays the picks out (a trial switch in the sheet's header), remembered here.
+	type PartsLayout = 'list' | 'covers' | 'groups' | 'chips' | 'shelves';
+	const layouts: { k: PartsLayout; label: string }[] = [
+		{ k: 'list', label: 'List' },
+		{ k: 'covers', label: 'Covers' },
+		{ k: 'groups', label: 'Groups' },
+		{ k: 'chips', label: 'Chips' },
+		{ k: 'shelves', label: 'Shelves' }
+	];
+	let partsLayout = $state<PartsLayout>('list');
+	$effect(() => {
+		try {
+			const v = localStorage.getItem('holyarrs.approvals-parts-layout');
+			if (layouts.some((l) => l.k === v)) partsLayout = v as PartsLayout;
+		} catch {
+			/* storage blocked */
+		}
+	});
+	function setLayout(k: PartsLayout) {
+		partsLayout = k;
+		try {
+			localStorage.setItem('holyarrs.approvals-parts-layout', k);
+		} catch {
+			/* storage blocked */
+		}
+	}
+
 	// The cards' window opens straight into What to get, once per ask.
 	let autoFor = 0;
 	$effect(() => {
@@ -239,13 +266,18 @@
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: 420, easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
 						<h3 id="sheet-h">What to get</h3>
+						{#if picked.kind !== 'movie'}
+							<div class="lay" role="group" aria-label="Lay out as">
+								{#each layouts as l (l.k)}<button type="button" class="lay-b" aria-pressed={partsLayout === l.k} onclick={() => setLayout(l.k)}>{l.label}</button>{/each}
+							</div>
+						{/if}
 						<button type="button" class="x" aria-label="Back to the banner" onclick={() => (choosing = false)}><Icon name="x" size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
 							<div class="one"><span class="one-pic"><Poster src={picked.poster} name={picked.name} /></span><div><strong>{picked.name}</strong><span>The movie{year ? ` · ${year}` : ''}{d?.runtime ? ` · ${Math.floor(d.runtime / 60) ? `${Math.floor(d.runtime / 60)}h ` : ''}${d.runtime % 60}m` : ''}</span></div><Icon name="check" size={18} /></div>
 						{:else}
-							<AskParts {ctx} a={picked} editable unfolded bind:pick />
+							<AskParts {ctx} a={picked} editable unfolded layout={partsLayout} bind:pick />
 						{/if}
 						{#if rules.length}
 							<div class="rules" role="radiogroup" aria-label="Pick rule">
@@ -376,6 +408,10 @@
 	.sheet { position: absolute; left: 14px; right: 14px; top: var(--sheet-top, 180px); z-index: 4; display: flex; flex-direction: column; max-height: calc(100% - var(--sheet-top, 180px) - 14px); border-radius: 20px; background: color-mix(in srgb, var(--bg) 84%, transparent); color: var(--text); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 	.sh-h { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 6px 16px; }
 	.sh-h h3 { font: var(--t-headline); }
+	.lay { display: inline-flex; gap: 2px; margin: 0 auto 0 14px; padding: 2px; border-radius: 999px; background: var(--surface-2); }
+	.lay-b { min-height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: var(--t-caption); font-weight: 600; cursor: pointer; transition: background 180ms var(--ease-out), color 180ms var(--ease-out); }
+	.lay-b:hover { color: var(--text); }
+	.lay-b[aria-pressed='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong, var(--line)), 0 1px 2px rgb(0 0 0 / 0.12); }
 	/* The picker, slimmer inside the sheet: one hairline box, shorter rows, the sheet does the scrolling. */
 	.sheet :global(.parts) { background: none; box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; }
 	.sheet :global(.head) { min-height: 38px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
