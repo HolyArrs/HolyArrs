@@ -12199,7 +12199,7 @@
         "summary": "A torrent's trackers and connected peers",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
-        "x-holyarrs-scope": "read"
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/downloads/{id}/top": {
