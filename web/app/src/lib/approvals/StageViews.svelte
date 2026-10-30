@@ -143,7 +143,7 @@
 	}));
 
 	// What a row says: what the ask is for (shows and music), else the year.
-	const line = (a: Ask) => askSummary(a, ctx.info(a)).line || (a.kind === 'artist' ? 'Every album' : a.year ? String(a.year) : kindWord(a.kind));
+	const line = (a: Ask) => askSummary(a, ctx.info(a)).line || (a.kind === 'artist' ? 'All albums' : a.year ? String(a.year) : kindWord(a.kind));
 	const notOut = (a: Ask) => {
 		if (a.kind !== 'show') return false;
 		const s = watchSeason(a, ctx.info(a));

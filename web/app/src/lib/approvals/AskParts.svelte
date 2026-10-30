@@ -137,7 +137,7 @@
 	const head = $derived.by(() => {
 		if (music) {
 			if (albumsLoading) return 'Loading the albums…';
-			if (!rows.length) return a.album_words ? a.album_words[0].toUpperCase() + a.album_words.slice(1) : 'Every album';
+			if (!rows.length) return a.album_words ? a.album_words[0].toUpperCase() + a.album_words.slice(1) : 'All albums';
 			const kept = albumPicks.filter((p) => p.tick !== 'none');
 			return songsHead(albumCounts(left.size ? kept.map((p) => p.row) : rows), albumPicks.map((p) => ({ all: p.list?.length ?? null, ticked: p.ticked.length })));
 		}

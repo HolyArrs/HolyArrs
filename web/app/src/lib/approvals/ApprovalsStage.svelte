@@ -24,6 +24,7 @@
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
 	import { askSummary, inboxTabs } from './inbox.ts';
 	import { lifecycle } from './lifecycle.ts';
+	import { askedFor } from './asked-for.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
 
@@ -62,7 +63,7 @@
 	});
 	const year = $derived(d?.year ?? picked?.year ?? null);
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
-	const count = (a: Ask) => (a.kind === 'movie' ? '' : (askSummary(a, ctx.info(a)).line.split(' · ').at(-1) ?? ''));
+	const count = (a: Ask) => askedFor(a, { seasons: ctx.info(a)?.seasons.length });
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
 
 	// What an empty tab says.
@@ -203,6 +204,10 @@
 					{#snippet heading()}<h2 class="bb-name" id="stage-title">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
 						<p class="facts"><span>{kindOf(picked)}</span>{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
+						{#each [ctx.who(picked)] as w (w.id)}
+							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> asked <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{ago(picked.asked_at)}</time></span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
+						{/each}
+						{#if picked.note}<p class="said">&ldquo;{picked.note}&rdquo;</p>{/if}
 					{/snippet}
 					{#snippet actions()}
 						{#if waiting(picked)}
@@ -319,6 +324,9 @@
 	.facts { display: flex; flex-wrap: nowrap; align-items: center; gap: 0; white-space: nowrap; }
 	.facts span + span::before { content: '·'; margin: 0 10px; opacity: 0.6; }
 	.state { color: rgb(255 255 255 / 0.85); font: var(--t-callout); }
+	.asker { flex-basis: 100%; display: inline-flex; align-items: center; gap: 8px; margin-top: 2px; color: rgb(255 255 255 / 0.82); font: 500 14px/1.3 var(--font-ui) !important; }
+	.asker b { color: #fff; font-weight: 700; }
+	.said { flex-basis: 100%; max-width: 520px; padding-left: 12px; border-left: 2px solid rgb(255 255 255 / 0.45); color: rgb(255 255 255 / 0.9); font: italic 400 15px/1.45 var(--font-ui) !important; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.sep { margin: 0 8px; opacity: 0.6; }
 
 	/* Tabs as a glass control at the top of the banner. */

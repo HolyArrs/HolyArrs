@@ -19,6 +19,7 @@
 	import { to } from '../paths.ts';
 	import { askSummary, inboxTabs } from './inbox.ts';
 	import { lifecycle } from './lifecycle.ts';
+	import { askedFor } from './asked-for.ts';
 	import type { Ask } from '../types.ts';
 
 	let { ctx }: { ctx: ApprovalsCtx } = $props();
@@ -106,11 +107,7 @@
 
 	// What the ask is for, in words that fit a card.
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
-	const wants = (a: Ask) => {
-		if (a.kind === 'movie') return 'The movie';
-		const l = askSummary(a, ctx.info(a)).line;
-		return l.split(' · ').at(-1) || l || (a.kind === 'artist' ? 'Every album' : 'Every season');
-	};
+	const wants = (a: Ask) => askedFor(a, { seasons: ctx.info(a)?.seasons.length });
 
 	// Approving shows its answer on the card for a beat, then the card leaves (Undo stays in the toast).
 	let approving = $state(new Set<number>());
@@ -211,7 +208,7 @@
 					<span class="cover" aria-hidden="true">{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}</span>
 					<div class="body">
 						<h3 class="title">{a.name}</h3>
-						<span class="wants">{a.year ? `${a.year} · ` : ''}{wants(a)}</span>
+						<span class="wants">{[a.year, wants(a)].filter(Boolean).join(' · ')}</span>
 						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><span><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
 					</div>
 					<div class="foot">
