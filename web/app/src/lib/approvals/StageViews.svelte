@@ -41,11 +41,16 @@
 	let look = $state(0);
 	const lookOptions = [
 		{ value: 0, label: 'Now' },
-		{ value: 1, label: 'Inbox' },
-		{ value: 2, label: 'Ticket rows' },
-		{ value: 3, label: 'Ticket wall' },
-		{ value: 4, label: 'Ledger + ticket' },
-		{ value: 5, label: 'By day' }
+		{ value: 1, label: 'Queue' },
+		{ value: 2, label: 'Mod queue' },
+		{ value: 3, label: 'Table + sheet' },
+		{ value: 4, label: 'Overview' },
+		{ value: 5, label: 'Ask cards' },
+		{ value: 6, label: 'Poster sheet' },
+		{ value: 7, label: 'Pick and act' },
+		{ value: 8, label: 'People' },
+		{ value: 9, label: 'Review window' },
+		{ value: 10, label: 'Tracker' }
 	];
 	function setView(v: InboxView) {
 		view = v;
@@ -288,7 +293,7 @@
 	<div class="sbar">
 		{#if rowsView}
 			<Menu label="Status" variant="button" text={`${tabs.find((t) => t.tab === ctx.tab)?.label ?? 'Waiting'} · ${ctx.counts[ctx.tab]}`} icon="chevronDown" items={statusItems} width={220} />
-		{:else}
+		{:else if ![2, 4, 8].includes(look)}
 		<div class="chips" role="group" aria-label="Show" data-testid="ask-tabs">
 			{#each tabs as t (t.tab)}
 				<span class="cw" class:zero={ctx.counts[t.tab] === 0}><Chip label={t.label} count={ctx.counts[t.tab]} selected={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)} /></span>
