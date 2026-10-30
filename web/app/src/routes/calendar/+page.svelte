@@ -128,15 +128,16 @@
 	);
 	// The heading names the week in view (the day at the top of the page), not every day loaded.
 	const viewWeek = $derived.by(() => {
-		const s = weekStart(active ? new Date(active + 'T00:00:00') : start);
+		const s = weekStart(active ? new Date(active + 'T00:00:00') : (askedMonth ?? now));
 		const e = addDays(s, 6);
 		const f = (d: Date, y: boolean) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
 		return { long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
 	});
 
 	// The small month: starts on the first week's month, pages on its own, and follows the day in view.
-	let pickYear = $state(untrack(() => start.getFullYear()));
-	let pickMonth = $state(untrack(() => start.getMonth()));
+	// Anchored to today (or the linked month), never to the year back where loading starts.
+	let pickYear = $state((askedMonth ?? now).getFullYear());
+	let pickMonth = $state((askedMonth ?? now).getMonth());
 	let active = $state<string | null>(null);
 	let sheetOpen = $state(false);
 	let filtersOpen = $state(false);
@@ -460,11 +461,14 @@
 		// The old view may stay a moment while it fades out: wait until only the new one is left.
 		let tries = 0;
 		const settle = () => {
-			if (document.querySelectorAll('.cal-main .view-in').length > 1 && tries++ < 40) return void requestAnimationFrame(settle);
-			anchor = was;
-			holdPlace();
+			const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
+			const row = was ? rows.find((x) => (x.dataset.day ?? '') >= was.day) : undefined;
+			if ((document.querySelectorAll('.cal-main .view-in').length > 1 || (was && !row)) && tries++ < 40) return void requestAnimationFrame(settle);
+			// Put the same day back where it was (absolute, so a page that shrank meanwhile cannot leave it in last year).
+			if (was && row) window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - was.top, behavior: 'instant' });
 			rebaseBar();
 			if (main) main.style.minHeight = '';
+			follow();
 		};
 		void tick().then(settle);
 		view = v;
@@ -473,8 +477,6 @@
 		u.searchParams.set('view', v);
 		u.searchParams.delete('span');
 		replaceState(u, page.state);
-		active = null;
-		void tick().then(follow);
 	}
 
 	// Near the end, the next six weeks load.
