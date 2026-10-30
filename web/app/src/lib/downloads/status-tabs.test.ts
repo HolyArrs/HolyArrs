@@ -61,12 +61,12 @@ describe('the tabs', () => {
 			}
 		}
 	});
-	it('sub-tabs: none on All or Done; Queued · Paused, Downloading · Importing, Failed · Review', () => {
+	it('sub-tabs: none on All or Done; Queued · Paused, Downloading · Checking · Importing, Failed · Review', () => {
 		const tabs = tabsFor(rows, true);
 		expect(tabs.map((t) => subCounts(rows, t).map((s) => `${s.label} ${s.count}`))).toEqual([
 			[],
 			['Queued 1', 'Paused 1'],
-			['Downloading 2', 'Importing 3'],
+			['Downloading 2', 'Checking 0', 'Importing 3'],
 			['Failed 3', 'Review 1'],
 			[]
 		]);
@@ -138,5 +138,28 @@ describe('emptyOf', () => {
 		expect(emptyOf('active', '', '  dune ')).toMatchObject({ title: 'No matches for “dune”', action: { act: 'clear' } });
 		expect(emptyOf('done', '', '', 'artist')).toMatchObject({ title: 'No music downloads', action: { act: 'all' } });
 		expect(emptyOf('active', '', '', '', TABS, 'usenet').title).toBe('No Usenet downloads');
+	});
+});
+
+import { statusHint as hintOf } from './status-tabs.ts';
+describe('client hints', () => {
+	const base = { progress: 0.5, state: 'queued' } as const;
+	it('puts checking and moving under In progress with one-word statuses', () => {
+		const r = { ...base, phase: 'waiting', client_hint: 'checking' as const };
+		expect(stageOf(r)).toBe('checking');
+		expect(statusWord(r)).toBe('Checking');
+		expect(statusWord({ ...r, client_hint: 'moving' as const })).toBe('Moving');
+		expect(pick([r], TABS, 'progress', 'checking')).toHaveLength(1);
+		expect(subCounts([r], TABS.find((t) => t.key === 'progress')).find((s) => s.key === 'checking')?.count).toBe(1);
+	});
+	it('says Errored for client errors and keeps idle seeding under Done', () => {
+		expect(statusWord({ ...base, phase: 'failed', client_hint: 'errored' })).toBe('Errored');
+		expect(statusWord({ ...base, phase: 'failed', client_hint: 'missing' })).toBe('Errored');
+		const idle = { progress: 1, phase: 'done', state: 'seeding', client_hint: 'idle_seed' as const };
+		expect(statusWord(idle)).toBe('Seeding');
+		expect(pick([idle], TABS, 'done')).toHaveLength(1);
+		expect(hintOf(idle)).toMatch(/Nobody/);
+		expect(statusWord({ ...base, phase: 'stalled' })).toBe('Stalled');
+		expect(pick([{ ...base, phase: 'stalled' }], TABS, 'progress', 'downloading')).toHaveLength(1);
 	});
 });

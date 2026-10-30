@@ -213,3 +213,11 @@ func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 		t.Fatalf("owner: %d", c)
 	}
 }
+
+func TestClientHints(t *testing.T) {
+	for in, want := range map[string]string{"checkingDL": "checking", "checkingUP": "checking", "checkingResumeData": "checking", "moving": "moving", "error": "errored", "missingFiles": "missing", "stalledUP": "idle_seed", "stalledDL": "", "uploading": ""} {
+		if got := clientHint(in); got != want {
+			t.Errorf("%s: %q", in, got)
+		}
+	}
+}

@@ -13,12 +13,14 @@
 // failed one only under Problems.
 import type { DownloadRow } from '../downloaders.ts';
 
-export type Stage = 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
+export type Stage = 'checking' | 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
 
-type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean };
+type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint'] };
 
 /** stageOf places one row on its fine-grained stage. */
 export function stageOf(r: RowBits): Stage {
+	// A torrent checking its data or moving to a new folder is busy, not waiting.
+	if (r.client_hint === 'checking' || r.client_hint === 'moving') return 'checking';
 	switch (r.phase) {
 		case 'waiting':
 			return 'queued';
@@ -79,21 +81,22 @@ const SUBS: Record<string, Sub> = {
 	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.', empty: 'Nothing is queued.' },
 	paused: { key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.', empty: 'Nothing is paused.' },
 	downloading: { key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'], hint: 'Taking in data, or stalled while it keeps trying.', empty: 'Nothing is downloading.' },
+	checking: { key: 'checking', label: 'Checking', stages: ['checking'], hint: 'Checking its data on disk, or moving to a new folder.', empty: 'Nothing is being checked or moved.' },
 	importing: { key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.', empty: 'Nothing is importing.' },
 	failed: { key: 'failed', label: 'Failed', stages: ['failed'], hint: 'Failed, removed outside HolyArrs, or the files did not match.', empty: 'Nothing failed.' },
 	decide: { key: 'decide', label: 'Review', stages: ['decide'], hint: 'HolyArrs could not finish it on its own and needs you to choose.', empty: 'Nothing to review.' }
 };
 
 export const TABS: Tab[] = [
-	{ key: 'active', label: 'All', stages: ['queued', 'paused', 'downloading', 'stalled', 'importing', 'failed', 'decide', 'done', 'seeding'], hint: ALL_HINT, empty: 'No downloads yet', subs: [] },
+	{ key: 'active', label: 'All', stages: ['queued', 'paused', 'downloading', 'stalled', 'checking', 'importing', 'failed', 'decide', 'done', 'seeding'], hint: ALL_HINT, empty: 'No downloads yet', subs: [] },
 	{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: "In your Downloader's line, or paused by you.", empty: 'Nothing waiting', subs: [SUBS.queued, SUBS.paused] },
 	{
 		key: 'progress',
 		label: 'In progress',
-		stages: ['downloading', 'stalled', 'importing'],
+		stages: ['downloading', 'stalled', 'checking', 'importing'],
 		hint: 'On its way: downloading now, or being checked and filed into your Library.',
 		empty: 'Nothing downloading',
-		subs: [SUBS.downloading, SUBS.importing]
+		subs: [SUBS.downloading, SUBS.checking, SUBS.importing]
 	},
 	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'All clear', subs: [SUBS.failed, SUBS.decide] },
 	{
@@ -149,8 +152,11 @@ export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
  *  words. A download removed outside HolyArrs, or a failed copy already
  *  replaced, still reads Failed; one cleaned up from HolyArrs reads Done. */
 export function statusWord(r: RowBits): string {
+	if (r.client_hint === 'errored' || r.client_hint === 'missing') return 'Errored';
 	if (r.phase === 'failed' || r.phase === 'vanished') return 'Failed';
 	switch (stageOf(r)) {
+		case 'checking':
+			return r.client_hint === 'moving' ? 'Moving' : 'Checking';
 		case 'queued':
 			return 'Queued';
 		case 'paused':
@@ -169,6 +175,21 @@ export function statusWord(r: RowBits): string {
 			return 'Failed';
 	}
 	return 'Done';
+}
+
+/** statusHint is a quiet line after the status word, or ''. */
+export function statusHint(r: RowBits): string {
+	switch (r.client_hint) {
+		case 'idle_seed':
+			return 'Nobody is asking for it right now';
+		case 'missing':
+			return 'Its files are gone from the disk';
+		case 'errored':
+			return 'The Downloader hit an error';
+		case 'moving':
+			return 'Moving to a new folder';
+	}
+	return r.phase === 'stalled' ? 'No data coming in; still trying' : '';
 }
 
 /** The values older links used, mapped to the nearest group now. */

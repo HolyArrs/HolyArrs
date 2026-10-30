@@ -37,7 +37,7 @@
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { kindOf, manyWords, rowName, rowPath, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
-	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
 	import { limitsWords, pickRange, type BulkAction, type SteerMode } from './manage.ts';
@@ -926,7 +926,7 @@
 			<span class="st" class:ph class:bad={s.bad} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx">{s.text}</span></span>
 		{:else}
 			{@const t = barTone(r)}
-			{@const more = statusDetail(r, importOf.get(r.id))}
+			{@const more = statusDetail(r, importOf.get(r.id)) || statusHint(r)}
 			<span class="st {t}" class:ph data-col="status" title={more ? `${statusWord(r)} · ${more}` : statusWord(r)}><span class="dot" aria-hidden="true"></span><span class="tx">{statusWord(r)}</span></span>
 		{/if}
 	{:else if id === 'speed'}

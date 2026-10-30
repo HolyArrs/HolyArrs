@@ -201,6 +201,8 @@ export interface DownloadRow extends DownloadView {
 	/** A seeding torrent's share ratio, when the Downloader reports one. */
 	ratio?: number;
 	/** A client torrent's own seeding rules (-2 the Downloader's rule, -1 none). */
+	/** A client torrent's finer state: checking, moving, errored, missing (files gone) or idle_seed (finished, nobody asking now). */
+	client_hint?: 'checking' | 'moving' | 'errored' | 'missing' | 'idle_seed';
 	limits?: { ratio: number; seeding_minutes: number; inactive_minutes: number; action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed' };
 	/** Read straight from the client's own list: no HolyArrs download id; addressed by downloader_id and hash. */
 	client_item?: boolean;

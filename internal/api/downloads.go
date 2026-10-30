@@ -76,6 +76,10 @@ type DownloadRow struct {
 	// Limits are a client torrent's own seeding rules (-2 the client's
 	// global rule, -1 none), when the client reports them.
 	Limits *downloader.ShareLimits `json:"limits,omitempty"`
+	// ClientHint is a client torrent's finer state where the phase is too
+	// coarse: checking, moving, errored, missing (files gone) or idle_seed
+	// (finished, nobody asking for it now).
+	ClientHint string `json:"client_hint,omitempty"`
 }
 
 // DownloadTotals are the bytes per second moving across every active download.

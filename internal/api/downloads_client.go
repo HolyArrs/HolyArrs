@@ -89,7 +89,7 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 		DownloadView: DownloadView{State: st, Label: PhaseLabels[ph], Progress: j.Progress, Speed: j.Speed, UpSpeed: j.UpSpeed, Seeds: j.Seeds, Peers: j.Peers, Active: active},
 		Phase:        ph, Name: j.Name, Downloader: d.Name, DownloaderKind: d.Adapter, Protocol: d.Protocol, Size: j.Size,
 		UpdatedAt: time.Now().UTC(), CanAct: true, ClientItem: true, Outside: true, DownloaderID: d.ID, Hash: j.ID,
-		Category: j.Category, Ratio: j.Ratio, Limits: j.Limits,
+		Category: j.Category, Ratio: j.Ratio, Limits: j.Limits, ClientHint: clientHint(j.Detail),
 	}
 	if j.ETA > 0 && active {
 		eta := j.ETA
@@ -103,6 +103,23 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 		row.Label = "Done"
 	}
 	return row
+}
+
+// clientHint is the finer word for a client torrent's own state.
+func clientHint(state string) string {
+	switch state {
+	case "checkingDL", "checkingUP", "checkingResumeData":
+		return "checking"
+	case "moving":
+		return "moving"
+	case "error":
+		return "errored"
+	case "missingFiles":
+		return "missing"
+	case "stalledUP":
+		return "idle_seed"
+	}
+	return ""
 }
 
 // clientPhase maps a client item onto the Downloads screen's phase and
