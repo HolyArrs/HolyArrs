@@ -146,9 +146,31 @@
 	let wasWaiting = false;
 	$effect(() => {
 		const w = !!openAsk && waiting(openAsk);
-		if (wasWaiting && !w && win?.open) setTimeout(hide, 650);
+		if (wasWaiting && !w && win?.open) {
+			// Answered here: go on to the next one still waiting, or close when none is left.
+			const gone = openId;
+			setTimeout(() => {
+				if (openId !== gone) return;
+				const next = list.find((x) => x.id !== gone && waiting(x));
+				if (next) openId = next.id;
+				else hide();
+			}, 650);
+		}
 		wasWaiting = w;
 	});
+	// ← and → (or the arrows) move to the ask before or after, without closing the window.
+	const at = $derived(list.findIndex((a) => a.id === openId));
+	function step(by: number) {
+		const next = list[at + by];
+		if (next) openId = next.id;
+	}
+	function winKeys(e: KeyboardEvent) {
+		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+		if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
+		if (win?.querySelector('.frame.choosing') || document.querySelectorAll('dialog[open]').length > 1) return;
+		e.preventDefault();
+		step(e.key === 'ArrowRight' ? 1 : -1);
+	}
 	function cancel(e: Event) {
 		const back = win?.querySelector<HTMLElement>('.frame.choosing .sh-h .x');
 		if (back) {
@@ -240,9 +262,16 @@
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<dialog class="win" tabindex="-1" bind:this={win} aria-label={openAsk?.name ?? 'Ask'} oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
+<dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-label={openAsk?.name ?? 'Ask'} oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
+		{#if list.length > 1 && at >= 0}
+			<div class="steps-nav">
+				<button type="button" class="nav" aria-label="The ask before" disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
+				<span class="pos">{at + 1} of {list.length}</span>
+				<button type="button" class="nav" aria-label="The next ask" disabled={at >= list.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
+			</div>
+		{/if}
 		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} /></div>
 	{/if}
 </dialog>
@@ -337,6 +366,11 @@
 	.win:focus { outline: none; }
 	.close { position: absolute; top: 18px; right: 18px; z-index: 10; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgb(20 20 24 / 0.55); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); cursor: pointer; transition: background 200ms var(--ease-out); }
 	.close:hover { background: rgb(20 20 24 / 0.8); }
+	.steps-nav { position: absolute; top: 18px; left: 18px; z-index: 10; display: flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; background: rgb(20 20 24 / 0.55); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: #fff; }
+	.nav { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer; transition: background 200ms var(--ease-out); }
+	.nav:hover:not(:disabled) { background: rgb(255 255 255 / 0.16); }
+	.nav:disabled { opacity: 0.35; cursor: default; }
+	.pos { min-width: 52px; text-align: center; font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.win :global(.ctl.top) { right: 68px !important; }
 	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.3); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }

@@ -250,7 +250,7 @@
 						{/if}
 					</div>
 					<footer class="sh-f">
-						<span class="sum">{pick.empty ? 'Nothing ticked yet' : changed ? 'Your picks, not all of what was asked' : 'Everything that was asked'}</span>
+						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Getting your picks, not all that was asked' : picked.kind === 'movie' ? `Getting ${picked.name}` : `Getting ${count(picked) || 'everything asked'}`}</span>
 						<button type="button" class="act ghost" onclick={() => (choosing = false)}>Back</button>
 						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />Approve</button>
 					</footer>
