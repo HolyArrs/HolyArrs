@@ -207,6 +207,69 @@
 			busy = 0;
 		}
 	}
+	// Client actions: the Downloader does the work; the row's new state is read back from it.
+	const DONE: Record<string, string> = { pause: 'Paused.', resume: 'Started.', top: 'Moved to the top.', recheck: 'Checking again.', reannounce: 'Asked the trackers again.' };
+	async function act(r: DownloadRow, action: 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce') {
+		busy = r.id;
+		try {
+			await api.post(`/downloads/${r.id}/${action}`);
+			toasts.push(DONE[action], 'ok');
+			await load();
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busy = 0;
+		}
+	}
+	type ClientStatus = { paused: boolean; speed_limit: number; up_limit: number };
+	type ClientView = { id: number; name: string; protocol: string; controls: boolean; status?: ClientStatus; error?: string };
+	async function all(pause: boolean) {
+		try {
+			const r = await api.post<{ clients: ClientView[] }>(pause ? '/downloads/pause-all' : '/downloads/resume-all');
+			const bad = r.clients.filter((c) => c.controls && c.error);
+			if (bad.length) toasts.push(`${bad.map((c) => c.name).join(', ')}: ${bad[0].error}`, 'fail');
+			else toasts.push(pause ? 'Paused everything.' : 'Started everything.', 'ok');
+			await load();
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		}
+	}
+
+	// The speed limit: one cap per Downloader, in MB/s (0 = none), read from the client.
+	let limitOpen = $state(false);
+	let clients = $state<ClientView[]>([]);
+	let limits = $state<Record<number, { down: number; up: number }>>({});
+	let limitError = $state('');
+	let limitBusy = $state(false);
+	const MB = 1_000_000;
+	async function openLimit() {
+		limitError = '';
+		limitOpen = true;
+		try {
+			const r = await api.get<{ clients: ClientView[] }>('/downloads/clients');
+			clients = r.clients.filter((c) => c.controls);
+			limits = Object.fromEntries(clients.map((c) => [c.id, { down: +((c.status?.speed_limit ?? 0) / MB).toFixed(1), up: +((c.status?.up_limit ?? 0) / MB).toFixed(1) }]));
+		} catch (e) {
+			limitError = message(e);
+		}
+	}
+	async function saveLimit(e: SubmitEvent) {
+		e.preventDefault();
+		limitBusy = true;
+		try {
+			for (const c of clients) {
+				const l = limits[c.id];
+				await api.put(`/downloaders/${c.id}/speed-limit`, { down: Math.round(Math.max(0, l.down || 0) * MB), up: Math.round(Math.max(0, l.up || 0) * MB) });
+			}
+			limitOpen = false;
+			toasts.push('Speed limit saved.', 'ok');
+		} catch (err) {
+			limitError = message(err);
+		} finally {
+			limitBusy = false;
+		}
+	}
+
 	// The top bar's search field filters this page while it is open.
 	$effect(() => {
 		dlScope.on = true;
@@ -232,7 +295,7 @@
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} />
 {/if}
 </PageLoader>
 
@@ -262,7 +325,33 @@
 	{/snippet}
 </Sheet>
 
+<Sheet bind:open={limitOpen} title="Speed limit" size="sm">
+	<form id="limit-form" onsubmit={saveLimit}>
+		<p class="hint">In MB/s for each Downloader. 0 means no limit.</p>
+		{#each clients as c (c.id)}
+			{#if limits[c.id]}
+				<fieldset class="lim" data-testid="dl-limit-{c.id}">
+					<legend>{c.name}</legend>
+					<label>Download<input type="number" min="0" step="0.1" inputmode="decimal" bind:value={limits[c.id].down} /></label>
+					{#if c.protocol === 'torrent'}<label>Upload<input type="number" min="0" step="0.1" inputmode="decimal" bind:value={limits[c.id].up} /></label>{/if}
+				</fieldset>
+			{/if}
+		{:else}
+			{#if !limitError}<p class="hint">Reading the Downloaders…</p>{/if}
+		{/each}
+		{#if limitError}<p class="form-error" role="alert">{limitError}</p>{/if}
+	</form>
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (limitOpen = false)}>Cancel</Button>
+		<Button type="submit" form="limit-form" busy={limitBusy} disabled={limitBusy || clients.length === 0}>Save</Button>
+	{/snippet}
+</Sheet>
+
 <style>
+	.lim { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px; min-width: 0; }
+	.lim legend { font: var(--t-headline); margin-bottom: 6px; padding: 0; }
+	.lim label { display: flex; flex-direction: column; gap: 4px; font: var(--t-subhead); color: var(--text-muted); flex: 1 1 120px; min-width: 0; }
+	.lim input { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-callout); width: 100%; box-sizing: border-box; }
 	.pad { padding: var(--s-6) var(--gutter); }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }

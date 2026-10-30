@@ -11421,6 +11421,61 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/speed-limit": {
+      "put": {
+        "description": "down and up in bytes per second; 0 removes the limit. Usenet Downloaders have no upload limit.",
+        "operationId": "setDownloaderSpeedLimit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "down": {
+                    "type": "integer"
+                  },
+                  "up": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Saved in the Downloader."
+          },
+          "400": {
+            "description": "A limit below 0."
+          },
+          "404": {
+            "description": "No such Downloader."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Set a Downloader's total speed limit",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/test": {
       "post": {
         "description": "Asks it for its version and validates the configured sign-in and category or label where the app supports them. A working answer ends a rest.",
@@ -11514,6 +11569,211 @@
         "tags": [
           "Downloads"
         ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/downloads/clients": {
+      "get": {
+        "description": "Paused, speeds, speed limits, totals and free space, as each Downloader reports them (bytes, bytes per second; 0 means none or not reported).",
+        "operationId": "downloadClients",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "clients": {
+                      "items": {
+                        "properties": {
+                          "controls": {
+                            "type": "boolean"
+                          },
+                          "error": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "protocol": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "object"
+                          },
+                          "torrent_controls": {
+                            "type": "boolean"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Each Downloader's own state",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/downloads/pause-all": {
+      "post": {
+        "description": "Each Downloader that offers controls pauses all its downloads; a Downloader that fails carries an error.",
+        "operationId": "pauseAllDownloads",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "clients": {
+                      "items": {
+                        "properties": {
+                          "controls": {
+                            "type": "boolean"
+                          },
+                          "error": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "protocol": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "object"
+                          },
+                          "torrent_controls": {
+                            "type": "boolean"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Pause everything in every Downloader",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/resume-all": {
+      "post": {
+        "description": "Each Downloader that offers controls starts all its downloads again.",
+        "operationId": "resumeAllDownloads",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "clients": {
+                      "items": {
+                        "properties": {
+                          "controls": {
+                            "type": "boolean"
+                          },
+                          "error": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "protocol": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "object"
+                          },
+                          "torrent_controls": {
+                            "type": "boolean"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Resume everything in every Downloader",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/speeds": {
+      "get": {
+        "operationId": "speedHistory",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "samples": {
+                      "items": {
+                        "properties": {
+                          "down": {
+                            "type": "integer"
+                          },
+                          "up": {
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Total download and upload speed since the app started",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "read"
@@ -11675,6 +11935,108 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloads/{id}/pause": {
+      "post": {
+        "description": "Stops one active download in the Downloader that holds it (qBittorrent stop, SABnzbd pause).",
+        "operationId": "pauseDownload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Pause one download in its Downloader",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/{id}/reannounce": {
+      "post": {
+        "description": "Torrent Downloaders only: the client asks its trackers for peers now.",
+        "operationId": "reannounceDownload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Ask a torrent's trackers again",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/{id}/recheck": {
+      "post": {
+        "description": "Torrent Downloaders only: the client checks the data on disk again.",
+        "operationId": "recheckDownload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Check a torrent's data again",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloads/{id}/remove": {
       "post": {
         "description": "Takes an active Download away by hand: removed from the Downloader (with its files when delete_files), the Release turned down when turn_down, and the movie searched again when turn_down and search_again; otherwise it goes back to wanted. Missing choices come from Settings > Downloaders.",
@@ -11746,6 +12108,129 @@
         "tags": [
           "Downloaders"
         ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/{id}/resume": {
+      "post": {
+        "description": "Starts one paused download again in its Downloader.",
+        "operationId": "resumeDownload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Resume one download in its Downloader",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/{id}/swarm": {
+      "get": {
+        "description": "Read live from the torrent Downloader.",
+        "operationId": "downloadSwarm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "peers": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "trackers": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "A torrent's trackers and connected peers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/downloads/{id}/top": {
+      "post": {
+        "description": "qBittorrent refuses this while its own queue is turned off.",
+        "operationId": "moveDownloadToTop",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new state shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such download, or the Downloader no longer has it."
+          },
+          "409": {
+            "description": "The download is not active, or its Downloader does not offer this control."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Move one download to the top of its Downloader's queue",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"

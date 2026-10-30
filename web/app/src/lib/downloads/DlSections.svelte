@@ -49,7 +49,10 @@
 		openId = $bindable(0),
 		onfail,
 		onremove,
-		ondone
+		ondone,
+		onact,
+		onall,
+		onlimit
 	}: {
 		rows: DownloadRow[];
 		importOf: Map<number, ImportRecord>;
@@ -69,6 +72,12 @@
 		onfail: (r: DownloadRow) => void;
 		onremove: (r: DownloadRow) => void;
 		ondone: () => void;
+		/** A client action on one download; the new state comes back from the client. */
+		onact?: (r: DownloadRow, action: ClientAction) => void;
+		/** Pause (true) or resume (false) everything in every client. */
+		onall?: (pause: boolean) => void;
+		/** Opens the speed limit. */
+		onlimit?: () => void;
 	} = $props();
 
 	// The Type filter (All, Movies, TV shows, Music) narrows every tab and total.
@@ -87,10 +96,11 @@
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	let menuId = $state(0);
-	const ACTIONS: { label: string; torrent?: boolean }[] = [
-		{ label: 'Check again' }, { label: 'Ask trackers again', torrent: true }, { label: 'Move' }, { label: 'Rename' },
-		{ label: 'Limit upload', torrent: true }, { label: 'Stop sharing at a ratio', torrent: true }, { label: 'Copy link' }, { label: 'Export' }
+	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce';
+	const ACTIONS: { label: string; action: ClientAction; torrent?: boolean }[] = [
+		{ label: 'Move to top', action: 'top' }, { label: 'Check again', action: 'recheck', torrent: true }, { label: 'Ask trackers again', action: 'reannounce', torrent: true }
 	];
+	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 	const TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
 	// Sample state for the Files, Peers and Trackers tables (the page only; nothing is sent anywhere).
@@ -155,6 +165,9 @@
 	const list = $derived(isDone ? [...shown].sort(newest) : shown);
 	const sum = $derived(totals(allQueue));
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
+	// The toolbar's Start and Pause act on the open row; its state comes from the client.
+	const canStart = $derived(!!openRow?.can_act && isPaused(openRow) && busy !== openRow?.id);
+	const canPause = $derived(!!openRow?.can_act && !isPaused(openRow) && busy !== openRow?.id);
 	const problems = $derived(allQueue.filter((r) => barTone(r) === 'bad').length);
 	const done = $derived(historyTotals(typed.filter(inHistory)));
 
@@ -768,7 +781,7 @@
 
 {#snippet btns(r: DownloadRow, files: boolean)}
 	<div class="xbt" data-testid="dl-actions">
-		<button type="button" class="xbn" disabled title="Coming soon">Pause</button>
+		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>
 		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
 		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
 		<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>
@@ -776,7 +789,7 @@
 	{#if menuId === r.id}
 		<ul class="mn" data-testid="dl-more-menu">
 			{#each ACTIONS.filter((a) => !a.torrent || protocolOf(r) === 'torrent') as a (a.label)}
-				<li><button type="button" class="mi" disabled title="Coming soon">{a.label}<span class="soon">Coming soon</span></button></li>
+				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
 			{/each}
 		</ul>
 	{/if}
@@ -982,11 +995,9 @@
 		{/if}
 	</div>
 	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
-		<span class="tw2" use:tip={'Add (coming soon)'}><button type="button" class="tbn" disabled aria-label="Add (coming soon)" data-testid="tb-add"><Icon name="plus" size={20} /></button></span>
-		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={'Start (coming soon)'}><button type="button" class="tbn" disabled aria-label="Start (coming soon)" data-testid="tb-start-btn"><Icon name="play" size={20} /></button></span><TopMenu label="More start actions" items={[{ label: 'Start all', hint: 'Coming soon', disabled: true }]} /></span>
-		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={'Pause (coming soon)'}><button type="button" class="tbn" disabled aria-label="Pause (coming soon)" data-testid="tb-pause-btn"><Icon name="pause" size={20} /></button></span><TopMenu label="More pause actions" items={[{ label: 'Pause all', hint: 'Coming soon', disabled: true }]} /></span>
+		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={canStart ? 'Start' : 'Start (select a paused download)'}><button type="button" class="tbn" disabled={!canStart} aria-label={canStart ? 'Start' : 'Start (select a paused download)'} onclick={() => openRow && onact?.(openRow, 'resume')} data-testid="tb-start-btn"><Icon name="play" size={20} /></button></span><TopMenu label="More start actions" items={[{ label: 'Start all', onselect: () => onall?.(false) }]} /></span>
+		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={canPause ? 'Pause' : 'Pause (select a download)'}><button type="button" class="tbn" disabled={!canPause} aria-label={canPause ? 'Pause' : 'Pause (select a download)'} onclick={() => openRow && onact?.(openRow, 'pause')} data-testid="tb-pause-btn"><Icon name="pause" size={20} /></button></span><TopMenu label="More pause actions" items={[{ label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]} /></span>
 		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={20} /></button></span>
-		<span class="tw2" use:tip={'Retry all problems (coming soon)'}><button type="button" class="tbn" disabled aria-label="Retry all problems (coming soon)" data-testid="dl-retry-all"><Icon name="refresh" size={20} /></button></span>
 	</div>
 </div>
 <div class="body" style="--rail: {railPx}px">
@@ -1348,7 +1359,6 @@
 	.mn { list-style: none; margin: 6px 0 0; padding: 4px; display: grid; gap: 2px; width: max-content; max-width: 100%; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 6px 18px rgb(0 0 0 / 0.14); }
 	.mi { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; }
 	.mi:disabled { opacity: 0.6; cursor: not-allowed; }
-	.soon { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
 	.strip.sub { margin-top: -4px; font: var(--t-footnote); color: var(--text-muted); }
 	.lim { display: inline-flex; align-items: center; gap: 8px; }
 	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
