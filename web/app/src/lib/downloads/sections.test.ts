@@ -27,6 +27,18 @@ describe('search', () => {
 		expect(['arriv', '2016.2160', 'basement', '2160p dv', ''].map((q) => matches(x, q))).toEqual([true, true, true, true, true]);
 		expect(matches(x, 'nope')).toBe(false);
 	});
+	it('filters the list as you type and gives every row back once cleared', () => {
+		const list = [row({ id: 1, title: 'Arrival', name: 'Arrival.2016.2160p.mkv' }), row({ id: 2, title: 'Dune', name: 'Dune.Part.Two.1080p.mkv' }), row({ id: 3, title: 'Severance', name: 'Severance.S02E01.720p.mkv' })];
+		const find = (q: string) => list.filter((r) => matches(r, q)).map((r) => r.id);
+		expect(find('a')).toEqual([1, 2, 3]);
+		expect(find('ar')).toEqual([1, 2]);
+		expect(find('arr')).toEqual([1]);
+		expect(find('S02E01')).toEqual([3]);
+		expect(find('part.two')).toEqual([2]);
+		expect(find('  DUNE ')).toEqual([2]);
+		expect(find('zzz')).toEqual([]);
+		expect(find('')).toEqual([1, 2, 3]);
+	});
 });
 
 describe('header strip', () => {

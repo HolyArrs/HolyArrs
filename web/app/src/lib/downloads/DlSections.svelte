@@ -17,12 +17,13 @@
 	import Menu from '../ui/Menu.svelte';
 	import TopMenu from './TopMenu.svelte';
 	import { to } from '../paths.ts';
-	import DlRail from './DlRail.svelte';
+	import DlBar from './DlBar.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
 	import Popover from '../ui/Popover.svelte';
 	import { tip } from './tip.ts';
 	import { dlScope } from '../search-field.svelte.ts';
+	import { dlTop } from '../dl-top.svelte.ts';
 	import { toasts } from '../toasts.svelte.ts';
 	import { demoDetails, fileExtras, isProblem, sampleFiles, sampleHeader, sampleLog, samplePeers, sampleRatio, sampleServers, sampleStory, sampleSwarm, sampleTrackers, fileTree } from './sampleDetails.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
@@ -201,7 +202,12 @@
 	// Phones have no top bar: the tab strip carries a magnifier that opens the same scoped search.
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
-	let railPx = $state(196);
+	const barActs = $derived([
+		{ key: 'start', icon: 'play' as const, label: 'Start', hint: canStart ? 'Start' : 'Start (select a paused download)', disabled: !canStart, run: () => openRow && onact?.(openRow, 'resume'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
+		{ key: 'pause', icon: 'pause' as const, label: 'Pause', hint: canPause ? 'Pause' : 'Pause (select a download)', disabled: !canPause, run: () => openRow && onact?.(openRow, 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }] },
+		{ key: 'remove', icon: 'trash' as const, label: 'Remove', hint: openRow?.can_act ? 'Remove' : 'Remove (select a download first)', disabled: !openRow?.can_act || busy === openRow?.id, run: () => openRow && onremove(openRow) },
+		{ key: 'turned', icon: 'shield' as const, label: 'Turned down', hint: 'Turned down copies', disabled: false, href: to('/downloads/turned-down') }
+	]);
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	function dragDown(e: PointerEvent) {
 		if (e.button !== 0 || !paneOpen) return;
@@ -258,15 +264,21 @@
 		next.click();
 	}
 	function slashKey(e: KeyboardEvent) {
-		if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || dlScope.off) return;
+		const mod = e.ctrlKey || e.metaKey;
+		const ck = mod && !e.altKey && (e.key === 'k' || e.key === 'K');
+		if (!ck && (e.key !== '/' || mod || e.altKey)) return;
 		const t = e.target as HTMLElement | null;
-		if (!t || t.closest('input, textarea, select, [contenteditable="true"]')) return;
+		if (!ck && (!t || t.closest('input, textarea, select, [contenteditable="true"]'))) return;
 		e.preventDefault();
 		e.stopImmediatePropagation();
 		if (matchMedia('(max-width: 767px)').matches) {
 			psOpen = true;
 			tick().then(() => psEl?.focus());
-		} else document.getElementById('q')?.focus();
+		} else {
+			const f = document.querySelector<HTMLInputElement>('[data-dl-search]');
+			f?.focus();
+			f?.select();
+		}
 	}
 	$effect(() => {
 		window.addEventListener('keydown', slashKey, true);
@@ -998,17 +1010,9 @@
 			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
 		{/if}
 	</div>
-	{#if !watch}
-	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
-		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={canStart ? 'Start' : 'Start (select a paused download)'}><button type="button" class="tbn" disabled={!canStart} aria-label={canStart ? 'Start' : 'Start (select a paused download)'} onclick={() => openRow && onact?.(openRow, 'resume')} data-testid="tb-start-btn"><Icon name="play" size={20} /></button></span><TopMenu label="More start actions" items={[{ label: 'Start all', onselect: () => onall?.(false) }]} /></span>
-		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={canPause ? 'Pause' : 'Pause (select a download)'}><button type="button" class="tbn" disabled={!canPause} aria-label={canPause ? 'Pause' : 'Pause (select a download)'} onclick={() => openRow && onact?.(openRow, 'pause')} data-testid="tb-pause-btn"><Icon name="pause" size={20} /></button></span><TopMenu label="More pause actions" items={[{ label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]} /></span>
-		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={20} /></button></span>
-		<span class="tw2" use:tip={'Turned down copies'}><a class="tbn" href={to('/downloads/turned-down')} aria-label="Turned down copies" data-testid="tb-turned-down"><Icon name="shield" size={20} /></a></span>
-	</div>
-	{/if}
+	<DlBar bind:kindOn bind:srcOn {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} sideControls={dlTop.controls} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} />
 </div>
-<div class="body" style="--rail: {railPx}px">
-<DlRail bind:kindOn bind:srcOn {kindCount} {srcCount} bind:px={railPx} />
+<div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div></div>
@@ -1080,6 +1084,7 @@
 {/if}
 
 </div>
+
 <style>
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.strip > span { display: inline-flex; align-items: center; gap: 6px; }
@@ -1222,11 +1227,10 @@
 	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 	.lg .bad { color: var(--fail); }
 	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; overflow: clip; }
-	.body { display: grid; grid-template-columns: var(--rail, 196px) minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
+	.body { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 	.listbox .tw { overflow: visible; }
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
-	.tbg { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 	.sbar { flex: none; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
@@ -1282,12 +1286,6 @@
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	.tbn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
-	.tbn:hover:not(:disabled) { background: var(--surface-3); }
-	.tbn:disabled { opacity: 0.45; cursor: not-allowed; }
-	.tbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.tw2 { display: inline-flex; }
-	.split { display: inline-flex; align-items: center; }
 	.sbar { container: sb / inline-size; }
 	.sbi { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px 14px; padding: 3px var(--dl-gutter); min-width: 0; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.3; }
 	.sbi > span { display: inline-flex; align-items: center; gap: 6px; }
@@ -1351,9 +1349,6 @@
 	:global(:root[data-theme='dark']) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); }
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); } }
 	@media (prefers-reduced-motion: reduce) { .pw, .tab, .stab, .subwrap { transition: none; } }
-	.tbn :global(svg.icon) { width: 20px; height: 20px; }
-	.tbn { width: 34px; height: 34px; }
-	.split :global(.caret) { height: 34px; }
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.dep h4 { margin: 0 0 6px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.dep .lg { max-height: none; margin-top: 8px; padding-left: 16px; list-style: decimal; }
@@ -1416,9 +1411,6 @@
 		.pt { flex-basis: 100%; }
 		.hdr { grid-template-columns: minmax(0, 1fr); }
 			.gen { grid-template-columns: minmax(0, 1fr); }
-	}
-	@media (max-width: 1099px) {
-		.body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bar i, .tg :global(svg), .bin, .cw, .post { transition: none; }

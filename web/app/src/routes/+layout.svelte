@@ -42,6 +42,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from '#lib/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/search-field.svelte.ts';
+	import { dlTop } from '#lib/dl-top.svelte.ts';
 	import { checkHero, installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
 	import { arrived, leaving } from '#lib/came-from.svelte.ts';
 	import {
@@ -190,6 +191,13 @@
 	// ⌘\ / Ctrl+\ toggles the sidebar; ⌘K / Ctrl+K and / open the Search page; Escape closes the overlay.
 	const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 	const searchKey = mac ? '⌘K' : 'Ctrl K';
+	// Downloads has no top bar: its own toolbar carries the sidebar button and a plain search.
+	$effect(() => {
+		dlTop.collapsed = collapsed;
+		dlTop.searchKey = searchKey;
+		dlTop.toggle = () => void toggleSidebar();
+	});
+	const topHidden = $derived(path === '/downloads');
 	const typingIn = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 	function keys(e: KeyboardEvent) {
 		if (!ready || bare) return;
@@ -454,14 +462,14 @@
 			/>
 		{/snippet}
 		{#snippet topbar()}
-			<TopBar
+			{#if !topHidden}<TopBar
 				showToggle={collapsed}
 				controls="sidebar"
 				bind:toggle={topToggle}
 				ontoggle={toggleSidebar}
 				history={detail}
 				{searchKey}
-			/>
+			/>{/if}
 		{/snippet}
 		{#snippet tabbar()}<TabBar items={tabs} />{/snippet}
 		<main id="main" tabindex="-1" class:bleed={path === '/downloads' || path.startsWith('/downloads/')}>
