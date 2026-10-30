@@ -121,8 +121,13 @@ func (q *Qbittorrent) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, 
 			continue
 		}
 		if strings.HasPrefix(low, "magnet:") {
-			var n int
-			l, n = safeMagnet(ctx, l, b.AllowLocal)
+			clean, n, err := safeMagnet(l, b.AllowLocal)
+			if err != nil {
+				out.Bad = append(out.Bad, "a magnet link")
+				out.Failed++
+				continue
+			}
+			l = clean
 			out.Dropped += n
 		}
 		if h := linkHash(l); h != "" {

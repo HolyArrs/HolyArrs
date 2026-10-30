@@ -2,9 +2,12 @@ package downloader
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/url"
+	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/CoderLuii/holyarrs/internal/source"
 )
@@ -27,83 +30,108 @@ func fetchTorrentLink(ctx context.Context, link string, allowLocal bool) ([]byte
 	return b, nil
 }
 
-// magnetURLParams are the magnet parameters that carry an address the
-// client would contact: trackers, web seeds, exact sources, acceptable
-// sources and peer addresses.
-var magnetURLParams = []string{"tr", "ws", "xs", "as", "x.pe"}
+// errMagnet is a magnet link that does not parse strictly.
+var errMagnet = errors.New("the magnet link could not be read")
 
-// safeMagnet drops every address in a magnet link that points at this
-// machine, the local network or a metadata service, unless the Downloader
-// may use the local network (metadata addresses are always dropped). It
-// says how many it dropped.
-func safeMagnet(ctx context.Context, link string, allowLocal bool) (string, int) {
-	u, err := url.Parse(link)
-	if err != nil {
-		return link, 0
+var btihHex = regexp.MustCompile(`^[0-9a-f]{40}$`)
+var btihB32 = regexp.MustCompile(`^[a-z2-7]{32}$`)
+var btmh = regexp.MustCompile(`^1220[0-9a-f]{64}$`)
+
+// safeMagnet rebuilds a magnet link from an allowlist: xt (a BitTorrent
+// v1 or v2 hash), dn and tr; with local network access also ws, xs, as and
+// x.pe. Every pair is decoded strictly and the link is written anew, so
+// the original string never reaches the client. A pair that does not
+// decode, or holds a control character, refuses the whole link. It says
+// how many pairs it left out.
+//
+// Trackers are kept by host name, as for trackers inside an uploaded
+// .torrent file: qBittorrent announces to them itself, so a name cannot be
+// checked here in a way that survives rebinding. Without local network
+// access a tracker that is a literal local, link-local or metadata address,
+// localhost or a .local name, or that is not http, https or udp, is left
+// out. Nothing here looks names up.
+func safeMagnet(link string, allowLocal bool) (string, int, error) {
+	if len(link) < 8 || !strings.EqualFold(link[:8], "magnet:?") {
+		return "", 0, errMagnet
 	}
-	q := u.Query()
-	dropped := 0
-	for _, k := range magnetURLParams {
-		vals, ok := q[k]
-		if !ok {
+	type pair struct{ k, v string }
+	var keep []pair
+	dropped, hashes := 0, 0
+	for _, raw := range strings.Split(link[8:], "&") {
+		if raw == "" {
 			continue
 		}
-		keep := vals[:0]
-		for _, v := range vals {
-			if addressAllowed(ctx, k, v, allowLocal) {
-				keep = append(keep, v)
+		rk, rv, _ := strings.Cut(raw, "=")
+		k, err1 := url.QueryUnescape(rk)
+		v, err2 := url.QueryUnescape(rv)
+		if err1 != nil || err2 != nil || strings.IndexFunc(k+v, unicode.IsControl) >= 0 {
+			return "", 0, errMagnet
+		}
+		k = strings.ToLower(k)
+		switch k {
+		case "xt":
+			h := strings.ToLower(v)
+			if b, ok := strings.CutPrefix(h, "urn:btih:"); ok && (btihHex.MatchString(b) || btihB32.MatchString(b)) {
+				hashes++
+			} else if b, ok := strings.CutPrefix(h, "urn:btmh:"); ok && btmh.MatchString(b) {
+				hashes++
 			} else {
-				dropped++
+				return "", 0, errMagnet
 			}
+		case "dn":
+		case "tr":
+			if !trackerAllowed(v, allowLocal) {
+				dropped++
+				continue
+			}
+		case "ws", "xs", "as", "x.pe":
+			if !allowLocal {
+				dropped++
+				continue
+			}
+		default:
+			dropped++
+			continue
 		}
-		if len(keep) == 0 {
-			q.Del(k)
-		} else {
-			q[k] = keep
+		keep = append(keep, pair{k, v})
+	}
+	if hashes == 0 {
+		return "", 0, errMagnet
+	}
+	parts := make([]string, len(keep))
+	for i, p := range keep {
+		if p.k == "xt" {
+			parts[i] = "xt=" + strings.ToLower(p.v) // checked above: letters, digits and colons only
+			continue
 		}
+		parts[i] = p.k + "=" + url.QueryEscape(p.v)
 	}
-	if dropped == 0 {
-		return link, 0
-	}
-	u.RawQuery = q.Encode()
-	return u.String(), dropped
+	return "magnet:?" + strings.Join(parts, "&"), dropped, nil
 }
 
-// addressAllowed checks one magnet address by its host: every address it
-// names or resolves to must pass the Downloader's policy.
-func addressAllowed(ctx context.Context, key, v string, allowLocal bool) bool {
-	host := ""
-	if key == "x.pe" {
-		h, _, err := net.SplitHostPort(v)
-		if err != nil {
-			return false
-		}
-		host = h
-	} else {
-		u, err := url.Parse(v)
-		if err != nil || u.Hostname() == "" {
-			return false
-		}
-		host = u.Hostname()
+// trackerAllowed checks one magnet tracker without looking its name up.
+func trackerAllowed(v string, allowLocal bool) bool {
+	u, err := url.Parse(v)
+	if err != nil || u.Hostname() == "" || u.User != nil {
+		return false
 	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https", "udp":
+	default:
+		return false
+	}
+	host := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
 	if metadataName(host) {
 		return false
 	}
-	allow := source.NotMetadata
-	if !allowLocal {
-		allow = source.PublicOnly
-	}
-	if ip := net.ParseIP(strings.Trim(host, "[]")); ip != nil {
-		return allow(ip)
-	}
-	addrs, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-	if err != nil || len(addrs) == 0 {
-		return false
-	}
-	for _, a := range addrs {
-		if !allow(a.IP) {
+	if ip := net.ParseIP(host); ip != nil {
+		if !source.NotMetadata(ip) {
 			return false
 		}
+		return allowLocal || source.PublicOnly(ip)
+	}
+	if !allowLocal && (host == "localhost" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".local")) {
+		return false
 	}
 	return true
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -260,19 +261,39 @@ func TestQbitAddFetchesLinksItself(t *testing.T) {
 	}
 }
 
-func TestSafeMagnetDropsLocalAddresses(t *testing.T) {
-	ctx := context.Background()
-	m := "magnet:?xt=urn:btih:" + hashA + "&tr=http%3A%2F%2F10.0.0.5%2Fannounce&tr=udp%3A%2F%2F1.1.1.1%3A80&xs=http%3A%2F%2F127.0.0.1%2Fx.torrent&ws=http%3A%2F%2Fmetadata.google.internal%2F&x.pe=192.168.1.2%3A6881&x.pe=8.8.8.8%3A6881&dn=x"
-	got, n := safeMagnet(ctx, m, false)
-	if n != 4 || strings.Contains(got, "10.0.0.5") || strings.Contains(got, "127.0.0.1") || strings.Contains(got, "metadata") || strings.Contains(got, "192.168") ||
-		!strings.Contains(got, "1.1.1.1") || !strings.Contains(got, "8.8.8.8") || linkHash(got) != hashA {
-		t.Fatalf("%d %s", n, got)
+func TestSafeMagnetAllowlist(t *testing.T) {
+	m := "magnet:?XT=urn:btih:" + strings.ToUpper(hashA) + "&dn=Some%20Name&TR=http%3A%2F%2F10.0.0.5%2Fannounce&tr=udp%3A%2F%2Ftracker.example%3A80&tr=udp%3A%2F%2Ftracker.example%3A80" +
+		"&tr=ftp%3A%2F%2Fx.example%2F&tr=http%3A%2F%2Flocalhost%2Fa&tr=http%3A%2F%2F169.254.169.254%2F&Xs=http%3A%2F%2F127.0.0.1%2Fx.torrent&ws=http%3A%2F%2Fseed.example%2F&x.pe=192.168.1.2%3A6881&dht=1&tr.1=http%3A%2F%2Fa.example%2F"
+	got, n, err := safeMagnet(m, false)
+	if err != nil || n != 9 || linkHash(got) != hashA {
+		t.Fatalf("%d %v %s", n, err, got)
 	}
-	got, n = safeMagnet(ctx, m, true)
-	if n != 1 || !strings.Contains(got, "10.0.0.5") || strings.Contains(got, "metadata") {
-		t.Fatalf("local allowed: %d %s", n, got)
+	u, _ := url.Parse(got)
+	for k := range u.Query() {
+		if k != "xt" && k != "dn" && k != "tr" {
+			t.Fatalf("kept %q: %s", k, got)
+		}
 	}
-	if _, n := safeMagnet(ctx, "magnet:?xt=urn:btih:"+hashA, false); n != 0 {
-		t.Fatal("plain magnet changed")
+	if trs := u.Query()["tr"]; len(trs) != 2 || trs[0] != "udp://tracker.example:80" || u.Query().Get("dn") != "Some Name" {
+		t.Fatalf("trackers %v in %s", trs, got)
+	}
+	got, n, err = safeMagnet(m, true)
+	q, _ := url.Parse(got)
+	if err != nil || n != 4 || q.Query().Get("xs") == "" || q.Query().Get("ws") == "" || len(q.Query()["tr"]) != 4 {
+		t.Fatalf("local allowed: %d %v %s", n, err, got)
+	}
+	for _, bad := range []string{
+		"magnet:?xt=urn:btih:" + hashA + "&dn=%zz",
+		"magnet:?xt=urn:btih:" + hashA + "&dn=a%0Ab",
+		"magnet:?dn=no-hash",
+		"magnet:?xt=urn:btih:nothex",
+		"https://x.example/?xt=urn:btih:" + hashA,
+	} {
+		if _, _, err := safeMagnet(bad, false); err == nil {
+			t.Errorf("%q passed", bad)
+		}
+	}
+	if got, n, err := safeMagnet("magnet:?xt=urn:btmh:1220"+strings.Repeat("ab", 32), false); err != nil || n != 0 || !strings.HasPrefix(got, "magnet:?xt=urn:btmh:1220") {
+		t.Fatalf("v2: %s %d %v", got, n, err)
 	}
 }
