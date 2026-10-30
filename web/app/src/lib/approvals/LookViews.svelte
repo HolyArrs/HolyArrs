@@ -141,6 +141,25 @@
 		];
 	});
 
+	// 15–19: the ask that needs you most (the oldest waiting), shelves by state,
+	// triage (reason and Later), and asks by person.
+	const mostNeeded = $derived(shown.filter(waiting).at(-1) ?? null);
+	const shelves = $derived([
+		{ id: 'waiting', title: 'Waiting on you', asks: all.filter(waiting).filter((a) => a.id !== mostNeeded?.id) },
+		{ id: 'approved', title: 'On its way', asks: all.filter((a) => !waiting(a) && askTab(a) === 'approved') },
+		{ id: 'done', title: 'Ready to watch', asks: all.filter((a) => askTab(a) === 'done') },
+		{ id: 'declined', title: 'Turned down', asks: all.filter((a) => askTab(a) === 'declined') }
+	]);
+	let later = $state(new Set<number>());
+	let reasonFor = $state(0);
+	let reasonText = $state('');
+	const triage = $derived(shown.filter((a) => !later.has(a.id)));
+	const persons = $derived.by(() => {
+		const by = new Map<number, Ask[]>();
+		for (const a of shown) by.set(ctx.who(a).id, [...(by.get(ctx.who(a).id) ?? []), a]);
+		return [...by.values()].map((asks) => ({ who: ctx.who(asks[0]), asks })).sort((x, y) => y.asks.filter(waiting).length - x.asks.filter(waiting).length);
+	});
+
 	// 10 Tracker: where each ask is on its way.
 	const steps = ['Asked', 'Approved', 'Getting it', 'Ready'];
 	const stepOf = (a: Ask) => (a.state === 'asked' ? 0 : a.state === 'available' ? 3 : askTab(a) === 'approved' ? 2 : 1);
@@ -631,6 +650,162 @@
 		{/each}
 		{#if !stacks.some((s) => s.asks.length)}{@render empty('Nothing here right now.')}{/if}
 	</div>
+{:else if look >= 15 && look <= 19}
+	<!-- 15–19: the best of what we learned. Desk rows (liked), QuickBox's banner and
+	     shelves, Linear's reason and "later", HEY's per-person answer, Downloads' side panel. -->
+	{#snippet banner(a: Ask)}
+		{@const w = ctx.who(a)}
+		<section class="bn" aria-label="Needs you most">
+			{#key a.id}
+				{@render fill(a, 'bn-bg')}
+				<div class="bn-in">
+					<button type="button" class="bn-art" aria-label="Open {a.name}" onclick={(e) => open(a, e.currentTarget)}>{@render pic(a, 'bn-pic')}</button>
+					<div class="bn-t">
+						<span class="dk-eyebrow">Needs you most · waiting {days(a.asked_at) ? plural(days(a.asked_at), 'day') : 'since today'}</span>
+						<h2>{a.name}</h2>
+						<p class="bn-meta">{kindWord(a.kind)}{a.year ? ` · ${a.year}` : ''}{a.kind !== 'movie' ? ` · ${line(a)}` : ''}</p>
+						<p class="bn-who"><Avatar name={w.name} src={w.avatar} size={26} /><span><strong>{w.name}</strong> asked {ago(a.asked_at)}</span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
+						{#if a.note}<p class="bn-note">&ldquo;{a.note}&rdquo;</p>{/if}
+						<div class="sr-act">
+							<button type="button" class="dk-b yes big-b" onclick={() => ctx.approve([a])}><Icon name="check" size={18} /><span>Approve</span></button>
+							<button type="button" class="dk-b no big-b glassy" onclick={() => ctx.turnDown([a])}><Icon name="x" size={18} /><span>Turn down</span></button>
+							<button type="button" class="dk-b no big-b glassy" onclick={(e) => open(a, e.currentTarget)}><Icon name="info" size={18} /><span>Details</span></button>
+						</div>
+					</div>
+				</div>
+			{/key}
+		</section>
+	{/snippet}
+	{#snippet row(a: Ask, i: number, opts: { who?: boolean; later?: boolean; reason?: boolean; pick?: boolean } = {})}
+		{@const w = ctx.who(a)}
+		{@const on = openRow === a.id}
+		<li class="dk" class:on class:answered={!waiting(a)} class:cur={opts.pick && pickedAsk?.id === a.id} style="--i: {i}">
+			{#if art(a)}{@render fill(a, 'dk-glow')}{/if}
+			<div class="dk-row" class:nowho={opts.who === false}>
+				<button class="dk-hit" type="button" aria-expanded={opts.pick ? undefined : on} onclick={() => (opts.pick ? (pickedId = a.id) : (openRow = on ? 0 : a.id))}>
+					<span class="dk-art">{@render pic(a, 'dk-pic')}{#if waiting(a)}<span class="dk-dot" aria-hidden="true"></span>{/if}</span>
+					<span class="dk-t"><span class="dk-kind">{kindWord(a.kind)}{a.year ? ` · ${a.year}` : ''}</span><strong>{a.name}</strong>{#if a.kind !== 'movie'}<span class="muted">{line(a)}</span>{/if}</span>
+				</button>
+				{#if opts.who !== false}<span class="dk-who"><Avatar name={w.name} src={w.avatar} size={30} /><span><strong>{w.name}{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</strong><time class="muted" datetime={a.asked_at} title={dateTime(a.asked_at)}>asked {ago(a.asked_at)}</time></span></span>{/if}
+				<span class="dk-act">
+					{#if waiting(a)}
+						{#if opts.later}<button type="button" class="dk-b no ghost" title="Hide it until you come back" onclick={() => (later = new Set(later).add(a.id))}><Icon name="clock" size={16} /><span>Later</span></button>{/if}
+						<button type="button" class="dk-b no" data-testid="ask-decline" onclick={() => (opts.reason ? (reasonFor = reasonFor === a.id ? 0 : a.id) : ctx.turnDown([a]))}><Icon name="x" size={16} /><span>Turn down</span></button>
+						<button type="button" class="dk-b yes" data-testid="ask-approve" onclick={() => ctx.approve([a])}><Icon name="check" size={16} /><span>Approve</span></button>
+					{:else if ctx.isPending(a.id)}<span class="sending">Sending your answer…</span>
+					{:else}<StatusPill kind={ctx.pill(a).kind} label={ctx.pill(a).label} />{/if}
+				</span>
+				{#if !opts.pick}<button class="caret dk-caret" type="button" aria-expanded={on} aria-label="{on ? 'Hide' : 'Show'} details for {a.name}" onclick={() => (openRow = on ? 0 : a.id)}><Icon name="chevronDown" size={16} /></button>{/if}
+			</div>
+			{#if opts.reason && reasonFor === a.id && waiting(a)}
+				<form class="why" transition:slide={{ duration: 200 }} onsubmit={(e) => { e.preventDefault(); ctx.turnDownWith(a, reasonText.trim()); reasonFor = 0; reasonText = ''; }}>
+					<label for="why-{a.id}">Tell {w.name} why <span class="muted">(optional, they’ll see it)</span></label>
+					<div class="why-row">
+						<input id="why-{a.id}" class="input" bind:value={reasonText} maxlength="300" placeholder="We already have it on another service" />
+						<button type="submit" class="dk-b no">Turn down</button>
+					</div>
+					<div class="why-chips">{#each ['Already have it', 'Not for kids', 'Not out yet', 'Too big right now'] as c (c)}<button type="button" class="chip-s" onclick={() => (reasonText = c)}>{c}</button>{/each}</div>
+				</form>
+			{/if}
+			{#if !opts.pick && on}
+				<div class="dk-more" transition:slide={{ duration: 260 }}>
+					<span class="dk-more-art">{@render pic(a, 'dk-big')}</span>
+					<div class="dk-more-txt">{@render facts(a)}<div class="dk-more-act"><Button size="sm" type="button" onclick={(e: MouseEvent) => open(a, e.currentTarget as HTMLElement)}>Choose seasons, folder and rules</Button></div></div>
+				</div>
+			{/if}
+		</li>
+	{/snippet}
+
+	{#if look === 15}
+		<!-- 15 Banner + Desk: the one that needs you most up top, the rest as Desk rows. -->
+		<div class="desk" data-look="banner-desk">
+			{#if mostNeeded}{@render banner(mostNeeded)}{:else}{@render empty('You’re all caught up. New asks land here the moment someone asks.')}{/if}
+			{#if shown.filter((a) => a.id !== mostNeeded?.id).length}
+				<h3 class="un-h">{ctx.tab === 'waiting' ? 'Also waiting' : 'In this list'}</h3>
+				<ul class="dk-list">{#each shown.filter((a) => a.id !== mostNeeded?.id) as a, i (a.id)}{@render row(a, i)}{/each}</ul>
+			{/if}
+		</div>
+	{:else if look === 16}
+		<!-- 16 Banner + shelves by state (QuickBox): poster shelves you scroll sideways. -->
+		<div class="desk wide" data-look="banner-shelves">
+			{#if mostNeeded}{@render banner(mostNeeded)}{/if}
+			{#each shelves as sh (sh.id)}
+				{#if sh.asks.length}
+					<section class="shelf-s" aria-labelledby="sh-{sh.id}">
+						<h3 class="un-h" id="sh-{sh.id}">{sh.title}<span class="rn">{sh.asks.length}</span></h3>
+						<ul class="un-shelf">
+							{#each sh.asks as a (a.id)}
+								<li animate:flip={{ duration: 260 }}>
+									<div class="un-card">
+										<button type="button" class="un-art" aria-label="Open {a.name}" onclick={(e) => open(a, e.currentTarget)}>{@render pic(a, 'un-cpic')}<span class="pg-av"><Avatar name={ctx.who(a).name} src={ctx.who(a).avatar} size={24} /></span></button>
+										<span class="pg-n">{a.name}</span>
+										<span class="muted">{ctx.who(a).name} · {ago(a.asked_at)}</span>
+										{#if waiting(a)}
+											<span class="shelf-act">
+												<button type="button" class="tk no" aria-label="Turn down {a.name}" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /></button>
+												<button type="button" class="tk yes" aria-label="Approve {a.name}" onclick={() => ctx.approve([a])}><Icon name="check" size={15} /></button>
+											</span>
+										{/if}
+									</div>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
+			{/each}
+		</div>
+	{:else if look === 17}
+		<!-- 17 Triage: Desk rows with a reason on turn-down and "Later" (Linear). -->
+		<div class="desk" data-look="triage">
+			<header class="tri-top">
+				<div><h2>{triage.length ? `${plural(triage.length, 'ask')} to triage` : later.size ? 'Only the ones you set aside are left' : 'Inbox zero'}</h2><p class="muted">Approve, turn down with a reason, or set it aside for later.</p></div>
+				{#if later.size}<button type="button" class="pill-btn" onclick={() => (later = new Set())}>Show {plural(later.size, 'ask')} set aside</button>{/if}
+			</header>
+			<ul class="dk-list">{#each triage as a, i (a.id)}{@render row(a, i, { later: true, reason: true })}{:else}<li class="dk-empty">{@render empty('Nothing left to triage.')}</li>{/each}</ul>
+		</div>
+	{:else if look === 18}
+		<!-- 18 By person (HEY): answer per person, or one ask at a time. -->
+		<div class="desk" data-look="by-person">
+			{#each persons as p (p.who.id)}
+				<section class="per" aria-labelledby="pe-{p.who.id}">
+					<header class="per-h">
+						<Avatar name={p.who.name} src={p.who.avatar} size={44} />
+						<div><h2 id="pe-{p.who.id}">{p.who.name}{#if p.who.kid}<KidMark label="Kid" size="sm" />{/if}</h2><p class="muted">{p.asks.filter(waiting).length ? `${plural(p.asks.filter(waiting).length, 'ask')} waiting · last asked ${ago(p.asks[0].asked_at)}` : 'Nothing waiting'}</p></div>
+						{#if p.asks.filter(waiting).length > 1}<button type="button" class="dk-b yes" onclick={() => ctx.approve(p.asks.filter(waiting))}><Icon name="check" size={16} /><span>Approve all from {p.who.name}</span></button>{/if}
+					</header>
+					<ul class="dk-list">{#each p.asks as a, i (a.id)}{@render row(a, i, { who: false })}{/each}</ul>
+				</section>
+			{:else}
+				{@render empty('Nothing here right now.')}
+			{/each}
+		</div>
+	{:else if look === 19}
+		<!-- 19 Desk + panel: Desk rows on the left, the picked ask large on the right (Downloads' side panel). -->
+		<div class="dp" data-look="desk-panel">
+			<ul class="dk-list">{#each shown as a, i (a.id)}{@render row(a, i, { pick: true, who: true })}{:else}<li class="dk-empty">{@render empty('Nothing here right now.')}</li>{/each}</ul>
+			<aside class="sr-stage dp-panel" aria-label="The picked ask">
+				{#if pickedAsk}
+					{@const cur = pickedAsk}
+					{#key cur.id}
+						{@render fill(cur, 'sr-bg')}
+						<div class="sr-in">
+							<div class="sr-head">{@render pic(cur, 'sr-big')}<div class="sr-ht"><span class="dk-kind">{kindWord(cur.kind)}{cur.year ? ` · ${cur.year}` : ''}</span><h2>{cur.name}</h2>{#if cur.kind !== 'movie'}<p class="muted">{line(cur)}</p>{/if}</div></div>
+							<div class="glass">{@render facts(cur)}</div>
+							<div class="sr-act">
+								{#if waiting(cur)}
+									<button type="button" class="dk-b yes" onclick={() => ctx.approve([cur])}><Icon name="check" size={16} /><span>Approve</span></button>
+									<button type="button" class="dk-b no" onclick={() => ctx.turnDown([cur])}><Icon name="x" size={16} /><span>Turn down</span></button>
+								{:else}{@render answer(cur, 'md')}{/if}
+								<Button size="md" variant="plain" type="button" onclick={(e: MouseEvent) => open(cur, e.currentTarget as HTMLElement)}>Seasons, folder and rules</Button>
+							</div>
+						</div>
+					{/key}
+				{:else}
+					<div class="sr-zero"><Icon name="check" size={28} /><h2>All caught up</h2></div>
+				{/if}
+			</aside>
+		</div>
+	{/if}
 {:else if look === 10}
 	<!-- 10 Tracker: every ask shows where it is on its way. -->
 	<ul class="trk" data-look="tracker">
@@ -1037,6 +1212,54 @@
 	.ss-pic { width: 48px; border-radius: 8px; box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.5); }
 	.ss-done { color: var(--text-muted); font: var(--t-footnote); }
 
+	/* 15–19 */
+	.desk.wide { max-width: none; }
+	.bn { position: relative; isolation: isolate; overflow: hidden; margin-bottom: 8px; border-radius: 24px; background: #000; box-shadow: 0 0 0 1px var(--line), 0 30px 60px -30px rgb(0 0 0 / 0.6); }
+	.bn-bg { position: absolute; inset: -40px; z-index: -1; filter: blur(28px) saturate(1.35); opacity: 0.8; transform: scale(1.1); animation: fade 600ms var(--ease-out) both; }
+	.bn::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.5) 60%, rgb(0 0 0 / 0.15)), linear-gradient(0deg, rgb(0 0 0 / 0.45), transparent 60%); }
+	.bn-in { display: flex; gap: 32px; align-items: flex-end; padding: 36px; color: #fff; animation: pop 420ms var(--ease-out) both; }
+	.bn-art { flex: none; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 14px; }
+	.bn-pic { width: 180px; border-radius: 14px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12), 0 30px 60px -16px rgb(0 0 0 / 0.8); transition: transform var(--dur) var(--ease-out); }
+	.bn-art:hover .bn-pic { transform: translateY(-3px) rotate(-1deg); }
+	.bn-t { display: flex; flex-direction: column; gap: 8px; max-width: 620px; }
+	.bn-t .dk-eyebrow { color: rgb(255 255 255 / 0.72); }
+	.bn-t h2 { font-size: clamp(28px, 3.6vw, 44px); font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; }
+	.bn-meta { color: rgb(255 255 255 / 0.75); font: var(--t-callout); }
+	.bn-who { display: flex; align-items: center; gap: 10px; font: var(--t-callout); }
+	.bn-note { padding-left: 12px; border-left: 2px solid rgb(255 255 255 / 0.4); font: var(--t-body); font-style: italic; }
+	.dk.cur { box-shadow: 0 0 0 2px var(--accent), 0 18px 44px -18px rgb(0 0 0 / 0.45); }
+	.dk-row.nowho { grid-template-columns: minmax(0, 1fr) auto 36px; }
+	.ghost { background: none !important; color: var(--text-muted) !important; }
+	.ghost:hover { color: var(--text) !important; background: color-mix(in srgb, var(--text) 7%, transparent) !important; }
+	.shelf-s { margin-top: 8px; }
+	.shelf-s .un-h { display: flex; align-items: center; gap: 8px; }
+	.shelf-s .rn { margin-left: 0; }
+	.un-card { position: relative; }
+	button.un-art { padding: 0; border: 0; background: none; cursor: pointer; width: 100%; }
+	.shelf-act { display: flex; gap: 6px; margin-top: 6px; }
+	.shelf-act .tk { width: 30px; height: 30px; }
+	.tri-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+	.tri-top h2 { font: var(--t-title2); }
+	.tri-top p { font: var(--t-footnote); }
+	.why { display: flex; flex-direction: column; gap: 8px; padding: 4px 16px 16px 82px; }
+	.why label { font: var(--t-footnote); font-weight: 600; }
+	.why-row { display: flex; gap: 8px; }
+	.why-row .input { flex: 1; min-width: 0; }
+	.why-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+	.chip-s { min-height: 28px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; cursor: pointer; }
+	.chip-s:hover { background: var(--surface-3); color: var(--text); }
+	.per { margin-bottom: 26px; }
+	.per-h { display: flex; align-items: center; gap: 14px; margin: 0 4px 12px; }
+	.per-h > div { flex: 1; min-width: 0; }
+	.per-h h2 { display: flex; align-items: center; gap: 8px; font: var(--t-title3); }
+	.per-h p { font: var(--t-footnote); }
+	.dp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); gap: 18px; align-items: start; }
+	.dp .dk-row { grid-template-columns: minmax(0, 1fr) 170px auto; }
+	.dp-panel { position: sticky; top: calc(var(--topbar, 56px) + 12px); min-height: 0; }
+	.dp-panel .sr-in { padding: 24px; }
+	.dp-panel .sr-big { width: 130px; }
+	.dp-panel .sr-ht h2 { font: var(--t-title2); }
+
 	/* Sheets: side (3), rising over art (6), review window (9). */
 	.sheet { padding: 0; border: 0; color: var(--text); background: var(--bg); box-shadow: 0 0 0 1px var(--line), var(--shadow-modal); overflow: hidden; }
 	.sheet::backdrop { background: rgb(0 0 0 / 0.5); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
@@ -1113,6 +1336,12 @@
 		.dk-caret { grid-row: 1; grid-column: 2; }
 		.dk-more { grid-template-columns: minmax(0, 1fr); padding: 16px; }
 		.dk-more-art { display: none; }
+		.bn-in { flex-direction: column; align-items: flex-start; padding: 22px; gap: 18px; }
+		.bn-pic { width: 120px; }
+		.dp { grid-template-columns: minmax(0, 1fr); }
+		.dp-panel { display: none; }
+		.why { padding: 4px 12px 14px; }
+		.tri-top, .per-h { flex-wrap: wrap; }
 		.sheet.side { width: 100vw; border-radius: 0; }
 		.sheet.review { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; margin: 0; }
 		.sheet.rise { width: 100vw; }

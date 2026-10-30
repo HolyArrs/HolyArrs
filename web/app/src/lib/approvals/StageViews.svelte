@@ -54,7 +54,12 @@
 		{ value: 11, label: 'Desk' },
 		{ value: 12, label: 'Screening Room' },
 		{ value: 13, label: 'Up Next' },
-		{ value: 14, label: 'Split stacks' }
+		{ value: 14, label: 'Split stacks' },
+		{ value: 15, label: 'Banner + Desk' },
+		{ value: 16, label: 'Banner + shelves' },
+		{ value: 17, label: 'Triage' },
+		{ value: 18, label: 'By person' },
+		{ value: 19, label: 'Desk + panel' }
 	];
 	function setView(v: InboxView) {
 		view = v;
@@ -297,7 +302,7 @@
 	<div class="sbar">
 		{#if rowsView}
 			<Menu label="Status" variant="button" text={`${tabs.find((t) => t.tab === ctx.tab)?.label ?? 'Waiting'} · ${ctx.counts[ctx.tab]}`} icon="chevronDown" items={statusItems} width={220} />
-		{:else if ![2, 4, 8, 12, 14].includes(look)}
+		{:else if ![2, 4, 8, 12, 14, 16].includes(look)}
 		<div class="chips" role="group" aria-label="Show" data-testid="ask-tabs">
 			{#each tabs as t (t.tab)}
 				<span class="cw" class:zero={ctx.counts[t.tab] === 0}><Chip label={t.label} count={ctx.counts[t.tab]} selected={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)} /></span>
