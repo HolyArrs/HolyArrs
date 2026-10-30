@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -124,11 +125,13 @@ func trackerAllowed(v string, allowLocal bool) bool {
 	if metadataName(host) {
 		return false
 	}
-	if ip := net.ParseIP(host); ip != nil {
+	if ip, numeric := hostIP(host); ip != nil {
 		if !source.NotMetadata(ip) {
 			return false
 		}
 		return allowLocal || source.PublicOnly(ip)
+	} else if numeric {
+		return false
 	}
 	if !allowLocal && oddHost(host) {
 		return false
@@ -210,8 +213,60 @@ func peerAllowed(k, v string) bool {
 	if metadataName(host) {
 		return false
 	}
-	if ip := net.ParseIP(host); ip != nil && !source.NotMetadata(ip) {
-		return false
+	ip, numeric := hostIP(host)
+	if ip != nil {
+		return source.NotMetadata(ip)
 	}
-	return true
+	return !numeric
+}
+
+// hostIP reads a host as an address the way inet_aton and resolvers do:
+// IPv6 (zone dropped) or one to four dotted parts in decimal, octal or 0x
+// hex. numeric says the host looks like a number form even when it fails
+// to parse (such a host is refused).
+func hostIP(host string) (ip net.IP, numeric bool) {
+	h := strings.Trim(host, "[]")
+	if i := strings.IndexByte(h, '%'); i >= 0 && strings.Contains(h, ":") {
+		h = h[:i]
+	}
+	if strings.Contains(h, ":") {
+		if ip := net.ParseIP(h); ip != nil {
+			return ip, true
+		}
+		return nil, true
+	}
+	parts := strings.Split(h, ".")
+	all := true
+	for _, p := range parts {
+		all = all && numberLabel(p)
+	}
+	if !all {
+		return nil, false
+	}
+	if len(parts) > 4 {
+		return nil, true
+	}
+	vals := make([]uint64, len(parts))
+	for i, p := range parts {
+		v, err := strconv.ParseUint(p, 0, 32)
+		if err != nil || p == "" {
+			return nil, true
+		}
+		vals[i] = v
+	}
+	last := len(vals) - 1
+	for i := 0; i < last; i++ {
+		if vals[i] > 255 {
+			return nil, true
+		}
+	}
+	if vals[last] >= 1<<(8*(4-last)) {
+		return nil, true
+	}
+	var n uint64
+	for i := 0; i < last; i++ {
+		n |= vals[i] << (8 * (3 - i))
+	}
+	n |= vals[last]
+	return net.IPv4(byte(n>>24), byte(n>>16), byte(n>>8), byte(n)), true
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -319,5 +320,25 @@ func TestPeersRefuseMetadataWithLocal(t *testing.T) {
 	}
 	if strings.Contains(got, "169.254") || strings.Contains(got, "metadata") || !strings.Contains(got, "192.168.1.5") || !strings.Contains(got, "192.168.1.2") {
 		t.Fatalf("kept %s", got)
+	}
+}
+
+func TestOddMetadataLiteralsWithLocal(t *testing.T) {
+	for _, h := range []string{"2852039166", "0xa9fea9fe", "169.254.43518", "0251.0376.0251.0376", "169.254.169.254.", "999.1.1.1"} {
+		if trackerAllowed("http://"+h+"/a", true) {
+			t.Errorf("tracker %s passed with local access", h)
+		}
+		if peerAllowed("ws", "http://"+h+"/s") || peerAllowed("x.pe", h+":80") {
+			t.Errorf("peer %s passed with local access", h)
+		}
+	}
+	if trackerAllowed("http://[fe80::1%25eth0]/a", true) || trackerAllowed("http://[fe80::1%25eth0]/a", false) || peerAllowed("x.pe", "[fe80::1%eth0]:80") {
+		t.Error("zoned link-local passed")
+	}
+	if !trackerAllowed("http://3232235777/a", true) || trackerAllowed("http://3232235777/a", false) {
+		t.Error("decimal 192.168.1.1: kept only with local access")
+	}
+	if ip, _ := hostIP("127.1"); !ip.Equal(net.IPv4(127, 0, 0, 1)) {
+		t.Errorf("127.1 read as %v", ip)
 	}
 }
