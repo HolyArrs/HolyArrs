@@ -285,3 +285,18 @@ export function askers(asks: Pick<Ask, 'asked_by' | 'people'>[]): { id: number; 
 export function askedByOne(a: Pick<Ask, 'asked_by' | 'people'>, id: number): boolean {
 	return a.asked_by.id === id || a.people.some((p) => p.id === id);
 }
+
+export type InboxView = 'list' | 'wall';
+/** loadView reads whether a member sees Approvals as a list or a poster wall (the wall when none is kept). */
+export function loadView(member: number | undefined, store: Store = globalThis.localStorage): InboxView {
+	try {
+		return store?.getItem(key('view', member)) === 'list' ? 'list' : 'wall';
+	} catch {
+		return 'wall';
+	}
+}
+export function saveView(member: number | undefined, v: InboxView, store: Store = globalThis.localStorage) {
+	try {
+		store?.setItem(key('view', member), v);
+	} catch { /* Private windows may refuse. */ }
+}

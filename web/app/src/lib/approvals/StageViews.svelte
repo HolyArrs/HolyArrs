@@ -22,7 +22,7 @@
 	import { ago, dateTime } from '../format.ts';
 	import { kindWord, personGroups, type ApprovalsCtx } from './approvals.ts';
 	import { type GroupBy } from './inbox.ts';
-	import { askSummary, dateGroups, groupByWords, inboxTabs, loadGroupBy, loadPanel, loadSize, saveGroupBy, savePanel, saveSize, showNotOut, sizeLabels, watchSeason, type InboxSize } from './inbox.ts';
+	import { askSummary, dateGroups, groupByWords, inboxTabs, loadGroupBy, loadPanel, loadSize, loadView, saveGroupBy, savePanel, saveSize, saveView, type InboxView, showNotOut, sizeLabels, watchSeason, type InboxSize } from './inbox.ts';
 	import { artistPhoto } from './details.svelte.ts';
 	import type { Ask } from '../types.ts';
 
@@ -32,6 +32,12 @@
 	let size = $state<InboxSize>('m');
 	let listOpen = $state(true);
 	let groupBy = $state<GroupBy>('type');
+	// The poster wall (posters like Explore, asker on each) or the list beside the Stage.
+	let view = $state<InboxView>('wall');
+	function setView(v: InboxView) {
+		view = v;
+		saveView(ctx.me, v);
+	}
 	function setGroup(g: GroupBy) {
 		groupBy = g;
 		saveGroupBy(ctx.me, g);
@@ -44,6 +50,7 @@
 		size = loadSize(me);
 		listOpen = loadPanel(me);
 		groupBy = loadGroupBy(me);
+		view = loadView(me);
 	});
 	function setSize(z: InboxSize) {
 		size = z;
@@ -104,7 +111,7 @@
 		const i = ctx.shown.findIndex((x) => x.id === a.id);
 		pickedId = a.id;
 		lastAt = Math.max(i, 0);
-		if (!wide) void openFull(a, el);
+		if (!wide || wall) void openFull(a, el);
 	}
 	function step(by: number) {
 		const n = ordered.length;
@@ -182,7 +189,8 @@
 	const groups = $derived<{ id: string | number; name: string; asks: Ask[] }[]>(groupBy === 'person' ? people : groupBy === 'date' ? dateGroups(ctx.shown) : types);
 	// The picked ask and the stepper follow the list as it is grouped on screen.
 	const ordered = $derived(groups.flatMap((g) => g.asks));
-	const split = $derived(wide && !oneByOne);
+	const wall = $derived(view === 'wall' && !oneByOne);
+	const split = $derived(wide && !oneByOne && !wall);
 	const emptyWord = $derived(ctx.tab === 'waiting' ? 'Inbox clear' : `Nothing ${inboxTabs.find((t) => t.tab === ctx.tab)?.label.toLowerCase()}`);
 </script>
 
@@ -237,6 +245,12 @@
 		</div>
 		<div class="tools">
 			<Menu label="Filter asks" variant="button" text={filterOn ? `Filter · ${filterOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={240} align="end" />
+			{#if !oneByOne}
+				<div class="seg" role="group" aria-label="View" data-testid="view-toggle">
+					<button type="button" class="gb" aria-pressed={view === 'wall'} onclick={() => setView('wall')}>Posters</button>
+					<button type="button" class="gb" aria-pressed={view === 'list'} onclick={() => setView('list')}>List</button>
+				</div>
+			{/if}
 			{#if !oneByOne}<Menu label="Poster size" variant="button" text={sizeLabels[size]} icon="chevronDown" items={sizeItems} width={200} align="end" />{/if}
 			{#if split}
 				<Button variant="secondary" size="md" icon="sidebar" aria-expanded={listOpen} aria-controls={listId} data-testid="list-toggle" onclick={() => setList(!listOpen)}>{listOpen ? 'Hide list' : 'Show list'}</Button>
@@ -275,6 +289,48 @@
 			</div>
 		{/if}
 
+		{#if wall}
+			<div class="groupby" role="group" aria-label="Group by" data-testid="group-by">
+				<span class="gb-l">Group by</span>
+				{#each ['type', 'person', 'date'] as const as g (g)}
+					<button type="button" class="gb" aria-pressed={groupBy === g} onclick={() => setGroup(g)}>{groupByWords[g]}</button>
+				{/each}
+			</div>
+			<div class="groups">
+				{#each groups as g (g.id)}
+					{@const w = groupBy === 'person' ? ctx.who(g.asks[0]) : null}
+					{@const open = g.asks.filter(waiting)}
+					<section class="group" aria-labelledby="w-{g.id}">
+						<header class="gh">
+							{#if w}<Avatar name={w.name} src={w.avatar} size={24} />{/if}
+							<h2 id="w-{g.id}">{w ? w.name : g.name}</h2>
+							{#if w}<KidMark label={w.kid} size="sm" />{/if}
+							<span class="gn">{g.asks.length}</span>
+							{#if ctx.choosable && open.length > 1}
+								<Button size="sm" variant="plain" icon="check" type="button" onclick={() => ctx.approve(open)}>Approve all {open.length}</Button>
+							{/if}
+						</header>
+						<ul class="wall" aria-label="{w ? `${w.name}'s` : g.name} asks" data-testid="ask-wall">
+							{#each g.asks as x (x.id)}
+								{@const p = ctx.who(x)}
+								<li class="tile" class:chosen={ctx.isChosen(x.id)} class:sending={ctx.isPending(x.id)} data-testid="ask">
+									<div class="art">
+										{@render thumb(x, 'cover')}
+										{#if groupBy !== 'person'}<span class="asker" title="Asked by {p.name}"><Avatar name={p.name} src={p.avatar} size={28} /></span>{/if}
+										{#if ctx.choosable}<span class="tick-at">{@render chooseBox(x)}</span>{/if}
+										{#if notOut(x)}<span class="soon at">Not out yet</span>{/if}
+									</div>
+									<button class="name" type="button" data-row={x.id} data-testid="ask-name" onclick={(e) => pick(x, e.currentTarget)}>{x.name}</button>
+									<span class="sub">{#if groupBy !== 'type'}{kindWord(x.kind)} · {/if}{line(x)}</span>
+									<span class="sub">{#if groupBy !== 'person'}{p.name} · {/if}<time datetime={x.asked_at} title={dateTime(x.asked_at)}>{ago(x.asked_at)}</time></span>
+									<div class="tq">{@render quick(x)}</div>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/each}
+			</div>
+		{:else}
 		<div class="split">
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="list" id={listId} onkeydown={listKeys} hidden={split && !listOpen ? true : undefined} inert={split && !listOpen}>
@@ -312,6 +368,7 @@
 				</section>
 			{/if}
 		</div>
+		{/if}
 	{/if}
 </div>
 
@@ -408,6 +465,29 @@
 	.gb[aria-pressed='true'] { background: var(--accent-fill); color: var(--on-accent, #fff); }
 	.gb:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
+	/* The poster wall: Explore's poster grid, one column width per Poster size. */
+	.seg { display: inline-flex; gap: 4px; }
+	.stage { --tile: 160px; }
+	.size-s { --tile: 128px; }
+	.size-l { --tile: 200px; }
+	.wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile), 1fr)); gap: 20px 14px; margin: 0; padding: 0 4px; list-style: none; }
+	.tile { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+	.tile .art { position: relative; margin-bottom: 6px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); transition: transform var(--dur-fast) var(--ease-out); }
+	.tile:has(.name:hover) .art { transform: translateY(-2px); }
+	.tile:has(.name:active) .art { transform: scale(0.98); }
+	.tile.chosen .art { box-shadow: 0 0 0 3px var(--accent); }
+	.cover { display: block; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; border-radius: 10px; overflow: hidden; background: var(--surface-3); }
+	.cover > img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
+	.asker { position: absolute; right: 6px; bottom: 6px; display: inline-flex; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg); }
+	.tick-at { position: absolute; left: 8px; top: 8px; z-index: 1; }
+	.soon.at { position: absolute; left: 6px; bottom: 8px; }
+	.tile .name { min-height: 22px; white-space: nowrap; }
+	.sub { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.tq { position: relative; z-index: 1; display: flex; min-height: 32px; margin-top: 6px; }
+	.tq .quick { gap: 8px; }
+	.tile .tick, .asker { z-index: 1; }
+	.tile:has(.name:focus-visible) .art { box-shadow: 0 0 0 2px var(--accent), var(--focus-ring); }
+
 	.calm { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 56px 20px; text-align: center; color: var(--text-muted); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	.calm h2 { font: var(--t-headline); color: var(--text); }
 	.muted { color: var(--text-muted); }
@@ -433,6 +513,10 @@
 		.tools > :global(*) { flex: 1 1 auto; }
 		.lhead { border-radius: var(--r-card); }
 		.row { padding: 10px; gap: 10px; }
+		.stage { --tile: 104px; }
+		.size-s { --tile: 88px; }
+		.size-l { --tile: 140px; }
+		.wall { gap: 16px 10px; padding: 0; }
 		.name { min-height: 32px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
