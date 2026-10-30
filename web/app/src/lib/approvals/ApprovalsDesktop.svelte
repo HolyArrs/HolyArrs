@@ -41,14 +41,14 @@
 		{ k: 'show', label: 'TV shows', icon: 'tv' },
 		{ k: 'artist', label: 'Music', icon: 'music' }
 	];
-	// Card frames Luis is comparing on the pill bar (?view=0…4): the same card, five frames.
+	// Card frames Luis is comparing on the pill bar (?view=0…4), all in the window's own pattern.
 	let look = $state(0);
 	const looks = [
 		{ value: 0, label: 'Now' },
-		{ value: 1, label: 'Full art' },
-		{ value: 2, label: 'Inset' },
-		{ value: 3, label: 'Glass' },
-		{ value: 4, label: 'Clean edge' }
+		{ value: 1, label: 'Window' },
+		{ value: 2, label: 'Window light' },
+		{ value: 3, label: 'Rows' },
+		{ value: 4, label: 'Full window' }
 	];
 
 	// The raised plate slides to the picked item in each group (as on Downloads).
@@ -203,9 +203,12 @@
 					<div class="ban" aria-hidden="true">
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else}<span class="ban-img soft" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
 						<span class="ban-kind">{kindOf(a)}</span>
+						<span class="ban-cap"><span class="ban-t">{a.name}</span><span class="ban-f">{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></span>
 					</div>
 					<span class="cover" aria-hidden="true">{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}</span>
+					<div class="sheet-b">
 					<div class="body">
+						<span class="row-cov" aria-hidden="true">{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}</span>
 						<h3 class="title">{a.name}</h3>
 						<span class="wants">{[a.year, wants(a)].filter(Boolean).join(' · ')}</span>
 						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><span><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
@@ -223,6 +226,7 @@
 								{/if}
 							</span>
 						{/if}
+					</div>
 					</div>
 					<span class="life tone-{approving.has(a.id) ? 'ok' : life.tone}" aria-hidden="true"><span class="fill" style:width="{approving.has(a.id) ? 100 : life.pct}%"></span></span>
 					{#if approving.has(a.id)}
@@ -334,42 +338,59 @@
 	.tone-off .fill { background: rgb(127 127 127 / 0.45); }
 	.tone-bad .fill { background: var(--fail, #e5484d); }
 	.answered .ban-img { filter: saturate(0.7); }
-	/* Frame trials (pill bar). 1 Full art: the art fills the card and fades to dark; text on the art. */
-	.look-1 .bc { padding-top: 92px; background: #0b0b0c; color: #fff; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -16px rgb(0 0 0 / 0.6); }
-	.look-1 .ban { position: absolute; inset: 0; z-index: -1; height: auto; border-radius: inherit; }
-	.look-1 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.25) 0%, transparent 18%, rgb(0 0 0 / 0.55) 48%, rgb(0 0 0 / 0.92) 72%); }
-	.look-1 .cover { margin-top: 0; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.18), 0 14px 28px -12px rgb(0 0 0 / 0.8); }
-	.look-1 .bc.music .cover { margin-top: 12px; }
-	.look-1 .title { color: #fff; }
-	.look-1 .wants, .look-1 .who { color: rgb(255 255 255 / 0.72); }
-	.look-1 .who b { color: #fff; }
-	.look-1 .b.no { background: rgb(255 255 255 / 0.14); color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-	.look-1 .b.yes { background: #fff; color: #0b0b0c; }
-	.look-1 .state { color: rgb(255 255 255 / 0.75); }
-	/* 2 Inset: the banner is its own rounded picture inside the card, a clean edge and no fade. */
+	/* Hooks the frame trials use; hidden on the plain card. */
+	.ban-cap, .row-cov { display: none; }
+	.sheet-b { display: contents; }
+	.ban-cap { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 1; flex-direction: column; gap: 3px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.5); }
+	.ban-t { font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+	/* The window family: a dark banner with the title on the art, then the frosted sheet (as in the window). */
+	.look-1 .bc, .look-2 .bc, .look-4 .bc { --sheet: color-mix(in srgb, var(--bg) 88%, transparent); }
+	.look-1 .ban-cap, .look-2 .ban-cap, .look-4 .ban-cap { display: flex; }
+	.look-1 .ban-kind, .look-2 .ban-kind, .look-4 .ban-kind { display: none; }
+	.look-1 .cover, .look-2 .cover, .look-4 .cover, .look-1 .title, .look-2 .title, .look-4 .title, .look-1 .wants, .look-2 .wants, .look-4 .wants { display: none; }
+	.look-1 .ban::after, .look-2 .ban::after, .look-4 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.15), transparent 30%, rgb(0 0 0 / 0.72)); }
+	.look-1 .sheet-b, .look-2 .sheet-b, .look-4 .sheet-b, .look-3 .sheet-b { display: flex; flex-direction: column; flex: 1; }
+
+	/* 1 Window: a dark card; a frosted sheet overlaps the banner's foot. */
+	.look-1 .bc { background: #0b0b0c; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -16px rgb(0 0 0 / 0.6); }
+	.look-1 .ban { height: 190px; }
+	.look-1 .ban-cap { bottom: 30px; }
+	.look-1 .sheet-b { position: relative; z-index: 1; margin: -20px 8px 8px; border-radius: 16px; background: var(--sheet); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 14px 30px -14px rgb(0 0 0 / 0.6); }
+	.look-1 .body { padding: 12px 12px 0; }
+	.look-1 .who { margin-top: 0; }
+	.look-1 .foot { padding: 12px; }
+
+	/* 2 Window light: the banner inset with the title on the art, the sheet as the card itself. */
 	.look-2 .bc { padding: 8px 8px 0; }
-	.look-2 .ban { height: 142px; border-radius: 13px; }
-	.look-2 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.22), transparent 35%); }
-	.look-2 .cover { margin-left: 12px; box-shadow: 0 0 0 4px var(--surface-1), 0 14px 28px -12px rgb(0 0 0 / 0.55); }
+	.look-2 .ban { height: 170px; border-radius: 14px; }
 	.look-2 .body { padding: 12px 6px 0; }
-	.look-2 .foot { padding: 14px 6px 14px; }
-	/* 3 Glass: the art, blurred, is the card itself; the facts sit on frosted glass. */
-	.look-3 .bc { background: transparent; }
-	.look-3 .ban { position: absolute; inset: 0; z-index: -1; height: auto; border-radius: inherit; }
-	.look-3 .ban-img { filter: blur(26px) saturate(1.5); transform: scale(1.3); }
-	.look-3 .bc:hover .ban-img:not(.soft) { transform: scale(1.35); }
-	.look-3 .ban::after { background: color-mix(in srgb, var(--surface-1) 62%, transparent); }
-	.look-3 .ban-kind { display: none; }
-	.look-3 .cover { margin-top: 16px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.2), 0 18px 36px -14px rgb(0 0 0 / 0.6); }
-	.look-3 .bc.music .cover { margin-top: 28px; }
-	.look-3 .b.no { background: color-mix(in srgb, var(--surface-1) 55%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-	/* 4 Clean edge: no fade at all, a hard line under the banner, a firmer border, tighter corners. */
-	.look-4 .bc { border-radius: 14px; box-shadow: 0 0 0 1.5px var(--line-strong, var(--line)); }
-	.look-4 .bc:hover { box-shadow: 0 0 0 1.5px var(--text), 0 18px 36px -20px rgb(0 0 0 / 0.5); }
-	.look-4 .ban { border-radius: 14px 14px 0 0; border-bottom: 1.5px solid var(--line-strong, var(--line)); }
-	.look-4 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.22), transparent 30%); }
-	.look-4 .cover { border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line-strong, var(--line)), 0 10px 22px -12px rgb(0 0 0 / 0.5); }
-	.look-4 .b { border-radius: 8px; }
+	.look-2 .who { margin-top: 0; }
+	.look-2 .foot { padding: 12px 6px 14px; }
+
+	/* 3 Rows: the banner, then one hairline box like the picker's rows (cover, title, what), the asker, the answers. */
+	.look-3 .cover { display: none; }
+	.look-3 .ban { height: 120px; }
+	.look-3 .sheet-b { margin: 10px 10px 0; }
+	.look-3 .body { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 12px; row-gap: 1px; align-items: center; padding: 8px; border-radius: 12px; background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line), 0 1px 3px rgb(0 0 0 / 0.06); }
+	.look-3 .row-cov { display: block; grid-row: 1 / 3; width: 44px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; border-radius: 6px; overflow: hidden; background: var(--surface-3); }
+	.look-3 .bc.music .row-cov { aspect-ratio: 1; --poster-ratio: 1; }
+	.look-3 .row-cov img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.look-3 .title { font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+	.look-3 .who { grid-column: 1 / -1; margin: 10px 0 0 2px; }
+	.look-3 .foot { padding: 12px 10px 14px; }
+
+	/* 4 Full window: the art fills the dark card; the sheet floats at the bottom. */
+	.look-4 .bc { min-height: 330px; background: #0b0b0c; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -16px rgb(0 0 0 / 0.6); }
+	.look-4 .ban { position: absolute; inset: 0; z-index: -1; height: auto; border-radius: inherit; }
+	.look-4 .ban-cap { bottom: auto; top: 14px; }
+	.look-4 .ban::after { background: linear-gradient(to bottom, rgb(0 0 0 / 0.6), transparent 40%, rgb(0 0 0 / 0.35)); }
+	.look-4 .sheet-b { position: relative; z-index: 1; margin: auto 8px 8px; border-radius: 16px; background: var(--sheet); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 14px 30px -14px rgb(0 0 0 / 0.6); flex: none; }
+	.look-4 .body { padding: 12px 12px 0; }
+	.look-4 .who { margin-top: 0; }
+	.look-4 .foot { padding: 12px; }
+
 	.done { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--surface-1) 78%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text); font: var(--t-headline); }
 	.done-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ok); color: #fff; box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--ok) 80%, transparent); }
 	.calm { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 64px 20px; border-radius: 18px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); color: var(--text-muted); text-align: center; }
