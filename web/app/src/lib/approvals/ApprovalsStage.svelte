@@ -326,7 +326,7 @@
 	.life.edge { z-index: 3; height: 4px; background: rgb(255 255 255 / 0.12); }
 	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1), background 400ms var(--ease-out); }
 	.tone-wait .fill { background: var(--wait); }
-	.tone-go .fill { background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #fff)); background-size: 200% 100%; animation: flow 2.4s linear infinite; }
+	.tone-go .fill { background: linear-gradient(90deg, var(--info, #3b82f6), color-mix(in srgb, var(--info, #3b82f6) 55%, #fff)); background-size: 200% 100%; animation: flow 2.4s linear infinite; }
 	.tone-ok .fill { background: var(--ok); }
 	.tone-off .fill { background: rgb(127 127 127 / 0.45); }
 	.tone-bad .fill { background: var(--fail, #e5484d); }

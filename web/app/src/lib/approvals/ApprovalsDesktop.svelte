@@ -88,6 +88,15 @@
 		return { update: () => void tick().then(place), destroy: () => ro.disconnect() };
 	}
 
+	// What an empty tab says.
+	const calm: Record<string, { title: string; text: string }> = {
+		waiting: { title: 'You’re all caught up', text: 'New asks land here the moment someone asks.' },
+		approved: { title: 'Nothing on its way', text: 'Approved asks wait here while HolyArrs gets them.' },
+		declined: { title: 'Nothing turned down', text: 'Asks you say no to stay here, with your reason.' },
+		done: { title: 'Nothing finished yet', text: 'Asks move here once they’re in the Library.' },
+		failed: { title: 'Nothing needs a look', text: 'Asks that HolyArrs couldn’t finish show up here.' }
+	};
+
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
 	const banner = (a: Ask) => {
 		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] ?? '';
@@ -190,7 +199,7 @@
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban" aria-hidden="true">
-						{#if wide}<span class="ban-img" style:background-image={`url("${wide}")`}></span>{:else}<span class="ban-img soft" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
+						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" onload={(e) => e.currentTarget.classList.add('in')} />{:else}<span class="ban-img soft" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
 						<span class="ban-kind">{kindOf(a)}</span>
 					</div>
 					<span class="cover" aria-hidden="true">{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.poster} name={a.name} />{/if}</span>
@@ -217,8 +226,8 @@
 			{:else}
 				<li class="calm">
 					<span class="calm-ic"><Icon name="check" size={24} /></span>
-					<h2>{ctx.tab === 'waiting' ? 'You’re all caught up' : 'Nothing here right now'}</h2>
-					<p>{ctx.tab === 'waiting' ? 'New asks land here the moment someone asks.' : 'Pick another tab, or another type.'}</p>
+					<h2>{calm[ctx.tab]?.title ?? 'Nothing here right now'}</h2>
+					<p>{ctx.kind !== 'all' ? 'Nothing of this type here. Try All.' : (calm[ctx.tab]?.text ?? '')}</p>
 				</li>
 			{/each}
 		</ul>
@@ -271,10 +280,12 @@
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.open:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 	.ban { position: relative; height: 128px; overflow: hidden; background: var(--surface-3); }
-	.ban-img { position: absolute; inset: 0; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1); }
+	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms var(--ease-out); }
+	img.ban-img { opacity: 0; }
+	img.ban-img:global(.in) { opacity: 1; }
 	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
 	.bc:hover .ban-img:not(.soft) { transform: scale(1.08); }
-	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.25), transparent 40%, color-mix(in srgb, var(--surface-1) 85%, transparent) 100%); }
+	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0%, transparent 35%, transparent 55%, var(--surface-1) 100%); }
 	.ban-kind { position: absolute; top: 10px; left: 10px; z-index: 1; padding: 3px 9px; border-radius: 999px; background: rgb(12 12 14 / 0.55); color: #fff; font: 600 11px/1.3 var(--font-ui); letter-spacing: 0.04em; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 	.cover { position: relative; z-index: 0; display: block; width: 72px; aspect-ratio: 2 / 3; --poster-ratio: 2 / 3; margin: -54px 0 0 14px; border-radius: 8px; overflow: hidden; background: var(--surface-3); box-shadow: 0 0 0 3px var(--surface-1), 0 14px 28px -12px rgb(0 0 0 / 0.7); transition: transform 300ms var(--ez); }
 	.cover img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
@@ -293,13 +304,13 @@
 	.state { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; color: var(--text-muted); font: var(--t-footnote); }
 	.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 	.state.tone-wait .dot { background: var(--wait); }
-	.state.tone-go .dot { background: var(--accent); }
+	.state.tone-go .dot { background: var(--info, #3b82f6); }
 	.state.tone-ok .dot { background: var(--ok); }
 	.state.tone-bad .dot { background: var(--fail, #e5484d); }
 	.life { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 3px; overflow: hidden; background: rgb(127 127 127 / 0.1); }
 	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.tone-wait .fill { background: var(--wait); }
-	.tone-go .fill { background: var(--accent); }
+	.tone-go .fill { background: var(--info, #3b82f6); }
 	.tone-ok .fill { background: var(--ok); }
 	.tone-off .fill { background: rgb(127 127 127 / 0.45); }
 	.tone-bad .fill { background: var(--fail, #e5484d); }
