@@ -6,7 +6,8 @@
 	// inside the same frame: the seasons and episodes (or albums and songs) to
 	// keep, the Pick rule, then Approve. Every ask carries its life-cycle line.
 	import { tick } from 'svelte';
-	import { fly } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
 	import { cubicOut } from 'svelte/easing';
 	import Billboard from '../ui/Billboard.svelte';
 	import Poster from '../Poster.svelte';
@@ -43,6 +44,15 @@
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
 	const count = (a: Ask) => (a.kind === 'movie' ? '' : (askSummary(a, ctx.info(a)).line.split(' · ').at(-1) ?? ''));
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
+
+	// What an empty tab says.
+	const calm: Record<string, { icon: IconName; title: string; text: string }> = {
+		waiting: { icon: 'check', title: 'You’re all caught up', text: 'New asks land here the moment someone asks.' },
+		approved: { icon: 'download', title: 'Nothing on its way', text: 'Approved asks wait here while HolyArrs gets them.' },
+		declined: { icon: 'declined', title: 'Nothing turned down', text: 'Asks you say no to stay here, with your reason.' },
+		done: { icon: 'film', title: 'Nothing finished yet', text: 'Asks move here once they’re in the Library.' },
+		failed: { icon: 'alert', title: 'Nothing needs a look', text: 'Asks that HolyArrs couldn’t finish show up here.' }
+	};
 
 	// Status tabs, built into the banner.
 	const tabs = $derived(inboxTabs.filter((t) => ctx.approver || t.tab !== 'failed'));
@@ -109,14 +119,38 @@
 		choosing = false;
 	}
 	function keys(e: KeyboardEvent) {
-		if (e.key === 'Escape' && choosing && !document.querySelector('dialog[open]')) {
+		if (document.querySelector('dialog[open]')) return;
+		if (e.key === 'Escape' && choosing) {
 			e.preventDefault();
 			choosing = false;
+			return;
 		}
+		// ↑ and ↓ move through the list (not while typing or choosing).
+		if ((e.key !== 'ArrowDown' && e.key !== 'ArrowUp') || choosing || e.metaKey || e.ctrlKey || e.altKey) return;
+		if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
+		const i = list.findIndex((a) => a.id === picked?.id);
+		const next = list[Math.min(Math.max(i + (e.key === 'ArrowDown' ? 1 : -1), 0), list.length - 1)];
+		if (!next || next.id === picked?.id) return;
+		e.preventDefault();
+		pickedId = next.id;
+		void tick().then(() => document.querySelector<HTMLElement>(`[data-row="${next.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
 	}
 </script>
 
 <svelte:window onkeydown={keys} />
+
+{#snippet tabBar()}
+<div class="tabbar">
+							<div class="tabs" role="tablist" aria-label="Show asks that are" bind:this={tabsEl}>
+								{#each tabs as t (t.tab)}
+									<button type="button" role="tab" class="tab" class:wait={t.tab === 'waiting'} aria-selected={ctx.tab === t.tab} data-tab={t.tab} onclick={() => ctx.setTab(t.tab)}>
+										{t.label}{#if ctx.counts[t.tab]}<span class="n">{ctx.counts[t.tab]}</span>{/if}
+									</button>
+								{/each}
+								<span class="ink" aria-hidden="true" style:transform="translateX({ink.x}px)" style:width="{ink.w}px"></span>
+							</div>
+						</div>
+{/snippet}
 
 {#snippet line(a: Ask, cls = '')}
 	{@const life = lifecycle(a)}
@@ -129,6 +163,7 @@
 	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
 		{#if picked}
 			{#key picked.id}
+			<div class="swap" in:fade={{ duration: 520 }} out:fade={{ duration: 360 }}>
 				<Billboard
 					label="{picked.name}, asked by {ctx.who(picked).name}"
 					testid="ask-banner"
@@ -139,18 +174,7 @@
 					position="60% 25%"
 					art={music && artistBg ? artistArt : undefined}
 				>
-					{#snippet top()}
-						<div class="tabbar">
-							<div class="tabs" role="tablist" aria-label="Show asks that are" bind:this={tabsEl}>
-								{#each tabs as t (t.tab)}
-									<button type="button" role="tab" class="tab" class:wait={t.tab === 'waiting'} aria-selected={ctx.tab === t.tab} data-tab={t.tab} onclick={() => ctx.setTab(t.tab)}>
-										{t.label}{#if ctx.counts[t.tab]}<span class="n">{ctx.counts[t.tab]}</span>{/if}
-									</button>
-								{/each}
-								<span class="ink" aria-hidden="true" style:transform="translateX({ink.x}px)" style:width="{ink.w}px"></span>
-							</div>
-						</div>
-					{/snippet}
+					{#snippet top()}{@render tabBar()}{/snippet}
 					{#snippet heading()}<h2 class="bb-name" id="stage-title">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
 						<p class="facts"><span>{kindOf(picked)}</span>{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
@@ -169,6 +193,7 @@
 						{/if}
 					{/snippet}
 				</Billboard>
+			</div>
 			{/key}
 			{@render line(picked, 'edge')}
 
@@ -202,7 +227,14 @@
 				</section>
 			{/if}
 		{:else}
-			<div class="calm"><Icon name="check" size={30} /><h2>You’re all caught up</h2><p>New asks land here the moment someone asks.</p></div>
+			<div class="calm">
+				<div class="calm-top">{@render tabBar()}</div>
+				<div class="calm-in" in:fade={{ duration: 400 }}>
+					<span class="calm-ic"><Icon name={calm[ctx.tab].icon} size={26} /></span>
+					<h2>{calm[ctx.tab].title}</h2>
+					<p>{calm[ctx.tab].text}</p>
+				</div>
+			</div>
 		{/if}
 	</div>
 
@@ -215,8 +247,8 @@
 		<ul class="rows">
 			{#each list as a (a.id)}
 				{@const w = ctx.who(a)}
-				<li>
-					<button type="button" class="row" class:on={picked?.id === a.id} class:unread={waiting(a)} aria-current={picked?.id === a.id ? 'true' : undefined} aria-controls="stage-title" onclick={() => (pickedId = a.id)}>
+				<li animate:flip={{ duration: 340, easing: cubicOut }} in:fly={{ y: 8, duration: 300, easing: cubicOut }} out:fade={{ duration: 220 }}>
+					<button type="button" class="row" data-row={a.id} class:on={picked?.id === a.id} class:unread={waiting(a)} aria-current={picked?.id === a.id ? 'true' : undefined} aria-controls="stage-title" onclick={() => (pickedId = a.id)}>
 						<span class="pic">{#if a.kind === 'artist' && artistPhoto(a)}<img src={artistPhoto(a)} alt="" loading="lazy" decoding="async" />{:else}<Poster src={a.kind === 'artist' ? null : a.poster} name={a.name} />{/if}</span>
 						<span class="txt">
 							<strong>{a.name}</strong>
@@ -312,8 +344,13 @@
 	.sum { flex: 1; color: var(--text-muted); font: var(--t-footnote); }
 	.sh-f .act.primary { background: var(--text); color: var(--bg); height: 44px; }
 
-	.calm { display: grid; place-content: center; justify-items: center; gap: 6px; height: 100%; background: var(--surface-1); color: var(--text-muted); text-align: center; }
-	.calm h2 { color: var(--text); font: var(--t-title2); }
+	.swap { position: absolute; inset: 0; }
+	.calm { position: relative; height: 100%; background: radial-gradient(120% 90% at 80% 0%, #24262d 0%, transparent 60%), linear-gradient(160deg, #18191e, #0b0b0c 75%); color: rgb(255 255 255 / 0.66); }
+	.calm-top { position: absolute; top: clamp(14px, 2vw, 24px); left: clamp(20px, 2vw, 40px); }
+	.calm-in { display: grid; place-content: center; justify-items: center; gap: 8px; height: 100%; text-align: center; padding: 24px; }
+	.calm-ic { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 6px; border-radius: 50%; background: rgb(255 255 255 / 0.08); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); }
+	.calm h2 { color: #fff; font: var(--t-title2); }
+	.calm p { max-width: 340px; font: var(--t-callout); }
 
 	/* The inbox on the right. */
 	.inbox { display: flex; flex-direction: column; gap: 10px; height: var(--h); min-width: 0; }
