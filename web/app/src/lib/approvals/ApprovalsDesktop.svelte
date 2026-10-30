@@ -137,6 +137,8 @@
 		win.style.setProperty('--ox', `${card.left + card.width / 2 - innerWidth / 2}px`);
 		win.style.setProperty('--oy', `${card.top + card.height / 2 - innerHeight / 2}px`);
 		if (!win.open) win.showModal();
+		// Focus the window itself, so no button opens wearing a focus ring.
+		win.focus({ preventScroll: true });
 	}
 	function hide() {
 		if (win?.open) win.close();
@@ -238,7 +240,7 @@
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<dialog class="win" bind:this={win} aria-label={openAsk?.name ?? 'Ask'} oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
+<dialog class="win" tabindex="-1" bind:this={win} aria-label={openAsk?.name ?? 'Ask'} oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
 		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} /></div>
@@ -332,6 +334,7 @@
 	.win[open] { animation: win-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 	.win::backdrop { background: rgb(0 0 0 / 0.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade-in 300ms var(--ease-out) both; }
 	.win-in { height: 100%; }
+	.win:focus { outline: none; }
 	.close { position: absolute; top: 18px; right: 18px; z-index: 10; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgb(20 20 24 / 0.55); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); cursor: pointer; transition: background 200ms var(--ease-out); }
 	.close:hover { background: rgb(20 20 24 / 0.8); }
 	.win :global(.ctl.top) { right: 68px !important; }

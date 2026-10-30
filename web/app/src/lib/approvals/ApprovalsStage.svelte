@@ -214,7 +214,7 @@
 							<div class="acts" class:gone={choosing}>
 								<button type="button" class="act primary" data-testid="ask-approve" onclick={() => ctx.approve([picked])}><Icon name="check" size={20} />Approve</button>
 								<button type="button" class="act glass" onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to get</button>
-								<button type="button" class="act glass round" aria-label="Turn down {picked.name}" title="Turn down" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} /></button>
+								<button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Turn down</button>
 							</div>
 						{:else if ctx.isPending(picked.id)}
 							<p class="state">Sending your answer…</p>
@@ -318,7 +318,7 @@
 	@keyframes drift { to { transform: scale(1.08) translate(-1.5%, -1%); } }
 
 	/* The title block lifts and shrinks into the corner; the frame stays. */
-	.frame :global(.ui-billboard .content) { transform-origin: left top; transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms var(--ease-out); }
+	.frame :global(.ui-billboard .content) { width: min(760px, 92%); transform-origin: left top; transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms var(--ease-out); }
 	.frame.choosing :global(.ui-billboard .content) { transform: translateY(calc(-1 * var(--lift))) scale(0.72); }
 	.frame.choosing :global(.ui-billboard .shade) { opacity: 1; background: linear-gradient(to bottom, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.35) 40%, rgb(0 0 0 / 0.75)); }
 	.facts { display: flex; flex-wrap: nowrap; align-items: center; gap: 0; white-space: nowrap; }
