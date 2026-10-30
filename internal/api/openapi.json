@@ -12169,16 +12169,16 @@
       "get": {
         "responses": {},
         "summary": "",
-        "x-holyarrs-part": "",
+        "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
-        "x-holyarrs-scope": "admin"
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/downloads/matches/run": {
       "post": {
         "responses": {},
         "summary": "",
-        "x-holyarrs-part": "",
+        "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
       }
@@ -12197,7 +12197,7 @@
         ],
         "responses": {},
         "summary": "",
-        "x-holyarrs-part": "",
+        "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
       }
