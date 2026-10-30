@@ -21,6 +21,7 @@ func (a *API) clientManageRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloaders/{id}/torrents", a.addTorrents)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/bulk", a.bulkItems)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/share-limits", a.shareLimits)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/slow-mode", a.slowMode)
 }
 
 // addTorrentsMax caps one add: qBittorrent itself takes 64 MiB a request.
@@ -296,4 +297,36 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
+}
+
+// slowMode turns a torrent Downloader's slower second set of speed limits
+// on or off.
+func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		return
+	}
+	var in struct {
+		On *bool `json:"on"`
+	}
+	if !decode(w, r, &in, `body is {"on": true or false}`) {
+		return
+	}
+	if in.On == nil {
+		fail(w, http.StatusBadRequest, `body is {"on": true or false}`)
+		return
+	}
+	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
+		t, ok := e.(downloader.SlowModer)
+		if !ok {
+			return downloader.ErrNotSupported
+		}
+		return t.SetSlowMode(r.Context(), *in.On)
+	})
+	if err != nil {
+		itemError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "slow_mode": *in.On})
 }

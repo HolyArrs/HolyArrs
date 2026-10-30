@@ -130,6 +130,8 @@
 	// qBittorrent's file priorities: 0 skip, 1 normal, 6 high, 7 maximum.
 	const PRIOS: { v: number; label: string }[] = [{ v: 0, label: 'Skip' }, { v: 1, label: 'Normal' }, { v: 6, label: 'High' }, { v: 7, label: 'Max' }];
 	const flagsOf = (p: { progress: number; speed: number; up_speed: number }) => `${p.progress >= 1 ? 'S ' : ''}${p.speed > 0 ? 'D ' : ''}${p.up_speed > 0 ? 'U' : ''}`.trim() || '–';
+	const CONN_WORD = { connected: 'Connected', firewalled: 'Firewalled', disconnected: 'Disconnected' } as const;
+	const CONN_HINT = { connected: 'Other peers can reach this Downloader.', firewalled: 'Downloading works, but other peers cannot connect in: open the listening port.', disconnected: 'The Downloader has no network.' } as const;
 	const TRACKER_WORD: Record<string, string> = { working: 'Working', not_contacted: 'Not contacted yet', not_working: 'Not working', error: 'Error', unreachable: 'Unreachable', disabled: 'Off' };
 
 	// The open download's real detail, read from the server (and through it
@@ -194,7 +196,7 @@
 	const fileIndexes = (files: TFile[], key: string) => files.filter((f) => f.name === key || f.name.startsWith(key + '/')).map((f) => f.index);
 
 	// What each Downloader says about itself (speeds, free space, totals).
-	type ClientStatus = { paused: boolean; speed: number; up_speed: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number };
+	type ClientStatus = { paused: boolean; speed: number; up_speed: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean };
 	type Client = { id: number; name: string; status?: ClientStatus; error?: string };
 	let clients = $state<Client[]>([]);
 	let clientsRead = $state(false);
@@ -205,6 +207,20 @@
 			clients = [];
 		}
 		clientsRead = true;
+	}
+	// Slow mode: a torrent Downloader's second, slower set of speed limits.
+	let slowBusy = $state(0);
+	async function setSlow(c: Client, on: boolean) {
+		slowBusy = c.id;
+		try {
+			await api.post(`/downloaders/${c.id}/slow-mode`, { on });
+			toasts.push(on ? `Slow mode on for ${c.name}.` : `Slow mode off for ${c.name}.`, 'ok');
+			await readClients();
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			slowBusy = 0;
+		}
 	}
 	const reporting = $derived(clients.filter((c) => c.status && !c.error));
 	const sumOf = (k: keyof ClientStatus) => reporting.reduce((n, c) => n + (Number(c.status?.[k]) || 0), 0);
@@ -1244,6 +1260,13 @@
 	<ul class="mo">
 		<li><i class="dot" class:ok={health === 'Connected'} aria-hidden="true"></i> {health}</li>
 		{#each clients.filter((c) => c.error) as c (c.id)}<li class="note">{c.name}: {c.error}</li>{/each}
+		{#each clients.filter((c) => c.status?.connection || c.status?.slow_mode != null) as c (c.id)}
+			<li class="cl" data-testid="sb-client">
+				{#if c.status?.connection}<span class="cn {c.status.connection}" data-testid="sb-connection" title={CONN_HINT[c.status.connection]}><i class="dot" aria-hidden="true"></i>{CONN_WORD[c.status.connection]}</span>{/if}
+				<span class="cname">{c.name}</span>
+				{#if c.status?.slow_mode != null}<label class="slow"><span>Slow mode</span><input type="checkbox" role="switch" checked={c.status.slow_mode} disabled={watch || slowBusy === c.id} onchange={(e) => setSlow(c, e.currentTarget.checked)} data-testid="sb-slow" /></label>{/if}
+			</li>
+		{/each}
 		{#if sumOf('session_down') || sumOf('session_up')}<li data-testid="sb-session"><span class="k">This session</span> ↓ {bytes(sumOf('session_down'))} · ↑ {bytes(sumOf('session_up'))}</li>{/if}
 		{#if sumOf('day_down') || sumOf('month_down') || sumOf('all_time_down')}
 			<li data-testid="sb-totals">{#if sumOf('day_down')}<span class="k">Today</span> {bytes(sumOf('day_down'))} · {/if}{#if sumOf('month_down')}<span class="k">Month</span> {bytes(sumOf('month_down'))} · {/if}<span class="k">All time</span> {sumOf('all_time_down') ? bytes(sumOf('all_time_down')) : '–'}</li>
@@ -1478,6 +1501,14 @@
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
+	.cl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
+	.cn { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+	.cn.connected .dot { background: var(--ok); }
+	.cn.firewalled .dot { background: var(--wait); }
+	.cn.disconnected .dot { background: var(--fail); }
+	.cname { color: var(--text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 60px; }
+	.slow { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; cursor: pointer; min-height: 32px; }
+	.slow input { width: 18px; height: 18px; accent-color: var(--accent); }
 	.mo { list-style: none; margin: 0; padding: 4px; display: grid; gap: 6px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.mo li.note { color: var(--text-muted); }
 	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }

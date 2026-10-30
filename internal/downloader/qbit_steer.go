@@ -87,3 +87,23 @@ func (q *Qbittorrent) SetShareLimits(ctx context.Context, hashes []string, l Sha
 	_, err = q.call(ctx, http.MethodPost, "torrents/setShareLimits", f)
 	return err
 }
+
+// SlowModer is the optional part of a torrent engine that turns the
+// client's second, slower set of speed limits on or off.
+type SlowModer interface {
+	SetSlowMode(ctx context.Context, on bool) error
+}
+
+// SetSlowMode reads the client's mode and flips it only when it differs,
+// which every 5.x version takes.
+func (q *Qbittorrent) SetSlowMode(ctx context.Context, on bool) error {
+	b, err := q.call(ctx, http.MethodGet, "transfer/speedLimitsMode", nil)
+	if err != nil {
+		return err
+	}
+	if (strings.TrimSpace(string(b)) == "1") == on {
+		return nil
+	}
+	_, err = q.call(ctx, http.MethodPost, "transfer/toggleSpeedLimitsMode", url.Values{})
+	return err
+}

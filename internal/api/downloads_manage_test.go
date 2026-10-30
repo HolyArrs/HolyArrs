@@ -163,6 +163,16 @@ func TestShareLimitsRoute(t *testing.T) {
 	}
 }
 
+// route: POST /api/v1/downloaders/{id}/slow-mode
+func TestSlowModeRoute(t *testing.T) {
+	_, f, base := manageBase(t)
+	do(t, "POST", base+"/slow-mode", `{"on":true}`, 200)
+	if !strings.Contains(f.saw(), "transfer/speedLimitsMode") || !strings.Contains(f.saw(), "transfer/toggleSpeedLimitsMode") {
+		t.Fatalf("calls %s", f.saw())
+	}
+	do(t, "POST", base+"/slow-mode", `{}`, 400)
+}
+
 // Seeding rules on an outside torrent that may end in a remove (the
 // torrent's own action, or the client's global one) need the settings
 // permission; an explicit stop on 5.2, or clearing every limit, does not.

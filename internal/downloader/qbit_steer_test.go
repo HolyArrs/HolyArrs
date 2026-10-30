@@ -58,3 +58,33 @@ func TestShareLimitsRead(t *testing.T) {
 		t.Fatal("no limits read as some")
 	}
 }
+
+func TestSlowModeFlipsOnlyWhenDifferent(t *testing.T) {
+	f, q := steerFake(t, "2.11.4")
+	f.answers["transfer/speedLimitsMode"] = "0"
+	if err := q.SetSlowMode(context.Background(), false); err != nil || f.count("transfer/toggleSpeedLimitsMode") != 0 {
+		t.Fatalf("off to off: %v %d", err, f.count("transfer/toggleSpeedLimitsMode"))
+	}
+	if err := q.SetSlowMode(context.Background(), true); err != nil || f.count("transfer/toggleSpeedLimitsMode") != 1 {
+		t.Fatalf("off to on: %v", err)
+	}
+	f.answers["transfer/speedLimitsMode"] = "1"
+	_ = q.SetSlowMode(context.Background(), true)
+	if f.count("transfer/toggleSpeedLimitsMode") != 1 {
+		t.Fatal("on to on flipped")
+	}
+}
+
+func TestStatusReadsConnection(t *testing.T) {
+	f, q := steerFake(t, "2.15.1")
+	f.answers["sync/maindata"] = `{"server_state":{"connection_status":"firewalled","use_alt_speed_limits":true}}`
+	st, err := q.Status(context.Background())
+	if err != nil || st.Connection != "firewalled" || st.SlowMode == nil || !*st.SlowMode {
+		t.Fatalf("%+v %v", st, err)
+	}
+	f.answers["sync/maindata"] = `{"server_state":{"connection_status":"weird"}}`
+	st, _ = q.Status(context.Background())
+	if st.Connection != "" || st.SlowMode != nil {
+		t.Fatalf("%+v", st)
+	}
+}

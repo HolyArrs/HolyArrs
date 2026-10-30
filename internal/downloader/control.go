@@ -33,6 +33,10 @@ type ClientStatus struct {
 	DayDown     int64 `json:"day_down"`
 	MonthDown   int64 `json:"month_down"`
 	FreeSpace   int64 `json:"free_space"`
+	// Torrent clients: connected, firewalled or disconnected ("" when not
+	// reported), and whether the slower second set of speed limits is on.
+	Connection string `json:"connection,omitempty"`
+	SlowMode   *bool  `json:"slow_mode,omitempty"`
 }
 
 // Tracker is one tracker of a torrent.
@@ -342,15 +346,17 @@ func (q *Qbittorrent) Status(ctx context.Context) (ClientStatus, error) {
 	var md struct {
 		Torrents    map[string]struct{ State string } `json:"torrents"`
 		ServerState struct {
-			AllTimeDL int64 `json:"alltime_dl"`
-			AllTimeUL int64 `json:"alltime_ul"`
-			DLData    int64 `json:"dl_info_data"`
-			ULData    int64 `json:"up_info_data"`
-			DLSpeed   int64 `json:"dl_info_speed"`
-			ULSpeed   int64 `json:"up_info_speed"`
-			DLLimit   int64 `json:"dl_rate_limit"`
-			ULLimit   int64 `json:"up_rate_limit"`
-			Free      int64 `json:"free_space_on_disk"`
+			AllTimeDL int64  `json:"alltime_dl"`
+			AllTimeUL int64  `json:"alltime_ul"`
+			DLData    int64  `json:"dl_info_data"`
+			ULData    int64  `json:"up_info_data"`
+			DLSpeed   int64  `json:"dl_info_speed"`
+			ULSpeed   int64  `json:"up_info_speed"`
+			DLLimit   int64  `json:"dl_rate_limit"`
+			ULLimit   int64  `json:"up_rate_limit"`
+			Free      int64  `json:"free_space_on_disk"`
+			Conn      string `json:"connection_status"`
+			Alt       *bool  `json:"use_alt_speed_limits"`
 		} `json:"server_state"`
 	}
 	if err := json.Unmarshal(b, &md); err != nil {
@@ -358,7 +364,11 @@ func (q *Qbittorrent) Status(ctx context.Context) (ClientStatus, error) {
 	}
 	s := md.ServerState
 	st := ClientStatus{Speed: s.DLSpeed, UpSpeed: s.ULSpeed, SpeedLimit: max(s.DLLimit, 0), UpLimit: max(s.ULLimit, 0),
-		SessionDown: s.DLData, SessionUp: s.ULData, AllTimeDown: s.AllTimeDL, AllTimeUp: s.AllTimeUL, FreeSpace: s.Free}
+		SessionDown: s.DLData, SessionUp: s.ULData, AllTimeDown: s.AllTimeDL, AllTimeUp: s.AllTimeUL, FreeSpace: s.Free, SlowMode: s.Alt}
+	switch s.Conn {
+	case "connected", "firewalled", "disconnected":
+		st.Connection = s.Conn
+	}
 	// Paused as a whole when there are torrents and none of them runs.
 	st.Paused = len(md.Torrents) > 0
 	for _, t := range md.Torrents {

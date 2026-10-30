@@ -12034,6 +12034,42 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/slow-mode": {
+      "post": {
+        "description": "Turns a torrent Downloader's second, slower set of speed limits on or off. The current state comes back in the Downloader's status.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Not a torrent Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Turn slow mode on or off",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/speed-limit": {
       "put": {
         "description": "down and up in bytes per second; 0 removes the limit. Usenet Downloaders have no upload limit.",
