@@ -239,21 +239,25 @@ func (q *Qbittorrent) Add(ctx context.Context, r AddRequest) (string, error) {
 var errBadHash = errors.New("not a torrent info hash")
 
 type qbitTorrent struct {
-	Hash        string  `json:"hash"`
-	Name        string  `json:"name"`
-	Category    string  `json:"category"`
-	SavePath    string  `json:"save_path"`
-	ContentPath string  `json:"content_path"`
-	Size        int64   `json:"size"`
-	Progress    float64 `json:"progress"`
-	DLSpeed     int64   `json:"dlspeed"`
-	UPSpeed     int64   `json:"upspeed"`
-	NumSeeds    int     `json:"num_seeds"`
-	NumLeechs   int     `json:"num_leechs"`
-	ETA         int64   `json:"eta"`
-	State       string  `json:"state"`
-	AddedOn     int64   `json:"added_on"`
-	Ratio       float64 `json:"ratio"`
+	Hash        string   `json:"hash"`
+	Name        string   `json:"name"`
+	Category    string   `json:"category"`
+	SavePath    string   `json:"save_path"`
+	ContentPath string   `json:"content_path"`
+	Size        int64    `json:"size"`
+	Progress    float64  `json:"progress"`
+	DLSpeed     int64    `json:"dlspeed"`
+	UPSpeed     int64    `json:"upspeed"`
+	NumSeeds    int      `json:"num_seeds"`
+	NumLeechs   int      `json:"num_leechs"`
+	ETA         int64    `json:"eta"`
+	State       string   `json:"state"`
+	AddedOn     int64    `json:"added_on"`
+	Ratio       float64  `json:"ratio"`
+	RatioLimit  *float64 `json:"ratio_limit"`
+	SeedLimit   *int64   `json:"seeding_time_limit"`
+	IdleLimit   *int64   `json:"inactive_seeding_time_limit"`
+	ShareAction string   `json:"share_limit_action"`
 }
 
 func (t qbitTorrent) job() Job {
@@ -263,7 +267,35 @@ func (t qbitTorrent) job() Job {
 	}
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
 		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
-		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0)}
+		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits()}
+}
+
+// limits reads the torrent's own seeding rules; nil when the client sent none.
+func (t qbitTorrent) limits() *ShareLimits {
+	if t.RatioLimit == nil && t.SeedLimit == nil {
+		return nil
+	}
+	l := ShareLimits{Ratio: -2, SeedingMinutes: -2, InactiveMinutes: -2}
+	if t.RatioLimit != nil {
+		l.Ratio = *t.RatioLimit
+	}
+	if t.SeedLimit != nil {
+		l.SeedingMinutes = *t.SeedLimit
+	}
+	if t.IdleLimit != nil {
+		l.InactiveMinutes = *t.IdleLimit
+	}
+	switch t.ShareAction {
+	case "Stop":
+		l.Action = "stop"
+	case "Remove":
+		l.Action = "remove"
+	case "RemoveWithContent":
+		l.Action = "remove_files"
+	case "EnableSuperSeeding":
+		l.Action = "super_seed"
+	}
+	return &l
 }
 
 // qbitState maps qBittorrent's state words onto ours.

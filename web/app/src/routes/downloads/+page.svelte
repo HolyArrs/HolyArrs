@@ -20,6 +20,8 @@
 	import ConfirmMatch from '#lib/downloads/ConfirmMatch.svelte';
 	import { byDownload } from '#lib/downloads/imports.ts';
 	import AddTorrents from '#lib/downloads/AddTorrents.svelte';
+	import SteerSheet from '#lib/downloads/SteerSheet.svelte';
+	import type { SteerMode } from '#lib/downloads/manage.ts';
 	import { BULK_DONE, byClient, type BulkAction } from '#lib/downloads/manage.ts';
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
@@ -286,6 +288,15 @@
 			busy = 0;
 		}
 	}
+	// The steering sheet: seeding rules and more for one or many torrents.
+	let steerOpen = $state(false);
+	let steerMode = $state<SteerMode>('seed');
+	let steerRows = $state<DownloadRow[]>([]);
+	function steer(rows: DownloadRow[], mode: SteerMode) {
+		steerRows = rows;
+		steerMode = mode;
+		steerOpen = true;
+	}
 	// A selection action: one call per torrent Downloader for every row it holds.
 	async function bulk(list: DownloadRow[], action: BulkAction) {
 		const groups = byClient(list);
@@ -389,10 +400,11 @@
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onremovemany={askRemoveMany} {watch} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} {watch} />
 {/if}
 </PageLoader>
 
+<SteerSheet bind:open={steerOpen} mode={steerMode} rows={steerRows} ondone={() => void load()} />
 <AddTorrents bind:open={addOpen} clients={torrentClients} ondone={() => void load()} />
 
 <Sheet bind:open={removeOpen} title={targets.length > 1 ? `Remove ${targets.length} downloads?` : 'Remove this download?'} size="sm">

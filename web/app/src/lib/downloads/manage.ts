@@ -75,3 +75,44 @@ export const BULK_DONE: Record<BulkAction, string> = {
 	start: 'Started', pause: 'Paused', recheck: 'Checking again', reannounce: 'Asked the trackers again', top: 'Moved to the top', bottom: 'Moved to the bottom',
 	up: 'Moved up', down: 'Moved down', force: 'Force started', unforce: 'Back in the queue'
 };
+
+/** A torrent's own seeding rules: -2 follows the Downloader's rule, -1 is no limit. */
+export interface ShareLimits {
+	ratio: number;
+	seeding_minutes: number;
+	inactive_minutes: number;
+	action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed';
+}
+
+/** One limit in the Seeding rules sheet: the Downloader's rule, none, or a value. */
+export type LimitMode = 'global' | 'none' | 'set';
+export const modeOf = (v: number): LimitMode => (v === -2 ? 'global' : v < 0 ? 'none' : 'set');
+export const valueOf = (mode: LimitMode, v: number) => (mode === 'global' ? -2 : mode === 'none' ? -1 : v);
+
+const minutesWords = (m: number) => (m % 1440 === 0 ? n(m / 1440, 'day') : m % 60 === 0 ? n(m / 60, 'hour') : n(m, 'minute'));
+const ACTION_WORD: Record<ShareLimits['action'], string> = { '': '', stop: 'then stop', remove: 'then remove', remove_files: 'then remove with files', super_seed: 'then super seed' };
+
+/** limitsWords reads a torrent's seeding rules in one line, for Info. */
+export function limitsWords(l: ShareLimits | undefined): string {
+	if (!l) return '–';
+	const one = (v: number, set: (v: number) => string) => (v === -2 ? '' : v < 0 ? 'none' : set(v));
+	const parts = [
+		[one(l.ratio, (v) => `ratio ${v}`), 'ratio'],
+		[one(l.seeding_minutes, minutesWords), 'seeding'],
+		[one(l.inactive_minutes, (v) => `${minutesWords(v)} idle`), 'idle']
+	]
+		.filter(([w]) => w)
+		.map(([w, k]) => (w === 'none' ? `no ${k} limit` : w));
+	const base = parts.length ? upper(parts.join(' · ')) : "Downloader's rules";
+	return ACTION_WORD[l.action] ? `${base}, ${ACTION_WORD[l.action]}` : base;
+}
+
+/** checkLimits says what is wrong with typed values, or ''. */
+export function checkLimits(l: ShareLimits): string {
+	if (l.ratio >= 0 && !(l.ratio <= 9998)) return 'Ratio is 0 to 9998.';
+	for (const m of [l.seeding_minutes, l.inactive_minutes]) if (m >= 0 && !(Number.isInteger(m) && m <= 525600)) return 'Minutes are whole numbers up to 525600 (a year).';
+	return '';
+}
+
+/** What the steering sheet edits. */
+export type SteerMode = 'seed';

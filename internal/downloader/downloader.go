@@ -70,6 +70,9 @@ type Job struct {
 	Files       []File
 	AddedAt     int64   // unix seconds the client took it; 0 when unknown
 	Ratio       float64 // share ratio (torrents)
+	// Torrent clients that report them: the torrent's own seeding rules
+	// (nil when not reported).
+	Limits *ShareLimits
 }
 
 // Health is what an engine says about itself.

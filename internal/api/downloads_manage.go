@@ -20,6 +20,7 @@ import (
 func (a *API) clientManageRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloaders/{id}/torrents", a.addTorrents)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/bulk", a.bulkItems)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/share-limits", a.shareLimits)
 }
 
 // addTorrentsMax caps one add: qBittorrent itself takes 64 MiB a request.
@@ -237,4 +238,56 @@ func (a *API) onBulk(r *http.Request, id int64, call func(t downloader.TorrentBu
 		}
 		return call(t)
 	})
+}
+
+const shareHelp = `body is {"hashes": [info hash...], "ratio": -2 (Downloader's rule), -1 (none) or 0 to 9998, "seeding_minutes": -2, -1 or 0 to 525600, "inactive_minutes": -2, -1 or 0 to 525600, "action": "", "stop", "remove", "remove_files" or "super_seed"}`
+
+// shareLimits sets seeding rules on many torrents of one Downloader. An
+// action that removes torrents HolyArrs did not send needs the settings
+// permission, as removing them does.
+func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		return
+	}
+	var in struct {
+		Hashes []string `json:"hashes"`
+		downloader.ShareLimits
+	}
+	if !decode(w, r, &in, shareHelp) || !a.bulkHashesOK(w, in.Hashes) {
+		return
+	}
+	l := in.ShareLimits
+	minutesOK := func(n int64) bool { return n == -2 || n == -1 || n >= 0 && n <= 525600 }
+	ratioOK := l.Ratio == -2 || l.Ratio == -1 || l.Ratio >= 0 && l.Ratio <= 9998
+	switch l.Action {
+	case "", "stop", "remove", "remove_files", "super_seed":
+	default:
+		ratioOK = false
+	}
+	if !ratioOK || !minutesOK(l.SeedingMinutes) || !minutesOK(l.InactiveMinutes) {
+		fail(w, http.StatusBadRequest, shareHelp)
+		return
+	}
+	if (l.Action == "remove" || l.Action == "remove_files") && !a.mayRemoveOutside(r.Context(), id, in.Hashes) {
+		fail(w, http.StatusForbidden, "removing a torrent HolyArrs did not send needs the settings permission")
+		return
+	}
+	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
+		t, ok := e.(downloader.ShareLimiter)
+		if !ok {
+			return downloader.ErrNotSupported
+		}
+		return t.SetShareLimits(r.Context(), in.Hashes, l)
+	})
+	if errors.Is(err, downloader.ErrShareAction) {
+		fail(w, http.StatusConflict, err.Error())
+		return
+	}
+	if err != nil {
+		itemError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
 }

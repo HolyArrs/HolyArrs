@@ -40,7 +40,7 @@
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
-	import { pickRange, type BulkAction } from './manage.ts';
+	import { limitsWords, pickRange, type BulkAction, type SteerMode } from './manage.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
@@ -61,6 +61,7 @@
 		onadd,
 		onremovemany,
 		onbulk,
+		onsteer,
 		watch = false
 	}: {
 		rows: DownloadRow[];
@@ -89,6 +90,8 @@
 		onremovemany?: (rows: DownloadRow[], withFiles?: boolean) => void;
 		/** One action on the selected rows (batched per Downloader by the page). */
 		onbulk?: (rows: DownloadRow[], action: BulkAction) => void;
+		/** Opens the steering sheet (seeding rules and more) for these torrents. */
+		onsteer?: (rows: DownloadRow[], mode: SteerMode) => void;
 		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
 		watch?: boolean;
 	} = $props();
@@ -299,6 +302,9 @@
 		picked = new Set([...picked, ...pickRange(list.map((r) => r.id), anchor || id, id)]);
 	}
 	const clearPicked = () => (picked = new Set());
+	// Torrents a torrent Downloader can steer by hash: seeding rules and more.
+	const steerable = (r: DownloadRow) => !!onsteer && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent';
+	const STEER: { mode: SteerMode; label: string; short: string }[] = [{ mode: 'seed', label: 'Seeding rules…', short: 'Seeding rules' }];
 	const BULK: { action: BulkAction; label: string }[] = [
 		{ action: 'start', label: 'Start' }, { action: 'pause', label: 'Pause' }, { action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' }
 	];
@@ -976,6 +982,9 @@
 			{#each ACTIONS.filter((a) => !a.torrent || protocolOf(r) === 'torrent') as a (a.label)}
 				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
 			{/each}
+			{#if steerable(r)}
+				{#each STEER as m (m.mode)}<li><button type="button" class="mi" disabled={busy === r.id} onclick={() => { menuId = 0; onsteer?.([r], m.mode); }} data-testid="dl-steer-{m.mode}">{m.label}</button></li>{/each}
+			{/if}
 		</ul>
 	{/if}
 	{#if files && filesOpen.has(r.id)}<p class="nr" data-testid="dl-files">Not reported yet</p>{/if}
@@ -1027,6 +1036,7 @@
 					<dt>Speed</dt><dd>{speed ? `${bytes(speed)}/s down` : '–'}{up ? ` · ${bytes(up)}/s up` : ''}</dd>
 					<dt>Time left</dt><dd>{eta ? duration(eta) : '–'}</dd>
 					<dt>Share ratio</dt><dd>{t ? t.ratio.toFixed(2) : '–'}</dd>
+					{#if r.limits}<dt>Seeding rules</dt><dd data-testid="dl-info-limits">{limitsWords(r.limits)}</dd>{/if}
 					<dt>Seeds</dt><dd>{t ? `${t.seeds} connected of ${t.seeds_total}` : '–'}</dd>
 					<dt>Peers</dt><dd>{t ? `${t.peers} connected of ${t.peers_total}` : '–'}</dd>
 					<dt>Wasted</dt><dd>{t ? bytes(t.wasted) : '–'}</dd>
@@ -1197,6 +1207,7 @@
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
 		{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}
+		{#if pickedRows.some(steerable)}{#each STEER as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
 		<button type="button" class="xbn" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-bulk-remove">Remove</button>
 		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
 		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>

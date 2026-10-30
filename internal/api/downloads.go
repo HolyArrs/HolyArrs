@@ -73,6 +73,9 @@ type DownloadRow struct {
 	Hash         string  `json:"hash,omitempty"`
 	Category     string  `json:"category,omitempty"`
 	Ratio        float64 `json:"ratio,omitempty"`
+	// Limits are a client torrent's own seeding rules (-2 the client's
+	// global rule, -1 none), when the client reports them.
+	Limits *downloader.ShareLimits `json:"limits,omitempty"`
 }
 
 // DownloadTotals are the bytes per second moving across every active download.

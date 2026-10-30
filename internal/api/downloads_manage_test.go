@@ -143,3 +143,21 @@ func TestAddTorrentsRouteRefusals(t *testing.T) {
 		t.Fatalf("private link %+v, calls %s", out, f.saw())
 	}
 }
+
+// route: POST /api/v1/downloaders/{id}/share-limits
+func TestShareLimitsRoute(t *testing.T) {
+	_, f, base := manageBase(t)
+	hs := `["` + outHash + `","` + seedHash + `"]`
+	do(t, "POST", base+"/share-limits", `{"hashes":`+hs+`,"ratio":2,"seeding_minutes":1440,"inactive_minutes":-1,"action":"stop"}`, 200)
+	if !strings.Contains(f.saw(), "torrents/setShareLimits?hashes="+outHash+"%7C"+seedHash+"&inactiveSeedingTimeLimit=-1&ratioLimit=2&seedingTimeLimit=1440&shareLimitAction=Stop") {
+		t.Fatalf("calls %s", f.saw())
+	}
+	for _, bad := range []string{
+		`{"hashes":` + hs + `,"ratio":-3,"seeding_minutes":-2,"inactive_minutes":-2}`,
+		`{"hashes":` + hs + `,"ratio":1,"seeding_minutes":9999999,"inactive_minutes":-2}`,
+		`{"hashes":` + hs + `,"ratio":1,"seeding_minutes":-2,"inactive_minutes":-2,"action":"explode"}`,
+		`{"hashes":["all"],"ratio":1,"seeding_minutes":-2,"inactive_minutes":-2}`,
+	} {
+		do(t, "POST", base+"/share-limits", bad, 400)
+	}
+}

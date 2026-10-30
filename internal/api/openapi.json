@@ -11995,6 +11995,45 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/share-limits": {
+      "post": {
+        "description": "Sets seeding rules on many torrents of one torrent Downloader: share ratio, seeding minutes and idle minutes (-2 follows the Downloader's own rule, -1 is no limit) and what happens at a limit. qBittorrent before 5.2 takes only the default action. A remove action on torrents HolyArrs did not send needs the settings permission.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Action not offered by this Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Set seeding rules",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/speed-limit": {
       "put": {
         "description": "down and up in bytes per second; 0 removes the limit. Usenet Downloaders have no upload limit.",

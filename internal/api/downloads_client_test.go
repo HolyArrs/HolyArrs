@@ -64,6 +64,8 @@ func (f *allClient) server(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"linux":{"name":"linux","savePath":"/data/linux"},"music":{"name":"music","savePath":""}}`))
 		case "sync/torrentPeers":
 			_, _ = w.Write([]byte(`{"peers":{}}`))
+		case "app/webapiVersion":
+			_, _ = w.Write([]byte(`2.15.1`))
 		}
 	}))
 	t.Cleanup(qb.Close)

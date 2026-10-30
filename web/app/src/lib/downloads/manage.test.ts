@@ -48,3 +48,23 @@ describe('selection', () => {
 		expect(m.get(1)?.map((r) => r.hash)).toEqual(['a', 'c']);
 	});
 });
+
+import { checkLimits, limitsWords, modeOf, valueOf } from './manage.ts';
+describe('seeding rules', () => {
+	it('reads limits in plain words', () => {
+		expect(limitsWords(undefined)).toBe('–');
+		expect(limitsWords({ ratio: -2, seeding_minutes: -2, inactive_minutes: -2, action: '' })).toBe("Downloader's rules");
+		expect(limitsWords({ ratio: 2, seeding_minutes: 1440, inactive_minutes: 90, action: 'stop' })).toBe('Ratio 2 · 1 day · 90 minutes idle, then stop');
+		expect(limitsWords({ ratio: -1, seeding_minutes: 120, inactive_minutes: -2, action: 'remove' })).toBe('No ratio limit · 2 hours, then remove');
+	});
+	it('maps modes and checks values', () => {
+		expect(modeOf(-2)).toBe('global');
+		expect(modeOf(-1)).toBe('none');
+		expect(modeOf(3)).toBe('set');
+		expect(valueOf('none', 5)).toBe(-1);
+		expect(valueOf('set', 5)).toBe(5);
+		expect(checkLimits({ ratio: 10000, seeding_minutes: -2, inactive_minutes: -2, action: '' })).toMatch(/Ratio/);
+		expect(checkLimits({ ratio: 1, seeding_minutes: 1.5, inactive_minutes: -2, action: '' })).toMatch(/Minutes/);
+		expect(checkLimits({ ratio: 1, seeding_minutes: 60, inactive_minutes: -1, action: '' })).toBe('');
+	});
+});
