@@ -119,10 +119,15 @@
 	let declineOpen = $state(false);
 	let declineList = $state<Ask[]>([]);
 	let declineWhy = $state('');
+	let whyBox = $state<HTMLTextAreaElement>();
+	// One-tap reasons for the people who asked; the box stays free to type.
+	const reasons = ['Already have it', 'Not for kids', 'Not out yet', 'Too big right now'];
 	function askDecline(list: Ask[]) {
 		declineList = list;
 		declineWhy = '';
 		declineOpen = true;
+		// The reason box takes focus, so the sheet opens ready to type (no ring on its close button).
+		void tick().then(() => setTimeout(() => whyBox?.focus({ preventScroll: true }), 60));
 	}
 	function confirmDecline(e: SubmitEvent) {
 		e.preventDefault();
@@ -737,7 +742,12 @@
 	<form class="decide" onsubmit={confirmDecline}>
 		<div class="field">
 			<label for="dc-why">Why (optional, the people who asked see it)</label>
-			<textarea id="dc-why" class="input" rows="3" maxlength="500" bind:value={declineWhy} data-testid="decline-why"></textarea>
+			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="A few words help them understand" bind:this={whyBox} bind:value={declineWhy} data-testid="decline-why"></textarea>
+			<div class="why-chips" role="group" aria-label="Quick reasons">
+				{#each reasons as why (why)}
+					<button type="button" class="why-chip" aria-pressed={declineWhy === why} onclick={() => (declineWhy = declineWhy === why ? '' : why)}>{why}</button>
+				{/each}
+			</div>
 		</div>
 		<div class="decide-actions">
 			<Button variant="plain" type="button" onclick={() => (declineOpen = false)}>Cancel</Button>
@@ -817,6 +827,11 @@
 	.decide { display: flex; flex-direction: column; gap: 14px; }
 	.decide .field + .field { margin-top: 0; }
 	textarea.input { height: auto; padding-top: 10px; resize: vertical; }
+	.why-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+	.why-chip { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 600; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.why-chip:hover { background: var(--surface-3); }
+	.why-chip[aria-pressed='true'] { background: var(--text); border-color: var(--text); color: var(--bg); }
+	.why-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.decide-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 	@media (pointer: coarse) { .inspect, summary { min-height: 44px; } }
 	.variant { min-width: 0; }
