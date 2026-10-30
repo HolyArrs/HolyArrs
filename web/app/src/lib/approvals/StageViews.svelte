@@ -259,7 +259,7 @@
 		<div class="calm" data-testid="calm">
 			<Icon name="inbox" size={28} />
 			<h2>{emptyWord}</h2>
-			<p class="muted">{ctx.tab === 'waiting' ? 'You're all caught up.' : 'Pick another tab above.'}</p>
+			<p class="muted">{ctx.tab === 'waiting' ? "You're all caught up." : 'Pick another tab above.'}</p>
 		</div>
 	{:else}
 		{#if ctx.choosable}
