@@ -81,6 +81,8 @@ export function buildNav(input: NavInput): NavSection[] {
 				...(!approver
 					? [{ href: '/wishlist', label: 'Wishlist', icon: 'wish', need: 'wishlist', badge: input.unread, badgeLabel: `${input.unread} new` } as NavItem]
 					: []),
+				// Everyone else watches the downloads for what they asked for.
+				...(!input.allowed('manage_library') ? [{ href: '/downloads', label: 'Downloads', icon: 'download', need: null } as NavItem] : []),
 				{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: null }
 			]
 		},

@@ -15,7 +15,7 @@ import type { DownloadRow } from '../downloaders.ts';
 
 export type Stage = 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
 
-type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'>;
+type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean };
 
 /** stageOf places one row on its fine-grained stage. */
 export function stageOf(r: RowBits): Stage {
@@ -37,6 +37,9 @@ export function stageOf(r: RowBits): Stage {
 			return 'decide';
 		case 'failed':
 		case 'vanished':
+			// Turned down and replaced (HolyArrs searches again or has another
+			// copy): finished as far as the table goes, not a problem.
+			return r.replaced ? 'done' : 'failed';
 		case 'import_refused':
 			return 'failed';
 		case 'done':
@@ -143,8 +146,10 @@ export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
 }
 
 /** statusWord is the row's word in the status column; it follows the sub-tab
- *  words. A cleaned-up download reads Removed. */
+ *  words. A download removed outside HolyArrs, or a failed copy already
+ *  replaced, still reads Failed; one cleaned up from HolyArrs reads Done. */
 export function statusWord(r: RowBits): string {
+	if (r.phase === 'failed' || r.phase === 'vanished') return 'Failed';
 	switch (stageOf(r)) {
 		case 'queued':
 			return 'Queued';
@@ -163,7 +168,7 @@ export function statusWord(r: RowBits): string {
 		case 'failed':
 			return 'Failed';
 	}
-	return r.phase === 'removed' ? 'Removed' : 'Done';
+	return 'Done';
 }
 
 /** The values older links used, mapped to the nearest group now. */

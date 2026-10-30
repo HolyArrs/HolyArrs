@@ -166,7 +166,7 @@
 	</div>
 {/snippet}
 
-<section class="decide" class:compact aria-label="Needs a decision" data-testid="decision-panel">
+<section class="decide" class:compact aria-label="Review" data-testid="decision-panel">
 	{#each groups as g (g.key)}
 		{@const d = g.lead}
 		{#if g.pack}

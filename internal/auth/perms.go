@@ -386,7 +386,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/downloaders/{id}/attempts":                      PermSettings,
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": PermSettings,
 	"POST /api/v1/downloads/{id}/mark-failed":                    PermManageLibrary,
-	"GET /api/v1/downloads/view":                                 PermManageLibrary,
+	"GET /api/v1/downloads/view":                                 needSignedIn, // everyone; non-managers see only their own asks
 	"GET /api/v1/downloads/speeds":                                 PermManageLibrary,
 	"POST /api/v1/downloads/{id}/remove":                         PermManageLibrary,
 	"POST /api/v1/downloads/{id}/pause":                           PermManageLibrary,

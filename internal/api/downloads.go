@@ -50,6 +50,9 @@ type DownloadRow struct {
 	UpdatedAt      time.Time  `json:"updated_at"`
 	SlotState      string     `json:"slot_state,omitempty"`
 	CanAct         bool       `json:"can_act"` // Mark failed and Remove
+	// Replaced says a failed copy was turned down and HolyArrs moved on (it
+	// searches again or already has another copy), so it is no problem.
+	Replaced bool `json:"replaced,omitempty"`
 	// Shows: the kind of Title, the episodes the download covers and a
 	// short line naming them ("S01E01-E03, 3 episodes").
 	// Artists: Episodes lists the tracks and Album names the album.
@@ -213,8 +216,8 @@ func showText(ph string, eps []EpisodeLine) string {
 // PhaseLabels are the words people see on the Downloads screen.
 var PhaseLabels = map[string]string{
 	"waiting": "Waiting its turn", "downloading": "Downloading", "stalled": "Stalled", "paused": "Paused in the Downloader",
-	"failed": "Failed", "vanished": "Vanished", "removed": "Removed", "waiting_to_import": "Waiting to import",
-	"importing": "Importing", "needs_a_decision": "Needs a decision", "import_refused": "Import refused", "done": "Done",
+	"failed": "Failed", "vanished": "Failed", "removed": "Removed", "waiting_to_import": "Waiting to import",
+	"importing": "Importing", "needs_a_decision": "Review", "import_refused": "Import refused", "done": "Done",
 }
 
 // phase is a Download's place in plain words: its own state while it
@@ -242,7 +245,18 @@ func phase(d domain.Download, slot string) string {
 }
 
 func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
-	ds, err := store.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 100))
+	// People who may not manage the Library watch only the downloads for
+	// titles they asked for, and act on none of them.
+	// (No person on the request: the sign-in layer is off, as in tests.)
+	who, ok := auth.From(r.Context())
+	manage := !ok || who.Has(auth.PermManageLibrary)
+	where, args := "1=1", []any{}
+	if !manage {
+		where = `EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
+			JOIN asks a ON a.title_id = i.title_id JOIN ask_people p ON p.ask_id = a.id WHERE p.user_id = ?)`
+		args = append(args, who.UserID)
+	}
+	ds, err := store.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, limit(r, 100))...)
 	if err != nil {
 		internal(w, err)
 		return
@@ -288,7 +302,10 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			row.Phase = phaseOfMany(d, row.Episodes)
 		}
 		row.Label = PhaseLabels[row.Phase]
-		row.CanAct = row.Active
+		row.CanAct = row.Active && manage
+		if (d.State == "failed" || d.State == "vanished") && row.SlotState != "" && row.SlotState != string(domain.SlotFailed) && row.SlotState != string(domain.SlotNeedsADecision) {
+			row.Replaced = true
+		}
 		if d.State == "cleaned" && d.StateReason != nil {
 			row.Text = upperFirst(*d.StateReason) + "."
 		}

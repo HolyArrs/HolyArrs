@@ -19,11 +19,11 @@ describe('buildNav', () => {
 	it('hides Music from a Kid, because music has no age ratings', () => {
 		expect(labels({ ...member, kid: true })[1]).toEqual(['Library', ['Movies', 'TV shows']]);
 	});
-	it('hides Manage from members but keeps Home', () => {
+	it('hides Manage from members but keeps Home, and lets them watch their Downloads', () => {
 		expect(labels(member)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music']],
-			['Your stuff', ['Wishlist', 'Calendar']]
+			['Your stuff', ['Wishlist', 'Downloads', 'Calendar']]
 		]);
 	});
 	it('shows each Manage item by its own permission', () => {

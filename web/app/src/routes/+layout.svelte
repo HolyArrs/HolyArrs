@@ -299,6 +299,8 @@
 	function pageAllowed(p: string): boolean {
 		if (p === '/account') return true;
 		if (session.s.mustTwoFactor) return false;
+		// Everyone signed in watches their own downloads; the rest of Downloads is for managers.
+		if (p === '/downloads') return true;
 		if (p.startsWith('/downloads')) return allowed('manage_library');
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/wishlist')) return allowed('wishlist');

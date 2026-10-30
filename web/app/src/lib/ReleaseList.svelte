@@ -15,8 +15,11 @@
 	import { plainReason } from '#lib/plain.ts';
 	import type { ReleasePage, ReleaseView } from '#lib/types.ts';
 
-	let { list }: { list: 'held' | 'turned-down' } = $props();
+	// from: the Library's lists (Held and Turned down side by side) or the Downloads page's Turned down list (Undo).
+	let { list, from = 'library' }: { list: 'held' | 'turned-down'; from?: 'library' | 'downloads' } = $props();
 	const held = $derived(list === 'held');
+	const dl = $derived(from === 'downloads');
+	const undoWord = $derived(held ? 'Stop holding' : dl ? 'Undo' : 'Take off the list');
 
 	let rows = $state<ReleaseView[]>([]);
 	let total = $state(0);
@@ -96,14 +99,18 @@
 	title={held ? 'Held' : 'Turned down'}
 	subtitle={held
 		? 'Releases HolyArrs picked that are waiting out their wait. A better one found meanwhile takes their place.'
-		: 'Releases HolyArrs never picks again for their movie or episode. Take one off the list to let it be picked again.'}
-	back={{ href: to('/library'), label: 'Library' }}
+		: dl
+			? 'Copies HolyArrs will not pick again, with why. Undo one to let it be picked again.'
+			: 'Releases HolyArrs never picks again for their movie or episode. Take one off the list to let it be picked again.'}
+	back={dl ? { href: to('/downloads'), label: 'Downloads' } : { href: to('/library'), label: 'Library' }}
 >
 	{#snippet actions()}
+		{#if !dl}
 		<nav class="switch-list" aria-label="Release lists">
 			<a href={to(`/library/held`)} aria-current={held ? 'page' : undefined}>Held</a>
 			<a href={to(`/library/turned-down`)} aria-current={held ? undefined : 'page'}>Turned down</a>
 		</nav>
+		{/if}
 	{/snippet}
 </PageHeader>
 
@@ -135,8 +142,8 @@
 						{/if}
 						<div class="rel-name">{r.name}</div>
 					</div>
-					<Button variant="secondary" icon="x" onclick={() => removeOne(r)} disabled={busy} aria-label="{held ? 'Stop holding' : 'Take off the list'} {r.name}">
-						{held ? 'Stop holding' : 'Take off the list'}
+					<Button variant="secondary" icon="x" onclick={() => removeOne(r)} disabled={busy} aria-label="{undoWord} {r.name}" data-testid="listed-undo">
+						{undoWord}
 					</Button>
 				</div>
 				<div class="facts">

@@ -190,6 +190,8 @@ export interface DownloadRow extends DownloadView {
 	updated_at: string;
 	slot_state?: string;
 	can_act: boolean;
+	/** A failed copy HolyArrs turned down and moved on from (searching again or another copy on its way). */
+	replaced?: boolean;
 	kind?: 'movie' | 'show' | 'artist';
 	episodes?: EpisodeLine[];
 	covers?: string;

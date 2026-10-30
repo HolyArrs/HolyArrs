@@ -88,7 +88,23 @@ describe('the tabs', () => {
 
 describe('statusWord', () => {
 	it('follows the sub-tab words', () => {
-		expect(rows.map((x) => statusWord(x))).toEqual(['Queued', 'Downloading', 'Importing', 'Stalled', 'Paused', 'Importing', 'Importing', 'Done', 'Seeding', 'Failed', 'Removed', 'Failed', 'Review', 'Failed']);
+		expect(rows.map((x) => statusWord(x))).toEqual(['Queued', 'Downloading', 'Importing', 'Stalled', 'Paused', 'Importing', 'Importing', 'Done', 'Seeding', 'Failed', 'Done', 'Failed', 'Review', 'Failed']);
+	});
+	it('never says Removed: removed outside HolyArrs reads Failed', () => {
+		expect(statusWord({ phase: 'vanished', state: 'vanished', progress: 0.4 })).toBe('Failed');
+		expect(rows.map((x) => statusWord(x))).not.toContain('Removed');
+	});
+});
+
+describe('a failed copy that was replaced', () => {
+	it('leaves Problems but still reads Failed', () => {
+		const gone = { phase: 'vanished', state: 'vanished', progress: 0.2, replaced: true };
+		const bad = { phase: 'failed', state: 'failed', progress: 0.2, replaced: true };
+		expect(stageOf(gone)).toBe('done');
+		expect(stageOf(bad)).toBe('done');
+		expect(statusWord(bad)).toBe('Failed');
+		expect(pick([gone, bad], TABS, 'problems')).toEqual([]);
+		expect(pick([{ ...bad, replaced: false }], TABS, 'problems')).toHaveLength(1);
 	});
 });
 

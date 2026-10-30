@@ -20,6 +20,8 @@
 	import { byDownload } from '#lib/downloads/imports.ts';
 	import { addSample, inHistory, totals } from '#lib/downloads/sections.ts';
 
+	// Someone who may not manage the Library only watches the downloads for what they asked for.
+	const watch = $derived(!session.can('manage_library'));
 	let rows = $state<DownloadRow[]>([]);
 	let imports = $state<ImportRecord[]>([]);
 	let titles = $state<TitleView[]>([]);
@@ -50,7 +52,7 @@
 			id: -d.slot_id,
 			phase: 'needs_a_decision',
 			state: '',
-			label: 'Needs a decision',
+			label: 'Review',
 			text: '',
 			progress: 0,
 			speed: 0,
@@ -71,7 +73,7 @@
 		};
 	}
 	const allRows = $derived([
-		...rows.map((r) => (decisionsByDownload.has(r.id) && !r.active && r.phase !== 'needs_a_decision' ? { ...r, phase: 'needs_a_decision', label: 'Needs a decision' } : r)),
+		...rows.map((r) => (decisionsByDownload.has(r.id) && !r.active && r.phase !== 'needs_a_decision' ? { ...r, phase: 'needs_a_decision', label: 'Review' } : r)),
 		...decisions.items.filter((d) => !(d.download_id && rowIds.has(d.download_id))).map(decisionRow)
 	]);
 	function decisionsOf(r: DownloadRow): Decision[] {
@@ -110,8 +112,8 @@
 		try {
 			const [d, i, h] = await Promise.all([
 				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
-				api.get<{ imports: ImportRecord[] }>('/imports?limit=100'),
-				history ? Promise.resolve(null) : api.get<{ samples: { down: number; up: number }[] }>('/downloads/speeds').catch(() => ({ samples: [] }))
+				watch ? Promise.resolve({ imports: [] as ImportRecord[] }) : api.get<{ imports: ImportRecord[] }>('/imports?limit=100'),
+				history || watch ? Promise.resolve(null) : api.get<{ samples: { down: number; up: number }[] }>('/downloads/speeds').catch(() => ({ samples: [] }))
 			]);
 			if (h) history = h.samples;
 			rows = d.downloads;
@@ -147,17 +149,22 @@
 				.get<{ downloaders: DownloaderView[] }>('/downloaders')
 				.then((r) => (torrent = r.downloaders.some((d) => d.protocol === 'torrent')))
 				.catch(() => {});
-		void refreshDecisions();
+		if (!watch) void refreshDecisions();
 		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
 		const decOffs = ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
 		const poll = setInterval(() => {
 			if (document.visibilityState === 'visible' && rows.some((r) => r.active)) soon();
 		}, 2000);
+		// The live stream is for managers: a watcher reads again every 10 s while the tab is visible.
+		const watchPoll = setInterval(() => {
+			if (watch && document.visibilityState === 'visible') soon();
+		}, 10_000);
 		return () => {
 			offs.forEach((off) => off());
 			decOffs.forEach((off) => off());
 			clearTimeout(timer);
 			clearInterval(poll);
+			clearInterval(watchPoll);
 		};
 	});
 
@@ -290,12 +297,16 @@
 	<div class="pad"><LoadError hasData={false} message="Downloads could not be loaded." onretry={load} /></div>
 {:else if allRows.length === 0}
 	<div class="pad">
+	{#if watch}
+	<EmptyState icon="download" title="Nothing on its way" text="When something you asked for starts downloading, you can watch it here." />
+	{:else}
 	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
-	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
+	{/if}
+	{#if !watch}<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>{/if}
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {samples} history={history ?? []} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} {watch} />
 {/if}
 </PageLoader>
 

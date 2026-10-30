@@ -16,6 +16,7 @@
 	import Chip from '../ui/Chip.svelte';
 	import Menu from '../ui/Menu.svelte';
 	import TopMenu from './TopMenu.svelte';
+	import { to } from '../paths.ts';
 	import DlRail from './DlRail.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import SpeedGraph from './SpeedGraph.svelte';
@@ -52,7 +53,8 @@
 		ondone,
 		onact,
 		onall,
-		onlimit
+		onlimit,
+		watch = false
 	}: {
 		rows: DownloadRow[];
 		importOf: Map<number, ImportRecord>;
@@ -78,6 +80,8 @@
 		onall?: (pause: boolean) => void;
 		/** Opens the speed limit. */
 		onlimit?: () => void;
+		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
+		watch?: boolean;
 	} = $props();
 
 	// The Type filter (All, Movies, TV shows, Music) narrows every tab and total.
@@ -748,7 +752,7 @@
 
 {#snippet bin(r: DownloadRow)}
 	<span class="del" data-col="bin">
-		<button type="button" class="bin" tabindex={tabRow === r.id ? 0 : -1} aria-label="Remove {who(r)}" title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} disabled={!r.can_act || busy === r.id} onclick={() => onremove(r)} data-testid="dl-remove"><Icon name="trash" size={16} /></button>
+		{#if !watch}<button type="button" class="bin" tabindex={tabRow === r.id ? 0 : -1} aria-label="Remove {who(r)}" title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} disabled={!r.can_act || busy === r.id} onclick={() => onremove(r)} data-testid="dl-remove"><Icon name="trash" size={16} /></button>{/if}
 	</span>
 {/snippet}
 
@@ -781,12 +785,12 @@
 
 {#snippet btns(r: DownloadRow, files: boolean)}
 	<div class="xbt" data-testid="dl-actions">
-		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>
-		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
+		{#if !watch}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>
+		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>{/if}
 		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
-		<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>
+		{#if !watch}<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>{/if}
 	</div>
-	{#if menuId === r.id}
+	{#if menuId === r.id && !watch}
 		<ul class="mn" data-testid="dl-more-menu">
 			{#each ACTIONS.filter((a) => !a.torrent || protocolOf(r) === 'torrent') as a (a.label)}
 				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
@@ -970,9 +974,9 @@
 			<div class="xb">
 				{@render tabsView(r, simple, im)}
 				{@render depth(r)}
-				{#if ds.length}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
+				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 				{@render btns(r, false)}
-				{#if r.can_act && !inHistory(r)}
+				{#if r.can_act && !watch && !inHistory(r)}
 					<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
 				{/if}
 			</div>
@@ -994,11 +998,14 @@
 			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
 		{/if}
 	</div>
+	{#if !watch}
 	<div class="tbg" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">
 		<span class="split" data-testid="tb-start"><span class="tw2" use:tip={canStart ? 'Start' : 'Start (select a paused download)'}><button type="button" class="tbn" disabled={!canStart} aria-label={canStart ? 'Start' : 'Start (select a paused download)'} onclick={() => openRow && onact?.(openRow, 'resume')} data-testid="tb-start-btn"><Icon name="play" size={20} /></button></span><TopMenu label="More start actions" items={[{ label: 'Start all', onselect: () => onall?.(false) }]} /></span>
 		<span class="split" data-testid="tb-pause"><span class="tw2" use:tip={canPause ? 'Pause' : 'Pause (select a download)'}><button type="button" class="tbn" disabled={!canPause} aria-label={canPause ? 'Pause' : 'Pause (select a download)'} onclick={() => openRow && onact?.(openRow, 'pause')} data-testid="tb-pause-btn"><Icon name="pause" size={20} /></button></span><TopMenu label="More pause actions" items={[{ label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]} /></span>
 		<span class="tw2" use:tip={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'}><button type="button" class="tbn" aria-label={openRow?.can_act ? 'Remove' : 'Remove (select a download first)'} disabled={!openRow?.can_act || busy === openRow?.id} onclick={() => openRow && onremove(openRow)} data-testid="tb-remove"><Icon name="trash" size={20} /></button></span>
+		<span class="tw2" use:tip={'Turned down copies'}><a class="tbn" href={to('/downloads/turned-down')} aria-label="Turned down copies" data-testid="tb-turned-down"><Icon name="shield" size={20} /></a></span>
 	</div>
+	{/if}
 </div>
 <div class="body" style="--rail: {railPx}px">
 <DlRail bind:kindOn bind:srcOn {kindCount} {srcCount} bind:px={railPx} />
