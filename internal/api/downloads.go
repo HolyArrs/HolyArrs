@@ -86,6 +86,10 @@ type DownloadRow struct {
 	Tracker  string `json:"tracker,omitempty"`
 	// TrackerProblem: error, warning or announce (no tracker answered).
 	TrackerProblem string `json:"tracker_problem,omitempty"`
+	// LimitDown and LimitUp are a client torrent's own speed caps (bytes per
+	// second, absent when none).
+	LimitDown int64 `json:"limit_down,omitempty"`
+	LimitUp   int64 `json:"limit_up,omitempty"`
 }
 
 // DownloadTotals are the bytes per second moving across every active download.

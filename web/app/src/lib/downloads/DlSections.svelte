@@ -395,9 +395,16 @@
 	const clearPicked = () => (picked = new Set());
 	// Torrents a torrent Downloader can steer by hash: seeding rules and more.
 	const steerable = (r: DownloadRow) => !!onsteer && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent';
-	const STEER: { mode: SteerMode; label: string; short: string }[] = [{ mode: 'seed', label: 'Seeding rules…', short: 'Seeding rules' }];
+	const STEER: { mode: SteerMode; label: string; short: string }[] = [
+		{ mode: 'location', label: 'Set location…', short: 'Set location' },
+		{ mode: 'speed', label: 'Speed limits…', short: 'Speed limits' },
+		{ mode: 'seed', label: 'Seeding rules…', short: 'Seeding rules' }
+	];
+	// Queue moves and force start for one torrent, as in the selection bar.
+	const QUEUE: { action: BulkAction; label: string }[] = [{ action: 'up', label: 'Move up' }, { action: 'down', label: 'Move down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }];
 	const BULK: { action: BulkAction; label: string }[] = [
-		{ action: 'start', label: 'Start' }, { action: 'pause', label: 'Pause' }, { action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' }
+		{ action: 'start', label: 'Start' }, { action: 'pause', label: 'Pause' }, { action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
+		{ action: 'up', label: 'Up' }, { action: 'down', label: 'Down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
 	];
 	// The detail pane under the list: its height is kept in this browser.
 	const PANE_KEY = 'holyarrs.downloads.pane';
@@ -1090,6 +1097,7 @@
 				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
 			{/each}
 			{#if steerable(r)}
+				{#each QUEUE as q (q.action)}<li><button type="button" class="mi" disabled={busy === r.id} onclick={() => { menuId = 0; onbulk?.([r], q.action); }} data-testid="dl-queue-{q.action}">{q.label}</button></li>{/each}
 				{#each STEER as m (m.mode)}<li><button type="button" class="mi" disabled={busy === r.id} onclick={() => { menuId = 0; onsteer?.([r], m.mode); }} data-testid="dl-steer-{m.mode}">{m.label}</button></li>{/each}
 			{/if}
 		</ul>
@@ -1143,6 +1151,7 @@
 					<dt>Speed</dt><dd>{speed ? `${bytes(speed)}/s down` : '–'}{up ? ` · ${bytes(up)}/s up` : ''}</dd>
 					<dt>Time left</dt><dd>{eta ? duration(eta) : '–'}</dd>
 					<dt>Share ratio</dt><dd>{t ? t.ratio.toFixed(2) : '–'}</dd>
+					{#if r.limit_down || r.limit_up}<dt>Speed caps</dt><dd data-testid="dl-info-caps">{r.limit_down ? `${bytes(r.limit_down)}/s down` : 'no cap down'} · {r.limit_up ? `${bytes(r.limit_up)}/s up` : 'no cap up'}</dd>{/if}
 					{#if r.limits}<dt>Seeding rules</dt><dd data-testid="dl-info-limits">{limitsWords(r.limits)}</dd>{/if}
 					<dt>Seeds</dt><dd>{t ? `${t.seeds} connected of ${t.seeds_total}` : '–'}</dd>
 					<dt>Peers</dt><dd>{t ? `${t.peers} connected of ${t.peers_total}` : '–'}</dd>

@@ -178,3 +178,26 @@ func TestTrackerProblem(t *testing.T) {
 		}
 	}
 }
+
+func TestMoveAndCap(t *testing.T) {
+	f, q := steerFake(t, "2.11.4")
+	ctx := context.Background()
+	if err := q.SetLocation(ctx, []string{steerA, steerB}, "/data/downloads/new"); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.last("torrents/setLocation"); got != "torrents/setLocation?hashes="+steerA+"%7C"+steerB+"&location=%2Fdata%2Fdownloads%2Fnew" {
+		t.Fatal(got)
+	}
+	if err := q.SetTorrentLimits(ctx, []string{steerA}, 1024, 0); err != nil {
+		t.Fatal(err)
+	}
+	if f.last("torrents/setDownloadLimit") != "torrents/setDownloadLimit?hashes="+steerA+"&limit=1024" || f.last("torrents/setUploadLimit") != "torrents/setUploadLimit?hashes="+steerA+"&limit=0" {
+		t.Fatal(f.calls)
+	}
+	if q.SetLocation(ctx, []string{"all"}, "/x") == nil || q.SetLocation(ctx, []string{steerA}, "") == nil {
+		t.Fatal("bad input passed")
+	}
+	if j := (qbitTorrent{DLLimit: 500, UPLimit: -1}).job(); j.LimitDown != 500 || j.LimitUp != 0 {
+		t.Fatalf("%+v", j)
+	}
+}

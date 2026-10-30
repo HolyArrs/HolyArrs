@@ -91,6 +91,7 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 		UpdatedAt: time.Now().UTC(), CanAct: true, ClientItem: true, Outside: true, DownloaderID: d.ID, Hash: j.ID,
 		Category: j.Category, Ratio: j.Ratio, Limits: j.Limits, ClientHint: clientHint(j.Detail),
 		QueuePos: j.QueuePos, Tracker: j.Tracker, TrackerProblem: j.TrackerProblem,
+		LimitDown: j.LimitDown, LimitUp: j.LimitUp,
 	}
 	if j.DoneAt > 0 {
 		t := time.Unix(j.DoneAt, 0).UTC()

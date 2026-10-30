@@ -243,3 +243,38 @@ func (q *Qbittorrent) RemoveTrackers(ctx context.Context, id string, refs []stri
 func TrackerAllowed(v string, allowLocal bool) bool {
 	return !strings.ContainsAny(v, "|\r\n") && trackerAllowed(v, allowLocal)
 }
+
+// Mover is the optional part of a torrent engine that moves torrents' data
+// to another folder and caps single torrents' speeds.
+type Mover interface {
+	SetLocation(ctx context.Context, hashes []string, folder string) error
+	SetTorrentLimits(ctx context.Context, hashes []string, down, up int64) error
+}
+
+// SetLocation moves torrents' data to a folder (the client makes it when
+// missing); qBittorrent turns automatic folder handling off for them.
+func (q *Qbittorrent) SetLocation(ctx context.Context, hashes []string, folder string) error {
+	hs, err := hashList(hashes)
+	if err != nil {
+		return err
+	}
+	if folder == "" {
+		return ErrNotFound
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/setLocation", url.Values{"hashes": {hs}, "location": {folder}})
+	return err
+}
+
+// SetTorrentLimits caps torrents' download and upload speeds in bytes per
+// second; 0 removes a cap.
+func (q *Qbittorrent) SetTorrentLimits(ctx context.Context, hashes []string, down, up int64) error {
+	hs, err := hashList(hashes)
+	if err != nil {
+		return err
+	}
+	if _, err := q.call(ctx, http.MethodPost, "torrents/setDownloadLimit", url.Values{"hashes": {hs}, "limit": {strconv.FormatInt(max(down, 0), 10)}}); err != nil {
+		return err
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/setUploadLimit", url.Values{"hashes": {hs}, "limit": {strconv.FormatInt(max(up, 0), 10)}})
+	return err
+}

@@ -89,3 +89,14 @@ describe('tracker filter', () => {
 		expect(splitTrackers('udp://a.example:80\n\nhttps://b.example/x\nftp://c\nudp://a|b')).toEqual({ urls: ['udp://a.example:80', 'https://b.example/x'], bad: ['ftp://c', 'udp://a|b'] });
 	});
 });
+
+import { bytesOf, kbOf } from './manage.ts';
+describe('speed boxes', () => {
+	it('read and write KB/s', () => {
+		expect(kbOf(2048)).toBe(2);
+		expect(kbOf(undefined)).toBe(0);
+		expect(bytesOf('1.5')).toBe(1536);
+		expect(bytesOf('')).toBe(0);
+		expect(bytesOf(-3)).toBe(0);
+	});
+});

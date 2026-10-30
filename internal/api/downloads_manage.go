@@ -22,6 +22,8 @@ func (a *API) clientManageRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloaders/{id}/bulk", a.bulkItems)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/share-limits", a.shareLimits)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/slow-mode", a.slowMode)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/location", a.setLocation)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/speed-limits", a.torrentLimits)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/trackers", a.addTrackers)
 	m.HandleFunc("PUT /api/v1/downloaders/{id}/items/{hash}/trackers", a.editTracker)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/trackers/remove", a.removeTrackers)
@@ -441,4 +443,79 @@ func (a *API) removeTrackers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.onTrackers(w, r, func(t downloader.TrackerEditor, id string) error { return t.RemoveTrackers(r.Context(), id, in.Refs) })
+}
+
+// onMover runs a call on a torrent Downloader that moves or caps torrents.
+func (a *API) onMover(r *http.Request, id int64, call func(t downloader.Mover) error) error {
+	return a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
+		t, ok := e.(downloader.Mover)
+		if !ok {
+			return downloader.ErrNotSupported
+		}
+		return call(t)
+	})
+}
+
+// setLocation moves many torrents' data to one folder. Without the
+// settings permission the folder is a subfolder of where the category (or
+// the Downloader by default) saves, as for an add.
+func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		return
+	}
+	var in struct {
+		Hashes   []string `json:"hashes"`
+		Category string   `json:"category"`
+		Folder   string   `json:"folder"`
+	}
+	const help = `body is {"hashes": [info hash...], "category": "", "folder": "a subfolder, or a full path with the settings permission"}`
+	if !decode(w, r, &in, help) || !a.bulkHashesOK(w, in.Hashes) {
+		return
+	}
+	if strings.TrimSpace(in.Folder) == "" {
+		fail(w, http.StatusBadRequest, help)
+		return
+	}
+	_, folder, err := a.clientFolder(r.Context(), id, in.Category, in.Folder, true)
+	if folderError(w, err) {
+		return
+	}
+	if err != nil {
+		itemError(w, err)
+		return
+	}
+	if err := a.onMover(r, id, func(t downloader.Mover) error { return t.SetLocation(r.Context(), in.Hashes, folder) }); err != nil {
+		itemError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes), "folder": folder})
+}
+
+// torrentLimits caps many torrents' download and upload speeds.
+func (a *API) torrentLimits(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		return
+	}
+	var in struct {
+		Hashes []string `json:"hashes"`
+		Down   int64    `json:"down"`
+		Up     int64    `json:"up"`
+	}
+	const help = `body is {"hashes": [info hash...], "down": bytes per second (0 no cap), "up": bytes per second (0 no cap)}`
+	if !decode(w, r, &in, help) || !a.bulkHashesOK(w, in.Hashes) {
+		return
+	}
+	if in.Down < 0 || in.Up < 0 || in.Down > 1<<40 || in.Up > 1<<40 {
+		fail(w, http.StatusBadRequest, help)
+		return
+	}
+	if err := a.onMover(r, id, func(t downloader.Mover) error { return t.SetTorrentLimits(r.Context(), in.Hashes, in.Down, in.Up) }); err != nil {
+		itemError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
 }

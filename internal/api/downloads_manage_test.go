@@ -251,3 +251,43 @@ func TestTrackerRoutes(t *testing.T) {
 	do(t, "POST", item, `{"urls":["http://127.1/announce"]}`, 400)
 	do(t, "POST", item, `{"urls":["ftp://x.example/"]}`, 400)
 }
+
+// route: POST /api/v1/downloaders/{id}/location
+// route: POST /api/v1/downloaders/{id}/speed-limits
+func TestLocationAndSpeedRoutes(t *testing.T) {
+	_, f, base := manageBase(t)
+	hs := `["` + outHash + `"]`
+	do(t, "POST", base+"/location", `{"hashes":`+hs+`,"folder":"/srv/elsewhere"}`, 200)
+	do(t, "POST", base+"/speed-limits", `{"hashes":`+hs+`,"down":2048,"up":512}`, 200)
+	saw := f.saw()
+	if !strings.Contains(saw, "torrents/setLocation?hashes="+outHash+"&location=%2Fsrv%2Felsewhere") || !strings.Contains(saw, "torrents/setDownloadLimit?hashes="+outHash+"&limit=2048") || !strings.Contains(saw, "torrents/setUploadLimit?hashes="+outHash+"&limit=512") {
+		t.Fatalf("calls %s", saw)
+	}
+	do(t, "POST", base+"/location", `{"hashes":`+hs+`,"folder":""}`, 400)
+	do(t, "POST", base+"/location", `{"hashes":`+hs+`,"folder":"a\u0000b"}`, 400)
+	do(t, "POST", base+"/speed-limits", `{"hashes":`+hs+`,"down":-1,"up":0}`, 400)
+}
+
+// Without the settings permission a move stays inside the Downloader's folders.
+func TestLocationWithoutSettings(t *testing.T) {
+	x, f, _ := manageBase(t)
+	var did int64
+	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
+	member := auth.Who{UserID: 7, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary}, Scopes: []string{auth.ScopeWrite}}
+	call := func(body string) int {
+		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(auth.ContextWith(context.Background(), member))
+		req.SetPathValue("id", itoa(did))
+		rec := httptest.NewRecorder()
+		x.api.setLocation(rec, req)
+		return rec.Code
+	}
+	if c := call(`{"hashes":["` + outHash + `"],"folder":"/etc"}`); c != 400 {
+		t.Fatalf("absolute: %d", c)
+	}
+	if c := call(`{"hashes":["` + outHash + `"],"folder":"../up"}`); c != 400 {
+		t.Fatalf("traversal: %d", c)
+	}
+	if c := call(`{"hashes":["` + outHash + `"],"category":"linux","folder":"iso/old"}`); c != 200 || !strings.Contains(f.saw(), "location=%2Fdata%2Flinux%2Fiso%2Fold") {
+		t.Fatalf("subfolder: %d %s", c, f.saw())
+	}
+}

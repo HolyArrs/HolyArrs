@@ -12035,6 +12035,42 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/location": {
+      "post": {
+        "description": "Moves many torrents' data of one torrent Downloader to one folder. Without the settings permission the folder is a subfolder of where the category, or the Downloader by default, saves.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Not a torrent Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Move torrents' data",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/pause": {
       "post": {
         "description": "HolyArrs sends nothing new to it; downloads already there are still followed.",
@@ -12250,6 +12286,42 @@
           }
         },
         "summary": "Set a Downloader's total speed limit",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/speed-limits": {
+      "post": {
+        "description": "Caps many torrents' download and upload speeds in bytes per second; 0 removes a cap.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Not a torrent Downloader"
+          },
+          "502": {
+            "description": "Downloader error"
+          }
+        },
+        "summary": "Cap torrents' speeds",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"

@@ -82,6 +82,9 @@ type Job struct {
 	// TrackerProblem says the trackers are not all well: error, warning or
 	// announce (no tracker answered); "" when fine or not reported.
 	TrackerProblem string
+	// LimitDown and LimitUp are a torrent's own speed caps in bytes per
+	// second (0 none).
+	LimitDown, LimitUp int64
 }
 
 // Health is what an engine says about itself.

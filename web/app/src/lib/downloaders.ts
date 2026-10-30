@@ -208,6 +208,9 @@ export interface DownloadRow extends DownloadView {
 	tracker?: string;
 	/** Trackers not all well: error, warning, or announce (none answering). */
 	tracker_problem?: 'error' | 'warning' | 'announce';
+	/** A client torrent's own speed caps in bytes per second (absent: none). */
+	limit_down?: number;
+	limit_up?: number;
 	client_hint?: 'checking' | 'moving' | 'errored' | 'missing' | 'idle_seed';
 	limits?: { ratio: number; seeding_minutes: number; inactive_minutes: number; action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed' };
 	/** Read straight from the client's own list: no HolyArrs download id; addressed by downloader_id and hash. */

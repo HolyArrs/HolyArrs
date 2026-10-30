@@ -265,6 +265,8 @@ type qbitTorrent struct {
 	TrackerErr  bool     `json:"has_tracker_error"`
 	TrackerWarn bool     `json:"has_tracker_warning"`
 	OtherErr    bool     `json:"has_other_announce_error"`
+	DLLimit     int64    `json:"dl_limit"`
+	UPLimit     int64    `json:"up_limit"`
 }
 
 func (t qbitTorrent) job() Job {
@@ -275,7 +277,8 @@ func (t qbitTorrent) job() Job {
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
 		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
-		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker), TrackerProblem: t.problem()}
+		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker), TrackerProblem: t.problem(),
+		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0)}
 }
 
 // problem reads the tracker flags (sent by newer clients) or, without
