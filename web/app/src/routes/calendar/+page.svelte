@@ -80,6 +80,9 @@
 	// ever slipped in above the person. A linked month starts at that month instead.
 	let start = $state(askedMonth ?? earliest);
 	let toTodayOnce = !askedMonth;
+	// False until the page has been put on today (or on the linked month). Until then nothing may
+	// read the scroll position as the day in view: the rows at the top are a year back.
+	let placed = !!askedMonth;
 	let end = $state(addDays(askedMonth ?? today0, 7 * REACH));
 	let entries = $state<CalendarEntry[]>([]);
 	let libraryEmpty = $state(false);
@@ -167,18 +170,42 @@
 	function keepDay() {
 		const line = narrow ? 112 : 136;
 		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
-		const was = rows.find((x) => x.getBoundingClientRect().bottom > line + 8)?.dataset.day;
-		if (!was || window.scrollY < 4) return;
+		// Near the top (a closed card may have left the page there) the day in view is the one
+		// the heading names, else today: never the first row loaded, which is a year back.
+		let was = window.scrollY < 4 || !placed ? (active ?? todayKey) : rows.find((x) => x.getBoundingClientRect().bottom > line + 8)?.dataset.day;
+		if (!was) return;
+		// The row standing in for today (today has nothing on it) means today: the new list may have today.
+		if (was > todayKey && was === todayRow()?.dataset.day && firstDay <= todayKey) was = todayKey;
 		const main = document.querySelector<HTMLElement>('.cal-main');
 		if (main) main.style.minHeight = `${main.offsetHeight}px`;
-		void tick().then(() => {
-			const now = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
-			const row = now.find((x) => (x.dataset.day ?? '') >= was) ?? now.at(-1);
+		void tick().then(() => landOn(was, line, () => {
 			if (main) main.style.minHeight = '';
-			if (!row) return;
-			window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - line, behavior: 'instant' });
+		}));
+	}
+	// Puts the row for this full date (YYYY-MM-DD, or the next one after it) at `at` px from the
+	// top, and keeps putting it back for a few frames while the new rows settle and grow.
+	function landOn(day: string, at: number, done?: () => void) {
+		let frames = 0;
+		let still = 0;
+		const step = () => {
+			const views = document.querySelectorAll<HTMLElement>('.cal-main .view-in');
+			const scope = views[views.length - 1] ?? document;
+			const rows = [...scope.querySelectorAll<HTMLElement>('[data-day]')];
+			const row = rows.find((x) => (x.dataset.day ?? '') >= day) ?? rows.at(-1);
+			if (row) {
+				const off = row.getBoundingClientRect().top - at;
+				if (Math.abs(off) > 1) {
+					window.scrollTo({ top: window.scrollY + off, behavior: 'instant' });
+					still = 0;
+				} else still++;
+			}
+			if ((views.length > 1 || still < 4) && frames++ < 60) return void requestAnimationFrame(step);
 			rebaseBar();
-		});
+			done?.();
+			follow();
+			checkToday();
+		};
+		step();
 	}
 	// Following nothing yet: the calendar opens on the Whole Library with one line saying how to follow.
 	const followNothing = $derived(loaded && myFollows === 0 && follows === 'library');
@@ -240,7 +267,16 @@
 				if (toTodayOnce && !error) {
 					// One go: with nothing on or after today the page simply stays where it is.
 					toTodayOnce = false;
-					void tick().then(atToday);
+					// Wait while an old view is still fading out (Cards or List clicked during the load).
+					let tries = 0;
+					const place = () => {
+						if (document.querySelectorAll('.cal-main .view-in').length > 1 && tries++ < 40) return void requestAnimationFrame(place);
+						atToday();
+						placed = true;
+						follow();
+						checkToday();
+					};
+					void tick().then(place);
 				}
 			}
 		}
@@ -266,10 +302,8 @@
 	};
 	// Today's row just below the top bar and the date bar, at once.
 	function atToday(): boolean {
-		const row = todayRow();
-		if (!row) return false;
-		window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - (narrow ? 112 : 136), behavior: 'instant' });
-		rebaseBar();
+		if (!todayRow()) return false;
+		landOn(todayKey, narrow ? 112 : 136);
 		return true;
 	}
 	// Calendar picked again (side menu) while it already shows: start over at today and the top.
@@ -278,6 +312,7 @@
 		const m = /^(\d{4})-(\d{2})$/.exec(nav.to?.url.searchParams.get('month') ?? '');
 		if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) {
 			toTodayOnce = false;
+			placed = true;
 			const at = new Date(Number(m[1]), Number(m[2]) - 1, 1);
 			jump(at < earliest ? earliest : at >= latest ? addDays(latest, -7 * REACH) : at);
 			window.scrollTo({ top: 0, behavior: 'instant' });
@@ -288,6 +323,7 @@
 		end = addDays(today0, 7 * REACH);
 		anchor = null;
 		toTodayOnce = true;
+		placed = false;
 	});
 	// Each new range (the arrows, Today, more weeks, the small month) is loaded once.
 	let started = $state(false);
@@ -307,6 +343,7 @@
 			end = addDays(today0, 7 * REACH);
 			anchor = null;
 			toTodayOnce = true;
+			placed = false;
 		}
 	}
 	const todayRow = () => [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= todayKey);
@@ -404,6 +441,8 @@
 	}
 	// The day at the top of the page, for the small month (which pages along when the month changes).
 	function follow() {
+		// Not on today yet: the small month and the heading stay on today, never the first day loaded.
+		if (!placed) return;
 		const rows = document.querySelectorAll<HTMLElement>('.cal-main [data-day]');
 		const line = 140;
 		let top: string | null = null;
@@ -411,7 +450,9 @@
 			if (r.getBoundingClientRect().top <= line) top = r.dataset.day ?? null;
 			else break;
 		}
-		top ??= rows[0]?.dataset.day ?? null;
+		if (!top) return;
+		// Today has nothing on it: the first row after today stands for today's week, not its own.
+		if (top > todayKey && top === todayRow()?.dataset.day && firstDay <= todayKey) top = todayKey;
 		if (top === active) return;
 		active = top;
 		if (top) {
@@ -453,24 +494,33 @@
 	// day at the top is put back where it was.
 	function pickView(v: CalendarView) {
 		if (v === view) return;
+		// Not placed yet (the first load is still on its way): switch only; the load puts the new view on today.
+		if (!placed) {
+			view = v;
+			saveView(v);
+			const u0 = new URL(page.url.href);
+			u0.searchParams.set('view', v);
+			u0.searchParams.delete('span');
+			replaceState(u0, page.state);
+			return;
+		}
 		const main = document.querySelector<HTMLElement>('.cal-main');
 		if (main) main.style.minHeight = `${main.offsetHeight}px`;
 		notePlace();
 		const was = anchor;
 		anchor = null;
-		// The old view may stay a moment while it fades out: wait until only the new one is left.
-		let tries = 0;
-		const settle = () => {
-			const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
-			const row = was ? rows.find((x) => (x.dataset.day ?? '') >= was.day) : undefined;
-			if ((document.querySelectorAll('.cal-main .view-in').length > 1 || (was && !row)) && tries++ < 40) return void requestAnimationFrame(settle);
-			// Put the same day back where it was (absolute, so a page that shrank meanwhile cannot leave it in last year).
-			if (was && row) window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - was.top, behavior: 'instant' });
-			rebaseBar();
-			if (main) main.style.minHeight = '';
-			follow();
-		};
-		void tick().then(settle);
+		// The same full date goes back where it was in the new view; at the very top, the day in view.
+		const day = was && window.scrollY >= 4 ? was.day : (active ?? (askedMonth ? null : todayKey));
+		const at = was && window.scrollY >= 4 ? was.top : narrow ? 112 : 136;
+		void tick().then(() => {
+			if (!day) {
+				if (main) main.style.minHeight = '';
+				return;
+			}
+			landOn(day, at, () => {
+				if (main) main.style.minHeight = '';
+			});
+		});
 		view = v;
 		saveView(v);
 		const u = new URL(page.url.href);
