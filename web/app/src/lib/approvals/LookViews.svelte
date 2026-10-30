@@ -108,6 +108,39 @@
 	// 11 Desk: the people waiting, once each, for the faces in the header.
 	const waiters = $derived([...new Map(open_.map((a) => [ctx.who(a).id, ctx.who(a)])).values()]);
 
+	// 12 Screening Room · 13 Up Next: one picked ask, the first waiting one by default.
+	let pickedId = $state(0);
+	const pickedAsk = $derived(shown.find((a) => a.id === pickedId) ?? shown.find(waiting) ?? shown[0] ?? null);
+	function roomKeys(e: KeyboardEvent) {
+		if (look !== 12 || (e.target as HTMLElement).closest('input, textarea, select, dialog') || e.metaKey || e.ctrlKey || e.altKey) return;
+		const i = shown.findIndex((a) => a.id === pickedAsk?.id);
+		const cur = pickedAsk;
+		if (e.key === 'j' || e.key === 'k') {
+			const n = shown[Math.min(Math.max(i + (e.key === 'j' ? 1 : -1), 0), shown.length - 1)];
+			if (n) { pickedId = n.id; void tick().then(() => document.querySelector<HTMLElement>(`[data-sr="${n.id}"]`)?.scrollIntoView({ block: 'nearest' })); }
+		} else if (e.key === 'a' && cur && waiting(cur)) ctx.approve([cur]);
+		else if (e.key === 'd' && cur && waiting(cur)) ctx.turnDown([cur]);
+		else return;
+		e.preventDefault();
+	}
+
+	// 14 Split stacks: what needs you most, first.
+	const stacks = $derived.by(() => {
+		const kid = (a: Ask) => !!ctx.who(a).kid;
+		const w = shown.filter(waiting);
+		const kids = w.filter(kid);
+		const rest = w.filter((a) => !kid(a));
+		const fresh = rest.filter((a) => days(a.asked_at) < 3);
+		const old = rest.filter((a) => days(a.asked_at) >= 3);
+		const done = all.filter((a) => !waiting(a) && a.decided_at && Date.now() - Date.parse(a.decided_at) < 7 * 86_400_000).slice(0, 8);
+		return [
+			{ id: 'new', title: 'New', hint: 'Asked in the last few days.', icon: 'sparkle' as IconName, color: 'var(--accent)', asks: fresh },
+			{ id: 'kids', title: 'From the kids', hint: 'Kid accounts; check the rating before you say yes.', icon: 'people' as IconName, color: 'var(--info, var(--accent))', asks: kids },
+			{ id: 'old', title: 'Waiting a while', hint: 'Three days or more. Someone is still hoping.', icon: 'clock' as IconName, color: 'var(--wait)', asks: old },
+			{ id: 'done', title: 'Handled this week', hint: 'Your answers from the last seven days.', icon: 'check' as IconName, color: 'var(--ok)', asks: done }
+		];
+	});
+
 	// 10 Tracker: where each ask is on its way.
 	const steps = ['Asked', 'Approved', 'Getting it', 'Ready'];
 	const stepOf = (a: Ask) => (a.state === 'asked' ? 0 : a.state === 'available' ? 3 : askTab(a) === 'approved' ? 2 : 1);
@@ -465,6 +498,139 @@
 			{/each}
 		</ul>
 	</div>
+{:else if look === 12 || look === 13}
+	{@const cur = pickedAsk}
+	{#if look === 12}
+		<!-- 12 Screening Room: tabs · a calm list · the picked ask large, lit by its art. J/K move, A approves, D turns down. -->
+		<div class="sr" data-look="screening-room">
+			<nav class="sr-tabs" aria-label="Show">
+				{#each queues.filter((q) => ctx.approver || q.tab !== 'failed') as q (q.tab)}
+					<button type="button" class="sr-tab" aria-current={ctx.tab === q.tab ? 'page' : undefined} onclick={() => ctx.setTab(q.tab)}><Icon name={q.icon} size={17} /><span>{q.label}</span>{#if ctx.counts[q.tab]}<span class="rn">{ctx.counts[q.tab]}</span>{/if}</button>
+				{/each}
+				<p class="sr-keys"><kbd>J</kbd><kbd>K</kbd> move<br /><kbd>A</kbd> approve · <kbd>D</kbd> turn down</p>
+			</nav>
+			<ul class="sr-list" aria-label="Asks">
+				{#each shown as a (a.id)}
+					<li animate:flip={{ duration: 220 }}>
+						<button type="button" class="sr-row" class:cur={cur?.id === a.id} aria-current={cur?.id === a.id ? 'true' : undefined} data-sr={a.id} onclick={() => (pickedId = a.id)}>
+							{@render pic(a, 'sr-pic')}
+							<span class="sr-t"><strong>{a.name}</strong><span class="muted">{ctx.who(a).name} · {ago(a.asked_at)}</span></span>
+							{#if waiting(a)}<span class="dk-dot sr-dot" aria-hidden="true"></span>{/if}
+						</button>
+					</li>
+				{:else}
+					<li>{@render empty('Nothing in this list.')}</li>
+				{/each}
+			</ul>
+			<section class="sr-stage" aria-label="The picked ask">
+				{#if cur}
+					{#key cur.id}
+						{@render fill(cur, 'sr-bg')}
+						<div class="sr-in">
+							<div class="sr-head">
+								{@render pic(cur, 'sr-big')}
+								<div class="sr-ht">
+									<span class="dk-kind">{kindWord(cur.kind)}{cur.year ? ` · ${cur.year}` : ''}</span>
+									<h2>{cur.name}</h2>
+									{#if cur.kind !== 'movie'}<p class="muted">{line(cur)}</p>{/if}
+								</div>
+							</div>
+							<div class="glass">{@render facts(cur)}</div>
+							<div class="sr-act">
+								{#if waiting(cur)}
+									<button type="button" class="dk-b yes" onclick={() => ctx.approve([cur])}><Icon name="check" size={16} /><span>Approve</span></button>
+									<button type="button" class="dk-b no" onclick={() => ctx.turnDown([cur])}><Icon name="x" size={16} /><span>Turn down</span></button>
+								{:else}{@render answer(cur, 'md')}{/if}
+								<Button size="md" variant="plain" type="button" onclick={(e: MouseEvent) => open(cur, e.currentTarget as HTMLElement)}>Seasons, folder and rules</Button>
+							</div>
+						</div>
+					{/key}
+				{:else}
+					<div class="sr-zero"><Icon name="check" size={28} /><h2>All caught up</h2><p class="muted">New asks land here the moment someone asks.</p></div>
+				{/if}
+			</section>
+		</div>
+	{:else}
+		<!-- 13 Up Next: a cinematic hero for the picked ask, a shelf of every ask below. -->
+		<div class="un" data-look="up-next">
+			{#if cur}
+				<section class="un-hero" aria-label="The picked ask">
+					{#key cur.id}
+						{@render fill(cur, 'un-bg')}
+						<div class="un-in">
+							{@render pic(cur, 'un-pic')}
+							<div class="un-t">
+								<span class="dk-eyebrow">{waiting(cur) ? 'Up next' : verdict(cur)}</span>
+								<h2>{cur.name}</h2>
+								<p class="un-meta">{kindWord(cur.kind)}{cur.year ? ` · ${cur.year}` : ''}{cur.kind !== 'movie' ? ` · ${line(cur)}` : ''}</p>
+								<p class="un-who">{@render who(cur, 28)}<span class="muted">asked {ago(cur.asked_at)}</span></p>
+								{#if cur.note}<p class="un-note">&ldquo;{cur.note}&rdquo;</p>{/if}
+								<div class="sr-act">
+									{#if waiting(cur)}
+										<button type="button" class="dk-b yes big-b" onclick={() => ctx.approve([cur])}><Icon name="check" size={18} /><span>Approve</span></button>
+										<button type="button" class="dk-b no big-b glassy" onclick={() => ctx.turnDown([cur])}><Icon name="x" size={18} /><span>Turn down</span></button>
+									{:else}{@render answer(cur, 'md')}{/if}
+									<button type="button" class="dk-b no big-b glassy" onclick={(e) => open(cur, e.currentTarget)}><Icon name="info" size={18} /><span>Details</span></button>
+								</div>
+							</div>
+						</div>
+					{/key}
+				</section>
+				<h3 class="un-h">{ctx.tab === 'waiting' ? `Waiting on you · ${shown.length}` : `${shown.length} in this list`}</h3>
+				<ul class="un-shelf" aria-label="Asks">
+					{#each shown as a (a.id)}
+						<li animate:flip={{ duration: 260 }}>
+							<button type="button" class="un-card" class:cur={cur.id === a.id} aria-current={cur.id === a.id ? 'true' : undefined} onclick={() => (pickedId = a.id)}>
+								<span class="un-art">{@render pic(a, 'un-cpic')}<span class="pg-av"><Avatar name={ctx.who(a).name} src={ctx.who(a).avatar} size={24} /></span></span>
+								<span class="pg-n">{a.name}</span>
+								<span class="muted">{ctx.who(a).name} · {ago(a.asked_at)}</span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<section class="un-zero">
+					<div class="collage" aria-hidden="true">{#each all.filter((a) => a.state !== 'asked' && art(a)).slice(0, 12) as a (a.id)}{@render pic(a, 'col-pic')}{/each}</div>
+					<div class="un-zt"><h2>All caught up</h2><p class="muted">Everything the house asked for has an answer. Here’s what you said yes to.</p></div>
+				</section>
+			{/if}
+		</div>
+	{/if}
+{:else if look === 14}
+	<!-- 14 Split stacks: the queue split by what needs you most. -->
+	<div class="ss" data-look="split-stacks">
+		{#each stacks as st (st.id)}
+			{#if st.asks.length}
+				<section class="ss-sec" aria-labelledby="ss-{st.id}">
+					<header class="ss-h">
+						<span class="ss-ic" style="--c: {st.color}"><Icon name={st.icon} size={16} /></span>
+						<div><h2 id="ss-{st.id}">{st.title}<span class="rn">{st.asks.length}</span></h2><p class="muted">{st.hint}</p></div>
+						{#if st.id !== 'done' && st.asks.filter(waiting).length > 1}<Button size="sm" variant="plain" icon="check" type="button" onclick={() => ctx.approve(st.asks.filter(waiting))}>Approve all {st.asks.filter(waiting).length}</Button>{/if}
+					</header>
+					<ul class="ss-list">
+						{#each st.asks as a (a.id)}
+							{@const w = ctx.who(a)}
+							<li class="ss-row" class:answered={!waiting(a)} animate:flip={{ duration: 240 }}>
+								{#if art(a)}{@render fill(a, 'dk-glow')}{/if}
+								<button type="button" class="dk-hit" onclick={(e) => open(a, e.currentTarget)}>
+									{@render pic(a, 'ss-pic')}
+									<span class="dk-t"><span class="dk-kind">{kindWord(a.kind)}{a.year ? ` · ${a.year}` : ''}</span><strong>{a.name}</strong>{#if a.kind !== 'movie'}<span class="muted">{line(a)}</span>{/if}</span>
+								</button>
+								<span class="dk-who"><Avatar name={w.name} src={w.avatar} size={28} /><span><strong>{w.name}{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</strong><time class="muted" datetime={a.asked_at}>asked {ago(a.asked_at)}</time></span></span>
+								<span class="dk-act">
+									{#if waiting(a)}
+										<button type="button" class="dk-b no" onclick={() => ctx.turnDown([a])}><Icon name="x" size={16} /><span>Turn down</span></button>
+										<button type="button" class="dk-b yes" onclick={() => ctx.approve([a])}><Icon name="check" size={16} /><span>Approve</span></button>
+									{:else}<span class="ss-done">{verdict(a)}{#if a.decided_at} · {ago(a.decided_at)}{/if}</span>{/if}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				</section>
+			{/if}
+		{/each}
+		{#if !stacks.some((s) => s.asks.length)}{@render empty('Nothing here right now.')}{/if}
+	</div>
 {:else if look === 10}
 	<!-- 10 Tracker: every ask shows where it is on its way. -->
 	<ul class="trk" data-look="tracker">
@@ -485,6 +651,8 @@
 		{/each}
 	</ul>
 {/if}
+
+<svelte:window onkeydown={roomKeys} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <dialog class="sheet" class:side={look === 3} class:rise={look === 6} class:review={look === 9} bind:this={sheetEl} aria-label={sheetAsk?.name ?? 'Ask'} onclose={sheetClosed} onclick={(e) => e.target === sheetEl && hideSheet()}>
@@ -793,6 +961,82 @@
 	@keyframes dk-in { from { opacity: 0; transform: translateY(8px); } }
 	@media (prefers-reduced-motion: reduce) { .dk, .dk-pic, .dk-b { animation: none; transition: none; } }
 
+	/* 12 Screening Room */
+	.sr { display: grid; grid-template-columns: 200px minmax(260px, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+	.sr-tabs { position: sticky; top: calc(var(--topbar, 56px) + 12px); display: flex; flex-direction: column; gap: 2px; }
+	.sr-tab { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border: 0; border-radius: 10px; background: none; color: var(--text-muted); font: var(--t-subhead); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.sr-tab:hover { background: var(--surface-2); color: var(--text); }
+	.sr-tab[aria-current='page'] { background: var(--surface-2); color: var(--text); font-weight: 600; }
+	.sr-keys { margin: 16px 10px 0; color: var(--text-muted); font: var(--t-caption); line-height: 2; }
+	kbd { margin-right: 3px; padding: 1px 6px; border-radius: 4px; background: var(--surface-3); box-shadow: inset 0 -1px 0 var(--line); font: var(--t-caption); font-weight: 600; }
+	.sr-list { position: sticky; top: calc(var(--topbar, 56px) + 12px); max-height: calc(100dvh - var(--topbar, 56px) - 120px); overflow-y: auto; padding: 6px; border-radius: 18px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.sr-row { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px; border: 0; border-radius: 12px; background: none; text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.sr-row:hover { background: var(--surface-2); }
+	.sr-row.cur { background: color-mix(in srgb, var(--accent) 14%, var(--surface-2)); }
+	.sr-pic { width: 38px; border-radius: 6px; box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.5); }
+	.sr-t { display: flex; flex-direction: column; min-width: 0; font: var(--t-subhead); }
+	.sr-t strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.sr-t .muted { font: var(--t-caption); }
+	.sr-dot { position: static; margin-left: auto; flex: none; width: 8px; height: 8px; box-shadow: none; }
+	.sr-stage { position: relative; isolation: isolate; overflow: hidden; min-height: 560px; border-radius: 22px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line), 0 30px 60px -30px rgb(0 0 0 / 0.6); }
+	.sr-bg { position: absolute; inset: -80px; z-index: -1; filter: blur(80px) saturate(1.6); opacity: 0.55; animation: fade 500ms var(--ease-out) both; }
+	.sr-stage::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, transparent, var(--surface-1) 85%); }
+	.sr-in { display: flex; flex-direction: column; gap: 20px; padding: 32px; animation: pop 360ms var(--ease-out) both; }
+	.sr-head { display: flex; gap: 24px; align-items: flex-end; }
+	.sr-big { width: 170px; border-radius: 14px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -18px rgb(0 0 0 / 0.7); }
+	.sr-ht h2 { margin-top: 4px; font: var(--t-title1); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+	.glass { padding: 16px 18px; border-radius: 16px; background: color-mix(in srgb, var(--surface-1) 55%, transparent); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07); -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); }
+	.sr-act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+	.sr-zero { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 560px; color: var(--text-muted); text-align: center; }
+	.sr-zero h2 { color: var(--text); font: var(--t-title3); }
+	@keyframes fade { from { opacity: 0; } }
+
+	/* 13 Up Next */
+	.un-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 440px; display: flex; align-items: flex-end; border-radius: 24px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.un-bg { position: absolute; inset: -40px; z-index: -1; filter: blur(30px) saturate(1.3); opacity: 0.75; transform: scale(1.1); animation: fade 600ms var(--ease-out) both; }
+	.un-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.45) 55%, rgb(0 0 0 / 0.1)), linear-gradient(0deg, rgb(0 0 0 / 0.5), transparent 50%); }
+	.un-in { display: flex; gap: 32px; align-items: flex-end; padding: 40px; color: #fff; animation: pop 420ms var(--ease-out) both; }
+	.un-pic { width: 200px; border-radius: 14px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12), 0 30px 60px -16px rgb(0 0 0 / 0.8); }
+	.un-t { display: flex; flex-direction: column; gap: 8px; max-width: 620px; }
+	.un-t .dk-eyebrow { color: rgb(255 255 255 / 0.7); }
+	.un-t h2 { font-size: clamp(30px, 4vw, 48px); font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; }
+	.un-meta { color: rgb(255 255 255 / 0.75); font: var(--t-callout); }
+	.un-who { display: flex; align-items: center; gap: 10px; font: var(--t-callout); }
+	.un-who .muted { color: rgb(255 255 255 / 0.7); }
+	.un-note { padding-left: 12px; border-left: 2px solid rgb(255 255 255 / 0.4); font: var(--t-body); font-style: italic; }
+	.big-b { min-height: 46px; padding: 0 22px; font: var(--t-headline); }
+	.glassy { background: rgb(255 255 255 / 0.16); color: #fff; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+	.glassy:hover { background: rgb(255 255 255 / 0.26); }
+	.un-h { margin: 28px 4px 12px; font: var(--t-title3); }
+	.un-shelf { display: flex; gap: 16px; overflow-x: auto; padding: 4px 4px 12px; scroll-snap-type: x proximity; scrollbar-width: none; }
+	.un-shelf::-webkit-scrollbar { display: none; }
+	.un-shelf li { flex: none; width: 168px; scroll-snap-align: start; }
+	.un-card { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; font: var(--t-caption); border-radius: 12px; }
+	.un-art { position: relative; display: block; margin-bottom: 8px; border-radius: 12px; transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); box-shadow: 0 0 0 1px var(--line); }
+	.un-card:hover .un-art { transform: translateY(-4px) scale(1.02); box-shadow: 0 0 0 1px var(--line), 0 18px 34px -14px rgb(0 0 0 / 0.6); }
+	.un-card.cur .un-art { box-shadow: 0 0 0 3px var(--accent), 0 18px 34px -14px rgb(0 0 0 / 0.6); transform: translateY(-4px); }
+	.un-cpic { width: 100%; border-radius: 12px; }
+	.un-zero { position: relative; overflow: hidden; min-height: 420px; display: grid; place-items: center; border-radius: 24px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.collage { position: absolute; inset: -20px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; opacity: 0.35; transform: rotate(-6deg) scale(1.15); }
+	.col-pic { width: 100%; border-radius: 10px; }
+	.un-zt { position: relative; padding: 28px 32px; border-radius: 20px; text-align: center; background: color-mix(in srgb, var(--surface-1) 70%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08); }
+	.un-zt h2 { font: var(--t-title2); }
+
+	/* 14 Split stacks */
+	.ss { display: flex; flex-direction: column; gap: 28px; max-width: 1120px; }
+	.ss-h { display: flex; align-items: center; gap: 12px; margin: 0 4px 12px; }
+	.ss-h > div { flex: 1; min-width: 0; }
+	.ss-h h2 { display: flex; align-items: center; gap: 8px; font: var(--t-title3); }
+	.ss-h .rn { margin-left: 0; }
+	.ss-h p { font: var(--t-footnote); }
+	.ss-ic { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
+	.ss-list { display: flex; flex-direction: column; gap: 8px; }
+	.ss-row { position: relative; isolation: isolate; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 220px auto; align-items: center; gap: 18px; padding: 12px 14px 12px 12px; border-radius: 16px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+	.ss-row:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px var(--line-strong, var(--line)), 0 10px 30px -12px rgb(0 0 0 / 0.35); }
+	.ss-row.answered .dk-hit, .ss-row.answered .dk-who { opacity: 0.66; }
+	.ss-pic { width: 48px; border-radius: 8px; box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.5); }
+	.ss-done { color: var(--text-muted); font: var(--t-footnote); }
+
 	/* Sheets: side (3), rising over art (6), review window (9). */
 	.sheet { padding: 0; border: 0; color: var(--text); background: var(--bg); box-shadow: 0 0 0 1px var(--line), var(--shadow-modal); overflow: hidden; }
 	.sheet::backdrop { background: rgb(0 0 0 / 0.5); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
@@ -825,6 +1069,14 @@
 	@keyframes from-below { from { transform: translateY(60px); opacity: 0; } }
 
 	@media (max-width: 1023px) {
+		.sr { grid-template-columns: minmax(0, 1fr); }
+		.sr-tabs, .sr-list { position: static; max-height: none; }
+		.sr-tabs { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+		.sr-tab { flex: none; }
+		.sr-keys { display: none; }
+		.ss-row { grid-template-columns: minmax(0, 1fr); }
+		.un-in { flex-direction: column; align-items: flex-start; padding: 24px; }
+		.un-pic { width: 130px; }
 		.q-grid, .mq { grid-template-columns: minmax(0, 1fr); }
 		.q-rail, .mq-rail { position: static; flex-direction: row; overflow-x: auto; scrollbar-width: none; gap: 6px; }
 		.q-rail .rh { display: none; }
