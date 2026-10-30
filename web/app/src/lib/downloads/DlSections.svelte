@@ -8,7 +8,7 @@
 	// (through the page's Remove dialog).
 	import { tick } from 'svelte';
 	import { page } from '$app/state';
-	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, quality, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
+	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, sortRows, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
 	import { replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
@@ -277,7 +277,37 @@
 	// One list, filtered by the tabs. Done reads newest first and can be searched.
 	const isDone = $derived(on === 'done');
 	const newest = (a: DownloadRow, b: DownloadRow) => (b.finished_at || b.updated_at).localeCompare(a.finished_at || a.updated_at);
-	const list = $derived(isDone ? [...shown].sort(newest) : shown);
+	const tabOrder = $derived(isDone ? [...shown].sort(newest) : shown);
+	// A sorted column (kept with the column layout) overrides the tab's own order.
+	const time = (v: string | undefined) => (v ? Date.parse(v) : undefined);
+	const list = $derived.by(() => {
+		const so = layout.sort;
+		return so && vis.includes(so.id) ? sortRows(tabOrder, (r) => sortKey(r, so.id), so.desc) : tabOrder;
+	});
+	function sortKey(r: DownloadRow, id: ColId): number | string | undefined {
+		const tor = r.protocol === 'torrent';
+		switch (id) {
+			case 'title': return rowName(r);
+			case 'kind': return kindOf(r) || categoryWords(r.category) || '';
+			case 'proto': return protocolOf(r);
+			case 'progress': return r.progress;
+			case 'status': return statusWord(r);
+			case 'speed': return moving(r) ? r.speed : undefined;
+			case 'time': return r.active && r.eta ? r.eta : undefined;
+			case 'size': return r.size || undefined;
+			case 'quality': return quality(r.name);
+			case 'added': return time(r.started_at);
+			case 'completed': return time(r.finished_at);
+			case 'seeds': return tor ? r.seeds : undefined;
+			case 'peers': return tor ? r.peers : undefined;
+			case 'ratio': return tor && r.ratio != null ? r.ratio : undefined;
+			case 'up': return tor ? r.up_speed : undefined;
+			case 'queue': return r.queue_pos || undefined;
+			case 'tracker': return r.tracker;
+			case 'downloader': return dlName(r);
+		}
+		return undefined;
+	}
 	const sum = $derived(totals(allQueue));
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
 	// The toolbar's Start and Pause act on the open row; its state comes from the client.
@@ -559,7 +589,7 @@
 	/** The least width each number column needs to show its text whole. */
 	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 52, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
-	const DROP: ColId[] = ['quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
+	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
 	const wMin = (id: ColId) => Math.max(layout.widths[id], MINW[id] ?? 0);
 	const vis = $derived.by(() => {
@@ -572,6 +602,10 @@
 		}
 		return cur;
 	});
+	function sortBy(id: ColId) {
+		layout.sort = nextSort(layout.sort, id);
+		save();
+	}
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
 	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'time'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
@@ -715,7 +749,7 @@
 		return { slot: i, line: at - box.left };
 	}
 	function headDown(e: PointerEvent, id: ColId) {
-		if (e.button !== 0) return;
+		if (e.button !== 0 || (e.target as Element).closest('.grip')) return;
 		const el = e.currentTarget as HTMLElement;
 		const head = el.closest<HTMLElement>('.chead');
 		if (!head) return;
@@ -730,7 +764,8 @@
 			slot = s.slot;
 			lineX = s.line;
 		};
-		const up = () => {
+		const up = (u?: PointerEvent) => {
+			if (!on && u?.type === 'pointerup') sortBy(id);
 			el.removeEventListener('pointermove', mv);
 			el.removeEventListener('pointerup', up);
 			el.removeEventListener('pointercancel', stop);
@@ -946,6 +981,16 @@
 	{:else if id === 'seeds' || id === 'peers'}
 		{@const n = id === 'seeds' ? r.seeds : r.peers}
 		<span class="num" class:ph data-col={id}>{!hist && r.protocol === 'torrent' && (r.phase === 'downloading' || r.phase === 'stalled') && n != null ? n : dash}</span>
+	{:else if id === 'ratio'}
+		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null && (r.client_item || stageOf(r) === 'seeding' || r.ratio > 0) ? r.ratio.toFixed(2) : dash}</span>
+	{:else if id === 'up'}
+		<span class="num" class:ph data-col="up">{r.protocol === 'torrent' && r.up_speed ? `${bytes(r.up_speed)}/s` : dash}</span>
+	{:else if id === 'completed'}
+		<span class="num" class:ph data-col="completed" title={r.finished_at ?? ''}>{r.finished_at ? ago(r.finished_at) : dash}</span>
+	{:else if id === 'queue'}
+		<span class="num" class:ph data-col="queue">{r.queue_pos || dash}</span>
+	{:else if id === 'tracker'}
+		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
 	{:else if id === 'downloader'}
 		<span class="txt" class:ph data-col="downloader" title={dlKind(r) || dlName(r)}>{dlName(r)}</span>
 	{:else}
@@ -978,7 +1023,8 @@
 		{#each vis as id (id)}
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} data-col={id} data-testid="dl-head" onpointerdown={(e) => headDown(e, id)} title="Drag to move · right-click for columns"><span class="lbl">{c.label}</span><!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			{@const so = layout.sort?.id === id ? layout.sort : undefined}
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1402,6 +1448,8 @@
 	.help { margin: 6px 6px 0; color: var(--text-muted); font: var(--t-caption); }
 	.pf { display: flex; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.sarr { flex: none; margin-left: 4px; color: var(--accent-text); font-weight: 700; }
+	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) / 2 - 6px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }

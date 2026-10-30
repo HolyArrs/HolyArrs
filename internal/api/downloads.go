@@ -80,6 +80,10 @@ type DownloadRow struct {
 	// coarse: checking, moving, errored, missing (files gone) or idle_seed
 	// (finished, nobody asking for it now).
 	ClientHint string `json:"client_hint,omitempty"`
+	// QueuePos is a client torrent's place in the client's queue (0 not
+	// queued); Tracker the host of the tracker it works with now.
+	QueuePos int    `json:"queue_pos,omitempty"`
+	Tracker  string `json:"tracker,omitempty"`
 }
 
 // DownloadTotals are the bytes per second moving across every active download.

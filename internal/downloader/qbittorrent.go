@@ -258,6 +258,9 @@ type qbitTorrent struct {
 	SeedLimit   *int64   `json:"seeding_time_limit"`
 	IdleLimit   *int64   `json:"inactive_seeding_time_limit"`
 	ShareAction string   `json:"share_limit_action"`
+	DoneOn      int64    `json:"completion_on"`
+	QueuePos    int      `json:"priority"`
+	Tracker     string   `json:"tracker"`
 }
 
 func (t qbitTorrent) job() Job {
@@ -267,7 +270,18 @@ func (t qbitTorrent) job() Job {
 	}
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
 		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
-		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits()}
+		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
+		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker)}
+}
+
+// hostOnly keeps a tracker address's host name: the path and query can
+// hold a passkey.
+func hostOnly(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }
 
 // limits reads the torrent's own seeding rules; nil when the client sent none.

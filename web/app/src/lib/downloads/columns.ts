@@ -18,6 +18,10 @@ export type ColId =
 	| 'seeds'
 	| 'peers'
 	| 'ratio'
+	| 'up'
+	| 'completed'
+	| 'queue'
+	| 'tracker'
 	| 'requested'
 	| 'downloader'
 	| 'source'
@@ -52,7 +56,11 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'age', label: 'Age', on: false, width: 70, num: true, missing: true },
 	{ id: 'seeds', label: 'Seeds', on: false, width: 70, num: true, torrent: true },
 	{ id: 'peers', label: 'Peers', on: false, width: 70, num: true, torrent: true },
-	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true, missing: true },
+	{ id: 'ratio', label: 'Ratio', on: true, width: 60, num: true, torrent: true },
+	{ id: 'up', label: 'Upload speed', on: false, width: 100, num: true, torrent: true },
+	{ id: 'completed', label: 'Completed', on: false, width: 100, num: true },
+	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true, torrent: true },
+	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
 	{ id: 'requested', label: 'Requested by', on: false, width: 120, missing: true },
 	{ id: 'downloader', label: 'Downloader', on: false, width: 120 },
 	{ id: 'source', label: 'Indexer', on: false, width: 120, missing: true },
@@ -73,6 +81,13 @@ export interface Layout {
 	widths: Record<ColId, number>;
 	/** The person set the Title width; until then it gives way when room is short. */
 	titleSet?: boolean;
+	/** The column the list is sorted by, and which way; none keeps the tab's own order. */
+	sort?: Sort;
+}
+
+export interface Sort {
+	id: ColId;
+	desc: boolean;
 }
 
 export const KEY = 'holyarrs.downloads.layout';
@@ -103,10 +118,14 @@ export function normalize(v: Partial<Layout> | null | undefined): Layout {
 		const after = IDS.slice(0, at).reverse().find((p) => order.includes(p));
 		order.splice(after ? order.indexOf(after) + 1 : 0, 0, id);
 	}
-	const hidden = Array.isArray(v.hidden) ? IDS.filter((id) => (v.hidden as unknown[]).includes(id)) : d.hidden;
+	// Columns added since the layout was saved start as their default says.
+	const saved = Array.isArray(v.order) ? (v.order as unknown[]) : [];
+	const hidden = Array.isArray(v.hidden) ? IDS.filter((id) => (v.hidden as unknown[]).includes(id) || (saved.length > 0 && !saved.includes(id) && !COL[id].on)) : d.hidden;
 	const w = (v.widths ?? {}) as Record<string, unknown>;
 	const widths = Object.fromEntries(IDS.map((id) => [id, width(w[id], d.widths[id])])) as Record<ColId, number>;
-	return { order, hidden, widths, titleSet: v.titleSet === true };
+	const s = v.sort as Partial<Sort> | undefined;
+	const sort = s && isId(s.id) ? { id: s.id, desc: s.desc === true } : undefined;
+	return { order, hidden, widths, titleSet: v.titleSet === true, sort };
 }
 
 /** load reads the saved layout; with none, it carries over the first shape's widths. */
@@ -131,7 +150,7 @@ export function load(raw: string | null, oldRaw: string | null): Layout {
 }
 
 export function dump(l: Layout): string {
-	return JSON.stringify({ v: VERSION, order: l.order, hidden: l.hidden, widths: l.widths, titleSet: !!l.titleSet });
+	return JSON.stringify({ v: VERSION, order: l.order, hidden: l.hidden, widths: l.widths, titleSet: !!l.titleSet, sort: l.sort });
 }
 
 /** visible is the columns on screen, in order (never one the Downloaders do not send). */
@@ -158,6 +177,28 @@ export function moveVisible(l: Layout, id: ColId, slot: number): ColId[] {
 
 export function toggle(l: Layout, id: ColId): ColId[] {
 	return l.hidden.includes(id) ? l.hidden.filter((x) => x !== id) : [...l.hidden, id];
+}
+
+/** nextSort is a header click: a new column sorts up (numbers and dates
+ *  start high), the same column flips, and a third click clears it. */
+export function nextSort(cur: Sort | undefined, id: ColId): Sort | undefined {
+	const first = !!COL[id].num;
+	if (!cur || cur.id !== id) return { id, desc: first };
+	if (cur.desc === first) return { id, desc: !first };
+	return undefined;
+}
+
+/** sortRows orders rows by one key; empty values (null, undefined, '') go last either way. */
+export function sortRows<T>(rows: T[], key: (r: T) => number | string | null | undefined, desc: boolean): T[] {
+	const empty = (v: unknown) => v == null || v === '' || (typeof v === 'number' && !Number.isFinite(v));
+	return rows
+		.map((r, i) => ({ r, i, k: key(r) }))
+		.sort((a, b) => {
+			if (empty(a.k) || empty(b.k)) return empty(a.k) === empty(b.k) ? a.i - b.i : empty(a.k) ? 1 : -1;
+			const c = typeof a.k === 'number' && typeof b.k === 'number' ? a.k - b.k : String(a.k).localeCompare(String(b.k), undefined, { numeric: true, sensitivity: 'base' });
+			return (desc ? -c : c) || a.i - b.i;
+		})
+		.map((x) => x.r);
 }
 
 /** quality reads a Release name: "2160p HDR", "1080p DV", "720p" ('' when it says nothing). */

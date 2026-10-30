@@ -73,6 +73,12 @@ type Job struct {
 	// Torrent clients that report them: the torrent's own seeding rules
 	// (nil when not reported).
 	Limits *ShareLimits
+	// DoneAt is unix seconds the torrent finished (0 not yet), QueuePos its
+	// place in the client's queue (0 not queued) and Tracker the host of
+	// the tracker it works with now ("" none).
+	DoneAt   int64
+	QueuePos int
+	Tracker  string
 }
 
 // Health is what an engine says about itself.

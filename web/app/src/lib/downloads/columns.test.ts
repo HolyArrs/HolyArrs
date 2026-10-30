@@ -3,15 +3,15 @@ import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quali
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
-	it('defaults show ten columns in order', () => {
-		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'speed', 'time', 'size', 'quality']);
+	it('defaults show eleven columns in order', () => {
+		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'speed', 'time', 'size', 'quality', 'ratio']);
 		expect(defaults().widths).toMatchObject({ title: 310, progress: 66, status: 130, size: 130, time: 80, speed: 90, quality: 90 });
 	});
 	it('never shows a column the Downloaders do not send', () => {
 		const l = defaults();
 		l.hidden = [];
-		expect(visible(l)).not.toContain('ratio');
-		expect(COLUMNS.filter((c) => c.missing).map((c) => c.id)).toEqual(['age', 'ratio', 'requested', 'source', 'category']);
+		expect(visible(l)).not.toContain('age');
+		expect(COLUMNS.filter((c) => c.missing).map((c) => c.id)).toEqual(['age', 'requested', 'source', 'category']);
 	});
 	it('offers Seeds and Peers as optional torrent columns', () => {
 		expect(visible(defaults())).not.toContain('seeds');
@@ -25,7 +25,7 @@ describe('columns', () => {
 		l.hidden = toggle(l, 'quality');
 		l.widths.title = 400;
 		const back = load(dump(l), null);
-		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'speed', 'time', 'size']);
+		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'speed', 'time', 'size', 'ratio']);
 		expect(back.widths.title).toBe(400);
 		back.hidden = toggle(back, 'quality');
 		expect(visible(back)).toContain('quality');
@@ -71,5 +71,39 @@ describe('Title width', () => {
 		expect(load(dump(l), null).titleSet).toBe(false);
 		expect(load(dump({ ...l, titleSet: true }), null).titleSet).toBe(true);
 		expect(load(null, JSON.stringify({ title: 500 })).widths.title).toBe(500);
+	});
+});
+
+import { VERSION, nextSort, sortRows } from './columns.ts';
+describe('sorting', () => {
+	it('cycles a column: first way, flipped, cleared', () => {
+		expect(nextSort(undefined, 'title')).toEqual({ id: 'title', desc: false });
+		expect(nextSort({ id: 'title', desc: false }, 'title')).toEqual({ id: 'title', desc: true });
+		expect(nextSort({ id: 'title', desc: true }, 'title')).toBeUndefined();
+		expect(nextSort(undefined, 'ratio')).toEqual({ id: 'ratio', desc: true });
+		expect(nextSort({ id: 'title', desc: true }, 'size')).toEqual({ id: 'size', desc: true });
+	});
+	it('sorts numbers and words with empties last', () => {
+		const rows = [{ v: 2 }, { v: undefined }, { v: 10 }, { v: 1 }];
+		expect(sortRows(rows, (r) => r.v, false).map((r) => r.v)).toEqual([1, 2, 10, undefined]);
+		expect(sortRows(rows, (r) => r.v, true).map((r) => r.v)).toEqual([10, 2, 1, undefined]);
+		expect(sortRows([{ v: 'b' }, { v: '' }, { v: 'A' }], (r) => r.v, false).map((r) => r.v)).toEqual(['A', 'b', '']);
+	});
+	it('keeps the sort in the saved layout and new columns hidden except Ratio', () => {
+		const l = load(dump({ ...defaults(), sort: { id: 'ratio', desc: true } }), null);
+		expect(l.sort).toEqual({ id: 'ratio', desc: true });
+		expect(load(JSON.stringify({ v: VERSION, sort: { id: 'nope' } }), null).sort).toBeUndefined();
+		const d = defaults();
+		expect(d.hidden).toEqual(expect.arrayContaining(['up', 'completed', 'queue', 'tracker', 'added']));
+		expect(d.hidden).not.toContain('ratio');
+	});
+});
+
+describe('columns added later', () => {
+	it('start hidden in an older saved layout, Ratio shown', () => {
+		const old = JSON.stringify({ v: VERSION, order: IDS.filter((id) => !['up', 'completed', 'queue', 'tracker'].includes(id)), hidden: ['added'], widths: {} });
+		const l = load(old, null);
+		expect(l.hidden).toEqual(expect.arrayContaining(['up', 'completed', 'queue', 'tracker', 'added']));
+		expect(visible(l)).toContain('ratio');
 	});
 });

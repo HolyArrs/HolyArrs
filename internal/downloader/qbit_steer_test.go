@@ -88,3 +88,13 @@ func TestStatusReadsConnection(t *testing.T) {
 		t.Fatalf("%+v", st)
 	}
 }
+
+func TestJobColumns(t *testing.T) {
+	j := qbitTorrent{Hash: steerA, DoneOn: 1700000000, QueuePos: 3, Tracker: "https://Tracker.Example:8443/abc123passkey/announce"}.job()
+	if j.DoneAt != 1700000000 || j.QueuePos != 3 || j.Tracker != "tracker.example" {
+		t.Fatalf("%+v", j)
+	}
+	if (qbitTorrent{DoneOn: -1, QueuePos: -1}).job().DoneAt != 0 {
+		t.Fatal("unset done date")
+	}
+}
