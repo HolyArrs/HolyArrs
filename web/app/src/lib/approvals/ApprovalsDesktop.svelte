@@ -110,8 +110,8 @@
 	$effect(() => {
 		if (statusPick.word && !status) statusPick = { tab: '', word: '' };
 	});
-	// Status pills, as on the Downloads page: the picked tab is a raised pill, and a tab's statuses open
-	// inside its pill when it is picked or hovered; leaving the bar folds them a moment later.
+	// A tab's statuses slide out from behind it only when the tab is clicked (never on hover);
+	// leaving the bar folds them shortly after, and coming back does not reopen them.
 	let openTab = $state<ApproverTab | ''>('');
 	let foldT: ReturnType<typeof setTimeout> | undefined;
 	const subsOf = (t: ApproverTab) => {
@@ -122,7 +122,7 @@
 		clearTimeout(foldT);
 		openTab = subsOf(t).length ? t : '';
 	}
-	function foldSoon(ms = 1500) {
+	function foldSoon(ms = 380) {
 		clearTimeout(foldT);
 		foldT = setTimeout(() => (openTab = ''), ms);
 	}
@@ -136,7 +136,7 @@
 	function pickStatus(t: ApproverTab, word: string, e?: MouseEvent) {
 		if (ctx.approverTab !== t) ctx.setApproverTab(t);
 		// Touch has no "leave": fold a moment after the pick.
-		if ((e as PointerEvent | undefined)?.pointerType && (e as PointerEvent).pointerType !== 'mouse') foldSoon();
+		if ((e as PointerEvent | undefined)?.pointerType && (e as PointerEvent).pointerType !== 'mouse') foldSoon(600);
 		statusPick = status === word && ctx.approverTab === t ? { tab: '', word: '' } : { tab: t, word };
 	}
 	function capKeys(e: KeyboardEvent) {
@@ -145,6 +145,20 @@
 			openTab = '';
 		}
 	}
+	// Touch and keyboard have no "leave": a tap or click outside the bar, or a page scroll, folds it.
+	let capEl = $state<HTMLElement>();
+	$effect(() => {
+		if (!openTab) return;
+		const out = (e: Event) => {
+			if (capEl && !capEl.contains(e.target as Node)) foldSoon(0);
+		};
+		document.addEventListener('pointerdown', out, true);
+		window.addEventListener('scroll', out, { passive: true, capture: true });
+		return () => {
+			document.removeEventListener('pointerdown', out, true);
+			window.removeEventListener('scroll', out, { capture: true });
+		};
+	});
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
@@ -264,7 +278,7 @@
 
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tcap" role="presentation" onkeydown={capKeys} onpointerleave={(e) => e.pointerType === 'mouse' && foldSoon()}>
+		<div class="tcap" role="presentation" bind:this={capEl} onkeydown={capKeys} onpointerenter={() => openTab && clearTimeout(foldT)} onpointerleave={(e) => e.pointerType === 'mouse' && openTab && foldSoon()}>
 		<div class="tabs" role="group" aria-label="Status">
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
@@ -272,13 +286,13 @@
 				{@const here = ctx.approverTab === t.tab}
 				{@const subs = subsOf(t.tab)}
 				{@const open = openTab === t.tab && subs.length > 0}
-				<div class="pw" class:on={here} class:pw-open={open} class:leaf={here && !status && open} role="presentation" onpointerenter={(e) => e.pointerType === 'mouse' && unfold(t.tab)}>
-					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-expanded={subs.length ? open : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && unfold(t.tab)}>{t.label}{#if here && status && !open}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
+				<div class="pw" class:on={here} class:pw-open={open} role="presentation">
+					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-expanded={subs.length ? open : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}{#if here && status && !open}<span class="pick">· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
 					{#if subs.length}
 						<div class="subwrap" inert={!open}>
 							<div class="subin" role="group" aria-label="{t.label} by status">
 								{#each subs as x (x.word)}
-									<button type="button" class="stab" class:stab-fail={x.tone === 'bad'} class:on={here && status === x.word} aria-pressed={here && status === x.word} aria-label="{x.word}, {x.count}" onclick={(e) => pickStatus(t.tab, x.word, e)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<b>{x.count}</b></button>
+									<button type="button" class="stab tn-{x.tone}" class:stab-on={here && status === x.word} aria-pressed={here && status === x.word} aria-label="{x.word}, {x.count}" onclick={(e) => pickStatus(t.tab, x.word, e)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<b>{x.count}</b></button>
 								{/each}
 							</div>
 						</div>
@@ -295,7 +309,7 @@
 				<div class="seg" role="group" aria-label="Type" use:plate={ctx.kind}>
 					<span class="plate" aria-hidden="true"></span>
 					{#each types as t (t.k)}
-						<button type="button" class="it" aria-pressed={ctx.kind === t.k} onclick={() => ctx.setKind(t.k)}><span class="ic"><Icon name={t.icon} size={18} /></span><span class="lb">{t.label}</span></button>
+						<button type="button" class="it" aria-pressed={ctx.kind === t.k} onclick={() => ctx.setKind(t.k)}><span class="ic"><Icon name={t.icon} size={16} /></span><span class="lb">{t.label}</span></button>
 					{/each}
 				</div>
 			</div>
@@ -385,48 +399,50 @@
 
 	/* The toolbar: tabs left, filter and view right. */
 	.tcap { position: relative; z-index: 6; }
-	/* Status pills, as on Downloads: the picked tab is a raised, lighter pill on the darker track; its statuses open inside it. */
-	.pw { display: flex; align-items: center; flex: none; height: 44px; border-radius: 10px; background: transparent; transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
-	.pw.on { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); }
-	.pw .tab { height: 44px; }
-	.subwrap { display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 260ms var(--ez, cubic-bezier(0.2, 0.8, 0.2, 1)), opacity 200ms var(--ease-out); }
-	.pw.pw-open .subwrap { grid-template-columns: 1fr; opacity: 1; }
-	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; }
-	.pw.pw-open .subin { padding: 0 4px 0 6px; border-left: 1px solid var(--line-strong); }
-	.stab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: color-mix(in srgb, var(--text) 72%, var(--seg-thumb)); font: 500 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.stab b { color: inherit; opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
-	.stab:hover { color: var(--text); }
+	/* Status bar: slim pills. Bar 40 = 1 border + 3 inset + 32 pill + 3 + 1; pill radius 9 = bar radius 12 - inset 3.
+	   Only the picked tab is raised; its statuses reveal out from behind it onto the track (clip + width + x + fade). */
+	.pw { position: relative; display: flex; align-items: center; flex: none; height: 32px; }
+	.pw .tab { height: 32px; }
+	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
+	.subwrap { display: grid; grid-template-columns: 0fr; overflow: hidden; transition: grid-template-columns 220ms cubic-bezier(0.4, 0, 1, 1); }
+	.pw.pw-open .subwrap { grid-template-columns: 1fr; transition: grid-template-columns 320ms cubic-bezier(0.25, 0.8, 0.3, 1); }
+	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; white-space: nowrap; opacity: 0; transform: translateX(-14px); transition: opacity 140ms cubic-bezier(0.4, 0, 1, 1), transform 220ms cubic-bezier(0.4, 0, 1, 1); }
+	.pw.pw-open .subin { opacity: 1; transform: none; transition: opacity 220ms cubic-bezier(0.25, 0.8, 0.3, 1) 40ms, transform 320ms cubic-bezier(0.25, 0.8, 0.3, 1); }
+	/* Chips: quiet until picked; the picked one takes a tint of its own tone with readable text in that tone. */
+	.stab { --tc: var(--info, #409cff); --tt: var(--info-text, #409cff); position: relative; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 32px; padding: 0 11px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+	.stab.tn-bad { --tc: var(--fail, #ff6961); --tt: var(--fail-text, #ff6961); }
+	.stab.tn-ok { --tc: var(--ok, #30d158); --tt: var(--ok-text, #30d158); }
+	.stab.tn-wait { --tc: var(--wait, #ffb340); --tt: var(--wait-text, #ffb340); }
+	.stab.tn-soon, .stab.tn-off { --tc: var(--text-muted); --tt: var(--text); }
+	.stab:first-child { margin-left: 4px; }
+	.stab b { font-weight: 600; font-variant-numeric: tabular-nums; opacity: 0.7; }
+	.stab:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
 	.stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.stab.on { background: var(--accent-soft); color: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
-	.stab.stab-fail { color: var(--fail-text, var(--fail, #e5484d)); }
-	/* Open with nothing picked: the tab itself carries the inner highlight, as on Downloads. */
-	.pw.leaf .tab { background: var(--accent-soft); color: color-mix(in srgb, var(--accent-text) 85%, var(--text)); box-shadow: inset 0 0 0 3px var(--seg-thumb); border-radius: 10px; }
-	@media (prefers-reduced-motion: reduce) { .pw, .subwrap { transition: none; } }
-	@media (pointer: coarse) { .stab { height: 40px; } }
-	.dd { width: 7px; height: 7px; border-radius: 50%; background: var(--info, #3b82f6); }
-	.dd.tone-bad { background: var(--fail, #e5484d); }
-	.dd.tone-ok { background: var(--ok, #3fb950); }
-	.dd.tone-soon, .dd.tone-off { background: var(--text-muted); }
-	.dd.tone-wait { background: var(--wait, #e5a50a); }
-	.pick { margin-left: 4px; color: var(--text-muted); font-weight: 500; }
-	.pick.pick-bad { color: var(--fail-text, var(--fail, #e5484d)); }
+	.stab.stab-on { color: var(--tt); background: color-mix(in srgb, var(--tc) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 30%, transparent); }
+	.stab.stab-on b { opacity: 1; }
+	.stab .dd { background: var(--tc); }
+	@media (prefers-reduced-motion: reduce) { .subwrap, .pw.pw-open .subwrap { transition: none; } .subin, .pw.pw-open .subin { transform: none; transition: opacity 120ms linear; } }
+	/* Coarse pointers keep a 44px target without fattening the bar. */
+	@media (pointer: coarse) { .tab::after, .stab::after, .it::after { content: ''; position: absolute; inset: -6px 0; } }
+	.dd { width: 6px; height: 6px; border-radius: 50%; }
+	.pick { margin-left: 4px; color: color-mix(in srgb, var(--text) 70%, transparent); font-weight: 500; }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 	.right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
-	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	.tabs .plate { border-radius: 10px; }
-	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); font-weight: 500; white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out); }
+	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 40px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 0; border-radius: 9px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: 500 13.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out), background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.tab:hover, .tab[aria-pressed='true'] { color: var(--text); }
+	.tab:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 6%, transparent); }
 	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
 	.n { opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
 	.tab .fail-dot { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
-	.cap { display: flex; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	.seg { position: relative; display: flex; align-items: stretch; gap: 2px; height: 44px; }
-	.seg .plate { border-radius: 10px; }
-	.it { position: relative; z-index: 1; display: grid; grid-template-rows: 18px 12px; align-content: center; justify-items: center; gap: 3px; width: 68px; height: 44px; padding: 0; border: 0; border-radius: 10px; background: none; color: var(--text); cursor: pointer; transition: background 160ms var(--ease-out), transform 180ms var(--ez); }
-	.ic { display: grid; place-items: center; height: 18px; }
-	.lb { font: 500 11px/1 var(--font-ui); color: var(--text-muted); transition: color 160ms var(--ease-out); }
+	.cap { display: flex; align-items: center; height: 40px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.seg { position: relative; display: flex; align-items: stretch; gap: 2px; height: 32px; }
+	.seg .plate { border-radius: 9px; }
+	.it { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 9px; background: none; color: var(--text); cursor: pointer; transition: background 160ms var(--ease-out), transform 180ms var(--ez); }
+	.ic { display: grid; place-items: center; width: 16px; height: 16px; }
+	.lb { white-space: nowrap; font: 500 13px/1 var(--font-ui); color: var(--text-muted); transition: color 160ms var(--ease-out); }
 	.it:hover .lb, .it[aria-pressed='true'] .lb { color: var(--text); }
 	.it:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.it:active { transform: scale(0.97); }
@@ -525,11 +541,11 @@
 		.tcap { width: 100%; }
 		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 		.tabs::-webkit-scrollbar { display: none; }
-		.tab { flex: none; padding: 0 14px; font: var(--t-footnote); font-weight: 600; }
-		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+		.tab { flex: none; padding: 0 12px; }
+		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; margin-left: 0; }
 		.cap { width: 100%; }
 		.cap .seg { flex: 1; }
-		.it { flex: 1; width: auto; }
+		.it { flex: 1; width: auto; gap: 5px; padding: 0 6px; }
 		.approve-all { justify-content: center; height: 48px; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 		.ban { height: 140px; }
