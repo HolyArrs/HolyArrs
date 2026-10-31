@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { demoOn, withDemo } from '#lib/approvals/live-demo.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { glide } from '#lib/ui/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -52,7 +51,7 @@
 	let person = $state(0);
 	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
-	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; seasons?: number[]; episodes?: { season: number; episodes: number[] }[]; albums?: string[]; songs?: { album: string; recordings: string[] }[]; timer: ReturnType<typeof setTimeout> };
+	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; seasons?: number[]; episodes?: { season: number; episodes: number[] }[]; albums?: string[]; songs?: { album: string; recordings: string[] }[]; timer: ReturnType<typeof setTimeout>; sending?: boolean };
 	let pending = $state<Record<number, Pending>>({});
 	const viewOf = (a: Ask): Ask => {
 		const p = pending[a.id];
@@ -80,19 +79,24 @@
 
 	async function commit(id: number) {
 		const p = pending[id];
-		if (!p) return;
+		// The ask keeps showing its new tab until the answer lands (no flick back to Pending).
+		if (!p || p.sending) return;
 		clearTimeout(p.timer);
-		delete pending[id];
+		p.sending = true;
 		try {
 			const path = `/asks/${id}/${p.mode === 'approve' ? 'approve' : 'turn-down'}`;
 			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.langs.length ? { audio_languages: p.langs } : {}), ...(p.seasons?.length || p.episodes?.length ? { seasons: p.seasons ?? [] } : {}), ...(p.episodes?.length ? { episodes: p.episodes } : {}), ...(p.albums?.length ? { albums: p.albums } : {}), ...(p.songs?.length ? { songs: p.songs } : {}) } : { note: p.note };
 			const r = await api.post<{ ask: Ask }>(path, body);
+			// A list load that started before this answer is older than it; drop that load.
+			loadGen++;
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
 			void refreshInbox();
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
 			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'decline'} ${a?.name ?? 'the ask'}. ${message(err)} Try again.`, 'fail');
+		} finally {
+			delete pending[id];
 		}
 	}
 
@@ -112,7 +116,8 @@
 				run: () => {
 					for (const id of ids) {
 						const p = pending[id];
-						if (p) clearTimeout(p.timer);
+						if (!p || p.sending) continue;
+						clearTimeout(p.timer);
 						delete pending[id];
 					}
 				}
@@ -202,9 +207,12 @@
 	const kindFolders = $derived(folders.filter((f) => f.kind === pickKind));
 	const kindRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes(pickKind)));
 
+	let loadGen = 0;
 	async function load() {
+		const gen = ++loadGen;
 		try {
 			const r = await api.get<{ asks: Ask[] }>('/asks');
+			if (gen !== loadGen) return;
 			asks = r.asks;
 			error = '';
 		} catch (e) {
@@ -263,8 +271,6 @@
 	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
 	let titleLive = $state(new Map<number, TitleLive>());
 	let liveBusy = false;
-	// Preview only: ?demo fills every live stage (see live-demo.ts).
-	const shownLive = $derived(demoOn() ? withDemo(titleLive, asks) : titleLive);
 	async function loadLive() {
 		if (liveBusy || !session.can('manage_library')) return;
 		liveBusy = true;
@@ -306,6 +312,8 @@
 			const path = `/asks/${a.id}/${mode === 'approve' ? 'approve' : 'turn-down'}`;
 			const body = mode === 'approve' ? { note, library_folder_id: folderId, pick_rules_id: rulesId } : { note };
 			const r = await api.post<{ ask: Ask }>(path, body);
+			// A list load that started before this answer is older than it; drop that load.
+			loadGen++;
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
 			const added =
@@ -440,7 +448,7 @@
 	const people = $derived(askers(asks));
 	const ctx: ApprovalsCtx = {
 		get shown() { return shown; },
-		live: (a) => liveFacts(a.title_id ? shownLive.get(a.title_id) : undefined),
+		live: (a) => liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined),
 		get viewed() { return viewed; },
 		get tab() { return tab; },
 		get counts() { return counts; },
