@@ -291,8 +291,8 @@
 					{#if subs.length}
 						<div class="subwrap" inert={!open}>
 							<div class="subin" role="group" aria-label="{t.label} by status">
-								{#each subs as x (x.word)}
-									<button type="button" class="stab tn-{x.tone}" class:stab-on={here && status === x.word} aria-pressed={here && status === x.word} aria-label="{x.word}, {x.count}" onclick={(e) => pickStatus(t.tab, x.word, e)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<b>{x.count}</b></button>
+								{#each subs as x, xi (x.word)}
+									<button type="button" class="stab tn-{x.tone}" style:--i={xi} class:stab-on={here && status === x.word} aria-pressed={here && status === x.word} aria-label="{x.word}, {x.count}" onclick={(e) => pickStatus(t.tab, x.word, e)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<b>{x.count}</b></button>
 								{/each}
 							</div>
 						</div>
@@ -404,10 +404,13 @@
 	.pw { position: relative; display: flex; align-items: center; flex: none; height: 32px; }
 	.pw .tab { height: 32px; }
 	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
-	.subwrap { display: grid; grid-template-columns: 0fr; overflow: hidden; transition: grid-template-columns 220ms cubic-bezier(0.4, 0, 1, 1); }
-	.pw.pw-open .subwrap { grid-template-columns: 1fr; transition: grid-template-columns 320ms cubic-bezier(0.25, 0.8, 0.3, 1); }
-	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; white-space: nowrap; opacity: 0; transform: translateX(-14px); transition: opacity 140ms cubic-bezier(0.4, 0, 1, 1), transform 220ms cubic-bezier(0.4, 0, 1, 1); }
-	.pw.pw-open .subin { opacity: 1; transform: none; transition: opacity 220ms cubic-bezier(0.25, 0.8, 0.3, 1) 40ms, transform 320ms cubic-bezier(0.25, 0.8, 0.3, 1); }
+	/* Glide, not snap: the width eases in and out over ~0.5s (gentle start, soft landing), the chips drift in one after another; folding eases both ways and is a little quicker. */
+	.subwrap { display: grid; grid-template-columns: 0fr; overflow: hidden; transition: grid-template-columns 380ms cubic-bezier(0.65, 0, 0.35, 1); }
+	.pw.pw-open .subwrap { grid-template-columns: 1fr; transition: grid-template-columns 500ms cubic-bezier(0.45, 0, 0.2, 1); }
+	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; white-space: nowrap; opacity: 0; transform: translateX(-24px); transition: opacity 220ms cubic-bezier(0.65, 0, 0.35, 1), transform 380ms cubic-bezier(0.65, 0, 0.35, 1); }
+	.pw.pw-open .subin { opacity: 1; transform: none; transition: opacity 360ms cubic-bezier(0.45, 0, 0.2, 1) 80ms, transform 500ms cubic-bezier(0.45, 0, 0.2, 1); }
+	.subin .stab { opacity: 0; transform: translateX(-8px); transition: opacity 180ms ease, transform 300ms cubic-bezier(0.65, 0, 0.35, 1), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+	.pw.pw-open .subin .stab { opacity: 1; transform: none; transition: opacity 320ms cubic-bezier(0.45, 0, 0.2, 1) calc(120ms + var(--i, 0) * 45ms), transform 420ms cubic-bezier(0.45, 0, 0.2, 1) calc(80ms + var(--i, 0) * 45ms), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
 	/* Chips: quiet until picked; the picked one takes a tint of its own tone with readable text in that tone. */
 	.stab { --tc: var(--info, #409cff); --tt: var(--info-text, #409cff); position: relative; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 32px; padding: 0 11px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
 	.stab.tn-bad { --tc: var(--fail, #ff6961); --tt: var(--fail-text, #ff6961); }
@@ -421,7 +424,7 @@
 	.stab.stab-on { color: var(--tt); background: color-mix(in srgb, var(--tc) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 30%, transparent); }
 	.stab.stab-on b { opacity: 1; }
 	.stab .dd { background: var(--tc); }
-	@media (prefers-reduced-motion: reduce) { .subwrap, .pw.pw-open .subwrap { transition: none; } .subin, .pw.pw-open .subin { transform: none; transition: opacity 120ms linear; } }
+	@media (prefers-reduced-motion: reduce) { .subwrap, .pw.pw-open .subwrap { transition: none; } .subin, .pw.pw-open .subin, .subin .stab, .pw.pw-open .subin .stab { transform: none; transition: opacity 120ms linear; } }
 	/* Coarse pointers keep a 44px target without fattening the bar. */
 	@media (pointer: coarse) { .tab::after, .stab::after, .it::after { content: ''; position: absolute; inset: -6px 0; } }
 	.dd { width: 6px; height: 6px; border-radius: 50%; }
@@ -433,7 +436,7 @@
 	.toolbar .tabs::-webkit-scrollbar { display: none; }
 	.toolbar .right { flex: none; }
 	/* While statuses are open, the type filter steps back to icons to give them room. */
-	.seg .lb { display: inline-block; max-width: 90px; overflow: hidden; transition: max-width 320ms cubic-bezier(0.25, 0.8, 0.3, 1), opacity 200ms var(--ease-out); }
+	.seg .lb { display: inline-block; max-width: 90px; overflow: hidden; transition: max-width 500ms cubic-bezier(0.45, 0, 0.2, 1), opacity 300ms cubic-bezier(0.45, 0, 0.2, 1); }
 	.toolbar:has(.pw-open) .seg .lb { max-width: 0; opacity: 0; }
 	.toolbar:has(.pw-open) .seg .it { gap: 0; }
 	.right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
