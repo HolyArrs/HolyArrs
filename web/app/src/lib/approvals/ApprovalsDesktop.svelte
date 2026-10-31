@@ -426,7 +426,16 @@
 	@media (pointer: coarse) { .tab::after, .stab::after, .it::after { content: ''; position: absolute; inset: -6px 0; } }
 	.dd { width: 6px; height: 6px; border-radius: 50%; }
 	.pick { margin-left: 4px; color: color-mix(in srgb, var(--text) 70%, transparent); font-weight: 500; }
-	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+	/* One row that never wraps: opening a tab's statuses must not push anything to a new line. */
+	.toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px; }
+	.toolbar .tcap { flex: 0 1 auto; min-width: 0; }
+	.toolbar .tabs { max-width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
+	.toolbar .tabs::-webkit-scrollbar { display: none; }
+	.toolbar .right { flex: none; }
+	/* While statuses are open, the type filter steps back to icons to give them room. */
+	.seg .lb { display: inline-block; max-width: 90px; overflow: hidden; transition: max-width 320ms cubic-bezier(0.25, 0.8, 0.3, 1), opacity 200ms var(--ease-out); }
+	.toolbar:has(.pw-open) .seg .lb { max-width: 0; opacity: 0; }
+	.toolbar:has(.pw-open) .seg .it { gap: 0; }
 	.right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
 	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 40px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
@@ -446,7 +455,7 @@
 	.it:hover .lb, .it[aria-pressed='true'] .lb { color: var(--text); }
 	.it:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.it:active { transform: scale(0.97); }
-	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 52px; padding: 0 18px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
+	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
 	.approve-all:hover { background: var(--surface-2); }
 	.approve-all:active { transform: scale(0.96); }
 
