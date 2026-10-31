@@ -2,6 +2,7 @@ package asks
 
 import (
 	"context"
+	"reflect"
 	"database/sql"
 	"errors"
 	"strings"
@@ -391,8 +392,8 @@ func TestArtistAskViewHasArtistIDAndPicture(t *testing.T) {
 
 // TestArtistApproveWidensKindsForAskedAlbum: the artist joins the Library
 // (added by hand, default kinds) while an ask for a live album waits;
-// approving it widens the kinds instead of failing.
-func TestArtistApproveWidensKindsForAskedAlbum(t *testing.T) {
+// approving it includes just that album and leaves the artist's kinds alone.
+func TestArtistApproveIncludesOnlyAskedAlbum(t *testing.T) {
 	r := musicRig(t)
 	ctx := context.Background()
 	live, err := r.svc.AskArtist(ctx, r.bo, "mbid:"+mArtist, []string{mLive})
@@ -413,5 +414,31 @@ func TestArtistApproveWidensKindsForAskedAlbum(t *testing.T) {
 	}
 	if keeps := albumKeeps(t, r.st, *got.TitleID); !keeps["Live Night"] {
 		t.Fatalf("album keeps %v", keeps)
+	}
+	var tt domain.Title
+	if err := store.Get(ctx, r.st.Read(), "titles", *got.TitleID, &tt); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(tt.MusicSecondary, defs.SecondaryTypes) || !reflect.DeepEqual(tt.MusicTypes, defs.AlbumTypes) {
+		t.Fatalf("kinds widened: %v %v", tt.MusicTypes, tt.MusicSecondary)
+	}
+	// A refresh keeps the asked album and does not take in other live ones.
+	fa := r.svc.Library.Artists.(*fakeArtists)
+	a := fa.artists[mArtist]
+	a.Albums = append(a.Albums, metadata.Album{MBID: "10000000-0000-0000-0000-0000000000ae", Name: "Live Again", PrimaryType: "album", SecondaryTypes: []string{"live"}, ReleaseDate: "2023"})
+	fa.artists[mArtist] = a
+	if _, err := r.svc.Library.RefreshArtist(ctx, *got.TitleID, domain.System, nil); err != nil {
+		t.Fatal(err)
+	}
+	ps, err := store.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album'", *got.TitleID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inc := map[string]bool{}
+	for _, p := range ps {
+		inc[p.Name] = p.Included
+	}
+	if !inc["Live Night"] || inc["Live Again"] {
+		t.Fatalf("after refresh included %v", inc)
 	}
 }

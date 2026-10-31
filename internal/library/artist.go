@@ -526,7 +526,7 @@ func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t domain.Title, a metadata.Ar
 			if err != nil {
 				return out, err
 			}
-			included := kinds && ok
+			included := (kinds || p.KeepUpToDate) && ok
 			dateMoved := !eqTime(p.ReleaseDate, date)
 			changed := p.Name != al.Name || !eqStr(p.ReleaseType, str(typ)) || !slices.Equal(p.SecondaryTypes, sec) || dateMoved ||
 				!eqStr(p.ReleaseDatePrecision, prec) ||
