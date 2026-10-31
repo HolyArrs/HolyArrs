@@ -442,3 +442,36 @@ func TestArtistApproveIncludesOnlyAskedAlbum(t *testing.T) {
 		t.Fatalf("after refresh included %v", inc)
 	}
 }
+
+// A refresh that runs right after the asked album is taken in (before the
+// approval finishes) keeps it: it is kept up to date in the same write.
+func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
+	r := musicRig(t)
+	ctx := context.Background()
+	defs, err := library.ReadMusicDefaults(ctx, r.st.Read())
+	if err != nil {
+		t.Fatal(err)
+	}
+	tid, _, err := r.svc.Library.AddArtist(ctx, "mbid:"+mArtist, library.ArtistAddOptions{Albums: library.AlbumsAll, WhyAdded: "by_hand",
+		NewAlbums: defs.NewAlbums, AlbumTypes: defs.AlbumTypes, SecondaryTypes: defs.SecondaryTypes, ReleaseStatuses: defs.ReleaseStatuses}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ps, err := store.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album' AND name = 'Live Night'", tid)
+	if err != nil || len(ps) != 1 || ps[0].Included {
+		t.Fatalf("left-out album %v %v", ps, err)
+	}
+	if err := r.svc.Library.IncludeAlbums(ctx, tid, []int64{ps[0].ID}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.Library.RefreshArtist(ctx, tid, domain.System, nil); err != nil {
+		t.Fatal(err)
+	}
+	var p domain.Part
+	if err := store.Get(ctx, r.st.Read(), "parts", ps[0].ID, &p); err != nil {
+		t.Fatal(err)
+	}
+	if !p.Included || !p.KeepUpToDate {
+		t.Fatalf("after refresh included=%v keep=%v", p.Included, p.KeepUpToDate)
+	}
+}

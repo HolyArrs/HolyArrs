@@ -687,9 +687,15 @@ func (s *Service) IncludeAlbums(ctx context.Context, titleID int64, partIDs []in
 			if p.TitleID != t.ID || p.Kind != "album" {
 				return ErrNotAlbum
 			}
-			if !p.Included {
-				p.Included = true
+			if !p.Included || !p.KeepUpToDate {
+				// Kept up to date in the same write, so a refresh queued
+				// below can't drop the asked album before it is kept.
+				p.Included, p.KeepUpToDate = true, true
 				if err := store.Update(tx, "parts", &p, by); err != nil {
+					return err
+				}
+				if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track'",
+					store.FormatTime(s.now()), actorText(by), p.ID); err != nil {
 					return err
 				}
 			}
@@ -699,7 +705,7 @@ func (s *Service) IncludeAlbums(ctx context.Context, titleID int64, partIDs []in
 	if err != nil {
 		return err
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": asked albums included; album kinds unchanged",
+	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": asked albums included and kept up to date; album kinds unchanged",
 		Data: map[string]any{"part_ids": partIDs}, GroupKey: groupKey(t.ID)})
 	_, _, err = s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID}, map[string]any{"new": true},
 		fmt.Sprintf("refresh_title:%d", t.ID), by)

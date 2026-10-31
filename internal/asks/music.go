@@ -410,7 +410,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		return 0, err
 	}
 	// An artist already in the Library may leave an approved album out by
-	// its album kinds: approving it widens the kinds to take it in.
+	// its album kinds: approving takes just that album in (the kinds stay).
 	var widen []int64
 	for _, p := range parts {
 		if !p.Included && slices.ContainsFunc(a.Albums, func(w domain.AskAlbum) bool { return w.MBID == p.SourceIDs["musicbrainz"] }) {
@@ -429,11 +429,15 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 	for _, p := range parts {
 		asked := len(a.Albums) == 0 && p.Included ||
 			slices.ContainsFunc(a.Albums, func(w domain.AskAlbum) bool { return w.MBID == p.SourceIDs["musicbrainz"] })
-		if !asked || p.KeepUpToDate {
+		// Albums taken in above are already kept up to date (in the same
+		// write); they still get the edition picked on the album page.
+		if !asked || p.KeepUpToDate && !slices.Contains(widen, p.ID) {
 			continue
 		}
-		if _, err := s.Library.SetAlbum(ctx, p.ID, &on, 0, by.actor()); err != nil {
-			return 0, err
+		if !p.KeepUpToDate {
+			if _, err := s.Library.SetAlbum(ctx, p.ID, &on, 0, by.actor()); err != nil {
+				return 0, err
+			}
 		}
 		if ed := askedEdition(p.SourceIDs["musicbrainz"], a.Albums); ed != "" {
 			// The edition picked on the album page; an edition the source no
