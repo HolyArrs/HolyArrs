@@ -45,7 +45,7 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'poster', label: 'Poster', on: true, width: 52 },
 	{ id: 'kind', label: 'Type', on: true, width: 84 },
 	{ id: 'title', label: 'Title', on: true, width: 310 },
-	{ id: 'proto', label: 'Source', on: true, width: 64 },
+	{ id: 'proto', label: 'Source', on: true, width: 36 },
 	{ id: 'progress', label: 'Progress', on: true, width: 66 },
 	{ id: 'status', label: 'Status', on: true, width: 130 },
 	{ id: 'speed', label: 'Speed', on: true, width: 90, num: true },
