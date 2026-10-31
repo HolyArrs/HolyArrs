@@ -22,7 +22,9 @@
 	import { to } from '../paths.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
-	import { lifecycle } from './lifecycle.ts';
+	import { lifecycle, upcoming } from './lifecycle.ts';
+	import { shortDate } from './inbox.ts';
+	import { askTab } from '../wishlist.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
@@ -58,6 +60,26 @@
 			});
 		});
 		return () => ctl.abort();
+	});
+	// Not pending (Processing or Done): a big status under the banner instead of the answer buttons.
+	const status = $derived(ctx.approver && picked.state !== 'asked');
+	const life = $derived.by(() => {
+		const a = picked;
+		if (a.state !== 'approved' || !a.title_id || a.kind === 'artist') return lifecycle(a);
+		const out = upcoming(a, ctx.info(a), (season) => ctx.episodes(a.tmdb_id, season)?.map((e) => e.air_day ?? '').filter(Boolean).sort()[0] ?? null);
+		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
+	});
+	const failed = $derived(status && askTab(picked) === 'failed');
+	const tabWord = $derived(life.stage === 'ready' || life.stage === 'declined' ? 'Done' : 'Processing');
+	const sentence = $derived.by(() => {
+		const who = ctx.who(picked).name;
+		if (life.stage === 'ready') {
+			const at = picked.available_at ?? picked.decided_at;
+			return `In the library${at ? ` since ${shortDate(at)}` : ''}.`;
+		}
+		if (life.stage === 'declined') return ctx.decided(picked) ? `${ctx.decided(picked)}.` : 'Declined.';
+		if (life.stage === 'failed') return 'Couldn’t find it.';
+		return life.stage === 'upcoming' ? `Getting it for ${who}. It isn’t out yet.` : `Getting it for ${who}.`;
 	});
 	const year = $derived(d?.year ?? picked.year ?? null);
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
@@ -141,7 +163,7 @@
 {/snippet}
 
 <div class="desk" data-testid="ask-window-stage">
-	<div class="frame" class:choosing bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
+	<div class="frame" class:choosing class:status bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
 			{#key picked.id}
 			<div class="swap" in:fade={{ duration: ms(520) }} out:fade={{ duration: ms(360) }}>
 				<Billboard
@@ -163,7 +185,9 @@
 						{#if picked.note}<p class="said">&ldquo;{picked.note}&rdquo;</p>{/if}
 					{/snippet}
 					{#snippet actions()}
-						{#if waiting(picked)}
+						{#if status}
+							<span></span>
+						{:else if waiting(picked)}
 							<div class="acts" class:gone={choosing}>
 								<button type="button" class="act primary" data-testid="ask-approve" onclick={() => ctx.approve([picked])}><Icon name="check" size={20} />Approve</button>
 								<button type="button" class="act glass" onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to add</button>
@@ -182,7 +206,19 @@
 				</Billboard>
 			</div>
 			{/key}
-			{@render line(picked)}
+			{#if status}
+				<section class="big" data-testid="ask-status" aria-label="Status">
+					<p class="tab">{tabWord}</p>
+					<p class="huge tone-{life.tone}" role="status" aria-live="polite">{life.label}</p>
+					<p class="sent">{sentence}{#if life.more}<span class="more"> {life.more}</span>{/if}</p>
+					<span class="life inline tone-{life.tone}" role="progressbar" aria-label="{picked.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
+					{#if failed}
+						<div class="acts"><button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />Decline</button></div>
+					{/if}
+				</section>
+			{:else}
+				{@render line(picked)}
+			{/if}
 
 			{#if choosing}
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
@@ -304,6 +340,26 @@
 	.sh-f .act.ghost { height: 40px; font: var(--t-subhead); }
 
 	.swap { position: absolute; inset: 0; }
+
+	/* Big status: the banner keeps the top, the status sits under it. */
+	.frame.status .swap { bottom: auto; height: 46%; }
+	.frame.status :global(.ui-billboard .shade) { opacity: 1; }
+	.big { position: absolute; left: 0; right: 0; top: 46%; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px; padding: 0 clamp(20px, 5vw, 56px); overflow: hidden; background: #0b0b0c; color: #fff; }
+	.tab { color: rgb(255 255 255 / 0.6); font: var(--t-footnote); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+	.huge { font: 800 40px/1.1 var(--font-ui); letter-spacing: -0.02em; text-wrap: balance; }
+	.huge.tone-wait { color: var(--wait-text, var(--wait)); }
+	.huge.tone-go { color: var(--info, #3b82f6); }
+	.huge.tone-ok { color: var(--ok-text, var(--ok)); }
+	.huge.tone-bad { color: var(--fail-text, var(--fail, #e5484d)); }
+	.huge.tone-soon, .huge.tone-off { color: rgb(255 255 255 / 0.7); }
+	.sent { color: rgb(255 255 255 / 0.85); font: var(--t-callout); }
+	.more { color: rgb(255 255 255 / 0.55); }
+	.life.inline { position: relative; display: block; width: min(420px, 100%); height: 4px; border-radius: 2px; margin: 6px 0 10px; background: rgb(255 255 255 / 0.12); }
+	.big .acts { margin-top: 4px; }
+	@media (max-width: 767px) {
+		.huge { font-size: 30px; }
+		.big { padding: 0 20px; }
+	}
 
 	@media (max-width: 767px) {
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
