@@ -120,7 +120,7 @@ func TestTenClientsReceiveAndCleanUp(t *testing.T) {
 	n := 0
 	for e := range results {
 		n++
-		if e.topic != "download" || e.id != itoa(id) || string(e.data) != `{"progress":0.5}` {
+		if e.topic != "download" || e.id != h.EventID(id) || string(e.data) != `{"progress":0.5}` {
 			t.Errorf("bad event %+v", e)
 		}
 	}
@@ -140,7 +140,7 @@ func TestResumeReplaysMissed(t *testing.T) {
 	h.Publish("job", 3)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	resp := connect(t, ctx, srv.URL, itoa(first))
+	resp := connect(t, ctx, srv.URL, h.EventID(first))
 	defer resp.Body.Close()
 	ch := make(chan got, 8)
 	go readEvents(t, resp, ch, nil)
@@ -169,7 +169,7 @@ func TestResumeTooOldAsksForResync(t *testing.T) {
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	resp := connect(t, ctx, srv.URL, "1")
+	resp := connect(t, ctx, srv.URL, h.EventID(1))
 	defer resp.Body.Close()
 	ch := make(chan got, 8)
 	go readEvents(t, resp, ch, nil)
@@ -200,14 +200,14 @@ func TestHeartbeat(t *testing.T) {
 
 func TestDefaults(t *testing.T) {
 	h := NewHub(Options{})
-	if h.opt.Heartbeat != 25*time.Second || h.opt.Ring != 256 {
+	if h.opt.Heartbeat != 15*time.Second || h.opt.Ring != 256 {
 		t.Fatalf("defaults %+v", h.opt)
 	}
 }
 
 func TestSlowClientIsDropped(t *testing.T) {
 	h := NewHub(Options{ClientQueue: 2})
-	c, _ := h.subscribe(0, false)
+	c, _ := h.subscribe(Viewer{All: true}, "")
 	for i := range 5 {
 		h.Publish("x", i)
 	}
@@ -226,7 +226,7 @@ func TestRingKeepsLast(t *testing.T) {
 	for i := range 5 {
 		h.Publish("x", i)
 	}
-	_, replay := h.subscribe(2, true)
+	_, replay := h.subscribe(Viewer{All: true}, h.EventID(2))
 	if len(replay) != 3 || replay[0].ID != 3 || replay[2].ID != 5 {
 		t.Fatalf("replay %+v", replay)
 	}

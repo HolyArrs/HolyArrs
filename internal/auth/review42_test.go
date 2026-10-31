@@ -12,7 +12,7 @@ func TestShowDownloadRoutesClosedToMembers(t *testing.T) {
 	for _, p := range []string{
 		"GET /api/v1/downloads/view", "POST /api/v1/downloads/{id}/remove", "POST /api/v1/downloads/{id}/mark-failed",
 		"GET /api/v1/needs-decision", "POST /api/v1/needs-decision/{id}/decide",
-		"GET /api/v1/settings/naming", "PUT /api/v1/settings/naming", "POST /api/v1/settings/naming/example", "GET /live",
+		"GET /api/v1/settings/naming", "PUT /api/v1/settings/naming", "POST /api/v1/settings/naming/example",
 	} {
 		need, ok := RoutePerms[p]
 		if !ok || slices.Contains(member, need) {

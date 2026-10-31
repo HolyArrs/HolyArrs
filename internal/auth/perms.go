@@ -144,6 +144,11 @@ var RoutePerms = map[string]Perm{
 	// Its pictures, same-origin; only the files the answer above holds.
 	"GET /api/v1/public/signin-pic/t/p/{size}/{file}": NeedPublic,
 
+	// The live stream filters each event by audience: managers receive
+	// everything, anyone else only events for their own items.
+	"GET /live":                  needSignedIn,
+	"POST /api/v1/live/interest": needSignedIn,
+
 	// My account.
 	"GET /api/v1/auth/me":                       needSelf,
 	"POST /api/v1/auth/logout":                  needSelf,
@@ -434,7 +439,6 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/health/states":                                  PermManageLibrary,
 	"GET /api/v1/settings/health":                                PermSettings,
 	"PUT /api/v1/settings/health":                                PermSettings,
-	"GET /live":                                                  PermManageLibrary,
 	"POST /api/v1/library-folders/{id}/check":                    PermManageLibrary,
 
 	// Settings.

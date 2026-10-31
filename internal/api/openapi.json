@@ -2425,6 +2425,35 @@
             },
             "type": "array"
           },
+          "sync": {
+            "description": "Torrent clients the background Downloads reader cannot serve right now (only with downloads sync on): degraded means the reader is down and the app reads the client itself, checking means the last read is too old and a new one is on its way.",
+            "items": {
+              "properties": {
+                "health": {
+                  "enum": [
+                    "degraded",
+                    "checking"
+                  ],
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "seen_at": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "stale": {
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
           "worst": {
             "enum": [
               "ok",
@@ -15255,6 +15284,67 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "users",
         "x-holyarrs-scope": "control"
+      }
+    },
+    "/api/v1/live/interest": {
+      "post": {
+        "description": "Tells the server a signed-in page shows a view that wants fast updates (today only downloads), so the Downloads reader polls at its viewer pace. Each call counts for 60 seconds; one call per session per 10 seconds counts, more answer 204 and change nothing. Browser sessions send the CSRF token like every other write.",
+        "operationId": "liveInterest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "view": {
+                    "enum": [
+                      "downloads"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "view"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ttl_seconds": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Counted for ttl_seconds."
+          },
+          "204": {
+            "description": "Already counted in the last 10 seconds; nothing changed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No view, or an unknown view."
+          }
+        },
+        "summary": "Say a page shows a fast-updating view",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/logs": {

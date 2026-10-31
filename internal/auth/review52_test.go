@@ -5,22 +5,22 @@ import (
 	"testing"
 )
 
-// 5.2 review: the routes 5.2 added or changed, and the live stream that
-// carries their Events, stay closed to members.
+// 5.2 review: the routes 5.2 added or changed stay closed to members. The
+// live stream is open to everyone signed in since the hub filters each
+// event by audience (members receive only their own items).
 func TestShowOrganiseRoutesClosedToMembers(t *testing.T) {
 	member := DefaultPerms(RoleMember)
 	for _, p := range []string{
 		"GET /api/v1/settings/alerts", "PUT /api/v1/settings/alerts", "POST /api/v1/titles/{id}/delete",
 		"POST /api/v1/library-folders/{id}/scan", "POST /api/v1/library-folders/{id}/adopt", "GET /api/v1/events",
-		"GET /live",
 	} {
 		need, ok := RoutePerms[p]
 		if !ok || slices.Contains(member, need) || need == NeedPublic {
 			t.Errorf("%s: need %q (in table %v), member may use it", p, need, ok)
 		}
 	}
-	if RoutePerms["GET /live"] != PermManageLibrary {
-		t.Errorf("live stream needs %q, want manage library", RoutePerms["GET /live"])
+	if RoutePerms["GET /live"] != needSignedIn || RoutePerms["POST /api/v1/live/interest"] != needSignedIn {
+		t.Errorf("live stream needs %q, interest %q, want signed in", RoutePerms["GET /live"], RoutePerms["POST /api/v1/live/interest"])
 	}
 }
 

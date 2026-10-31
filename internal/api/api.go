@@ -155,6 +155,8 @@ type API struct {
 	s Server
 	// tlog is the torrent log's last seen state per torrent (torrentlog.go).
 	tlog torrentLog
+	// interest limits each session's live interest calls (live.go).
+	interest interestState
 	// listSeen is each region's last world-list shelves signature
 	// (music_lists_v1), guarded by musicv2.cursorMu.
 	listSeen map[string]string
@@ -438,9 +440,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
-	if a.s.Live != nil {
-		m.Handle("GET /live", a.s.Live)
-	}
+	a.liveRoutes(m)
 	m.Handle("GET /", web.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)

@@ -1,6 +1,9 @@
 // Live updates: one event stream per tab (/live). Each message is
 // {"topic": "...", "data": ...}; pages subscribe to the topics they show.
 // "resync" means the stream lost messages, so every listener reloads.
+// Event ids are "<boot>-<n>": a new stream resumes with ?last=<id> and the
+// server replays what was missed, or sends "resync" when it cannot (it
+// restarted, or the gap is too old). A new boot seen here also reloads.
 import { to } from './paths.ts';
 import { api } from './api.ts';
 
@@ -22,6 +25,19 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	const status = $state<{ state: LiveState; last: number }>({ state: 'off', last: 0 });
 	const listeners = new Map<string, Set<Listener>>();
 	let src: SourceLike | null = null;
+	let lastId = '';
+
+	/** seen keeps the newest event id; a new boot id means the server restarted. */
+	function seen(id: string) {
+		if (!id) return;
+		const boot = id.slice(0, id.lastIndexOf('-'));
+		const before = lastId.slice(0, lastId.lastIndexOf('-'));
+		lastId = id;
+		if (before && boot !== before) {
+			api.forget();
+			emit('resync', null);
+		}
+	}
 
 	function emit(topic: string, data: unknown) {
 		const run = (set: Set<Listener> | undefined) => set?.forEach((fn) => fn(data, topic));
@@ -71,7 +87,7 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			}, PAUSE_AFTER);
 		} else if (paused) {
 			paused = false;
-			missed = true;
+			missed = !lastId;
 			start(true);
 		}
 	}
@@ -85,7 +101,7 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			if (document.hidden) queueMicrotask(visibility);
 		}
 		if (!again) status.state = 'connecting';
-		src = factory(to('/live'));
+		src = factory(to('/live') + (lastId ? '?last=' + encodeURIComponent(lastId) : ''));
 		src.onopen = () => {
 			tries = 0;
 			status.state = 'live';
@@ -97,6 +113,8 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		};
 		src.onerror = () => {
 			// Lost the server (restart, update): retry after 1 s, 2 s, 4 s… up to 15 s.
+			// Without an id to resume from, the reopened stream cannot replay.
+			if (!lastId && status.state === 'live') missed = true;
 			status.state = 'reconnecting';
 			src?.close();
 			src = null;
@@ -105,7 +123,10 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 				if (status.state === 'reconnecting') start(true);
 			}, backoff(tries++));
 		};
-		src.onmessage = (e: MessageEvent) => dispatch(String(e.data));
+		src.onmessage = (e: MessageEvent) => {
+			seen(e.lastEventId ?? '');
+			dispatch(String(e.data));
+		};
 	}
 
 	function stop() {

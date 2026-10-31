@@ -126,6 +126,7 @@ var Routes = map[string]Owner{
 	"GET /login":                    Core,
 	"GET /healthz":                  Core,
 	"GET /live":                     Core,
+	"POST /api/v1/live/interest":    Core,
 	"GET /api/v1/openapi.json":      Core,
 	"GET /api/v1/auth/state":        Core,
 	"GET /api/v1/public/signin-art": Core,
