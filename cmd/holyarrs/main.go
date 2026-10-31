@@ -29,6 +29,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/backup"
 	"github.com/CoderLuii/holyarrs/internal/compress"
+	"github.com/CoderLuii/holyarrs/internal/dlsync"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 	"github.com/CoderLuii/holyarrs/internal/health"
@@ -374,6 +375,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			return source.GrabLink(ctx, s, vault, rel)
 		},
 		FromVault: vault.Get}
+	// Background download sync, Phase 1: shadow only (downloads.sync =
+	// shadow), fed from the lists the Manager already reads.
+	dlShadow := &dlsync.Shadow{Store: &dlsync.Store{}, DB: s}
+	dm.OnList = dlShadow.OnList
 	im := &importer.Importer{Store: s, Live: hub}
 	sr := &source.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloader.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))

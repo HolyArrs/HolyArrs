@@ -53,6 +53,10 @@ type Manager struct {
 	Link func(ctx context.Context, rel domain.Release) (string, error)
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
+	// OnList, when set, is handed every list SyncOnce already read (or its
+	// error), with the engine generation it came from. The background
+	// reader uses it in shadow mode; it adds no call to any client.
+	OnList func(downloaderID int64, generation uint64, category string, jobs []Job, err error)
 
 	mu               sync.Mutex
 	engines          map[int64]Engine
@@ -87,6 +91,29 @@ func (m *Manager) Forget(id int64) {
 	m.mu.Unlock()
 }
 
+// Generation is the Downloader's engine generation: it moves on every
+// Forget (an edit), so state kept per engine can tell it is stale.
+func (m *Manager) Generation(id int64) uint64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.engineGeneration[id]
+}
+
+// Syncer gives the Downloader's guarded engine for background reads, with
+// the generation it belongs to. Every call on it goes through the guard.
+func (m *Manager) Syncer(ctx context.Context, d domain.Downloader) (Syncer, uint64, error) {
+	gen := m.Generation(d.ID)
+	e, err := m.engine(ctx, d)
+	if err != nil {
+		return nil, gen, err
+	}
+	s, ok := e.(Syncer)
+	if !ok {
+		return nil, gen, ErrNotSupported
+	}
+	return s, gen, nil
+}
+
 func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, error) {
 	m.mu.Lock()
 	if e := m.engines[d.ID]; e != nil {
@@ -102,6 +129,10 @@ func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, erro
 	} else {
 		e, err = m.EngineFor(ctx, d)
 		if err == nil {
+			if readOnlyFor(d) {
+				// Inside the guard: refused writes never reach outside or the client.
+				e = readOnly(e)
+			}
 			instance := fmt.Sprintf("%p", m)
 			if m.Store != nil {
 				instance = m.Store.Dir()
@@ -627,6 +658,9 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 			continue
 		}
 		jobsIn, err := e.List(ctx, dr.Category)
+		if m.OnList != nil {
+			m.OnList(dr.ID, m.Generation(dr.ID), dr.Category, jobsIn, err)
+		}
 		if err != nil {
 			m.downloaderFailed(ctx, dr, err)
 			errs = append(errs, err)

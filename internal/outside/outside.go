@@ -61,6 +61,9 @@ type State struct {
 	Kind   string
 	Status string
 	Reason string
+	// OpenUntil is when the next call is allowed; zero when not suppressed
+	// (a probe may run now).
+	OpenUntil time.Time
 }
 
 type entry struct {
@@ -238,7 +241,7 @@ func (r *Registry) States() []State {
 		if e.openUntil.IsZero() && !e.probe {
 			continue
 		}
-		out = append(out, State{ID: id, Kind: e.kind, Status: "retrying", Reason: "It does not answer; HolyArrs tries again on its own."})
+		out = append(out, State{ID: id, Kind: e.kind, Status: "retrying", Reason: "It does not answer; HolyArrs tries again on its own.", OpenUntil: e.openUntil})
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Kind != out[j].Kind {

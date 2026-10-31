@@ -159,3 +159,20 @@ func TestRegistryStaysBoundedAndKeepsActiveCalls(t *testing.T) {
 	}
 	active.Finish(Success)
 }
+
+func TestStateOpenUntilShowsNextTry(t *testing.T) {
+	now := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
+	r := New([]byte("test process key"), Options{Threshold: 2, Cooldown: 45 * time.Second, Now: func() time.Time { return now }})
+	target := Target{Kind: "downloader", Identity: []string{"lab"}}
+	for range 2 {
+		op, err := r.Begin(context.Background(), target)
+		if err != nil {
+			t.Fatal(err)
+		}
+		op.Finish(TransientFailure)
+	}
+	states := r.States()
+	if len(states) != 1 || !states[0].OpenUntil.Equal(now.Add(45*time.Second)) {
+		t.Fatalf("states = %#v", states)
+	}
+}

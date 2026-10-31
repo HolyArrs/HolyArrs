@@ -208,16 +208,39 @@ type sabQueue struct {
 
 type sabHistory struct {
 	History struct {
-		Slots []struct {
-			ID          string `json:"nzo_id"`
-			Name        string `json:"name"`
-			Category    string `json:"category"`
-			Bytes       int64  `json:"bytes"`
-			Status      string `json:"status"`
-			FailMessage string `json:"fail_message"`
-			Storage     string `json:"storage"`
-		} `json:"slots"`
+		Slots      []sabHistorySlot `json:"slots"`
+		LastUpdate json.RawMessage  `json:"last_history_update"`
 	} `json:"history"`
+}
+
+type sabHistorySlot struct {
+	ID          string `json:"nzo_id"`
+	Name        string `json:"name"`
+	Category    string `json:"category"`
+	Bytes       int64  `json:"bytes"`
+	Status      string `json:"status"`
+	FailMessage string `json:"fail_message"`
+	Storage     string `json:"storage"`
+}
+
+// job reads one finished-list entry; the same for List and History.
+func (x sabHistorySlot) job() Job {
+	j := Job{ID: x.ID, Name: x.Name, Category: x.Category, Size: x.Bytes, Detail: x.Status}
+	switch x.Status {
+	case "Completed":
+		j.State, j.Progress = StateFinished, 1
+		j.ContentPath = x.Storage
+		j.SavePath = parentDir(x.Storage)
+	case "Failed":
+		j.State, j.Progress = StateFailed, 0
+		if x.FailMessage != "" {
+			j.Detail = x.FailMessage
+		}
+	default:
+		// Still being repaired or unpacked: downloading at full progress.
+		j.State, j.Progress = StateDownloading, 1
+	}
+	return j
 }
 
 func num(s string) float64 {
@@ -309,22 +332,7 @@ func (s *Sabnzbd) jobs(ctx context.Context, q url.Values) ([]Job, error) {
 		return nil, fmt.Errorf("sabnzbd history: %w", err)
 	}
 	for _, x := range hi.History.Slots {
-		j := Job{ID: x.ID, Name: x.Name, Category: x.Category, Size: x.Bytes, Detail: x.Status}
-		switch x.Status {
-		case "Completed":
-			j.State, j.Progress = StateFinished, 1
-			j.ContentPath = x.Storage
-			j.SavePath = parentDir(x.Storage)
-		case "Failed":
-			j.State, j.Progress = StateFailed, 0
-			if x.FailMessage != "" {
-				j.Detail = x.FailMessage
-			}
-		default:
-			// Still being repaired or unpacked: downloading at full progress.
-			j.State, j.Progress = StateDownloading, 1
-		}
-		out = append(out, j)
+		out = append(out, x.job())
 	}
 	return out, nil
 }

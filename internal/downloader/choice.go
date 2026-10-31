@@ -221,6 +221,7 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 		if guarded, ok := e.(*guardedEngine); ok {
 			raw = guarded.Engine
 		}
+		raw = unwrapReadOnly(raw)
 		if s, ok := raw.(*Sabnzbd); ok && d.Category != "" && d.Category != "*" {
 			if has, cerr := s.HasCategory(ctx, d.Category); cerr == nil && !has {
 				err = fmt.Errorf("%w (%s)", ErrNoCategory, d.Category)

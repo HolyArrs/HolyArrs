@@ -279,7 +279,12 @@ type qbitTorrent struct {
 	TimeActive  int64    `json:"time_active"`
 }
 
-func (t qbitTorrent) job() Job {
+func (t qbitTorrent) job() Job { return jobFromTorrent(t) }
+
+// jobFromTorrent is the one conversion from a qBittorrent torrent to a Job,
+// shared by torrents/info (List, ListAll, Get) and sync/maindata, so both
+// paths give the same ID (lower-case hash) and the same fields.
+func jobFromTorrent(t qbitTorrent) Job {
 	eta := t.ETA
 	if eta >= 8640000 || eta < 0 { // qBittorrent's "infinite"
 		eta = 0
@@ -376,7 +381,7 @@ func (q *Qbittorrent) info(ctx context.Context, f url.Values) ([]Job, error) {
 	}
 	out := make([]Job, len(ts))
 	for i, t := range ts {
-		out[i] = t.job()
+		out[i] = jobFromTorrent(t)
 	}
 	return out, nil
 }

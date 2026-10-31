@@ -49,6 +49,12 @@ func (g *guardedEngine) run(ctx context.Context, call func() error) error {
 		var network net.Error
 		var status adapterHTTPError
 		switch {
+		case errors.Is(err, ErrReadOnly):
+			// Refused here, before the client: proves nothing about it.
+			outcome = outside.Canceled
+		case errors.Is(err, ErrSyncParse):
+			// A garbled change feed is a passing failure, never a refusal.
+			outcome = outside.TransientFailure
 		case errors.Is(err, source.ErrAddressRefused):
 			outcome = outside.TerminalFailure
 		case errors.As(err, &status):
@@ -67,6 +73,9 @@ func (g *guardedEngine) Health(ctx context.Context) (h Health, err error) {
 	return
 }
 func (g *guardedEngine) Add(ctx context.Context, r AddRequest) (id string, err error) {
+	if isReadOnly(g.Engine) {
+		return "", ErrReadOnly
+	}
 	err = g.run(ctx, func() error { var e error; id, e = g.Engine.Add(ctx, r); return e })
 	return
 }
@@ -79,5 +88,38 @@ func (g *guardedEngine) Get(ctx context.Context, id string) (job Job, err error)
 	return
 }
 func (g *guardedEngine) Remove(ctx context.Context, id string, files bool) error {
+	if isReadOnly(g.Engine) {
+		return ErrReadOnly
+	}
 	return g.run(ctx, func() error { return g.Engine.Remove(ctx, id, files) })
 }
+
+// SyncMain, History and ListAll are the guarded Syncer. They are methods of
+// the guard itself so the background reader never reaches an optional part
+// around outside.Begin (as ControlEngine's unwrapping would allow).
+func (g *guardedEngine) SyncMain(ctx context.Context, rid int64) (d MainData, err error) {
+	s, ok := g.Engine.(MainSyncer)
+	if !ok {
+		return d, ErrNotSupported
+	}
+	err = g.run(ctx, func() error { var e error; d, e = s.SyncMain(ctx, rid); return e })
+	return
+}
+func (g *guardedEngine) History(ctx context.Context, since int64) (p HistoryPage, err error) {
+	s, ok := g.Engine.(HistoryReader)
+	if !ok {
+		return p, ErrNotSupported
+	}
+	err = g.run(ctx, func() error { var e error; p, e = s.History(ctx, since); return e })
+	return
+}
+func (g *guardedEngine) ListAll(ctx context.Context) (jobs []Job, err error) {
+	s, ok := g.Engine.(AllLister)
+	if !ok {
+		return nil, ErrNotSupported
+	}
+	err = g.run(ctx, func() error { var e error; jobs, e = s.ListAll(ctx); return e })
+	return
+}
+
+var _ Syncer = (*guardedEngine)(nil)
