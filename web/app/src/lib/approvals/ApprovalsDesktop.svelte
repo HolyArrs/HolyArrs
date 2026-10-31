@@ -7,7 +7,7 @@
 	// (trailer banner, What to get).
 	import { tick } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import { fade, fly } from 'svelte/transition';
+	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import Avatar from '../ui/Avatar.svelte';
@@ -19,7 +19,7 @@
 	import { to } from '../paths.ts';
 	import { shortDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
-	import { approverTabs, askTab } from '../wishlist.ts';
+	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../wishlist.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { Ask } from '../types.ts';
 
@@ -87,15 +87,49 @@
 	// Filter by status within the tab: the status word without its detail (Downloading · 40% → Downloading).
 	const statusOf = (a: Ask) => lifeOf(a).label.split(' · ')[0];
 	let status = $state('');
-	$effect(() => {
-		void ctx.approverTab;
-		status = '';
-	});
-	const statuses = $derived.by(() => {
+	/** The statuses in one tab, in the page's order (Processing: failed first). */
+	const statusesIn = (t: ApproverTab) => {
 		const n = new Map<string, number>();
-		for (const a of list) n.set(statusOf(a), (n.get(statusOf(a)) ?? 0) + 1);
-		return [...n].map(([word, count]) => ({ word, count }));
-	});
+		for (const a of ctx.viewed) if (tabOfAsk(a) === t) n.set(statusOf(a), (n.get(statusOf(a)) ?? 0) + 1);
+		return [...n].map(([word, count]) => ({ word, count })).sort((x, y) => Number(y.word === 'Failed') - Number(x.word === 'Failed'));
+	};
+	// Each tab's own menu, centred under that tab: hover (or keyboard focus, or a second tap) opens it,
+	// and picking a status goes straight to that tab, filtered.
+	const tabEls: Partial<Record<ApproverTab, HTMLElement>> = {};
+	let capEl = $state<HTMLElement>();
+	let dropTab = $state<ApproverTab | ''>('');
+	let dropX = $state(0);
+	let hideT: ReturnType<typeof setTimeout> | undefined;
+	const dropItems = $derived(dropTab ? statusesIn(dropTab) : []);
+	function openDrop(t: ApproverTab) {
+		clearTimeout(hideT);
+		const el = tabEls[t];
+		if (!el || !capEl || statusesIn(t).length < 2) return void (dropTab = '');
+		const a = el.getBoundingClientRect();
+		const cap = capEl.getBoundingClientRect();
+		const want = a.left + a.width / 2 - cap.left;
+		// Kept on screen near the edges (phones).
+		const half = 108;
+		const lo = half + 8 - cap.left;
+		const hi = window.innerWidth - half - 8 - cap.left;
+		dropX = Math.min(Math.max(want, lo), Math.max(lo, hi));
+		dropTab = t;
+	}
+	function closeDrop(now = false) {
+		clearTimeout(hideT);
+		if (now) dropTab = '';
+		else hideT = setTimeout(() => (dropTab = ''), 140);
+	}
+	function pickTab(t: ApproverTab) {
+		if (ctx.approverTab === t) return dropTab === t ? closeDrop(true) : openDrop(t);
+		status = '';
+		ctx.setApproverTab(t);
+	}
+	function pickStatus(t: ApproverTab, word: string) {
+		if (ctx.approverTab !== t) ctx.setApproverTab(t);
+		status = status === word && ctx.approverTab === t ? '' : word;
+		closeDrop(true);
+	}
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
@@ -208,13 +242,23 @@
 
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts]}>
+		<div class="tcap" bind:this={capEl} role="presentation" onpointerleave={(e) => e.pointerType === 'mouse' && closeDrop()}>
+		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts, status]}>
 			<span class="plate" aria-hidden="true"></span>
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
-				<button type="button" class="tab" class:zero={!n} aria-pressed={ctx.approverTab === t.tab} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}" onclick={() => ctx.setApproverTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="bad" aria-hidden="true"></span>{/if}</button>
+				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={() => pickTab(t.tab)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="bad" aria-hidden="true"></span>{/if}</button>
 			{/each}
+		</div>
+		{#if dropTab}
+			{@const at = dropTab}
+			<div class="drop" role="menu" aria-label="{approverTabs.find((x) => x.tab === at)?.label} by status" style:left="{dropX}px" onmouseenter={() => clearTimeout(hideT)} transition:slide={{ duration: ms(200), easing: cubicOut }}>
+				{#each dropItems as x (x.word)}
+					<button type="button" role="menuitemcheckbox" class="dr" class:bad={x.word === 'Failed'} aria-checked={ctx.approverTab === at && status === x.word} onclick={() => pickStatus(at, x.word)}><span class="dd dd-{x.word.toLowerCase()}" aria-hidden="true"></span><span class="dw">{x.word}</span><span class="dn">{x.count}</span></button>
+				{/each}
+			</div>
+		{/if}
 		</div>
 		<div class="right">
 			{#if ctx.approverTab === 'pending' && list.filter(waiting).length > 1}
@@ -231,14 +275,7 @@
 		</div>
 	</div>
 
-		{#if statuses.length > 1}
-			<div class="stats" role="group" aria-label="Filter by status">
-				<button type="button" class="st" aria-pressed={!status} onclick={() => (status = '')}>All<span class="sn">{list.length}</span></button>
-				{#each statuses as x (x.word)}
-					<button type="button" class="st" class:bad={x.word === 'Failed'} aria-pressed={status === x.word} onclick={() => (status = status === x.word ? '' : x.word)}>{x.word}<span class="sn">{x.count}</span></button>
-				{/each}
-			</div>
-		{/if}
+
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each cardsShown as a, i (a.id)}
 				{@const w = ctx.who(a)}
@@ -312,14 +349,24 @@
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* The toolbar: tabs left, filter and view right. */
-	.stats { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 -4px; }
-	.st { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text-muted); font: 600 13px/1 var(--font-ui); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.st:hover { color: var(--text); }
-	.st[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
-	.st.bad { color: var(--fail-text, var(--fail, #e5484d)); }
-	.st.bad[aria-pressed='true'] { background: var(--fail, #e5484d); color: #fff; border-color: transparent; }
+	/* Each tab's menu slides out from under the bar, centred on that tab. */
+	.tcap { position: relative; z-index: 6; }
+	.drop { position: absolute; top: calc(100% - 16px); transform: translateX(-50%); z-index: -1; width: 216px; box-sizing: border-box; display: flex; flex-direction: column; gap: 1px; padding: 21px 5px 5px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; background: var(--surface-1); box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.55); }
+	.dr { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text); font: 500 13px/1 var(--font-ui); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.dr:hover, .dr:focus-visible { background: color-mix(in srgb, var(--text) 8%, transparent); }
+	.dr[aria-checked='true'] { background: color-mix(in srgb, var(--text) 14%, transparent); }
+	.dr.bad .dw { color: var(--fail-text, var(--fail, #e5484d)); }
+	.dn { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.dd { width: 8px; height: 8px; border-radius: 50%; background: var(--info, #3b82f6); }
+	.dd-failed { background: var(--fail, #e5484d); }
+	.dd-ready { background: var(--ok, #3fb950); }
+	.dd-upcoming, .dd-declined { background: var(--text-muted); }
+	.dd-pending { background: var(--wait, #e5a50a); }
+	@media (pointer: coarse) { .dr { height: 44px; } }
+	.pick { margin-left: 4px; color: var(--text-muted); font-weight: 500; }
+	.pick.bad { color: var(--fail-text, var(--fail, #e5484d)); }
+	@media (prefers-reduced-motion: reduce) { .stats { transition: none; } }
 	.sn { font-variant-numeric: tabular-nums; opacity: 0.7; }
-	@media (pointer: coarse) { .st { height: 44px; } }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 	.right { display: flex; align-items: center; gap: 10px; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
@@ -425,6 +472,7 @@
 	@media (max-width: 767px) {
 		.desktop { gap: 12px; padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
 		.toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+		.tcap { width: 100%; }
 		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 		.tabs::-webkit-scrollbar { display: none; }
 		.tab { flex: none; padding: 0 14px; font: var(--t-footnote); font-weight: 600; }
