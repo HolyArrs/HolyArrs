@@ -679,7 +679,7 @@
 			</aside>
 		{/if}
 
-		{@render messages()}
+		{#if !approver}{@render messages()}{/if}
 	</div>
 </div>
 {:else}
