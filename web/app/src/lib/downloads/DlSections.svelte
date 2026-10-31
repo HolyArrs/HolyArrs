@@ -33,6 +33,8 @@
 	import { api, message } from '../api.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { healthLine, quietPeers, logDays, badKind, clientMark } from './panel-words.ts';
+	// Each client's own app icon (design/assets/clients, licenses in its README).
+	const CLIENT_ICONS = new Set(['qbittorrent', 'transmission', 'deluge', 'sabnzbd', 'nzbget']);
 	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../motion.ts';
@@ -1053,7 +1055,7 @@
 		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category) || dash}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
-		<span class="pcell" class:ph data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}<span class="pm" class:cmk={!!cm.mark} data-tone={cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{/if}</span>
+		<span class="pcell" class:ph data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}<span class="pm" class:cmk={!!cm.mark} data-tone={cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if CLIENT_ICONS.has(r.downloader_kind ?? '')}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="18" height="18" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
 			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && r.linked}<span class="ver" data-testid="dl-linked" title="Added outside HolyArrs, matched to this title">Linked</span>{:else if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
@@ -1547,6 +1549,8 @@
 </div>
 
 <style>
+	.pm:has(.cico) { background: none; box-shadow: none; }
+	.cico { display: block; width: 18px; height: 18px; object-fit: contain; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.strip > span { display: inline-flex; align-items: center; gap: 6px; }
 	.k { color: var(--text-muted); font: var(--t-footnote); }
@@ -2065,4 +2069,17 @@
 		:global(:root:not([data-theme='light'])) .pm[data-tone='sab'] { --cm: #f0c84a; }
 		:global(:root:not([data-theme='light'])) .pm[data-tone='nzb'] { --cm: #6cd08c; }
 	}
+
+	/* Log: one raised card like the Files table, each day a tinted band, rows split by hairlines. */
+	.lgw { gap: 0; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); overflow: hidden; min-width: 0; }
+	.lgday { margin: 0; padding: 7px 14px; background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-1)); border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-caption); font-weight: 600; letter-spacing: 0.01em; }
+	.lgday:not(:first-child) { border-top: 1px solid var(--line); }
+	.lgw .lg { gap: 0; padding: 4px 14px; max-height: none; }
+	.lgw .lg li { padding: 7px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+	.lgw .lg li:last-child { border-bottom: 0; }
+	.lgw .lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	/* Files filter: the same surface and edge as the table under it. */
+	.fbar .tfld { min-height: 34px; padding: 7px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.05); transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
+	.fbar .tfld:hover { border-color: var(--line-strong); }
+	.fbar .tfld:focus-visible { border-color: var(--line-strong); box-shadow: var(--focus-ring); }
 </style>
