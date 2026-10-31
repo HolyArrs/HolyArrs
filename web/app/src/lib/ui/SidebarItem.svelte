@@ -88,7 +88,7 @@
 	.count { min-width: 22px; height: 20px; padding: 0 7px; display: grid; place-items: center; flex: none; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; transition: opacity var(--dur-fast) var(--ease-out); }
 	.current .count { background: var(--surface-1); }
 	:global(.ui-sidebar.collapsed) .ui-sbi .label { opacity: 0; }
-	:global(.ui-sidebar.collapsed) .ui-sbi .count { position: absolute; top: 2px; left: 34px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--accent-fill); color: var(--text-on-red); }
+	:global(.ui-sidebar.collapsed) .ui-sbi .count { position: absolute; top: 1px; right: 1px; left: auto; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--accent-fill); color: var(--text-on-red); }
 	.tip { position: fixed; z-index: 80; translate: 0 -50%; padding: 5px 9px; border-radius: 7px; background: var(--text); color: var(--bg); font: var(--t-footnote); white-space: nowrap; pointer-events: none; box-shadow: var(--shadow-lift); }
 	@media (pointer: coarse) { .ui-sbi { min-height: 44px; } }
 </style>
