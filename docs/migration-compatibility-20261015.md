@@ -2,7 +2,7 @@
 
 **Goal:** Close the migration gaps that fit the existing HolyArrs data model while preserving least privilege, source relationships, repeat safety, undo safety and read-only media handling.
 
-**Architecture:** Extend migration snapshots and plans with source-stable person identities, per-kind request limits, supported Wishlist defaults, and Lidarr artist policy. Apply those fields only through the existing store and service contracts. Keep unsupported source values explicit in the plan report and keep real-media trials disposable.
+**Architecture:** Extend migration snapshots and plans with source-stable person identities, per-kind request limits, supported Request defaults, and Lidarr artist policy. Apply those fields only through the existing store and service contracts. Keep unsupported source values explicit in the plan report and keep real-media trials disposable.
 
 **Tech stack:** Go, SQLite, existing `internal/migrate`, `internal/asks`, `internal/library` and store test fixtures.
 
@@ -25,13 +25,13 @@
 - [x] Read stable external person ids when the source exposes them without linking sign-in automatically.
 - [x] Read Lidarr albums and their watched edition through bounded API GETs and backups.
 - [x] Map exact permissions only; retain broader source-only permission variants as not moved.
-- [x] Map exact seven-day per-kind limits and supported Wishlist defaults; report other windows and ambiguous per-person zero values as not moved.
+- [x] Map exact seven-day per-kind limits and supported Request defaults; report other windows and ambiguous per-person zero values as not moved.
 - [x] Reject out-of-range limits instead of clamping them, and bound source timestamps by the persisted snapshot read time.
 - [x] Map Lidarr new-album policy, filter kinds/statuses, album monitoring and watched editions; retain invalid or unrepresentable values with precise reasons.
 
 ## Task 3: Apply, repeat and undo
 
-- [x] Apply supported Wishlist defaults with before/after marks and guarded undo.
+- [x] Apply supported Request defaults with before/after marks and guarded undo.
 - [x] Apply per-kind person limits and preserve request asker/decider relationships.
 - [x] Apply artist policy after adoption and choose a watched edition only when the imported Pressing exists.
 - [x] Verify a repeat creates no duplicate rows and an undo removes only task-created relationships/settings while leaving media untouched.

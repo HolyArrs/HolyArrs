@@ -177,8 +177,8 @@ const historyRecovery = {
 };
 
 const wishlistActions = {
-	name: 'Wishlist messages, approval, denial and take back',
-	route: '/wishlist',
+	name: 'Requests messages, approval, denial and take back',
+	route: '/requests',
 	setup: async (ctx) => {
 		const initial = [ask(11, 'Approve Me'), ask(12, 'Turn Me Down'), ask(13, 'Take Me Back', 'asked', true)];
 		ctx.activity = { read: 0, approve: 0, deny: 0, takeBack: 0 };

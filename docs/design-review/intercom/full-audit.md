@@ -43,7 +43,7 @@ Still unavailable: exact Intercom font files and timed-motion evidence, native I
 
 ## Route and scenario scope
 
-The source inventory contains 48 page components. The final read-only matrix covers 34 route states: Home; Library movie/show/artist filters; movie, TV, artist and album details; Wishlist; active downloads, decisions and History; Calendar; collections; held and turned-down releases; copies; missing subtitles; rename and import entry screens; People; Search; Settings overview, naming, search, parts, schedules, This app, music, Wishlist, Library folders, backups, moving media and users.
+The source inventory contains 48 page components. The final read-only matrix covers 34 route states: Home; Library movie/show/artist filters; movie, TV, artist and album details; Requests; active downloads, decisions and History; Calendar; collections; held and turned-down releases; copies; missing subtitles; rename and import entry screens; People; Search; Settings overview, naming, search, parts, schedules, This app, music, Wishlist, Library folders, backups, moving media and users.
 
 Nested collection/person pages, invitation/welcome completion, account changes, provider setup and credential-bearing settings are not certified by this matrix. Empty collections and inactive provider flows do not establish populated provider lifecycle correctness. Real delete, approve, import, download, credential and file operations were deliberately not executed: browser checks abort non-GET requests. Existing function handlers and permissions remain in place.
 

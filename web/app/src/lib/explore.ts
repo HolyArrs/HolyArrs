@@ -1,5 +1,5 @@
 // Explore: rows of titles built from data HolyArrs already has (the Library,
-// the calendar and the Wishlist), plus rows from a later discover endpoint.
+// the calendar and Requests), plus rows from a later discover endpoint.
 // Everything that decides what shows, and in which order, lives here as pure
 // functions so it can be tested and explained.
 import { pickFrom, type CardArtPick } from './card-art.ts';

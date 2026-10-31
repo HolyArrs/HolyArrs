@@ -2,7 +2,7 @@
 	import { api, message } from './api.ts';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
-	import { refreshInbox } from './wishlist.svelte.ts';
+	import { refreshInbox } from './requests.svelte.ts';
 	import { loadDetails } from './title-details.ts';
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from './explore.ts';
 	import { seasonWords } from './shows.ts';

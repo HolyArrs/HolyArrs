@@ -46,7 +46,7 @@ const routes = [
 	{ area: 'library', name: 'library-collections', path: '/library/collections' },
 	{ area: 'people', name: 'people', path: '/people' },
 	{ area: 'search', name: 'search', path: '/search' },
-	{ area: 'requests', name: 'wishlist', path: '/wishlist' },
+	{ area: 'requests', name: 'wishlist', path: '/requests' },
 	{ area: 'downloads', name: 'downloads', path: '/downloads' },
 	{ area: 'downloads', name: 'downloads-decide', path: '/downloads/decide' },
 	{ area: 'downloads', name: 'downloads-history', path: '/downloads/history' },

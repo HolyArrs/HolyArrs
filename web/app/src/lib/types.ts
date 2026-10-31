@@ -59,7 +59,7 @@ export interface TitleView {
 	last_activity?: string;
 	versions: VersionView[];
 	slots: SlotView[];
-	/** Wishlist asks that led to it: who asked and who decided. */
+	/** Requests that led to it: who asked and who decided. */
 	asks?: Ask[];
 	/** A show's choices and season summaries (shows only). */
 	show?: ShowInfo;
@@ -288,7 +288,7 @@ export interface LookupShow {
 	seasons?: { number: number; name?: string }[];
 	title_id?: number;
 	never_add?: boolean;
-	/** The open Wishlist ask for it, if someone asked. */
+	/** The open request for it, if someone asked. */
 	ask?: AskBrief;
 }
 
@@ -331,7 +331,7 @@ export interface Movie {
 export interface LookupMovie extends Movie {
 	title_id?: number;
 	never_add: boolean;
-	/** The open Wishlist ask for it, if someone asked. */
+	/** The open request for it, if someone asked. */
 	ask?: AskBrief;
 }
 
@@ -352,7 +352,7 @@ export interface Who {
 	name: string;
 }
 
-/** Ask is one movie or show someone asked for on the Wishlist. */
+/** Ask is one movie or show someone asked for on the Requests page. */
 export interface Ask {
 	id: number;
 	kind: string;

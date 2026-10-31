@@ -61,8 +61,8 @@ const libraryChooser = {
 };
 
 const wishlistReview = {
-	name: 'Wishlist review opens and restores focus by touch',
-	route: '/wishlist',
+	name: 'Requests review opens and restores focus by touch',
+	route: '/requests',
 	setup: ({ intercept }) => {
 		const ask = {
 			id: 71,

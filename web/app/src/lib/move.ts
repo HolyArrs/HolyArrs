@@ -144,7 +144,7 @@ export const groupLabels: Record<string, string> = {
 	naming: 'Naming',
 	subtitles: 'Subtitles',
 	people: 'People',
-	wishlist: 'Wishlist asks',
+	wishlist: 'Requests',
 	alerts: 'Alerts',
 	other: 'Other settings'
 };

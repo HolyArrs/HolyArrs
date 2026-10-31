@@ -93,7 +93,7 @@ describe('what is happening', () => {
 
 	it('puts something you asked for first, then asks waiting, then news, then downloads', () => {
 		expect(every(line(all), /asked for|Gladiator|asks are in the Library/)).toBe(true);
-		expect(every(line({ ...all, askedArrived: [] }), /\d+ asks waiting for you|Wishlist has 4 asks/)).toBe(true);
+		expect(every(line({ ...all, askedArrived: [] }), /\d+ asks waiting for you|Your Requests page has 4 asks/)).toBe(true);
 		expect(every(line({ ...all, askedArrived: [], waiting: 0 }), /New today|Something new landed today/)).toBe(true);
 		expect(every(line({ ...all, askedArrived: [], waiting: 0, newToday: { count: 0 } }), /Something you asked for is almost here/)).toBe(true);
 		expect(every(line({ ...all, askedArrived: [], waiting: 0, newToday: { count: 0 }, finishing: { mine: 0, all: 3 } }), /Downloads are almost done/)).toBe(true);
@@ -111,7 +111,7 @@ describe('what is happening', () => {
 		expect(line(facts({ waiting: 1 })).some((l) => l.includes('1 ask waiting'))).toBe(true);
 		expect(line(facts({ waiting: 1 })).some((l) => l.includes('1 asks'))).toBe(false);
 	});
-	it('keeps a Kid away from approvals and the owner downloads', () => {
+	it('keeps a Kid away from requests to approve and the owner downloads', () => {
 		expect(every(line(facts({ waiting: 9 }), { kid: true }), /^(Good morning|Morning)/)).toBe(true);
 		expect(every(line(facts({ finishing: { mine: 0, all: 4 } }), { kid: true }), /^(Good morning|Morning)/)).toBe(true);
 		expect(every(line(facts({ finishing: { mine: 1, all: 4 } }), { kid: true }), /Something you asked for is almost here/)).toBe(true);
@@ -144,7 +144,7 @@ describe('one line all day', () => {
 });
 
 describe('the lines themselves', () => {
-	const avoid = [/\bMonitored\b/i, /\bActivity\b/, /\bWanted\b/, /\bCutoff\b/, /Quality Profile/, /Root Folder/, /Download Client/, /Interactive Search/, /Manual Import/, /\bGrabbed\b/, /\bConnections\b/, /\bDiscover\b/, /\bRequests\b/, /\bCollections\b/, /\bSeries\b/i, /\bgrab/i, /queue item/i, /notification/i, /pipeline/i, /\btracked\b/i, /\bfollowed\b/i, /\bblocklist/i, /\bindexer/i];
+	const avoid = [/\bMonitored\b/i, /\bActivity\b/, /\bWanted\b/, /\bCutoff\b/, /Quality Profile/, /Root Folder/, /Download Client/, /Interactive Search/, /Manual Import/, /\bGrabbed\b/, /\bConnections\b/, /\bDiscover\b/, /\bCollections\b/, /\bSeries\b/i, /\bgrab/i, /queue item/i, /notification/i, /pipeline/i, /\btracked\b/i, /\bfollowed\b/i, /\bblocklist/i, /\bindexer/i];
 	it('are about twenty-five short, plain lines', () => {
 		expect(homeLineTemplates.length).toBeGreaterThanOrEqual(22);
 		expect(homeLineTemplates.length).toBeLessThanOrEqual(30);
@@ -160,8 +160,8 @@ describe('the lines themselves', () => {
 	it('use the glossary words for what they say', () => {
 		const text = homeLineTemplates.join(' ');
 		expect(text).toContain('Library');
-		expect(text).toContain('Wishlist');
-		expect(text).not.toMatch(/download client|request/i);
+		expect(text).toContain('Requests');
+		expect(text).not.toMatch(/download client|\brequest\b/i);
 	});
 	it('read as one clean line with and without a name', () => {
 		for (const l of homeLineTemplates) {

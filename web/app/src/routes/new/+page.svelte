@@ -9,7 +9,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/wishlist.svelte.ts';
+	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
 	import { cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
 	import { contextLine } from '#lib/grow-lines.ts';

@@ -50,7 +50,7 @@ and move again: nothing is added twice.
 | Naming | HolyArrs naming settings, where a pattern word has a match. Nothing on disk is renamed. |
 | Bazarr's default language profile, Podnapisi and Gestdown | Default subtitle languages and Subtitle sites. |
 | Seerr and Overseerr people | Turned-off **placeholder** people, as **members**, with the permissions that match and their weekly ask limit. No password comes over. An admin there stays an admin only if you tick **Keep (name) an admin here** in the plan; the Seerr owner is you only if you tick **This is me**. An email that is not one plain address is left out. |
-| Their open asks (waiting or approved) | **Wishlist** asks, with the right person. They do not count against anyone's weekly limit. An approved ask whose title did not come over waits for approval again. |
+| Their open asks (waiting or approved) | **Requests** asks, with the right person. They do not count against anyone's weekly limit. An approved ask whose title did not come over waits for approval again. |
 | Discord, webhook and email notifications | **Alerts**, turned off until you type the link, address or mail password. Links in notification settings (webhook addresses, servers, topics) never come over. |
 
 ## What never moves
@@ -123,7 +123,7 @@ titles stay too, because the removed titles keep their History.
 
 A part that is off is left out of the move: with Movies off, no movie
 folder or movie comes over; with Subtitles off, no subtitle setting; with
-the Wishlist off, no asks. HolyArrs started in safe mode refuses to move or
+Requests off, no asks. HolyArrs started in safe mode refuses to move or
 undo (reading, the plan and the dry run still work).
 
 ## Who may move

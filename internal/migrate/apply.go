@@ -1467,7 +1467,7 @@ func (r *run) ask(it Item) (string, string) {
 		}
 		if a.Approved || a.Decider != "" || a.DecidedAt != "" {
 			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupWishlist, From: it.From, What: it.Name + ": old decision",
-				Why: "the Wishlist entry already exists, so its current decision and decision time are kept"})
+				Why: "Requests entry already exists, so its current decision and decision time are kept"})
 		}
 		if by > 0 && r.id("SELECT ask_id FROM ask_people WHERE ask_id = ? AND user_id = ?", existing, by) != 0 {
 			if !r.dry {
@@ -1491,10 +1491,10 @@ func (r *run) ask(it Item) (string, string) {
 					return ResFailed, err.Error()
 				}
 			}
-			return ResAlready, "already on the Wishlist for this person"
+			return ResAlready, "already on the Requests page for this person"
 		}
 		if r.dry {
-			return ResCreate, "adds this person's request to the existing Wishlist ask"
+			return ResCreate, "adds this person's request to the existing request"
 		}
 		if by <= 0 {
 			return ResFailed, "its asker was not moved"
@@ -1518,7 +1518,7 @@ func (r *run) ask(it Item) (string, string) {
 			mark, _ := json.Marshal(askPersonMark{AskID: existing, UserID: by, AskedAt: store.FormatTime(asked), AskFingerprint: askFP, UserFingerprint: userFP})
 			return r.markTx(tx, it.Key, "ask_person", 0, string(mark), "")
 		})
-		return result(err, ResCreated, "added this person's request to the existing Wishlist ask")
+		return result(err, ResCreated, "added this person's request to the existing request")
 	}
 	state := "asked"
 	if a.Approved && titleID != 0 {
@@ -2155,7 +2155,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		}
 		return ResRemoved, "request ownership link removed"
 	case "ask_claim":
-		return ResRemoved, "later move's Wishlist claim released; the existing request and ownership stay"
+		return ResRemoved, "later move's Requests claim released; the existing request and ownership stay"
 	case "ask_settings":
 		var old, moved askSettingsMark
 		if json.Unmarshal([]byte(x.before), &old) != nil || json.Unmarshal([]byte(x.after), &moved) != nil {

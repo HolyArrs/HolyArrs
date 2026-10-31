@@ -3,7 +3,7 @@ import { askHref, detailKey, kindWord, personGroups, runtimeLine, stepIndex } fr
 
 const who = (id: number, name: string) => ({ id, name });
 
-describe('approvals', () => {
+describe('requests page', () => {
 	it('links each ask to its Library page, title page or artist page', () => {
 		expect(askHref({ kind: 'movie', tmdb_id: '496243', title_id: 12 })).toBe('/library/12');
 		expect(askHref({ kind: 'movie', tmdb_id: '496243' })).toBe('/title/movie/496243');

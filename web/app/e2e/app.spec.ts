@@ -41,7 +41,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
 
 	// The first-run step: Movies and Shows ticked, Music not; the browser
-	// tests use every part, so Music and the Wishlist go on too.
+	// tests use every part, so Music and Requests go on too.
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
 	await expect(page.getByRole('heading', { name: 'What do you use?', level: 1 })).toBeVisible();
 	await expect(page.getByLabel('Movies', { exact: true })).toBeChecked();

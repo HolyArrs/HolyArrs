@@ -1,4 +1,4 @@
-// Package asks runs the Wishlist for movies, shows and music: people ask (a
+// Package asks runs Requests for movies, shows and music: people ask (a
 // show whole or by seasons, an artist whole or by albums), a second ask for the same thing joins the first, an owner or admin approves or turns it
 // down (or auto-approve does), approving adds the Title and starts the
 // search, and the people who asked are told when it is approved, turned
@@ -526,7 +526,7 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 	return Result{Ask: a, Joined: true}, nil
 }
 
-// ApproveOptions are the approver's choices; zero values take the Wishlist
+// ApproveOptions are the approver's choices; zero values take Requests
 // settings (then the add-a-movie defaults).
 type ApproveOptions struct {
 	LibraryFolderID int64  `json:"library_folder_id"`
@@ -1011,7 +1011,7 @@ func (s *Service) tell(ctx context.Context, a domain.Ask, people []person, momen
 
 func (s *Service) tellStaff(ctx context.Context, a domain.Ask, by Person) {
 	s.send(ctx, alerts.Message{Moment: alerts.MomentWaiting, Subject: by.Name + " asked for " + label(a),
-		Text: by.Name + " asked for " + label(a) + ". Approve or turn it down on the Wishlist."})
+		Text: by.Name + " asked for " + label(a) + ". Approve or turn it down on the Requests page."})
 }
 
 // send hands the message to the Alerts in the background, so a slow mail

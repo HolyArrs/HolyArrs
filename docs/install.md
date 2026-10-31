@@ -141,7 +141,7 @@ code file is mode `0600` and is deleted after the owner is made.
 
 The first-run screens then ask for:
 
-1. The parts you use: Movies, Shows, Music, Subtitles and the Wishlist.
+1. The parts you use: Movies, Shows, Music, Subtitles and Requests.
 2. One Library folder. Use a path inside the shared mount, such as
    `/data/library/movies`, `/data/library/shows` or `/data/library/music`.
 

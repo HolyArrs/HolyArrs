@@ -357,18 +357,18 @@
 			{:else if row === 'arrived'}
 				{@render wideRow(home?.arrived ?? [], 'home_arrived', { title: 'Just arrived', subtitle: 'New in the last two weeks', href: to('/library') })}
 			{:else if row === 'approval' && waiting.length}
-				<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Wishlist" href={to('/wishlist')} item="var(--poster-item)">
+				<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Requests page" href={to('/requests')} item="var(--poster-item)">
 					{#each waiting.slice(0, 20) as a (a.id)}
-						<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
+						<PosterCard title={a.name} href={to('/requests')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
 					{/each}
 				</Shelf>
 			{:else if row === 'asks' && mine.length}
-				<Shelf title="Your asks" subtitle="{mine.length} on your Wishlist" href={to('/wishlist')} item="var(--poster-item)">
+				<Shelf title="Your asks" subtitle="{mine.length} on your requests" href={to('/requests')} item="var(--poster-item)">
 					{#each mine as a (a.id)}
 						{@const p = a.title_id ? progress[a.title_id] : undefined}
 						<PosterCard
 							title={a.name}
-							href={a.title_id ? to(`/library/${a.title_id}`) : to('/wishlist')}
+							href={a.title_id ? to(`/library/${a.title_id}`) : to('/requests')}
 							image={a.poster}
 							subtitle={p ? askProgressLine(p) : a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
 							progress={p && p.state === 'downloading' ? Math.round(p.progress * 100) : undefined}

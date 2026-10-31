@@ -119,7 +119,7 @@
 		<ul class="where">
 			<li><a href={to('/settings/library-folders')}>Library folders</a>: each folder has its own Pick rules, which every new title there gets.</li>
 			<li><a href={to('/settings/title-defaults')}>Movies and TV defaults</a>: the rules a new movie or show gets.</li>
-			<li><a href={to('/settings/wishlist#ask-rules')}>Wishlist rules</a>: the rules approved asks get.</li>
+			<li><a href={to('/settings/wishlist#ask-rules')}>Request rules</a>: the rules approved asks get.</li>
 			<li><a href={to('/settings/outside-lists')}>Outside lists</a>: the rules titles from a list get.</li>
 			<li>A title's own page: change the rules for that one title.</li>
 		</ul>

@@ -12,7 +12,7 @@ import (
 // seerrReader reads Seerr and Overseerr: people (name, email, role,
 // permissions and ask limits; no avatar, no sign-in hashes or tokens),
 // the default limits, and the open and approved requests, for the move to
-// turn into Wishlist asks.
+// turn into Requests.
 type seerrReader struct{ kind Kind }
 
 func (r seerrReader) Kind() Kind { return r.kind }

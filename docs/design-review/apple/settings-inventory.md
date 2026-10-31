@@ -155,7 +155,7 @@ Row actions: Read now, Change, Remove (asks first), Take off (Never-add).
 | MusicBrainz | MusicBrainz address (optional) | text | empty | rare | Y |
 | MusicBrainz | Keep answers for (hours) | number | 24 | rare | Y |
 
-### Wishlist (`/settings/wishlist`, settings). One form, one Save.
+### Requests (`/settings/wishlist`, settings). One form, one Save.
 | Card | Label | Control | Default | How often | Adv |
 |---|---|---|---|---|---|
 | Weekly limits | Movie asks, Show asks, Music asks | numbers 0–1000 | 10 each | sometimes | |
@@ -297,8 +297,8 @@ Restore, shut down and safe mode are advanced and also risky. They live in Dange
 | Library › Search | **Getting copies › Search** |
 | Linked apps › Downloaders | **Getting copies › Downloaders** |
 | (no page; Pick rules were only picked from lists) | **Getting copies › Pick rules** (new page `/settings/pick-rules`; at first read-only, later with an editor for one set at `/settings/pick-rules/{id}`) |
-| Library › Wishlist | **Wishlist and people › Wishlist rules** |
-| Access › Users (invites, people, invite links) | **Wishlist and people › Users and roles**. Invites stay on that page as their own cards, and the search finds them. |
+| Library › Requests | **Requests and people › Request rules** |
+| Access › Users (invites, people, invite links) | **Requests and people › Users and roles**. Invites stay on that page as their own cards, and the search finds them. |
 | Access › Sign-in (methods, two-factor rule, local network, passwords, API keys) | **Sign-in and security › Sign-in and security** |
 | Linked apps › Media servers | **Linked apps › Media servers** |
 | Linked apps › Alerts | **Linked apps › Alerts** |
@@ -334,7 +334,7 @@ Pages, cards and settings per group, after the move:
 | General | 4 | 16 | Theme, plus one interval per timed job |
 | Library | 7 | 21 | 93 |
 | Getting copies | 5 | 20 | 78 |
-| Wishlist and people | 2 | 5 | 19 |
+| Requests and people | 2 | 5 | 19 |
 | Sign-in and security | 1 | 6 | 11 |
 | Linked apps | 4 | 12 | 38 |
 | Maintenance | 4 | 7 | 9 |

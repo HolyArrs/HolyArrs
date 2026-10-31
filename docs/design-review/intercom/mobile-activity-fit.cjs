@@ -62,7 +62,7 @@ async function fit(page, selector, label, width) {
     });
     const page = await context.newPage();
     page.on('pageerror', (error) => receipt.pageErrors.push(error.message));
-    await page.goto(`${origin}/wishlist`);
+    await page.goto(`${origin}/requests`);
     await expect(page.getByTestId('ask').first()).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await fit(page, '.ask', 'requests-waiting', width);

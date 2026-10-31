@@ -15,7 +15,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/wishlist.svelte.ts';
+	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import {
 		cardAction,
 		followsByTmdb,
@@ -635,7 +635,7 @@
 			remember(c.kind, tmdb, { name: c.name, year: c.year, poster: c.image });
 			return to(detailPath(c.kind, tmdb));
 		}
-		return c.status === 'requested' ? to('/wishlist') : undefined;
+		return c.status === 'requested' ? to('/requests') : undefined;
 	}
 
 	function searchHref(c: ExploreCard): string {

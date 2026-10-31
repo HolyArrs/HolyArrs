@@ -9,13 +9,13 @@
 	import Icon from '#lib/Icon.svelte';
 	import { ago } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { askMoments, libraryMoments, momentWords } from '#lib/wishlist.ts';
+	import { askMoments, libraryMoments, momentWords } from '#lib/requests.ts';
 	import type { AlertView, Moment } from '#lib/types.ts';
 
 	type Kind = 'discord' | 'email' | 'webhook';
 	const allMoments: Moment[] = [...askMoments, ...libraryMoments];
 	const momentGroups: { label: string; hint: string; moments: readonly Moment[] }[] = [
-		{ label: 'Wishlist', hint: 'Asks and their answers.', moments: askMoments },
+		{ label: 'Requests', hint: 'Asks and their answers.', moments: askMoments },
 		{ label: 'Library', hint: 'What HolyArrs does with your movies and shows. Email goes to the staff addresses.', moments: libraryMoments }
 	];
 	const kindWord: Record<Kind, string> = { discord: 'Discord', email: 'Email', webhook: 'Webhook' };
@@ -167,7 +167,7 @@
 </PageHeader>
 
 <p class="small muted lead">
-	Everyone also gets these messages inside HolyArrs, on their Wishlist. For email and Discord, each person adds their address or Discord user id in My account.
+	Everyone also gets these messages inside HolyArrs, on their Requests page. For email and Discord, each person adds their address or Discord user id in My account.
 </p>
 
 {#if editing}

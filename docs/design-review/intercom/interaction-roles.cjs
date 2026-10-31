@@ -32,14 +32,14 @@ async function assertShell(ctx, expected) {
 		await expect(tabs).toBeVisible();
 		await present(expect, tabs.getByRole('button', { name: 'Library', exact: true }), expected.Library, 'mobile Library');
 		await present(expect, tabs.getByRole('link', { name: 'Search', exact: true }), expected.Search, 'mobile Search');
-		await present(expect, tabs.getByRole('link', { name: 'Wishlist', exact: true }), expected.Wishlist, 'mobile Wishlist');
+		await present(expect, tabs.getByRole('link', { name: 'Requests', exact: true }), expected.Wishlist, 'mobile Requests');
 		await present(expect, tabs.getByRole('link', { name: 'Downloads', exact: true }), expected.Downloads, 'mobile Downloads');
 		await tabs.getByRole('button', { name: 'More', exact: true }).click();
 		const menu = page.locator('dialog.navigation-dialog');
 		await expect(menu).toBeVisible();
 		await present(expect, menu.getByRole('link', { name: 'Home', exact: true }), expected.Home, 'More Home');
 		await present(expect, menu.getByRole('link', { name: 'Search', exact: true }), expected.Search, 'More Search');
-		await present(expect, menu.getByRole('link', { name: 'Wishlist', exact: true }), expected.Wishlist, 'More Wishlist');
+		await present(expect, menu.getByRole('link', { name: 'Requests', exact: true }), expected.Wishlist, 'More Requests');
 		await present(expect, menu.getByRole('link', { name: 'Downloads', exact: true }), expected.Downloads, 'More Downloads');
 		await present(expect, menu.getByRole('link', { name: 'Calendar', exact: true }), expected.Calendar, 'More Calendar');
 		await present(expect, menu.getByRole('link', { name: 'Settings', exact: true }), expected.Settings, 'More Settings');
@@ -52,7 +52,7 @@ async function assertShell(ctx, expected) {
 	await present(expect, rail.getByRole('link', { name: 'Home', exact: true }), expected.Home, 'desktop Home');
 	await present(expect, rail.getByRole('button', { name: 'Library', exact: true }), expected.Library, 'desktop Library');
 	await present(expect, rail.getByRole('link', { name: 'Search', exact: true }), expected.Search, 'desktop Search');
-	await present(expect, rail.getByRole('link', { name: 'Wishlist', exact: true }), expected.Wishlist, 'desktop Wishlist');
+	await present(expect, rail.getByRole('link', { name: 'Requests', exact: true }), expected.Wishlist, 'desktop Requests');
 	await present(expect, rail.getByRole('link', { name: 'Downloads', exact: true }), expected.Downloads, 'desktop Downloads');
 	await present(expect, rail.getByRole('link', { name: 'Calendar', exact: true }), expected.Calendar, 'desktop Calendar');
 	await present(expect, rail.getByRole('link', { name: 'Settings', exact: true }), expected.Settings, 'desktop Settings');

@@ -184,7 +184,7 @@
 		</SettingsCard>
 
 		<p class="hint where">
-			Each <a href={to('/settings/library-folders')}>Library folder</a> has Pick rules of its own. <a href={to('/settings/wishlist')}>Wishlist rules</a> and
+			Each <a href={to('/settings/library-folders')}>Library folder</a> has Pick rules of its own. <a href={to('/settings/wishlist')}>Request rules</a> and
 			<a href={to('/settings/outside-lists')}>Outside lists</a> keep their own choices.
 		</p>
 	</fieldset>

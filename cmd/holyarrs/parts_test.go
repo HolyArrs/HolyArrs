@@ -111,7 +111,7 @@ func TestPartSwitchesSurviveARestart(t *testing.T) {
 	if pc.On(parts.Music) || pc.On(parts.Wishlist) || !pc.On(parts.Movies) {
 		t.Fatalf("after a restart, off: %v", pc.Off())
 	}
-	if st, _ := reg.Get(supervisor.StageKey("wishlist")); st.State != supervisor.Off || st.Reason != "The Wishlist is off." {
+	if st, _ := reg.Get(supervisor.StageKey("wishlist")); st.State != supervisor.Off || st.Reason != "Requests is off." {
 		t.Fatalf("wishlist stage after a restart: %+v", st)
 	}
 	waitState(t, reg, "gates", supervisor.Running)

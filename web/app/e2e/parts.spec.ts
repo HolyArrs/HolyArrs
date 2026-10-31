@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn } from './helpers.ts';
 
-// Parts (3.7.6): with the Wishlist and Music turned off through the API
+// Parts (3.7.6): with Requests and Music turned off through the API
 // (the controls screen waits on its design), their menu entries and
 // Settings tiles hide, a direct link says the part is off, the routes
 // answer "this part is off", and everything is back when they are on.
@@ -34,20 +34,20 @@ test.afterAll(async () => {
 
 test('a part that is off hides its pages and says so on a direct link', async () => {
 	const main = page.getByRole('navigation', { name: 'Main' }).first();
-	// The owner approves, so the Wishlist is Approvals in the Manage section.
-	await expect(main.getByRole('link', { name: /^Approvals/ })).toBeVisible();
+	// The owner approves, so Requests sits in Your stuff.
+	await expect(main.getByRole('link', { name: /^Requests/ })).toBeVisible();
 	expect(await control(page, '/parts/wishlist/off')).toBe(200);
 	expect(await control(page, '/parts/music/off')).toBe(200);
 
 	await page.goto('/library');
 	await expect(main.getByRole('link', { name: 'Movies' })).toBeVisible();
-	await expect(main.getByRole('link', { name: /^Approvals/ })).toHaveCount(0);
+	await expect(main.getByRole('link', { name: /^Requests/ })).toHaveCount(0);
 	await expect(main.getByRole('link', { name: 'Music' })).toHaveCount(0);
 
-	await page.goto('/wishlist');
+	await page.goto('/requests');
 	const off = page.getByTestId('part-off');
 	await expect(off).toBeVisible();
-	await expect(off).toContainText('The Wishlist is turned off');
+	await expect(off).toContainText('Requests is turned off');
 	await page.goto('/settings/music');
 	await expect(off).toContainText('Music is turned off');
 	const r = await page.request.get('/api/v1/settings/music');
@@ -59,7 +59,7 @@ test('a part that is off hides its pages and says so on a direct link', async ()
 	await expect(page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'MusicBrainz' })).toHaveCount(0);
 	await expect(page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'Weekly limits' })).toHaveCount(0);
 
-	await page.goto('/wishlist');
+	await page.goto('/requests');
 	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
 	const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	expect(axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual([]);
@@ -72,9 +72,9 @@ test('a part that is off hides its pages and says so on a direct link', async ()
 test('turned on again, every page is back with its data', async () => {
 	expect(await control(page, '/parts/music/on')).toBe(200);
 	expect(await control(page, '/parts/wishlist/on')).toBe(200);
-	await page.goto('/wishlist');
+	await page.goto('/requests');
 	await expect(page.getByTestId('part-off')).toHaveCount(0);
-	await expect(page.getByRole('heading', { level: 1, name: 'Approvals' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Requests' })).toBeVisible();
 	await page.goto('/settings/music');
 	await expect(page.getByTestId('part-off')).toHaveCount(0);
 	expect((await page.request.get('/api/v1/settings/music')).status()).toBe(200);

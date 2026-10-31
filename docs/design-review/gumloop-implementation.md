@@ -1,6 +1,6 @@
 # Approved desktop workspace implementation
 
-Luis approved the Gumloop direction after reviewing the Library, Downloads and Wishlist images. This supersedes the earlier unapproved concepts. The approved composition uses a near-black sidebar, charcoal canvas, compact Geist typography, quiet borders, blue actions and contextual details. The images are visual references, not functional specifications: implemented capabilities and the glossary govern product behavior and wording.
+Luis approved the Gumloop direction after reviewing the Library, Downloads and Requests images. This supersedes the earlier unapproved concepts. The approved composition uses a near-black sidebar, charcoal canvas, compact Geist typography, quiet borders, blue actions and contextual details. The images are visual references, not functional specifications: implemented capabilities and the glossary govern product behavior and wording.
 
 ## Scope
 
@@ -11,7 +11,7 @@ Keep the existing Svelte application, API contracts, authorization, part visibil
 - [x] Shared tokens and controls: neutral surfaces, typography, blue actions, readable contrast, visible focus, restrained motion, fluid fields and dialogs.
 - [x] Shell: grouped desktop sidebar and account footer; tablet rail; phone up to four primary destinations plus a complete modal navigation menu. Preserve capability/part filters and route specificity.
 - [x] Media: real Library filters/grid/list, title detail, releases, shows/music, Search and people; all library operations remain reachable.
-- [x] Operations: Home, Downloads, decision recovery, History, Calendar and Wishlist; retain exact consequences and request approval fields.
+- [x] Operations: Home, Downloads, decision recovery, History, Calendar and Requests; retain exact consequences and request approval fields.
 - [x] Settings and access: grouped section navigation that stays usable on narrow screens, forms, accounts, login/invites and first run.
 - [ ] Isolated verification: exact-source typecheck, unit tests, vocabulary/build; headless desktop/tablet/phone/narrow screenshots, keyboard/menu/focus, axe, member/part/base-path behavior and affected functional tests. Heavy work is serial under the shared allocation log.
 - [ ] Review and integration: fix review findings, commit only owned frontend/review files, hand off exact source plus fresh evidence and backend dependencies. Combined app must be reverified after backend integration.

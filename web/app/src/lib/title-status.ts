@@ -1,5 +1,5 @@
 // One status vocabulary for a title's ask and Library state, used by every
-// poster, title hero, Approvals row, search result and Explore card. Members
+// poster, title hero, Requests row, search result and Explore card. Members
 // get the plain words (spec section 7); staff get more precise ones.
 import type { StatusKind } from './ui/StatusPill.svelte';
 import type { AskState, SlotView } from './types.ts';

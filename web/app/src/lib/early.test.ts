@@ -116,11 +116,11 @@ describe('app.html boot requests', () => {
 		expect(boot({ url: '/people/287', stored: { 'holyarrs.people.sort': 'popular' } }).asked).toEqual(['/api/v1/auth/me', '/api/v1' + firstPageURL('287', 'popular')]);
 	});
 
-	it('asks Library, a Library title, Approvals and Downloads', () => {
+	it('asks Library, a Library title, Requests and Downloads', () => {
 		expect(boot({ url: '/library' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/titles', '/api/v1/collections']);
 		expect(boot({ url: '/library/294' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/titles/294']);
 		expect(boot({ url: '/library/held' }).asked).toEqual(['/api/v1/auth/me']);
-		expect(boot({ url: '/wishlist' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/asks']);
+		expect(boot({ url: '/requests' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/asks']);
 		expect(boot({ url: '/downloads' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/downloads/view?limit=100']);
 	});
 });

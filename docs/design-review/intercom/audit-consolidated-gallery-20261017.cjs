@@ -28,7 +28,7 @@ const frozenHash = '45144ef19d962c8cd785e124d352c7f00f42821ea359558b919415073e6f
         if (file === 'index.html') {
           await page.locator('#group').selectOption('Comparison');
           await expect(page.locator('article:visible')).toHaveCount(8);
-          await page.locator('#find').fill('/wishlist');
+          await page.locator('#find').fill('/requests');
           await expect(page.locator('article:visible')).toHaveCount(2);
           await page.locator('#width').selectOption('1920');
           await expect(page.locator('article:visible')).toHaveCount(2);
@@ -47,7 +47,7 @@ const frozenHash = '45144ef19d962c8cd785e124d352c7f00f42821ea359558b919415073e6f
         checks.push({ width, file, passed: true, screenshot });
       } finally { await context.close(); }
     }
-    for (const width of [390, 1440]) for (const route of ['/', '/library', '/wishlist', '/downloads']) {
+    for (const width of [390, 1440]) for (const route of ['/', '/library', '/requests', '/downloads']) {
       const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block' });
       await context.route('**/*', r => r.request().method() === 'GET' && new URL(r.request().url()).origin === origin ? r.continue() : r.abort());
       const page = await context.newPage(), errors = [];

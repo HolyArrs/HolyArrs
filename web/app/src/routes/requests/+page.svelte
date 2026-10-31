@@ -6,7 +6,6 @@
 	import { onDestroy, onMount, tick } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { api, message } from '#lib/api.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -20,9 +19,9 @@
 	import { loadProfile, profile } from '#lib/account/profile.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/plain.ts';
-	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/wishlist.ts';
+	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/requests.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
-	import { inbox, markRead, refreshInbox } from '#lib/wishlist.svelte.ts';
+	import { inbox, markRead, refreshInbox } from '#lib/requests.svelte.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView, SearchView } from '#lib/types.ts';
 	import type { DownloadRow } from '#lib/downloaders.ts';
 	import { liveByTitle, liveFacts, type TitleLive } from '#lib/approvals/live.ts';
@@ -246,7 +245,7 @@
 				.then((r) => (rules = r.pick_rules))
 				.catch(() => {});
 		}
-		// The Wishlist's own Pick rules, to name the default rule (settings people only).
+		// The Requests page's own Pick rules, to name the default rule (settings people only).
 		if (session.can('settings')) {
 			api
 				.get<Record<string, unknown>>('/settings/asks')
@@ -511,20 +510,17 @@
 	};
 </script>
 
-<svelte:head><title>{approver ? 'Approvals' : 'Your Wishlist'} · HolyArrs</title></svelte:head>
+<svelte:head><title>Requests · HolyArrs</title></svelte:head>
 
 <div class="ap-top" class:compact={approver}>
-<PageHeader
-	title={approver ? 'Approvals' : 'Your Wishlist'}
->
-	{#snippet actions()}
-		{#if session.can('ask') && !approver}
+<h1 class="sr-only">Requests</h1>
+{#if session.can('ask') && !approver}
+	<div class="ask-actions">
 			<Button icon="film" variant="primary" href={to(`/search`)}><span class="ask-d">Ask for a movie</span><span class="ask-m"><span class="sr-only">Ask for a </span>Movie</span></Button>
 			<Button icon="tv" href={to(`/search?kind=show`)}><span class="ask-d">Ask for a show</span><span class="ask-m"><span class="sr-only">Ask for a </span>Show</span></Button>
 			<Button icon="music" href={to(`/search?kind=music`)}><span class="ask-d">Ask for music</span><span class="ask-m"><span class="sr-only">Ask for </span>Music</span></Button>
-		{/if}
-	{/snippet}
-</PageHeader>
+		</div>
+{/if}
 
 {#if limitLines(limit, onKinds).length}
 	<ul class="limit" data-testid="ask-limit">
@@ -578,13 +574,13 @@
 <div class="workspace">
 	<div class="main-col">
 		{#if error}
-			<LoadError hasData={false} message="Couldn't load your Wishlist. {error}" onretry={load} />
+			<LoadError hasData={false} message="Couldn't load your requests. {error}" onretry={load} />
 		{:else}
-		<PageLoader loading={!loaded} label="Loading your Wishlist…">
+		<PageLoader loading={!loaded} label="Loading your requests…">
 		{#if asks.length === 0}
 			<EmptyState
 				icon="wish"
-				title="Nothing on the Wishlist yet"
+				title="Nothing on the Requests page yet"
 				text={session.can('ask')
 					? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
 					: "Your account can't ask for titles yet. Check with the owner."}
@@ -598,7 +594,7 @@
 			/>
 		{:else}
 			{@render bulkBar()}
-			<ul class="asks" aria-label="Wishlist asks">
+			<ul class="asks" aria-label="Requests">
 				{#each shown as a, i (a.id)}
 					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask">
 						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${a.poster}")`}></div>{/if}
@@ -636,7 +632,7 @@
 									aria-label="Review {a.name}"
 									aria-pressed={selected?.id === a.id}
 									aria-expanded={compactReview ? reviewOpen && selected?.id === a.id : undefined}
-									aria-controls="wishlist-review"
+									aria-controls="requests-review"
 									onclick={(event) => void selectAsk(a.id, event.currentTarget)}>Review</button
 								>
 								{#if a.mine && a.state === 'asked'}
@@ -660,7 +656,7 @@
 
 	<div class="side-col">
 		{#if loaded && !error && selected}
-			<aside id="wishlist-review" class="review" class:mobile-open={reviewOpen} aria-label="Ask details">
+			<aside id="requests-review" class="review" class:mobile-open={reviewOpen} aria-label="Ask details">
 				<div class="review-close"><Button variant="plain" size="sm" icon="x" type="button" aria-label="Close review" onclick={() => void closeReview()}>Close</Button></div>
 				<div class="review-head">
 					<div class="review-art"><Poster src={selected.poster} name={selected.name} /></div>
@@ -686,13 +682,13 @@
 {:else}
 	<div class="variant">
 		{#if error}
-			<LoadError hasData={false} message="Couldn't load your Wishlist. {error}" onretry={load} />
+			<LoadError hasData={false} message="Couldn't load your requests. {error}" onretry={load} />
 		{:else}
-			<PageLoader loading={!loaded} label="Loading your Wishlist…">
+			<PageLoader loading={!loaded} label="Loading your requests…">
 				{#if asks.length === 0}
 					<EmptyState
 						icon="wish"
-						title="Nothing on the Wishlist yet"
+						title="Nothing on the Requests page yet"
 						text={session.can('ask')
 							? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
 							: "Your account can't ask for titles yet. Check with the owner."}
@@ -805,7 +801,7 @@
 	</form>
 </Sheet>
 
-<Sheet bind:open={takeBackOpen} onclose={takeBackClosed} size="sm" title={takeBackAsk ? `Take back ${takeBackAsk.name}${year(takeBackAsk)}?` : 'Take back'} description="It leaves the Wishlist. You can ask again later.">
+<Sheet bind:open={takeBackOpen} onclose={takeBackClosed} size="sm" title={takeBackAsk ? `Take back ${takeBackAsk.name}${year(takeBackAsk)}?` : 'Take back'} description="It leaves Requests. You can ask again later.">
 	{#if takeBackAsk}
 		{#if takeBackError}<p class="form-error" role="alert" data-testid="take-back-error">{takeBackError}</p>{/if}
 		<div class="decide-actions">
@@ -816,6 +812,7 @@
 </Sheet>
 
 <style>
+	.ask-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 	.limit { margin: 0 0 16px; padding: 12px 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text-muted); font: var(--t-callout); }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }

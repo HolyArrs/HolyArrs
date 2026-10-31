@@ -1,4 +1,4 @@
-// Words and small rules for the Wishlist screens.
+// Words and small rules for Requests screens.
 
 import type { Ask, AskLimit, AskState, LimitKind } from './types.ts';
 
@@ -92,20 +92,20 @@ export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'as
 /** libraryMoments go to the staff. */
 export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
 
-export type WishlistView = 'waiting' | 'all' | 'mine';
+export type RequestsView = 'waiting' | 'all' | 'mine';
 
-/** viewCounts counts the asks in each Approvals view. */
-export function viewCounts(asks: Pick<Ask, 'state' | 'mine'>[]): Record<WishlistView, number> {
+/** viewCounts counts the asks in each Requests view. */
+export function viewCounts(asks: Pick<Ask, 'state' | 'mine'>[]): Record<RequestsView, number> {
 	return { waiting: asks.filter((a) => a.state === 'asked').length, all: asks.length, mine: asks.filter((a) => a.mine).length };
 }
 
 /** firstView is the first view with items: Waiting, else Everyone's, else Mine. */
-export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): WishlistView {
+export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): RequestsView {
 	const n = viewCounts(asks);
 	return n.waiting ? 'waiting' : n.all ? 'all' : 'mine';
 }
 
-/** The Approvals tabs. Failed is an approved ask that never reached the Library. */
+/** The Requests tabs. Failed is an approved ask that never reached the Library. */
 export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
 export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', label: 'Pending' },

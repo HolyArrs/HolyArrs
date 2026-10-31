@@ -18,7 +18,7 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const ids: Record<string, string> = { Movies: 'movies', 'TV shows': 'shows', Music: 'music', Subtitles: 'subtitles', 'The Wishlist': 'wishlist' };
+const ids: Record<string, string> = { Movies: 'movies', 'TV shows': 'shows', Music: 'music', Subtitles: 'subtitles', 'Requests': 'wishlist' };
 const part = (name: string) => page.locator(`[data-testid="part"][data-part="${ids[name]}"]`);
 
 async function confirm(label: RegExp) {
@@ -115,7 +115,7 @@ test('"Just movies" on the first-run step is one click, and everything comes bac
 	await page.getByRole('button', { name: 'Just movies' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');
-	for (const off of ['TV shows', 'Music', 'Subtitles', 'The Wishlist']) await expect(part(off)).toHaveAttribute('data-state', 'off');
+	for (const off of ['TV shows', 'Music', 'Subtitles', 'Requests']) await expect(part(off)).toHaveAttribute('data-state', 'off');
 	await expect(part('Movies')).not.toHaveAttribute('data-state', 'off');
 
 	// The same step turns everything back on.
@@ -125,7 +125,7 @@ test('"Just movies" on the first-run step is one click, and everything comes bac
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');
-	for (const on of ['Movies', 'TV shows', 'Music', 'Subtitles', 'The Wishlist']) await expect(part(on)).not.toHaveAttribute('data-state', 'off');
+	for (const on of ['Movies', 'TV shows', 'Music', 'Subtitles', 'Requests']) await expect(part(on)).not.toHaveAttribute('data-state', 'off');
 });
 
 test('both screens at phone width, and accessibility', async ({ browser }) => {

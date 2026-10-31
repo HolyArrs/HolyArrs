@@ -39,7 +39,7 @@
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
-	import { decided } from './wishlist.ts';
+	import { decided } from './requests.ts';
 	import { groupLabel, kindTone } from './history.ts';
 	import {
 		detailsSources,
@@ -557,7 +557,7 @@
 </TitleSection>
 
 {#if title.asks?.length}
-	<TitleSection id="h-show-asks" title="Wishlist" testid="title-asks">
+	<TitleSection id="h-show-asks" title="Requests" testid="title-asks">
 		{#each title.asks as a (a.id)}
 			<dl class="facts">
 				<dt>Asked by</dt>

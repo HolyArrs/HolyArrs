@@ -132,7 +132,7 @@ const DAYS: Record<number, string[]> = {
 };
 
 const ASKED_ARRIVED = { any: 'Something you asked for has arrived{,name}.', one: '{title} is in the Library now{,name}.', many: '{n} of your asks are in the Library now{,name}.' };
-const WAITING = ['{n} {asks} waiting for you{,name}.', 'Your Wishlist has {n} {asks} to look at{,name}.'];
+const WAITING = ['{n} {asks} waiting for you{,name}.', 'Your Requests page has {n} {asks} to look at{,name}.'];
 const NEW_TODAY = { any: 'Something new landed today{,name}.', one: 'New today{,name}: {title}.', many: 'New today{,name}: {n} things in the Library.' };
 const FINISHING = { mine: 'Something you asked for is almost here{,name}.', all: 'Downloads are almost done{,name}.' };
 
@@ -169,7 +169,7 @@ export interface HomeLineInput {
 	/** The display name, when the account has one. */
 	displayName?: string | null;
 	now: Date;
-	/** A Kid account: no approvals or admin downloads, and gentler late-night lines. */
+	/** A Kid account: no requests to approve or admin downloads, and gentler late-night lines. */
 	kid?: boolean;
 	facts?: Partial<HomeFacts>;
 }

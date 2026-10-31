@@ -8,12 +8,12 @@ const screens = {
 	'/library/held': 'media',
 	'/library/[id]/albums/[album]': 'music',
 	'/library/missing-subtitles': 'subtitles',
-	'/wishlist': 'wishlist',
+	'/requests': 'wishlist',
 	'/settings/music': 'music'
 };
 
 function answer(off: PartName[]): PartsAnswer {
-	const names: Record<PartName, string> = { movies: 'Movies', shows: 'TV shows', music: 'Music', subtitles: 'Subtitles', wishlist: 'The Wishlist' };
+	const names: Record<PartName, string> = { movies: 'Movies', shows: 'TV shows', music: 'Music', subtitles: 'Subtitles', wishlist: 'Requests' };
 	return {
 		parts: (Object.keys(names) as PartName[]).map((p) => ({ part: p, name: names[p], on: !off.includes(p), state: off.includes(p) ? 'off' : 'running' })),
 		screens,
@@ -34,14 +34,14 @@ describe('screen owners', () => {
 describe('pages of parts that are off', () => {
 	it('names the part that is off', () => {
 		expect(offPartName(answer(['music']), '/settings/music')).toBe('Music');
-		expect(offPartName(answer(['wishlist']), '/wishlist')).toBe('The Wishlist');
+		expect(offPartName(answer(['wishlist']), '/requests')).toBe('Requests');
 		expect(offPartName(answer(['subtitles']), '/library/missing-subtitles')).toBe('Subtitles');
 	});
 	it('shows pages of parts that are on, the core and single titles', () => {
 		expect(offPartName(answer([]), '/settings/music')).toBeNull();
 		expect(offPartName(answer(['movies', 'shows', 'music']), '/')).toBeNull();
 		expect(offPartName(answer(['movies']), '/library/12')).toBeNull();
-		expect(offPartName(null, '/wishlist')).toBeNull();
+		expect(offPartName(null, '/requests')).toBeNull();
 	});
 	it('hides shared pages only when Movies, TV shows and Music are all off', () => {
 		expect(offPartName(answer(['movies', 'shows']), '/library')).toBeNull();

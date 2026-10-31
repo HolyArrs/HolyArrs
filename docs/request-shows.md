@@ -1,6 +1,6 @@
 # Adding and asking for shows
 
-This page covers how shows get into HolyArrs: adding them yourself, keeping seasons and episodes up to date, and asking for them on the Wishlist.
+This page covers how shows get into HolyArrs: adding them yourself, keeping seasons and episodes up to date, and asking for them on the Requests page.
 
 Searching for episodes comes in a later version. Until then HolyArrs adds shows, tracks every season and episode with its air date, and shows what is missing; it does not fetch episodes yet.
 
@@ -56,24 +56,24 @@ The Library holds movies and shows together. Use **Everything**, **Movies** or *
 
 1. Open **Search**, press **Shows** and find the show.
 2. Press **Ask**. Pick **The whole show** (every season but specials, and seasons that come later) or **Only some seasons** and tick the seasons you want.
-3. The show lands on your Wishlist as **Waiting for approval**, with the seasons you asked for.
+3. The show lands on your requests as **Waiting for approval**, with the seasons you asked for.
 
 If someone already asked for the same seasons, you join their ask and hear the same news. If their ask is still waiting and you want more seasons, the ask grows to include yours. A show already in the Library shows **Ask for more**: you can ask only for seasons it does not keep up to date yet.
 
-**Weekly limit.** Shows have their own weekly limit, apart from movies and music. A show ask counts as one, whatever its seasons; asking for more seasons of a waiting ask is one more. The default is in **Settings, Wishlist** (**Show asks**, 0 is no limit); one person's own show limit is on the **Users** page. Joining someone else's ask never counts.
+**Weekly limit.** Shows have their own weekly limit, apart from movies and music. A show ask counts as one, whatever its seasons; asking for more seasons of a waiting ask is one more. The default is in **Settings, Requests** (**Show asks**, 0 is no limit); one person's own show limit is on the **Users** page. Joining someone else's ask never counts.
 
 ## Approve or turn down (owner and admins)
 
-On the **Wishlist**, show asks carry a **Show** chip and say which seasons were asked for. Press **Approve**, pick a show Library folder and Pick rules (or keep the Wishlist defaults), add a note if you like, and press **Approve and add**. HolyArrs adds the show and keeps exactly the asked seasons up to date; for a show already in the Library it turns those seasons on. **Turn down** asks for a short reason, which the people who asked see.
+On the **Requests**, show asks carry a **Show** chip and say which seasons were asked for. Press **Approve**, pick a show Library folder and Pick rules (or keep the Request defaults), add a note if you like, and press **Approve and add**. HolyArrs adds the show and keeps exactly the asked seasons up to date; for a show already in the Library it turns those seasons on. **Turn down** asks for a short reason, which the people who asked see.
 
 People who may auto-approve get their show asks approved straight away.
 
-The default show folder and Pick rules for approved asks, and the default show limit, live in **Settings, Wishlist**.
+The default show folder and Pick rules for approved asks, and the default show limit, live in **Settings, Requests**.
 
 ## Being told
 
-Messages on the Wishlist tell the people who asked when their show is approved or turned down, and when it is ready: every aired episode of the seasons they asked for is in the Library. Alerts (Settings, Alerts) can send the same to Discord, email or a webhook.
+Messages on the Requests page tell the people who asked when their show is approved or turned down, and when it is ready: every aired episode of the seasons they asked for is in the Library. Alerts (Settings, Alerts) can send the same to Discord, email or a webhook.
 
 ## Who asked
 
-The show page has a Wishlist card naming who asked, for which seasons, and who approved. **Downloads, History** lists the same, for example "max asked for Lantern Street (2023), seasons 1 and 2".
+The show page has a Requests card naming who asked, for which seasons, and who approved. **Downloads, History** lists the same, for example "max asked for Lantern Street (2023), seasons 1 and 2".

@@ -18,7 +18,7 @@ Links, passwords and secrets are kept encrypted and are never shown again: the p
 
 Each Alert picks what it speaks for. New Alerts speak for every moment; untick what you do not want, or use **All of these** and **None of these** per group.
 
-**Wishlist**
+**Requests**
 
 - **Someone asks**: to the staff, when a movie waits for approval.
 - **Approved**, **Turned down**, **Ready to watch**: to the people who asked.

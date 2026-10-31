@@ -52,7 +52,7 @@ print(json.dumps({'originalUsers':digest(sorted(users,key=lambda r:json.dumps(r,
   const page=await ctx.newPage();
   for(const[width,height]of[[360,800],[834,1112],[1440,1000]]){
     await page.setViewportSize({width,height});
-    for(const[name,url]of[['completed','/downloads'],['album','/library/166/albums/144'],['library','/library?kind=artist&q=Amber%20Satellites'],['library-list','/library?kind=artist&q=Amber%20Satellites'],['request','/wishlist']]){
+    for(const[name,url]of[['completed','/downloads'],['album','/library/166/albums/144'],['library','/library?kind=artist&q=Amber%20Satellites'],['library-list','/library?kind=artist&q=Amber%20Satellites'],['request','/requests']]){
       await page.goto(base+url);await page.evaluate(()=>document.fonts.ready);
       if(name==='completed'){const row=page.getByTestId('download-row').filter({hasText:'[MP3 320]'}).filter({hasText:'Evening Signals'});await expect(row.getByTestId('row-state')).toHaveText('Done');await expect(row.getByTestId('row-text')).toHaveText('3 of 3 tracks in the library.');}
       if(name==='album'){await expect(page.getByTestId('album-state')).toHaveText('In library');await expect(page.getByTestId('track-state')).toHaveCount(3);await expect(page.getByTestId('track-state').first()).toHaveText('Better copy sought');}

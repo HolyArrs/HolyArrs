@@ -52,7 +52,7 @@ describe('history', () => {
 			['library_folder_unreachable', 'Scans'],
 			['health_broken', 'Health'],
 			['needs_decision', 'Needs a decision'],
-			['ask_made', 'Wishlist'],
+			['ask_made', 'Requests'],
 			['media_server_told', 'Alerts and media servers'],
 			['something_new', 'Other']
 		]) {

@@ -46,7 +46,7 @@ var GroupOrder = []string{GroupFolders, GroupRules, GroupTitles, GroupNeverAdd, 
 var GroupLabels = map[string]string{
 	GroupFolders: "Library folders", GroupRules: "Pick rules", GroupTitles: "Titles", GroupNeverAdd: "Never-add list",
 	GroupSources: "Sources", GroupDownloaders: "Downloaders", GroupNaming: "Naming", GroupSubtitles: "Subtitles",
-	GroupPeople: "People", GroupWishlist: "Wishlist asks", GroupAlerts: "Alerts", GroupOther: "Other settings",
+	GroupPeople: "People", GroupWishlist: "Requests", GroupAlerts: "Alerts", GroupOther: "Other settings",
 }
 
 // Caps on what one Plan holds; anything past them is listed as not moved.
@@ -273,7 +273,7 @@ type PersonPlan struct {
 	Choice string `json:"choice,omitempty"`
 }
 
-// AskPlan is one open Wishlist ask.
+// AskPlan is one open request.
 type AskPlan struct {
 	App      string            `json:"app"`
 	Kind     string            `json:"kind"` // movie, show
@@ -1624,7 +1624,7 @@ func (b *builder) people(s *Snapshot) {
 	accountDefault("show", shows)
 	if movies != nil || shows != nil {
 		as := &AskSettingsPlan{MoviesPerWeek: movies, ShowsPerWeek: shows}
-		b.add(GroupWishlist, Item{Key: "wishlist_defaults", Name: "Wishlist defaults", From: b.from("settings", -1),
+		b.add(GroupWishlist, Item{Key: "wishlist_defaults", Name: "Request defaults", From: b.from("settings", -1),
 			Detail: "default weekly limits", AskSettings: as})
 	}
 	keys := make([]string, 0, len(s.Settings))
@@ -1636,7 +1636,7 @@ func (b *builder) people(s *Snapshot) {
 		if recognized[k] {
 			continue
 		}
-		b.not(GroupPeople, b.from("settings", -1)+"."+k, k, "app-wide settings of the old app are not moved; set the Wishlist defaults under Settings > Wishlist")
+		b.not(GroupPeople, b.from("settings", -1)+"."+k, k, "app-wide settings of the old app are not moved; set the Request defaults under Settings > Request rules")
 	}
 }
 

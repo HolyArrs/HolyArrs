@@ -1,5 +1,5 @@
 // Title details (backdrop, story, runtime, rating) for asks shown big on the
-// Approvals looks. Asked once per title while the app is open, from the
+// Requests looks. Asked once per title while the app is open, from the
 // install's own metadata endpoint (the same answer the title page uses).
 // The same answer also gives the seasons and release dates the Inbox
 // summary reads, and a season's episodes are asked once when a pill opens
@@ -133,7 +133,7 @@ export function albumSongs(album: string, artist: string): AlbumSong[] | null {
 	return songs[album] ?? null;
 }
 
-/** What the Approvals panel shows of an artist: the round photo, the banner pictures and the albums (release groups). */
+/** What the Requests panel shows of an artist: the round photo, the banner pictures and the albums (release groups). */
 export interface AskArtist {
 	image: string | null;
 	backgrounds: string[];

@@ -6,9 +6,9 @@ HolyArrs reads people and movie credits from TMDB through the HolyArrs metadata 
 
 On a person's page you can filter credits to Actor or Director. A movie credited more than once appears once. Its card retains every distinct acting character and whether the person was also the director. Crew credits count as directing only when the provider marks the job as Director.
 
-Each movie is joined to HolyArrs by its stable TMDB movie id. The page shows whether it is already in the Library, on Never-add, part of an open Wishlist ask or missing. These checks run again when you review a selection.
+Each movie is joined to HolyArrs by its stable TMDB movie id. The page shows whether it is already in the Library, on Never-add, part of an open request or missing. These checks run again when you review a selection.
 
-Select missing movies, then choose **Review selected**. The review names the exact movies that will be submitted. People who manage the Library add each reviewed movie through the normal one-movie add path. People with Wishlist permission send each one through the normal ask path, including the existing rolling weekly limit. One refusal does not hide the result for the other movies.
+Select missing movies, then choose **Review selected**. The review names the exact movies that will be submitted. People who manage the Library add each reviewed movie through the normal one-movie add path. People with Requests permission send each one through the normal ask path, including the existing rolling weekly limit. One refusal does not hide the result for the other movies.
 
 Browsing and filtering do not add anything. HolyArrs does not follow a person's future credits and does not subscribe to their whole filmography. You must select and review movies each time.
 

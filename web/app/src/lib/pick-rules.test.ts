@@ -108,7 +108,7 @@ describe('usedWords', () => {
 	it('says where a rule is used, in plain words', () => {
 		expect(usedWords({ versions: 3, library_folders: 1, outside_lists: 0, wishlist: 0, title_defaults: 0 })).toBe('Used by 3 Versions and 1 Library folder');
 		expect(usedWords({ versions: 1, library_folders: 2, outside_lists: 1, wishlist: 1, title_defaults: 2 })).toBe(
-			'Used by 1 Version, 2 Library folders, 1 Outside list, 1 Wishlist rule and 2 Movies and TV defaults'
+			'Used by 1 Version, 2 Library folders, 1 Outside list, 1 Request rule and 2 Movies and TV defaults'
 		);
 		expect(usedWords({ versions: 0, library_folders: 0, outside_lists: 0, wishlist: 0, title_defaults: 0 })).toBe('Not used yet');
 	});

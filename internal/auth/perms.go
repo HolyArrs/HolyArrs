@@ -237,7 +237,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/albums/{id}/cover":                        needSignedIn,
 	"GET /api/v1/openapi.json":                             needSignedIn,
 
-	// The Wishlist: everyone sees their own asks and messages; asking needs
+	// Requests: everyone sees their own asks and messages; asking needs
 	// ask, deciding needs approve.
 	"GET /api/v1/asks":                               needSignedIn,
 	"GET /api/v1/asks/{id}":                          needSignedIn,

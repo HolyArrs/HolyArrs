@@ -1,6 +1,6 @@
 # Adding and asking for music
 
-This page covers how music gets into HolyArrs: adding an artist yourself, choosing which albums and which Pressing of each album to keep up to date, and asking for an artist or a few albums on the Wishlist.
+This page covers how music gets into HolyArrs: adding an artist yourself, choosing which albums and which Pressing of each album to keep up to date, and asking for an artist or a few albums on the Requests page.
 
 Searching for music Releases comes in a later version. Until then HolyArrs adds artists, fills in every album, Pressing and track from MusicBrainz, and shows what is missing; it does not fetch music yet, so a music ask is never Ready to listen until that version.
 
@@ -55,24 +55,24 @@ The Library holds movies, shows and artists together. Use **Everything**, **Movi
 
 1. Open **Search**, press **Music** and find the artist.
 2. Press **Ask**. Pick **Every album** (every album of the usual kinds, and albums that come out later) or **Only some albums** and tick the albums you want. Albums already in the Library, and albums the artist in the Library leaves out, cannot be ticked.
-3. The ask lands on your Wishlist as **Waiting for approval**, with a **Music** chip and the albums you asked for.
+3. The ask lands on your requests as **Waiting for approval**, with a **Music** chip and the albums you asked for.
 
 If someone already asked for the same albums, you join their ask and hear the same news. If their ask is still waiting and you want more albums, the ask grows to include yours. An artist already in the Library shows **Ask for more**, and its page has **Ask for albums**: you can ask only for albums it does not keep up to date yet.
 
-**Weekly limit.** Music has its own weekly limit, apart from movies and shows. A whole-artist or album ask counts as one, whatever its albums; asking for more albums of a waiting ask is one more. The default is in **Settings, Wishlist** (**Music asks**, 0 is no limit); one person's own music limit is on the **Users** page. Joining someone else's ask never counts.
+**Weekly limit.** Music has its own weekly limit, apart from movies and shows. A whole-artist or album ask counts as one, whatever its albums; asking for more albums of a waiting ask is one more. The default is in **Settings, Requests** (**Music asks**, 0 is no limit); one person's own music limit is on the **Users** page. Joining someone else's ask never counts.
 
 ## Approve or turn down (owner and admins)
 
-On the **Wishlist**, music asks say which albums were asked for. Press **Approve**, pick a music Library folder and Pick rules (or keep the Wishlist defaults), add a note if you like, and press **Approve and add**. HolyArrs adds the artist with only the asked albums kept up to date. An asked album of a kind the defaults leave out (a single, a live album) is included for that artist so it can be kept. For an artist already in the Library, HolyArrs turns the asked albums on. **Turn down** asks for a short reason, which the people who asked see.
+On the **Requests**, music asks say which albums were asked for. Press **Approve**, pick a music Library folder and Pick rules (or keep the Request defaults), add a note if you like, and press **Approve and add**. HolyArrs adds the artist with only the asked albums kept up to date. An asked album of a kind the defaults leave out (a single, a live album) is included for that artist so it can be kept. For an artist already in the Library, HolyArrs turns the asked albums on. **Turn down** asks for a short reason, which the people who asked see.
 
 People who may auto-approve get their music asks approved straight away.
 
-The default music folder and Pick rules for approved asks, and the default music limit, live in **Settings, Wishlist**.
+The default music folder and Pick rules for approved asks, and the default music limit, live in **Settings, Requests**.
 
 ## Being told
 
-Messages on the Wishlist tell the people who asked when their music is approved or turned down, and when it is ready to listen to: every track of every album they asked for is in the Library. Alerts (Settings, Alerts) can send the same to Discord, email or a webhook.
+Messages on the Requests page tell the people who asked when their music is approved or turned down, and when it is ready to listen to: every track of every album they asked for is in the Library. Alerts (Settings, Alerts) can send the same to Discord, email or a webhook.
 
 ## Who asked
 
-The artist page has a Wishlist card naming who asked, for which albums, and who approved. **Downloads, History** lists the same, for example "ivy asked for Moss Choir, Fern Hymns".
+The artist page has a Requests card naming who asked, for which albums, and who approved. **Downloads, History** lists the same, for example "ivy asked for Moss Choir, Fern Hymns".

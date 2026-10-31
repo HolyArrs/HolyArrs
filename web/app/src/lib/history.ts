@@ -25,7 +25,7 @@ export const kindGroups: KindGroup[] = [
 	{ key: 'scan', label: 'Scans', kinds: ['library_scanned', 'library_rescanned', 'folder_scanned', 'file_missing', 'file_back', 'library_folder_*', 'title_refreshed', 'episodes_changed', 'details_source_changed'] },
 	{ key: 'decide', label: 'Needs a decision', kinds: ['needs_decision', 'stopped_looking'] },
 	{ key: 'health', label: 'Health', kinds: ['health_*'] },
-	{ key: 'wishlist', label: 'Wishlist', kinds: ['ask_*'] },
+	{ key: 'wishlist', label: 'Requests', kinds: ['ask_*'] },
 	{ key: 'links', label: 'Alerts and media servers', kinds: ['alert_failed', 'media_server_*'] }
 ];
 

@@ -51,7 +51,7 @@ func (a *API) askRoutes(m *http.ServeMux) {
 	}
 }
 
-// person is the signed-in person as the Wishlist sees them. Without
+// person is the signed-in person as Requests sees them. Without
 // sign-in (tests) it is user 1 with every right.
 func (a *API) person(r *http.Request) asks.Person {
 	who, ok := auth.From(r.Context())
@@ -329,7 +329,7 @@ func (a *API) withdrawAsk(w http.ResponseWriter, r *http.Request) {
 }
 
 // askParts answers an ask's stored lists (season episodes, album songs),
-// stored when it was asked for, so the Approvals panel opens them at once.
+// stored when it was asked for, so the Requests panel opens them at once.
 func (a *API) askParts(w http.ResponseWriter, r *http.Request) {
 	v, ok := a.askByID(w, r)
 	if !ok {

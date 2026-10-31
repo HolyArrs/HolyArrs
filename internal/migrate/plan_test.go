@@ -325,7 +325,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if n, ok := notMoved(p, "seerr users[1].permissions"); !ok || !strings.Contains(n.What, "REQUEST_4K") {
 		t.Fatalf("perms %+v", n)
 	}
-	// Wishlist asks: names from the read titles, attributed to the people.
+	// Requests: names from the read titles, attributed to the people.
 	ask := item(t, p, GroupWishlist, "ask:seerr:7")
 	if ask.Name != "The Matrix" || ask.Ask.By != "person:seerr:2" || ask.Ask.Approved {
 		t.Fatalf("ask %+v", ask)

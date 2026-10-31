@@ -18,7 +18,7 @@ import (
 )
 
 // What an ask is made of is stored once, when it is asked for: a show's
-// episode lists per season and an album's song list. The Approvals panel
+// episode lists per season and an album's song list. The Requests panel
 // reads them with the ask, so opening a season or an album never waits on
 // an outside source.
 

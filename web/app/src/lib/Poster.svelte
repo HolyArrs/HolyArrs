@@ -6,7 +6,7 @@
 	let broken = $state(false);
 	const usable = $derived(!!src && !broken && (src.startsWith('https://') || src.startsWith('/')));
 	let loaded = $state(false);
-	// A small slot (a History row, an Approvals thumbnail) takes the 250 px copy
+	// A small slot (a History row, a Requests thumbnail) takes the 250 px copy
 	// instead of the stored 500-1000 px picture, by the cover rule in
 	// music-pages.ts coverSize: up to 125 css pixels on screens up to 2x. Library
 	// pictures, album covers and artist photos all have one.

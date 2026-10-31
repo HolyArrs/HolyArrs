@@ -14,7 +14,7 @@
 	import Icon from '#lib/Icon.svelte';
 	import Sessions from '#lib/Sessions.svelte';
 	import type { AskSettings, LimitKind, PersonLimit } from '#lib/types.ts';
-	import { kindAsks } from '#lib/wishlist.ts';
+	import { kindAsks } from '#lib/requests.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { kidLabel, ratingChoices } from '#lib/kid.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
@@ -62,7 +62,7 @@
 	const roleWord: Record<string, string> = { owner: 'Owner', admin: 'Admin', member: 'Member' };
 	const providerWord: Record<string, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
 
-	// Weekly ask limits, one per kind, from the Wishlist (absent when it is off).
+	// Weekly ask limits, one per kind, from Request rules (absent when it is off).
 	interface LimitRow extends PersonLimit {
 		user_id: number;
 		used: Record<LimitKind, number>;
@@ -514,7 +514,7 @@
 							</Field>
 						{/each}
 					</div>
-					<span id="limits-hint" class="hint">Empty uses the default from Settings &gt; Wishlist. 0 means no limit. Each kind counts on its own; joining someone else's ask is free.</span>
+					<span id="limits-hint" class="hint">Empty uses the default from Settings &gt; Request rules. 0 means no limit. Each kind counts on its own; joining someone else's ask is free.</span>
 				</fieldset>
 			{:else if limits[editing.id]?.no_limit}
 				<p class="hint">No weekly ask limit: {editing.name} may approve asks.</p>

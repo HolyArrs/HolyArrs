@@ -556,7 +556,7 @@
 	{/if}
 </SettingsCard>
 
-<SettingsCard id="alerts-me" title="Alerts" description="Asks always show on your Wishlist; add email or Discord too." icon="bell">
+<SettingsCard id="alerts-me" title="Alerts" description="Asks always show on your Requests page; add email or Discord too." icon="bell">
 	<form id="alerts-form" class="rows" onsubmit={saveTargets} novalidate>
 		<div class="srow">
 			<div class="txt"><label for="tg-email">Email</label><span class="hint">When the owner set up email.</span></div>

@@ -76,7 +76,7 @@
 				music_per_week: Number(settings.music_per_week)
 			});
 			saved = JSON.stringify(settings);
-			toasts.push('Wishlist settings saved.', 'ok');
+			toasts.push('Request settings saved.', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -85,14 +85,14 @@
 	}
 </script>
 
-<svelte:head><title>Wishlist rules · HolyArrs</title></svelte:head>
+<svelte:head><title>Request rules · HolyArrs</title></svelte:head>
 
-<PageHeader title="Wishlist rules" />
+<PageHeader title="Request rules" />
 
 {#if !loaded}
 	<SkSettings rows={3} />
 {:else}
-	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label="Wishlist rules">
+	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label="Request rules">
 		<SettingsCard id="weekly-limits" title="Weekly limits" description="How many asks each person may make in 7 days.">
 			<fieldset class="kinds">
 				<legend class="sr-only">Asks each person may make in 7 days</legend>

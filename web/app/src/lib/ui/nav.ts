@@ -77,13 +77,11 @@ export function buildNav(input: NavInput): NavSection[] {
 			id: 'yours',
 			label: 'Your stuff',
 			items: [
-				// People who approve find the Wishlist under Manage instead.
-				...(!approver
-					? [{ href: '/wishlist', label: 'Wishlist', icon: 'wish', need: 'wishlist', badge: input.unread, badgeLabel: `${input.unread} new` } as NavItem]
-					: []),
 				// Everyone else watches the downloads for what they asked for.
 				...(!input.allowed('manage_library') ? [{ href: '/downloads', label: 'Downloads', icon: 'download', need: null } as NavItem] : []),
-				{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: null }
+				{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: null },
+				// Everyone finds Requests here; people who approve see how many are waiting.
+				{ href: '/requests', label: 'Requests', icon: approver ? 'inbox' : 'wish', need: 'wishlist', ...(approver ? { badge: input.approvals, badgeLabel: `${input.approvals} waiting` } : { badge: input.unread, badgeLabel: `${input.unread} new` }) }
 			]
 		},
 		{
@@ -92,7 +90,6 @@ export function buildNav(input: NavInput): NavSection[] {
 			items: input.allowed('manage') || input.allowed('staff')
 				? [
 						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
-						{ href: '/wishlist', label: 'Approvals', icon: 'inbox', need: 'approve', badge: input.approvals, badgeLabel: `${input.approvals} waiting` },
 						{ href: '/downloads/history', label: 'History', icon: 'clock', need: 'manage_library' },
 						{ href: '/settings', label: 'Settings', icon: 'settings', need: 'staff' }
 					]

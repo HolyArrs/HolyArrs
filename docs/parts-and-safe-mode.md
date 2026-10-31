@@ -6,11 +6,11 @@ The part switches and the controls are on **Settings**, **Parts and controls** (
 
 ## The first-run step: What do you use?
 
-Right after the owner is made, HolyArrs asks once which parts to use. **Movies**, **Shows** and **Subtitles** are ticked, **Music** is not, and one question, "Will family or friends ask for titles?", turns **the Wishlist** on (Yes) or leaves it off (No, the default). Each part has one line saying what stops while it is off. **Continue** saves the choice; **Just movies** keeps only Movies on in one click. Change it any time in **Settings**, **Parts and controls**.
+Right after the owner is made, HolyArrs asks once which parts to use. **Movies**, **Shows** and **Subtitles** are ticked, **Music** is not, and one question, "Will family or friends ask for titles?", turns **Requests** on (Yes) or leaves it off (No, the default). Each part has one line saying what stops while it is off. **Continue** saves the choice; **Just movies** keeps only Movies on in one click. Change it any time in **Settings**, **Parts and controls**.
 
 ## Parts
 
-There are five parts: **Movies**, **Shows**, **Music**, **Subtitles** and **the Wishlist**. All five are on in a new install until the first-run step (above) turns the unpicked ones off.
+There are five parts: **Movies**, **Shows**, **Music**, **Subtitles** and **Requests**. All five are on in a new install until the first-run step (above) turns the unpicked ones off.
 
 Everything else is the **core** and is always on: sign-in and accounts, Library folders, Sources, Downloaders and Downloads, Alerts, History, backups, health checks, settings and the API.
 
@@ -22,7 +22,7 @@ Everything else is the **core** and is always on: sign-in and accounts, Library 
 | Shows | The show pages, adding and searching shows, season searches, show refreshes. Show routes answer "this part is off". | As for movies. |
 | Music | The artist and album pages, Settings > Music, artist refreshes and album searches. | As for movies. |
 | Subtitles | Settings > Subtitles, the missing-subtitles page, every subtitle search and check. | Subtitle files already placed stay beside their videos. |
-| The Wishlist | The Wishlist page, asking for titles, the Wishlist ready check, messages about asks. | Asks already made stay and come back when it is on. |
+| Requests | Requests page, asking for titles, Requests ready check, messages about asks. | Asks already made stay and come back when it is on. |
 
 When Movies, Shows and Music are all off, the shared Library pages (Library, Search, Calendar, Rename, Import) and the shared scheduled work (searching for missing items, feed checks, list syncs, rescans) stop too.
 
@@ -31,7 +31,7 @@ A few rules apply:
 - **Nothing is deleted.** Turning a part off keeps every row and file. Turning it on again picks up where it was.
 - **Its data stays readable through the core.** History (Events), the Jobs list, Downloads, Imports and the health states are core, so entries about a part that is off still show there (for example a finished download of a movie while Movies is off, or a subtitle Event).
 - **Work in the queue waits.** A Job of a part that is off stays in the queue and runs once the part is on again; it is not lost and not run twice. A scheduled Job of a part that is off is not queued at all.
-- **Some parts need others.** Subtitles need Movies or Shows. The Wishlist needs Movies, Shows or Music. HolyArrs refuses a switch that would break this and says which part to turn on or off first.
+- **Some parts need others.** Subtitles need Movies or Shows. Requests needs Movies, Shows or Music. HolyArrs refuses a switch that would break this and says which part to turn on or off first.
 - **A member cannot ask for a title of a part that is off.**
 - **It is not a memory saving.** Parts that are off share the same process, database connections and worker queue. The measured numbers are in the release report; see [Memory](#memory).
 
@@ -56,7 +56,7 @@ The owner and admins have these controls, on **Settings**, **Parts and controls*
 | Turn a part on | `POST /api/v1/parts/{part}/on` | no |
 | Turn a part off | `POST /api/v1/parts/{part}/off` | yes |
 | Restart a part (its scheduled work stops and starts again) | `POST /api/v1/parts/{part}/restart` | yes |
-| Pause, resume or restart one stage (backups, download sync, schedules, session clean-up, stranded imports, Release gates, Wishlist ready check) | `POST /api/v1/stages/{name}/pause`, `/resume`, `/restart` | no |
+| Pause, resume or restart one stage (backups, download sync, schedules, session clean-up, stranded imports, Release gates, Requests ready check) | `POST /api/v1/stages/{name}/pause`, `/resume`, `/restart` | no |
 | Reconnect one linked app (a Downloader, a Source, a media server or a subtitle site) | `POST /api/v1/links/{kind}/{id}/restart` | no |
 | Restart the whole app | `POST /api/v1/app/restart` | yes |
 | Restart in safe mode | `POST /api/v1/app/safe-mode` | yes |

@@ -108,13 +108,13 @@ test('Save in the bar saves through the page form, with a toast', async () => {
 	const before = await field.inputValue();
 	await field.fill(String(Number(before) + 1));
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Wishlist settings saved.')).toBeVisible();
+	await expect(page.getByText('Request settings saved.')).toBeVisible();
 	await expect(page.getByTestId('savebar')).toHaveCount(0);
 	await page.reload();
 	await expect(field).toHaveValue(String(Number(before) + 1));
 	await field.fill(before);
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Wishlist settings saved.').first()).toBeVisible();
+	await expect(page.getByText('Request settings saved.').first()).toBeVisible();
 });
 
 test('Advanced starts closed and stays as the person left it', async () => {

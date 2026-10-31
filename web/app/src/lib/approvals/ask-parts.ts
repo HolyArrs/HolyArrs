@@ -1,4 +1,4 @@
-// What a music or TV ask is made of, for the Approvals panel's lists: an
+// What a music or TV ask is made of, for the Requests panel's lists: an
 // artist ask's albums (one row per album, its other editions folded under
 // it, singles and EPs, live albums and compilations counted apart), and a
 // show ask's seasons. The approver can leave some out before approving.

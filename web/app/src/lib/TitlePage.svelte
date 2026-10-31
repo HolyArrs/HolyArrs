@@ -5,7 +5,7 @@
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/wishlist.svelte.ts';
+	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { detailPath, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
 	import { preloadHero } from '#lib/tmdb-image.ts';

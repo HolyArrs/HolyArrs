@@ -12,7 +12,7 @@
 	import EmptyState from '#lib/EmptyState.svelte';
 	import { secondVersion, slotNotes } from '#lib/library.ts';
 	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from '#lib/releases.ts';
-	import { decided } from '#lib/wishlist.ts';
+	import { decided } from '#lib/requests.ts';
 	import { downloadTone, percent, timeLeft } from '#lib/downloaders.ts';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
@@ -604,7 +604,7 @@
 		</TitleSection>
 
 		{#if title.asks?.length}
-			<TitleSection id="h-asks" title="Wishlist" testid="title-asks">
+			<TitleSection id="h-asks" title="Requests" testid="title-asks">
 				{#each title.asks as a (a.id)}
 					<dl class="facts">
 						<dt>Asked by</dt>

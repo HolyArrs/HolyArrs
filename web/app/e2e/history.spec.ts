@@ -136,8 +136,8 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 	await page.getByLabel('Webhook link').fill(`http://127.0.0.1:${discordPort}/hook`);
 	await page.getByLabel('Secret', { exact: true }).fill(['e2e', 'hook'].join('-'));
 	await expect(page.getByLabel('What the secret does')).toHaveValue('sign');
-	await page.getByTestId('moments-wishlist').getByRole('button', { name: 'None of these' }).click();
-	await expect(page.getByTestId('moments-wishlist').getByRole('checkbox', { name: /Someone asks/ })).not.toBeChecked();
+	await page.getByTestId('moments-requests').getByRole('button', { name: 'None of these' }).click();
+	await expect(page.getByTestId('moments-requests').getByRole('checkbox', { name: /Someone asks/ })).not.toBeChecked();
 	await expect(page.getByTestId('moments-library').getByRole('checkbox', { name: /Sent to download/ })).toBeChecked();
 	await page.getByRole('checkbox', { name: /May reach the local network/ }).check();
 	await page.getByRole('button', { name: 'Save Alert' }).click();

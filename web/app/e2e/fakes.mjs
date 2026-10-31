@@ -115,7 +115,7 @@ export const tmdbMovies = [
 	{ id: 900005, title: 'Salt Choir', release_date: '2020-01-01', imdb_id: 'tt9000050', overview: 'A choir that sings the tide in.', dates: [[3, '2020-01-01'], [4, '2020-03-01']] },
 	{ id: 900006, title: 'Ember Road', release_date: '2019-06-06', imdb_id: 'tt9000060', overview: 'A road that is only there while it burns.', cert: 'R', dates: [[3, '2019-06-06'], [4, '2019-08-01']] },
 	{ id: 900007, title: 'Northern Kettle', release_date: '2018-02-02', imdb_id: 'tt9000070', overview: 'A kettle that boils only for strangers.', dates: [[3, '2018-02-02'], [4, '2018-04-01']] },
-	// Movies the Wishlist tests ask for.
+	// Movies Requests tests ask for.
 	{ id: 900008, title: 'Copper Lighthouse', release_date: '2017-04-04', imdb_id: 'tt9000080', overview: 'A lighthouse that guides ships into the past.', dates: [[3, '2017-04-04'], [4, '2017-06-01']] },
 	{ id: 900009, title: 'Velvet Tide', release_date: '2016-08-08', imdb_id: 'tt9000090', overview: 'The sea comes in soft one night a year.', dates: [[3, '2016-08-08'], [4, '2016-10-01']] },
 	// The Downloader tests add this one and mark its download failed.

@@ -282,7 +282,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		pc.Add(l, true)
 	}
 	if c.SafeMode {
-		log.Printf("holyarrs: SAFE MODE: only the core runs (sign-in, the Library, settings, backups, health); schedules, searches, downloads, imports, subtitles and the Wishlist check are off")
+		log.Printf("holyarrs: SAFE MODE: only the core runs (sign-in, the Library, settings, backups, health); schedules, searches, downloads, imports, subtitles and Requests check are off")
 	}
 	// The lock tells tools that change a stopped config folder (holyarrs-demo)
 	// that HolyArrs runs here; the system drops it when the process ends.
@@ -622,7 +622,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	defer sender.Wait()
 	wish := &asks.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
-	optional(supervisor.Loop{Name: "wishlist", Label: "Wishlist ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
+	optional(supervisor.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
 		if _, err := wish.CheckReady(ctx); err != nil {
 			return err
 		}

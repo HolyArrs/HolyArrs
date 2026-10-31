@@ -30,7 +30,7 @@ type PickRulesInput struct {
 	Body  domain.PickRulesBody `json:"body"`
 }
 
-// Use counts what uses one Pick rule. Wishlist counts the ask settings and
+// Use counts what uses one Pick rule. Requests counts the ask settings and
 // TitleDefaults the saved Movies and TV defaults.
 type Use struct {
 	Versions       int `json:"versions"`

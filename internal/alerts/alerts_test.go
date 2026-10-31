@@ -209,7 +209,7 @@ func TestEmailGoesToThePeopleOrTheStaff(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := snd.Send(ctx, Message{Moment: MomentWaiting, Subject: "ana asked for Dune", Text: "Approve it on the Wishlist."}); err != nil {
+	if err := snd.Send(ctx, Message{Moment: MomentWaiting, Subject: "ana asked for Dune", Text: "Approve it on the Requests page."}); err != nil {
 		t.Fatal(err)
 	}
 	g := got()

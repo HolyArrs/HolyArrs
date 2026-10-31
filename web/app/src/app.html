@@ -15,7 +15,7 @@
 			// holyarrs-early: the first data requests start now, beside the app's
 			// scripts, not after them: who is signed in, and the page's main answer
 			// (Home, Explore, an artist, an album, a title, a Library title, Library,
-			// a person, Approvals, Downloads). lib/api.ts takes each one once,
+			// a person, Requests, Downloads). lib/api.ts takes each one once,
 			// for the same address, within 30 s, and drops them all on any change,
 			// a 401 or another session. lib/early.test.ts runs this script.
 			(function () {
@@ -68,7 +68,7 @@
 						var sort = saved('holyarrs.people.sort');
 						if (sort !== 'newest' && sort !== 'popular') sort = 'oldest';
 						asks.push('/people/' + m[1] + '?role=all&sort=' + sort + '&page_size=100&page=1');
-					} else if (path === '/wishlist') {
+					} else if (path === '/requests') {
 						asks.push('/asks');
 					} else if (path === '/downloads') {
 						asks.push('/downloads/view?limit=100');

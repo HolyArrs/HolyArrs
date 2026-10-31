@@ -21,7 +21,7 @@
 	import { session } from './session.svelte.ts';
 	import { audienceStatus } from './title-status.ts';
 	import { toasts } from './toasts.svelte.ts';
-	import { decided } from './wishlist.ts';
+	import { decided } from './requests.ts';
 	import { groupLabel, kindTone } from './history.ts';
 	import AskArtistDialog from './AskArtistDialog.svelte';
 	import RenamePreview from './RenamePreview.svelte';
@@ -316,7 +316,7 @@
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
 {#if title.asks?.length}
-	<TitleSection id="h-artist-asks" title="Wishlist" testid="title-asks">
+	<TitleSection id="h-artist-asks" title="Requests" testid="title-asks">
 		{#each title.asks as a (a.id)}
 			<dl class="facts">
 				<dt>Asked by</dt>

@@ -26,7 +26,7 @@ type showcaseMovie struct {
 	Progress float64 // unfinished downloads
 	FourK    bool    // a 4K Version is wanted next to the main one
 	Keep     string  // "off": Keep up to date off
-	Ask      string  // "asked", "approved", "turned_down": comes in through the Wishlist instead
+	Ask      string  // "asked", "approved", "turned_down": comes in through Requests instead
 	AskedBy  string
 }
 
@@ -67,7 +67,7 @@ var showcaseMovieList = []showcaseMovie{
 	// Kid limit: R-rated titles the Kid cannot see; G/PG titles they can.
 	{TMDB: "550", Name: "Fight Club", Scenario: "R: hidden from the Kid member", Quality: "bluray1080"},
 	{TMDB: "862", Name: "Toy Story", Scenario: "G: visible to the Kid member", Quality: "bluray1080"},
-	// Wishlist.
+	// Requests.
 	{TMDB: "496243", Name: "Parasite", Scenario: "asked by a member, waiting for approval", Ask: "asked", AskedBy: "Maya"},
 	{TMDB: "419430", Name: "Get Out", Scenario: "asked by a member, waiting for approval", Ask: "asked", AskedBy: "Maya"},
 	{TMDB: "346648", Name: "Paddington 2", Scenario: "asked by the Kid, waiting for approval", Ask: "asked", AskedBy: "Leo (Kid)"},

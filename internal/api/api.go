@@ -111,7 +111,7 @@ type Server struct {
 	Lists *lists.Service
 	// Alerts sends Discord and email Alerts; New makes one when Secrets is set.
 	Alerts *alerts.Sender
-	// Asks runs the Wishlist; New makes one when nil.
+	// Asks runs Requests; New makes one when nil.
 	Asks *asks.Service
 	// Downloads follows Downloaders and Downloads; made on first use when nil.
 	Downloads *downloader.Manager
@@ -554,7 +554,7 @@ type TitleView struct {
 	// Versions are the wanted copies (main first), such as HD and 4K.
 	Versions []VersionView `json:"versions"`
 	Slots    []SlotView    `json:"slots"`
-	// Asks are the Wishlist asks that led to it: who asked and who decided.
+	// Asks are the Requests that led to it: who asked and who decided.
 	Asks []asks.View `json:"asks"`
 	// Show holds a show's choices and season summaries (shows only; their
 	// episodes and Slots come from /titles/{id}/episodes, so Slots is empty).

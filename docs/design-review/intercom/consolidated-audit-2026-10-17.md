@@ -26,7 +26,7 @@ Fresh visual-ralph verdicts apply only to the named screenshots and reference fi
 
 - Context sidebar uses the shared sidebar surface, separating it correctly from the workspace in light and dark themes.
 - The Home event feed stacks through 1100px. The health panel moves below the activity content through 1600px, preserving readable event text at tablet and compact-desktop sizes.
-- Existing mobile Library, Wishlist and Downloads layouts, filter/requester counts, removable chips, saved search/view, scroll restoration and Last opened behavior are preserved and rechecked in the final scenarios.
+- Existing mobile Library, Requests and Downloads layouts, filter/requester counts, removable chips, saved search/view, scroll restoration and Last opened behavior are preserved and rechecked in the final scenarios.
 
 Matching before/after captures retain their own source identities. Only the After images belong to the final frontend digest. The local gallery is generated only after required coverage gates clear:
 

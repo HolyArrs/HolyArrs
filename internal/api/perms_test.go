@@ -127,7 +127,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 	checked := 0
 	for pattern, need := range auth.RoutePerms {
 		method, path, _ := strings.Cut(pattern, " ")
-		// Members may ask for titles (the Wishlist), so those routes are theirs.
+		// Members may ask for titles (Requests), so those routes are theirs.
 		if need == "signed_in" || need == "self" || need == auth.NeedPublic || need == auth.PermAsk || path == "/" || path == "/login" {
 			continue
 		}

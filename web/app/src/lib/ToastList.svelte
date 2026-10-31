@@ -53,7 +53,7 @@
 	onMount(() => () => clearTimeout(shrinkTimer));
 
 	// Toasts live in the top layer (a manual popover), so they stay above an open
-	// <dialog> such as the Approvals window and Undo can still be clicked. Shown again
+	// <dialog> such as the Requests window and Undo can still be clicked. Shown again
 	// on every new toast, so they land above whatever dialog opened since.
 	let host = $state<HTMLElement>();
 	$effect(() => {

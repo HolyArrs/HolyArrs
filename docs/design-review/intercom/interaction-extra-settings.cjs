@@ -99,7 +99,7 @@ const musicRejectedSave = {
 };
 
 const wishlistValidation = {
-	name: 'Wishlist native validation and successful save',
+	name: 'Requests native validation and successful save',
 	route: '/settings/wishlist',
 	setup: async (ctx) => {
 		await ctx.routeJSON('GET', '/settings/asks', {
@@ -125,13 +125,13 @@ const wishlistValidation = {
 		await ctx.expect(ctx.attempts.filter((x) => x.method === 'PUT').length === 0, 'invalid weekly limit sends no request');
 		await movies.fill('12');
 		await save.click();
-		await page.getByText('Wishlist settings saved.', { exact: true }).waitFor();
+		await page.getByText('Request settings saved.', { exact: true }).waitFor();
 		await ctx.expect(await movies.inputValue() === '12', 'successful save preserves the weekly limit');
 	}
 };
 
 const wishlistRejectedSave = {
-	name: 'Wishlist rejected save recovers without losing form state',
+	name: 'Requests rejected save recovers without losing form state',
 	route: '/settings/wishlist',
 	setup: async (ctx) => {
 		await wishlistValidation.setup(ctx);

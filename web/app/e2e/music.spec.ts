@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, libraryView, titleAction, openAdvanced, openFromSearch, openInLibrary } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openRequests, libraryKind, libraryStatus, libraryView, titleAction, openAdvanced, openFromSearch, openInLibrary } from './helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and
@@ -174,7 +174,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await ivy.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(ivy).toHaveURL(/\/$/);
 
-	await ivy.goto('/wishlist');
+	await ivy.goto('/requests');
 	await expect(ivy.getByTestId('ask-limit')).toContainText('music asks left this week');
 	await searchMusic(ivy, 'moss');
 	const hit = artistCard(ivy, 'Moss Choir');
@@ -197,20 +197,20 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await openFromSearch(ivy, 'lantern', 'Tin Lanterns');
 	await expect(ivy.getByTestId('ask-albums')).toBeVisible();
 
-	await ivy.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
+	await ivy.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByTestId('ask-kind')).toHaveText('Music');
 	await expect(ask.getByTestId('ask-albums')).toHaveText('Asked for Fern Hymns');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);
 	await noSidewaysScroll(ivy);
-	await axe(ivy, 'wishlist member phone music');
+	await axe(ivy, 'requests member phone music');
 });
 
 test('the owner approves from a phone: the artist is added with that single and ivy is told', async ({ browser }) => {
 	const phone = await fresh(browser, 412);
 	await signIn(phone, owner());
-	await openApprovals(phone);
+	await openRequests(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Moss Choir' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by ivy');
 	// The row's Approve is one tap with Undo; Review holds Choose what to add.
@@ -244,7 +244,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: 'Approved by luis' }).first()).toBeVisible();
 
 	// ivy reads the message; members see no switches on the artist page.
-	await ivy.goto('/wishlist');
+	await ivy.goto('/requests');
 	await expect(ivy.getByTestId('message').first()).toContainText('Moss Choir, Fern Hymns was approved by luis');
 	await expect(ivy.getByTestId('message').first()).toContainText('Enjoy the hymns');
 	await ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' }).getByRole('link', { name: /Moss Choir/ }).click();

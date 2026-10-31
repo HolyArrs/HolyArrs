@@ -563,7 +563,7 @@ const (
 	AskAvailable  = "available"
 )
 
-// Ask is a person's ask for a movie or a show on the Wishlist. It follows
+// Ask is a person's ask for a movie or a show on the Requests page. It follows
 // its Title from asked to approved (or turned down) to available.
 type Ask struct {
 	Meta

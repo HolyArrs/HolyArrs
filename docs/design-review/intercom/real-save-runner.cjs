@@ -281,7 +281,7 @@ async function main() {
   const owner = await context('owner', { width: 1440, height: 1000 });
   const member = await context('member', { width: 360, height: 800 });
   const second = await context('second', { width: 834, height: 1100 });
-  await owner.goto(`${base}/wishlist`);
+  await owner.goto(`${base}/requests`);
   if (resuming) {
     await step('Resume only the two disposable test members without changing passwords', async () => {
       for (const [index, [who, page]] of [['member', member], ['second', second]].entries()) {

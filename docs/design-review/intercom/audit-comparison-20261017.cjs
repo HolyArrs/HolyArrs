@@ -18,7 +18,7 @@ function identity() {
   fs.writeFileSync(path.join(out,'receipt.json'),JSON.stringify({captureComplete:false,status:'pending',checks:[]}));
   const before = identity(), checks = [], browser = await chromium.launch({headless:true});
   try {
-    for (const theme of ['light','dark']) for (const route of ['/library','/wishlist','/downloads','/settings']) {
+    for (const theme of ['light','dark']) for (const route of ['/library','/requests','/downloads','/settings']) {
       const context = await browser.newContext({viewport:{width:1920,height:1192},deviceScaleFactor:1,serviceWorkers:'block'});
       await context.addInitScript(value=>localStorage.setItem('holyarrs-theme',value),theme);
       await context.route('**/*',r=>{ const q=r.request(),u=new URL(q.url()); if(q.method()!=='GET'||u.origin!==origin&&!(q.resourceType()==='image'&&['image.tmdb.org','static.tvmaze.com','is1-ssl.mzstatic.com'].includes(u.hostname))) return r.abort(); return r.continue(); });

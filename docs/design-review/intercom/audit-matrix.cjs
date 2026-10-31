@@ -8,7 +8,7 @@ const requireApp = createRequire(path.join(root, 'web/app/package.json'));
 const { chromium } = requireApp('playwright');
 const output = path.join(root, '.omx/artifacts/visual-ralph/intercom/full-audit', process.env.AUDIT_BATCH || 'final');
 const widths = (process.env.AUDIT_WIDTHS || '390,834,1440').split(',').map(Number);
-const routes = (process.env.AUDIT_ROUTES || '/,/library?kind=movie,/wishlist,/downloads,/downloads/decide,/downloads/history,/settings').split(',');
+const routes = (process.env.AUDIT_ROUTES || '/,/library?kind=movie,/requests,/downloads,/downloads/decide,/downloads/history,/settings').split(',');
 const theme = process.env.AUDIT_THEME || 'light';
 function identity() {
   const hash = createHash('sha256');

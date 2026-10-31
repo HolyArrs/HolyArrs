@@ -1,4 +1,4 @@
-// Parts (Movies, TV shows, Music, Subtitles, the Wishlist) that can be turned
+// Parts (Movies, TV shows, Music, Subtitles, Requests) that can be turned
 // off, and which page belongs to which part. The table lives in the server
 // (internal/parts) and comes with GET /api/v1/parts.
 
@@ -98,8 +98,8 @@ export function needsProblem(want: Record<PartName, boolean>): string {
 /**
  * switchPlan lists the switches that take the parts from now to want, in
  * an order the server accepts: parts turned on first (the media parts
- * before Subtitles and the Wishlist), then parts turned off (Subtitles and
- * the Wishlist before the media parts they need).
+ * before Subtitles and Requests), then parts turned off (Subtitles and
+ * Requests before the media parts they need).
  */
 export function switchPlan(now: Record<PartName, boolean>, want: Record<PartName, boolean>): { part: PartName; on: boolean }[] {
 	const ons = partOrder.filter((p) => want[p] && !now[p]).map((part) => ({ part, on: true }));

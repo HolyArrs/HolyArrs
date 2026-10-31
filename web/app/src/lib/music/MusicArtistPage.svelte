@@ -41,7 +41,7 @@
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { refreshInbox } from '#lib/wishlist.svelte.ts';
+	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { releaseWords } from '#lib/music/music-trending.ts';

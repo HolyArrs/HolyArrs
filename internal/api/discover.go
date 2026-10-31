@@ -376,7 +376,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 }
 
 // metadataDetails answers a movie or show page from TMDB, in the Library
-// or not, with the Library and Wishlist joined.
+// or not, with the Library and Requests joined.
 func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")
 	if kind != "movie" && kind != "show" {
@@ -570,7 +570,7 @@ const moreFromMin = 4
 
 // metadataMoreFrom answers GET /api/v1/metadata/{kind}/{tmdb_id}/more-from:
 // the other movies the title's director made, or the other shows its
-// creator made, most popular first, with the Library and Wishlist joined.
+// creator made, most popular first, with the Library and Requests joined.
 // Items is empty when fewer than four are left. Cached 24 h per title.
 func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")

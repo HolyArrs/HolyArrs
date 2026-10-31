@@ -294,7 +294,7 @@ func needsLocked(on map[Part]bool, changed Part, turnOn bool) error {
 			}
 		case Wishlist:
 			if !media {
-				return NeedsError{"The Wishlist needs Movies, TV shows or Music. Turn one of them on first."}
+				return NeedsError{"Requests needs Movies, TV shows or Music. Turn one of them on first."}
 			}
 		}
 		return nil
@@ -303,7 +303,7 @@ func needsLocked(on map[Part]bool, changed Part, turnOn bool) error {
 		return NeedsError{"Subtitles need Movies or TV shows, and " + changed.Label() + " is the last of them that is on. Turn Subtitles off first."}
 	}
 	if on[Wishlist] && !media {
-		return NeedsError{"The Wishlist needs Movies, TV shows or Music, and " + changed.Label() + " is the last of them that is on. Turn the Wishlist off first."}
+		return NeedsError{"Requests needs Movies, TV shows or Music, and " + changed.Label() + " is the last of them that is on. Turn Requests off first."}
 	}
 	return nil
 }

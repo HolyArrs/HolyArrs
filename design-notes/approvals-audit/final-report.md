@@ -1,6 +1,6 @@
-# Approvals page: final audit (2026-10-31)
+# Requests page: final audit (2026-10-31)
 
-Page: `/wishlist` for approvers. Files: `lib/approvals/ApprovalsDesktop.svelte`, `ApprovalsStage.svelte`, `routes/wishlist/+page.svelte`.
+Page: `/requests` for approvers. Files: `lib/approvals/ApprovalsDesktop.svelte`, `ApprovalsStage.svelte`, `routes/requests/+page.svelte`.
 
 ## Round 1 findings
 

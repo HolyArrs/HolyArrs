@@ -224,7 +224,7 @@ type LookupView struct {
 	metadata.Movie
 	TitleID  int64 `json:"title_id,omitempty"` // set when already in the Library
 	NeverAdd bool  `json:"never_add"`
-	// Ask is the open Wishlist ask for it, if someone asked.
+	// Ask is the open request for it, if someone asked.
 	Ask *askBrief `json:"ask,omitempty"`
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Approvals for approvers. One toolbar the Downloads way: the status tabs as a
+	// The Requests page for approvers. One toolbar the Downloads way: the status tabs as a
 	// pill group on the left, the Filter button (status and type) on the right. Each card is
 	// a small window: a dark card with the title's wide art, the title and its facts
 	// on the art, then a frosted sheet over the art's foot with who asked and the
@@ -20,7 +20,7 @@
 	import { to } from '../paths.ts';
 	import { shortDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
-	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../wishlist.ts';
+	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../requests.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { Ask } from '../types.ts';
 
@@ -332,7 +332,7 @@
 	}
 </script>
 
-<div class="desktop" data-testid="approvals-desktop">
+<div class="desktop" data-testid="requests-desktop">
 	{#snippet statusItems(close: boolean)}
 		<button type="button" role="menuitemradio" aria-checked={!status} class="sf-mi" onclick={() => { setStatus(''); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-w">All statuses</span><span class="sf-c">{subsTotal}</span></button>
 		{#each subs as x (x.word)}

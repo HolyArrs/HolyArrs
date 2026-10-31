@@ -130,7 +130,7 @@
 
 			<fieldset>
 				<legend>Will family or friends ask for titles?</legend>
-				<p class="hint" id="family-hint">Yes turns on the Wishlist: people you invite ask, and you approve. Off: {partStops.wishlist}</p>
+				<p class="hint" id="family-hint">Yes turns on the Requests page: people you invite ask, and you approve. Off: {partStops.wishlist}</p>
 				<div class="row" role="radiogroup" aria-describedby="family-hint">
 					<label class="checkline"><input type="radio" name="family" value="no" bind:group={family} /> No, just me</label>
 					<label class="checkline"><input type="radio" name="family" value="yes" bind:group={family} /> Yes</label>

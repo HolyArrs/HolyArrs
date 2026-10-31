@@ -3,7 +3,7 @@ import { askedByOne, askers, movieRelease, readInfo, runtimeShort } from './inbo
 
 const now = new Date('2026-10-27T12:00:00Z');
 
-describe('approvals inbox', () => {
+describe('requests inbox', () => {
 	it('says a runtime and whether a movie is out', () => {
 		expect(runtimeShort(130)).toBe('2h 10m');
 		expect(runtimeShort(48)).toBe('48m');

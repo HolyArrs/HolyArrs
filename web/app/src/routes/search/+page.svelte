@@ -40,7 +40,7 @@
 	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
 	import { appPicture, artistHref } from '#lib/music/music-pages.ts';
 	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music/music-trending.ts';
-	import { refreshInbox } from '#lib/wishlist.svelte.ts';
+	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import QuickAsk from '#lib/QuickAsk.svelte';

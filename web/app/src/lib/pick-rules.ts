@@ -183,7 +183,7 @@ const useWords: [keyof PickRulesUse, string, string][] = [
 	['versions', 'Version', 'Versions'],
 	['library_folders', 'Library folder', 'Library folders'],
 	['outside_lists', 'Outside list', 'Outside lists'],
-	['wishlist', 'Wishlist rule', 'Wishlist rules'],
+	['wishlist', 'Request rule', 'Request rules'],
 	['title_defaults', 'Movies and TV default', 'Movies and TV defaults']
 ];
 

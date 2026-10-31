@@ -180,7 +180,7 @@ show no names. The server trims the list before it is sent:
 
 Two settings control it:
 
-- **Show who asked** (household) under **Settings > Wishlist**: **Owner,
+- **Show who asked** (household) under **Settings > Request rules**: **Owner,
   admins and managers only** (the default) or **Everyone in the household**.
 - **Show my name on my asks** (personal) under **My account**, for people who may
   ask. It only has an effect when the household chose "Everyone in the

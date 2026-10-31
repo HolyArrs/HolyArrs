@@ -19,7 +19,7 @@ import (
 // 10 shows and 10 music asks a person.
 const DefaultPerWeek = 10
 
-// Settings are the Wishlist settings.
+// Settings are the Request settings.
 type Settings struct {
 	// MoviesPerWeek, ShowsPerWeek and MusicPerWeek are how many asks of
 	// each kind a person may make in 7 days, unless their own limit for
@@ -67,7 +67,7 @@ func (s Settings) PerWeekOf(kind string) int {
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
 	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_show_who_asked"}
 
-// ReadSettings reads the Wishlist settings (10 a week of each kind, search
+// ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
 func ReadSettings(ctx context.Context, db store.Lister) (Settings, error) {
 	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true, ShowWhoAsked: "approvers"}
@@ -114,7 +114,7 @@ func ReadSettings(ctx context.Context, db store.Lister) (Settings, error) {
 	return s, rows.Err()
 }
 
-// SaveSettings checks and stores the Wishlist settings.
+// SaveSettings checks and stores the Request settings.
 func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Actor) error {
 	for _, n := range []int{s.MoviesPerWeek, s.ShowsPerWeek, s.MusicPerWeek} {
 		if n < 0 || n > 1000 {

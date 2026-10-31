@@ -8,12 +8,12 @@ const member: NavInput = { ...owner, allowed: (n) => memberPerms.has(n) };
 const labels = (input: NavInput) => buildNav(input).map((s) => [s.label, s.items.map((i) => i.label)]);
 
 describe('buildNav', () => {
-	it('gives owners every section, with Approvals under Manage', () => {
+	it('gives owners every section, with Requests last under Your stuff', () => {
 		expect(labels(owner)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music']],
-			['Your stuff', ['Calendar']],
-			['Manage', ['Downloads', 'Approvals', 'History', 'Settings']]
+			['Your stuff', ['Calendar', 'Requests']],
+			['Manage', ['Downloads', 'History', 'Settings']]
 		]);
 	});
 	it('hides Music from a Kid, because music has no age ratings', () => {
@@ -23,13 +23,14 @@ describe('buildNav', () => {
 		expect(labels(member)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music']],
-			['Your stuff', ['Wishlist', 'Downloads', 'Calendar']]
+			['Your stuff', ['Downloads', 'Calendar', 'Requests']]
 		]);
 	});
 	it('shows each Manage item by its own permission', () => {
 		const approverOnly = new Set(['approve', 'manage', 'wishlist']);
 		const nav = buildNav({ ...owner, allowed: (n) => approverOnly.has(n) });
-		expect(nav.find((s) => s.id === 'manage')?.items.map((i) => i.label)).toEqual(['Approvals']);
+		expect(nav.find((s) => s.id === 'manage')).toBeUndefined();
+		expect(nav.find((s) => s.id === 'yours')?.items.map((i) => i.label)).toEqual(['Downloads', 'Calendar', 'Requests']);
 	});
 	it('shows Settings to someone who only manages users', () => {
 		const usersOnly = new Set(['staff']);
@@ -37,13 +38,14 @@ describe('buildNav', () => {
 		expect(nav.find((s) => s.id === 'manage')?.items.map((i) => i.label)).toEqual(['Settings']);
 	});
 	it('drops places whose part is off', () => {
-		const nav = buildNav({ ...owner, kinds: ['show'], off: (h) => h === '/wishlist' });
+		const nav = buildNav({ ...owner, kinds: ['show'], off: (h) => h === '/requests' });
 		expect(nav.find((s) => s.id === 'library')?.items.map((i) => i.label)).toEqual(['TV shows']);
-		expect(nav.find((s) => s.id === 'manage')?.items.map((i) => i.label)).not.toContain('Approvals');
+		expect(nav.find((s) => s.id === 'yours')?.items.map((i) => i.label)).not.toContain('Requests');
 	});
 	it('carries the badge counts', () => {
-		const manage = buildNav(owner).find((s) => s.id === 'manage')!;
-		expect(manage.items.find((i) => i.label === 'Approvals')?.badge).toBe(3);
+		const nav = buildNav(owner);
+		const manage = nav.find((s) => s.id === 'manage')!;
+		expect(nav.find((s) => s.id === 'yours')!.items.find((i) => i.label === 'Requests')?.badge).toBe(3);
 		expect(manage.items.find((i) => i.label === 'Downloads')?.badge).toBe(1);
 	});
 });
@@ -67,7 +69,7 @@ describe('current page', () => {
 describe('palette', () => {
 	const list = destinations(buildNav(owner), [{ href: '/account', label: 'Account', icon: 'user', section: 'You' }]);
 	it('lists each place once', () => {
-		expect(list.filter((d) => d.href === '/wishlist')).toHaveLength(1);
+		expect(list.filter((d) => d.href === '/requests')).toHaveLength(1);
 		expect(list.at(-1)?.label).toBe('Account');
 	});
 	it('ranks starts-with before contains', () => {

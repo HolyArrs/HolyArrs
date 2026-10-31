@@ -8,7 +8,7 @@ References: Luis's screenshots (a DVR app's sidebar and Apple TV-like title page
 
 ## 1. Principles
 
-1. **Media first, work second.** Browsing screens (Home, Explore, title pages) are artwork-led and airy. Work screens (Downloads, Approvals, Settings) are calm and dense. Both use the same shell, type, colours, buttons and motion.
+1. **Media first, work second.** Browsing screens (Home, Explore, title pages) are artwork-led and airy. Work screens (Downloads, Requests, Settings) are calm and dense. Both use the same shell, type, colours, buttons and motion.
 2. **One way to do each thing.** One page header, one button set, one card, one shelf, one sheet, one status pill. No page invents its own.
 3. **Plain words, big targets.** At least 44px touch targets. Words a non-technical family member understands. No jargon in member views.
 4. **Calm motion.** Motion explains (where did this come from, did my tap register). Never decorative loops. Everything respects reduced motion.
@@ -82,7 +82,7 @@ Implement as: CSS in `tokens.css` + a small `lib/motion.ts` (Svelte actions: `pr
   - (no label) **Home**, **Explore**
   - **Library**: Movies, TV shows, Music, Movie series (only parts that are on)
   - **Your stuff** (members): My requests, Calendar
-  - **Manage** (only for people with manage/approve/settings permissions): Downloads, Approvals (Wishlist inbox, with count badge), History, Library tools, Settings
+  - **Manage** (only for people with manage/approve/settings permissions): Downloads, Requests (Wishlist inbox, with count badge), History, Library tools, Settings
 - Bottom: account row (avatar, name, role) with a ⌃⌄ menu: Account, Appearance (Light / Dark / System), Sign out.
 - Selected row: soft fill `--surface-3`, accent-coloured icon, semibold label. Counts are right-aligned pills.
 - Top bar inside the content area (56px, sticky, translucent blur): collapse button (when collapsed), back/forward chevrons on detail pages, search field `Search… ⌘K` opening a command palette sheet, live connection dot, and an activity button showing current download count.
@@ -91,7 +91,7 @@ Implement as: CSS in `tokens.css` + a small `lib/motion.ts` (Svelte actions: `pr
 - Sidebar starts collapsed (72px). Expanding overlays the content as a sheet with scrim, closes on Escape/outside tap/selection.
 
 ### Phone (< 768px)
-- No sidebar. Bottom tab bar (translucent blur, safe-area aware): **Home, Explore, Library, Search**, and **Manage** (admins) or **Wishlist** (members). A "More" sheet holds the rest. Large-title page headers that shrink on scroll.
+- No sidebar. Bottom tab bar (translucent blur, safe-area aware): **Home, Explore, Library, Search**, and **Manage** (admins) or **Requests** (members). A "More" sheet holds the rest. Large-title page headers that shrink on scroll.
 
 ### Accessibility
 - `<nav aria-label="Main">`, `aria-current="page"`, the toggle has `aria-expanded` and `aria-controls`. Collapsed rows keep text via `aria-label`. Tooltips are not the only label. Skip link stays first. Focus returns to the toggle after closing the overlay sheet.
@@ -149,7 +149,7 @@ Behaviour as built (user guide: [Explore](../../explore.md), [Trailers](../../tr
 - Member words: "Get it", "Requested", "Downloading", "Ready to watch". Admin words may be more precise, but always glossary terms.
 
 ## 8. Not in this milestone (later, same template)
-Downloads, Approvals, History, Library list/grid, Search results, Calendar, People, Settings and Access screens move onto the kit in the next milestone. Until then they render inside the new shell with their current content (they must still work).
+Downloads, Requests, History, Library list/grid, Search results, Calendar, People, Settings and Access screens move onto the kit in the next milestone. Until then they render inside the new shell with their current content (they must still work).
 
 ## 9. Done means
 - Svelte check 0/0, unit tests pass, word check passes.

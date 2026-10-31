@@ -1,4 +1,4 @@
-// The Wishlist badge: unread messages for the person, and asks waiting for
+// Requests badge: unread messages for the person, and asks waiting for
 // people who approve. Asked again on page changes and every minute.
 
 import { api } from './api.ts';

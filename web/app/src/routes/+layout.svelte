@@ -18,7 +18,7 @@
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { inbox, refreshInbox } from '#lib/wishlist.svelte.ts';
+	import { inbox, refreshInbox } from '#lib/requests.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
 	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
@@ -263,10 +263,10 @@
 		add('/explore', 'Explore', 'compass');
 		add('/library', 'Library', 'library');
 		add('/search', 'Search', 'search');
-		if (!manager && allowed('wishlist') && !offPartName(partsNow.answer, '/wishlist')) {
-			t.push({ href: to('/wishlist'), label: 'Wishlist', icon: 'wish', current: path.startsWith('/wishlist'), badge: inbox.unread || undefined });
+		if (!manager && allowed('wishlist') && !offPartName(partsNow.answer, '/requests')) {
+			t.push({ href: to('/requests'), label: 'Requests', icon: 'wish', current: path.startsWith('/requests'), badge: inbox.unread || undefined });
 		}
-		const tabbed = ['/', '/explore', '/library', '/search', '/wishlist'];
+		const tabbed = ['/', '/explore', '/library', '/search', '/requests'];
 		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
 		t.push({ label: manager ? 'Manage' : 'More', icon: manager ? 'inbox' : 'more', current: elsewhere, dot: inbox.waiting + decisions.count > 0 && manager, onclick: () => (moreOpen = true) });
 		return t;
@@ -312,7 +312,7 @@
 		if (p === '/downloads') return true;
 		if (p.startsWith('/downloads')) return allowed('manage_library');
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
-		if (p.startsWith('/wishlist')) return allowed('wishlist');
+		if (p.startsWith('/requests')) return allowed('wishlist');
 		if (p === '/settings/users') return session.can('users');
 		if (p === '/settings/account' || p === '/settings/appearance') return true;
 		// People who manage the Library may look at Pick rules and Movies and TV defaults, read only.
@@ -347,9 +347,9 @@
 		return () => clearInterval(t);
 	});
 
-	// Wishlist counts: asks waiting for people who approve, else unread messages.
+	// Requests counts: asks waiting for people who approve, else unread messages.
 	// A derived flag, so the Parts answer arriving does not ask a second time.
-	const inboxOn = $derived(session.s.state === 'signed_in' && allowed('wishlist') && !offPartName(partsNow.answer, '/wishlist'));
+	const inboxOn = $derived(session.s.state === 'signed_in' && allowed('wishlist') && !offPartName(partsNow.answer, '/requests'));
 	$effect(() => {
 		void path;
 		if (!inboxOn) return;

@@ -38,7 +38,7 @@ const pages = [
 	'/settings/pick-rules/1',
 	'/settings/title-defaults',
 	'/explore',
-	'/wishlist'
+	'/requests'
 ];
 
 async function scan(page: Page, where: string) {

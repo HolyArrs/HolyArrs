@@ -1,5 +1,5 @@
 // Package parts holds the five parts a person can turn on, off or restart
-// while the app runs (Movies, Shows, Music, Subtitles, the Wishlist), the
+// while the app runs (Movies, Shows, Music, Subtitles, Requests), the
 // one table that says which routes, screens, background loops and Job
 // kinds belong to which part, and the Control that switches them.
 // Everything not in a part is the core: sign-in and accounts, Sources,
@@ -35,7 +35,7 @@ func (p Part) Label() string {
 	case Subtitles:
 		return "Subtitles"
 	case Wishlist:
-		return "The Wishlist"
+		return "Requests"
 	}
 	return string(p)
 }
@@ -497,7 +497,7 @@ var Routes = map[string]Owner{
 	"DELETE /api/v1/subtitle-sites/{id}":        subtitles,
 	"POST /api/v1/subtitle-sites/{id}/test":     subtitles,
 
-	// The Wishlist: asks, limits, and the messages about asks.
+	// Requests: asks, limits, and the messages about asks.
 	"GET /api/v1/asks":                               wishlist,
 	"GET /api/v1/asks/{id}":                          wishlist,
 	"GET /api/v1/asks/{id}/parts":                    wishlist,
@@ -563,7 +563,7 @@ var Screens = map[string]Owner{
 	"/music/[kind=musicpage]/[slug]": music,
 	"/music/album/[mbid]":            music,
 	"/calendar":                      Media,
-	"/wishlist":                      wishlist,
+	"/requests":                      wishlist,
 	"/settings":                      Core,
 	"/settings/account":              Core,
 	"/settings/appearance":           Core,

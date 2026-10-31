@@ -29,7 +29,7 @@ test('phone: bottom menu, one column, no sideways scroll on any page', async ({ 
 		'/settings/wishlist',
 		'/settings/alerts',
 		'/account',
-		'/wishlist',
+		'/requests',
 		'/settings/this-app'
 	]) {
 		await page.goto(url);

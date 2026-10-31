@@ -148,7 +148,7 @@ func TestAskedByPrivacyMatrix(t *testing.T) {
 	optIn(r.bo, false)
 	check("member ana, bo opted out", r.ana, []string{"ana", "kai"})
 
-	// The Wishlist and title answers are trimmed the same way.
+	// Requests and title answers are trimmed the same way.
 	var list struct {
 		Asks []asks.View `json:"asks"`
 	}

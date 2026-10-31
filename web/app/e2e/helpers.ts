@@ -51,11 +51,11 @@ export async function libraryView(scope: Page | Locator, name: 'Banners' | 'Post
 	await scope.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name, exact: true }).click();
 }
 
-/** openApprovals reaches the Wishlist as an approver on a phone: Manage tab, then Approvals. */
-export async function openApprovals(page: Page) {
+/** openRequests reaches Requests as an approver on a phone: Manage tab, then Requests. */
+export async function openRequests(page: Page) {
 	await page.locator('.ui-tabbar').getByRole('button', { name: /^Manage/ }).click();
-	await page.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: /^Approvals/ }).click();
-	await expect(page).toHaveURL(/wishlist/);
+	await page.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: /^Requests/ }).click();
+	await expect(page).toHaveURL(/requests/);
 }
 
 /** titleAction picks an item from a title page's hero ⋯ menu. The Library

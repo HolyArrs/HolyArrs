@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	// Status glyphs for the Approvals page (chips, the progress capsule and the Filter menu).
+	// Status glyphs for the Requests page (chips, the progress capsule and the Filter menu).
 	// Path data hand-copied from Lucide (https://lucide.dev), ISC License,
 	// Copyright (c) Lucide Contributors. Glyphs: search, download, package, loader-circle,
 	// calendar, circle-check, circle-alert, circle-x, clock. Inlined, no runtime CDN.

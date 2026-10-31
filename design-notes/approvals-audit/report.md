@@ -1,4 +1,4 @@
-# Approvals audit (31 Oct 2026)
+# Requests audit (31 Oct 2026)
 
 Fix commit: 148da715. svelte-check 0 errors; vitest src/lib 1244/1244. CLS 0, no long tasks, no sideways scroll at 1920, 1440, 1024, 768, 390, 360 (dark) and 1440/390 (light).
 

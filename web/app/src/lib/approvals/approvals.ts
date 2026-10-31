@@ -1,9 +1,9 @@
-// Approvals page: the context every Inbox arrangement (inbox.ts) and the
+// Requests page: the context every Inbox arrangement (inbox.ts) and the
 // one-by-one review get from the page, and the small rules they share.
 
 import type { Ask } from '../types.ts';
 import type { StatusKind } from '../ui/StatusPill.svelte';
-import type { ApproverTab, AskTab } from '../wishlist.ts';
+import type { ApproverTab, AskTab } from '../requests.ts';
 import type { TitleDetails } from '../title-details.ts';
 import type { LibraryFolder, PickRulesView } from '../types.ts';
 import type { AskInfo, EpisodeInfo } from './inbox.ts';
@@ -143,7 +143,7 @@ export interface ApprovalsCtx {
 	info(a: Ask): AskInfo | null;
 	/** One season's episodes (null until known); asks once. */
 	episodes(tmdb: string, season: number): EpisodeInfo[] | null;
-	/** The Wishlist's default Pick rules for the ask's kind, by name ('' when unknown). */
+	/** The Requests page's default Pick rules for the ask's kind, by name ('' when unknown). */
 	defaultRule(a: Ask): string;
 	readonly kind: 'all' | 'movie' | 'show' | 'artist';
 	setKind(k: 'all' | 'movie' | 'show' | 'artist'): void;

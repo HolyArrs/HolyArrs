@@ -99,7 +99,7 @@ export function verbOf(kind: string): Verb {
 		case 'scan': return { word: 'Scanned', icon: 'refresh', tone: 'idle' };
 		case 'decide': return { word: 'Needs a decision', icon: 'alert', tone: 'wait' };
 		case 'health': return { word: 'Health', icon: 'alert', tone: 'fail' };
-		case 'wishlist': return { word: 'Wishlist', icon: 'wish', tone: 'info' };
+		case 'wishlist': return { word: 'Requests', icon: 'wish', tone: 'info' };
 		case 'links': return { word: kind === 'alert_failed' ? 'Alert failed' : 'Media server', icon: 'bell', tone: /failed|unreachable/.test(kind) ? 'fail' : 'idle' };
 	}
 	return { word: 'Other', icon: 'info', tone: 'idle' };

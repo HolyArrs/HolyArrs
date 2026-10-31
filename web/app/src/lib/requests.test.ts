@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
+import { approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './requests.ts';
 import type { AskKindLimit, AskLimit, AskState } from './types.ts';
 
-describe('wishlist words', () => {
+describe('requests words', () => {
 	it('joins names', () => {
 		expect(names([])).toBe('');
 		expect(names(['ana'])).toBe('ana');
@@ -57,7 +57,7 @@ describe('wishlist words', () => {
 	});
 });
 
-describe('wishlist views', () => {
+describe('requests views', () => {
 	const ask = (state: string, mine: boolean) => ({ state, mine }) as Pick<import('./types.ts').Ask, 'state' | 'mine'>;
 
 	it('counts each view', () => {

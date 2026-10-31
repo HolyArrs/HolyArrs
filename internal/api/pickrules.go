@@ -45,7 +45,7 @@ func useWords(u library.Use) string {
 	add(u.Versions, "Version", "Versions")
 	add(u.LibraryFolders, "Library folder", "Library folders")
 	add(u.OutsideLists, "Outside list", "Outside lists")
-	add(u.Wishlist, "Wishlist setting", "Wishlist settings")
+	add(u.Wishlist, "Request setting", "Request settings")
 	add(u.TitleDefaults, "Movies and TV default", "Movies and TV defaults")
 	switch len(parts) {
 	case 0:

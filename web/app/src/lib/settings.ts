@@ -46,7 +46,7 @@ export const groups: Group[] = [
 export const sections: Section[] = [
 	{ href: '/settings/this-app', group: 'general', tint: 'gray', label: 'This app', icon: 'info', about: 'Version, updates, trailers, picture storage and where things are stored.' },
 	{ href: '/settings/appearance', group: 'general', tint: 'indigo', label: 'Appearance', icon: 'appearance', about: 'Light, dark or automatic, in this browser.', need: 'self' },
-	{ href: '/settings/parts', group: 'general', tint: 'graphite', label: 'Parts and controls', icon: 'grid', about: 'Turn Movies, TV shows, Music, Subtitles and the Wishlist on or off; restart one part or stage.', need: 'users' },
+	{ href: '/settings/parts', group: 'general', tint: 'graphite', label: 'Parts and controls', icon: 'grid', about: 'Turn Movies, TV shows, Music, Subtitles and Requests on or off; restart one part or stage.', need: 'users' },
 
 	{ href: '/settings/library-folders', group: 'library', tint: 'blue', label: 'Library folders', icon: 'folder', about: 'Where finished movies, shows and music live, and their health.' },
 	{ href: '/settings/naming', group: 'library', tint: 'teal', label: 'Naming and files', icon: 'film', about: 'How files and folders are named, the holding folder and free space.' },
@@ -62,7 +62,7 @@ export const sections: Section[] = [
 	{ href: '/settings/outside-lists', group: 'copies', tint: 'teal', label: 'Outside lists', icon: 'inbox', about: 'TMDB and Trakt lists that add movies by themselves, and the Never-add list.' },
 
 	{ href: '/settings/users', group: 'people', tint: 'blue', label: 'Users and roles', icon: 'people', about: 'Invite family and friends, roles, permissions and devices.', need: 'users' },
-	{ href: '/settings/wishlist', group: 'people', tint: 'pink', label: 'Wishlist rules', icon: 'wish', about: 'Weekly limits, and the folder and Pick rules approved asks get.' },
+	{ href: '/settings/wishlist', group: 'people', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Weekly limits, and the folder and Pick rules approved asks get.' },
 	{ href: '/settings/sign-in', group: 'people', tint: 'graphite', label: 'Sign-in and security', icon: 'shield', about: 'Plex, Jellyfin and Emby sign-in, two-factor rules, the local network and API keys.' },
 
 	{ href: '/settings/media-servers', group: 'linked', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Tell Plex, Jellyfin or Emby about imports, renames and deletes.' },

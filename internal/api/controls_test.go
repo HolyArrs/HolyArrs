@@ -232,7 +232,7 @@ func TestAskRefusedWhenItsPartIsOff(t *testing.T) {
 	}
 	confirmTwice(t, u+"parts/movies/off", 200)
 	do(t, "POST", u+"asks", `{"id":"tmdb:1"}`, 409)
-	// The Wishlist itself off: every ask route says so.
+	// Requests itself off: every ask route says so.
 	confirmTwice(t, u+"parts/wishlist/off", 200)
 	do(t, "GET", u+"asks", "", 409)
 }

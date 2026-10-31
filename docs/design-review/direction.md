@@ -22,7 +22,7 @@ Prompt 2 owns the implemented app frontend across desktop, tablet and phone. Thi
 | Downloads | Active/finished/import rows, nested episodes, progress, remove and mark failed | Text state plus color; full release names; touch actions; removal consequences |
 | Decisions and history | Retry, choose release, version, turn down, stop; filters, details, pagination | Recovery adjacent to cause; no destructive one-click shortcut |
 | Calendar | Month/list, month controls, kind filters, phone feed | Desktop month; tablet readable cells; phone agenda; preserve feed function |
-| Wishlist | Personal asks or approval inbox, filters, messages, approve/turn down | Member/admin variants; long names; badges; accessible decision dialog |
+| Requests | Personal asks or approval inbox, filters, messages, approve/turn down | Member/admin variants; long names; badges; accessible decision dialog |
 | Library operations | Import scan/adopt, rename plans, copy selection and bulk search | Staged preview/review/apply; preserve protection, warnings, cancellation and exact file scope |
 | Settings | Account, people/users, linked apps, folders, pick rules, naming, music, subtitles, Wishlist, lists, schedules, parts, sign-in, alerts, health/logs, backups, migration, API | Searchable section index; persistent section selection on tablet/phone; credentials remain masked; separate test/save feedback |
 | Access | Sign-in/OTP, SSO/Plex/proxy, invitation, first-run welcome | Actual available options only; forms, validation, password reveal, recovery and keyboard access |

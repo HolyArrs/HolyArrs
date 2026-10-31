@@ -298,7 +298,7 @@ func TestRestartNeverCutsOffAJob(t *testing.T) {
 	}
 }
 
-// Subtitles need Movies or TV shows; the Wishlist needs one of Movies, Shows
+// Subtitles need Movies or TV shows; Requests needs one of Movies, Shows
 // and Music. A switch that breaks either is refused with the reason.
 func TestDependencies(t *testing.T) {
 	f := newFix(t)
@@ -321,7 +321,7 @@ func TestDependencies(t *testing.T) {
 	must(Subtitles, false)
 	must(Shows, false)
 	refused(Subtitles, true, "Turn Movies or TV shows on first")
-	refused(Music, false, "Turn the Wishlist off first")
+	refused(Music, false, "Turn Requests off first")
 	must(Wishlist, false)
 	must(Music, false)
 	refused(Wishlist, true, "Turn one of them on first")
@@ -498,7 +498,7 @@ func TestSchedulesOfAnOffPartWait(t *testing.T) {
 func TestScreenOwner(t *testing.T) {
 	for path, want := range map[string]Owner{
 		"/library/held": Media, "/library/12": ByTitle, "/library/12/albums/3": Of(Music), "/settings/music": Of(Music),
-		"/wishlist": Of(Wishlist), "/": Core, "/settings/sources/4": Core,
+		"/requests": Of(Wishlist), "/": Core, "/settings/sources/4": Core,
 	} {
 		if got, ok := ScreenOwner(path); !ok || got != want {
 			t.Errorf("%s: %q, want %q", path, got, want)

@@ -45,7 +45,7 @@ Unknown `row`, missing `id`/`g`: `400 {"error": "..."}`.
 
 - `title` optional; the app has its own fallback words.
 - `in_library` + `title_id`: matched by TMDB id against the Library (and by TVDB/TMDB show id for shows).
-- `ask`: the open Wishlist ask for this item, or `null`. Same shape as the `ask` on `PersonMovie` today.
+- `ask`: the open request for this item, or `null`. Same shape as the `ask` on `PersonMovie` today.
 - At most 20 items. Never-add items are left out.
 - The card's + uses `tmdb:<tmdb_id>` with the existing `POST /asks` (members) or the Search add flow (`manage_library`).
 
@@ -104,7 +104,7 @@ What is asked for:
 - **TMDB key present.** **Built** as `tmdb_key_set` on the status route. `GET /settings/tmdb-token` needs a recent password, so without one the home cannot tell whether a key is missing. Please add `tmdb_key_set: boolean` to that status route, or to `GET /health`, for anyone with the settings permission. Never send the key itself.
 - **Status for the other groups.**
   - Media servers and Alerts keep no last test result, so Linked apps can only show a failure through `/health/states`.
-  - Sign-in and security, and Wishlist and people, have no health signal at all, so their cards show no status line.
+  - Sign-in and security, and Requests and people, have no health signal at all, so their cards show no status line.
   - Ask: store the last test result for media servers and Alerts (`last_test_at`, `last_test_ok`, `last_test_text`), the same way Sources and Downloaders already do.
 - **Editing Pick rules.** The app can only list them (`GET /pick-rules`). The new page *Getting copies › Pick rules* lists them and says where each is chosen. Editing needs `POST`, `PUT` and `DELETE /api/v1/pick-rules`, with the rule body the server already keeps.
 - **Reset in Danger zone.** HolyArrs has no in-app reset; the owner reset is the `holyarrs reset-owner` command. If one is wanted, it needs a route that asks a second time, like `POST /app/restart` does. Until then Danger zone holds Restart, Restart in safe mode and Shut down.

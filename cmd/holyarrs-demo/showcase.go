@@ -884,7 +884,7 @@ func safeName(s string) string {
 	}, s), ". ")
 }
 
-// showcaseAsks makes the Wishlist: asks waiting for approval (a member's
+// showcaseAsks makes Requests: asks waiting for approval (a member's
 // and a Kid's), one approved (added and looked for), one turned down, a new
 // season of a show already kept, and an artist.
 func (w *world) showcaseAsks(ctx context.Context) error {

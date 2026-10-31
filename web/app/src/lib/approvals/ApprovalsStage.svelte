@@ -27,7 +27,7 @@
 	import { api } from '../api.ts';
 	import type { AlbumSummary, TitleView } from '../types.ts';
 	import { shortDate } from './inbox.ts';
-	import { askTab } from '../wishlist.ts';
+	import { askTab } from '../requests.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';

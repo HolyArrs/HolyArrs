@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { api, message } from './api.ts';
 	import { toasts } from './toasts.svelte.ts';
-	import { refreshInbox } from './wishlist.svelte.ts';
+	import { refreshInbox } from './requests.svelte.ts';
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';

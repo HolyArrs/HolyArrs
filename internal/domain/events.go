@@ -18,7 +18,7 @@ const (
 	EventListSynced       = "list_synced"     // an Outside list was read and its new movies added
 )
 
-// Event kinds for asks (the Wishlist) and Alerts.
+// Event kinds for asks (Requests) and Alerts.
 const (
 	EventAskMade       = "ask_made"        // someone asked for a movie
 	EventAskJoined     = "ask_joined"      // someone asked for a movie already asked for

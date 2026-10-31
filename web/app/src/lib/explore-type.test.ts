@@ -59,6 +59,6 @@ describe('typeHref', () => {
 	});
 	it('adds type= to other pages', () => {
 		expect(typeHref('/calendar', 'movies')).toBe('/calendar?type=movies');
-		expect(typeHref('/wishlist', 'shows')).toBe('/wishlist?type=shows');
+		expect(typeHref('/requests', 'shows')).toBe('/requests?type=shows');
 	});
 });

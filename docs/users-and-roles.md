@@ -11,13 +11,13 @@ There are three roles:
 | --- | --- |
 | Owner | The first account. It can do everything and cannot be changed or turned off from the Users screen. |
 | Admin | May manage members and the Library according to its permissions. |
-| Member | Usually asks for titles and sees their own Wishlist. |
+| Member | Usually asks for titles and sees their own Requests. |
 
 The five assignable permissions are:
 
 | Permission | Allows |
 | --- | --- |
-| Ask for titles | Make asks through the Wishlist. |
+| Ask for titles | Make asks through Requests. |
 | Asks approved without waiting | Add an ask without waiting for another person. |
 | Approve or turn down asks | Decide other people's asks. |
 | Run the Library | Search, organise and manage Library work. |
@@ -54,7 +54,7 @@ permissions from this screen.
 
 Changing a role selects that role's default permissions before the change is
 saved. Weekly movie, show and music ask limits accept a whole number from 0 to
-1000. Empty uses the default from **Settings > Wishlist**; 0 means no limit.
+1000. Empty uses the default from **Settings > Request rules**; 0 means no limit.
 People who may approve asks have no weekly ask limit.
 
 **Turn off** signs the person out everywhere, removes their API keys, and

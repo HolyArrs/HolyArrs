@@ -58,9 +58,9 @@ test('the owner invites a member with a one-time link', async ({ browser }) => {
 	await expect(own.getByText('Used by ana')).toBeVisible();
 });
 
-test('a member sees Home, the Library, Search, Wishlist and My account only', async () => {
+test('a member sees Home, the Library, Search, Requests and My account only', async () => {
 	const nav = ana.getByRole('navigation', { name: 'Main' }).first();
-	for (const label of ['Home', 'Explore', 'Movies', 'Wishlist']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
+	for (const label of ['Home', 'Explore', 'Movies', 'Requests']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
 	await expect(ana.getByTestId('search-box')).toBeVisible();
 	for (const label of ['Downloads', 'Calendar', 'History', 'Library tools']) await expect(nav.getByRole('link', { name: label })).toHaveCount(0);
 	await expect(ana.getByRole('link', { name: 'Settings' })).toHaveCount(0);
@@ -73,8 +73,8 @@ test('a member sees Home, the Library, Search, Wishlist and My account only', as
 		await expect(ana).toHaveURL(/\/$/);
 	}
 	await expect(ana.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
-	await ana.goto('/wishlist');
-	await expect(ana.getByRole('heading', { name: 'Nothing on the Wishlist yet' })).toBeVisible();
+	await ana.goto('/requests');
+	await expect(ana.getByRole('heading', { name: 'Nothing on the Requests page yet' })).toBeVisible();
 	await ana.goto('/search?q=Dune');
 	await expect(ana.getByRole('heading', { level: 2 }).first()).toBeVisible();
 	await expect(ana.getByRole('button', { name: 'Add' })).toHaveCount(0);

@@ -64,7 +64,7 @@
 			<p class="small muted">
 				{picked.ask
 					? `Someone asked for it already (${picked.ask.state_label}). Asking joins their ask, and you hear when it is ready.`
-					: 'It goes on the Wishlist. You hear when it is approved and when it is ready to watch.'}
+					: 'It goes on the Requests page. You hear when it is approved and when it is ready to watch.'}
 			</p>
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />

@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals, openSeason, seasonCount, episodeAction, episodeKept, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openRequests, openSeason, seasonCount, episodeAction, episodeKept, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss
@@ -158,7 +158,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await max.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(max).toHaveURL(/\/$/);
 
-	await max.goto('/wishlist');
+	await max.goto('/requests');
 	await expect(max.getByTestId('ask-limit')).toContainText('show asks left this week');
 	await openFromSearch(max, 'lantern', 'Lantern Street', 'show');
 	await noSidewaysScroll(max);
@@ -179,20 +179,20 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await openFromSearch(max, 'harbour', 'Harbour Lights', 'show');
 	await expect(max.getByTestId('ask-seasons-more')).toBeVisible();
 
-	await max.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
+	await max.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = max.getByTestId('ask').filter({ hasText: 'Lantern Street' });
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByTestId('ask-kind')).toHaveText('Show');
 	await expect(ask.getByTestId('ask-seasons')).toHaveText('Asked for seasons 1 and 2');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);
 	await noSidewaysScroll(max);
-	await axe(max, 'wishlist member phone');
+	await axe(max, 'requests member phone');
 });
 
 test('the owner approves from a phone: the show is added with those seasons and max is told', async ({ browser }) => {
 	const phone = await fresh(browser, 412);
 	await signIn(phone, owner());
-	await openApprovals(phone);
+	await openRequests(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Lantern Street' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by max');
 	// The row's Approve is one tap with Undo; Review holds Choose what to add.
@@ -230,7 +230,7 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await expect(own.getByTestId('history-row').filter({ hasText: 'Lantern Street' }).filter({ hasText: 'Approved by luis' }).first()).toBeVisible();
 
 	// max reads the message; members see no switches on the show page.
-	await max.goto('/wishlist');
+	await max.goto('/requests');
 	await expect(max.getByTestId('message').first()).toContainText('Lantern Street (2023), seasons 1 and 2 was approved by luis');
 	await expect(max.getByTestId('message').first()).toContainText('Seasons 1 and 2 coming up');
 	await max.getByTestId('ask').filter({ hasText: 'Lantern Street' }).getByRole('link', { name: /Lantern Street/ }).click();

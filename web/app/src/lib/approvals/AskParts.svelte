@@ -14,7 +14,7 @@
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
 
-	let { ctx, a, editable = false, unfolded = false, layout = 'list', pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: ApprovalsCtx; a: Ask; editable?: boolean; /** Open from the start, with the first season's episodes showing (the Approvals Stage). */ unfolded?: boolean; /** Rows that open (list), or two panes that fill their box (split: the Approvals sheet). */ layout?: 'list' | 'split'; pick?: PartsPick } = $props();
+	let { ctx, a, editable = false, unfolded = false, layout = 'list', pick = $bindable({ seasons: null, albums: null, empty: false }) }: { ctx: ApprovalsCtx; a: Ask; editable?: boolean; /** Open from the start, with the first season's episodes showing (the Requests Stage). */ unfolded?: boolean; /** Rows that open (list), or two panes that fill their box (split: the Requests sheet). */ layout?: 'list' | 'split'; pick?: PartsPick } = $props();
 
 	const music = $derived(a.kind === 'artist');
 	const artist = $derived(music ? askArtist(a) : null);

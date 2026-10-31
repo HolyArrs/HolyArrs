@@ -15,7 +15,7 @@ const output = path.join(outputRoot, runId);
 const artworkHosts = new Set(['image.tmdb.org', 'static.tvmaze.com', 'is1-ssl.mzstatic.com']);
 const routes = [
 	{ path: '/library?kind=movie', name: 'library-list', prepare: async (page) => page.getByRole('button', { name: 'List' }).click() },
-	{ path: '/wishlist', name: 'requests' },
+	{ path: '/requests', name: 'requests' },
 	{ path: '/downloads', name: 'downloads' },
 	{ path: '/settings', name: 'settings' }
 ];

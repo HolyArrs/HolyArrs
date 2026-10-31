@@ -40,10 +40,10 @@ export default defineConfig({
 		{ name: 'a11y', testMatch: 'a11y.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['accounts'] },
 		{ name: 'movies', testMatch: 'movies.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['a11y'] },
 		{ name: 'lists', testMatch: 'lists.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['movies'] },
-		// The Wishlist at phone width: a member asks, the owner approves from a phone.
-		{ name: 'wishlist', testMatch: 'wishlist.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['lists'] },
+		// The Requests page at phone width: a member asks, the owner approves from a phone.
+		{ name: 'requests', testMatch: 'requests.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['lists'] },
 		// Sources: add, test, a wrong key, pause, the health page, an rss feed.
-		{ name: 'sources', testMatch: 'sources.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['wishlist'] },
+		{ name: 'sources', testMatch: 'sources.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['requests'] },
 		// Search: Choose a release, Held and Turned down, Home, Settings > Search.
 		{ name: 'search', testMatch: 'search.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['sources'] },
 		// Downloaders: SABnzbd and qBittorrent fakes, the settings, Mark failed on a movie, phone width and accessibility.
@@ -74,7 +74,7 @@ export default defineConfig({
 		{ name: 'subtitles', testMatch: 'subtitles.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicorganise'] },
 		// Several Versions per show: add a show with a 4K Version, both Versions searched with their own pack, History names the Version, change, add and remove Versions, a busy Version stays, a phone.
 		{ name: 'showversions', testMatch: 'showversions.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['subtitles'] },
-		// Parts: the Wishlist and Music turned off hide their menu entries and Settings tiles, a direct link says the part is off, its routes answer 409, and on again everything is back.
+		// Parts: Requests and Music turned off hide their menu entries and Settings tiles, a direct link says the part is off, its routes answer 409, and on again everything is back.
 		{ name: 'parts', testMatch: 'parts.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['showversions'] },
 		// Move from other apps: read a fake old Radarr and Seerr, the plan with a suggested path rule, a dry run, the move and its report, a second try adds nothing, undo, a phone and accessibility.
 		{ name: 'move', testMatch: 'move.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['parts'] },

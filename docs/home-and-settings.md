@@ -8,7 +8,7 @@ configuration screen the signed-in person may use.
 After the owner account is made, HolyArrs asks an owner or admin to:
 
 1. Turn Movies, Shows, Music and Subtitles on or off, and say whether family
-   or friends will use the Wishlist.
+   or friends will use Requests.
 2. Add one Library folder for movies, shows or music.
 
 Metadata needs no keys; see [Metadata](metadata-keys.md).
@@ -100,7 +100,7 @@ approved asks keep their own settings.
 read, change and remove Pick rules (reading needs Run the Library, the rest
 Change settings). A change bumps `revision`. Ready-made rules keep their name
 and kinds and cannot be removed; their rules may change. Rules in use (by a
-Version, a Library folder, an Outside list, a Wishlist setting or a Movies and
+Version, a Library folder, an Outside list, a Request setting or a Movies and
 TV default; `in_use` counts each) cannot be removed, drop a kind in use, or
 switch between video and music: those answer 409 with `in_use`. A wrong field
 answers 400 `{"error", "field"}` where `field` is a dotted path such as
@@ -112,7 +112,7 @@ answers 400 `{"error", "field"}` where `field` is a dotted path such as
 | --- | --- | --- |
 | My account, Alerts for you | **New episodes of shows I asked for** | On |
 | My account | **Show my name on my asks** (people who may ask) | Off |
-| Settings > Wishlist | **Show who asked** (household): owner, admins and managers only, or everyone | Owner, admins and managers only |
+| Settings > Request rules | **Show who asked** (household): owner, admins and managers only, or everyone | Owner, admins and managers only |
 | Settings > This app | **Autoplay trailers** | On |
 | Settings > This app | **Keep yt-dlp up to date** | On |
 

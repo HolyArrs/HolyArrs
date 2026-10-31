@@ -162,7 +162,7 @@ async function createMusicAsk(ctx, page, metadata) {
 }
 
 async function wishlistRow(page, base, metadata) {
-	await open(page, base, '/wishlist');
+	await open(page, base, '/requests');
 	const row = page.getByTestId('ask').filter({ hasText: metadata.name });
 	await row.waitFor();
 	return row;
@@ -326,7 +326,7 @@ async function saveAndRestoreMemberAlerts(ctx) {
 }
 
 async function markMemberMessagesRead(ctx) {
-	await open(ctx.member, ctx.base, '/wishlist');
+	await open(ctx.member, ctx.base, '/requests');
 	const before = await ctx.get(ctx.member, '/messages');
 	const button = ctx.member.getByRole('button', { name: 'Mark all read', exact: true });
 	if (before.unread > 0) {

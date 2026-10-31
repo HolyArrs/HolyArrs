@@ -33,7 +33,7 @@ in square brackets.
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](subtitles.md). |
 | Search | `/search` | [Searching for movies](search-movies.md), [shows](search-shows.md), and [music](search-music.md). |
 | Calendar | `/calendar` | [History and the calendar](history-and-calendar.md#calendar). |
-| Wishlist | `/wishlist` | Adding and asking guides for [movies](request-movies.md), [shows](request-shows.md), and [music](request-music.md). |
+| Requests | `/requests` | Adding and asking guides for [movies](request-movies.md), [shows](request-shows.md), and [music](request-music.md). |
 | Settings | `/settings` | [Home and Settings](home-and-settings.md#settings), plus this screen-to-guide map. |
 | Alerts | `/settings/alerts` | [Alerts, health checks and media servers](alerts-and-health.md). |
 | Backups | `/settings/backups` | [Backups](backups.md), including schedules, the master key and restore. |
@@ -55,7 +55,7 @@ in square brackets.
 | Search settings | `/settings/search` | [Searching for movies](search-movies.md), [shows](search-shows.md), and [music](search-music.md). |
 | Music settings | `/settings/music` | [Adding and asking for music](request-music.md), [searching for music](search-music.md), and [organising music](organise-music.md). |
 | Subtitles | `/settings/subtitles` | [Subtitles](subtitles.md). |
-| Wishlist settings | `/settings/wishlist` | Adding and asking guides for [movies](request-movies.md), [shows](request-shows.md), and [music](request-music.md). |
+| Request settings | `/settings/wishlist` | Adding and asking guides for [movies](request-movies.md), [shows](request-shows.md), and [music](request-music.md). |
 
 ## Guides without their own screen
 

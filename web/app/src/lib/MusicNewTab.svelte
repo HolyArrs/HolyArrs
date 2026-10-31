@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 	import { api, message } from './api.ts';
 	import { toasts } from './toasts.svelte.ts';
-	import { refreshInbox } from './wishlist.svelte.ts';
+	import { refreshInbox } from './requests.svelte.ts';
 	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music/music-trending.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
