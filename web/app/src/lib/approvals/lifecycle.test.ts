@@ -57,7 +57,7 @@ describe('lifecycle', () => {
 describe('ready with more to request', () => {
 	it('names what came in and what is left to ask for', () => {
 		const l = lifecycle(ask('approved', 7), { partial: { have: 2, total: 2, unit: 'albums' }, more: 5 });
-		expect(l).toMatchObject({ stage: 'ready', label: 'Ready · 2 albums', more: '5 more out' });
+		expect(l).toMatchObject({ stage: 'ready', label: 'Ready · 2 albums', more: '5 more available' });
 		expect(lifecycle(ask('available', 7), { partial: { have: 1, total: 1, unit: 'seasons' } })).toMatchObject({ label: 'Ready · 1 season' });
 		expect(lifecycle(ask('available', 7)).more).toBeUndefined();
 	});

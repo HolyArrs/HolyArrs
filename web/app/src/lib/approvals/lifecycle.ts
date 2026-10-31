@@ -14,7 +14,7 @@ export interface Life {
 	/** wait (amber), soon (muted), go (accent), ok (green), off (dim), bad (red). */
 	tone: 'wait' | 'soon' | 'go' | 'ok' | 'off' | 'bad';
 	label: string;
-	/** Ready with more of the title not asked for: "5 more out". */
+	/** Ready with more of the title not asked for: "5 more available". */
 	more?: string;
 }
 
@@ -63,7 +63,7 @@ const word = (n: number, unit: 'seasons' | 'albums') => `${n} ${n === 1 ? unit.s
 function ready(f: LifeFacts): Life {
 	const part = f.partial;
 	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
-	if (f.more && f.more > 0) life.more = `${f.more} more out`;
+	if (f.more && f.more > 0) life.more = `${f.more} more available`;
 	return life;
 }
 
