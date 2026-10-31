@@ -1254,16 +1254,23 @@
 	{@const t = d?.torrent}
 	{#if tab === 'Info'}
 		{@const groups = tor ? infoGroups(r, d) : [{ cap: 'Details', rows: simple.filter((x) => x.label !== 'Requested by' && x.value !== 'Not reported yet').map((x) => ({ k: x.label, v: x.value, path: x.label === 'Folder' || x.label === 'Source' } as Fact)).concat(d?.requested_by ? [{ k: 'Requested by', v: d.requested_by, tid: 'dl-info-asker' }] : []) }]}
+		{@const shown = groups.filter((g) => g.rows.length)}
 		<div class="facts" data-testid="dl-info">
 			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{CALM_ERR}</span><button type="button" class="xbn" onclick={() => void readDetail(r, 'Info')} data-testid="dl-panel-retry">Retry</button></p>{/if}
-			{#each groups as g (g.cap)}
-				{#if tor}<h3 class="fcap">{g.cap}</h3>{/if}
-				<dl class="fgrid" aria-label={g.cap}>
-					{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path ? x.v : undefined} data-testid={x.tid}>{x.v}</dd></div>{/each}
-				</dl>
+			{#if shown.length}
+				<div class="fcols" style="--fn: {shown.length}">
+					{#each shown as g (g.cap)}
+						<div class="fcol">
+							{#if tor}<h3 class="fcap">{g.cap}</h3>{/if}
+							<dl class="fgrid" aria-label={g.cap}>
+								{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path || x.v.length > 24 ? x.v : undefined} data-testid={x.tid}>{x.v}</dd></div>{/each}
+							</dl>
+						</div>
+					{/each}
+				</div>
 			{:else}
 				<p class="fnone">Nothing reported yet.</p>
-			{/each}
+			{/if}
 		</div>
 	{:else if tab === 'Files'}
 		{@const files = det.id === r.id ? det.files : undefined}
@@ -1421,10 +1428,19 @@
 		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
 		{ label: 'Requested by', value: '–' }
 	]}
-	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
+	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `max-height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="ph">
 			<p class="xt pt"><b>{who(r)}</b><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></p>
 			{@render tabStrip(r)}
+			{#if paneOpen}
+			<div class="pact" data-testid="dl-pane-actions">
+				{#if /fail|replac/i.test(`${r.phase} ${r.state}`)}<a class="tdl" href={to('/downloads/history?tab=turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
+				{#if r.can_act && !watch && !inHistory(r) && !r.client_item}
+					<button type="button" class="xbn quiet" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button>
+				{/if}
+				{@render btns(r, false)}
+			</div>
+			{/if}
 			<button type="button" class="pcl" aria-expanded={paneOpen} aria-label={paneOpen ? 'Collapse details' : 'Expand details'} onclick={() => (paneOpen = !paneOpen)} data-testid="dl-pane-toggle"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
 		</div>
 		{#if paneOpen}
@@ -1435,15 +1451,6 @@
 				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 			</div>
 		</div>
-		<footer class="pact">
-			{@render btns(r, false)}
-			<span class="pend">
-				{#if /fail|replac/i.test(`${r.phase} ${r.state}`)}<a class="tdl" href={to('/downloads/history?tab=turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
-				{#if r.can_act && !watch && !inHistory(r) && !r.client_item}
-					<button type="button" class="xbn quiet" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button>
-				{/if}
-			</span>
-		</footer>
 		{/if}
 	</section>
 {/snippet}
@@ -1895,20 +1902,20 @@
 	.tview { animation: tabin var(--dur) var(--ease-out); }
 	@keyframes tabin { from { opacity: 0; transform: translateY(4px); } }
 	@keyframes fadein { from { opacity: 0; } }
-	.pact { position: relative; flex: none; margin-top: auto; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px var(--dl-gutter); border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 70%, transparent); }
-	.pact .xbt { margin: 0; gap: 8px; }
-	.pact .xbn { min-height: 32px; padding: 0 12px; border-radius: var(--r-btn); font: var(--t-footnote); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
+	/* Actions sit in the panel header, right side, next to the chevron. */
+	.pact { position: relative; flex: none; margin-left: auto; display: flex; align-items: center; gap: 6px; min-width: 0; }
+	.ph .pcl { margin-left: 0; }
+	.pact .xbt { margin: 0; gap: 6px; flex-wrap: nowrap; }
+	.pact .xbn { min-height: 26px; padding: 0 10px; border-radius: var(--r-btn); font: var(--t-footnote); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
-	.pact .more { min-width: 32px; padding: 0 8px; }
-	.pend { display: flex; align-items: center; gap: 12px; margin-left: auto; padding-left: 8px; }
-	.pend:has(.quiet) { border-left: 1px solid var(--line); padding-left: 16px; }
-	.pend:empty { display: none; }
+	.pact .more { min-width: 28px; padding: 0 6px; }
+	.pact .xbn.quiet { padding: 0 8px; }
 	.xbn.quiet { border-color: transparent; background: none; color: var(--text-muted); }
 	.xbn.quiet:hover:not(:disabled) { border-color: color-mix(in srgb, var(--fail) 35%, transparent); background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail); }
 	.tdl { color: var(--text-muted); font: var(--t-caption); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--r-sm); }
 	.tdl:hover { color: var(--text); }
 	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pact .mn { position: absolute; left: var(--dl-gutter); bottom: calc(100% + 4px); margin: 0; z-index: 6; transform-origin: bottom left; animation: menin var(--dur) var(--ease-out); }
+	.pact .mn { position: absolute; right: 0; top: calc(100% + 4px); margin: 0; z-index: 6; transform-origin: top right; animation: menin var(--dur) var(--ease-out); }
 	@keyframes menin { from { opacity: 0; transform: translateY(4px) scale(0.97); } }
 	.mi { border-radius: var(--r-sm); transition: background-color var(--dur-fast) var(--ease-out); }
 	.mi:hover:not(:disabled) { background: var(--surface-2); }
@@ -2022,7 +2029,7 @@
 		.pb { grid-template-columns: minmax(0, 1fr); }
 		.pb .big { display: none; }
 		.pb .tblw { max-height: 40dvh; }
-		.pact { flex-wrap: wrap; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+		.pact { flex-wrap: wrap; }
 		.pend:has(.quiet) { border-left: 0; padding-left: 0; }
 	}
 	/* Info cards share the Files table's depth: raised surface, tinted title band, full-width hairline rows, zebra. */
@@ -2080,23 +2087,33 @@
 	.pb .big { width: 160px; height: 240px; border-radius: var(--r-card); box-shadow: 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16); }
 	.pb .big :global(.poster) { border-radius: var(--r-card); }
 	.pb .big.square { height: 160px; }
-	.facts { min-width: 0; padding: 4px 0; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: hidden; }
+	.facts { justify-self: start; width: fit-content; max-width: 100%; box-sizing: border-box; min-width: 0; padding: 4px 0; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: hidden; }
 	.fcap { margin: 0; padding: 10px 12px 2px; color: var(--text-muted); font: var(--t-caption); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-	.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); column-gap: 24px; margin: 0; padding: 0 12px; }
-	.fr { display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 32px; border-bottom: 1px solid var(--line); font: var(--t-caption); }
+	.fcols { display: grid; grid-template-columns: repeat(var(--fn, 4), minmax(0, 280px)); }
+	.fcol { min-width: 0; padding: 0 0 6px; }
+	.fcol + .fcol { border-left: 1px solid var(--line); }
+	.fgrid { display: block; margin: 0; padding: 0 14px; }
+	.fr { display: flex; align-items: center; gap: 16px; min-width: 0; height: 30px; box-sizing: border-box; border-bottom: 1px solid var(--line); font: var(--t-caption); }
 	.fr dt { flex: none; color: var(--text-muted); }
 	.fr dd { flex: 1 1 auto; min-width: 0; margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fr dd.path { direction: rtl; }
-	.fgrid:last-child .fr { border-bottom-color: transparent; }
-	.fgrid:last-child { margin-bottom: 0; }
+	.fr:last-child { border-bottom-color: transparent; }
 	.fnone { margin: 0; padding: 10px 12px; color: var(--text-muted); font: var(--t-caption); }
 	.calm.slim { margin: 4px 8px 4px; padding: 4px 4px 4px 10px; gap: 8px; border-color: var(--line); background: color-mix(in srgb, var(--surface-3) 50%, var(--surface-2)); font: var(--t-caption); }
 	.calm.slim .xbn { min-height: 24px; }
+	@media (max-width: 1100px) and (min-width: 768px) {
+		.fcols { grid-template-columns: repeat(min(var(--fn, 2), 2), minmax(0, 280px)); }
+		.fcol:nth-child(odd) { border-left: 0; }
+		.fcol:nth-child(even) { border-left: 1px solid var(--line); }
+		.fcol:nth-child(n + 3) { border-top: 1px solid var(--line); }
+	}
 	@media (max-width: 767px) {
 		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
 		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
 		.pb .big.square { height: 56px; }
-		.fgrid { grid-template-columns: minmax(0, 1fr); }
+		.fcols { grid-template-columns: minmax(0, 1fr); }
+		.fcol + .fcol { border-left: 0; border-top: 1px solid var(--line); }
+		.facts { width: auto; justify-self: stretch; }
 	}
 	@media (max-width: 640px) {
 		.pb { grid-template-columns: minmax(0, 1fr); }
