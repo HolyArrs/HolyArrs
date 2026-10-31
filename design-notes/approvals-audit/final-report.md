@@ -45,3 +45,24 @@ Window open 532–581ms · close ~320ms · sheet reveal ~460ms · sheet collapse
 
 `?demo` (live-demo.ts) removed. Nothing else preview-only remains on this page.
 Searching / Downloading / Importing can't be checked on real data until something downloads.
+
+## Skill review round
+
+Four reviewers on real data (1920, 1440, 1024, 768, 390 touch, 360 touch; dark and light), then a critic pass that checked every finding against the code.
+
+| Skill | Top findings | Result |
+|---|---|---|
+| design-critique | Phone: Filter and Approve all on two full-width rows push the art down; Decline a small icon square next to a wide Approve; lifecycle line under every card | Fixed: one row, equal halves; equal icon-only answers on phones. Line kept (it is the lifecycle line by design) |
+| visual-verdict | Score 82 (revise): phone toolbar, uneven answers, empty space in What to add at 1440 | Phone items fixed; empty panel space kept for now |
+| high-end-visual-design | Light cards ring + hard shadow; meta text weak over bright art; chip sizes differ in the window | Not changed (Low/unchecked by critic) |
+| ux-copy | Approve toasts had a second sentence; "The download failed." vs "Couldn't add it to the library."; "Approved straight away (… may auto-approve)"; "Available" tab label in the inbox layout | Fixed: "Approved X.", "Couldn't download it." / "Couldn't add it to the Library.", "Auto-approved", "Ready" |
+| kill-ai-slop | Glow and kicker in FocusView (not on this page's list); scrims are for legibility | No change |
+| web-design-guidelines | Window close and backdrop still animated under reduced motion; press scale not removed; nested live region; progress fill animated width | Fixed all four (fill now scaleX) |
+| animation-vocabulary | Close used a different curve from the open; endless shimmer on the window's progress line | Close now uses the open's ease; shimmer kept (off under reduced motion) |
+| accessibility-scan / inspect | Approve buttons all named "Approve"; amber Pending count 3.84:1 in dark; phone tabs 32px tall; desktop Tab gets stuck in the search overlay | Fixed: "Approve {title}". Others left (below) |
+| critic | Rejected "Available" as an approver-page issue (inbox layout only); downgraded phone toolbar and Downloading % to Med | Followed |
+
+Also: "Declined by …" now shows your display name when you were the one who decided. The server only shares your own display name, so other approvers still show their account name until the asks view sends display names (server change).
+"Play trailer full screen" is the shared TrailerPlayer label (Explore too); left.
+
+Left open: Searching / Downloading · % / Importing words on Processing cards (Seerr shows one word; your call); amber count contrast; 44px phone tabs; search field opening on focus (shared shell); phone filter sheet still wraps a menu role; light card shadow; window panel height.
