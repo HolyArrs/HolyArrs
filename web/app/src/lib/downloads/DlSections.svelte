@@ -1136,7 +1136,8 @@
 		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
 	{:else if id === 'seeds' || id === 'peers'}
 		{@const n = id === 'seeds' ? r.seeds : r.peers}
-		<span class="num" class:ph data-col={id}>{!hist && r.protocol === 'torrent' && (r.phase === 'downloading' || r.phase === 'stalled') && n != null ? n : dash}</span>
+		{@const tot = id === 'seeds' ? r.seeds_total : r.peers_total}
+		<span class="num" class:ph data-col={id} title={tot ? `${n ?? 0} connected of ${tot} in the swarm` : undefined}>{#if r.protocol !== 'torrent'}{dash}{:else if tot}{n ?? 0}<span class="swt">&nbsp;({tot})</span>{:else if (r.phase === 'downloading' || r.phase === 'stalled') && n != null}{n}{:else}{dash}{/if}</span>
 	{:else if id === 'ratio'}
 		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null ? r.ratio.toFixed(2) : dash}</span>
 	{:else if id === 'up'}
@@ -2085,8 +2086,9 @@
 	.fbar .tfld:focus-visible { border-color: var(--line-strong); box-shadow: var(--focus-ring); }
 
 	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
-	.pb { grid-template-columns: 160px minmax(0, 1fr); gap: 20px; }
-	@media (min-width: 1800px) { .pb { grid-template-columns: 200px minmax(0, 1fr); gap: 28px; } .pb .big { width: 200px; height: 300px; } .pb .big.square { height: 200px; } }
+	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
+	.swt { color: var(--text-muted); font-weight: 400; }
+	@media (min-width: 1800px) { .pb { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; } .pb .big { width: 200px; height: 300px; } .pb .big.square { height: 200px; } }
 	.pb .big { width: 160px; height: 240px; border-radius: var(--r-card); box-shadow: 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16); }
 	.pb .big :global(.poster) { border-radius: var(--r-card); }
 	.pb .big.square { height: 160px; }

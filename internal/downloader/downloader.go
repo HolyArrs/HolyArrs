@@ -64,6 +64,8 @@ type Job struct {
 	UpSpeed     int64   // upload bytes per second (torrents)
 	Seeds       int     // connected seeds (torrents)
 	Peers       int     // connected peers (torrents)
+	SeedsTotal  int     // seeds in the whole swarm (torrents)
+	PeersTotal  int     // peers in the whole swarm (torrents)
 	ETA         int64   // seconds, 0 when unknown
 	State       string  // one of the State constants
 	Detail      string  // the engine's own state word, for reasons

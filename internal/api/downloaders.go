@@ -397,8 +397,11 @@ type DownloadView struct {
 	UpSpeed  int64   `json:"up_speed"`
 	Seeds    int     `json:"seeds"`
 	Peers    int     `json:"peers"`
-	ETA      *int64  `json:"eta,omitempty"`
-	Active   bool    `json:"active"`
+	// Whole-swarm counts, when the Downloader reports them.
+	SeedsTotal int    `json:"seeds_total,omitempty"`
+	PeersTotal int    `json:"peers_total,omitempty"`
+	ETA        *int64 `json:"eta,omitempty"`
+	Active     bool   `json:"active"`
 }
 
 // DownloadLabels are the words people see for Download states.

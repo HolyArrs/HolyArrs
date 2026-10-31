@@ -71,6 +71,8 @@ export interface DownloadView {
 	up_speed?: number;
 	seeds?: number;
 	peers?: number;
+	seeds_total?: number;
+	peers_total?: number;
 	eta?: number;
 	active: boolean;
 }

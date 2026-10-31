@@ -250,6 +250,8 @@ type qbitTorrent struct {
 	UPSpeed     int64    `json:"upspeed"`
 	NumSeeds    int      `json:"num_seeds"`
 	NumLeechs   int      `json:"num_leechs"`
+	NumComplete int      `json:"num_complete"`
+	NumIncompl  int      `json:"num_incomplete"`
 	ETA         int64    `json:"eta"`
 	State       string   `json:"state"`
 	AddedOn     int64    `json:"added_on"`
@@ -280,7 +282,7 @@ func (t qbitTorrent) job() Job {
 		eta = 0
 	}
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
-		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
+		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), SeedsTotal: max(t.NumComplete, 0), PeersTotal: max(t.NumIncompl, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
 		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker), TrackerProblem: t.problem(),
 		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0),
