@@ -6,7 +6,8 @@
 	// column grid: ▾ · poster · the picked columns · bin (columns.ts
 	// holds which columns exist and the saved layout). ▾ opens a row's details in place; the bin removes it
 	// (through the page's Remove dialog).
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
+	import { mergeDetail } from './detail-merge.ts';
 	import { page } from '$app/state';
 	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, sortRows, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
 	import { replaceState } from '$app/navigation';
@@ -176,7 +177,7 @@
 	type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number; fixed?: boolean; ref?: string };
 	type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
 	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string };
-	let det = $state<Det>({ id: 0 });
+	let det = $state.raw<Det>({ id: 0 });
 	// Panel reads never show the server's own words; a calm line and Retry instead.
 	const CALM_ERR = "Couldn't read this from the Downloader just now.";
 	let filesBusy = $state(false);
@@ -186,7 +187,7 @@
 	async function readDetail(r: DownloadRow, tab: string) {
 		const id = r.id;
 		const path = rowPath(r);
-		const next: Det = det.id === id ? { ...det } : { id };
+		const next: Partial<Det> & { id: number } = { id };
 		try {
 			next.detail = await api.get<Detail>(`${path}/detail`);
 		} catch {
@@ -213,7 +214,10 @@
 				}
 			}
 		}
-		if (openId === id) det = next;
+		if (openId !== id) return;
+		// Only a real change is written, so a quiet poll costs no re-render.
+		const merged = mergeDetail(det, next);
+		if (merged !== det) det = merged;
 	}
 	// Tracker editing in the Trackers tab: a picked tracker can get a new
 	// address or tier, or go; new ones are added one per line.
@@ -441,12 +445,21 @@
 	let paneH = $state(260);
 	let paneOpen = $state(true);
 	// Read the open download's detail now and every 3 seconds while it shows.
+	// The effect depends only on which row, which tab and whether the pane shows:
+	// not on the row object (replaced on every list refresh) nor on det (which
+	// readDetail writes), so it never restarts itself.
+	const openTab = $derived(openRow ? tabNow(openRow) : '');
 	$effect(() => {
-		const r = openRow;
-		if (!r || !paneOpen) return;
-		const tab = tabNow(r);
-		void readDetail(r, tab);
-		const t = setInterval(() => void readDetail(r, tab), 3000);
+		const id = openId;
+		const tab = openTab;
+		if (!id || !tab || !paneOpen) return;
+		const read = () =>
+			untrack(() => {
+				const r = everyRow.find((x) => x.id === id);
+				if (r) void readDetail(r, tab);
+			});
+		read();
+		const t = setInterval(read, 3000);
 		return () => clearInterval(t);
 	});
 	// The Downloaders' own status for the pills, every 5 seconds.
