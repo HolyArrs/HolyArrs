@@ -93,6 +93,16 @@
 	// and when it no longer exists in that tab.
 	let statusPick = $state<{ tab: ApproverTab | ''; word: string }>({ tab: '', word: '' });
 	/** The statuses in one tab, in the page's order (Processing: failed first). */
+	const FLOW = ['Pending', 'Upcoming', 'Searching', 'Downloading', 'Importing', 'Processing', 'Ready'];
+	const endsFlow = (x: { tone: Life['tone'] }) => x.tone === 'bad' || x.tone === 'off';
+	function menuKeys(e: KeyboardEvent) {
+		const items = [...(e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.dr')];
+		const i = items.indexOf(document.activeElement as HTMLElement);
+		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+			e.preventDefault();
+			items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+		}
+	}
 	const statusesIn = (t: ApproverTab) => {
 		const n = new Map<string, { count: number; tone: Life['tone'] }>();
 		for (const a of ctx.viewed) {
@@ -101,7 +111,9 @@
 			const x = n.get(w);
 			n.set(w, { count: (x?.count ?? 0) + 1, tone: x?.tone ?? lifeOf(a).tone });
 		}
-		return [...n].map(([word, x]) => ({ word, ...x })).sort((x, y) => Number(y.tone === 'bad') - Number(x.tone === 'bad'));
+		// The order an ask moves through; Failed and Declined end the list on their own.
+		const rank = (x: { word: string; tone: Life['tone'] }) => (x.tone === 'bad' || x.tone === 'off' ? 100 : (FLOW.indexOf(x.word) + 1 || 50));
+		return [...n].map(([word, x]) => ({ word, ...x })).sort((x, y) => rank(x) - rank(y));
 	};
 	const status = $derived(statusPick.word && statusPick.tab === ctx.approverTab && statusesIn(ctx.approverTab).some((x) => x.word === statusPick.word) ? statusPick.word : '');
 	$effect(() => {
@@ -134,7 +146,10 @@
 		if (now) dropTab = '';
 		else hideT = setTimeout(() => (dropTab = ''), 140);
 	}
-	function pickTab(t: ApproverTab) {
+	function pickTab(t: ApproverTab, e?: MouseEvent) {
+		// A mouse opens the menu by hovering; touch and keyboard open it with a second press on the open tab.
+		const viaMouse = (e as PointerEvent | undefined)?.pointerType === 'mouse';
+		if (ctx.approverTab === t && !viaMouse && dropTab !== t) return openDrop(t);
 		closeDrop(true);
 		if (ctx.approverTab === t) return;
 		statusPick = { tab: '', word: '' };
@@ -286,15 +301,24 @@
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
-				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={() => pickTab(t.tab)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
+				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={(e) => pickTab(t.tab, e)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
 			{/each}
 		</div>
 		{#if dropTab}
 			{@const at = dropTab}
-			<div class="drop" role="menu" aria-label="{approverTabs.find((x) => x.tab === at)?.label} by status" style:left="{dropX}px" onmouseenter={() => clearTimeout(hideT)} transition:slide={{ duration: ms(200), easing: cubicOut }}>
-				{#each dropItems as x (x.word)}
-					<button type="button" role="menuitemcheckbox" class="dr" class:bad={x.tone === 'bad'} aria-checked={ctx.approverTab === at && status === x.word} onclick={() => pickStatus(at, x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span><span class="dw">{x.word}</span><span class="dn">{x.count}</span></button>
-				{/each}
+			{@const flow = dropItems.filter((x) => !endsFlow(x))}
+			{@const ends = dropItems.filter(endsFlow)}
+			<div class="drop" role="menu" tabindex="-1" aria-label="{approverTabs.find((x) => x.tab === at)?.label} by status" style:left="{dropX}px" onmouseenter={() => clearTimeout(hideT)} onkeydown={menuKeys} transition:fly={{ y: -4, duration: ms(160), easing: cubicOut }}>
+				{#snippet row(x: { word: string; count: number; tone: Life['tone'] })}
+					<button type="button" role="menuitemcheckbox" class="dr" class:dr-fail={x.tone === 'bad'} aria-checked={ctx.approverTab === at && status === x.word} aria-label="{x.word}, {x.count}" onclick={() => pickStatus(at, x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span><span class="dw">{x.word}</span><span class="dn">{x.count}</span></button>
+				{/snippet}
+				{#if flow.length}
+					<div class="flow" class:rail={flow.length > 1}>
+						{#each flow as x (x.word)}{@render row(x)}{/each}
+					</div>
+				{/if}
+				{#if flow.length && ends.length}<span class="dsep" aria-hidden="true"></span>{/if}
+				{#each ends as x (x.word)}{@render row(x)}{/each}
 			</div>
 		{/if}
 		</div>
@@ -397,13 +421,18 @@
 	/* The toolbar: tabs left, filter and view right. */
 	/* Each tab's menu slides out from under the bar, centred on that tab. */
 	.tcap { position: relative; z-index: 6; }
-	.drop { position: absolute; top: calc(100% - 16px); transform: translateX(-50%); z-index: -1; width: 216px; box-sizing: border-box; display: flex; flex-direction: column; gap: 1px; padding: 21px 5px 5px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; background: var(--surface-1); box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.55); }
-	.dr { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text); font: 500 13px/1 var(--font-ui); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
-	.dr:hover, .dr:focus-visible { background: color-mix(in srgb, var(--text) 8%, transparent); }
-	.dr[aria-checked='true'] { background: color-mix(in srgb, var(--text) 14%, transparent); }
-	.dr.bad .dw { color: var(--fail-text, var(--fail, #e5484d)); }
+	/* Slim menu (as on Downloads): the steps in the order an ask moves, joined by a thin rail; Failed and Declined split off below. */
+	.drop { position: absolute; top: calc(100% + 6px); transform: translateX(-50%); width: 196px; box-sizing: border-box; display: flex; flex-direction: column; gap: 1px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-1); box-shadow: 0 12px 32px -10px rgb(0 0 0 / 0.45); }
+	.drop:focus { outline: none; }
+	.flow { position: relative; display: flex; flex-direction: column; gap: 1px; }
+	.flow.rail::before { content: ''; position: absolute; left: 13.5px; top: 15px; bottom: 15px; width: 1px; background: var(--line); }
+	.dsep { height: 1px; margin: 4px 6px; background: var(--line); }
+	.dr { position: relative; display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 10px; height: 30px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font: 500 12.5px/1 var(--font-ui); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.dr:hover, .dr:focus-visible { background: var(--surface-3); outline: none; }
+	.dr[aria-checked='true'] { background: color-mix(in srgb, var(--text) 12%, transparent); }
+	.dr.dr-fail .dw { color: var(--fail-text, var(--fail, #e5484d)); }
 	.dn { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.dd { width: 8px; height: 8px; border-radius: 50%; background: var(--info, #3b82f6); }
+	.dd { position: relative; z-index: 1; width: 7px; height: 7px; border-radius: 50%; background: var(--info, #3b82f6); box-shadow: 0 0 0 2px var(--surface-1); }
 	.dd.tone-bad { background: var(--fail, #e5484d); }
 	.dd.tone-ok { background: var(--ok, #3fb950); }
 	.dd.tone-soon, .dd.tone-off { background: var(--text-muted); }
