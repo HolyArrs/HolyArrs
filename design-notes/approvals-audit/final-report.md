@@ -66,3 +66,48 @@ Also: "Declined by …" now shows your display name when you were the one who de
 "Play trailer full screen" is the shared TrailerPlayer label (Explore too); left.
 
 Left open: Searching / Downloading · % / Importing words on Processing cards (Seerr shows one word; your call); amber count contrast; 44px phone tabs; search field opening on focus (shared shell); phone filter sheet still wraps a menu role; light card shadow; window panel height.
+
+## Round 3: icons + skill audit
+
+### Icons
+
+New `web/app/src/lib/approvals/StatusIcon.svelte`, one glyph per status, used in the Done chip, the progress capsule and the Filter status list.
+Path data is hand-copied from Lucide (ISC License, Copyright (c) Lucide Contributors): search, download, package, loader-circle, calendar, circle-check, circle-alert, circle-x, clock. It is inlined, with no runtime CDN and no new package. The licence note is also in the file header.
+
+| Status | Glyph | Motion (off under reduced motion) |
+|---|---|---|
+| Searching | magnifier | slow sweep, fill moves with the lens |
+| Downloading | arrow into tray | arrow nudges down |
+| Importing | package | none |
+| Processing | loader arc | slow spin (1.6s) |
+| Upcoming | calendar | none |
+| Ready | check circle | check draws in once when the card mounts |
+| Failed | alert circle | none |
+| Declined | x circle | none |
+
+Chip: 28px tile, 16px glyph, duotone (20% tinted fill of the shape plus a 2.4-unit stroke, about 1.6px on screen), and a faint top inner highlight that matches the glass. Measured glyph contrast on the capsule is 5.3 to 7.8:1 and the word 6.0 to 9.5:1. Close-ups at 2x: `icons-light.png` and `icons-dark.png` in the round3 scratch folder.
+
+### Skills, findings, outcome
+
+| Skill | Top findings | Outcome |
+|---|---|---|
+| design-critique | Idle Processing capsules all look alike; Failed beside Decline reads as a button; empty space in the window's What to add | Kept: the capsule and the equal halves are the agreed design. The window height is left. |
+| visual-verdict | Score 84 (revise): same three points | As above |
+| high-end-visual-design | Light glass muddy over warm art (saturate 1.9) | Fixed: saturate 1.3 and brightness 1.14 |
+| ui-ux-pro-max | Touch targets: Approve all and Filter at 40px, ticks at 18px; 11px phone text | Fixed: 44px on touch, a 32px tick label (44px on touch), 12px minimum |
+| kill-ai-slop | Search fill and lens split during the sweep; six fast spinners at once | Fixed: the fill moves with the lens; the spin slowed to 1.6s |
+| animation-vocabulary | The hover shimmer loops | Kept: it is the chosen hover, and it is off under reduced motion |
+| web-design-guidelines | Window focus lands on the dialog; Filter groups not announced | Kept: the dialog is named by its title. The group roles are Low and left. |
+| ux-copy | "7 d ago" in the window vs "7 days ago" on cards | Fixed: shared `agoLong` in format.ts, with a test |
+| accessibility-scan / inspect | High: no focus ring on the card's Decline and Approve. High: the window's "Failed" was 2.74:1 in light. Tab out of Filter jumped to a card. Heading order skipped a level. | All fixed: `.b:focus-visible` ring; the dark status band keeps dark tones (#ff6961 about 6.9:1); Tab returns to Filter; card titles are h2 |
+| code-review (high) | High: an approved album taken in by IncludeAlbums could be dropped by a refresh before it was kept up to date. Medium: failed downloads not sorted or counted as failed. Medium: the member Stage branch was dead code. Low: live reads capped at 100 and dropped events during a read. | Fixed: kept up to date in the same write, with a test; failed sorts and counts from the live stage; StageViews, AskPanel, FocusView and AskSummary removed; 500 rows and a reread after a busy read |
+| verification-before-completion | svelte-check (0 errors), `vitest run src/lib` (164 files, 1270 tests), `go test ./internal/asks/ ./internal/library/` | All passing |
+| critic | Accepted with reservations. One Medium: the failed count depends on live rows. | Raised to 500 rows. A server-side count of failed asks is still needed for libraries with more than 500 recent downloads. |
+
+### Left, and why
+
+- Cards and the window can word a partly-had show differently (the window has the per-season facts, the card does not). This needs one shared status helper and the facts cached in ctx. It is not a quick fix.
+- Lifecycle `skipped` and `reason` are never filled, so "n more available" and the failure reason don't show yet. They need the server to send them.
+- A failed count on the server for libraries with more than 500 recent downloads. That is the downloads API, which another session owns.
+- An "asked" flag on album parts, so turning keep-up-to-date off later still keeps an asked album. This is a data-model change.
+- Searching, Downloading and Importing were only checked in code and on the icon sheet. The test data has no live downloads, and Downloads must not get fake data.
