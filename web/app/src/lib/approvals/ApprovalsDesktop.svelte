@@ -37,6 +37,28 @@
 		for (const a of list.slice(0, 16)) ctx.want(a);
 	});
 
+	// Five hover effects for the cards. ?hover shows a pill bar to switch; without it, effect 1.
+	const HOVERS = ['Lean in', 'Lift', 'Glow', 'Parallax', 'Spotlight'];
+	const hoverOn = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('hover');
+	let hv = $state(1);
+	if (hoverOn) {
+		try { hv = Math.min(5, Math.max(1, Number(localStorage.getItem('approvals-hover')) || 1)); } catch { hv = 1; }
+	}
+	function pickHover(n: number) {
+		hv = n;
+		try { localStorage.setItem('approvals-hover', String(n)); } catch { /* storage blocked: the pick lasts this visit */ }
+	}
+	// Parallax and Spotlight follow the pointer: write its place on the card as CSS variables (no re-render).
+	function track(e: PointerEvent) {
+		if (hv < 4 || e.pointerType === 'touch') return;
+		const el = e.currentTarget as HTMLElement;
+		const r = el.getBoundingClientRect();
+		const x = e.clientX - r.left, y = e.clientY - r.top;
+		el.style.setProperty('--mx', `${x.toFixed(1)}px`);
+		el.style.setProperty('--my', `${y.toFixed(1)}px`);
+		el.style.setProperty('--px', String(Math.max(-1, Math.min(1, (x / r.width) * 2 - 1)).toFixed(3)));
+		el.style.setProperty('--py', String(Math.max(-1, Math.min(1, (y / r.height) * 2 - 1)).toFixed(3)));
+	}
 	// "16 d ago" read out in full: "16 days ago".
 	const longAgo = (s: string) => ago(s).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
 
@@ -359,7 +381,7 @@
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" data-ask={a.id} data-hover={hv} onpointermove={track} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
@@ -406,6 +428,12 @@
 			{/each}
 		</ul>
 </div>
+
+{#if hoverOn}
+	<div class="hv-bar" role="group" aria-label="Card hover (preview)">
+		{#each HOVERS as name, i (name)}<button type="button" class="hv-pill" aria-pressed={hv === i + 1} onclick={() => pickHover(i + 1)}>{i + 1} · {name}</button>{/each}
+	</div>
+{/if}
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
@@ -499,19 +527,17 @@
 	   who asked and the answers. The life-cycle line runs along the bottom edge. */
 	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	/* The card takes the sheet's own colour (dark in dark mode, pale in light), so no band shows under the sheet. */
-	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 300ms var(--ez), box-shadow 300ms var(--ease-out); }
-	.bc:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 2px 4px rgb(0 0 0 / 0.08), 0 24px 48px -24px rgb(0 0 0 / 0.65); }
+	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 380ms cubic-bezier(0.4, 0, 0.2, 1); }
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.open:focus-visible { box-shadow: none; }
 	.bc:has(.open:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
-	.ban { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: #17181d; border-radius: inherit; }
+	.ban { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: #17181d; border-radius: inherit; transform-origin: 50% 50%; transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
 	.ban.noart { background: radial-gradient(120% 90% at 15% 0%, #3b4263 0%, transparent 60%), radial-gradient(90% 80% at 100% 100%, #583a58 0%, transparent 58%), #17181d; }
 	.top { flex: none; height: var(--top); display: flex; align-items: flex-end; box-sizing: border-box; padding: 0 14px 10px; }
 	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 400ms var(--ez), opacity 500ms var(--ease-out); }
 	img.ban-img { animation: ban-in 600ms var(--ease-out) both; }
 	@keyframes ban-in { from { opacity: 0; } }
 	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
-	.bc:hover .ban-img:not(.soft) { transform: scale(1.04); }
 	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.18), transparent calc(var(--top) * 0.35), rgb(0 0 0 / 0.66) var(--top), rgb(0 0 0 / 0.4)); }
 	.ban-cap { min-width: 0; display: flex; flex-direction: column; gap: 3px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.5); }
 	.ban-t { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -620,7 +646,8 @@
 	@media (prefers-reduced-motion: reduce) {
 		.bc, .fill, .win[open], .win::backdrop, .ban-img, img.ban-img, .win[open]:global(.win-out), .win[open]:global(.win-out)::backdrop { transition: none; animation: none; }
 		.b:active, .approve-all:active { transform: none; }
-		.bc:hover, .bc:hover .ban-img:not(.soft) { transform: none; }
+		.bc[data-hover], .bc[data-hover]:hover, .bc[data-hover] .ban, .bc[data-hover] .sheet-b { transform: none !important; transition: none !important; }
+	.bc::after, .sheet-b::after { display: none; }
 	}
 
 	/* The glass panel: smoked glass. Dark: deep smoke with a soft inner highlight. Light: a pale grey-blue smoke,
@@ -629,4 +656,39 @@
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#3b4150, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(228 233 242 / 0.74), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(205 212 226 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(232 236 244 / 0.34), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)), 0 18px 34px -14px light-dark(rgb(10 14 30 / 0.5), rgb(0 0 0 / 0.8)); }
 	.b.no { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); }
 	.b.yes { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
+
+	/* Hover effects (mouse only; touch screens and reduced motion get none). Each moves only paint, never layout,
+	   so the grid and the neighbours stay still. In is slow and eased, out is a little quicker. */
+	.bc::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: radial-gradient(circle 170px at var(--mx, 50%) var(--my, 40%), rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.06) 45%, transparent 75%); opacity: 0; pointer-events: none; transition: opacity 300ms ease-out; }
+	.sheet-b::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgb(255 255 255); opacity: 0; pointer-events: none; transition: opacity 380ms ease-out; }
+	@media (hover: hover) and (pointer: fine) {
+		.bc:hover, .bc:hover .ban, .bc:hover .sheet-b, .bc:hover::after, .bc:hover .sheet-b::after { transition-duration: 650ms; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+		/* 1 Lean in: the art slowly zooms, the shadow deepens a little. */
+		.bc[data-hover='1']:hover .ban { transform: scale(1.04); }
+		.bc[data-hover='1']:hover { box-shadow: 0 0 0 1px var(--line), 0 18px 38px -16px rgb(0 0 0 / 0.78); }
+		/* 2 Lift: the card rises, a softer larger shadow, the art zooms a touch, the glass brightens. */
+		.bc[data-hover='2']:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px var(--line), 0 30px 60px -22px rgb(0 0 0 / 0.6); }
+		.bc[data-hover='2']:hover .ban { transform: scale(1.02); }
+		.bc[data-hover='2']:hover .sheet-b::after { opacity: 0.08; }
+		/* 3 Glow: a soft light rim fades in, the glass brightens, the art zooms a little. */
+		.bc[data-hover='3']:hover { box-shadow: 0 0 0 1px light-dark(rgb(60 110 255 / 0.55), rgb(255 255 255 / 0.5)), 0 0 30px 2px light-dark(rgb(60 110 255 / 0.28), rgb(255 255 255 / 0.22)), 0 12px 32px -16px rgb(0 0 0 / 0.6); }
+		.bc[data-hover='3']:hover .ban { transform: scale(1.03); }
+		.bc[data-hover='3']:hover .sheet-b::after { opacity: 0.1; }
+		/* 4 Parallax: the art drifts with the pointer, the glass drifts the other way. */
+		.bc[data-hover='4']:hover .ban { transform: translate(calc(var(--px, 0) * 5.5px), calc(var(--py, 0) * 5.5px)) scale(1.04); }
+		.bc[data-hover='4']:hover .sheet-b { transform: translate(calc(var(--px, 0) * -2px), calc(var(--py, 0) * -2px)); }
+		.bc[data-hover='4'] .sheet-b { transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1); }
+		/* 5 Spotlight: a soft light follows the pointer over the art and the glass. */
+		.bc[data-hover='5']:hover .ban { transform: scale(1.02); }
+		.bc[data-hover='5']:hover::after { opacity: 1; }
+	}
+	.hv-bar { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 2000; display: flex; gap: 4px; max-width: calc(100vw - 24px); box-sizing: border-box; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 999px; transform: translateX(-50%); background: color-mix(in srgb, var(--surface-2) 88%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 0 0 1px var(--line-strong), 0 12px 30px -10px rgb(0 0 0 / 0.5); }
+	.hv-bar::-webkit-scrollbar { display: none; }
+	.hv-pill { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+	.hv-pill:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+	.hv-pill[aria-pressed='true'] { background: var(--text); color: var(--bg); }
+	@media (max-width: 767px) {
+		.hv-bar { bottom: calc(var(--tabbar, 64px) + 12px + env(safe-area-inset-bottom, 0px)); }
+		.hv-pill { height: 32px; padding: 0 11px; font-size: 12px; }
+	}
 </style>
