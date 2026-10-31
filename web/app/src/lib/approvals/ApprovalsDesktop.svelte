@@ -12,6 +12,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import Avatar from '../ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
+	import StatusIcon, { statusKey, type StatusKey } from './StatusIcon.svelte';
 	import ApprovalsStage from './ApprovalsStage.svelte';
 	import { ago, dateTime } from '../format.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
@@ -76,9 +77,7 @@
 	// The status row of answered cards. Processing and Failed: a button-shaped capsule that fills in its tone
 	// (the live download share when known, else the stage's place on the line). Done: an icon chip like the who row.
 	const stTone = (t: Life['tone']) => (t === 'bad' ? 'bad' : t === 'go' ? 'go' : t === 'ok' ? 'ok' : 'soft');
-	const stIcon = (l: Life): IconName =>
-		l.stage === 'failed' ? 'alert' : l.stage === 'downloading' ? 'download' : l.stage === 'importing' ? 'archive' : l.stage === 'upcoming' ? 'clock' : l.stage === 'ready' ? 'check' : l.stage === 'declined' ? 'x' : 'refresh';
-	const stSpins = (l: Life) => l.stage === 'searching' || l.stage === 'getting';
+	const stKey = (l: Life): StatusKey => (l.stage === 'asked' ? 'pending' : l.stage === 'getting' ? 'processing' : l.stage);
 	/** The status word: "Downloading · 48%" → "Downloading". */
 	const stWord = (l: Life) => l.label.split(' · ')[0];
 	/** The live download share, only when the label carries one. */
@@ -333,7 +332,7 @@
 	{#snippet statusItems(close: boolean)}
 		<button type="button" role="menuitemradio" aria-checked={!status} class="sf-mi" onclick={() => { setStatus(''); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-w">All statuses</span><span class="sf-c">{subsTotal}</span></button>
 		{#each subs as x (x.word)}
-			<button type="button" role="menuitemradio" aria-checked={status === x.word} class="sf-mi sf-t-{toneOf(x.tone)}" onclick={() => { setStatus(x.word); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"></span><span class="sf-w">{x.word}</span><span class="sf-c">{x.count}</span></button>
+			<button type="button" role="menuitemradio" aria-checked={status === x.word} class="sf-mi sf-t-{toneOf(x.tone)}" onclick={() => { setStatus(x.word); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"><StatusIcon status={statusKey(x.word)} size={14} motion={false} /></span><span class="sf-w">{x.word}</span><span class="sf-c">{x.count}</span></button>
 		{/each}
 	{/snippet}
 	{#snippet filterItems()}
@@ -390,20 +389,20 @@
 			<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
 		{/snippet}
 		{#snippet stIc(l: Life, size: number)}
-			<span class="st-i" class:st-spin={stSpins(l)} aria-hidden="true"><Icon name={stIcon(l)} size={size} /></span>
+			<span class="st-i" aria-hidden="true"><StatusIcon status={stKey(l)} {size} /></span>
 		{/snippet}
 		{#snippet stRow(a: Ask, l: Life)}
 			{@const d = stDetail(a, l)}
 			{@const can = l.stage === 'failed' && failed(a)}
 			{#if stChip(l)}
 				<span class="st-chip st-{stTone(l.tone)}">
-					<span class="st-sq">{@render stIc(l, 14)}</span>
+					<span class="st-sq">{@render stIc(l, 16)}</span>
 					<span class="st-id"><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
 				</span>
 			{:else}
 				<span class="st-cap st-{stTone(l.tone)}" class:st-half={can} class:st-live={l.stage === 'searching' || l.stage === 'downloading'} style:--st-fill={stFill(l)}>
 					<span class="st-meter" aria-hidden="true"></span>
-					{@render stIc(l, 15)}<span class="st-tx"><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
+					{@render stIc(l, 16)}<span class="st-tx"><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
 				</span>
 				{#if can}{@render stDecline(a)}{/if}
 			{/if}
@@ -517,7 +516,7 @@
 	.sf-t-ok { --sc: var(--ok, #30d158); --st: var(--ok-text, var(--ok, #30d158)); }
 	.sf-t-wait { --sc: var(--wait, #ffb340); --st: var(--wait-text, var(--wait, #ffb340)); }
 	.sf-t-off { --sc: var(--text-muted); --st: var(--text); }
-	.sf-d { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--sc, var(--text-muted)); }
+	.sf-d { flex: none; display: grid; place-items: center; width: 16px; height: 16px; color: var(--st, var(--text-muted)); }
 	.sf-anchor { position: relative; }
 	.sf-btn { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
 	.sf-btn:hover, .sf-btn[aria-expanded='true'] { background: var(--surface-2); }
@@ -705,8 +704,6 @@
 	/* The capsule and the chip carry the status, so the thin line under answered cards steps aside on every tab. */
 	.bc.st-row .life { display: none; }
 	.st-i { display: inline-grid; place-items: center; flex: none; }
-	.st-spin :global(svg) { animation: st-rot 1.4s linear infinite; }
-	@keyframes st-rot { to { transform: rotate(360deg); } }
 	.st-d { min-width: 0; font-weight: 500; }
 	/* Processing and Failed: one button-shaped capsule over the whole row (half, beside Decline, when failed); it is the meter. */
 	.st-cap { grid-column: 1 / -1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; height: var(--st-h); padding: 0 12px; border-radius: var(--st-r); background: light-dark(color-mix(in srgb, var(--st-c) 8%, rgb(255 255 255 / 0.5)), color-mix(in srgb, var(--st-c) 9%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 34%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 600; }
@@ -722,7 +719,8 @@
 	@keyframes st-shim { from { background-position: -60% 0; } to { background-position: 160% 0; } }
 	/* Done: an icon chip + word + detail, built like the who row (26px, same gap and type). */
 	.st-chip { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px; min-width: 0; height: var(--st-h); }
-	.st-sq { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: color-mix(in srgb, var(--st-c) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 40%, transparent); color: var(--st-ink); }
+	/* 28px tile, 16px duotone glyph; a faint top highlight matches the glass. */
+	.st-sq { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 60%), color-mix(in srgb, var(--st-c) 20%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--st-c) 42%, transparent); color: var(--st-ink); }
 	.st-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 	.st-id > b { color: var(--st-ink); font: 700 13.5px/1.3 var(--font-ui); }
 	.st-id > .st-d { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
@@ -737,5 +735,5 @@
 		.st-id > b { font-size: 12.5px; }
 		.st-id > .st-d { font-size: 11px; }
 	}
-	@media (prefers-reduced-motion: reduce) { .st-spin :global(svg) { animation: none; } .st-live .st-meter::after { display: none; } .st-meter { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .st-live .st-meter::after { display: none; } .st-meter { transition: none; } }
 </style>
