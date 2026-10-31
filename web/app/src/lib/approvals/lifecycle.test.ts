@@ -61,6 +61,13 @@ describe('ready with more to request', () => {
 		expect(lifecycle(ask('available', 7), { partial: { have: 1, total: 1, unit: 'seasons' } })).toMatchObject({ label: 'Ready · 1 season' });
 		expect(lifecycle(ask('available', 7)).more).toBeUndefined();
 	});
+	it('unticked episodes or songs show when no whole part was skipped', () => {
+		const show = { partial: { have: 3, total: 3, unit: 'seasons' as const } };
+		expect(lifecycle(ask('approved', 7), { ...show, skipped: 4 }).more).toBe('4 episodes available');
+		expect(lifecycle(ask('approved', 7), { ...show, skipped: 1 }).more).toBe('1 episode available');
+		expect(lifecycle(ask('approved', 7), { ...show, skipped: 4, more: 1 }).more).toBe('1 more available');
+		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 2, unit: 'albums' }, skipped: 6 }).more).toBe('6 songs available');
+	});
 });
 
 describe('upcoming', () => {

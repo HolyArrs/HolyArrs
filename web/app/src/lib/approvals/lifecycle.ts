@@ -31,6 +31,8 @@ export interface LifeFacts {
 	partial?: { have: number; total: number; unit?: 'seasons' | 'albums' };
 	/** Seasons or albums the title has beyond what was asked (shown once Ready). */
 	more?: number;
+	/** Episodes or songs left unticked inside the asked seasons or albums. */
+	skipped?: number;
 	/** Why it failed, when known. */
 	reason?: string;
 }
@@ -57,13 +59,15 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: p > 0 ? `Processing · ${Math.round(p * 100)}%` : 'Processing' };
 }
 
-const word = (n: number, unit: 'seasons' | 'albums') => `${n} ${n === 1 ? unit.slice(0, -1) : unit}`;
+const word = (n: number, unit: string) => `${n} ${n === 1 ? unit.slice(0, -1) : unit}`;
 
 /** Ready names what came in ("Ready · 2 albums") and what's left to request. */
 function ready(f: LifeFacts): Life {
 	const part = f.partial;
 	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
+	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs.
 	if (f.more && f.more > 0) life.more = `${f.more} more available`;
+	else if (f.skipped && f.skipped > 0 && part?.unit) life.more = `${word(f.skipped, part.unit === 'seasons' ? 'episodes' : 'songs')} available`;
 	return life;
 }
 
