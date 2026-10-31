@@ -395,7 +395,9 @@
 	.sp-row:has(.sp-open:focus-visible) { box-shadow: var(--focus-ring); }
 	.sp-row .tick { width: 18px; height: 18px; margin: 0; }
 	/* The row's tick sits in its own box, finger-sized on touch screens. */
-	.sp-tk { flex: none; display: grid; place-items: center; align-self: stretch; padding-left: 8px; cursor: pointer; }
+	.sp-tk { flex: none; display: grid; place-items: center; align-self: stretch; min-width: 32px; padding-left: 4px; cursor: pointer; }
+	/* Touch: the label around the tick is the 44px target. */
+	@media (pointer: coarse) { .sp-tk { min-width: 44px; min-height: 44px; } }
 	/* The row's open button fills the rest of the row, so clicking anywhere past the tick opens it. */
 	.sp-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; align-self: stretch; padding: 4px 8px; border: 0; border-radius: inherit; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 	.sp-open:focus-visible { outline: none; }

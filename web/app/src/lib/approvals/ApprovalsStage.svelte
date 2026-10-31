@@ -18,7 +18,7 @@
 	import Avatar from '../ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
 	import AskParts from './AskParts.svelte';
-	import { ago, dateTime } from '../format.ts';
+	import { agoLong, dateTime } from '../format.ts';
 	import { to } from '../paths.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
@@ -223,7 +223,7 @@
 					{#snippet meta()}
 						<p class="facts"><span>{kindOf(picked)}</span>{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
 						{#each [ctx.who(picked)] as w (w.id)}
-							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> asked <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{ago(picked.asked_at)}</time></span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
+							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> asked <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time></span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
 						{/each}
 						{#if picked.note}<p class="said">&ldquo;{picked.note}&rdquo;</p>{/if}
 					{/snippet}
@@ -406,10 +406,11 @@
 	.big { position: absolute; left: 0; right: 0; bottom: 0; height: var(--big-h); display: flex; align-items: center; gap: 20px; padding: 0 28px; background: #0b0b0c; color: #fff; }
 	.says { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 	.huge { font: 800 34px/1.1 var(--font-ui); letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.huge.tone-wait { color: var(--wait-text, var(--wait)); }
-	.huge.tone-go { color: var(--info, #3b82f6); }
-	.huge.tone-ok { color: var(--ok-text, var(--ok)); }
-	.huge.tone-bad { color: var(--fail-text, var(--fail, #e5484d)); }
+	/* The status band is dark in both themes, so it keeps dark-theme tones (light ones fall under 3:1 here). */
+	.huge.tone-wait { color: #ffb340; }
+	.huge.tone-go { color: #6aa6ff; }
+	.huge.tone-ok { color: #4ad27a; }
+	.huge.tone-bad { color: #ff6961; }
 	.huge.tone-soon, .huge.tone-off { color: rgb(255 255 255 / 0.7); }
 	.sent { color: rgb(255 255 255 / 0.8); font: var(--t-callout); }
 	.more { color: rgb(255 255 255 / 0.5); }

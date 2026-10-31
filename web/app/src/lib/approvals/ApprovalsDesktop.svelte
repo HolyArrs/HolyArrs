@@ -14,9 +14,9 @@
 	import KidMark from './KidMark.svelte';
 	import StatusIcon, { statusKey, type StatusKey } from './StatusIcon.svelte';
 	import ApprovalsStage from './ApprovalsStage.svelte';
-	import { ago, dateTime } from '../format.ts';
+	import { agoLong, dateTime } from '../format.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
-	import { artistPhoto, askArtist } from './details.svelte.ts';
+	import { artistPhoto, askArtist, storedParts } from './details.svelte.ts';
 	import { to } from '../paths.ts';
 	import { shortDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
@@ -36,10 +36,9 @@
 	const list = $derived(ctx.shown);
 	$effect(() => {
 		for (const a of list.slice(0, 16)) ctx.want(a);
+		// The first windows open with their seasons and albums already here (a window reads them at first paint).
+		for (const a of list.slice(0, 4)) storedParts(a);
 	});
-
-	// "16 d ago" read out in full: "16 days ago".
-	const longAgo = (s: string) => ago(s).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
 
 	const types: { k: 'all' | 'movie' | 'show' | 'artist'; label: string; icon: IconName }[] = [
 		{ k: 'all', label: 'All', icon: 'library' },
@@ -173,7 +172,8 @@
 				e.preventDefault();
 				e.stopPropagation();
 			}
-			sfClose(e.key === 'Escape');
+			// Tab leaves the menu from the Filter button, so the order stays page order.
+			sfClose();
 			return;
 		}
 		if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
@@ -193,7 +193,11 @@
 		return () => document.removeEventListener('pointerdown', out, true);
 	});
 	const filterCount = $derived((status ? 1 : 0) + (ctx.kind !== 'all' ? 1 : 0));
-	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
+	// A download that failed (known only from the live stages) joins the failed asks at the front of Processing.
+	const isFailed = (a: Ask) => lifeOf(a).stage === 'failed';
+	const ordered = $derived(ctx.approverTab === 'processing' ? [...list].sort((x, y) => Number(isFailed(y)) - Number(isFailed(x))) : list);
+	const cardsShown = $derived(status ? ordered.filter((a) => statusOf(a) === status) : ordered);
+	const failedCount = $derived(ctx.viewed.filter((a) => tabOfAsk(a) === 'processing' && isFailed(a)).length);
 	// Approve all: the waiting cards, minus any already in their Approved beat.
 	const toApprove = $derived(cardsShown.filter((x) => waiting(x) && !approving.has(x.id)));
 
@@ -351,7 +355,7 @@
 		<div class="tabs" role="group" aria-label="Status">
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
-				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
+				{@const bad = t.tab === 'processing' ? failedCount : 0}
 				{@const here = ctx.approverTab === t.tab}
 				<div class="pw" class:on={here} role="presentation">
 					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
@@ -421,11 +425,11 @@
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${a.poster}")`}></span>{/if}
 					</div>
 					<div class="top">
-						<div class="ban-cap"><h3 class="ban-t">{a.name}</h3><span class="ban-f">{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
+						<div class="ban-cap"><h2 class="ban-t">{a.name}</h2><span class="ban-f">{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{longAgo(a.asked_at)}</time></span></span></span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time></span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
@@ -489,7 +493,7 @@
 	.pw .tab { height: 32px; }
 	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
 	/* Coarse pointers keep a 44px target without fattening the bar. */
-	@media (pointer: coarse) { .tab::after, .sf-btn::after { content: ''; position: absolute; inset: -6px 0; } }
+	@media (pointer: coarse) { .tab::after { content: ''; position: absolute; inset: -6px 0; } .right .approve-all, .right .sf-btn { height: 44px; } }
 	.dd { width: 6px; height: 6px; border-radius: 50%; }
 	/* One row that never wraps: tabs left, the status control and the type filter right. */
 	.toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px; }
@@ -611,7 +615,6 @@
 	.calm { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 64px 20px; border-radius: 18px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); color: var(--text-muted); text-align: center; }
 	.calm-ic { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 50%; background: var(--surface-2); color: var(--text); }
 	.calm h2 { color: var(--text); font: var(--t-title3); }
-	.show-all { margin-top: 6px; }
 
 	/* The window: one ask on the Stage. */
 	.win { width: min(1180px, calc(100vw - 48px)); max-width: none; height: min(760px, calc(100dvh - 48px)); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 24px; background: #0b0b0c; overflow: hidden; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 50px 120px -30px rgb(0 0 0 / 0.85); }
@@ -654,10 +657,10 @@
 		.bc { --top: 124px; --gap: 8px; }
 		.top { padding: 0 10px 8px; }
 		.ban-t { font-size: 17px; }
-		.ban-f { font-size: 11px; }
+		.ban-f { font-size: 12px; }
 		.sheet-b { border-radius: 12px; }
 		.gl-n { font-size: 12.5px; gap: 4px; }
-		.gl-when { font-size: 11px; }
+		.gl-when { font-size: 12px; }
 		.body { padding: 10px 10px 0; }
 		.who { gap: 7px; font: var(--t-caption); }
 		/* Decline and Approve: equal halves, icons only (each has its full name for screen readers). */
@@ -678,12 +681,13 @@
 	   redefined on the panel so the answers and the status read on it. */
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)), inset 0 14px 22px -16px light-dark(rgb(255 255 255 / 0.6), transparent), 0 18px 34px -14px light-dark(rgb(10 14 30 / 0.32), rgb(0 0 0 / 0.8)); }
 	/* Light: white smoke. Milky and see-through, the art blurred and lifted behind it; dense enough behind the ink to keep it readable without any halo. */
-	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.9) brightness(1.12); }
+	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
 	@media (prefers-color-scheme: light) {
-		:global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.9) brightness(1.12); }
+		:global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
 	}
 	.b.no { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); }
 	.b.yes { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
+	.b:focus-visible { box-shadow: var(--focus-ring); }
 
 	/* Hover (mouse only; touch screens and reduced motion get none): the art slowly pushes in ~4% over 5s while a soft glint
 	   crosses once, then shimmers. It lives in the art layer, under the glass and the title. Leaving eases back from wherever it is. */
@@ -728,12 +732,12 @@
 	@media (max-width: 767px) {
 		.st-cap { padding: 0 8px; gap: 5px; font: 600 12px/1.15 var(--font-ui); }
 		.st-tx { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; text-align: left; }
-		.st-tx > .st-d { font-size: 11px; }
+		.st-tx > .st-d { font-size: 12px; }
 		.st-tx > .st-d::before { display: none; }
 		.st-cap.st-half .st-tx > .st-d { display: none; }
 		.st-chip { gap: 7px; }
 		.st-id > b { font-size: 12.5px; }
-		.st-id > .st-d { font-size: 11px; }
+		.st-id > .st-d { font-size: 12px; }
 	}
 	@media (prefers-reduced-motion: reduce) { .st-live .st-meter::after { display: none; } .st-meter { transition: none; } }
 </style>

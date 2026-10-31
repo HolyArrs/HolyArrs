@@ -54,6 +54,11 @@ export function ago(s: string | null | undefined, now = Date.now()): string {
 	return `${Math.round(sec / 86400)} d ago`;
 }
 
+/** `ago` in full words ("7 days ago", "1 hour ago"), for places with room to say it. */
+export function agoLong(s: string | null | undefined, now = Date.now()): string {
+	return ago(s, now).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
+}
+
 export type Tone = 'ok' | 'wait' | 'fail' | 'idle';
 
 const okStates = ['in_library', 'finished', 'done', 'chosen', 'placed', 'enabled', 'ok'];

@@ -4,7 +4,7 @@
 	// Copyright (c) Lucide Contributors. Glyphs: search, download, package, loader-circle,
 	// calendar, circle-check, circle-alert, circle-x, clock. Inlined, no runtime CDN.
 	// Each glyph has `fill` (the shape that takes the tinted duotone fill) and `d` (the strokes);
-	// `move` is the part that carries the micro-motion.
+	// `move` is the part that carries the micro-motion (the search fill moves with its lens).
 	export type StatusKey = 'pending' | 'upcoming' | 'searching' | 'downloading' | 'importing' | 'processing' | 'ready' | 'failed' | 'declined';
 	type Glyph = { fill?: string; d: string; move?: string; mark?: string };
 	const CIRCLE = 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z';
@@ -36,7 +36,7 @@
 
 <!-- 24 grid drawn at 16px: a 2px Lucide stroke lands near 1.4px; 2.4 keeps it near 1.6px on screen. -->
 <svg class="si si-{status}" class:si-motion={motion} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-	{#if g.fill}<path class="si-fill" d={g.fill} fill="currentColor" stroke="none" />{/if}
+	{#if g.fill}<path class="si-fill" class:si-move={status === 'searching'} d={g.fill} fill="currentColor" stroke="none" />{/if}
 	{#if g.d}<path d={g.d} />{/if}
 	{#if g.move}<path class="si-move" d={g.move} />{/if}
 	{#if g.mark}<path class="si-mark" d={g.mark} pathLength="1" />{/if}
@@ -49,7 +49,7 @@
 	@media (prefers-reduced-motion: no-preference) {
 		.si-motion.si-downloading .si-move { animation: si-nudge 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 		.si-motion.si-searching .si-move { transform-origin: 11px 11px; animation: si-sweep 2.4s ease-in-out infinite; }
-		.si-motion.si-processing .si-move { animation: si-spin 1.1s linear infinite; }
+		.si-motion.si-processing .si-move { animation: si-spin 1.6s linear infinite; }
 		.si-motion.si-ready .si-mark { stroke-dasharray: 1; stroke-dashoffset: 1; animation: si-draw 520ms cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards; }
 	}
 	@keyframes si-nudge { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(1.5px); } }

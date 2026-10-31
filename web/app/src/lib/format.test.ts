@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ago, bytes, date, duration, folderHealth, greeting, percent, tone, words } from './format.ts';
+import { ago, agoLong, bytes, date, duration, folderHealth, greeting, percent, tone, words } from './format.ts';
 
 describe('format', () => {
 	it('calendar days keep their day in every time zone', () => {
@@ -99,5 +99,17 @@ describe('tokens.css', () => {
 		expect(reduced).toMatch(/--stagger:\s*0ms/);
 		expect(reduced).toMatch(/--dur-page:\s*1ms/);
 		expect(reduced).toMatch(/--press:\s*1/);
+	});
+});
+
+describe('agoLong', () => {
+	const now = Date.parse('2026-10-31T12:00:00Z');
+	it('says the unit in full words', () => {
+		expect(agoLong('2026-10-24T12:00:00Z', now)).toBe('7 days ago');
+		expect(agoLong('2026-10-30T12:00:00Z', now)).toBe('1 day ago');
+		expect(agoLong('2026-10-31T11:00:00Z', now)).toBe('1 hour ago');
+		expect(agoLong('2026-10-31T11:55:00Z', now)).toBe('5 minutes ago');
+		expect(agoLong('2026-10-31T11:59:50Z', now)).toBe('just now');
+		expect(agoLong(null, now)).toBe('');
 	});
 });
