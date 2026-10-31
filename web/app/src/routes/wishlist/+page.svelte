@@ -42,7 +42,6 @@
 	let tab = $state<AskTab>('waiting');
 	// Approvers see three tabs (Pending, Processing, Done); members keep the five.
 	let apTab = $state<ApproverTab>('pending');
-	let mineOnly = $state(false);
 	let kind = $state<'all' | 'movie' | 'show' | 'artist'>('all');
 	let limit = $state<AskLimit | null>(null);
 	// One line per kind whose part is on.
@@ -59,7 +58,7 @@
 		if (!p) return a;
 		return { ...a, state: p.mode === 'approve' ? 'approved' : 'turned_down', title_id: a.title_id ?? (p.mode === 'approve' ? -1 : undefined) };
 	};
-	const viewed = $derived((mineOnly ? ofKind.filter((a) => a.mine) : ofKind).map(viewOf));
+	const viewed = $derived(ofKind.map(viewOf));
 	const shown = $derived(approver ? approverSort(apTab, viewed.filter((a) => approverTabOf(a) === apTab)) : viewed.filter((a) => askTab(a) === tab));
 	const apCounts = $derived(approverCountsOf(viewed));
 	const tabs = $derived(askTabs.filter((t) => approver || t.tab !== 'failed'));
@@ -273,12 +272,16 @@
 	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
 	let titleLive = $state(new Map<number, TitleLive>());
 	let liveBusy = false;
+	let liveAgain = false;
 	async function loadLive() {
-		if (liveBusy || !session.can('manage_library')) return;
+		if (!session.can('manage_library')) return;
+		// A live event during a read asks for one more read once it ends, so the last change is never lost.
+		if (liveBusy) return void (liveAgain = true);
 		liveBusy = true;
 		try {
 			const [d, s] = await Promise.all([
-				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
+				// The newest 500 downloads (the most the list gives): enough for every ask still being got.
+				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=500'),
 				api.get<{ running: SearchView[] }>('/searches')
 			]);
 			titleLive = liveByTitle(d.downloads, s.running ?? []);
@@ -286,6 +289,10 @@
 			// keep the last answer
 		} finally {
 			liveBusy = false;
+			if (liveAgain) {
+				liveAgain = false;
+				void loadLive();
+			}
 		}
 	}
 
@@ -497,8 +504,6 @@
 		defaultRule: defaultRuleOf,
 		get kind() { return kind; },
 		setKind: (k) => ((kind = k), (chosen = new Set())),
-		get mineOnly() { return mineOnly; },
-		setMine: (on) => ((mineOnly = on), (chosen = new Set())),
 		get person() { return person; },
 		setPerson: (id) => ((person = id), (chosen = new Set())),
 		get people() { return people; },

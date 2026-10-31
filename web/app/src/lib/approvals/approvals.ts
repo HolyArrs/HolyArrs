@@ -147,8 +147,6 @@ export interface ApprovalsCtx {
 	defaultRule(a: Ask): string;
 	readonly kind: 'all' | 'movie' | 'show' | 'artist';
 	setKind(k: 'all' | 'movie' | 'show' | 'artist'): void;
-	readonly mineOnly: boolean;
-	setMine(on: boolean): void;
 	/** Asked by: a person's id, 0 for everyone. */
 	readonly person: number;
 	setPerson(id: number): void;
