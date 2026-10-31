@@ -88,4 +88,5 @@
 	.mi2:focus-visible { box-shadow: var(--focus-ring); }
 	.mi2[aria-disabled='true'] { cursor: not-allowed; }
 	.mi2[aria-disabled='true'] .t { opacity: 0.55; }
+	@media (max-width: 640px) { .mi2 { align-items: center; min-height: 44px; font: var(--t-callout); } }
 </style>

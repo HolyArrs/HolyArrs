@@ -28,7 +28,8 @@
 		side = false,
 		sideControls = 'sidebar',
 		onside,
-		searchKey = 'Ctrl K'
+		searchKey = 'Ctrl K',
+		allItems = []
 	}: {
 		kindOn?: string;
 		srcOn?: string;
@@ -47,7 +48,11 @@
 		sideControls?: string;
 		onside?: () => void;
 		searchKey?: string;
+		/** The phone bar's "All downloads" menu (Start all, Pause all, Speed limit). */
+		allItems?: { label: string; onselect: () => void }[];
 	} = $props();
+	let allMenu = $state<TopMenu>();
+	let allBtn = $state<HTMLButtonElement>();
 
 	const KIND_ICON: Record<string, IconName> = { movie: 'film', show: 'tv', artist: 'music' };
 	const kinds = KIND_TABS.filter((t) => t.key).map((t) => ({ key: t.key as string, label: t.label, icon: KIND_ICON[t.key] }));
@@ -173,6 +178,7 @@
 			<span>Filters</span>{#if fCount}<b class="fc" data-testid="dl-filters-count">{fCount}</b>{/if}
 		</button>
 		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={nameOf(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}
+		{#if allItems.length}<button type="button" class="pbn ico" bind:this={allBtn} aria-haspopup="menu" aria-label="All downloads" onclick={() => allBtn && allMenu?.show(allBtn)} data-testid="dl-all-btn"><Icon name="more" size={18} /></button><TopMenu bare bind:this={allMenu} label="All downloads" items={allItems} />{/if}
 	</div>
 </div>
 
@@ -277,6 +283,7 @@
 	.pbn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 15px/1 var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 160ms var(--ease-out), transform 160ms var(--ez); }
 	.pbn:active { transform: scale(0.97); }
 	.pbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pbn.ico { justify-content: center; width: 44px; padding: 0; }
 	.pbn.has { border-color: var(--line-strong); background: var(--surface-2); }
 	.fc { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--text); color: var(--bg); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.fs { display: grid; gap: 18px; }

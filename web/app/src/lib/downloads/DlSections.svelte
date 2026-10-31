@@ -22,7 +22,7 @@
 	import DecisionPanel from './DecisionPanel.svelte';
 	import DlStatus from './DlStatus.svelte';
 	import GhostEmpty from './GhostEmpty.svelte';
-	import { reviewCount } from './status-views.ts';
+	import { reviewCount, reviewWord } from './status-views.ts';
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
 	import Popover from '../ui/Popover.svelte';
 	import { tip } from './tip.ts';
@@ -45,6 +45,7 @@
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
 	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
+	import { longPress, phoneTitle, subLine } from './phone.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
@@ -481,6 +482,10 @@
 	];
 	// Queue moves and force start for one torrent, as in the selection bar.
 	const QUEUE: { action: BulkAction; label: string }[] = [{ action: 'up', label: 'Move up' }, { action: 'down', label: 'Move down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }];
+	// The phone selection bar: the few actions that fit a thumb.
+	const PHONE_BULK: { action: BulkAction; label: string; icon: 'play' | 'pause' | 'refresh' }[] = [{ action: 'start', label: 'Start', icon: 'play' }, { action: 'pause', label: 'Pause', icon: 'pause' }, { action: 'recheck', label: 'Check again', icon: 'refresh' }];
+	// The phone bar's "All downloads" menu, through the same handlers as the toolbar's menus.
+	const allItems = $derived(watch ? [] : [{ label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]);
 	const BULK: { action: BulkAction; label: string }[] = [
 		{ action: 'start', label: 'Start' }, { action: 'pause', label: 'Pause' }, { action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
 		{ action: 'up', label: 'Up' }, { action: 'down', label: 'Down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
@@ -1069,6 +1074,11 @@
 			pickTo(id);
 			return;
 		}
+		// Phones: once a long press started picking, a tap picks or unpicks a row.
+		if (!watch && phone && picked.size > 0) {
+			pickOne(id);
+			return;
+		}
 		if ((getSelection()?.toString() ?? '').length > 0) return;
 		anchor = id;
 		toggle(id);
@@ -1107,8 +1117,9 @@
 		<span class="pcell" class:ph data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="18" height="18" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && r.linked}<span class="ver" data-testid="dl-linked" title="Added outside HolyArrs, matched to this title">Linked</span>{:else if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
+			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tp">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && r.linked}<span class="ver" data-testid="dl-linked" title="Added outside HolyArrs, matched to this title">Linked</span>{:else if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
 			<span class="rel" title={r.name}>{sub2(r)}</span>
+			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
 		</span>
 	{:else if id === 'progress'}
 		{#if hist && stageOf(r) !== 'failed'}
@@ -1173,7 +1184,7 @@
 {#snippet row(r: DownloadRow, hist: boolean)}
 	<li class="drow" class:sel={openId === r.id} class:picked={picked.has(r.id)} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => (rowFocus = r.id)} aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
+		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => (rowFocus = r.id)} aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" use:longPress={() => { if (!watch) pickOne(r.id, true); }} onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
 			{@render lead(r)}
 			{#each cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
 			<span class="spare"></span>
@@ -1479,12 +1490,13 @@
 			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
 		{/if}
 	</div>
-	<DlBar bind:kindOn bind:srcOn bind:trackOn trackAll={bySource.length} trackHosts={trackHosts} {trackProblems} {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} />
+	<DlBar bind:kindOn bind:srcOn bind:trackOn trackAll={bySource.length} trackHosts={trackHosts} {trackProblems} {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} {allItems} />
 </div>
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
+<p class="qline" data-testid="dl-qline"><span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{#if freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
 {#if pickedRows.length && !watch}
@@ -1496,6 +1508,13 @@
 		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
 		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>
 	</div>
+		<div class="psel" role="toolbar" aria-label="Selected downloads" data-testid="dl-psel">
+			<div class="pst"><span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span><button type="button" class="plk" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-psel-all">Select all</button><button type="button" class="plk" onclick={clearPicked} data-testid="dl-psel-cancel">Cancel</button></div>
+			<div class="psa">
+				{#each PHONE_BULK as b (b.action)}<button type="button" class="pa" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
+				<button type="button" class="pa bad" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-psel-remove"><Icon name="trash" size={20} /><span>Remove</span></button>
+			</div>
+		</div>
 {/if}
 {#if list.length}
 	<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
@@ -1604,6 +1623,9 @@
 	.selbar { position: sticky; top: 0; left: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px var(--gutter, 12px); background: var(--surface-1); border-bottom: 1px solid var(--line); }
 	.selbar .sn { font: var(--t-footnote); color: var(--text-muted); margin-right: 4px; }
 	.selbar .sn b { color: var(--text); }
+	.psel, .qline, .tt .tp, .nm .ep { display: none; }
+	@keyframes pselIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+	@media (prefers-reduced-motion: reduce) { .psel { animation: none; } }
 	@media (hover: none) { .pk { opacity: 1; } }
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: 44px; }
 	.drow > .dline { cursor: pointer; }
@@ -1992,7 +2014,10 @@
 		.chead { display: none; }
 		.tin { min-width: 0; }
 		/* Two lines, about 64px: poster · title / status, bar · size / time on the right. */
-		.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 44px minmax(52px, auto); grid-template-areas: 'tg post nm nm size' '. post st bar time'; column-gap: 10px; row-gap: 3px; height: auto; min-height: 64px; padding: 5px 12px 5px 0; box-sizing: border-box; align-items: center; }
+		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */
+		.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto; grid-template-areas: 'tg post nm nm nm' 'tg post st bar time'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
+		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
+		.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 		.dline > [data-col] { display: none; }
 		.dline > .ph { display: none; }
 		.dline > [data-col='poster'] { display: block; grid-area: post; align-self: start; }
@@ -2000,13 +2025,41 @@
 		.dline > [data-col='progress'] { display: flex; grid-area: bar; }
 		.dline > [data-col='status'] { display: flex; grid-area: st; }
 		.dline > [data-col='time'] { display: block; grid-area: time; }
-		.dline > [data-col='size'] { display: block; grid-area: size; justify-self: end; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.dline > [data-col='title'] { flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
+		.dline > [data-col='title'] .tn { display: none; }
+		.dline > [data-col='title'] .tp { display: inline; }
+		.dline > [data-col='title'] .ep { display: block; overflow: hidden; color: var(--text-muted); font: 400 13px/16px var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
 		.dline > [data-col='bin'] { display: none; }
 		.tg .pk:not(.any) { display: none; }
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
 		.dline > [data-col='title'] .rel { display: none; }
-		.dline > [data-col='title'] .tt { font: var(--t-callout); font-weight: 600; }
+		.dline > [data-col='title'] .tt { font: 600 15px/19px var(--font-ui); }
+		.dline > [data-col='status'] { font: 400 12px/16px var(--font-ui); }
+		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.tg { align-self: center; }
+		.tg .pk.any { width: 20px; height: 20px; margin-left: 4px; }
+		.dline:has(.pk.any) { grid-template-columns: 32px 36px minmax(0, 1fr) 40px auto; }
+		/* The status line: full width for the tabs, with speed and free space as a quiet line under it. */
+		.tabrow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); padding-right: 24px; }
+		.tabrow :global([data-testid='dl-stat']) { display: none; }
+		.qline { display: flex; align-items: center; gap: 6px; min-height: 24px; margin: 0; padding: 2px var(--dl-gutter) 4px; color: var(--text-muted); font: 400 12px/16px var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+		.qline .qd { color: color-mix(in srgb, var(--ok) 45%, var(--text-muted)); font-weight: 600; }
+		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); font: 600 12px/1 var(--font-ui); }
+		/* The selection bar sits over the tab bar, thumb-sized. */
+		.selbar { display: none; }
+		.psel { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 8px); z-index: 45; display: grid; gap: 4px; padding: 6px 8px 8px; border: 1px solid var(--line-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface-1) 97%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: var(--shadow-modal); animation: pselIn 220ms var(--ease-out); }
+		.pst { display: flex; align-items: center; gap: 4px; }
+		.pst .sn { flex: 1; padding-left: 8px; color: var(--text-muted); font: 400 13px/1 var(--font-ui); }
+		.pst .sn b { color: var(--text); font-weight: 600; }
+		.plk { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--accent-text, var(--text)); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+		.psa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+		.pa { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 52px; padding: 4px 2px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--text); font: 500 11px/1.1 var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+		.pa span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		.pa:active, .plk:active { transform: scale(0.97); }
+		.pa.bad { color: var(--fail); }
+		.pa:focus-visible, .plk:focus-visible, .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+		.listbox:has(.psel) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
 		.dline > [data-col='progress'] .bl { display: none; }
 		.dline > .spare { display: none; }
