@@ -28,6 +28,7 @@
 	import type { AlbumSummary, TitleView } from '../types.ts';
 	import { shortDate } from './inbox.ts';
 	import { askTab } from '../requests.ts';
+	import { askHref } from './approvals.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
@@ -116,6 +117,8 @@
 	const year = $derived(d?.year ?? picked.year ?? null);
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
 	const count = (a: Ask) => askedFor(a, { seasons: ctx.info(a)?.seasons.length });
+	const pageHref = $derived(askHref(picked));
+	const pageLabel = $derived(picked.kind === 'show' ? 'Show page' : picked.kind === 'artist' ? 'Artist page' : 'Movie page');
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
 
 	// Choose what to get: the title lifts into the corner, the sheet rises inside the frame.
@@ -228,6 +231,7 @@
 						{#if picked.note}<p class="said">&ldquo;{picked.note}&rdquo;</p>{/if}
 					{/snippet}
 					{#snippet actions()}
+						<div class="tl-row">
 						{#if status}
 							<span></span>
 						{:else if waiting(picked)}
@@ -244,6 +248,8 @@
 								{/if}
 							</div>
 						{/if}
+						{#if pageHref && !choosing}<a class="tl-link" href={to(pageHref)} data-testid="ask-title-page">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
+						</div>
 					{/snippet}
 				</Billboard>
 			</div>
@@ -270,6 +276,7 @@
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: instant ? 0 : ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
 						<h3 id="sheet-h">{status ? listName : 'What to add'}</h3>
+						{#if pageHref}<a class="tl-link tl-sheet" href={to(pageHref)} data-testid="ask-title-page-sheet">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
 						<button type="button" class="st-hide" aria-label="Hide {status ? listName : 'What to add'}" title="Hide" onclick={closeSheet}><span>Hide</span><Icon name="chevronDown" size={18} /></button>
 					</header>
 					<div class="sh-body">
@@ -372,6 +379,12 @@
 	.sheet:focus { outline: none; }
 	.st-hide { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 10px 0 14px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-2); color: var(--ink-2, inherit); font: 600 13px/1 var(--font-ui); cursor: pointer; transition: background 160ms var(--ease-out); }
 	.st-hide:hover { background: var(--surface-3); }
+	.tl-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+	.tl-link { display: inline-flex; align-items: center; gap: 4px; flex: none; margin-left: auto; height: 36px; padding: 0 10px 0 14px; border-radius: var(--r-pill); background: rgb(255 255 255 / 0.18); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); font: 600 13px/1 var(--font-ui); text-decoration: none; white-space: nowrap; }
+	.tl-link:hover { background: rgb(255 255 255 / 0.28); }
+	.tl-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+	.tl-link.tl-sheet { margin-left: auto; margin-right: 8px; background: var(--surface-2); color: var(--ink-2, inherit); box-shadow: none; border: 1px solid var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; }
+	.tl-link.tl-sheet:hover { background: var(--surface-3); }
 	.st-half { flex: 1 1 0; min-width: 0; }
 	.acts:has(.st-half) { flex-wrap: nowrap; width: min(420px, 100%); }
 	/* Processing and Done open already in place: the title doesn't travel, the picture holds still. */
@@ -435,6 +448,7 @@
 	@media (max-width: 767px) {
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
 		.act { height: 46px; padding: 0 18px; }
+		.tl-link { height: 44px; }
 		/* Phones: the Quality row scrolls sideways; the summary sits on its own line above the buttons. */
 		.rules { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -16px; padding: 0 16px; }
 		.rules::-webkit-scrollbar { display: none; }
@@ -446,7 +460,7 @@
 	/* Touch screens: every small control gets a full finger-sized target. */
 	@media (pointer: coarse) {
 		.rule { min-height: 44px; }
-		.st-hide { height: 44px; }
+		.st-hide, .tl-link { height: 44px; }
 		.sheet :global(.line), .sheet :global(.season) { min-height: 44px; }
 		.sh-f .act.primary, .sh-f .act.ghost { height: 44px; }
 	}
