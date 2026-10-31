@@ -117,7 +117,7 @@ func TestDownloadsViewListsEveryTorrent(t *testing.T) {
 		o.Seeds != 3 || o.Peers != 4 || o.ETA == nil || *o.ETA != 60 || o.StartedAt == nil || !o.CanAct || o.Kind != "" || o.TitleID != 0 || o.DownloaderID == 0 {
 		t.Fatalf("outside row %+v", o)
 	}
-	if s := by[seedHash]; s.Phase != "done" || s.State != "seeding" || s.Ratio != 1.5 || s.Active {
+	if s := by[seedHash]; s.Phase != "done" || s.State != "seeding" || s.Ratio == nil || *s.Ratio != 1.5 || s.Active {
 		t.Fatalf("seeding row %+v", s)
 	}
 	if p := by[pauseHash]; p.Phase != "done" || p.State != "paused" {

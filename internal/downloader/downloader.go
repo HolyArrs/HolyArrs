@@ -85,6 +85,9 @@ type Job struct {
 	// LimitDown and LimitUp are a torrent's own speed caps in bytes per
 	// second (0 none).
 	LimitDown, LimitUp int64
+	// LastActivity and SeenComplete are unix seconds (0 unknown);
+	// SeedingTime and TimeActive are seconds; Uploaded is bytes.
+	LastActivity, SeenComplete, SeedingTime, TimeActive, Uploaded int64
 }
 
 // Health is what an engine says about itself.

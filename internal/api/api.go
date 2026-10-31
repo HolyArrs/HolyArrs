@@ -149,6 +149,8 @@ type Server struct {
 // API serves HTTP.
 type API struct {
 	s Server
+	// tlog is the torrent log's last seen state per torrent (torrentlog.go).
+	tlog torrentLog
 	// listSeen is each region's last world-list shelves signature
 	// (music_lists_v1), guarded by musicv2.cursorMu.
 	listSeen map[string]string

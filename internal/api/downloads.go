@@ -68,11 +68,12 @@ type DownloadRow struct {
 	Outside    bool `json:"outside,omitempty"`
 	// Linked says an outside torrent is matched to a Library title (a
 	// client_links row): Title, Kind and Covers come from that link.
-	Linked       bool    `json:"linked,omitempty"`
-	DownloaderID int64   `json:"downloader_id,omitempty"`
-	Hash         string  `json:"hash,omitempty"`
-	Category     string  `json:"category,omitempty"`
-	Ratio        float64 `json:"ratio,omitempty"`
+	Linked       bool   `json:"linked,omitempty"`
+	DownloaderID int64  `json:"downloader_id,omitempty"`
+	Hash         string `json:"hash,omitempty"`
+	Category     string `json:"category,omitempty"`
+	// Ratio is a torrent's share ratio as the client reports it; nil unknown.
+	Ratio *float64 `json:"ratio,omitempty"`
 	// Limits are a client torrent's own seeding rules (-2 the client's
 	// global rule, -1 none), when the client reports them.
 	Limits *downloader.ShareLimits `json:"limits,omitempty"`
@@ -369,6 +370,12 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	// screen does: the torrents HolyArrs did not send come after its own.
 	if manage {
 		rows = append(rows, a.clientRows(r.Context(), shown)...)
+		// HolyArrs' own torrents take the ratio the same list read saw.
+		for i := range rows {
+			if rows[i].Ratio == nil && !rows[i].ClientItem && rows[i].Protocol == "torrent" {
+				rows[i].Ratio = a.seenRatio(rows[i].DownloaderID, rows[i].Hash)
+			}
+		}
 	}
 	var total DownloadTotals
 	for _, row := range rows {

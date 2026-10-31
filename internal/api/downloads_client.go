@@ -59,6 +59,7 @@ func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []Downlo
 				jobs, err = l.ListAll(ctx)
 				return err
 			})
+			a.noteJobs(ctx, d.ID, jobs)
 			out := make([]DownloadRow, 0, len(jobs))
 			for _, j := range jobs {
 				if j.ID == "" || shown[clientKey{d.ID, j.ID}] {
@@ -89,7 +90,7 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 		DownloadView: DownloadView{State: st, Label: PhaseLabels[ph], Progress: j.Progress, Speed: j.Speed, UpSpeed: j.UpSpeed, Seeds: j.Seeds, Peers: j.Peers, Active: active},
 		Phase:        ph, Name: j.Name, Downloader: d.Name, DownloaderKind: d.Adapter, Protocol: d.Protocol, Size: j.Size,
 		UpdatedAt: time.Now().UTC(), CanAct: true, ClientItem: true, Outside: true, DownloaderID: d.ID, Hash: j.ID,
-		Category: j.Category, Ratio: j.Ratio, Limits: j.Limits, ClientHint: clientHint(j.Detail),
+		Category: j.Category, Ratio: &j.Ratio, Limits: j.Limits, ClientHint: clientHint(j.Detail),
 		QueuePos: j.QueuePos, Tracker: j.Tracker, TrackerProblem: j.TrackerProblem,
 		LimitDown: j.LimitDown, LimitUp: j.LimitUp,
 	}
@@ -300,6 +301,7 @@ func (a *API) itemDetail(w http.ResponseWriter, r *http.Request) {
 				out.RequestedBy = "Added in " + adapterWord(adapter)
 			}
 		}
+		out.Log = a.torrentTimeline(r.Context(), id, r.PathValue("hash"), out.Torrent, nil)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -348,6 +350,9 @@ func (a *API) itemSwarm(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		itemError(w, err)
 		return
+	}
+	if id, perr := strconv.ParseInt(r.PathValue("id"), 10, 64); perr == nil {
+		a.noteTrackers(r.Context(), id, r.PathValue("hash"), out.Trackers)
 	}
 	writeJSON(w, http.StatusOK, out)
 }

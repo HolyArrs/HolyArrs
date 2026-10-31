@@ -100,7 +100,9 @@ func (a *API) downloadSwarm(w http.ResponseWriter, r *http.Request) {
 		Trackers []downloader.Tracker `json:"trackers"`
 		Peers    []downloader.Peer    `json:"peers"`
 	}{}
+	var hash string
 	err := a.manager().Inspect(r.Context(), id, func(e downloader.Engine, ext string) error {
+		hash = ext
 		return asTorrent(e, func(t downloader.TorrentController) error {
 			var err error
 			if out.Trackers, err = t.Trackers(r.Context(), ext); err != nil {
@@ -113,6 +115,10 @@ func (a *API) downloadSwarm(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		clientControlError(w, err)
 		return
+	}
+	var dlr int64
+	if a.s.Store.Read().QueryRowContext(r.Context(), "SELECT downloader_id FROM downloads WHERE id = ?", id).Scan(&dlr) == nil && hash != "" {
+		a.noteTrackers(r.Context(), dlr, hash, out.Trackers)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -174,7 +180,7 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 	default:
 		out.RequestedBy = "HolyArrs"
 	}
-	rows, err := a.s.Store.ReadEvents().QueryContext(ctx, "SELECT at, kind, summary FROM events WHERE download_id = ? ORDER BY at, id LIMIT 200", id)
+	rows, err := a.s.Store.ReadEvents().QueryContext(ctx, "SELECT at, kind, summary FROM events WHERE download_id = ? ORDER BY at DESC, id DESC LIMIT 200", id)
 	if err != nil {
 		internal(w, err)
 		return
@@ -203,6 +209,9 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 		if err != nil && !errors.Is(err, downloader.ErrNotSupported) && (isActiveDownload(d.State) || !errors.Is(err, downloader.ErrNotFound)) {
 			out.TorrentErr = err.Error()
 		}
+	}
+	if dr.Protocol == "torrent" && d.ExternalID != "" {
+		out.Log = a.torrentTimeline(ctx, d.DownloaderID, d.ExternalID, out.Torrent, out.Log)
 	}
 	writeJSON(w, http.StatusOK, out)
 }

@@ -267,6 +267,11 @@ type qbitTorrent struct {
 	OtherErr    bool     `json:"has_other_announce_error"`
 	DLLimit     int64    `json:"dl_limit"`
 	UPLimit     int64    `json:"up_limit"`
+	LastAct     int64    `json:"last_activity"`
+	SeedTime    int64    `json:"seeding_time"`
+	SeenDone    int64    `json:"seen_complete"`
+	Uploaded    int64    `json:"uploaded"`
+	TimeActive  int64    `json:"time_active"`
 }
 
 func (t qbitTorrent) job() Job {
@@ -278,7 +283,8 @@ func (t qbitTorrent) job() Job {
 		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
 		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker), TrackerProblem: t.problem(),
-		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0)}
+		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0),
+		LastActivity: max(t.LastAct, 0), SeedingTime: max(t.SeedTime, 0), SeenComplete: max(t.SeenDone, 0), Uploaded: max(t.Uploaded, 0), TimeActive: max(t.TimeActive, 0)}
 }
 
 // problem reads the tracker flags (sent by newer clients) or, without

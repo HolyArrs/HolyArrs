@@ -107,6 +107,12 @@ type TorrentDetail struct {
 	DoneAt     *time.Time `json:"done_at,omitempty"`
 	SavePath   string     `json:"save_path"`
 	Private    *bool      `json:"private,omitempty"`
+	// SeedingTime and TimeActive are seconds (0 unknown). LastSeen is the
+	// last time a full copy was seen; LastActivity the last piece moved.
+	SeedingTime  int64      `json:"seeding_time,omitempty"`
+	TimeActive   int64      `json:"time_active,omitempty"`
+	LastSeen     *time.Time `json:"last_seen,omitempty"`
+	LastActivity *time.Time `json:"last_activity,omitempty"`
 }
 
 // TorrentFile is one file inside a torrent. Priority: 0 skip, 1 normal,
@@ -495,6 +501,9 @@ func (q *Qbittorrent) Properties(ctx context.Context, id string) (TorrentDetail,
 		Done       int64   `json:"completion_date"`
 		SavePath   string  `json:"save_path"`
 		Private    *bool   `json:"is_private"`
+		SeedTime   int64   `json:"seeding_time"`
+		Elapsed    int64   `json:"time_elapsed"`
+		LastSeen   int64   `json:"last_seen"`
 	}
 	if err := json.Unmarshal(b, &p); err != nil {
 		return TorrentDetail{}, fmt.Errorf("qbittorrent torrents/properties: %w", err)
@@ -513,7 +522,8 @@ func (q *Qbittorrent) Properties(ctx context.Context, id string) (TorrentDetail,
 	return TorrentDetail{Size: max(p.Size, 0), Downloaded: max(p.Downloaded, 0), Uploaded: max(p.Uploaded, 0), Wasted: max(p.Wasted, 0),
 		Speed: max(p.DLSpeed, 0), UpSpeed: max(p.UPSpeed, 0), ETA: eta, Ratio: max(p.Ratio, 0),
 		Seeds: max(p.Seeds, 0), SeedsTotal: max(p.SeedsTotal, 0), Peers: max(p.Peers, 0), PeersTotal: max(p.PeersTotal, 0),
-		AddedAt: when(p.Added), DoneAt: when(p.Done), SavePath: p.SavePath, Private: p.Private}, nil
+		AddedAt: when(p.Added), DoneAt: when(p.Done), SavePath: p.SavePath, Private: p.Private,
+		SeedingTime: max(p.SeedTime, 0), TimeActive: max(p.Elapsed, 0), LastSeen: when(p.LastSeen)}, nil
 }
 
 // TorrentFiles lists a torrent's files with their priority; empty before
@@ -701,3 +711,7 @@ var urlish = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9+.-]*://[^\s"'<>]+`)
 func redactURLs(msg string) string {
 	return urlish.ReplaceAllStringFunc(msg, trackerHost)
 }
+
+// RedactURLs swaps every address in free text for its scheme and host, so
+// a passkey never leaves the client's answer.
+func RedactURLs(msg string) string { return redactURLs(msg) }

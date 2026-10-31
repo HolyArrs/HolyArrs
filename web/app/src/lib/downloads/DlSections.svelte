@@ -32,6 +32,7 @@
 	import { fileTree } from './filetree.ts';
 	import { api, message } from '../api.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
+	import { healthLine, quietPeers, logDays, badKind, clientMark } from './panel-words.ts';
 	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../motion.ts';
@@ -171,7 +172,7 @@
 	// The open download's real detail, read from the server (and through it
 	// from the torrent client) while its pane is open. Nothing is made up:
 	// what is not reported shows as a dash or an empty table.
-	type TorrentDetail = { size: number; downloaded: number; uploaded: number; wasted: number; speed: number; up_speed: number; eta: number; ratio: number; seeds: number; seeds_total: number; peers: number; peers_total: number; added_at?: string; done_at?: string; save_path: string; private?: boolean };
+	type TorrentDetail = { size: number; downloaded: number; uploaded: number; wasted: number; speed: number; up_speed: number; eta: number; ratio: number; seeds: number; seeds_total: number; peers: number; peers_total: number; added_at?: string; done_at?: string; save_path: string; private?: boolean; seeding_time?: number; time_active?: number; last_seen?: string; last_activity?: string };
 	type Detail = { downloader: string; requested_by: string; torrent?: TorrentDetail; torrent_error?: string; log: { at: string; kind: string; summary: string }[] };
 	type TFile = { index: number; name: string; size: number; progress: number; priority: number };
 	type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number; fixed?: boolean; ref?: string };
@@ -1052,7 +1053,7 @@
 		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category) || dash}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
-		<span class="pcell" class:ph data-col="proto">{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} use:tip={`${p === 'torrent' ? 'Torrent' : 'Usenet'} · ${dlName(r)}`} role="img" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download"><Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} /></span>{/if}</span>
+		<span class="pcell" class:ph data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}<span class="pm" class:cmk={!!cm.mark} data-tone={cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
 			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && r.linked}<span class="ver" data-testid="dl-linked" title="Added outside HolyArrs, matched to this title">Linked</span>{:else if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
@@ -1081,7 +1082,7 @@
 		<span class="num" class:ph data-col="speed">{!hist && moving(r) ? `${bytes(r.speed)}/s` : dash}</span>
 	{:else if id === 'time'}
 		{#if hist}
-			<span class="num" class:ph data-col="time" title={r.finished_at || (r.client_item ? '' : r.updated_at)}>{r.finished_at ? ago(r.finished_at) : r.client_item ? dash : ago(r.updated_at)}</span>
+			<span class="num" class:ph data-col="time">{dash}</span>
 		{:else}
 			<span class="num" class:ph data-col="time">{r.active && r.eta ? duration(r.eta) : dash}</span>
 		{/if}
@@ -1095,7 +1096,7 @@
 		{@const n = id === 'seeds' ? r.seeds : r.peers}
 		<span class="num" class:ph data-col={id}>{!hist && r.protocol === 'torrent' && (r.phase === 'downloading' || r.phase === 'stalled') && n != null ? n : dash}</span>
 	{:else if id === 'ratio'}
-		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null && (r.client_item || stageOf(r) === 'seeding' || r.ratio > 0) ? r.ratio.toFixed(2) : dash}</span>
+		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null ? r.ratio.toFixed(2) : dash}</span>
 	{:else if id === 'up'}
 		<span class="num" class:ph data-col="up">{r.protocol === 'torrent' && r.up_speed ? `${bytes(r.up_speed)}/s` : dash}</span>
 	{:else if id === 'completed'}
@@ -1220,6 +1221,7 @@
 					<dt>Down</dt><dd>{speed ? `${bytes(speed)}/s` : '–'}</dd>
 					<dt>Up</dt><dd>{up ? `${bytes(up)}/s` : '–'}</dd>
 					<dt>Time left</dt><dd>{eta ? duration(eta) : '–'}</dd>
+					<dt>Uploaded</dt><dd data-testid="dl-info-uploaded">{t ? bytes(t.uploaded) : '–'}</dd>
 					<dt>Wasted</dt><dd>{t ? bytes(t.wasted) : '–'}</dd>
 				</dl></section>
 				<section class="grp" aria-label="Swarm"><h3 class="gt">Swarm</h3><dl class="kv">
@@ -1227,11 +1229,14 @@
 					<dt>Peers</dt><dd>{t ? `${t.peers} of ${t.peers_total}` : '–'}</dd>
 					<dt>Share ratio</dt><dd>{t ? t.ratio.toFixed(2) : '–'}</dd>
 					<dt>Private</dt><dd>{t?.private == null ? '–' : t.private ? 'Yes' : 'No'}</dd>
+					<dt>Last activity</dt><dd data-testid="dl-info-activity">{t?.last_activity ? ago(t.last_activity) : '–'}</dd>
 				</dl></section>
 				<section class="grp" aria-label="Dates and paths"><h3 class="gt">Dates and paths</h3><dl class="kv">
 					<dt>Size</dt><dd>{t?.size || r.size ? bytes(t?.size || r.size || 0) : '–'}</dd>
 					<dt>Added</dt><dd>{dateTime(t?.added_at ?? r.started_at) || '–'}</dd>
 					<dt>Done</dt><dd>{dateTime(t?.done_at ?? r.finished_at) || '–'}</dd>
+					<dt>Seeding time</dt><dd data-testid="dl-info-seedtime">{t?.seeding_time ? duration(t.seeding_time) : '–'}</dd>
+					<dt>Time active</dt><dd>{t?.time_active ? duration(t.time_active) : '–'}</dd>
 					<dt>Save path</dt><dd class="path" title={t?.save_path || ''}>{t?.save_path || '–'}</dd>
 				</dl></section>
 				<section class="grp" aria-label="Limits and rules"><h3 class="gt">Limits and rules</h3><dl class="kv">
@@ -1255,7 +1260,7 @@
 			{@const shownF = filterFiles(files, fq)}
 			{@const rowsT = fileTree(shownF.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!closed[`${r.id}|${k}`])}
 			{@const keys = rowsT.map((x) => x.key)}
-			<div class="fbar">
+			<div class="fbar" hidden={files.length === 1}>
 				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
 				{#if fsel.size && !watch}
 					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} picked</span>
@@ -1263,7 +1268,19 @@
 					<button type="button" class="xbn" onclick={() => (fsel = new Set())} data-testid="dl-files-clear">Clear</button>
 				{/if}
 			</div>
-			{#if !shownF.length}
+			{#if files.length === 1}
+				{@const f = files[0]}
+				{@const pc = Math.floor(f.progress * 100)}
+				<div class="tblw" data-testid="dl-filetable"><table class="t2">
+					<thead><tr><th class="c-name">Name</th><th class="c-num c-size">Size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th></tr></thead>
+					<tbody><tr class:off={f.priority === 0} data-testid="dl-filerow" data-single="true">
+						<td class="c-name"><span class="fn" title={f.name}>{f.name.split('/').pop()}</span></td>
+						<td class="c-num c-size">{bytes(f.size)}</td>
+						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
+						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
+					</tr></tbody>
+				</table></div>
+			{:else if !shownF.length}
 				<GhostEmpty compact testid="dl-files-nomatch" title="No files match" text="Try fewer words, or clear the filter." />
 			{:else}
 			<div class="tblw" data-testid="dl-filetable"><table class="t2">
@@ -1292,6 +1309,8 @@
 		{@const peers = det.id === r.id ? det.peers : undefined}
 		{#if !peers}
 			{@render calm(r, 'Peers', det.id === r.id ? det.swarmErr : undefined)}
+		{:else if !peers.length && r.progress >= 1}
+			<p class="quiet0" role="status" data-testid="dl-peers-quiet">{quietPeers(t?.last_activity)}</p>
 		{:else}
 			<div class="tblw" data-testid="dl-peertable"><table class="t2">
 				<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
@@ -1359,12 +1378,17 @@
 		<GhostEmpty compact testid="dl-repair-none" title="Nothing to repair" text="Checking, repairing and unpacking steps show up here." />
 	{:else}
 		{@const log = d?.log ?? []}
-		{#if r.outside}
-			<GhostEmpty compact testid="dl-log-outside" title="No history here" text="This torrent was added outside HolyArrs." />
-		{:else if log.length}
-			<ol class="lg" data-testid="dl-log">
-				{#each log as l, i (i)}<li class:bad={/fail|error|stall|vanish/i.test(l.kind)}><time>{dateTime(l.at)}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l.summary}</span></li>{/each}
-			</ol>
+		{#if log.length}
+			<div class="lgw" data-testid="dl-log">
+				{#each logDays(log) as g (g.day)}
+					<h4 class="lgday">{g.day}</h4>
+					<ol class="lg">
+						{#each g.lines as l, i (i)}<li class:bad={badKind(l.kind)}><time>{new Date(l.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l.summary}</span></li>{/each}
+					</ol>
+				{/each}
+			</div>
+		{:else if !d}
+			{@render calm(r, 'Log', undefined)}
 		{:else}
 			<GhostEmpty compact testid="dl-log-none" title="Nothing logged yet" text="What happens to this download shows up here." />
 		{/if}
@@ -1384,7 +1408,7 @@
 	]}
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="ph">
-			<p class="xt pt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
+			<p class="xt pt"><b>{who(r)}</b><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></p>
 			{@render tabStrip(r)}
 			<button type="button" class="pcl" aria-expanded={paneOpen} aria-label={paneOpen ? 'Collapse details' : 'Expand details'} onclick={() => (paneOpen = !paneOpen)} data-testid="dl-pane-toggle"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
 		</div>
@@ -1995,5 +2019,50 @@
 		.pb .tblw { max-height: 40dvh; }
 		.pact { flex-wrap: wrap; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
 		.pend:has(.quiet) { border-left: 0; padding-left: 0; }
+	}
+	/* Info cards share the Files table's depth: raised surface, tinted title band, full-width hairline rows, zebra. */
+	.pb .gen { align-items: stretch; }
+	.pb .grp { display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid var(--line-strong); background: var(--surface-2); box-shadow: var(--shadow-card); }
+	.pb .grp .gt { display: flex; align-items: center; height: 28px; margin: 0; padding: 0 12px; border-bottom: 1px solid var(--line-strong); background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); }
+	.pb .grp .kv { flex: 1; gap: 0; align-content: start; }
+	.pb .grp .kv dt, .pb .grp .kv dd { display: flex; align-items: center; min-height: 32px; padding: 0 12px; border-top: 1px solid var(--line); }
+	.pb .grp .kv dd { justify-content: flex-end; padding-left: 4px; font-variant-numeric: tabular-nums; }
+	.pb .grp .kv dd.path { display: block; line-height: 32px; }
+	.pb .grp .kv dt:first-of-type, .pb .grp .kv dt:first-of-type + dd { border-top: 0; }
+	.pb .grp .kv dt:nth-of-type(even), .pb .grp .kv dt:nth-of-type(even) + dd { background: color-mix(in srgb, var(--surface-3) 28%, var(--surface-2)); }
+	.quiet0 { margin: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.lgw { display: grid; gap: 4px; }
+	.lgday { margin: 6px 0 0; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
+	.lgday:first-child { margin-top: 0; }
+	.pt span { font-variant-numeric: tabular-nums; }
+	/* The main list in the same family: raised surface, tinted header band, zebra rows, a lift on hover. */
+	@media (min-width: 641px) {
+		.tin { border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: clip; }
+		.tin .chead { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); border-bottom-color: var(--line-strong); }
+		.listbox :global(.tin .chead) { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); }
+		.dlrows .drow:last-child { border-bottom: 0; }
+		.dlrows .drow:nth-child(even) > .dline { background: color-mix(in srgb, var(--surface-3) 28%, var(--surface-2)); }
+		.dlrows .drow > .dline:hover { background: var(--surface-3); box-shadow: 0 2px 8px -4px rgb(0 0 0 / 0.25); }
+		.dlrows .drow.picked > .dline { background: color-mix(in srgb, var(--accent) 9%, var(--surface-2)); }
+		.dlrows .drow.sel > .dline, .dlrows .drow.sel > .dline:hover { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
+	}
+	/* Our own Downloader marks: short letters on a tinted rounded badge. */
+	.pm.cmk { display: inline-grid; place-items: center; width: auto; min-width: 22px; height: 22px; padding: 0 3px; border-radius: 5px; font: 700 9px/1 var(--font-sans, system-ui); letter-spacing: 0.02em; color: var(--cm); background: color-mix(in srgb, var(--cm) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cm) 40%, transparent); }
+	.pm[data-tone='qb'] { --cm: #2f6fd6; }
+	.pm[data-tone='tr'] { --cm: #d23c3c; }
+	.pm[data-tone='de'] { --cm: #5b7388; }
+	.pm[data-tone='sab'] { --cm: #a87a00; }
+	.pm[data-tone='nzb'] { --cm: #2e8b4a; }
+	:global([data-theme='dark']) .pm[data-tone='qb'] { --cm: #7aa8f5; }
+	:global([data-theme='dark']) .pm[data-tone='tr'] { --cm: #f07a7a; }
+	:global([data-theme='dark']) .pm[data-tone='de'] { --cm: #9db3c6; }
+	:global([data-theme='dark']) .pm[data-tone='sab'] { --cm: #f0c84a; }
+	:global([data-theme='dark']) .pm[data-tone='nzb'] { --cm: #6cd08c; }
+	@media (prefers-color-scheme: dark) {
+		:global(:root:not([data-theme='light'])) .pm[data-tone='qb'] { --cm: #7aa8f5; }
+		:global(:root:not([data-theme='light'])) .pm[data-tone='tr'] { --cm: #f07a7a; }
+		:global(:root:not([data-theme='light'])) .pm[data-tone='de'] { --cm: #9db3c6; }
+		:global(:root:not([data-theme='light'])) .pm[data-tone='sab'] { --cm: #f0c84a; }
+		:global(:root:not([data-theme='light'])) .pm[data-tone='nzb'] { --cm: #6cd08c; }
 	}
 </style>
