@@ -159,6 +159,8 @@
 	});
 	const filterCount = $derived((status ? 1 : 0) + (ctx.kind !== 'all' ? 1 : 0));
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
+	// Approve all: the waiting cards, minus any already in their Approved beat.
+	const toApprove = $derived(cardsShown.filter((x) => waiting(x) && !approving.has(x.id)));
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
 	const banner = (a: Ask) => {
@@ -220,8 +222,25 @@
 		// Focus the window itself, so no button opens wearing a focus ring.
 		win.focus({ preventScroll: true });
 	}
+	// Closing eases out (scale down and fade), then the dialog closes.
+	let closing: ReturnType<typeof setTimeout> | undefined;
 	function hide() {
-		if (win?.open) win.close();
+		if (!win?.open || closing) return;
+		if (reduced()) return win.close();
+		win.classList.add('win-out');
+		closing = setTimeout(() => {
+			closing = undefined;
+			win?.classList.remove('win-out');
+			win?.close();
+		}, 320);
+	}
+	onDestroy(() => clearTimeout(closing));
+	// Focus goes back to the card of the ask last shown (stepping moves it), else the card it opened from.
+	function closed() {
+		const id = openId;
+		openId = 0;
+		const card = document.querySelector<HTMLElement>(`.bc[data-ask="${id}"] .open`);
+		(card ?? (from?.isConnected ? from : document.querySelector<HTMLElement>('.bc .open')))?.focus({ preventScroll: true });
 	}
 	// Only an answer to the same ask moves on; stepping to an answered ask must not.
 	let wasWaiting = 0;
@@ -251,6 +270,8 @@
 	// "2 of 9: Name", read out when stepping.
 	let said = $state('');
 	function step(by: number) {
+		// The open ask isn't listed (it was just answered): stay put until the window moves on.
+		if (at < 0) return;
 		const next = cardsShown[at + by];
 		if (!next) return;
 		openId = next.id;
@@ -265,12 +286,10 @@
 		e.preventDefault();
 		step(e.key === 'ArrowRight' ? 1 : -1);
 	}
+	// Esc closes the whole window in one press (with the closing motion).
 	function cancel(e: Event) {
-		const back = win?.querySelector<HTMLElement>('.frame.choosing .sh-h .x');
-		if (back) {
-			e.preventDefault();
-			back.click();
-		}
+		e.preventDefault();
+		hide();
 	}
 </script>
 
@@ -306,8 +325,8 @@
 		</div>
 		</div>
 		<div class="right">
-			{#if ctx.approverTab === 'pending' && cardsShown.filter(waiting).length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(cardsShown.filter((x) => waiting(x) && !approving.has(x.id)))}><Icon name="check" size={16} />Approve all {cardsShown.filter(waiting).length}</button>
+			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />Approve all {toApprove.length}</button>
 			{/if}
 			<div class="sf-anchor">
 					<button type="button" class="sf-btn" bind:this={sfBtn} aria-haspopup={phone ? 'dialog' : 'menu'} aria-expanded={sfMenu} aria-label="Filter{filterCount ? `, ${filterCount} on` : ''}" onclick={sfToggle}>
@@ -316,7 +335,7 @@
 						{#if filterCount}<span class="sf-badge" aria-hidden="true">{filterCount}</span>{/if}
 					</button>
 					{#if sfMenu && !phone}
-						<div class="sf-menu" role="menu" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys}>
+						<div class="sf-menu" in:fly={{ y: -8, duration: ms(280), easing: cubicOut }} out:fade={{ duration: ms(180) }} role="menu" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys}>
 							{@render filterItems()}
 						</div>
 					{/if}
@@ -324,8 +343,8 @@
 		</div>
 	</div>
 	{#if sfMenu && phone}
-		<div class="sf-scrim" aria-hidden="true" transition:fade={{ duration: ms(160) }}></div>
-		<div class="sf-sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} transition:fly={{ y: 40, duration: ms(220), easing: cubicOut }}>
+		<div class="sf-scrim" aria-hidden="true" transition:fade={{ duration: ms(300) }}></div>
+		<div class="sf-sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(260), easing: cubicOut }}>
 			<div class="sf-grab" aria-hidden="true"></div>
 			<div role="menu" aria-label="Filter">{@render filterItems()}</div>
 		</div>
@@ -348,7 +367,7 @@
 					<div class="body">
 						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="when">· <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
 					</div>
-					<div class="foot">
+					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
 							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
 							<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
@@ -374,24 +393,17 @@
 					{/if}
 				</li>
 			{:else}
-				{#if status}
-					<li class="calm">
-						<h2>Nothing here with this status.</h2>
-						<button type="button" class="b no show-all" onclick={() => (statusPick = { tab: '', word: '' })}>Show all</button>
-					</li>
-				{:else}
 					<li class="calm">
 						<span class="calm-ic"><Icon name="check" size={24} /></span>
 						<h2>{calm[ctx.approverTab]?.title ?? 'Nothing here right now.'}</h2>
 						<p>{ctx.kind !== 'all' ? 'Nothing of this type here. Try All.' : (calm[ctx.approverTab]?.text ?? '')}</p>
 					</li>
-				{/if}
 			{/each}
 		</ul>
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
+<dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
 		{#if cardsShown.length > 1 && at >= 0}
@@ -452,9 +464,8 @@
 	.sf-btn:hover, .sf-btn[aria-expanded='true'] { background: var(--surface-2); }
 	.sf-funnel { color: var(--text-muted); }
 	.sf-badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--info, #409cff); color: #fff; font: 600 11px/18px var(--font-ui); text-align: center; }
-	.sf-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; max-height: min(420px, 70vh); overflow-y: auto; padding: 4px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); animation: sf-in 160ms var(--ease-out) both; }
+	.sf-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; max-height: min(420px, 70vh); overflow-y: auto; padding: 4px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); }
 	.sf-menu:focus { outline: none; }
-	@keyframes sf-in { from { opacity: 0; transform: translateY(-4px); } }
 	.sf-mh { padding: 8px 10px 4px; color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
 	.sf-sep { height: 1px; margin: 4px 6px; background: var(--line); }
 	.sf-mi { display: flex; align-items: center; gap: 10px; width: 100%; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: 500 13px/1 var(--font-ui); text-align: left; white-space: nowrap; cursor: pointer; }
@@ -477,7 +488,6 @@
 		.sf-badge { margin-left: auto; }
 		.sf-menu { left: 0; right: 0; }
 	}
-	@media (prefers-reduced-motion: reduce) { .sf-menu { animation: none; } }
 
 	/* Window cards: a dark card (in both themes, it is led by the art), the title's wide art
 	   with the title and its facts on it, then a frosted sheet over the art's foot holding
@@ -563,6 +573,10 @@
 	@media (pointer: coarse) { .nav, .close { width: 44px; height: 44px; } .b { height: 44px; } }
 	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.85); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }
+	.win[open]:global(.win-out) { animation: win-out 320ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+	.win[open]:global(.win-out)::backdrop { animation: fade-out 320ms var(--ease-out) both; }
+	@keyframes win-out { to { opacity: 0; transform: translateY(10px) scale(0.96); } }
+	@keyframes fade-out { to { opacity: 0; } }
 	/* Phones: the tabs swipe, the filter fills the width, two cards per row, the window fills the screen. */
 	@media (max-width: 767px) {
 		.desktop { gap: 12px; padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
@@ -572,7 +586,7 @@
 		.tabs::-webkit-scrollbar { display: none; }
 		.tab { flex: none; padding: 0 12px; }
 		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; margin-left: 0; }
-		.approve-all { justify-content: center; height: 48px; }
+		.approve-all { justify-content: center; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 		.ban { height: 140px; }
 		.ban-cap { left: 10px; right: 10px; bottom: 24px; }

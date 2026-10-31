@@ -6,7 +6,7 @@
 	// title into the corner and raises the What to get sheet inside the same
 	// frame: the two-pane picker (seasons and episodes, or albums and songs),
 	// the Pick rule, then Approve. The life-cycle line runs along the edge.
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import Billboard from '../ui/Billboard.svelte';
@@ -49,11 +49,11 @@
 	const pictures = $derived(music ? [] : d?.backdrop ? [to(d.backdrop)] : picked.poster ? [to(picked.poster)] : []);
 	// Music: the artist's music video plays muted over the photo, as on the artist page (same Autoplay setting).
 	let mvideo = $state<HeroVideo | null>(null);
+	// Keyed on the artist only, so a list refresh doesn't restart the playing video.
+	const mvArtist = $derived(picked.kind === 'artist' ? artistIdOf(picked) : null);
 	$effect(() => {
-		const a = picked;
+		const id = mvArtist;
 		mvideo = null;
-		if (a.kind !== 'artist') return;
-		const id = artistIdOf(a);
 		if (!id) return;
 		const ctl = new AbortController();
 		void loadUISettings().then(() => {
@@ -68,8 +68,11 @@
 	const status = $derived(ctx.approver && picked.state !== 'asked');
 	// How much of what was asked is in the Library (this window only: one title read).
 	let partial = $state<{ id: number; facts: LifeFacts } | null>(null);
+	// Read again only when the ask, its title or its state changes (not on every list refresh).
+	const partKey = $derived(`${picked.id}|${picked.title_id ?? 0}|${picked.state}`);
 	$effect(() => {
-		const a = picked;
+		void partKey;
+		const a = untrack(() => picked);
 		if (!a.title_id || (a.state !== 'approved' && a.state !== 'available') || a.kind === 'movie') return;
 		const id = a.title_id;
 		const ctl = new AbortController();
@@ -179,16 +182,8 @@
 			to?.focus({ preventScroll: true });
 		});
 	}
-	function keys(e: KeyboardEvent) {
-		if (document.querySelector('dialog[open]')) return;
-		if (e.key === 'Escape' && choosing) {
-			e.preventDefault();
-			closeSheet();
-		}
-	}
 </script>
 
-<svelte:window onkeydown={keys} />
 
 <!-- The life-cycle line along the banner's bottom edge. -->
 {#snippet line(a: Ask, life: Life)}
