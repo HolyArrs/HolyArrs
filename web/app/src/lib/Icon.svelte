@@ -48,6 +48,7 @@
 		chevronLeft: 'M14.5 6 8.5 12l6 6',
 		chevronRight: 'M9.5 6l6 6-6 6',
 		chevronDown: 'M6 9.5l6 6 6-6',
+		chevronUp: 'M6 14.5l6-6 6 6',
 		chevronUpDown: 'M8 9.5l4-4 4 4M8 14.5l4 4 4-4',
 		more: 'M6 12h.01M12 12h.01M18 12h.01',
 		play: 'M8 5.5v13l10.5-6.5z',

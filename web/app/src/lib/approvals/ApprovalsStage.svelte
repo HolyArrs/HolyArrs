@@ -213,6 +213,9 @@
 						<p class="huge tone-{life.tone}" role="status" aria-live="polite">{life.label}</p>
 						<p class="sent">{sentence}{#if life.more}<span class="more"> · {life.more}</span>{/if}</p>
 					</div>
+					{#if picked.kind !== 'movie' && !choosing}
+						<button type="button" class="act glass peek" onclick={() => void choose()}><Icon name="chevronUp" size={18} />What was approved</button>
+					{/if}
 					{#if failed}
 						<div class="acts"><button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />Decline</button></div>
 					{/if}
@@ -225,7 +228,7 @@
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
 						<h3 id="sheet-h">{status ? 'What was approved' : 'What to add'}</h3>
-						<button type="button" class="x" aria-label="Close" onclick={() => (choosing = false)}><Icon name="x" size={18} /></button>
+						<button type="button" class="x" aria-label={status ? 'Collapse' : 'Close'} onclick={() => (choosing = false)}><Icon name={status ? 'chevronDown' : 'x'} size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
@@ -366,6 +369,7 @@
 	/* The lifecycle line runs the full width along the seam between art and status. */
 	.life.inline { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: rgb(255 255 255 / 0.1); }
 	.big .acts { flex: none; }
+	.peek { flex: none; }
 	@media (max-width: 767px) {
 		.frame.status { --big-h: 112px; }
 		.huge { font-size: 26px; }
