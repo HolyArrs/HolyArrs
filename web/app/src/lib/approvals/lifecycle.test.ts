@@ -63,7 +63,7 @@ describe('lifecycle', () => {
 		expect(lifecycle(ask('approved'), { reason: 'not found' })).toMatchObject({ label: 'Failed · not found' });
 	});
 	it('a title not out yet is Upcoming, with its date when known', () => {
-		expect(lifecycle(ask('approved', 7), { upcoming: 'Mar 3' })).toMatchObject({ stage: 'upcoming', tone: 'soon', label: 'Upcoming · out Mar 3' });
+		expect(lifecycle(ask('approved', 7), { upcoming: 'Mar 3' })).toMatchObject({ stage: 'upcoming', tone: 'soon', label: 'Upcoming · Mar 3' });
 		expect(lifecycle(ask('approved', 7), { upcoming: '' })).toMatchObject({ label: 'Upcoming' });
 	});
 	it('part of the asked seasons in the Library says how many', () => {
@@ -76,7 +76,7 @@ describe('lifecycle', () => {
 	});
 	it('partial wins over upcoming, upcoming over progress', () => {
 		expect(lifecycle(ask('approved', 7), { partial: { have: 1, total: 2 }, upcoming: 'Mar 3' }).label).toBe('Processing · 1 left');
-		expect(lifecycle(ask('approved', 7), { upcoming: 'Mar 3', progress: 0.5 }).label).toBe('Upcoming · out Mar 3');
+		expect(lifecycle(ask('approved', 7), { upcoming: 'Mar 3', progress: 0.5 }).label).toBe('Upcoming · Mar 3');
 	});
 });
 

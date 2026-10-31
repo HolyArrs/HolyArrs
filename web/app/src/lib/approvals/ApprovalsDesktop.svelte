@@ -84,6 +84,20 @@
 		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
 	};
 
+	// Filter by status within the tab: the status word without its detail (Downloading · 40% → Downloading).
+	const statusOf = (a: Ask) => lifeOf(a).label.split(' · ')[0];
+	let status = $state('');
+	$effect(() => {
+		void ctx.approverTab;
+		status = '';
+	});
+	const statuses = $derived.by(() => {
+		const n = new Map<string, number>();
+		for (const a of list) n.set(statusOf(a), (n.get(statusOf(a)) ?? 0) + 1);
+		return [...n].map(([word, count]) => ({ word, count }));
+	});
+	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
+
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
 	const banner = (a: Ask) => {
 		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] ?? '';
@@ -165,14 +179,14 @@
 		if (openId && !openAsk && win?.open) hide();
 	});
 	// ← and → (or the arrows) move to the ask before or after, without closing the window.
-	const at = $derived(list.findIndex((a) => a.id === openId));
+	const at = $derived(cardsShown.findIndex((a) => a.id === openId));
 	// "2 of 9: Name", read out when stepping.
 	let said = $state('');
 	function step(by: number) {
-		const next = list[at + by];
+		const next = cardsShown[at + by];
 		if (!next) return;
 		openId = next.id;
-		said = `${at + by + 1} of ${list.length}: ${next.name}`;
+		said = `${at + by + 1} of ${cardsShown.length}: ${next.name}`;
 	}
 	function winKeys(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -215,8 +229,16 @@
 		</div>
 	</div>
 
+		{#if statuses.length > 1}
+			<div class="stats" role="group" aria-label="Filter by status">
+				<button type="button" class="st" aria-pressed={!status} onclick={() => (status = '')}>All<span class="sn">{list.length}</span></button>
+				{#each statuses as x (x.word)}
+					<button type="button" class="st" class:bad={x.word === 'Failed'} aria-pressed={status === x.word} onclick={() => (status = status === x.word ? '' : x.word)}>{x.word}<span class="sn">{x.count}</span></button>
+				{/each}
+			</div>
+		{/if}
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
-			{#each list as a, i (a.id)}
+			{#each cardsShown as a, i (a.id)}
 				{@const w = ctx.who(a)}
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
@@ -270,11 +292,11 @@
 <dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={() => { openId = 0; from?.focus({ preventScroll: true }); }} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
-		{#if list.length > 1 && at >= 0}
+		{#if cardsShown.length > 1 && at >= 0}
 			<div class="steps-nav">
 				<button type="button" class="nav" aria-label="Previous ask" disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
-				<span class="pos">{at + 1} of {list.length}</span>
-				<button type="button" class="nav" aria-label="Next ask" disabled={at >= list.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
+				<span class="pos">{at + 1} of {cardsShown.length}</span>
+				<button type="button" class="nav" aria-label="Next ask" disabled={at >= cardsShown.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
 			</div>
 		{/if}
 		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} choose /></div>
@@ -288,6 +310,14 @@
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* The toolbar: tabs left, filter and view right. */
+	.stats { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 -4px; }
+	.st { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text-muted); font: 600 13px/1 var(--font-ui); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.st:hover { color: var(--text); }
+	.st[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
+	.st.bad { color: var(--fail-text, var(--fail, #e5484d)); }
+	.st.bad[aria-pressed='true'] { background: var(--fail, #e5484d); color: #fff; border-color: transparent; }
+	.sn { font-variant-numeric: tabular-nums; opacity: 0.7; }
+	@media (pointer: coarse) { .st { height: 40px; } }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 	.right { display: flex; align-items: center; gap: 10px; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
