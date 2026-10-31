@@ -11829,6 +11829,65 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/items/{hash}/retry": {
+      "post": {
+        "description": "Sends a failed job back to the Usenet Downloader's queue. The job may come back under a new id (answered as id); its log and Library link follow it. Jobs HolyArrs sent are refused (it searched again already); jobs it did not send need the settings permission.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Sent back."
+          },
+          "403": {
+            "description": "A job HolyArrs did not send, without the settings permission."
+          },
+          "404": {
+            "description": "No such Downloader or job."
+          },
+          "409": {
+            "description": "A job HolyArrs sent, or a Downloader that cannot retry."
+          },
+          "502": {
+            "description": "The Downloader refused."
+          }
+        },
+        "summary": "Retry a failed Usenet job",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/items/{hash}/swarm": {
       "get": {
         "description": "Read live from the torrent Downloader. Tracker addresses keep only scheme and host.",
@@ -12062,6 +12121,71 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/usenet": {
+      "get": {
+        "description": "Read live from the Usenet Downloader: the job's verify, repair, unpack and script lines, how much each news server sent for it, and the servers' byte counters. Addresses keep only scheme and host.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "job_servers": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "servers": {
+                      "type": "object"
+                    },
+                    "stages": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The stage log and the server counters."
+          },
+          "404": {
+            "description": "No such Downloader or job."
+          },
+          "409": {
+            "description": "Not a Usenet Downloader."
+          },
+          "502": {
+            "description": "The Downloader did not answer."
+          }
+        },
+        "summary": "Read a Usenet job's servers and steps",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/downloaders/{id}/location": {
@@ -13380,6 +13504,63 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloads/{id}/usenet": {
+      "get": {
+        "description": "The same as the client job read, for a download HolyArrs sent.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "job_servers": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "servers": {
+                      "type": "object"
+                    },
+                    "stages": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The stage log and the server counters."
+          },
+          "404": {
+            "description": "No such Downloader or job."
+          },
+          "409": {
+            "description": "Not a Usenet Downloader."
+          },
+          "502": {
+            "description": "The Downloader did not answer."
+          }
+        },
+        "summary": "Read a Usenet download's servers and steps",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/episodes/{id}": {

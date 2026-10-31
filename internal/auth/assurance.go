@@ -39,7 +39,8 @@ func recentLocalExempt(pattern string, who Who) bool {
 	case "GET /api/v1/downloads/{id}/swarm", "GET /api/v1/downloads/{id}/detail",
 		"GET /api/v1/downloads/{id}/files",
 		"GET /api/v1/downloaders/{id}/items/{hash}/detail", "GET /api/v1/downloaders/{id}/items/{hash}/swarm",
-		"GET /api/v1/downloaders/{id}/items/{hash}/files":
+		"GET /api/v1/downloaders/{id}/items/{hash}/files",
+		"GET /api/v1/downloaders/{id}/items/{hash}/usenet", "GET /api/v1/downloads/{id}/usenet":
 		return true
 	case "POST /api/v1/auth/two-factor/setup", "POST /api/v1/auth/two-factor/enable":
 		return who.MustTwoFactor

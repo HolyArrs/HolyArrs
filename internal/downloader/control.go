@@ -38,6 +38,8 @@ type ClientStatus struct {
 	// reported), and whether the slower second set of speed limits is on.
 	Connection string `json:"connection,omitempty"`
 	SlowMode   *bool  `json:"slow_mode,omitempty"`
+	// TimeLeft is a Usenet queue's own estimate in seconds (0 none).
+	TimeLeft int64 `json:"time_left,omitempty"`
 }
 
 // Tracker is one tracker of a torrent.
@@ -667,6 +669,7 @@ func (s *Sabnzbd) Status(ctx context.Context) (ClientStatus, error) {
 			Paused     bool   `json:"paused"`
 			KBPerSec   string `json:"kbpersec"`
 			Limit      string `json:"speedlimit_abs"`
+			TimeLeft   string `json:"timeleft"`
 			DiskSpace1 string `json:"diskspace1"`
 			DiskSpace2 string `json:"diskspace2"`
 		} `json:"queue"`
@@ -679,7 +682,7 @@ func (s *Sabnzbd) Status(ctx context.Context) (ClientStatus, error) {
 	if f2 := gib(qu.Queue.DiskSpace2); f2 > 0 && (free == 0 || f2 < free) {
 		free = f2
 	}
-	st := ClientStatus{Paused: qu.Queue.Paused, Speed: int64(num(qu.Queue.KBPerSec) * 1024), SpeedLimit: int64(num(qu.Queue.Limit)), FreeSpace: free}
+	st := ClientStatus{Paused: qu.Queue.Paused, Speed: int64(num(qu.Queue.KBPerSec) * 1024), SpeedLimit: int64(num(qu.Queue.Limit)), FreeSpace: free, TimeLeft: clock(qu.Queue.TimeLeft)}
 	b, err = s.call(ctx, "server_stats", nil, true)
 	if err != nil {
 		return st, nil // the counters are extra; the header is enough

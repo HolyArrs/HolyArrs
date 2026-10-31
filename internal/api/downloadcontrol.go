@@ -41,6 +41,7 @@ func (a *API) downloadControlRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloads/resume-all", a.allAct(false))
 	m.HandleFunc("PUT /api/v1/downloaders/{id}/speed-limit", a.speedLimit)
 	a.clientItemRoutes(m)
+	a.usenetRoutes(m)
 	a.clientManageRoutes(m)
 }
 

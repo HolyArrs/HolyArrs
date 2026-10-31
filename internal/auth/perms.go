@@ -413,6 +413,9 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/downloaders/{id}/items/{hash}/recheck":         PermManageLibrary,
 	"POST /api/v1/downloaders/{id}/items/{hash}/reannounce":      PermManageLibrary,
 	"POST /api/v1/downloaders/{id}/items/{hash}/remove":          PermManageLibrary, // outside torrents also need PermSettings (checked in the handler)
+	"POST /api/v1/downloaders/{id}/items/{hash}/retry":           PermManageLibrary, // outside Usenet jobs also need PermSettings (checked in the handler)
+	"GET /api/v1/downloaders/{id}/items/{hash}/usenet":           PermManageLibrary,
+	"GET /api/v1/downloads/{id}/usenet":                          PermManageLibrary,
 	"GET /api/v1/downloads/matches":                              PermManageLibrary,
 	"POST /api/v1/downloads/matches/run":                         PermManageLibrary,
 	"POST /api/v1/downloads/matches/{id}/pick":                   PermManageLibrary,
@@ -579,6 +582,8 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/downloaders/{id}/items/{hash}/swarm":            ScopeAdmin,
 	"GET /api/v1/downloaders/{id}/items/{hash}/files":            ScopeAdmin,
 	"PUT /api/v1/downloaders/{id}/items/{hash}/files":            ScopeAdmin,
+	"GET /api/v1/downloaders/{id}/items/{hash}/usenet":           ScopeAdmin,
+	"GET /api/v1/downloads/{id}/usenet":                          ScopeAdmin,
 	"GET /api/v1/downloaders/{id}/attempts":                      ScopeAdmin,
 	"GET /api/v1/explore/title-stats":                            ScopeAdmin,
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": ScopeAdmin,

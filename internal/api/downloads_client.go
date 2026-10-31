@@ -269,6 +269,17 @@ func clientHint(state string) string {
 		return "missing"
 	case "stalledUP":
 		return "idle_seed"
+	// SABnzbd's steps after the bytes are in (the row reads Importing).
+	case "QuickCheck", "Verifying":
+		return "verifying"
+	case "Repairing":
+		return "repairing"
+	case "Extracting":
+		return "unpacking"
+	case "Moving":
+		return "finishing"
+	case "Running":
+		return "script"
 	}
 	return ""
 }
