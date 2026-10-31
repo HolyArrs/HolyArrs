@@ -100,7 +100,7 @@
 		rulesId = 0;
 	});
 	$effect(() => {
-		if (choosing && !waiting(picked)) choosing = false;
+		if (choosing && !waiting(picked) && !status) choosing = false;
 	});
 	async function choose() {
 		const content = frame?.querySelector<HTMLElement>('.ui-billboard .content');
@@ -117,7 +117,8 @@
 	let autoFor = 0;
 	$effect(() => {
 		const a = picked;
-		if (!startChoosing || autoFor === a.id || !waiting(a)) return;
+		// Processing and Done open on what was approved (read only); a movie has nothing to list.
+		if (!startChoosing || autoFor === a.id || (!waiting(a) && !(status && a.kind !== 'movie'))) return;
 		// Cleared when the window steps on first, so the sheet never opens on the next ask unasked.
 		const t = setTimeout(() => {
 			autoFor = a.id;
@@ -223,16 +224,20 @@
 			{#if choosing}
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
-						<h3 id="sheet-h">What to add</h3>
+						<h3 id="sheet-h">{status ? 'What was approved' : 'What to add'}</h3>
 						<button type="button" class="x" aria-label="Close" onclick={() => (choosing = false)}><Icon name="x" size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
 							<div class="one"><span class="one-pic"><Poster src={picked.poster} name={picked.name} /></span><div><strong>{picked.name}</strong><span>The movie{year ? ` · ${year}` : ''}{d?.runtime ? ` · ${Math.floor(d.runtime / 60) ? `${Math.floor(d.runtime / 60)}h ` : ''}${d.runtime % 60}m` : ''}</span></div><Icon name="check" size={18} /></div>
 						{:else}
-							<AskParts {ctx} a={picked} editable unfolded layout="split" bind:pick />
+							{#if status}
+								<AskParts {ctx} a={picked} unfolded layout="split" />
+							{:else}
+								<AskParts {ctx} a={picked} editable unfolded layout="split" bind:pick />
+							{/if}
 						{/if}
-						{#if rules.length}
+						{#if rules.length && !status}
 							<div class="rules" role="group" aria-label="Pick rules">
 								<span class="rl">Pick rules</span>
 								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">· default</span>{:else}Default pick rules{/if}</button>
@@ -242,11 +247,13 @@
 							</div>
 						{/if}
 					</div>
+					{#if !status}
 					<footer class="sh-f">
 						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Approving adds only what you ticked' : picked.kind === 'movie' ? `Approving adds the movie` : `Approving adds ${(count(picked) || 'everything they asked for').toLowerCase()}`}</span>
 						<button type="button" class="act ghost" onclick={() => (choosing = false)}>Back</button>
 						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />Approve</button>
 					</footer>
+					{/if}
 				</section>
 			{/if}
 	</div>
@@ -342,9 +349,10 @@
 	.swap { position: absolute; inset: 0; }
 
 	/* Big status: the banner keeps the top, the status sits under it. */
-	.frame.status .swap { bottom: auto; height: calc(100% - var(--big-h)); }
+	.frame.status:not(.choosing) .swap { bottom: auto; height: calc(100% - var(--big-h)); }
 	.frame.status { --big-h: 132px; }
 	.frame.status :global(.ui-billboard .shade) { opacity: 1; }
+	.frame.status .sheet { bottom: calc(var(--big-h) + 14px); }
 	.big { position: absolute; left: 0; right: 0; bottom: 0; height: var(--big-h); display: flex; align-items: center; gap: 20px; padding: 0 28px; background: #0b0b0c; color: #fff; }
 	.says { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 	.huge { font: 800 34px/1.1 var(--font-ui); letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

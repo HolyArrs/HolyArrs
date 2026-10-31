@@ -215,7 +215,7 @@
 								{@const on = p.ticked.includes(songKey(t))}
 								<li class:off={!on} data-testid="ask-song">
 									<label class="sp-item">
-										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}" onchange={() => tickSong(p, songKey(t))} />{/if}
+										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}" onchange={() => tickSong(p, songKey(t))} />{:else}<span class="mk" class:no={!on} aria-label={on ? 'Approved' : 'Left out'}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
 										<span class="n">{t.disc > 1 ? `${t.disc}-` : ''}{t.number}</span>
 										<span class="t">{t.name || `Song ${t.number}`}</span>
 										<span class="y">{songLen(t.length_ms)}</span>
@@ -247,7 +247,7 @@
 								{@const later = !!e.air_day && e.air_day.slice(0, 10) > today}
 								<li class:off={!on} class:later data-testid="ask-episode">
 									<label class="sp-item">
-										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Episode {e.number}" onchange={() => tickEpisode(p, e.number)} />{/if}
+										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Episode {e.number}" onchange={() => tickEpisode(p, e.number)} />{:else}<span class="mk" class:no={!on} aria-label={on ? 'Approved' : 'Left out'}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
 										<span class="n">E{e.number}</span>
 										<span class="t">{e.name || `Episode ${e.number}`}</span>
 										{#if !p.asked.includes(e.number)}<span class="tag">Not asked for</span>{/if}
@@ -464,4 +464,6 @@
 	@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
 	.rowtap { cursor: pointer; }
 	.rowtap:hover { background: var(--surface-2); }
+	.mk { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: none; color: var(--ok-text, var(--ok)); }
+	.mk.no { color: var(--text-muted); }
 </style>
