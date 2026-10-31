@@ -197,10 +197,6 @@ func (a *API) noteJobs(ctx context.Context, downloaderID int64, jobs []downloade
 			delete(a.tlog.seenDay, k)
 		}
 	}
-	sweep := now.Sub(a.tlog.lastSweep) >= 24*time.Hour
-	if sweep {
-		a.tlog.lastSweep = now
-	}
 	a.tlog.mu.Unlock()
 	for _, r := range recs {
 		a.writeTorrentLog(ctx, downloaderID, r.hash, now, r.lines)
@@ -217,7 +213,20 @@ func (a *API) noteJobs(ctx context.Context, downloaderID int64, jobs []downloade
 			return nil
 		})
 	}
-	if sweep {
+}
+
+// maybeSweep runs the daily sweep. Callers run it only after every
+// Downloader's list was read and noted, so no torrent_seen row is stale
+// merely because its Downloader has not been read yet.
+func (a *API) maybeSweep(ctx context.Context) {
+	now := time.Now().UTC()
+	a.tlog.mu.Lock()
+	due := now.Sub(a.tlog.lastSweep) >= 24*time.Hour
+	if due {
+		a.tlog.lastSweep = now
+	}
+	a.tlog.mu.Unlock()
+	if due {
 		a.sweepTorrentRows(ctx, now)
 	}
 }
@@ -228,12 +237,12 @@ func (a *API) sweepTorrentRows(ctx context.Context, now time.Time) {
 	cut := now.Add(-torrentForget).Format(store.TimeLayout)
 	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		stale := `SELECT downloader_id, hash FROM torrent_seen WHERE seen_at < ?`
-		if _, err := tx.Exec(`DELETE FROM torrent_log WHERE (downloader_id, lower(hash)) IN (`+stale+`)
-			OR (at < ? AND (downloader_id, lower(hash)) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
+		if _, err := tx.Exec(`DELETE FROM torrent_log WHERE (downloader_id, hash) IN (`+stale+`)
+			OR (at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`DELETE FROM client_links WHERE (downloader_id, lower(hash)) IN (`+stale+`)
-			OR (matched_at < ? AND (downloader_id, lower(hash)) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
+		if _, err := tx.Exec(`DELETE FROM client_links WHERE (downloader_id, hash) IN (`+stale+`)
+			OR (matched_at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
 			return err
 		}
 		_, err := tx.Exec(`DELETE FROM torrent_seen WHERE seen_at < ?`, cut)
@@ -243,6 +252,9 @@ func (a *API) sweepTorrentRows(ctx context.Context, now time.Time) {
 
 // forgetTorrents drops what HolyArrs keeps about torrents removed through
 // it: memory, log, link and seen rows. No hashes means the whole Downloader.
+// forgetChunk caps the hashes in one DELETE ... IN (...).
+const forgetChunk = 500
+
 func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []string) {
 	all := len(hashes) == 0
 	gone := map[string]bool{}
@@ -266,6 +278,10 @@ func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []s
 		}
 	}
 	a.tlog.mu.Unlock()
+	list := make([]string, 0, len(gone))
+	for h := range gone {
+		list = append(list, h)
+	}
 	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		for _, t := range []string{"torrent_log", "client_links", "torrent_seen"} {
 			if all {
@@ -274,8 +290,15 @@ func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []s
 				}
 				continue
 			}
-			for h := range gone {
-				if _, err := tx.Exec("DELETE FROM "+t+" WHERE downloader_id = ? AND lower(hash) = ?", downloaderID, h); err != nil {
+			for i := 0; i < len(list); i += forgetChunk {
+				part := list[i:min(i+forgetChunk, len(list))]
+				args := make([]any, 0, len(part)+1)
+				args = append(args, downloaderID)
+				for _, h := range part {
+					args = append(args, h)
+				}
+				q := "DELETE FROM " + t + " WHERE downloader_id = ? AND hash IN (?" + strings.Repeat(",?", len(part)-1) + ")"
+				if _, err := tx.Exec(q, args...); err != nil {
 					return err
 				}
 			}

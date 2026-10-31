@@ -255,6 +255,9 @@ func TestRedactURLs(t *testing.T) {
 		"announce/0123456789abcdef0123456789abcdef": "announce/…",
 		"basket=1 monkey=2 sass":                    "basket=1 monkey=2 sass",
 		"":                                          "",
+		"x api_key=s1 apikey=s2 token=s3 uid=4":     "x api_key=… apikey=… token=… uid=…",
+		"tracker says passkey: abc":                 "tracker says passkey: …",
+		"monkey=1 basket=2":                         "monkey=1 basket=2",
 	}
 	for in, want := range cases {
 		if got := redactURLs(in); got != want {

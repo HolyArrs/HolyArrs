@@ -76,14 +76,23 @@ func (q *Qbittorrent) qbitAPI(ctx context.Context) ([3]int, error) {
 	return v, nil
 }
 
+// qbitVersionRecheck is how old a too-old kept version must be before it
+// is read again, so an upgrade is seen soon without a read per call.
+const qbitVersionRecheck = 2 * time.Minute
+
 // qbitAPIAtLeast says the client's API is a.b.c or newer. A kept version
-// that is too old is read again once, so an upgraded client is seen at once.
+// that is too old is read again once when it is older than
+// qbitVersionRecheck, so an upgraded client is seen soon.
 func (q *Qbittorrent) qbitAPIAtLeast(ctx context.Context, a, b, c int) (bool, error) {
 	v, err := q.qbitAPI(ctx)
 	if err != nil || atLeast(v, a, b, c) {
 		return err == nil, err
 	}
 	q.verMu.Lock()
+	if time.Since(q.verAt) < qbitVersionRecheck {
+		q.verMu.Unlock()
+		return false, nil
+	}
 	q.verAt = time.Time{}
 	q.verMu.Unlock()
 	v, err = q.qbitAPI(ctx)

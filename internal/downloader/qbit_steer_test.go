@@ -93,6 +93,26 @@ func TestQbitAPIVersionCachedAndFailureIsError(t *testing.T) {
 	}
 }
 
+func TestQbitAPIAtLeastRechecksOnlyStaleOldVersion(t *testing.T) {
+	f, q := steerFake(t, "2.11.4")
+	ctx := context.Background()
+	for i := 0; i < 3; i++ {
+		if ok, err := q.qbitAPIAtLeast(ctx, 2, 13, 0); ok || err != nil {
+			t.Fatalf("%v %v", ok, err)
+		}
+	}
+	if n := f.count("app/webapiVersion"); n != 1 {
+		t.Fatalf("fresh old version read %d times, want 1", n)
+	}
+	q.verAt = time.Now().Add(-3 * time.Minute)
+	f.mu.Lock()
+	f.answers["app/webapiVersion"] = "2.13.1"
+	f.mu.Unlock()
+	if ok, err := q.qbitAPIAtLeast(ctx, 2, 13, 0); !ok || err != nil {
+		t.Fatalf("stale old version not read again: %v %v", ok, err)
+	}
+}
+
 func TestSlowModeFlipsOnlyWhenDifferent(t *testing.T) {
 	f, q := steerFake(t, "2.11.4")
 	f.answers["transfer/speedLimitsMode"] = "0"

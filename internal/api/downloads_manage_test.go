@@ -203,6 +203,10 @@ func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 	if c := call(member, clear); c != 200 {
 		t.Fatalf("member clear: %d", c)
 	}
+	// A too-old version is kept for a couple of minutes, so the upgraded
+	// client is a fresh Downloader here.
+	x, f, _ = manageBase(t)
+	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
 	f.webapi = "2.15.1"
 	if c := call(member, ratio); c != 403 {
 		t.Fatalf("member default action on 5.2: %d", c)

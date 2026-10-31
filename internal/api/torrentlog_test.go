@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -177,5 +178,59 @@ func TestTorrentLogForgetsGoneTorrents(t *testing.T) {
 	}
 	if n := count("SELECT count(*) FROM torrent_log WHERE downloader_id = 9 AND hash = ?", ownHash); n != 1 {
 		t.Fatal("recently seen torrent swept")
+	}
+}
+
+// The daily sweep runs only from clientRows after every list was read, so
+// noting one Downloader never sweeps rows of another; removals match
+// lower-case hashes in batches.
+func TestTorrentLogSweepWaitsForEveryDownloader(t *testing.T) {
+	s, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	a := &API{s: Server{Store: s}}
+	ctx := context.Background()
+	old := time.Now().UTC().Add(-40 * 24 * time.Hour)
+	a.writeTorrentLog(ctx, 2, seedHash, time.Now().UTC(), []DownloadLogLine{{Kind: "x", Summary: "a"}})
+	_ = s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO torrent_seen (downloader_id, hash, seen_at) VALUES (2, ?, ?)", seedHash, old.Format(store.TimeLayout))
+		return err
+	})
+	a.noteJobs(ctx, 1, []downloader.Job{{ID: ownHash}})
+	var n int
+	_ = s.Read().QueryRow("SELECT count(*) FROM torrent_log WHERE downloader_id = 2").Scan(&n)
+	if n != 1 {
+		t.Fatal("noting Downloader 1 swept Downloader 2's rows")
+	}
+	if !a.tlog.lastSweep.IsZero() {
+		t.Fatal("noteJobs started the sweep")
+	}
+	a.maybeSweep(ctx)
+	_ = s.Read().QueryRow("SELECT count(*) FROM torrent_log WHERE downloader_id = 2").Scan(&n)
+	if n != 0 {
+		t.Fatal("sweep kept a long-unseen torrent")
+	}
+	hashes := make([]string, 1200)
+	for i := range hashes {
+		hashes[i] = fmt.Sprintf("%040x", i)
+	}
+	_ = s.Write(ctx, func(tx *sql.Tx) error {
+		for _, h := range hashes {
+			if _, err := tx.Exec("INSERT INTO torrent_log (downloader_id, hash, at, kind, summary) VALUES (3, ?, '', 'x', 'a')", h); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	up := make([]string, len(hashes))
+	for i, h := range hashes {
+		up[i] = strings.ToUpper(h)
+	}
+	a.forgetTorrents(ctx, 3, up)
+	_ = s.Read().QueryRow("SELECT count(*) FROM torrent_log WHERE downloader_id = 3").Scan(&n)
+	if n != 0 {
+		t.Fatalf("batched forget left %d rows", n)
 	}
 }

@@ -705,10 +705,10 @@ func trackerHost(raw string) string {
 var urlish = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9+.-]*://[^\s"'<>]+`)
 
 // secretish finds passkey-shaped fragments left once the addresses are
-// gone: key=value pairs trackers use for a member's key, and long hex path
+// gone: key=value (or key: value) pairs trackers use for a member's key, and long hex path
 // parts.
 var (
-	secretPair = regexp.MustCompile(`(?i)\b(passkey|authkey|torrent_pass|pid|key)=[^\s&;,"'<>]+`)
+	secretPair = regexp.MustCompile(`(?i)\b(passkey|authkey|torrent_pass|api_?key|apikey|token|pid|uid|key)(\s*[=:]\s*)[^\s&;,"'<>]+`)
 	secretPath = regexp.MustCompile(`/[0-9a-fA-F]{24,}`)
 )
 
@@ -716,7 +716,7 @@ var (
 // blanks passkey-shaped fragments written without a scheme.
 func redactURLs(msg string) string {
 	msg = urlish.ReplaceAllStringFunc(msg, trackerHost)
-	msg = secretPair.ReplaceAllString(msg, "$1=…")
+	msg = secretPair.ReplaceAllString(msg, "$1$2…")
 	return secretPath.ReplaceAllString(msg, "/…")
 }
 

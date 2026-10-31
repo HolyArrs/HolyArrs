@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -41,6 +42,7 @@ func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []Downlo
 	defer cancel()
 	per := make([][]DownloadRow, len(ds))
 	var wg sync.WaitGroup
+	var failed atomic.Bool
 	for i, d := range ds {
 		if d.Protocol != "torrent" {
 			continue
@@ -60,6 +62,8 @@ func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []Downlo
 			})
 			if lerr == nil {
 				a.noteJobs(ctx, d.ID, jobs)
+			} else {
+				failed.Store(true)
 			}
 			out := make([]DownloadRow, 0, len(jobs))
 			for _, j := range jobs {
@@ -72,6 +76,9 @@ func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []Downlo
 		}(i, d)
 	}
 	wg.Wait()
+	if !failed.Load() {
+		a.maybeSweep(ctx)
+	}
 	var rows []DownloadRow
 	defer func() { a.matchQueue(context.WithoutCancel(ctx), rows) }()
 	for i, out := range per {
