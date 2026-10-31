@@ -14,6 +14,8 @@ export interface Life {
 	/** wait (amber), soon (muted), go (accent), ok (green), off (dim), bad (red). */
 	tone: 'wait' | 'soon' | 'go' | 'ok' | 'off' | 'bad';
 	label: string;
+	/** Ready with more of the title not asked for: "5 more to request". */
+	more?: string;
 }
 
 /** What else is known about an approved ask; each part is left out when unknown. */
@@ -27,6 +29,8 @@ export interface LifeFacts {
 	 * catalogue) are in the Library. `unit` adds the word: "Processing · 1 season left".
 	 */
 	partial?: { have: number; total: number; unit?: 'seasons' | 'albums' };
+	/** Seasons or albums the title has beyond what was asked (shown once Ready). */
+	more?: number;
 	/** Why it failed, when known. */
 	reason?: string;
 }
@@ -35,13 +39,13 @@ export interface LifeFacts {
 export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts = {}): Life {
 	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Pending' };
 	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', label: 'Declined' };
-	if (a.state === 'available') return { stage: 'ready', pct: 100, tone: 'ok', label: 'Ready' };
+	if (a.state === 'available') return ready(facts);
 	if (!a.title_id) return { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: facts.reason ? `Failed · ${facts.reason}` : 'Failed' };
 	const lo = STAGE_WEIGHT.getting;
 	const hi = STAGE_WEIGHT.getting_end;
 	const part = facts.partial;
 	// Everything asked for is in: Ready, however much more the title has.
-	if (part && part.total > 0 && part.have >= part.total) return { stage: 'ready', pct: 100, tone: 'ok', label: 'Ready' };
+	if (part && part.total > 0 && part.have >= part.total) return ready(facts);
 	if (part && part.total > 0 && part.have > 0) {
 		const left = part.total - part.have;
 		const unit = part.unit ? ` ${left === 1 ? part.unit.slice(0, -1) : part.unit}` : '';
@@ -51,6 +55,16 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	const progress = facts.progress;
 	const p = progress === undefined || !Number.isFinite(progress) ? 0 : Math.min(Math.max(progress, 0), 1);
 	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: p > 0 ? `Processing · ${Math.round(p * 100)}%` : 'Processing' };
+}
+
+const word = (n: number, unit: 'seasons' | 'albums') => `${n} ${n === 1 ? unit.slice(0, -1) : unit}`;
+
+/** Ready names what came in ("Ready · 2 albums") and what's left to request. */
+function ready(f: LifeFacts): Life {
+	const part = f.partial;
+	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
+	if (f.more && f.more > 0) life.more = `${f.more} more to request`;
+	return life;
 }
 
 const day = (iso: string) => iso.slice(0, 10);
