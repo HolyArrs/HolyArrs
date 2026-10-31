@@ -40,21 +40,7 @@ func (a *API) storeRows(ctx context.Context, names map[int64]domain.Downloader, 
 	var rows []DownloadRow
 	for _, d := range ds {
 		snap := sy.Store.Current(d.ID)
-		h := ClientHealth{ID: d.ID, Name: d.Name, Health: "ok", SeenAt: snap.ReadAt}
-		switch {
-		case snap.Fallback:
-			h.Health, h.Stale = "degraded", !snap.Fresh
-		case snap.Fresh:
-		case snap.Stale || snap.ReadAt.IsZero() && len(snap.Items) > 0:
-			h.Health, h.Stale = "checking", true
-		case snap.ReadAt.IsZero():
-			h.Health = "waiting"
-		case snap.Failed:
-			h.Health, h.Stale = "offline", true
-		default:
-			h.Health, h.Stale = "slow", true
-		}
-		health = append(health, h)
+		health = append(health, syncHealth(d, snap))
 		out := make([]DownloadRow, 0, len(snap.Items))
 		for _, j := range snap.Items {
 			if j.ID == "" || shown[clientKey{d.ID, strings.ToLower(j.ID)}] {
@@ -70,6 +56,49 @@ func (a *API) storeRows(ctx context.Context, names map[int64]domain.Downloader, 
 		}
 	}
 	return rows, health
+}
+
+// syncHealth is one client's state as the background reader sees it.
+func syncHealth(d domain.Downloader, snap dlsync.Snapshot) ClientHealth {
+	h := ClientHealth{ID: d.ID, Name: d.Name, Health: "ok", SeenAt: snap.ReadAt}
+	switch {
+	case snap.Fallback:
+		h.Health, h.Stale = "degraded", !snap.Fresh
+	case snap.Fresh:
+	case snap.Stale || snap.ReadAt.IsZero() && len(snap.Items) > 0:
+		h.Health, h.Stale = "checking", true
+	case snap.ReadAt.IsZero():
+		h.Health = "waiting"
+	case snap.Failed:
+		h.Health, h.Stale = "offline", true
+	default:
+		h.Health, h.Stale = "slow", true
+	}
+	return h
+}
+
+// syncTrouble lists the torrent clients whose background reads are
+// degraded (the Manager reads them itself) or being checked again, for the
+// health page. Empty while the reader is off.
+func (a *API) syncTrouble(ctx context.Context) []ClientHealth {
+	out := []ClientHealth{}
+	if !a.syncOn() {
+		return out
+	}
+	ds, err := store.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
+	if err != nil {
+		return out
+	}
+	sortDownloaders(ds)
+	for _, d := range ds {
+		if d.Removed || d.Protocol != "torrent" {
+			continue
+		}
+		if h := syncHealth(d, a.s.DLSync.Store.Current(d.ID)); h.Health == "degraded" || h.Health == "checking" {
+			out = append(out, h)
+		}
+	}
+	return out
 }
 
 // storeRatio is the share ratio in the reader's snapshot; nil when unseen.

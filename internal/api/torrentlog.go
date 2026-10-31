@@ -340,8 +340,13 @@ func (a *API) noteTrackers(ctx context.Context, downloaderID int64, hash string,
 	}
 }
 
-// lastActivity is the last piece-moved time the list refresh saw.
+// lastActivity is the last piece-moved time the list refresh saw; with
+// the background reader on, the reader's snapshot (the list cache stays
+// empty then).
 func (a *API) lastActivity(downloaderID int64, hash string) int64 {
+	if a.syncOn() {
+		return a.s.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].LastActivity
+	}
 	a.tlog.mu.Lock()
 	defer a.tlog.mu.Unlock()
 	return a.tlog.seen[clientKey{downloaderID, strings.ToLower(hash)}].lastActivity

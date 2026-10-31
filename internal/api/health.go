@@ -31,7 +31,9 @@ func (a *API) healthChecks(w http.ResponseWriter, r *http.Request) {
 	if len(cs) > 0 {
 		worst = cs[0].State
 	}
-	writeJSON(w, http.StatusOK, healthSummary(cs, worst))
+	out := healthSummary(cs, worst)
+	out["sync"] = a.syncTrouble(r.Context())
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (a *API) runHealthChecks(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +46,9 @@ func (a *API) runHealthChecks(w http.ResponseWriter, r *http.Request) {
 	if len(cs) > 0 {
 		worst = cs[0].State
 	}
-	writeJSON(w, http.StatusOK, healthSummary(cs, worst))
+	out := healthSummary(cs, worst)
+	out["sync"] = a.syncTrouble(r.Context())
+	writeJSON(w, http.StatusOK, out)
 }
 
 // healthStates answers the state of every stage (from the supervisor's

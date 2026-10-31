@@ -107,6 +107,24 @@
 			<span class="chip {checks.worst === 'ok' ? 'ok' : checks.worst === 'warning' ? 'wait' : 'fail'}" data-testid="health-worst">{stateWord(checks.worst)}</span>
 		</div>
 		<p class="small muted">When something breaks or is fixed, the Alerts that speak for health hear of it.</p>
+		{#if checks.sync?.length}
+			<ul class="rows checks" data-testid="health-sync">
+				{#each checks.sync as c (c.id)}
+					<li data-testid="health-sync-row" data-state={c.health}>
+						<span class="chip {c.health === 'degraded' ? 'fail' : 'wait'}">{c.health === 'degraded' ? 'Sync degraded' : 'Checking'}</span>
+						<span class="grow small">
+							<b>Downloads reader</b> {c.name}
+							<br /><span class="muted"
+								>{c.health === 'degraded'
+									? 'The background reader is down; HolyArrs reads this Downloader itself until it is back.'
+									: 'The last read is too old; a new one is on its way.'}</span
+							>
+						</span>
+						{#if c.seen_at}<time class="mono xs muted" datetime={c.seen_at} title="Last read">{ago(c.seen_at)}</time>{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
 		{#if checks.checks.length === 0}
 			<p class="small muted" style="margin-top: var(--s-3)">No results yet. Check again to run them now.</p>
 		{:else}

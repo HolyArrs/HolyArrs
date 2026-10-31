@@ -48,7 +48,7 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	var jobs []downloader.Job
 	for i := range 250 {
 		jobs = append(jobs, downloader.Job{ID: fmt.Sprintf("%040x", i+1), Name: fmt.Sprintf("Outside.%d", i), Category: "linux", Size: 100, Progress: 1,
-			UpSpeed: 10, State: downloader.StateFinished, Detail: "uploading", AddedAt: int64(1700000000 + i), Ratio: 1.5})
+			UpSpeed: 10, State: downloader.StateFinished, Detail: "uploading", AddedAt: int64(1700000000 + i), Ratio: 1.5, LastActivity: int64(1700100000 + i)})
 	}
 	sy.Store.Load(dlr, jobs)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -121,6 +121,26 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	v := view(t, x.srv.URL+"/api/v1/downloads/view?cursor=200")
 	if len(v.Downloads) != 51 || v.NextCursor != "" {
 		t.Fatalf("page 2: rows %d cursor %q", len(v.Downloads), v.NextCursor)
+	}
+	// The torrent detail's last activity comes from the reader's snapshot,
+	// not the empty list cache.
+	var td downloader.TorrentDetail
+	x.api.torrentTimeline(context.Background(), dlr, fmt.Sprintf("%040X", 3), &td, nil)
+	if td.LastActivity == nil || td.LastActivity.Unix() != 1700100002 {
+		t.Fatalf("last activity %v, want from the reader", td.LastActivity)
+	}
+	// The health page names the client the reader is checking again.
+	var hc struct {
+		Sync []ClientHealth `json:"sync"`
+	}
+	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/health/checks", "", 200), &hc)
+	if len(hc.Sync) != 1 || hc.Sync[0].ID != dlr || hc.Sync[0].Health != "checking" {
+		t.Fatalf("health sync %+v, want checking", hc.Sync)
+	}
+	sy.Store.SetFallback(dlr, true)
+	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/health/checks", "", 200), &hc)
+	if len(hc.Sync) != 1 || hc.Sync[0].Health != "degraded" {
+		t.Fatalf("health sync %+v, want degraded", hc.Sync)
 	}
 }
 

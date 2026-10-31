@@ -698,6 +698,8 @@ export interface HealthStates {
 export interface HealthChecks {
 	checks: HealthCheck[];
 	worst: 'ok' | 'warning' | 'error';
+	/** Torrent clients the Downloads reader cannot serve now (downloads sync on only). */
+	sync?: { id: number; name: string; health: 'degraded' | 'checking'; stale?: boolean; seen_at?: string }[];
 }
 
 export interface HealthSettings {
