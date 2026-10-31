@@ -702,7 +702,7 @@
 				{/if}
 			</PageLoader>
 		{/if}
-		{#if inbox.messages.length}<div class="variant-messages">{@render messages()}</div>{/if}
+		{#if inbox.messages.length && !approver}<div class="variant-messages">{@render messages()}</div>{/if}
 	</div>
 {/if}
 
