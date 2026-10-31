@@ -171,6 +171,8 @@ export interface AskAlbum {
 	mbid: string;
 	name: string;
 	year?: number;
+	/** The songs (recording ids) an approver kept; absent: every song. */
+	songs?: string[];
 }
 
 /** LookupArtist is a MusicBrainz artist with what the Library knows of it. */

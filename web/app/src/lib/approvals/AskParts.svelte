@@ -20,7 +20,13 @@
 	const artist = $derived(music ? askArtist(a) : null);
 	const kinds = $derived(music ? musicKinds() : null);
 	const cover = (id: string) => appPicture(`/api/v1/music-trending/art/album/${id}`) ?? '';
-	const rows = $derived(music && artist ? albumGroups(askAlbums(a, artist.albums, kinds ?? undefined, cover)) : []);
+	// Read only (an answered ask): every album of the artist, so the ones left out show as left out.
+	const approved = $derived(!editable && music && a.state !== 'asked' && a.albums?.length ? a.albums : null);
+	const rows = $derived(music && artist ? albumGroups(approved ? mergeAlbums(askAlbums(a, artist.albums, kinds ?? undefined, cover), askAlbums({ albums: [] }, artist.albums, kinds ?? undefined, cover)) : askAlbums(a, artist.albums, kinds ?? undefined, cover)) : []);
+	function mergeAlbums<T extends { mbid: string }>(kept: T[], all: T[]): T[] {
+		const ids = new Set(kept.map((x) => x.mbid));
+		return [...kept, ...all.filter((x) => !ids.has(x.mbid))];
+	}
 	const albumsLoading = $derived(music && !a.albums?.length && artist?.albums === null);
 	const info = $derived(a.kind === 'show' ? ctx.info(a) : null);
 	const seasons = $derived(a.kind === 'show' && info ? askSeasons(a, info.seasons) : []);
@@ -77,6 +83,14 @@
 			// Stored songs first; an album not stored yet asks the album page once it is opened.
 			const list = kept?.albums[r.main.mbid] ?? (kept && openAlbum === r.key ? albumSongs(r.main.mbid, artistId) : null);
 			const all = list?.map(songKey) ?? [];
+			if (approved) {
+				// What was approved: albums not kept are left out; a kept album's stored songs are its ticks.
+				const w = approved.find((x) => r.ids.includes(x.mbid));
+				if (!w) return { row: r, list, ticked: [], tick: 'none' };
+				if (!w.songs?.length || !list) return { row: r, list, ticked: all, tick: 'all' };
+				const t = all.filter((x) => w.songs!.includes(x));
+				return { row: r, list, ticked: t, tick: t.length < all.length ? 'some' : 'all' };
+			}
 			if (left.has(r.key)) return { row: r, list, ticked: [], tick: 'none' };
 			const t = songTicks[r.key]?.filter((x) => all.includes(x));
 			if (!list || !t) return { row: r, list, ticked: all, tick: 'all' };
