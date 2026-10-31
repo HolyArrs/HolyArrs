@@ -22,7 +22,6 @@
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../wishlist.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { Ask } from '../types.ts';
-	import { page } from '$app/state';
 
 	let { ctx }: { ctx: ApprovalsCtx } = $props();
 
@@ -74,28 +73,8 @@
 	const lives = $derived(new Map(ctx.viewed.map((a) => [a.id, lifeNow(a)])));
 	const lifeOf = (a: Ask): Life => lives.get(a.id) ?? lifeNow(a);
 
-	// Preview only (?status): five looks for the status row of answered cards, picked from a pill bar
-	// and remembered on this device. Without ?status the row keeps its current look (0).
-	const stVariants = ['Status button', 'Progress bar', 'Icon chip', 'Split tiles', 'Ribbon'];
-	const stPreview = $derived(page.url.searchParams.has('status'));
-	let stPick = $state(1);
-	$effect(() => {
-		try {
-			const n = Number(localStorage.getItem('holyarrs.approvals.status-variant'));
-			if (n >= 1 && n <= 5) stPick = n;
-		} catch {
-			/* storage off: start on 1 */
-		}
-	});
-	function stSet(n: number) {
-		stPick = n;
-		try {
-			localStorage.setItem('holyarrs.approvals.status-variant', String(n));
-		} catch {
-			/* storage off: the pick lasts for this visit */
-		}
-	}
-	const sv = $derived(stPreview ? stPick : 0);
+	// The status row of answered cards. Processing and Failed: a button-shaped capsule that fills in its tone
+	// (the live download share when known, else the stage's place on the line). Done: an icon chip like the who row.
 	const stTone = (t: Life['tone']) => (t === 'bad' ? 'bad' : t === 'go' ? 'go' : t === 'ok' ? 'ok' : 'soft');
 	const stIcon = (l: Life): IconName =>
 		l.stage === 'failed' ? 'alert' : l.stage === 'downloading' ? 'download' : l.stage === 'importing' ? 'archive' : l.stage === 'upcoming' ? 'clock' : l.stage === 'ready' ? 'check' : l.stage === 'declined' ? 'x' : 'refresh';
@@ -107,26 +86,25 @@
 		const m = /(\d+)%$/.exec(l.label);
 		return m ? Number(m[1]) : null;
 	};
+	/** Declined by whom, only when the page knows a display name (an account name alone isn't said). */
+	const stDeclinedBy = (a: Ask) => {
+		if (!a.decided_by) return '';
+		const name = ctx.decided(a).replace(/^Declined by\s*/, '').trim();
+		return name && name !== a.decided_by.name ? name : '';
+	};
 	/** The detail after the word, from what the ask really carries. */
 	const stDetail = (a: Ask, l: Life) => {
 		if (l.stage === 'ready' && a.available_at) return shortDate(a.available_at);
-		if (l.stage === 'declined') return a.decided_by ? `By ${a.decided_by.name}` : a.decided_at ? shortDate(a.decided_at) : '';
+		if (l.stage === 'declined') {
+			const by = stDeclinedBy(a);
+			return by ? `By ${by}` : a.decided_at ? shortDate(a.decided_at) : '';
+		}
 		if (l.stage === 'failed') return l.reason ?? '';
 		return l.label.split(' · ').slice(1).join(' · ');
 	};
-	/** Split tiles: the one most useful fact for the right tile. */
-	const stFact = (a: Ask, l: Life) => {
-		const pct = stPct(l);
-		if (pct !== null) return `${pct}%`;
-		if (l.stage === 'searching') return 'Searching…';
-		if (l.stage === 'importing') return 'Importing…';
-		if (l.stage === 'upcoming') return l.label.includes(' · ') ? `Out ${stDetail(a, l)}` : 'Date to come';
-		if (l.stage === 'ready') return a.available_at ? `Since ${shortDate(a.available_at)}` : stDetail(a, l) || 'In the Library';
-		if (l.stage === 'declined') return stDetail(a, l) || 'Declined';
-		return stDetail(a, l) || 'Working…';
-	};
-	/** Progress bar: how full the capsule is (the live share when known, else the stage's place on the line). */
-	const stFill = (l: Life) => (l.stage === 'failed' || l.stage === 'declined' ? 100 : (stPct(l) ?? l.pct));
+	/** How full the capsule is, 0..1: the live share when known, else the stage's place (failed stops where it failed). */
+	const stFill = (l: Life) => Math.max(0, Math.min(100, stPct(l) ?? l.pct)) / 100;
+	const stChip = (l: Life) => l.stage === 'ready' || l.stage === 'declined';
 
 	// Filter by status within the tab: the status word without its detail (Downloading · 40% → Downloading).
 	const statusOf = (a: Ask) => lifeOf(a).label.split(' · ')[0];
@@ -417,36 +395,27 @@
 		{#snippet stRow(a: Ask, l: Life)}
 			{@const d = stDetail(a, l)}
 			{@const can = l.stage === 'failed' && failed(a)}
-			{#if sv === 1 || sv === 2}
-				<span class="st-cap st-{stTone(l.tone)}" class:st-half={can} style:--st-fill={sv === 2 ? `${stFill(l)}%` : null}>
-					{#if sv === 2}<span class="st-meter" aria-hidden="true"></span>{/if}
+			{#if stChip(l)}
+				<span class="st-chip st-{stTone(l.tone)}">
+					<span class="st-sq">{@render stIc(l, 14)}</span>
+					<span class="st-id"><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
+				</span>
+			{:else}
+				<span class="st-cap st-{stTone(l.tone)}" class:st-half={can} class:st-live={l.stage === 'searching' || l.stage === 'downloading'} style:--st-fill={stFill(l)}>
+					<span class="st-meter" aria-hidden="true"></span>
 					{@render stIc(l, 15)}<span class="st-tx"><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
 				</span>
 				{#if can}{@render stDecline(a)}{/if}
-			{:else if sv === 3}
-				<span class="st-chip st-{stTone(l.tone)}" class:st-half={can}>
-					<span class="st-sq">{@render stIc(l, 14)}</span>
-					<span class="st-id"><b>{stWord(l)}</b><span class="st-d">{d || ' '}</span></span>
-				</span>
-				{#if can}{@render stDecline(a)}{/if}
-			{:else if sv === 4}
-				<span class="st-tile st-{stTone(l.tone)}">{@render stIc(l, 15)}<b class="st-w">{stWord(l)}</b></span>
-				{#if can}{@render stDecline(a)}{:else}<span class="st-tile st-fact">{stFact(a, l)}</span>{/if}
-			{:else}
-				<span class="st-band st-{stTone(l.tone)}">
-					<span class="st-bl">{@render stIc(l, 15)}<b>{stWord(l)}</b></span>
-					{#if can}{@render stDecline(a)}{:else if d}<span class="st-d">{d}</span>{/if}
-				</span>
 			{/if}
 		{/snippet}
-		<ul class="cards st-v{sv}" aria-label="Asks" in:fade={{ duration: ms(260) }}>
+		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each cardsShown as a, i (a.id)}
 				{@const w = ctx.who(a)}
 				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
@@ -463,12 +432,8 @@
 						{#if waiting(a)}
 							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
 							<button type="button" class="b yes" aria-label="Approve {a.name}" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} /><span class="bl">Approve</span></button>
-						{:else if sv && !ctx.isPending(a.id)}
+						{:else if !ctx.isPending(a.id)}
 							{@render stRow(a, life)}
-						{:else if life.stage === 'failed' && !ctx.isPending(a.id)}
-							<!-- Every failed ask: the red label on the left, Decline on the right when it can still be declined. -->
-							<span class="state tone-bad"><span class="dot"></span>{life.label}</span>
-							{#if failed(a)}<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>{/if}
 						{:else}
 							<span class="said">
 								{#if ctx.isPending(a.id)}
@@ -497,14 +462,6 @@
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-{#if stPreview}
-	<div class="st-bar" role="group" aria-label="Status row look (preview)">
-		{#each stVariants as v, i (v)}
-			<button type="button" class="st-pill" aria-pressed={stPick === i + 1} onclick={() => stSet(i + 1)}>{i + 1} · {v}</button>
-		{/each}
-	</div>
-{/if}
-
 <dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
@@ -739,63 +696,46 @@
 	}
 	@keyframes fx-sweep { from { background-position: 130% 0; } to { background-position: -30% 0; } }
 	@keyframes fx-shimmer { from { background-position: -30% 0; opacity: 1; } 50% { opacity: 0.35; } to { background-position: -10% 0; opacity: 0.55; } }
-	/* Preview (?status): five looks for the status row. Each fills the same foot as Decline/Approve, so every tab lines up. */
-	.sheet-b { --st-h: 40px; --st-r: 12px; --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#7a1208, #ffb3ae); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#0c3a8c, #b5d1ff); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#0b4f24, #a6efc0); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); }
+	/* The status row: fills the same foot as Decline/Approve (40px in 12px padding: 64 desktop, 60 phone), so every tab lines up. */
+	.sheet-b { --st-h: 40px; --st-r: 12px; --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#5e0e06, #ffb3ae); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); }
 	.st-bad { --st-c: var(--st-bad); --st-ink: var(--st-bad-ink); }
 	.st-go { --st-c: var(--st-go); --st-ink: var(--st-go-ink); }
 	.st-ok { --st-c: var(--st-ok); --st-ink: var(--st-ok-ink); }
 	.st-soft { --st-c: var(--st-soft); --st-ink: var(--st-soft-ink); }
+	/* The capsule and the chip carry the status, so the thin line under answered cards steps aside on every tab. */
+	.bc.st-row .life { display: none; }
 	.st-i { display: inline-grid; place-items: center; flex: none; }
 	.st-spin :global(svg) { animation: st-rot 1.4s linear infinite; }
 	@keyframes st-rot { to { transform: rotate(360deg); } }
-	.st-d { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; opacity: 0.86; }
-	/* 1 and 2: one button-shaped capsule over the whole row (half, beside Decline, when failed). */
-	.st-cap { grid-column: 1 / -1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; height: var(--st-h); padding: 0 12px; border-radius: var(--st-r); background: color-mix(in srgb, var(--st-c) 18%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 34%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 600; white-space: nowrap; }
-	.st-cap.st-half, .st-chip.st-half { grid-column: 1; }
-	.st-tx { position: relative; display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+	.st-d { min-width: 0; font-weight: 500; }
+	/* Processing and Failed: one button-shaped capsule over the whole row (half, beside Decline, when failed); it is the meter. */
+	.st-cap { grid-column: 1 / -1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; height: var(--st-h); padding: 0 12px; border-radius: var(--st-r); background: light-dark(color-mix(in srgb, var(--st-c) 8%, rgb(255 255 255 / 0.5)), color-mix(in srgb, var(--st-c) 9%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 34%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 600; }
+	.st-cap.st-half { grid-column: 1; }
+	.st-tx { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 6px; min-width: 0; line-height: 1.15; text-align: center; }
 	.st-tx > b { flex: none; font-weight: 700; }
 	.st-tx > .st-d::before { content: '·'; margin-right: 6px; opacity: 0.7; }
 	.st-cap > .st-i { position: relative; }
-	/* 2: the capsule is the meter; the thin line under the card steps aside. */
-	.st-meter { position: absolute; inset: 0; width: var(--st-fill, 0%); background: color-mix(in srgb, var(--st-c) 30%, transparent); box-shadow: inset -1px 0 0 color-mix(in srgb, var(--st-c) 70%, transparent); transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1); }
-	.st-v2 .st-cap { background: color-mix(in srgb, var(--st-c) 9%, transparent); }
-	.st-v2 .life { display: none; }
-	/* 3: an icon chip + word + detail, built like the who row (26px, same gap and type). */
+	.st-meter { position: absolute; inset: 0; overflow: hidden; background: light-dark(color-mix(in srgb, var(--st-c) 15%, transparent), color-mix(in srgb, var(--st-c) 30%, transparent)); transform: scaleX(var(--st-fill, 0)); transform-origin: left; transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1); }
+	.st-soft .st-meter { background: light-dark(color-mix(in srgb, var(--st-c) 14%, transparent), color-mix(in srgb, var(--st-c) 22%, transparent)); }
+	/* A soft light passes along the fill while it searches or downloads. */
+	.st-live .st-meter::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent) no-repeat; background-size: 40% 100%; animation: st-shim 2.2s ease-in-out infinite; }
+	@keyframes st-shim { from { background-position: -60% 0; } to { background-position: 160% 0; } }
+	/* Done: an icon chip + word + detail, built like the who row (26px, same gap and type). */
 	.st-chip { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px; min-width: 0; height: var(--st-h); }
 	.st-sq { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: color-mix(in srgb, var(--st-c) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 40%, transparent); color: var(--st-ink); }
 	.st-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-	.st-id > b { overflow: hidden; color: var(--st-ink); font: 700 13.5px/1.3 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
-	.st-id > .st-d { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); opacity: 1; }
-	/* 4: two button-sized tiles, the status and its most useful fact. */
-	.st-tile { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; height: var(--st-h); padding: 0 10px; border-radius: var(--st-r); background: color-mix(in srgb, var(--st-c) 18%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 34%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 700; white-space: nowrap; }
-	.st-tile .st-w { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-	.st-tile.st-fact { background: color-mix(in srgb, var(--text) 8%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
-	/* 5: a tinted band across the panel's foot, its corners the panel's own. */
-	.st-v5 .foot:has(.st-band) { display: flex; padding: 0; }
-	.st-band { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; height: calc(var(--st-h) + 24px); padding: 0 12px 0 14px; border-radius: 0 0 calc(20px - var(--gap)) calc(20px - var(--gap)); background: color-mix(in srgb, var(--st-c) 20%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--st-c) 40%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 600; white-space: nowrap; }
-	.st-bl { display: flex; align-items: center; gap: 7px; min-width: 0; }
-	.st-bl > b { overflow: hidden; font-weight: 700; text-overflow: ellipsis; }
-	.st-band > .st-d { flex: 0 1 auto; color: var(--st-ink); }
-	.st-band > .b { flex: none; }
+	.st-id > b { color: var(--st-ink); font: 700 13.5px/1.3 var(--font-ui); }
+	.st-id > .st-d { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
 	@media (pointer: coarse) { .sheet-b { --st-h: 44px; } }
-	/* The preview pill bar. */
-	.st-bar { position: fixed; left: 50%; bottom: calc(16px + var(--tabbar, 0px) + env(safe-area-inset-bottom, 0px)); z-index: 50; display: flex; gap: 4px; max-width: calc(100vw - 32px); padding: 4px; overflow-x: auto; transform: translateX(-50%); border-radius: 999px; background: rgb(20 20 24 / 0.82); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12), 0 14px 34px -12px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); scrollbar-width: none; }
-	.st-pill { flex: none; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: rgb(255 255 255 / 0.85); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
-	.st-pill[aria-pressed='true'] { background: #fff; color: #111; }
 	@media (max-width: 767px) {
-		.st-cap, .st-tile, .st-band { font: 600 12px/1.15 var(--font-ui); }
-		.st-cap { padding: 0 8px; gap: 5px; }
-		.st-tx { flex-direction: column; align-items: flex-start; gap: 0; }
+		.st-cap { padding: 0 8px; gap: 5px; font: 600 12px/1.15 var(--font-ui); }
+		.st-tx { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; text-align: left; }
 		.st-tx > .st-d { font-size: 11px; }
 		.st-tx > .st-d::before { display: none; }
 		.st-cap.st-half .st-tx > .st-d { display: none; }
 		.st-chip { gap: 7px; }
 		.st-id > b { font-size: 12.5px; }
 		.st-id > .st-d { font-size: 11px; }
-		.st-tile { padding: 0 6px; }
-		.st-tile:not(.st-fact) .st-w { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-		.st-band { height: calc(var(--st-h) + 20px); padding: 0 8px 0 10px; border-radius: 0 0 12px 12px; gap: 6px; }
-		.st-bl { gap: 5px; }
 	}
-	@media (prefers-reduced-motion: reduce) { .st-spin :global(svg) { animation: none; } .st-meter { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .st-spin :global(svg) { animation: none; } .st-live .st-meter::after { display: none; } .st-meter { transition: none; } }
 </style>
