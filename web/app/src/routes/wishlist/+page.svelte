@@ -105,7 +105,7 @@
 		// Words follow the asks actually decided (some in the list may be answered already).
 		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'the ask') : `${ids.length} asks`;
 		const verb = mode === 'approve' ? 'Approved' : 'Declined';
-		toasts.push(`${verb} ${one}`, 'ok', {
+		toasts.push(`${verb} ${one}.`, 'ok', {
 			ms: UNDO_MS,
 			action: {
 				label: 'Undo',
@@ -122,13 +122,13 @@
 	// Leaving the page sends what is still waiting out its Undo time.
 	onDestroy(() => Object.keys(pending).forEach((id) => void commit(Number(id))));
 
-	// Turn down asks for an optional reason the asker sees.
+	// Decline asks for an optional reason the asker sees.
 	let declineOpen = $state(false);
 	let declineList = $state<Ask[]>([]);
 	let declineWhy = $state('');
 	let whyBox = $state<HTMLTextAreaElement>();
 	// One-tap reasons for the people who asked; the box stays free to type.
-	const reasons = ['Already have it', 'Not for kids', 'Not out yet', 'Not enough space right now'];
+	const reasons = ['Already have it', 'Not for kids', 'Asked before', 'Not enough space right now'];
 	function askDecline(list: Ask[]) {
 		declineList = list;
 		declineWhy = '';
@@ -475,7 +475,10 @@
 		who: (a) => {
 			const p = a.people[0] ?? a.asked_by;
 			const m = members[p.id];
-			return { id: p.id, name: plain(p.name), avatar: m?.avatar ?? null, kid: kidLabel(m?.max_rating) };
+			const kid = kidLabel(m?.max_rating);
+			// The Kid badge says it already: no "(Kid)" in the name beside it.
+			const name = plain(p.name);
+			return { id: p.id, name: kid ? name.replace(/\s*\(kid\)\s*$/i, '') || name : name, avatar: m?.avatar ?? null, kid };
 		},
 		what,
 		year,
@@ -744,16 +747,16 @@
 				<div class="field">
 					<label for="ap-folder">Library folder</label>
 					<select id="ap-folder" class="input" bind:value={folderId}>
-						<option value={0}>The Wishlist default</option>
+						<option value={0}>Default</option>
 						{#each kindFolders as f (f.id)}
 							<option value={f.id}>{f.label || f.path} ({f.path})</option>
 						{/each}
 					</select>
 				</div>
 				<div class="field">
-					<label for="ap-rules">Pick rules</label>
+					<label for="ap-rules">Quality</label>
 					<select id="ap-rules" class="input" bind:value={rulesId}>
-						<option value={0}>The Wishlist default</option>
+						<option value={0}>Default</option>
 						{#each kindRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
@@ -792,7 +795,7 @@
 >
 	<form class="decide" onsubmit={confirmDecline}>
 		<div class="field">
-			<label for="dc-why">Reason (optional, the person who asked sees it)</label>
+			<label for="dc-why">Reason (optional, shown to {declineList.length === 1 ? ctx.who(declineList[0]).name : 'the people who asked'})</label>
 			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="For example: we already have it" bind:this={whyBox} bind:value={declineWhy} data-testid="decline-why"></textarea>
 			<div class="why-chips" role="group" aria-label="Quick reasons">
 				{#each reasons as why (why)}
