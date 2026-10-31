@@ -404,13 +404,13 @@
 	.pw { position: relative; display: flex; align-items: center; flex: none; height: 32px; }
 	.pw .tab { height: 32px; }
 	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
-	/* Glide, not snap: the width eases in and out over ~0.5s (gentle start, soft landing), the chips drift in one after another; folding eases both ways and is a little quicker. */
-	.subwrap { display: grid; grid-template-columns: 0fr; overflow: hidden; transition: grid-template-columns 380ms cubic-bezier(0.65, 0, 0.35, 1); }
-	.pw.pw-open .subwrap { grid-template-columns: 1fr; transition: grid-template-columns 500ms cubic-bezier(0.45, 0, 0.2, 1); }
-	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; white-space: nowrap; opacity: 0; transform: translateX(-24px); transition: opacity 220ms cubic-bezier(0.65, 0, 0.35, 1), transform 380ms cubic-bezier(0.65, 0, 0.35, 1); }
-	.pw.pw-open .subin { opacity: 1; transform: none; transition: opacity 360ms cubic-bezier(0.45, 0, 0.2, 1) 80ms, transform 500ms cubic-bezier(0.45, 0, 0.2, 1); }
-	.subin .stab { opacity: 0; transform: translateX(-8px); transition: opacity 180ms ease, transform 300ms cubic-bezier(0.65, 0, 0.35, 1), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
-	.pw.pw-open .subin .stab { opacity: 1; transform: none; transition: opacity 320ms cubic-bezier(0.45, 0, 0.2, 1) calc(120ms + var(--i, 0) * 45ms), transform 420ms cubic-bezier(0.45, 0, 0.2, 1) calc(80ms + var(--i, 0) * 45ms), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+	/* Glide, not snap: the width eases in and out slowly enough to watch (~0.75s open, ~0.6s fold); the chips follow one after another. */
+	.subwrap { display: grid; grid-template-columns: 0fr; overflow: hidden; transition: grid-template-columns 600ms cubic-bezier(0.45, 0, 0.25, 1); }
+	.pw.pw-open .subwrap { grid-template-columns: 1fr; transition: grid-template-columns 760ms cubic-bezier(0.45, 0, 0.2, 1); }
+	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; margin: 0; padding: 2px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 8%, transparent), inset 0 1px 2px rgb(0 0 0 / 0.18); white-space: nowrap; opacity: 0; transform: translateX(-28px); transition: opacity 420ms cubic-bezier(0.45, 0, 0.25, 1), transform 600ms cubic-bezier(0.45, 0, 0.25, 1), margin 600ms cubic-bezier(0.45, 0, 0.25, 1); }
+	.pw.pw-open .subin { margin: 0 3px 0 6px; opacity: 1; transform: none; transition: opacity 520ms cubic-bezier(0.45, 0, 0.2, 1) 120ms, transform 760ms cubic-bezier(0.45, 0, 0.2, 1), margin 760ms cubic-bezier(0.45, 0, 0.2, 1); }
+	.subin .stab { height: 26px; padding: 0 9px; border-radius: 6px; opacity: 0; transform: translateX(-10px); transition: opacity 260ms ease, transform 420ms cubic-bezier(0.45, 0, 0.25, 1), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+	.pw.pw-open .subin .stab { opacity: 1; transform: none; transition: opacity 460ms cubic-bezier(0.45, 0, 0.2, 1) calc(220ms + var(--i, 0) * 70ms), transform 600ms cubic-bezier(0.45, 0, 0.2, 1) calc(160ms + var(--i, 0) * 70ms), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
 	/* Chips: quiet until picked; the picked one takes a tint of its own tone with readable text in that tone. */
 	.stab { --tc: var(--info, #409cff); --tt: var(--info-text, #409cff); position: relative; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 32px; padding: 0 11px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
 	.stab.tn-bad { --tc: var(--fail, #ff6961); --tt: var(--fail-text, #ff6961); }
@@ -435,10 +435,13 @@
 	.toolbar .tabs { max-width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
 	.toolbar .tabs::-webkit-scrollbar { display: none; }
 	.toolbar .right { flex: none; }
+	/* Desktop: the type filter (and Approve all) sit up beside the page title, so the status tabs get the whole row and never squeeze. */
+	@media (min-width: 768px) {
+		.toolbar { position: relative; }
+		.toolbar .right { position: absolute; right: 0; bottom: calc(100% + 23px); }
+	}
 	/* While statuses are open, the type filter steps back to icons to give them room. */
 	.seg .lb { display: inline-block; max-width: 90px; overflow: hidden; transition: max-width 500ms cubic-bezier(0.45, 0, 0.2, 1), opacity 300ms cubic-bezier(0.45, 0, 0.2, 1); }
-	.toolbar:has(.pw-open) .seg .lb { max-width: 0; opacity: 0; }
-	.toolbar:has(.pw-open) .seg .it { gap: 0; }
 	.right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
 	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 40px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
