@@ -113,18 +113,12 @@
 	// A tab's statuses slide out from behind it only when the tab is clicked (never on hover);
 	// leaving the bar folds them shortly after, and coming back does not reopen them.
 	let openTab = $state<ApproverTab | ''>('');
-	let foldT: ReturnType<typeof setTimeout> | undefined;
 	const subsOf = (t: ApproverTab) => {
 		const x = statusesIn(t);
 		return x.length > 1 ? x : [];
 	};
 	function unfold(t: ApproverTab) {
-		clearTimeout(foldT);
 		openTab = subsOf(t).length ? t : '';
-	}
-	function foldSoon(ms = 380) {
-		clearTimeout(foldT);
-		foldT = setTimeout(() => (openTab = ''), ms);
 	}
 	function pickTab(t: ApproverTab) {
 		if (ctx.approverTab !== t) {
@@ -135,8 +129,6 @@
 	}
 	function pickStatus(t: ApproverTab, word: string, e?: MouseEvent) {
 		if (ctx.approverTab !== t) ctx.setApproverTab(t);
-		// Touch has no "leave": fold a moment after the pick.
-		if ((e as PointerEvent | undefined)?.pointerType && (e as PointerEvent).pointerType !== 'mouse') foldSoon(600);
 		statusPick = status === word && ctx.approverTab === t ? { tab: '', word: '' } : { tab: t, word };
 	}
 	function capKeys(e: KeyboardEvent) {
@@ -145,20 +137,8 @@
 			openTab = '';
 		}
 	}
-	// Touch and keyboard have no "leave": a tap or click outside the bar, or a page scroll, folds it.
+	// The open tab's statuses stay open until another tab is picked (Escape folds them).
 	let capEl = $state<HTMLElement>();
-	$effect(() => {
-		if (!openTab) return;
-		const out = (e: Event) => {
-			if (capEl && !capEl.contains(e.target as Node)) foldSoon(0);
-		};
-		document.addEventListener('pointerdown', out, true);
-		window.addEventListener('scroll', out, { passive: true, capture: true });
-		return () => {
-			document.removeEventListener('pointerdown', out, true);
-			window.removeEventListener('scroll', out, { capture: true });
-		};
-	});
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
@@ -177,7 +157,6 @@
 	const beats = new Set<ReturnType<typeof setTimeout>>();
 	onDestroy(() => {
 		for (const t of beats) clearTimeout(t);
-		clearTimeout(foldT);
 	});
 	function approveOne(a: Ask) {
 		if (approving.has(a.id)) return;
@@ -278,7 +257,7 @@
 
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tcap" role="presentation" bind:this={capEl} onkeydown={capKeys} onpointerenter={() => openTab && clearTimeout(foldT)} onpointerleave={(e) => e.pointerType === 'mouse' && openTab && foldSoon()}>
+		<div class="tcap" role="presentation" bind:this={capEl} onkeydown={capKeys}>
 		<div class="tabs" role="group" aria-label="Status">
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
