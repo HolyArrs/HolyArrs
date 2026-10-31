@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -50,7 +49,7 @@ func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []Downlo
 		go func(i int, d domain.Downloader) {
 			defer wg.Done()
 			var jobs []downloader.Job
-			_ = a.manager().ControlEngine(ctx, d, func(e downloader.Engine) error {
+			lerr := a.manager().ControlEngine(ctx, d, func(e downloader.Engine) error {
 				l, ok := e.(downloader.AllLister)
 				if !ok {
 					return downloader.ErrNotSupported
@@ -59,7 +58,9 @@ func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []Downlo
 				jobs, err = l.ListAll(ctx)
 				return err
 			})
-			a.noteJobs(ctx, d.ID, jobs)
+			if lerr == nil {
+				a.noteJobs(ctx, d.ID, jobs)
+			}
 			out := make([]DownloadRow, 0, len(jobs))
 			for _, j := range jobs {
 				if j.ID == "" || shown[clientKey{d.ID, j.ID}] {
@@ -257,14 +258,17 @@ func (a *API) removeItem(w http.ResponseWriter, r *http.Request) {
 	}
 	// Removing a torrent HolyArrs did not send is a Downloader owner's call:
 	// it needs the settings permission (and an admin-scoped key).
-	if id, err := strconv.ParseInt(r.PathValue("id"), 10, 64); err == nil && a.outsideHash(r.Context(), id, r.PathValue("hash")) {
-		if who, ok := auth.From(r.Context()); ok && (!who.Has(auth.PermSettings) || !who.HasScope(auth.ScopeAdmin)) {
-			fail(w, http.StatusForbidden, "removing a torrent HolyArrs did not send needs the settings permission")
-			return
-		}
+	if !a.itemChangeOK(w, r) {
+		return
 	}
 	a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {
-		return e.Remove(r.Context(), id, in.DeleteFiles)
+		err := e.Remove(r.Context(), id, in.DeleteFiles)
+		if err == nil {
+			if did, perr := strconv.ParseInt(r.PathValue("id"), 10, 64); perr == nil {
+				a.forgetTorrents(r.Context(), did, []string{r.PathValue("hash")})
+			}
+		}
+		return err
 	})(w, r)
 }
 
@@ -391,6 +395,9 @@ func (a *API) setItemFiles(w http.ResponseWriter, r *http.Request) {
 	case 0, 1, 6, 7:
 	default:
 		fail(w, http.StatusBadRequest, downloader.ErrFilePriority.Error())
+		return
+	}
+	if !a.itemChangeOK(w, r) {
 		return
 	}
 	a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {

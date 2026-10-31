@@ -183,13 +183,16 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, bulkHelp)
 		return
 	}
-	if in.Action == "remove" && !a.mayRemoveOutside(r.Context(), id, in.Hashes) {
-		fail(w, http.StatusForbidden, "removing a torrent HolyArrs did not send needs the settings permission")
+	if in.Action == "remove" && !a.changeOutsideOK(w, r, id, in.Hashes) {
 		return
 	}
 	err = a.onBulk(r, id, func(t downloader.TorrentBulk) error {
 		if in.Action == "remove" {
-			return t.RemoveMany(r.Context(), in.Hashes, in.DeleteFiles)
+			err := t.RemoveMany(r.Context(), in.Hashes, in.DeleteFiles)
+			if err == nil {
+				a.forgetTorrents(r.Context(), id, in.Hashes)
+			}
+			return err
 		}
 		return t.Bulk(r.Context(), in.Action, in.Hashes)
 	})
@@ -219,12 +222,17 @@ func (a *API) bulkHashesOK(w http.ResponseWriter, hashes []string) bool {
 	return true
 }
 
-// mayRemoveOutside says the person may remove these torrents: any of them
-// that HolyArrs did not send needs the settings permission and an
-// admin-scoped key.
-func (a *API) mayRemoveOutside(ctx context.Context, downloaderID int64, hashes []string) bool {
+// mayChangeOutside says the person may change or remove these torrents
+// beyond pause, resume, recheck, reannounce and queue moves: any of them that
+// HolyArrs did not send needs the settings permission and an admin-scoped
+// key. No identity attached means no, unless the server runs without
+// sign-in (Auth nil, tests only).
+func (a *API) mayChangeOutside(ctx context.Context, downloaderID int64, hashes []string) bool {
 	who, ok := auth.From(ctx)
-	if !ok || (who.Has(auth.PermSettings) && who.HasScope(auth.ScopeAdmin)) {
+	if !ok {
+		return a.s.Auth == nil
+	}
+	if who.Has(auth.PermSettings) && who.HasScope(auth.ScopeAdmin) {
 		return true
 	}
 	for _, h := range hashes {
@@ -233,6 +241,26 @@ func (a *API) mayRemoveOutside(ctx context.Context, downloaderID int64, hashes [
 		}
 	}
 	return true
+}
+
+const outsideRefused = "changing a torrent HolyArrs did not send needs the settings permission"
+
+// changeOutsideOK answers 403 when mayChangeOutside says no.
+func (a *API) changeOutsideOK(w http.ResponseWriter, r *http.Request, downloaderID int64, hashes []string) bool {
+	if a.mayChangeOutside(r.Context(), downloaderID, hashes) {
+		return true
+	}
+	fail(w, http.StatusForbidden, outsideRefused)
+	return false
+}
+
+// itemChangeOK is changeOutsideOK for the torrent named in the path.
+func (a *API) itemChangeOK(w http.ResponseWriter, r *http.Request) bool {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		return true // the route itself answers 404
+	}
+	return a.changeOutsideOK(w, r, id, []string{r.PathValue("hash")})
 }
 
 // onBulk runs a call on a torrent Downloader that acts on many torrents.
@@ -282,8 +310,7 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 	// explicit stop or super seed (which those clients refuse) or clearing
 	// every limit needs no more than managing the Library.
 	safe := l.Action == "stop" || l.Action == "super_seed" || l.Ratio == -1 && l.SeedingMinutes == -1 && l.InactiveMinutes == -1
-	if !safe && !a.mayRemoveOutside(r.Context(), id, in.Hashes) {
-		fail(w, http.StatusForbidden, "removing a torrent HolyArrs did not send needs the settings permission")
+	if !safe && !a.changeOutsideOK(w, r, id, in.Hashes) {
 		return
 	}
 	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
@@ -390,6 +417,9 @@ func (a *API) addTrackers(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in, `body is {"urls": [tracker address...]}`) {
 		return
 	}
+	if !a.itemChangeOK(w, r) {
+		return
+	}
 	urls := []string{}
 	for _, u := range in.URLs {
 		if u = strings.TrimSpace(u); u != "" {
@@ -417,6 +447,9 @@ func (a *API) editTracker(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in, help) {
 		return
 	}
+	if !a.itemChangeOK(w, r) {
+		return
+	}
 	in.URL = strings.TrimSpace(in.URL)
 	if in.Ref == "" || in.URL == "" && in.Tier == nil || in.Tier != nil && (*in.Tier < 0 || *in.Tier > 255) {
 		fail(w, http.StatusBadRequest, help)
@@ -436,6 +469,9 @@ func (a *API) removeTrackers(w http.ResponseWriter, r *http.Request) {
 		Refs []string `json:"refs"`
 	}
 	if !decode(w, r, &in, `body is {"refs": [tracker ref...]}`) {
+		return
+	}
+	if !a.itemChangeOK(w, r) {
 		return
 	}
 	if len(in.Refs) == 0 || len(in.Refs) > 100 {
@@ -474,6 +510,9 @@ func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in, help) || !a.bulkHashesOK(w, in.Hashes) {
 		return
 	}
+	if !a.changeOutsideOK(w, r, id, in.Hashes) {
+		return
+	}
 	if strings.TrimSpace(in.Folder) == "" {
 		fail(w, http.StatusBadRequest, help)
 		return
@@ -507,6 +546,9 @@ func (a *API) torrentLimits(w http.ResponseWriter, r *http.Request) {
 	}
 	const help = `body is {"hashes": [info hash...], "down": bytes per second (0 no cap), "up": bytes per second (0 no cap)}`
 	if !decode(w, r, &in, help) || !a.bulkHashesOK(w, in.Hashes) {
+		return
+	}
+	if !a.changeOutsideOK(w, r, id, in.Hashes) {
 		return
 	}
 	if in.Down < 0 || in.Up < 0 || in.Down > 1<<40 || in.Up > 1<<40 {

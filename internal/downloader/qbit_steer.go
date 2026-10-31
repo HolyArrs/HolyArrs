@@ -6,10 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Hand steering of single torrents from the Downloads screen, as the
@@ -37,22 +39,55 @@ type ShareLimiter interface {
 // before 5.2 has no action per torrent.
 var ErrShareAction = errors.New("this Downloader cannot set what happens at the limit per torrent (it needs qBittorrent 5.2 or newer); leave it on the default")
 
-// qbitAPI reads the client's API version as three numbers; an answer that
-// does not read is 0.0.0 (the oldest rules).
-func (q *Qbittorrent) qbitAPI(ctx context.Context) [3]int {
+// qbitVersionTTL is how long a read API version is trusted.
+const qbitVersionTTL = time.Hour
+
+// qbitAPI reads the client's API version as three numbers. A good read is
+// kept for qbitVersionTTL; a failed or unreadable one is an error, never
+// taken as the oldest rules, and clears what was kept.
+func (q *Qbittorrent) qbitAPI(ctx context.Context) ([3]int, error) {
+	q.verMu.Lock()
+	if !q.verAt.IsZero() && time.Since(q.verAt) < qbitVersionTTL {
+		v := q.ver
+		q.verMu.Unlock()
+		return v, nil
+	}
+	q.verMu.Unlock()
 	var v [3]int
 	b, err := q.call(ctx, http.MethodGet, "app/webapiVersion", nil)
-	if err != nil {
-		return v
-	}
-	for i, p := range strings.SplitN(strings.TrimSpace(string(b)), ".", 3) {
-		n, err := strconv.Atoi(p)
-		if err != nil {
-			return [3]int{}
+	if err == nil {
+		parts := strings.SplitN(strings.TrimSpace(string(b)), ".", 3)
+		for i, p := range parts {
+			n, perr := strconv.Atoi(p)
+			if perr != nil {
+				err = fmt.Errorf("qBittorrent sent an API version that does not read: %q", strings.TrimSpace(string(b)))
+				break
+			}
+			v[i] = n
 		}
-		v[i] = n
 	}
-	return v
+	q.verMu.Lock()
+	defer q.verMu.Unlock()
+	if err != nil {
+		q.verAt = time.Time{}
+		return [3]int{}, err
+	}
+	q.ver, q.verAt = v, time.Now()
+	return v, nil
+}
+
+// qbitAPIAtLeast says the client's API is a.b.c or newer. A kept version
+// that is too old is read again once, so an upgraded client is seen at once.
+func (q *Qbittorrent) qbitAPIAtLeast(ctx context.Context, a, b, c int) (bool, error) {
+	v, err := q.qbitAPI(ctx)
+	if err != nil || atLeast(v, a, b, c) {
+		return err == nil, err
+	}
+	q.verMu.Lock()
+	q.verAt = time.Time{}
+	q.verMu.Unlock()
+	v, err = q.qbitAPI(ctx)
+	return err == nil && atLeast(v, a, b, c), err
 }
 
 // atLeast says version v is a or newer.
@@ -82,7 +117,11 @@ func (q *Qbittorrent) SetShareLimits(ctx context.Context, hashes []string, l Sha
 	}
 	f := url.Values{"hashes": {hs}, "ratioLimit": {strconv.FormatFloat(l.Ratio, 'f', -1, 64)},
 		"seedingTimeLimit": {strconv.FormatInt(l.SeedingMinutes, 10)}, "inactiveSeedingTimeLimit": {strconv.FormatInt(l.InactiveMinutes, 10)}}
-	if atLeast(q.qbitAPI(ctx), 2, 12, 0) {
+	newer, err := q.qbitAPIAtLeast(ctx, 2, 12, 0)
+	if err != nil {
+		return err
+	}
+	if newer {
 		f.Set("shareLimitAction", word)
 	} else if l.Action != "" {
 		return ErrShareAction
@@ -197,7 +236,11 @@ func (q *Qbittorrent) EditTracker(ctx context.Context, id, ref, newURL string, t
 		newURL = orig
 	}
 	f := url.Values{"hash": {h}, "newUrl": {newURL}}
-	if atLeast(q.qbitAPI(ctx), 2, 13, 0) {
+	newer, err := q.qbitAPIAtLeast(ctx, 2, 13, 0)
+	if err != nil {
+		return err
+	}
+	if newer {
 		f.Set("url", orig)
 		if tier != nil {
 			f.Set("tier", strconv.Itoa(*tier))

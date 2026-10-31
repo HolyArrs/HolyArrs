@@ -35,11 +35,11 @@ func recentLocalExempt(pattern string, who Who) bool {
 		"GET /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions/{sid}":
 		return true
 	// The Downloads detail panel: admin scope keeps them off read-only API keys,
-	// but a signed-in manager reading or steering a torrent needs no fresh password.
+	// but a signed-in manager reading a torrent needs no fresh password.
 	case "GET /api/v1/downloads/{id}/swarm", "GET /api/v1/downloads/{id}/detail",
-		"GET /api/v1/downloads/{id}/files", "PUT /api/v1/downloads/{id}/files",
+		"GET /api/v1/downloads/{id}/files",
 		"GET /api/v1/downloaders/{id}/items/{hash}/detail", "GET /api/v1/downloaders/{id}/items/{hash}/swarm",
-		"GET /api/v1/downloaders/{id}/items/{hash}/files", "PUT /api/v1/downloaders/{id}/items/{hash}/files":
+		"GET /api/v1/downloaders/{id}/items/{hash}/files":
 		return true
 	case "POST /api/v1/auth/two-factor/setup", "POST /api/v1/auth/two-factor/enable":
 		return who.MustTwoFactor

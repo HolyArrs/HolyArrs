@@ -20,9 +20,14 @@ import (
 
 // mayPickAnyFolder says the person may name any folder or category on the
 // Downloader's machine: the settings permission and an admin-scoped key.
-func mayPickAnyFolder(ctx context.Context) bool {
+// No identity attached means no, unless the server runs without sign-in
+// (Auth nil, tests only).
+func (a *API) mayPickAnyFolder(ctx context.Context) bool {
 	who, ok := auth.From(ctx)
-	return !ok || (who.Has(auth.PermSettings) && who.HasScope(auth.ScopeAdmin))
+	if !ok {
+		return a.s.Auth == nil
+	}
+	return who.Has(auth.PermSettings) && who.HasScope(auth.ScopeAdmin)
 }
 
 var errFolder = errors.New("the folder is a subfolder name inside the Downloader's own folder (no full paths, drive letters or ..)")
@@ -67,7 +72,7 @@ func (a *API) clientFolder(ctx context.Context, downloaderID int64, category, fo
 	if hasControl(category) || hasControl(folder) {
 		return "", "", errFolder
 	}
-	if mayPickAnyFolder(ctx) || (folder == "" && (!checkCategory || category == "")) {
+	if a.mayPickAnyFolder(ctx) || (folder == "" && (!checkCategory || category == "")) {
 		return category, folder, nil
 	}
 	var dr domain.Downloader

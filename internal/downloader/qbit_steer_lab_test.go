@@ -31,7 +31,7 @@ func TestLabQbitSteer(t *testing.T) {
 	}
 	ctx := context.Background()
 	q := NewQbittorrentKey(base, key, nil)
-	if v := q.qbitAPI(ctx); !atLeast(v, 2, 12, 0) {
+	if v, _ := q.qbitAPI(ctx); !atLeast(v, 2, 12, 0) {
 		t.Fatalf("lab API %v: expected 5.2", v)
 	}
 	const folder = "/data/downloads/incomplete/holyarrs-labtest"

@@ -212,6 +212,7 @@ func (a *API) deleteDownloader(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.manager().Forget(id)
+	a.forgetTorrents(r.Context(), id, nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 

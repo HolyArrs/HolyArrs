@@ -36,7 +36,14 @@ type torrentLog struct {
 	mu       sync.Mutex
 	seen     map[clientKey]torrentSnap
 	trackers map[clientKey]map[string]string
+	// seenDay is the day each torrent's torrent_seen row was last written.
+	seenDay   map[clientKey]string
+	lastSweep time.Time
 }
+
+// torrentForget is how long a torrent may go unseen before its log and link
+// rows are swept.
+const torrentForget = 30 * 24 * time.Hour
 
 func snapOf(j downloader.Job) torrentSnap {
 	return torrentSnap{detail: j.Detail, savePath: j.SavePath, trackerProblem: j.TrackerProblem, progress: j.Progress,
@@ -121,7 +128,7 @@ func trackerLines(prev map[string]string, cur []downloader.Tracker) ([]DownloadL
 		if t.Fixed {
 			continue
 		}
-		host := hostOnlyWord(t.URL)
+		host := downloader.HostOnly(t.URL)
 		msg := strings.TrimSpace(downloader.RedactURLs(t.Message))
 		if msg == "" {
 			msg = t.Status
@@ -134,35 +141,37 @@ func trackerLines(prev map[string]string, cur []downloader.Tracker) ([]DownloadL
 	return out, next
 }
 
-// hostOnlyWord is a tracker address's host name alone.
-func hostOnlyWord(u string) string {
-	if i := strings.Index(u, "://"); i >= 0 {
-		u = u[i+3:]
-	}
-	if i := strings.IndexAny(u, "/?@"); i >= 0 {
-		u = u[:i]
-	}
-	return strings.ToLower(u)
-}
-
 // noteJobs compares a Downloader's list with the last one and records what
-// changed. The first sighting after a start only remembers.
+// changed. The first sighting after a start only remembers. jobs is the
+// whole list: torrents no longer in it are dropped from memory.
 func (a *API) noteJobs(ctx context.Context, downloaderID int64, jobs []downloader.Job) {
 	now := time.Now().UTC()
+	day := now.Format("2006-01-02")
 	type rec struct {
 		hash  string
 		lines []DownloadLogLine
 	}
 	var recs []rec
+	var fresh []string
 	a.tlog.mu.Lock()
 	if a.tlog.seen == nil {
 		a.tlog.seen = map[clientKey]torrentSnap{}
 	}
+	if a.tlog.seenDay == nil {
+		a.tlog.seenDay = map[clientKey]string{}
+	}
+	here := map[string]bool{}
 	for _, j := range jobs {
 		if j.ID == "" {
 			continue
 		}
-		k := clientKey{downloaderID, j.ID}
+		hash := strings.ToLower(j.ID)
+		here[hash] = true
+		k := clientKey{downloaderID, hash}
+		if a.tlog.seenDay[k] != day {
+			a.tlog.seenDay[k] = day
+			fresh = append(fresh, hash)
+		}
 		cur := snapOf(j)
 		prev, ok := a.tlog.seen[k]
 		a.tlog.seen[k] = cur
@@ -170,13 +179,109 @@ func (a *API) noteJobs(ctx context.Context, downloaderID int64, jobs []downloade
 			continue
 		}
 		if ls := stateLines(prev, cur); len(ls) > 0 {
-			recs = append(recs, rec{j.ID, ls})
+			recs = append(recs, rec{hash, ls})
 		}
+	}
+	for k := range a.tlog.seen {
+		if k.downloader == downloaderID && !here[k.hash] {
+			delete(a.tlog.seen, k)
+		}
+	}
+	for k := range a.tlog.trackers {
+		if k.downloader == downloaderID && !here[k.hash] {
+			delete(a.tlog.trackers, k)
+		}
+	}
+	for k := range a.tlog.seenDay {
+		if k.downloader == downloaderID && !here[k.hash] {
+			delete(a.tlog.seenDay, k)
+		}
+	}
+	sweep := now.Sub(a.tlog.lastSweep) >= 24*time.Hour
+	if sweep {
+		a.tlog.lastSweep = now
 	}
 	a.tlog.mu.Unlock()
 	for _, r := range recs {
 		a.writeTorrentLog(ctx, downloaderID, r.hash, now, r.lines)
 	}
+	if len(fresh) > 0 {
+		at := now.Format(store.TimeLayout)
+		_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
+			for _, h := range fresh {
+				if _, err := tx.Exec(`INSERT INTO torrent_seen (downloader_id, hash, seen_at) VALUES (?, ?, ?)
+					ON CONFLICT (downloader_id, hash) DO UPDATE SET seen_at = excluded.seen_at`, downloaderID, h, at); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	}
+	if sweep {
+		a.sweepTorrentRows(ctx, now)
+	}
+}
+
+// sweepTorrentRows drops log and link rows of torrents not seen for
+// torrentForget. Rows from before torrent_seen existed go by their own age.
+func (a *API) sweepTorrentRows(ctx context.Context, now time.Time) {
+	cut := now.Add(-torrentForget).Format(store.TimeLayout)
+	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
+		stale := `SELECT downloader_id, hash FROM torrent_seen WHERE seen_at < ?`
+		if _, err := tx.Exec(`DELETE FROM torrent_log WHERE (downloader_id, lower(hash)) IN (`+stale+`)
+			OR (at < ? AND (downloader_id, lower(hash)) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`DELETE FROM client_links WHERE (downloader_id, lower(hash)) IN (`+stale+`)
+			OR (matched_at < ? AND (downloader_id, lower(hash)) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`DELETE FROM torrent_seen WHERE seen_at < ?`, cut)
+		return err
+	})
+}
+
+// forgetTorrents drops what HolyArrs keeps about torrents removed through
+// it: memory, log, link and seen rows. No hashes means the whole Downloader.
+func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []string) {
+	all := len(hashes) == 0
+	gone := map[string]bool{}
+	for _, h := range hashes {
+		gone[strings.ToLower(h)] = true
+	}
+	a.tlog.mu.Lock()
+	for k := range a.tlog.seen {
+		if k.downloader == downloaderID && (all || gone[k.hash]) {
+			delete(a.tlog.seen, k)
+		}
+	}
+	for k := range a.tlog.trackers {
+		if k.downloader == downloaderID && (all || gone[k.hash]) {
+			delete(a.tlog.trackers, k)
+		}
+	}
+	for k := range a.tlog.seenDay {
+		if k.downloader == downloaderID && (all || gone[k.hash]) {
+			delete(a.tlog.seenDay, k)
+		}
+	}
+	a.tlog.mu.Unlock()
+	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
+		for _, t := range []string{"torrent_log", "client_links", "torrent_seen"} {
+			if all {
+				if _, err := tx.Exec("DELETE FROM "+t+" WHERE downloader_id = ?", downloaderID); err != nil {
+					return err
+				}
+				continue
+			}
+			for h := range gone {
+				if _, err := tx.Exec("DELETE FROM "+t+" WHERE downloader_id = ? AND lower(hash) = ?", downloaderID, h); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 }
 
 // noteTrackers records tracker message changes from a swarm read.

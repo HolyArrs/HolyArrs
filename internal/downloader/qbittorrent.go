@@ -30,6 +30,9 @@ type Qbittorrent struct {
 	signInMu   sync.Mutex
 	refusedAt  time.Time // last refused sign-in; no new try until qbitSignInPause has passed
 	refusedErr error
+	verMu      sync.Mutex
+	ver        [3]int    // API version, read once and kept for qbitVersionTTL
+	verAt      time.Time // when ver was read; zero when not kept
 }
 
 // qbitSignInPause is how long a refused sign-in is not tried again.
@@ -284,7 +287,7 @@ func (t qbitTorrent) job() Job {
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
 		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), SeedsTotal: max(t.NumComplete, 0), PeersTotal: max(t.NumIncompl, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
-		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: hostOnly(t.Tracker), TrackerProblem: t.problem(),
+		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: HostOnly(t.Tracker), TrackerProblem: t.problem(),
 		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0),
 		LastActivity: max(t.LastAct, 0), SeedingTime: max(t.SeedTime, 0), SeenComplete: max(t.SeenDone, 0), Uploaded: max(t.Uploaded, 0), TimeActive: max(t.TimeActive, 0)}
 }
@@ -309,9 +312,9 @@ func (t qbitTorrent) problem() string {
 	return ""
 }
 
-// hostOnly keeps a tracker address's host name: the path and query can
+// HostOnly keeps a tracker address's host name: the path and query can
 // hold a passkey.
-func hostOnly(raw string) string {
+func HostOnly(raw string) string {
 	u, err := url.Parse(raw)
 	if err != nil {
 		return ""
@@ -321,7 +324,7 @@ func hostOnly(raw string) string {
 
 // limits reads the torrent's own seeding rules; nil when the client sent none.
 func (t qbitTorrent) limits() *ShareLimits {
-	if t.RatioLimit == nil && t.SeedLimit == nil {
+	if t.RatioLimit == nil && t.SeedLimit == nil && t.IdleLimit == nil {
 		return nil
 	}
 	l := ShareLimits{Ratio: -2, SeedingMinutes: -2, InactiveMinutes: -2}

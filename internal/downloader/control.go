@@ -695,10 +695,7 @@ func (s *Sabnzbd) Retry(ctx context.Context, id string) (string, error) {
 func trackerHost(raw string) string {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" {
-		if strings.Contains(raw, "://") {
-			return "tracker"
-		}
-		return raw
+		return "tracker"
 	}
 	return u.Scheme + "://" + u.Host
 }
@@ -707,9 +704,20 @@ func trackerHost(raw string) string {
 // the announce address, passkey included).
 var urlish = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9+.-]*://[^\s"'<>]+`)
 
-// redactURLs swaps every address in a message for its trackerHost.
+// secretish finds passkey-shaped fragments left once the addresses are
+// gone: key=value pairs trackers use for a member's key, and long hex path
+// parts.
+var (
+	secretPair = regexp.MustCompile(`(?i)\b(passkey|authkey|torrent_pass|pid|key)=[^\s&;,"'<>]+`)
+	secretPath = regexp.MustCompile(`/[0-9a-fA-F]{24,}`)
+)
+
+// redactURLs swaps every address in a message for its trackerHost and
+// blanks passkey-shaped fragments written without a scheme.
 func redactURLs(msg string) string {
-	return urlish.ReplaceAllStringFunc(msg, trackerHost)
+	msg = urlish.ReplaceAllStringFunc(msg, trackerHost)
+	msg = secretPair.ReplaceAllString(msg, "$1=…")
+	return secretPath.ReplaceAllString(msg, "/…")
 }
 
 // RedactURLs swaps every address in free text for its scheme and host, so

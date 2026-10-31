@@ -232,3 +232,24 @@ func TestOutsideRemoveNeedsSettings(t *testing.T) {
 	r.ana.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/items/%s/pause", dl, isoHash), "", 200)
 	r.owner.call("POST", path, `{"delete_files":false}`, 200)
 }
+
+// route: POST /api/v1/downloaders/{id}/items/{hash}/trackers
+// route: POST /api/v1/downloaders/{id}/location
+// route: POST /api/v1/downloaders/{id}/speed-limits
+// route: PUT /api/v1/downloaders/{id}/items/{hash}/files
+// Changing a torrent HolyArrs did not send, beyond pause and the like, needs
+// the settings permission.
+func TestOutsideChangesNeedSettings(t *testing.T) {
+	r := newAskRig(t)
+	dl := addQB(t, r.st, mediaClient(t).URL)
+	r.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", r.ana.id), `{"perms":["ask","manage_library"]}`, 200)
+	item := fmt.Sprintf("/api/v1/downloaders/%d/items/%s", dl, isoHash)
+	r.ana.call("POST", item+"/trackers", `{"urls":["https://t.example.org/announce"]}`, 403)
+	r.ana.call("POST", item+"/trackers/remove", `{"refs":["x"]}`, 403)
+	r.ana.call("PUT", item+"/files", `{"indexes":[0],"priority":0}`, 403)
+	r.ana.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/location", dl), `{"hashes":["`+isoHash+`"],"folder":"x"}`, 403)
+	r.ana.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/speed-limits", dl), `{"hashes":["`+isoHash+`"],"down":1,"up":1}`, 403)
+	r.ana.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/bulk", dl), `{"action":"pause","hashes":["`+isoHash+`"]}`, 200)
+	r.owner.call("POST", item+"/trackers", `{"urls":["https://t.example.org/announce"]}`, 200)
+	r.owner.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/speed-limits", dl), `{"hashes":["`+isoHash+`"],"down":1,"up":1}`, 200)
+}

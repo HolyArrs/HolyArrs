@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"testing"
 	"time"
@@ -51,7 +52,7 @@ func TestTorrentLogTrackerLinesNeverKeepPasskey(t *testing.T) {
 	next := []downloader.Tracker{{URL: "https://t.example:443", Status: "not_working", Message: "down: http://t.example/announce?passkey=SECRET123"},
 		{URL: "DHT", Fixed: true, Message: "x"}}
 	ls, _ = trackerLines(seen, next)
-	if len(ls) != 1 || !strings.HasPrefix(ls[0].Summary, "t.example:443: ") || strings.Contains(ls[0].Summary, "SECRET123") || strings.Contains(ls[0].Summary, "passkey") {
+	if len(ls) != 1 || !strings.HasPrefix(ls[0].Summary, "t.example: ") || strings.Contains(ls[0].Summary, "SECRET123") || strings.Contains(ls[0].Summary, "passkey") {
 		t.Fatalf("tracker lines %+v", ls)
 	}
 }
@@ -123,5 +124,58 @@ func TestTorrentLogRecordsAndPrunes(t *testing.T) {
 	_ = s.Read().QueryRow("SELECT summary FROM torrent_log WHERE kind = 'tracker'").Scan(&sum)
 	if !strings.HasPrefix(sum, "t.example: ") || strings.Contains(sum, "/a/abc") {
 		t.Fatalf("tracker line %q", sum)
+	}
+}
+
+// Torrents gone from the list leave memory; a remove through HolyArrs and a
+// Downloader delete drop their rows; the daily sweep drops long-unseen ones.
+func TestTorrentLogForgetsGoneTorrents(t *testing.T) {
+	s, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	a := &API{s: Server{Store: s}}
+	ctx := context.Background()
+	a.noteJobs(ctx, 7, []downloader.Job{{ID: strings.ToUpper(outHash)}, {ID: ownHash}})
+	a.noteTrackers(ctx, 7, ownHash, []downloader.Tracker{{URL: "https://t.example", Message: "ok"}})
+	if _, ok := a.tlog.seen[clientKey{7, outHash}]; !ok {
+		t.Fatal("hash not lower-cased")
+	}
+	a.noteJobs(ctx, 7, []downloader.Job{{ID: outHash}})
+	if _, ok := a.tlog.seen[clientKey{7, ownHash}]; ok {
+		t.Fatal("gone torrent kept in memory")
+	}
+	if _, ok := a.tlog.trackers[clientKey{7, ownHash}]; ok {
+		t.Fatal("gone torrent's trackers kept in memory")
+	}
+	count := func(q string, args ...any) int {
+		var n int
+		_ = s.Read().QueryRow(q, args...).Scan(&n)
+		return n
+	}
+	a.writeTorrentLog(ctx, 7, outHash, time.Now().UTC(), []DownloadLogLine{{Kind: "x", Summary: "a"}})
+	a.writeTorrentLog(ctx, 8, outHash, time.Now().UTC(), []DownloadLogLine{{Kind: "x", Summary: "a"}})
+	a.forgetTorrents(ctx, 7, []string{strings.ToUpper(outHash)})
+	if n := count("SELECT count(*) FROM torrent_log WHERE downloader_id = 7"); n != 0 {
+		t.Fatalf("removed torrent kept %d lines", n)
+	}
+	a.forgetTorrents(ctx, 8, nil)
+	if n := count("SELECT count(*) FROM torrent_log WHERE downloader_id = 8"); n != 0 {
+		t.Fatalf("deleted Downloader kept %d lines", n)
+	}
+	old := time.Now().UTC().Add(-40 * 24 * time.Hour)
+	a.writeTorrentLog(ctx, 9, seedHash, old, []DownloadLogLine{{Kind: "x", Summary: "a"}})
+	a.writeTorrentLog(ctx, 9, ownHash, old, []DownloadLogLine{{Kind: "x", Summary: "a"}})
+	_ = s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO torrent_seen (downloader_id, hash, seen_at) VALUES (9, ?, ?)", ownHash, time.Now().UTC().Format(store.TimeLayout))
+		return err
+	})
+	a.sweepTorrentRows(ctx, time.Now().UTC())
+	if n := count("SELECT count(*) FROM torrent_log WHERE downloader_id = 9 AND hash = ?", seedHash); n != 0 {
+		t.Fatal("long-unseen torrent kept")
+	}
+	if n := count("SELECT count(*) FROM torrent_log WHERE downloader_id = 9 AND hash = ?", ownHash); n != 1 {
+		t.Fatal("recently seen torrent swept")
 	}
 }

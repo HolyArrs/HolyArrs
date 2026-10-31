@@ -222,12 +222,39 @@ func TestSabStatus(t *testing.T) {
 	}
 }
 
+func TestTrackerHostFallback(t *testing.T) {
+	if got := trackerHost("t.example/abc0123456789abcdef0123456789"); got != "tracker" {
+		t.Fatalf("trackerHost without a scheme = %q, want tracker", got)
+	}
+}
+
+func TestHostOnly(t *testing.T) {
+	cases := map[string]string{
+		"https://user:pass@Tracker.Example.org/announce?k=1": "tracker.example.org",
+		"udp://t.example:6969/announce":                      "t.example",
+		"https://user:pass@t.example:8443/x":                 "t.example",
+		"%%bad":                                              "",
+	}
+	for in, want := range cases {
+		if got := HostOnly(in); got != want {
+			t.Errorf("HostOnly(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestRedactURLs(t *testing.T) {
 	cases := map[string]string{
 		"announce failed: https://t.example.org/abc123passkey/announce?x=1": "announce failed: https://t.example.org",
 		"two udp://a.example:80/key and http://u:p@b.example/k":             "two udp://a.example:80 and http://b.example",
 		"Not working": "Not working",
-		"":            "",
+		"bad request tracker.example/announce?passkey=deadbeef&x=1":  "bad request tracker.example/announce?passkey=…&x=1",
+		"unregistered authkey=AbC torrent_pass=zz pid=9 key=k1":      "unregistered authkey=… torrent_pass=… pid=… key=…",
+		"denied t.example/0123456789abcdef0123456789abcdef/announce": "denied t.example/…/announce",
+		"x ?passkey=abc123": "x ?passkey=…",
+		"x &key=abc":        "x &key=…",
+		"announce/0123456789abcdef0123456789abcdef": "announce/…",
+		"basket=1 monkey=2 sass":                    "basket=1 monkey=2 sass",
+		"":                                          "",
 	}
 	for in, want := range cases {
 		if got := redactURLs(in); got != want {

@@ -372,8 +372,10 @@ func (a *API) matchOne(ctx context.Context, w matchWant) error {
 func (a *API) addAndLink(ctx context.Context, w matchWant, g guess, c Candidate, cs []Candidate, how string) error {
 	titleID, err := a.ensureTitle(ctx, c)
 	if err != nil {
-		var fe *library.FolderError
-		if errors.Is(err, library.ErrNoShowFolder) || errors.As(err, &fe) || errors.Is(err, library.ErrNotShowFolder) || isNoFolder(err) {
+		if isNoFolder(err) {
+			if how == "by hand" {
+				return errHandNoFolder
+			}
 			// Adding needs a choice that has no default: ask instead.
 			return a.saveLink(ctx, w, linkUnsure, 0, nil, "", cs, "no default folder")
 		}
@@ -383,8 +385,20 @@ func (a *API) addAndLink(ctx context.Context, w matchWant, g guess, c Candidate,
 	return a.saveLink(ctx, w, linkLinked, titleID, slots, covers, cs, how)
 }
 
+// errHandNoFolder answers a hand pick whose title has no default Library
+// folder to go into.
+var errHandNoFolder = errors.New("this title has no default Library folder to go into; set one in Settings > Library first")
+
+// isNoFolder says adding failed only for want of a usable Library folder.
 func isNoFolder(err error) bool {
-	return err != nil && strings.Contains(strings.ToLower(err.Error()), "folder")
+	var fe *library.FolderError
+	for _, e := range []error{library.ErrNoFolder, library.ErrNotMovieFolder, library.ErrNoShowFolder, library.ErrNotShowFolder,
+		library.ErrNoMusicFolder, library.ErrNotMusicFolder, library.ErrBadFolder, library.ErrFolderAbsent} {
+		if errors.Is(err, e) {
+			return true
+		}
+	}
+	return errors.As(err, &fe)
 }
 
 // ensureTitle finds the candidate in the Library or adds it the normal way,
@@ -706,9 +720,13 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 		if c.Kind == "show" && g.kind != "show" {
 			g = guess{kind: "show", complete: true}
 		}
-		err = a.addAndLink(r.Context(), want, g, *c, nil, "by hand")
+		err = a.addAndLink(r.Context(), want, g, *c, v.Candidates, "by hand")
 	default:
 		fail(w, http.StatusBadRequest, pickHelp)
+		return
+	}
+	if errors.Is(err, errHandNoFolder) {
+		fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	if err != nil {

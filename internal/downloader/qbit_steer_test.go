@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 )
 
 const steerA, steerB = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -56,6 +57,39 @@ func TestShareLimitsRead(t *testing.T) {
 	}
 	if (qbitTorrent{}).limits() != nil {
 		t.Fatal("no limits read as some")
+	}
+	idle := int64(30)
+	if l := (qbitTorrent{IdleLimit: &idle}).limits(); l == nil || l.InactiveMinutes != 30 {
+		t.Fatalf("idle limit alone lost: %+v", l)
+	}
+}
+
+func TestQbitAPIVersionCachedAndFailureIsError(t *testing.T) {
+	f, q := steerFake(t, "2.13.1")
+	ctx := context.Background()
+	for i := 0; i < 3; i++ {
+		v, err := q.qbitAPI(ctx)
+		if err != nil || v != [3]int{2, 13, 1} {
+			t.Fatalf("%v %v", v, err)
+		}
+	}
+	n := 0
+	f.mu.Lock()
+	for _, c := range f.calls {
+		if strings.Contains(c, "app/webapiVersion") {
+			n++
+		}
+	}
+	f.mu.Unlock()
+	if n != 1 {
+		t.Fatalf("version read %d times, want 1", n)
+	}
+	q.verAt = time.Now().Add(-2 * qbitVersionTTL)
+	f.mu.Lock()
+	f.codes["app/webapiVersion"] = 500
+	f.mu.Unlock()
+	if _, err := q.qbitAPI(ctx); err == nil {
+		t.Fatal("a failed version read must be an error")
 	}
 }
 

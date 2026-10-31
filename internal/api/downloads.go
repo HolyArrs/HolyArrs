@@ -438,6 +438,9 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 	default:
 		var d domain.Download
 		_ = store.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
+		if d.ExternalID != "" {
+			a.forgetTorrents(r.Context(), d.DownloaderID, []string{d.ExternalID})
+		}
 		v := downloadView(d)
 		v.Label = PhaseLabels["removed"]
 		if d.StateReason != nil {
