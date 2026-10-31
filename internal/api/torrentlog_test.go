@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -207,7 +209,7 @@ func TestTorrentLogSweepWaitsForEveryDownloader(t *testing.T) {
 	if !a.tlog.lastSweep.IsZero() {
 		t.Fatal("noteJobs started the sweep")
 	}
-	a.maybeSweep(ctx)
+	a.maybeSweep(ctx, nil)
 	_ = s.Read().QueryRow("SELECT count(*) FROM torrent_log WHERE downloader_id = 2").Scan(&n)
 	if n != 0 {
 		t.Fatal("sweep kept a long-unseen torrent")
@@ -232,5 +234,83 @@ func TestTorrentLogSweepWaitsForEveryDownloader(t *testing.T) {
 	_ = s.Read().QueryRow("SELECT count(*) FROM torrent_log WHERE downloader_id = 3").Scan(&n)
 	if n != 0 {
 		t.Fatalf("batched forget left %d rows", n)
+	}
+}
+
+// sweepEngine lists a fixed set of jobs, or fails every list.
+type sweepEngine struct {
+	jobs []downloader.Job
+	fail bool
+}
+
+func (e sweepEngine) Health(context.Context) (downloader.Health, error) {
+	return downloader.Health{}, nil
+}
+func (e sweepEngine) Add(context.Context, downloader.AddRequest) (string, error) { return "", nil }
+func (e sweepEngine) List(context.Context, string) ([]downloader.Job, error)    { return nil, nil }
+func (e sweepEngine) Get(context.Context, string) (downloader.Job, error) {
+	return downloader.Job{}, downloader.ErrNotFound
+}
+func (e sweepEngine) Remove(context.Context, string, bool) error { return nil }
+func (e sweepEngine) ListAll(context.Context) ([]downloader.Job, error) {
+	if e.fail {
+		return nil, errors.New("offline")
+	}
+	return e.jobs, nil
+}
+
+// One offline Downloader does not stop the daily sweep: only its rows are
+// kept, the healthy Downloader's long-unseen rows go, and rows keyed by a
+// capitalised hash are dropped.
+func TestSweepSkipsOnlyFailedDownloader(t *testing.T) {
+	s, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	down := addQB(t, s, "http://127.0.0.1:9")
+	_ = s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloaders SET name = 'Offline' WHERE id = ?", down)
+		return err
+	})
+	up := addQB(t, s, "http://127.0.0.1:10")
+	m := &downloader.Manager{Store: s, Engine: func(d domain.Downloader) (downloader.Engine, error) {
+		return sweepEngine{fail: d.ID == down, jobs: []downloader.Job{{ID: ownHash, Name: "x"}}}, nil
+	}}
+	a := &API{s: Server{Store: s, Downloads: m}}
+	ctx := context.Background()
+	old := time.Now().UTC().Add(-40 * 24 * time.Hour)
+	for _, id := range []int64{down, up} {
+		a.writeTorrentLog(ctx, id, seedHash, time.Now().UTC(), []DownloadLogLine{{Kind: "x", Summary: "a"}})
+		_ = s.Write(ctx, func(tx *sql.Tx) error {
+			_, err := tx.Exec("INSERT INTO torrent_seen (downloader_id, hash, seen_at) VALUES (?, ?, ?)", id, seedHash, old.Format(store.TimeLayout))
+			return err
+		})
+	}
+	_ = s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO torrent_log (downloader_id, hash, at, kind, summary) VALUES (?, ?, ?, 'x', 'a')",
+			up, strings.ToUpper(ownHash), time.Now().UTC().Format(store.TimeLayout))
+		return err
+	})
+	a.clientRows(ctx, map[clientKey]bool{})
+	n := func(q string, args ...any) int {
+		var c int
+		_ = s.Read().QueryRow(q, args...).Scan(&c)
+		return c
+	}
+	if a.tlog.lastSweep.IsZero() {
+		t.Fatal("one offline Downloader stopped the sweep")
+	}
+	if c := n("SELECT count(*) FROM torrent_log WHERE downloader_id = ? AND hash = ?", down, seedHash); c != 1 {
+		t.Fatal("sweep dropped the offline Downloader's rows")
+	}
+	if c := n("SELECT count(*) FROM torrent_seen WHERE downloader_id = ?", down); c != 1 {
+		t.Fatal("sweep dropped the offline Downloader's seen row")
+	}
+	if c := n("SELECT count(*) FROM torrent_log WHERE downloader_id = ? AND hash = ?", up, seedHash); c != 0 {
+		t.Fatal("sweep kept the healthy Downloader's long-unseen torrent")
+	}
+	if c := n("SELECT count(*) FROM torrent_log WHERE hash <> lower(hash)"); c != 0 {
+		t.Fatal("sweep kept a capitalised-hash row")
 	}
 }

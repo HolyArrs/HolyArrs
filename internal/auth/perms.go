@@ -770,7 +770,7 @@ func Gate(m *http.ServeMux) http.Handler {
 		}
 		if who.Via != "api_key" && (RouteScope(pattern) == ScopeAdmin || RouteScope(pattern) == ScopeControl) &&
 			!RecentLocal(r) && !recentLocalExempt(pattern, who) {
-			fail(w, http.StatusForbidden, "confirm your local password again before using this route")
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
 			return
 		}
 		if !who.Has(need) {

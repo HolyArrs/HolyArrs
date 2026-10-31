@@ -139,7 +139,7 @@ func (a *API) matchLoop() {
 // linkStates reads the stored link state of each row's torrent.
 func (a *API) linkStates(ctx context.Context, rows []DownloadRow) map[clientKey]string {
 	out := map[clientKey]string{}
-	rs, err := a.s.Store.Read().QueryContext(ctx, "SELECT downloader_id, hash, state FROM client_links")
+	rs, err := a.s.Store.Read().QueryContext(ctx, "SELECT downloader_id, hash, state FROM client_links WHERE hash = lower(hash)")
 	if err != nil {
 		return out
 	}

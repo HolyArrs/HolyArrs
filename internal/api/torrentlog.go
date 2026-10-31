@@ -216,9 +216,10 @@ func (a *API) noteJobs(ctx context.Context, downloaderID int64, jobs []downloade
 }
 
 // maybeSweep runs the daily sweep. Callers run it only after every
-// Downloader's list was read and noted, so no torrent_seen row is stale
-// merely because its Downloader has not been read yet.
-func (a *API) maybeSweep(ctx context.Context) {
+// Downloader's list was read and noted; skip names the Downloaders whose
+// list read failed, so their rows are not stale merely because they were
+// not read.
+func (a *API) maybeSweep(ctx context.Context, skip []int64) {
 	now := time.Now().UTC()
 	a.tlog.mu.Lock()
 	due := now.Sub(a.tlog.lastSweep) >= 24*time.Hour
@@ -227,26 +228,42 @@ func (a *API) maybeSweep(ctx context.Context) {
 	}
 	a.tlog.mu.Unlock()
 	if due {
-		a.sweepTorrentRows(ctx, now)
+		a.sweepTorrentRows(ctx, now, skip...)
 	}
 }
 
 // sweepTorrentRows drops log and link rows of torrents not seen for
-// torrentForget. Rows from before torrent_seen existed go by their own age.
-func (a *API) sweepTorrentRows(ctx context.Context, now time.Time) {
+// torrentForget, leaving the skipped Downloaders alone. Rows from before
+// torrent_seen existed go by their own age. Rows keyed by a hash with
+// capitals (from before hashes were stored lower-case) go too.
+func (a *API) sweepTorrentRows(ctx context.Context, now time.Time, skip ...int64) {
 	cut := now.Add(-torrentForget).Format(store.TimeLayout)
+	not, skipArgs := "", []any{}
+	if len(skip) > 0 {
+		not = " AND downloader_id NOT IN (?" + strings.Repeat(",?", len(skip)-1) + ")"
+		for _, id := range skip {
+			skipArgs = append(skipArgs, id)
+		}
+	}
 	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		stale := `SELECT downloader_id, hash FROM torrent_seen WHERE seen_at < ?`
-		if _, err := tx.Exec(`DELETE FROM torrent_log WHERE (downloader_id, hash) IN (`+stale+`)
-			OR (at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
+		if _, err := tx.Exec(`DELETE FROM torrent_log WHERE ((downloader_id, hash) IN (`+stale+`)
+			OR (at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen)))`+not, append([]any{cut, cut}, skipArgs...)...); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`DELETE FROM client_links WHERE (downloader_id, hash) IN (`+stale+`)
-			OR (matched_at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen))`, cut, cut); err != nil {
+		if _, err := tx.Exec(`DELETE FROM client_links WHERE ((downloader_id, hash) IN (`+stale+`)
+			OR (matched_at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen)))`+not, append([]any{cut, cut}, skipArgs...)...); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`DELETE FROM torrent_seen WHERE seen_at < ?`, cut)
-		return err
+		if _, err := tx.Exec(`DELETE FROM torrent_seen WHERE seen_at < ?`+not, append([]any{cut}, skipArgs...)...); err != nil {
+			return err
+		}
+		for _, t := range []string{"torrent_log", "client_links", "torrent_seen"} {
+			if _, err := tx.Exec("DELETE FROM " + t + " WHERE hash <> lower(hash)"); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
