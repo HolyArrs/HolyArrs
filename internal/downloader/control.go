@@ -642,6 +642,20 @@ func (s *Sabnzbd) MoveTop(ctx context.Context, id string) error {
 		} `json:"result"`
 	}
 	if json.Unmarshal(b, &r) == nil && r.Result.Position != nil && *r.Result.Position < 0 {
+		// No move: SABnzbd answers the same for a job already first (the
+		// only one, say) as for one it does not have.
+		qb, err := s.call(ctx, "queue", url.Values{"nzo_ids": {id}, "start": {"0"}, "limit": {"1"}}, true)
+		if err != nil {
+			return err
+		}
+		var qu sabQueueFull
+		if json.Unmarshal(qb, &qu) == nil {
+			for _, x := range qu.Queue.Slots {
+				if x.ID == id {
+					return nil
+				}
+			}
+		}
 		return ErrNotFound
 	}
 	return nil

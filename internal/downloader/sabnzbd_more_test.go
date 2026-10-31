@@ -79,8 +79,10 @@ func (f *sabPaged) serve(t *testing.T) string {
 				return
 			}
 			fmt.Fprintf(w, `{"status":true,"nzo_id":%q}`, f.retryID)
+		case "switch":
+			_, _ = w.Write([]byte(`{"result":{"position":-1,"priority":0}}`))
 		case "server_stats":
-			_, _ = w.Write([]byte(`{"total":300,"month":200,"week":100,"day":10,"servers":{"small.example":{"total":100,"month":50,"week":20,"day":1,"articles_tried":10,"articles_success":9,"daily":{"2026-10-30":1}},"big.example":{"total":200,"month":150,"week":80,"day":9,"articles_tried":40,"articles_success":40}}}`))
+			_, _ = w.Write([]byte(`{"total":300,"month":200,"week":100,"day":10,"servers":{"small.example":{"total":100,"month":50,"week":20,"day":1,"articles_tried":10,"articles_success":9,"daily":{"2026-10-30":1}},"big.example":{"total":200,"month":150,"week":80,"day":9,"articles_tried":{"2026-10-30":30,"2026-10-31":10},"articles_success":{"2026-10-31":38}}}}`))
 		default:
 			http.NotFound(w, r)
 		}
@@ -170,7 +172,7 @@ func TestSabServerStats(t *testing.T) {
 	if err != nil || st.Total != 300 || st.Week != 100 || len(st.Servers) != 2 {
 		t.Fatalf("%v %+v", err, st)
 	}
-	if st.Servers[0].Name != "big.example" || st.Servers[1].ArticlesFound != 9 || st.Servers[1].ArticlesTried != 10 {
+	if st.Servers[0].Name != "big.example" || st.Servers[1].ArticlesFound != 9 || st.Servers[1].ArticlesTried != 10 || st.Servers[0].ArticlesTried != 40 || st.Servers[0].ArticlesFound != 38 {
 		t.Fatalf("%+v", st.Servers)
 	}
 }
@@ -195,5 +197,17 @@ func TestSabJobStagesRedacted(t *testing.T) {
 	}
 	if _, err := s.JobStages(context.Background(), ""); err != ErrNotFound {
 		t.Fatal("empty id")
+	}
+}
+
+// SABnzbd answers position -1 both for the only job (already first) and for
+// a job it does not have; the queue tells them apart.
+func TestSabMoveTopAlreadyFirst(t *testing.T) {
+	s := NewSabnzbd((&sabPaged{queue: 1}).serve(t), sabKey, nil)
+	if err := s.MoveTop(context.Background(), "SABnzbd_nzo_q0"); err != nil {
+		t.Fatalf("only job: %v", err)
+	}
+	if err := s.MoveTop(context.Background(), "SABnzbd_nzo_gone"); err != ErrNotFound {
+		t.Fatalf("missing job: %v", err)
 	}
 }

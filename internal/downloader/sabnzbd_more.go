@@ -277,12 +277,12 @@ func (s *Sabnzbd) ServerStats(ctx context.Context) (ServerStats, error) {
 		Week    int64 `json:"week"`
 		Day     int64 `json:"day"`
 		Servers map[string]struct {
-			Total   int64 `json:"total"`
-			Month   int64 `json:"month"`
-			Week    int64 `json:"week"`
-			Day     int64 `json:"day"`
-			Tried   int64 `json:"articles_tried"`
-			Success int64 `json:"articles_success"`
+			Total   int64           `json:"total"`
+			Month   int64           `json:"month"`
+			Week    int64           `json:"week"`
+			Day     int64           `json:"day"`
+			Tried   json.RawMessage `json:"articles_tried"`
+			Success json.RawMessage `json:"articles_success"`
 		} `json:"servers"`
 	}
 	if err := json.Unmarshal(b, &raw); err != nil {
@@ -290,10 +290,26 @@ func (s *Sabnzbd) ServerStats(ctx context.Context) (ServerStats, error) {
 	}
 	out := ServerStats{Total: raw.Total, Month: raw.Month, Week: raw.Week, Day: raw.Day, Servers: []ServerStat{}}
 	for name, v := range raw.Servers {
-		out.Servers = append(out.Servers, ServerStat{Name: name, Total: v.Total, Month: v.Month, Week: v.Week, Day: v.Day, ArticlesTried: v.Tried, ArticlesFound: v.Success})
+		out.Servers = append(out.Servers, ServerStat{Name: name, Total: v.Total, Month: v.Month, Week: v.Week, Day: v.Day, ArticlesTried: countOf(v.Tried), ArticlesFound: countOf(v.Success)})
 	}
 	sortServers(out.Servers)
 	return out, nil
+}
+
+// countOf reads an article count SABnzbd sends as one number or as a
+// per-day map of numbers (summed).
+func countOf(raw json.RawMessage) int64 {
+	var n int64
+	if json.Unmarshal(raw, &n) == nil {
+		return n
+	}
+	var days map[string]int64
+	if json.Unmarshal(raw, &days) == nil {
+		for _, v := range days {
+			n += v
+		}
+	}
+	return n
 }
 
 func sortServers(s []ServerStat) {
