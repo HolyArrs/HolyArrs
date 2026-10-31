@@ -20,11 +20,13 @@ export function askedBy(a: Pick<Ask, 'people' | 'asked_by'>): string {
 }
 
 /** decided says who decided and how, or '' while it waits. */
-export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>): string {
+export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, me?: { id: number; displayName: string }): string {
 	if (!a.decided_by || a.state === 'asked') return '';
-	if (a.state === 'turned_down') return `Declined by ${a.decided_by.name}`;
-	if (a.auto_approved) return `Approved straight away (${a.decided_by.name} may auto-approve)`;
-	return `Approved by ${a.decided_by.name}`;
+	// The server only shares my own display name, so that one wins over the account name.
+	const who = me && me.id === a.decided_by.id && me.displayName.trim() ? me.displayName.trim() : a.decided_by.name;
+	if (a.state === 'turned_down') return `Declined by ${who}`;
+	if (a.auto_approved) return 'Auto-approved';
+	return `Approved by ${who}`;
 }
 
 /** waitWords says a wait in words, like the server: "2 days and 3 hours". */

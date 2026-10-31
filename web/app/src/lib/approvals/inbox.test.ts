@@ -24,7 +24,7 @@ describe('approvals inbox', () => {
 		expect(loadGroupBy(4, store)).toBe('type');
 	});
 	it('uses the glossary words on the tabs', () => {
-		expect(inboxTabs.map((t) => t.label)).toEqual(['Pending', 'Approved', 'Declined', 'Available', 'Failed']);
+		expect(inboxTabs.map((t) => t.label)).toEqual(['Pending', 'Approved', 'Declined', 'Ready', 'Failed']);
 	});
 
 	it('says what a show ask is for, with season pills', () => {

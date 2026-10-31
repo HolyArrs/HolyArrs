@@ -109,7 +109,7 @@
 		if (life.stage === 'declined') return ctx.decided(picked) ? `${ctx.decided(picked)}.` : 'Declined.';
 		if (life.stage === 'failed') {
 			const why = life.reason ? ` ${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : '';
-			return (picked.title_id ? 'The download failed.' : 'Couldn’t add it to the library.') + why;
+			return (picked.title_id ? 'Couldn’t download it.' : 'Couldn’t add it to the Library.') + why;
 		}
 		return life.stage === 'upcoming' ? `Getting it for ${who}. It isn’t out yet.` : `Getting it for ${who}.`;
 	});
@@ -243,7 +243,7 @@
 				<section class="big" data-testid="ask-status" aria-label="Status">
 					<span class="life inline tone-{life.tone}" role="progressbar" aria-label="{picked.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 					<div class="says">
-						<p class="huge tone-{life.tone}" role="status" aria-live="polite">{life.label}</p>
+						<p class="huge tone-{life.tone}">{life.label}</p>
 						<p class="sent">{sentence}{#if life.more}<span class="more">{` · ${life.more}`}</span>{/if}</p>
 					</div>
 					{#if picked.kind !== 'movie' && !choosing}

@@ -17,6 +17,7 @@
 	import { ago, dateTime } from '#lib/format.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { loadProfile, profile } from '#lib/account/profile.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/plain.ts';
 	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/wishlist.ts';
@@ -229,6 +230,7 @@
 	}
 
 	onMount(() => {
+		if (approver) void loadProfile();
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
 			tab = stageLook > 0 && approver ? 'waiting' : firstTab(asks);
@@ -316,13 +318,8 @@
 			loadGen++;
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
-			const added =
-				r.ask.kind === 'show'
-					? `Approved ${r.ask.name}. HolyArrs will keep ${r.ask.season_words ?? seasonWords(r.ask.seasons)} up to date.`
-					: r.ask.kind === 'artist'
-						? `Approved ${r.ask.name}. HolyArrs will keep ${albumWords(r.ask.albums)} up to date.`
-						: `Approved ${r.ask.name}. Looking for it now.`;
-			toasts.push(mode === 'approve' ? added : `Declined ${r.ask.name}.`, 'ok');
+			// Short, like the card: what happens next is on the Processing tab.
+			toasts.push(mode === 'approve' ? `Approved ${r.ask.name}.` : `Declined ${r.ask.name}.`, 'ok');
 			void refreshInbox();
 			return '';
 		} catch (err) {
@@ -394,7 +391,7 @@
 	// Id-like account names read as a person, never a raw id.
 	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? 'someone in your household' : w));
 	const askedBy = (a: Ask) => plain(askedByRaw(a));
-	const decided = (a: Ask) => plain(decidedRaw(a) ?? '');
+	const decided = (a: Ask) => plain(decidedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined) ?? '');
 
 	function year(a: Ask) {
 		return a.year ? ` (${a.year})` : '';

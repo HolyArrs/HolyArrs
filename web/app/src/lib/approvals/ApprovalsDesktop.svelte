@@ -346,7 +346,7 @@
 		<div class="sf-scrim" aria-hidden="true" transition:fade={{ duration: ms(300) }}></div>
 		<div class="sf-sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(260), easing: cubicOut }}>
 			<div class="sf-grab" aria-hidden="true"></div>
-			<div role="menu" aria-label="Filter">{@render filterItems()}</div>
+			<div role="menu" aria-label="Filter options">{@render filterItems()}</div>
 		</div>
 	{/if}
 
@@ -370,7 +370,7 @@
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
 							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
-							<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
+							<button type="button" class="b yes" aria-label="Approve {a.name}" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} /><span class="bl">Approve</span></button>
 						{:else if life.stage === 'failed' && !ctx.isPending(a.id)}
 							<!-- Every failed ask: the red label on the left, Decline on the right when it can still be declined. -->
 							<span class="state tone-bad"><span class="dot"></span>{life.label}</span>
@@ -387,7 +387,7 @@
 						{/if}
 					</div>
 					</div>
-					<span class="life tone-{approving.has(a.id) ? 'ok' : life.tone}" aria-hidden="true"><span class="fill" style:width="{approving.has(a.id) ? 100 : life.pct}%"></span></span>
+					<span class="life tone-{approving.has(a.id) ? 'ok' : life.tone}" aria-hidden="true"><span class="fill" style:transform="scaleX({(approving.has(a.id) ? 100 : life.pct) / 100})"></span></span>
 					{#if approving.has(a.id)}
 						<span class="done" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>Approved</span>
 					{/if}
@@ -536,7 +536,7 @@
 	.state.tone-soon .dot { background: var(--text-muted); }
 	/* Inset from the card's rounded corners, so the line is never clipped. */
 	.life { position: absolute; left: 20px; right: 20px; bottom: 3px; z-index: 2; height: 3px; overflow: hidden; border-radius: 3px; background: rgb(127 127 127 / 0.14); }
-	.fill { display: block; height: 100%; border-radius: 3px; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1); }
+	.fill { display: block; width: 100%; height: 100%; border-radius: 3px; transform-origin: left; transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.tone-wait .fill { background: var(--wait); }
 	.tone-go .fill { background: var(--info, #3b82f6); }
 	.tone-ok .fill { background: var(--ok); }
@@ -573,7 +573,7 @@
 	@media (pointer: coarse) { .nav, .close { width: 44px; height: 44px; } .b { height: 44px; } }
 	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.85); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }
-	.win[open]:global(.win-out) { animation: win-out 320ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+	.win[open]:global(.win-out) { animation: win-out 320ms cubic-bezier(0.32, 0.72, 0, 1) both; }
 	.win[open]:global(.win-out)::backdrop { animation: fade-out 320ms var(--ease-out) both; }
 	@keyframes win-out { to { opacity: 0; transform: translateY(10px) scale(0.96); } }
 	@keyframes fade-out { to { opacity: 0; } }
@@ -585,8 +585,10 @@
 		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 		.tabs::-webkit-scrollbar { display: none; }
 		.tab { flex: none; padding: 0 12px; }
-		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; margin-left: 0; }
+		/* Approve all and Filter share one row, equal halves, so the art starts sooner. */
+		.right { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin-left: 0; }
 		.approve-all { justify-content: center; }
+		.right .sf-anchor, .right .sf-anchor :global(.sf-btn) { width: 100%; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 		.ban { height: 140px; }
 		.ban-cap { left: 10px; right: 10px; bottom: 24px; }
@@ -595,15 +597,17 @@
 		.sheet-b { margin: -16px 6px 6px; border-radius: 14px; }
 		.body { padding: 10px 10px 0; }
 		.who { font: var(--t-caption); }
-		.foot { grid-template-columns: 44px minmax(0, 1fr); gap: 6px; padding: 10px; }
+		/* Decline and Approve: equal halves, icons only (each has its full name for screen readers). */
+		.foot { gap: 6px; padding: 10px; }
 		.b { padding: 0 8px; font: var(--t-footnote); font-weight: 600; }
-		.b.no .bl { display: none; }
+		.b .bl { display: none; }
 		.win { width: 100vw; height: 100dvh; border-radius: 0; }
 		.close { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; width: 44px; height: 44px; }
 		.win :global(.ctl.top) { right: 64px !important; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.bc, .fill, .win[open], .win::backdrop, .ban-img, img.ban-img { transition: none; animation: none; }
+		.bc, .fill, .win[open], .win::backdrop, .ban-img, img.ban-img, .win[open]:global(.win-out), .win[open]:global(.win-out)::backdrop { transition: none; animation: none; }
+		.b:active, .approve-all:active { transform: none; }
 		.bc:hover, .bc:hover .ban-img:not(.soft) { transform: none; }
 	}
 </style>
