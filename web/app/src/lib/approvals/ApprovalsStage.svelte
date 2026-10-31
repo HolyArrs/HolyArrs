@@ -22,7 +22,10 @@
 	import { to } from '../paths.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
-	import { lifecycle, upcoming } from './lifecycle.ts';
+	import { lifecycle, upcoming, type Life, type LifeFacts } from './lifecycle.ts';
+	import { partialFacts } from './live.ts';
+	import { api } from '../api.ts';
+	import type { AlbumSummary, TitleView } from '../types.ts';
 	import { shortDate } from './inbox.ts';
 	import { askTab } from '../wishlist.ts';
 	import { askedFor } from './asked-for.ts';
@@ -63,11 +66,33 @@
 	});
 	// Not pending (Processing or Done): a big status under the banner instead of the answer buttons.
 	const status = $derived(ctx.approver && picked.state !== 'asked');
+	// How much of what was asked is in the Library (this window only: one title read).
+	let partial = $state<{ id: number; facts: LifeFacts } | null>(null);
+	$effect(() => {
+		const a = picked;
+		if (!a.title_id || (a.state !== 'approved' && a.state !== 'available') || a.kind === 'movie') return;
+		const id = a.title_id;
+		const ctl = new AbortController();
+		const load =
+			a.kind === 'show'
+				? api.get<TitleView>(`/titles/${id}`, ctl.signal).then((t) =>
+						partialFacts('seasons', (t.show?.seasons ?? []).filter((s) => s.number > 0 && !s.dropped).map((s) => ({ key: s.number, complete: s.aired > 0 && s.in_library >= s.aired })), a.seasons ?? [])
+					)
+				: api.get<{ albums: AlbumSummary[] }>(`/titles/${id}/albums`, ctl.signal).then((r) =>
+						partialFacts('albums', r.albums.filter((x) => !x.dropped).map((x) => ({ key: x.mbid, complete: x.tracks > 0 && x.in_library >= x.tracks })), (a.albums ?? []).map((x) => x.mbid))
+					);
+		load.then((facts) => !ctl.signal.aborted && (partial = { id, facts })).catch(() => {});
+		return () => ctl.abort();
+	});
 	const life = $derived.by(() => {
 		const a = picked;
-		if (a.state !== 'approved' || !a.title_id || a.kind === 'artist') return lifecycle(a);
-		const out = upcoming(a, ctx.info(a), (season) => ctx.episodes(a.tmdb_id, season)?.map((e) => e.air_day ?? '').filter(Boolean).sort()[0] ?? null);
-		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
+		if (a.state === 'available') return lifecycle(a, partial && partial.id === a.title_id ? partial.facts : {});
+		if (a.state !== 'approved' || !a.title_id) return lifecycle(a);
+		const live = ctx.live(a);
+		const part: LifeFacts = partial && partial.id === a.title_id ? partial.facts : {};
+		if (live.phase) return lifecycle(a, { ...part, ...live });
+		const out = a.kind === 'artist' ? '' : upcoming(a, ctx.info(a), (season) => ctx.episodes(a.tmdb_id, season)?.map((e) => e.air_day ?? '').filter(Boolean).sort()[0] ?? null);
+		return lifecycle(a, out ? { ...part, upcoming: shortDate(out) } : part);
 	});
 	const failed = $derived(status && askTab(picked) === 'failed');
 	const sentence = $derived.by(() => {
@@ -152,8 +177,7 @@
 <svelte:window onkeydown={keys} />
 
 <!-- The life-cycle line along the banner's bottom edge. -->
-{#snippet line(a: Ask)}
-	{@const life = lifecycle(a)}
+{#snippet line(a: Ask, life: Life)}
 	<span class="life edge tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 {/snippet}
 
@@ -221,7 +245,7 @@
 					{/if}
 				</section>
 			{:else}
-				{@render line(picked)}
+				{@render line(picked, life)}
 			{/if}
 
 			{#if choosing}

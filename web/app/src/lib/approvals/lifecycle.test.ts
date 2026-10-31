@@ -3,6 +3,32 @@ import { lifecycle, STAGE_WEIGHT, upcoming } from './lifecycle.ts';
 
 const ask = (state: string, title_id?: number) => ({ state, title_id }) as Parameters<typeof lifecycle>[0];
 
+describe('lifecycle live stages', () => {
+	const a = ask('approved', 7);
+	it('searching, downloading and importing sit inside the getting span', () => {
+		const lo = STAGE_WEIGHT.getting;
+		const hi = STAGE_WEIGHT.getting_end;
+		const s = lifecycle(a, { phase: 'searching' });
+		const d0 = lifecycle(a, { phase: 'downloading', progress: 0 });
+		const d5 = lifecycle(a, { phase: 'downloading', progress: 0.5 });
+		const d1 = lifecycle(a, { phase: 'downloading', progress: 1 });
+		const i = lifecycle(a, { phase: 'importing' });
+		expect(s).toMatchObject({ stage: 'searching', tone: 'go', label: 'Searching' });
+		expect(d5).toMatchObject({ stage: 'downloading', tone: 'go', label: 'Downloading · 50%' });
+		expect(i).toMatchObject({ stage: 'importing', tone: 'go', label: 'Importing' });
+		const p = [s.pct, d0.pct, d5.pct, d1.pct, i.pct];
+		expect(p).toEqual([...p].sort((x, y) => x - y));
+		for (const x of p) {
+			expect(x).toBeGreaterThan(lo);
+			expect(x).toBeLessThanOrEqual(hi);
+		}
+	});
+	it('a failed download shows Failed, and a live stage beats Upcoming', () => {
+		expect(lifecycle(a, { phase: 'failed' })).toMatchObject({ stage: 'failed', tone: 'bad', label: 'Failed' });
+		expect(lifecycle(a, { phase: 'searching', upcoming: 'Nov 3' }).label).toBe('Searching');
+	});
+});
+
 describe('lifecycle', () => {
 	it('weights rise with each stage', () => {
 		const w = Object.values(STAGE_WEIGHT);

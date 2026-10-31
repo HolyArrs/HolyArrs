@@ -6,7 +6,7 @@ import type { AskInfo } from './inbox.ts';
 
 export const STAGE_WEIGHT = { asked: 8, approved: 30, getting: 45, getting_end: 92, ready: 100 } as const;
 
-export type Stage = 'asked' | 'upcoming' | 'getting' | 'ready' | 'declined' | 'failed';
+export type Stage = 'asked' | 'upcoming' | 'searching' | 'downloading' | 'importing' | 'getting' | 'ready' | 'declined' | 'failed';
 export interface Life {
 	stage: Stage;
 	/** 0..100, how much of the line is filled. */
@@ -22,6 +22,8 @@ export interface Life {
 export interface LifeFacts {
 	/** The download's 0..1. */
 	progress?: number;
+	/** What the pipeline is doing for it right now (from the live searches and downloads). */
+	phase?: 'searching' | 'downloading' | 'importing' | 'failed';
 	/** Not released yet: the short date it comes out ('' when the date is unknown). */
 	upcoming?: string;
 	/**
@@ -46,6 +48,13 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	const lo = STAGE_WEIGHT.getting;
 	const hi = STAGE_WEIGHT.getting_end;
 	const part = facts.partial;
+	if (facts.phase === 'failed') return { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: facts.reason ? `Failed · ${facts.reason}` : 'Failed' };
+	if (facts.phase === 'searching') return { stage: 'searching', pct: lo + (hi - lo) * 0.1, tone: 'go', label: 'Searching' };
+	if (facts.phase === 'importing') return { stage: 'importing', pct: hi - 3, tone: 'go', label: 'Importing' };
+	if (facts.phase === 'downloading') {
+		const d = facts.progress === undefined || !Number.isFinite(facts.progress) ? 0 : Math.min(Math.max(facts.progress, 0), 1);
+		return { stage: 'downloading', pct: lo + (hi - lo) * (0.15 + 0.75 * d), tone: 'go', label: `Downloading · ${Math.round(d * 100)}%` };
+	}
 	// Everything asked for is in: Ready, however much more the title has.
 	if (part && part.total > 0 && part.have >= part.total) return ready(facts);
 	if (part && part.total > 0 && part.have > 0) {

@@ -22,7 +22,9 @@
 	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/wishlist.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { inbox, markRead, refreshInbox } from '#lib/wishlist.svelte.ts';
-	import type { Ask, AskLimit, LibraryFolder, PickRulesView } from '#lib/types.ts';
+	import type { Ask, AskLimit, LibraryFolder, PickRulesView, SearchView } from '#lib/types.ts';
+	import type { DownloadRow } from '#lib/downloaders.ts';
+	import { liveByTitle, liveFacts, type TitleLive } from '#lib/approvals/live.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { albumWords } from '#lib/music/music.ts';
 	import { titleStatus } from '#lib/title-status.ts';
@@ -245,12 +247,36 @@
 		const syncCompactReview = () => (compactReview = compactQuery.matches);
 		syncCompactReview();
 		compactQuery.addEventListener('change', syncCompactReview);
-		const offs = [live.on('ask', () => void load()), live.on('ask_removed', () => void load())];
+		void loadLive();
+		const offs = [
+			live.on('ask', () => void load()),
+			live.on('ask_removed', () => void load()),
+			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive()))
+		];
 		return () => {
 			compactQuery.removeEventListener('change', syncCompactReview);
 			offs.forEach((off) => off());
 		};
 	});
+
+	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
+	let titleLive = $state(new Map<number, TitleLive>());
+	let liveBusy = false;
+	async function loadLive() {
+		if (liveBusy || !session.can('manage_library')) return;
+		liveBusy = true;
+		try {
+			const [d, s] = await Promise.all([
+				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
+				api.get<{ running: SearchView[] }>('/searches')
+			]);
+			titleLive = liveByTitle(d.downloads, s.running ?? []);
+		} catch {
+			// keep the last answer
+		} finally {
+			liveBusy = false;
+		}
+	}
 
 	function open(a: Ask, m: 'approve' | 'turn_down') {
 		picked = a;
@@ -411,6 +437,7 @@
 	const people = $derived(askers(asks));
 	const ctx: ApprovalsCtx = {
 		get shown() { return shown; },
+		live: (a) => liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined),
 		get viewed() { return viewed; },
 		get tab() { return tab; },
 		get counts() { return counts; },

@@ -77,7 +77,9 @@
 		return eps.map((e) => e.air_day ?? '').filter(Boolean).sort()[0] ?? null;
 	};
 	const lifeOf = (a: Ask): Life => {
-		if (a.state !== 'approved' || !a.title_id || a.kind === 'artist') return lifecycle(a);
+		if (a.state !== 'approved' || !a.title_id) return lifecycle(a);
+		const live = ctx.live(a);
+		if (live.phase || a.kind === 'artist') return lifecycle(a, live);
 		const out = upcoming(a, ctx.info(a), firstAir(a));
 		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
 	};

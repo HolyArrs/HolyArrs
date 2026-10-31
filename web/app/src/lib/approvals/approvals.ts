@@ -7,6 +7,7 @@ import type { ApproverTab, AskTab } from '../wishlist.ts';
 import type { TitleDetails } from '../title-details.ts';
 import type { LibraryFolder, PickRulesView } from '../types.ts';
 import type { AskInfo, EpisodeInfo } from './inbox.ts';
+import type { LifeFacts } from './lifecycle.ts';
 
 /** The approver's choices for one ask: Pick rules (0: the default), audio languages (empty: any), a note, and the seasons or albums kept (absent: all of the ask). */
 export interface DecideOptions {
@@ -91,6 +92,8 @@ export function runtimeLine(min: number | undefined): string {
 export interface ApprovalsCtx {
 	/** The asks in the chosen tab, kind and Mine filter. */
 	readonly shown: Ask[];
+	/** What the pipeline is doing for an approved ask right now (searching, downloading, importing, failed); {} when nothing. */
+	live(a: Ask): LifeFacts;
 	/** Every ask in the kind, person and Mine filter, all tabs. */
 	readonly viewed: Ask[];
 	readonly tab: AskTab;
