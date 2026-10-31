@@ -770,7 +770,7 @@
 		save();
 	}
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
-	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'time'];
+	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'time', 'size'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
 	const FIXED = 8 + 32;
 	let room = $state(0);
@@ -1989,7 +1989,8 @@
 		.dlgrid { --gap: 8px; }
 		.chead { display: none; }
 		.tin { min-width: 0; }
-		.dline { grid-template-columns: 8px 28px minmax(0, 1fr) 88px 52px 32px; grid-template-areas: 'tg post nm nm nm del' '. post bar st time del'; row-gap: 4px; height: auto; min-height: 62px; padding: 6px 0; }
+		/* Two lines, about 64px: poster · title / status, bar · size / time on the right. */
+		.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 44px minmax(52px, auto); grid-template-areas: 'tg post nm nm size' '. post st bar time'; column-gap: 10px; row-gap: 3px; height: auto; min-height: 64px; padding: 5px 12px 5px 0; box-sizing: border-box; align-items: center; }
 		.dline > [data-col] { display: none; }
 		.dline > .ph { display: none; }
 		.dline > [data-col='poster'] { display: block; grid-area: post; align-self: start; }
@@ -1997,7 +1998,15 @@
 		.dline > [data-col='progress'] { display: flex; grid-area: bar; }
 		.dline > [data-col='status'] { display: flex; grid-area: st; }
 		.dline > [data-col='time'] { display: block; grid-area: time; }
-		.dline > [data-col='bin'] { display: flex; grid-area: del; }
+		.dline > [data-col='size'] { display: block; grid-area: size; justify-self: end; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
+		.dline > [data-col='bin'] { display: none; }
+		.tg .pk:not(.any) { display: none; }
+		.dline > [data-col='poster'] { width: 36px; height: 54px; }
+		.dline > [data-col='title'] .rel { display: none; }
+		.dline > [data-col='title'] .tt { font: var(--t-callout); font-weight: 600; }
+		.dline > [data-col='progress'] { height: 4px; align-self: center; }
+		.dline > [data-col='progress'] .bl { display: none; }
 		.dline > .spare { display: none; }
 		.tg { grid-area: tg; }
 		.post { grid-area: post; align-self: start; }
@@ -2033,7 +2042,7 @@
 	}
 	/* Phones: a bottom sheet at about 60% that leaves at least three rows of the list in view. */
 	@media (max-width: 767px) {
-		.dpane { height: min(60dvh, calc(100dvh - var(--tabbar, 56px) - 300px), 520px) !important; }
+		.dpane { height: min(60dvh, calc(100dvh - var(--tabbar, 56px) - env(safe-area-inset-bottom) - 340px), 520px) !important; }
 		.grab { display: grid; place-items: center; order: -1; flex: 1 0 100%; height: 18px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
 		.grab i { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); }
 		.dpane.shut .grab { display: none; }

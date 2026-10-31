@@ -4,6 +4,7 @@
 	import DlFind from './DlFind.svelte';
 	import { tip } from './tip.ts';
 	import { KIND_TABS } from './size.ts';
+	import Sheet from '../ui/Sheet.svelte';
 
 	// The Downloads toolbar: three glass capsules. Actions on the left; Library and Sources
 	// on the right. Every button is the same width (icon over label) so highlights sit centred.
@@ -70,6 +71,17 @@
 	function trkOutside(e: MouseEvent) {
 		if (trkOpen && !(e.target as HTMLElement | null)?.closest('.trw')) trkOpen = false;
 	}
+
+	// Phones: one compact bar. Filters opens a bottom sheet with Library, Source and trackers;
+	// Start, Pause and Remove act on a picked row, so they live in its details and the selection bar.
+	let fOpen = $state(false);
+	const fCount = $derived((kindOn ? 1 : 0) + (srcOn ? 1 : 0) + (trackOn ? 1 : 0));
+	const addAct = $derived(actions.find((a) => a.key === 'add'));
+	const clearAll = () => {
+		kindOn = '';
+		srcOn = '';
+		trackOn = '';
+	};
 
 	// The sliding highlight: each segment measures its picked item and moves one shared plate to it.
 	function slider(node: HTMLElement, _dep: string) {
@@ -155,7 +167,42 @@
 		<DlFind bind:term {shown} {total} {searchKey} />
 		<div class="cap">{@render library()}</div><div class="cap">{@render srcs()}</div>
 	</div>
+	<div class="pbar" data-testid="dl-phonebar">
+		<button type="button" class="pbn" class:has={fCount > 0} aria-haspopup="dialog" aria-label={fCount ? `Filters, ${fCount} on` : 'Filters'} onclick={() => (fOpen = true)} data-testid="dl-filters-btn">
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>
+			<span>Filters</span>{#if fCount}<b class="fc" data-testid="dl-filters-count">{fCount}</b>{/if}
+		</button>
+		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={nameOf(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}
+	</div>
 </div>
+
+{#snippet opt(on: boolean, label: string, n: number | undefined, pick: () => void, tid: string, key: string, bad = false)}
+	<button type="button" class="fo" class:on class:bad aria-pressed={on} onclick={pick} data-testid={tid} data-key={key}><span class="fl2">{label}</span>{#if n !== undefined}<b>{n}</b>{/if}<span class="ck" aria-hidden="true">{#if on}<Icon name="check" size={16} />{/if}</span></button>
+{/snippet}
+
+<Sheet bind:open={fOpen} title="Filters" size="sm" placement="bottom">
+	<div class="fs" data-testid="dl-filters-sheet">
+		<section aria-label="Library"><h3>Library</h3><div class="fg">
+			{@render opt(!kindOn, 'Everything', undefined, () => (kindOn = ''), 'dl-f-kind', '')}
+			{#each kinds as k (k.key)}{@render opt(kindOn === k.key, k.label, kindCount(k.key), () => (kindOn = k.key), 'dl-f-kind', k.key)}{/each}
+		</div></section>
+		<section aria-label="Source"><h3>Source</h3><div class="fg">
+			{@render opt(!srcOn, 'Any source', undefined, () => (srcOn = ''), 'dl-f-src', '')}
+			{#each sources as s (s.key)}{@render opt(srcOn === s.key, s.label, srcCount(s.key), () => (srcOn = s.key), 'dl-f-src', s.key)}{/each}
+		</div></section>
+		{#if trackHosts.length || trackProblems}
+			<section aria-label="Trackers"><h3>Trackers</h3><div class="fg">
+				{@render opt(!trackOn, 'All trackers', trackAll, () => (trackOn = ''), 'dl-f-trk', '')}
+				{#each trackHosts as o (o.key)}{@render opt(trackOn === o.key, o.label, o.count, () => (trackOn = o.key), 'dl-f-trk', o.key)}{/each}
+				{#if trackProblems}{@render opt(trackOn === 'p:any', 'Trackers with problems', trackProblems, () => (trackOn = 'p:any'), 'dl-f-trk', 'p:any', true)}{/if}
+			</div></section>
+		{/if}
+	</div>
+	{#snippet footer()}
+		<button type="button" class="fbtn" disabled={!fCount} onclick={clearAll} data-testid="dl-filters-clear">Clear filters</button>
+		<button type="button" class="fbtn pri" onclick={() => (fOpen = false)} data-testid="dl-filters-done">Show {shown}</button>
+	{/snippet}
+</Sheet>
 
 <svelte:window onclick={trkOutside} />
 
@@ -225,7 +272,41 @@
 		.dlbar .it.stk { width: 58px; }
 		.row > :global(.dlfind), .sidecap, .dlbar .it.side, .vr.ph { display: none; }
 	}
+	/* The phone bar (hidden until 640px and below). */
+	.pbar { display: none; }
+	.pbn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 15px/1 var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 160ms var(--ease-out), transform 160ms var(--ez); }
+	.pbn:active { transform: scale(0.97); }
+	.pbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pbn.has { border-color: var(--line-strong); background: var(--surface-2); }
+	.fc { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--text); color: var(--bg); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.fs { display: grid; gap: 18px; }
+	.fs section { display: grid; gap: 6px; }
+	.fs h3 { margin: 0; color: var(--text-muted); font: 600 13px/1.2 var(--font-ui); }
+	.fg { display: grid; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); overflow: hidden; }
+	.fo { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: var(--t-callout); text-align: left; cursor: pointer; }
+	.fo:first-child { border-top: 0; }
+	.fo:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+	.fo .fl2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.fo b { color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+	.fo .ck { display: grid; place-items: center; width: 18px; color: var(--accent-text, var(--text)); }
+	.fo.on { font-weight: 600; }
+	.fo.bad .fl2 { color: var(--fail); }
+	.fbtn { min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 12px; background: none; color: var(--text); font: 500 15px/1 var(--font-ui); cursor: pointer; }
+	.fbtn:disabled { opacity: 0.45; cursor: default; }
+	.fbtn.pri { flex: 1; border-color: transparent; background: var(--text); color: var(--bg); }
+	.fbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Tablets: slimmer buttons so the three capsules share one row. */
+	@media (min-width: 641px) and (max-width: 1099px) {
+		.dlbar .it.stk { width: 56px; }
+		.row > :global(.dlfind) { min-width: 160px; }
+	}
+	@media (max-width: 640px) {
+		.dlbar { flex: 1 1 auto; }
+		.row { display: none; }
+		.pbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 4px 0; }
+	}
 	@media (prefers-reduced-motion: reduce) {
+		.pbn { transition: none; }
 		.it, .it .ic, .plate, .dlbar .it.stk .lb { transition: none; }
 		.dlbar .it:active:not(:disabled) { transform: none; }
 	}
