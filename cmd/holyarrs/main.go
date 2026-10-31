@@ -354,7 +354,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := ensure(ctx, s, c); err != nil {
 		return fmt.Errorf("setup: %w", err)
 	}
-	hub := live.NewHub(live.Options{})
+	hub := live.NewHub(live.Options{Merge: dlsync.MergePatch})
 	pools := jobs.DefaultPools
 	if c.SafeMode {
 		pools = map[jobs.Pool]int{jobs.PoolCore: jobs.DefaultPools[jobs.PoolCore]}
@@ -664,6 +664,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	// Matching in the reader's queue is link-only: it never adds a title.
 	dls.Match = a.MatchLinkOnly
+	// Push updates of the snapshots to the Downloads page (only while on).
+	dls.Pub = &dlsync.Publisher{Store: dls.Store, Build: a.PublishDL, Health: a.PublishDLHealth}
 	a.StartSpeedHistory(ctx)
 	if !c.SafeMode {
 		a.StartExplore(ctx)

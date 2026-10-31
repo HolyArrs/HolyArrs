@@ -137,8 +137,19 @@ func (x liveSetup) stream(t *testing.T, ctx context.Context, u liveUser, last st
 	if last != "" {
 		path += "?last=" + last
 	}
+	return x.streamWith(t, ctx, u.c, path)
+}
+
+// streamURL opens a stream at url without a signed-in client.
+func (x liveSetup) streamURL(t *testing.T, ctx context.Context, url string) <-chan liveFrame {
+	t.Helper()
+	return x.streamWith(t, ctx, http.DefaultClient, url)
+}
+
+func (x liveSetup) streamWith(t *testing.T, ctx context.Context, c *http.Client, path string) <-chan liveFrame {
+	t.Helper()
 	req, _ := http.NewRequestWithContext(ctx, "GET", path, nil)
-	resp, err := u.c.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}

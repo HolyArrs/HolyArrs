@@ -50,7 +50,9 @@ type Sync struct {
 	Manager Manager
 	Lines   LinesFunc
 	Match   MatchFunc
-	Now     func() time.Time
+	// Pub sends push updates of the snapshots (nil: none).
+	Pub *Publisher
+	Now func() time.Time
 	// Sleep waits (tests may shorten it); nil waits for real.
 	Sleep func(ctx context.Context, d time.Duration) error
 
@@ -155,6 +157,32 @@ func (s *Sync) Kick(id int64) {
 	}
 }
 
+// Watched records that someone views the Downloads page. When nobody did
+// before, every client is read soon, so the faster viewer cadence starts
+// now instead of after the idle wait.
+func (s *Sync) Watched() {
+	if s == nil || s.Store == nil {
+		return
+	}
+	was := s.Store.Viewer()
+	s.Store.Viewed()
+	if was || !s.started.Load() {
+		return
+	}
+	s.mu.Lock()
+	ks := make([]chan struct{}, 0, len(s.kicks))
+	for _, k := range s.kicks {
+		ks = append(ks, k)
+	}
+	s.mu.Unlock()
+	for _, k := range ks {
+		select {
+		case k <- struct{}{}:
+		default:
+		}
+	}
+}
+
 func (s *Sync) signal() {
 	select {
 	case s.changed <- struct{}{}:
@@ -179,6 +207,13 @@ func (s *Sync) Around(loopCtx context.Context, run func(context.Context)) {
 		defer wg.Done()
 		s.coordinate(syncCtx, &wg)
 	}()
+	if s.Pub != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			supervisor.Guard("dlsync publisher", func() { s.Pub.Run(syncCtx) })
+		}()
+	}
 	defer func() {
 		stop()
 		wg.Wait()
@@ -390,6 +425,12 @@ func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 		switch {
 		case err == nil:
 			fails = 0
+			// The wait follows what this read saw (a torrent that just
+			// started moving gets the faster step now, not one read later).
+			if !s.Store.Current(id).Fallback {
+				every = s.cadence(d, n)
+				s.Store.SetFloor(id, every)
+			}
 		case errors.Is(err, downloader.ErrAuth):
 			// Turned down the sign-in: stop until the settings change (a
 			// new engine generation) so the client never bans us.
@@ -513,6 +554,9 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		}
 		cur := s.Store.Current(d.ID).Items
 		s.persist.note(d.ID, ch, prev, cur, why)
+		if rev := s.Store.Rev(d.ID); rev > 0 {
+			s.Pub.Note(d.ID, rev-1, prev)
+		}
 		s.signal()
 	}
 	return nil

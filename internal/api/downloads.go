@@ -87,6 +87,9 @@ type DownloadRow struct {
 	Tracker  string `json:"tracker,omitempty"`
 	// TrackerProblem: error, warning or announce (no tracker answered).
 	TrackerProblem string `json:"tracker_problem,omitempty"`
+	// LiveKey is the row's key in push updates ("<downloader id>:<external
+	// id>"); empty for rows no client item backs.
+	LiveKey string `json:"live_key,omitempty"`
 	// LimitDown and LimitUp are a client torrent's own speed caps (bytes per
 	// second, absent when none).
 	LimitDown int64 `json:"limit_down,omitempty"`
@@ -317,6 +320,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		row := DownloadRow{DownloadView: downloadView(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID}
 		if d.ExternalID != "" {
 			shown[clientKey{d.DownloaderID, strings.ToLower(d.ExternalID)}] = true
+			row.LiveKey = liveKey(d.DownloaderID, d.ExternalID)
 		}
 		n := names[d.DownloaderID]
 		row.Downloader, row.DownloaderKind, row.Protocol = n.Name, n.Adapter, n.Protocol
@@ -407,8 +411,11 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"downloads": rows, "totals": total, "clients": health, "outside_total": len(outside), "next_cursor": next}
 	if a.syncOn() {
 		// Someone is watching: the reader reads faster (no write, no call).
-		a.s.DLSync.Store.Viewed()
+		a.s.DLSync.Watched()
 		out["revs"] = a.s.DLSync.Store.Revs()
+		if a.s.Live != nil {
+			out["boot"] = a.s.Live.Boot()
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
 }

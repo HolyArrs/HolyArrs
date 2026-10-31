@@ -9,8 +9,10 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { decisionName, manyWords, removeBody, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
-	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting'; stale?: boolean; seen_at?: string };
-	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string };
+	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
+	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
+	import { applyPatch, fromAnswer, isDl, type Sync } from '#lib/downloads/dlstore.ts';
+	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -158,6 +160,31 @@
 		return { ...r, id };
 	}
 
+	// Push updates (setting downloads.sync = on): the view answer carries each
+	// client's rev, and patches on /live keep the rows current between reads.
+	// Without revs (legacy) the page polls exactly as before.
+	let sync: Sync | null = null;
+	const pushHealthy = () => sync !== null && live.status.state === 'live';
+	function interest() {
+		if (sync && document.visibilityState === 'visible') api.post('/live/interest', { view: 'downloads' }).catch(() => {});
+	}
+
+	function onDl(data: unknown) {
+		if (!sync || !isDl(data)) return;
+		if (data.kind === 'health') {
+			const h: ClientHealth = { id: data.client, name: data.name ?? '', health: data.health, stale: data.stale, seen_at: data.seen_at };
+			clientHealth = clientHealth.some((c) => c.id === h.id) ? clientHealth.map((c) => (c.id === h.id ? { ...h, name: h.name || c.name } : c)) : [...clientHealth, h];
+			return;
+		}
+		const out = applyPatch(rows, sync, data, withId);
+		if (out.kind === 'reread') soon();
+		else if (out.kind === 'applied') {
+			rows = out.rows;
+			sync = out.sync;
+			if (out.upTotal !== undefined) upTotal = out.upTotal;
+		}
+	}
+
 	async function load() {
 		try {
 			const [d, i] = await Promise.all([
@@ -168,6 +195,10 @@
 			clientHealth = d.clients ?? [];
 			upTotal = d.totals?.up_speed;
 			moreOutside = !!d.next_cursor;
+			const was = sync;
+			sync = fromAnswer(d);
+			dlPush.on = sync !== null;
+			if (sync && !was) interest();
 			imports = i.imports;
 			reads++;
 			error = '';
@@ -213,16 +244,23 @@
 				})
 				.catch(() => note('downloaders', 'The Downloader list could not be loaded; adding torrents by hand is off for now.'));
 		if (!watch) void refreshDecisions();
-		// The live stream (/live) is for managers only: a watcher never subscribes.
+		// Library and download news on /live is for managers; a watcher receives only dl patches (push mode).
 		const offs = watch ? [] : ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
 		const decOffs = watch ? [] : ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
+		const offDl = live.on('dl', onDl);
+		// While push updates flow, the rows move with them: no 2 s reads.
 		const poll = setInterval(() => {
-			if (document.visibilityState === 'visible' && rows.some((r) => r.active)) soon();
+			if (document.visibilityState === 'visible' && rows.some((r) => r.active) && !pushHealthy()) soon();
 		}, 2000);
-		// The live stream is for managers: a watcher reads again every 10 s while the tab is visible.
+		// Without push the stream is for managers: a watcher reads again every 10 s while the tab is visible.
 		const watchPoll = setInterval(() => {
-			if (watch && document.visibilityState === 'visible') soon();
+			if (watch && document.visibilityState === 'visible' && !pushHealthy()) soon();
 		}, 10_000);
+		// With push: a slow safety read, and the server is told someone watches (faster client reads).
+		const safety = setInterval(() => {
+			if (pushHealthy() && document.visibilityState === 'visible') soon();
+		}, 30_000);
+		const interestPoll = setInterval(interest, 30_000);
 		// Back on the tab: read at once instead of waiting for the next tick.
 		const back = () => {
 			if (document.visibilityState === 'visible') void load();
@@ -232,9 +270,13 @@
 			document.removeEventListener('visibilitychange', back);
 			offs.forEach((off) => off());
 			decOffs.forEach((off) => off());
+			offDl();
+			dlPush.on = false;
 			clearTimeout(timer);
 			clearInterval(poll);
 			clearInterval(watchPoll);
+			clearInterval(safety);
+			clearInterval(interestPoll);
 		};
 	});
 

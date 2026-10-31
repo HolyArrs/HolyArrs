@@ -249,3 +249,27 @@ func TestDLSlotDeliveredOverStream(t *testing.T) {
 		}
 	}
 }
+
+// A patch for one person reaches only that person's streams, live and on
+// replay: never a manager (who gets a fuller one) nor anyone else.
+func TestDLUserOnly(t *testing.T) {
+	h := NewHub(Options{})
+	mgr, _ := h.subscribe(Viewer{All: true, UserID: 1}, "")
+	ana, _ := h.subscribe(Viewer{UserID: 2}, "")
+	bo, _ := h.subscribe(Viewer{UserID: 3}, "")
+	h.PublishDLUser("1", "for ana", 2)
+	if len(mgr.ch) != 0 || len(bo.ch) != 0 || len(ana.ch) != 1 {
+		t.Fatalf("live: manager %d, bo %d, ana %d", len(mgr.ch), len(bo.ch), len(ana.ch))
+	}
+	for _, v := range []Viewer{{All: true, UserID: 1}, {UserID: 3}} {
+		if _, replay := h.subscribe(v, h.EventID(0)); len(replay) != 0 {
+			t.Fatalf("replay to %+v: %+v", v, replay)
+		}
+	}
+	if _, replay := h.subscribe(Viewer{UserID: 2}, h.EventID(0)); len(replay) != 1 {
+		t.Fatalf("replay to ana: %+v", replay)
+	}
+	if got := h.Viewers(); len(got) != 2 {
+		t.Fatalf("viewers %v", got)
+	}
+}

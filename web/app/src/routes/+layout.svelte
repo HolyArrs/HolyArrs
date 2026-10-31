@@ -15,6 +15,7 @@
 	import { theater } from '#lib/theater.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
+	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/wishlist.svelte.ts';
@@ -331,8 +332,9 @@
 		if (st === 'signed_in' && !bare && !pageAllowed(path)) {
 			void goto(to(session.s.mustTwoFactor ? '/account' : homeHref()), { replace: true });
 		}
-		// The live stream carries Library and download news for staff.
-		if (st === 'signed_in' && allowed('manage_library')) live.start();
+		// The live stream carries Library and download news for staff; on
+		// Downloads with push updates, everyone else gets their own rows' patches.
+		if (st === 'signed_in' && (allowed('manage_library') || (path === '/downloads' && dlPush.on))) live.start();
 		else live.stop();
 	});
 

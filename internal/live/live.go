@@ -51,9 +51,15 @@ type Event struct {
 	Key   string // dl only: the coalescing key (one per download client)
 	aud   Audience
 	open  bool // sent to every viewer (resync)
+	only  bool // sent only to viewers aud lets in, never to every manager
 }
 
-func (e Event) visible(v Viewer) bool { return e.open || v.All || e.aud != nil && e.aud(v) }
+func (e Event) visible(v Viewer) bool {
+	if e.only {
+		return e.aud != nil && e.aud(v)
+	}
+	return e.open || v.All || e.aud != nil && e.aud(v)
+}
 
 type client struct {
 	who  Viewer
@@ -159,6 +165,27 @@ func (h *Hub) PublishDL(key string, data any, aud Audience) uint64 {
 	return h.publish(TopicDL, key, data, aud)
 }
 
+// PublishDLUser sends one dl patch for key to one non-manager person's
+// streams only (managers get their own, fuller patch).
+func (h *Hub) PublishDLUser(key string, data any, userID int64) uint64 {
+	return h.publishEvent(TopicDL, key, data, func(v Viewer) bool { return !v.All && userID > 0 && v.UserID == userID }, true)
+}
+
+// Viewers lists the people holding a stream who are not managers.
+func (h *Hub) Viewers() []int64 {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	seen := map[int64]bool{}
+	var out []int64
+	for c := range h.clients {
+		if !c.who.All && c.who.UserID > 0 && !seen[c.who.UserID] {
+			seen[c.who.UserID] = true
+			out = append(out, c.who.UserID)
+		}
+	}
+	return out
+}
+
 func push(ring []Event, max int, e Event) ([]Event, Event, bool) {
 	var out Event
 	full := len(ring) == max
@@ -171,6 +198,10 @@ func push(ring []Event, max int, e Event) ([]Event, Event, bool) {
 }
 
 func (h *Hub) publish(topic, key string, data any, aud Audience) uint64 {
+	return h.publishEvent(topic, key, data, aud, false)
+}
+
+func (h *Hub) publishEvent(topic, key string, data any, aud Audience, only bool) uint64 {
 	b, err := json.Marshal(data)
 	if err != nil {
 		b, _ = json.Marshal(map[string]string{"error": err.Error()})
@@ -178,7 +209,7 @@ func (h *Hub) publish(topic, key string, data any, aud Audience) uint64 {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.next++
-	e := Event{ID: h.next, Topic: topic, Data: b, Key: key, aud: aud}
+	e := Event{ID: h.next, Topic: topic, Data: b, Key: key, aud: aud, only: only}
 	if topic == TopicDL {
 		h.dlRing, _, _ = push(h.dlRing, h.opt.DLRing, e)
 	} else {

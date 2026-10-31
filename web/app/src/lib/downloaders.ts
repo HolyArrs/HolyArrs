@@ -225,6 +225,8 @@ export interface DownloadRow extends DownloadView {
 	hash?: string;
 	/** The client's own category for it. */
 	category?: string;
+	/** The row's key in push updates: "<downloader id>:<external id>". */
+	live_key?: string;
 }
 
 /** rowPath is the API path of a row's client controls: a HolyArrs download by its id, a client item by Downloader and hash. */

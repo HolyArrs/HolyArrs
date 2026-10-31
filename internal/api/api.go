@@ -157,6 +157,8 @@ type API struct {
 	tlog torrentLog
 	// interest limits each session's live interest calls (live.go).
 	interest interestState
+	// dlHealth is the health last pushed per client (downloads_live.go).
+	dlHealth dlHealthSent
 	// listSeen is each region's last world-list shelves signature
 	// (music_lists_v1), guarded by musicv2.cursorMu.
 	listSeen map[string]string
