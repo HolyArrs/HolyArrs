@@ -57,6 +57,11 @@ type Manager struct {
 	// error), with the engine generation it came from. The background
 	// reader uses it in shadow mode; it adds no call to any client.
 	OnList func(downloaderID int64, generation uint64, category string, jobs []Job, err error)
+	// Sync, when set and on (downloads.sync = on), is the background reader:
+	// SyncOnce reads its snapshots instead of listing clients, and falls
+	// back to its own guarded List only for a client the reader has not
+	// read freshly for too long.
+	Sync SyncSource
 
 	mu               sync.Mutex
 	engines          map[int64]Engine
@@ -456,6 +461,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	}
 	m.publish("download", dl)
 	m.Poke()
+	m.Kick(d.ID)
 	return dl.ID, nil
 }
 
@@ -644,6 +650,7 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 		byDownloader[d.DownloaderID] = append(byDownloader[d.DownloaderID], d)
 	}
 	st := m.settings(ctx)
+	useStore := m.storeOn()
 	active := 0
 	var errs []error
 	for did, list := range byDownloader {
@@ -657,23 +664,50 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 			errs = append(errs, err)
 			continue
 		}
-		jobsIn, err := e.List(ctx, dr.Category)
-		if m.OnList != nil {
-			m.OnList(dr.ID, m.Generation(dr.ID), dr.Category, jobsIn, err)
+		var jobsIn []Job
+		// fromStore: this tick reads the reader's snapshot taken at readAt.
+		fromStore := false
+		var readAt time.Time
+		if useStore {
+			v := m.Sync.View(dr.ID)
+			switch {
+			case v.Fresh:
+				m.Sync.Fallback(dr.ID, false)
+				jobsIn, fromStore, readAt = snapshotJobs(v, dr.Category), true, v.ReadAt
+			case !v.Degraded:
+				// Not fresh yet, but within its bound: every row is unknown
+				// this tick (no state change, no stall timer change).
+				active += len(list)
+				continue
+			default:
+				m.Sync.Fallback(dr.ID, true)
+			}
 		}
-		if err != nil {
-			m.downloaderFailed(ctx, dr, err)
-			errs = append(errs, err)
-			active += len(list)
-			continue
+		if !fromStore {
+			jobsIn, err = e.List(ctx, dr.Category)
+			if m.OnList != nil {
+				m.OnList(dr.ID, m.Generation(dr.ID), dr.Category, jobsIn, err)
+			}
+			if err != nil {
+				m.downloaderFailed(ctx, dr, err)
+				errs = append(errs, err)
+				active += len(list)
+				continue
+			}
+			m.downloaderOK(ctx, dr)
 		}
-		m.downloaderOK(ctx, dr)
 		have := map[string]Job{}
 		for _, j := range jobsIn {
 			have[j.ID] = j
 		}
 		for _, d := range list {
 			j, ok := have[d.ExternalID]
+			if fromStore && !ok && !readAt.After(d.UpdatedAt) {
+				// Missing from a snapshot no newer than the row: unknown, so
+				// a grab the client has not listed yet is never vanished.
+				active++
+				continue
+			}
 			if ok && j.State == StateFinished {
 				if full, err := e.Get(ctx, d.ExternalID); err == nil {
 					j = full
@@ -911,6 +945,10 @@ func (m *Manager) Run(ctx context.Context) {
 	if every <= 0 {
 		every = time.Minute
 	}
+	var changed <-chan struct{}
+	if m.Sync != nil {
+		changed = m.Sync.Changed()
+	}
 	var checked time.Time
 	for {
 		if time.Since(checked) >= every {
@@ -924,6 +962,10 @@ func (m *Manager) Run(ctx context.Context) {
 			t.Stop()
 			return
 		case <-w:
+			t.Stop()
+		case <-changed:
+			// A snapshot moved: apply it now (the floor timer still runs the
+			// time-based checks when nothing moves).
 			t.Stop()
 		case <-t.C:
 		}

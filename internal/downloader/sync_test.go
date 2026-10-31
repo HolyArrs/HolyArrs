@@ -22,7 +22,8 @@ import (
 )
 
 // Interfaces in this package that are not optional engine parts.
-var notOptional = map[string]bool{"Engine": true, "Publisher": true}
+// SyncSource is the background reader as the Manager sees it, not an engine part.
+var notOptional = map[string]bool{"Engine": true, "Publisher": true, "SyncSource": true}
 
 // Every method of the registry, sorted into reads and writes. A method in
 // neither fails TestEveryRegistryMethodIsClassified.
