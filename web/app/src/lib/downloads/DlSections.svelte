@@ -30,7 +30,8 @@
 	import { dlTop } from '../dl-top.svelte.ts';
 	import { toasts } from '../toasts.svelte.ts';
 	import { fileTree } from './filetree.ts';
-	import { api, message } from '../api.ts';
+	import { api, message, ApiError } from '../api.ts';
+	import Confirm from '../account/Confirm.svelte';
 	import { ago, dateTime, duration, percent } from '../format.ts';
 	import { healthLine, quietPeers, logDays, badKind, clientMark, swarmLine, swarmTotal } from './panel-words.ts';
 	// Each client's own app icon (design/assets/clients, licenses in its README).
@@ -306,13 +307,22 @@
 	function removeTracker(r: DownloadRow, x: Tracker) {
 		void trackerCall(r, () => api.post(`${trPath(r)}/remove`, { refs: [x.ref] }), 'Tracker removed.');
 	}
+	// A priority change is a control route: an old sign-in is asked for the
+	// password first (inline, in the Files tab), then the change is sent again.
+	let prioWait = $state<{ r: DownloadRow; indexes: number[]; priority: number } | null>(null);
 	async function setPrio(r: DownloadRow, indexes: number[], priority: number) {
 		if (!indexes.length) return;
 		filesBusy = true;
 		try {
 			await api.put(`${rowPath(r)}/files`, { indexes, priority });
+			prioWait = null;
 			await readDetail(r, 'Files');
 		} catch (e) {
+			if (e instanceof ApiError && e.status === 403 && /confirm your local password/i.test(e.message)) {
+				prioWait = { r, indexes, priority };
+				void readDetail(r, 'Files');
+				return;
+			}
 			toasts.push(message(e), 'fail');
 		} finally {
 			filesBusy = false;
@@ -455,6 +465,9 @@
 	// The selection: Ctrl or Cmd click toggles a row, Shift click picks a range
 	// from the last picked one, Ctrl+A picks every row in the list.
 	let picked = $state<Set<number>>(new Set());
+	// Phones: "Select" in the All downloads menu starts picking before any row is picked.
+	let selecting = $state(false);
+	const choosing = $derived(picked.size > 0 || selecting);
 	let anchor = 0;
 	const pickedRows = $derived(list.filter((r) => picked.has(r.id)));
 	$effect(() => {
@@ -472,7 +485,10 @@
 	function pickTo(id: number) {
 		picked = new Set([...picked, ...pickRange(list.map((r) => r.id), anchor || id, id)]);
 	}
-	const clearPicked = () => (picked = new Set());
+	const clearPicked = () => {
+		picked = new Set();
+		selecting = false;
+	};
 	// Torrents a torrent Downloader can steer by hash: seeding rules and more.
 	const steerable = (r: DownloadRow) => !!onsteer && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent';
 	const STEER: { mode: SteerMode; label: string; short: string }[] = [
@@ -485,7 +501,7 @@
 	// The phone selection bar: the few actions that fit a thumb.
 	const PHONE_BULK: { action: BulkAction; label: string; icon: 'play' | 'pause' | 'refresh' }[] = [{ action: 'start', label: 'Start', icon: 'play' }, { action: 'pause', label: 'Pause', icon: 'pause' }, { action: 'recheck', label: 'Check again', icon: 'refresh' }];
 	// The phone bar's "All downloads" menu, through the same handlers as the toolbar's menus.
-	const allItems = $derived(watch ? [] : [{ label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]);
+	const allItems = $derived(watch ? [] : [{ label: 'Select', onselect: () => (selecting = true) }, { label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]);
 	const BULK: { action: BulkAction; label: string }[] = [
 		{ action: 'start', label: 'Start' }, { action: 'pause', label: 'Pause' }, { action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
 		{ action: 'up', label: 'Up' }, { action: 'down', label: 'Down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
@@ -513,7 +529,14 @@
 		const t = setInterval(() => {
 			if (document.visibilityState === 'visible') read();
 		}, 3000);
-		return () => clearInterval(t);
+		const back = () => {
+			if (document.visibilityState === 'visible') read();
+		};
+		document.addEventListener('visibilitychange', back);
+		return () => {
+			clearInterval(t);
+			document.removeEventListener('visibilitychange', back);
+		};
 	});
 	// The Downloaders' own status for the pills, every 5 seconds.
 	$effect(() => {
@@ -521,7 +544,14 @@
 		const t = setInterval(() => {
 			if (document.visibilityState === 'visible') void readClients();
 		}, 5000);
-		return () => clearInterval(t);
+		const back = () => {
+			if (document.visibilityState === 'visible') void readClients();
+		};
+		document.addEventListener('visibilitychange', back);
+		return () => {
+			clearInterval(t);
+			document.removeEventListener('visibilitychange', back);
+		};
 	});
 	try {
 		const v = typeof localStorage === 'undefined' ? null : Number(localStorage.getItem(PANE_KEY));
@@ -624,7 +654,7 @@
 		if (!searchShortcut(e, inField, inDialog)) return;
 		e.preventDefault();
 		e.stopImmediatePropagation();
-		if (matchMedia('(max-width: 767px)').matches) {
+		if (matchMedia('(max-width: 640px)').matches) {
 			psOpen = true;
 			tick().then(() => psEl?.focus());
 		} else {
@@ -662,7 +692,7 @@
 			}
 			return;
 		}
-		if (e.key === 'Escape' && listEsc(picked.size, !!openId) === 'clear' && !(e.target as HTMLElement | null)?.closest('input, select, textarea, [role="dialog"]')) {
+		if (e.key === 'Escape' && listEsc(choosing ? Math.max(1, picked.size) : 0, !!openId) === 'clear' && !(e.target as HTMLElement | null)?.closest('input, select, textarea, [role="dialog"]')) {
 			e.preventDefault();
 			clearPicked();
 			return;
@@ -1075,7 +1105,7 @@
 			return;
 		}
 		// Phones: once a long press started picking, a tap picks or unpicks a row.
-		if (!watch && phone && picked.size > 0) {
+		if (!watch && phone && choosing) {
 			pickOne(id);
 			return;
 		}
@@ -1104,7 +1134,7 @@
 </script>
 
 {#snippet lead(r: DownloadRow)}
-	<span class="tg">{#if !watch}<input type="checkbox" class="pk" class:any={picked.size > 0} tabindex="-1" checked={picked.has(r.id)} aria-label="Select {who(r)}" onclick={(e) => { e.stopPropagation(); if (e.shiftKey) { e.preventDefault(); pickTo(r.id); } else pickOne(r.id, e.currentTarget.checked); }} data-testid="dl-pick" />{/if}</span>
+	<span class="tg">{#if !watch}<input type="checkbox" class="pk" class:any={choosing} tabindex="-1" checked={picked.has(r.id)} aria-label="Select {who(r)}" onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); pickOne(r.id); } else if (e.key === ' ') e.stopPropagation(); }} onclick={(e) => { e.stopPropagation(); if (e.shiftKey) { e.preventDefault(); pickTo(r.id); } else pickOne(r.id, e.currentTarget.checked); }} data-testid="dl-pick" />{/if}</span>
 {/snippet}
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
@@ -1201,7 +1231,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1303,6 +1333,15 @@
 			{@const shownF = filterFiles(files, fq)}
 			{@const rowsT = fileTree(shownF.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!closed[`${r.id}|${k}`])}
 			{@const keys = rowsT.map((x) => x.key)}
+			{#if prioWait && prioWait.r.id === r.id && !watch}
+				{@const w = prioWait}
+				<div class="calm prf" data-testid="dl-files-proof">
+					<p class="xt">Confirm your password to change file priority.</p>
+					<Confirm action="password" onCancel={() => (prioWait = null)}>
+						<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(w.r, w.indexes, w.priority)} data-testid="dl-files-proof-go">Change priority</button>
+					</Confirm>
+				</div>
+			{/if}
 			<div class="fbar" hidden={files.length === 1}>
 				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
 				{#if fsel.size && !watch}
@@ -1450,7 +1489,7 @@
 		{ label: 'Requested by', value: '–' }
 	]}
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
-		<div class="ph">
+		<div class="phd">
 			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
 			<p class="xt pt"><b>{who(r)}</b><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></p>
 			{@render tabStrip(r)}
@@ -1499,7 +1538,7 @@
 <p class="qline" data-testid="dl-qline"><span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{#if freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
-{#if pickedRows.length && !watch}
+{#if (pickedRows.length || selecting) && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
 		{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}
@@ -1780,18 +1819,18 @@
 	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
-	.ph { flex: none; }
+	.phd { flex: none; }
 	.trchip { flex: none; align-self: center; min-height: 24px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--fail) 45%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail); font: var(--t-caption); font-weight: 600; cursor: pointer; white-space: nowrap; }
 	.trchip.on, .trchip:hover { background: color-mix(in srgb, var(--fail) 22%, transparent); }
 	.trchip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.grab { display: none; }
-	.ph { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); min-width: 0; }
-	.dpane.shut .ph { border-bottom: 0; }
+	.phd { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); min-width: 0; }
+	.dpane.shut .phd { border-bottom: 0; }
 	.pt { flex: 0 1 380px; min-width: 0; margin: 0; }
 	.pt b { font: 600 16px / 1.3 var(--font-ui); }
 	.pt span { font: var(--t-callout); }
 	.pt b, .pt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.ph .xtabs { margin: 0; background: none; padding: 0; }
+	.phd .xtabs { margin: 0; background: none; padding: 0; }
 	.pcl { margin-left: auto; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
 	.pcl :global(svg) { transition: transform var(--dur-fast) var(--ease-out); }
 	.dpane.shut .pcl :global(svg) { transform: rotate(180deg); }
@@ -1915,13 +1954,13 @@
 	.dv:not(.fixed):active i { transform: scaleX(1.8) scaleY(1.3); background: var(--text-muted); }
 
 	/* Panel header: title, underline tabs with a sliding ink, collapse. */
-	.ph { position: relative; min-height: 48px; padding: 0 var(--dl-gutter); gap: 0 16px; }
-	.ph .xtabs { position: relative; align-self: stretch; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-	.ph .xtabs::-webkit-scrollbar { display: none; }
-	.ph .xtab { min-height: 48px; height: 100%; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; font: var(--t-callout); font-weight: 500; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
-	.ph .xtab:hover { color: var(--text); }
-	.ph .xtab.on { background: none; box-shadow: none; color: var(--text); }
-	.ph .xtab:focus-visible { box-shadow: inset var(--focus-ring); border-radius: var(--r-sm); }
+	.phd { position: relative; min-height: 48px; padding: 0 var(--dl-gutter); gap: 0 16px; }
+	.phd .xtabs { position: relative; align-self: stretch; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+	.phd .xtabs::-webkit-scrollbar { display: none; }
+	.phd .xtab { min-height: 48px; height: 100%; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; font: var(--t-callout); font-weight: 500; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
+	.phd .xtab:hover { color: var(--text); }
+	.phd .xtab.on { background: none; box-shadow: none; color: var(--text); }
+	.phd .xtab:focus-visible { box-shadow: inset var(--focus-ring); border-radius: var(--r-sm); }
 	.ink { position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: left; transform: translateX(var(--ix, 0)) scaleX(var(--iw, 0)); transition: transform var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
 	.ink.gone { opacity: 0; }
 
@@ -1932,7 +1971,7 @@
 	@keyframes fadein { from { opacity: 0; } }
 	/* Actions sit in the panel header, right side, next to the chevron. */
 	.pact { position: relative; flex: none; margin-left: auto; display: flex; align-items: center; gap: 6px; min-width: 0; }
-	.ph .pcl { margin-left: 0; }
+	.phd .pcl { margin-left: 0; }
 	.pact .xbt { margin: 0; gap: 6px; flex-wrap: nowrap; }
 	.pact .xbn { min-height: 30px; padding: 0 10px; border-radius: var(--r-btn); font: var(--t-subhead); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
@@ -2015,7 +2054,6 @@
 		.dlgrid { --gap: 8px; }
 		.chead { display: none; }
 		.tin { min-width: 0; }
-		/* Two lines, about 64px: poster · title / status, bar · size / time on the right. */
 		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */
 		.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto; grid-template-areas: 'tg post nm nm nm' 'tg post st bar time'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
@@ -2033,7 +2071,8 @@
 		.dline > [data-col='title'] .ep { display: block; overflow: hidden; color: var(--text-muted); font: 400 13px/16px var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
 		.dline > [data-col='bin'] { display: none; }
-		.tg .pk:not(.any) { display: none; }
+		/* Not picking: the box stays for screen readers, out of sight and out of the way. */
+		.tg .pk:not(.any) { width: 1px; height: 1px; margin: 0; opacity: 0; clip-path: inset(50%); overflow: hidden; pointer-events: none; }
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
 		.dline > [data-col='title'] .rel { display: none; }
 		.dline > [data-col='title'] .tt { font: 600 15px/19px var(--font-ui); }
@@ -2076,7 +2115,7 @@
 		.strip { gap: 4px 14px; }
 		.picker { display: none; }
 	}
-	@media (max-width: 767px) {
+	@media (max-width: 640px) {
 		.psearch { display: flex; flex: none; align-items: center; gap: 2px; }
 		.dv { display: none; }
 		.dpane { background: var(--surface-1); }
@@ -2091,23 +2130,23 @@
 	}
 	/* Narrower screens: the actions get their own row under the tabs, never over the panel. */
 	@media (max-width: 1199px) {
-		.ph .pt { order: 0; }
-		.ph .xtabs { order: 1; }
-		.ph .pcl { order: 2; margin-left: auto; }
+		.phd .pt { order: 0; }
+		.phd .xtabs { order: 1; }
+		.phd .pcl { order: 2; margin-left: auto; }
 		.pact { order: 3; flex: 1 0 100%; margin-left: 0; flex-wrap: wrap; padding-bottom: 4px; }
 		.pact .xbt { flex-wrap: wrap; }
 	}
 	/* Phones: a bottom sheet at about 60% that leaves at least three rows of the list in view. */
-	@media (max-width: 767px) {
+	@media (max-width: 640px) {
 		.dpane { height: min(60dvh, calc(100dvh - var(--tabbar, 56px) - env(safe-area-inset-bottom) - 340px), 520px) !important; }
-		.grab { display: grid; place-items: center; order: -1; flex: 1 0 100%; height: 18px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
+		.grab { display: grid; place-items: center; order: -1; flex: 1 0 100%; height: 44px; margin: -13px 0; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
 		.grab i { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); }
 		.dpane.shut .grab { display: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.prg i, .tg :global(svg), .bin, .cw, .post { transition: none; }
 	}
-	@media (max-width: 767px) {
+	@media (max-width: 640px) {
 		.dpane { border-radius: var(--r-panel) var(--r-panel) 0 0; box-shadow: var(--shadow-modal); }
 		.pb { grid-template-columns: minmax(0, 1fr); }
 		.pb .big { display: none; }
@@ -2184,6 +2223,7 @@
 	.fr dd { flex: 1 1 auto; min-width: 0; margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fr dd.path { direction: rtl; }
 	.fr:last-child { border-bottom-color: transparent; }
+	.prf { flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 0 8px; }
 	.fnone { margin: 0; padding: 10px 12px; color: var(--text-muted); font: var(--t-callout); }
 	.calm.slim { margin: 4px 8px 4px; padding: 4px 4px 4px 10px; gap: 8px; border-color: var(--line); background: color-mix(in srgb, var(--surface-3) 50%, var(--surface-2)); font: var(--t-caption); }
 	.calm.slim .xbn { min-height: 24px; }

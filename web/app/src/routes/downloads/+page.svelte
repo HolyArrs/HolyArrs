@@ -181,7 +181,13 @@
 		const watchPoll = setInterval(() => {
 			if (watch && document.visibilityState === 'visible') soon();
 		}, 10_000);
+		// Back on the tab: read at once instead of waiting for the next tick.
+		const back = () => {
+			if (document.visibilityState === 'visible') void load();
+		};
+		document.addEventListener('visibilitychange', back);
 		return () => {
+			document.removeEventListener('visibilitychange', back);
 			offs.forEach((off) => off());
 			decOffs.forEach((off) => off());
 			clearTimeout(timer);

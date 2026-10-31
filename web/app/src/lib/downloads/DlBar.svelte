@@ -68,18 +68,26 @@
 	const pickSrc = (k: string) => (srcOn = srcOn === k ? '' : k);
 	const showSide = $derived(side && !!onside);
 	// The tracker menu on the Torrent button: all trackers, one host, or trackers with problems.
-	let trkOpen = $state(false);
-	const pickTrack = (k: string) => {
-		trackOn = k;
-		trkOpen = false;
-	};
-	function trkOutside(e: MouseEvent) {
-		if (trkOpen && !(e.target as HTMLElement | null)?.closest('.trw')) trkOpen = false;
-	}
+	let trkBtn = $state<HTMLButtonElement>();
+	let trkMenu = $state<TopMenu>();
+	const trkItems = $derived([
+		{ label: 'All trackers', hint: String(trackAll), checked: !trackOn, tid: 'dl-tracker-opt', key: '', onselect: () => (trackOn = '') },
+		...trackHosts.map((o) => ({ label: o.label, hint: String(o.count), checked: trackOn === o.key, tid: 'dl-tracker-opt', key: o.key, onselect: () => (trackOn = o.key) })),
+		...(trackProblems ? [{ label: 'Trackers with problems', hint: String(trackProblems), checked: trackOn === 'p:any', bad: true, tid: 'dl-tracker-opt', key: 'p:any', onselect: () => (trackOn = 'p:any') }] : [])
+	]);
 
 	// Phones: one compact bar. Filters opens a bottom sheet with Library, Source and trackers;
 	// Start, Pause and Remove act on a picked row, so they live in its details and the selection bar.
 	let fOpen = $state(false);
+	// The Filters sheet belongs to the phone bar: it closes when the screen grows past 640px.
+	$effect(() => {
+		const mq = matchMedia('(max-width: 640px)');
+		const off = () => {
+			if (!mq.matches) fOpen = false;
+		};
+		mq.addEventListener('change', off);
+		return () => mq.removeEventListener('change', off);
+	});
 	const fCount = $derived((kindOn ? 1 : 0) + (srcOn ? 1 : 0) + (trackOn ? 1 : 0));
 	const addAct = $derived(actions.find((a) => a.key === 'add'));
 	const clearAll = () => {
@@ -143,14 +151,8 @@
 			</button>
 			{#if f.key === 'torrent' && (trackHosts.length || trackProblems)}
 				<span class="trw">
-					<button type="button" class="trk" class:on={!!trackOn} aria-haspopup="menu" aria-expanded={trkOpen} aria-label="Filter by tracker" onclick={() => (trkOpen = !trkOpen)} onkeydown={(e) => { if (e.key === 'Escape' && trkOpen) { e.stopPropagation(); trkOpen = false; } }} data-testid="dl-tracker-menu-btn">▾</button>
-					{#if trkOpen}
-						<ul class="trm" role="menu" aria-label="Trackers" data-testid="dl-tracker-menu">
-							<li role="none"><button type="button" role="menuitemradio" aria-checked={!trackOn} onclick={() => pickTrack('')} data-testid="dl-tracker-opt" data-key="">All trackers <b>{trackAll}</b></button></li>
-							{#each trackHosts as o (o.key)}<li role="none"><button type="button" role="menuitemradio" aria-checked={trackOn === o.key} onclick={() => pickTrack(o.key)} data-testid="dl-tracker-opt" data-key={o.key}>{o.label} <b>{o.count}</b></button></li>{/each}
-							{#if trackProblems}<li role="none"><button type="button" role="menuitemradio" class="bad" aria-checked={trackOn === 'p:any'} onclick={() => pickTrack('p:any')} data-testid="dl-tracker-opt" data-key="p:any">Trackers with problems <b>{trackProblems}</b></button></li>{/if}
-						</ul>
-					{/if}
+					<button type="button" class="trk" class:on={!!trackOn} bind:this={trkBtn} aria-haspopup="menu" aria-label="Filter by tracker" onclick={() => trkBtn && trkMenu?.show(trkBtn)} data-testid="dl-tracker-menu-btn"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
+					<TopMenu bare bind:this={trkMenu} label="Trackers" items={trkItems} />
 				</span>
 			{/if}
 		{/each}
@@ -210,19 +212,12 @@
 	{/snippet}
 </Sheet>
 
-<svelte:window onclick={trkOutside} />
 
 <style>
 	.trw { position: relative; display: flex; align-items: stretch; }
-	.trk { width: 18px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font-size: 11px; cursor: pointer; }
+	.trk { display: grid; place-items: center; width: 32px; min-height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font-size: 11px; cursor: pointer; }
 	.trk:hover, .trk.on { color: var(--text); background: var(--surface-3); }
 	.trk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.trm { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 220px; max-width: min(320px, 90vw); max-height: 60vh; overflow: auto; margin: 0; padding: 4px; list-style: none; border: 1px solid var(--line); border-radius: var(--r-panel, 10px); background: var(--surface-1); box-shadow: var(--shadow-modal); }
-	.trm button { display: flex; justify-content: space-between; gap: 12px; width: 100%; min-height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-callout); text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.trm button:hover, .trm button:focus-visible { background: var(--surface-3); outline: none; }
-	.trm button[aria-checked='true'] { font-weight: 600; }
-	.trm button.bad { color: var(--fail); }
-	.trm b { font-weight: 500; color: var(--text-muted); }
 	.dlbar { --ez: cubic-bezier(0.32, 0.72, 0, 1); flex: 1 1 0; min-width: 0; display: grid; gap: 4px; }
 	.row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.row::-webkit-scrollbar { display: none; }
@@ -310,6 +305,7 @@
 	@media (max-width: 640px) {
 		.dlbar { flex: 1 1 auto; }
 		.row { display: none; }
+		.trk { width: 44px; min-height: 44px; }
 		.pbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 4px 0; }
 	}
 	@media (prefers-reduced-motion: reduce) {

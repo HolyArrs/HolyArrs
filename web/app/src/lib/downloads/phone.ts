@@ -84,7 +84,12 @@ export function longPress(node: HTMLElement, onlong: () => void) {
 		cb();
 	});
 	const down = (e: PointerEvent) => {
-		if (e.pointerType === 'mouse' || !matchMedia('(max-width: 640px)').matches) return;
+		if (e.pointerType === 'mouse') {
+			touched = false;
+			return;
+		}
+		if (!e.isPrimary || e.button > 0 || !matchMedia('(max-width: 640px)').matches) return;
+		if ((e.target as Element | null)?.closest?.('input, button, a, select, textarea')) return;
 		touched = true;
 		node.setAttribute('data-pressing', '');
 		p.down(e.clientX, e.clientY);

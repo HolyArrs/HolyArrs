@@ -6,7 +6,8 @@
 	// Popover API), so no frame or side nav can cover it; it is placed from the caret and
 	// kept inside the screen (flipped above when there is no room below). Arrow keys,
 	// Home and End move; Escape and an outside click close it and give the focus back.
-	type Item = { label: string; hint?: string; disabled?: boolean; onselect?: () => void };
+	// checked makes the item a radio choice (menuitemradio); tid and key feed data-testid and data-key.
+	type Item = { label: string; hint?: string; disabled?: boolean; checked?: boolean; bad?: boolean; tid?: string; key?: string; onselect?: () => void };
 	let { label, items, tight = false, text = '', bare = false }: { label: string; items: Item[]; tight?: boolean; text?: string; bare?: boolean } = $props();
 
 	let btn = $state<HTMLButtonElement>();
@@ -37,15 +38,27 @@
 		panel.style.left = `${Math.round(left)}px`;
 		panel.style.top = `${Math.round(top)}px`;
 	}
-	const entries = () => [...(panel?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+	const entries = () => [...(panel?.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemradio"]') ?? [])];
 	async function toggled(e: Event) {
 		open = (e as ToggleEvent).newState === 'open';
-		if (!open) return;
+		if (!open) {
+			// Give the focus back to what opened the menu when it was inside the menu.
+			const a = document.activeElement;
+			if (!a || a === document.body || panel?.contains(a)) (anchor ?? btn)?.focus({ preventScroll: true });
+			return;
+		}
 		place();
 		await tick();
 		entries()[0]?.focus({ preventScroll: true });
 	}
 	function keys(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			// Closed here so the page's own Escape handler never sees it.
+			e.preventDefault();
+			e.stopPropagation();
+			panel?.hidePopover();
+			return;
+		}
 		const list = entries();
 		const i = list.indexOf(document.activeElement as HTMLElement);
 		let n = -1;
@@ -67,7 +80,7 @@
 {#if !bare}<button type="button" class="caret" class:tight class:txt={!!text} bind:this={btn} popovertarget={id} aria-haspopup="menu" aria-expanded={open} aria-controls={id} aria-label={label} data-testid="dl-menu-caret">{#if text}<span>{text}</span>{/if}<Icon name="chevronDown" size={14} stroke={2.2} /></button>{/if}
 <div {id} popover="auto" role="menu" tabindex="-1" aria-label={label} bind:this={panel} ontoggle={toggled} onkeydown={keys} class="tm" data-testid="dl-menu">
 	{#each items as it (it.label)}
-		<button type="button" role="menuitem" class="mi2" aria-disabled={it.disabled ? 'true' : undefined} tabindex="-1" onclick={() => pick(it)}><span class="t">{it.label}</span>{#if it.hint}<span class="h">{it.hint}</span>{/if}</button>
+		<button type="button" role={it.checked === undefined ? 'menuitem' : 'menuitemradio'} aria-checked={it.checked === undefined ? undefined : it.checked} class="mi2" class:bad={it.bad} data-testid={it.tid} data-key={it.key} aria-disabled={it.disabled ? 'true' : undefined} tabindex="-1" onclick={() => pick(it)}><span class="t">{it.label}</span>{#if it.hint}<span class="h">{it.hint}</span>{/if}</button>
 	{/each}
 </div>
 
@@ -86,6 +99,8 @@
 	.mi2 .h { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
 	.mi2:hover, .mi2:focus-visible { background: var(--surface-3); outline: none; }
 	.mi2:focus-visible { box-shadow: var(--focus-ring); }
+	.mi2[aria-checked='true'] .t { font-weight: 600; }
+	.mi2.bad .t { color: var(--fail); }
 	.mi2[aria-disabled='true'] { cursor: not-allowed; }
 	.mi2[aria-disabled='true'] .t { opacity: 0.55; }
 	@media (max-width: 640px) { .mi2 { align-items: center; min-height: 44px; font: var(--t-callout); } }
