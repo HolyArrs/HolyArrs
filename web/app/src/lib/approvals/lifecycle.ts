@@ -14,8 +14,10 @@ export interface Life {
 	/** wait (amber), soon (muted), go (accent), ok (green), off (dim), bad (red). */
 	tone: 'wait' | 'soon' | 'go' | 'ok' | 'off' | 'bad';
 	label: string;
-	/** Ready with more of the title not asked for: "5 more available". */
+	/** Ready with more of the title not asked for: "2 more seasons available". */
 	more?: string;
+	/** Why it failed, when known (said in the window, not in the label). */
+	reason?: string;
 }
 
 /** What else is known about an approved ask; each part is left out when unknown. */
@@ -44,11 +46,11 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Pending' };
 	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', label: 'Declined' };
 	if (a.state === 'available') return ready(facts);
-	if (!a.title_id) return { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: facts.reason ? `Failed · ${facts.reason}` : 'Failed' };
+	if (!a.title_id) return failedLife(facts);
 	const lo = STAGE_WEIGHT.getting;
 	const hi = STAGE_WEIGHT.getting_end;
 	const part = facts.partial;
-	if (facts.phase === 'failed') return { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: facts.reason ? `Failed · ${facts.reason}` : 'Failed' };
+	if (facts.phase === 'failed') return failedLife(facts);
 	if (facts.phase === 'searching') return { stage: 'searching', pct: lo + (hi - lo) * 0.1, tone: 'go', label: 'Searching' };
 	if (facts.phase === 'importing') return { stage: 'importing', pct: hi - 3, tone: 'go', label: 'Importing' };
 	if (facts.phase === 'downloading') {
@@ -63,9 +65,16 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 		return { stage: 'getting', pct: lo + (hi - lo) * (part.have / part.total), tone: 'go', label: `Processing · ${left}${unit} left` };
 	}
 	if (facts.upcoming !== undefined) return { stage: 'upcoming', pct: STAGE_WEIGHT.approved, tone: 'soon', label: facts.upcoming ? `Upcoming · ${facts.upcoming}` : 'Upcoming' };
+	// No live phase: the line still fills, but the words stay plain.
 	const progress = facts.progress;
 	const p = progress === undefined || !Number.isFinite(progress) ? 0 : Math.min(Math.max(progress, 0), 1);
-	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: p > 0 ? `Processing · ${Math.round(p * 100)}%` : 'Processing' };
+	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: 'Processing' };
+}
+
+function failedLife(f: LifeFacts): Life {
+	const life: Life = { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Failed' };
+	if (f.reason) life.reason = f.reason;
+	return life;
 }
 
 const word = (n: number, unit: string) => `${n} ${n === 1 ? unit.slice(0, -1) : unit}`;
@@ -75,8 +84,10 @@ function ready(f: LifeFacts): Life {
 	const part = f.partial;
 	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
 	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs.
-	if (f.more && f.more > 0) life.more = `${f.more} more available`;
-	else if (f.skipped && f.skipped > 0 && part?.unit) life.more = `${f.skipped} more available`;
+	// The unit stays when known: "2 more seasons available", "3 more episodes available".
+	const one = (n: number, unit: string) => (n === 1 ? unit.slice(0, -1) : unit);
+	if (f.more && f.more > 0) life.more = part?.unit ? `${f.more} more ${one(f.more, part.unit)} available` : `${f.more} more available`;
+	else if (f.skipped && f.skipped > 0 && part?.unit) life.more = `${f.skipped} more ${one(f.skipped, part.unit === 'seasons' ? 'episodes' : 'songs')} available`;
 	return life;
 }
 
@@ -96,7 +107,8 @@ export function upcoming(
 	now = new Date()
 ): string {
 	if (!info || a.future_only) return '';
-	const today = now.toISOString().slice(0, 10);
+	// The local day, not UTC: late evening must not count as tomorrow.
+	const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 	const later = (ds: (string | null | undefined)[]) => {
 		const d = ds.map((x) => (x ? day(x) : ''));
 		return d.length && d.every((x) => x && x > today) ? d.sort()[0] : '';

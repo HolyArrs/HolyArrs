@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { approverCounts, approverSort, approverTab, askTab, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
+import { approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
 import type { AskKindLimit, AskLimit, AskState } from './types.ts';
 
 describe('wishlist words', () => {
@@ -83,6 +83,9 @@ describe('ask tabs', () => {
 		expect(askTab(a('approved'))).toBe('failed');
 		expect(askTab(a('turned_down'))).toBe('declined');
 		expect(askTab(a('available', 4))).toBe('done');
+	});
+	it('calls the requester tab for titles in the Library Ready', () => {
+		expect(askTabs.find((t) => t.tab === 'done')?.label).toBe('Ready');
 	});
 	it('counts and picks the first tab with asks', () => {
 		const list = [a('approved', 1), a('available', 2), a('turned_down')];

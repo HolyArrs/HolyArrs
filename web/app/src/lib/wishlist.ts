@@ -109,7 +109,7 @@ export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', label: 'Pending' },
 	{ tab: 'approved', label: 'Approved' },
 	{ tab: 'declined', label: 'Declined' },
-	{ tab: 'done', label: 'Available' },
+	{ tab: 'done', label: 'Ready' },
 	{ tab: 'failed', label: 'Failed' }
 ];
 

@@ -44,7 +44,7 @@ describe('lifecycle', () => {
 	it('download progress fills the getting-it span, never past it', () => {
 		const lo = STAGE_WEIGHT.getting;
 		const hi = STAGE_WEIGHT.getting_end;
-		expect(lifecycle(ask('approved', 7), { progress: 0.5 })).toMatchObject({ label: 'Processing · 50%' });
+		expect(lifecycle(ask('approved', 7), { progress: 0.5 })).toMatchObject({ label: 'Processing' });
 		expect(lifecycle(ask('approved', 7), { progress: 0.5 }).pct).toBeCloseTo(lo + (hi - lo) * 0.5);
 		expect(lifecycle(ask('approved', 7), { progress: 4 }).pct).toBe(hi);
 		expect(lifecycle(ask('approved', 7), { progress: -1 }).pct).toBe(lo);
@@ -60,7 +60,7 @@ describe('lifecycle', () => {
 	});
 	it('approved with no title failed where it stopped, with its reason when known', () => {
 		expect(lifecycle(ask('approved'))).toMatchObject({ stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Failed' });
-		expect(lifecycle(ask('approved'), { reason: 'not found' })).toMatchObject({ label: 'Failed · not found' });
+		expect(lifecycle(ask('approved'), { reason: 'not found' })).toMatchObject({ label: 'Failed', reason: 'not found' });
 	});
 	it('a title not out yet is Upcoming, with its date when known', () => {
 		expect(lifecycle(ask('approved', 7), { upcoming: 'Mar 3' })).toMatchObject({ stage: 'upcoming', tone: 'soon', label: 'Upcoming · Mar 3' });
@@ -83,16 +83,16 @@ describe('lifecycle', () => {
 describe('ready with more to request', () => {
 	it('names what came in and what is left to ask for', () => {
 		const l = lifecycle(ask('approved', 7), { partial: { have: 2, total: 2, unit: 'albums' }, more: 5 });
-		expect(l).toMatchObject({ stage: 'ready', label: 'Ready · 2 albums', more: '5 more available' });
+		expect(l).toMatchObject({ stage: 'ready', label: 'Ready · 2 albums', more: '5 more albums available' });
 		expect(lifecycle(ask('available', 7), { partial: { have: 1, total: 1, unit: 'seasons' } })).toMatchObject({ label: 'Ready · 1 season' });
 		expect(lifecycle(ask('available', 7)).more).toBeUndefined();
 	});
 	it('unticked episodes or songs show when no whole part was skipped', () => {
 		const show = { partial: { have: 3, total: 3, unit: 'seasons' as const } };
-		expect(lifecycle(ask('approved', 7), { ...show, skipped: 4 }).more).toBe('4 more available');
-		expect(lifecycle(ask('approved', 7), { ...show, skipped: 1 }).more).toBe('1 more available');
-		expect(lifecycle(ask('approved', 7), { ...show, skipped: 4, more: 1 }).more).toBe('1 more available');
-		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 2, unit: 'albums' }, skipped: 6 }).more).toBe('6 more available');
+		expect(lifecycle(ask('approved', 7), { ...show, skipped: 4 }).more).toBe('4 more episodes available');
+		expect(lifecycle(ask('approved', 7), { ...show, skipped: 1 }).more).toBe('1 more episode available');
+		expect(lifecycle(ask('approved', 7), { ...show, skipped: 4, more: 1 }).more).toBe('1 more season available');
+		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 2, unit: 'albums' }, skipped: 6 }).more).toBe('6 more songs available');
 	});
 });
 
