@@ -769,6 +769,7 @@
 		const r = list[n];
 		openId = r.id;
 		rowFocus = r.id;
+		reveal(n);
 		tick().then(() => {
 			const row = grid?.querySelector<HTMLElement>(`[data-dl-id="${r.id}"] > .dline`);
 			row?.focus({ preventScroll: true });
@@ -801,6 +802,69 @@
 	let listEl = $state<HTMLElement>();
 	let appH = $state(0);
 	let phone = $state(false);
+	// A long list (over 100 rows) draws only the rows on screen plus 10 on each
+	// side; the list keeps its full height with padding above and below, so
+	// the scroll bar, sticky header and column widths stay as they are.
+	const WINDOW_FROM = 100;
+	const OVERSCAN = 10;
+	let ulEl = $state<HTMLElement>();
+	let vTop = $state(0);
+	let vH = $state(900);
+	let ulTop = $state(0);
+	let rowH = $state(0);
+	const windowed = $derived(list.length > WINDOW_FROM);
+	const rh = $derived(rowH || (phone ? 65 : 45));
+	const span = $derived.by(() => {
+		const n = list.length;
+		if (!windowed) return { a: 0, b: n };
+		const off = vTop - ulTop;
+		const b = Math.min(n, Math.max(0, Math.ceil((off + vH) / rh)) + OVERSCAN);
+		let a = Math.min(Math.max(0, Math.floor(off / rh) - OVERSCAN), Math.max(0, b - 1));
+		// Start on an even row so the striped rows keep their colours.
+		a -= a % 2;
+		return { a, b };
+	});
+	const shownRows = $derived(windowed ? list.slice(span.a, span.b) : list);
+	function measure() {
+		if (!listEl) return;
+		vTop = listEl.scrollTop;
+		vH = listEl.clientHeight || vH;
+		if (ulEl) ulTop = ulEl.getBoundingClientRect().top - listEl.getBoundingClientRect().top + listEl.scrollTop;
+	}
+	$effect(() => {
+		const el = listEl;
+		if (!el || !windowed) return;
+		let raf = 0;
+		const onScroll = () => {
+			if (!raf) raf = requestAnimationFrame(() => ((raf = 0), measure()));
+		};
+		measure();
+		el.addEventListener('scroll', onScroll, { passive: true });
+		const ro = new ResizeObserver(measure);
+		ro.observe(el);
+		return () => {
+			cancelAnimationFrame(raf);
+			el.removeEventListener('scroll', onScroll);
+			ro.disconnect();
+		};
+	});
+	// The real row height (desktop and phone rows differ), read from a drawn row.
+	$effect(() => {
+		void shownRows;
+		void phone;
+		if (!windowed || !ulEl) return;
+		tick().then(() => {
+			const h = ulEl?.querySelector<HTMLElement>('.drow')?.offsetHeight;
+			if (h && h !== rowH) rowH = h;
+		});
+	});
+	/** reveal scrolls a row that is not drawn into the window, so it can be focused. */
+	function reveal(i: number) {
+		if (!windowed || !listEl || (i >= span.a && i < span.b)) return;
+		measure();
+		listEl.scrollTop = Math.max(0, ulTop + i * rh - vH / 2);
+		vTop = listEl.scrollTop;
+	}
 	// Select mode ends when the screen leaves phone width or watch mode starts.
 	let wasPhone = false;
 	$effect(() => {
@@ -1611,8 +1675,8 @@
 {#if list.length}
 	<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
 		{@render header()}
-		<ul class="dlrows" data-testid="dl-list" data-tab={on}>
-			{#each list as r (r.id)}{@render row(r, inHistory(r))}{/each}
+		<ul class="dlrows" class:vw={windowed} bind:this={ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={windowed ? `padding-top: ${span.a * rh}px; padding-bottom: ${(list.length - span.b) * rh}px` : undefined}>
+			{#each shownRows as r (r.id)}{@render row(r, inHistory(r))}{/each}
 		</ul>
 	</div></div>
 {:else}
@@ -1992,6 +2056,8 @@
 	.drow.sel > .dline { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
 	.drow.sel > .dline:hover { background: var(--surface-1); }
 	.drow { animation: rowin var(--dur) var(--ease-out) backwards; }
+	/* Rows drawn while scrolling a long list appear at once. */
+	.dlrows.vw .drow { animation: none; }
 	@keyframes rowin { from { opacity: 0; transform: translateY(-4px); } }
 	.st { gap: 8px; }
 	.prg { height: 16px; padding: 0 8px; border-radius: var(--r-pill); font-size: 10px; line-height: 16px; }

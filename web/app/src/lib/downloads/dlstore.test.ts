@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DownloadRow } from '../downloaders.ts';
-import { applyPatch, fromAnswer, isDl, type DlPatch } from './dlstore.ts';
+import { applyPatch, fromAnswer, isDl, mergeClient, type DlPatch } from './dlstore.ts';
 
 const row = (over: Partial<DownloadRow>): DownloadRow =>
 	({ id: 1, phase: 'downloading', state: 'downloading', label: '', text: '', progress: 0, speed: 0, active: true, name: 'x', title: '', version: '', downloader: 'Q', size: 1, updated_at: '', can_act: true, ...over }) as DownloadRow;
@@ -66,5 +66,18 @@ describe('dl push store', () => {
 		expect(isDl({ kind: 'health', client: 1 })).toBe(true);
 		expect(isDl({ kind: 'x', client: 1 })).toBe(false);
 		expect(isDl(null)).toBe(false);
+	});
+
+	it('a gap names its client; that client page replaces only its rows and rev', () => {
+		const ownA = row({ id: 7, live_key: '3:aa', downloader_id: 3, progress: 0.1 });
+		const ownB = row({ id: 8, live_key: '4:cc', downloader_id: 4, progress: 0.2 });
+		const gap = applyPatch([ownA, ownB, outside], sync, patch({ fromRev: 12, toRev: 13 }));
+		expect(gap).toEqual({ kind: 'reread', client: 3 });
+		const fresh = [row({ id: 7, live_key: '3:aa', downloader_id: 3, progress: 0.9 }), row({ id: -5, live_key: '3:dd', client_item: true, downloader_id: 3, hash: 'dd' })];
+		const out = mergeClient([ownA, ownB, outside], sync, 3, fresh, { '3': 13 });
+		expect(out.sync.revs).toEqual({ '3': 13, '4': 2 });
+		expect(out.rows.map((r) => r.live_key)).toEqual(['4:cc', '3:aa', '3:dd']);
+		expect(out.rows[1].progress).toBe(0.9);
+		expect(out.rows[0]).toBe(ownB);
 	});
 });

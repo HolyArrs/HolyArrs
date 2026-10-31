@@ -122,6 +122,19 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	if len(v.Downloads) != 51 || v.NextCursor != "" {
 		t.Fatalf("page 2: rows %d cursor %q", len(v.Downloads), v.NextCursor)
 	}
+	// One client's page only (a rev gap on that client): its rows and its rev.
+	var one struct {
+		viewAnswer
+		Revs map[string]uint64 `json:"revs"`
+	}
+	_ = json.Unmarshal(do(t, "GET", x.srv.URL+fmt.Sprintf("/api/v1/downloads/view?client=%d", dlr), "", 200), &one)
+	if len(one.Downloads) != 201 || len(one.Revs) != 1 || one.Revs[fmt.Sprint(dlr)] != first.Revs[fmt.Sprint(dlr)] {
+		t.Fatalf("client page: rows %d revs %v", len(one.Downloads), one.Revs)
+	}
+	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?client=999999", "", 200), &one)
+	if len(one.Downloads) != 0 {
+		t.Fatalf("other client page: rows %d, want 0", len(one.Downloads))
+	}
 	// The torrent detail's last activity comes from the reader's snapshot,
 	// not the empty list cache.
 	var td downloader.TorrentDetail

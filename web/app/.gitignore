@@ -5,4 +5,5 @@ playwright-report/
 e2e/.tmp/
 e2e/.tmp-base/
 e2e/.tmp-live/
+e2e/live-push.spec.ts-snapshots/
 static/vendor/

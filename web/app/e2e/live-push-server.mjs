@@ -37,6 +37,10 @@ function main() {
 	const t = { hash: 'c'.repeat(40), name: 'Live.Push.Test.ISO', category: 'linux', size: 4_000_000_000, progress: 0.2, dlspeed: 2_097_152, upspeed: 0,
 		eta: 900, state: 'downloading', save_path: '/downloads', added_on: 1_700_000_000, ratio: 0, num_seeds: 3, num_leechs: 1 };
 	let rid = 0;
+	// /set?count=N adds N more torrents (the long-list test); the first 200 of them move on every read.
+	/** @type {Record<string, string | number>[]} */
+	let bulk = [];
+	const all = () => [t, ...bulk];
 	const qbit = createServer((req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		const json = (/** @type {unknown} */ v) => {
@@ -50,6 +54,11 @@ function main() {
 		switch (url.pathname) {
 			case '/set':
 				for (const k of ['progress', 'dlspeed', 'eta']) if (url.searchParams.get(k)) t[k] = Number(url.searchParams.get(k));
+				if (url.searchParams.has('count')) {
+					const n = Number(url.searchParams.get('count'));
+					bulk = Array.from({ length: n }, (_, i) => ({ ...t, hash: (i + 1).toString(16).padStart(40, '0'), name: `Bulk.Row.${String(i).padStart(4, '0')}`, progress: (i % 97) / 100,
+						dlspeed: i < 200 ? 100_000 + i : 0, state: i < 200 ? 'downloading' : 'uploading', added_on: 1_700_000_000 + i }));
+				}
 				return json({ ok: true });
 			case '/api/v2/auth/login':
 				return text('Ok.');
@@ -60,10 +69,11 @@ function main() {
 			case '/api/v2/sync/maindata': {
 				const from = Number(url.searchParams.get('rid') ?? 0);
 				rid++;
-				return json({ rid, full_update: from === 0, torrents: { [t.hash]: { ...t } }, server_state: { dl_info_speed: t.dlspeed, up_info_speed: 0 } });
+				for (const b of bulk.slice(0, 200)) b.progress = Math.min(0.99, Number(b.progress) + 0.001);
+				return json({ rid, full_update: from === 0, torrents: Object.fromEntries(all().map((x) => [x.hash, { ...x }])), server_state: { dl_info_speed: t.dlspeed, up_info_speed: 0 } });
 			}
 			case '/api/v2/torrents/info':
-				return json([t]);
+				return json(all());
 			case '/api/v2/torrents/files':
 			case '/api/v2/torrents/trackers':
 				return json([]);
@@ -80,8 +90,21 @@ function main() {
 	// The built app, with /api, /live and /healthz sent to the backend.
 	/** @type {Record<string, string>} */
 	const types = { '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.html': 'text/html' };
+	// Open /live streams through this front, for the shared-stream test (one per browser).
+	let liveOpen = 0;
+	let liveTotal = 0;
 	const web = createServer((req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
+		if (url.pathname === '/__test/live') {
+			res.writeHead(200, { 'Content-Type': 'application/json' });
+			res.end(JSON.stringify({ open: liveOpen, total: liveTotal }));
+			return;
+		}
+		if (url.pathname === '/live') {
+			liveOpen++;
+			liveTotal++;
+			res.on('close', () => liveOpen--);
+		}
 		if (/^\/(api|live|healthz)(\/|$)/.test(url.pathname)) {
 			const up = request({ host: '127.0.0.1', port: backendPort, path: req.url, method: req.method, headers: req.headers }, (r) => {
 				res.writeHead(r.statusCode ?? 502, r.headers);

@@ -296,6 +296,21 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			JOIN asks a ON a.title_id = i.title_id JOIN ask_people p ON p.ask_id = a.id WHERE p.user_id = ?)`
 		args = append(args, who.UserID)
 	}
+	// ?client=<id> reads one client's rows only (the page lost that client's
+	// patches). Its rev is taken before the rows, so the rows are at least as
+	// new as the rev and the patches after it apply on top.
+	only, _ := strconv.ParseInt(r.URL.Query().Get("client"), 10, 64)
+	var revs map[int64]uint64
+	if a.syncOn() {
+		revs = a.s.DLSync.Store.Revs()
+		if only > 0 {
+			revs = map[int64]uint64{only: revs[only]}
+		}
+	}
+	if only > 0 {
+		where += " AND downloader_id = ?"
+		args = append(args, only)
+	}
 	ds, err := store.Select[domain.Download](r.Context(), a.read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, limit(r, 100))...)
 	if err != nil {
 		internal(w, err)
@@ -405,6 +420,15 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	// Totals count every row, before the outside rows are paged: download
 	// speed from what is moving, upload from everything that sends (seeding
 	// torrents too).
+	if only > 0 {
+		keep := outside[:0:0]
+		for _, row := range outside {
+			if row.DownloaderID == only {
+				keep = append(keep, row)
+			}
+		}
+		outside = keep
+	}
 	total := viewTotals(rows, outside)
 	page, next := pageOutside(outside, r.URL.Query().Get("cursor"), outsideLimit(r))
 	rows = append(rows, page...)
@@ -412,7 +436,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	if a.syncOn() {
 		// Someone is watching: the reader reads faster (no write, no call).
 		a.s.DLSync.Watched()
-		out["revs"] = a.s.DLSync.Store.Revs()
+		out["revs"] = revs
 		if a.s.Live != nil {
 			out["boot"] = a.s.Live.Boot()
 		}

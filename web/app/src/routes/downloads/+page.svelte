@@ -11,7 +11,7 @@
 	import { decisionName, manyWords, removeBody, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
 	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
-	import { applyPatch, fromAnswer, isDl, type Sync } from '#lib/downloads/dlstore.ts';
+	import { applyPatch, fromAnswer, isDl, mergeClient, type Sync } from '#lib/downloads/dlstore.ts';
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -166,7 +166,7 @@
 	let sync: Sync | null = null;
 	const pushHealthy = () => sync !== null && live.status.state === 'live';
 	function interest() {
-		if (sync && document.visibilityState === 'visible') api.post('/live/interest', { view: 'downloads' }).catch(() => {});
+		if (sync && document.visibilityState === 'visible') live.interest('downloads');
 	}
 
 	function onDl(data: unknown) {
@@ -177,7 +177,10 @@
 			return;
 		}
 		const out = applyPatch(rows, sync, data, withId);
-		if (out.kind === 'reread') soon();
+		if (out.kind === 'reread') {
+			if (out.client === undefined) soon();
+			else rereadClient(out.client);
+		}
 		else if (out.kind === 'applied') {
 			rows = out.rows;
 			sync = out.sync;
@@ -207,6 +210,25 @@
 		} finally {
 			loaded = true;
 		}
+	}
+
+	// A gap on one client rereads that client's page only (its rows and rev);
+	// the other clients keep their rows and keep applying patches.
+	const rereading = new Set<number>();
+	function rereadClient(id: number) {
+		if (rereading.has(id)) return;
+		rereading.add(id);
+		api
+			.get<ViewAnswer>(`/downloads/view?limit=100&client=${id}${outsideLimit > 200 ? `&outside_limit=${outsideLimit}` : ''}`)
+			.then((d) => {
+				if (!sync) return;
+				if (d.boot && sync.boot && d.boot !== sync.boot) return soon();
+				const out = mergeClient(rows, sync, id, d.downloads.map(withId), d.revs);
+				rows = out.rows;
+				sync = out.sync;
+			})
+			.catch(() => soon())
+			.finally(() => rereading.delete(id));
 	}
 
 	// Live news comes often while something downloads: read again at most
@@ -250,11 +272,11 @@
 		const offDl = live.on('dl', onDl);
 		// While push updates flow, the rows move with them: no 2 s reads.
 		const poll = setInterval(() => {
-			if (document.visibilityState === 'visible' && rows.some((r) => r.active) && !pushHealthy()) soon();
+			if (document.visibilityState === 'visible' && rows.some((r) => r.active) && sync === null) soon();
 		}, 2000);
-		// Without push the stream is for managers: a watcher reads again every 10 s while the tab is visible.
+		// Without a stream (a watcher on legacy, or push whose stream failed) the page reads again every 10 s while visible.
 		const watchPoll = setInterval(() => {
-			if (watch && document.visibilityState === 'visible' && !pushHealthy()) soon();
+			if ((watch || sync !== null) && document.visibilityState === 'visible' && !pushHealthy()) soon();
 		}, 10_000);
 		// With push: a slow safety read, and the server is told someone watches (faster client reads).
 		const safety = setInterval(() => {

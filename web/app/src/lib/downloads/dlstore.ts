@@ -42,7 +42,7 @@ export function fromAnswer(a: { boot?: string; revs?: Record<string, number> }):
 export type Outcome =
 	| { kind: 'applied'; rows: DownloadRow[]; sync: Sync; upTotal?: number }
 	| { kind: 'dropped' }
-	| { kind: 'reread' };
+	| { kind: 'reread'; client?: number };
 
 /**
  * applyPatch puts one patch on the rows. A row a patch names but the page
@@ -54,7 +54,7 @@ export function applyPatch(rows: DownloadRow[], sync: Sync, p: DlPatch, withId: 
 	if (p.boot && sync.boot && p.boot !== sync.boot) return { kind: 'reread' };
 	const have = sync.revs[String(p.client)] ?? 0;
 	if (p.toRev <= have) return { kind: 'dropped' };
-	if (p.fromRev !== have) return { kind: 'reread' };
+	if (p.fromRev !== have) return { kind: 'reread', client: p.client };
 	const gone = new Set(p.remove ?? []);
 	const ups = new Map((p.upsert ?? []).map((u) => [u.key, u]));
 	const out: DownloadRow[] = [];
@@ -91,4 +91,19 @@ function merge(r: DownloadRow, u: Record<string, unknown>): DownloadRow {
 export function isDl(x: unknown): x is DlMessage {
 	const m = x as DlMessage | null;
 	return !!m && typeof m === 'object' && (m.kind === 'patch' || m.kind === 'health') && typeof m.client === 'number';
+}
+
+/**
+ * mergeClient puts one client's page (a view read with ?client=) in place of
+ * that client's rows: the other clients' rows and revs stay as they are, so
+ * a gap on one client never rereads the whole list.
+ */
+export function mergeClient(rows: DownloadRow[], sync: Sync, client: number, page: DownloadRow[], revs: Record<string, number> | undefined): { rows: DownloadRow[]; sync: Sync } {
+	const kept = rows.filter((r) => r.downloader_id !== client);
+	const rev = revs?.[String(client)] ?? sync.revs[String(client)] ?? 0;
+	const fresh = page.filter((r) => r.downloader_id === client);
+	// HolyArrs' own rows stay newest first, client rows after them, as a full read gives.
+	const own = [...kept.filter((r) => !r.client_item), ...fresh.filter((r) => !r.client_item)].sort((a, b) => b.id - a.id);
+	const outside = [...kept.filter((r) => r.client_item), ...fresh.filter((r) => r.client_item)];
+	return { rows: [...own, ...outside], sync: { boot: sync.boot, revs: { ...sync.revs, [String(client)]: rev } } };
 }

@@ -80,3 +80,142 @@ test('legacy: the page polls the view every 2 s as before and sends no interest'
 	await fetch(`${qbit}/set?progress=0.9`);
 	await expect(progress()).toContainText('90%', { timeout: 10_000 });
 });
+
+// AC9: the Downloads list looks the same on push as on legacy. The baseline
+// is taken in legacy in this run (fixed clock, live numbers masked) and the
+// push page is compared with toHaveScreenshot.
+const masks = (p: Page) => ['progress', 'speed', 'eta', 'up', 'seeds', 'peers', 'ratio', 'completed', 'added', 'size'].map((c) => p.locator(`[data-testid="dl-listbox"] [data-col="${c}"]`));
+const sizes = [
+	{ name: 'dl-1280.png', width: 1280, height: 800 },
+	{ name: 'dl-390.png', width: 390, height: 844 }
+];
+async function shotPage(p: Page, width: number, height: number) {
+	await p.setViewportSize({ width, height });
+	await p.clock.setFixedTime(new Date('2026-10-31T12:00:00Z'));
+	await p.goto('/downloads');
+	await expect(p.locator('[data-testid="dl-table-row"]').filter({ hasText: 'Live.Push.Test.ISO' })).toBeVisible({ timeout: 20_000 });
+	await p.waitForTimeout(800);
+	return p.locator('[data-testid="dl-listbox"]');
+}
+
+test('AC9 baseline: legacy Downloads list at 1280x800 and 390x844', async () => {
+	const p = await page.context().newPage();
+	for (const s of sizes) {
+		const box = await shotPage(p, s.width, s.height);
+		await box.screenshot({ path: test.info().snapshotPath(s.name, { kind: 'screenshot' }), animations: 'disabled', caret: 'hide', scale: 'css', mask: masks(p) });
+	}
+	await p.close();
+});
+
+test('AC9: push Downloads list matches the legacy baseline (maxDiffPixelRatio 0.01)', async () => {
+	await setSync('on');
+	await page.waitForTimeout(6000);
+	const p = await page.context().newPage();
+	for (const s of sizes) {
+		const box = await shotPage(p, s.width, s.height);
+		await expect(box).toHaveScreenshot(s.name, { maxDiffPixelRatio: 0.01, animations: 'disabled', caret: 'hide', scale: 'css', mask: masks(p) });
+	}
+	await p.close();
+});
+
+// Phase 4: every tab of one browser shares one /live stream.
+const liveCount = async () => (await (await page.request.get('/__test/live')).json()) as { open: number; total: number };
+
+test('three tabs open exactly one /live stream; closing the leader hands over without missing a change', async () => {
+	await page.goto('/downloads');
+	await expect(row()).toBeVisible({ timeout: 20_000 });
+	const ctx = page.context();
+	const tabs = [page, await ctx.newPage(), await ctx.newPage()];
+	const full: string[] = [];
+	for (const t of tabs.slice(1)) {
+		t.on('request', (r) => {
+			const u = new URL(r.url());
+			if (u.pathname === '/api/v1/downloads/view' && !u.searchParams.has('client')) full.push(u.search);
+		});
+		await t.goto('/downloads');
+	}
+	for (const t of tabs) await expect(t.locator('[data-testid="dl-table-row"]').filter({ hasText: 'Live.Push.Test.ISO' })).toBeVisible({ timeout: 20_000 });
+	await expect.poll(async () => (await liveCount()).open, { timeout: 10_000 }).toBe(1);
+	await page.waitForTimeout(2000);
+	expect((await liveCount()).open, 'three tabs, one stream').toBe(1);
+	// The followers move with the leader's stream.
+	await fetch(`${qbit}/set?progress=0.41`);
+	for (const t of tabs) await expect(t.locator('[data-testid="dl-table-row"]').filter({ hasText: 'Live.Push.Test.ISO' }).locator('[data-col="progress"]')).toContainText('41%', { timeout: 2500 });
+	// Close the leader (the first tab) while a change is on its way.
+	const before = await liveCount();
+	full.length = 0;
+	await fetch(`${qbit}/set?progress=0.62`);
+	await page.close();
+	page = tabs[1];
+	for (const t of tabs.slice(1)) await expect(t.locator('[data-testid="dl-table-row"]').filter({ hasText: 'Live.Push.Test.ISO' }).locator('[data-col="progress"]')).toContainText('62%', { timeout: 5000 });
+	await fetch(`${qbit}/set?progress=0.73`);
+	for (const t of tabs.slice(1)) await expect(t.locator('[data-testid="dl-table-row"]').filter({ hasText: 'Live.Push.Test.ISO' }).locator('[data-col="progress"]')).toContainText('73%', { timeout: 2500 });
+	const after = await liveCount();
+	expect(after.open, 'one stream after the handover').toBe(1);
+	expect(after.total - before.total, 'exactly one new stream').toBe(1);
+	expect(full, 'no whole-list rereads during the handover').toEqual([]);
+	await tabs[2].close();
+});
+
+// AC6: 2,000 rows at 390x844 with 4x CPU slowdown, a scripted 10 s scroll:
+// p95 frame time < 33 ms and fewer than 100 row nodes in the page.
+test('AC6: 2,000-row list scrolls smoothly and draws fewer than 100 rows', async ({ browser }, info) => {
+	test.setTimeout(240_000);
+	await fetch(`${qbit}/set?count=2000`);
+	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await page.context().storageState() });
+	const p = await ctx.newPage();
+	await p.goto('/downloads');
+	await expect(p.locator('[data-testid="dl-table-row"]').first()).toBeVisible({ timeout: 30_000 });
+	await expect.poll(async () => (await page.request.get('/api/v1/downloads/view?limit=1')).json().then((v) => v.outside_total), { timeout: 30_000 }).toBeGreaterThanOrEqual(2000);
+	for (let i = 0; i < 12; i++) {
+		const more = p.getByTestId('dl-outside-more');
+		if (!(await more.isVisible().catch(() => false))) break;
+		await more.click();
+		await p.waitForTimeout(1200);
+	}
+	const rowsAttr = async () => Number(await p.locator('[data-testid="dl-list"]').getAttribute('data-rows'));
+	await expect.poll(rowsAttr, { timeout: 30_000 }).toBeGreaterThanOrEqual(2000);
+	const cdp = await ctx.newCDPSession(p);
+	await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+	await ctx.tracing.startChunk({ title: 'ac6-scroll' }); // the config already traces each context
+	const res = await p.evaluate(async () => {
+		const box = document.querySelector<HTMLElement>('[data-testid="dl-listbox"]')!;
+		const frames: number[] = [];
+		let maxRows = 0;
+		const t0 = performance.now();
+		let last = t0;
+		await new Promise<void>((done) => {
+			const step = (now: number) => {
+				frames.push(now - last);
+				last = now;
+				box.scrollTop += 60;
+				maxRows = Math.max(maxRows, document.querySelectorAll('[data-testid="dl-table-row"]').length);
+				if (now - t0 < 10_000) requestAnimationFrame(step);
+				else done();
+			};
+			requestAnimationFrame(step);
+		});
+		frames.shift();
+		const sorted = [...frames].sort((a, b) => a - b);
+		return { p95: sorted[Math.floor(sorted.length * 0.95)], frames: frames.length, maxRows, scrolled: box.scrollTop, height: box.scrollHeight };
+	});
+	await ctx.tracing.stopChunk({ path: info.outputPath('ac6-trace.zip') });
+	await ctx.tracing.startChunk(); // hand tracing back to the test runner
+	await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+	console.log(`AC6 p95 frame ${res.p95.toFixed(1)} ms over ${res.frames} frames, max row nodes ${res.maxRows}, scrolled ${res.scrolled}/${res.height}px`);
+	expect(res.scrolled, 'the list scrolled').toBeGreaterThan(20_000);
+	expect(res.maxRows, 'row nodes').toBeLessThan(100);
+	expect(res.p95, 'p95 frame time').toBeLessThan(33);
+	// Keyboard: the arrow keys walk past the drawn window and the row stays focused and on screen.
+	await p.setViewportSize({ width: 1280, height: 800 });
+	await p.locator('[data-testid="dl-listbox"]').evaluate((b) => (b.scrollTop = 0));
+	await p.locator('[data-testid="dl-line"]').first().click();
+	for (let i = 0; i < 60; i++) await p.keyboard.press('ArrowDown');
+	const focused = p.locator('[data-testid="dl-table-row"]:has(> .dline:focus)');
+	await expect(focused).toHaveCount(1);
+	await expect(focused).toBeInViewport();
+	const nodes = await p.locator('[data-testid="dl-table-row"]').count();
+	expect(nodes, 'row nodes after the keyboard walk').toBeLessThan(100);
+	await ctx.close();
+	await fetch(`${qbit}/set?count=0`);
+});
