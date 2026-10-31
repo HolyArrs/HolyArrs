@@ -318,7 +318,7 @@
 			prioWait = null;
 			await readDetail(r, 'Files');
 		} catch (e) {
-			if (e instanceof ApiError && e.status === 403 && /confirm your local password/i.test(e.message)) {
+			if (e instanceof ApiError && e.status === 403 && (e.body.code === 'reauth' || /confirm your local password/i.test(e.message))) {
 				prioWait = { r, indexes, priority };
 				void readDetail(r, 'Files');
 				return;
@@ -516,6 +516,12 @@
 	// readDetail writes), so it never restarts itself.
 	let grabY: number | null = null;
 	const openTab = $derived(openRow ? tabNow(openRow) : '');
+	// A password ask belongs to the row and tab it was made in.
+	$effect(() => {
+		void openId;
+		void openTab;
+		untrack(() => (prioWait = null));
+	});
 	$effect(() => {
 		const id = openId;
 		const tab = openTab;
@@ -677,7 +683,37 @@
 		next.focus();
 		next.click();
 	}
+	// The ⋯ menu is placed from its button and kept inside the screen: flipped
+	// above when there is no room below, and scrolling inside when taller.
+	function fitMenu(ul: HTMLElement) {
+		const at = ul.parentElement?.querySelector<HTMLElement>('[data-more-for]');
+		if (!at) return;
+		const pad = 8;
+		const a = at.getBoundingClientRect();
+		const vh = document.documentElement.clientHeight;
+		const vw = document.documentElement.clientWidth;
+		ul.style.position = 'fixed';
+		ul.style.maxHeight = `calc(100vh - ${pad * 2}px)`;
+		ul.style.overflow = 'auto';
+		const m = ul.getBoundingClientRect();
+		let top = a.bottom + 4;
+		if (top + m.height > vh - pad) top = a.top - 4 - m.height;
+		top = Math.max(pad, Math.min(vh - m.height - pad, top));
+		const left = Math.max(pad, Math.min(vw - m.width - pad, a.right - m.width));
+		ul.style.top = `${Math.round(top)}px`;
+		ul.style.left = `${Math.round(left)}px`;
+		ul.style.right = 'auto';
+	}
 	function listKey(e: KeyboardEvent) {
+		if (e.key === 'Escape' && menuId) {
+			// Closed here so the panel's own Escape never sees it, as in TopMenu.
+			e.preventDefault();
+			e.stopPropagation();
+			const id = menuId;
+			menuId = 0;
+			document.querySelector<HTMLElement>(`[data-more-for="${id}"]`)?.focus({ preventScroll: true });
+			return;
+		}
 		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && fqEl && openRow && paneOpen && tabNow(openRow) === 'Files') {
 			e.preventDefault();
 			fqEl.focus();
@@ -761,6 +797,13 @@
 	let listEl = $state<HTMLElement>();
 	let appH = $state(0);
 	let phone = $state(false);
+	// Select mode ends when the screen leaves phone width or watch mode starts.
+	let wasPhone = false;
+	$effect(() => {
+		const p = phone;
+		if ((wasPhone && !p) || watch) untrack(() => (selecting = false));
+		wasPhone = p;
+	});
 	let gap = $state(10);
 	let layout = $state<Layout>(typeof localStorage === 'undefined' ? defaults() : readLayout());
 	function readLayout(): Layout {
@@ -999,7 +1042,13 @@
 		const w = 260;
 		pop = { x: Math.max(8, Math.min(x, innerWidth - w - 8)), y: Math.max(8, Math.min(y, innerHeight - 440)) };
 		held = null;
-		tick().then(() => pickEl?.querySelector<HTMLElement>('input, button')?.focus());
+		tick().then(() => {
+			// Keep the whole list on screen: move it up by however much its
+			// bottom passes the screen edge (it scrolls inside past that).
+			const r = pickEl?.getBoundingClientRect();
+			if (r && pop && r.bottom > innerHeight - 8) pop = { x: pop.x, y: Math.max(8, pop.y - (r.bottom - (innerHeight - 8))) };
+			pickEl?.querySelector<HTMLElement>('input, button')?.focus();
+		});
 	}
 	function closePicker() {
 		if (held) layout.order = heldFrom;
@@ -1244,10 +1293,10 @@
 		{#if !watch}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>
 		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>{/if}
 		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
-		{#if !watch}<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>{/if}
+		{#if !watch}<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" data-more-for={r.id} onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>{/if}
 	</div>
 	{#if menuId === r.id && !watch}
-		<ul class="mn" data-testid="dl-more-menu">
+		<ul class="mn" use:fitMenu data-testid="dl-more-menu">
 			{#each ACTIONS.filter((a) => !a.torrent || protocolOf(r) === 'torrent') as a (a.label)}
 				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
 			{/each}
@@ -1424,12 +1473,12 @@
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<tr class:sel={sel[`${r.id}:t`] === (x.ref || x.url)} class:fixed={x.fixed} tabindex={ri === 0 ? 0 : -1} onclick={() => pickTracker(r, x)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter') pickTracker(r, x); }} data-testid="dl-trackerrow" data-fixed={x.fixed ? 'true' : undefined}>
 							<td class="c-name"><span class="fn">{x.url}</span></td>
-							<td class="c-num c-tier">{x.fixed ? '–' : x.tier}</td>
+							<td class="c-num c-tier">{x.fixed ? '' : x.tier}</td>
 							<td><span class="st-{x.status === 'working' ? 'working' : x.status === 'not_contacted' ? 'updating' : 'error'}">{TRACKER_WORD[x.status] ?? x.status}</span></td>
 							<td class="c-num">{x.peers}</td>
 							<td class="c-num">{x.seeds}</td>
-							<td class="c-msg"><span class="fn">{x.message || '–'}</span></td>
-							<td class="c-num">{x.next_check ? mmss(x.next_check) : '–'}</td>
+							<td class="c-msg"><span class="fn">{x.message}</span></td>
+							<td class="c-num">{x.next_check ? mmss(x.next_check) : x.fixed ? '' : '–'}</td>
 						</tr>
 					{/each}
 					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}

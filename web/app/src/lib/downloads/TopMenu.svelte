@@ -93,7 +93,7 @@
 	.caret:active { transform: scale(0.96); }
 	.caret:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.caret[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
-	.tm { position: fixed; inset: auto; margin: 0; min-width: 190px; padding: 4px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); color: var(--text); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28); }
+	.tm { position: fixed; inset: auto; margin: 0; min-width: 190px; max-height: calc(100vh - 16px); overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); color: var(--text); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28); }
 	.tm:popover-open { display: grid; gap: 2px; }
 	.mi2 { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; min-height: 32px; padding: 6px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; cursor: pointer; }
 	.mi2 .h { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
