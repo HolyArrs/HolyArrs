@@ -2,8 +2,8 @@
 	// One ask in the cards' window (ApprovalsDesktop): the trailer as a big
 	// banner (Explore's Billboard; for music, the artist's video over the
 	// photo), type · year · what was asked, who asked and their note, then
-	// Approve / Choose what to get / Decline. "Choose what to get" lifts the
-	// title into the corner and raises the What to get sheet inside the same
+	// Decline / Approve. Approve (and the window opening) lifts the
+	// title into the corner and raises the What to add sheet inside the same
 	// frame: the two-pane picker (seasons and episodes, or albums and songs),
 	// the Pick rule, then Approve. The life-cycle line runs along the edge.
 	import { tick, untrack } from 'svelte';
@@ -120,6 +120,8 @@
 
 	// Choose what to get: the title lifts into the corner, the sheet rises inside the frame.
 	let choosing = $state(false);
+	// Opened by the window itself on Processing/Done: everything is already in place (no lift, no rise, no fade).
+	let instant = $state(false);
 	let frame = $state<HTMLElement>();
 	let lift = $state(0);
 	// Where the sheet starts: just under the lifted title block.
@@ -135,7 +137,8 @@
 	$effect(() => {
 		if (choosing && !waiting(picked) && !status) choosing = false;
 	});
-	async function choose() {
+	async function choose(now = false) {
+		instant = now;
 		const content = frame?.querySelector<HTMLElement>('.ui-billboard .content');
 		// How far the title travels: from where it sits to just under the tabs.
 		lift = content ? Math.max(content.offsetTop - 64, 0) : 0;
@@ -152,6 +155,12 @@
 		const a = picked;
 		// Processing and Done open on what was approved (read only); a movie has nothing to list.
 		if (!startChoosing || autoFor === a.id || (!waiting(a) && !(status && a.kind !== 'movie'))) return;
+		// Processing and Done: already open on the first paint, nothing moves.
+		if (status) {
+			autoFor = a.id;
+			void choose(true);
+			return;
+		}
 		// Cleared when the window steps on first, so the sheet never opens on the next ask unasked.
 		const t = setTimeout(() => {
 			autoFor = a.id;
@@ -175,6 +184,7 @@
 	}
 	// Closing the sheet hands focus back to the button that opens it (or the window).
 	function closeSheet() {
+		instant = false;
 		choosing = false;
 		void tick().then(() => {
 			const opener = frame?.querySelector<HTMLElement>('[data-opens-sheet]');
@@ -196,9 +206,9 @@
 {/snippet}
 
 <div class="desk" data-testid="ask-window-stage">
-	<div class="frame" class:choosing class:status bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
+	<div class="frame" class:choosing class:status class:instant bind:this={frame} style:--lift="{lift}px" style:--sheet-top="{sheetTop}px">
 			{#key picked.id}
-			<div class="swap" in:fade={{ duration: ms(520) }} out:fade={{ duration: ms(360) }}>
+			<div class="swap" in:fade={{ duration: status && startChoosing ? 0 : ms(520) }} out:fade={{ duration: ms(360) }}>
 				<Billboard
 					label="{picked.name}, asked by {ctx.who(picked).name}"
 					testid="ask-banner"
@@ -222,9 +232,8 @@
 							<span></span>
 						{:else if waiting(picked)}
 							<div class="acts" class:gone={choosing} inert={choosing}>
-								<button type="button" class="act primary" data-testid="ask-approve" onclick={() => ctx.approve([picked])}><Icon name="check" size={20} />Approve</button>
-								<button type="button" class="act glass" data-opens-sheet onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to add</button>
-								<button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Decline</button>
+								<button type="button" class="act glass st-half" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Decline</button>
+								<button type="button" class="act primary st-half" data-testid="ask-approve" data-opens-sheet onclick={() => void choose()}><Icon name="check" size={20} />Approve</button>
 							</div>
 						{:else}
 							<div role="status" aria-live="polite">
@@ -258,10 +267,10 @@
 			{/if}
 
 			{#if choosing}
-				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
+				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: instant ? 0 : ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
 						<h3 id="sheet-h">{status ? listName : 'What to add'}</h3>
-						<button type="button" class="x" aria-label={status ? 'Collapse' : 'Close'} onclick={closeSheet}><Icon name={status ? 'chevronDown' : 'x'} size={18} /></button>
+						<button type="button" class="st-hide" aria-label="Hide {status ? listName : 'What to add'}" title="Hide" onclick={closeSheet}><span>Hide</span><Icon name="chevronDown" size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
@@ -361,8 +370,13 @@
 	.sheet :global(.list > ul) { max-height: none; }
 	.sheet :global(.season) { min-height: 36px; }
 	.sheet:focus { outline: none; }
-	.x { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--surface-2); cursor: pointer; }
-	.x:hover { background: var(--surface-3); }
+	.st-hide { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 10px 0 14px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-2); color: var(--ink-2, inherit); font: 600 13px/1 var(--font-ui); cursor: pointer; transition: background 160ms var(--ease-out); }
+	.st-hide:hover { background: var(--surface-3); }
+	.st-half { flex: 1 1 0; min-width: 0; }
+	.acts:has(.st-half) { flex-wrap: nowrap; width: min(420px, 100%); }
+	/* Processing and Done open already in place: the title doesn't travel, the picture holds still. */
+	.frame.instant :global(.ui-billboard .content) { transition: none; }
+	.frame.status :global(.ui-kb img), .frame.status :global(.ui-kb .frame), .frame.status .artist-bg { animation: none; transition: none; }
 	.sh-body { flex: 1; min-height: 0; overflow: hidden; padding: 0 16px 10px; display: flex; flex-direction: column; gap: 10px; }
 	.sh-body > :global(.split) { flex: 1; min-height: 0; }
 	.sh-body > :global(.parts) { flex: none; }
@@ -431,7 +445,7 @@
 	/* Touch screens: every small control gets a full finger-sized target. */
 	@media (pointer: coarse) {
 		.rule { min-height: 44px; }
-		.x { width: 44px; height: 44px; }
+		.st-hide { height: 44px; }
 		.sheet :global(.line), .sheet :global(.season) { min-height: 44px; }
 		.sh-f .act.primary, .sh-f .act.ghost { height: 44px; }
 	}
