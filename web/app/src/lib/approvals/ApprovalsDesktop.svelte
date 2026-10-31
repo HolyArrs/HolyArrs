@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Approvals for approvers. One toolbar the Downloads way: the status tabs as a
-	// pill group on the left, the type filter in a capsule on the right. Each card is
+	// pill group on the left, the Filter button (status and type) on the right. Each card is
 	// a small window: a dark card with the title's wide art, the title and its facts
 	// on the art, then a frosted sheet over the art's foot with who asked and the
 	// answers (Approve, Decline). A card opens the full window with that ask
@@ -43,23 +43,6 @@
 		{ k: 'show', label: 'TV shows', icon: 'tv' },
 		{ k: 'artist', label: 'Music', icon: 'music' }
 	];
-
-	// The raised plate slides to the picked item in each group (as on Downloads).
-	function plate(node: HTMLElement, _key: unknown) {
-		const place = () => {
-			const on = node.querySelector<HTMLElement>(':scope > [aria-pressed="true"]');
-			if (!on) return node.style.setProperty('--io', '0');
-			node.style.setProperty('--ix', `${on.offsetLeft}px`);
-			node.style.setProperty('--iw', `${on.offsetWidth}px`);
-			node.style.setProperty('--ih', `${on.offsetHeight}px`);
-			node.style.setProperty('--iy', `${on.offsetTop}px`);
-			node.style.setProperty('--io', '1');
-		};
-		void tick().then(place);
-		const ro = new ResizeObserver(place);
-		ro.observe(node);
-		return { update: () => void tick().then(place), destroy: () => ro.disconnect() };
-	}
 
 	// What an empty tab says.
 	const calm: Record<string, { title: string; text: string }> = {
@@ -110,35 +93,71 @@
 	$effect(() => {
 		if (statusPick.word && !status) statusPick = { tab: '', word: '' };
 	});
-	// A tab's statuses slide out from behind it only when the tab is clicked (never on hover);
-	// leaving the bar folds them shortly after, and coming back does not reopen them.
-	let openTab = $state<ApproverTab | ''>('');
-	const subsOf = (t: ApproverTab) => {
-		const x = statusesIn(t);
-		return x.length > 1 ? x : [];
-	};
-	function unfold(t: ApproverTab) {
-		openTab = subsOf(t).length ? t : '';
-	}
+	// The current tab's statuses; the status control shows only when there are two or more.
+	const subs = $derived(statusesIn(ctx.approverTab));
+	const hasSubs = $derived(subs.length > 1);
+	const subsTotal = $derived(subs.reduce((n, x) => n + x.count, 0));
+	const toneOf = (t: Life['tone']) => (t === 'bad' ? 'fail' : t === 'go' ? 'info' : t === 'ok' ? 'ok' : t === 'wait' ? 'wait' : 'off');
 	function pickTab(t: ApproverTab) {
+		sfMenu = false;
 		if (ctx.approverTab !== t) {
 			statusPick = { tab: '', word: '' };
 			ctx.setApproverTab(t);
 		}
-		unfold(t);
 	}
-	function pickStatus(t: ApproverTab, word: string, e?: MouseEvent) {
-		if (ctx.approverTab !== t) ctx.setApproverTab(t);
-		statusPick = status === word && ctx.approverTab === t ? { tab: '', word: '' } : { tab: t, word };
+	function setStatus(word: string) {
+		statusPick = word ? { tab: ctx.approverTab, word } : { tab: '', word: '' };
 	}
-	function capKeys(e: KeyboardEvent) {
-		if (e.key === 'Escape' && openTab) {
-			e.stopPropagation();
-			openTab = '';
+
+	// The Filter menu (Status for this tab, then Type). On phones it opens as a bottom sheet.
+	let phone = $state(false);
+	$effect(() => {
+		const mq = window.matchMedia('(max-width: 767px)');
+		phone = mq.matches;
+		const on = () => (phone = mq.matches);
+		mq.addEventListener('change', on);
+		return () => mq.removeEventListener('change', on);
+	});
+	// One open menu at a time: the status menu (1, 5) or the filter menu (3). Variant 5 on a phone opens it as a sheet.
+	let sfMenu = $state(false);
+	let sfBtn = $state<HTMLButtonElement>();
+	let sfPop = $state<HTMLElement>();
+	const sfItems = () => [...(sfPop?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])];
+	function sfToggle() {
+		sfMenu = !sfMenu;
+		if (sfMenu) void tick().then(() => (sfPop?.querySelector<HTMLElement>('[aria-checked="true"]') ?? sfItems()[0])?.focus());
+	}
+	function sfClose(back = true) {
+		if (!sfMenu) return;
+		sfMenu = false;
+		if (back) sfBtn?.focus();
+	}
+	function sfKeys(e: KeyboardEvent) {
+		if (e.key === 'Escape' || e.key === 'Tab') {
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				e.stopPropagation();
+			}
+			sfClose(e.key === 'Escape');
+			return;
 		}
+		if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+		const items = sfItems();
+		const i = items.indexOf(document.activeElement as HTMLElement);
+		const n = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+		e.preventDefault();
+		items[n]?.focus();
 	}
-	// The open tab's statuses stay open until another tab is picked (Escape folds them).
-	let capEl = $state<HTMLElement>();
+	$effect(() => {
+		if (!sfMenu) return;
+		const out = (e: PointerEvent) => {
+			const t = e.target as Node;
+			if (!sfPop?.contains(t) && !sfBtn?.contains(t)) sfClose(false);
+		};
+		document.addEventListener('pointerdown', out, true);
+		return () => document.removeEventListener('pointerdown', out, true);
+	});
+	const filterCount = $derived((status ? 1 : 0) + (ctx.kind !== 'all' ? 1 : 0));
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
@@ -256,26 +275,32 @@
 </script>
 
 <div class="desktop" data-testid="approvals-desktop">
+	{#snippet statusItems(close: boolean)}
+		<button type="button" role="menuitemradio" aria-checked={!status} class="sf-mi" onclick={() => { setStatus(''); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-w">All statuses</span><span class="sf-c">{subsTotal}</span></button>
+		{#each subs as x (x.word)}
+			<button type="button" role="menuitemradio" aria-checked={status === x.word} class="sf-mi sf-t-{toneOf(x.tone)}" onclick={() => { setStatus(x.word); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"></span><span class="sf-w">{x.word}</span><span class="sf-c">{x.count}</span></button>
+		{/each}
+	{/snippet}
+	{#snippet filterItems()}
+		{#if hasSubs}
+				<div class="sf-mh" role="presentation">Status</div>
+				{@render statusItems(false)}
+				<div class="sf-sep" role="separator"></div>
+			{/if}
+			<div class="sf-mh" role="presentation">Type</div>
+			{#each types as t (t.k)}
+				<button type="button" role="menuitemradio" aria-checked={ctx.kind === t.k} class="sf-mi" onclick={() => ctx.setKind(t.k)}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-ti" aria-hidden="true"><Icon name={t.icon} size={14} /></span><span class="sf-w">{t.label}</span></button>
+			{/each}
+	{/snippet}
 	<div class="toolbar">
-		<div class="tcap" role="presentation" bind:this={capEl} onkeydown={capKeys}>
+		<div class="tcap">
 		<div class="tabs" role="group" aria-label="Status">
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
 				{@const here = ctx.approverTab === t.tab}
-				{@const subs = subsOf(t.tab)}
-				{@const open = openTab === t.tab && subs.length > 0}
-				<div class="pw" class:on={here} class:pw-open={open} role="presentation">
-					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-expanded={subs.length ? open : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}{#if here && status && !open}<span class="pick">· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
-					{#if subs.length}
-						<div class="subwrap" inert={!open}>
-							<div class="subin" role="group" aria-label="{t.label} by status">
-								{#each subs as x, xi (x.word)}
-									<button type="button" class="stab tn-{x.tone}" style:--i={xi} class:stab-on={here && status === x.word} aria-pressed={here && status === x.word} aria-label="{x.word}, {x.count}" onclick={(e) => pickStatus(t.tab, x.word, e)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<b>{x.count}</b></button>
-								{/each}
-							</div>
-						</div>
-					{/if}
+				<div class="pw" class:on={here} role="presentation">
+					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
 				</div>
 			{/each}
 		</div>
@@ -284,17 +309,27 @@
 			{#if ctx.approverTab === 'pending' && cardsShown.filter(waiting).length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(cardsShown.filter((x) => waiting(x) && !approving.has(x.id)))}><Icon name="check" size={16} />Approve all {cardsShown.filter(waiting).length}</button>
 			{/if}
-			<div class="cap">
-				<div class="seg" role="group" aria-label="Type" use:plate={ctx.kind}>
-					<span class="plate" aria-hidden="true"></span>
-					{#each types as t (t.k)}
-						<button type="button" class="it" aria-pressed={ctx.kind === t.k} onclick={() => ctx.setKind(t.k)}><span class="ic"><Icon name={t.icon} size={16} /></span><span class="lb">{t.label}</span></button>
-					{/each}
+			<div class="sf-anchor">
+					<button type="button" class="sf-btn" bind:this={sfBtn} aria-haspopup={phone ? 'dialog' : 'menu'} aria-expanded={sfMenu} aria-label="Filter{filterCount ? `, ${filterCount} on` : ''}" onclick={sfToggle}>
+						<svg class="sf-funnel" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
+						<span class="sf-v">Filter</span>
+						{#if filterCount}<span class="sf-badge" aria-hidden="true">{filterCount}</span>{/if}
+					</button>
+					{#if sfMenu && !phone}
+						<div class="sf-menu" role="menu" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys}>
+							{@render filterItems()}
+						</div>
+					{/if}
 				</div>
-			</div>
 		</div>
 	</div>
-
+	{#if sfMenu && phone}
+		<div class="sf-scrim" aria-hidden="true" transition:fade={{ duration: ms(160) }}></div>
+		<div class="sf-sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} transition:fly={{ y: 40, duration: ms(220), easing: cubicOut }}>
+			<div class="sf-grab" aria-hidden="true"></div>
+			<div role="menu" aria-label="Filter">{@render filterItems()}</div>
+		</div>
+	{/if}
 
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each cardsShown as a, i (a.id)}
@@ -376,53 +411,23 @@
 	button { font: inherit; color: inherit; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-	/* The toolbar: tabs left, filter and view right. */
+	/* The toolbar: tabs left, the Filter button right. */
 	.tcap { position: relative; z-index: 6; }
 	/* Status bar: slim pills. Bar 40 = 1 border + 3 inset + 32 pill + 3 + 1; pill radius 9 = bar radius 12 - inset 3.
 	   Only the picked tab is raised; its statuses reveal out from behind it onto the track (clip + width + x + fade). */
 	.pw { position: relative; display: flex; align-items: center; flex: none; height: 32px; }
 	.pw .tab { height: 32px; }
 	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
-	/* Glide, not snap: the width eases in and out slowly enough to watch (~0.75s open, ~0.6s fold); the chips follow one after another. */
-	.subwrap { display: grid; grid-template-columns: 0fr; overflow: hidden; transition: grid-template-columns 600ms cubic-bezier(0.45, 0, 0.25, 1); }
-	.pw.pw-open .subwrap { grid-template-columns: 1fr; transition: grid-template-columns 760ms cubic-bezier(0.45, 0, 0.2, 1); }
-	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; margin: 0; padding: 0; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 8%, transparent), inset 0 1px 2px rgb(0 0 0 / 0.18); white-space: nowrap; opacity: 0; transform: translateX(-28px); transition: opacity 420ms cubic-bezier(0.45, 0, 0.25, 1), transform 600ms cubic-bezier(0.45, 0, 0.25, 1), margin 600ms cubic-bezier(0.45, 0, 0.25, 1); }
-	.pw.pw-open .subin { margin: 0 3px 0 6px; padding: 2px; opacity: 1; transform: none; transition: opacity 520ms cubic-bezier(0.45, 0, 0.2, 1) 120ms, transform 760ms cubic-bezier(0.45, 0, 0.2, 1), margin 760ms cubic-bezier(0.45, 0, 0.2, 1); }
-	.subin .stab { height: 26px; padding: 0 9px; border-radius: 6px; opacity: 0; transform: translateX(-10px); transition: opacity 260ms ease, transform 420ms cubic-bezier(0.45, 0, 0.25, 1), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
-	.pw.pw-open .subin .stab { opacity: 1; transform: none; transition: opacity 460ms cubic-bezier(0.45, 0, 0.2, 1) calc(220ms + var(--i, 0) * 70ms), transform 600ms cubic-bezier(0.45, 0, 0.2, 1) calc(160ms + var(--i, 0) * 70ms), background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
-	/* Chips: quiet until picked; the picked one takes a tint of its own tone with readable text in that tone. */
-	.stab { --tc: var(--info, #409cff); --tt: var(--info-text, #409cff); position: relative; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 32px; padding: 0 11px; border: 0; border-radius: 9px; background: none; color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
-	.stab.tn-bad { --tc: var(--fail, #ff6961); --tt: var(--fail-text, #ff6961); }
-	.stab.tn-ok { --tc: var(--ok, #30d158); --tt: var(--ok-text, #30d158); }
-	.stab.tn-wait { --tc: var(--wait, #ffb340); --tt: var(--wait-text, #ffb340); }
-	.stab.tn-soon, .stab.tn-off { --tc: var(--text-muted); --tt: var(--text); }
-	.stab:first-child { margin-left: 4px; }
-	.stab b { font-weight: 600; font-variant-numeric: tabular-nums; opacity: 0.7; }
-	.stab:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
-	.stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.stab.stab-on { color: var(--tt); background: color-mix(in srgb, var(--tc) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 30%, transparent); }
-	.stab.stab-on b { opacity: 1; }
-	.stab .dd { background: var(--tc); }
-	@media (prefers-reduced-motion: reduce) { .subwrap, .pw.pw-open .subwrap { transition: none; } .subin, .pw.pw-open .subin, .subin .stab, .pw.pw-open .subin .stab { transform: none; transition: opacity 120ms linear; } }
 	/* Coarse pointers keep a 44px target without fattening the bar. */
-	@media (pointer: coarse) { .tab::after, .stab::after, .it::after { content: ''; position: absolute; inset: -6px 0; } }
+	@media (pointer: coarse) { .tab::after, .sf-btn::after { content: ''; position: absolute; inset: -6px 0; } }
 	.dd { width: 6px; height: 6px; border-radius: 50%; }
-	.pick { margin-left: 4px; color: color-mix(in srgb, var(--text) 70%, transparent); font-weight: 500; }
-	/* One row that never wraps: opening a tab's statuses must not push anything to a new line. */
+	/* One row that never wraps: tabs left, the status control and the type filter right. */
 	.toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px; }
 	.toolbar .tcap { flex: 0 1 auto; min-width: 0; }
 	.toolbar .tabs { max-width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
 	.toolbar .tabs::-webkit-scrollbar { display: none; }
 	.toolbar .right { flex: none; }
-	/* Desktop: the type filter (and Approve all) sit up beside the page title, so the status tabs get the whole row and never squeeze. */
-	@media (min-width: 768px) {
-		.toolbar { position: relative; }
-		.toolbar .right { position: absolute; right: 0; bottom: calc(100% + 23px); }
-	}
-	/* While statuses are open, the type filter steps back to icons to give them room. */
-	.seg .lb { display: inline-block; max-width: 90px; overflow: hidden; transition: max-width 500ms cubic-bezier(0.45, 0, 0.2, 1), opacity 300ms cubic-bezier(0.45, 0, 0.2, 1); }
 	.right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
 	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 40px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 0; border-radius: 9px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: 500 13.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out), background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.tab:hover, .tab[aria-pressed='true'] { color: var(--text); }
@@ -431,18 +436,48 @@
 	.n { opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
 	.tab .fail-dot { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
-	.cap { display: flex; align-items: center; height: 40px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	.seg { position: relative; display: flex; align-items: stretch; gap: 2px; height: 32px; }
-	.seg .plate { border-radius: 9px; }
-	.it { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 9px; background: none; color: var(--text); cursor: pointer; transition: background 160ms var(--ease-out), transform 180ms var(--ez); }
-	.ic { display: grid; place-items: center; width: 16px; height: 16px; }
-	.lb { white-space: nowrap; font: 500 13px/1 var(--font-ui); color: var(--text-muted); transition: color 160ms var(--ease-out); }
-	.it:hover .lb, .it[aria-pressed='true'] .lb { color: var(--text); }
-	.it:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); }
-	.it:active { transform: scale(0.97); }
 	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
 	.approve-all:hover { background: var(--surface-2); }
 	.approve-all:active { transform: scale(0.96); }
+
+	/* The Filter button and its menu (Status for this tab, then Type). Tones: failed red, live steps blue, ready green, waiting amber, the rest muted. */
+	.sf-t-fail { --sc: var(--fail, #ff6961); --st: var(--fail-text, var(--fail, #ff6961)); }
+	.sf-t-info { --sc: var(--info, #409cff); --st: var(--info-text, var(--info, #409cff)); }
+	.sf-t-ok { --sc: var(--ok, #30d158); --st: var(--ok-text, var(--ok, #30d158)); }
+	.sf-t-wait { --sc: var(--wait, #ffb340); --st: var(--wait-text, var(--wait, #ffb340)); }
+	.sf-t-off { --sc: var(--text-muted); --st: var(--text); }
+	.sf-d { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--sc, var(--text-muted)); }
+	.sf-anchor { position: relative; }
+	.sf-btn { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
+	.sf-btn:hover, .sf-btn[aria-expanded='true'] { background: var(--surface-2); }
+	.sf-funnel { color: var(--text-muted); }
+	.sf-badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--info, #409cff); color: #fff; font: 600 11px/18px var(--font-ui); text-align: center; }
+	.sf-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; max-height: min(420px, 70vh); overflow-y: auto; padding: 4px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); animation: sf-in 160ms var(--ease-out) both; }
+	.sf-menu:focus { outline: none; }
+	@keyframes sf-in { from { opacity: 0; transform: translateY(-4px); } }
+	.sf-mh { padding: 8px 10px 4px; color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
+	.sf-sep { height: 1px; margin: 4px 6px; background: var(--line); }
+	.sf-mi { display: flex; align-items: center; gap: 10px; width: 100%; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: 500 13px/1 var(--font-ui); text-align: left; white-space: nowrap; cursor: pointer; }
+	.sf-mi:hover, .sf-mi:focus-visible, .sf-mi[aria-checked='true'] { background: color-mix(in srgb, var(--text) 8%, transparent); }
+	.sf-mi:focus-visible { box-shadow: var(--focus-ring); }
+	.sf-mi.sf-t-fail .sf-w { color: var(--st); }
+	.sf-tick { display: grid; place-items: center; width: 14px; color: var(--info-text, var(--info, #409cff)); visibility: hidden; }
+	.sf-mi[aria-checked='true'] .sf-tick { visibility: visible; }
+	.sf-ti { display: grid; place-items: center; color: var(--text-muted); }
+	.sf-c { margin-left: auto; padding-left: 16px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	/* 5 on phones: a bottom sheet above the tab bar. */
+	.sf-scrim { position: fixed; inset: 0; z-index: 96; background: rgb(0 0 0 / 0.45); }
+	.sf-sheet { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar, 64px) + env(safe-area-inset-bottom, 0px)); z-index: 97; max-height: calc(100dvh - var(--tabbar, 64px) - env(safe-area-inset-bottom, 0px) - 48px); overflow-y: auto; box-sizing: border-box; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line-strong); border-radius: 18px 18px 0 0; background: var(--surface-2); box-shadow: 0 -20px 50px rgb(0 0 0 / 0.45); }
+	.sf-sheet:focus { outline: none; }
+	.sf-sheet .sf-mi { height: 48px; font-size: 15px; }
+	.sf-grab { width: 40px; height: 4px; margin: 0 auto 6px; border-radius: 2px; background: var(--line-strong); }
+	@media (pointer: coarse) { .sf-mi { height: 44px; } }
+	@media (max-width: 767px) {
+		.sf-btn { width: 100%; justify-content: flex-start; }
+		.sf-badge { margin-left: auto; }
+		.sf-menu { left: 0; right: 0; }
+	}
+	@media (prefers-reduced-motion: reduce) { .sf-menu { animation: none; } }
 
 	/* Window cards: a dark card (in both themes, it is led by the art), the title's wide art
 	   with the title and its facts on it, then a frosted sheet over the art's foot holding
@@ -537,9 +572,6 @@
 		.tabs::-webkit-scrollbar { display: none; }
 		.tab { flex: none; padding: 0 12px; }
 		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; margin-left: 0; }
-		.cap { width: 100%; }
-		.cap .seg { flex: 1; }
-		.it { flex: 1; width: auto; gap: 5px; padding: 0 6px; }
 		.approve-all { justify-content: center; height: 48px; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 		.ban { height: 140px; }
@@ -557,7 +589,7 @@
 		.win :global(.ctl.top) { right: 64px !important; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.plate, .bc, .fill, .it, .win[open], .win::backdrop, .ban-img, img.ban-img { transition: none; animation: none; }
+		.bc, .fill, .win[open], .win::backdrop, .ban-img, img.ban-img { transition: none; animation: none; }
 		.bc:hover, .bc:hover .ban-img:not(.soft) { transform: none; }
 	}
 </style>
