@@ -182,7 +182,7 @@ func TestPickRulesInUseCountsEveryReference(t *testing.T) {
 		} `json:"in_use"`
 	}
 	_ = json.Unmarshal(do(t, "DELETE", path, "", 409), &e)
-	if e.InUse.Versions != 1 || e.InUse.Wishlist != 2 || !strings.Contains(e.Error, "1 Version") || !strings.Contains(e.Error, "Requests") {
+	if e.InUse.Versions != 1 || e.InUse.Wishlist != 2 || !strings.Contains(e.Error, "1 Version") || !strings.Contains(e.Error, "Request setting") {
 		t.Fatalf("delete in use %+v", e)
 	}
 }
