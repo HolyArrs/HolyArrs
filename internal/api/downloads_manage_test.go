@@ -272,7 +272,8 @@ func TestLocationAndSpeedRoutes(t *testing.T) {
 	do(t, "POST", base+"/speed-limits", `{"hashes":`+hs+`,"down":-1,"up":0}`, 400)
 }
 
-// Without the settings permission a move stays inside the Downloader's folders.
+// Without the settings permission a move of a HolyArrs-sent torrent stays
+// inside the Downloader's folders; one HolyArrs did not send cannot move.
 func TestLocationWithoutSettings(t *testing.T) {
 	x, f, _ := manageBase(t)
 	var did int64
@@ -285,13 +286,17 @@ func TestLocationWithoutSettings(t *testing.T) {
 		x.api.setLocation(rec, req)
 		return rec.Code
 	}
-	if c := call(`{"hashes":["` + outHash + `"],"folder":"/etc"}`); c != 400 {
+	// A torrent HolyArrs did not send needs the settings permission to move at all.
+	if c := call(`{"hashes":["` + outHash + `"],"category":"linux","folder":"iso/old"}`); c != 403 {
+		t.Fatalf("outside torrent: %d", c)
+	}
+	if c := call(`{"hashes":["` + ownHash + `"],"folder":"/etc"}`); c != 400 {
 		t.Fatalf("absolute: %d", c)
 	}
-	if c := call(`{"hashes":["` + outHash + `"],"folder":"../up"}`); c != 400 {
+	if c := call(`{"hashes":["` + ownHash + `"],"folder":"../up"}`); c != 400 {
 		t.Fatalf("traversal: %d", c)
 	}
-	if c := call(`{"hashes":["` + outHash + `"],"category":"linux","folder":"iso/old"}`); c != 200 || !strings.Contains(f.saw(), "location=%2Fdata%2Flinux%2Fiso%2Fold") {
+	if c := call(`{"hashes":["` + ownHash + `"],"category":"linux","folder":"iso/old"}`); c != 200 || !strings.Contains(f.saw(), "location=%2Fdata%2Flinux%2Fiso%2Fold") {
 		t.Fatalf("subfolder: %d %s", c, f.saw())
 	}
 }
