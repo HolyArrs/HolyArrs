@@ -94,14 +94,6 @@
 	let statusPick = $state<{ tab: ApproverTab | ''; word: string }>({ tab: '', word: '' });
 	/** The statuses in one tab, in the page's order (Processing: failed first). */
 	const FLOW = ['Pending', 'Upcoming', 'Searching', 'Downloading', 'Importing', 'Processing', 'Ready'];
-	function menuKeys(e: KeyboardEvent) {
-		const items = [...(e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.dr')];
-		const i = items.indexOf(document.activeElement as HTMLElement);
-		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-			e.preventDefault();
-			items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
-		}
-	}
 	const statusesIn = (t: ApproverTab) => {
 		const n = new Map<string, { count: number; tone: Life['tone'] }>();
 		for (const a of ctx.viewed) {
@@ -118,60 +110,31 @@
 	$effect(() => {
 		if (statusPick.word && !status) statusPick = { tab: '', word: '' };
 	});
-	// Each tab's own menu, centred under that tab: hover (or keyboard focus, or a second tap) opens it,
-	// and picking a status goes straight to that tab, filtered.
-	const tabEls: Partial<Record<ApproverTab, HTMLElement>> = {};
-	let capEl = $state<HTMLElement>();
-	let dropTab = $state<ApproverTab | ''>('');
-	let dropX = $state(0);
-	let hideT: ReturnType<typeof setTimeout> | undefined;
-	const dropItems = $derived(dropTab ? statusesIn(dropTab) : []);
-	function openDrop(t: ApproverTab) {
-		clearTimeout(hideT);
-		const el = tabEls[t];
-		if (!el || !capEl || statusesIn(t).length < 2) return void (dropTab = '');
-		const a = el.getBoundingClientRect();
-		const cap = capEl.getBoundingClientRect();
-		const want = a.left + a.width / 2 - cap.left;
-		// Kept on screen near the edges (phones).
-		const half = 108;
-		const lo = half + 8 - cap.left;
-		const hi = window.innerWidth - half - 8 - cap.left;
-		dropX = Math.min(Math.max(want, lo), Math.max(lo, hi));
-		dropTab = t;
-	}
-	function closeDrop(now = false) {
-		clearTimeout(hideT);
-		if (now) dropTab = '';
-		else hideT = setTimeout(() => (dropTab = ''), 140);
-	}
-	function pickTab(t: ApproverTab, e?: MouseEvent) {
-		// A mouse opens the menu by hovering; touch and keyboard open it with a second press on the open tab.
-		const viaMouse = (e as PointerEvent | undefined)?.pointerType === 'mouse';
-		if (ctx.approverTab === t && !viaMouse && dropTab !== t) return openDrop(t);
-		closeDrop(true);
-		if (ctx.approverTab === t) return;
+	// Sub-tabs: clicking the open tab grows the bar to the right (downward on phones) into a tinted
+	// strip of that tab's statuses; clicking it again, or Escape, folds it back.
+	let subOpen = $state(false);
+	const subItems = $derived(statusesIn(ctx.approverTab));
+	const canSub = $derived(subItems.length > 1);
+	$effect(() => {
+		if (!canSub) subOpen = false;
+	});
+	function pickTab(t: ApproverTab) {
+		if (ctx.approverTab === t) {
+			if (canSub) subOpen = !subOpen;
+			return;
+		}
 		statusPick = { tab: '', word: '' };
 		ctx.setApproverTab(t);
 	}
-	function pickStatus(t: ApproverTab, word: string) {
-		const same = status === word && ctx.approverTab === t;
-		if (ctx.approverTab !== t) ctx.setApproverTab(t);
-		statusPick = same ? { tab: '', word: '' } : { tab: t, word };
-		closeDrop(true);
+	function pickStatus(word: string) {
+		const same = status === word;
+		statusPick = same ? { tab: '', word: '' } : { tab: ctx.approverTab, word };
 	}
-	// The menu also closes on Escape, on a press outside it, and when focus leaves the tabs.
 	function capKeys(e: KeyboardEvent) {
-		if (e.key === 'Escape' && dropTab) {
+		if (e.key === 'Escape' && subOpen) {
 			e.stopPropagation();
-			closeDrop(true);
+			subOpen = false;
 		}
-	}
-	function outside(e: PointerEvent) {
-		if (dropTab && capEl && e.target instanceof Node && !capEl.contains(e.target)) closeDrop(true);
-	}
-	function capOut(e: FocusEvent) {
-		if (!(e.relatedTarget instanceof Node && capEl?.contains(e.relatedTarget))) closeDrop(true);
 	}
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
 
@@ -191,7 +154,6 @@
 	const beats = new Set<ReturnType<typeof setTimeout>>();
 	onDestroy(() => {
 		for (const t of beats) clearTimeout(t);
-		clearTimeout(hideT);
 	});
 	function approveOne(a: Ask) {
 		if (approving.has(a.id)) return;
@@ -290,28 +252,27 @@
 	}
 </script>
 
-<svelte:window onpointerdown={outside} />
-
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tcap" bind:this={capEl} role="presentation" onpointerleave={(e) => e.pointerType === 'mouse' && closeDrop()} onkeydown={capKeys} onfocusout={capOut}>
+		<div class="tcap" role="presentation" onkeydown={capKeys}>
 		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts, status]}>
 			<span class="plate" aria-hidden="true"></span>
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
-				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={(e) => pickTab(t.tab, e)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
+				{@const here = ctx.approverTab === t.tab}
+				<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-expanded={here && canSub ? subOpen : undefined} aria-controls={here && canSub ? 'sub-tabs' : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}{#if here && status && !subOpen}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}{#if here && canSub}<span class="chev" class:chev-open={subOpen} aria-hidden="true"><Icon name="chevronRight" size={12} /></span>{/if}</button>
 			{/each}
+			{#if canSub}
+				<div class="stx" class:stx-open={subOpen} id="sub-tabs" role="group" aria-label="{approverTabs.find((x) => x.tab === ctx.approverTab)?.label} by status" inert={!subOpen}>
+					<div class="stx-in">
+						{#each subItems as x (x.word)}
+							<button type="button" class="sc" class:sc-fail={x.tone === 'bad'} aria-pressed={status === x.word} aria-label="{x.word}, {x.count}" onclick={() => pickStatus(x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<span class="sn">{x.count}</span></button>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
-		{#if dropTab}
-			{@const at = dropTab}
-			<div class="drop" role="menu" tabindex="-1" aria-label="{approverTabs.find((x) => x.tab === at)?.label} by status" style:left="{dropX}px" onmouseenter={() => clearTimeout(hideT)} onkeydown={menuKeys} transition:fly={{ y: -4, duration: ms(160), easing: cubicOut }}>
-				{#snippet row(x: { word: string; count: number; tone: Life['tone'] })}
-					<button type="button" role="menuitemcheckbox" class="dr" class:dr-fail={x.tone === 'bad'} aria-checked={ctx.approverTab === at && status === x.word} aria-label="{x.word}, {x.count}" onclick={() => pickStatus(at, x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span><span class="dw">{x.word}</span><span class="dn">{x.count}</span></button>
-				{/snippet}
-				{#each dropItems as x (x.word)}{@render row(x)}{/each}
-			</div>
-		{/if}
 		</div>
 		<div class="right">
 			{#if ctx.approverTab === 'pending' && cardsShown.filter(waiting).length > 1}
@@ -410,22 +371,30 @@
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* The toolbar: tabs left, filter and view right. */
-	/* Each tab's menu slides out from under the bar, centred on that tab. */
 	.tcap { position: relative; z-index: 6; }
-	/* Slim menu, as on Downloads: Failed first, then the steps in order. */
-	.drop { position: absolute; top: calc(100% + 6px); transform: translateX(-50%); width: 196px; box-sizing: border-box; display: flex; flex-direction: column; gap: 1px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-1); box-shadow: 0 12px 32px -10px rgb(0 0 0 / 0.45); }
-	.drop:focus { outline: none; }
-	.dr { position: relative; display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 10px; height: 30px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font: 500 12.5px/1 var(--font-ui); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
-	.dr:hover, .dr:focus-visible { background: var(--surface-3); outline: none; }
-	.dr[aria-checked='true'] { background: color-mix(in srgb, var(--text) 12%, transparent); }
-	.dr.dr-fail .dw { color: var(--fail-text, var(--fail, #e5484d)); }
-	.dn { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.dd { position: relative; z-index: 1; width: 7px; height: 7px; border-radius: 50%; background: var(--info, #3b82f6); }
+	/* Sub-tabs: a tinted strip that grows out of the bar to the right (rows on phones), so it reads as a level below the tabs. */
+	.stx { display: grid; grid-template-columns: 0fr; align-self: stretch; margin-left: 0; transition: grid-template-columns 340ms var(--ez, cubic-bezier(0.2, 0.8, 0.2, 1)), margin 340ms var(--ez, ease); }
+	.stx.stx-open { grid-template-columns: 1fr; margin-left: 6px; }
+	.stx-in { min-width: 0; overflow: hidden; display: flex; align-items: center; gap: 2px; padding: 0; border-radius: 10px; background: color-mix(in srgb, var(--info, #3b82f6) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #3b82f6) 30%, transparent); opacity: 0; transition: opacity 180ms var(--ease-out), padding 340ms var(--ez, ease); }
+	.stx.stx-open .stx-in { opacity: 1; padding: 0 3px; transition-delay: 90ms, 0ms; }
+	.sc { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: 500 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.sc:hover { background: color-mix(in srgb, var(--info, #3b82f6) 16%, transparent); }
+	.sc:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.sc[aria-pressed='true'] { background: var(--info, #3b82f6); color: #fff; }
+	.sc[aria-pressed='true'] .dd { background: #fff; }
+	.sc.sc-fail { color: var(--fail-text, var(--fail, #e5484d)); }
+	.sc.sc-fail[aria-pressed='true'] { background: var(--fail, #e5484d); color: #fff; }
+	.sn { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.sc[aria-pressed='true'] .sn { color: rgb(255 255 255 / 0.8); }
+	.chev { display: inline-grid; place-items: center; margin-left: 2px; color: var(--text-muted); transition: transform 300ms var(--ez, ease); }
+	.chev.chev-open { transform: rotate(180deg); }
+	@media (prefers-reduced-motion: reduce) { .stx, .stx-in, .chev { transition: none; } }
+	@media (pointer: coarse) { .sc { height: 44px; } }
+	.dd { width: 7px; height: 7px; border-radius: 50%; background: var(--info, #3b82f6); }
 	.dd.tone-bad { background: var(--fail, #e5484d); }
 	.dd.tone-ok { background: var(--ok, #3fb950); }
 	.dd.tone-soon, .dd.tone-off { background: var(--text-muted); }
 	.dd.tone-wait { background: var(--wait, #e5a50a); }
-	@media (pointer: coarse) { .dr { height: 44px; } }
 	.pick { margin-left: 4px; color: var(--text-muted); font-weight: 500; }
 	.pick.pick-bad { color: var(--fail-text, var(--fail, #e5484d)); }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
@@ -541,8 +510,12 @@
 		.desktop { gap: 12px; padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
 		.toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
 		.tcap { width: 100%; }
-		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
-		.tabs::-webkit-scrollbar { display: none; }
+		.tabs { width: 100%; height: auto; min-height: 52px; flex-wrap: wrap; }
+		/* Phones: the sub-tabs grow downward as a second row inside the bar. */
+		.stx { flex-basis: 100%; grid-template-columns: 1fr; grid-template-rows: 0fr; margin: 0; transition: grid-template-rows 340ms var(--ez, ease), margin 340ms var(--ez, ease); }
+		.stx.stx-open { grid-template-rows: 1fr; margin: 4px 0 0; }
+		.stx-in { min-height: 0; flex-wrap: wrap; }
+		.stx.stx-open .stx-in { padding: 3px; }
 		.tab { flex: none; padding: 0 14px; font: var(--t-footnote); font-weight: 600; }
 		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
 		.cap { width: 100%; }
