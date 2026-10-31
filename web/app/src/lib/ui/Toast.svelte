@@ -4,7 +4,7 @@
 
 	// One notification, iOS style: a frosted card with an app-style icon tile,
 	// a bold title, a one-line body and a time. ToastList stacks and animates them.
-	// `compact` shrinks it to a pill (tap to open again); swipe up or × dismisses.
+	// `compact` shrinks it to a pill (tap to open again); swipe down or × dismisses.
 	type Tone = 'ok' | 'fail' | 'info' | 'warn';
 	let {
 		text,
@@ -39,12 +39,12 @@
 	}
 	function move(e: PointerEvent) {
 		if (startY === null) return;
-		dy = Math.min(0, e.clientY - startY);
+		dy = Math.max(0, e.clientY - startY);
 	}
 	function up() {
 		if (startY === null) return;
 		startY = null;
-		if (dy < -28) ondismiss?.();
+		if (dy > 28) ondismiss?.();
 		dy = 0;
 	}
 	function key(e: KeyboardEvent) {
@@ -62,7 +62,7 @@
 	</button>
 {:else}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="ui-toast card {tone}" style:transform={dy ? `translateY(${dy}px)` : undefined} style:opacity={dy ? Math.max(0.3, 1 + dy / 120) : undefined} class:drag={dy !== 0} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onkeydown={key}>
+	<div class="ui-toast card {tone}" style:transform={dy ? `translateY(${dy}px)` : undefined} style:opacity={dy ? Math.max(0.3, 1 - dy / 120) : undefined} class:drag={dy !== 0} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onkeydown={key}>
 		<span class="tile"><Icon name={glyph} size={20} stroke={2} /></span>
 		<span class="body">
 			{#if title}
@@ -104,7 +104,7 @@
 	.pill-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.pill:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.x { width: 30px; height: 30px; flex: none; align-self: flex-start; display: grid; place-items: center; border-radius: 50%; color: var(--text-muted); }
-	.act { min-height: 34px; padding: 0 12px; border-radius: 999px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; flex: none; }
+	.act { min-height: 34px; padding: 0 12px; border-radius: 999px; color: var(--text); font: var(--t-subhead); font-weight: 700; flex: none; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent); }
 	.act:hover, .x:hover { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 	.act:focus-visible, .x:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { .x { width: 44px; height: 44px; margin: -7px -4px -7px 0; } }

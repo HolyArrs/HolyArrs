@@ -15,8 +15,8 @@
 	} from './metadata-health.svelte.ts';
 	import { session } from './session.svelte.ts';
 
-	// All notifications drop in from the top centre, under the top bar, with a
-	// soft spring and leave upwards, quicker; reduced motion fades only.
+	// All notifications slide up at the bottom centre (above the tab bar on
+	// phones) with a soft spring and leave downwards, quicker; reduced motion fades only.
 	const toastIn = dropIn;
 	const toastOut = dropOut;
 
@@ -75,13 +75,16 @@
 		position: fixed;
 		z-index: 90;
 		left: 50%;
-		top: calc(var(--topbar) + var(--s-2) + env(safe-area-inset-top));
+		bottom: calc(var(--s-4, 16px) + env(safe-area-inset-bottom, 0px));
 		transform: translateX(-50%);
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-2);
 		width: min(400px, calc(100vw - 32px));
 		pointer-events: none;
+	}
+	@media (max-width: 767px) {
+		.toasts { bottom: calc(var(--tabbar, 64px) + 12px + env(safe-area-inset-bottom, 0px)); }
 	}
 	.slot { display: flex; flex-direction: column; }
 </style>

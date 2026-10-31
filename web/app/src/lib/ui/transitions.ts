@@ -42,15 +42,15 @@ export function popOut(node: Element): TransitionConfig {
 	return scale(node, { start: 0.97, opacity: 0, duration: DUR.fast, easing: easeIn });
 }
 
-/** A notification dropping in from the top. */
+/** A notification sliding up from the bottom. */
 export function dropIn(node: Element): TransitionConfig {
 	if (reducedMotion()) return calm(node, DUR.fast);
-	return fly(node, { y: -24, duration: DUR.slow, easing: easeSpring });
+	return fly(node, { y: 24, duration: DUR.slow, easing: easeSpring });
 }
-/** A notification leaving upwards. */
+/** A notification leaving downwards. */
 export function dropOut(node: Element): TransitionConfig {
 	if (reducedMotion()) return calm(node, DUR.fast);
-	return fly(node, { y: -16, duration: DUR.fast, easing: easeIn });
+	return fly(node, { y: 16, duration: DUR.fast, easing: easeIn });
 }
 
 /** How long a list item takes to slide to its new place (animate:flip). 0 under reduced motion. */
