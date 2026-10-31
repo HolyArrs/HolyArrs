@@ -49,11 +49,8 @@
 		const place = () => {
 			const on = node.querySelector<HTMLElement>(':scope > [aria-pressed="true"]');
 			if (!on) return node.style.setProperty('--io', '0');
-			// The selected tab's plate grows to hold its open sub-tabs (desktop; phones put them on a row below).
-			const sub = on.nextElementSibling as HTMLElement | null;
-			const inline = sub?.classList.contains('stx') && getComputedStyle(sub).flexBasis !== '100%';
 			node.style.setProperty('--ix', `${on.offsetLeft}px`);
-			node.style.setProperty('--iw', `${inline && sub ? sub.offsetLeft + sub.offsetWidth - on.offsetLeft + 3 : on.offsetWidth}px`);
+			node.style.setProperty('--iw', `${on.offsetWidth}px`);
 			node.style.setProperty('--ih', `${on.offsetHeight}px`);
 			node.style.setProperty('--iy', `${on.offsetTop}px`);
 			node.style.setProperty('--io', '1');
@@ -61,11 +58,7 @@
 		void tick().then(place);
 		const ro = new ResizeObserver(place);
 		ro.observe(node);
-		// Follow the strip while it grows.
-		const mo = new MutationObserver(() => node.querySelectorAll(':scope > .stx').forEach((x) => ro.observe(x)));
-		mo.observe(node, { childList: true });
-		node.querySelectorAll(':scope > .stx').forEach((x) => ro.observe(x));
-		return { update: () => void tick().then(place), destroy: () => (ro.disconnect(), mo.disconnect()) };
+		return { update: () => void tick().then(place), destroy: () => ro.disconnect() };
 	}
 
 	// What an empty tab says.
@@ -117,30 +110,39 @@
 	$effect(() => {
 		if (statusPick.word && !status) statusPick = { tab: '', word: '' };
 	});
-	// Sub-tabs: clicking the open tab grows the bar to the right (downward on phones) into a tinted
-	// strip of that tab's statuses; clicking it again, or Escape, folds it back.
-	let subOpen = $state(false);
-	const subItems = $derived(statusesIn(ctx.approverTab));
-	const canSub = $derived(subItems.length > 1);
-	$effect(() => {
-		if (!canSub) subOpen = false;
-	});
-	function pickTab(t: ApproverTab) {
-		if (ctx.approverTab === t) {
-			if (canSub) subOpen = !subOpen;
-			return;
-		}
-		statusPick = { tab: '', word: '' };
-		ctx.setApproverTab(t);
+	// Status pills, as on the Downloads page: the picked tab is a raised pill, and a tab's statuses open
+	// inside its pill when it is picked or hovered; leaving the bar folds them a moment later.
+	let openTab = $state<ApproverTab | ''>('');
+	let foldT: ReturnType<typeof setTimeout> | undefined;
+	const subsOf = (t: ApproverTab) => {
+		const x = statusesIn(t);
+		return x.length > 1 ? x : [];
+	};
+	function unfold(t: ApproverTab) {
+		clearTimeout(foldT);
+		openTab = subsOf(t).length ? t : '';
 	}
-	function pickStatus(word: string) {
-		const same = status === word;
-		statusPick = same ? { tab: '', word: '' } : { tab: ctx.approverTab, word };
+	function foldSoon(ms = 1500) {
+		clearTimeout(foldT);
+		foldT = setTimeout(() => (openTab = ''), ms);
+	}
+	function pickTab(t: ApproverTab) {
+		if (ctx.approverTab !== t) {
+			statusPick = { tab: '', word: '' };
+			ctx.setApproverTab(t);
+		}
+		unfold(t);
+	}
+	function pickStatus(t: ApproverTab, word: string, e?: MouseEvent) {
+		if (ctx.approverTab !== t) ctx.setApproverTab(t);
+		// Touch has no "leave": fold a moment after the pick.
+		if ((e as PointerEvent | undefined)?.pointerType && (e as PointerEvent).pointerType !== 'mouse') foldSoon();
+		statusPick = status === word && ctx.approverTab === t ? { tab: '', word: '' } : { tab: t, word };
 	}
 	function capKeys(e: KeyboardEvent) {
-		if (e.key === 'Escape' && subOpen) {
+		if (e.key === 'Escape' && openTab) {
 			e.stopPropagation();
-			subOpen = false;
+			openTab = '';
 		}
 	}
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
@@ -161,6 +163,7 @@
 	const beats = new Set<ReturnType<typeof setTimeout>>();
 	onDestroy(() => {
 		for (const t of beats) clearTimeout(t);
+		clearTimeout(foldT);
 	});
 	function approveOne(a: Ask) {
 		if (approving.has(a.id)) return;
@@ -261,23 +264,26 @@
 
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tcap" role="presentation" onkeydown={capKeys}>
-		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts, status, subOpen]}>
-			<span class="plate" aria-hidden="true"></span>
+		<div class="tcap" role="presentation" onkeydown={capKeys} onpointerleave={(e) => e.pointerType === 'mouse' && foldSoon()}>
+		<div class="tabs" role="group" aria-label="Status">
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
 				{@const here = ctx.approverTab === t.tab}
-				<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-expanded={here && canSub ? subOpen : undefined} aria-controls={here && canSub ? 'sub-tabs' : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}{#if here && status && !subOpen}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}{#if here && canSub}<span class="chev" class:chev-open={subOpen} aria-hidden="true"><Icon name="chevronRight" size={12} /></span>{/if}</button>
-				{#if here && canSub}
-					<div class="stx" class:stx-open={subOpen} id="sub-tabs" role="group" aria-label="{approverTabs.find((x) => x.tab === ctx.approverTab)?.label} by status" inert={!subOpen}>
-						<div class="stx-in">
-							{#each subItems as x (x.word)}
-								<button type="button" class="sc" class:sc-fail={x.tone === 'bad'} aria-pressed={status === x.word} aria-label="{x.word}, {x.count}" onclick={() => pickStatus(x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<span class="sn">{x.count}</span></button>
-							{/each}
+				{@const subs = subsOf(t.tab)}
+				{@const open = openTab === t.tab && subs.length > 0}
+				<div class="pw" class:on={here} class:pw-open={open} class:leaf={here && !status && open} role="presentation" onpointerenter={(e) => e.pointerType === 'mouse' && unfold(t.tab)}>
+					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-expanded={subs.length ? open : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && unfold(t.tab)}>{t.label}{#if here && status && !open}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
+					{#if subs.length}
+						<div class="subwrap" inert={!open}>
+							<div class="subin" role="group" aria-label="{t.label} by status">
+								{#each subs as x (x.word)}
+									<button type="button" class="stab" class:stab-fail={x.tone === 'bad'} class:on={here && status === x.word} aria-pressed={here && status === x.word} aria-label="{x.word}, {x.count}" onclick={(e) => pickStatus(t.tab, x.word, e)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<b>{x.count}</b></button>
+								{/each}
+							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</div>
 			{/each}
 		</div>
 		</div>
@@ -379,24 +385,24 @@
 
 	/* The toolbar: tabs left, filter and view right. */
 	.tcap { position: relative; z-index: 6; }
-	/* Sub-tabs: a tinted strip that grows out of the bar to the right (rows on phones), so it reads as a level below the tabs. */
-	.stx { position: relative; z-index: 1; display: grid; grid-template-columns: 0fr; align-self: stretch; margin-left: 0; transition: grid-template-columns 340ms var(--ez, cubic-bezier(0.2, 0.8, 0.2, 1)), margin 340ms var(--ez, ease); }
-	.stx.stx-open { grid-template-columns: 1fr; margin: 0 3px 0 -6px; }
-	.stx-in { min-width: 0; overflow: hidden; display: flex; align-items: center; gap: 2px; padding: 0; border-radius: 10px; background: color-mix(in srgb, var(--info, #3b82f6) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #3b82f6) 30%, transparent); opacity: 0; transition: opacity 180ms var(--ease-out), padding 340ms var(--ez, ease); }
-	.stx.stx-open .stx-in { opacity: 1; padding: 0 3px; transition-delay: 90ms, 0ms; }
-	.sc { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: 500 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.sc:hover { background: color-mix(in srgb, var(--info, #3b82f6) 16%, transparent); }
-	.sc:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.sc[aria-pressed='true'] { background: var(--info, #3b82f6); color: #fff; }
-	.sc[aria-pressed='true'] .dd { background: #fff; }
-	.sc.sc-fail { color: var(--fail-text, var(--fail, #e5484d)); }
-	.sc.sc-fail[aria-pressed='true'] { background: var(--fail, #e5484d); color: #fff; }
-	.sn { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.sc[aria-pressed='true'] .sn { color: rgb(255 255 255 / 0.8); }
-	.chev { display: inline-grid; place-items: center; margin-left: 2px; color: var(--text-muted); transition: transform 300ms var(--ez, ease); }
-	.chev.chev-open { transform: rotate(180deg); }
-	@media (prefers-reduced-motion: reduce) { .stx, .stx-in, .chev { transition: none; } }
-	@media (pointer: coarse) { .sc { height: 44px; } }
+	/* Status pills, as on Downloads: the picked tab is a raised, lighter pill on the darker track; its statuses open inside it. */
+	.pw { display: flex; align-items: center; flex: none; height: 44px; border-radius: 10px; background: transparent; transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+	.pw.on { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); }
+	.pw .tab { height: 44px; }
+	.subwrap { display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 260ms var(--ez, cubic-bezier(0.2, 0.8, 0.2, 1)), opacity 200ms var(--ease-out); }
+	.pw.pw-open .subwrap { grid-template-columns: 1fr; opacity: 1; }
+	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; }
+	.pw.pw-open .subin { padding: 0 4px 0 6px; border-left: 1px solid var(--line-strong); }
+	.stab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: color-mix(in srgb, var(--text) 72%, var(--seg-thumb)); font: 500 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.stab b { color: inherit; opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.stab:hover { color: var(--text); }
+	.stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.stab.on { background: var(--accent-soft); color: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
+	.stab.stab-fail { color: var(--fail-text, var(--fail, #e5484d)); }
+	/* Open with nothing picked: the tab itself carries the inner highlight, as on Downloads. */
+	.pw.leaf .tab { background: var(--accent-soft); color: color-mix(in srgb, var(--accent-text) 85%, var(--text)); box-shadow: inset 0 0 0 3px var(--seg-thumb); border-radius: 10px; }
+	@media (prefers-reduced-motion: reduce) { .pw, .subwrap { transition: none; } }
+	@media (pointer: coarse) { .stab { height: 40px; } }
 	.dd { width: 7px; height: 7px; border-radius: 50%; background: var(--info, #3b82f6); }
 	.dd.tone-bad { background: var(--fail, #e5484d); }
 	.dd.tone-ok { background: var(--ok, #3fb950); }
@@ -517,12 +523,8 @@
 		.desktop { gap: 12px; padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
 		.toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
 		.tcap { width: 100%; }
-		.tabs { width: 100%; height: auto; min-height: 52px; flex-wrap: wrap; }
-		/* Phones: the sub-tabs grow downward as a second row inside the bar. */
-		.stx { order: 10; flex-basis: 100%; grid-template-columns: 1fr; grid-template-rows: 0fr; margin: 0; transition: grid-template-rows 340ms var(--ez, ease), margin 340ms var(--ez, ease); }
-		.stx.stx-open { grid-template-rows: 1fr; margin: 4px 0 0; }
-		.stx-in { min-height: 0; flex-wrap: wrap; }
-		.stx.stx-open .stx-in { padding: 3px; }
+		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+		.tabs::-webkit-scrollbar { display: none; }
 		.tab { flex: none; padding: 0 14px; font: var(--t-footnote); font-weight: 600; }
 		.right { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
 		.cap { width: 100%; }
