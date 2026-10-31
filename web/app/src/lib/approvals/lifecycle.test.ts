@@ -41,15 +41,15 @@ describe('lifecycle', () => {
 		expect(lifecycle(ask('approved', 7), { upcoming: '' })).toMatchObject({ label: 'Upcoming' });
 	});
 	it('part of the asked seasons in the Library says how many', () => {
-		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 5 } })).toMatchObject({ stage: 'getting', tone: 'go', label: '2 of 5 ready' });
-		expect(lifecycle(ask('approved', 7), { partial: { have: 1, total: 2, unit: 'seasons' } }).label).toBe('1 of 2 seasons ready');
-		expect(lifecycle(ask('approved', 7), { partial: { have: 3, total: 5, unit: 'albums' } }).label).toBe('3 of 5 albums ready');
+		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 5 } })).toMatchObject({ stage: 'getting', tone: 'go', label: 'Processing · 3 left' });
+		expect(lifecycle(ask('approved', 7), { partial: { have: 1, total: 2, unit: 'seasons' } }).label).toBe('Processing · 1 season left');
+		expect(lifecycle(ask('approved', 7), { partial: { have: 3, total: 5, unit: 'albums' } }).label).toBe('Processing · 2 albums left');
 		// None in: the usual line. All asked for in: Ready.
 		expect(lifecycle(ask('approved', 7), { partial: { have: 0, total: 5 } }).label).toBe('Processing');
 		expect(lifecycle(ask('approved', 7), { partial: { have: 2, total: 2 } })).toMatchObject({ stage: 'ready', tone: 'ok', label: 'Ready' });
 	});
 	it('partial wins over upcoming, upcoming over progress', () => {
-		expect(lifecycle(ask('approved', 7), { partial: { have: 1, total: 2 }, upcoming: 'Mar 3' }).label).toBe('1 of 2 ready');
+		expect(lifecycle(ask('approved', 7), { partial: { have: 1, total: 2 }, upcoming: 'Mar 3' }).label).toBe('Processing · 1 left');
 		expect(lifecycle(ask('approved', 7), { upcoming: 'Mar 3', progress: 0.5 }).label).toBe('Upcoming · out Mar 3');
 	});
 });

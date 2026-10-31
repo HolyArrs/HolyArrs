@@ -24,7 +24,7 @@ export interface LifeFacts {
 	upcoming?: string;
 	/**
 	 * How many of the seasons or albums the ask covers (as approved, never the whole
-	 * catalogue) are in the Library. `unit` adds the word: "1 of 2 seasons ready".
+	 * catalogue) are in the Library. `unit` adds the word: "Processing · 1 season left".
 	 */
 	partial?: { have: number; total: number; unit?: 'seasons' | 'albums' };
 	/** Why it failed, when known. */
@@ -43,8 +43,9 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	// Everything asked for is in: Ready, however much more the title has.
 	if (part && part.total > 0 && part.have >= part.total) return { stage: 'ready', pct: 100, tone: 'ok', label: 'Ready' };
 	if (part && part.total > 0 && part.have > 0) {
-		const unit = part.unit ? ` ${part.unit}` : '';
-		return { stage: 'getting', pct: lo + (hi - lo) * (part.have / part.total), tone: 'go', label: `${part.have} of ${part.total}${unit} ready` };
+		const left = part.total - part.have;
+		const unit = part.unit ? ` ${left === 1 ? part.unit.slice(0, -1) : part.unit}` : '';
+		return { stage: 'getting', pct: lo + (hi - lo) * (part.have / part.total), tone: 'go', label: `Processing · ${left}${unit} left` };
 	}
 	if (facts.upcoming !== undefined) return { stage: 'upcoming', pct: STAGE_WEIGHT.approved, tone: 'soon', label: facts.upcoming ? `Upcoming · out ${facts.upcoming}` : 'Upcoming' };
 	const progress = facts.progress;
