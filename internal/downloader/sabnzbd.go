@@ -221,14 +221,21 @@ type sabHistorySlot struct {
 	Status      string `json:"status"`
 	FailMessage string `json:"fail_message"`
 	Storage     string `json:"storage"`
+	Completed   int64  `json:"completed"`
+	TimeAdded   int64  `json:"time_added"`
+	StageLog    []struct {
+		Name    string   `json:"name"`
+		Actions []string `json:"actions"`
+	} `json:"stage_log"`
 }
 
 // job reads one finished-list entry; the same for List and History.
 func (x sabHistorySlot) job() Job {
-	j := Job{ID: x.ID, Name: x.Name, Category: x.Category, Size: x.Bytes, Detail: x.Status}
+	j := Job{ID: x.ID, Name: x.Name, Category: x.Category, Size: x.Bytes, Detail: x.Status, AddedAt: x.TimeAdded}
 	switch x.Status {
 	case "Completed":
 		j.State, j.Progress = StateFinished, 1
+		j.DoneAt = x.Completed
 		j.ContentPath = x.Storage
 		j.SavePath = parentDir(x.Storage)
 	case "Failed":

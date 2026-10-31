@@ -59,6 +59,8 @@ var optionalInterfaces = []reflect.Type{
 	reflect.TypeFor[MainSyncer](),
 	reflect.TypeFor[HistoryReader](),
 	reflect.TypeFor[Syncer](),
+	reflect.TypeFor[QueueReader](),
+	reflect.TypeFor[UsenetInspector](),
 }
 
 func shapeOf(e any) uint64 {
@@ -84,7 +86,7 @@ func readOnly(inner Engine) Engine {
 		return roQbit{c, roController{c}, roTorrentController{c}, roTorrentInspector{c}, roAllLister{c}, roTorrentAdder{c},
 			roTorrentFolders{c}, roTorrentBulk{c}, roShareLimiter{c}, roSlowModer{c}, roTrackerEditor{c}, roMover{c}, roMainSyncer{c}}
 	case shapeOf(&Sabnzbd{}):
-		return roSab{c, roController{c}, roRetrier{c}, roHistoryReader{c}}
+		return roSab{c, roController{c}, roRetrier{c}, roHistoryReader{c}, roQueueReader{c}, roUsenetInspector{c}}
 	}
 	return c
 }
@@ -134,6 +136,8 @@ type roSab struct {
 	roController
 	roRetrier
 	roHistoryReader
+	roQueueReader
+	roUsenetInspector
 }
 
 type roController struct{ c *roCore }
@@ -231,4 +235,19 @@ type roHistoryReader struct{ c *roCore }
 
 func (r roHistoryReader) History(ctx context.Context, since int64) (HistoryPage, error) {
 	return r.c.inner.(HistoryReader).History(ctx, since)
+}
+
+type roQueueReader struct{ c *roCore }
+
+func (r roQueueReader) Queue(ctx context.Context) (QueuePage, error) {
+	return r.c.inner.(QueueReader).Queue(ctx)
+}
+
+type roUsenetInspector struct{ c *roCore }
+
+func (r roUsenetInspector) JobStages(ctx context.Context, id string) ([]JobStage, error) {
+	return r.c.inner.(UsenetInspector).JobStages(ctx, id)
+}
+func (r roUsenetInspector) ServerStats(ctx context.Context) (ServerStats, error) {
+	return r.c.inner.(UsenetInspector).ServerStats(ctx)
 }

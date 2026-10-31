@@ -36,12 +36,14 @@ var writeMethods = map[string]bool{
 var readMethods = map[string]bool{
 	"Health": true, "List": true, "Get": true, "Status": true, "Trackers": true, "Peers": true, "Properties": true,
 	"TorrentFiles": true, "ListAll": true, "SaveBase": true, "SyncMain": true, "History": true,
+	"Queue": true, "JobStages": true, "ServerStats": true,
 }
 
 // syncerMethods are reached on the guard itself; every other optional part
 // is reached the way ControlEngine does.
 var syncerIfaces = map[reflect.Type]bool{
 	reflect.TypeFor[Syncer](): true, reflect.TypeFor[MainSyncer](): true, reflect.TypeFor[HistoryReader](): true,
+	reflect.TypeFor[QueueReader](): true,
 }
 
 const testHash = "0123456789abcdef0123456789abcdef01234567"
@@ -143,7 +145,7 @@ func TestGuardRegistryEveryOptionalCallPassesBegin(t *testing.T) {
 			}
 			// The guard's own Syncer: a part the adapter has passes Begin;
 			// a part it lacks answers ErrNotSupported without Begin.
-			for _, it := range []reflect.Type{reflect.TypeFor[MainSyncer](), reflect.TypeFor[HistoryReader](), reflect.TypeFor[AllLister]()} {
+			for _, it := range []reflect.Type{reflect.TypeFor[MainSyncer](), reflect.TypeFor[HistoryReader](), reflect.TypeFor[QueueReader](), reflect.TypeFor[AllLister]()} {
 				meth := it.Method(0)
 				before := begins
 				err := callMethod(t, g, it, meth, callArgs(context.Background(), meth))

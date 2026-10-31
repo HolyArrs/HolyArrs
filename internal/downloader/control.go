@@ -214,15 +214,23 @@ var ErrNoDownloader = errors.New("no such Downloader")
 // not. It never touches HolyArrs' download records; when write is true a
 // sync follows so the new state shows.
 func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash string, write bool, call func(e Engine, id string) error) error {
-	h, err := qbitHash(hash)
-	if err != nil {
-		return ErrNotFound
-	}
 	var dr domain.Downloader
 	if err := store.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
 		return ErrNoDownloader
 	}
-	if dr.Protocol != "torrent" {
+	var h string
+	var err error
+	switch dr.Protocol {
+	case "torrent":
+		if h, err = qbitHash(hash); err != nil {
+			return ErrNotFound
+		}
+	case "usenet":
+		// A Usenet job id goes out as the client wrote it.
+		if h, err = UsenetID(hash); err != nil {
+			return ErrNotFound
+		}
+	default:
 		return ErrNotSupported
 	}
 	err = m.ControlEngine(ctx, dr, func(e Engine) error { return call(e, h) })
@@ -230,6 +238,22 @@ func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash stri
 		m.Poke()
 	}
 	return err
+}
+
+// UsenetID checks a Usenet job id from a request: letters, digits and
+// _ . - only, at most 100 characters (SABnzbd ids are SABnzbd_nzo_... or a
+// UUID).
+func UsenetID(id string) (string, error) {
+	if id == "" || len(id) > 100 {
+		return "", ErrNotFound
+	}
+	for _, r := range id {
+		ok := r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-' || r == '.'
+		if !ok {
+			return "", ErrNotFound
+		}
+	}
+	return id, nil
 }
 
 // ControlTorrentClient runs a call on a torrent Downloader as a whole (an

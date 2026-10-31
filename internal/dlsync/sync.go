@@ -57,6 +57,7 @@ type Sync struct {
 	Sleep func(ctx context.Context, d time.Duration) error
 
 	cursors Cursors
+	sabs    SabCursors
 	persist *persister
 	bucket  bucket
 	started atomic.Bool
@@ -531,6 +532,15 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		var p MainPoll
 		p, err = s.cursors.Poll(cctx, d.ID, gen, ms)
 		jobs, scope, shared = p.Jobs, "", p.SharedSession
+	case d.Adapter == "sabnzbd" && isSab(e):
+		var p SabPoll
+		p, err = s.sabs.Poll(cctx, d.ID, gen, e.(SabSource))
+		jobs = p.Jobs
+		if s.SABOutside(ctx) {
+			scope = ""
+		} else {
+			jobs = inCategory(jobs, d.Category)
+		}
 	case d.Protocol == "usenet" && s.SABOutside(ctx):
 		jobs, err = e.List(cctx, "")
 		scope = ""
@@ -562,8 +572,28 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 	return nil
 }
 
+// isSab says the engine has the paged SABnzbd reads.
+func isSab(e downloader.Engine) bool {
+	_, ok := e.(SabSource)
+	return ok
+}
+
+// inCategory keeps the jobs of one category ("" or "*" keeps all).
+func inCategory(jobs []downloader.Job, cat string) []downloader.Job {
+	if cat == "" || cat == "*" {
+		return jobs
+	}
+	out := jobs[:0:0]
+	for _, j := range jobs {
+		if j.Category == cat {
+			out = append(out, j)
+		}
+	}
+	return out
+}
+
 // SettingSABOutside is the setting downloads.sab_outside (Usenet items
-// HolyArrs did not send shown on the Downloads page); default off.
+// HolyArrs did not send shown on the Downloads page); default on.
 const SettingSABOutside = "downloads_sab_outside"
 
 // SABOutside reads downloads.sab_outside.
@@ -573,5 +603,5 @@ func (s *Sync) SABOutside(ctx context.Context) bool {
 	}
 	var v string
 	_ = s.DB.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", SettingGroup, SettingSABOutside).Scan(&v)
-	return v == "true"
+	return v != "false"
 }

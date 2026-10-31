@@ -36,6 +36,7 @@ type HistoryReader interface {
 type Syncer interface {
 	MainSyncer
 	HistoryReader
+	QueueReader
 	AllLister
 }
 
@@ -167,27 +168,32 @@ type HistoryPage struct {
 	Jobs    []Job
 }
 
-// History reads the first page of the finished list when it changed since
-// the counter since (0 always reads).
+// History reads the whole finished list, in pages, when it changed since
+// the counter since (0 always reads). SABnzbd answers false instead of
+// rows when nothing changed, so an unchanged list costs one small call.
 func (s *Sabnzbd) History(ctx context.Context, since int64) (HistoryPage, error) {
-	q := url.Values{"start": {"0"}, "limit": {"200"}}
-	if since > 0 {
-		q.Set("last_history_update", strconv.FormatInt(since, 10))
-	}
-	b, err := s.call(ctx, "history", q, true)
+	slots, last, total, unchanged, err := s.historyPage(ctx, 0, since, "")
 	if err != nil {
 		return HistoryPage{}, err
 	}
-	var hi sabHistory
-	if err := json.Unmarshal(b, &hi); err != nil {
-		return HistoryPage{}, fmt.Errorf("%w: sabnzbd history: %v", ErrSyncParse, err)
+	if unchanged {
+		return HistoryPage{Last: since}, nil
 	}
-	last, err := counter(hi.History.LastUpdate)
-	if err != nil {
-		return HistoryPage{}, fmt.Errorf("%w: sabnzbd history counter: %v", ErrSyncParse, err)
+	p := HistoryPage{Last: last, Changed: since == 0 || last != since || len(slots) > 0}
+	if !p.Changed {
+		return p, nil
 	}
-	p := HistoryPage{Last: last, Changed: since == 0 || last != since || len(hi.History.Slots) > 0}
-	for _, x := range hi.History.Slots {
+	for start := len(slots); len(slots) == start && start < total && start < sabMaxRows; start = len(slots) {
+		more, _, _, _, err := s.historyPage(ctx, start, 0, "")
+		if err != nil {
+			return HistoryPage{}, err
+		}
+		if len(more) == 0 {
+			break
+		}
+		slots = append(slots, more...)
+	}
+	for _, x := range slots {
 		p.Jobs = append(p.Jobs, x.job())
 	}
 	return p, nil

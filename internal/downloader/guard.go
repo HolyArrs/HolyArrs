@@ -94,7 +94,7 @@ func (g *guardedEngine) Remove(ctx context.Context, id string, files bool) error
 	return g.run(ctx, func() error { return g.Engine.Remove(ctx, id, files) })
 }
 
-// SyncMain, History and ListAll are the guarded Syncer. They are methods of
+// SyncMain, History, Queue and ListAll are the guarded Syncer. They are methods of
 // the guard itself so the background reader never reaches an optional part
 // around outside.Begin (as ControlEngine's unwrapping would allow).
 func (g *guardedEngine) SyncMain(ctx context.Context, rid int64) (d MainData, err error) {
@@ -111,6 +111,14 @@ func (g *guardedEngine) History(ctx context.Context, since int64) (p HistoryPage
 		return p, ErrNotSupported
 	}
 	err = g.run(ctx, func() error { var e error; p, e = s.History(ctx, since); return e })
+	return
+}
+func (g *guardedEngine) Queue(ctx context.Context) (p QueuePage, err error) {
+	s, ok := g.Engine.(QueueReader)
+	if !ok {
+		return p, ErrNotSupported
+	}
+	err = g.run(ctx, func() error { var e error; p, e = s.Queue(ctx); return e })
 	return
 }
 func (g *guardedEngine) ListAll(ctx context.Context) (jobs []Job, err error) {

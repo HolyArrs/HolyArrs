@@ -495,9 +495,13 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 			mode := v
 			st.Sync = &mode
 		case "links/" + dlsync.SettingSABOutside:
-			on := v == "true"
+			on := v != "false"
 			st.SABOutside = &on
 		}
+	}
+	if st.SABOutside == nil {
+		on := true // shown by default
+		st.SABOutside = &on
 	}
 	return st, rows.Err()
 }
