@@ -248,7 +248,7 @@
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
-				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={() => pickTab(t.tab)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="bad" aria-hidden="true"></span>{/if}</button>
+				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={() => pickTab(t.tab)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="bad" aria-hidden="true"></span>{/if}</button>
 			{/each}
 		</div>
 		{#if dropTab}
@@ -364,7 +364,7 @@
 	.dd-pending { background: var(--wait, #e5a50a); }
 	@media (pointer: coarse) { .dr { height: 44px; } }
 	.pick { margin-left: 4px; color: var(--text-muted); font-weight: 500; }
-	.pick.bad { color: var(--fail-text, var(--fail, #e5484d)); }
+	.pick.pick-bad { color: var(--fail-text, var(--fail, #e5484d)); }
 	@media (prefers-reduced-motion: reduce) { .stats { transition: none; } }
 	.sn { font-variant-numeric: tabular-nums; opacity: 0.7; }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
