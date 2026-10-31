@@ -81,7 +81,7 @@ export function buildNav(input: NavInput): NavSection[] {
 				...(!input.allowed('manage_library') ? [{ href: '/downloads', label: 'Downloads', icon: 'download', need: null } as NavItem] : []),
 				{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: null },
 				// Everyone finds Requests here; people who approve see how many are waiting.
-				{ href: '/requests', label: 'Requests', icon: approver ? 'inbox' : 'wish', need: 'wishlist', ...(approver ? { badge: input.approvals, badgeLabel: `${input.approvals} waiting` } : { badge: input.unread, badgeLabel: `${input.unread} new` }) }
+				{ href: '/requests', label: 'Requests', icon: 'requests', need: 'wishlist', ...(approver ? { badge: input.approvals, badgeLabel: `${input.approvals} waiting` } : { badge: input.unread, badgeLabel: `${input.unread} new` }) }
 			]
 		},
 		{

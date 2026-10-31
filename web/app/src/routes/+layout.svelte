@@ -264,7 +264,7 @@
 		add('/library', 'Library', 'library');
 		add('/search', 'Search', 'search');
 		if (!manager && allowed('wishlist') && !offPartName(partsNow.answer, '/requests')) {
-			t.push({ href: to('/requests'), label: 'Requests', icon: 'wish', current: path.startsWith('/requests'), badge: inbox.unread || undefined });
+			t.push({ href: to('/requests'), label: 'Requests', icon: 'requests', current: path.startsWith('/requests'), badge: inbox.unread || undefined });
 		}
 		const tabbed = ['/', '/explore', '/library', '/search', '/requests'];
 		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
