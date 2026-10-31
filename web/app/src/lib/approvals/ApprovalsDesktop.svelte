@@ -37,8 +37,8 @@
 		for (const a of list.slice(0, 16)) ctx.want(a);
 	});
 
-	// Five hover effects for the cards. ?hover shows a pill bar to switch; without it, effect 1.
-	const HOVERS = ['Lean in', 'Lift', 'Glow', 'Parallax', 'Spotlight'];
+	// Five photo effects: the art comes alive under a mouse. ?hover shows a pill bar to switch; without it, effect 1.
+	const HOVERS = ['Dust', 'Light sweep', 'Film grain', 'Bokeh', 'Dust + drift'];
 	const hoverOn = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('hover');
 	let hv = $state(1);
 	if (hoverOn) {
@@ -48,17 +48,80 @@
 		hv = n;
 		try { localStorage.setItem('approvals-hover', String(n)); } catch { /* storage blocked: the pick lasts this visit */ }
 	}
-	// Parallax and Spotlight follow the pointer: write its place on the card as CSS variables (no re-render).
-	function track(e: PointerEvent) {
-		if (hv < 4 || e.pointerType === 'touch') return;
-		const el = e.currentTarget as HTMLElement;
-		const r = el.getBoundingClientRect();
-		const x = e.clientX - r.left, y = e.clientY - r.top;
-		el.style.setProperty('--mx', `${x.toFixed(1)}px`);
-		el.style.setProperty('--my', `${y.toFixed(1)}px`);
-		el.style.setProperty('--px', String(Math.max(-1, Math.min(1, (x / r.width) * 2 - 1)).toFixed(3)));
-		el.style.setProperty('--py', String(Math.max(-1, Math.min(1, (y / r.height) * 2 - 1)).toFixed(3)));
+	// One canvas at most, on the hovered card's art, made on enter and removed on leave. Paused while the tab is hidden.
+	type Speck = { x: number; y: number; r: number; a: number; vx: number; vy: number; tw: number };
+	let fxStop: (() => void) | null = null;
+	function fxEnter(e: PointerEvent) {
+		if (e.pointerType !== 'mouse' || hv === 2) return;
+		if (!matchMedia('(hover: hover) and (pointer: fine)').matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		fxStop?.();
+		const ban = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('.ban');
+		if (!ban) return;
+		const cv = document.createElement('canvas');
+		cv.className = 'fx-cv';
+		cv.setAttribute('aria-hidden', 'true');
+		ban.appendChild(cv);
+		const ctx2 = cv.getContext('2d');
+		if (!ctx2) { cv.remove(); return; }
+		const mode = hv;
+		const dpr = Math.min(2, devicePixelRatio || 1);
+		const w = ban.clientWidth, h = ban.clientHeight;
+		const grain = mode === 3;
+		const sc = grain ? 0.5 : dpr; // grain draws at half size and is scaled up: cheap and soft
+		cv.width = Math.max(1, Math.round(w * sc)); cv.height = Math.max(1, Math.round(h * sc));
+		ctx2.scale(sc, sc);
+		const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+		const bokeh = mode === 4;
+		const specks: Speck[] = Array.from({ length: bokeh ? 7 : grain ? 0 : 46 }, () => bokeh
+			? { x: rnd(0, w), y: rnd(0, h * 0.75), r: rnd(14, 34), a: rnd(0.08, 0.2), vx: rnd(-6, 6), vy: rnd(-5, -1.5), tw: rnd(0, 6.28) }
+			: { x: rnd(0, w), y: rnd(0, h), r: rnd(0.5, 1.9), a: rnd(0.25, 0.8), vx: rnd(-3, 7), vy: rnd(-9, -2.5), tw: rnd(0, 6.28) });
+		let noise: ImageData | null = null;
+		if (grain) noise = ctx2.createImageData(cv.width, cv.height);
+		let raf = 0, last = performance.now(), gt = 0;
+		const frame = (t: number) => {
+			const dt = Math.min(0.05, (t - last) / 1000); last = t;
+			if (grain && noise) {
+				gt += dt;
+				if (gt > 1 / 24) { // film runs at 24 frames a second
+					gt = 0;
+					const d = noise.data;
+					for (let i = 0; i < d.length; i += 4) { const v = (Math.random() * 255) | 0; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 26; }
+					ctx2.putImageData(noise, 0, 0);
+					cv.style.setProperty('--flk', rnd(0.9, 1).toFixed(3));
+				}
+			} else {
+				ctx2.clearRect(0, 0, w, h);
+				for (const p of specks) {
+					p.x += p.vx * dt; p.y += p.vy * dt; p.tw += dt * 0.8;
+					if (p.y < -p.r * 2) { p.y = h + p.r; p.x = rnd(0, w); }
+					if (p.x > w + p.r * 2) p.x = -p.r; else if (p.x < -p.r * 2) p.x = w + p.r;
+					const a = p.a * (0.65 + 0.35 * Math.sin(p.tw));
+					const g = ctx2.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * (bokeh ? 1 : 2.2));
+					g.addColorStop(0, `rgba(255,246,228,${a})`);
+					g.addColorStop(bokeh ? 0.7 : 0.4, `rgba(255,240,215,${a * (bokeh ? 0.75 : 0.35)})`);
+					g.addColorStop(1, 'rgba(255,240,215,0)');
+					ctx2.fillStyle = g;
+					ctx2.beginPath(); ctx2.arc(p.x, p.y, p.r * (bokeh ? 1 : 2.2), 0, 6.283); ctx2.fill();
+				}
+			}
+			raf = requestAnimationFrame(frame);
+		};
+		const vis = () => { cancelAnimationFrame(raf); if (!document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };
+		document.addEventListener('visibilitychange', vis);
+		raf = requestAnimationFrame(frame);
+		requestAnimationFrame(() => cv.classList.add('on'));
+		const stop = () => {
+			cancelAnimationFrame(raf);
+			document.removeEventListener('visibilitychange', vis);
+			cv.classList.remove('on');
+			cv.addEventListener('transitionend', () => cv.remove(), { once: true });
+			setTimeout(() => cv.remove(), 400);
+			if (fxStop === stop) fxStop = null;
+		};
+		fxStop = stop;
 	}
+	function fxLeave() { fxStop?.(); }
+	$effect(() => () => fxStop?.());
 	// "16 d ago" read out in full: "16 days ago".
 	const longAgo = (s: string) => ago(s).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
 
@@ -378,10 +441,11 @@
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each cardsShown as a, i (a.id)}
 				{@const w = ctx.who(a)}
+				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" data-ask={a.id} data-hover={hv} onpointermove={track} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" data-ask={a.id} data-hover={hv} onpointerenter={fxEnter} onpointerleave={fxLeave} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
@@ -392,7 +456,7 @@
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.kid ? w.name.replace(/\s*\(kid\)\s*$/i, '') : w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{longAgo(a.asked_at)}</time></span></span></span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{longAgo(a.asked_at)}</time></span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
@@ -646,42 +710,35 @@
 	@media (prefers-reduced-motion: reduce) {
 		.bc, .fill, .win[open], .win::backdrop, .ban-img, img.ban-img, .win[open]:global(.win-out), .win[open]:global(.win-out)::backdrop { transition: none; animation: none; }
 		.b:active, .approve-all:active { transform: none; }
-		.bc[data-hover], .bc[data-hover]:hover, .bc[data-hover] .ban, .bc[data-hover] .sheet-b { transform: none !important; transition: none !important; }
-	.bc::after, .sheet-b::after { display: none; }
 	}
 
 	/* The glass panel: smoked glass. Dark: deep smoke with a soft inner highlight. Light: a pale grey-blue smoke,
 	   dark ink. The full-frame art shows around it and, blurred, through it. --text, --text-muted and --bg are
 	   redefined on the panel so the answers and the status read on it. */
-	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#3b4150, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(228 233 242 / 0.74), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(205 212 226 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(232 236 244 / 0.34), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)), 0 18px 34px -14px light-dark(rgb(10 14 30 / 0.5), rgb(0 0 0 / 0.8)); }
+	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.52), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.5), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)), inset 0 14px 22px -16px light-dark(rgb(255 255 255 / 0.6), transparent), 0 18px 34px -14px light-dark(rgb(10 14 30 / 0.32), rgb(0 0 0 / 0.8)); }
+	/* Light: white smoke. Milky and see-through, the art blurred and lifted behind it; a soft white halo under the ink keeps it readable. */
+	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.9) brightness(1.12); }
+	:global(:root[data-theme='light']) .sheet-b .body { text-shadow: 0 0 10px rgb(255 255 255 / 0.55), 0 0 2px rgb(255 255 255 / 0.4); }
+	@media (prefers-color-scheme: light) {
+		:global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.9) brightness(1.12); }
+		:global(:root:not([data-theme])) .sheet-b .body { text-shadow: 0 0 10px rgb(255 255 255 / 0.55), 0 0 2px rgb(255 255 255 / 0.4); }
+	}
 	.b.no { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); }
 	.b.yes { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
 
-	/* Hover effects (mouse only; touch screens and reduced motion get none). Each moves only paint, never layout,
-	   so the grid and the neighbours stay still. In is slow and eased, out is a little quicker. */
-	.bc::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: radial-gradient(circle 170px at var(--mx, 50%) var(--my, 40%), rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.06) 45%, transparent 75%); opacity: 0; pointer-events: none; transition: opacity 300ms ease-out; }
-	.sheet-b::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgb(255 255 255); opacity: 0; pointer-events: none; transition: opacity 380ms ease-out; }
-	@media (hover: hover) and (pointer: fine) {
-		.bc:hover, .bc:hover .ban, .bc:hover .sheet-b, .bc:hover::after, .bc:hover .sheet-b::after { transition-duration: 650ms; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-		/* 1 Lean in: the art slowly zooms, the shadow deepens a little. */
-		.bc[data-hover='1']:hover .ban { transform: scale(1.04); }
-		.bc[data-hover='1']:hover { box-shadow: 0 0 0 1px var(--line), 0 18px 38px -16px rgb(0 0 0 / 0.78); }
-		/* 2 Lift: the card rises, a softer larger shadow, the art zooms a touch, the glass brightens. */
-		.bc[data-hover='2']:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px var(--line), 0 30px 60px -22px rgb(0 0 0 / 0.6); }
-		.bc[data-hover='2']:hover .ban { transform: scale(1.02); }
-		.bc[data-hover='2']:hover .sheet-b::after { opacity: 0.08; }
-		/* 3 Glow: a soft light rim fades in, the glass brightens, the art zooms a little. */
-		.bc[data-hover='3']:hover { box-shadow: 0 0 0 1px light-dark(rgb(60 110 255 / 0.55), rgb(255 255 255 / 0.5)), 0 0 30px 2px light-dark(rgb(60 110 255 / 0.28), rgb(255 255 255 / 0.22)), 0 12px 32px -16px rgb(0 0 0 / 0.6); }
-		.bc[data-hover='3']:hover .ban { transform: scale(1.03); }
-		.bc[data-hover='3']:hover .sheet-b::after { opacity: 0.1; }
-		/* 4 Parallax: the art drifts with the pointer, the glass drifts the other way. */
-		.bc[data-hover='4']:hover .ban { transform: translate(calc(var(--px, 0) * 5.5px), calc(var(--py, 0) * 5.5px)) scale(1.04); }
-		.bc[data-hover='4']:hover .sheet-b { transform: translate(calc(var(--px, 0) * -2px), calc(var(--py, 0) * -2px)); }
-		.bc[data-hover='4'] .sheet-b { transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1); }
-		/* 5 Spotlight: a soft light follows the pointer over the art and the glass. */
-		.bc[data-hover='5']:hover .ban { transform: scale(1.02); }
-		.bc[data-hover='5']:hover::after { opacity: 1; }
+	/* Photo effects (mouse only; touch screens and reduced motion get none). They live inside the art layer,
+	   under the glass and the title, so reading never changes. In ~400ms, out ~300ms. */
+	.ban :global(.fx-cv) { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity 300ms ease-out; mix-blend-mode: screen; }
+	.ban :global(.fx-cv.on) { opacity: var(--flk, 1); transition-duration: 400ms; }
+	.bc[data-hover='3'] .ban :global(.fx-cv) { mix-blend-mode: overlay; image-rendering: auto; }
+	.ban::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.22) 47%, rgb(255 250 235 / 0.34) 50%, rgb(255 255 255 / 0.22) 53%, transparent 65%) no-repeat; background-size: 250% 100%; background-position: 130% 0; transition: opacity 300ms ease-out; }
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.bc[data-hover='2']:hover .ban::before { opacity: 1; transition-duration: 400ms; animation: fx-sweep 2.4s cubic-bezier(0.4, 0, 0.2, 1) both, fx-shimmer 3.2s ease-in-out 2.4s infinite alternate; }
+		.bc[data-hover='5']:hover .ban-img { transform: scale(1.05); transition: transform 6s cubic-bezier(0.25, 0.1, 0.25, 1); }
+		.bc[data-hover='5'] .ban-img { transition: transform 300ms ease-out, opacity 500ms var(--ease-out); }
 	}
+	@keyframes fx-sweep { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+	@keyframes fx-shimmer { from { background-position: -30% 0; opacity: 1; } 50% { opacity: 0.35; } to { background-position: -10% 0; opacity: 0.55; } }
 	.hv-bar { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 2000; display: flex; gap: 4px; max-width: calc(100vw - 24px); box-sizing: border-box; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 999px; transform: translateX(-50%); background: color-mix(in srgb, var(--surface-2) 88%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 0 0 1px var(--line-strong), 0 12px 30px -10px rgb(0 0 0 / 0.5); }
 	.hv-bar::-webkit-scrollbar { display: none; }
 	.hv-pill { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
