@@ -388,3 +388,30 @@ func TestArtistAskViewHasArtistIDAndPicture(t *testing.T) {
 		t.Fatalf("artist ask view %+v", v)
 	}
 }
+
+// TestArtistApproveWidensKindsForAskedAlbum: the artist joins the Library
+// (added by hand, default kinds) while an ask for a live album waits;
+// approving it widens the kinds instead of failing.
+func TestArtistApproveWidensKindsForAskedAlbum(t *testing.T) {
+	r := musicRig(t)
+	ctx := context.Background()
+	live, err := r.svc.AskArtist(ctx, r.bo, "mbid:"+mArtist, []string{mLive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defs, err := library.ReadMusicDefaults(ctx, r.st.Read())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := r.svc.Library.AddArtist(ctx, "mbid:"+mArtist, library.ArtistAddOptions{Albums: library.AlbumsAll, WhyAdded: "by_hand",
+		NewAlbums: defs.NewAlbums, AlbumTypes: defs.AlbumTypes, SecondaryTypes: defs.SecondaryTypes, ReleaseStatuses: defs.ReleaseStatuses}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.svc.Approve(ctx, live.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil {
+		t.Fatalf("approve left-out album: %v", err)
+	}
+	if keeps := albumKeeps(t, r.st, *got.TitleID); !keeps["Live Night"] {
+		t.Fatalf("album keeps %v", keeps)
+	}
+}

@@ -409,6 +409,22 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 	if err != nil {
 		return 0, err
 	}
+	// An artist already in the Library may leave an approved album out by
+	// its album kinds: approving it widens the kinds to take it in.
+	var widen []int64
+	for _, p := range parts {
+		if !p.Included && slices.ContainsFunc(a.Albums, func(w domain.AskAlbum) bool { return w.MBID == p.SourceIDs["musicbrainz"] }) {
+			widen = append(widen, p.ID)
+		}
+	}
+	if len(widen) > 0 {
+		if err := s.Library.IncludeAlbums(ctx, tid, widen, by.actor()); err != nil {
+			return 0, err
+		}
+		if parts, err = store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid); err != nil {
+			return 0, err
+		}
+	}
 	on := true
 	for _, p := range parts {
 		asked := len(a.Albums) == 0 && p.Included ||

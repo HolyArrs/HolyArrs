@@ -663,3 +663,61 @@ func (s *Service) ChooseEdition(ctx context.Context, partID int64, release strin
 	_, err = s.SetAlbum(ctx, partID, nil, id, by)
 	return err == nil, err
 }
+
+// IncludeAlbums widens an artist's album kinds just enough to take in the
+// given albums (an approved ask names them), marks them included, and
+// queues a details refresh so they get their Pressings and tracks.
+func (s *Service) IncludeAlbums(ctx context.Context, titleID int64, partIDs []int64, by domain.Actor) error {
+	if len(partIDs) == 0 {
+		return nil
+	}
+	var t domain.Title
+	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+			return err
+		}
+		if t.Kind != "artist" {
+			return ErrNotArtist
+		}
+		for _, id := range partIDs {
+			var p domain.Part
+			if err := store.Get(ctx, tx, "parts", id, &p); err != nil {
+				return err
+			}
+			if p.TitleID != t.ID || p.Kind != "album" {
+				return ErrNotAlbum
+			}
+			primary := "other"
+			if p.ReleaseType != nil && *p.ReleaseType != "" {
+				primary = *p.ReleaseType
+			}
+			if !slices.Contains(t.MusicTypes, primary) {
+				t.MusicTypes = append(t.MusicTypes, primary)
+			}
+			extra := p.SecondaryTypes
+			if len(extra) == 0 {
+				extra = []string{"studio"}
+			}
+			for _, x := range extra {
+				if !slices.Contains(t.MusicSecondary, x) {
+					t.MusicSecondary = append(t.MusicSecondary, x)
+				}
+			}
+			if !p.Included {
+				p.Included = true
+				if err := store.Update(tx, "parts", &p, by); err != nil {
+					return err
+				}
+			}
+		}
+		return store.Update(tx, "titles", &t, by)
+	})
+	if err != nil {
+		return err
+	}
+	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": album choices changed for an approved ask",
+		Data: map[string]any{"album_types": t.MusicTypes, "secondary_types": t.MusicSecondary}, GroupKey: groupKey(t.ID)})
+	_, _, err = s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID}, map[string]any{"new": true},
+		fmt.Sprintf("refresh_title:%d", t.ID), by)
+	return err
+}
