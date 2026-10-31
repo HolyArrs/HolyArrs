@@ -7,7 +7,7 @@
 	import { reviewWord, timeWords } from './status-views.ts';
 
 	interface Props {
-		/** Speeds as words ("26 MB/s"). */
+		/** Speeds as words ("26 MB/s"); an empty up hides its pill (Usenet only). */
 		down: string;
 		up: string;
 		/** Time until everything finishes, short ("25m"). */
@@ -33,7 +33,7 @@
 	<!-- Speed: Down and Up. -->
 	<span class="t" role="group" aria-label="Speed">
 		<span class="sg sp dn" data-testid="sb-down"><span class="sl">Down</span><span class="n" data-testid="dl-speed">{@render num(`↓ ${down}`)}</span></span>
-		<span class="sg sp x k1" data-testid="sb-up"><span class="sl">Up</span><span class="n" data-testid="dl-up">{@render num(`↑ ${up}`)}</span></span>
+		{#if up}<span class="sg sp x k1" data-testid="sb-up"><span class="sl">Up</span><span class="n" data-testid="dl-up">{@render num(`↑ ${up}`)}</span></span>{/if}
 	</span>
 	<!-- Storage: free words over a thin free-space meter, today, time left. -->
 	<span class="t" role="group" aria-label="Storage">

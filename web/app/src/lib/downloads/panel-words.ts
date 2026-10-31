@@ -1,5 +1,6 @@
 import { size as bytes } from './size.ts';
 import { duration, percent } from '../format.ts';
+import { STEP_WORD } from './usenet.ts';
 
 /** What the health line needs from a row and the client's detail. */
 export type HealthIn = {
@@ -21,6 +22,8 @@ export function healthLine(h: HealthIn, now = Date.now()): string {
 	if (h.client_hint === 'missing') return `Files missing · ${pc}`;
 	if (h.client_hint === 'checking') return `Checking · ${pc}`;
 	if (h.client_hint === 'moving') return `Moving · ${pc}`;
+	// A Usenet job past its download: verifying, repairing, unpacking…
+	if (h.client_hint && STEP_WORD[h.client_hint]) return STEP_WORD[h.client_hint];
 	const ratio = h.ratio != null ? `ratio ${h.ratio.toFixed(2)}` : '';
 	if (h.phase === 'done') {
 		let since = h.seeding_time ? h.seeding_time : 0;

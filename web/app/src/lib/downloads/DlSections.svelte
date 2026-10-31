@@ -44,6 +44,7 @@
 	import type { ImportRecord, TitleView } from '../types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
+	import { repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
 	import { poster, who } from './shared.ts';
 	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { longPress, phoneTitle, subLine } from './phone.ts';
@@ -66,6 +67,7 @@
 		onlimit,
 		onadd,
 		onremovemany,
+		onretry,
 		onbulk,
 		onsteer,
 		watch = false,
@@ -95,6 +97,8 @@
 		onadd?: () => void;
 		/** Opens the Remove dialog for the selected rows. */
 		onremovemany?: (rows: DownloadRow[], withFiles?: boolean) => void;
+		/** Try again for failed Usenet jobs. */
+		onretry?: (rows: DownloadRow[]) => void;
 		/** One action on the selected rows (batched per Downloader by the page). */
 		onbulk?: (rows: DownloadRow[], action: BulkAction) => void;
 		/** Opens the steering sheet (seeding rules and more) for these torrents. */
@@ -127,10 +131,12 @@
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	let menuId = $state(0);
-	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce';
-	const ACTIONS: { label: string; action: ClientAction; torrent?: boolean }[] = [
-		{ label: 'Move to top', action: 'top' }, { label: 'Check again', action: 'recheck', torrent: true }, { label: 'Ask trackers again', action: 'reannounce', torrent: true }
+	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry';
+	const ACTIONS: { label: string; action: ClientAction; torrent?: boolean; retry?: boolean }[] = [
+		{ label: 'Try again', action: 'retry', retry: true }, { label: 'Move to top', action: 'top' }, { label: 'Check again', action: 'recheck', torrent: true }, { label: 'Ask trackers again', action: 'reannounce', torrent: true }
 	];
+	// A failed Usenet job offers Try again; queue moves are for live jobs.
+	const actionsOf = (r: DownloadRow) => ACTIONS.filter((a) => (a.retry ? retryable(r) : (!a.torrent || protocolOf(r) === 'torrent') && !(a.action === 'top' && retryable(r))));
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 	// The detail tabs follow the download's kind: a torrent has peers and
@@ -186,7 +192,7 @@
 	type TFile = { index: number; name: string; size: number; progress: number; priority: number };
 	type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number; fixed?: boolean; ref?: string };
 	type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
-	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string };
+	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string; usenet?: UsenetView; usenetErr?: string };
 	let det = $state.raw<Det>({ id: 0 });
 	// Panel reads never show the server's own words; a calm line and Retry instead.
 	const CALM_ERR = "Couldn't read this from the Downloader just now.";
@@ -264,6 +270,14 @@
 				}
 			}
 		}
+		if (protocolOf(r) === 'usenet' && live(r) && (tab === 'Servers' || tab === 'Repair and unpack')) {
+			try {
+				next.usenet = await api.get<UsenetView>(`${path}/usenet`);
+				next.usenetErr = undefined;
+			} catch {
+				next.usenetErr = CALM_ERR;
+			}
+		}
 		if (openId !== id) return;
 		// Only a real change is written, so a quiet poll costs no re-render.
 		const merged = mergeDetail(det, next);
@@ -334,8 +348,8 @@
 	const fileIndexes = (files: TFile[], key: string) => files.filter((f) => f.name === key || f.name.startsWith(key + '/')).map((f) => f.index);
 
 	// What each Downloader says about itself (speeds, free space, totals).
-	type ClientStatus = { paused: boolean; speed: number; up_speed: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean };
-	type Client = { id: number; name: string; status?: ClientStatus; error?: string };
+	type ClientStatus = { paused: boolean; speed: number; up_speed: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean; time_left?: number };
+	type Client = { id: number; name: string; protocol?: string; status?: ClientStatus; error?: string };
 	let clients = $state<Client[]>([]);
 	let clientsRead = $state(false);
 	async function readClients() {
@@ -453,7 +467,11 @@
 	const canStart = $derived(!!openRow?.can_act && isPaused(openRow) && busy !== openRow?.id);
 	const canPause = $derived(!!openRow?.can_act && !isPaused(openRow) && busy !== openRow?.id);
 	const toReview = $derived(reviewCount(allQueue));
-	const etaWords = $derived(sum.eta ? duration(sum.eta) : '');
+	// Time left: the longest of the rows' own estimates and a Usenet queue's.
+	const etaAll = $derived(Math.max(sum.eta || 0, ...clients.map((c) => (c.error ? 0 : (c.status?.time_left ?? 0)))));
+	const etaWords = $derived(etaAll ? duration(etaAll) : '');
+	// Usenet has no upload: with only Usenet Downloaders the Up pill goes.
+	const noUp = $derived(clientsRead && clients.length > 0 && !clients.some((c) => c.protocol === 'torrent'));
 	/** The review call opens Problems › Review. */
 	function openReview() {
 		choose('problems');
@@ -1365,7 +1383,7 @@
 	</div>
 	{#if menuId === r.id && !watch}
 		<ul class="mn" use:fitMenu data-testid="dl-more-menu">
-			{#each ACTIONS.filter((a) => !a.torrent || protocolOf(r) === 'torrent') as a (a.label)}
+			{#each actionsOf(r) as a (a.label)}
 				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
 			{/each}
 			{#if steerable(r)}
@@ -1572,9 +1590,39 @@
 			{/if}
 		{/if}
 	{:else if tab === 'Servers'}
-		<GhostEmpty compact testid="dl-servers-none" title="No server details yet" text="Which servers supplied this download shows up here." />
+		{@const uv = det.id === r.id ? det.usenet : undefined}
+		{@const srv = serverRows(uv)}
+		{#if !uv && live(r)}
+			{@render calm(r, 'Servers', det.id === r.id ? det.usenetErr : undefined)}
+		{:else if srv.length}
+			<div class="tblw" data-testid="dl-servertable"><table class="t2">
+				<thead><tr><th class="c-name">Server</th><th class="c-num">This download</th><th class="c-num">All time</th><th class="c-num">Found</th></tr></thead>
+				<tbody>
+					{#each srv as s (s.name)}
+						<tr data-testid="dl-serverrow"><td class="c-name"><span class="fn">{s.name}</span></td><td class="c-num">{s.job || '–'}</td><td class="c-num">{s.total ? bytes(s.total) : '–'}</td><td class="c-num">{s.found || '–'}</td></tr>
+					{/each}
+				</tbody>
+			</table></div>
+		{:else}
+			<GhostEmpty compact testid="dl-servers-none" title="No server details yet" text="Which servers supplied this download shows up here." />
+		{/if}
 	{:else if tab === 'Repair and unpack'}
-		<GhostEmpty compact testid="dl-repair-none" title="Nothing to repair" text="Checking, repairing and unpacking steps show up here." />
+		{@const uv = det.id === r.id ? det.usenet : undefined}
+		{@const steps = repairSteps(uv)}
+		{#if !uv && live(r)}
+			{@render calm(r, 'Repair and unpack', det.id === r.id ? det.usenetErr : undefined)}
+		{:else if steps.length}
+			<div class="lgw" data-testid="dl-repair">
+				{#each steps as g (g.title)}
+					<h4 class="lgday">{g.title}</h4>
+					<ol class="lg">
+						{#each g.lines as l, i (i)}<li class:bad={badKind(l)}><time></time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l}</span></li>{/each}
+					</ol>
+				{/each}
+			</div>
+		{:else}
+			<GhostEmpty compact testid="dl-repair-none" title="Nothing to repair" text="Checking, repairing and unpacking steps show up here." />
+		{/if}
 	{:else}
 		{@const log = d?.log ?? []}
 		{#if log.length}
@@ -1651,7 +1699,7 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up="{bytes(upSum)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <p class="qline" data-testid="dl-qline"><span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{#if freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
@@ -1660,6 +1708,7 @@
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
 		{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}
 		{#if pickedRows.some(steerable)}{#each STEER as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
+		{#if pickedRows.some(retryable)}<button type="button" class="xbn" onclick={() => onretry?.(pickedRows.filter(retryable))} data-testid="dl-bulk-retry">Try again</button>{/if}
 		<button type="button" class="xbn" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-bulk-remove">Remove</button>
 		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
 		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>

@@ -62,3 +62,10 @@ describe('swarm counts', () => {
 		expect(swarmTotal(2, 9)).toBe(9);
 	});
 });
+
+describe('healthLine Usenet steps', () => {
+	it('names the step after the download', () => {
+		expect(healthLine({ phase: 'downloading', progress: 1, client_hint: 'repairing' })).toBe('Repairing');
+		expect(healthLine({ phase: 'downloading', progress: 1, client_hint: 'script' })).toBe('Running script');
+	});
+});

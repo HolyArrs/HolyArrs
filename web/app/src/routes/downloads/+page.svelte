@@ -387,8 +387,8 @@
 		}
 	}
 	// Client actions: the Downloader does the work; the row's new state is read back from it.
-	const DONE: Record<string, string> = { pause: 'Paused.', resume: 'Started.', top: 'Moved to the top.', recheck: 'Checking again.', reannounce: 'Asked the trackers again.' };
-	async function act(r: DownloadRow, action: 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce') {
+	const DONE: Record<string, string> = { pause: 'Paused.', resume: 'Started.', top: 'Moved to the top.', recheck: 'Checking again.', reannounce: 'Asked the trackers again.', retry: 'Sent back to the queue.' };
+	async function act(r: DownloadRow, action: 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry') {
 		busy = r.id;
 		try {
 			await api.post(`${rowPath(r)}/${action}`);
@@ -399,6 +399,20 @@
 		} finally {
 			busy = 0;
 		}
+	}
+	// Try again for many failed Usenet jobs: one call each.
+	async function retryMany(list: DownloadRow[]) {
+		const bad: string[] = [];
+		for (const r of list) {
+			try {
+				await api.post(`${rowPath(r)}/retry`);
+			} catch (e) {
+				bad.push(`${r.name || 'Download'}: ${message(e)}`);
+			}
+		}
+		if (bad.length) toasts.push(bad.join(' · '), 'fail');
+		else toasts.push(list.length === 1 ? 'Sent back to the queue.' : `Sent ${list.length} downloads back to the queue.`, 'ok');
+		await load();
 	}
 	// The steering sheet: seeding rules and more for one or many torrents.
 	let steerOpen = $state(false);
@@ -513,7 +527,7 @@
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
 	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} {watch} {upTotal} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} onretry={retryMany} {watch} {upTotal} />
 	{#if moreOutside}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit += 200; void load(); }} data-testid="dl-outside-more">Show more torrents</Button></p>{/if}
 {/if}
 </PageLoader>
