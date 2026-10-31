@@ -37,6 +37,20 @@
 		for (const a of list.slice(0, 16)) ctx.want(a);
 	});
 
+	// Preview only (?looks): five looks for the card's sheet, picked from a pill bar and remembered.
+	const LOOKS = ['Glass', 'Sticky note', 'Notepad', 'Ticket', 'Inset'];
+	const lookOn = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('looks');
+	let look = $state(0);
+	if (lookOn) {
+		try { look = Math.min(5, Math.max(1, Number(localStorage.getItem('approvals-look')) || 1)); } catch { look = 1; }
+	}
+	function pickLook(n: number) {
+		look = n;
+		try { localStorage.setItem('approvals-look', String(n)); } catch { /* storage blocked: the pick lasts this visit */ }
+	}
+	// "16 d ago" read out in full: "16 days ago".
+	const longAgo = (s: string) => ago(s).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
+
 	const types: { k: 'all' | 'movie' | 'show' | 'artist'; label: string; icon: IconName }[] = [
 		{ k: 'all', label: 'All', icon: 'library' },
 		{ k: 'movie', label: 'Movies', icon: 'film' },
@@ -356,7 +370,7 @@
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" data-ask={a.id} data-look={look || undefined} style:--art={look && (wide || photo || a.poster) ? `url("${wide ?? photo ?? a.poster}")` : undefined} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					<div class="ban">
@@ -365,7 +379,12 @@
 					</div>
 					<div class="sheet-b">
 					<div class="body">
+						{#if look}
+							<!-- Preview looks: who on one line, when below (or as a chip), never joined by a dot. -->
+							<span class="who sk-who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="sk-id"><span class="sk-k">Asked by</span><span class="sk-n"><b>{w.kid ? w.name.replace(/\s*\(kid\)\s*$/i, '') : w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="sk-v">asked</span></span><span class="when sk-when"><span class="sk-a">Asked{" "}</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{longAgo(a.asked_at)}</time></span></span></span>
+						{:else}
 						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="when">· <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
+						{/if}
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
@@ -401,6 +420,12 @@
 			{/each}
 		</ul>
 </div>
+
+{#if lookOn}
+	<div class="sk-bar" role="group" aria-label="Card look (preview)">
+		{#each LOOKS as name, i (name)}<button type="button" class="sk-pill" aria-pressed={look === i + 1} onclick={() => pickLook(i + 1)}>{i + 1} · {name}</button>{/each}
+	</div>
+{/if}
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
@@ -609,5 +634,86 @@
 		.bc, .fill, .win[open], .win::backdrop, .ban-img, img.ban-img, .win[open]:global(.win-out), .win[open]:global(.win-out)::backdrop { transition: none; animation: none; }
 		.b:active, .approve-all:active { transform: none; }
 		.bc:hover, .bc:hover .ban-img:not(.soft) { transform: none; }
+	}
+
+	/* Preview looks (?looks) for the card's sheet. Each look sets the sheet's own ink and paper
+	   (light-dark follows the app theme), so the answers and the status read on it. */
+	.bc { --card-bg: var(--bg); }
+	.sk-k, .sk-v { display: none; }
+	.sk-who { gap: 9px; white-space: normal; }
+	.sk-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto !important; }
+	.sk-n { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text); font: 600 13.5px/1.3 var(--font-ui); }
+	.sk-n b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sk-n > :global(*) { flex: none; }
+	.sk-n > b { flex: 0 1 auto; }
+	.sk-when { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.bc[data-look] .sheet-b { --text: var(--sk-ink); --text-muted: var(--sk-muted); --bg: var(--sk-paper); color: var(--sk-ink); -webkit-backdrop-filter: none; backdrop-filter: none; }
+	.bc[data-look] .b.no { background: color-mix(in srgb, var(--sk-ink) 9%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sk-ink) 8%, transparent); }
+	.bc[data-look] .b.yes { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
+
+	/* 1 Glass: raised frosted glass, a bright top edge, a hairline and a soft drop; the art tints it. */
+	.bc[data-look='1'] { --sk-ink: light-dark(#111114, #f5f5f7); --sk-muted: light-dark(#53555c, rgb(235 235 245 / 0.74)); --sk-paper: light-dark(#f4f5f7, #1d1d21); }
+	.bc[data-look='1']::before { content: ''; position: absolute; inset: 150px 0 0; z-index: -1; background: var(--art, none) center / cover; filter: blur(42px) saturate(1.7); opacity: 0.45; transform: scale(1.5); pointer-events: none; }
+	.bc[data-look='1'] .sheet-b { background: linear-gradient(180deg, light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.13)), light-dark(rgb(246 247 250 / 0.84), rgb(255 255 255 / 0.05))); -webkit-backdrop-filter: blur(26px) saturate(1.6); backdrop-filter: blur(26px) saturate(1.6); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.22)), inset 0 -1px 0 light-dark(rgb(0 0 0 / 0.04), rgb(0 0 0 / 0.25)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.1)), 0 18px 34px -16px rgb(0 0 0 / 0.6); }
+
+	/* 2 Sticky note: warm paper with a folded top corner and a lift shadow. */
+	.bc[data-look='2'] { --sk-ink: light-dark(#2b2410, #f3ead6); --sk-muted: light-dark(#6a5821, #c9b994); --sk-paper: light-dark(#fff3c4, #2a2620); --sk-fold: light-dark(#e8d27c, #4a4234); }
+	.bc[data-look='2'] .sheet-b { border-radius: 10px; background: linear-gradient(225deg, transparent 13px, light-dark(#fff7d4, #2e2a23) 13.5px, var(--sk-paper)); box-shadow: none; filter: drop-shadow(0 0 0.6px light-dark(rgb(110 80 0 / 0.4), rgb(255 230 180 / 0.2))) drop-shadow(0 12px 14px rgb(0 0 0 / 0.38)); }
+	.bc[data-look='2'] .sheet-b::before { content: ''; position: absolute; top: 0; right: 0; width: 18.5px; height: 18.5px; border-radius: 0 0 0 4px; background: linear-gradient(45deg, var(--sk-fold) 50%, transparent 50%); filter: drop-shadow(-1px 1px 1px rgb(0 0 0 / 0.2)); }
+	.bc[data-look='2'] .sheet-b::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: repeating-linear-gradient(115deg, light-dark(rgb(120 90 0 / 0.03), rgb(255 230 180 / 0.025)) 0 2px, transparent 2px 5px); pointer-events: none; }
+
+	/* 3 Notepad: a pad page with binding holes, ruled lines behind who asked, a page under it. */
+	.bc[data-look='3'] { --sk-ink: light-dark(#1d1d21, #ececf0); --sk-muted: light-dark(#585a62, #a9a9b4); --sk-paper: light-dark(#fdfcf8, #1f1f23); --sk-rule: light-dark(rgb(60 100 175 / 0.2), rgb(140 170 235 / 0.14)); }
+	.bc[data-look='3'] .sheet-b { border-radius: 6px 6px 12px 12px; background: var(--sk-paper); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.06)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.07)), 0 4px 0 -1px light-dark(#ebe8df, #17171a), 0 4px 0 0 light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.05)), 0 18px 30px -16px rgb(0 0 0 / 0.6); }
+	.bc[data-look='3'] .sheet-b::before { content: ''; position: absolute; top: 6px; left: 12px; right: 12px; height: 7px; background: radial-gradient(circle at 50% 50%, light-dark(rgb(30 30 35 / 0.55), rgb(0 0 0 / 0.85)) 2.6px, transparent 3.2px) center / 16px 7px repeat-x; pointer-events: none; }
+	.bc[data-look='3'] .body { padding-top: 20px; background: repeating-linear-gradient(180deg, transparent 0 21px, var(--sk-rule) 21px 22px) 0 19px / 100% calc(100% - 19px) no-repeat; }
+	.bc[data-look='3'] .sk-id { gap: 0; }
+	.bc[data-look='3'] .sk-n, .bc[data-look='3'] .sk-when { line-height: 22px; }
+	.bc[data-look='3'] .sk-v { display: inline; color: var(--sk-muted); font-weight: 500; }
+	.bc[data-look='3'] .sk-a { display: none; }
+
+	/* 4 Ticket: an admission stub, a perforation with side notches, the answers below. */
+	.bc[data-look='4'] { --sk-ink: light-dark(#121216, #f2f2f5); --sk-muted: light-dark(#5a5b64, #a7a7b2); --sk-paper: light-dark(#ffffff, #222226); --sk-cut: 64px; }
+	.bc[data-look='4'] .sheet-b { border-radius: 14px; background: linear-gradient(180deg, light-dark(#fff, #29292e), light-dark(#f4f4f7, #1d1d21)); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.1)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.09), rgb(255 255 255 / 0.08)), 0 16px 30px -16px rgb(0 0 0 / 0.62); }
+	.bc[data-look='4'] .sheet-b::before, .bc[data-look='4'] .sheet-b::after { content: ''; position: absolute; top: calc(var(--sk-cut) - 8px); z-index: 3; width: 16px; height: 16px; border-radius: 50%; background: var(--card-bg); }
+	.bc[data-look='4'] .sheet-b::before { left: -8px; box-shadow: inset -1px 0 0 light-dark(rgb(0 0 0 / 0.09), rgb(255 255 255 / 0.08)); }
+	.bc[data-look='4'] .sheet-b::after { right: -8px; box-shadow: inset 1px 0 0 light-dark(rgb(0 0 0 / 0.09), rgb(255 255 255 / 0.08)); }
+	.bc[data-look='4'] .body { box-sizing: border-box; height: var(--sk-cut); justify-content: center; padding: 8px 14px 6px; }
+	.bc[data-look='4'] .foot::before { content: ''; position: absolute; top: 0; left: 14px; right: 14px; border-top: 2px dashed light-dark(rgb(0 0 0 / 0.13), rgb(255 255 255 / 0.16)); }
+	.bc[data-look='4'] .sk-id { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: center; }
+	.bc[data-look='4'] .sk-k { display: block; grid-column: 1; color: var(--sk-muted); font: 700 10px/1.2 var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; }
+	.bc[data-look='4'] .sk-n { grid-column: 1; }
+	.bc[data-look='4'] .sk-when { grid-column: 2; grid-row: 1 / 3; padding: 4px 8px; border-radius: 999px; background: color-mix(in srgb, var(--sk-ink) 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sk-ink) 9%, transparent); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+	.bc[data-look='4'] .sk-a { display: none; }
+
+	/* 5 Inset: the sheet sits in a well cut into the card; the answers on a raised plate. */
+	.bc[data-look='5'] { --sk-ink: light-dark(#141418, #f2f2f5); --sk-muted: light-dark(#575a62, #a2a2ad); --sk-paper: light-dark(#eceef2, #0f0f12); --sk-plate: light-dark(#ffffff, #232327); }
+	.bc[data-look='5'] .sheet-b { margin-top: 8px; border-radius: 16px; background: var(--sk-paper); box-shadow: inset 0 2px 6px light-dark(rgb(0 0 0 / 0.13), rgb(0 0 0 / 0.75)), inset 0 0 0 1px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.04)), 0 1px 0 light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.06)); }
+	.bc[data-look='5'] .foot { margin: 0 6px 6px; padding: 8px; border-radius: 12px; background: var(--sk-plate); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.08)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.05)), 0 6px 14px -6px rgb(0 0 0 / 0.45); }
+	.bc[data-look='5'] .foot .b.no { background: color-mix(in srgb, var(--sk-ink) 7%, var(--sk-plate)); }
+	.bc[data-look='5'] .foot > .state.tone-bad { padding-left: 6px; }
+
+	/* The preview pill bar: above the phone tab bar and the toasts. */
+	.sk-bar { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 2000; display: flex; gap: 4px; max-width: calc(100vw - 24px); box-sizing: border-box; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 999px; transform: translateX(-50%); background: color-mix(in srgb, var(--surface-2) 88%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); box-shadow: 0 0 0 1px var(--line-strong), 0 16px 40px -12px rgb(0 0 0 / 0.6); }
+	.sk-bar::-webkit-scrollbar { display: none; }
+	.sk-pill { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+	.sk-pill:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+	.sk-pill[aria-pressed='true'] { background: var(--text); color: var(--bg); }
+	@media (max-width: 767px) {
+		.sk-bar { bottom: calc(var(--tabbar, 64px) + 12px + env(safe-area-inset-bottom, 0px)); }
+		.sk-pill { height: 32px; padding: 0 11px; font-size: 12px; }
+		.sk-who { gap: 7px; }
+		.sk-n { font-size: 12.5px; gap: 4px; }
+		.sk-when { font-size: 11px; }
+		.bc[data-look='1']::before { inset: 110px 0 0; }
+		.bc[data-look='3'] .body { padding-top: 18px; background-position: 0 17px; }
+		.bc[data-look='4'] { --sk-cut: 58px; }
+		.bc[data-look='4'] .body { padding: 6px 10px 4px; }
+		.bc[data-look='4'] .sk-id { grid-template-columns: minmax(0, 1fr); }
+		.bc[data-look='4'] .sk-k { display: none; }
+		.bc[data-look='4'] .sk-when { grid-column: 1; grid-row: auto; justify-self: start; padding: 2px 7px; font-size: 10.5px; }
+		.bc[data-look='4'] .foot::before { left: 10px; right: 10px; }
+		.bc[data-look='5'] .sheet-b { margin-top: 6px; }
+		.bc[data-look='5'] .foot { margin: 0 5px 5px; padding: 6px; }
 	}
 </style>
