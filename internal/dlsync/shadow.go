@@ -25,7 +25,7 @@ const (
 
 // modeTTL is how long a read of the setting is kept, so the flag changes
 // without a restart but SyncOnce does not query it every tick.
-const modeTTL = 5 * time.Second
+var modeTTL = 5 * time.Second
 
 // Shadow feeds a Store from the lists downloader.Manager already reads
 // (Manager.OnList). It never contacts a client.
@@ -68,14 +68,15 @@ func (sh *Shadow) Mode(ctx context.Context) string {
 }
 
 // OnList is downloader.Manager.OnList: in shadow mode it records the list
-// the Manager just read. Phase 1 only has shadow, so "on" acts as shadow.
+// the Manager just read. With "on" the pollers own the store, so a list the
+// Manager reads in its fallback is not recorded (it covers one category).
 func (sh *Shadow) OnList(id int64, gen uint64, _ string, jobs []downloader.Job, err error) {
 	if sh == nil || sh.Store == nil {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	if sh.Mode(ctx) == ModeLegacy {
+	if sh.Mode(ctx) != ModeShadow {
 		return
 	}
 	if err != nil {
