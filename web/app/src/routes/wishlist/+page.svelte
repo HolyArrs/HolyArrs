@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { demoOn, withDemo } from '#lib/approvals/live-demo.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { glide } from '#lib/ui/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -262,6 +263,8 @@
 	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
 	let titleLive = $state(new Map<number, TitleLive>());
 	let liveBusy = false;
+	// Preview only: ?demo fills every live stage (see live-demo.ts).
+	const shownLive = $derived(demoOn() ? withDemo(titleLive, asks) : titleLive);
 	async function loadLive() {
 		if (liveBusy || !session.can('manage_library')) return;
 		liveBusy = true;
@@ -437,7 +440,7 @@
 	const people = $derived(askers(asks));
 	const ctx: ApprovalsCtx = {
 		get shown() { return shown; },
-		live: (a) => liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined),
+		live: (a) => liveFacts(a.title_id ? shownLive.get(a.title_id) : undefined),
 		get viewed() { return viewed; },
 		get tab() { return tab; },
 		get counts() { return counts; },
