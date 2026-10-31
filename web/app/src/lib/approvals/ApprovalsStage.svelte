@@ -2,7 +2,7 @@
 	// One ask in the cards' window (ApprovalsDesktop): the trailer as a big
 	// banner (Explore's Billboard; for music, the artist's video over the
 	// photo), type · year · what was asked, who asked and their note, then
-	// Approve / Choose what to get / Turn down. "Choose what to get" lifts the
+	// Approve / Choose what to get / Decline. "Choose what to get" lifts the
 	// title into the corner and raises the What to get sheet inside the same
 	// frame: the two-pane picker (seasons and episodes, or albums and songs),
 	// the Pick rule, then Approve. The life-cycle line runs along the edge.
@@ -101,10 +101,13 @@
 		const who = ctx.who(picked).name;
 		if (life.stage === 'ready') {
 			const at = picked.available_at ?? picked.decided_at;
-			return `In the library${at ? ` since ${shortDate(at)}` : ''}${life.more ? '' : '.'}`;
+			return `In the Library${at ? ` since ${shortDate(at)}` : ''}${life.more ? '' : '.'}`;
 		}
 		if (life.stage === 'declined') return ctx.decided(picked) ? `${ctx.decided(picked)}.` : 'Declined.';
-		if (life.stage === 'failed') return ctx.live(picked).phase === 'failed' ? 'The download failed.' : 'Couldn’t find it.';
+		if (life.stage === 'failed') {
+			const why = life.reason ? ` ${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : '';
+			return (picked.title_id ? 'The download failed.' : 'Couldn’t add it to the library.') + why;
+		}
 		return life.stage === 'upcoming' ? `Getting it for ${who}. It isn’t out yet.` : `Getting it for ${who}.`;
 	});
 	const year = $derived(d?.year ?? picked.year ?? null);
@@ -165,13 +168,22 @@
 			...(pick.albums ? { albums: pick.albums } : {}),
 			...(pick.songs ? { songs: pick.songs } : {})
 		});
+		closeSheet();
+	}
+	// Closing the sheet hands focus back to the button that opens it (or the window).
+	function closeSheet() {
 		choosing = false;
+		void tick().then(() => {
+			const opener = frame?.querySelector<HTMLElement>('[data-opens-sheet]');
+			const to = opener ?? frame?.closest<HTMLElement>('dialog') ?? null;
+			to?.focus({ preventScroll: true });
+		});
 	}
 	function keys(e: KeyboardEvent) {
 		if (document.querySelector('dialog[open]')) return;
 		if (e.key === 'Escape' && choosing) {
 			e.preventDefault();
-			choosing = false;
+			closeSheet();
 		}
 	}
 </script>
@@ -214,9 +226,9 @@
 						{#if status}
 							<span></span>
 						{:else if waiting(picked)}
-							<div class="acts" class:gone={choosing}>
+							<div class="acts" class:gone={choosing} inert={choosing}>
 								<button type="button" class="act primary" data-testid="ask-approve" onclick={() => ctx.approve([picked])}><Icon name="check" size={20} />Approve</button>
-								<button type="button" class="act glass" onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to add</button>
+								<button type="button" class="act glass" data-opens-sheet onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to add</button>
 								<button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Decline</button>
 							</div>
 						{:else}
@@ -240,7 +252,7 @@
 						<p class="sent">{sentence}{#if life.more}<span class="more">{` · ${life.more}`}</span>{/if}</p>
 					</div>
 					{#if picked.kind !== 'movie' && !choosing}
-						<button type="button" class="act glass peek" onclick={() => void choose()}><Icon name="chevronUp" size={18} />{listName}</button>
+						<button type="button" class="act glass peek" data-opens-sheet onclick={() => void choose()}><Icon name="chevronUp" size={18} />{listName}</button>
 					{/if}
 					{#if failed}
 						<div class="acts"><button type="button" class="act glass" aria-label="Decline {picked.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} /><span class="bl">Decline</span></button></div>
@@ -254,7 +266,7 @@
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
 						<h3 id="sheet-h">{status ? listName : 'What to add'}</h3>
-						<button type="button" class="x" aria-label={status ? 'Collapse' : 'Close'} onclick={() => (choosing = false)}><Icon name={status ? 'chevronDown' : 'x'} size={18} /></button>
+						<button type="button" class="x" aria-label={status ? 'Collapse' : 'Close'} onclick={closeSheet}><Icon name={status ? 'chevronDown' : 'x'} size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
@@ -267,9 +279,9 @@
 							{/if}
 						{/if}
 						{#if rules.length && !status}
-							<div class="rules" role="group" aria-label="Pick rules">
-								<span class="rl">Pick rules</span>
-								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">· default</span>{:else}Default pick rules{/if}</button>
+							<div class="rules" role="group" aria-label="Quality">
+								<span class="rl">Quality</span>
+								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">(default)</span>{:else}Default{/if}</button>
 								{#each rules as r (r.id)}
 									<button type="button" class="rule" aria-pressed={rulesId === r.id} onclick={() => (rulesId = r.id)}>{r.name}</button>
 								{/each}
@@ -279,7 +291,7 @@
 					{#if !status}
 					<footer class="sh-f">
 						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Approving adds only what you ticked' : picked.kind === 'movie' ? `Approving adds the movie` : `Approving adds ${(count(picked) || 'everything they asked for').toLowerCase()}`}</span>
-						<button type="button" class="act ghost" onclick={() => (choosing = false)}>Back</button>
+						<button type="button" class="act ghost" onclick={closeSheet}>Back</button>
 						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />Approve</button>
 					</footer>
 					{/if}
@@ -413,6 +425,13 @@
 	@media (max-width: 767px) {
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
 		.act { height: 46px; padding: 0 18px; }
+		/* Phones: the Quality row scrolls sideways; the summary sits on its own line above the buttons. */
+		.rules { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -16px; padding: 0 16px; }
+		.rules::-webkit-scrollbar { display: none; }
+		.rule, .rl { flex: none; white-space: nowrap; }
+		.sh-f { flex-wrap: wrap; }
+		.sum { flex: 1 0 100%; }
+		.sh-f .act.ghost { margin-left: auto; }
 	}
 	/* Touch screens: every small control gets a full finger-sized target. */
 	@media (pointer: coarse) {

@@ -189,7 +189,7 @@
 					{@const first = albumPicks.find((x) => x.row.kind === r.kind) === p}
 					{#if first}<li class="sp-kind" aria-hidden="true">{kindLabel[r.kind] ?? r.kind}</li>{/if}
 					<li class="sp-row" class:on={openAlbum === r.key} class:off={p.tick === 'none'} data-testid="ask-album" data-tick={p.tick}>
-						{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Tick {r.main.name}" onchange={() => tickAlbum(p)} />{/if}
+						{#if editable}<label class="sp-tk"><input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Tick {r.main.name}" onchange={() => tickAlbum(p)} /></label>{/if}
 						<button type="button" class="sp-open" aria-pressed={openAlbum === r.key} onclick={() => (openAlbum = r.key)}>
 							<span class="sp-cov">{#if r.main.image}<img src={coverFor(r.main.image, 64).src} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />{/if}</span>
 							<span class="sp-t"><span class="sp-n">{r.main.name}</span><span class="sp-s">{r.main.year ?? ''}{p.list?.length ? ` · ${p.tick === 'all' ? p.list.length : p.ticked.length} of ${p.list.length} songs` : ''}</span></span>
@@ -201,7 +201,7 @@
 				{#each picks as p, i (p.number)}
 					{@const s = seasons[i]}
 					<li class="sp-row" class:on={openSeason === s.number} class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
-						{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={s.number === 0 ? 'Tick every episode in specials' : `Tick every episode in season ${s.number}`} onchange={() => tickSeason(p)} />{/if}
+						{#if editable}<label class="sp-tk"><input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={s.number === 0 ? 'Tick every episode in specials' : `Tick every episode in season ${s.number}`} onchange={() => tickSeason(p)} /></label>{/if}
 						<button type="button" class="sp-open" aria-pressed={openSeason === s.number} onclick={() => (openSeason = s.number)}>
 							<span class="sp-num">{s.number === 0 ? 'SP' : s.number}</span>
 							<span class="sp-t"><span class="sp-n">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span><span class="sp-s">{p.tick === 'none' ? 'Left out' : !(s.episodes || p.all.length) ? 'Not out yet' : `${p.ticked.length || s.episodes} of ${s.episodes || p.all.length} episodes`}</span></span>
@@ -393,7 +393,9 @@
 	.sp-row:hover { background: var(--surface-2); }
 	.sp-row.on { background: var(--surface-1); color: var(--text); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgb(0 0 0 / 0.08); }
 	.sp-row:has(.sp-open:focus-visible) { box-shadow: var(--focus-ring); }
-	.sp-row .tick { width: 18px; height: 18px; margin: 0 0 0 8px; }
+	.sp-row .tick { width: 18px; height: 18px; margin: 0; }
+	/* The row's tick sits in its own box, finger-sized on touch screens. */
+	.sp-tk { flex: none; display: grid; place-items: center; align-self: stretch; padding-left: 8px; cursor: pointer; }
 	/* The row's open button fills the rest of the row, so clicking anywhere past the tick opens it. */
 	.sp-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; align-self: stretch; padding: 4px 8px; border: 0; border-radius: inherit; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 	.sp-open:focus-visible { outline: none; }
@@ -420,10 +422,16 @@
 	.sp-item .y { flex: none; color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; }
 	.sp-list li.off .t { opacity: 0.5; }
 	.sp-list .tick { width: 16px; height: 16px; }
+	@media (pointer: coarse) {
+		.sp-item { min-height: 44px; }
+		.sp-tk { width: 44px; min-height: 44px; padding-left: 0; }
+	}
 	@media (max-width: 767px) {
 		.split { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
 		.sp-left { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 		.sp-left::-webkit-scrollbar { display: none; }
+		/* A strip cut at the right edge fades out there, so it reads as more to swipe. */
+		.sp-left { padding-right: 28px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); }
 		.sp-kind { display: none; }
 		.sp-row { flex: none; max-width: 220px; }
 		.sp-row :global(svg:last-child) { display: none; }
