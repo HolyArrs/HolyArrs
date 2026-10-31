@@ -183,6 +183,46 @@
 	let det = $state.raw<Det>({ id: 0 });
 	// Panel reads never show the server's own words; a calm line and Retry instead.
 	const CALM_ERR = "Couldn't read this from the Downloader just now.";
+	// Info: one surface of facts in groups; a fact with no value is left out, and so is an empty group.
+	type Fact = { k: string; v: string; tid?: string; path?: boolean };
+	function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string; rows: Fact[] }[] {
+		const t = d?.torrent;
+		const speed = t?.speed ?? r.speed ?? 0;
+		const up = t?.up_speed ?? r.up_speed ?? 0;
+		const eta = t?.eta ?? r.eta ?? 0;
+		const size = t?.size || r.size || 0;
+		const seeding = (t ? t.downloaded >= t.size && t.size > 0 : false) || r.progress >= 1;
+		const got = t ? `${bytes(t.downloaded)} of ${bytes(t.size)}` : r.size ? `${bytes((r.size * percent(r.progress)) / 100)} of ${bytes(r.size)}` : '';
+		const f = (k: string, v: string | false | undefined | null, tid?: string, path?: boolean): Fact | null => (v ? { k, v, tid, path } : null);
+		const ratio = f('Share ratio', t ? t.ratio.toFixed(2) : r.ratio != null ? Number(r.ratio).toFixed(2) : '');
+		const uploaded = f('Uploaded', t ? bytes(t.uploaded) : '', 'dl-info-uploaded');
+		const seedTime = f('Seeding time', t?.seeding_time ? duration(t.seeding_time) : '', 'dl-info-seedtime');
+		const activity = f('Last activity', t?.last_activity ? ago(t.last_activity) : '', 'dl-info-activity');
+		const downRow = f('Down', speed ? `${bytes(speed)}/s` : '');
+		const upRow = f('Up', up ? `${bytes(up)}/s` : '');
+		const transfer = seeding
+			? [ratio, uploaded, seedTime, activity, f('Size', size ? bytes(size) : ''), upRow, downRow, f('Wasted', t?.wasted ? bytes(t.wasted) : '')]
+			: [f('Downloaded', got), downRow, upRow, f('Time left', eta ? duration(eta) : ''), uploaded, ratio, activity, f('Wasted', t?.wasted ? bytes(t.wasted) : '')];
+		const swarm = [f('Seeds', t ? `${t.seeds} of ${t.seeds_total}` : ''), f('Peers', t ? `${t.peers} of ${t.peers_total}` : ''), f('Private', t?.private == null ? '' : t.private ? 'Yes' : 'No')];
+		const dates = [
+			f('Added', dateTime(t?.added_at ?? r.started_at)),
+			f('Done', dateTime(t?.done_at ?? r.finished_at)),
+			f('Time active', t?.time_active ? duration(t.time_active) : ''),
+			seeding ? null : seedTime,
+			f('Save path', t?.save_path, undefined, true),
+			f('Downloader', d?.downloader || r.downloader),
+			f('Requested by', d?.requested_by, 'dl-info-asker')
+		];
+		const caps = r.limit_down || r.limit_up ? `${r.limit_down ? `${bytes(r.limit_down)}/s down` : 'no cap down'} · ${r.limit_up ? `${bytes(r.limit_up)}/s up` : 'no cap up'}` : '';
+		const rules = [f('Speed caps', caps, 'dl-info-caps'), f('Seeding rules', r.limits ? limitsWords(r.limits) : '', 'dl-info-limits')];
+		const keep = (xs: (Fact | null)[]) => xs.filter((x): x is Fact => !!x);
+		return [
+			{ cap: 'Transfer', rows: keep(transfer) },
+			{ cap: 'Swarm', rows: keep(swarm) },
+			{ cap: 'Dates', rows: keep(dates) },
+			{ cap: 'Rules', rows: keep(rules) }
+		].filter((g) => g.rows.length);
+	}
 	let filesBusy = $state(false);
 	// The client is read live for as long as it may hold the torrent: while
 	// it downloads, and when it is finished or seeding too.
@@ -1213,45 +1253,18 @@
 	{@const d = det.id === r.id ? det.detail : undefined}
 	{@const t = d?.torrent}
 	{#if tab === 'Info'}
-		{#if tor}
-			{@const speed = t?.speed ?? r.speed ?? 0}
-			{@const up = t?.up_speed ?? r.up_speed ?? 0}
-			{@const eta = t?.eta ?? r.eta ?? 0}
-			<div class="gen" data-testid="dl-info">
-				<section class="grp" aria-label="Transfer"><h3 class="gt">Transfer</h3><dl class="kv">
-					<dt>Downloaded</dt><dd>{t ? `${bytes(t.downloaded)} of ${bytes(t.size)}` : r.size ? `${bytes((r.size * percent(r.progress)) / 100)} of ${bytes(r.size)}` : '–'}</dd>
-					<dt>Down</dt><dd>{speed ? `${bytes(speed)}/s` : '–'}</dd>
-					<dt>Up</dt><dd>{up ? `${bytes(up)}/s` : '–'}</dd>
-					<dt>Time left</dt><dd>{eta ? duration(eta) : '–'}</dd>
-					<dt>Uploaded</dt><dd data-testid="dl-info-uploaded">{t ? bytes(t.uploaded) : '–'}</dd>
-					<dt>Wasted</dt><dd>{t ? bytes(t.wasted) : '–'}</dd>
-				</dl></section>
-				<section class="grp" aria-label="Swarm"><h3 class="gt">Swarm</h3><dl class="kv">
-					<dt>Seeds</dt><dd>{t ? `${t.seeds} of ${t.seeds_total}` : '–'}</dd>
-					<dt>Peers</dt><dd>{t ? `${t.peers} of ${t.peers_total}` : '–'}</dd>
-					<dt>Share ratio</dt><dd>{t ? t.ratio.toFixed(2) : '–'}</dd>
-					<dt>Private</dt><dd>{t?.private == null ? '–' : t.private ? 'Yes' : 'No'}</dd>
-					<dt>Last activity</dt><dd data-testid="dl-info-activity">{t?.last_activity ? ago(t.last_activity) : '–'}</dd>
-				</dl></section>
-				<section class="grp" aria-label="Dates and paths"><h3 class="gt">Dates and paths</h3><dl class="kv">
-					<dt>Size</dt><dd>{t?.size || r.size ? bytes(t?.size || r.size || 0) : '–'}</dd>
-					<dt>Added</dt><dd>{dateTime(t?.added_at ?? r.started_at) || '–'}</dd>
-					<dt>Done</dt><dd>{dateTime(t?.done_at ?? r.finished_at) || '–'}</dd>
-					<dt>Seeding time</dt><dd data-testid="dl-info-seedtime">{t?.seeding_time ? duration(t.seeding_time) : '–'}</dd>
-					<dt>Time active</dt><dd>{t?.time_active ? duration(t.time_active) : '–'}</dd>
-					<dt>Save path</dt><dd class="path" title={t?.save_path || ''}>{t?.save_path || '–'}</dd>
-				</dl></section>
-				<section class="grp" aria-label="Limits and rules"><h3 class="gt">Limits and rules</h3><dl class="kv">
-					{#if r.limit_down || r.limit_up}<dt>Speed caps</dt><dd data-testid="dl-info-caps">{r.limit_down ? `${bytes(r.limit_down)}/s down` : 'no cap down'} · {r.limit_up ? `${bytes(r.limit_up)}/s up` : 'no cap up'}</dd>{:else}<dt>Speed caps</dt><dd>None</dd>{/if}
-					{#if r.limits}<dt>Seeding rules</dt><dd data-testid="dl-info-limits">{limitsWords(r.limits)}</dd>{:else}<dt>Seeding rules</dt><dd>None</dd>{/if}
-					<dt>Downloader</dt><dd>{d?.downloader || r.downloader || '–'}</dd>
-					<dt>Requested by</dt><dd data-testid="dl-info-asker">{d?.requested_by || '—'}</dd>
-				</dl></section>
-			</div>
-			{#if d?.torrent_error}{@render calm(r, 'Info', CALM_ERR)}{/if}
-		{:else}
-			<div class="gen"><section class="grp" aria-label="Details"><dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.label === 'Requested by' ? d?.requested_by || '—' : f.value}</dd>{/each}</dl></section></div>
-		{/if}
+		{@const groups = tor ? infoGroups(r, d) : [{ cap: 'Details', rows: simple.filter((x) => x.label !== 'Requested by' && x.value !== 'Not reported yet').map((x) => ({ k: x.label, v: x.value, path: x.label === 'Folder' || x.label === 'Source' } as Fact)).concat(d?.requested_by ? [{ k: 'Requested by', v: d.requested_by, tid: 'dl-info-asker' }] : []) }]}
+		<div class="facts" data-testid="dl-info">
+			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{CALM_ERR}</span><button type="button" class="xbn" onclick={() => void readDetail(r, 'Info')} data-testid="dl-panel-retry">Retry</button></p>{/if}
+			{#each groups as g (g.cap)}
+				{#if tor}<h3 class="fcap">{g.cap}</h3>{/if}
+				<dl class="fgrid" aria-label={g.cap}>
+					{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path ? x.v : undefined} data-testid={x.tid}>{x.v}</dd></div>{/each}
+				</dl>
+			{:else}
+				<p class="fnone">Nothing reported yet.</p>
+			{/each}
+		</div>
 	{:else if tab === 'Files'}
 		{@const files = det.id === r.id ? det.files : undefined}
 		{#if !tor || !files}
@@ -1716,8 +1729,6 @@
 	.listbox :global(.chead) { position: sticky; top: 0; z-index: 4; background: var(--bg); }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
-	.gen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 10px; }
-	.gen .kv { margin: 0; }
 	.tblw { margin-top: 10px; max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
 	.fnm { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
 	.fold { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--text-muted); cursor: pointer; }
@@ -1761,7 +1772,6 @@
 	.pb .t2 th { padding: 3px 8px; }
 	.pb .t2 td { padding: 2px 8px; }
 	.pb .tblw { margin-top: 6px; }
-	.pb .gen { gap: 6px 20px; margin-top: 6px; }
 	.pb .dep { margin-top: 8px; padding: 6px 10px; }
 	.pb .lg { font: var(--t-caption); }
 	.pb .xbt { margin-top: 6px; }
@@ -1903,15 +1913,6 @@
 	.mi { border-radius: var(--r-sm); transition: background-color var(--dur-fast) var(--ease-out); }
 	.mi:hover:not(:disabled) { background: var(--surface-2); }
 
-	/* Info: four balanced cards, label left, value right, hairline between rows. */
-	.pb .gen { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin: 0; }
-	.grp { min-width: 0; padding: 8px 12px 4px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-1); }
-	.gt { margin: 0 0 4px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
-	.pb .grp .kv { grid-template-columns: max-content minmax(0, 1fr); gap: 0 16px; font: var(--t-caption); }
-	.grp .kv dt, .grp .kv dd { padding: 4px 0; border-top: 1px solid var(--line); }
-	.grp .kv dt:first-of-type, .grp .kv dt:first-of-type + dd { border-top: 0; }
-	.grp .kv dd { text-align: right; overflow-wrap: anywhere; }
-	.grp .kv dd.path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
 
 	/* Files, Peers, Trackers: full width, a sticky header that matches the main list, hairline rows. */
 	.pb .tblw { margin-top: 0; max-height: max(160px, calc(var(--ph, 260px) - 150px)); overflow: auto; border-radius: var(--r-card); background: var(--surface-1); }
@@ -2025,15 +2026,6 @@
 		.pend:has(.quiet) { border-left: 0; padding-left: 0; }
 	}
 	/* Info cards share the Files table's depth: raised surface, tinted title band, full-width hairline rows, zebra. */
-	.pb .gen { align-items: stretch; }
-	.pb .grp { display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid var(--line-strong); background: var(--surface-2); box-shadow: var(--shadow-card); }
-	.pb .grp .gt { display: flex; align-items: center; height: 28px; margin: 0; padding: 0 12px; border-bottom: 1px solid var(--line-strong); background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); }
-	.pb .grp .kv { flex: 1; gap: 0; align-content: start; }
-	.pb .grp .kv dt, .pb .grp .kv dd { display: flex; align-items: center; min-height: 32px; padding: 0 12px; border-top: 1px solid var(--line); }
-	.pb .grp .kv dd { justify-content: flex-end; padding-left: 4px; font-variant-numeric: tabular-nums; }
-	.pb .grp .kv dd.path { display: block; line-height: 32px; }
-	.pb .grp .kv dt:first-of-type, .pb .grp .kv dt:first-of-type + dd { border-top: 0; }
-	.pb .grp .kv dt:nth-of-type(even), .pb .grp .kv dt:nth-of-type(even) + dd { background: color-mix(in srgb, var(--surface-3) 28%, var(--surface-2)); }
 	.quiet0 { margin: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.lgw { display: grid; gap: 4px; }
 	.lgday { margin: 6px 0 0; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
@@ -2082,4 +2074,32 @@
 	.fbar .tfld { min-height: 34px; padding: 7px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.05); transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
 	.fbar .tfld:hover { border-color: var(--line-strong); }
 	.fbar .tfld:focus-visible { border-color: var(--line-strong); box-shadow: var(--focus-ring); }
+
+	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
+	.pb { grid-template-columns: 160px minmax(0, 1fr); gap: 20px; }
+	.pb .big { width: 160px; height: 240px; border-radius: var(--r-card); box-shadow: 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16); }
+	.pb .big :global(.poster) { border-radius: var(--r-card); }
+	.pb .big.square { height: 160px; }
+	.facts { min-width: 0; padding: 4px 0; border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); overflow: hidden; }
+	.fcap { margin: 0; padding: 10px 12px 2px; color: var(--text-muted); font: var(--t-caption); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+	.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); column-gap: 24px; margin: 0; padding: 0 12px; }
+	.fr { display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 32px; border-bottom: 1px solid var(--line); font: var(--t-caption); }
+	.fr dt { flex: none; color: var(--text-muted); }
+	.fr dd { flex: 1 1 auto; min-width: 0; margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.fr dd.path { direction: rtl; }
+	.fgrid:last-child .fr { border-bottom-color: transparent; }
+	.fgrid:last-child { margin-bottom: 0; }
+	.fnone { margin: 0; padding: 10px 12px; color: var(--text-muted); font: var(--t-caption); }
+	.calm.slim { margin: 4px 8px 4px; padding: 4px 4px 4px 10px; gap: 8px; border-color: var(--line); background: color-mix(in srgb, var(--surface-3) 50%, var(--surface-2)); font: var(--t-caption); }
+	.calm.slim .xbn { min-height: 24px; }
+	@media (max-width: 767px) {
+		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
+		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
+		.pb .big.square { height: 56px; }
+		.fgrid { grid-template-columns: minmax(0, 1fr); }
+	}
+	@media (max-width: 640px) {
+		.pb { grid-template-columns: minmax(0, 1fr); }
+		.pb .big { display: none; }
+	}
 </style>
