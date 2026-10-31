@@ -1428,7 +1428,7 @@
 		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
 		{ label: 'Requested by', value: '–' }
 	]}
-	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `max-height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
+	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="ph">
 			<p class="xt pt"><b>{who(r)}</b><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></p>
 			{@render tabStrip(r)}
