@@ -47,10 +47,13 @@
 	// The raised plate slides to the picked item in each group (as on Downloads).
 	function plate(node: HTMLElement, _key: unknown) {
 		const place = () => {
-			const on = node.querySelector<HTMLElement>('[aria-pressed="true"]');
+			const on = node.querySelector<HTMLElement>(':scope > [aria-pressed="true"]');
 			if (!on) return node.style.setProperty('--io', '0');
+			// The selected tab's plate grows to hold its open sub-tabs (desktop; phones put them on a row below).
+			const sub = on.nextElementSibling as HTMLElement | null;
+			const inline = sub?.classList.contains('stx') && getComputedStyle(sub).flexBasis !== '100%';
 			node.style.setProperty('--ix', `${on.offsetLeft}px`);
-			node.style.setProperty('--iw', `${on.offsetWidth}px`);
+			node.style.setProperty('--iw', `${inline && sub ? sub.offsetLeft + sub.offsetWidth - on.offsetLeft + 3 : on.offsetWidth}px`);
 			node.style.setProperty('--ih', `${on.offsetHeight}px`);
 			node.style.setProperty('--iy', `${on.offsetTop}px`);
 			node.style.setProperty('--io', '1');
@@ -58,7 +61,11 @@
 		void tick().then(place);
 		const ro = new ResizeObserver(place);
 		ro.observe(node);
-		return { update: () => void tick().then(place), destroy: () => ro.disconnect() };
+		// Follow the strip while it grows.
+		const mo = new MutationObserver(() => node.querySelectorAll(':scope > .stx').forEach((x) => ro.observe(x)));
+		mo.observe(node, { childList: true });
+		node.querySelectorAll(':scope > .stx').forEach((x) => ro.observe(x));
+		return { update: () => void tick().then(place), destroy: () => (ro.disconnect(), mo.disconnect()) };
 	}
 
 	// What an empty tab says.
@@ -255,23 +262,23 @@
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
 		<div class="tcap" role="presentation" onkeydown={capKeys}>
-		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts, status]}>
+		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts, status, subOpen]}>
 			<span class="plate" aria-hidden="true"></span>
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
 				{@const here = ctx.approverTab === t.tab}
 				<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-expanded={here && canSub ? subOpen : undefined} aria-controls={here && canSub ? 'sub-tabs' : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}{#if here && status && !subOpen}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}{#if here && canSub}<span class="chev" class:chev-open={subOpen} aria-hidden="true"><Icon name="chevronRight" size={12} /></span>{/if}</button>
-			{/each}
-			{#if canSub}
-				<div class="stx" class:stx-open={subOpen} id="sub-tabs" role="group" aria-label="{approverTabs.find((x) => x.tab === ctx.approverTab)?.label} by status" inert={!subOpen}>
-					<div class="stx-in">
-						{#each subItems as x (x.word)}
-							<button type="button" class="sc" class:sc-fail={x.tone === 'bad'} aria-pressed={status === x.word} aria-label="{x.word}, {x.count}" onclick={() => pickStatus(x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<span class="sn">{x.count}</span></button>
-						{/each}
+				{#if here && canSub}
+					<div class="stx" class:stx-open={subOpen} id="sub-tabs" role="group" aria-label="{approverTabs.find((x) => x.tab === ctx.approverTab)?.label} by status" inert={!subOpen}>
+						<div class="stx-in">
+							{#each subItems as x (x.word)}
+								<button type="button" class="sc" class:sc-fail={x.tone === 'bad'} aria-pressed={status === x.word} aria-label="{x.word}, {x.count}" onclick={() => pickStatus(x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span>{x.word}<span class="sn">{x.count}</span></button>
+							{/each}
+						</div>
 					</div>
-				</div>
-			{/if}
+				{/if}
+			{/each}
 		</div>
 		</div>
 		<div class="right">
@@ -373,8 +380,8 @@
 	/* The toolbar: tabs left, filter and view right. */
 	.tcap { position: relative; z-index: 6; }
 	/* Sub-tabs: a tinted strip that grows out of the bar to the right (rows on phones), so it reads as a level below the tabs. */
-	.stx { display: grid; grid-template-columns: 0fr; align-self: stretch; margin-left: 0; transition: grid-template-columns 340ms var(--ez, cubic-bezier(0.2, 0.8, 0.2, 1)), margin 340ms var(--ez, ease); }
-	.stx.stx-open { grid-template-columns: 1fr; margin-left: 6px; }
+	.stx { position: relative; z-index: 1; display: grid; grid-template-columns: 0fr; align-self: stretch; margin-left: 0; transition: grid-template-columns 340ms var(--ez, cubic-bezier(0.2, 0.8, 0.2, 1)), margin 340ms var(--ez, ease); }
+	.stx.stx-open { grid-template-columns: 1fr; margin: 0 3px 0 -6px; }
 	.stx-in { min-width: 0; overflow: hidden; display: flex; align-items: center; gap: 2px; padding: 0; border-radius: 10px; background: color-mix(in srgb, var(--info, #3b82f6) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #3b82f6) 30%, transparent); opacity: 0; transition: opacity 180ms var(--ease-out), padding 340ms var(--ez, ease); }
 	.stx.stx-open .stx-in { opacity: 1; padding: 0 3px; transition-delay: 90ms, 0ms; }
 	.sc { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: 500 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
@@ -512,7 +519,7 @@
 		.tcap { width: 100%; }
 		.tabs { width: 100%; height: auto; min-height: 52px; flex-wrap: wrap; }
 		/* Phones: the sub-tabs grow downward as a second row inside the bar. */
-		.stx { flex-basis: 100%; grid-template-columns: 1fr; grid-template-rows: 0fr; margin: 0; transition: grid-template-rows 340ms var(--ez, ease), margin 340ms var(--ez, ease); }
+		.stx { order: 10; flex-basis: 100%; grid-template-columns: 1fr; grid-template-rows: 0fr; margin: 0; transition: grid-template-rows 340ms var(--ez, ease), margin 340ms var(--ez, ease); }
 		.stx.stx-open { grid-template-rows: 1fr; margin: 4px 0 0; }
 		.stx-in { min-height: 0; flex-wrap: wrap; }
 		.stx.stx-open .stx-in { padding: 3px; }
