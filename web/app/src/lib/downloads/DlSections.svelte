@@ -23,7 +23,7 @@
 	import DlStatus from './DlStatus.svelte';
 	import GhostEmpty from './GhostEmpty.svelte';
 	import { reviewCount } from './status-views.ts';
-	import { reviewShown, searchShortcut } from './keys.ts';
+	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
 	import Popover from '../ui/Popover.svelte';
 	import { tip } from './tip.ts';
 	import { dlScope } from '../search-field.svelte.ts';
@@ -32,7 +32,7 @@
 	import { fileTree } from './filetree.ts';
 	import { api, message } from '../api.ts';
 	import { ago, dateTime, duration, percent } from '../format.ts';
-	import { healthLine, quietPeers, logDays, badKind, clientMark } from './panel-words.ts';
+	import { healthLine, quietPeers, logDays, badKind, clientMark, swarmLine, swarmTotal } from './panel-words.ts';
 	// Each client's own app icon (design/assets/clients, licenses in its README).
 	const CLIENT_ICONS = new Set(['qbittorrent', 'transmission', 'deluge', 'sabnzbd', 'nzbget']);
 	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
@@ -44,7 +44,7 @@
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
-	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
+	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
@@ -113,7 +113,9 @@
 	// The tracker filter: one tracker host, or a tracker problem; counts follow the other filters.
 	let trackOn = $state('');
 	const trackOpts = $derived(trackerOptions(bySource));
-	const trackKey = $derived(trackOpts.some((o) => o.key === trackOn) ? trackOn : '');
+	const trackHosts = $derived(trackOpts.filter((o) => o.key.startsWith('host:')));
+	const trackProblems = $derived(bySource.filter((r) => r.tracker_problem).length);
+	const trackKey = $derived(trackOn === 'p:any' ? (trackProblems ? trackOn : '') : trackOpts.some((o) => o.key === trackOn) ? trackOn : '');
 	const rows = $derived(trackKey ? bySource.filter((r) => byTracker(r, trackKey)) : bySource);
 	const kindCount = (k: string) => everyRow.filter((r) => kindOf(r) === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
@@ -203,7 +205,7 @@
 		const transfer = seeding
 			? [ratio, uploaded, seedTime, activity, f('Size', size ? bytes(size) : ''), upRow, downRow, f('Wasted', t?.wasted ? bytes(t.wasted) : '')]
 			: [f('Downloaded', got), downRow, upRow, f('Time left', eta ? duration(eta) : ''), uploaded, ratio, activity, f('Wasted', t?.wasted ? bytes(t.wasted) : '')];
-		const swarm = [f('Seeds', t ? `${t.seeds} of ${t.seeds_total}` : ''), f('Peers', t ? `${t.peers} of ${t.peers_total}` : ''), f('Private', t?.private == null ? '' : t.private ? 'Yes' : 'No')];
+		const swarm = [f('Seeds', t ? swarmLine(t.seeds, t.seeds_total) : ''), f('Peers', t ? swarmLine(t.peers, t.peers_total) : ''), f('Private', t?.private == null ? '' : t.private ? 'Yes' : 'No')];
 		const dates = [
 			f('Added', dateTime(t?.added_at ?? r.started_at)),
 			f('Done', dateTime(t?.done_at ?? r.finished_at)),
@@ -491,6 +493,7 @@
 	// The effect depends only on which row, which tab and whether the pane shows:
 	// not on the row object (replaced on every list refresh) nor on det (which
 	// readDetail writes), so it never restarts itself.
+	let grabY: number | null = null;
 	const openTab = $derived(openRow ? tabNow(openRow) : '');
 	$effect(() => {
 		const id = openId;
@@ -502,13 +505,17 @@
 				if (r) void readDetail(r, tab);
 			});
 		read();
-		const t = setInterval(read, 3000);
+		const t = setInterval(() => {
+			if (document.visibilityState === 'visible') read();
+		}, 3000);
 		return () => clearInterval(t);
 	});
 	// The Downloaders' own status for the pills, every 5 seconds.
 	$effect(() => {
 		void readClients();
-		const t = setInterval(() => void readClients(), 5000);
+		const t = setInterval(() => {
+			if (document.visibilityState === 'visible') void readClients();
+		}, 5000);
 		return () => clearInterval(t);
 	});
 	try {
@@ -650,7 +657,7 @@
 			}
 			return;
 		}
-		if (e.key === 'Escape' && picked.size && !(e.target as HTMLElement | null)?.closest('input, select, textarea, [role="dialog"]')) {
+		if (e.key === 'Escape' && listEsc(picked.size, !!openId) === 'clear' && !(e.target as HTMLElement | null)?.closest('input, select, textarea, [role="dialog"]')) {
 			e.preventDefault();
 			clearPicked();
 			return;
@@ -659,7 +666,7 @@
 		const t = e.target as HTMLElement | null;
 		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], [role="dialog"], .mn')) return;
 		if (e.key === 'Escape') {
-			if (openId) {
+			if (listEsc(picked.size, !!openId) === 'close') {
 				openId = 0;
 				e.preventDefault();
 			}
@@ -1095,7 +1102,7 @@
 		<span class="kcell" class:ph data-col="kind"><span class="kt" data-testid="dl-kind">{kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category) || dash}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
-		<span class="pcell" class:ph data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}<span class="pm" class:cmk={!!cm.mark} data-tone={cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if CLIENT_ICONS.has(r.downloader_kind ?? '')}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="18" height="18" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{/if}</span>
+		<span class="pcell" class:ph data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="18" height="18" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
 			<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && r.linked}<span class="ver" data-testid="dl-linked" title="Added outside HolyArrs, matched to this title">Linked</span>{:else if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
@@ -1136,8 +1143,8 @@
 		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
 	{:else if id === 'seeds' || id === 'peers'}
 		{@const n = id === 'seeds' ? r.seeds : r.peers}
-		{@const tot = id === 'seeds' ? r.seeds_total : r.peers_total}
-		<span class="num" class:ph data-col={id} title={tot ? `${n ?? 0} connected of ${tot} in the swarm` : undefined}>{#if r.protocol !== 'torrent'}{dash}{:else if tot}{n ?? 0}<span class="swt">&nbsp;({tot})</span>{:else if (r.phase === 'downloading' || r.phase === 'stalled') && n != null}{n}{:else}{dash}{/if}</span>
+		{@const tot = swarmTotal(n, id === 'seeds' ? r.seeds_total : r.peers_total)}
+		<span class="num" class:ph data-col={id} title={tot ? `${n ?? 0} connected of ${tot} in the swarm` : undefined}>{#if r.protocol !== 'torrent'}{dash}{:else if tot}{n ?? 0}<span class="swt">&nbsp;({tot})</span>{:else if n || ((r.phase === 'downloading' || r.phase === 'stalled') && n != null)}{n}{:else}{dash}{/if}</span>
 	{:else if id === 'ratio'}
 		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null ? r.ratio.toFixed(2) : dash}</span>
 	{:else if id === 'up'}
@@ -1431,6 +1438,7 @@
 	]}
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="ph">
+			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
 			<p class="xt pt"><b>{who(r)}</b><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></p>
 			{@render tabStrip(r)}
 			{#if paneOpen}
@@ -1469,25 +1477,14 @@
 			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
 		{/if}
 	</div>
-	<DlBar bind:kindOn bind:srcOn {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} />
+	<DlBar bind:kindOn bind:srcOn bind:trackOn trackAll={bySource.length} trackHosts={trackHosts} {trackProblems} {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} />
 </div>
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div><DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">
-{#if trackOpts.length}
-	<div class="tfilt" data-testid="dl-tracker-filter">
-		<label><span class="k">Tracker</span>
-			<select class="pick" value={trackKey} onchange={(e) => (trackOn = e.currentTarget.value)} data-testid="dl-tracker-select">
-				<option value="">All ({bySource.length})</option>
-				{#each trackOpts as o (o.key)}<option value={o.key}>{o.label} ({o.count})</option>{/each}
-			</select>
-		</label>
-		{#if trackKey}<button type="button" class="xbn" onclick={() => (trackOn = '')} data-testid="dl-tracker-clear">Show all</button>{/if}
-	</div>
-{/if}
 {#if pickedRows.length && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
@@ -1570,7 +1567,7 @@
 </div>
 
 <style>
-	.pm:has(.cico) { background: none; box-shadow: none; }
+	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; width: 18px; height: 18px; object-fit: contain; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.strip > span { display: inline-flex; align-items: center; gap: 6px; }
@@ -1676,9 +1673,6 @@
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	.fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 0 0 8px; min-width: 0; }
 	.fbar .tfld { flex: 1 1 180px; max-width: 320px; }
-	.tfilt { display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-width: 0; flex-wrap: wrap; }
-	.tfilt label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
-	.tfilt select { max-width: min(320px, 70vw); }
 	.tred { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px; min-width: 0; }
 	.tred .tl { margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font: var(--t-footnote); }
 	.trow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-width: 0; }
@@ -1760,6 +1754,11 @@
 	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
+	.ph { flex: none; }
+	.trchip { flex: none; align-self: center; min-height: 24px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--fail) 45%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail); font: var(--t-caption); font-weight: 600; cursor: pointer; white-space: nowrap; }
+	.trchip.on, .trchip:hover { background: color-mix(in srgb, var(--fail) 22%, transparent); }
+	.trchip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.grab { display: none; }
 	.ph { display: flex; align-items: center; gap: 2px 14px; flex-wrap: wrap; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); min-width: 0; }
 	.dpane.shut .ph { border-bottom: 0; }
 	.pt { flex: 0 1 380px; min-width: 0; margin: 0; }
@@ -2023,6 +2022,21 @@
 		.pt { flex-basis: 100%; }
 		.hdr { grid-template-columns: minmax(0, 1fr); }
 			.gen { grid-template-columns: minmax(0, 1fr); }
+	}
+	/* Narrower screens: the actions get their own row under the tabs, never over the panel. */
+	@media (max-width: 1199px) {
+		.ph .pt { order: 0; }
+		.ph .xtabs { order: 1; }
+		.ph .pcl { order: 2; margin-left: auto; }
+		.pact { order: 3; flex: 1 0 100%; margin-left: 0; flex-wrap: wrap; padding-bottom: 4px; }
+		.pact .xbt { flex-wrap: wrap; }
+	}
+	/* Phones: a bottom sheet at about 60% that leaves at least three rows of the list in view. */
+	@media (max-width: 767px) {
+		.dpane { height: min(60dvh, calc(100dvh - var(--tabbar, 56px) - 300px), 520px) !important; }
+		.grab { display: grid; place-items: center; order: -1; flex: 1 0 100%; height: 18px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
+		.grab i { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); }
+		.dpane.shut .grab { display: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.prg i, .tg :global(svg), .bin, .cw, .post { transition: none; }

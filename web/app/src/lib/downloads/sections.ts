@@ -69,20 +69,6 @@ export function totals(queue: Pick<DownloadRow, 'phase' | 'state' | 'size' | 'pr
 	return { speed, up, left: rest, eta: speed > 0 && rest > 0 ? Math.round(rest / speed) : 0 };
 }
 
-/** addSample keeps the last `keep` speed readings for the graph. */
-export function addSample(samples: number[], speed: number, keep = 40): number[] {
-	const next = [...samples, Math.max(0, speed || 0)];
-	return next.length > keep ? next.slice(next.length - keep) : next;
-}
-
-/** sparkPath draws the speed readings as an SVG line in a w×h box ('' with fewer than two). */
-export function sparkPath(samples: number[], w: number, h: number): string {
-	if (samples.length < 2) return '';
-	const top = Math.max(...samples) || 1;
-	const step = w / (samples.length - 1);
-	return samples.map((v, i) => `${i ? 'L' : 'M'}${(i * step).toFixed(1)} ${(h - 1 - (v / top) * (h - 2)).toFixed(1)}`).join(' ');
-}
-
 /** historyTotals: what finished today and this month, from the rows on the page. */
 export function historyTotals(rows: Pick<DownloadRow, 'size' | 'finished_at' | 'updated_at' | 'phase' | 'state' | 'progress'>[], now = new Date()): { today: number; month: number } {
 	let today = 0;

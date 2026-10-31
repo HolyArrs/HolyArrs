@@ -16,6 +16,11 @@
 	let open = $state(false);
 	let busy = $state(0);
 	let running = $state(false);
+	let later: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		if (!open) clearTimeout(later);
+		return () => clearTimeout(later);
+	});
 	const list = $derived(data?.matches ?? []);
 	const words = $derived(bannerWords(list.length));
 
@@ -49,7 +54,8 @@
 		try {
 			await api.post('/downloads/matches/run');
 			toasts.push('Matching the torrents now. Sure matches link on their own.', 'info');
-			setTimeout(() => void read(), 4000);
+			clearTimeout(later);
+			later = setTimeout(() => void read(), 4000);
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {

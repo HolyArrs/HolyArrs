@@ -144,9 +144,10 @@ export function trackerOptions(rows: Tracked[]): { key: string; label: string; c
 	];
 }
 
-/** byTracker says a row passes the tracker filter. */
+/** byTracker says a row passes the tracker filter ('p:any' is any tracker problem). */
 export function byTracker(r: Tracked, key: string): boolean {
 	if (!key) return true;
+	if (key === 'p:any') return !!r.tracker_problem;
 	if (key.startsWith('p:')) return r.tracker_problem === key.slice(2);
 	return key.startsWith('host:') && r.tracker === key.slice(5);
 }
@@ -179,4 +180,9 @@ export function indexesUnder(files: { name: string; index: number }[], keys: Ite
 	const out = new Set<number>();
 	for (const k of keys) for (const f of files) if (f.name === k || f.name.startsWith(k + '/')) out.add(f.index);
 	return [...out].sort((a, b) => a - b);
+}
+
+/** problemWords is the chip beside the status pills: '' when no tracker has a problem. */
+export function problemWords(n: number): string {
+	return n > 0 ? `${n} tracker ${n === 1 ? 'issue' : 'issues'}` : '';
 }

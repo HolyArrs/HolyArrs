@@ -119,3 +119,14 @@ describe('files tab', () => {
 		expect(indexesUnder(files, ['Show/S0'])).toEqual([]);
 	});
 });
+
+import { byTracker as byTr, problemWords } from './manage.ts';
+describe('tracker problems', () => {
+	it('p:any passes every row with a tracker problem; the chip counts them', () => {
+		expect(byTr({ tracker: 'a', tracker_problem: 'error' }, 'p:any')).toBe(true);
+		expect(byTr({ tracker: 'a' }, 'p:any')).toBe(false);
+		expect(problemWords(0)).toBe('');
+		expect(problemWords(1)).toBe('1 tracker issue');
+		expect(problemWords(3)).toBe('3 tracker issues');
+	});
+});

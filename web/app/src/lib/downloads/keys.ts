@@ -28,3 +28,9 @@ export function reviewShown(watch: boolean, toReview: number): number {
 export function escStep(term: string): 'clear' | 'blur' {
 	return term ? 'clear' : 'blur';
 }
+
+/** listEsc is what Esc does on the Downloads list: clear a selection first, then close the open panel. */
+export function listEsc(picked: number, open: boolean): 'clear' | 'close' | 'none' {
+	if (picked > 0) return 'clear';
+	return open ? 'close' : 'none';
+}

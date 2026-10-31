@@ -91,3 +91,14 @@ export function clientMark(kind: string | undefined): { mark: string; tone: stri
 	}
 	return { mark: '', tone: '' };
 }
+
+/** swarmTotal is the whole-swarm count worth showing beside the connected one: none when it is 0 or below what is connected. */
+export function swarmTotal(connected: number | undefined, total: number | undefined): number {
+	return total && total >= (connected ?? 0) ? total : 0;
+}
+
+/** swarmLine is "3 of 40", or just "3" when the swarm count is missing or smaller. */
+export function swarmLine(connected: number, total: number): string {
+	const t = swarmTotal(connected, total);
+	return t ? `${connected} of ${t}` : `${connected}`;
+}

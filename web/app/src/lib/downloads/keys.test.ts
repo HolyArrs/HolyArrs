@@ -39,3 +39,22 @@ describe('search Esc', () => {
 		expect(escStep('')).toBe('blur');
 	});
 });
+
+import { listEsc } from './keys.ts';
+describe('list Esc', () => {
+	it('clears the selection first, then closes the panel', () => {
+		let picked = 3;
+		let open = true;
+		const press = () => {
+			const s = listEsc(picked, open);
+			if (s === 'clear') picked = 0;
+			if (s === 'close') open = false;
+			return s;
+		};
+		expect(press()).toBe('clear');
+		expect(open).toBe(true);
+		expect(press()).toBe('close');
+		expect(open).toBe(false);
+		expect(press()).toBe('none');
+	});
+});

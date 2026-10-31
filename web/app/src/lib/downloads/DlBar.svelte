@@ -13,6 +13,10 @@
 	let {
 		kindOn = $bindable(''),
 		srcOn = $bindable(''),
+		trackOn = $bindable(''),
+		trackAll = 0,
+		trackHosts = [],
+		trackProblems = 0,
 		kindCount,
 		srcCount,
 		actions,
@@ -27,6 +31,10 @@
 	}: {
 		kindOn?: string;
 		srcOn?: string;
+		trackOn?: string;
+		trackAll?: number;
+		trackHosts?: { key: string; label: string; count: number }[];
+		trackProblems?: number;
 		kindCount: (k: string) => number;
 		srcCount: (k: string) => number;
 		actions: Act[];
@@ -53,6 +61,15 @@
 	const pickKind = (k: string) => (kindOn = kindOn === k ? '' : k);
 	const pickSrc = (k: string) => (srcOn = srcOn === k ? '' : k);
 	const showSide = $derived(side && !!onside);
+	// The tracker menu on the Torrent button: all trackers, one host, or trackers with problems.
+	let trkOpen = $state(false);
+	const pickTrack = (k: string) => {
+		trackOn = k;
+		trkOpen = false;
+	};
+	function trkOutside(e: MouseEvent) {
+		if (trkOpen && !(e.target as HTMLElement | null)?.closest('.trw')) trkOpen = false;
+	}
 
 	// The sliding highlight: each segment measures its picked item and moves one shared plate to it.
 	function slider(node: HTMLElement, _dep: string) {
@@ -107,6 +124,18 @@
 			<button type="button" class="it fl stk" class:on class:zero={n === 0} aria-pressed={on} onclick={() => pick(f.key)} data-testid={tid} data-key={f.key} data-count={n}>
 				<span class="ic"><Icon name={f.icon} size={20} /></span><span class="lb">{f.label}</span>
 			</button>
+			{#if f.key === 'torrent' && (trackHosts.length || trackProblems)}
+				<span class="trw">
+					<button type="button" class="trk" class:on={!!trackOn} aria-haspopup="menu" aria-expanded={trkOpen} aria-label="Filter by tracker" onclick={() => (trkOpen = !trkOpen)} onkeydown={(e) => { if (e.key === 'Escape' && trkOpen) { e.stopPropagation(); trkOpen = false; } }} data-testid="dl-tracker-menu-btn">▾</button>
+					{#if trkOpen}
+						<ul class="trm" role="menu" aria-label="Trackers" data-testid="dl-tracker-menu">
+							<li role="none"><button type="button" role="menuitemradio" aria-checked={!trackOn} onclick={() => pickTrack('')} data-testid="dl-tracker-opt" data-key="">All trackers <b>{trackAll}</b></button></li>
+							{#each trackHosts as o (o.key)}<li role="none"><button type="button" role="menuitemradio" aria-checked={trackOn === o.key} onclick={() => pickTrack(o.key)} data-testid="dl-tracker-opt" data-key={o.key}>{o.label} <b>{o.count}</b></button></li>{/each}
+							{#if trackProblems}<li role="none"><button type="button" role="menuitemradio" class="bad" aria-checked={trackOn === 'p:any'} onclick={() => pickTrack('p:any')} data-testid="dl-tracker-opt" data-key="p:any">Trackers with problems <b>{trackProblems}</b></button></li>{/if}
+						</ul>
+					{/if}
+				</span>
+			{/if}
 		{/each}
 	</div>
 {/snippet}
@@ -128,7 +157,19 @@
 	</div>
 </div>
 
+<svelte:window onclick={trkOutside} />
+
 <style>
+	.trw { position: relative; display: flex; align-items: stretch; }
+	.trk { width: 18px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font-size: 11px; cursor: pointer; }
+	.trk:hover, .trk.on { color: var(--text); background: var(--surface-3); }
+	.trk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.trm { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 220px; max-width: min(320px, 90vw); max-height: 60vh; overflow: auto; margin: 0; padding: 4px; list-style: none; border: 1px solid var(--line); border-radius: var(--r-panel, 10px); background: var(--surface-1); box-shadow: var(--shadow-modal); }
+	.trm button { display: flex; justify-content: space-between; gap: 12px; width: 100%; min-height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-callout); text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.trm button:hover, .trm button:focus-visible { background: var(--surface-3); outline: none; }
+	.trm button[aria-checked='true'] { font-weight: 600; }
+	.trm button.bad { color: var(--fail); }
+	.trm b { font-weight: 500; color: var(--text-muted); }
 	.dlbar { --ez: cubic-bezier(0.32, 0.72, 0, 1); flex: 1 1 0; min-width: 0; display: grid; gap: 4px; }
 	.row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.row::-webkit-scrollbar { display: none; }

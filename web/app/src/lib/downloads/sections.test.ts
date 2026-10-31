@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addSample, barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, sparkPath, totals } from './sections.ts';
+import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 import type { DownloadRow } from '../downloaders.ts';
 
 const row = (o: Partial<DownloadRow>): DownloadRow => ({
@@ -53,14 +53,7 @@ describe('header strip', () => {
 		expect(totals([row({ active: true, speed: 100, up_speed: 30, size: 1000, progress: 0.5 })]).up).toBe(30);
 		expect(totals([row({ size: 10 })]).eta).toBe(0);
 	});
-	it('keeps the last readings and draws them', () => {
-		let s: number[] = [];
-		for (let i = 0; i < 50; i++) s = addSample(s, i);
-		expect(s).toHaveLength(40);
-		expect(s[0]).toBe(10);
-		expect(sparkPath([1], 10, 10)).toBe('');
-		expect(sparkPath([0, 2], 10, 10)).toBe('M0.0 9.0 L10.0 1.0');
-	});
+
 });
 
 describe('history', () => {

@@ -51,3 +51,14 @@ describe('clientMark', () => {
 		expect(clientMark('other').mark).toBe('');
 	});
 });
+
+import { swarmLine, swarmTotal } from './panel-words.ts';
+describe('swarm counts', () => {
+	it('shows only the connected number when the swarm total is 0 or smaller', () => {
+		expect(swarmLine(1, 0)).toBe('1');
+		expect(swarmLine(5, 3)).toBe('5');
+		expect(swarmLine(3, 40)).toBe('3 of 40');
+		expect(swarmTotal(1, 0)).toBe(0);
+		expect(swarmTotal(2, 9)).toBe(9);
+	});
+});
