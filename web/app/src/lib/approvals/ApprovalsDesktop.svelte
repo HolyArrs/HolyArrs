@@ -37,17 +37,6 @@
 		for (const a of list.slice(0, 16)) ctx.want(a);
 	});
 
-	// Preview only (?looks): five looks for the card's sheet, picked from a pill bar and remembered.
-	const LOOKS = ['Glass', 'Sticky note', 'Notepad', 'Ticket', 'Inset'];
-	const lookOn = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('looks');
-	let look = $state(0);
-	if (lookOn) {
-		try { look = Math.min(5, Math.max(1, Number(localStorage.getItem('approvals-look')) || 1)); } catch { look = 1; }
-	}
-	function pickLook(n: number) {
-		look = n;
-		try { localStorage.setItem('approvals-look', String(n)); } catch { /* storage blocked: the pick lasts this visit */ }
-	}
 	// "16 d ago" read out in full: "16 days ago".
 	const longAgo = (s: string) => ago(s).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
 
@@ -370,21 +359,18 @@
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
-				<li class="bc" data-ask={a.id} data-look={look || undefined} style:--art={look && (wide || photo || a.poster) ? `url("${wide ?? photo ?? a.poster}")` : undefined} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
-					<div class="ban">
-						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else}<span class="ban-img soft" aria-hidden="true" style:background-image={photo || a.poster ? `url("${photo ?? a.poster}")` : undefined}></span>{/if}
+					<div class="ban" class:noart={!wide && !photo && !a.poster}>
+						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${a.poster}")`}></span>{/if}
+					</div>
+					<div class="top">
 						<div class="ban-cap"><h3 class="ban-t">{a.name}</h3><span class="ban-f">{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						{#if look}
-							<!-- Preview looks: who on one line, when below (or as a chip), never joined by a dot. -->
-							<span class="who sk-who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="sk-id"><span class="sk-k">Asked by</span><span class="sk-n"><b>{w.kid ? w.name.replace(/\s*\(kid\)\s*$/i, '') : w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="sk-v">asked</span></span><span class="when sk-when"><span class="sk-a">Asked{" "}</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{longAgo(a.asked_at)}</time></span></span></span>
-						{:else}
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="when">· <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
-						{/if}
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.kid ? w.name.replace(/\s*\(kid\)\s*$/i, '') : w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{longAgo(a.asked_at)}</time></span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
@@ -420,12 +406,6 @@
 			{/each}
 		</ul>
 </div>
-
-{#if lookOn}
-	<div class="sk-bar" role="group" aria-label="Card look (preview)">
-		{#each LOOKS as name, i (name)}<button type="button" class="sk-pill" aria-pressed={look === i + 1} onclick={() => pickLook(i + 1)}>{i + 1} · {name}</button>{/each}
-	</div>
-{/if}
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
@@ -519,30 +499,35 @@
 	   who asked and the answers. The life-cycle line runs along the bottom edge. */
 	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	/* The card takes the sheet's own colour (dark in dark mode, pale in light), so no band shows under the sheet. */
-	.bc { --sheet: color-mix(in srgb, var(--bg) 88%, transparent); position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: var(--bg); box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 300ms var(--ez), box-shadow 300ms var(--ease-out); }
+	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 300ms var(--ez), box-shadow 300ms var(--ease-out); }
 	.bc:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 2px 4px rgb(0 0 0 / 0.08), 0 24px 48px -24px rgb(0 0 0 / 0.65); }
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.open:focus-visible { box-shadow: none; }
 	.bc:has(.open:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
-	.ban { position: relative; height: 190px; overflow: hidden; background: #1a1a1d; border-radius: 20px 20px 0 0; }
+	.ban { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: #17181d; border-radius: inherit; }
+	.ban.noart { background: radial-gradient(120% 90% at 15% 0%, #3b4263 0%, transparent 60%), radial-gradient(90% 80% at 100% 100%, #583a58 0%, transparent 58%), #17181d; }
+	.top { flex: none; height: var(--top); display: flex; align-items: flex-end; box-sizing: border-box; padding: 0 14px 10px; }
 	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 400ms var(--ez), opacity 500ms var(--ease-out); }
 	img.ban-img { animation: ban-in 600ms var(--ease-out) both; }
 	@keyframes ban-in { from { opacity: 0; } }
 	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
 	.bc:hover .ban-img:not(.soft) { transform: scale(1.04); }
-	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.15), transparent 30%, rgb(0 0 0 / 0.72)); }
-	.ban-cap { position: absolute; left: 14px; right: 14px; bottom: 30px; z-index: 1; display: flex; flex-direction: column; gap: 3px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.5); }
+	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.18), transparent calc(var(--top) * 0.35), rgb(0 0 0 / 0.66) var(--top), rgb(0 0 0 / 0.4)); }
+	.ban-cap { min-width: 0; display: flex; flex-direction: column; gap: 3px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.5); }
 	.ban-t { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	/* Clicks pass through the sheet to the card's open layer; only its buttons take their own. */
-	.sheet-b, .ban, .ban-cap { pointer-events: none; }
+	.sheet-b, .top { pointer-events: none; }
 	.sheet-b button { pointer-events: auto; }
-	.sheet-b { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; margin: -20px 8px 8px; border-radius: 16px; background: var(--sheet); color: var(--text); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 14px 30px -14px rgb(0 0 0 / 0.6); }
+	.sheet-b { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; margin: 0 var(--gap) var(--gap); border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
 	.body { display: flex; flex-direction: column; gap: 4px; padding: 12px 12px 0; min-width: 0; }
-	.who { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
+	.who { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
 	.who > :global(*) { flex: none; }
-	.who b { max-width: 60%; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-weight: 600; }
-	.who .when { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.gl-id { display: flex; flex: 1 1 auto; flex-direction: column; gap: 1px; min-width: 0; }
+	.gl-n { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text); font: 600 13.5px/1.3 var(--font-ui); }
+	.gl-n > :global(*) { flex: none; }
+	.gl-n > b { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.gl-when { overflow: hidden; color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 	.foot { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding: 12px; }
 	.b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform 140ms var(--ease-out), background 200ms var(--ease-out);  white-space: nowrap; }
 	.b:active { transform: scale(0.96); }
@@ -555,12 +540,12 @@
 	.state.tone-wait .dot { background: var(--wait); }
 	.state.tone-go .dot { background: var(--info, #3b82f6); }
 	.state.tone-ok .dot { background: var(--ok); }
-	.state.tone-bad { color: var(--fail-text, var(--fail, #e5484d)); }
+	.state.tone-bad { color: var(--gl-fail); }
 	.state.tone-bad .dot { background: var(--fail, #e5484d); }
 	.foot > .state.tone-bad { grid-column: 1; }
 	.state.tone-soon .dot { background: var(--text-muted); }
 	/* Inset from the card's rounded corners, so the line is never clipped. */
-	.life { position: absolute; left: 20px; right: 20px; bottom: 3px; z-index: 2; height: 3px; overflow: hidden; border-radius: 3px; background: rgb(127 127 127 / 0.14); }
+	.life { position: absolute; left: 20px; right: 20px; bottom: 3px; z-index: 2; height: 3px; overflow: hidden; border-radius: 3px; background: rgb(255 255 255 / 0.22); }
 	.fill { display: block; width: 100%; height: 100%; border-radius: 3px; transform-origin: left; transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.tone-wait .fill { background: var(--wait); }
 	.tone-go .fill { background: var(--info, #3b82f6); }
@@ -615,13 +600,15 @@
 		.approve-all { justify-content: center; }
 		.right .sf-anchor, .right .sf-anchor :global(.sf-btn) { width: 100%; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-		.ban { height: 140px; }
-		.ban-cap { left: 10px; right: 10px; bottom: 24px; }
+		.bc { --top: 124px; --gap: 8px; }
+		.top { padding: 0 10px 8px; }
 		.ban-t { font-size: 17px; }
 		.ban-f { font-size: 11px; }
-		.sheet-b { margin: -16px 6px 6px; border-radius: 14px; }
+		.sheet-b { border-radius: 12px; }
+		.gl-n { font-size: 12.5px; gap: 4px; }
+		.gl-when { font-size: 11px; }
 		.body { padding: 10px 10px 0; }
-		.who { font: var(--t-caption); }
+		.who { gap: 7px; font: var(--t-caption); }
 		/* Decline and Approve: equal halves, icons only (each has its full name for screen readers). */
 		.foot { gap: 6px; padding: 10px; }
 		.b { padding: 0 8px; font: var(--t-footnote); font-weight: 600; }
@@ -636,84 +623,10 @@
 		.bc:hover, .bc:hover .ban-img:not(.soft) { transform: none; }
 	}
 
-	/* Preview looks (?looks) for the card's sheet. Each look sets the sheet's own ink and paper
-	   (light-dark follows the app theme), so the answers and the status read on it. */
-	.bc { --card-bg: var(--bg); }
-	.sk-k, .sk-v { display: none; }
-	.sk-who { gap: 9px; white-space: normal; }
-	.sk-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto !important; }
-	.sk-n { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text); font: 600 13.5px/1.3 var(--font-ui); }
-	.sk-n b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.sk-n > :global(*) { flex: none; }
-	.sk-n > b { flex: 0 1 auto; }
-	.sk-when { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.bc[data-look] .sheet-b { --text: var(--sk-ink); --text-muted: var(--sk-muted); --bg: var(--sk-paper); color: var(--sk-ink); -webkit-backdrop-filter: none; backdrop-filter: none; }
-	.bc[data-look] .b.no { background: color-mix(in srgb, var(--sk-ink) 9%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sk-ink) 8%, transparent); }
-	.bc[data-look] .b.yes { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
-
-	/* 1 Glass: raised frosted glass, a bright top edge, a hairline and a soft drop; the art tints it. */
-	.bc[data-look='1'] { --sk-ink: light-dark(#111114, #f5f5f7); --sk-muted: light-dark(#53555c, rgb(235 235 245 / 0.74)); --sk-paper: light-dark(#f4f5f7, #1d1d21); }
-	.bc[data-look='1']::before { content: ''; position: absolute; inset: 150px 0 0; z-index: -1; background: var(--art, none) center / cover; filter: blur(42px) saturate(1.7); opacity: 0.45; transform: scale(1.5); pointer-events: none; }
-	.bc[data-look='1'] .sheet-b { background: linear-gradient(180deg, light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.13)), light-dark(rgb(246 247 250 / 0.84), rgb(255 255 255 / 0.05))); -webkit-backdrop-filter: blur(26px) saturate(1.6); backdrop-filter: blur(26px) saturate(1.6); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.22)), inset 0 -1px 0 light-dark(rgb(0 0 0 / 0.04), rgb(0 0 0 / 0.25)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.1)), 0 18px 34px -16px rgb(0 0 0 / 0.6); }
-
-	/* 2 Sticky note: warm paper with a folded top corner and a lift shadow. */
-	.bc[data-look='2'] { --sk-ink: light-dark(#2b2410, #f3ead6); --sk-muted: light-dark(#6a5821, #c9b994); --sk-paper: light-dark(#fff3c4, #2a2620); --sk-fold: light-dark(#e8d27c, #4a4234); }
-	.bc[data-look='2'] .sheet-b { border-radius: 10px; background: linear-gradient(225deg, transparent 13px, light-dark(#fff7d4, #2e2a23) 13.5px, var(--sk-paper)); box-shadow: none; filter: drop-shadow(0 0 0.6px light-dark(rgb(110 80 0 / 0.4), rgb(255 230 180 / 0.2))) drop-shadow(0 12px 14px rgb(0 0 0 / 0.38)); }
-	.bc[data-look='2'] .sheet-b::before { content: ''; position: absolute; top: 0; right: 0; width: 18.5px; height: 18.5px; border-radius: 0 0 0 4px; background: linear-gradient(45deg, var(--sk-fold) 50%, transparent 50%); filter: drop-shadow(-1px 1px 1px rgb(0 0 0 / 0.2)); }
-	.bc[data-look='2'] .sheet-b::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: repeating-linear-gradient(115deg, light-dark(rgb(120 90 0 / 0.03), rgb(255 230 180 / 0.025)) 0 2px, transparent 2px 5px); pointer-events: none; }
-
-	/* 3 Notepad: a pad page with binding holes, ruled lines behind who asked, a page under it. */
-	.bc[data-look='3'] { --sk-ink: light-dark(#1d1d21, #ececf0); --sk-muted: light-dark(#585a62, #a9a9b4); --sk-paper: light-dark(#fdfcf8, #1f1f23); --sk-rule: light-dark(rgb(60 100 175 / 0.2), rgb(140 170 235 / 0.14)); }
-	.bc[data-look='3'] .sheet-b { border-radius: 6px 6px 12px 12px; background: var(--sk-paper); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.06)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.07)), 0 4px 0 -1px light-dark(#ebe8df, #17171a), 0 4px 0 0 light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.05)), 0 18px 30px -16px rgb(0 0 0 / 0.6); }
-	.bc[data-look='3'] .sheet-b::before { content: ''; position: absolute; top: 6px; left: 12px; right: 12px; height: 7px; background: radial-gradient(circle at 50% 50%, light-dark(rgb(30 30 35 / 0.55), rgb(0 0 0 / 0.85)) 2.6px, transparent 3.2px) center / 16px 7px repeat-x; pointer-events: none; }
-	.bc[data-look='3'] .body { padding-top: 20px; background: repeating-linear-gradient(180deg, transparent 0 21px, var(--sk-rule) 21px 22px) 0 19px / 100% calc(100% - 19px) no-repeat; }
-	.bc[data-look='3'] .sk-id { gap: 0; }
-	.bc[data-look='3'] .sk-n, .bc[data-look='3'] .sk-when { line-height: 22px; }
-	.bc[data-look='3'] .sk-v { display: inline; color: var(--sk-muted); font-weight: 500; }
-	.bc[data-look='3'] .sk-a { display: none; }
-
-	/* 4 Ticket: an admission stub, a perforation with side notches, the answers below. */
-	.bc[data-look='4'] { --sk-ink: light-dark(#121216, #f2f2f5); --sk-muted: light-dark(#5a5b64, #a7a7b2); --sk-paper: light-dark(#ffffff, #222226); --sk-cut: 64px; }
-	.bc[data-look='4'] .sheet-b { border-radius: 14px; background: linear-gradient(180deg, light-dark(#fff, #29292e), light-dark(#f4f4f7, #1d1d21)); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.1)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.09), rgb(255 255 255 / 0.08)), 0 16px 30px -16px rgb(0 0 0 / 0.62); }
-	.bc[data-look='4'] .sheet-b::before, .bc[data-look='4'] .sheet-b::after { content: ''; position: absolute; top: calc(var(--sk-cut) - 8px); z-index: 3; width: 16px; height: 16px; border-radius: 50%; background: var(--card-bg); }
-	.bc[data-look='4'] .sheet-b::before { left: -8px; box-shadow: inset -1px 0 0 light-dark(rgb(0 0 0 / 0.09), rgb(255 255 255 / 0.08)); }
-	.bc[data-look='4'] .sheet-b::after { right: -8px; box-shadow: inset 1px 0 0 light-dark(rgb(0 0 0 / 0.09), rgb(255 255 255 / 0.08)); }
-	.bc[data-look='4'] .body { box-sizing: border-box; height: var(--sk-cut); justify-content: center; padding: 8px 14px 6px; }
-	.bc[data-look='4'] .foot::before { content: ''; position: absolute; top: 0; left: 14px; right: 14px; border-top: 2px dashed light-dark(rgb(0 0 0 / 0.13), rgb(255 255 255 / 0.16)); }
-	.bc[data-look='4'] .sk-id { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: center; }
-	.bc[data-look='4'] .sk-k { display: block; grid-column: 1; color: var(--sk-muted); font: 700 10px/1.2 var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; }
-	.bc[data-look='4'] .sk-n { grid-column: 1; }
-	.bc[data-look='4'] .sk-when { grid-column: 2; grid-row: 1 / 3; padding: 4px 8px; border-radius: 999px; background: color-mix(in srgb, var(--sk-ink) 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sk-ink) 9%, transparent); font-size: 11.5px; font-variant-numeric: tabular-nums; }
-	.bc[data-look='4'] .sk-a { display: none; }
-
-	/* 5 Inset: the sheet sits in a well cut into the card; the answers on a raised plate. */
-	.bc[data-look='5'] { --sk-ink: light-dark(#141418, #f2f2f5); --sk-muted: light-dark(#575a62, #a2a2ad); --sk-paper: light-dark(#eceef2, #0f0f12); --sk-plate: light-dark(#ffffff, #232327); }
-	.bc[data-look='5'] .sheet-b { margin-top: 8px; border-radius: 16px; background: var(--sk-paper); box-shadow: inset 0 2px 6px light-dark(rgb(0 0 0 / 0.13), rgb(0 0 0 / 0.75)), inset 0 0 0 1px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.04)), 0 1px 0 light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.06)); }
-	.bc[data-look='5'] .foot { margin: 0 6px 6px; padding: 8px; border-radius: 12px; background: var(--sk-plate); box-shadow: inset 0 1px 0 light-dark(#fff, rgb(255 255 255 / 0.08)), 0 0 0 1px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.05)), 0 6px 14px -6px rgb(0 0 0 / 0.45); }
-	.bc[data-look='5'] .foot .b.no { background: color-mix(in srgb, var(--sk-ink) 7%, var(--sk-plate)); }
-	.bc[data-look='5'] .foot > .state.tone-bad { padding-left: 6px; }
-
-	/* The preview pill bar: above the phone tab bar and the toasts. */
-	.sk-bar { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 2000; display: flex; gap: 4px; max-width: calc(100vw - 24px); box-sizing: border-box; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 999px; transform: translateX(-50%); background: color-mix(in srgb, var(--surface-2) 88%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); box-shadow: 0 0 0 1px var(--line-strong), 0 16px 40px -12px rgb(0 0 0 / 0.6); }
-	.sk-bar::-webkit-scrollbar { display: none; }
-	.sk-pill { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
-	.sk-pill:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
-	.sk-pill[aria-pressed='true'] { background: var(--text); color: var(--bg); }
-	@media (max-width: 767px) {
-		.sk-bar { bottom: calc(var(--tabbar, 64px) + 12px + env(safe-area-inset-bottom, 0px)); }
-		.sk-pill { height: 32px; padding: 0 11px; font-size: 12px; }
-		.sk-who { gap: 7px; }
-		.sk-n { font-size: 12.5px; gap: 4px; }
-		.sk-when { font-size: 11px; }
-		.bc[data-look='1']::before { inset: 110px 0 0; }
-		.bc[data-look='3'] .body { padding-top: 18px; background-position: 0 17px; }
-		.bc[data-look='4'] { --sk-cut: 58px; }
-		.bc[data-look='4'] .body { padding: 6px 10px 4px; }
-		.bc[data-look='4'] .sk-id { grid-template-columns: minmax(0, 1fr); }
-		.bc[data-look='4'] .sk-k { display: none; }
-		.bc[data-look='4'] .sk-when { grid-column: 1; grid-row: auto; justify-self: start; padding: 2px 7px; font-size: 10.5px; }
-		.bc[data-look='4'] .foot::before { left: 10px; right: 10px; }
-		.bc[data-look='5'] .sheet-b { margin-top: 6px; }
-		.bc[data-look='5'] .foot { margin: 0 5px 5px; padding: 6px; }
-	}
+	/* The glass panel: smoked glass. Dark: deep smoke with a soft inner highlight. Light: a pale grey-blue smoke,
+	   dark ink. The full-frame art shows around it and, blurred, through it. --text, --text-muted and --bg are
+	   redefined on the panel so the answers and the status read on it. */
+	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#3b4150, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(228 233 242 / 0.74), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(205 212 226 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(232 236 244 / 0.34), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)), 0 18px 34px -14px light-dark(rgb(10 14 30 / 0.5), rgb(0 0 0 / 0.8)); }
+	.b.no { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); }
+	.b.yes { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
 </style>
