@@ -17,8 +17,9 @@
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistPhoto, askArtist } from './details.svelte.ts';
 	import { to } from '../paths.ts';
-	import { askSummary, inboxTabs } from './inbox.ts';
-	import { lifecycle } from './lifecycle.ts';
+	import { shortDate } from './inbox.ts';
+	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
+	import { approverTabs, askTab } from '../wishlist.ts';
 	import { askedFor } from './asked-for.ts';
 	import type { Ask } from '../types.ts';
 
@@ -28,8 +29,10 @@
 	const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const ms = (d: number) => (reduced() ? 0 : d);
 	const waiting = (a: Ask) => ctx.approver && a.state === 'asked' && !ctx.isPending(a.id);
-	const tabs = $derived(inboxTabs.filter((t) => ctx.approver || t.tab !== 'failed'));
-	const list = $derived([...ctx.shown].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at)));
+	// A failed ask can still be declined, so the person who asked hears back.
+	const failed = (a: Ask) => ctx.approver && askTab(a) === 'failed' && !ctx.isPending(a.id);
+	// The page sorts each tab (Processing: failed first; Done: newest decision first).
+	const list = $derived(ctx.shown);
 	$effect(() => {
 		for (const a of list.slice(0, 16)) ctx.want(a);
 	});
@@ -60,11 +63,23 @@
 
 	// What an empty tab says.
 	const calm: Record<string, { title: string; text: string }> = {
-		waiting: { title: 'You’re all caught up', text: 'New asks show up here.' },
-		approved: { title: 'Nothing approved yet', text: 'Approved asks stay here while they download.' },
-		declined: { title: 'Nothing declined', text: 'Asks you decline stay here, with your reason if you gave one.' },
-		done: { title: 'Nothing available yet', text: "Asks move here once they're in the Library." },
-		failed: { title: 'Nothing failed', text: "Asks HolyArrs couldn't finish show up here." }
+		pending: { title: 'You’re all caught up', text: 'New asks show up here.' },
+		processing: { title: 'Nothing in progress', text: 'Approved asks stay here until they’re ready.' },
+		done: { title: 'Nothing done yet', text: 'Ready and declined asks end up here.' }
+	};
+
+	// The status line, with what the page knows: not out yet (from the release and air dates).
+	// Partly in the Library ("1 of 2 ready") needs which asked seasons and albums are in the
+	// Library, which the asks list doesn't carry yet, so it isn't said (Processing instead).
+	const firstAir = (a: Ask) => (season: number) => {
+		const eps = ctx.episodes(a.tmdb_id, season);
+		if (!eps) return null;
+		return eps.map((e) => e.air_day ?? '').filter(Boolean).sort()[0] ?? null;
+	};
+	const lifeOf = (a: Ask): Life => {
+		if (a.state !== 'approved' || !a.title_id || a.kind === 'artist') return lifecycle(a);
+		const out = upcoming(a, ctx.info(a), firstAir(a));
+		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
 	};
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
@@ -175,14 +190,16 @@
 
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.tab, ctx.counts]}>
+		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts]}>
 			<span class="plate" aria-hidden="true"></span>
-			{#each tabs as t (t.tab)}
-				<button type="button" class="tab" class:zero={!ctx.counts[t.tab]} aria-pressed={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'waiting' && ctx.counts[t.tab]}>{ctx.counts[t.tab] ?? 0}</span></button>
+			{#each approverTabs as t (t.tab)}
+				{@const n = ctx.approverCounts[t.tab] ?? 0}
+				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
+				<button type="button" class="tab" class:zero={!n} aria-pressed={ctx.approverTab === t.tab} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}" onclick={() => ctx.setApproverTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="bad" aria-hidden="true"></span>{/if}</button>
 			{/each}
 		</div>
 		<div class="right">
-			{#if ctx.tab === 'waiting' && list.filter(waiting).length > 1}
+			{#if ctx.approverTab === 'pending' && list.filter(waiting).length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(list.filter((x) => waiting(x) && !approving.has(x.id)))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
 			{/if}
 			<div class="cap">
@@ -199,7 +216,7 @@
 		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
 			{#each list as a, i (a.id)}
 				{@const w = ctx.who(a)}
-				{@const life = lifecycle(a)}
+				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
 				{@const wide = banner(a)}
 				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
@@ -217,12 +234,16 @@
 						{#if waiting(a)}
 							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
 							<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
+						{:else if failed(a)}
+							<span class="state tone-bad" role="status"><span class="dot"></span>{life.label}</span>
+							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
 						{:else}
 							<span class="said" role="status" aria-live="polite">
 								{#if ctx.isPending(a.id)}
 									<span class="state">Sending…</span>
 								{:else}
-									<span class="state tone-{life.tone}"><span class="dot"></span>{ctx.decided(a) || life.label}</span>
+									<!-- Declined says who declined; the rest say where the ask is. -->
+									<span class="state tone-{life.tone}"><span class="dot"></span>{(a.state === 'turned_down' && ctx.decided(a)) || life.label}</span>
 								{/if}
 							</span>
 						{/if}
@@ -236,8 +257,8 @@
 			{:else}
 				<li class="calm">
 					<span class="calm-ic"><Icon name="check" size={24} /></span>
-					<h2>{calm[ctx.tab]?.title ?? 'Nothing here right now'}</h2>
-					<p>{ctx.kind !== 'all' ? 'Nothing of this type here. Try All.' : (calm[ctx.tab]?.text ?? '')}</p>
+					<h2>{calm[ctx.approverTab]?.title ?? 'Nothing here right now'}</h2>
+					<p>{ctx.kind !== 'all' ? 'Nothing of this type here. Try All.' : (calm[ctx.approverTab]?.text ?? '')}</p>
 				</li>
 			{/each}
 		</ul>
@@ -275,6 +296,7 @@
 	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
 	.n { opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
+	.bad { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
 	.cap { display: flex; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.seg { position: relative; display: flex; align-items: stretch; gap: 2px; height: 44px; }
 	.seg .plate { border-radius: 10px; }
@@ -328,11 +350,14 @@
 	.state.tone-go .dot { background: var(--info, #3b82f6); }
 	.state.tone-ok .dot { background: var(--ok); }
 	.state.tone-bad .dot { background: var(--fail, #e5484d); }
+	.foot > .state.tone-bad { grid-column: auto; color: var(--fail, #e5484d); }
+	.state.tone-soon .dot { background: var(--text-muted); }
 	.life { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 3px; overflow: hidden; background: rgb(127 127 127 / 0.1); }
 	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.tone-wait .fill { background: var(--wait); }
 	.tone-go .fill { background: var(--info, #3b82f6); }
 	.tone-ok .fill { background: var(--ok); }
+	.tone-soon .fill { background: var(--text-muted); }
 	.tone-off .fill { background: rgb(127 127 127 / 0.45); }
 	.tone-bad .fill { background: var(--fail, #e5484d); }
 	.answered .ban-img { filter: saturate(0.7); }

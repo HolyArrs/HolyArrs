@@ -133,3 +133,46 @@ export function firstTab(asks: Pick<Ask, 'state' | 'title_id'>[]): AskTab {
 	const n = tabCounts(asks);
 	return askTabs.find((t) => n[t.tab] > 0)?.tab ?? 'waiting';
 }
+
+/**
+ * The approvers' tabs, simpler than the members' five: Pending waits for an
+ * answer, Processing is approved and not in the Library yet (failed ones too),
+ * Done is in the Library or declined.
+ */
+export type ApproverTab = 'pending' | 'processing' | 'done';
+export const approverTabs: { tab: ApproverTab; label: string }[] = [
+	{ tab: 'pending', label: 'Pending' },
+	{ tab: 'processing', label: 'Processing' },
+	{ tab: 'done', label: 'Done' }
+];
+
+/** approverTab says which approver tab an ask sits in. */
+export function approverTab(a: Pick<Ask, 'state'>): ApproverTab {
+	if (a.state === 'asked') return 'pending';
+	if (a.state === 'approved') return 'processing';
+	return 'done';
+}
+
+/** approverCounts counts the asks in each approver tab, and the failed ones among Processing. */
+export function approverCounts(asks: Pick<Ask, 'state' | 'title_id'>[]): Record<ApproverTab, number> & { failed: number } {
+	const n = { pending: 0, processing: 0, done: 0, failed: 0 };
+	for (const a of asks) {
+		n[approverTab(a)]++;
+		if (askTab(a) === 'failed') n.failed++;
+	}
+	return n;
+}
+
+const when = (iso?: string) => (iso ? Date.parse(iso) || 0 : 0);
+
+/**
+ * approverSort orders one approver tab: Pending newest ask first; Processing
+ * failed first, then newest approved; Done newest decision first.
+ */
+export function approverSort<T extends Pick<Ask, 'state' | 'title_id' | 'asked_at' | 'decided_at' | 'available_at'>>(tab: ApproverTab, list: T[]): T[] {
+	const out = [...list];
+	if (tab === 'pending') return out.sort((x, y) => when(y.asked_at) - when(x.asked_at));
+	const decidedAt = (a: T) => when(a.decided_at) || when(a.available_at) || when(a.asked_at);
+	if (tab === 'processing') return out.sort((x, y) => Number(askTab(y) === 'failed') - Number(askTab(x) === 'failed') || decidedAt(y) - decidedAt(x));
+	return out.sort((x, y) => decidedAt(y) - decidedAt(x));
+}

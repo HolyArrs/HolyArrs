@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { askTab, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
+import { approverCounts, approverSort, approverTab, askTab, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
 import type { AskKindLimit, AskLimit, AskState } from './types.ts';
 
 describe('wishlist words', () => {
@@ -90,5 +90,28 @@ describe('ask tabs', () => {
 		expect(firstTab(list)).toBe('approved');
 		expect(firstTab([...list, a('asked')])).toBe('waiting');
 		expect(firstTab([])).toBe('waiting');
+	});
+});
+
+describe('approver tabs', () => {
+	const a = (id: number, state: AskState, title_id?: number, decided_at?: string) => ({ id, state, title_id, asked_at: `2026-10-0${id}T00:00:00Z`, decided_at });
+	it('folds the five states into Pending, Processing and Done', () => {
+		expect(approverTab(a(1, 'asked'))).toBe('pending');
+		expect(approverTab(a(1, 'approved', 4))).toBe('processing');
+		expect(approverTab(a(1, 'approved'))).toBe('processing');
+		expect(approverTab(a(1, 'available', 4))).toBe('done');
+		expect(approverTab(a(1, 'turned_down'))).toBe('done');
+	});
+	it('counts each tab and the failed ones', () => {
+		expect(approverCounts([a(1, 'asked'), a(2, 'approved'), a(3, 'approved', 1), a(4, 'turned_down')])).toEqual({ pending: 1, processing: 2, done: 1, failed: 1 });
+	});
+	it('puts failed first in Processing, then the newest approved', () => {
+		const list = [a(1, 'approved', 1, '2026-10-05T00:00:00Z'), a(2, 'approved', 1, '2026-10-09T00:00:00Z'), a(3, 'approved', undefined, '2026-10-01T00:00:00Z')];
+		expect(approverSort('processing', list).map((x) => x.id)).toEqual([3, 2, 1]);
+	});
+	it('puts the newest decision first in Done, the newest ask first in Pending', () => {
+		const done = [a(1, 'available', 1, '2026-10-02T00:00:00Z'), a(2, 'turned_down', undefined, '2026-10-08T00:00:00Z')];
+		expect(approverSort('done', done).map((x) => x.id)).toEqual([2, 1]);
+		expect(approverSort('pending', [a(1, 'asked'), a(3, 'asked'), a(2, 'asked')]).map((x) => x.id)).toEqual([3, 2, 1]);
 	});
 });

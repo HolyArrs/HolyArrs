@@ -19,7 +19,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/plain.ts';
-	import { askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type AskTab } from '#lib/wishlist.ts';
+	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/wishlist.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { inbox, markRead, refreshInbox } from '#lib/wishlist.svelte.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView } from '#lib/types.ts';
@@ -37,6 +37,8 @@
 	let loaded = $state(false);
 	let error = $state('');
 	let tab = $state<AskTab>('waiting');
+	// Approvers see three tabs (Pending, Processing, Done); members keep the five.
+	let apTab = $state<ApproverTab>('pending');
 	let mineOnly = $state(false);
 	let kind = $state<'all' | 'movie' | 'show' | 'artist'>('all');
 	let limit = $state<AskLimit | null>(null);
@@ -55,14 +57,15 @@
 		return { ...a, state: p.mode === 'approve' ? 'approved' : 'turned_down', title_id: a.title_id ?? (p.mode === 'approve' ? -1 : undefined) };
 	};
 	const viewed = $derived((mineOnly ? ofKind.filter((a) => a.mine) : ofKind).map(viewOf));
-	const shown = $derived(viewed.filter((a) => askTab(a) === tab));
+	const shown = $derived(approver ? approverSort(apTab, viewed.filter((a) => approverTabOf(a) === apTab)) : viewed.filter((a) => askTab(a) === tab));
+	const apCounts = $derived(approverCountsOf(viewed));
 	const tabs = $derived(askTabs.filter((t) => approver || t.tab !== 'failed'));
 	// The kind chips show once asks of more than one kind are listed.
 	const bothKinds = $derived(new Set(asks.map((a) => a.kind)).size > 1);
 	const counts = $derived(tabCounts(viewed));
 	// Bulk choice: waiting asks only.
 	let chosen = $state<Set<number>>(new Set());
-	const choosable = $derived(approver && tab === 'waiting');
+	const choosable = $derived(approver && apTab === 'pending');
 	const chosenAsks = $derived(shown.filter((a) => chosen.has(a.id)));
 	function toggleChosen(id: number) {
 		const next = new Set(chosen);
@@ -412,6 +415,9 @@
 		get tab() { return tab; },
 		get counts() { return counts; },
 		setTab: (t) => ((tab = t), (chosen = new Set())),
+		get approverTab() { return apTab; },
+		get approverCounts() { return apCounts; },
+		setApproverTab: (t) => ((apTab = t), (chosen = new Set())),
 		get approver() { return approver; },
 		get choosable() { return choosable; },
 		isChosen: (id) => chosen.has(id),

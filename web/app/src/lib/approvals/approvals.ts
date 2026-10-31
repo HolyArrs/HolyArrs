@@ -3,7 +3,7 @@
 
 import type { Ask } from '../types.ts';
 import type { StatusKind } from '../ui/StatusPill.svelte';
-import type { AskTab } from '../wishlist.ts';
+import type { ApproverTab, AskTab } from '../wishlist.ts';
 import type { TitleDetails } from '../title-details.ts';
 import type { LibraryFolder, PickRulesView } from '../types.ts';
 import type { AskInfo, EpisodeInfo } from './inbox.ts';
@@ -96,6 +96,11 @@ export interface ApprovalsCtx {
 	readonly tab: AskTab;
 	readonly counts: Record<AskTab, number>;
 	setTab(t: AskTab): void;
+	/** The approvers' three tabs (Pending, Processing, Done); `shown` follows it for approvers. */
+	readonly approverTab: ApproverTab;
+	/** Asks per approver tab, and how many in Processing failed. */
+	readonly approverCounts: Record<ApproverTab, number> & { failed: number };
+	setApproverTab(t: ApproverTab): void;
 	readonly approver: boolean;
 	readonly choosable: boolean;
 	isChosen(id: number): boolean;
