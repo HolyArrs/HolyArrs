@@ -3,9 +3,9 @@
 	// pill group on the left, the type filter in a capsule on the right. Each card is
 	// a small window: a dark card with the title's wide art, the title and its facts
 	// on the art, then a frosted sheet over the art's foot with who asked and the
-	// answers (Approve, Turn down). A card opens the full window with that ask
+	// answers (Approve, Decline). A card opens the full window with that ask
 	// (trailer banner, What to get).
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
@@ -63,9 +63,9 @@
 
 	// What an empty tab says.
 	const calm: Record<string, { title: string; text: string }> = {
-		pending: { title: 'You’re all caught up', text: 'New asks show up here.' },
-		processing: { title: 'Nothing in progress', text: 'Approved asks stay here until they’re ready.' },
-		done: { title: 'Nothing done yet', text: 'Ready and declined asks end up here.' }
+		pending: { title: 'You’re all caught up.', text: 'New asks show up here.' },
+		processing: { title: 'Nothing in progress.', text: 'Approved asks stay here until they’re ready.' },
+		done: { title: 'Nothing done yet.', text: 'Ready and declined asks end up here.' }
 	};
 
 	// The status line, with what the page knows: not out yet (from the release and air dates).
@@ -76,23 +76,37 @@
 		if (!eps) return null;
 		return eps.map((e) => e.air_day ?? '').filter(Boolean).sort()[0] ?? null;
 	};
-	const lifeOf = (a: Ask): Life => {
+	const lifeNow = (a: Ask): Life => {
 		if (a.state !== 'approved' || !a.title_id) return lifecycle(a);
 		const live = ctx.live(a);
 		if (live.phase || a.kind === 'artist') return lifecycle(a, live);
 		const out = upcoming(a, ctx.info(a), firstAir(a));
 		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
 	};
+	// Worked out once per ask; the cards, the status filter and its counts all read it.
+	const lives = $derived(new Map(ctx.viewed.map((a) => [a.id, lifeNow(a)])));
+	const lifeOf = (a: Ask): Life => lives.get(a.id) ?? lifeNow(a);
 
 	// Filter by status within the tab: the status word without its detail (Downloading · 40% → Downloading).
 	const statusOf = (a: Ask) => lifeOf(a).label.split(' · ')[0];
-	let status = $state('');
+	// The picked status belongs to one tab: it clears when the tab changes by any path,
+	// and when it no longer exists in that tab.
+	let statusPick = $state<{ tab: ApproverTab | ''; word: string }>({ tab: '', word: '' });
 	/** The statuses in one tab, in the page's order (Processing: failed first). */
 	const statusesIn = (t: ApproverTab) => {
-		const n = new Map<string, number>();
-		for (const a of ctx.viewed) if (tabOfAsk(a) === t) n.set(statusOf(a), (n.get(statusOf(a)) ?? 0) + 1);
-		return [...n].map(([word, count]) => ({ word, count })).sort((x, y) => Number(y.word === 'Failed') - Number(x.word === 'Failed'));
+		const n = new Map<string, { count: number; tone: Life['tone'] }>();
+		for (const a of ctx.viewed) {
+			if (tabOfAsk(a) !== t) continue;
+			const w = statusOf(a);
+			const x = n.get(w);
+			n.set(w, { count: (x?.count ?? 0) + 1, tone: x?.tone ?? lifeOf(a).tone });
+		}
+		return [...n].map(([word, x]) => ({ word, ...x })).sort((x, y) => Number(y.tone === 'bad') - Number(x.tone === 'bad'));
 	};
+	const status = $derived(statusPick.word && statusPick.tab === ctx.approverTab && statusesIn(ctx.approverTab).some((x) => x.word === statusPick.word) ? statusPick.word : '');
+	$effect(() => {
+		if (statusPick.word && !status) statusPick = { tab: '', word: '' };
+	});
 	// Each tab's own menu, centred under that tab: hover (or keyboard focus, or a second tap) opens it,
 	// and picking a status goes straight to that tab, filtered.
 	const tabEls: Partial<Record<ApproverTab, HTMLElement>> = {};
@@ -121,14 +135,29 @@
 		else hideT = setTimeout(() => (dropTab = ''), 140);
 	}
 	function pickTab(t: ApproverTab) {
-		if (ctx.approverTab === t) return dropTab === t ? closeDrop(true) : openDrop(t);
-		status = '';
+		closeDrop(true);
+		if (ctx.approverTab === t) return;
+		statusPick = { tab: '', word: '' };
 		ctx.setApproverTab(t);
 	}
 	function pickStatus(t: ApproverTab, word: string) {
+		const same = status === word && ctx.approverTab === t;
 		if (ctx.approverTab !== t) ctx.setApproverTab(t);
-		status = status === word && ctx.approverTab === t ? '' : word;
+		statusPick = same ? { tab: '', word: '' } : { tab: t, word };
 		closeDrop(true);
+	}
+	// The menu also closes on Escape, on a press outside it, and when focus leaves the tabs.
+	function capKeys(e: KeyboardEvent) {
+		if (e.key === 'Escape' && dropTab) {
+			e.stopPropagation();
+			closeDrop(true);
+		}
+	}
+	function outside(e: PointerEvent) {
+		if (dropTab && capEl && e.target instanceof Node && !capEl.contains(e.target)) closeDrop(true);
+	}
+	function capOut(e: FocusEvent) {
+		if (!(e.relatedTarget instanceof Node && capEl?.contains(e.relatedTarget))) closeDrop(true);
 	}
 	const cardsShown = $derived(status ? list.filter((a) => statusOf(a) === status) : list);
 
@@ -145,10 +174,16 @@
 
 	// Approving shows its answer on the card for a beat, then the card leaves (Undo stays in the toast).
 	let approving = $state(new Set<number>());
+	const beats = new Set<ReturnType<typeof setTimeout>>();
+	onDestroy(() => {
+		for (const t of beats) clearTimeout(t);
+		clearTimeout(hideT);
+	});
 	function approveOne(a: Ask) {
 		if (approving.has(a.id)) return;
 		approving = new Set(approving).add(a.id);
-		setTimeout(() => {
+		const t = setTimeout(() => {
+			beats.delete(t);
 			// Answered elsewhere meanwhile (Approve all, the window): only clear the beat.
 			if (!waiting(a)) {
 				const next = new Set(approving);
@@ -166,6 +201,7 @@
 			approving = next;
 			if (had && after) void tick().then(() => after.isConnected && after.focus({ preventScroll: true }));
 		}, ms(560));
+		beats.add(t);
 	}
 
 	// The window: one ask on the Stage.
@@ -200,7 +236,7 @@
 			clearTimeout(advance);
 			advance = setTimeout(() => {
 				if (openId !== id || !win?.open) return;
-				const next = list.find((x) => x.id !== id && waiting(x));
+				const next = cardsShown.find((x) => x.id !== id && waiting(x));
 				if (next) openId = next.id;
 				else hide();
 			}, ms(650));
@@ -240,29 +276,31 @@
 	}
 </script>
 
+<svelte:window onpointerdown={outside} />
+
 <div class="desktop" data-testid="approvals-desktop">
 	<div class="toolbar">
-		<div class="tcap" bind:this={capEl} role="presentation" onpointerleave={(e) => e.pointerType === 'mouse' && closeDrop()}>
+		<div class="tcap" bind:this={capEl} role="presentation" onpointerleave={(e) => e.pointerType === 'mouse' && closeDrop()} onkeydown={capKeys} onfocusout={capOut}>
 		<div class="tabs" role="group" aria-label="Status" use:plate={[ctx.approverTab, ctx.approverCounts, status]}>
 			<span class="plate" aria-hidden="true"></span>
 			{#each approverTabs as t (t.tab)}
 				{@const n = ctx.approverCounts[t.tab] ?? 0}
 				{@const bad = t.tab === 'processing' ? ctx.approverCounts.failed : 0}
-				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={() => pickTab(t.tab)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="bad" aria-hidden="true"></span>{/if}</button>
+				<button type="button" class="tab" class:zero={!n} bind:this={tabEls[t.tab]} aria-pressed={ctx.approverTab === t.tab} aria-haspopup={t.tab !== 'pending' ? 'true' : undefined} aria-expanded={t.tab !== 'pending' ? dropTab === t.tab : undefined} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{status && ctx.approverTab === t.tab ? `, showing ${status}` : ''}" onpointerenter={(e) => e.pointerType === 'mouse' && openDrop(t.tab)} onfocus={(e) => (e.currentTarget as HTMLElement).matches(':focus-visible') && openDrop(t.tab)} onclick={() => pickTab(t.tab)}>{t.label}{#if status && ctx.approverTab === t.tab}<span class="pick" class:pick-bad={status === 'Failed'}>· {status}</span>{/if}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
 			{/each}
 		</div>
 		{#if dropTab}
 			{@const at = dropTab}
 			<div class="drop" role="menu" aria-label="{approverTabs.find((x) => x.tab === at)?.label} by status" style:left="{dropX}px" onmouseenter={() => clearTimeout(hideT)} transition:slide={{ duration: ms(200), easing: cubicOut }}>
 				{#each dropItems as x (x.word)}
-					<button type="button" role="menuitemcheckbox" class="dr" class:bad={x.word === 'Failed'} aria-checked={ctx.approverTab === at && status === x.word} onclick={() => pickStatus(at, x.word)}><span class="dd dd-{x.word.toLowerCase()}" aria-hidden="true"></span><span class="dw">{x.word}</span><span class="dn">{x.count}</span></button>
+					<button type="button" role="menuitemcheckbox" class="dr" class:bad={x.tone === 'bad'} aria-checked={ctx.approverTab === at && status === x.word} onclick={() => pickStatus(at, x.word)}><span class="dd tone-{x.tone}" aria-hidden="true"></span><span class="dw">{x.word}</span><span class="dn">{x.count}</span></button>
 				{/each}
 			</div>
 		{/if}
 		</div>
 		<div class="right">
-			{#if ctx.approverTab === 'pending' && list.filter(waiting).length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(list.filter((x) => waiting(x) && !approving.has(x.id)))}><Icon name="check" size={16} />Approve all {list.filter(waiting).length}</button>
+			{#if ctx.approverTab === 'pending' && cardsShown.filter(waiting).length > 1}
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(cardsShown.filter((x) => waiting(x) && !approving.has(x.id)))}><Icon name="check" size={16} />Approve all {cardsShown.filter(waiting).length}</button>
 			{/if}
 			<div class="cap">
 				<div class="seg" role="group" aria-label="Type" use:plate={ctx.kind}>
@@ -291,17 +329,18 @@
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><span><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={20} /><b>{w.name}</b>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}<span class="when">· <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time></span></span>
 					</div>
 					<div class="foot">
 						{#if waiting(a)}
 							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
 							<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
-						{:else if failed(a)}
-							<span class="state tone-bad" role="status"><span class="dot"></span>{life.label}</span>
-							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
+						{:else if life.stage === 'failed' && !ctx.isPending(a.id)}
+							<!-- Every failed ask: the red label on the left, Decline on the right when it can still be declined. -->
+							<span class="state tone-bad"><span class="dot"></span>{life.label}</span>
+							{#if failed(a)}<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>{/if}
 						{:else}
-							<span class="said" role="status" aria-live="polite">
+							<span class="said">
 								{#if ctx.isPending(a.id)}
 									<span class="state">Sending…</span>
 								{:else}
@@ -314,15 +353,22 @@
 					</div>
 					<span class="life tone-{approving.has(a.id) ? 'ok' : life.tone}" aria-hidden="true"><span class="fill" style:width="{approving.has(a.id) ? 100 : life.pct}%"></span></span>
 					{#if approving.has(a.id)}
-						<span class="done" role="status" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>Approved</span>
+						<span class="done" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>Approved</span>
 					{/if}
 				</li>
 			{:else}
-				<li class="calm">
-					<span class="calm-ic"><Icon name="check" size={24} /></span>
-					<h2>{calm[ctx.approverTab]?.title ?? 'Nothing here right now'}</h2>
-					<p>{ctx.kind !== 'all' ? 'Nothing of this type here. Try All.' : (calm[ctx.approverTab]?.text ?? '')}</p>
-				</li>
+				{#if status}
+					<li class="calm">
+						<h2>Nothing here with this status.</h2>
+						<button type="button" class="b no show-all" onclick={() => (statusPick = { tab: '', word: '' })}>Show all</button>
+					</li>
+				{:else}
+					<li class="calm">
+						<span class="calm-ic"><Icon name="check" size={24} /></span>
+						<h2>{calm[ctx.approverTab]?.title ?? 'Nothing here right now.'}</h2>
+						<p>{ctx.kind !== 'all' ? 'Nothing of this type here. Try All.' : (calm[ctx.approverTab]?.text ?? '')}</p>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 </div>
@@ -358,17 +404,15 @@
 	.dr.bad .dw { color: var(--fail-text, var(--fail, #e5484d)); }
 	.dn { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.dd { width: 8px; height: 8px; border-radius: 50%; background: var(--info, #3b82f6); }
-	.dd-failed { background: var(--fail, #e5484d); }
-	.dd-ready { background: var(--ok, #3fb950); }
-	.dd-upcoming, .dd-declined { background: var(--text-muted); }
-	.dd-pending { background: var(--wait, #e5a50a); }
+	.dd.tone-bad { background: var(--fail, #e5484d); }
+	.dd.tone-ok { background: var(--ok, #3fb950); }
+	.dd.tone-soon, .dd.tone-off { background: var(--text-muted); }
+	.dd.tone-wait { background: var(--wait, #e5a50a); }
 	@media (pointer: coarse) { .dr { height: 44px; } }
 	.pick { margin-left: 4px; color: var(--text-muted); font-weight: 500; }
 	.pick.pick-bad { color: var(--fail-text, var(--fail, #e5484d)); }
-	@media (prefers-reduced-motion: reduce) { .stats { transition: none; } }
-	.sn { font-variant-numeric: tabular-nums; opacity: 0.7; }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-	.right { display: flex; align-items: center; gap: 10px; }
+	.right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
 	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.tabs .plate { border-radius: 10px; }
@@ -377,7 +421,7 @@
 	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
 	.n { opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
-	.tab .bad { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
+	.tab .fail-dot { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
 	.cap { display: flex; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.seg { position: relative; display: flex; align-items: stretch; gap: 2px; height: 44px; }
 	.seg .plate { border-radius: 10px; }
@@ -387,7 +431,6 @@
 	.it:hover .lb, .it[aria-pressed='true'] .lb { color: var(--text); }
 	.it:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.it:active { transform: scale(0.97); }
-	.vr { width: 1px; height: 26px; margin: 0 4px; background: var(--line); }
 	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 52px; padding: 0 18px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
 	.approve-all:hover { background: var(--surface-2); }
 	.approve-all:active { transform: scale(0.96); }
@@ -396,17 +439,18 @@
 	   with the title and its facts on it, then a frosted sheet over the art's foot holding
 	   who asked and the answers. The life-cycle line runs along the bottom edge. */
 	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
-	.bc { --sheet: color-mix(in srgb, var(--bg) 88%, transparent); position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #0b0b0c; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 300ms var(--ez), box-shadow 300ms var(--ease-out); }
+	/* The card takes the sheet's own colour (dark in dark mode, pale in light), so no band shows under the sheet. */
+	.bc { --sheet: color-mix(in srgb, var(--bg) 88%, transparent); position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: var(--bg); box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 300ms var(--ez), box-shadow 300ms var(--ease-out); }
 	.bc:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 2px 4px rgb(0 0 0 / 0.08), 0 24px 48px -24px rgb(0 0 0 / 0.65); }
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.open:focus-visible { box-shadow: none; }
 	.bc:has(.open:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
 	.ban { position: relative; height: 190px; overflow: hidden; background: #1a1a1d; border-radius: 20px 20px 0 0; }
-	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms var(--ease-out); }
+	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 400ms var(--ez), opacity 500ms var(--ease-out); }
 	img.ban-img { animation: ban-in 600ms var(--ease-out) both; }
 	@keyframes ban-in { from { opacity: 0; } }
 	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
-	.bc:hover .ban-img:not(.soft) { transform: scale(1.08); }
+	.bc:hover .ban-img:not(.soft) { transform: scale(1.04); }
 	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.15), transparent 30%, rgb(0 0 0 / 0.72)); }
 	.ban-cap { position: absolute; left: 14px; right: 14px; bottom: 30px; z-index: 1; display: flex; flex-direction: column; gap: 3px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.5); }
 	.ban-t { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -416,8 +460,10 @@
 	.sheet-b button { pointer-events: auto; }
 	.sheet-b { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; margin: -20px 8px 8px; border-radius: 16px; background: var(--sheet); color: var(--text); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 14px 30px -14px rgb(0 0 0 / 0.6); }
 	.body { display: flex; flex-direction: column; gap: 4px; padding: 12px 12px 0; min-width: 0; }
-	.who { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font: var(--t-footnote); }
-	.who b { color: var(--text); font-weight: 600; }
+	.who { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
+	.who > :global(*) { flex: none; }
+	.who b { max-width: 60%; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-weight: 600; }
+	.who .when { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.foot { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding: 12px; }
 	.b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform 140ms var(--ease-out), background 200ms var(--ease-out);  white-space: nowrap; }
 	.b:active { transform: scale(0.96); }
@@ -430,11 +476,13 @@
 	.state.tone-wait .dot { background: var(--wait); }
 	.state.tone-go .dot { background: var(--info, #3b82f6); }
 	.state.tone-ok .dot { background: var(--ok); }
+	.state.tone-bad { color: var(--fail-text, var(--fail, #e5484d)); }
 	.state.tone-bad .dot { background: var(--fail, #e5484d); }
-	.foot > .state.tone-bad { grid-column: auto; color: var(--fail, #e5484d); }
+	.foot > .state.tone-bad { grid-column: 1; }
 	.state.tone-soon .dot { background: var(--text-muted); }
-	.life { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 3px; overflow: hidden; background: rgb(127 127 127 / 0.1); }
-	.fill { display: block; height: 100%; border-radius: 0 3px 3px 0; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1); }
+	/* Inset from the card's rounded corners, so the line is never clipped. */
+	.life { position: absolute; left: 20px; right: 20px; bottom: 3px; z-index: 2; height: 3px; overflow: hidden; border-radius: 3px; background: rgb(127 127 127 / 0.14); }
+	.fill { display: block; height: 100%; border-radius: 3px; transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.tone-wait .fill { background: var(--wait); }
 	.tone-go .fill { background: var(--info, #3b82f6); }
 	.tone-ok .fill { background: var(--ok); }
@@ -448,6 +496,7 @@
 	.calm { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 64px 20px; border-radius: 18px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); color: var(--text-muted); text-align: center; }
 	.calm-ic { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 50%; background: var(--surface-2); color: var(--text); }
 	.calm h2 { color: var(--text); font: var(--t-title3); }
+	.show-all { margin-top: 6px; }
 
 	/* The window: one ask on the Stage. */
 	.win { width: min(1180px, calc(100vw - 48px)); max-width: none; height: min(760px, calc(100dvh - 48px)); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 24px; background: #0b0b0c; overflow: hidden; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 50px 120px -30px rgb(0 0 0 / 0.85); }
@@ -463,10 +512,12 @@
 	.nav:disabled { opacity: 0.35; cursor: default; }
 	.pos { min-width: 52px; text-align: center; font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.win :global(.ctl.top) { right: 68px !important; }
+	/* One close at a time: while the sheet is up, its own header closes it. */
+	.win:has(:global(.frame.choosing)) .close { display: none; }
 	.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 	/* Touch screens: every control gets a full finger-sized target, at any width. */
 	@media (pointer: coarse) { .nav, .close { width: 44px; height: 44px; } .b { height: 44px; } }
-	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.3); border-radius: 20px; } }
+	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.85); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }
 	/* Phones: the tabs swipe, the filter fills the width, two cards per row, the window fills the screen. */
 	@media (max-width: 767px) {
