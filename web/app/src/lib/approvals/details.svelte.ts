@@ -83,11 +83,6 @@ export function storedParts(a: Pick<Ask, 'id' | 'kind'> | null | undefined): Sto
 	return stored[a.id] ?? null;
 }
 
-/** prefetchParts asks for the stored lists of the given asks (the picked one and the next) ahead of time. */
-export function prefetchParts(...as: (Pick<Ask, 'id' | 'kind'> | null | undefined)[]): void {
-	for (const a of as) storedParts(a);
-}
-
 /** A song of an album, as the album page lists it. */
 export interface AlbumSong {
 	disc: number;

@@ -1,21 +1,7 @@
-// The Stage views of the Approvals page Luis compares (?stage=1…5), and
-// the rules they share: what an ask is for in one line
-// (with season pills), whether part of it is not out yet, the status tabs,
-// and the remembered poster size and side panel.
+// What an ask carries from the metadata answer (seasons, release dates, language),
+// the audio languages an approver can ask for, and who asked.
 
 import type { Ask } from '../types.ts';
-import type { AskTab } from '../wishlist.ts';
-
-/** The Stage views on the bottom bar (?stage=1…5): the picked ask large, the list roomier in each. */
-
-/** The status tabs, in the words the app uses (Downloads-style, each with its count). */
-export const inboxTabs: { tab: AskTab; label: string }[] = [
-	{ tab: 'waiting', label: 'Pending' },
-	{ tab: 'approved', label: 'Approved' },
-	{ tab: 'declined', label: 'Declined' },
-	{ tab: 'done', label: 'Ready' },
-	{ tab: 'failed', label: 'Failed' }
-];
 
 /** A season as the metadata answer lists it. */
 export interface SeasonInfo {
@@ -87,101 +73,6 @@ export function movieRelease(info: Pick<AskInfo, 'dates' | 'status'> | null | un
 	return { words: '', notOut: '' };
 }
 
-/** A pill under a show's summary: one season and how much of it was asked for. */
-export interface SeasonPill {
-	season: number;
-	/** "S1: 3 of 7" or "S6: all 16". */
-	label: string;
-	/** The episodes asked for; empty is the whole season. */
-	episodes: number[];
-}
-export interface AskSummary {
-	line: string;
-	pills: SeasonPill[];
-}
-
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
-
-/** seasonRange says "Season 2", "Seasons 1–3" or "Seasons 1, 3 and 5". */
-export function seasonRange(ns: number[]): string {
-	const s = [...new Set(ns)].sort((a, b) => a - b);
-	if (s.length === 0) return '';
-	if (s.length === 1) return `Season ${s[0]}`;
-	const run = s.every((n, i) => i === 0 || n === s[i - 1] + 1);
-	if (run) return `Seasons ${s[0]}–${s[s.length - 1]}`;
-	return `Seasons ${s.slice(0, -1).join(', ')} and ${s[s.length - 1]}`;
-}
-
-/**
- * showSummary says what a show ask is for in one line, with season pills:
- * the entire show, whole seasons, a few episodes of one season, or a mix.
- * `episodes` maps a season to the episodes asked for (empty: the whole season).
- */
-export function showSummary(
-	a: Pick<Ask, 'seasons' | 'future_only' | 'season_words'>,
-	seasons: SeasonInfo[],
-	episodes?: Record<number, number[]>
-): AskSummary {
-	const regular = seasons.filter((s) => s.number > 0);
-	const count = (n: number) => regular.find((s) => s.number === n)?.episode_count ?? 0;
-	if (a.future_only) return { line: 'New episodes from now on', pills: [] };
-	const picked = episodes && Object.keys(episodes).length ? Object.keys(episodes).map(Number) : (a.seasons ?? []);
-	if (!picked.length) {
-		if (!regular.length) return { line: 'The entire show', pills: [] };
-		const eps = regular.reduce((n, s) => n + s.episode_count, 0);
-		return { line: `${plural(regular.length, 'season')}, ${plural(eps, 'episode')}`, pills: [] };
-	}
-	const sorted = [...new Set(picked)].sort((x, y) => x - y);
-	const pills: SeasonPill[] = sorted.map((n) => {
-		const eps = episodes?.[n] ?? [];
-		const all = count(n);
-		const label = eps.length && (!all || eps.length < all) ? `S${n}: ${eps.length}${all ? ` of ${all}` : ''}` : `S${n}: all${all ? ` ${all}` : ''}`;
-		return { season: n, label, episodes: eps.length && (!all || eps.length < all) ? [...eps].sort((x, y) => x - y) : [] };
-	});
-	const partial = pills.some((p) => p.episodes.length);
-	const total = pills.reduce((n, p) => n + (p.episodes.length || count(p.season)), 0);
-	if (partial) {
-		const line = sorted.length === 1 ? `${plural(total, 'episode')} from season ${sorted[0]}` : `${plural(total, 'episode')} from ${sorted.length} seasons`;
-		return { line, pills };
-	}
-	if (!regular.length) return { line: a.season_words ? a.season_words[0].toUpperCase() + a.season_words.slice(1) : seasonRange(sorted), pills };
-	return { line: `${seasonRange(sorted)} · ${sorted.length} of ${plural(regular.length, 'season')}, ${plural(total, 'episode')}`, pills };
-}
-
-/** askSummary is an ask's one-line summary: seasons for shows, albums for music; none for movies (the title page has the rest). */
-export function askSummary(a: Ask, info: AskInfo | null | undefined): AskSummary {
-	if (a.kind === 'artist') {
-		const w = a.album_words ?? (a.albums?.length ? a.albums.map((x) => x.name).join(', ') : 'every album');
-		return { line: w ? w[0].toUpperCase() + w.slice(1) : '', pills: [] };
-	}
-	if (a.kind === 'show') return showSummary(a, info?.seasons ?? []);
-	return { line: '', pills: [] };
-}
-
-/** The season whose episodes say whether part of a show ask is not out yet: the last asked one (or the show's last). */
-export function watchSeason(a: Pick<Ask, 'kind' | 'seasons' | 'future_only'>, info: AskInfo | null | undefined, now = new Date()): number {
-	if (a.kind !== 'show' || !info) return 0;
-	const regular = info.seasons.filter((s) => s.number > 0);
-	const asked = a.seasons?.length && !a.future_only ? Math.max(...a.seasons) : (regular[regular.length - 1]?.number ?? 0);
-	const s = regular.find((x) => x.number === asked);
-	// A season from before last year is out.
-	if (!s || (s.year && s.year < now.getFullYear() - 1)) return 0;
-	return asked;
-}
-
-/** showNotOut says "Not out yet · S6 airs Mar 3" (or "· S4 E7 airs …") when an asked season still has episodes to air. */
-export function showNotOut(season: number, eps: EpisodeInfo[] | null | undefined, now = new Date()): string {
-	if (!season || !eps?.length) return '';
-	const today = now.toISOString().slice(0, 10);
-	const next = eps.filter((e) => e.air_day && day(e.air_day) > today).sort((x, y) => (x.air_day ?? '').localeCompare(y.air_day ?? ''))[0];
-	if (!next?.air_day) {
-		// No date for an episode that has not aired: still waiting, date unknown.
-		return eps.every((e) => !e.air_day) ? `Not out yet · S${season} has no air date` : '';
-	}
-	const first = Math.min(...eps.map((e) => e.number));
-	return next.number === first ? `Not out yet · S${season} airs ${shortDate(next.air_day, now)}` : `Not out yet · S${season} E${next.number} airs ${shortDate(next.air_day, now)}`;
-}
-
 /** The audio languages the approver can ask for, by base code. */
 export const audioLanguages: { code: string; name: string }[] = [
 	{ code: 'en', name: 'English' },
@@ -204,69 +95,6 @@ export const audioLanguages: { code: string; name: string }[] = [
 export function languageName(code: string | undefined): string {
 	if (!code) return '';
 	return audioLanguages.find((l) => l.code === code)?.name ?? code;
-}
-
-/** The poster sizes, the same three the Library offers. */
-export type InboxSize = 's' | 'm' | 'l';
-export const sizeLabels: Record<InboxSize, string> = { s: 'Small', m: 'Medium', l: 'Large' };
-
-type Store = Pick<Storage, 'getItem' | 'setItem'> | undefined;
-const key = (what: string, member: number | undefined) => `holyarrs.approvals-${what}.${member ?? 'me'}`;
-
-/** loadSize reads a member's poster size for the Approvals rows (medium when none is kept). */
-export function loadSize(member: number | undefined, store: Store = globalThis.localStorage): InboxSize {
-	try {
-		const v = store?.getItem(key('poster-size', member));
-		return v === 's' || v === 'l' ? v : 'm';
-	} catch {
-		return 'm';
-	}
-}
-export function saveSize(member: number | undefined, s: InboxSize, store: Store = globalThis.localStorage) {
-	try {
-		store?.setItem(key('poster-size', member), s);
-	} catch { /* Private windows may refuse. */ }
-}
-/** loadPanel reads whether a member keeps the side panel open (open when none is kept). */
-export function loadPanel(member: number | undefined, store: Store = globalThis.localStorage): boolean {
-	try {
-		return store?.getItem(key('panel', member)) !== 'hidden';
-	} catch {
-		return true;
-	}
-}
-export function savePanel(member: number | undefined, open: boolean, store: Store = globalThis.localStorage) {
-	try {
-		store?.setItem(key('panel', member), open ? 'shown' : 'hidden');
-	} catch { /* Private windows may refuse. */ }
-}
-
-export type GroupBy = 'type' | 'person' | 'date';
-export const groupByWords: Record<GroupBy, string> = { type: 'Type', person: 'Person', date: 'Date' };
-/** loadGroupBy reads how a member groups the Approvals list (by type when none is kept). */
-export function loadGroupBy(member: number | undefined, store: Store = globalThis.localStorage): GroupBy {
-	try {
-		const v = store?.getItem(key('group', member));
-		return v === 'person' || v === 'date' ? v : 'type';
-	} catch {
-		return 'type';
-	}
-}
-export function saveGroupBy(member: number | undefined, g: GroupBy, store: Store = globalThis.localStorage) {
-	try {
-		store?.setItem(key('group', member), g);
-	} catch { /* Private windows may refuse. */ }
-}
-/** dateGroups splits asks into Today, This week and Older, newest first in each. */
-export function dateGroups<T extends { asked_at: string }>(asks: T[], now = new Date()): { id: string; name: string; asks: T[] }[] {
-	const day = new Date(now); day.setHours(0, 0, 0, 0);
-	const week = day.getTime() - 6 * 864e5;
-	const g = [{ id: 'today', name: 'Today', asks: [] as T[] }, { id: 'week', name: 'This week', asks: [] as T[] }, { id: 'older', name: 'Older', asks: [] as T[] }];
-	for (const a of [...asks].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at))) {
-		const t = Date.parse(a.asked_at);
-		g[t >= day.getTime() ? 0 : t >= week ? 1 : 2].asks.push(a);
-	}
-	return g.filter((x) => x.asks.length);
 }
 
 /** askers lists the people with asks, by name, for the Asked by filter. */

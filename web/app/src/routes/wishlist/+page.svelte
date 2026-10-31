@@ -33,7 +33,7 @@
 	import { askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
 	import { askedByOne, askers } from '#lib/approvals/inbox.ts';
 	import { kidLabel } from '#lib/kid.ts';
-	import StageViews from '#lib/approvals/StageViews.svelte';
+	import ApprovalsDesktop from '#lib/approvals/ApprovalsDesktop.svelte';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -233,7 +233,7 @@
 		if (approver) void loadProfile();
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
-			tab = stageLook > 0 && approver ? 'waiting' : firstTab(asks);
+			tab = approver ? 'waiting' : firstTab(asks);
 		});
 		void refreshInbox();
 		myId = session.s.id;
@@ -410,8 +410,6 @@
 		return 'HolyArrs is looking for it.';
 	}
 
-	// Approvers get the grouped list beside the large ask; members keep their Wishlist.
-	const stageLook = $derived(approver ? 5 : 0);
 	// Who asked: picture and age limit, for the Inbox looks.
 	let members = $state<Record<number, Member>>({});
 	let membersAsked = false;
@@ -419,7 +417,7 @@
 		// The people list is an admin route that wants a recent local password proof
 		// (10 minutes): without one it answers 403, so it is not asked; the rows
 		// then show initials and no age-limit mark.
-		if (!stageLook || !approver || membersAsked || !session.s.localRecent) return;
+		if (!approver || membersAsked || !session.s.localRecent) return;
 		membersAsked = true;
 		api
 			.get<{ users: Member[] }>('/users')
@@ -510,7 +508,7 @@
 
 <svelte:head><title>{approver ? 'Approvals' : 'Your Wishlist'} · HolyArrs</title></svelte:head>
 
-<div class="ap-top" class:compact={stageLook > 0}>
+<div class="ap-top" class:compact={approver}>
 <PageHeader
 	title={approver ? 'Approvals' : 'Your Wishlist'}
 >
@@ -529,14 +527,13 @@
 	</ul>
 {/if}
 
-{#if (bothKinds || asks.length) && !(stageLook > 0 && approver)}
+{#if (bothKinds || asks.length) && !approver}
 	<div class="toolbar">
 		{#if asks.length}
 			<div class="chips tabs" role="group" aria-label="Show" data-testid="ask-tabs">
 				{#each tabs as t (t.tab)}
 					<Chip label={t.label} count={t.tab === 'waiting' && counts.waiting ? counts.waiting : undefined} selected={tab === t.tab} onclick={() => ((tab = t.tab), (chosen = new Set()))} />
 				{/each}
-				{#if approver}<Chip label="Mine" icon="user" selected={mineOnly} onclick={() => (mineOnly = !mineOnly)} />{/if}
 			</div>
 		{/if}
 		{#if bothKinds}
@@ -572,7 +569,7 @@
 			{/if}
 {/snippet}
 
-{#if stageLook === 0 || !approver}
+{#if !approver}
 <div class="workspace">
 	<div class="main-col">
 		{#if error}
@@ -626,12 +623,6 @@
 							{#if a.note}<p class="line note">“{a.note}”</p>{/if}
 							{#if a.state === 'approved'}<p class="line muted">{approvedLine(a)}</p>{/if}
 							<div class="actions">
-								{#if approver && a.state === 'asked'}
-									<span class="quick">
-										<IconButton icon="check" variant="tinted" label="Approve {a.name}" data-testid="ask-approve" onclick={() => act([a], 'approve')} />
-										<IconButton icon="x" variant="tinted" label="Decline {a.name}" data-testid="ask-decline" onclick={() => askDecline([a])} />
-									</span>
-								{/if}
 								{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
 								<button
 									class="inspect"
@@ -681,20 +672,14 @@
 				</dl>
 				{#if selected.note}<p class="review-note">“{selected.note}”</p>{/if}
 				{#if selected.state === 'approved'}<p class="line muted">{approvedLine(selected)}</p>{/if}
-				{#if approver && selected.state === 'asked'}
-					<div class="review-actions">
-						<Button variant="primary" icon="check" full type="button" onclick={() => selected && open(selected, 'approve')}>Choose what to add</Button>
-						<Button icon="x" full type="button" onclick={() => selected && open(selected, 'turn_down')}>Decline</Button>
-					</div>
-				{/if}
 			</aside>
 		{/if}
 
-		{#if !approver}{@render messages()}{/if}
+		{@render messages()}
 	</div>
 </div>
 {:else}
-	<div class="variant" data-inbox={stageLook}>
+	<div class="variant">
 		{#if error}
 			<LoadError hasData={false} message="Couldn't load your Wishlist. {error}" onretry={load} />
 		{:else}
@@ -709,12 +694,12 @@
 						action={{ label: 'Search', href: to('/search') }}
 					/>
 				{:else}
-					<StageViews {ctx} />
+					<!-- Approvers: Cards (every width) or the Stage (wide screens); design-notes/approvals-stage.md. -->
+					<ApprovalsDesktop {ctx} />
 				{/if}
 			</PageLoader>
 		{/if}
-		{#if inbox.messages.length && !approver}<div class="variant-messages">{@render messages()}</div>{/if}
-	</div>
+			</div>
 {/if}
 
 {#snippet messages()}
@@ -843,7 +828,6 @@
 	.bulk.on { background: var(--surface-2); }
 	.tick-all { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; font: var(--t-subhead); color: var(--text-muted); }
 	.tick-all input { margin-top: 0; }
-	.quick { display: inline-flex; gap: 6px; }
 	.pending { font: var(--t-footnote); }
 	.ask + .ask { border-top: 1px solid var(--line); }
 	.ask.selected { background: var(--surface-2); }
@@ -873,7 +857,6 @@
 	.review-facts dt { color: var(--text-muted); }
 	.review-facts dd { text-align: right; overflow-wrap: anywhere; }
 	.review-note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font: var(--t-callout); overflow-wrap: anywhere; }
-	.review-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
 	.msg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 	.msg-head h2 { font: var(--t-headline); white-space: nowrap; display: flex; align-items: center; gap: 8px; }
 	.badge { padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: var(--t-footnote); font-weight: 600; }
@@ -906,7 +889,6 @@
 		.compact .chips::-webkit-scrollbar { display: none; }
 		.compact .chips > :global(*) { flex: none; }
 	}
-	.variant-messages { max-width: 560px; margin-top: 24px; }
 	@media (max-width: 1023px) {
 		.workspace { grid-template-columns: minmax(0, 1fr); }
 		.side-col { position: static; }
@@ -918,6 +900,5 @@
 		.ask { padding: 12px; gap: 12px; }
 		.art { width: 44px; }
 		.actions > :global(*):not(.row-menu) { flex: 1 1 auto; }
-		.review-actions { grid-template-columns: 1fr; }
 	}
 </style>
