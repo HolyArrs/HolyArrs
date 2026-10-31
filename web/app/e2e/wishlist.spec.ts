@@ -45,7 +45,7 @@ test('the owner adds a Discord Alert and sends a test', async () => {
 	await own.getByRole('button', { name: 'Save Alert' }).click();
 	const row = own.getByTestId('alert');
 	await expect(row).toContainText('Family Discord');
-	await expect(row).toContainText('Someone asks · Approved · Turned down · Ready');
+	await expect(row).toContainText('Someone asks · Approved · Declined · Ready');
 	await expect(own.locator('body')).not.toContainText('stand-in');
 	await row.getByRole('button', { name: 'Send a test' }).click();
 	await expect(row.getByTestId('alert-result')).toContainText('Last sent');
@@ -181,18 +181,18 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 
 	await own.goto('/wishlist');
 	const ask = own.getByTestId('ask').filter({ hasText: 'Velvet Tide' });
-	await ask.getByRole('button', { name: 'Turn down' }).click();
+	await ask.getByRole('button', { name: 'Decline' }).click();
 	await own.getByRole('dialog').getByLabel(/^Why/).fill('We have it on disc');
-	await own.getByRole('dialog').getByRole('button', { name: 'Turn down' }).click();
+	await own.getByRole('dialog').getByRole('button', { name: 'Decline' }).click();
 	await own.getByRole('button', { name: /^Declined/ }).click();
-	await expect(ask.getByTestId('ask-state')).toHaveText('Turned down');
+	await expect(ask.getByTestId('ask-state')).toHaveText('Declined');
 	// A turn down is sent after its few seconds of Undo.
 	await expect(ask.getByText('Sending…')).toHaveCount(0, { timeout: 15_000 });
 
 	await kim.goto('/wishlist');
 	await kim.getByRole('button', { name: /^Declined/ }).click();
 	const mine = kim.getByTestId('ask').filter({ hasText: 'Velvet Tide' });
-	await expect(mine.getByTestId('ask-state')).toHaveText('Turned down');
+	await expect(mine.getByTestId('ask-state')).toHaveText('Declined');
 	await expect(mine).toContainText('We have it on disc');
 
 	// One movie a week for kim, set on the Users page: Copper Lighthouse used

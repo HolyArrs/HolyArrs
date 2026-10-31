@@ -167,7 +167,7 @@
 							<div class="acts" class:gone={choosing}>
 								<button type="button" class="act primary" data-testid="ask-approve" onclick={() => ctx.approve([picked])}><Icon name="check" size={20} />Approve</button>
 								<button type="button" class="act glass" onclick={() => void choose()}><Icon name="tools" size={20} />Choose what to add</button>
-								<button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Turn down</button>
+								<button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Decline</button>
 							</div>
 						{:else}
 							<div role="status" aria-live="polite">

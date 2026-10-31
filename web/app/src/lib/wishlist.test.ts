@@ -16,7 +16,7 @@ describe('wishlist words', () => {
 		expect(decided({ state: 'asked', auto_approved: false })).toBe('');
 		expect(decided({ state: 'approved', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Approved by luis');
 		expect(decided({ state: 'available', decided_by: { id: 2, name: 'ana' }, auto_approved: true })).toContain('straight away');
-		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Turned down by luis');
+		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Declined by luis');
 	});
 
 	it('colours states', () => {

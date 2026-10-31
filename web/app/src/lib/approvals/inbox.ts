@@ -10,11 +10,11 @@ import type { AskTab } from '../wishlist.ts';
 
 /** The status tabs, in the words the app uses (Downloads-style, each with its count). */
 export const inboxTabs: { tab: AskTab; label: string }[] = [
-	{ tab: 'waiting', label: 'Waiting' },
+	{ tab: 'waiting', label: 'Pending' },
 	{ tab: 'approved', label: 'Approved' },
-	{ tab: 'declined', label: 'Turned down' },
-	{ tab: 'done', label: 'In the Library' },
-	{ tab: 'failed', label: 'Needs a look' }
+	{ tab: 'declined', label: 'Declined' },
+	{ tab: 'done', label: 'Available' },
+	{ tab: 'failed', label: 'Failed' }
 ];
 
 /** A season as the metadata answer lists it. */

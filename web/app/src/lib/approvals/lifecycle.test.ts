@@ -10,7 +10,7 @@ describe('lifecycle', () => {
 		expect(STAGE_WEIGHT.ready).toBe(100);
 	});
 	it('an ask waiting for an answer sits at the asked weight', () => {
-		expect(lifecycle(ask('asked'))).toMatchObject({ stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Waiting for you' });
+		expect(lifecycle(ask('asked'))).toMatchObject({ stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Pending' });
 	});
 	it('an approved ask with a title is being got', () => {
 		expect(lifecycle(ask('approved', 7))).toMatchObject({ stage: 'getting', pct: STAGE_WEIGHT.getting, tone: 'go' });
@@ -23,7 +23,7 @@ describe('lifecycle', () => {
 		expect(lifecycle(ask('approved', 7), -1).pct).toBe(lo);
 	});
 	it('a broken progress number (NaN) reads as no progress, not an empty line', () => {
-		expect(lifecycle(ask('approved', 7), Number.NaN)).toMatchObject({ pct: STAGE_WEIGHT.getting, label: 'Approved · looking for it' });
+		expect(lifecycle(ask('approved', 7), Number.NaN)).toMatchObject({ pct: STAGE_WEIGHT.getting, label: 'Processing' });
 	});
 	it('in the Library is full and green', () => {
 		expect(lifecycle(ask('available', 7))).toMatchObject({ stage: 'ready', pct: 100, tone: 'ok' });

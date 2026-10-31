@@ -202,7 +202,7 @@
 	{#if waiting(x)}
 		<span class="quick">
 			<IconButton icon="check" variant="tinted" size="sm" label="Approve {x.name}" data-testid="ask-approve" onclick={() => ctx.approve([x])} />
-			<IconButton icon="x" variant="tinted" size="sm" label="Turn down {x.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([x])} />
+			<IconButton icon="x" variant="tinted" size="sm" label="Decline {x.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([x])} />
 		</span>
 	{:else if ctx.isPending(x.id)}
 		<span class="sending-word">Sending…</span>
@@ -267,7 +267,7 @@
 				<label class="all"><input class="tick" type="checkbox" checked={allChosen} indeterminate={chosen.length > 0 && !allChosen} onchange={() => ctx.chooseAll(ctx.shown)} />{chosen.length ? `${chosen.length} chosen` : 'Choose all'}</label>
 				{#if chosen.length}
 					<Button size="sm" variant="primary" icon="check" type="button" onclick={() => ctx.approve(chosen)}>Approve {chosen.length}</Button>
-					<Button size="sm" icon="x" type="button" onclick={() => ctx.turnDown(chosen)}>Turn down {chosen.length}</Button>
+					<Button size="sm" icon="x" type="button" onclick={() => ctx.turnDown(chosen)}>Decline {chosen.length}</Button>
 				{/if}
 				{#if split && ctx.shown.length > 1}
 					<span class="stepper">

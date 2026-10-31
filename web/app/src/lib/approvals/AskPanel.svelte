@@ -121,7 +121,7 @@
 				</div>
 				<div class="acts">
 					<Button variant="primary" icon="check" type="submit" disabled={parts.empty} data-testid="ask-approve">{some ? 'Approve ticked' : 'Approve'}</Button>
-					<Button icon="x" type="button" data-testid="ask-decline" onclick={() => ctx.turnDownWith(a, note.trim())}>Turn down</Button>
+					<Button icon="x" type="button" data-testid="ask-decline" onclick={() => ctx.turnDownWith(a, note.trim())}>Decline</Button>
 				</div>
 				{#if noteOpen}
 					<div class="field">

@@ -71,7 +71,7 @@ function askOf(t: TitleView): 'asked' | 'approved' | 'turned_down' | null {
 
 function askState(ask: ReturnType<typeof askOf>): LibState | null {
 	if (ask === 'approved') return make('approved', 'Approved · searching');
-	if (ask === 'asked') return make('waiting_approval', 'Waiting for approval');
+	if (ask === 'asked') return make('waiting_approval', 'Pending');
 	if (ask === 'turned_down') return make('declined', 'Declined');
 	return null;
 }

@@ -44,7 +44,7 @@ const t = (id: number, extra: Partial<TitleView> = {}): TitleView =>
 	({ id, kind: 'movie', name: `Title ${id}`, year: 2000 + id, ids: null, keep_up_to_date: true, why_added: 'by_hand', release_gate: 'released', gate_delay_days: 0, stage: 'released', gate_open: true, gate_reason: '', artwork: [`/a/${id}.jpg`], versions: [], slots: [], asks: [], ...extra }) as TitleView;
 
 const ask = (id: number, extra: Partial<Ask> = {}): Ask =>
-	({ id, kind: 'movie', tmdb_id: String(900 + id), ref: `tmdb:${900 + id}`, name: `Wish ${id}`, state: 'asked', state_label: 'Waiting for approval', asked_by: { id: 1, name: 'A' }, asked_at: `2026-10-0${id}T00:00:00Z`, people: [{ id: 1, name: 'A', asked_at: '' }], auto_approved: false, mine: false, ...extra }) as Ask;
+	({ id, kind: 'movie', tmdb_id: String(900 + id), ref: `tmdb:${900 + id}`, name: `Wish ${id}`, state: 'asked', state_label: 'Pending', asked_by: { id: 1, name: 'A' }, asked_at: `2026-10-0${id}T00:00:00Z`, people: [{ id: 1, name: 'A', asked_at: '' }], auto_approved: false, mine: false, ...extra }) as Ask;
 
 const f = (genres: string[], people: string[] = []): Facets => ({ genres, people });
 
@@ -59,7 +59,7 @@ describe('explore cards', () => {
 		const pill = (x: TitleView, who: 'member' | 'staff') => cardPill(titleCard(x), who);
 		expect(pill(t(1, { slots: [slot('downloading'), slot('in_library')] }), 'staff')?.kind).toBe('downloading');
 		expect(pill(t(1, { asks: [ask(1)] }), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
-		expect(pill(t(1, { asks: [ask(1)] }), 'staff')).toEqual({ kind: 'requested', label: 'Waiting for approval' });
+		expect(pill(t(1, { asks: [ask(1)] }), 'staff')).toEqual({ kind: 'requested', label: 'Pending' });
 		expect(pill(t(1, { asks: [ask(1)], slots: [slot('in_library')] }), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
 		expect(pill(t(1, { slots: [slot('in_library')] }), 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
 	});
@@ -187,7 +187,7 @@ describe('popular in the household', () => {
 		expect(cards[0].subtitle).toBe('3 people asked');
 		expect(cards[1].subtitle).toBe('2 people asked');
 		expect(cards[0].status).toBe('requested');
-		expect(cards[0].ask).toEqual({ id: 2, state: 'asked', state_label: 'Waiting for approval', mine: false, people: 3 });
+		expect(cards[0].ask).toEqual({ id: 2, state: 'asked', state_label: 'Pending', mine: false, people: 3 });
 	});
 	it('uses the Library title when the ask led to one', () => {
 		const [c] = popularInHousehold([ask(1, { title_id: 5, mine: true })], [t(5, { slots: [slot('in_library')] })]);
@@ -306,7 +306,7 @@ describe('discover', () => {
 		expect(discoverCard({ tmdb_id: '5', kind: 'show', name: 'S', in_library: false, ask: { id: 1, state: 'asked', state_label: '', mine: true, people: 1 } }, 'p')).toMatchObject({ titleId: undefined, status: 'requested', mine: true });
 	});
 	it('keeps the open ask on the card so asking joins it', () => {
-		const a = { id: 1, state: 'asked' as const, state_label: 'Waiting for approval', mine: false, people: 2 };
+		const a = { id: 1, state: 'asked' as const, state_label: 'Pending', mine: false, people: 2 };
 		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: false, ask: a }, 'p').ask).toEqual(a);
 		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: false, ask: { ...a, state: 'turned_down' } }, 'p').ask).toBeUndefined();
 	});

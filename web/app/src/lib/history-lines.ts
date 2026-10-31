@@ -285,7 +285,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 			return t(TAG.asked, join(`Asked for by ${who(e, ctx) || str(d.asked_by) || 'a member'}`, what));
 		}
 		case 'ask_approved': return t(TAG.approved, join(`Approved by ${str(d.approved_by) || who(e, ctx) || 'HolyArrs'}`, d.auto === true ? 'on its own' : '', str(d.note)));
-		case 'ask_turned_down': return t(TAG.declined, join(`Turned down by ${str(d.turned_down_by) || who(e, ctx) || 'HolyArrs'}`, str(d.note)));
+		case 'ask_turned_down': return t(TAG.declined, join(`Declined by ${str(d.turned_down_by) || who(e, ctx) || 'HolyArrs'}`, str(d.note)));
 		case 'secrets_imported': return t(TAG.changed, join('Settings imported', `${num(d.set)} set`));
 		case 'media_server_told': return t(TAG.checked, 'Told the media server about it');
 		case 'media_server_failed': return t(TAG.failed, join('Could not reach the media server', plainWhy(str(d.reason) || str(d.error))));

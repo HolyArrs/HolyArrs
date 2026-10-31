@@ -18,7 +18,7 @@ describe('title status words', () => {
 
 	it('uses the more precise staff words', () => {
 		expect(titleStatus({}, 'staff')).toEqual({ kind: 'missing', label: 'Missing' });
-		expect(titleStatus({ ask: 'asked' }, 'staff')).toEqual({ kind: 'requested', label: 'Waiting for approval' });
+		expect(titleStatus({ ask: 'asked' }, 'staff')).toEqual({ kind: 'requested', label: 'Pending' });
 		expect(titleStatus({ inLibrary: true }, 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
 		expect(titleStatus({ failed: true }, 'staff')).toEqual({ kind: 'failed', label: 'Failed' });
 		expect(titleStatus({ comingSoon: true }, 'staff')).toEqual({ kind: 'coming_soon', label: 'Coming soon' });
@@ -30,7 +30,7 @@ describe('title status words', () => {
 
 	it('follows an ask through approval and turning down', () => {
 		expect(titleStatus({ ask: 'approved' }, 'member')).toEqual({ kind: 'approved', label: 'Approved' });
-		expect(titleStatus({ ask: 'turned_down' }, 'member')).toEqual({ kind: 'turned_down', label: 'Turned down' });
+		expect(titleStatus({ ask: 'turned_down' }, 'member')).toEqual({ kind: 'turned_down', label: 'Declined' });
 		expect(titleStatus({ ask: 'available' }, 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
 	});
 
@@ -51,7 +51,7 @@ describe('title status words', () => {
 
 	it('says when the ask is the person’s own', () => {
 		expect(titleStatus({ ask: 'asked', mine: true }, 'member')).toEqual({ kind: 'requested', label: 'You asked · Requested' });
-		expect(titleStatus({ ask: 'asked', mine: true }, 'staff')).toEqual({ kind: 'requested', label: 'You asked · Waiting for approval' });
+		expect(titleStatus({ ask: 'asked', mine: true }, 'staff')).toEqual({ kind: 'requested', label: 'You asked · Pending' });
 		expect(titleStatus({ ask: 'approved', mine: true }, 'member').label).toBe('You asked · Approved');
 		expect(titleStatus({ ask: 'asked', mine: false }, 'member').label).toBe('Requested');
 		// Once it is in the Library or downloading, that is what counts.

@@ -22,7 +22,7 @@ export function askedBy(a: Pick<Ask, 'people' | 'asked_by'>): string {
 /** decided says who decided and how, or '' while it waits. */
 export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>): string {
 	if (!a.decided_by || a.state === 'asked') return '';
-	if (a.state === 'turned_down') return `Turned down by ${a.decided_by.name}`;
+	if (a.state === 'turned_down') return `Declined by ${a.decided_by.name}`;
 	if (a.auto_approved) return `Approved straight away (${a.decided_by.name} may auto-approve)`;
 	return `Approved by ${a.decided_by.name}`;
 }
@@ -72,7 +72,7 @@ export function limitLines(l: AskLimit | null, kinds: LimitKind[] = limitKinds, 
 export const momentWords: Record<string, [string, string]> = {
 	ask_waiting: ['Someone asks', 'To the staff: a movie, show or artist waits for approval.'],
 	ask_approved: ['Approved', 'To the people who asked.'],
-	ask_turned_down: ['Turned down', 'To the people who asked, with the note.'],
+	ask_turned_down: ['Declined', 'To the people who asked, with the note.'],
 	ask_ready: ['Ready', 'To the people who asked, once the files are in the Library (ready to watch or listen to).'],
 	new_episodes: ['New episodes', 'To the people who asked for or follow a show: new episodes and seasons are in the Library, one notice per show per hour. Each person can turn these off in Account.'],
 	new_albums: ['New albums', 'To the people who follow an artist: a new album is in the Library, one notice per artist per hour.'],
@@ -106,11 +106,11 @@ export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): WishlistView {
 /** The Approvals tabs. Failed is an approved ask that never reached the Library. */
 export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
 export const askTabs: { tab: AskTab; label: string }[] = [
-	{ tab: 'waiting', label: 'Waiting' },
+	{ tab: 'waiting', label: 'Pending' },
 	{ tab: 'approved', label: 'Approved' },
 	{ tab: 'declined', label: 'Declined' },
-	{ tab: 'done', label: 'In the Library' },
-	{ tab: 'failed', label: 'Needs a look' }
+	{ tab: 'done', label: 'Available' },
+	{ tab: 'failed', label: 'Failed' }
 ];
 
 /** askTab says which tab an ask sits in. */

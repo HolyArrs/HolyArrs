@@ -17,12 +17,12 @@ export interface Life {
 
 /** lifecycle places an ask on its line; `progress` is the download's 0..1 when known. */
 export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, progress?: number): Life {
-	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Waiting for you' };
-	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', label: 'Turned down' };
-	if (a.state === 'available') return { stage: 'ready', pct: 100, tone: 'ok', label: 'In the Library' };
-	if (!a.title_id) return { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Stuck, needs a look' };
+	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Pending' };
+	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', label: 'Declined' };
+	if (a.state === 'available') return { stage: 'ready', pct: 100, tone: 'ok', label: 'Available' };
+	if (!a.title_id) return { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Failed' };
 	const lo = STAGE_WEIGHT.getting;
 	const hi = STAGE_WEIGHT.getting_end;
 	const p = progress === undefined || !Number.isFinite(progress) ? 0 : Math.min(Math.max(progress, 0), 1);
-	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: p > 0 ? `Downloading · ${Math.round(p * 100)}%` : 'Approved · looking for it' };
+	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: p > 0 ? `Processing · ${Math.round(p * 100)}%` : 'Processing' };
 }

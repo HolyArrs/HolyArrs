@@ -86,7 +86,7 @@
 			void refreshInbox();
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
-			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'turn down'} ${a?.name ?? 'the ask'}. ${message(err)} Try again.`, 'fail');
+			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'decline'} ${a?.name ?? 'the ask'}. ${message(err)} Try again.`, 'fail');
 		}
 	}
 
@@ -98,7 +98,7 @@
 		chosen = new Set();
 		// Words follow the asks actually decided (some in the list may be answered already).
 		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'the ask') : `${ids.length} asks`;
-		const verb = mode === 'approve' ? 'Approved' : 'Turned down';
+		const verb = mode === 'approve' ? 'Approved' : 'Declined';
 		toasts.push(`${verb} ${one}`, 'ok', {
 			ms: UNDO_MS,
 			action: {
@@ -282,7 +282,7 @@
 					: r.ask.kind === 'artist'
 						? `Approved ${r.ask.name}. HolyArrs will keep ${albumWords(r.ask.albums)} up to date.`
 						: `Approved ${r.ask.name}. Looking for it now.`;
-			toasts.push(mode === 'approve' ? added : `Turned down ${r.ask.name}.`, 'ok');
+			toasts.push(mode === 'approve' ? added : `Declined ${r.ask.name}.`, 'ok');
 			void refreshInbox();
 			return '';
 		} catch (err) {
@@ -522,7 +522,7 @@
 					</label>
 					{#if chosenAsks.length}
 						<Button size="sm" variant="primary" icon="check" type="button" onclick={() => act(chosenAsks, 'approve')}>Approve {chosenAsks.length}</Button>
-						<Button size="sm" icon="x" type="button" onclick={() => askDecline(chosenAsks)}>Turn down {chosenAsks.length}</Button>
+						<Button size="sm" icon="x" type="button" onclick={() => askDecline(chosenAsks)}>Decline {chosenAsks.length}</Button>
 					{/if}
 				</div>
 			{/if}
@@ -585,7 +585,7 @@
 								{#if approver && a.state === 'asked'}
 									<span class="quick">
 										<IconButton icon="check" variant="tinted" label="Approve {a.name}" data-testid="ask-approve" onclick={() => act([a], 'approve')} />
-										<IconButton icon="x" variant="tinted" label="Turn down {a.name}" data-testid="ask-decline" onclick={() => askDecline([a])} />
+										<IconButton icon="x" variant="tinted" label="Decline {a.name}" data-testid="ask-decline" onclick={() => askDecline([a])} />
 									</span>
 								{/if}
 								{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
@@ -640,7 +640,7 @@
 				{#if approver && selected.state === 'asked'}
 					<div class="review-actions">
 						<Button variant="primary" icon="check" full type="button" onclick={() => selected && open(selected, 'approve')}>Choose what to add</Button>
-						<Button icon="x" full type="button" onclick={() => selected && open(selected, 'turn_down')}>Turn down</Button>
+						<Button icon="x" full type="button" onclick={() => selected && open(selected, 'turn_down')}>Decline</Button>
 					</div>
 				{/if}
 			</aside>
@@ -685,7 +685,7 @@
 					<ul class="msg-list">
 						{#each inbox.messages.slice(0, 5) as m (m.id)}
 							<li class:unread={!m.read_at} data-testid="message">
-								<StatusPill kind={msgKind(m.kind)} label={m.kind === 'ready' ? 'Ready' : m.kind === 'turned_down' ? 'Turned down' : 'Approved'} />
+								<StatusPill kind={msgKind(m.kind)} label={m.kind === 'ready' ? 'Ready' : m.kind === 'turned_down' ? 'Declined' : 'Approved'} />
 								<span class="msg-text">{plain(m.text)}</span>
 								<time class="muted" datetime={m.created_at} title={dateTime(m.created_at)}>{ago(m.created_at)}</time>
 							</li>
@@ -699,7 +699,7 @@
 
 <Sheet
 	bind:open={decideOpen}
-	title={picked ? `${mode === 'approve' ? 'Approve' : 'Turn down'} ${picked.name}${year(picked)}` : 'Approve or turn down'}
+	title={picked ? `${mode === 'approve' ? 'Approve' : 'Decline'} ${picked.name}${year(picked)}` : 'Approve or decline'}
 	description={picked ? `${askedBy(picked)}${what(picked) ? `, for ${what(picked)}` : ''}.` : undefined}
 >
 	{#if picked}
@@ -741,7 +741,7 @@
 			<div class="decide-actions">
 				<Button variant="plain" type="button" onclick={() => (decideOpen = false)}>Cancel</Button>
 				<Button variant={mode === 'approve' ? 'primary' : 'destructive'} type="submit" {busy}>
-					{mode === 'approve' ? 'Approve' : 'Turn down'}
+					{mode === 'approve' ? 'Approve' : 'Decline'}
 				</Button>
 			</div>
 		</form>
@@ -751,7 +751,7 @@
 <Sheet
 	bind:open={declineOpen}
 	size="sm"
-	title={declineList.length === 1 ? `Turn down ${declineList[0].name}${year(declineList[0])}?` : `Turn down ${declineList.length} asks?`}
+	title={declineList.length === 1 ? `Decline ${declineList[0].name}${year(declineList[0])}?` : `Decline ${declineList.length} asks?`}
 	description="You can undo this for a few seconds."
 >
 	<form class="decide" onsubmit={confirmDecline}>
@@ -766,7 +766,7 @@
 		</div>
 		<div class="decide-actions">
 			<Button variant="plain" type="button" onclick={() => (declineOpen = false)}>Cancel</Button>
-			<Button variant="destructive" type="submit">Turn down</Button>
+			<Button variant="destructive" type="submit">Decline</Button>
 		</div>
 	</form>
 </Sheet>

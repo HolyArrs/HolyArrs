@@ -119,7 +119,7 @@
 					{#if can}
 						<button class="act yes" type="button" data-testid="ask-approve" onclick={approve}><Icon name="check" size={20} />Approve<kbd>A</kbd></button>
 						<button class="act opt" type="button" onclick={() => a && ctx.withOptions(a)}><Icon name="sparkle" size={18} />Choose what to add</button>
-						<button class="act no" type="button" data-testid="ask-decline" onclick={turnDown}><Icon name="x" size={20} />Turn down<kbd>D</kbd></button>
+						<button class="act no" type="button" data-testid="ask-decline" onclick={turnDown}><Icon name="x" size={20} />Decline<kbd>D</kbd></button>
 					{:else if ctx.isPending(a.id)}
 						<span class="bar-line">Sending…</span>
 					{:else}
@@ -132,7 +132,7 @@
 				</div>
 			</article>
 		{/key}
-		<p class="keys muted" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd> move · <kbd>A</kbd> approve · <kbd>D</kbd> turn down</p>
+		<p class="keys muted" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd> move · <kbd>A</kbd> approve · <kbd>D</kbd> decline</p>
 	</section>
 
 	{#if ctx.shown.length > 1 || ctx.choosable}

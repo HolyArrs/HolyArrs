@@ -61,10 +61,10 @@
 	// What an empty tab says.
 	const calm: Record<string, { title: string; text: string }> = {
 		waiting: { title: 'You’re all caught up', text: 'New asks show up here.' },
-		approved: { title: 'Nothing on the way', text: 'Approved asks stay here while HolyArrs finds and downloads them.' },
-		declined: { title: 'Nothing turned down', text: 'Asks you turn down stay here, with your reason if you gave one.' },
-		done: { title: 'Nothing finished yet', text: "Asks move here once they're in the Library." },
-		failed: { title: 'Nothing needs a look', text: 'Asks that HolyArrs couldn’t finish show up here.' }
+		approved: { title: 'Nothing approved yet', text: 'Approved asks stay here while they download.' },
+		declined: { title: 'Nothing declined', text: 'Asks you decline stay here, with your reason if you gave one.' },
+		done: { title: 'Nothing available yet', text: "Asks move here once they're in the Library." },
+		failed: { title: 'Nothing failed', text: "Asks HolyArrs couldn't finish show up here." }
 	};
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
@@ -215,7 +215,7 @@
 					</div>
 					<div class="foot">
 						{#if waiting(a)}
-							<button type="button" class="b no" aria-label="Turn down {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Turn down</span></button>
+							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
 							<button type="button" class="b yes" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} />Approve</button>
 						{:else}
 							<span class="said" role="status" aria-live="polite">
@@ -292,7 +292,7 @@
 	/* Window cards: a dark card (in both themes, it is led by the art), the title's wide art
 	   with the title and its facts on it, then a frosted sheet over the art's foot holding
 	   who asked and the answers. The life-cycle line runs along the bottom edge. */
-	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	.bc { --sheet: color-mix(in srgb, var(--bg) 88%, transparent); position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #0b0b0c; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 300ms var(--ez), box-shadow 300ms var(--ease-out); }
 	.bc:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 2px 4px rgb(0 0 0 / 0.08), 0 24px 48px -24px rgb(0 0 0 / 0.65); }
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
@@ -308,12 +308,15 @@
 	.ban-cap { position: absolute; left: 14px; right: 14px; bottom: 30px; z-index: 1; display: flex; flex-direction: column; gap: 3px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.5); }
 	.ban-t { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* Clicks pass through the sheet to the card's open layer; only its buttons take their own. */
+	.sheet-b, .ban, .ban-cap { pointer-events: none; }
+	.sheet-b button { pointer-events: auto; }
 	.sheet-b { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; margin: -20px 8px 8px; border-radius: 16px; background: var(--sheet); color: var(--text); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 14px 30px -14px rgb(0 0 0 / 0.6); }
 	.body { display: flex; flex-direction: column; gap: 4px; padding: 12px 12px 0; min-width: 0; }
 	.who { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font: var(--t-footnote); }
 	.who b { color: var(--text); font-weight: 600; }
 	.foot { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding: 12px; }
-	.b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform 140ms var(--ease-out), background 200ms var(--ease-out); }
+	.b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: transform 140ms var(--ease-out), background 200ms var(--ease-out);  white-space: nowrap; }
 	.b:active { transform: scale(0.96); }
 	.b.no { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 	.b.no:hover { background: color-mix(in srgb, var(--text) 13%, transparent); }
