@@ -70,7 +70,6 @@
 		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
 	});
 	const failed = $derived(status && askTab(picked) === 'failed');
-	const tabWord = $derived(life.stage === 'ready' || life.stage === 'declined' ? 'Done' : 'Processing');
 	const sentence = $derived.by(() => {
 		const who = ctx.who(picked).name;
 		if (life.stage === 'ready') {
@@ -208,10 +207,11 @@
 			{/key}
 			{#if status}
 				<section class="big" data-testid="ask-status" aria-label="Status">
-					<p class="tab">{tabWord}</p>
-					<p class="huge tone-{life.tone}" role="status" aria-live="polite">{life.label}</p>
-					<p class="sent">{sentence}{#if life.more}<span class="more"> {life.more}</span>{/if}</p>
 					<span class="life inline tone-{life.tone}" role="progressbar" aria-label="{picked.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
+					<div class="says">
+						<p class="huge tone-{life.tone}" role="status" aria-live="polite">{life.label}</p>
+						<p class="sent">{sentence}{#if life.more}<span class="more"> · {life.more}</span>{/if}</p>
+					</div>
 					{#if failed}
 						<div class="acts"><button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />Decline</button></div>
 					{/if}
@@ -342,23 +342,26 @@
 	.swap { position: absolute; inset: 0; }
 
 	/* Big status: the banner keeps the top, the status sits under it. */
-	.frame.status .swap { bottom: auto; height: 46%; }
+	.frame.status .swap { bottom: auto; height: calc(100% - var(--big-h)); }
+	.frame.status { --big-h: 132px; }
 	.frame.status :global(.ui-billboard .shade) { opacity: 1; }
-	.big { position: absolute; left: 0; right: 0; top: 46%; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px; padding: 0 clamp(20px, 5vw, 56px); overflow: hidden; background: #0b0b0c; color: #fff; }
-	.tab { color: rgb(255 255 255 / 0.6); font: var(--t-footnote); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
-	.huge { font: 800 40px/1.1 var(--font-ui); letter-spacing: -0.02em; text-wrap: balance; }
+	.big { position: absolute; left: 0; right: 0; bottom: 0; height: var(--big-h); display: flex; align-items: center; gap: 20px; padding: 0 28px; background: #0b0b0c; color: #fff; }
+	.says { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+	.huge { font: 800 34px/1.1 var(--font-ui); letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.huge.tone-wait { color: var(--wait-text, var(--wait)); }
 	.huge.tone-go { color: var(--info, #3b82f6); }
 	.huge.tone-ok { color: var(--ok-text, var(--ok)); }
 	.huge.tone-bad { color: var(--fail-text, var(--fail, #e5484d)); }
 	.huge.tone-soon, .huge.tone-off { color: rgb(255 255 255 / 0.7); }
-	.sent { color: rgb(255 255 255 / 0.85); font: var(--t-callout); }
-	.more { color: rgb(255 255 255 / 0.55); }
-	.life.inline { position: relative; display: block; width: min(420px, 100%); height: 4px; border-radius: 2px; margin: 6px 0 10px; background: rgb(255 255 255 / 0.12); }
-	.big .acts { margin-top: 4px; }
+	.sent { color: rgb(255 255 255 / 0.8); font: var(--t-callout); }
+	.more { color: rgb(255 255 255 / 0.5); }
+	/* The lifecycle line runs the full width along the seam between art and status. */
+	.life.inline { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: rgb(255 255 255 / 0.1); }
+	.big .acts { flex: none; }
 	@media (max-width: 767px) {
-		.huge { font-size: 30px; }
-		.big { padding: 0 20px; }
+		.frame.status { --big-h: 112px; }
+		.huge { font-size: 26px; }
+		.big { padding: 0 20px; gap: 12px; }
 	}
 
 	@media (max-width: 767px) {
