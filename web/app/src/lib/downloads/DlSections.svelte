@@ -755,13 +755,13 @@
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 36, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 60, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
 	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
 	const wMin = (id: ColId) => (id === 'proto' ? SRC_W : Math.max(layout.widths[id], MINW[id] ?? 0));
-	// The Source column holds only the client's logo, so it is exactly that wide.
-	const SRC_W = 36;
+	// The Source column is just wide enough for its header word and the client's logo.
+	const SRC_W = 60;
 	const vis = $derived.by(() => {
 		if (phone || room <= 0) return visAll;
 		const need = (c: ColId[]) => 48 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
@@ -1201,7 +1201,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto'}<span class="lbl sr" title={c.label}>{c.label}</span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1588,6 +1588,8 @@
 </div>
 
 <style>
+	.ch[data-col='proto'] { justify-content: center; }
+	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; width: 18px; height: 18px; object-fit: contain; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
