@@ -1,0 +1,211 @@
+package api
+
+import (
+	"context"
+	"database/sql"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/dlsync"
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// With setting downloads.sync = on the background reader (package dlsync)
+// owns every client read: the Downloads view reads its snapshots and never
+// calls a client, writes nothing and starts no matching. Matching runs in
+// the reader's persisted queue, link-only (it never adds to the Library).
+
+// syncOn says the background reader serves the Downloads view now.
+func (a *API) syncOn() bool {
+	return a.s.DLSync != nil && a.s.DLSync.On()
+}
+
+// storeRows is clientRows from the reader's snapshots: no client call, no
+// write, no matcher start.
+func (a *API) storeRows(ctx context.Context, names map[int64]domain.Downloader, shown map[clientKey]bool) ([]DownloadRow, []ClientHealth) {
+	sy := a.s.DLSync
+	health := []ClientHealth{}
+	sab := sy.SABOutside(ctx)
+	var ds []domain.Downloader
+	for _, d := range names {
+		if !d.Removed && (d.Protocol == "torrent" || sab && d.Protocol == "usenet") {
+			ds = append(ds, d)
+		}
+	}
+	sortDownloaders(ds)
+	var rows []DownloadRow
+	for _, d := range ds {
+		snap := sy.Store.Current(d.ID)
+		h := ClientHealth{ID: d.ID, Name: d.Name, Health: "ok", SeenAt: snap.ReadAt}
+		switch {
+		case snap.Fallback:
+			h.Health, h.Stale = "degraded", !snap.Fresh
+		case snap.Fresh:
+		case snap.Stale || snap.ReadAt.IsZero() && len(snap.Items) > 0:
+			h.Health, h.Stale = "checking", true
+		case snap.ReadAt.IsZero():
+			h.Health = "waiting"
+		case snap.Failed:
+			h.Health, h.Stale = "offline", true
+		default:
+			h.Health, h.Stale = "slow", true
+		}
+		health = append(health, h)
+		out := make([]DownloadRow, 0, len(snap.Items))
+		for _, j := range snap.Items {
+			if j.ID == "" || shown[clientKey{d.ID, strings.ToLower(j.ID)}] {
+				continue
+			}
+			out = append(out, clientRow(d, j))
+		}
+		sortClientRows(out)
+		if len(out) > 0 {
+			a.knownTitles(ctx, d.ID, out)
+			a.linkedTitles(ctx, d.ID, out)
+			rows = append(rows, out...)
+		}
+	}
+	return rows, health
+}
+
+// storeRatio is the share ratio in the reader's snapshot; nil when unseen.
+func (a *API) storeRatio(downloaderID int64, hash string) *float64 {
+	if hash == "" {
+		return nil
+	}
+	j, ok := a.s.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)]
+	if !ok {
+		return nil
+	}
+	r := j.Ratio
+	return &r
+}
+
+func sortDownloaders(ds []domain.Downloader) {
+	sort.Slice(ds, func(i, j int) bool {
+		if ds[i].Priority != ds[j].Priority {
+			return ds[i].Priority < ds[j].Priority
+		}
+		if ds[i].Name != ds[j].Name {
+			return ds[i].Name < ds[j].Name
+		}
+		return ds[i].ID < ds[j].ID
+	})
+}
+
+// sortClientRows orders one client's rows newest first, then by hash.
+func sortClientRows(out []DownloadRow) {
+	sort.SliceStable(out, func(i, j int) bool {
+		ai, aj := out[i].StartedAt, out[j].StartedAt
+		switch {
+		case ai == nil || aj == nil:
+			if (ai == nil) != (aj == nil) {
+				return aj == nil
+			}
+		case !ai.Equal(*aj):
+			return ai.After(*aj)
+		}
+		return out[i].Hash < out[j].Hash
+	})
+}
+
+// TorrentLines is the torrent log's line format for one item going from
+// prev to cur, for the reader's persister.
+func TorrentLines(prev, cur downloader.Job) []dlsync.LogLine {
+	ls := stateLines(snapOf(prev), snapOf(cur))
+	out := make([]dlsync.LogLine, len(ls))
+	for i, l := range ls {
+		out[i] = dlsync.LogLine{Kind: l.Kind, Summary: l.Summary}
+	}
+	return out
+}
+
+// MatchLinkOnly is the reader's match lookup: it links an item to a title
+// already in the Library when the name is a sure match, and otherwise
+// leaves the choices in the Confirm match list. It never adds a title.
+func (a *API) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, category string) (string, int64, error) {
+	db := a.s.Store.Read()
+	key = strings.ToLower(key)
+	var n int
+	if db.QueryRowContext(ctx, "SELECT COUNT(*) FROM downloads WHERE downloader_id = ? AND lower(external_id) = ?", downloaderID, key).Scan(&n) == nil && n > 0 {
+		return "own", 0, nil
+	}
+	var st string
+	var tid *int64
+	if db.QueryRowContext(ctx, "SELECT state, title_id FROM client_links WHERE downloader_id = ? AND hash = ?", downloaderID, key).Scan(&st, &tid) == nil {
+		// Already decided (by a person or an earlier match): leave it.
+		if tid != nil {
+			return st, *tid, nil
+		}
+		return st, 0, nil
+	}
+	w := matchWant{downloader: downloaderID, hash: key, name: name, category: category}
+	g := guessOf(name, category)
+	if g.kind == "" {
+		return linkNotMedia, 0, a.saveLink(ctx, w, linkNotMedia, 0, nil, "", nil, "name")
+	}
+	cs, err := a.candidatesFor(ctx, g)
+	if err != nil {
+		return "", 0, err
+	}
+	i := pickSure(cs, g.year)
+	if i < 0 && g.kind == "show" && g.year == 0 {
+		n, i = 0, -1
+		for j, c := range cs {
+			if c.Score >= sureScore {
+				n, i = n+1, j
+			}
+		}
+		if n != 1 {
+			i = -1
+		}
+	}
+	if i < 0 {
+		if cs == nil {
+			cs = []Candidate{}
+		}
+		return linkUnsure, 0, a.saveLink(ctx, w, linkUnsure, 0, nil, "", cs, "unsure")
+	}
+	c := cs[i]
+	titleID, err := a.libraryTitle(ctx, c)
+	if err != nil {
+		return "", 0, err
+	}
+	if titleID == 0 {
+		// A sure match not in the Library: suggested, waiting for a person
+		// to confirm (which adds it the normal way).
+		return "suggested", 0, a.saveLink(ctx, w, linkUnsure, 0, nil, "", cs, "suggested")
+	}
+	slots, covers := a.linkSlots(ctx, titleID, c.Kind, g)
+	return linkLinked, titleID, a.saveLink(ctx, w, linkLinked, titleID, slots, covers, cs, "auto")
+}
+
+// libraryTitle finds a candidate already in the Library (0 when missing),
+// reading only.
+func (a *API) libraryTitle(ctx context.Context, c Candidate) (int64, error) {
+	db := a.s.Store.Read()
+	kind, v, _ := strings.Cut(c.ID, ":")
+	if c.Kind == "movie" {
+		return library.TitleByTMDB(ctx, db, v)
+	}
+	return library.ShowByIDs(ctx, db, map[string]string{kind: v})
+}
+
+// rematch makes every waiting or given-up item in the reader's match queue
+// due now (Match now, with sync on).
+func (a *API) rematch(ctx context.Context) int {
+	var n int64
+	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, "UPDATE dl_match_queue SET attempts = 0, next_try_at = ?, outcome = '', last_error = '' WHERE outcome IN ('', 'nomatch')",
+			time.Now().UTC().Format(store.TimeLayout))
+		if err == nil {
+			n, _ = res.RowsAffected()
+		}
+		return err
+	})
+	return int(n)
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/CoderLuii/holyarrs/internal/dlsync"
 	"net/http"
 	"strconv"
 	"strings"
@@ -449,6 +450,10 @@ type DownloaderSettings struct {
 	RemoveDeleteFiles bool `json:"remove_delete_files"`
 	RemoveTurnDown    bool `json:"remove_turn_down"`
 	RemoveSearchAgain bool `json:"remove_search_again"`
+	// Sync is downloads.sync (legacy, shadow or on) and SABOutside
+	// downloads.sab_outside. Left out of a save, they stay as they are.
+	Sync       *string `json:"downloads_sync,omitempty"`
+	SABOutside *bool   `json:"downloads_sab_outside,omitempty"`
 }
 
 func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, error) {
@@ -486,6 +491,12 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 			st.RemoveSearchAgain = v != "false"
 		case "what_to_pick/try_next_downloader":
 			st.TryNextDownloader = v != "false"
+		case "links/" + dlsync.SettingSync:
+			mode := v
+			st.Sync = &mode
+		case "links/" + dlsync.SettingSABOutside:
+			on := v == "true"
+			st.SABOutside = &on
 		}
 	}
 	return st, rows.Err()
@@ -517,6 +528,10 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "grab_spacing_seconds is 0 to 60")
 		return
 	}
+	if in.Sync != nil && *in.Sync != dlsync.ModeLegacy && *in.Sync != dlsync.ModeShadow && *in.Sync != dlsync.ModeOn {
+		fail(w, http.StatusBadRequest, "downloads_sync is legacy, shadow or on")
+		return
+	}
 	by := actor(r)
 	now := store.FormatTime(time.Now())
 	byText := actorJSONText(by)
@@ -531,6 +546,12 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		{"links", "remove_delete_files", strconv.FormatBool(in.RemoveDeleteFiles)},
 		{"links", "remove_turn_down", strconv.FormatBool(in.RemoveTurnDown)},
 		{"links", "remove_search_again", strconv.FormatBool(in.RemoveSearchAgain)},
+	}
+	if in.Sync != nil {
+		vals = append(vals, struct{ grp, key, value string }{"links", dlsync.SettingSync, *in.Sync})
+	}
+	if in.SABOutside != nil {
+		vals = append(vals, struct{ grp, key, value string }{"links", dlsync.SettingSABOutside, strconv.FormatBool(*in.SABOutside)})
 	}
 	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		for _, v := range vals {

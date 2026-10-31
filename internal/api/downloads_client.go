@@ -118,6 +118,9 @@ func (a *API) readList(d domain.Downloader) (done <-chan struct{}, started bool)
 // first), and each client's health. Lists are read side by side in the
 // background; the caller waits at most wait for them.
 func (a *API) clientRows(ctx context.Context, names map[int64]domain.Downloader, shown map[clientKey]bool, wait time.Duration) ([]DownloadRow, []ClientHealth) {
+	if a.syncOn() {
+		return a.storeRows(ctx, names, shown)
+	}
 	health := []ClientHealth{}
 	var ds []domain.Downloader
 	for _, d := range names {
@@ -385,7 +388,11 @@ func (a *API) onItem(r *http.Request, write bool, call func(e downloader.Engine,
 	if err != nil {
 		return downloader.ErrNoDownloader
 	}
-	return a.manager().ControlItem(r.Context(), id, r.PathValue("hash"), write, call)
+	err = a.manager().ControlItem(r.Context(), id, r.PathValue("hash"), write, call)
+	if err == nil && write {
+		a.manager().Kick(id) // the reader shows the change at once
+	}
+	return err
 }
 
 func itemError(w http.ResponseWriter, err error) {

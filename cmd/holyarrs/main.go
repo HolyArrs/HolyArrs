@@ -375,10 +375,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			return source.GrabLink(ctx, s, vault, rel)
 		},
 		FromVault: vault.Get}
-	// Background download sync, Phase 1: shadow only (downloads.sync =
-	// shadow), fed from the lists the Manager already reads.
+	// Background download sync (setting downloads.sync): shadow is fed from
+	// the lists the Manager already reads; on runs one reader per
+	// Downloader inside the "downloads" loop, and the Manager and the
+	// Downloads view read its snapshots. legacy (the default) leaves both off.
 	dlShadow := &dlsync.Shadow{Store: &dlsync.Store{}, DB: s}
 	dm.OnList = dlShadow.OnList
+	dls := &dlsync.Sync{Store: dlShadow.Store, DB: s, Mode: dlShadow, Manager: dm, Lines: api.TorrentLines}
+	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub}
 	sr := &source.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloader.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))
@@ -545,7 +549,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		reg.Set(supervisor.StageKey("jobs_"+string(p)), "stage", label, supervisor.Running, "")
 	}
-	optional(supervisor.Loop{Name: "downloads", Label: "Download sync", Run: func(ctx context.Context) error { dm.Run(ctx); return nil }})
+	optional(supervisor.Loop{Name: "downloads", Label: "Download sync", Run: func(ctx context.Context) error {
+		// The reader lives and dies with this loop: it stops after dm.Run
+		// returns (or panics), then flushes with its own deadline.
+		dls.Around(ctx, dm.Run)
+		return nil
+	}})
 	optional(supervisor.Loop{Name: "schedules", Label: "Schedules", Every: time.Minute, Run: func(ctx context.Context) error {
 		_, err := q.RunSchedules(ctx, time.Now().UTC())
 		return err
@@ -650,9 +659,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, DLSync: dls, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
+	// Matching in the reader's queue is link-only: it never adds a title.
+	dls.Match = a.MatchLinkOnly
 	a.StartSpeedHistory(ctx)
 	if !c.SafeMode {
 		a.StartExplore(ctx)

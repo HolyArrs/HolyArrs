@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/CoderLuii/holyarrs/internal/dlsync"
 	"github.com/CoderLuii/holyarrs/internal/music"
 	"log"
 	"net/http"
@@ -42,7 +43,10 @@ import (
 
 // Server is what the API needs.
 type Server struct {
-	Store    *store.Store
+	Store *store.Store
+	// DLSync is the background download reader (downloads.sync = on); nil
+	// keeps the Downloads view's own client reads.
+	DLSync   *dlsync.Sync
 	Queue    *jobs.Queue
 	Live     *live.Hub
 	Metadata metadata.Provider

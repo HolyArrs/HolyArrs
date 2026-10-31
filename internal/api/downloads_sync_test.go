@@ -1,0 +1,165 @@
+package api
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/dlsync"
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/downloader"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+)
+
+// noClient is a reader Manager that never reaches a client: the store only
+// holds what the test loads.
+type noClient struct{ m *downloader.Manager }
+
+func (noClient) Reader(context.Context, domain.Downloader) (downloader.Engine, uint64, error) {
+	return nil, 0, errors.New("no client in this test")
+}
+func (noClient) ReportRead(context.Context, domain.Downloader, error) {}
+func (noClient) Generation(int64) uint64                              { return 0 }
+func (n noClient) Interval(a int) time.Duration                       { return n.m.Interval(a) }
+
+// With downloads.sync = on the view reads the reader's snapshot only: no
+// client call, no database write, no matcher start; it carries the revs
+// and pages outside rows as before.
+func TestDownloadsViewFromStore(t *testing.T) {
+	x := seed41(t, domain.SlotDownloading, "downloading")
+	var calls atomic.Int64
+	qb := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))
+	t.Cleanup(qb.Close)
+	pointQB(t, x, qb.URL)
+	var dlr int64
+	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&dlr)
+	exec41(t, x.s, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('links', 'downloads_sync', 'on', '', '{}', '', '{}')`)
+
+	sh := &dlsync.Shadow{Store: &dlsync.Store{}, DB: x.s}
+	sy := &dlsync.Sync{Store: sh.Store, DB: x.s, Mode: sh, Manager: noClient{x.api.manager()}}
+	x.api.s.DLSync = sy
+	var jobs []downloader.Job
+	for i := range 250 {
+		jobs = append(jobs, downloader.Job{ID: fmt.Sprintf("%040x", i+1), Name: fmt.Sprintf("Outside.%d", i), Category: "linux", Size: 100, Progress: 1,
+			UpSpeed: 10, State: downloader.StateFinished, Detail: "uploading", AddedAt: int64(1700000000 + i), Ratio: 1.5})
+	}
+	sy.Store.Load(dlr, jobs)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { sy.Around(ctx, func(ctx context.Context) { <-ctx.Done() }); close(done) }()
+	t.Cleanup(func() { cancel(); <-done })
+	for !sy.On() {
+		time.Sleep(5 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond) // let the reader's first (failed) read pass
+
+	conn, err := x.s.Read().Conn(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	version := func() int64 {
+		var v int64
+		if err := conn.QueryRowContext(context.Background(), "PRAGMA data_version").Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	calls.Store(0)
+	before := version()
+	var first struct {
+		viewAnswer
+		Revs map[string]uint64 `json:"revs"`
+	}
+	start := time.Now()
+	for i := range 5 {
+		b := do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200)
+		if i == 0 {
+			if err := json.Unmarshal(b, &first); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if took := time.Since(start) / 5; took > 300*time.Millisecond {
+		t.Fatalf("a view took %v", took)
+	}
+	if n := calls.Load(); n != 0 {
+		t.Fatalf("the view made %d client calls", n)
+	}
+	if after := version(); after != before {
+		t.Fatalf("the view wrote to the database (data_version %d -> %d)", before, after)
+	}
+	x.api.match.mu.Lock()
+	running := x.api.match.running
+	x.api.match.mu.Unlock()
+	if running {
+		t.Fatal("the view started the old matcher")
+	}
+	if first.OutsideTotal != 250 || first.NextCursor != "200" || len(first.Downloads) != 201 {
+		t.Fatalf("outside %d cursor %q rows %d", first.OutsideTotal, first.NextCursor, len(first.Downloads))
+	}
+	if first.Revs[fmt.Sprint(dlr)] == 0 {
+		t.Fatalf("revs %v", first.Revs)
+	}
+	if len(first.Clients) != 1 || first.Clients[0].Health != "checking" || !first.Clients[0].Stale {
+		t.Fatalf("client health %+v, want checking (last known rows)", first.Clients)
+	}
+	if first.Totals.UpSpeed != 2500 {
+		t.Fatalf("upload total %d, want 2500", first.Totals.UpSpeed)
+	}
+	if !sy.Store.Viewer() {
+		t.Fatal("a view did not count as a viewer")
+	}
+	// The next page from the cursor.
+	v := view(t, x.srv.URL+"/api/v1/downloads/view?cursor=200")
+	if len(v.Downloads) != 51 || v.NextCursor != "" {
+		t.Fatalf("page 2: rows %d cursor %q", len(v.Downloads), v.NextCursor)
+	}
+}
+
+// Link-only matching never adds a title: a sure match missing from the
+// Library is only suggested.
+func TestMatchLinkOnlyNeverAdds(t *testing.T) {
+	x := seed41(t, domain.SlotDownloading, "downloading")
+	added := 0
+	x.api.match.addMovie = func(context.Context, string) (int64, error) { added++; return 0, nil }
+	x.api.match.addShow = func(context.Context, string) (int64, error) { added++; return 0, nil }
+	var titles int
+	_ = x.s.Read().QueryRow("SELECT COUNT(*) FROM titles").Scan(&titles)
+	out, tid, err := x.api.MatchLinkOnly(context.Background(), 1, "ABCDEF0000000000000000000000000000000000", "Some.Linux.ISO.x64", "linux")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out != linkNotMedia || tid != 0 {
+		t.Fatalf("outcome %q %d", out, tid)
+	}
+	var after int
+	_ = x.s.Read().QueryRow("SELECT COUNT(*) FROM titles").Scan(&after)
+	if added != 0 || after != titles {
+		t.Fatalf("titles %d -> %d, adds %d", titles, after, added)
+	}
+	var st string
+	if err := x.s.Read().QueryRow("SELECT state FROM client_links WHERE hash = 'abcdef0000000000000000000000000000000000'").Scan(&st); err != nil || st != linkNotMedia {
+		t.Fatalf("link %q %v", st, err)
+	}
+	// A sure match not in the Library: suggested, still no add.
+	x.api.match.searchMovies = func(context.Context, string, int) ([]metadata.Movie, error) {
+		return []metadata.Movie{{Name: "Arrival", Year: 2016, IDs: map[string]string{"tmdb": "329865"}}}, nil
+	}
+	out, tid, err = x.api.MatchLinkOnly(context.Background(), 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	if err != nil || out != "suggested" || tid != 0 {
+		t.Fatalf("sure match not in the Library: %q %d %v", out, tid, err)
+	}
+	_ = x.s.Read().QueryRow("SELECT COUNT(*) FROM titles").Scan(&after)
+	if added != 0 || after != titles {
+		t.Fatalf("suggested match added a title: titles %d -> %d, adds %d", titles, after, added)
+	}
+	_ = sql.ErrNoRows
+}

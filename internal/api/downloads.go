@@ -388,9 +388,13 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	if manage {
 		outside, health = a.clientRows(ctx, names, shown, clientViewWait)
 		// HolyArrs' own torrents take the ratio the same list read saw.
+		ratio := a.seenRatio
+		if a.syncOn() {
+			ratio = a.storeRatio
+		}
 		for i := range rows {
 			if rows[i].Ratio == nil && rows[i].Protocol == "torrent" {
-				rows[i].Ratio = a.seenRatio(rows[i].DownloaderID, rows[i].Hash)
+				rows[i].Ratio = ratio(rows[i].DownloaderID, rows[i].Hash)
 			}
 		}
 	}
@@ -400,7 +404,13 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	total := viewTotals(rows, outside)
 	page, next := pageOutside(outside, r.URL.Query().Get("cursor"), outsideLimit(r))
 	rows = append(rows, page...)
-	writeJSON(w, http.StatusOK, map[string]any{"downloads": rows, "totals": total, "clients": health, "outside_total": len(outside), "next_cursor": next})
+	out := map[string]any{"downloads": rows, "totals": total, "clients": health, "outside_total": len(outside), "next_cursor": next}
+	if a.syncOn() {
+		// Someone is watching: the reader reads faster (no write, no call).
+		a.s.DLSync.Store.Viewed()
+		out["revs"] = a.s.DLSync.Store.Revs()
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // viewTotals adds up the speeds of HolyArrs' rows and every client row.

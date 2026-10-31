@@ -659,6 +659,12 @@ func (a *API) listMatches(w http.ResponseWriter, r *http.Request) {
 // runMatches (Match now) reads every torrent Downloader and matches the
 // outside torrents with no link yet, failed lookups included.
 func (a *API) runMatches(w http.ResponseWriter, r *http.Request) {
+	if a.syncOn() {
+		// The reader's queue matches (link-only): everything waiting or
+		// given up is due again.
+		writeJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": a.rematch(r.Context())})
+		return
+	}
 	a.match.mu.Lock()
 	a.match.failed = map[clientKey]time.Time{}
 	a.match.mu.Unlock()
