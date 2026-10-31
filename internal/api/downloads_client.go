@@ -287,9 +287,46 @@ func (a *API) itemDetail(w http.ResponseWriter, r *http.Request) {
 		out.TorrentErr = err.Error()
 	}
 	if id, perr := strconv.ParseInt(r.PathValue("id"), 10, 64); perr == nil {
-		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name FROM downloaders WHERE id = ?", id).Scan(&out.Downloader)
+		db := a.s.Store.Read()
+		var adapter string
+		_ = db.QueryRowContext(r.Context(), "SELECT name, adapter FROM downloaders WHERE id = ?", id).Scan(&out.Downloader, &adapter)
+		if a.outsideHash(r.Context(), id, r.PathValue("hash")) {
+			// A torrent HolyArrs did not send: nobody asked for it here. When
+			// a person added its Library title, that person is named.
+			var titleID int64
+			_ = db.QueryRowContext(r.Context(), "SELECT title_id FROM client_links WHERE downloader_id = ? AND lower(hash) = ? AND state = 'linked'",
+				id, strings.ToLower(r.PathValue("hash"))).Scan(&titleID)
+			if out.RequestedBy = a.titleOwner(r.Context(), titleID); out.RequestedBy == "" {
+				out.RequestedBy = "Added in " + adapterWord(adapter)
+			}
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// titleOwner names the person who added a Library title, or "" when
+// HolyArrs added it on its own (an import or a match).
+func (a *API) titleOwner(ctx context.Context, titleID int64) string {
+	if titleID == 0 {
+		return ""
+	}
+	var name string
+	_ = a.s.Store.Read().QueryRowContext(ctx, `SELECT u.name FROM titles t JOIN users u ON u.id = json_extract(t.created_by, '$.id')
+		WHERE t.id = ? AND json_extract(t.created_by, '$.kind') = 'user'`, titleID).Scan(&name)
+	return name
+}
+
+// adapterWord is a torrent client's own name for plain sentences.
+func adapterWord(adapter string) string {
+	switch adapter {
+	case "qbittorrent":
+		return "qBittorrent"
+	case "transmission":
+		return "Transmission"
+	case "deluge":
+		return "Deluge"
+	}
+	return "the Downloader"
 }
 
 // itemSwarm lists a client item's trackers and peers.

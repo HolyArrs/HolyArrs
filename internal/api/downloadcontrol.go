@@ -164,7 +164,13 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 	switch d.StartedBy.Kind {
 	case "user":
 		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", d.StartedBy.ID).Scan(&out.RequestedBy)
-	case "":
+	case "", "system":
+		// No asker: name the person who added the Library title, if a person did.
+		if len(d.SlotIDs) > 0 {
+			var titleID int64
+			_ = db.QueryRowContext(ctx, "SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", d.SlotIDs[0]).Scan(&titleID)
+			out.RequestedBy = a.titleOwner(ctx, titleID)
+		}
 	default:
 		out.RequestedBy = "HolyArrs"
 	}

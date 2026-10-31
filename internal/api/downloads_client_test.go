@@ -199,7 +199,7 @@ func TestClientItemControls(t *testing.T) {
 	do(t, "POST", base+"/remove", "", 200)
 	var d DownloadDetailView
 	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
-	if d.Torrent == nil || d.Torrent.Downloaded != 2500 || d.Downloader != "Q" || len(d.Log) != 0 {
+	if d.Torrent == nil || d.Torrent.Downloaded != 2500 || d.Downloader != "Q" || len(d.Log) != 0 || d.RequestedBy != "Added in qBittorrent" {
 		t.Fatalf("detail %+v", d)
 	}
 	var sw struct {

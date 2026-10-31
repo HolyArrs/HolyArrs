@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -462,6 +463,8 @@ func (q *Qbittorrent) Peers(ctx context.Context, id string) ([]Peer, error) {
 		}
 		out = append(out, Peer{Address: addr, Client: p.Client, Progress: p.Progress, Speed: p.DLSpeed, UpSpeed: p.UPSpeed, Country: p.Country})
 	}
+	// A steady order, so the list does not reshuffle between reads.
+	sort.Slice(out, func(i, j int) bool { return out[i].Address < out[j].Address })
 	return out, nil
 }
 

@@ -177,6 +177,8 @@
 	type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
 	type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string };
 	let det = $state<Det>({ id: 0 });
+	// Panel reads never show the server's own words; a calm line and Retry instead.
+	const CALM_ERR = "Couldn't read this from the Downloader just now.";
 	let filesBusy = $state(false);
 	// The client is read live for as long as it may hold the torrent: while
 	// it downloads, and when it is finished or seeding too.
@@ -188,27 +190,26 @@
 		try {
 			next.detail = await api.get<Detail>(`${path}/detail`);
 		} catch {
-			next.detail = undefined;
+			// Keep the last Info on a failed refresh.
 		}
 		if (protocolOf(r) === 'torrent' && live(r)) {
 			if (tab === 'Files') {
 				try {
 					next.files = (await api.get<{ files: TFile[] }>(`${path}/files`)).files ?? [];
 					next.filesErr = undefined;
-				} catch (e) {
-					next.files = undefined;
-					next.filesErr = message(e);
+				} catch {
+					// A failed refresh keeps the last list; the calm note shows only with none.
+					next.filesErr = CALM_ERR;
 				}
 			}
 			if (tab === 'Peers' || tab === 'Trackers') {
 				try {
 					const sw = await api.get<{ trackers: Tracker[]; peers: Peer[] }>(`${path}/swarm`);
 					next.trackers = sw.trackers ?? [];
-					next.peers = sw.peers ?? [];
+					next.peers = [...(sw.peers ?? [])].sort((a, b) => a.address.localeCompare(b.address));
 					next.swarmErr = undefined;
-				} catch (e) {
-					next.trackers = next.peers = undefined;
-					next.swarmErr = message(e);
+				} catch {
+					next.swarmErr = CALM_ERR;
 				}
 			}
 		}
@@ -1182,6 +1183,14 @@
 	{/each}
 {/snippet}
 
+{#snippet calm(r: DownloadRow, tab: string, err: string | undefined)}
+	{#if err}
+		<p class="calm" role="status" data-testid="dl-panel-error"><span>{err}</span><button type="button" class="xbn" onclick={() => void readDetail(r, tab)} data-testid="dl-panel-retry">Retry</button></p>
+	{:else}
+		<p class="calm wait" aria-live="polite" data-testid="dl-panel-wait">Reading from the Downloader…</p>
+	{/if}
+{/snippet}
+
 {#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[])}
 	{@const tor = protocolOf(r) === 'torrent'}
 	{@const tab = tabNow(r)}
@@ -1216,17 +1225,17 @@
 					{#if r.limit_down || r.limit_up}<dt>Speed caps</dt><dd data-testid="dl-info-caps">{r.limit_down ? `${bytes(r.limit_down)}/s down` : 'no cap down'} · {r.limit_up ? `${bytes(r.limit_up)}/s up` : 'no cap up'}</dd>{:else}<dt>Speed caps</dt><dd>None</dd>{/if}
 					{#if r.limits}<dt>Seeding rules</dt><dd data-testid="dl-info-limits">{limitsWords(r.limits)}</dd>{:else}<dt>Seeding rules</dt><dd>None</dd>{/if}
 					<dt>Downloader</dt><dd>{d?.downloader || r.downloader || '–'}</dd>
-					<dt>Requested by</dt><dd>{d?.requested_by || '–'}</dd>
+					<dt>Requested by</dt><dd data-testid="dl-info-asker">{d?.requested_by || '—'}</dd>
 				</dl></section>
 			</div>
-			{#if d?.torrent_error}<p class="nr" data-testid="dl-info-error">{d.torrent_error}</p>{/if}
+			{#if d?.torrent_error}{@render calm(r, 'Info', CALM_ERR)}{/if}
 		{:else}
-			<div class="gen"><section class="grp" aria-label="Details"><dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.label === 'Requested by' ? d?.requested_by || '–' : f.value}</dd>{/each}</dl></section></div>
+			<div class="gen"><section class="grp" aria-label="Details"><dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.label === 'Requested by' ? d?.requested_by || '—' : f.value}</dd>{/each}</dl></section></div>
 		{/if}
 	{:else if tab === 'Files'}
 		{@const files = det.id === r.id ? det.files : undefined}
 		{#if !tor || !files}
-			<p class="nr" data-testid="dl-files-none">{tor && det.id === r.id && det.filesErr ? det.filesErr : '–'}</p>
+			{@render calm(r, 'Files', tor && det.id === r.id ? det.filesErr : undefined)}
 		{:else if !files.length}
 			<GhostEmpty compact testid="dl-files-none" title="No files yet" text="The file list appears once the download has its details." />
 		{:else}
@@ -1269,7 +1278,7 @@
 	{:else if tab === 'Peers'}
 		{@const peers = det.id === r.id ? det.peers : undefined}
 		{#if !peers}
-			<p class="nr">{det.id === r.id && det.swarmErr ? det.swarmErr : '–'}</p>
+			{@render calm(r, 'Peers', det.id === r.id ? det.swarmErr : undefined)}
 		{:else}
 			<div class="tblw" data-testid="dl-peertable"><table class="t2">
 				<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
@@ -1285,14 +1294,14 @@
 							<td class="c-fl">{flagsOf(p)}</td>
 						</tr>
 					{/each}
-					{#if !peers.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-peers-none" title="No peers connected" text="Peers show up here while the torrent is active." /></td></tr>{/if}
+					{#if !peers.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-peers-none" title="No peers connected" text={r.progress >= 1 ? 'Nobody is downloading from this torrent right now.' : 'Peers show up here while the torrent is active.'} /></td></tr>{/if}
 				</tbody>
 			</table></div>
 		{/if}
 	{:else if tab === 'Trackers'}
 		{@const trs = det.id === r.id ? det.trackers : undefined}
 		{#if !trs}
-			<p class="nr">{det.id === r.id && det.swarmErr ? det.swarmErr : '–'}</p>
+			{@render calm(r, 'Trackers', det.id === r.id ? det.swarmErr : undefined)}
 		{:else}
 			<div class="tblw" data-testid="dl-trackertable"><table class="t2">
 				<thead><tr><th class="c-name">Source</th><th class="c-num c-tier">Tier</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
@@ -1488,7 +1497,7 @@
 				{@const c = COL[id]}
 				<li data-id={id} class:held={held === id} class:off={c.missing}>
 					<button type="button" class="hd" data-handle={id} aria-label="Move {c.label}" aria-pressed={held === id} aria-describedby="dl-pick-help" disabled={c.missing} onkeydown={(e) => handleKey(e, id)} onpointerdown={(e) => handleDown(e, id)}><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="5" cy="7" r="1.2"/><circle cx="9" cy="7" r="1.2"/><circle cx="5" cy="11" r="1.2"/><circle cx="9" cy="11" r="1.2"/></g></svg></button>
-					<label class="pk"><input type="checkbox" checked={!c.missing && !layout.hidden.includes(id)} disabled={c.missing} onchange={() => flip(id)} data-testid="dl-pick-{id}" /><span>{c.label}</span>{#if c.missing}<span class="nr">Not reported yet</span>{/if}</label>
+					<label class="pkl"><input type="checkbox" checked={!c.missing && !layout.hidden.includes(id)} disabled={c.missing} onchange={() => flip(id)} data-testid="dl-pick-{id}" /><span>{c.label}</span>{#if c.missing}<span class="nr">Not reported yet</span>{/if}</label>
 				</li>
 			{/each}
 		</ul>
@@ -1595,9 +1604,10 @@
 	.pl li.held { background: var(--surface-3); }
 	.hd { display: grid; place-items: center; width: 24px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--text-muted); cursor: grab; touch-action: none; }
 	.hd:disabled { opacity: 0.3; cursor: default; }
-	.hd:focus-visible, .pk input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pk { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; font: var(--t-footnote); cursor: pointer; }
-	.off .pk { color: var(--text-muted); cursor: default; }
+	.hd:focus-visible, .pkl input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pkl { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; color: var(--text); font: var(--t-footnote); cursor: pointer; }
+	.pkl > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.off .pkl { color: var(--text-muted); cursor: default; }
 	.nr { margin-left: auto; padding-right: 4px; color: var(--text-muted); font: var(--t-caption); }
 	.help { margin: 6px 6px 0; color: var(--text-muted); font: var(--t-caption); }
 	.pf { display: flex; justify-content: flex-end; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px; }
@@ -1700,9 +1710,10 @@
 	.dpane.shut .pcl :global(svg) { transform: rotate(180deg); }
 	.pcl:hover { background: var(--surface-3); color: var(--text); }
 	.pcl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pb { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 8px var(--dl-gutter); overflow: auto; }
-	.pb .big { width: 56px; height: 84px; }
-	.pb .big.square { height: 56px; }
+	.pb { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 8px var(--dl-gutter); overflow: auto; }
+	.pb .big { width: 112px; height: 168px; border-radius: var(--r-card, 10px); }
+	.pb .big :global(.poster) { border-radius: var(--r-card, 10px); }
+	.pb .big.square { height: 112px; }
 	.pb .kv { gap: 2px 12px; font: var(--t-caption); }
 	.pb .xtab { min-height: 24px; padding: 0 9px; font: var(--t-caption); font-weight: 500; }
 	.pb .t2 { font: var(--t-caption); }
@@ -1833,7 +1844,7 @@
 	.tview { animation: tabin var(--dur) var(--ease-out); }
 	@keyframes tabin { from { opacity: 0; transform: translateY(4px); } }
 	@keyframes fadein { from { opacity: 0; } }
-	.pact { position: relative; flex: none; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px var(--dl-gutter); border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 70%, transparent); }
+	.pact { position: relative; flex: none; margin-top: auto; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px var(--dl-gutter); border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 70%, transparent); }
 	.pact .xbt { margin: 0; gap: 8px; }
 	.pact .xbn { min-height: 32px; padding: 0 12px; border-radius: var(--r-btn); font: var(--t-footnote); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
@@ -1880,6 +1891,25 @@
 	.t2 tbody tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 	.t2 tbody tr:focus-visible td { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
 	.t2 tbody tr.off td { color: var(--text-muted); }
+	/* Depth for Files, Peers and Trackers: a raised surface, a tinted header band, hairline zebra rows and a lift on hover. */
+	.pb .tblw { border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--surface-2); box-shadow: var(--shadow-card); }
+	.pb .t2 th { background: color-mix(in srgb, var(--surface-3) 70%, var(--surface-2)); border-bottom-color: var(--line-strong); }
+	.pb .t2 td { border-bottom-color: var(--line); }
+	.pb .t2 tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--surface-3) 28%, var(--surface-2)); }
+	.pb .t2 tbody tr:hover td { background: var(--surface-3); }
+	.pb .t2 tbody tr.sel td { background: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+	.pb .t2 tbody tr { animation: fadein var(--dur) var(--ease-out); }
+	.pb .t2 td.c-chk input[type='checkbox'] { appearance: none; display: inline-grid; place-content: center; width: 16px; height: 16px; margin: 0; border: 1.5px solid var(--line-strong); border-radius: 5px; background: var(--surface-1); cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+	.pb .t2 td.c-chk input[type='checkbox']::after { content: ''; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg) scale(0); transition: transform var(--dur-fast) var(--ease-out); }
+	.pb .t2 td.c-chk input[type='checkbox']:checked { border-color: var(--accent); background: var(--accent); }
+	.pb .t2 td.c-chk input[type='checkbox']:checked::after { transform: translateY(-1px) rotate(-45deg) scale(1); }
+	.pb .t2 td.c-chk input[type='checkbox']:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pb .t2 td.c-chk input[type='checkbox']:disabled { opacity: 0.5; cursor: default; }
+	.pb .t2 .pick { max-width: 110px; height: 26px; padding: 0 24px 0 8px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface-1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center; color: var(--text); font: var(--t-caption); appearance: none; cursor: pointer; }
+	.pb .t2 .pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.calm { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-2); color: var(--text-muted); font: var(--t-footnote); }
+	.calm.wait { border-color: transparent; background: none; padding-left: 0; }
+	.calm .xbn { margin-left: auto; }
 	.pbar { width: 64px; height: 4px; border-radius: var(--r-pill); }
 	.pbar i { border-radius: inherit; transition: width var(--dur-slow) var(--ease-out); }
 	.pv { min-width: 36px; margin-left: 8px; color: var(--text-muted); }
@@ -1899,7 +1929,7 @@
 	.lgt { overflow-wrap: anywhere; }
 
 	@media (prefers-reduced-motion: reduce) {
-		.drow, .pb, .tview, .pact .mn { animation: none; }
+		.drow, .pb, .tview, .pact .mn, .pb .t2 tbody tr { animation: none; }
 		.ink, .dv i, .drow > .dline, .pact .xbn, .t2 td, .pbar i, .mi { transition: none; }
 	}
 
@@ -1936,6 +1966,8 @@
 		.dpane { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom)); z-index: 40; height: min(64dvh, 520px) !important; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.32); }
 		.dpane.shut { height: auto !important; }
 		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
+		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
+		.pb .big.square { height: 56px; }
 		.pt { flex-basis: 100%; }
 		.hdr { grid-template-columns: minmax(0, 1fr); }
 			.gen { grid-template-columns: minmax(0, 1fr); }
