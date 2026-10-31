@@ -68,7 +68,8 @@
 		onremovemany,
 		onbulk,
 		onsteer,
-		watch = false
+		watch = false,
+		upTotal
 	}: {
 		rows: DownloadRow[];
 		importOf: Map<number, ImportRecord>;
@@ -100,6 +101,8 @@
 		onsteer?: (rows: DownloadRow[], mode: SteerMode) => void;
 		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
 		watch?: boolean;
+		/** Upload speed the server added up over every sending row (seeding too, and rows past the page); else the rows on hand. */
+		upTotal?: number;
 	} = $props();
 
 	// The Type filter (All, Movies, TV shows, Music) narrows every tab and total.
@@ -444,6 +447,7 @@
 		return undefined;
 	}
 	const sum = $derived(totals(allQueue));
+	const upSum = $derived(upTotal ?? sum.up);
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
 	// The toolbar's Start and Pause act on the open row; its state comes from the client.
 	const canStart = $derived(!!openRow?.can_act && isPaused(openRow) && busy !== openRow?.id);
@@ -1583,7 +1587,7 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up="{bytes(sum.up)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up="{bytes(upSum)}/s" eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <p class="qline" data-testid="dl-qline"><span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{#if freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={listEl} data-testid="dl-listbox">

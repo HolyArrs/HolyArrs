@@ -9,6 +9,8 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { decisionName, manyWords, removeBody, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting'; stale?: boolean; seen_at?: string };
+	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string };
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -35,6 +37,34 @@
 	// The poster pictures come from the Library titles; until they arrive the rows show plain poster tiles (no initials).
 	let titlesReady = $state(false);
 	let error = $state('');
+	// Calm notes for side reads that failed (posters, remove defaults, the
+	// Downloader list) and for torrent clients that are slow or down.
+	let sideNotes = $state<Record<string, string>>({});
+	let clientHealth = $state<ClientHealth[]>([]);
+	let upTotal = $state<number | undefined>(undefined);
+	// Outside torrents come 200 at a time; Show more asks for the next 200 too.
+	let outsideLimit = $state(200);
+	let moreOutside = $state(false);
+	const clientNotes = $derived(
+		clientHealth
+			.filter((c) => c.health !== 'ok')
+			.map((c) =>
+				c.health === 'waiting'
+					? `${c.name} has not answered yet; its torrents show once it does.`
+					: c.stale
+						? `${c.name} is not answering right now; showing its last list.`
+						: `${c.name} is not answering right now.`
+			)
+	);
+	const notes = $derived([...Object.values(sideNotes), ...clientNotes]);
+	function note(key: string, text: string) {
+		sideNotes = { ...sideNotes, [key]: text };
+	}
+	function clearNote(key: string) {
+		if (!(key in sideNotes)) return;
+		const { [key]: _, ...rest } = sideNotes;
+		sideNotes = rest;
+	}
 	let settings = $state<DownloaderSettings | null>(null);
 	let openId = $state(0);
 	// A torrent Downloader brings the Seeding sub-tab under Done.
@@ -131,10 +161,13 @@
 	async function load() {
 		try {
 			const [d, i] = await Promise.all([
-				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
+				api.get<ViewAnswer>(`/downloads/view?limit=100${outsideLimit > 200 ? `&outside_limit=${outsideLimit}` : ''}`),
 				watch ? Promise.resolve({ imports: [] as ImportRecord[] }) : api.get<{ imports: ImportRecord[] }>('/imports?limit=100')
 			]);
 			rows = d.downloads.map(withId);
+			clientHealth = d.clients ?? [];
+			upTotal = d.totals?.up_speed;
+			moreOutside = !!d.next_cursor;
 			imports = i.imports;
 			reads++;
 			error = '';
@@ -159,9 +192,18 @@
 
 	onMount(() => {
 		void load();
-		void libraryTitles().then((r) => (titles = r)).catch(() => {}).finally(() => (titlesReady = true));
+		void libraryTitles()
+			.then((r) => {
+				titles = r;
+				clearNote('titles');
+			})
+			.catch(() => note('titles', 'Posters could not be loaded; the downloads are all here.'))
+			.finally(() => (titlesReady = true));
 		// The remove defaults are a settings read; without that permission the server's own defaults stand (no 403 in the console).
-		if (session.can('settings')) api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
+		if (session.can('settings')) api
+				.get<DownloaderSettings>('/settings/downloaders')
+				.then((s) => (settings = s))
+				.catch(() => note('settings', 'Your remove defaults could not be loaded; Remove asks with the usual choices.'));
 		if (session.can('manage_library'))
 			api
 				.get<{ downloaders: DownloaderView[] }>('/downloaders')
@@ -169,7 +211,7 @@
 					torrentClients = r.downloaders.filter((d) => d.protocol === 'torrent').map((d) => ({ id: d.id, name: d.name, category: d.category }));
 					torrent = torrentClients.length > 0;
 				})
-				.catch(() => {});
+				.catch(() => note('downloaders', 'The Downloader list could not be loaded; adding torrents by hand is off for now.'));
 		if (!watch) void refreshDecisions();
 		// The live stream (/live) is for managers only: a watcher never subscribes.
 		const offs = watch ? [] : ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
@@ -405,8 +447,10 @@
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
+	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} {watch} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} {watch} {upTotal} />
+	{#if moreOutside}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit += 200; void load(); }} data-testid="dl-outside-more">Show more torrents</Button></p>{/if}
 {/if}
 </PageLoader>
 
@@ -476,6 +520,8 @@
 	.lim input { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-callout); width: 100%; box-sizing: border-box; }
 	.pad { padding: var(--s-6) var(--gutter); }
 	.matchpad { padding: 0 var(--gutter); }
+	.notes { list-style: none; margin: 0; padding: var(--s-2) var(--gutter) 0; display: grid; gap: 2px; color: var(--text-muted); font: var(--t-footnote); }
+	.more { display: flex; justify-content: center; padding: var(--s-4) var(--gutter); }
 	.matchpad:empty { display: none; }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }

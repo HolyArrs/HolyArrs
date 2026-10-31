@@ -210,6 +210,18 @@ type API struct {
 	speeds speedHistory
 	// match links outside torrents to Library titles (client_match.go).
 	match clientMatch
+	// lists is the last list read of each torrent client (downloads_client.go).
+	lists clientLists
+	// viewDB, when set, takes the Downloads view's reads (tests count them).
+	viewDB *sql.DB
+}
+
+// read is the read pool the Downloads view uses.
+func (a *API) read() *sql.DB {
+	if a.viewDB != nil {
+		return a.viewDB
+	}
+	return a.s.Store.Read()
 }
 
 // New makes the API.

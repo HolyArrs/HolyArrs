@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,68 +28,200 @@ type clientKey struct {
 	hash       string
 }
 
-// clientListWait caps how long the Downloads screen waits for a client.
+// clientListWait caps one list read of a client (it runs in the
+// background, apart from any request).
 var clientListWait = 5 * time.Second
 
-// clientRows reads every torrent Downloader's full list (one call each, side
-// by side) and returns the items not already shown as HolyArrs rows.
-func (a *API) clientRows(ctx context.Context, shown map[clientKey]bool) []DownloadRow {
-	ds, err := a.manager().Downloaders(ctx)
-	if err != nil {
-		return nil
+// clientViewWait is how long the Downloads view waits for fresh lists
+// before it answers with what it has.
+var clientViewWait = 200 * time.Millisecond
+
+// clientStaleFor is how long a client's last good list is still shown
+// while the client does not answer.
+const clientStaleFor = 5 * time.Minute
+
+// ClientHealth says how a torrent client answered the Downloads view:
+// ok (a fresh list), slow (no answer yet, its last list shown), offline
+// (its last read failed) or waiting (no list yet).
+type ClientHealth struct {
+	ID     int64     `json:"id"`
+	Name   string    `json:"name"`
+	Health string    `json:"health"`
+	Stale  bool      `json:"stale,omitempty"`
+	SeenAt time.Time `json:"seen_at,omitzero"`
+}
+
+// clientLists holds the last list read of each torrent client and the read
+// in flight, so slow clients are read once at a time and never in a request.
+type clientLists struct {
+	mu sync.Mutex
+	by map[int64]*clientList
+}
+
+type clientList struct {
+	jobs   []downloader.Job
+	at     time.Time     // last good read
+	failed bool          // the last read failed
+	busy   chan struct{} // closed when the read in flight ends; nil when none
+}
+
+// readList starts a list read of d unless one is in flight, and returns a
+// channel closed when that read ends; started says this call began it.
+func (a *API) readList(d domain.Downloader) (done <-chan struct{}, started bool) {
+	c := &a.lists
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.by == nil {
+		c.by = map[int64]*clientList{}
 	}
-	ctx, cancel := context.WithTimeout(ctx, clientListWait)
-	defer cancel()
-	per := make([][]DownloadRow, len(ds))
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	var failed []int64
-	for i, d := range ds {
-		if d.Protocol != "torrent" {
-			continue
+	l := c.by[d.ID]
+	if l == nil {
+		l = &clientList{}
+		c.by[d.ID] = l
+	}
+	if l.busy != nil {
+		return l.busy, false
+	}
+	busy := make(chan struct{})
+	l.busy = busy
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), clientListWait)
+		defer cancel()
+		var jobs []downloader.Job
+		err := a.manager().ControlEngine(ctx, d, func(e downloader.Engine) error {
+			al, ok := e.(downloader.AllLister)
+			if !ok {
+				return downloader.ErrNotSupported
+			}
+			var err error
+			jobs, err = al.ListAll(ctx)
+			return err
+		})
+		if err == nil {
+			a.noteJobs(ctx, d.ID, jobs)
 		}
-		wg.Add(1)
-		go func(i int, d domain.Downloader) {
-			defer wg.Done()
-			var jobs []downloader.Job
-			lerr := a.manager().ControlEngine(ctx, d, func(e downloader.Engine) error {
-				l, ok := e.(downloader.AllLister)
-				if !ok {
-					return downloader.ErrNotSupported
-				}
-				var err error
-				jobs, err = l.ListAll(ctx)
-				return err
-			})
-			if lerr == nil {
-				a.noteJobs(ctx, d.ID, jobs)
-			} else {
-				mu.Lock()
-				failed = append(failed, d.ID)
-				mu.Unlock()
-			}
-			out := make([]DownloadRow, 0, len(jobs))
-			for _, j := range jobs {
-				if j.ID == "" || shown[clientKey{d.ID, j.ID}] {
-					continue
-				}
-				out = append(out, clientRow(d, j))
-			}
-			per[i] = out
-		}(i, d)
+		c.mu.Lock()
+		if err == nil {
+			l.jobs, l.at, l.failed = jobs, time.Now(), false
+		} else {
+			l.failed = true
+		}
+		l.busy = nil
+		c.mu.Unlock()
+		close(busy)
+	}()
+	return busy, true
+}
+
+// clientRows returns the items of every torrent Downloader not already shown
+// as HolyArrs rows, in a stable order (Downloader priority, then newest
+// first), and each client's health. Lists are read side by side in the
+// background; the caller waits at most wait for them.
+func (a *API) clientRows(ctx context.Context, names map[int64]domain.Downloader, shown map[clientKey]bool, wait time.Duration) ([]DownloadRow, []ClientHealth) {
+	health := []ClientHealth{}
+	var ds []domain.Downloader
+	for _, d := range names {
+		if d.Protocol == "torrent" && !d.Removed {
+			ds = append(ds, d)
+		}
 	}
-	wg.Wait()
-	a.maybeSweep(ctx, failed)
+	sort.Slice(ds, func(i, j int) bool {
+		if ds[i].Priority != ds[j].Priority {
+			return ds[i].Priority < ds[j].Priority
+		}
+		if ds[i].Name != ds[j].Name {
+			return ds[i].Name < ds[j].Name
+		}
+		return ds[i].ID < ds[j].ID
+	})
+	// Only reads this call started are waited for: a read still running
+	// from an earlier view means the client is slow, and the view answers
+	// at once with what it has.
+	var waits []<-chan struct{}
+	for _, d := range ds {
+		if w, started := a.readList(d); started {
+			waits = append(waits, w)
+		}
+	}
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+wait:
+	for _, w := range waits {
+		select {
+		case <-w:
+		case <-timer.C:
+			break wait
+		case <-ctx.Done():
+			break wait
+		}
+	}
+	var failed []int64
 	var rows []DownloadRow
-	defer func() { a.matchQueue(context.WithoutCancel(ctx), rows) }()
-	for i, out := range per {
+	now := time.Now()
+	for _, d := range ds {
+		a.lists.mu.Lock()
+		l := a.lists.by[d.ID]
+		jobs, at, bad, busy := l.jobs, l.at, l.failed, l.busy != nil
+		a.lists.mu.Unlock()
+		h := ClientHealth{ID: d.ID, Name: d.Name, Health: "ok", SeenAt: at}
+		fresh := !busy && !bad && !at.IsZero()
+		switch {
+		case fresh:
+		case busy && !at.IsZero():
+			h.Health, h.Stale = "slow", true
+		case busy:
+			h.Health = "waiting"
+		default:
+			h.Health, h.Stale = "offline", !at.IsZero()
+		}
+		if !fresh {
+			failed = append(failed, d.ID)
+		}
+		if at.IsZero() || now.Sub(at) > clientStaleFor {
+			h.Stale = false
+			jobs = nil
+		}
+		health = append(health, h)
+		out := make([]DownloadRow, 0, len(jobs))
+		for _, j := range jobs {
+			if j.ID == "" || shown[clientKey{d.ID, strings.ToLower(j.ID)}] {
+				continue
+			}
+			out = append(out, clientRow(d, j))
+		}
+		sort.SliceStable(out, func(i, j int) bool {
+			ai, aj := out[i].StartedAt, out[j].StartedAt
+			switch {
+			case ai == nil || aj == nil:
+				if (ai == nil) != (aj == nil) {
+					return aj == nil
+				}
+			case !ai.Equal(*aj):
+				return ai.After(*aj)
+			}
+			return out[i].Hash < out[j].Hash
+		})
 		if len(out) > 0 {
-			a.knownTitles(ctx, ds[i].ID, out)
-			a.linkedTitles(ctx, ds[i].ID, out)
+			a.knownTitles(ctx, d.ID, out)
+			a.linkedTitles(ctx, d.ID, out)
 			rows = append(rows, out...)
 		}
 	}
-	return rows
+	a.maybeSweep(ctx, failed)
+	a.matchQueue(context.WithoutCancel(ctx), rows)
+	return rows, health
+}
+
+// downloaderNames reads every Downloader (removed ones too: old downloads
+// still name them) by id, in one read.
+func (a *API) downloaderNames(ctx context.Context) map[int64]domain.Downloader {
+	names := map[int64]domain.Downloader{}
+	if all, err := store.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1"); err == nil {
+		for _, d := range all {
+			names[d.ID] = d
+		}
+	}
+	return names
 }
 
 // clientRow is one client item in the Downloads screen's words.
@@ -171,7 +304,7 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 	for h := range at {
 		hashes = append(hashes, h)
 	}
-	db := a.s.Store.Read()
+	db := a.read()
 	for len(hashes) > 0 {
 		n := min(len(hashes), 400)
 		part := hashes[:n]
@@ -184,6 +317,13 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 		if err != nil {
 			continue
 		}
+		first := []int64{}
+		for _, d := range ds {
+			if len(d.SlotIDs) > 0 {
+				first = append(first, d.SlotIDs[0])
+			}
+		}
+		slots := slotInfos(ctx, db, first)
 		for _, d := range ds {
 			i, ok := at[strings.ToLower(d.ExternalID)]
 			if !ok {
@@ -194,8 +334,9 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 			if len(d.SlotIDs) == 0 {
 				continue
 			}
-			_ = db.QueryRowContext(ctx, `SELECT t.id, t.name, t.kind, v.label FROM slots s JOIN items i ON i.id = s.item_id
-				JOIN titles t ON t.id = i.title_id JOIN versions v ON v.id = s.version_id WHERE s.id = ?`, d.SlotIDs[0]).Scan(&row.TitleID, &row.Title, &row.Kind, &row.Version)
+			if si, ok := slots[d.SlotIDs[0]]; ok && si.full {
+				row.TitleID, row.Title, row.Kind, row.Version = si.titleID, si.title, si.kind, si.version
+			}
 		}
 	}
 }

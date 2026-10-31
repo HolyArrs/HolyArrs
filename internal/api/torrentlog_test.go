@@ -292,7 +292,7 @@ func TestSweepSkipsOnlyFailedDownloader(t *testing.T) {
 			up, strings.ToUpper(ownHash), time.Now().UTC().Format(store.TimeLayout))
 		return err
 	})
-	a.clientRows(ctx, map[clientKey]bool{})
+	a.clientRows(ctx, a.downloaderNames(ctx), map[clientKey]bool{}, clientListWait)
 	n := func(q string, args ...any) int {
 		var c int
 		_ = s.Read().QueryRow(q, args...).Scan(&c)

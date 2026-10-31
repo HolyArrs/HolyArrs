@@ -125,18 +125,24 @@ func episodeLines(ctx context.Context, db *sql.DB, slotIDs []int64) []EpisodeLin
 			continue
 		}
 		e.Season, e.Episode, e.Name = int(season.Int64), int(episode.Int64), name.String
-		e.Label = fmt.Sprintf("S%02dE%02d", e.Season, e.Episode)
-		if kind == "track" {
-			e.Track = true
-			e.Label = fmt.Sprintf("Track %02d", e.Episode)
-			if e.Season > 1 {
-				e.Label = fmt.Sprintf("Disc %d track %02d", e.Season, e.Episode)
-			}
-		}
+		labelLine(&e, kind)
 		out = append(out, e)
 	}
 	sortLines(out)
 	return out
+}
+
+// labelLine names an episode line: S01E02, or for a track Track 02 or
+// Disc 2 track 03.
+func labelLine(e *EpisodeLine, kind string) {
+	e.Label = fmt.Sprintf("S%02dE%02d", e.Season, e.Episode)
+	if kind == "track" {
+		e.Track = true
+		e.Label = fmt.Sprintf("Track %02d", e.Episode)
+		if e.Season > 1 {
+			e.Label = fmt.Sprintf("Disc %d track %02d", e.Season, e.Episode)
+		}
+	}
 }
 
 // sortLines puts episode lines in season and episode order.
@@ -287,57 +293,64 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			JOIN asks a ON a.title_id = i.title_id JOIN ask_people p ON p.ask_id = a.id WHERE p.user_id = ?)`
 		args = append(args, who.UserID)
 	}
-	ds, err := store.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, limit(r, 100))...)
+	ds, err := store.Select[domain.Download](r.Context(), a.read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, limit(r, 100))...)
 	if err != nil {
 		internal(w, err)
 		return
 	}
+	db := a.read()
+	ctx := r.Context()
+	// One read per related table for the whole page (no read per row).
+	names := a.downloaderNames(ctx)
+	relIDs, slotIDs := []int64{}, []int64{}
+	for _, d := range ds {
+		if d.ReleaseID != nil {
+			relIDs = append(relIDs, *d.ReleaseID)
+		}
+		slotIDs = append(slotIDs, d.SlotIDs...)
+	}
+	rels := releaseNames(ctx, db, relIDs)
+	slots := slotInfos(ctx, db, slotIDs)
 	rows := make([]DownloadRow, 0, len(ds))
 	shown := map[clientKey]bool{}
-	type dlInfo struct{ name, kind, protocol string }
-	names := map[int64]dlInfo{}
 	for _, d := range ds {
 		row := DownloadRow{DownloadView: downloadView(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID}
 		if d.ExternalID != "" {
 			shown[clientKey{d.DownloaderID, strings.ToLower(d.ExternalID)}] = true
 		}
-		n, ok := names[d.DownloaderID]
-		if !ok {
-			_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name, adapter, protocol FROM downloaders WHERE id = ?", d.DownloaderID).Scan(&n.name, &n.kind, &n.protocol)
-			names[d.DownloaderID] = n
-		}
-		row.Downloader, row.DownloaderKind, row.Protocol = n.name, n.kind, n.protocol
+		n := names[d.DownloaderID]
+		row.Downloader, row.DownloaderKind, row.Protocol = n.Name, n.Adapter, n.Protocol
 		// A torrent of HolyArrs' own is also addressed by Downloader and hash,
 		// so a selection can act on it together with outside torrents.
-		if h := strings.ToLower(d.ExternalID); n.protocol == "torrent" && validHash(h) {
+		if h := strings.ToLower(d.ExternalID); n.Protocol == "torrent" && validHash(h) {
 			row.DownloaderID, row.Hash = d.DownloaderID, h
 		}
 		if d.ReleaseID != nil {
-			_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name, size FROM releases WHERE id = ?", *d.ReleaseID).Scan(&row.Name, &row.Size)
+			if rl, ok := rels[*d.ReleaseID]; ok {
+				row.Name, row.Size = rl.name, rl.size
+			}
 		}
 		if len(d.SlotIDs) > 0 {
-			var year sql.NullInt64
-			_ = a.s.Store.Read().QueryRowContext(r.Context(), `SELECT s.state, t.id, t.name, t.year, v.label FROM slots s
-				JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id JOIN versions v ON v.id = s.version_id WHERE s.id = ?`,
-				d.SlotIDs[0]).Scan(&row.SlotState, &row.TitleID, &row.Title, &year, &row.Version)
-			if year.Valid {
-				y := int(year.Int64)
-				row.Year = &y
+			if si, ok := slots[d.SlotIDs[0]]; ok && si.full {
+				row.SlotState, row.TitleID, row.Title, row.Version, row.Kind = si.line.State, si.titleID, si.title, si.version, si.kind
+				if si.year.Valid {
+					y := int(si.year.Int64)
+					row.Year = &y
+				}
 			}
 		}
 		row.Phase = phase(d, row.SlotState)
-		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT kind FROM titles WHERE id = ?", row.TitleID).Scan(&row.Kind)
 		if row.Kind == "artist" && len(d.SlotIDs) > 0 {
-			var year sql.NullString
-			_ = a.s.Store.Read().QueryRowContext(r.Context(), `SELECT p.name, substr(p.release_date, 1, 4) FROM slots s JOIN items i ON i.id = s.item_id
-				JOIN parts p ON p.id = i.part_id WHERE s.id = ?`, d.SlotIDs[0]).Scan(&row.Album, &year)
-			row.Year = nil
-			if y, err := strconv.Atoi(year.String); err == nil && y > 0 {
-				row.Year = &y
+			row.Album, row.Year = "", nil
+			if si, ok := slots[d.SlotIDs[0]]; ok && si.album.Valid {
+				row.Album = si.album.String
+				if y, err := strconv.Atoi(si.albumYear.String); err == nil && y > 0 {
+					row.Year = &y
+				}
 			}
 		}
 		if row.Kind == "show" || row.Kind == "artist" {
-			row.Episodes = episodeLines(r.Context(), a.s.Store.Read(), d.SlotIDs)
+			row.Episodes = linesOf(d.SlotIDs, slots)
 			row.Covers = covers(row.Episodes)
 			row.Phase = phaseOfMany(d, row.Episodes)
 		}
@@ -368,23 +381,173 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	}
 	// Managers see everything in their torrent clients, as the client's own
 	// screen does: the torrents HolyArrs did not send come after its own.
+	// A client that is slow or down never holds the page up: its last list
+	// is shown (marked stale), or nothing, and its health says why.
+	var outside []DownloadRow
+	health := []ClientHealth{}
 	if manage {
-		rows = append(rows, a.clientRows(r.Context(), shown)...)
+		outside, health = a.clientRows(ctx, names, shown, clientViewWait)
 		// HolyArrs' own torrents take the ratio the same list read saw.
 		for i := range rows {
-			if rows[i].Ratio == nil && !rows[i].ClientItem && rows[i].Protocol == "torrent" {
+			if rows[i].Ratio == nil && rows[i].Protocol == "torrent" {
 				rows[i].Ratio = a.seenRatio(rows[i].DownloaderID, rows[i].Hash)
 			}
 		}
 	}
-	var total DownloadTotals
-	for _, row := range rows {
-		if row.Active && row.State == "downloading" {
-			total.Speed += row.Speed
-			total.UpSpeed += row.UpSpeed
+	// Totals count every row, before the outside rows are paged: download
+	// speed from what is moving, upload from everything that sends (seeding
+	// torrents too).
+	total := viewTotals(rows, outside)
+	page, next := pageOutside(outside, r.URL.Query().Get("cursor"), outsideLimit(r))
+	rows = append(rows, page...)
+	writeJSON(w, http.StatusOK, map[string]any{"downloads": rows, "totals": total, "clients": health, "outside_total": len(outside), "next_cursor": next})
+}
+
+// viewTotals adds up the speeds of HolyArrs' rows and every client row.
+func viewTotals(sets ...[]DownloadRow) DownloadTotals {
+	var t DownloadTotals
+	for _, rows := range sets {
+		for _, row := range rows {
+			if row.Active && row.State == "downloading" {
+				t.Speed += row.Speed
+			}
+			t.UpSpeed += row.UpSpeed
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"downloads": rows, "totals": total})
+	return t
+}
+
+// outsideCap is how many outside rows one view answer carries by default.
+const outsideCap = 200
+
+// outsideLimit is the page size for outside rows (?outside_limit=, 1-2000).
+func outsideLimit(r *http.Request) int {
+	n, err := strconv.Atoi(r.URL.Query().Get("outside_limit"))
+	if err != nil || n <= 0 || n > 2000 {
+		return outsideCap
+	}
+	return n
+}
+
+// pageOutside returns one page of outside rows from the cursor (an offset
+// into the stable order clientRows gives) and the cursor of the next page,
+// "" when this page is the last.
+func pageOutside(rows []DownloadRow, cursor string, n int) ([]DownloadRow, string) {
+	from, err := strconv.Atoi(cursor)
+	if err != nil || from < 0 {
+		from = 0
+	}
+	if from >= len(rows) {
+		return nil, ""
+	}
+	to := min(from+n, len(rows))
+	if to == len(rows) {
+		return rows[from:to], ""
+	}
+	return rows[from:to], strconv.Itoa(to)
+}
+
+// releaseLine is a Release's name and size.
+type releaseLine struct {
+	name string
+	size int64
+}
+
+// inChunks calls f on ids in parts small enough for one IN (...) read.
+func inChunks(ids []int64, f func(part []any, marks string)) {
+	seen := map[int64]bool{}
+	uniq := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if !seen[id] {
+			seen[id] = true
+			uniq = append(uniq, id)
+		}
+	}
+	for len(uniq) > 0 {
+		n := min(len(uniq), 500)
+		part := make([]any, n)
+		for i, id := range uniq[:n] {
+			part[i] = id
+		}
+		uniq = uniq[n:]
+		f(part, "?"+strings.Repeat(", ?", n-1))
+	}
+}
+
+// releaseNames reads the names and sizes of many Releases at once.
+func releaseNames(ctx context.Context, db *sql.DB, ids []int64) map[int64]releaseLine {
+	out := map[int64]releaseLine{}
+	inChunks(ids, func(part []any, marks string) {
+		rs, err := db.QueryContext(ctx, "SELECT id, name, size FROM releases WHERE id IN ("+marks+")", part...)
+		if err != nil {
+			return
+		}
+		defer rs.Close()
+		for rs.Next() {
+			var id int64
+			var v releaseLine
+			if rs.Scan(&id, &v.name, &v.size) == nil {
+				out[id] = v
+			}
+		}
+	})
+	return out
+}
+
+// slotInfo is what the Downloads screen shows about one Slot: its episode
+// line, and its Title, Version and (for tracks) album.
+type slotInfo struct {
+	line      EpisodeLine
+	titleID   int64
+	title     string
+	year      sql.NullInt64
+	kind      string
+	version   string
+	full      bool // the Slot has its Version (the Title line is shown)
+	album     sql.NullString
+	albumYear sql.NullString
+}
+
+// slotInfos reads many Slots at once.
+func slotInfos(ctx context.Context, db *sql.DB, ids []int64) map[int64]slotInfo {
+	out := map[int64]slotInfo{}
+	inChunks(ids, func(part []any, marks string) {
+		rs, err := db.QueryContext(ctx, `SELECT s.id, s.state, i.kind, CASE i.kind WHEN 'track' THEN COALESCE(json_extract(i.numbers, '$.disc'), 1) ELSE json_extract(i.numbers, '$.season') END,
+			CASE i.kind WHEN 'track' THEN json_extract(i.numbers, '$.track') ELSE json_extract(i.numbers, '$.episode') END, i.name,
+			t.id, t.name, t.year, t.kind, v.label, p.name, substr(p.release_date, 1, 4)
+			FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
+			LEFT JOIN versions v ON v.id = s.version_id LEFT JOIN parts p ON p.id = i.part_id WHERE s.id IN (`+marks+`)`, part...)
+		if err != nil {
+			return
+		}
+		defer rs.Close()
+		for rs.Next() {
+			var si slotInfo
+			var season, episode sql.NullInt64
+			var name, version sql.NullString
+			var kind string
+			if rs.Scan(&si.line.SlotID, &si.line.State, &kind, &season, &episode, &name, &si.titleID, &si.title, &si.year, &si.kind, &version, &si.album, &si.albumYear) != nil {
+				continue
+			}
+			si.line.Season, si.line.Episode, si.line.Name = int(season.Int64), int(episode.Int64), name.String
+			labelLine(&si.line, kind)
+			si.version, si.full = version.String, version.Valid
+			out[si.line.SlotID] = si
+		}
+	})
+	return out
+}
+
+// linesOf is the episode lines of a download's Slots, in order.
+func linesOf(ids []int64, slots map[int64]slotInfo) []EpisodeLine {
+	out := []EpisodeLine{}
+	for _, id := range ids {
+		if si, ok := slots[id]; ok {
+			out = append(out, si.line)
+		}
+	}
+	sortLines(out)
+	return out
 }
 
 func upperFirst(s string) string {

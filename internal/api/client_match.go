@@ -139,7 +139,7 @@ func (a *API) matchLoop() {
 // linkStates reads the stored link state of each row's torrent.
 func (a *API) linkStates(ctx context.Context, rows []DownloadRow) map[clientKey]string {
 	out := map[clientKey]string{}
-	rs, err := a.s.Store.Read().QueryContext(ctx, "SELECT downloader_id, hash, state FROM client_links WHERE hash = lower(hash)")
+	rs, err := a.read().QueryContext(ctx, "SELECT downloader_id, hash, state FROM client_links WHERE hash = lower(hash)")
 	if err != nil {
 		return out
 	}
@@ -551,7 +551,7 @@ func (a *API) saveLink(ctx context.Context, w matchWant, state string, titleID i
 // linkedTitles names outside rows from their links: the Library title,
 // its kind and the episodes the torrent holds. They stay outside rows.
 func (a *API) linkedTitles(ctx context.Context, downloaderID int64, rows []DownloadRow) {
-	db := a.s.Store.Read()
+	db := a.read()
 	rs, err := db.QueryContext(ctx, `SELECT l.hash, t.id, t.name, t.kind, t.year, l.covers FROM client_links l JOIN titles t ON t.id = l.title_id
 		WHERE l.downloader_id = ? AND l.state = 'linked'`, downloaderID)
 	if err != nil {
@@ -662,7 +662,7 @@ func (a *API) runMatches(w http.ResponseWriter, r *http.Request) {
 	a.match.mu.Lock()
 	a.match.failed = map[clientKey]time.Time{}
 	a.match.mu.Unlock()
-	rows := a.clientRows(r.Context(), map[clientKey]bool{})
+	rows, _ := a.clientRows(r.Context(), a.downloaderNames(r.Context()), map[clientKey]bool{}, clientListWait)
 	n := 0
 	for _, x := range rows {
 		if x.Outside && x.TitleID == 0 {
