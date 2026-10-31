@@ -76,7 +76,7 @@ function ready(f: LifeFacts): Life {
 	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
 	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs.
 	if (f.more && f.more > 0) life.more = `${f.more} more available`;
-	else if (f.skipped && f.skipped > 0 && part?.unit) life.more = `${word(f.skipped, part.unit === 'seasons' ? 'episodes' : 'songs')} available`;
+	else if (f.skipped && f.skipped > 0 && part?.unit) life.more = `${f.skipped} more available`;
 	return life;
 }
 

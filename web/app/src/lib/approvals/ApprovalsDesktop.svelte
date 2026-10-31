@@ -186,12 +186,14 @@
 		const next = cardsShown[at + by];
 		if (!next) return;
 		openId = next.id;
-		said = `${at + by + 1} of ${cardsShown.length}: ${next.name}`;
+		// Read back from the window's own position, so the words match what it shows.
+		void tick().then(() => (said = `${at + 1} of ${cardsShown.length}: ${next.name}`));
 	}
 	function winKeys(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-		if (e.target instanceof Element && e.target.closest('input, textarea, select, video, [contenteditable], .sheet, [role="group"], button[aria-pressed]')) return;
-		if (win?.querySelector('.frame.choosing') || document.querySelectorAll('dialog[open]').length > 1) return;
+		// Controls inside the sheet keep their arrows; the sheet itself (focused when it opens) steps.
+		if (e.target instanceof Element && (e.target.closest('input, textarea, select, video, [contenteditable], [role="group"], button[aria-pressed]') || e.target.closest('.sheet *'))) return;
+		if (document.querySelectorAll('dialog[open]').length > 1) return;
 		e.preventDefault();
 		step(e.key === 'ArrowRight' ? 1 : -1);
 	}
@@ -266,8 +268,8 @@
 								{#if ctx.isPending(a.id)}
 									<span class="state">Sending…</span>
 								{:else}
-									<!-- Declined says who declined; the rest say where the ask is. -->
-									<span class="state tone-{life.tone}"><span class="dot"></span>{(a.state === 'turned_down' && ctx.decided(a)) || life.label}</span>
+									<!-- The status word only; the window says who declined. -->
+									<span class="state tone-{life.tone}"><span class="dot"></span>{life.label}</span>
 								{/if}
 							</span>
 						{/if}
@@ -317,7 +319,7 @@
 	.st.bad { color: var(--fail-text, var(--fail, #e5484d)); }
 	.st.bad[aria-pressed='true'] { background: var(--fail, #e5484d); color: #fff; border-color: transparent; }
 	.sn { font-variant-numeric: tabular-nums; opacity: 0.7; }
-	@media (pointer: coarse) { .st { height: 40px; } }
+	@media (pointer: coarse) { .st { height: 44px; } }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 	.right { display: flex; align-items: center; gap: 10px; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
@@ -328,7 +330,7 @@
 	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
 	.n { opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
-	.bad { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
+	.tab .bad { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
 	.cap { display: flex; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.seg { position: relative; display: flex; align-items: stretch; gap: 2px; height: 44px; }
 	.seg .plate { border-radius: 10px; }
@@ -415,7 +417,8 @@
 	.pos { min-width: 52px; text-align: center; font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.win :global(.ctl.top) { right: 68px !important; }
 	.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-	@media (pointer: coarse) { .nav { width: 44px; height: 44px; } }
+	/* Touch screens: every control gets a full finger-sized target, at any width. */
+	@media (pointer: coarse) { .nav, .close { width: 44px; height: 44px; } .b { height: 44px; } }
 	@keyframes win-in { from { opacity: 0; transform: translate(var(--ox, 0), var(--oy, 16px)) scale(0.3); border-radius: 20px; } }
 	@keyframes fade-in { from { opacity: 0; } }
 	/* Phones: the tabs swipe, the filter fills the width, two cards per row, the window fills the screen. */
@@ -438,8 +441,8 @@
 		.sheet-b { margin: -16px 6px 6px; border-radius: 14px; }
 		.body { padding: 10px 10px 0; }
 		.who { font: var(--t-caption); }
-		.foot { grid-template-columns: 40px minmax(0, 1fr); gap: 6px; padding: 10px; }
-		.b { height: 40px; padding: 0 8px; font: var(--t-footnote); font-weight: 600; }
+		.foot { grid-template-columns: 44px minmax(0, 1fr); gap: 6px; padding: 10px; }
+		.b { padding: 0 8px; font: var(--t-footnote); font-weight: 600; }
 		.b.no .bl { display: none; }
 		.win { width: 100vw; height: 100dvh; border-radius: 0; }
 		.close { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; width: 44px; height: 44px; }

@@ -151,10 +151,11 @@
 	$effect(() => {
 		if (!unfolded) return;
 		open = true;
-		if (!openSeason && seasons.length) openSeason = seasons[0].number;
+		// Opens on the first season that was asked for (a read-only list never opens on one left out).
+		if (!openSeason && seasons.length) openSeason = (seasons.find((x) => a.seasons?.includes(x.number)) ?? seasons[0]).number;
 	});
 	$effect(() => {
-		if (layout === 'split' && music && !openAlbum && rows.length) openAlbum = rows[0].key;
+		if (layout === 'split' && music && !openAlbum && rows.length) openAlbum = (albumPicks.find((p) => p.tick !== 'none') ?? albumPicks[0]).row.key;
 	});
 	let openEditions = $state('');
 	const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

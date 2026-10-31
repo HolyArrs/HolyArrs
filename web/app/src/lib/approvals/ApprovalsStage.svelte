@@ -95,14 +95,16 @@
 		return lifecycle(a, out ? { ...part, upcoming: shortDate(out) } : part);
 	});
 	const failed = $derived(status && askTab(picked) === 'failed');
+	// A declined ask had nothing approved: its list is what was asked for.
+	const listName = $derived(picked.state === 'turned_down' ? 'What was asked' : 'What was approved');
 	const sentence = $derived.by(() => {
 		const who = ctx.who(picked).name;
 		if (life.stage === 'ready') {
 			const at = picked.available_at ?? picked.decided_at;
-			return `In the library${at ? ` since ${shortDate(at)}` : ''}.`;
+			return `In the library${at ? ` since ${shortDate(at)}` : ''}${life.more ? '' : '.'}`;
 		}
 		if (life.stage === 'declined') return ctx.decided(picked) ? `${ctx.decided(picked)}.` : 'Declined.';
-		if (life.stage === 'failed') return 'Couldn’t find it.';
+		if (life.stage === 'failed') return ctx.live(picked).phase === 'failed' ? 'The download failed.' : 'Couldn’t find it.';
 		return life.stage === 'upcoming' ? `Getting it for ${who}. It isn’t out yet.` : `Getting it for ${who}.`;
 	});
 	const year = $derived(d?.year ?? picked.year ?? null);
@@ -235,13 +237,13 @@
 					<span class="life inline tone-{life.tone}" role="progressbar" aria-label="{picked.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 					<div class="says">
 						<p class="huge tone-{life.tone}" role="status" aria-live="polite">{life.label}</p>
-						<p class="sent">{sentence}{#if life.more}<span class="more"> · {life.more}</span>{/if}</p>
+						<p class="sent">{sentence}{#if life.more}<span class="more">{` · ${life.more}`}</span>{/if}</p>
 					</div>
 					{#if picked.kind !== 'movie' && !choosing}
-						<button type="button" class="act glass peek" onclick={() => void choose()}><Icon name="chevronUp" size={18} />What was approved</button>
+						<button type="button" class="act glass peek" onclick={() => void choose()}><Icon name="chevronUp" size={18} />{listName}</button>
 					{/if}
 					{#if failed}
-						<div class="acts"><button type="button" class="act glass" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />Decline</button></div>
+						<div class="acts"><button type="button" class="act glass" aria-label="Decline {picked.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} /><span class="bl">Decline</span></button></div>
 					{/if}
 				</section>
 			{:else}
@@ -251,7 +253,7 @@
 			{#if choosing}
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
-						<h3 id="sheet-h">{status ? 'What was approved' : 'What to add'}</h3>
+						<h3 id="sheet-h">{status ? listName : 'What to add'}</h3>
 						<button type="button" class="x" aria-label={status ? 'Collapse' : 'Close'} onclick={() => (choosing = false)}><Icon name={status ? 'chevronDown' : 'x'} size={18} /></button>
 					</header>
 					<div class="sh-body">
@@ -398,6 +400,14 @@
 		.frame.status { --big-h: 112px; }
 		.huge { font-size: 26px; }
 		.big { padding: 0 20px; gap: 12px; }
+		/* Phones: the status words get the full width; the buttons take a row of their own under them. */
+		.frame.status:has(.big .peek), .frame.status:has(.big .acts) { --big-h: 156px; }
+		.big { flex-wrap: wrap; align-content: center; row-gap: 12px; }
+		.says { flex: 1 0 100%; }
+		.peek { flex: 1 1 0; min-width: 0; }
+		.big .acts { flex: none; margin-left: auto; }
+		.big .acts .act { width: 46px; padding: 0; }
+		.big .acts .bl { display: none; }
 	}
 
 	@media (max-width: 767px) {
@@ -408,6 +418,8 @@
 	@media (pointer: coarse) {
 		.rule { min-height: 44px; }
 		.x { width: 44px; height: 44px; }
+		.sheet :global(.line), .sheet :global(.season) { min-height: 44px; }
+		.sh-f .act.primary, .sh-f .act.ghost { height: 44px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.frame :global(.ui-billboard .content), .fill, .acts, .act { transition: none; }
