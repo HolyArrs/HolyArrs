@@ -51,9 +51,27 @@
 		return watchMetadata();
 	});
 	onMount(() => () => clearTimeout(shrinkTimer));
+
+	// Toasts live in the top layer (a manual popover), so they stay above an open
+	// <dialog> such as the Approvals window and Undo can still be clicked. Shown again
+	// on every new toast, so they land above whatever dialog opened since.
+	let host = $state<HTMLElement>();
+	$effect(() => {
+		void toasts.list.length;
+		void downShown;
+		void back;
+		const el = host;
+		if (!el || typeof el.showPopover !== 'function') return;
+		try {
+			if (el.matches(':popover-open')) el.hidePopover();
+			el.showPopover();
+		} catch {
+			// popover unsupported: the fixed layer still shows outside dialogs
+		}
+	});
 </script>
 
-<div class="toasts" role="status" aria-live="polite">
+<div class="toasts" role="status" aria-live="polite" popover="manual" bind:this={host}>
 	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
 			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text={METADATA_DOWN} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
@@ -72,6 +90,14 @@
 
 <style>
 	.toasts {
+		/* Undo the popover defaults; keep the bottom-centre placement. */
+		inset: auto;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		overflow: visible;
 		position: fixed;
 		z-index: 90;
 		left: 50%;
