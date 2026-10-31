@@ -476,8 +476,7 @@
 		...(onadd ? [{ key: 'add', icon: 'plus' as const, label: 'Add', hint: 'Add torrents by link or file', disabled: false, run: () => onadd?.() }] : []),
 		{ key: 'start', icon: 'play' as const, label: 'Start', hint: canStart ? 'Start' : 'Start (select a paused download)', disabled: !canStart, run: () => openRow && onact?.(openRow, 'resume'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
 		{ key: 'pause', icon: 'pause' as const, label: 'Pause', hint: canPause ? 'Pause' : 'Pause (select a download)', disabled: !canPause, run: () => openRow && onact?.(openRow, 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }] },
-		{ key: 'remove', icon: 'trash' as const, label: 'Remove', hint: openRow?.can_act ? 'Remove' : 'Remove (select a download first)', disabled: !openRow?.can_act || busy === openRow?.id, run: () => openRow && onremove(openRow) },
-		{ key: 'turned', icon: 'shield' as const, label: 'Turned down', hint: 'Turned down copies', disabled: false, href: to('/downloads/turned-down') }
+		{ key: 'remove', icon: 'trash' as const, label: 'Remove', hint: openRow?.can_act ? 'Remove' : 'Remove (select a download first)', disabled: !openRow?.can_act || busy === openRow?.id, run: () => openRow && onremove(openRow) }
 	]);
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	function dragDown(e: PointerEvent) {
@@ -504,6 +503,19 @@
 		e.stopPropagation();
 		paneH = Math.max(120, Math.min(maxPane(), paneH + (e.key === 'ArrowUp' ? 24 : -24)));
 		savePane();
+	}
+	// The underline under the picked panel tab: measured once per change, moved with transform only.
+	function ink(node: HTMLElement, _key: string) {
+		const set = () => {
+			const a = node.querySelector<HTMLElement>('[aria-selected="true"]');
+			if (!a) return;
+			node.style.setProperty('--ix', `${a.offsetLeft}px`);
+			node.style.setProperty('--iw', String(a.offsetWidth));
+		};
+		set();
+		const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(set);
+		ro?.observe(node);
+		return { update: () => requestAnimationFrame(set), destroy: () => ro?.disconnect() };
 	}
 	/** Up and Down move the selected row; the pane follows. Escape clears it. */
 	/** The row that has the focus (or holds it inside), if any. */
@@ -1040,7 +1052,7 @@
 			{@const raw = percent(r.progress)}
 			{@const pct = stageOf(r) === 'importing' ? raw : Math.min(99, raw)}
 			{@const tone = stageOf(r) === 'paused' ? 'paused' : barTone(r)}
-			<span class="bar {tone}" class:ph data-col="progress" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>
+			<span class="prg {tone}" class:ph data-col="progress" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>
 		{/if}
 	{:else if id === 'status'}
 		{#if hist}
@@ -1142,10 +1154,11 @@
 
 {#snippet tabStrip(r: DownloadRow)}
 	{@const tab = tabNow(r)}
-	<div class="xtabs" role="tablist" aria-label="Details">
+	<div class="xtabs" role="tablist" aria-label="Details" use:ink={`${r.id}:${tab}:${paneOpen}`}>
 		{#each tabsOf(r) as t (t)}
 			<button type="button" role="tab" class="xtab" class:on={tab === t} aria-selected={tab === t} onclick={() => { xtabOn[r.id] = t; paneOpen = true; }} data-testid="dl-tab-{t.toLowerCase().replaceAll(' ', '-')}">{t}</button>
 		{/each}
+		<i class="ink" class:gone={!paneOpen} aria-hidden="true"></i>
 	</div>
 {/snippet}
 
@@ -1180,32 +1193,35 @@
 			{@const up = t?.up_speed ?? r.up_speed ?? 0}
 			{@const eta = t?.eta ?? r.eta ?? 0}
 			<div class="gen" data-testid="dl-info">
-				<dl class="kv">
-					<dt class="gh">Transfer</dt><dd class="gh"></dd>
+				<section class="grp" aria-label="Transfer"><h3 class="gt">Transfer</h3><dl class="kv">
 					<dt>Downloaded</dt><dd>{t ? `${bytes(t.downloaded)} of ${bytes(t.size)}` : r.size ? `${bytes((r.size * percent(r.progress)) / 100)} of ${bytes(r.size)}` : '–'}</dd>
-					<dt>Speed</dt><dd>{speed ? `${bytes(speed)}/s down` : '–'}{up ? ` · ${bytes(up)}/s up` : ''}</dd>
+					<dt>Down</dt><dd>{speed ? `${bytes(speed)}/s` : '–'}</dd>
+					<dt>Up</dt><dd>{up ? `${bytes(up)}/s` : '–'}</dd>
 					<dt>Time left</dt><dd>{eta ? duration(eta) : '–'}</dd>
-					<dt>Share ratio</dt><dd>{t ? t.ratio.toFixed(2) : '–'}</dd>
-					{#if r.limit_down || r.limit_up}<dt>Speed caps</dt><dd data-testid="dl-info-caps">{r.limit_down ? `${bytes(r.limit_down)}/s down` : 'no cap down'} · {r.limit_up ? `${bytes(r.limit_up)}/s up` : 'no cap up'}</dd>{/if}
-					{#if r.limits}<dt>Seeding rules</dt><dd data-testid="dl-info-limits">{limitsWords(r.limits)}</dd>{/if}
-					<dt>Seeds</dt><dd>{t ? `${t.seeds} connected of ${t.seeds_total}` : '–'}</dd>
-					<dt>Peers</dt><dd>{t ? `${t.peers} connected of ${t.peers_total}` : '–'}</dd>
 					<dt>Wasted</dt><dd>{t ? bytes(t.wasted) : '–'}</dd>
-				</dl>
-				<dl class="kv">
-					<dt class="gh">Properties</dt><dd class="gh"></dd>
+				</dl></section>
+				<section class="grp" aria-label="Swarm"><h3 class="gt">Swarm</h3><dl class="kv">
+					<dt>Seeds</dt><dd>{t ? `${t.seeds} of ${t.seeds_total}` : '–'}</dd>
+					<dt>Peers</dt><dd>{t ? `${t.peers} of ${t.peers_total}` : '–'}</dd>
+					<dt>Share ratio</dt><dd>{t ? t.ratio.toFixed(2) : '–'}</dd>
+					<dt>Private</dt><dd>{t?.private == null ? '–' : t.private ? 'Yes' : 'No'}</dd>
+				</dl></section>
+				<section class="grp" aria-label="Dates and paths"><h3 class="gt">Dates and paths</h3><dl class="kv">
 					<dt>Size</dt><dd>{t?.size || r.size ? bytes(t?.size || r.size || 0) : '–'}</dd>
 					<dt>Added</dt><dd>{dateTime(t?.added_at ?? r.started_at) || '–'}</dd>
 					<dt>Done</dt><dd>{dateTime(t?.done_at ?? r.finished_at) || '–'}</dd>
-					<dt>Save path</dt><dd>{t?.save_path || '–'}</dd>
-					<dt>Private</dt><dd>{t?.private == null ? '–' : t.private ? 'Yes' : 'No'}</dd>
+					<dt>Save path</dt><dd class="path" title={t?.save_path || ''}>{t?.save_path || '–'}</dd>
+				</dl></section>
+				<section class="grp" aria-label="Limits and rules"><h3 class="gt">Limits and rules</h3><dl class="kv">
+					{#if r.limit_down || r.limit_up}<dt>Speed caps</dt><dd data-testid="dl-info-caps">{r.limit_down ? `${bytes(r.limit_down)}/s down` : 'no cap down'} · {r.limit_up ? `${bytes(r.limit_up)}/s up` : 'no cap up'}</dd>{:else}<dt>Speed caps</dt><dd>None</dd>{/if}
+					{#if r.limits}<dt>Seeding rules</dt><dd data-testid="dl-info-limits">{limitsWords(r.limits)}</dd>{:else}<dt>Seeding rules</dt><dd>None</dd>{/if}
 					<dt>Downloader</dt><dd>{d?.downloader || r.downloader || '–'}</dd>
 					<dt>Requested by</dt><dd>{d?.requested_by || '–'}</dd>
-				</dl>
+				</dl></section>
 			</div>
 			{#if d?.torrent_error}<p class="nr" data-testid="dl-info-error">{d.torrent_error}</p>{/if}
 		{:else}
-			<dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.label === 'Requested by' ? d?.requested_by || '–' : f.value}</dd>{/each}</dl>
+			<div class="gen"><section class="grp" aria-label="Details"><dl class="kv">{#each simple as f (f.label)}<dt>{f.label}</dt><dd>{f.label === 'Requested by' ? d?.requested_by || '–' : f.value}</dd>{/each}</dl></section></div>
 		{/if}
 	{:else if tab === 'Files'}
 		{@const files = det.id === r.id ? det.files : undefined}
@@ -1229,7 +1245,7 @@
 				<GhostEmpty compact testid="dl-files-nomatch" title="No files match" text="Try fewer words, or clear the filter." />
 			{:else}
 			<div class="tblw" data-testid="dl-filetable"><table class="t2">
-				<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Total size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th></tr></thead>
+				<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th></tr></thead>
 				<tbody>
 					{#each rowsT as x, ri (x.key)}
 						{@const pc = x.size ? Math.floor((x.done / x.size) * 100) : 0}
@@ -1325,7 +1341,7 @@
 			<GhostEmpty compact testid="dl-log-outside" title="No history here" text="This torrent was added outside HolyArrs." />
 		{:else if log.length}
 			<ol class="lg" data-testid="dl-log">
-				{#each log as l, i (i)}<li class:bad={/fail|error|stall|vanish/i.test(l.kind)}><time>{dateTime(l.at)}</time> {l.summary}</li>{/each}
+				{#each log as l, i (i)}<li class:bad={/fail|error|stall|vanish/i.test(l.kind)}><time>{dateTime(l.at)}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l.summary}</span></li>{/each}
 			</ol>
 		{:else}
 			<GhostEmpty compact testid="dl-log-none" title="Nothing logged yet" text="What happens to this download shows up here." />
@@ -1344,7 +1360,7 @@
 		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
 		{ label: 'Requested by', value: '–' }
 	]}
-	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
+	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="ph">
 			<p class="xt pt"><b>{who(r)}</b><span>{statusWord(r)} · {Math.floor(percent(r.progress))}% · {sizeWord}</span></p>
 			{@render tabStrip(r)}
@@ -1354,14 +1370,19 @@
 		<div class="pb" data-testid="dl-panel" data-card="d">
 			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady && !(r.client_item && !r.title) ? r.title || r.name : ''} /></span>
 			<div class="xb">
-				{@render tabsView(r, simple)}
+				{#key tabNow(r)}<div class="tview">{@render tabsView(r, simple)}</div>{/key}
 				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
-				{@render btns(r, false)}
-				{#if r.can_act && !watch && !inHistory(r) && !r.client_item}
-					<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
-				{/if}
 			</div>
 		</div>
+		<footer class="pact">
+			{@render btns(r, false)}
+			<span class="pend">
+				{#if /fail|replac/i.test(`${r.phase} ${r.state}`)}<a class="tdl" href={to('/downloads/history?tab=turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
+				{#if r.can_act && !watch && !inHistory(r) && !r.client_item}
+					<button type="button" class="xbn quiet" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button>
+				{/if}
+			</span>
+		</footer>
 		{/if}
 	</section>
 {/snippet}
@@ -1531,11 +1552,11 @@
 	.rel { color: var(--text-muted); font: var(--t-caption); }
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
 
-	.bar { position: relative; display: flex; align-items: center; height: 14px; white-space: nowrap; padding: 0 6px; border-radius: 4px; overflow: hidden; background: var(--surface-3); color: var(--text); font-size: 10px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
-	.bar i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
-	.bar.queued i { background: var(--info); }
-	.bar.held i { background: var(--wait); }
-	.bar.bad i { background: var(--fail); }
+	.prg { position: relative; display: flex; align-items: center; height: 14px; white-space: nowrap; padding: 0 6px; border-radius: 4px; overflow: hidden; background: var(--surface-3); color: var(--text); font-size: 10px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.prg i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
+	.prg.queued i { background: var(--info); }
+	.prg.held i { background: var(--wait); }
+	.prg.bad i { background: var(--fail); }
 	.bl, .br { position: relative; overflow: hidden; text-overflow: ellipsis; }
 	.bw { font-weight: 500; }
 	.hcell { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 24px; padding: 0 8px; }
@@ -1708,7 +1729,7 @@
 	.kcell .kt { width: 100%; margin: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.pcell { justify-content: center; }
 	.pm { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); }
-	.bar.paused i { background: var(--text-muted); }
+	.prg.paused i { background: var(--text-muted); }
 	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
 	.app { --dl-gutter: 10px; --dl-icon: 16px; --dl-icon-sm: 14px; }
 	.app :global(svg.icon), .app :global(.ui-ibtn svg) { width: var(--dl-icon); height: var(--dl-icon); }
@@ -1773,6 +1794,115 @@
 	.tr { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 	.tot { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 
+	/* Polish pass: one radius scale (--r-sm 6, --r-btn 10, --r-card 12, --r-panel 16, pill),
+	   one depth scale (--shadow-card, --shadow-lift, --shadow-modal), a 4/8 spacing grid. */
+	.app { --r-poster: 4px; }
+	.post, .post :global(.poster), .thumb, .thumb :global(.poster), .big, .big :global(.poster) { border-radius: var(--r-poster); }
+	.big { box-shadow: var(--shadow-card); }
+	.drow > .dline { transition: background-color var(--dur-fast) var(--ease-out); }
+	.drow.sel > .dline { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
+	.drow.sel > .dline:hover { background: var(--surface-1); }
+	.drow { animation: rowin var(--dur) var(--ease-out) backwards; }
+	@keyframes rowin { from { opacity: 0; transform: translateY(-4px); } }
+	.st { gap: 8px; }
+	.prg { height: 16px; padding: 0 8px; border-radius: var(--r-pill); font-size: 10px; line-height: 16px; }
+	.pcl, .bin, .pick, .fold { border-radius: var(--r-sm); }
+	.tfld { border-radius: var(--r-btn); }
+	.ghost, .picker, .mn { box-shadow: var(--shadow-lift); }
+	.dep { border-radius: var(--r-card); box-shadow: var(--shadow-card); }
+
+	/* Resize handle: a wide hit area; the grip widens under the pointer and firms up while held. */
+	.dv { height: 12px; border-top: 1px solid var(--line); }
+	.dv i { top: 4px; width: 36px; margin-left: -18px; border-radius: var(--r-pill); transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+	.dv:not(.fixed):hover i, .dv:focus-visible i { transform: scaleX(1.5); opacity: 1; }
+	.dv:not(.fixed):active i { transform: scaleX(1.8) scaleY(1.3); background: var(--text-muted); }
+
+	/* Panel header: title, underline tabs with a sliding ink, collapse. */
+	.ph { position: relative; min-height: 40px; padding: 0 var(--dl-gutter); gap: 0 16px; }
+	.ph .xtabs { position: relative; align-self: stretch; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+	.ph .xtabs::-webkit-scrollbar { display: none; }
+	.ph .xtab { min-height: 40px; height: 100%; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; font: var(--t-footnote); font-weight: 500; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
+	.ph .xtab:hover { color: var(--text); }
+	.ph .xtab.on { background: none; box-shadow: none; color: var(--text); }
+	.ph .xtab:focus-visible { box-shadow: inset var(--focus-ring); border-radius: var(--r-sm); }
+	.ink { position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: left; transform: translateX(var(--ix, 0)) scaleX(var(--iw, 0)); transition: transform var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out); pointer-events: none; }
+	.ink.gone { opacity: 0; }
+
+	/* Panel body: tab content crossfades in; the footer holds every action. */
+	.pb { padding: 12px var(--dl-gutter); gap: 16px; animation: fadein var(--dur) var(--ease-out); }
+	.tview { animation: tabin var(--dur) var(--ease-out); }
+	@keyframes tabin { from { opacity: 0; transform: translateY(4px); } }
+	@keyframes fadein { from { opacity: 0; } }
+	.pact { position: relative; flex: none; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px var(--dl-gutter); border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-1) 70%, transparent); }
+	.pact .xbt { margin: 0; gap: 8px; }
+	.pact .xbn { min-height: 32px; padding: 0 12px; border-radius: var(--r-btn); font: var(--t-footnote); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
+	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
+	.pact .more { min-width: 32px; padding: 0 8px; }
+	.pend { display: flex; align-items: center; gap: 12px; margin-left: auto; padding-left: 8px; }
+	.pend:has(.quiet) { border-left: 1px solid var(--line); padding-left: 16px; }
+	.pend:empty { display: none; }
+	.xbn.quiet { border-color: transparent; background: none; color: var(--text-muted); }
+	.xbn.quiet:hover:not(:disabled) { border-color: color-mix(in srgb, var(--fail) 35%, transparent); background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail); }
+	.tdl { color: var(--text-muted); font: var(--t-caption); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--r-sm); }
+	.tdl:hover { color: var(--text); }
+	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pact .mn { position: absolute; left: var(--dl-gutter); bottom: calc(100% + 4px); margin: 0; z-index: 6; transform-origin: bottom left; animation: menin var(--dur) var(--ease-out); }
+	@keyframes menin { from { opacity: 0; transform: translateY(4px) scale(0.97); } }
+	.mi { border-radius: var(--r-sm); transition: background-color var(--dur-fast) var(--ease-out); }
+	.mi:hover:not(:disabled) { background: var(--surface-2); }
+
+	/* Info: four balanced cards, label left, value right, hairline between rows. */
+	.pb .gen { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin: 0; }
+	.grp { min-width: 0; padding: 8px 12px 4px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-1); }
+	.gt { margin: 0 0 4px; color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
+	.pb .grp .kv { grid-template-columns: max-content minmax(0, 1fr); gap: 0 16px; font: var(--t-caption); }
+	.grp .kv dt, .grp .kv dd { padding: 4px 0; border-top: 1px solid var(--line); }
+	.grp .kv dt:first-of-type, .grp .kv dt:first-of-type + dd { border-top: 0; }
+	.grp .kv dd { text-align: right; overflow-wrap: anywhere; }
+	.grp .kv dd.path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
+
+	/* Files, Peers, Trackers: full width, a sticky header that matches the main list, hairline rows. */
+	.pb .tblw { margin-top: 0; max-height: max(160px, calc(var(--ph, 260px) - 150px)); overflow: auto; border-radius: var(--r-card); background: var(--surface-1); }
+	.t2 { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+	.pb .t2 th { position: sticky; top: 0; z-index: 1; height: 28px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface-1); color: var(--text-muted); font: var(--t-caption); font-weight: 600; text-align: left; white-space: nowrap; }
+	.pb .t2 td { height: 32px; padding: 0 12px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; transition: background-color var(--dur-fast) var(--ease-out); }
+	.t2 tbody tr:last-child td { border-bottom: 0; }
+	.pb .t2 .c-num { width: 1%; text-align: right; }
+	.pb .t2 .c-chk { width: 32px; padding-right: 0; }
+	.t2 .c-prog { width: 128px; }
+	.t2 .c-prio { width: 1%; }
+	.t2 .c-name, .t2 .c-msg { max-width: 0; width: 40%; }
+	.t2 .c-name .fn, .t2 .c-msg .fn { display: block; }
+	.t2 .c-name .fnm .fn { display: inline; }
+	.t2 tbody tr { cursor: default; outline: none; }
+	.t2 tbody tr:hover td { background: var(--surface-2); }
+	.t2 tbody tr.sel td { background: color-mix(in srgb, var(--accent) 7%, var(--surface-1)); }
+	.t2 tbody tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+	.t2 tbody tr:focus-visible td { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
+	.t2 tbody tr.off td { color: var(--text-muted); }
+	.pbar { width: 64px; height: 4px; border-radius: var(--r-pill); }
+	.pbar i { border-radius: inherit; transition: width var(--dur-slow) var(--ease-out); }
+	.pv { min-width: 36px; margin-left: 8px; color: var(--text-muted); }
+	.fbar { padding: 0 0 8px; gap: 8px; }
+
+	/* Log: a quiet timeline; time column, a dot on a thin line, the event. */
+	.pb .lg { gap: 0; max-height: none; font: var(--t-caption); }
+	.lg li { display: grid; grid-template-columns: max-content 16px minmax(0, 1fr); column-gap: 8px; align-items: start; padding: 4px 0; }
+	.lg time { margin: 0; white-space: nowrap; }
+	.lgd { position: relative; align-self: stretch; }
+	.lgd::before { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; margin-left: -0.5px; background: var(--line); }
+	.lgd::after { content: ''; position: absolute; left: 50%; top: 5px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: var(--surface-1); box-shadow: inset 0 0 0 1.5px var(--text-muted); }
+	.lg li:first-child .lgd::before { top: 8px; }
+	.lg li:last-child .lgd::before { bottom: auto; height: 12px; }
+	.lg li:only-child .lgd::before { display: none; }
+	.lg .bad .lgd::after { background: var(--fail); box-shadow: none; }
+	.lgt { overflow-wrap: anywhere; }
+
+	@media (prefers-reduced-motion: reduce) {
+		.drow, .pb, .tview, .pact .mn { animation: none; }
+		.ink, .dv i, .drow > .dline, .pact .xbn, .t2 td, .pbar i, .mi { transition: none; }
+	}
+
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
 	@media (max-width: 640px) {
 		.dlgrid { --gap: 8px; }
@@ -1811,6 +1941,14 @@
 			.gen { grid-template-columns: minmax(0, 1fr); }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.bar i, .tg :global(svg), .bin, .cw, .post { transition: none; }
+		.prg i, .tg :global(svg), .bin, .cw, .post { transition: none; }
+	}
+	@media (max-width: 767px) {
+		.dpane { border-radius: var(--r-panel) var(--r-panel) 0 0; box-shadow: var(--shadow-modal); }
+		.pb { grid-template-columns: minmax(0, 1fr); }
+		.pb .big { display: none; }
+		.pb .tblw { max-height: 40dvh; }
+		.pact { flex-wrap: wrap; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+		.pend:has(.quiet) { border-left: 0; padding-left: 0; }
 	}
 </style>

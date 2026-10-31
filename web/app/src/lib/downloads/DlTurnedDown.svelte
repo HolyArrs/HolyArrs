@@ -17,6 +17,8 @@
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import type { ReleasePage, ReleaseView } from '#lib/types.ts';
 
+	// Embedded: shown as a tab on the History page, which carries the heading and the way back.
+	let { embedded = false }: { embedded?: boolean } = $props();
 	let rows = $state<ReleaseView[]>([]);
 	let total = $state(0);
 	let offset = $state(0);
@@ -98,14 +100,14 @@
 </script>
 
 <div class="app" bind:this={appEl} style="--app-h: {appH}px" data-testid="td-app">
-	<h1 class="sr">Turned down</h1>
+	{#if !embedded}<h1 class="sr">Turned down</h1>{/if}
 	<div class="hdr">
-		<div class="bar" role="toolbar" aria-label="Turned down actions">
-			<a class="it stack" href={to('/downloads')} aria-label="Back to Downloads" use:tip={'Back to Downloads'} data-testid="td-back"><span class="ic"><Icon name="chevronLeft" size={20} /></span><span class="lb">Downloads</span></a>
+		<div class="tdbar" role="toolbar" aria-label="Turned down actions">
+			{#if !embedded}<a class="it stk" href={to('/downloads')} aria-label="Back to Downloads" use:tip={'Back to Downloads'} data-testid="td-back"><span class="ic"><Icon name="chevronLeft" size={20} /></span><span class="lb">Downloads</span></a>
 			<span class="sep" aria-hidden="true"></span>
-			<span class="it stack here" aria-current="page"><span class="ic"><Icon name="shield" size={20} /></span><span class="lb">Turned down</span></span>
+			<span class="it stk here" aria-current="page"><span class="ic"><Icon name="shield" size={20} /></span><span class="lb">Turned down</span></span>{/if}
 			<span class="grow"></span>
-			<button type="button" class="it stack" disabled={busy || total === 0} onclick={undoAll} use:tip={'Undo all: every copy may be picked again'} data-testid="td-undo-all"><span class="ic"><Icon name="x" size={20} /></span><span class="lb">Undo all</span></button>
+			<button type="button" class="it stk" disabled={busy || total === 0} onclick={undoAll} use:tip={'Undo all: every copy may be picked again'} data-testid="td-undo-all"><span class="ic"><Icon name="x" size={20} /></span><span class="lb">Undo all</span></button>
 		</div>
 	</div>
 	<div class="listbox">
@@ -153,7 +155,7 @@
 	.app { --g: 10px; --ez: cubic-bezier(0.32, 0.72, 0, 1); display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 360px; min-width: 0; overflow: clip; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	.hdr { flex: none; padding: 3px var(--g); border-bottom: 1px solid var(--line); }
-	.bar { display: flex; align-items: center; gap: 4px; min-width: 0; }
+	.tdbar { display: flex; align-items: center; gap: 4px; min-width: 0; }
 	.sep { flex: none; width: 1px; height: 30px; margin: 0 6px; background: var(--line); }
 	.grow { flex: 1 1 0; }
 	.it { display: inline-flex; flex: none; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 52px; height: 46px; padding: 3px 8px; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); text-decoration: none; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform 180ms var(--ez); }

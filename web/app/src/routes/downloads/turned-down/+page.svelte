@@ -1,10 +1,12 @@
 <script lang="ts">
-	// The copies HolyArrs turned down (by hand, or on its own after a failed
-	// download), reached from the Downloads toolbar. Undo lets a copy be picked again.
-	// Laid out like the Downloads page (DlTurnedDown); the Library keeps ReleaseList.
-	import DlTurnedDown from '#lib/downloads/DlTurnedDown.svelte';
+	// The Turned down list now lives as a tab on the History page; old links land there.
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { to } from '#lib/paths.ts';
+
+	onMount(() => {
+		void goto(to('/downloads/history?tab=turned-down'), { replaceState: true });
+	});
 </script>
 
 <svelte:head><title>Turned down · HolyArrs</title></svelte:head>
-
-<DlTurnedDown />

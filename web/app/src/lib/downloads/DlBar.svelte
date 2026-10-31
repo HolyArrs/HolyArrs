@@ -89,7 +89,7 @@
 	<span class="aw" data-testid="tb-{a.key}">
 		<span class="tw2" use:tip={a.hint !== a.label ? a.hint : ''}>
 			{#if a.href}
-				<a class="it act stk" href={a.href} aria-label={nameOf(a)} data-testid={a.key === 'turned' ? 'tb-turned-down' : undefined}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
+				<a class="it act stk" href={a.href} aria-label={nameOf(a)}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
 			{:else}
 				<button type="button" class="it act stk" disabled={a.disabled} aria-label={nameOf(a)} onclick={() => a.run?.()} data-testid={a.key === 'remove' ? 'tb-remove' : `tb-${a.key}-btn`}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
 			{/if}
