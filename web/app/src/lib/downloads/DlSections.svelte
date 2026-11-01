@@ -1825,7 +1825,7 @@
 
 
 	/* One column grid for every row of both sections. */
-	.dlgrid { --gap: 10px; min-width: 0; }
+	.dlgrid { --gap: 6px; min-width: 0; }
 	.tw { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
 	.tin { min-width: var(--c-in); }
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
@@ -1927,8 +1927,8 @@
 	.sarr { flex: none; margin-left: 4px; color: var(--accent-text); font-weight: 700; }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) / 2 - 6px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
-	.grip::after { content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
+	.grip { position: absolute; top: 4px; bottom: 4px; right: -6px; width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
+	.grip::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
 	.grip:focus-visible { outline: none; }
 	.cm { display: flex; justify-content: flex-end; }
