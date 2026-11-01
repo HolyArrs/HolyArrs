@@ -424,7 +424,13 @@ func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 		}
 		var d domain.Downloader
 		if err := store.Get(ctx, s.DB.Read(), "downloaders", id, &d); err != nil || d.Removed {
-			return
+			if err == nil || ctx.Err() != nil {
+				return
+			}
+			// A failed DB read: try again next step (ensurePollers stops
+			// this poller if the Downloader is really gone).
+			wait = scanEvery
+			continue
 		}
 		n := s.active(ctx, id)
 		every := s.cadence(d, n)
@@ -576,6 +582,9 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		return err
 	}
 	s.Store.SetShared(d.ID, shared)
+	// A good read ends any fallback, even with no HolyArrs download left
+	// for SyncOnce to clear it.
+	s.Store.SetFallback(d.ID, false)
 	ch, prev, stale := s.Store.Apply(d.ID, gen, scope, jobs, s.now())
 	if !ch.Empty() {
 		why := ""

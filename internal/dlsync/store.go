@@ -115,11 +115,16 @@ func (s *Store) Current(id int64) Snapshot {
 	if c == nil {
 		return Snapshot{}
 	}
+	fresh := s.fresh(c, s.now())
 	items := make(map[string]downloader.Job, len(c.items))
 	for k, v := range c.items {
+		if !fresh {
+			// Last-known rows: their speeds are not current.
+			v.Speed, v.UpSpeed, v.ETA = 0, 0, 0
+		}
 		items[k] = v
 	}
-	return Snapshot{Gen: c.gen, Rev: c.rev, Items: items, Complete: c.complete, ReadAt: c.readAt, Fresh: s.fresh(c, s.now()),
+	return Snapshot{Gen: c.gen, Rev: c.rev, Items: items, Complete: c.complete, ReadAt: c.readAt, Fresh: fresh,
 		Stale: c.stale, Running: c.running, Fallback: c.fallback, Failed: c.failed, Shared: c.shared}
 }
 

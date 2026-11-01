@@ -21,6 +21,7 @@ const (
 var (
 	ErrNotFound  = errors.New("download not found in the Downloader")
 	ErrAuth      = errors.New("the Downloader wants a sign-in")
+	ErrTooLarge  = errors.New("the Downloader's answer is too large to read")
 	ErrUncertain = errors.New("the Downloader send outcome is unknown; inspect it before choosing another Release")
 )
 

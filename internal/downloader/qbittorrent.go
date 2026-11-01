@@ -186,7 +186,14 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 		return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, err)
 	}
 	defer resp.Body.Close()
-	b, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	limit := int64(8 << 20)
+	if path == "sync/maindata" || path == "torrents/info" {
+		limit = 64 << 20 // big seedbox libraries
+	}
+	b, _ := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if int64(len(b)) > limit {
+		return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, ErrTooLarge)
+	}
 	code := resp.StatusCode
 	switch {
 	case code >= 200 && code < 300: // 5.x answers 202 to add

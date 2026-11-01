@@ -235,6 +235,9 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 		return h, err
 	}
 	m.downloaderOK(ctx, d)
+	if m.Sync != nil && !m.Sync.View(d.ID).Fresh {
+		m.Kick(d.ID) // the client answers again: let the reader catch up now
+	}
 	if d.CheckedAt == nil || m.now().Sub(*d.CheckedAt) > time.Minute {
 		_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE downloaders SET checked_at = ? WHERE id = ?", store.FormatTime(m.now()), d.ID)

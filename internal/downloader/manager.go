@@ -94,6 +94,7 @@ func (m *Manager) Forget(id int64) {
 	}
 	m.engineGeneration[id]++
 	m.mu.Unlock()
+	m.Kick(id) // read with the new settings now, not after a widened wait
 }
 
 // Generation is the Downloader's engine generation: it moves on every
