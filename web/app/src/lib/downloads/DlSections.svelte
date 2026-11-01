@@ -1378,6 +1378,7 @@
 	<div class="xbt" data-testid="dl-actions">
 		{#if !watch}{#if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>{/if}
 		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>{/if}
+		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">Open in Library</a>{/if}
 		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
 		{#if !watch}<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" data-more-for={r.id} onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>{/if}
 	</div>
@@ -2197,6 +2198,7 @@
 	.calm { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-2); color: var(--text-muted); font: var(--t-footnote); }
 	.calm.wait { border-color: transparent; background: none; padding-left: 0; }
 	.calm .xbn { margin-left: auto; }
+	a.xbn { display: inline-flex; align-items: center; text-decoration: none; }
 	.pbar { width: 64px; height: 4px; border-radius: var(--r-pill); }
 	.pbar i { border-radius: inherit; transition: width var(--dur-slow) var(--ease-out); }
 	.pv { min-width: 36px; margin-left: 8px; color: var(--text-muted); }
