@@ -26,6 +26,9 @@ type Manager interface {
 // Reader timings.
 const (
 	callTimeout  = 4 * time.Second   // one read of one client
+	// sabFullTimeout is a SABnzbd read that pages the whole finished list
+	// (up to 25 pages on a big history); later reads use callTimeout.
+	sabFullTimeout = 30 * time.Second
 	kickDebounce = 1 * time.Second   // a kick reads at most this soon after the last read
 	widenCap     = 300 * time.Second // failures widen the cadence up to this
 	flushTimeout = 5 * time.Second   // FinalFlush's own deadline
@@ -523,9 +526,17 @@ func Cadence(adapter string, n int, viewer, outsideActive bool, active, idle tim
 	return idle
 }
 
+// readBudget is one read's deadline: longer for SABnzbd's first full read.
+func readBudget(d domain.Downloader, sabs *SabCursors) time.Duration {
+	if d.Adapter == "sabnzbd" && sabs.NeedsFull(d.ID) {
+		return sabFullTimeout
+	}
+	return callTimeout
+}
+
 // read reads one client once through the guarded engine and records it.
 func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
-	cctx, cancel := context.WithTimeout(ctx, callTimeout)
+	cctx, cancel := context.WithTimeout(ctx, readBudget(d, &s.sabs))
 	defer cancel()
 	e, gen, err := s.Manager.Reader(cctx, d)
 	if err != nil {

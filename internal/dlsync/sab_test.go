@@ -160,3 +160,22 @@ func TestSabReaderListsEveryJob(t *testing.T) {
 		}
 	}
 }
+
+// Until a full finished list has been read the poll gets the long budget;
+// after that the short one.
+func TestSabCursorsNeedsFull(t *testing.T) {
+	f := &fakeSab{hist: []downloader.Job{sabJob("h1", "tv", downloader.StateFinished)}, counter: 5}
+	var c SabCursors
+	if !c.NeedsFull(1) {
+		t.Fatal("new downloader should need a full read")
+	}
+	if _, err := c.Poll(context.Background(), 1, 0, f); err != nil {
+		t.Fatal(err)
+	}
+	if c.NeedsFull(1) {
+		t.Fatal("after a full read the short budget applies")
+	}
+	if readBudget(domain.Downloader{ID: 1, Adapter: "sabnzbd"}, &c) != callTimeout || readBudget(domain.Downloader{ID: 2, Adapter: "sabnzbd"}, &c) != sabFullTimeout {
+		t.Fatal("budget")
+	}
+}

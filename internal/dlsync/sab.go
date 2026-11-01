@@ -59,6 +59,19 @@ func (c *SabCursors) cursor(id int64, gen uint64) *sabCursor {
 	return cur
 }
 
+// NeedsFull says whether the next poll reads the whole finished list (no
+// counter kept yet for this Downloader).
+func (c *SabCursors) NeedsFull(id int64) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for k, cur := range c.by {
+		if k.id == id && cur.last > 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // Drop forgets a Downloader's counter: the next poll reads everything.
 func (c *SabCursors) Drop(id int64) {
 	c.mu.Lock()
