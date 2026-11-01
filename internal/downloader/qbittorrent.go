@@ -52,6 +52,13 @@ func NewQbittorrent(base string, h *http.Client) *Qbittorrent {
 	if h == nil {
 		h = &http.Client{Timeout: clientTimeout}
 	}
+	if h.Jar == nil {
+		// Keep qBittorrent's session cookie so it reuses one session and
+		// the change feed's deltas work.
+		c := *h
+		c.Jar, _ = cookiejar.New(nil)
+		h = &c
+	}
 	return &Qbittorrent{base: strings.TrimRight(base, "/"), http: h}
 }
 
@@ -66,9 +73,7 @@ func NewQbittorrentKey(base, key string, h *http.Client) *Qbittorrent {
 func NewQbittorrentLogin(base, user, pass string, h *http.Client) *Qbittorrent {
 	q := NewQbittorrent(base, h)
 	if user != "" {
-		c := *q.http
-		c.Jar, _ = cookiejar.New(nil)
-		q.http, q.user, q.pass = &c, user, pass
+		q.user, q.pass = user, pass
 	}
 	return q
 }
@@ -206,7 +211,20 @@ func (q *Qbittorrent) Health(ctx context.Context) (Health, error) {
 	if err != nil {
 		return Health{}, err
 	}
-	return Health{Version: strings.TrimSpace(string(b)), At: time.Now().UTC()}, nil
+	h := Health{Version: strings.TrimSpace(string(b)), At: time.Now().UTC()}
+	if q.key != "" && qbitBefore52(h.Version) {
+		h.Note = "This qBittorrent is older than 5.2, so it ignores API keys; it answers only because it trusts this address."
+	}
+	return h, nil
+}
+
+// qbitBefore52 reads a version such as "v5.1.2"; an unreadable one is not older.
+func qbitBefore52(v string) bool {
+	var major, minor int
+	if _, err := fmt.Sscanf(strings.TrimPrefix(strings.TrimSpace(v), "v"), "%d.%d", &major, &minor); err != nil {
+		return false
+	}
+	return major < 5 || (major == 5 && minor < 2)
 }
 
 // Add sends a torrent by URL into a category and save path.

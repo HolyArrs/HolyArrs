@@ -129,6 +129,15 @@ func (s *Sync) On() bool {
 	return s.mode(ctx) == ModeOn
 }
 
+// ClientStatus is a qBittorrent's state from the reader's last read, when
+// the reader is on and has one.
+func (s *Sync) ClientStatus(id int64) (downloader.ClientStatus, bool) {
+	if !s.On() {
+		return downloader.ClientStatus{}, false
+	}
+	return s.cursors.Status(id)
+}
+
 // View is downloader.SyncSource.View.
 func (s *Sync) View(id int64) downloader.SyncView { return s.Store.View(id) }
 

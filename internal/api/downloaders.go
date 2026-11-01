@@ -356,6 +356,9 @@ func (a *API) testDownloader(w http.ResponseWriter, r *http.Request) {
 	} else {
 		out["text"] = "It answered: " + d.Adapter + " " + h.Version + "."
 		out["version"] = h.Version
+		if h.Note != "" {
+			out["text"] = out["text"].(string) + " " + h.Note
+		}
 	}
 	_ = store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d)
 	out["health"] = downloader.HealthOf(d, time.Now())

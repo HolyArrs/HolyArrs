@@ -96,6 +96,7 @@ type Job struct {
 type Health struct {
 	Version string
 	At      time.Time
+	Note    string // a caveat the connection test shows beside a pass
 }
 
 // Engine is one download engine. A new engine (another torrent client, a

@@ -16,6 +16,7 @@ type mainCursor struct {
 	state    downloader.MainState
 	recent   []bool // full answers among the last polls sent with a valid rid
 	baseline bool   // the next full answer follows a reset and is not counted
+	status   *downloader.ClientStatus
 }
 
 // Cursors keeps qBittorrent's change-feed cursor per (Downloader,
@@ -65,6 +66,18 @@ func (c *Cursors) Drop(id int64) {
 	}
 }
 
+// Status is the client state from the last merged read, if any.
+func (c *Cursors) Status(id int64) (downloader.ClientStatus, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for k, cur := range c.by {
+		if k.id == id && cur.status != nil {
+			return *cur.status, true
+		}
+	}
+	return downloader.ClientStatus{}, false
+}
+
 // Rid is the cursor the next poll would send (0 when none).
 func (c *Cursors) Rid(id int64, gen uint64) int64 {
 	c.mu.Lock()
@@ -98,6 +111,10 @@ func (c *Cursors) Poll(ctx context.Context, id int64, gen uint64, s downloader.M
 		}
 	}
 	cur.baseline = false
+	st := downloader.StatusFromMain(&cur.state)
+	c.mu.Lock()
+	cur.status = &st
+	c.mu.Unlock()
 	full := 0
 	for _, f := range cur.recent {
 		if f {

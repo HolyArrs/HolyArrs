@@ -323,8 +323,14 @@ func (a *API) eachClient(ctx context.Context, f func(d domain.Downloader, e down
 // downloadClients shows each Downloader's state: paused, speeds, limits,
 // totals and free space, where the client reports them.
 func (a *API) downloadClients(w http.ResponseWriter, r *http.Request) {
-	out, err := a.eachClient(r.Context(), func(_ domain.Downloader, e downloader.Engine, v *ClientView) error {
+	out, err := a.eachClient(r.Context(), func(d domain.Downloader, e downloader.Engine, v *ClientView) error {
 		return asController(e, func(c downloader.Controller) error {
+			if d.Adapter == "qbittorrent" && a.s.DLSync != nil {
+				if st, ok := a.s.DLSync.ClientStatus(d.ID); ok {
+					v.Status = &st
+					return nil
+				}
+			}
 			st, err := c.Status(r.Context())
 			if err == nil {
 				v.Status = &st

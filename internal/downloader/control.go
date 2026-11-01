@@ -382,25 +382,47 @@ func (q *Qbittorrent) Status(ctx context.Context) (ClientStatus, error) {
 		return ClientStatus{}, err
 	}
 	var md struct {
-		Torrents    map[string]struct{ State string } `json:"torrents"`
-		ServerState struct {
-			AllTimeDL int64  `json:"alltime_dl"`
-			AllTimeUL int64  `json:"alltime_ul"`
-			DLData    int64  `json:"dl_info_data"`
-			ULData    int64  `json:"up_info_data"`
-			DLSpeed   int64  `json:"dl_info_speed"`
-			ULSpeed   int64  `json:"up_info_speed"`
-			DLLimit   int64  `json:"dl_rate_limit"`
-			ULLimit   int64  `json:"up_rate_limit"`
-			Free      int64  `json:"free_space_on_disk"`
-			Conn      string `json:"connection_status"`
-			Alt       *bool  `json:"use_alt_speed_limits"`
-		} `json:"server_state"`
+		Torrents map[string]struct{ State string } `json:"torrents"`
+		Server   json.RawMessage                   `json:"server_state"`
 	}
 	if err := json.Unmarshal(b, &md); err != nil {
 		return ClientStatus{}, fmt.Errorf("qbittorrent sync/maindata: %w", err)
 	}
-	s := md.ServerState
+	states := make([]string, 0, len(md.Torrents))
+	for _, t := range md.Torrents {
+		states = append(states, t.State)
+	}
+	return qbitStatus(md.Server, states), nil
+}
+
+// StatusFromMain is Status built from the background reader's merged
+// change feed, so the page needs no full read of its own.
+func StatusFromMain(s *MainState) ClientStatus {
+	server, _ := json.Marshal(s.Server)
+	states := make([]string, 0, len(s.fields))
+	for _, f := range s.fields {
+		var st string
+		_ = json.Unmarshal(f["state"], &st)
+		states = append(states, st)
+	}
+	return qbitStatus(server, states)
+}
+
+func qbitStatus(server []byte, states []string) ClientStatus {
+	var s struct {
+		AllTimeDL int64  `json:"alltime_dl"`
+		AllTimeUL int64  `json:"alltime_ul"`
+		DLData    int64  `json:"dl_info_data"`
+		ULData    int64  `json:"up_info_data"`
+		DLSpeed   int64  `json:"dl_info_speed"`
+		ULSpeed   int64  `json:"up_info_speed"`
+		DLLimit   int64  `json:"dl_rate_limit"`
+		ULLimit   int64  `json:"up_rate_limit"`
+		Free      int64  `json:"free_space_on_disk"`
+		Conn      string `json:"connection_status"`
+		Alt       *bool  `json:"use_alt_speed_limits"`
+	}
+	_ = json.Unmarshal(server, &s)
 	st := ClientStatus{Speed: s.DLSpeed, UpSpeed: s.ULSpeed, SpeedLimit: max(s.DLLimit, 0), UpLimit: max(s.ULLimit, 0),
 		SessionDown: s.DLData, SessionUp: s.ULData, AllTimeDown: s.AllTimeDL, AllTimeUp: s.AllTimeUL, FreeSpace: s.Free, SlowMode: s.Alt}
 	switch s.Conn {
@@ -408,14 +430,14 @@ func (q *Qbittorrent) Status(ctx context.Context) (ClientStatus, error) {
 		st.Connection = s.Conn
 	}
 	// Paused as a whole when there are torrents and none of them runs.
-	st.Paused = len(md.Torrents) > 0
-	for _, t := range md.Torrents {
-		if !strings.HasPrefix(t.State, "stopped") && !strings.HasPrefix(t.State, "paused") {
+	st.Paused = len(states) > 0
+	for _, t := range states {
+		if !strings.HasPrefix(t, "stopped") && !strings.HasPrefix(t, "paused") {
 			st.Paused = false
 			break
 		}
 	}
-	return st, nil
+	return st
 }
 
 var qbitTrackerStatus = map[int]string{0: "disabled", 1: "not_contacted", 2: "working", 3: "working", 4: "not_working", 5: "error", 6: "unreachable"}
