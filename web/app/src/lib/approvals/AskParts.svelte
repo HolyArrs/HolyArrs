@@ -160,7 +160,21 @@
 	let openEditions = $state('');
 	const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const slideIn = () => ({ duration: reduced() ? 0 : DUR.base, easing: easeOut });
-	const today = new Date().toISOString().slice(0, 10);
+	// The local day (late evening must not count as tomorrow), as lifecycle.ts does.
+	const today = (() => {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	})();
+	// A declined ask had nothing approved: its marks say what was asked for.
+	const markOn = $derived(a.state === 'turned_down' ? 'Asked for' : 'Approved');
+	const markOff = $derived(a.state === 'turned_down' ? 'Not asked for' : 'Left out');
+	// Phones show the albums as a sideways strip: keep the open one in view.
+	let strip = $state<HTMLElement>();
+	$effect(() => {
+		void openAlbum;
+		const el = strip?.querySelector<HTMLElement>('.sp-open[aria-pressed="true"]');
+		if (el && strip && strip.scrollWidth > strip.clientWidth + 1) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+	});
 	const keptRows = $derived(rows.filter((r) => !left.has(r.key)));
 	const head = $derived.by(() => {
 		if (music) {
@@ -182,7 +196,7 @@
 	<!-- Two panes that fill their box: seasons or albums on the left, the open one's episodes or songs on the right. -->
 	<div class="split" data-testid="ask-parts">
 		<!-- A plain list: each row's tick sits beside a real button that opens that season or album. -->
-		<ul class="sp-left" aria-label={music ? 'Albums' : 'Seasons'}>
+		<ul class="sp-left" aria-label={music ? 'Albums' : 'Seasons'} bind:this={strip}>
 			{#if music}
 				{#each albumPicks as p (p.row.key)}
 					{@const r = p.row}
@@ -230,7 +244,7 @@
 								{@const on = p.ticked.includes(songKey(t))}
 								<li class:off={!on} data-testid="ask-song">
 									<label class="sp-item">
-										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}" onchange={() => tickSong(p, songKey(t))} />{:else}<span class="mk" class:no={!on} aria-label={on ? 'Approved' : 'Left out'}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
+										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}: {t.name || `Song ${t.number}`}" onchange={() => tickSong(p, songKey(t))} />{:else}<span class="mk" class:no={!on} role="img" aria-label={on ? markOn : markOff}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
 										<span class="n">{t.disc > 1 ? `${t.disc}-` : ''}{t.number}</span>
 										<span class="t">{t.name || `Song ${t.number}`}</span>
 										<span class="y">{songLen(t.length_ms)}</span>
@@ -262,7 +276,7 @@
 								{@const later = !!e.air_day && e.air_day.slice(0, 10) > today}
 								<li class:off={!on} class:later data-testid="ask-episode">
 									<label class="sp-item">
-										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Episode {e.number}" onchange={() => tickEpisode(p, e.number)} />{:else}<span class="mk" class:no={!on} aria-label={on ? 'Approved' : 'Left out'}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
+										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Episode {e.number}: {e.name || `Episode ${e.number}`}" onchange={() => tickEpisode(p, e.number)} />{:else}<span class="mk" class:no={!on} role="img" aria-label={on ? markOn : markOff}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
 										<span class="n">E{e.number}</span>
 										<span class="t">{e.name || `Episode ${e.number}`}</span>
 										{#if !p.asked.includes(e.number)}<span class="tag">Not asked for</span>{/if}
@@ -414,7 +428,7 @@
 	.sp-a { min-height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-caption); font-weight: 600; cursor: pointer; }
 	.sp-a:hover { background: var(--surface-3); }
 	.sp-a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	@media (pointer: coarse) { .sp-a { min-height: 44px; } }
+	@media (pointer: coarse) { .sp-a { min-height: 44px; min-width: 44px; } }
 	.sp-list { margin: 0; padding: 4px 6px 8px; list-style: none; columns: 2 280px; column-gap: 12px; }
 	.sp-list li { break-inside: avoid; }
 	.sp-item { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 6px; border-radius: 8px; font: var(--t-footnote); cursor: pointer; }

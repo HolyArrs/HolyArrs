@@ -107,7 +107,13 @@
 			const at = picked.available_at ?? picked.decided_at;
 			return `In the Library${at ? ` since ${shortDate(at)}` : ''}${life.more ? '' : '.'}`;
 		}
-		if (life.stage === 'declined') return ctx.decided(picked) ? `${ctx.decided(picked)}.` : 'Declined.';
+		if (life.stage === 'declined') {
+			// Same rule as the card: a display name only, never a bare account name, and the
+			// status word isn't said twice.
+			const by = ctx.decided(picked).replace(/^Declined by\s*/, '').trim();
+			if (by && by !== picked.decided_by?.name) return `By ${by}.`;
+			return picked.decided_at ? `On ${shortDate(picked.decided_at)}.` : '';
+		}
 		if (life.stage === 'failed') {
 			const why = life.reason ? ` ${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : '';
 			return (picked.title_id ? 'Couldn’t download it.' : 'Couldn’t add it to the Library.') + why;
@@ -132,10 +138,17 @@
 	let pick = $state<PartsPick>({ seasons: null, albums: null, empty: false });
 	let rulesId = $state(0);
 	const rules = $derived(ctx.rulesFor(picked));
+	// Keyed on the id value only: a list refresh hands a new object for the same ask and
+	// must not throw away the ticks and the Quality pick.
+	const pid = $derived(picked.id);
 	$effect(() => {
-		void picked.id;
-		choosing = false;
-		rulesId = 0;
+		void pid;
+		untrack(() => {
+			pick = { seasons: null, albums: null, empty: false };
+			rulesId = 0;
+			// Stepping from one waiting ask to the next keeps What to add open (no half close).
+			if (!(choosing && waiting(picked) && !status)) choosing = false;
+		});
 	});
 	$effect(() => {
 		if (choosing && !waiting(picked) && !status) choosing = false;
@@ -158,12 +171,17 @@
 		// How far the title travels: from where it sits to just under the tabs.
 		// Measured against the window itself, so it holds whatever the banner's own layout is
 		// (Processing/Done windows put the banner above the status strip).
-		const top = frame?.getBoundingClientRect().top ?? 0;
+		// The window may still be zooming in from the card: divide by its current scale.
+		const fr = frame?.getBoundingClientRect();
+		const k = fr && frame?.offsetWidth ? fr.width / frame.offsetWidth || 1 : 1;
+		const top = fr?.top ?? 0;
 		const box = content?.getBoundingClientRect();
-		lift = box ? Math.max(box.top - top - 64, 0) : 0;
-		// The sheet starts 20 px under the lifted meta line (the block keeps 72 % of its size).
-		const meta = content?.querySelector<HTMLElement>('.meta')?.getBoundingClientRect();
-		sheetTop = box && meta ? Math.round(64 + (meta.bottom - box.top) * 0.72 + 20) : 180;
+		lift = box ? Math.max((box.top - top) / k - 64, 0) : 0;
+		// The sheet starts 20 px under the lifted block's last line (the block keeps 72 % of its size).
+		const lines = content?.querySelectorAll<HTMLElement>('.meta > *, .facts, .asker, .said');
+		let bottom = content?.querySelector<HTMLElement>('.meta')?.getBoundingClientRect().bottom ?? 0;
+		for (const el of lines ?? []) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
+		sheetTop = box && bottom ? Math.round(64 + ((bottom - box.top) / k) * 0.72 + 20) : 180;
 		choosing = true;
 		await tick();
 		frame?.querySelector<HTMLElement>('.sheet')?.focus({ preventScroll: true });
@@ -204,6 +222,12 @@
 	// Closing the sheet hands focus back to the button that opens it (or the window).
 	function closeSheet() {
 		instant = false;
+		// Hide drops the ticks with the list, so the Quality pick goes with them: reopening
+		// always starts from what was asked, never half of an earlier choice.
+		if (!status) {
+			pick = { seasons: null, albums: null, empty: false };
+			rulesId = 0;
+		}
 		choosing = false;
 		void tick().then(() => {
 			const opener = frame?.querySelector<HTMLElement>('[data-opens-sheet]');
@@ -238,7 +262,7 @@
 					position="60% 25%"
 					art={music && (artistBg || mvideo) ? artistArt : undefined}
 				>
-					{#snippet heading()}<h2 class="bb-name" id="stage-title">{picked.name}</h2>{/snippet}
+					{#snippet heading()}<h2 class="bb-name" id="stage-title-{picked.id}">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
 						<p class="facts"><span>{kindOf(picked)}</span>{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
 						{#each [ctx.who(picked)] as w (w.id)}
@@ -252,8 +276,8 @@
 							<span></span>
 						{:else if waiting(picked)}
 							<div class="acts" class:gone={choosing} inert={choosing}>
-								<button type="button" class="act glass st-half" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}>Decline</button>
-								<button type="button" class="act primary st-half" data-testid="ask-approve" data-opens-sheet onclick={() => void choose()}><Icon name="check" size={20} />Approve</button>
+								<button type="button" class="act glass st-half" aria-label="Decline {picked.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />Decline</button>
+								<button type="button" class="act primary st-half" aria-label="Approve {picked.name}" data-testid="ask-approve" data-opens-sheet onclick={() => void choose()}><Icon name="check" size={20} />Approve</button>
 							</div>
 						{:else}
 							<div role="status" aria-live="polite">
@@ -270,7 +294,7 @@
 			</div>
 			{/key}
 			<!-- The title's own page: pinned to the banner's bottom-right corner, opposite the answer buttons. -->
-			{#if pageHref && !choosing}<a class="tl-link tl-float" href={to(pageHref)} data-testid="ask-title-page">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
+			{#if pageHref && !choosing}<a class="tl-link tl-float" class:tl-wait={!status && waiting(picked)} href={to(pageHref)} data-testid="ask-title-page">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
 			{#if status}
 				<section class="big" data-testid="ask-status" aria-label="Status">
 					<span class="life inline tone-{life.tone}" role="progressbar" aria-label="{picked.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
@@ -354,6 +378,8 @@
 	.state { color: rgb(255 255 255 / 0.85); font: var(--t-callout); }
 	.asker { flex-basis: 100%; display: inline-flex; align-items: center; gap: 8px; margin-top: 2px; color: rgb(255 255 255 / 0.82); font: 500 14px/1.3 var(--font-ui) !important; }
 	.asker b { color: #fff; font-weight: 700; }
+	/* The banner art is always dark: the Kid mark keeps a light ink in both themes. */
+	.asker :global(.kid.kid) { color: #fff; }
 	.said { flex-basis: 100%; max-width: 520px; padding-left: 12px; border-left: 2px solid rgb(255 255 255 / 0.45); color: rgb(255 255 255 / 0.9); font: italic 400 15px/1.45 var(--font-ui) !important; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.sep { margin: 0 8px; opacity: 0.6; }
 
@@ -410,7 +436,11 @@
 	.tl-link:hover { background: rgb(255 255 255 / 0.28); }
 	.tl-float { position: absolute; z-index: 3; right: 28px; bottom: 44px; margin: 0; }
 	.frame.status .tl-float { bottom: calc(var(--big-h) + 22px); }
-	@media (max-width: 767px) { .tl-float { right: 16px; bottom: 28px; } }
+	/* On bright art the white glass alone is too faint: the same smoke as the window controls. */
+	.tl-float { background: rgb(20 20 24 / 0.55); }
+	.tl-float:hover { background: rgb(20 20 24 / 0.7); }
+	/* Phones: the answer row spans the banner, so the link waits in the sheet header instead. */
+	@media (max-width: 767px) { .tl-float { right: 16px; bottom: 28px; } .tl-float.tl-wait { display: none; } }
 	.tl-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	.tl-link.tl-sheet { margin-left: auto; margin-right: 8px; background: var(--surface-2); color: var(--ink-2, inherit); box-shadow: none; border: 1px solid var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; }
 	.tl-link.tl-sheet:hover { background: var(--surface-3); }

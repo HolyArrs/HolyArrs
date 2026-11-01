@@ -8,7 +8,7 @@
 	import { onDestroy, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, fly, slide } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
+	import { cubicIn, cubicOut } from 'svelte/easing';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import Avatar from '../ui/Avatar.svelte';
 	import KidMark from './KidMark.svelte';
@@ -49,9 +49,9 @@
 
 	// What an empty tab says.
 	const calm: Record<string, { title: string; text: string }> = {
-		pending: { title: 'You’re all caught up.', text: 'New asks show up here.' },
-		processing: { title: 'Nothing in progress.', text: 'Approved asks stay here until they’re ready.' },
-		done: { title: 'Nothing done yet.', text: 'Ready and declined asks end up here.' }
+		pending: { title: 'You’re all caught up.', text: 'New requests show up here.' },
+		processing: { title: 'Nothing in progress.', text: 'Approved requests stay here until they’re ready.' },
+		done: { title: 'Nothing done yet.', text: 'Ready and declined requests end up here.' }
 	};
 
 	// The status line, with what the page knows: not out yet (from the release and air dates).
@@ -123,10 +123,13 @@
 		const rank = (x: { word: string; tone: Life['tone'] }) => (x.tone === 'bad' ? 0 : x.tone === 'off' ? 100 : FLOW.indexOf(x.word) + 1 || 50);
 		return [...n].map(([word, x]) => ({ word, ...x })).sort((x, y) => rank(x) - rank(y));
 	};
-	const status = $derived(statusPick.word && statusPick.tab === ctx.approverTab && statusesIn(ctx.approverTab).some((x) => x.word === statusPick.word) ? statusPick.word : '');
-	$effect(() => {
-		if (statusPick.word && !status) statusPick = { tab: '', word: '' };
-	});
+	// Kept even when a Type pick leaves no match: the empty state says so and offers Show all,
+	// so the user's filter never changes by itself.
+	const status = $derived(statusPick.word && statusPick.tab === ctx.approverTab ? statusPick.word : '');
+	function showAll() {
+		statusPick = { tab: '', word: '' };
+		ctx.setKind('all');
+	}
 	// The current tab's statuses; the status control shows only when there are two or more.
 	const subs = $derived(statusesIn(ctx.approverTab));
 	const hasSubs = $derived(subs.length > 1);
@@ -187,7 +190,8 @@
 		if (!sfMenu) return;
 		const out = (e: PointerEvent) => {
 			const t = e.target as Node;
-			if (!sfPop?.contains(t) && !sfBtn?.contains(t)) sfClose(false);
+			// The phone sheet closes on its scrim's own click instead, so the tap can't land on a card below.
+			if (!phone && !sfPop?.contains(t) && !sfBtn?.contains(t)) sfClose(false);
 		};
 		document.addEventListener('pointerdown', out, true);
 		return () => document.removeEventListener('pointerdown', out, true);
@@ -220,6 +224,8 @@
 	});
 	function approveOne(a: Ask) {
 		if (approving.has(a.id)) return;
+		// Read before the foot turns inert (inert drops the focus).
+		const had = !!document.querySelector(`.bc[data-ask="${a.id}"]`)?.contains(document.activeElement);
 		approving = new Set(approving).add(a.id);
 		const t = setTimeout(() => {
 			beats.delete(t);
@@ -233,12 +239,11 @@
 			// Focus goes on to the next card, so the keyboard doesn't fall back to the page top.
 			const card = document.querySelector<HTMLElement>(`.bc[data-ask="${a.id}"]`);
 			const after = card?.nextElementSibling?.querySelector<HTMLElement>('.open') ?? null;
-			const had = !!card?.contains(document.activeElement);
 			ctx.approve([a]);
 			const next = new Set(approving);
 			next.delete(a.id);
 			approving = next;
-			if (had && after) void tick().then(() => after.isConnected && after.focus({ preventScroll: true }));
+			if (had) void tick().then(() => (after?.isConnected ? after : (document.querySelector<HTMLElement>('.bc .open') ?? sfBtn))?.focus({ preventScroll: true }));
 		}, ms(560));
 		beats.add(t);
 	}
@@ -292,11 +297,15 @@
 			clearTimeout(advance);
 			advance = setTimeout(() => {
 				if (openId !== id || !win?.open) return;
-				const next = cardsShown.find((x) => x.id !== id && waiting(x));
+				const i = cardsShown.findIndex((x) => x.id === id);
+				const ok = (x: Ask) => x.id !== id && waiting(x);
+				const next = (i >= 0 ? cardsShown.slice(i + 1).find(ok) : undefined) ?? cardsShown.slice(0, Math.max(i, 0)).find(ok) ?? cardsShown.find(ok);
 				if (next) openId = next.id;
 				else hide();
 			}, ms(650));
 		}
+		// Answered and then undone (the toast's Undo): stay on it.
+		if (w && wasWaiting !== id) clearTimeout(advance);
 		wasWaiting = w ? id : 0;
 	});
 	$effect(() => () => clearTimeout(advance));
@@ -341,14 +350,18 @@
 	{/snippet}
 	{#snippet filterItems()}
 		{#if hasSubs}
-				<div class="sf-mh" role="presentation">Status</div>
+				<div role="group" aria-labelledby="sf-mh-status">
+				<div class="sf-mh" id="sf-mh-status">Status</div>
 				{@render statusItems(false)}
+				</div>
 				<div class="sf-sep" role="separator"></div>
 			{/if}
-			<div class="sf-mh" role="presentation">Type</div>
+			<div role="group" aria-labelledby="sf-mh-type">
+			<div class="sf-mh" id="sf-mh-type">Type</div>
 			{#each types as t (t.k)}
 				<button type="button" role="menuitemradio" aria-checked={ctx.kind === t.k} class="sf-mi" onclick={() => ctx.setKind(t.k)}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-ti" aria-hidden="true"><Icon name={t.icon} size={14} /></span><span class="sf-w">{t.label}</span></button>
 			{/each}
+			</div>
 	{/snippet}
 	<div class="toolbar">
 		<div class="tcap">
@@ -382,9 +395,10 @@
 		</div>
 	</div>
 	{#if sfMenu && phone}
-		<div class="sf-scrim" aria-hidden="true" transition:fade={{ duration: ms(300) }}></div>
-		<div class="sf-sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(260), easing: cubicOut }}>
-			<div class="sf-grab" aria-hidden="true"></div>
+		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+		<div class="sf-scrim" aria-hidden="true" in:fade={{ duration: ms(300) }} out:fade={{ duration: ms(200) }} onclick={(e) => { e.preventDefault(); sfClose(true); }}></div>
+		<div class="sf-sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(200), easing: cubicIn }}>
+			<div class="sf-head"><span class="sf-ht">Filter</span><button type="button" class="sf-done" onclick={() => sfClose(true)}>Done</button></div>
 			<div role="menu" aria-label="Filter options">{@render filterItems()}</div>
 		</div>
 	{/if}
@@ -411,7 +425,7 @@
 				{#if can}{@render stDecline(a)}{/if}
 			{/if}
 		{/snippet}
-		<ul class="cards" aria-label="Asks" in:fade={{ duration: ms(260) }}>
+		<ul class="cards" aria-label="Requests" in:fade={{ duration: ms(260) }}>
 			{#each cardsShown as a, i (a.id)}
 				{@const w = ctx.who(a)}
 				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
@@ -421,7 +435,7 @@
 				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
-					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'Show' : 'Movie'} page for {a.name}" title="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'Show' : 'Movie'} page"><Icon name="arrowUpRight" size={16} /></a>{/if}
+					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page for {a.name}" title="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page"><Icon name="arrowUpRight" size={16} /></a>{/if}
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${a.poster}")`}></span>{/if}
 					</div>
@@ -458,22 +472,28 @@
 			{:else}
 					<li class="calm">
 						<span class="calm-ic"><Icon name="check" size={24} /></span>
-						<h2>{calm[ctx.approverTab]?.title ?? 'Nothing here right now.'}</h2>
-						<p>{ctx.kind !== 'all' ? 'Nothing of this type here. Try All.' : (calm[ctx.approverTab]?.text ?? '')}</p>
+						{#if filterCount}
+							<h2>{status ? `Nothing ${status.toLowerCase()} here.` : `No ${(types.find((t) => t.k === ctx.kind)?.label ?? '').toLowerCase()} requests here.`}</h2>
+							<p>Other requests are hidden by the filter.</p>
+							<button type="button" class="calm-all" onclick={showAll}>Show all</button>
+						{:else}
+							<h2>{calm[ctx.approverTab]?.title ?? 'Nothing here right now.'}</h2>
+							<p>{calm[ctx.approverTab]?.text ?? ''}</p>
+						{/if}
 					</li>
 			{/each}
 		</ul>
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
+<dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title-{openId}" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
 		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
 		{#if cardsShown.length > 1 && at >= 0}
 			<div class="steps-nav">
-				<button type="button" class="nav" aria-label="Previous ask" disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
+				<button type="button" class="nav" aria-label="Previous request" disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
 				<span class="pos">{at + 1} of {cardsShown.length}</span>
-				<button type="button" class="nav" aria-label="Next ask" disabled={at >= cardsShown.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
+				<button type="button" class="nav" aria-label="Next request" disabled={at >= cardsShown.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
 			</div>
 		{/if}
 		<div class="win-in"><ApprovalsStage {ctx} single={openAsk} choose /></div>
@@ -504,12 +524,15 @@
 	.toolbar .right { flex: none; }
 	.right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 40px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 0; border-radius: 9px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: 500 13.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out), background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 0; border-radius: 9px; background: none; color: color-mix(in srgb, var(--text) 88%, var(--bg)); font: 500 13.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out), background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.tab:hover, .tab[aria-pressed='true'] { color: var(--text); }
 	.tab:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 6%, transparent); }
 	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
-	.n { opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.n { font-weight: 600; font-variant-numeric: tabular-nums; }
 	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
+	/* On the raised thumb (dark) the amber needs to be lighter to read. */
+	:global(:root[data-theme='dark']) .pw.on .n.wait { color: #ffd08a; }
+	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .pw.on .n.wait { color: #ffd08a; } }
 	.tab .fail-dot { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
 	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
 	.approve-all:hover { background: var(--surface-2); }
@@ -526,7 +549,7 @@
 	.sf-btn { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
 	.sf-btn:hover, .sf-btn[aria-expanded='true'] { background: var(--surface-2); }
 	.sf-funnel { color: var(--text-muted); }
-	.sf-badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--info, #409cff); color: #fff; font: 600 11px/18px var(--font-ui); text-align: center; }
+	.sf-badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: light-dark(var(--info, #0071e3), #1d5fd6); color: #fff; font: 600 11px/18px var(--font-ui); text-align: center; }
 	.sf-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; max-height: min(420px, 70vh); overflow-y: auto; padding: 4px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); }
 	.sf-menu:focus { outline: none; }
 	.sf-mh { padding: 8px 10px 4px; color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
@@ -548,7 +571,12 @@
 	.sf-sheet { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 64px) + 14px + env(safe-area-inset-bottom, 0px)); z-index: 97; max-height: calc(100dvh - var(--tabbar, 64px) - env(safe-area-inset-bottom, 0px) - 62px); overflow-y: auto; box-sizing: border-box; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface-2); box-shadow: 0 -20px 50px rgb(0 0 0 / 0.45); }
 	.sf-sheet:focus { outline: none; }
 	.sf-sheet .sf-mi { height: 48px; font-size: 15px; }
-	.sf-grab { width: 40px; height: 4px; margin: 0 auto 6px; border-radius: 2px; background: var(--line-strong); }
+	.sf-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 6px; padding: 0 4px; }
+	.sf-ht { font: 600 15px/1.2 var(--font-ui); color: var(--text); }
+	.sf-done { min-height: 44px; padding: 0 14px; border: 0; border-radius: var(--r-pill, 999px); background: var(--surface-2); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	.sf-done:focus-visible, .calm-all:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.calm-all { margin-top: 8px; min-height: 36px; padding: 0 16px; border: 0; border-radius: var(--r-pill, 999px); background: var(--surface-2); color: var(--text); box-shadow: 0 0 0 1px var(--line); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	@media (pointer: coarse) { .calm-all { min-height: 44px; } }
 	@media (pointer: coarse) { .sf-mi { height: 44px; } }
 	@media (max-width: 767px) {
 		.sf-btn { width: 100%; justify-content: flex-start; }
@@ -559,9 +587,9 @@
 	/* Window cards: a dark card (in both themes, it is led by the art), the title's wide art
 	   with the title and its facts on it, then a frosted sheet over the art's foot holding
 	   who asked and the answers. The life-cycle line runs along the bottom edge. */
-	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+	.cards { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	/* The card takes the sheet's own colour (dark in dark mode, pale in light), so no band shows under the sheet. */
-	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 380ms cubic-bezier(0.4, 0, 0.2, 1); }
+	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: box-shadow 380ms cubic-bezier(0.4, 0, 0.2, 1); }
 	/* Desktop: a small "open its page" link fades into the card's top-right corner on hover; touch uses the window's link. */
 	.cl-go { position: absolute; top: 10px; right: 10px; z-index: 5; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; color: #fff; background: rgb(20 20 24 / 0.42); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 0 0 1px rgb(255 255 255 / 0.14), 0 6px 16px -6px rgb(0 0 0 / 0.5); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); opacity: 0; transform: translateY(-3px) scale(0.96); transition: opacity 280ms cubic-bezier(0.22, 1, 0.36, 1), transform 280ms cubic-bezier(0.22, 1, 0.36, 1), background 160ms ease; }
 	.cl-go:hover { background: rgb(20 20 24 / 0.62); }
@@ -634,9 +662,9 @@
 	.win::backdrop { background: rgb(0 0 0 / 0.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade-in 300ms var(--ease-out) both; }
 	.win-in { height: 100%; }
 	.win:focus { outline: none; }
-	.close { position: absolute; top: 18px; right: 18px; z-index: 10; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgb(20 20 24 / 0.55); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); cursor: pointer; transition: background 200ms var(--ease-out); }
+	.close { position: absolute; top: 16px; right: 18px; z-index: 10; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgb(20 20 24 / 0.55); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); cursor: pointer; transition: background 200ms var(--ease-out); }
 	.close:hover { background: rgb(20 20 24 / 0.8); }
-	.steps-nav { position: absolute; top: 18px; left: 18px; z-index: 10; display: flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; background: rgb(20 20 24 / 0.55); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: #fff; }
+	.steps-nav { position: absolute; top: 13px; left: 18px; z-index: 10; display: flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; background: rgb(20 20 24 / 0.55); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: #fff; }
 	.nav { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer; transition: background 200ms var(--ease-out); }
 	.nav:hover:not(:disabled) { background: rgb(255 255 255 / 0.16); }
 	.nav:disabled { opacity: 0.35; cursor: default; }
@@ -669,7 +697,7 @@
 		.bc { --top: 124px; --gap: 8px; }
 		.top { padding: 0 10px 8px; }
 		.ban-t { font-size: 17px; }
-		.ban-f { font-size: 12px; }
+		.ban-f { font-size: 12px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 		.sheet-b { border-radius: 12px; }
 		.gl-n { font-size: 12.5px; gap: 4px; }
 		.gl-when { font-size: 12px; }
@@ -681,6 +709,7 @@
 		.b .bl { display: none; }
 		.win { width: 100vw; height: 100dvh; border-radius: 0; }
 		.close { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; width: 44px; height: 44px; }
+		.steps-nav { top: calc(12px + env(safe-area-inset-top, 0px)); padding: 0; }
 		.win :global(.ctl.top) { right: 64px !important; }
 	}
 	@media (prefers-reduced-motion: reduce) {
@@ -736,13 +765,15 @@
 	/* Done: an icon chip + word + detail, built like the who row (26px, same gap and type). */
 	.st-chip { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px; min-width: 0; height: var(--st-h); }
 	/* 28px tile, 16px duotone glyph; a faint top highlight matches the glass. */
-	.st-sq { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 60%), color-mix(in srgb, var(--st-c) 20%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--st-c) 42%, transparent); color: var(--st-ink); }
+	.st-sq { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 60%), color-mix(in srgb, var(--st-c) 20%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--st-c) 42%, transparent); color: var(--st-ink); }
 	.st-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 	.st-id > b { color: var(--st-ink); font: 700 13.5px/1.3 var(--font-ui); }
 	.st-id > .st-d { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
 	@media (pointer: coarse) { .sheet-b { --st-h: 44px; } }
 	@media (max-width: 767px) {
 		.st-cap { padding: 0 8px; gap: 5px; font: 600 12px/1.15 var(--font-ui); }
+		.st-cap.st-half { padding: 0 6px; gap: 0; }
+		.st-cap.st-half > .st-i { display: none; }
 		.st-tx { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; text-align: left; }
 		.st-tx > .st-d { font-size: 12px; }
 		.st-tx > .st-d::before { display: none; }
