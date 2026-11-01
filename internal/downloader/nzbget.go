@@ -403,6 +403,9 @@ func (r nzbgetRow) job(history bool) Job {
 		switch {
 		case nzbgetHistoryFailed(r):
 			j.State = StateFailed
+		case r.Status == "WARNING/SPACE" || r.UnpackStatus == "SPACE":
+			// Out of the queue and stuck on disk space: waiting on the user.
+			j.State = StatePaused
 		case strings.HasPrefix(r.Status, "SUCCESS/"):
 			j.State, j.ContentPath = StateFinished, r.FinalDir
 			if j.ContentPath == "" {
@@ -528,11 +531,11 @@ func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error 
 	if !found {
 		return ErrNotFound
 	}
-	// Keeping files uses NZBGet's non-final delete, which leaves the
-	// downloaded files on disk.
+	// Keeping files uses park-delete; a plain GroupDelete can still clean
+	// the partial files off disk (DeleteCleanupDisk).
 	command := "GroupFinalDelete"
 	if !deleteFiles {
-		command = "GroupDelete"
+		command = "GroupParkDelete"
 	}
 	if match.history {
 		command = "HistoryFinalDelete"

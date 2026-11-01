@@ -447,7 +447,7 @@ func TestNZBGetFinalAndPostProcessStates(t *testing.T) {
 	h["UnpackStatus"], h["Status"] = "SPACE", "WARNING/SPACE"
 	f.mu.Unlock()
 	j, err = n.Get(context.Background(), id)
-	if err != nil || j.State == StateFailed || !strings.Contains(j.Detail, "SPACE") {
+	if err != nil || j.State != StatePaused || !strings.Contains(j.Detail, "SPACE") {
 		t.Fatalf("disk full must not fail %+v %v", j, err)
 	}
 	f.mu.Lock()
@@ -466,7 +466,7 @@ func TestNZBGetRemoveKeepsFilesWithNonFinalDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := n.Remove(context.Background(), id, false); err != nil || !slices.Equal(f.edits, []string{"GroupDelete"}) {
+	if err := n.Remove(context.Background(), id, false); err != nil || !slices.Equal(f.edits, []string{"GroupParkDelete"}) {
 		t.Fatalf("keep-files removal: %v edits=%v", err, f.edits)
 	}
 	if err := n.Remove(context.Background(), id, true); !errors.Is(err, ErrNotFound) {
