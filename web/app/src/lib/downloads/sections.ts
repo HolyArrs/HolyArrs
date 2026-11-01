@@ -95,7 +95,10 @@ export function matches(r: Pick<DownloadRow, 'name' | 'title' | 'covers' | 'albu
 export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { text: string; bad: boolean } {
 	const s = stageOf(r);
 	// A client item has no import: its word is the client's own state.
-	if (r.client_item) return { text: statusWord(r), bad: s === 'failed' };
+	if (r.client_item) {
+		const why = s === 'failed' ? r.text?.trim() : '';
+		return { text: why ? `${statusWord(r)}: ${why}` : statusWord(r), bad: s === 'failed' };
+	}
 	if (s === 'failed') {
 		const why = failReason(im) ?? statusDetail(r, im);
 		return { text: why ? `Failed: ${why}` : 'Failed', bad: true };

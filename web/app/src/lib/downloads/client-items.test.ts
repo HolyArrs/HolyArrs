@@ -28,4 +28,9 @@ describe('client items', () => {
 		expect(statusWord(item({ state: 'paused' }))).toBe('Done');
 		expect(statusWord(item({ phase: 'stalled', state: 'stalled', active: true }))).toBe('Stalled');
 	});
+	it('show the Downloader reason on a failed item', () => {
+		const failed = item({ phase: 'failed', state: 'failed', label: 'Failed', progress: 0, protocol: 'usenet', downloader: 'SABnzbd' });
+		expect(historyStatus({ ...failed, text: 'Download failed - Not on your server(s)' }, undefined)).toEqual({ text: 'Failed: Download failed - Not on your server(s)', bad: true });
+		expect(historyStatus(failed, undefined)).toEqual({ text: 'Failed', bad: true });
+	});
 });
