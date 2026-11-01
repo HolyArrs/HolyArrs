@@ -23,6 +23,18 @@ describe('retryable', () => {
 	});
 });
 
+describe('nzbget', () => {
+	const job = { client_item: true, hash: 'nzbid-7', downloader_id: 3, protocol: 'usenet', phase: 'failed', downloader_kind: 'nzbget' } as const;
+	it('takes Try again on a failed job, but no queue controls', () => {
+		expect(retryable(job)).toBe(true);
+		expect(pausable({ protocol: 'usenet', phase: 'downloading', downloader_kind: 'nzbget' })).toBe(false);
+		expect(retryable({ ...job, downloader_kind: 'deluge' as never })).toBe(false);
+	});
+	it('shows the move step in the Repair tab', () => {
+		expect(repairSteps({ stages: [{ stage: 'move', lines: ['Move to the finished folder: failed'] }], job_servers: [] })).toEqual([{ title: 'Move', lines: ['Move to the finished folder: failed'] }]);
+	});
+});
+
 describe('repairSteps', () => {
 	it('keeps the post-download stages with lines, in order', () => {
 		expect(repairSteps(view)).toEqual([{ title: 'Verify and repair', lines: ['Verified in 2 seconds'] }, { title: 'Unpack', lines: ['Unpacked 1 file'] }]);

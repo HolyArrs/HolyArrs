@@ -12,9 +12,10 @@ export type UsenetView = { stages: JobStage[]; job_servers: { name: string; amou
 type RetryBits = Pick<DownloadRow, 'phase' | 'protocol' | 'client_item' | 'hash' | 'downloader_id'>;
 
 /** retryable says a row is a failed Usenet job the Downloader still holds
- *  and HolyArrs did not send (its own failed downloads were searched again). */
+ *  and HolyArrs did not send (its own failed downloads were searched again).
+ *  NZBGet takes Try again but not the queue controls yet. */
 export function retryable(r: RetryBits & { downloader_kind?: string }): boolean {
-	return controllable(r.downloader_kind) && !!r.client_item && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
+	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !!r.client_item && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
 }
 
 /** pausable says whether Pause/Resume means anything: a Usenet job in the
@@ -34,7 +35,7 @@ export function controllable(kind?: string): boolean {
 export const STEP_WORD: Record<string, string> = { verifying: 'Verifying', repairing: 'Repairing', unpacking: 'Unpacking', finishing: 'Moving files', script: 'Running script' };
 
 // The Repair tab's stages in their order, with our headings.
-const REPAIR: [string, string][] = [['download', 'Download'], ['repair', 'Verify and repair'], ['join', 'Join'], ['unpack', 'Unpack'], ['rename', 'Rename'], ['script', 'Script']];
+const REPAIR: [string, string][] = [['download', 'Download'], ['repair', 'Verify and repair'], ['join', 'Join'], ['unpack', 'Unpack'], ['rename', 'Rename'], ['move', 'Move'], ['script', 'Script']];
 
 /** repairSteps is the Repair tab: the post-download stages that have lines. */
 export function repairSteps(v: UsenetView | undefined): { title: string; lines: string[] }[] {

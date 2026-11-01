@@ -136,7 +136,7 @@
 		{ label: 'Try again', action: 'retry', retry: true }, { label: 'Move to top', action: 'top' }, { label: 'Check again', action: 'recheck', torrent: true }, { label: 'Ask trackers again', action: 'reannounce', torrent: true }
 	];
 	// A failed Usenet job offers Try again; queue moves are for live jobs.
-	const actionsOf = (r: DownloadRow) => (controllable(r.downloader_kind) ? ACTIONS : []).filter((a) => (a.retry ? retryable(r) : (!a.torrent || protocolOf(r) === 'torrent') && !(a.action === 'top' && retryable(r))));
+	const actionsOf = (r: DownloadRow) => ACTIONS.filter((a) => (a.retry ? retryable(r) : controllable(r.downloader_kind) && (!a.torrent || protocolOf(r) === 'torrent') && !(a.action === 'top' && retryable(r))));
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 	// The detail tabs follow the download's kind: a torrent has peers and
