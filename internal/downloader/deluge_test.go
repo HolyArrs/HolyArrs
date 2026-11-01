@@ -783,3 +783,17 @@ func TestDelugeSessionRefreshLockHonorsContext(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDelugeFinishedQueuedOrPausedIsFinished(t *testing.T) {
+	for _, w := range []string{"Queued", "Paused", "Seeding"} {
+		if got := delugeState(w, true); got != StateFinished {
+			t.Fatalf("%s+finished = %s", w, got)
+		}
+	}
+	if got := delugeState("Checking", true); got != StateQueued {
+		t.Fatalf("checking+finished = %s", got)
+	}
+	if got := delugeState("Error", true); got != StateFailed {
+		t.Fatalf("error+finished = %s", got)
+	}
+}

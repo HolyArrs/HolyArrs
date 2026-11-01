@@ -16,19 +16,20 @@ import (
 
 // Reasons a Downloader is not saved; each is said to the person as it is.
 var (
-	ErrName     = errors.New("give the Downloader a name of 1 to 80 characters")
-	ErrNameUsed = errors.New("another Downloader has that name")
-	ErrAdapter  = errors.New("choose a supported Downloader kind")
-	ErrURL      = errors.New("the address must start with http:// or https:// and name a host, with no name or password in it")
-	ErrCategory = errors.New("the category must be 1 to 64 characters with no slashes")
-	ErrPriority = errors.New("priority must be 1 to 50 (1 is used first)")
-	ErrPathMap  = errors.New("each path map needs both paths, each starting with / or a drive letter")
-	ErrUsername = errors.New("the sign-in name must be at most 100 characters")
-	ErrKeyNeed  = errors.New("SABnzbd needs its API key (SABnzbd: Config > General)")
-	ErrQbitKey  = errors.New("qBittorrent needs an API key (qBittorrent 5.2 or newer: Options > Web UI > API key) or a user name and password")
-	ErrKeyAgain = errors.New("the address changed to another host; type the key or password again so it is never sent to a new host by itself")
-	ErrNoVault  = errors.New("keys cannot be stored: the secrets vault is not open")
-	ErrBusy     = errors.New("this Downloader still has active downloads; pause it and let them finish first (its category and address cannot change, and it cannot be removed, while they run)")
+	ErrName        = errors.New("give the Downloader a name of 1 to 80 characters")
+	ErrNameUsed    = errors.New("another Downloader has that name")
+	ErrAdapter     = errors.New("choose a supported Downloader kind")
+	ErrURL         = errors.New("the address must start with http:// or https:// and name a host, with no name or password in it")
+	ErrCategory    = errors.New("the category must be 1 to 64 characters with no slashes")
+	ErrDelugeLabel = errors.New("Deluge labels use only lowercase letters, digits, _ - and .")
+	ErrPriority    = errors.New("priority must be 1 to 50 (1 is used first)")
+	ErrPathMap     = errors.New("each path map needs both paths, each starting with / or a drive letter")
+	ErrUsername    = errors.New("the sign-in name must be at most 100 characters")
+	ErrKeyNeed     = errors.New("SABnzbd needs its API key (SABnzbd: Config > General)")
+	ErrQbitKey     = errors.New("qBittorrent needs an API key (qBittorrent 5.2 or newer: Options > Web UI > API key) or a user name and password")
+	ErrKeyAgain    = errors.New("the address changed to another host; type the key or password again so it is never sent to a new host by itself")
+	ErrNoVault     = errors.New("keys cannot be stored: the secrets vault is not open")
+	ErrBusy        = errors.New("this Downloader still has active downloads; pause it and let them finish first (its category and address cannot change, and it cannot be removed, while they run)")
 )
 
 // Input is what a person sets on a Downloader. Secret is the SABnzbd API
@@ -97,6 +98,11 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		c := strings.TrimSpace(*in.Category)
 		if c == "" || len(c) > 64 || strings.ContainsAny(c, `/\`) {
 			return ErrCategory
+		}
+		if d.Adapter == "deluge" && strings.Trim(c, "abcdefghijklmnopqrstuvwxyz0123456789_.-") != "" {
+			// Deluge's Label plugin lowercases and refuses anything else,
+			// which would leave an unlabelled torrent and a stuck send.
+			return ErrDelugeLabel
 		}
 		d.Category = c
 	} else if isNew {

@@ -126,7 +126,7 @@ func downloaderError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, store.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such Downloader")
-	case errors.Is(err, downloader.ErrName), errors.Is(err, downloader.ErrAdapter), errors.Is(err, downloader.ErrURL), errors.Is(err, downloader.ErrCategory),
+	case errors.Is(err, downloader.ErrName), errors.Is(err, downloader.ErrAdapter), errors.Is(err, downloader.ErrURL), errors.Is(err, downloader.ErrCategory), errors.Is(err, downloader.ErrDelugeLabel),
 		errors.Is(err, downloader.ErrPriority), errors.Is(err, downloader.ErrPathMap), errors.Is(err, downloader.ErrUsername), errors.Is(err, downloader.ErrKeyNeed),
 		errors.Is(err, downloader.ErrQbitKey):
 		fail(w, http.StatusBadRequest, err.Error())

@@ -444,7 +444,14 @@ func TestNZBGetFinalAndPostProcessStates(t *testing.T) {
 		t.Fatalf("failed component %+v %v", j, err)
 	}
 	f.mu.Lock()
-	h["UnpackStatus"], h["FinalDir"] = "SUCCESS", ""
+	h["UnpackStatus"], h["Status"] = "SPACE", "WARNING/SPACE"
+	f.mu.Unlock()
+	j, err = n.Get(context.Background(), id)
+	if err != nil || j.State == StateFailed || !strings.Contains(j.Detail, "SPACE") {
+		t.Fatalf("disk full must not fail %+v %v", j, err)
+	}
+	f.mu.Lock()
+	h["UnpackStatus"], h["Status"], h["FinalDir"] = "SUCCESS", "SUCCESS/UNPACK", ""
 	f.mu.Unlock()
 	j, err = n.Get(context.Background(), id)
 	if err != nil || j.State != StateFinished || j.ContentPath != "/downloads/movies" {
@@ -452,18 +459,18 @@ func TestNZBGetFinalAndPostProcessStates(t *testing.T) {
 	}
 }
 
-func TestNZBGetRemoveRefusesToKeepFiles(t *testing.T) {
+func TestNZBGetRemoveKeepsFilesWithNonFinalDelete(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "keep", Category: "movies", OperationKey: "keep", AllowLocal: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := n.Remove(context.Background(), id, false); err == nil || len(f.edits) != 0 {
+	if err := n.Remove(context.Background(), id, false); err != nil || !slices.Equal(f.edits, []string{"GroupDelete"}) {
 		t.Fatalf("keep-files removal: %v edits=%v", err, f.edits)
 	}
-	if err := n.Remove(context.Background(), id, true); err != nil || !slices.Equal(f.edits, []string{"GroupFinalDelete"}) {
-		t.Fatalf("active removal: %v edits=%v", err, f.edits)
+	if err := n.Remove(context.Background(), id, true); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("second removal: %v", err)
 	}
 }
 

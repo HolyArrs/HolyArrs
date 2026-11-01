@@ -26,7 +26,6 @@ const (
 )
 
 var (
-	errNZBGetKeepFiles       = errors.New("NZBGet cannot remove a job while keeping its files")
 	errNZBGetAmbiguousMarker = errors.New("NZBGet has multiple jobs with the same HolyArrs marker")
 	errNZBGetForeignMarker   = errors.New("the NZBGet job marker belongs to another category")
 )
@@ -359,6 +358,11 @@ func nzbgetPostProcess(s string) bool {
 }
 
 func nzbgetHistoryFailed(r nzbgetRow) bool {
+	// A full disk is not a bad release: keep the job so nothing is deleted
+	// or blocked; Detail carries the reason.
+	if r.Status == "WARNING/SPACE" || r.UnpackStatus == "SPACE" {
+		return false
+	}
 	if strings.HasPrefix(r.Status, "FAILURE/") || strings.HasPrefix(r.Status, "WARNING/") || strings.HasPrefix(r.Status, "DELETED/") {
 		return true
 	}
@@ -524,12 +528,17 @@ func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error 
 	if !found {
 		return ErrNotFound
 	}
-	if !deleteFiles {
-		return errNZBGetKeepFiles
-	}
+	// Keeping files uses NZBGet's non-final delete, which leaves the
+	// downloaded files on disk.
 	command := "GroupFinalDelete"
+	if !deleteFiles {
+		command = "GroupDelete"
+	}
 	if match.history {
 		command = "HistoryFinalDelete"
+		if !deleteFiles {
+			command = "HistoryDelete"
+		}
 	}
 	var ok bool
 	if err := n.rpc(ctx, "editqueue", []any{command, "", []int{match.row.NZBID}}, &ok); err != nil {

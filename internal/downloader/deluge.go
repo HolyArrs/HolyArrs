@@ -460,6 +460,15 @@ func delugeState(state string, finished bool) string {
 	switch strings.ToLower(state) {
 	case "error":
 		return StateFailed
+	case "checking", "moving":
+		return StateQueued
+	}
+	if finished {
+		// A finished torrent Deluge has queued or paused (waiting for a
+		// seeding slot, or stopped at its ratio) is still complete.
+		return StateFinished
+	}
+	switch strings.ToLower(state) {
 	case "paused":
 		return StatePaused
 	case "queued", "checking", "allocating", "moving":

@@ -97,6 +97,10 @@ func (a *API) readList(d domain.Downloader) (done <-chan struct{}, started bool)
 			jobs, err = al.ListAll(ctx)
 			return err
 		})
+		if errors.Is(err, downloader.ErrNotSupported) {
+			// No outside list for this engine: that is not "not answering".
+			err, jobs = nil, nil
+		}
 		if err == nil {
 			a.noteJobs(ctx, d.ID, jobs)
 		}
