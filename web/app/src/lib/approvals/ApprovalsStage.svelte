@@ -26,7 +26,7 @@
 	import { partialFacts } from './live.ts';
 	import { api } from '../api.ts';
 	import type { AlbumSummary, TitleView } from '../types.ts';
-	import { shortDate } from './inbox.ts';
+	import { shortDate, whenDate } from './inbox.ts';
 	import { askTab } from '../requests.ts';
 	import { askHref } from './approvals.ts';
 	import { askedFor } from './asked-for.ts';
@@ -105,14 +105,14 @@
 		const who = ctx.who(picked).name;
 		if (life.stage === 'ready') {
 			const at = picked.available_at ?? picked.decided_at;
-			return `In the Library${at ? ` since ${shortDate(at)}` : ''}${life.more ? '' : '.'}`;
+			return `In the Library${at ? ` since ${whenDate(at)}` : ''}${life.more ? '' : '.'}`;
 		}
 		if (life.stage === 'declined') {
 			// Same rule as the card: a display name only, never a bare account name, and the
 			// status word isn't said twice.
 			const by = ctx.decided(picked).replace(/^Declined by\s*/, '').trim();
 			if (by && by !== picked.decided_by?.name) return `By ${by}.`;
-			return picked.decided_at ? `On ${shortDate(picked.decided_at)}.` : '';
+			return picked.decided_at ? `On ${whenDate(picked.decided_at)}.` : '';
 		}
 		if (life.stage === 'failed') {
 			const why = life.reason ? ` ${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : '';

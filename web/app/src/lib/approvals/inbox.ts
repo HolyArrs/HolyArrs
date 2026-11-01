@@ -50,6 +50,16 @@ export function runtimeShort(min: number | undefined): string {
 }
 
 const day = (iso: string) => iso.slice(0, 10);
+/** whenDate says when something happened ("Mar 3") in the viewer's own time zone, never later than now. */
+export function whenDate(iso: string, now = new Date()): string {
+	const t = new Date(iso);
+	if (Number.isNaN(t.getTime())) return '';
+	const d = t > now ? now : t;
+	const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+	if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+	return d.toLocaleDateString('en-US', opts);
+}
+
 /** shortDate says "Mar 3", or "Mar 3, 2027" outside this year. */
 export function shortDate(iso: string, now = new Date()): string {
 	const [y, m, d] = day(iso).split('-').map(Number);

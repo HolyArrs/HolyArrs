@@ -18,7 +18,7 @@
 	import { askHref, type ApprovalsCtx } from './approvals.ts';
 	import { artistPhoto, askArtist, storedParts } from './details.svelte.ts';
 	import { to } from '../paths.ts';
-	import { shortDate } from './inbox.ts';
+	import { shortDate, whenDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../requests.ts';
 	import { askedFor } from './asked-for.ts';
@@ -92,10 +92,10 @@
 	};
 	/** The detail after the word, from what the ask really carries. */
 	const stDetail = (a: Ask, l: Life) => {
-		if (l.stage === 'ready' && a.available_at) return shortDate(a.available_at);
+		if (l.stage === 'ready' && a.available_at) return whenDate(a.available_at);
 		if (l.stage === 'declined') {
 			const by = stDeclinedBy(a);
-			return by ? `By ${by}` : a.decided_at ? shortDate(a.decided_at) : '';
+			return by ? `By ${by}` : a.decided_at ? whenDate(a.decided_at) : '';
 		}
 		if (l.stage === 'failed') return l.reason ?? '';
 		return l.label.split(' · ').slice(1).join(' · ');
@@ -301,7 +301,11 @@
 				const ok = (x: Ask) => x.id !== id && waiting(x);
 				const next = (i >= 0 ? cardsShown.slice(i + 1).find(ok) : undefined) ?? cardsShown.slice(0, Math.max(i, 0)).find(ok) ?? cardsShown.find(ok);
 				if (next) openId = next.id;
-				else hide();
+				else {
+					// Undo can still bring it back: reopen on it then, so the approver lands where they were.
+					reopen = { id, until: Date.now() + 6500 };
+					hide();
+				}
 			}, ms(650));
 		}
 		// Answered and then undone (the toast's Undo): stay on it.
@@ -309,6 +313,17 @@
 		wasWaiting = w ? id : 0;
 	});
 	$effect(() => () => clearTimeout(advance));
+	let reopen = $state<{ id: number; until: number } | null>(null);
+	$effect(() => {
+		const r = reopen;
+		if (!r) return;
+		const a = ctx.viewed.find((x) => x.id === r.id);
+		if (!a || !waiting(a) || openId || closing) return;
+		reopen = null;
+		if (Date.now() > r.until) return;
+		const el = document.querySelector<HTMLElement>(`.bc[data-ask="${r.id}"] .open`);
+		if (el) void show(a, el);
+	});
 	// The ask left the list (filter, tab or a refresh): don't leave an empty window open.
 	$effect(() => {
 		if (openId && !openAsk && win?.open) hide();
@@ -700,7 +715,7 @@
 		.ban-f { font-size: 12px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 		.sheet-b { border-radius: 12px; }
 		.gl-n { font-size: 12.5px; gap: 4px; }
-		.gl-when { font-size: 12px; }
+		.gl-when { font-size: 12px; white-space: normal; text-overflow: clip; }
 		.body { padding: 10px 10px 0; }
 		.who { gap: 7px; font: var(--t-caption); }
 		/* Decline and Approve: equal halves, icons only (each has its full name for screen readers). */
