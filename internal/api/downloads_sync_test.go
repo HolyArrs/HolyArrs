@@ -111,8 +111,9 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	if len(first.Clients) != 1 || first.Clients[0].Health != "checking" || !first.Clients[0].Stale {
 		t.Fatalf("client health %+v, want checking (last known rows)", first.Clients)
 	}
-	if first.Totals.UpSpeed != 2500 {
-		t.Fatalf("upload total %d, want 2500", first.Totals.UpSpeed)
+	if first.Totals.UpSpeed != 0 {
+		// Last-known rows carry no speeds: they are not current.
+		t.Fatalf("upload total %d, want 0", first.Totals.UpSpeed)
 	}
 	if !sy.Store.Viewer() {
 		t.Fatal("a view did not count as a viewer")
