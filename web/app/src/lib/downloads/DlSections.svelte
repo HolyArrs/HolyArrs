@@ -1895,7 +1895,7 @@
 	.chead + .dlrows { border-top: 0; }
 	.chead:hover { background: none; }
 	.ch { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
-	.ch.end { justify-content: flex-end; }
+	/* Every column name starts right after the divider line, as in qBittorrent; numbers below stay right-aligned. */
 	.ch { cursor: grab; user-select: none; touch-action: none; }
 	.ch.moving { opacity: 0.4; }
 	.ins { position: absolute; top: 2px; bottom: 2px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); pointer-events: none; z-index: 4; }
@@ -1927,7 +1927,7 @@
 	.sarr { flex: none; margin-left: 4px; color: var(--accent-text); font-weight: 700; }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.grip { position: absolute; top: 4px; bottom: 4px; right: -6px; width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
+	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) - 5px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
 	.grip:focus-visible { outline: none; }
