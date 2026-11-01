@@ -7,7 +7,7 @@
 	// download, the latest Events for the same title); arrow keys or j and k
 	// move through the rows. The panel can be hidden; picking a row shows it
 	// again. Narrower screens open the row in a sheet instead.
-	import { onMount, tick, untrack } from 'svelte';
+	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
 	import Icon from '../Icon.svelte';
@@ -40,7 +40,9 @@
 		panelId,
 		episodeName = $bindable(''),
 		people,
-		me
+		me,
+		keep,
+		actions
 	}: {
 		filter: HistoryFilter;
 		kinds: string[] | undefined;
@@ -59,6 +61,10 @@
 		people?: Map<number, string>;
 		/** The signed-in member. */
 		me?: number;
+		/** Keeps only some Events (a filter the server does not do). */
+		keep?: (e: EventRecord) => boolean;
+		/** Extra buttons under a picked row's details. */
+		actions?: Snippet<[HistoryRow]>;
 	} = $props();
 	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 
@@ -76,7 +82,7 @@
 
 	// A page of routine only (the Routine tab) is not folded: it is what was asked for.
 	const days = $derived.by(() => {
-		const list = byDay(feed.events);
+		const list = byDay(keep ? feed.events.filter(keep) : feed.events);
 		const allQuiet = list.every((d) => d.rows.every((r) => rowTier(r) === 'routine'));
 		return list.map((d) => ({ ...d, items: allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows) }));
 	});
@@ -257,6 +263,7 @@
 								</ol>
 							{/if}
 							{#if !picked.steps.length && details(e).length === 0}<p class="none">No reasons or paths were kept for this Event.</p>{/if}
+							{#if actions}<div class="pact">{@render actions(picked)}</div>{/if}
 							{#if href && e.title_name}<div class="pact"><Button variant="secondary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button></div>{/if}
 						</div>
 					{/key}
@@ -266,7 +273,7 @@
 	</div>
 </LookFrame>
 
-{#if !wide}<EventSheet bind:row={sheet} {titleById} {people} {me} />{/if}
+{#if !wide}<EventSheet bind:row={sheet} {titleById} {people} {me} {actions} />{/if}
 
 <style>
 	/* Poster size: one set of measures per size, used by every row. */
@@ -367,7 +374,7 @@
 	.also li + li { border-top: 1px solid var(--line); }
 	.as { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
 	.also time { color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
-	.pact { display: flex; }
+	.pact { display: flex; flex-wrap: wrap; gap: 8px; }
 	.none { color: var(--text-faint); font: var(--t-footnote); }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 

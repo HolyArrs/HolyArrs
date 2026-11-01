@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Poster from '#lib/Poster.svelte';
@@ -13,7 +14,7 @@
 	// Everything about one History row in a side sheet (a bottom sheet on
 	// phones): the full text, who did it, the reasons and paths, every step
 	// of a download, and the way to the title.
-	let { row = $bindable(null), titleById, people, me }: { row: HistoryRow | null; titleById: Map<number, TitleView>; people?: Map<number, string>; me?: number } = $props();
+	let { row = $bindable(null), titleById, people, me, actions }: { row: HistoryRow | null; titleById: Map<number, TitleView>; people?: Map<number, string>; me?: number; /** Extra buttons for the row (History preview looks). */ actions?: Snippet<[HistoryRow]> } = $props();
 	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 	let open = $state(false);
 	$effect(() => {
@@ -43,6 +44,7 @@
 				<dt>By</dt><dd>{byWhom(e)}</dd>
 				{#each row.steps.length ? [] : details(e) as [k, v], i (i)}<dt>{k}</dt><dd class="mono">{v}</dd>{/each}
 			</dl>
+			{#if actions}<div class="acts">{@render actions(row)}</div>{/if}
 			{#if row.events.length > 1}
 				<h3 class="h">Every step</h3>
 				<ol class="trail">
@@ -65,6 +67,7 @@
 </Sheet>
 
 <style>
+	.acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 	.es { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.head { display: flex; gap: 14px; align-items: flex-start; }
 	.art { flex: none; width: 72px; --poster-ratio: 2 / 3; border-radius: var(--r-sm); overflow: hidden; }
