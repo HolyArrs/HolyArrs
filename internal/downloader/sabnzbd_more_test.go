@@ -211,3 +211,11 @@ func TestSabMoveTopAlreadyFirst(t *testing.T) {
 		t.Fatalf("missing job: %v", err)
 	}
 }
+
+// Archive passwords in a stage line are masked; the line stays readable.
+func TestCleanLineMasksPassword(t *testing.T) {
+	got := cleanLine(`[x] Trying unrar with password "hunter2"`)
+	if strings.Contains(got, "hunter2") || !strings.Contains(got, "Trying unrar with password") {
+		t.Fatalf("got %q", got)
+	}
+}

@@ -257,11 +257,15 @@ func stageKey(name string) string {
 
 var tagRe = regexp.MustCompile(`<[^>]*>`)
 
+// passRe finds a quoted archive password in a stage line.
+var passRe = regexp.MustCompile(`(?i)(password\W{0,3})("[^"]*"|'[^']*')`)
+
 // cleanLine drops markup and redacts addresses from one stage line.
 func cleanLine(l string) string {
 	l = strings.ReplaceAll(l, "<br/>", " ")
 	l = strings.ReplaceAll(l, "<br>", " ")
 	l = tagRe.ReplaceAllString(l, "")
+	l = passRe.ReplaceAllString(l, `$1"…"`)
 	return strings.TrimSpace(redactURLs(l))
 }
 
