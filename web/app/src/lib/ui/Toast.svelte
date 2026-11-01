@@ -107,6 +107,6 @@
 	.act { min-height: 34px; padding: 0 12px; border-radius: 999px; color: var(--text); font: var(--t-subhead); font-weight: 700; flex: none; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent); }
 	.act:hover, .x:hover { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 	.act:focus-visible, .x:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	@media (pointer: coarse) { .x { width: 44px; height: 44px; margin: -7px -4px -7px 0; } }
+	@media (pointer: coarse) { .x { width: 44px; height: 44px; margin: -7px -4px -7px 0; } .act { min-height: 44px; margin: -5px 0; } }
 	@media (prefers-reduced-motion: reduce) { .card { transition: opacity var(--dur-fast) var(--ease-out); } }
 </style>

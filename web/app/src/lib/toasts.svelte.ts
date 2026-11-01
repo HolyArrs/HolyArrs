@@ -25,7 +25,11 @@ export function createToasts(ms = 4200) {
 	function push(text: string, tone: ToastTone = 'info', opts: { action?: ToastAction; ms?: number } = {}): number {
 		const id = next++;
 		list.push({ id, text, tone, action: opts.action });
-		if (list.length > 4) list.splice(0, list.length - 4);
+		// Keep at most 4: drop plain notes first, so an Undo stays reachable while its decision waits.
+		while (list.length > 4) {
+			const plain = list.findIndex((t) => !t.action);
+			list.splice(plain >= 0 ? plain : 0, 1);
+		}
 		setTimeout(() => dismiss(id), opts.ms ?? (tone === 'fail' ? ms * 2 : ms));
 		return id;
 	}

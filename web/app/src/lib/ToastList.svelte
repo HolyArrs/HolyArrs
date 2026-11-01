@@ -56,10 +56,9 @@
 	// <dialog> such as the Requests window and Undo can still be clicked. Shown again
 	// on every new toast, so they land above whatever dialog opened since.
 	let host = $state<HTMLElement>();
-	$effect(() => {
-		void toasts.list.length;
-		void downShown;
-		void back;
+	let home = $state<HTMLElement>();
+	let inWin = $state(false);
+	function raise() {
 		const el = host;
 		if (!el || typeof el.showPopover !== 'function') return;
 		try {
@@ -68,10 +67,48 @@
 		} catch {
 			// popover unsupported: the fixed layer still shows outside dialogs
 		}
+	}
+	// A modal <dialog> makes everything outside it inert, a top-layer popover included, so
+	// while one is open the toasts move inside it (Undo stays clickable, and a click on a
+	// toast never reads as a click on the dialog's backdrop). They move back when it closes.
+	function place() {
+		const el = host;
+		if (!el || !home) return;
+		const open = [...document.querySelectorAll<HTMLDialogElement>('dialog[open]')].filter((d) => {
+			try {
+				return d.matches(':modal');
+			} catch {
+				return true;
+			}
+		});
+		const want: Node = open.at(-1) ?? home.parentNode!;
+		if (el.parentNode === want) return;
+		if (want === home.parentNode) home.after(el);
+		else want.appendChild(el);
+		inWin = want !== home.parentNode;
+		raise();
+	}
+	onMount(() => {
+		place();
+		const mo = new MutationObserver(place);
+		mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
+		return () => {
+			mo.disconnect();
+			// Back home before Svelte removes it, so it never lingers inside a dialog.
+			if (host && home && host.parentNode !== home.parentNode) home.after(host);
+		};
+	});
+	$effect(() => {
+		void toasts.list.length;
+		void downShown;
+		void back;
+		place();
+		raise();
 	});
 </script>
 
-<div class="toasts" role="status" aria-live="polite" popover="manual" bind:this={host}>
+<span class="toast-home" hidden bind:this={home}></span>
+<div class="toasts" class:in-win={inWin} role="status" aria-live="polite" popover="manual" bind:this={host}>
 	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
 			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text={METADATA_DOWN} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
@@ -111,6 +148,9 @@
 	}
 	@media (max-width: 767px) {
 		.toasts { bottom: calc(var(--tabbar, 64px) + 12px + env(safe-area-inset-bottom, 0px)); }
+		/* Inside a full-screen window there's no tab bar; the bottom holds the window's status
+		   strip and answer buttons, so the toast drops in under the window's top controls. */
+		.toasts.in-win { bottom: auto; top: calc(72px + env(safe-area-inset-top, 0px)); }
 	}
 	.slot { display: flex; flex-direction: column; }
 </style>
