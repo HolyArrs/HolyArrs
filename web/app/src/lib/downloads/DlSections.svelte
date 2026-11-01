@@ -1387,8 +1387,8 @@
 				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
 			{/each}
 			{#if steerable(r)}
-				{#each QUEUE as q (q.action)}<li><button type="button" class="mi" disabled={busy === r.id} onclick={() => { menuId = 0; onbulk?.([r], q.action); }} data-testid="dl-queue-{q.action}">{q.label}</button></li>{/each}
-				{#each STEER as m (m.mode)}<li><button type="button" class="mi" disabled={busy === r.id} onclick={() => { menuId = 0; onsteer?.([r], m.mode); }} data-testid="dl-steer-{m.mode}">{m.label}</button></li>{/each}
+				{#each QUEUE as q (q.action)}<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onbulk?.([r], q.action); }} data-testid="dl-queue-{q.action}">{q.label}</button></li>{/each}
+				{#each STEER as m (m.mode)}<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onsteer?.([r], m.mode); }} data-testid="dl-steer-{m.mode}">{m.label}</button></li>{/each}
 			{/if}
 		</ul>
 	{/if}
