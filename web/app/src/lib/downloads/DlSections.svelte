@@ -44,7 +44,7 @@
 	import type { ImportRecord, TitleView } from '../types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
-	import { repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
+	import { pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
 	import { poster, who } from './shared.ts';
 	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { longPress, phoneTitle, subLine } from './phone.ts';
@@ -142,7 +142,7 @@
 	// The detail tabs follow the download's kind: a torrent has peers and
 	// trackers, a Usenet job servers and its repair and unpack steps.
 	const TORRENT_TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
-	const USENET_TABS = ['Info', 'Files', 'Servers', 'Repair and unpack', 'Log'] as const;
+	const USENET_TABS = ['Info', 'Servers', 'Repair and unpack', 'Log'] as const;
 	type PaneTab = (typeof TORRENT_TABS)[number] | (typeof USENET_TABS)[number];
 	const tabsOf = (r: DownloadRow): readonly PaneTab[] => (protocolOf(r) === 'torrent' ? TORRENT_TABS : USENET_TABS);
 	// Selection and folder state for the Files, Peers and Trackers tables.
@@ -1376,7 +1376,7 @@
 
 {#snippet btns(r: DownloadRow, files: boolean)}
 	<div class="xbt" data-testid="dl-actions">
-		{#if !watch}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>
+		{#if !watch}{#if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>{/if}
 		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>{/if}
 		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
 		{#if !watch}<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" data-more-for={r.id} onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>{/if}
@@ -1847,7 +1847,10 @@
 
 	.nm { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 	.tt, .rel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.tt { font: var(--t-callout); font-weight: 500; }
+	.tt { font: var(--t-callout); font-weight: 500; display: flex; align-items: center; min-width: 0; }
+	/* The name shrinks with an ellipsis; the badges never do. */
+	.tt .tn, .tt .tp { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.tt .ver { flex: none; }
 	.rel { color: var(--text-muted); font: var(--t-caption); }
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
+import { pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
 
 const view: UsenetView = {
 	stages: [
@@ -36,5 +36,18 @@ describe('serverRows', () => {
 			{ name: 'news.example', job: '812 MB', total: 900, found: '90%' },
 			{ name: 'backup', job: '', total: 5, found: '' }
 		]);
+	});
+});
+
+describe('sab audit fixes', () => {
+	it('shows the download stage first so a failed job says why', () => {
+		const v: UsenetView = { stages: [{ stage: 'unpack', lines: ['x'] }, { stage: 'download', lines: ['136 articles were missing'] }] } as UsenetView;
+		expect(repairSteps(v)[0]).toEqual({ title: 'Download', lines: ['136 articles were missing'] });
+	});
+	it('offers no pause on finished or failed Usenet jobs', () => {
+		expect(pausable({ protocol: 'usenet', phase: 'failed' })).toBe(false);
+		expect(pausable({ protocol: 'usenet', phase: 'done' })).toBe(false);
+		expect(pausable({ protocol: 'usenet', phase: 'downloading' })).toBe(true);
+		expect(pausable({ protocol: 'torrent', phase: 'done' })).toBe(true);
 	});
 });

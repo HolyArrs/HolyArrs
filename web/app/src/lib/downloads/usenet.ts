@@ -17,11 +17,17 @@ export function retryable(r: RetryBits): boolean {
 	return !!r.client_item && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
 }
 
+/** pausable says whether Pause/Resume means anything: a Usenet job in the
+ *  finished list (done or failed) cannot be paused. */
+export function pausable(r: { protocol?: string; phase?: string }): boolean {
+	return !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
+}
+
 /** The words for a Usenet job's step after the download, from client_hint. */
 export const STEP_WORD: Record<string, string> = { verifying: 'Verifying', repairing: 'Repairing', unpacking: 'Unpacking', finishing: 'Moving files', script: 'Running script' };
 
 // The Repair tab's stages in their order, with our headings.
-const REPAIR: [string, string][] = [['repair', 'Verify and repair'], ['join', 'Join'], ['unpack', 'Unpack'], ['rename', 'Rename'], ['script', 'Script']];
+const REPAIR: [string, string][] = [['download', 'Download'], ['repair', 'Verify and repair'], ['join', 'Join'], ['unpack', 'Unpack'], ['rename', 'Rename'], ['script', 'Script']];
 
 /** repairSteps is the Repair tab: the post-download stages that have lines. */
 export function repairSteps(v: UsenetView | undefined): { title: string; lines: string[] }[] {
