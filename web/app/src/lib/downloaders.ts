@@ -40,6 +40,8 @@ export interface DownloaderSettings {
 	remove_delete_files: boolean;
 	remove_turn_down: boolean;
 	remove_search_again: boolean;
+	/** Add a matched outside item's movie or show to the Library (no search). Off by default. */
+	downloads_auto_add?: boolean;
 }
 
 /** DownloaderAttempt is the public recovery record for one uncertain send.

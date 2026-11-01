@@ -155,7 +155,8 @@ func TorrentLines(prev, cur downloader.Job) []dlsync.LogLine {
 
 // MatchLinkOnly is the reader's match lookup: it links an item to a title
 // already in the Library when the name is a sure match, and otherwise
-// leaves the choices in the Confirm match list. It never adds a title.
+// leaves the choices in the Confirm match list. It adds a missing title
+// only with downloads_auto_add on.
 func (a *API) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, category string) (string, int64, error) {
 	db := a.s.Store.Read()
 	key = strings.ToLower(key)
@@ -204,13 +205,44 @@ func (a *API) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 	if err != nil {
 		return "", 0, err
 	}
+	added := false
+	if titleID == 0 && a.autoAddOn(ctx) {
+		// downloads_auto_add: add it the normal way (default folder and
+		// pick rules, no search; the files are already in the client).
+		// ensureTitle reuses a copy added before a restart, so never twice.
+		titleID, err = a.ensureTitle(ctx, c)
+		if err != nil && !isNoFolder(err) {
+			return "", 0, err
+		}
+		added = err == nil && titleID != 0
+	}
 	if titleID == 0 {
 		// A sure match not in the Library: suggested, waiting for a person
 		// to confirm (which adds it the normal way).
 		return "suggested", 0, a.saveLink(ctx, w, linkUnsure, 0, nil, "", cs, "suggested")
 	}
 	slots, covers := a.linkSlots(ctx, titleID, c.Kind, g)
-	return linkLinked, titleID, a.saveLink(ctx, w, linkLinked, titleID, slots, covers, cs, "auto")
+	how := "auto"
+	if added {
+		how = "auto add"
+	}
+	if err := a.saveLink(ctx, w, linkLinked, titleID, slots, covers, cs, how); err != nil {
+		return "", 0, err
+	}
+	if added {
+		a.writeTorrentLog(ctx, downloaderID, key, time.Now().UTC(), []DownloadLogLine{{Kind: "library", Summary: "Added to your Library"}})
+	}
+	return linkLinked, titleID, nil
+}
+
+// settingAutoAdd is downloads_auto_add (group links), off by default.
+const settingAutoAdd = "downloads_auto_add"
+
+// autoAddOn reads downloads_auto_add.
+func (a *API) autoAddOn(ctx context.Context) bool {
+	var v string
+	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'links' AND key = ?", settingAutoAdd).Scan(&v)
+	return v == "true"
 }
 
 // libraryTitle finds a candidate already in the Library (0 when missing),

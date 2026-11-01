@@ -457,6 +457,9 @@ type DownloaderSettings struct {
 	// downloads.sab_outside. Left out of a save, they stay as they are.
 	Sync       *string `json:"downloads_sync,omitempty"`
 	SABOutside *bool   `json:"downloads_sab_outside,omitempty"`
+	// AutoAdd is downloads_auto_add: a sure match of an outside item whose
+	// title is not in the Library adds it (no search). Off by default.
+	AutoAdd *bool `json:"downloads_auto_add,omitempty"`
 }
 
 func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, error) {
@@ -500,7 +503,14 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 		case "links/" + dlsync.SettingSABOutside:
 			on := v != "false"
 			st.SABOutside = &on
+		case "links/" + settingAutoAdd:
+			on := v == "true"
+			st.AutoAdd = &on
 		}
+	}
+	if st.AutoAdd == nil {
+		off := false
+		st.AutoAdd = &off
 	}
 	if st.SABOutside == nil {
 		on := true // shown by default
@@ -559,6 +569,9 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if in.SABOutside != nil {
 		vals = append(vals, struct{ grp, key, value string }{"links", dlsync.SettingSABOutside, strconv.FormatBool(*in.SABOutside)})
+	}
+	if in.AutoAdd != nil {
+		vals = append(vals, struct{ grp, key, value string }{"links", settingAutoAdd, strconv.FormatBool(*in.AutoAdd)})
 	}
 	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		for _, v := range vals {

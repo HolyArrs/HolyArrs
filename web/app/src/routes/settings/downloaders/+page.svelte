@@ -51,7 +51,8 @@
 		try_next_downloader: true,
 		remove_delete_files: true,
 		remove_turn_down: false,
-		remove_search_again: true
+		remove_search_again: true,
+		downloads_auto_add: false
 	});
 	let setBusy = $state(false);
 	let saved = $state('');
@@ -421,6 +422,10 @@
 		<label class="checkline">
 			<input id="remove-failed" type="checkbox" bind:checked={settings.remove_failed} />
 			<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">With their files. Off: they stay there for you to look at.</span></span>
+		</label>
+		<label class="checkline">
+			<input id="auto-add" type="checkbox" bind:checked={settings.downloads_auto_add} />
+			<span><b>Add matched titles to your Library</b><br /><span class="hint">When something already in a Downloader matches a movie or show for sure, add that title without searching.</span></span>
 		</label>
 		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
 			<legend class="small muted">When you remove a download on the Downloads screen, the choices start as:</legend>

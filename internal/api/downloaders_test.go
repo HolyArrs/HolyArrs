@@ -266,6 +266,19 @@ func TestDownloaderSettings(t *testing.T) {
 	if st.StalledAfterHours != 3 || st.StalledActHours != 12 || st.RemoveFailed || st.ReplaceVanished || st.GrabSpacingSeconds != 5 || st.TryNextDownloader {
 		t.Fatalf("saved %+v", st)
 	}
+	if st.AutoAdd == nil || *st.AutoAdd {
+		t.Fatalf("downloads_auto_add should start off: %+v", st.AutoAdd)
+	}
+	body = `{"stalled_after_hours":3,"stalled_act_hours":12,"grab_spacing_seconds":5,"downloads_auto_add":true}`
+	_ = json.Unmarshal(do(t, "PUT", srv.URL+"/api/v1/settings/downloaders", body, 200), &st)
+	if st.AutoAdd == nil || !*st.AutoAdd {
+		t.Fatalf("downloads_auto_add not saved: %+v", st.AutoAdd)
+	}
+	// Left out of a save, it stays.
+	_ = json.Unmarshal(do(t, "PUT", srv.URL+"/api/v1/settings/downloaders", `{"stalled_after_hours":3,"stalled_act_hours":12,"grab_spacing_seconds":5}`, 200), &st)
+	if st.AutoAdd == nil || !*st.AutoAdd {
+		t.Fatalf("downloads_auto_add lost: %+v", st.AutoAdd)
+	}
 	do(t, "PUT", srv.URL+"/api/v1/settings/downloaders", `{"stalled_after_hours":10,"stalled_act_hours":5,"grab_spacing_seconds":2}`, 400)
 	do(t, "PUT", srv.URL+"/api/v1/settings/downloaders", `{"stalled_after_hours":0,"stalled_act_hours":5,"grab_spacing_seconds":2}`, 400)
 	do(t, "PUT", srv.URL+"/api/v1/settings/downloaders", `{"stalled_after_hours":6,"stalled_act_hours":24,"grab_spacing_seconds":99}`, 400)

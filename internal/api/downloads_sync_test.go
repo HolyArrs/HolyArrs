@@ -197,3 +197,59 @@ func TestMatchLinkOnlyNeverAdds(t *testing.T) {
 	}
 	_ = sql.ErrNoRows
 }
+
+// downloads_auto_add on: a sure match not in the Library is added (once,
+// even when matched again after a restart) and linked, with a log line;
+// not-media and unsure names never add.
+func TestMatchAutoAdd(t *testing.T) {
+	x := seed41(t, domain.SlotDownloading, "downloading")
+	ctx := context.Background()
+	exec41(t, x.s, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('links', 'downloads_auto_add', 'true', '', '{}', '', '{}')`)
+	var adds int
+	var newID int64
+	// The add stands in for the real one: the seeded title takes the
+	// looked-up id, so the Library holds it from then on.
+	_ = x.s.Read().QueryRow("SELECT id FROM titles ORDER BY id LIMIT 1").Scan(&newID)
+	exec41(t, x.s, `UPDATE titles SET source_ids = '{}', kind = 'movie'`)
+	x.api.match.addMovie = func(ctx context.Context, id string) (int64, error) {
+		adds++
+		exec41(t, x.s, `UPDATE titles SET source_ids = '{"tmdb":"329865"}' WHERE id = `+fmt.Sprint(newID))
+		return newID, nil
+	}
+	x.api.match.searchMovies = func(context.Context, string, int) ([]metadata.Movie, error) {
+		return []metadata.Movie{{Name: "Arrival", Year: 2016, IDs: map[string]string{"tmdb": "329865"}}}, nil
+	}
+	if out, _, err := x.api.MatchLinkOnly(ctx, 1, "cccc000000000000000000000000000000000000", "Some.Linux.ISO.x64", "linux"); err != nil || out != linkNotMedia {
+		t.Fatalf("not media: %q %v", out, err)
+	}
+	if out, _, err := x.api.MatchLinkOnly(ctx, 1, "dddd000000000000000000000000000000000000", "Arival.Two.2016.1080p", "movies"); err != nil || out != linkUnsure {
+		t.Fatalf("unsure: %q %v", out, err)
+	}
+	if adds != 0 {
+		t.Fatalf("adds %d before a sure match", adds)
+	}
+	out, tid, err := x.api.MatchLinkOnly(ctx, 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	if err != nil || out != linkLinked || tid == 0 || tid != newID || adds != 1 {
+		t.Fatalf("auto add: %q %d %v adds %d", out, tid, err, adds)
+	}
+	var line string
+	_ = x.s.Read().QueryRow("SELECT summary FROM torrent_log WHERE hash = 'bbbb000000000000000000000000000000000000'").Scan(&line)
+	if line != "Added to your Library" {
+		t.Fatalf("log line %q", line)
+	}
+	// A restart: the link row is gone (as if lost) but the title stays;
+	// matching again links the same title and adds nothing.
+	exec41(t, x.s, `DELETE FROM client_links`)
+	out, tid2, err := x.api.MatchLinkOnly(ctx, 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	if err != nil || out != linkLinked || tid2 != tid || adds != 1 {
+		t.Fatalf("again: %q %d %v adds %d", out, tid2, err, adds)
+	}
+	// Off: a new sure match is only suggested.
+	exec41(t, x.s, `UPDATE settings SET value = 'false' WHERE key = 'downloads_auto_add'`)
+	exec41(t, x.s, `DELETE FROM client_links`)
+	exec41(t, x.s, `UPDATE titles SET source_ids = '{}'`)
+	out, _, err = x.api.MatchLinkOnly(ctx, 1, "eeee000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	if err != nil || out != "suggested" || adds != 1 {
+		t.Fatalf("off: %q %v adds %d", out, err, adds)
+	}
+}
