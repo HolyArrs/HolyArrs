@@ -118,7 +118,7 @@
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
 	const count = (a: Ask) => askedFor(a, { seasons: ctx.info(a)?.seasons.length });
 	const pageHref = $derived(askHref(picked));
-	const pageLabel = $derived(picked.kind === 'show' ? 'Show page' : picked.kind === 'artist' ? 'Artist page' : 'Movie page');
+	const pageLabel = $derived(picked.kind === 'show' ? 'TV show page' : picked.kind === 'artist' ? 'Artist page' : 'Movie page');
 	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
 
 	// Choose what to get: the title lifts into the corner, the sheet rises inside the frame.
@@ -248,12 +248,13 @@
 								{/if}
 							</div>
 						{/if}
-						{#if pageHref && !choosing}<a class="tl-link" href={to(pageHref)} data-testid="ask-title-page">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
 						</div>
 					{/snippet}
 				</Billboard>
 			</div>
 			{/key}
+			<!-- The title's own page: pinned to the banner's bottom-right corner, opposite the answer buttons. -->
+			{#if pageHref && !choosing}<a class="tl-link tl-float" href={to(pageHref)} data-testid="ask-title-page">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
 			{#if status}
 				<section class="big" data-testid="ask-status" aria-label="Status">
 					<span class="life inline tone-{life.tone}" role="progressbar" aria-label="{picked.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
@@ -382,6 +383,9 @@
 	.tl-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
 	.tl-link { display: inline-flex; align-items: center; gap: 4px; flex: none; margin-left: auto; height: 36px; padding: 0 10px 0 14px; border-radius: var(--r-pill); background: rgb(255 255 255 / 0.18); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); font: 600 13px/1 var(--font-ui); text-decoration: none; white-space: nowrap; }
 	.tl-link:hover { background: rgb(255 255 255 / 0.28); }
+	.tl-float { position: absolute; z-index: 3; right: 28px; bottom: 44px; margin: 0; }
+	.frame.status .tl-float { bottom: calc(var(--big-h) + 22px); }
+	@media (max-width: 767px) { .tl-float { right: 16px; bottom: 28px; } }
 	.tl-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	.tl-link.tl-sheet { margin-left: auto; margin-right: 8px; background: var(--surface-2); color: var(--ink-2, inherit); box-shadow: none; border: 1px solid var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; }
 	.tl-link.tl-sheet:hover { background: var(--surface-3); }
