@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -240,8 +241,8 @@ func (x sabHistorySlot) job() Job {
 		j.SavePath = parentDir(x.Storage)
 	case "Failed":
 		j.State, j.Progress = StateFailed, 0
-		if x.FailMessage != "" {
-			j.Detail = cleanLine(x.FailMessage)
+		if m := x.failReason(); m != "" {
+			j.Detail = m
 		}
 	default:
 		// Still being repaired or unpacked: downloading at full progress.
@@ -249,6 +250,32 @@ func (x sabHistorySlot) job() Job {
 	}
 	return j
 }
+
+// failReason is the most useful why for a failed entry: fail_message, or
+// when that is SABnzbd's generic abort text, the last download, verify or
+// repair log line. Cleaned, without the trailing help link.
+func (x sabHistorySlot) failReason() string {
+	m := x.FailMessage
+	if m == "" || strings.HasPrefix(strings.TrimSpace(m), "Aborted, cannot be completed") {
+		for i := len(x.StageLog) - 1; i >= 0; i-- {
+			st := x.StageLog[i]
+			if st.Name != "Download" && st.Name != "Verify" && st.Name != "Repair" {
+				continue
+			}
+			for k := len(st.Actions) - 1; k >= 0; k-- {
+				if a := strings.TrimSpace(st.Actions[k]); a != "" && !strings.HasPrefix(a, "Aborted") {
+					m = a
+					i = -1
+					break
+				}
+			}
+		}
+	}
+	return trailLink.ReplaceAllString(cleanLine(m), "")
+}
+
+// trailLink is a " - https://host/..." help link at the end of a line.
+var trailLink = regexp.MustCompile(`\s+-\s+https?://\S+$`)
 
 func num(s string) float64 {
 	f, _ := strconv.ParseFloat(strings.TrimSpace(s), 64)

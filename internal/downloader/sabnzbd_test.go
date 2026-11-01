@@ -221,3 +221,26 @@ func TestSabnzbdClock(t *testing.T) {
 		}
 	}
 }
+
+func TestSabnzbdFailReasonPrefersStageLog(t *testing.T) {
+	var x sabHistorySlot
+	x.Status, x.FailMessage = "Failed", "Aborted, cannot be completed - https://sabnzbd.org/not-complete"
+	x.StageLog = append(x.StageLog, struct {
+		Name    string   `json:"name"`
+		Actions []string `json:"actions"`
+	}{"Download", []string{"Downloaded in 3 minutes"}}, struct {
+		Name    string   `json:"name"`
+		Actions []string `json:"actions"`
+	}{"Repair", []string{"136 articles were missing", ""}})
+	if d := x.job().Detail; d != "136 articles were missing" {
+		t.Fatalf("detail %q", d)
+	}
+	x.StageLog = nil
+	if d := x.job().Detail; d != "Aborted, cannot be completed" {
+		t.Fatalf("no log: %q", d)
+	}
+	x.FailMessage = "Download failed - Not on your server(s) - https://sabnzbd.org/not-complete"
+	if d := x.job().Detail; d != "Download failed - Not on your server(s)" {
+		t.Fatalf("own: %q", d)
+	}
+}
