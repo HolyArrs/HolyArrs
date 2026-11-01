@@ -167,9 +167,10 @@ func (a *API) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 	var st, how string
 	var tid *int64
 	if db.QueryRowContext(ctx, "SELECT state, title_id, COALESCE(how, '') FROM client_links WHERE downloader_id = ? AND hash = ?", downloaderID, key).Scan(&st, &tid, &how) == nil &&
-		!(how == "suggested" && tid == nil && a.autoAddOn(ctx)) {
+		!(how == "suggested" && tid == nil && a.autoAddOn(ctx)) && !(st == linkNotMedia && how == "name") {
 		// Already decided (by a person or an earlier match): leave it. Only
-		// a matcher suggestion is looked at again once auto-add is on.
+		// the matcher's own calls are looked at again: a suggestion once
+		// auto-add is on, and a not-media name (the name reading improves).
 		if tid != nil {
 			return st, *tid, nil
 		}
@@ -262,10 +263,11 @@ func (a *API) libraryTitle(ctx context.Context, c Candidate) (int64, error) {
 // due now (Match now, with sync on).
 func (a *API) rematch(ctx context.Context) int {
 	var n int64
-	// With auto-add on, the matcher's suggestions go again too, to be added.
-	outs := "('', 'nomatch')"
+	// Not-media names go again too (a person's not-media pick stays), and
+	// with auto-add on, the matcher's suggestions, to be added.
+	outs := "('', 'nomatch', 'not_media')"
 	if a.autoAddOn(ctx) {
-		outs = "('', 'nomatch', 'suggested')"
+		outs = "('', 'nomatch', 'not_media', 'suggested')"
 	}
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, "UPDATE dl_match_queue SET attempts = 0, next_try_at = ?, outcome = '', last_error = '' WHERE outcome IN "+outs,

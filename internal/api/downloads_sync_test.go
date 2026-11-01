@@ -265,4 +265,13 @@ func TestMatchAutoAdd(t *testing.T) {
 	if n := x.api.rematch(ctx); n != 1 {
 		t.Fatalf("rematch %d", n)
 	}
+	// A not-media call made by the name reading is looked at again; a
+	// person's not-media pick is not.
+	exec41(t, x.s, `INSERT INTO client_links (downloader_id, hash, name, state, slot_ids, covers, candidates, how, matched_at) VALUES (1, 'hhhh', 'Arrival_2016_Bluray-1080p', 'not_media', '[]', '', '[]', 'name', ''), (1, 'iiii', 'Arrival_2016_Bluray-1080p', 'not_media', '[]', '', '[]', 'by hand', '')`)
+	if out, _, err := x.api.MatchLinkOnly(ctx, 1, "hhhh", "Arrival_2016_Bluray-1080p", "prowlarr"); err != nil || out != linkLinked {
+		t.Fatalf("stale not media: %q %v", out, err)
+	}
+	if out, _, err := x.api.MatchLinkOnly(ctx, 1, "iiii", "Arrival_2016_Bluray-1080p", "prowlarr"); err != nil || out != linkNotMedia {
+		t.Fatalf("person not media changed: %q %v", out, err)
+	}
 }
