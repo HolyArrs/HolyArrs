@@ -321,7 +321,7 @@ func musicReady(ctx context.Context, db querier, titleID int64, albums []string,
 		var tracks, ready int
 		err := db.QueryRowContext(ctx, `SELECT count(*), coalesce(sum(CASE WHEN s.state IN ('in_library', 'better_wanted') THEN 1 ELSE 0 END), 0)
 			FROM items i LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
-			WHERE i.part_id = ? AND i.kind = 'track' AND i.dropped_at IS NULL`, p.ID).Scan(&tracks, &ready)
+			WHERE i.part_id = ? AND i.kind = 'track' AND i.dropped_at IS NULL AND i.keep_up_to_date = 1`, p.ID).Scan(&tracks, &ready)
 		if err != nil {
 			return false, err
 		}

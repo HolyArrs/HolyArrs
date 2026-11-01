@@ -172,7 +172,11 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 			if !s.sees(uid) {
 				continue
 			}
-			t, _ := time.Parse(store.TimeLayout, at)
+			// Older rows were written in RFC 3339 rather than the store's layout.
+			t, err := time.Parse(store.TimeLayout, at)
+			if err != nil {
+				t, _ = time.Parse(time.RFC3339Nano, at)
+			}
 			k := strconv.FormatInt(tid, 10)
 			e := out[k]
 			e.Askers = append(e.Askers, askedByPerson{ID: uid, Name: name, AskedAt: t, Me: uid == s.me})
