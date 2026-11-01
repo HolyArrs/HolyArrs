@@ -182,8 +182,10 @@ func guessOf(name, category string) guess {
 	case tvHint:
 		g.kind = "show"
 		g.complete = true
-	case cat != "" && !movieHint:
-		// Another category (linux, games, music...): not a movie or show.
+	case cat != "" && !movieHint && !(g.year > 0 && (p.Resolution.Value > 0 || p.Codec.Value != "")):
+		// Another category (linux, games, music...): not a movie or show,
+		// unless the name itself reads like a film (year plus quality), as
+		// with Prowlarr's own "prowlarr" category.
 	case movieHint || g.year > 0 || p.Resolution.Value > 0 || p.Codec.Value != "":
 		g.kind = "movie"
 	}

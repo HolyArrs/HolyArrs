@@ -253,3 +253,14 @@ func TestOutsideChangesNeedSettings(t *testing.T) {
 	r.owner.call("POST", item+"/trackers", `{"urls":["https://t.example.org/announce"]}`, 200)
 	r.owner.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/speed-limits", dl), `{"hashes":["`+isoHash+`"],"down":1,"up":1}`, 200)
 }
+
+// An indexer-manager category like "prowlarr" says nothing about the kind: a
+// name with a year and a resolution is still a movie; other names stay out.
+func TestGuessNeutralCategory(t *testing.T) {
+	if g := guessOf("Root_Cause_2019_Bluray-1080p", "prowlarr"); g.kind != "movie" {
+		t.Fatalf("prowlarr movie: %+v", g)
+	}
+	if g := guessOf("Some.Linux.Distro.x64", "linux"); g.kind != "" {
+		t.Fatalf("linux: %+v", g)
+	}
+}
