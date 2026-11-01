@@ -248,4 +248,21 @@ func TestMatchAutoAdd(t *testing.T) {
 	if err != nil || out != "suggested" || adds != 1 {
 		t.Fatalf("off: %q %v adds %d", out, err, adds)
 	}
+	// On again: the matcher's own suggestion is added; a person's choice
+	// (any other how) stays as it is.
+	exec41(t, x.s, `INSERT INTO client_links (downloader_id, hash, name, state, slot_ids, covers, candidates, how, matched_at) VALUES (1, 'ffff000000000000000000000000000000000000', 'Arrival.2016.1080p', 'unsure', '[]', '', '[]', 'rejected', '')`)
+	exec41(t, x.s, `UPDATE settings SET value = 'true' WHERE key = 'downloads_auto_add'`)
+	out, tid, err = x.api.MatchLinkOnly(ctx, 1, "eeee000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	if err != nil || out != linkLinked || tid != newID || adds != 2 {
+		t.Fatalf("upgrade: %q %d %v adds %d", out, tid, err, adds)
+	}
+	out, _, err = x.api.MatchLinkOnly(ctx, 1, "ffff000000000000000000000000000000000000", "Arrival.2016.1080p", "movies")
+	if err != nil || out != linkUnsure || adds != 2 {
+		t.Fatalf("person choice changed: %q %v adds %d", out, err, adds)
+	}
+	// Match now with auto-add on puts suggested items back in the queue.
+	exec41(t, x.s, `INSERT INTO dl_match_queue (downloader_id, key, name, category, priority, next_try_at, outcome) VALUES (1, 'gggg', 'X.2016', 'movies', 0, '', 'suggested')`)
+	if n := x.api.rematch(ctx); n != 1 {
+		t.Fatalf("rematch %d", n)
+	}
 }

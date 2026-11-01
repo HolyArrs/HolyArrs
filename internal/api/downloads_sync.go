@@ -164,10 +164,12 @@ func (a *API) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 	if db.QueryRowContext(ctx, "SELECT COUNT(*) FROM downloads WHERE downloader_id = ? AND lower(external_id) = ?", downloaderID, key).Scan(&n) == nil && n > 0 {
 		return "own", 0, nil
 	}
-	var st string
+	var st, how string
 	var tid *int64
-	if db.QueryRowContext(ctx, "SELECT state, title_id FROM client_links WHERE downloader_id = ? AND hash = ?", downloaderID, key).Scan(&st, &tid) == nil {
-		// Already decided (by a person or an earlier match): leave it.
+	if db.QueryRowContext(ctx, "SELECT state, title_id, COALESCE(how, '') FROM client_links WHERE downloader_id = ? AND hash = ?", downloaderID, key).Scan(&st, &tid, &how) == nil &&
+		!(how == "suggested" && tid == nil && a.autoAddOn(ctx)) {
+		// Already decided (by a person or an earlier match): leave it. Only
+		// a matcher suggestion is looked at again once auto-add is on.
 		if tid != nil {
 			return st, *tid, nil
 		}
@@ -222,7 +224,7 @@ func (a *API) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 		return "suggested", 0, a.saveLink(ctx, w, linkUnsure, 0, nil, "", cs, "suggested")
 	}
 	slots, covers := a.linkSlots(ctx, titleID, c.Kind, g)
-	how := "auto"
+	how = "auto"
 	if added {
 		how = "auto add"
 	}
@@ -260,8 +262,13 @@ func (a *API) libraryTitle(ctx context.Context, c Candidate) (int64, error) {
 // due now (Match now, with sync on).
 func (a *API) rematch(ctx context.Context) int {
 	var n int64
+	// With auto-add on, the matcher's suggestions go again too, to be added.
+	outs := "('', 'nomatch')"
+	if a.autoAddOn(ctx) {
+		outs = "('', 'nomatch', 'suggested')"
+	}
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
-		res, err := tx.ExecContext(ctx, "UPDATE dl_match_queue SET attempts = 0, next_try_at = ?, outcome = '', last_error = '' WHERE outcome IN ('', 'nomatch')",
+		res, err := tx.ExecContext(ctx, "UPDATE dl_match_queue SET attempts = 0, next_try_at = ?, outcome = '', last_error = '' WHERE outcome IN "+outs,
 			time.Now().UTC().Format(store.TimeLayout))
 		if err == nil {
 			n, _ = res.RowsAffected()

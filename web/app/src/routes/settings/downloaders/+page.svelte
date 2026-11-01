@@ -425,7 +425,7 @@
 		</label>
 		<label class="checkline">
 			<input id="auto-add" type="checkbox" bind:checked={settings.downloads_auto_add} />
-			<span><b>Add matched titles to your Library</b><br /><span class="hint">When something already in a Downloader matches a movie or show for sure, add that title without searching. Only for items seen from now on; ones already in Suggested stay there for you to confirm.</span></span>
+			<span><b>Add matched titles to your Library</b><br /><span class="hint">When something already in a Downloader matches a movie or show for sure, add that title without searching. Sure matches already in Suggested are added the next time they are matched.</span></span>
 		</label>
 		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
 			<legend class="small muted">When you remove a download on the Downloads screen, the choices start as:</legend>
