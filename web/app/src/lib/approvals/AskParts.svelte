@@ -124,7 +124,12 @@
 		l.delete(p.row.key);
 		left = l;
 	}
-	const songLen = (ms?: number) => (ms ? `${Math.floor(ms / 60000)}:${String(Math.round((ms % 60000) / 1000)).padStart(2, '0')}` : '');
+	// Round the whole length first, so 179.6 s reads 3:00, never 2:60.
+	const songLen = (ms?: number) => {
+		if (!ms) return '';
+		const sec = Math.round(ms / 1000);
+		return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+	};
 
 	// The approver's episode ticks, by season (absent: as asked).
 	let ticks = $state<Record<number, number[]>>({});

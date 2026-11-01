@@ -6,6 +6,6 @@
 {#if label}<span class="kid {size}" data-testid="ask-kid" title="This person has an age limit">{label}</span>{/if}
 
 <style>
-	.kid { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--mark-ask) 18%, transparent); color: var(--text); font: var(--t-footnote); font-weight: 600; white-space: nowrap; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mark-ask) 45%, transparent); }
+	.kid { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--mark-ask) 24%, var(--surface-1)); color: color-mix(in srgb, var(--mark-ask) 45%, var(--text)); font: var(--t-footnote); font-weight: 600; white-space: nowrap; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mark-ask) 45%, transparent); }
 	.kid.sm { padding: 1px 6px; font-size: 11px; }
 </style>

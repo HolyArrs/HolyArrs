@@ -85,7 +85,11 @@
 	});
 
 	const year = (iso?: string) => (iso ? iso.slice(0, 4) : '');
-	const len = (ms?: number) => (ms ? `${Math.floor(ms / 60000)}:${String(Math.round((ms % 60000) / 1000)).padStart(2, '0')}` : '');
+	const len = (ms?: number) => {
+		if (!ms) return '';
+		const sec = Math.round(ms / 1000);
+		return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+	};
 	const tone = (st = '') => (['have', 'imported', 'in_library', 'kept'].includes(st) ? 'have' : ['downloading', 'importing', 'searching'].includes(st) ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
 
 	async function run(key: string, fn: () => Promise<unknown>, done?: string) {

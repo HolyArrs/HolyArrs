@@ -379,7 +379,8 @@
 	.asker { flex-basis: 100%; display: inline-flex; align-items: center; gap: 8px; margin-top: 2px; color: rgb(255 255 255 / 0.82); font: 500 14px/1.3 var(--font-ui) !important; }
 	.asker b { color: #fff; font-weight: 700; }
 	/* The banner art is always dark: the Kid mark keeps a light ink in both themes. */
-	.asker :global(.kid.kid) { color: #fff; }
+	/* Over artwork: a solid dark chip with white text reads in both themes. */
+	.asker :global(.kid.kid) { color: #fff; background: rgb(0 0 0 / 0.55); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mark-ask) 70%, transparent); }
 	.said { flex-basis: 100%; max-width: 520px; padding-left: 12px; border-left: 2px solid rgb(255 255 255 / 0.45); color: rgb(255 255 255 / 0.9); font: italic 400 15px/1.45 var(--font-ui) !important; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.sep { margin: 0 8px; opacity: 0.6; }
 
