@@ -47,6 +47,7 @@
 		compass: 'M12 3.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17zM15.5 8.5l-2 5-5 2 2-5z',
 		chevronLeft: 'M14.5 6 8.5 12l6 6',
 		chevronRight: 'M9.5 6l6 6-6 6',
+		arrowUpRight: 'M7.5 16.5 16.5 7.5M9 7.5h7.5V15',
 		chevronDown: 'M6 9.5l6 6 6-6',
 		chevronUp: 'M6 14.5l6-6 6 6',
 		chevronUpDown: 'M8 9.5l4-4 4 4M8 14.5l4 4 4-4',

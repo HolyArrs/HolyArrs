@@ -15,7 +15,7 @@
 	import StatusIcon, { statusKey, type StatusKey } from './StatusIcon.svelte';
 	import ApprovalsStage from './ApprovalsStage.svelte';
 	import { agoLong, dateTime } from '../format.ts';
-	import type { ApprovalsCtx } from './approvals.ts';
+	import { askHref, type ApprovalsCtx } from './approvals.ts';
 	import { artistPhoto, askArtist, storedParts } from './details.svelte.ts';
 	import { to } from '../paths.ts';
 	import { shortDate } from './inbox.ts';
@@ -421,6 +421,7 @@
 				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
+					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'Show' : 'Movie'} page for {a.name}" title="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'Show' : 'Movie'} page"><Icon name="arrowUpRight" size={16} /></a>{/if}
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${a.poster}")`}></span>{/if}
 					</div>
@@ -557,6 +558,13 @@
 	.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	/* The card takes the sheet's own colour (dark in dark mode, pale in light), so no band shows under the sheet. */
 	.bc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 380ms cubic-bezier(0.4, 0, 0.2, 1); }
+	/* Desktop: a small "open its page" link fades into the card's top-right corner on hover; touch uses the window's link. */
+	.cl-go { position: absolute; top: 10px; right: 10px; z-index: 5; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; color: #fff; background: rgb(20 20 24 / 0.42); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 0 0 1px rgb(255 255 255 / 0.14), 0 6px 16px -6px rgb(0 0 0 / 0.5); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); opacity: 0; transform: translateY(-3px) scale(0.96); transition: opacity 280ms cubic-bezier(0.22, 1, 0.36, 1), transform 280ms cubic-bezier(0.22, 1, 0.36, 1), background 160ms ease; }
+	.cl-go:hover { background: rgb(20 20 24 / 0.62); }
+	.cl-go:focus-visible { opacity: 1; transform: none; outline: none; box-shadow: var(--focus-ring); }
+	@media (hover: hover) and (pointer: fine) { .bc:hover .cl-go { opacity: 1; transform: none; } }
+	@media (hover: none), (pointer: coarse) { .cl-go { display: none; } }
+	@media (prefers-reduced-motion: reduce) { .cl-go { transition: opacity 120ms linear; transform: none; } }
 	.open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.open:focus-visible { box-shadow: none; }
 	.bc:has(.open:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
