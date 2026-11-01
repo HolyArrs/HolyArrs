@@ -26,6 +26,10 @@ func readOnlyFor(d domain.Downloader) bool {
 	return readOnlyListed(os.Getenv(ReadOnlyEnv), d)
 }
 
+// ReadOnlyFor is readOnlyFor for callers outside this package (the
+// Downloads screen hides controls on these rows).
+func ReadOnlyFor(d domain.Downloader) bool { return readOnlyFor(d) }
+
 func readOnlyListed(list string, d domain.Downloader) bool {
 	base := strings.TrimRight(strings.ToLower(strings.TrimSpace(d.URL)), "/")
 	for _, v := range strings.Split(list, ",") {

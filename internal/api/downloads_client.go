@@ -230,10 +230,13 @@ func (a *API) downloaderNames(ctx context.Context) map[int64]domain.Downloader {
 // clientRow is one client item in the Downloads screen's words.
 func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 	ph, st, active := clientPhase(j)
+	if d.Protocol == "usenet" && st == "seeding" {
+		st = "done" // Usenet has no sharing after the bytes are in
+	}
 	row := DownloadRow{
 		DownloadView: DownloadView{State: st, Label: PhaseLabels[ph], Progress: j.Progress, Speed: j.Speed, UpSpeed: j.UpSpeed, Seeds: j.Seeds, Peers: j.Peers, SeedsTotal: j.SeedsTotal, PeersTotal: j.PeersTotal, Active: active},
 		Phase:        ph, Name: j.Name, Downloader: d.Name, DownloaderKind: d.Adapter, Protocol: d.Protocol, Size: j.Size,
-		UpdatedAt: time.Now().UTC(), CanAct: true, ClientItem: true, Outside: true, DownloaderID: d.ID, Hash: j.ID,
+		UpdatedAt: time.Now().UTC(), CanAct: !downloader.ReadOnlyFor(d), ClientItem: true, Outside: true, DownloaderID: d.ID, Hash: j.ID,
 		Category: j.Category, Ratio: &j.Ratio, Limits: j.Limits, ClientHint: clientHint(j.Detail),
 		QueuePos: j.QueuePos, Tracker: j.Tracker, TrackerProblem: j.TrackerProblem,
 		LimitDown: j.LimitDown, LimitUp: j.LimitUp, LiveKey: liveKey(d.ID, j.ID),
@@ -252,6 +255,9 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 	}
 	if ph == "done" {
 		row.Label = "Done"
+	}
+	if j.State == downloader.StateFailed && j.Detail != "" && row.ClientHint == "" {
+		row.Text = j.Detail // the Downloader's own reason (SABnzbd's fail message)
 	}
 	return row
 }
