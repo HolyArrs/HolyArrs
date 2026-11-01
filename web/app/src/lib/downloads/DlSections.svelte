@@ -918,7 +918,7 @@
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
 	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
-	const wMin = (id: ColId) => (id === 'proto' ? SRC_W : Math.max(layout.widths[id], MINW[id] ?? 0));
+	const wMin = (id: ColId) => (id === 'proto' ? SRC_W : layout.widths[id]);
 	// The Source column is just wide enough for its header word and the client's logo.
 	const SRC_W = 60;
 	const vis = $derived.by(() => {
@@ -963,9 +963,12 @@
 	function minOf(id: ColId): number {
 		const l = grid?.querySelector<HTMLElement>(`.chead [data-col="${id}"] .lbl`);
 		const w = l ? textW(l) : 0;
-		return w > 0 ? Math.ceil(w) + 14 : MIN_W;
+		// The sort arrow counts too, so a sorted column never cuts its own name.
+		const a = l?.parentElement?.querySelector<HTMLElement>('.sarr');
+		return w > 0 ? Math.ceil(w + (a ? a.offsetWidth + 4 : 0)) + 14 : MIN_W;
 	}
-	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), MINW[id] ?? 0, Math.min(MAX_W, v)));
+	// Dragging stops at the column's own name; MINW only sets how narrow double-click fit goes.
+	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), Math.min(MAX_W, v)));
 	/** fitOf is the widest cell of a column (the header label too) plus padding. */
 	function fitOf(id: ColId): number {
 		if (!grid) return COL[id].width;
@@ -979,7 +982,7 @@
 			const tx = el.classList.contains('ch') ? el.querySelector('.lbl') : (el.querySelector('.tx') ?? el);
 			w = Math.max(w, tx ? textW(tx) + (el.classList.contains('st') ? 14 : 0) : 0);
 		}
-		return clamp(id, Math.ceil(w) + 14);
+		return clamp(id, Math.max(Math.ceil(w) + 14, MINW[id] ?? 0));
 	}
 	$effect(() => {
 		if (!grid) return;
@@ -1025,16 +1028,19 @@
 		e.preventDefault();
 		e.stopPropagation();
 		const x0 = e.clientX;
-		const w0 = wOf(id);
 		const el = e.currentTarget as HTMLElement;
+		// Start from the width on screen (a flexing Title is wider than its saved width), so the edge stays under the pointer.
+		const w0 = Math.round(el.parentElement?.getBoundingClientRect().width ?? wOf(id));
 		el.setPointerCapture(e.pointerId);
 		el.classList.add('drag');
+		document.documentElement.classList.add('col-resizing');
 		const mv = (m: PointerEvent) => resize(id, w0, m.clientX - x0);
 		const up = () => {
 			el.removeEventListener('pointermove', mv);
 			el.removeEventListener('pointerup', up);
 			el.removeEventListener('pointercancel', up);
 			el.classList.remove('drag');
+			document.documentElement.classList.remove('col-resizing');
 			save();
 		};
 		el.addEventListener('pointermove', mv);
@@ -1045,7 +1051,7 @@
 		const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
 		if (!d) return;
 		e.preventDefault();
-		resize(id, wOf(id), d * (e.shiftKey ? 40 : 10));
+		resize(id, Math.round((e.currentTarget as HTMLElement).parentElement?.getBoundingClientRect().width ?? wOf(id)), d * (e.shiftKey ? 40 : 10));
 		save();
 	}
 	// Double-click auto-fits that column, as in a spreadsheet.
@@ -1879,6 +1885,9 @@
 	.hic.bad .ic { background: var(--fail); }
 
 	.dline > .ph { display: none; }
+	/* A column narrowed past its content cuts it off cleanly instead of spilling into the next one. */
+	@media (min-width: 641px) { .dline:not(.chead) > [data-col] { min-width: 0; overflow: hidden; } }
+	:global(html.col-resizing), :global(html.col-resizing *) { cursor: col-resize !important; user-select: none !important; }
 	.txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
 	.num { text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
