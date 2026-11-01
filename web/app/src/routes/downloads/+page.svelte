@@ -261,7 +261,7 @@
 			api
 				.get<{ downloaders: DownloaderView[] }>('/downloaders')
 				.then((r) => {
-					torrentClients = r.downloaders.filter((d) => d.protocol === 'torrent').map((d) => ({ id: d.id, name: d.name, category: d.category }));
+					torrentClients = r.downloaders.filter((d) => d.protocol === 'torrent' && d.kind === 'qbittorrent').map((d) => ({ id: d.id, name: d.name, category: d.category }));
 					torrent = torrentClients.length > 0;
 				})
 				.catch(() => note('downloaders', 'The Downloader list could not be loaded; adding torrents by hand is off for now.'));

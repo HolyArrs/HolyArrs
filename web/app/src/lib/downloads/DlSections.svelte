@@ -44,7 +44,7 @@
 	import type { ImportRecord, TitleView } from '../types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
-	import { pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
+	import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
 	import { poster, who } from './shared.ts';
 	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { longPress, phoneTitle, subLine } from './phone.ts';
@@ -136,7 +136,7 @@
 		{ label: 'Try again', action: 'retry', retry: true }, { label: 'Move to top', action: 'top' }, { label: 'Check again', action: 'recheck', torrent: true }, { label: 'Ask trackers again', action: 'reannounce', torrent: true }
 	];
 	// A failed Usenet job offers Try again; queue moves are for live jobs.
-	const actionsOf = (r: DownloadRow) => ACTIONS.filter((a) => (a.retry ? retryable(r) : (!a.torrent || protocolOf(r) === 'torrent') && !(a.action === 'top' && retryable(r))));
+	const actionsOf = (r: DownloadRow) => (controllable(r.downloader_kind) ? ACTIONS : []).filter((a) => (a.retry ? retryable(r) : (!a.torrent || protocolOf(r) === 'torrent') && !(a.action === 'top' && retryable(r))));
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 	// The detail tabs follow the download's kind: a torrent has peers and
@@ -464,8 +464,8 @@
 	const upSum = $derived(upTotal ?? sum.up);
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
 	// The toolbar's Start and Pause act on the open row; its state comes from the client.
-	const canStart = $derived(!!openRow?.can_act && isPaused(openRow) && busy !== openRow?.id);
-	const canPause = $derived(!!openRow?.can_act && !isPaused(openRow) && busy !== openRow?.id);
+	const canStart = $derived(!!openRow?.can_act && controllable(openRow?.downloader_kind) && isPaused(openRow) && busy !== openRow?.id);
+	const canPause = $derived(!!openRow?.can_act && controllable(openRow?.downloader_kind) && !isPaused(openRow) && busy !== openRow?.id);
 	const toReview = $derived(reviewCount(allQueue));
 	// Time left: the longest of the rows' own estimates and a Usenet queue's.
 	const etaAll = $derived(Math.max(sum.eta || 0, ...clients.map((c) => (c.error ? 0 : (c.status?.time_left ?? 0)))));

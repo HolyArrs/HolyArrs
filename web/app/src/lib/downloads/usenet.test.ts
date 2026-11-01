@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
+import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
 
 const view: UsenetView = {
 	stages: [
@@ -49,5 +49,15 @@ describe('sab audit fixes', () => {
 		expect(pausable({ protocol: 'usenet', phase: 'done' })).toBe(false);
 		expect(pausable({ protocol: 'usenet', phase: 'downloading' })).toBe(true);
 		expect(pausable({ protocol: 'torrent', phase: 'done' })).toBe(true);
+	});
+});
+
+describe('controllable', () => {
+	it('offers row controls only for engines that take them', () => {
+		expect(controllable('qbittorrent')).toBe(true);
+		expect(controllable('sabnzbd')).toBe(true);
+		expect(controllable(undefined)).toBe(true);
+		for (const k of ['transmission', 'deluge', 'nzbget']) expect(controllable(k)).toBe(false);
+		expect(pausable({ protocol: 'torrent', phase: 'downloading', downloader_kind: 'deluge' })).toBe(false);
 	});
 });

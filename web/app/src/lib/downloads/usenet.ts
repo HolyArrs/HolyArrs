@@ -13,14 +13,21 @@ type RetryBits = Pick<DownloadRow, 'phase' | 'protocol' | 'client_item' | 'hash'
 
 /** retryable says a row is a failed Usenet job the Downloader still holds
  *  and HolyArrs did not send (its own failed downloads were searched again). */
-export function retryable(r: RetryBits): boolean {
-	return !!r.client_item && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
+export function retryable(r: RetryBits & { downloader_kind?: string }): boolean {
+	return controllable(r.downloader_kind) && !!r.client_item && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
 }
 
 /** pausable says whether Pause/Resume means anything: a Usenet job in the
  *  finished list (done or failed) cannot be paused. */
-export function pausable(r: { protocol?: string; phase?: string }): boolean {
-	return !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
+export function pausable(r: { protocol?: string; phase?: string; downloader_kind?: string }): boolean {
+	return controllable(r.downloader_kind) && !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
+}
+
+/** controllable says the Downloader kind takes pause, resume, retry and the
+ *  other row controls; Transmission, Deluge and NZBGet do not (yet). An
+ *  unknown kind is allowed and the server answers. */
+export function controllable(kind?: string): boolean {
+	return !kind || kind === 'qbittorrent' || kind === 'sabnzbd';
 }
 
 /** The words for a Usenet job's step after the download, from client_hint. */
