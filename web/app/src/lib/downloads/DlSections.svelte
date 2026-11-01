@@ -965,7 +965,7 @@
 		const w = l ? textW(l) : 0;
 		// The sort arrow counts too, so a sorted column never cuts its own name.
 		const a = l?.parentElement?.querySelector<HTMLElement>('.sarr');
-		return w > 0 ? Math.ceil(w + (a ? a.offsetWidth + 4 : 0)) + 14 : MIN_W;
+		return w > 0 ? Math.ceil(w + (a ? a.offsetWidth + 4 : 0)) + 2 : MIN_W;
 	}
 	// Dragging stops at the column's own name; MINW only sets how narrow double-click fit goes.
 	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), Math.min(MAX_W, v)));
