@@ -93,7 +93,7 @@
 			void refreshInbox();
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
-			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'decline'} ${a?.name ?? 'the ask'}. ${message(err)} Try again.`, 'fail');
+			toasts.push(`Couldn’t ${p.mode === 'approve' ? 'approve' : 'decline'} ${a?.name ?? 'the request'}. ${message(err)} Try again.`, 'fail');
 		} finally {
 			delete pending[id];
 		}
@@ -101,14 +101,19 @@
 
 	/** act decides a set of asks after an Undo window; the toast's Undo cancels them all. */
 	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '', opt?: DecideOptions) {
-		const ids = list.filter((a) => a.state === 'asked' && !pending[a.id]).map((a) => a.id);
-		if (!ids.length) return;
+		// Waiting asks, and (to decline only) approved ones whose title never got added (Failed).
+		const open = (a: Ask) => a.state === 'asked' || (mode === 'turn_down' && a.state === 'approved' && !a.title_id);
+		const ids = list.filter((a) => open(a) && !pending[a.id]).map((a) => a.id);
+		if (!ids.length) {
+			if (list.length && !list.some((a) => pending[a.id])) toasts.push(`Couldn’t ${mode === 'approve' ? 'approve' : 'decline'} ${list.length === 1 ? list[0].name : `${list.length} requests`}. It was already answered.`, 'fail');
+			return;
+		}
 		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		// Words follow the asks actually decided (some in the list may be answered already).
-		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'the ask') : `${ids.length} asks`;
+		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'the request') : `${ids.length} requests`;
 		const verb = mode === 'approve' ? 'Approved' : 'Declined';
-		toasts.push(`${verb} ${one}.`, 'ok', {
+		const toastId = toasts.push(`${verb} ${one}.`, 'ok', {
 			ms: UNDO_MS,
 			action: {
 				label: 'Undo',
@@ -122,9 +127,19 @@
 				}
 			}
 		});
+		for (const id of ids) undoToast.set(id, toastId);
 	}
+	// Each waiting decision's Undo toast, so leaving the page can take the Undo away.
+	const undoToast = new Map<number, number>();
 	// Leaving the page sends what is still waiting out its Undo time.
-	onDestroy(() => Object.keys(pending).forEach((id) => void commit(Number(id))));
+	// Its Undo can't work after that, so the toast goes too.
+	onDestroy(() =>
+		Object.keys(pending).forEach((id) => {
+			const t = undoToast.get(Number(id));
+			if (t) toasts.dismiss(t);
+			void commit(Number(id));
+		})
+	);
 
 	// Decline asks for an optional reason the asker sees.
 	let declineOpen = $state(false);
@@ -156,8 +171,19 @@
 	}
 	function confirmDecline(e: SubmitEvent) {
 		e.preventDefault();
+		// The button that opened the sheet leaves with the ask: focus goes to the window, or the next card.
+		const ids = new Set(declineList.map((a) => a.id));
+		const cards = [...document.querySelectorAll<HTMLElement>('.bc[data-ask]')];
+		const at = cards.findIndex((c) => ids.has(Number(c.dataset.ask)));
+		const nextCard = cards.slice(at + 1).find((c) => !ids.has(Number(c.dataset.ask))) ?? cards.slice(0, Math.max(at, 0)).find((c) => !ids.has(Number(c.dataset.ask)));
 		act(declineList, 'turn_down', declineWhy.trim());
 		declineOpen = false;
+		setTimeout(() => {
+			const a = document.activeElement;
+			if (a && a !== document.body && a.isConnected && !a.closest('[inert]')) return;
+			const win = document.querySelector<HTMLElement>('dialog.win[open]');
+			(win ?? nextCard?.querySelector<HTMLElement>('.open') ?? null)?.focus({ preventScroll: true });
+		}, 80);
 	}
 	let selectedId = $state(0);
 	const selected = $derived(shown.find((a) => a.id === selectedId) ?? shown[0] ?? null);
@@ -215,6 +241,8 @@
 			asks = r.asks;
 			error = '';
 		} catch (e) {
+			// A background refresh that fails keeps the list on screen and says so once.
+			if (asks.length) toasts.push(`Couldn’t refresh your requests. ${message(e)}`, 'fail');
 			error = message(e);
 		} finally {
 			loaded = true;
@@ -573,8 +601,8 @@
 {#if !approver}
 <div class="workspace">
 	<div class="main-col">
-		{#if error}
-			<LoadError hasData={false} message="Couldn't load your requests. {error}" onretry={load} />
+		{#if error && !asks.length}
+			<LoadError hasData={false} message="Couldn’t load your requests. {error}" onretry={load} />
 		{:else}
 		<PageLoader loading={!loaded} label="Loading your requests…">
 		{#if asks.length === 0}
@@ -590,7 +618,7 @@
 			<EmptyState
 				compact
 				icon="check"
-				title={tab === 'waiting' ? "You're all caught up." : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
+				title={tab === 'waiting' ? 'You’re all caught up.' : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
 			/>
 		{:else}
 			{@render bulkBar()}
@@ -681,8 +709,8 @@
 </div>
 {:else}
 	<div class="variant">
-		{#if error}
-			<LoadError hasData={false} message="Couldn't load your requests. {error}" onretry={load} />
+		{#if error && !asks.length}
+			<LoadError hasData={false} message="Couldn’t load your requests. {error}" onretry={load} />
 		{:else}
 			<PageLoader loading={!loaded} label="Loading your requests…">
 				{#if asks.length === 0}
