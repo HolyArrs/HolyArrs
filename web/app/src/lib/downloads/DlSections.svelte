@@ -938,7 +938,7 @@
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
 	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'time', 'size'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
-	const FIXED = 8 + 32;
+	const FIXED = 32;
 	let room = $state(0);
 	let titleMin = $state(MIN_W);
 	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
@@ -951,7 +951,7 @@
 	});
 	const wOf = (id: ColId) => (id === 'title' ? tW : wMin(id));
 	// Until a person sets the Title width, it flexes and takes whatever room is left.
-	const tpl = $derived(`8px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
+	const tpl = $derived(`0px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
 	/** inner is the full width of the columns; the table box is at least this wide. */
 	const inner = $derived(vis.reduce((n, id) => n + wOf(id), FIXED) + (vis.length + 3) * gap);
 	const textW = (n: Node) => {
@@ -1848,7 +1848,8 @@
 
 	.bin:focus-visible, .lk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-	.post { width: 26px; height: 39px; justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
+	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
+	.post { width: 26px; height: 39px; justify-self: end; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
 	.post.square { height: 28px; --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 3px; }
 
@@ -2287,7 +2288,7 @@
 		.dline > [data-col='progress'] .bl { display: none; }
 		.dline > .spare { display: none; }
 		.tg { grid-area: tg; }
-		.post { grid-area: post; align-self: start; }
+		.post { grid-area: post; align-self: start; justify-self: center; }
 		.x { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 4px 8px 12px calc(24px + var(--gap)); }
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
