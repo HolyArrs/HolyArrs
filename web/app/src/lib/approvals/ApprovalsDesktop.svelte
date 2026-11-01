@@ -334,7 +334,7 @@
 
 <div class="desktop" data-testid="requests-desktop">
 	{#snippet statusItems(close: boolean)}
-		<button type="button" role="menuitemradio" aria-checked={!status} class="sf-mi" onclick={() => { setStatus(''); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-w">All statuses</span><span class="sf-c">{subsTotal}</span></button>
+		<button type="button" role="menuitemradio" aria-checked={!status} class="sf-mi" onclick={() => { setStatus(''); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"><Icon name="requests" size={14} /></span><span class="sf-w">All statuses</span><span class="sf-c">{subsTotal}</span></button>
 		{#each subs as x (x.word)}
 			<button type="button" role="menuitemradio" aria-checked={status === x.word} class="sf-mi sf-t-{toneOf(x.tone)}" onclick={() => { setStatus(x.word); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"><StatusIcon status={statusKey(x.word)} size={14} motion={false} /></span><span class="sf-w">{x.word}</span><span class="sf-c">{x.count}</span></button>
 		{/each}
@@ -521,7 +521,7 @@
 	.sf-t-ok { --sc: var(--ok, #30d158); --st: var(--ok-text, var(--ok, #30d158)); }
 	.sf-t-wait { --sc: var(--wait, #ffb340); --st: var(--wait-text, var(--wait, #ffb340)); }
 	.sf-t-off { --sc: var(--text-muted); --st: var(--text); }
-	.sf-d { flex: none; display: grid; place-items: center; width: 16px; height: 16px; color: var(--st, var(--text-muted)); }
+	.sf-d, .sf-ti { flex: none; display: grid; place-items: center; width: 16px; height: 16px; color: var(--st, var(--text-muted)); }
 	.sf-anchor { position: relative; }
 	.sf-btn { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
 	.sf-btn:hover, .sf-btn[aria-expanded='true'] { background: var(--surface-2); }
@@ -532,7 +532,11 @@
 	.sf-mh { padding: 8px 10px 4px; color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
 	.sf-sep { height: 1px; margin: 4px 6px; background: var(--line); }
 	.sf-mi { display: flex; align-items: center; gap: 10px; width: 100%; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: 500 13px/1 var(--font-ui); text-align: left; white-space: nowrap; cursor: pointer; }
-	.sf-mi:hover, .sf-mi:focus-visible, .sf-mi[aria-checked='true'] { background: color-mix(in srgb, var(--text) 8%, transparent); }
+	/* Only the row under the pointer is shaded; the picked row is marked by its tick and weight, so the two never merge. */
+	.sf-mi + .sf-mi { margin-top: 2px; }
+	.sf-mi { transition: background-color 120ms ease; }
+	.sf-mi:hover, .sf-mi:focus-visible { background: color-mix(in srgb, var(--text) 8%, transparent); }
+	.sf-mi[aria-checked='true'] { font-weight: 650; }
 	.sf-mi:focus-visible { box-shadow: var(--focus-ring); }
 	.sf-mi.sf-t-fail .sf-w { color: var(--st); }
 	.sf-tick { display: grid; place-items: center; width: 14px; color: var(--info-text, var(--info, #409cff)); visibility: hidden; }
