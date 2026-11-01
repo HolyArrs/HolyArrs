@@ -107,3 +107,12 @@ export function mergeClient(rows: DownloadRow[], sync: Sync, client: number, pag
 	const outside = [...kept.filter((r) => r.client_item), ...fresh.filter((r) => r.client_item)];
 	return { rows: [...own, ...outside], sync: { boot: sync.boot, revs: { ...sync.revs, [String(client)]: rev } } };
 }
+
+/**
+ * wentStale says a health event turned a client stale: its rows' speeds and
+ * the upload total on the page are no longer current, so the page reads
+ * its snapshot again (the server zeroes stale speeds there).
+ */
+export function wentStale(before: { stale?: boolean } | undefined, h: DlHealth): boolean {
+	return !!h.stale && !before?.stale;
+}

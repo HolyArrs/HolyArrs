@@ -11,7 +11,7 @@
 	import { decisionName, manyWords, removeBody, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
 	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
-	import { applyPatch, fromAnswer, isDl, mergeClient, type Sync } from '#lib/downloads/dlstore.ts';
+	import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync } from '#lib/downloads/dlstore.ts';
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -173,6 +173,7 @@
 		if (!sync || !isDl(data)) return;
 		if (data.kind === 'health') {
 			const h: ClientHealth = { id: data.client, name: data.name ?? '', health: data.health, stale: data.stale, seen_at: data.seen_at };
+			if (wentStale(clientHealth.find((c) => c.id === h.id), data)) soon();
 			clientHealth = clientHealth.some((c) => c.id === h.id) ? clientHealth.map((c) => (c.id === h.id ? { ...h, name: h.name || c.name } : c)) : [...clientHealth, h];
 			return;
 		}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DownloadRow } from '../downloaders.ts';
-import { applyPatch, fromAnswer, isDl, mergeClient, type DlPatch } from './dlstore.ts';
+import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type DlHealth, type DlPatch } from './dlstore.ts';
 
 const row = (over: Partial<DownloadRow>): DownloadRow =>
 	({ id: 1, phase: 'downloading', state: 'downloading', label: '', text: '', progress: 0, speed: 0, active: true, name: 'x', title: '', version: '', downloader: 'Q', size: 1, updated_at: '', can_act: true, ...over }) as DownloadRow;
@@ -79,5 +79,15 @@ describe('dl push store', () => {
 		expect(out.rows.map((r) => r.live_key)).toEqual(['4:cc', '3:aa', '3:dd']);
 		expect(out.rows[1].progress).toBe(0.9);
 		expect(out.rows[0]).toBe(ownB);
+	});
+});
+
+describe('wentStale', () => {
+	const h = (stale?: boolean): DlHealth => ({ kind: 'health', client: 1, health: stale ? 'offline' : 'ok', stale });
+	it('is true only when a client turns stale', () => {
+		expect(wentStale(undefined, h(true))).toBe(true);
+		expect(wentStale({ stale: false }, h(true))).toBe(true);
+		expect(wentStale({ stale: true }, h(true))).toBe(false);
+		expect(wentStale({ stale: true }, h(false))).toBe(false);
 	});
 });
