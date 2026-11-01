@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/dlsync"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -129,8 +130,9 @@ func view(t *testing.T, url string) viewAnswer {
 	return v
 }
 
-// A client that never answers does not hold the view up: every answer comes
-// in under 300 ms and the client is marked as not answering.
+// A client that never answers does not hold the view up (the view never
+// calls a client): every answer comes in under 300 ms and the client is
+// marked as not read yet.
 func TestDownloadsViewHungClient(t *testing.T) {
 	x := seed41(t, domain.SlotDownloading, "downloading")
 	stop := make(chan struct{})
@@ -143,6 +145,7 @@ func TestDownloadsViewHungClient(t *testing.T) {
 	t.Cleanup(hang.Close)
 	t.Cleanup(func() { close(stop) })
 	pointQB(t, x, hang.URL)
+	x.api.s.DLSync = &dlsync.Sync{Store: &dlsync.Store{}, DB: x.s}
 	var worst time.Duration
 	var last viewAnswer
 	for range 20 {
@@ -167,17 +170,13 @@ func TestDownloadsViewHungClient(t *testing.T) {
 func TestDownloadsViewStaleClient(t *testing.T) {
 	x := seed41(t, domain.SlotDownloading, "downloading")
 	pointQB(t, x, qbList(t, outsideTorrents(3, 0)).URL)
+	feedStore(t, x.api)
 	if v := view(t, x.srv.URL+"/api/v1/downloads/view"); v.OutsideTotal != 3 || v.Clients[0].Health != "ok" {
 		t.Fatalf("first %+v", v.Clients)
 	}
 	pointQB(t, x, "http://127.0.0.1:1")
-	var v viewAnswer
-	for range 50 { // the failed read lands in the background
-		if v = view(t, x.srv.URL+"/api/v1/downloads/view"); v.Clients[0].Health == "offline" {
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
+	feedStore(t, x.api) // the background read fails
+	v := view(t, x.srv.URL+"/api/v1/downloads/view")
 	if v.Clients[0].Health != "offline" || !v.Clients[0].Stale || v.OutsideTotal != 3 {
 		t.Fatalf("after %+v outside %d", v.Clients, v.OutsideTotal)
 	}
@@ -204,8 +203,9 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 		t.Fatal(err)
 	}
 	pointQB(t, x, qbList(t, `[]`).URL)
+	feedStore(t, x.api)
 	x.api.viewDB = countingPool(t, x.s)
-	view(t, x.srv.URL+"/api/v1/downloads/view") // the first list read lands
+	view(t, x.srv.URL+"/api/v1/downloads/view")
 	before := countReads.Load()
 	v := view(t, x.srv.URL+"/api/v1/downloads/view")
 	n := countReads.Load() - before
@@ -220,6 +220,7 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 	// With outside rows, the count does not grow with how many there are.
 	count := func(n int) int64 {
 		pointQB(t, x, qbList(t, outsideTorrents(n, 0)).URL)
+		feedStore(t, x.api)
 		view(t, x.srv.URL+"/api/v1/downloads/view")
 		b := countReads.Load()
 		if got := view(t, x.srv.URL+"/api/v1/downloads/view"); got.OutsideTotal != n {
@@ -240,6 +241,7 @@ func TestDownloadsViewTotalsIncludeSeeding(t *testing.T) {
 	x := seed41(t, domain.SlotInLibrary, "seeding")
 	exec41(t, x.s, "UPDATE downloads SET up_speed = 100, speed = 0")
 	pointQB(t, x, qbList(t, outsideTorrents(250, 10)).URL)
+	feedStore(t, x.api)
 	v := view(t, x.srv.URL+"/api/v1/downloads/view")
 	if v.Totals.UpSpeed != 100+250*10 || v.Totals.Speed != 0 {
 		t.Fatalf("totals %+v", v.Totals)
@@ -253,6 +255,7 @@ func TestDownloadsViewTotalsIncludeSeeding(t *testing.T) {
 func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 	x := seed41(t, domain.SlotDownloading, "downloading")
 	pointQB(t, x, qbList(t, outsideTorrents(450, 0)).URL)
+	feedStore(t, x.api)
 	seen := map[string]bool{}
 	cursor, pages := "", 0
 	for {

@@ -375,13 +375,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			return source.GrabLink(ctx, s, vault, rel)
 		},
 		FromVault: vault.Get}
-	// Background download sync (setting downloads.sync): shadow is fed from
-	// the lists the Manager already reads; on runs one reader per
-	// Downloader inside the "downloads" loop, and the Manager and the
-	// Downloads view read its snapshots. legacy (the default) leaves both off.
-	dlShadow := &dlsync.Shadow{Store: &dlsync.Store{}, DB: s}
-	dm.OnList = dlShadow.OnList
-	dls := &dlsync.Sync{Store: dlShadow.Store, DB: s, Mode: dlShadow, Manager: dm, Lines: api.TorrentLines}
+	// Background download reader: one reader per Downloader inside the
+	// "downloads" loop; the Manager and the Downloads view read its snapshots.
+	dls := &dlsync.Sync{Store: &dlsync.Store{}, DB: s, Manager: dm, Lines: api.TorrentLines}
 	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub}
 	sr := &source.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {

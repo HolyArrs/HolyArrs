@@ -31,19 +31,11 @@ type torrentSnap struct {
 	limits                           *downloader.ShareLimits
 }
 
-// torrentLog keeps the last seen snapshot and tracker messages per torrent.
+// torrentLog keeps the last seen tracker messages per torrent.
 type torrentLog struct {
 	mu       sync.Mutex
-	seen     map[clientKey]torrentSnap
 	trackers map[clientKey]map[string]string
-	// seenDay is the day each torrent's torrent_seen row was last written.
-	seenDay   map[clientKey]string
-	lastSweep time.Time
 }
-
-// torrentForget is how long a torrent may go unseen before its log and link
-// rows are swept.
-const torrentForget = 30 * 24 * time.Hour
 
 func snapOf(j downloader.Job) torrentSnap {
 	return torrentSnap{detail: j.Detail, savePath: j.SavePath, trackerProblem: j.TrackerProblem, progress: j.Progress,
@@ -141,132 +133,6 @@ func trackerLines(prev map[string]string, cur []downloader.Tracker) ([]DownloadL
 	return out, next
 }
 
-// noteJobs compares a Downloader's list with the last one and records what
-// changed. The first sighting after a start only remembers. jobs is the
-// whole list: torrents no longer in it are dropped from memory.
-func (a *API) noteJobs(ctx context.Context, downloaderID int64, jobs []downloader.Job) {
-	now := time.Now().UTC()
-	day := now.Format("2006-01-02")
-	type rec struct {
-		hash  string
-		lines []DownloadLogLine
-	}
-	var recs []rec
-	var fresh []string
-	a.tlog.mu.Lock()
-	if a.tlog.seen == nil {
-		a.tlog.seen = map[clientKey]torrentSnap{}
-	}
-	if a.tlog.seenDay == nil {
-		a.tlog.seenDay = map[clientKey]string{}
-	}
-	here := map[string]bool{}
-	for _, j := range jobs {
-		if j.ID == "" {
-			continue
-		}
-		hash := strings.ToLower(j.ID)
-		here[hash] = true
-		k := clientKey{downloaderID, hash}
-		if a.tlog.seenDay[k] != day {
-			a.tlog.seenDay[k] = day
-			fresh = append(fresh, hash)
-		}
-		cur := snapOf(j)
-		prev, ok := a.tlog.seen[k]
-		a.tlog.seen[k] = cur
-		if !ok {
-			continue
-		}
-		if ls := stateLines(prev, cur); len(ls) > 0 {
-			recs = append(recs, rec{hash, ls})
-		}
-	}
-	for k := range a.tlog.seen {
-		if k.downloader == downloaderID && !here[k.hash] {
-			delete(a.tlog.seen, k)
-		}
-	}
-	for k := range a.tlog.trackers {
-		if k.downloader == downloaderID && !here[k.hash] {
-			delete(a.tlog.trackers, k)
-		}
-	}
-	for k := range a.tlog.seenDay {
-		if k.downloader == downloaderID && !here[k.hash] {
-			delete(a.tlog.seenDay, k)
-		}
-	}
-	a.tlog.mu.Unlock()
-	for _, r := range recs {
-		a.writeTorrentLog(ctx, downloaderID, r.hash, now, r.lines)
-	}
-	if len(fresh) > 0 {
-		at := now.Format(store.TimeLayout)
-		_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
-			for _, h := range fresh {
-				if _, err := tx.Exec(`INSERT INTO torrent_seen (downloader_id, hash, seen_at) VALUES (?, ?, ?)
-					ON CONFLICT (downloader_id, hash) DO UPDATE SET seen_at = excluded.seen_at`, downloaderID, h, at); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-	}
-}
-
-// maybeSweep runs the daily sweep. Callers run it only after every
-// Downloader's list was read and noted; skip names the Downloaders whose
-// list read failed, so their rows are not stale merely because they were
-// not read.
-func (a *API) maybeSweep(ctx context.Context, skip []int64) {
-	now := time.Now().UTC()
-	a.tlog.mu.Lock()
-	due := now.Sub(a.tlog.lastSweep) >= 24*time.Hour
-	if due {
-		a.tlog.lastSweep = now
-	}
-	a.tlog.mu.Unlock()
-	if due {
-		a.sweepTorrentRows(ctx, now, skip...)
-	}
-}
-
-// sweepTorrentRows drops log and link rows of torrents not seen for
-// torrentForget, leaving the skipped Downloaders alone. Rows from before
-// torrent_seen existed go by their own age. Rows keyed by a hash with
-// capitals (from before hashes were stored lower-case) go too.
-func (a *API) sweepTorrentRows(ctx context.Context, now time.Time, skip ...int64) {
-	cut := now.Add(-torrentForget).Format(store.TimeLayout)
-	not, skipArgs := "", []any{}
-	if len(skip) > 0 {
-		not = " AND downloader_id NOT IN (?" + strings.Repeat(",?", len(skip)-1) + ")"
-		for _, id := range skip {
-			skipArgs = append(skipArgs, id)
-		}
-	}
-	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
-		stale := `SELECT downloader_id, hash FROM torrent_seen WHERE seen_at < ?`
-		if _, err := tx.Exec(`DELETE FROM torrent_log WHERE ((downloader_id, hash) IN (`+stale+`)
-			OR (at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen)))`+not, append([]any{cut, cut}, skipArgs...)...); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(`DELETE FROM client_links WHERE ((downloader_id, hash) IN (`+stale+`)
-			OR (matched_at < ? AND (downloader_id, hash) NOT IN (SELECT downloader_id, hash FROM torrent_seen)))`+not, append([]any{cut, cut}, skipArgs...)...); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(`DELETE FROM torrent_seen WHERE seen_at < ?`+not, append([]any{cut}, skipArgs...)...); err != nil {
-			return err
-		}
-		for _, t := range []string{"torrent_log", "client_links", "torrent_seen"} {
-			if _, err := tx.Exec("DELETE FROM " + t + " WHERE hash <> lower(hash)"); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
 // forgetTorrents drops what HolyArrs keeps about torrents removed through
 // it: memory, log, link and seen rows. No hashes means the whole Downloader.
 // forgetChunk caps the hashes in one DELETE ... IN (...).
@@ -279,19 +145,9 @@ func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []s
 		gone[strings.ToLower(h)] = true
 	}
 	a.tlog.mu.Lock()
-	for k := range a.tlog.seen {
-		if k.downloader == downloaderID && (all || gone[k.hash]) {
-			delete(a.tlog.seen, k)
-		}
-	}
 	for k := range a.tlog.trackers {
 		if k.downloader == downloaderID && (all || gone[k.hash]) {
 			delete(a.tlog.trackers, k)
-		}
-	}
-	for k := range a.tlog.seenDay {
-		if k.downloader == downloaderID && (all || gone[k.hash]) {
-			delete(a.tlog.seenDay, k)
 		}
 	}
 	a.tlog.mu.Unlock()
@@ -340,16 +196,12 @@ func (a *API) noteTrackers(ctx context.Context, downloaderID int64, hash string,
 	}
 }
 
-// lastActivity is the last piece-moved time the list refresh saw; with
-// the background reader on, the reader's snapshot (the list cache stays
-// empty then).
+// lastActivity is the last piece-moved time in the reader's snapshot.
 func (a *API) lastActivity(downloaderID int64, hash string) int64 {
-	if a.syncOn() {
-		return a.s.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].LastActivity
+	if a.s.DLSync == nil {
+		return 0
 	}
-	a.tlog.mu.Lock()
-	defer a.tlog.mu.Unlock()
-	return a.tlog.seen[clientKey{downloaderID, strings.ToLower(hash)}].lastActivity
+	return a.s.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].LastActivity
 }
 
 // writeTorrentLog stores lines and keeps the newest torrentLogCap.
@@ -469,19 +321,4 @@ func (a *API) torrentTimeline(ctx context.Context, downloaderID int64, hash stri
 		t.LastActivity = &at
 	}
 	return mergeLog(own, a.recordedLines(ctx, downloaderID, hash), derivedLines(t, la, time.Now().UTC()))
-}
-
-// seenRatio is the share ratio the last list read saw; nil when unseen.
-func (a *API) seenRatio(downloaderID int64, hash string) *float64 {
-	if hash == "" {
-		return nil
-	}
-	a.tlog.mu.Lock()
-	defer a.tlog.mu.Unlock()
-	s, ok := a.tlog.seen[clientKey{downloaderID, strings.ToLower(hash)}]
-	if !ok {
-		return nil
-	}
-	r := s.ratio
-	return &r
 }

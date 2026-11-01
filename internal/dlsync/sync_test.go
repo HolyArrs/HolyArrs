@@ -81,18 +81,16 @@ type rig struct {
 	db       *store.Store
 	client   *fakeClient
 	m        *downloader.Manager
-	sh       *Shadow
 	s        *Sync
 	dlID     int64
-	ownLists atomic.Int64 // lists the Manager itself made (its OnList hook)
 }
 
 const ownHash = "1111111111111111111111111111111111111111"
 
 // newRig makes a store with one Downloader (a list-only adapter), one
 // active HolyArrs Download on it, a Manager reading a fake client, and a
-// reader with downloads.sync set to mode.
-func newRig(t *testing.T, mode string, js ...downloader.Job) *rig {
+// reader.
+func newRig(t *testing.T, js ...downloader.Job) *rig {
 	t.Helper()
 	db, err := store.Open(t.TempDir(), store.Options{})
 	if err != nil {
@@ -116,11 +114,8 @@ func newRig(t *testing.T, mode string, js ...downloader.Job) *rig {
 	}
 	r.m = &downloader.Manager{Store: db, Active: 50 * time.Millisecond, Idle: 100 * time.Millisecond, HealthEvery: time.Hour,
 		Engine: func(domain.Downloader) (downloader.Engine, error) { return r.client, nil }}
-	r.m.OnList = func(int64, uint64, string, []downloader.Job, error) { r.ownLists.Add(1) }
-	r.sh = &Shadow{Store: &Store{}, DB: db}
-	r.s = &Sync{Store: r.sh.Store, DB: db, Mode: r.sh, Manager: r.m, Lines: testLines}
+	r.s = &Sync{Store: &Store{}, DB: db, Manager: r.m, Lines: testLines}
 	r.m.Sync = r.s
-	r.setMode(t, mode)
 	return r
 }
 
@@ -131,26 +126,11 @@ func testLines(prev, cur downloader.Job) []LogLine {
 	return nil
 }
 
-func (r *rig) setMode(t *testing.T, mode string) {
-	t.Helper()
-	err := r.db.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, '', '{}', '', '{}')
-			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value`, SettingGroup, SettingSync, mode)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	r.sh.mu.Lock()
-	r.sh.mode = ""
-	r.sh.mu.Unlock()
-}
-
 func fastTimers(t *testing.T) {
 	t.Helper()
-	oldScan, oldBack, oldTTL := scanEvery, restartBackoff, modeTTL
-	scanEvery, restartBackoff, modeTTL = 20*time.Millisecond, []time.Duration{100 * time.Millisecond}, 0
-	t.Cleanup(func() { scanEvery, restartBackoff, modeTTL = oldScan, oldBack, oldTTL })
+	oldScan, oldBack := scanEvery, restartBackoff
+	scanEvery, restartBackoff = 20*time.Millisecond, []time.Duration{100 * time.Millisecond}
+	t.Cleanup(func() { scanEvery, restartBackoff = oldScan, oldBack })
 }
 
 func waitUntil(t *testing.T, what string, ok func() bool) {
@@ -186,7 +166,7 @@ func outsider(id string, progress float64) downloader.Job {
 // and the Manager makes none, yet still applies the client's changes.
 func TestReaderOwnsListReads(t *testing.T) {
 	fastTimers(t)
-	r := newRig(t, ModeOn, own(0.2))
+	r := newRig(t, own(0.2))
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	start := time.Now()
@@ -198,8 +178,8 @@ func TestReaderOwnsListReads(t *testing.T) {
 	cancel()
 	<-done
 	elapsed := time.Since(start)
-	if n := r.ownLists.Load(); n != 0 {
-		t.Fatalf("the Manager listed the client %d times; the reader owns list reads", n)
+	if r.s.Store.Current(r.dlID).Fallback {
+		t.Fatal("the Manager fell back to its own list reads; the reader owns list reads")
 	}
 	// Active cadence 50 ms: at most one read per tick, plus a little slack.
 	if lists, most := r.client.listCount(), int(elapsed/(50*time.Millisecond))+3; lists > most || lists == 0 {
@@ -212,7 +192,7 @@ func TestReaderOwnsListReads(t *testing.T) {
 func TestShutdownOrderAndFinalFlush(t *testing.T) {
 	fastTimers(t)
 	scanEvery = time.Hour // only the final flush writes
-	r := newRig(t, ModeOn, own(0.2), outsider("aaaa", 0.1))
+	r := newRig(t, own(0.2), outsider("aaaa", 0.1))
 	ctx, cancel := context.WithCancel(context.Background())
 	var liveAfterCancel atomic.Bool
 	run := func(ctx context.Context) {
@@ -245,7 +225,7 @@ func TestShutdownOrderAndFinalFlush(t *testing.T) {
 // supervisor starts Run again, so there is one poller per client.
 func TestRunPanicLeavesOnePoller(t *testing.T) {
 	fastTimers(t)
-	r := newRig(t, ModeOn, own(0.2))
+	r := newRig(t, own(0.2))
 	func() {
 		defer func() { _ = recover() }()
 		r.s.Around(context.Background(), func(context.Context) {
@@ -277,7 +257,7 @@ func TestRunPanicLeavesOnePoller(t *testing.T) {
 // fresh again.
 func TestPollerPanicDegradesAndRecovers(t *testing.T) {
 	fastTimers(t)
-	r := newRig(t, ModeOn, own(0.2))
+	r := newRig(t, own(0.2))
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { r.s.Around(ctx, r.m.Run); close(done) }()
@@ -285,7 +265,7 @@ func TestPollerPanicDegradesAndRecovers(t *testing.T) {
 	r.client.mu.Lock()
 	r.client.panicN = 1
 	r.client.mu.Unlock()
-	waitUntil(t, "the Manager's fallback list", func() bool { return r.ownLists.Load() > 0 })
+	waitUntil(t, "the Manager's fallback list", func() bool { return r.s.Store.Current(r.dlID).Fallback })
 	waitUntil(t, "fresh again after the restart", func() bool {
 		c := r.s.Store.Current(r.dlID)
 		return c.Fresh && c.Running
@@ -298,7 +278,7 @@ func TestPollerPanicDegradesAndRecovers(t *testing.T) {
 // Safe mode never runs the loop: the reader makes no call, Kick is a no-op
 // and the Manager keeps its own reads.
 func TestNotStartedMakesNoCalls(t *testing.T) {
-	r := newRig(t, ModeOn, own(0.2))
+	r := newRig(t, own(0.2))
 	r.s.Kick(r.dlID)
 	time.Sleep(100 * time.Millisecond)
 	if r.s.On() {
@@ -310,8 +290,8 @@ func TestNotStartedMakesNoCalls(t *testing.T) {
 	if _, err := r.m.SyncOnce(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if r.ownLists.Load() != 1 || r.client.listCount() != 1 {
-		t.Fatalf("the Manager did not keep its own read: own %d, client %d", r.ownLists.Load(), r.client.listCount())
+	if n := r.client.listCount(); n != 1 {
+		t.Fatalf("the Manager did not keep its own read: %d client lists", n)
 	}
 }
 
@@ -335,7 +315,7 @@ func logLines(t *testing.T, db *store.Store, hash string) []string {
 // carries the log on from dl_items (one line for a change while off).
 func TestPartToggleResumesFromItems(t *testing.T) {
 	fastTimers(t)
-	r := newRig(t, ModeOn, own(0.2), outsider("bbbb", 0.5))
+	r := newRig(t, own(0.2), outsider("bbbb", 0.5))
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { r.s.Around(ctx, r.m.Run); close(done) }()
@@ -364,7 +344,7 @@ func TestPartToggleResumesFromItems(t *testing.T) {
 // A process restart (a new reader on the same database) continues the log.
 func TestRestartKeepsLogContinuity(t *testing.T) {
 	fastTimers(t)
-	r := newRig(t, ModeOn, own(0.2), outsider("cccc", 0.5), outsider("dddd", 0.5))
+	r := newRig(t, own(0.2), outsider("cccc", 0.5), outsider("dddd", 0.5))
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { r.s.Around(ctx, r.m.Run); close(done) }()
@@ -373,8 +353,7 @@ func TestRestartKeepsLogContinuity(t *testing.T) {
 	<-done
 	r.client.set(outsider("cccc", 1))
 	r.client.drop("dddd")
-	sh := &Shadow{Store: &Store{}, DB: r.db}
-	s2 := &Sync{Store: sh.Store, DB: r.db, Mode: sh, Manager: r.m, Lines: testLines}
+	s2 := &Sync{Store: &Store{}, DB: r.db, Manager: r.m, Lines: testLines}
 	r.m.Sync = s2
 	ctx, cancel = context.WithCancel(context.Background())
 	done = make(chan struct{})
@@ -395,59 +374,10 @@ func TestRestartKeepsLogContinuity(t *testing.T) {
 	}
 }
 
-// on -> legacy -> on without a restart: nothing read or written while
-// legacy (the Manager reads again itself), and on return the changes made
-// meanwhile give exactly one line each, no lost removal and no second
-// match attempt.
-func TestFlipOnLegacyOn(t *testing.T) {
-	fastTimers(t)
-	r := newRig(t, ModeOn, own(0.2), outsider("eeee", 0.5), outsider("ffff", 0.5))
-	var tries atomic.Int64
-	r.s.Match = func(context.Context, int64, string, string, string) (string, int64, error) {
-		tries.Add(1)
-		return "unsure", 0, nil
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	done := make(chan struct{})
-	go func() { r.s.Around(ctx, r.m.Run); close(done) }()
-	waitUntil(t, "matches for both outside items", func() bool { return tries.Load() >= 3 })
-	r.setMode(t, ModeLegacy)
-	waitUntil(t, "the Manager reading itself", func() bool { return r.ownLists.Load() > 0 })
-	var items, queue int
-	_ = r.db.Read().QueryRow("SELECT COUNT(*) FROM dl_items").Scan(&items)
-	_ = r.db.Read().QueryRow("SELECT COUNT(*) FROM dl_match_queue").Scan(&queue)
-	r.client.set(outsider("eeee", 1))
-	r.client.drop("ffff")
-	time.Sleep(200 * time.Millisecond)
-	var items2, logs int
-	_ = r.db.Read().QueryRow("SELECT COUNT(*) FROM dl_items WHERE gone_at IS NULL").Scan(&items2)
-	_ = r.db.Read().QueryRow("SELECT COUNT(*) FROM torrent_log").Scan(&logs)
-	if items2 != items || logs != 0 {
-		t.Fatalf("legacy touched the new tables: items %d -> %d, log lines %d", items, items2, logs)
-	}
-	before := tries.Load()
-	r.setMode(t, ModeOn)
-	waitUntil(t, "lines after re-entry", func() bool { return len(logLines(t, r.db, "eeee")) > 0 && len(logLines(t, r.db, "ffff")) > 0 })
-	time.Sleep(300 * time.Millisecond)
-	cancel()
-	<-done
-	if got := logLines(t, r.db, "eeee"); len(got) != 1 || got[0] != "Completed (while sync was off)" {
-		t.Fatalf("eeee log %q", got)
-	}
-	if got := logLines(t, r.db, "ffff"); len(got) != 1 || got[0] != "Removed outside HolyArrs (while sync was off)" {
-		t.Fatalf("ffff log %q", got)
-	}
-	if tries.Load() != before {
-		t.Fatalf("match attempts went from %d to %d after re-entry", before, tries.Load())
-	}
-	_ = queue
-}
-
 // The match queue: backoff per failure, nomatch after six, a restart does
 // not try before next_try_at, and the bucket allows a burst of 10 then 2/s.
 func TestMatchQueueBackoffAndRestart(t *testing.T) {
-	r := newRig(t, ModeOn)
+	r := newRig(t)
 	clock := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
 	now := func() time.Time { return clock }
 	var calls int
@@ -568,17 +498,23 @@ func TestReaderNeverWritesDownloads(t *testing.T) {
 	}
 }
 
-// AC12 on fakes: client-finished to download-finished latency with sync on
-// is no worse than legacy (median + 1 s, max + 2 s), 10 runs each.
-func TestFinishLatencyOnVsLegacy(t *testing.T) {
+// AC12 on fakes: client-finished to download-finished latency with the
+// reader is no worse than the Manager reading the client itself (median
+// + 1 s, max + 2 s), 10 runs each.
+func TestFinishLatencyReaderVsOwnReads(t *testing.T) {
 	fastTimers(t)
-	measure := func(mode string) []time.Duration {
+	measure := func(reader bool) []time.Duration {
 		var out []time.Duration
 		for range 10 {
-			r := newRig(t, mode, own(0.5))
+			r := newRig(t, own(0.5))
 			ctx, cancel := context.WithCancel(context.Background())
 			done := make(chan struct{})
-			go func() { r.s.Around(ctx, r.m.Run); close(done) }()
+			if reader {
+				go func() { r.s.Around(ctx, r.m.Run); close(done) }()
+			} else {
+				r.m.Sync = nil
+				go func() { r.m.Run(ctx); close(done) }()
+			}
 			waitUntil(t, "downloading", func() bool { st, _ := r.state(t); return st == "downloading" })
 			j := own(1)
 			j.State = downloader.StateFinished
@@ -592,9 +528,9 @@ func TestFinishLatencyOnVsLegacy(t *testing.T) {
 		sort.Slice(out, func(i, k int) bool { return out[i] < out[k] })
 		return out
 	}
-	legacy, on := measure(ModeLegacy), measure(ModeOn)
-	t.Logf("legacy median %v max %v; on median %v max %v", legacy[5], legacy[9], on[5], on[9])
-	if on[5] > legacy[5]+time.Second || on[9] > legacy[9]+2*time.Second {
-		t.Fatalf("on is slower than legacy: median %v vs %v, max %v vs %v", on[5], legacy[5], on[9], legacy[9])
+	self, on := measure(false), measure(true)
+	t.Logf("own reads median %v max %v; reader median %v max %v", self[5], self[9], on[5], on[9])
+	if on[5] > self[5]+time.Second || on[9] > self[9]+2*time.Second {
+		t.Fatalf("the reader is slower than own reads: median %v vs %v, max %v vs %v", on[5], self[5], on[9], self[9])
 	}
 }

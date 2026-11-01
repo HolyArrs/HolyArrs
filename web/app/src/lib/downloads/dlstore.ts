@@ -33,7 +33,7 @@ export type DlMessage = DlPatch | DlHealth;
 /** Sync is what the page knows of the server's snapshot. */
 export type Sync = { boot: string; revs: Record<string, number> };
 
-/** fromAnswer reads the push state from a view answer; null when the server does not push (legacy). */
+/** fromAnswer reads the push state from a view answer; null when the server does not push (its reader is not running). */
 export function fromAnswer(a: { boot?: string; revs?: Record<string, number> }): Sync | null {
 	if (!a.revs) return null;
 	return { boot: a.boot ?? '', revs: { ...a.revs } };

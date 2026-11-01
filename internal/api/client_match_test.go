@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -141,25 +140,14 @@ func TestClientMatchLinksAndConfirms(t *testing.T) {
 		}
 		return ms, err
 	}
-	done := make(chan struct{}, 10)
-	r.api.match.done = func() { done <- struct{}{} }
-	wait := func(n int) {
-		for range n {
-			select {
-			case <-done:
-			case <-time.After(10 * time.Second):
-				t.Fatal("matcher did not finish")
-			}
-		}
-	}
+	r.owner.call("PUT", "/api/v1/settings/downloaders", `{"stalled_after_hours":6,"stalled_act_hours":24,"grab_spacing_seconds":2,"downloads_auto_add":true}`, 200)
 	downloadsBefore := count(t, r.st, "SELECT COUNT(*) FROM downloads")
 
-	r.owner.call("GET", "/api/v1/downloads/view", "", 200)
-	wait(3)
-	// Reading again finds every torrent stored: no new lookups.
-	r.owner.call("GET", "/api/v1/downloads/view", "", 200)
+	feedStore(t, r.api)
+	matchStored(t, r.api)
+	// Matching again finds every torrent stored: no new lookups.
+	matchStored(t, r.api)
 	r.owner.call("POST", "/api/v1/downloads/matches/run", "", 202)
-	time.Sleep(100 * time.Millisecond)
 	if lookups != 2 {
 		t.Fatalf("lookups %d, want 2 (one per media torrent, never repeated)", lookups)
 	}

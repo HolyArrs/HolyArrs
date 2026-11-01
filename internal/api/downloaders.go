@@ -453,8 +453,9 @@ type DownloaderSettings struct {
 	RemoveDeleteFiles bool `json:"remove_delete_files"`
 	RemoveTurnDown    bool `json:"remove_turn_down"`
 	RemoveSearchAgain bool `json:"remove_search_again"`
-	// Sync is downloads.sync (legacy, shadow or on) and SABOutside
-	// downloads.sab_outside. Left out of a save, they stay as they are.
+	// Sync is the old downloads.sync: always "on" now (the background
+	// reader always runs); a saved value is ignored. SABOutside is
+	// downloads.sab_outside; left out of a save, it stays as it is.
 	Sync       *string `json:"downloads_sync,omitempty"`
 	SABOutside *bool   `json:"downloads_sab_outside,omitempty"`
 	// AutoAdd is downloads_auto_add: a sure match of an outside item whose
@@ -497,9 +498,6 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 			st.RemoveSearchAgain = v != "false"
 		case "what_to_pick/try_next_downloader":
 			st.TryNextDownloader = v != "false"
-		case "links/" + dlsync.SettingSync:
-			mode := v
-			st.Sync = &mode
 		case "links/" + dlsync.SettingSABOutside:
 			on := v != "false"
 			st.SABOutside = &on
@@ -508,6 +506,8 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 			st.AutoAdd = &on
 		}
 	}
+	mode := dlsync.ModeOn // any stored value reads as on
+	st.Sync = &mode
 	if st.AutoAdd == nil {
 		off := false
 		st.AutoAdd = &off
@@ -545,10 +545,6 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "grab_spacing_seconds is 0 to 60")
 		return
 	}
-	if in.Sync != nil && *in.Sync != dlsync.ModeLegacy && *in.Sync != dlsync.ModeShadow && *in.Sync != dlsync.ModeOn {
-		fail(w, http.StatusBadRequest, "downloads_sync is legacy, shadow or on")
-		return
-	}
 	by := actor(r)
 	now := store.FormatTime(time.Now())
 	byText := actorJSONText(by)
@@ -563,9 +559,6 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		{"links", "remove_delete_files", strconv.FormatBool(in.RemoveDeleteFiles)},
 		{"links", "remove_turn_down", strconv.FormatBool(in.RemoveTurnDown)},
 		{"links", "remove_search_again", strconv.FormatBool(in.RemoveSearchAgain)},
-	}
-	if in.Sync != nil {
-		vals = append(vals, struct{ grp, key, value string }{"links", dlsync.SettingSync, *in.Sync})
 	}
 	if in.SABOutside != nil {
 		vals = append(vals, struct{ grp, key, value string }{"links", dlsync.SettingSABOutside, strconv.FormatBool(*in.SABOutside)})

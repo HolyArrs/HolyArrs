@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -28,21 +26,8 @@ type clientKey struct {
 	hash       string
 }
 
-// clientListWait caps one list read of a client (it runs in the
-// background, apart from any request).
-var clientListWait = 5 * time.Second
-
-// clientViewWait is how long the Downloads view waits for fresh lists
-// before it answers with what it has.
-var clientViewWait = 200 * time.Millisecond
-
-// clientStaleFor is how long a client's last good list is still shown
-// while the client does not answer.
-const clientStaleFor = 5 * time.Minute
-
-// ClientHealth says how a torrent client answered the Downloads view:
-// ok (a fresh list), slow (no answer yet, its last list shown), offline
-// (its last read failed) or waiting (no list yet).
+// ClientHealth is a client's state in the Downloads view, from the
+// background reader (see syncHealth).
 type ClientHealth struct {
 	ID     int64     `json:"id"`
 	Name   string    `json:"name"`
@@ -51,172 +36,14 @@ type ClientHealth struct {
 	SeenAt time.Time `json:"seen_at,omitzero"`
 }
 
-// clientLists holds the last list read of each torrent client and the read
-// in flight, so slow clients are read once at a time and never in a request.
-type clientLists struct {
-	mu sync.Mutex
-	by map[int64]*clientList
-}
-
-type clientList struct {
-	jobs   []downloader.Job
-	at     time.Time     // last good read
-	failed bool          // the last read failed
-	busy   chan struct{} // closed when the read in flight ends; nil when none
-}
-
-// readList starts a list read of d unless one is in flight, and returns a
-// channel closed when that read ends; started says this call began it.
-func (a *API) readList(d domain.Downloader) (done <-chan struct{}, started bool) {
-	c := &a.lists
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.by == nil {
-		c.by = map[int64]*clientList{}
+// clientRows returns the items of every client not already shown as
+// HolyArrs rows, and each client's health, from the background reader's
+// snapshots: no client call, no write.
+func (a *API) clientRows(ctx context.Context, names map[int64]domain.Downloader, shown map[clientKey]bool) ([]DownloadRow, []ClientHealth) {
+	if a.s.DLSync == nil {
+		return nil, []ClientHealth{}
 	}
-	l := c.by[d.ID]
-	if l == nil {
-		l = &clientList{}
-		c.by[d.ID] = l
-	}
-	if l.busy != nil {
-		return l.busy, false
-	}
-	busy := make(chan struct{})
-	l.busy = busy
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), clientListWait)
-		defer cancel()
-		var jobs []downloader.Job
-		err := a.manager().ControlEngine(ctx, d, func(e downloader.Engine) error {
-			al, ok := e.(downloader.AllLister)
-			if !ok {
-				return downloader.ErrNotSupported
-			}
-			var err error
-			jobs, err = al.ListAll(ctx)
-			return err
-		})
-		if errors.Is(err, downloader.ErrNotSupported) {
-			// No outside list for this engine: that is not "not answering".
-			err, jobs = nil, nil
-		}
-		if err == nil {
-			a.noteJobs(ctx, d.ID, jobs)
-		}
-		c.mu.Lock()
-		if err == nil {
-			l.jobs, l.at, l.failed = jobs, time.Now(), false
-		} else {
-			l.failed = true
-		}
-		l.busy = nil
-		c.mu.Unlock()
-		close(busy)
-	}()
-	return busy, true
-}
-
-// clientRows returns the items of every torrent Downloader not already shown
-// as HolyArrs rows, in a stable order (Downloader priority, then newest
-// first), and each client's health. Lists are read side by side in the
-// background; the caller waits at most wait for them.
-func (a *API) clientRows(ctx context.Context, names map[int64]domain.Downloader, shown map[clientKey]bool, wait time.Duration) ([]DownloadRow, []ClientHealth) {
-	if a.syncOn() {
-		return a.storeRows(ctx, names, shown)
-	}
-	health := []ClientHealth{}
-	var ds []domain.Downloader
-	for _, d := range names {
-		if d.Protocol == "torrent" && !d.Removed {
-			ds = append(ds, d)
-		}
-	}
-	sort.Slice(ds, func(i, j int) bool {
-		if ds[i].Priority != ds[j].Priority {
-			return ds[i].Priority < ds[j].Priority
-		}
-		if ds[i].Name != ds[j].Name {
-			return ds[i].Name < ds[j].Name
-		}
-		return ds[i].ID < ds[j].ID
-	})
-	// Only reads this call started are waited for: a read still running
-	// from an earlier view means the client is slow, and the view answers
-	// at once with what it has.
-	var waits []<-chan struct{}
-	for _, d := range ds {
-		if w, started := a.readList(d); started {
-			waits = append(waits, w)
-		}
-	}
-	timer := time.NewTimer(wait)
-	defer timer.Stop()
-wait:
-	for _, w := range waits {
-		select {
-		case <-w:
-		case <-timer.C:
-			break wait
-		case <-ctx.Done():
-			break wait
-		}
-	}
-	var failed []int64
-	var rows []DownloadRow
-	now := time.Now()
-	for _, d := range ds {
-		a.lists.mu.Lock()
-		l := a.lists.by[d.ID]
-		jobs, at, bad, busy := l.jobs, l.at, l.failed, l.busy != nil
-		a.lists.mu.Unlock()
-		h := ClientHealth{ID: d.ID, Name: d.Name, Health: "ok", SeenAt: at}
-		fresh := !busy && !bad && !at.IsZero()
-		switch {
-		case fresh:
-		case busy && !at.IsZero():
-			h.Health, h.Stale = "slow", true
-		case busy:
-			h.Health = "waiting"
-		default:
-			h.Health, h.Stale = "offline", !at.IsZero()
-		}
-		if !fresh {
-			failed = append(failed, d.ID)
-		}
-		if at.IsZero() || now.Sub(at) > clientStaleFor {
-			h.Stale = false
-			jobs = nil
-		}
-		health = append(health, h)
-		out := make([]DownloadRow, 0, len(jobs))
-		for _, j := range jobs {
-			if j.ID == "" || shown[clientKey{d.ID, strings.ToLower(j.ID)}] {
-				continue
-			}
-			out = append(out, clientRow(d, j))
-		}
-		sort.SliceStable(out, func(i, j int) bool {
-			ai, aj := out[i].StartedAt, out[j].StartedAt
-			switch {
-			case ai == nil || aj == nil:
-				if (ai == nil) != (aj == nil) {
-					return aj == nil
-				}
-			case !ai.Equal(*aj):
-				return ai.After(*aj)
-			}
-			return out[i].Hash < out[j].Hash
-		})
-		if len(out) > 0 {
-			a.knownTitles(ctx, d.ID, out)
-			a.linkedTitles(ctx, d.ID, out)
-			rows = append(rows, out...)
-		}
-	}
-	a.maybeSweep(ctx, failed)
-	a.matchQueue(context.WithoutCancel(ctx), rows)
-	return rows, health
+	return a.storeRows(ctx, names, shown)
 }
 
 // downloaderNames reads every Downloader (removed ones too: old downloads

@@ -2,7 +2,6 @@ package dlsync
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"reflect"
@@ -230,54 +229,3 @@ func openDB(t *testing.T) *store.Store {
 	return s
 }
 
-func setMode(t *testing.T, s *store.Store, v string) {
-	t.Helper()
-	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, 'system', ?, 'system')
-ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value`, SettingGroup, SettingSync, v, store.FormatTime(time.Now()), store.FormatTime(time.Now()))
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-// Shadow records nothing in legacy mode (the default) and, in shadow mode,
-// holds exactly the rows the Manager's list returned (parity).
-func TestShadowFlagAndParity(t *testing.T) {
-	db := openDB(t)
-	now := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
-	sh := &Shadow{Store: &Store{}, DB: db, Now: func() time.Time { return now }}
-	listed := []downloader.Job{{ID: "aa", Name: "A", Category: "holyarrs", State: downloader.StateDownloading, Progress: 0.3}, {ID: "bb", Name: "B", Category: "holyarrs", State: downloader.StateFinished}}
-	sh.OnList(1, 0, "holyarrs", listed, nil)
-	if sh.Store.Current(1).Items != nil {
-		t.Fatal("legacy mode recorded rows")
-	}
-	setMode(t, db, ModeShadow)
-	sh.OnList(1, 0, "holyarrs", listed, nil)
-	if sh.Store.Current(1).Items != nil {
-		t.Fatal("mode read again before its TTL")
-	}
-	now = now.Add(modeTTL)
-	sh.OnList(1, 0, "holyarrs", listed, nil)
-	snap := sh.Store.Current(1)
-	if !snap.Complete || len(snap.Items) != len(listed) {
-		t.Fatalf("%+v", snap)
-	}
-	for _, j := range listed {
-		if !reflect.DeepEqual(snap.Items[j.ID], j) {
-			t.Fatalf("row %s: store %+v list %+v", j.ID, snap.Items[j.ID], j)
-		}
-	}
-	sh.OnList(1, 0, "holyarrs", nil, errors.New("offline"))
-	if c := sh.Store.Current(1); c.Complete || len(c.Items) != 2 {
-		t.Fatalf("failed read %+v", c)
-	}
-	setMode(t, db, ModeLegacy)
-	now = now.Add(modeTTL)
-	if sh.Mode(context.Background()) != ModeLegacy {
-		t.Fatal("flag change not seen without restart")
-	}
-	var nilShadow *Shadow
-	nilShadow.OnList(1, 0, "", nil, nil)
-}

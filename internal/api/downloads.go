@@ -400,20 +400,18 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	}
 	// Managers see everything in their torrent clients, as the client's own
 	// screen does: the torrents HolyArrs did not send come after its own.
-	// A client that is slow or down never holds the page up: its last list
-	// is shown (marked stale), or nothing, and its health says why.
+	// Rows come from the background reader's snapshots: a client that is
+	// slow or down never holds the page up, and its health says why.
 	var outside []DownloadRow
 	health := []ClientHealth{}
 	if manage {
-		outside, health = a.clientRows(ctx, names, shown, clientViewWait)
-		// HolyArrs' own torrents take the ratio the same list read saw.
-		ratio := a.seenRatio
-		if a.syncOn() {
-			ratio = a.storeRatio
-		}
-		for i := range rows {
-			if rows[i].Ratio == nil && rows[i].Protocol == "torrent" {
-				rows[i].Ratio = ratio(rows[i].DownloaderID, rows[i].Hash)
+		outside, health = a.clientRows(ctx, names, shown)
+		// HolyArrs' own torrents take the ratio the reader's snapshot saw.
+		if a.s.DLSync != nil {
+			for i := range rows {
+				if rows[i].Ratio == nil && rows[i].Protocol == "torrent" {
+					rows[i].Ratio = a.storeRatio(rows[i].DownloaderID, rows[i].Hash)
+				}
 			}
 		}
 	}

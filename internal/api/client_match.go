@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -36,8 +35,6 @@ const (
 	linkSkipped  = "skipped"
 )
 
-// matchRetry is how long a failed lookup waits before it is tried again.
-var matchRetry = 30 * time.Minute
 
 // Candidate is one looked-up choice for a torrent.
 type Candidate struct {
@@ -56,102 +53,15 @@ type matchWant struct {
 	category   string
 }
 
-// clientMatch runs the matching one lookup at a time in the background.
+// clientMatch holds the match lookups' hooks (the background reader's
+// queue does the matching, through MatchLinkOnly).
 type clientMatch struct {
-	mu      sync.Mutex
-	queue   []matchWant
-	queued  map[clientKey]bool
-	failed  map[clientKey]time.Time
-	running bool
+	mu sync.Mutex
 	// Hooks; nil means the real lookups and adds (tests swap them).
 	searchMovies func(ctx context.Context, name string, year int) ([]metadata.Movie, error)
 	searchShows  func(ctx context.Context, name string) ([]metadata.Show, error)
 	addMovie     func(ctx context.Context, id string) (int64, error)
 	addShow      func(ctx context.Context, id string) (int64, error)
-	// done is told after each torrent (tests wait on it).
-	done func()
-}
-
-// matchQueue hands rows with no link yet to the background matcher.
-func (a *API) matchQueue(ctx context.Context, rows []DownloadRow) {
-	if len(rows) == 0 {
-		return
-	}
-	known := a.linkStates(ctx, rows)
-	m := &a.match
-	m.mu.Lock()
-	if m.queued == nil {
-		m.queued, m.failed = map[clientKey]bool{}, map[clientKey]time.Time{}
-	}
-	for _, r := range rows {
-		k := clientKey{r.DownloaderID, strings.ToLower(r.Hash)}
-		if !r.Outside || r.TitleID != 0 || known[k] != "" || m.queued[k] {
-			continue
-		}
-		if t, ok := m.failed[k]; ok && time.Since(t) < matchRetry {
-			continue
-		}
-		m.queued[k] = true
-		m.queue = append(m.queue, matchWant{r.DownloaderID, k.hash, r.Name, r.Category})
-	}
-	start := !m.running && len(m.queue) > 0
-	if start {
-		m.running = true
-	}
-	m.mu.Unlock()
-	if start {
-		go a.matchLoop()
-	}
-}
-
-func (a *API) matchLoop() {
-	m := &a.match
-	for {
-		m.mu.Lock()
-		if len(m.queue) == 0 {
-			m.running = false
-			m.mu.Unlock()
-			return
-		}
-		w := m.queue[0]
-		m.queue = m.queue[1:]
-		m.mu.Unlock()
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		err := a.matchOne(ctx, w)
-		cancel()
-		k := clientKey{w.downloader, w.hash}
-		m.mu.Lock()
-		delete(m.queued, k)
-		if err != nil {
-			log.Printf("api: match %q: %v", w.name, err)
-			m.failed[k] = time.Now()
-		} else {
-			delete(m.failed, k)
-		}
-		done := m.done
-		m.mu.Unlock()
-		if done != nil {
-			done()
-		}
-	}
-}
-
-// linkStates reads the stored link state of each row's torrent.
-func (a *API) linkStates(ctx context.Context, rows []DownloadRow) map[clientKey]string {
-	out := map[clientKey]string{}
-	rs, err := a.read().QueryContext(ctx, "SELECT downloader_id, hash, state FROM client_links WHERE hash = lower(hash)")
-	if err != nil {
-		return out
-	}
-	defer rs.Close()
-	for rs.Next() {
-		var k clientKey
-		var st string
-		if rs.Scan(&k.downloader, &k.hash, &st) == nil {
-			out[k] = st
-		}
-	}
-	return out
 }
 
 // guess is what a torrent name says.
@@ -335,38 +245,6 @@ func (a *API) candidatesFor(ctx context.Context, g guess) ([]Candidate, error) {
 		cs = cs[:6]
 	}
 	return cs, nil
-}
-
-// matchOne matches one torrent and stores the outcome.
-func (a *API) matchOne(ctx context.Context, w matchWant) error {
-	g := guessOf(w.name, w.category)
-	if g.kind == "" {
-		return a.saveLink(ctx, w, linkNotMedia, 0, nil, "", nil, "name")
-	}
-	cs, err := a.candidatesFor(ctx, g)
-	if err != nil {
-		return err
-	}
-	i := pickSure(cs, g.year)
-	if i < 0 && g.kind == "show" && g.year == 0 {
-		// A show name without a year: one alike candidate is enough.
-		n := 0
-		for j, c := range cs {
-			if c.Score >= sureScore {
-				n, i = n+1, j
-			}
-		}
-		if n != 1 {
-			i = -1
-		}
-	}
-	if i < 0 {
-		if len(cs) == 0 {
-			return a.saveLink(ctx, w, linkUnsure, 0, nil, "", []Candidate{}, "no candidates")
-		}
-		return a.saveLink(ctx, w, linkUnsure, 0, nil, "", cs, "unsure")
-	}
-	return a.addAndLink(ctx, w, g, cs[i], cs, "auto")
 }
 
 // addAndLink adds the candidate (or reuses the Library's copy) and links the
@@ -649,35 +527,17 @@ func (a *API) listMatches(w http.ResponseWriter, r *http.Request) {
 			counts[st] = n
 		}
 	}
-	a.match.mu.Lock()
-	pending := len(a.match.queue)
-	if a.match.running {
-		pending++
-	}
-	a.match.mu.Unlock()
+	var pending int
+	_ = a.read().QueryRowContext(r.Context(), "SELECT COUNT(*) FROM dl_match_queue WHERE outcome = ''").Scan(&pending)
 	writeJSON(w, http.StatusOK, map[string]any{"matches": unsure, "counts": counts, "pending": pending})
 }
 
-// runMatches (Match now) reads every torrent Downloader and matches the
-// outside torrents with no link yet, failed lookups included.
+// runMatches (Match now) makes every unmatched outside item due again in
+// the reader's match queue, failed lookups included.
 func (a *API) runMatches(w http.ResponseWriter, r *http.Request) {
-	if a.syncOn() {
-		// The reader's queue matches (link-only): everything waiting or
-		// given up is due again.
-		writeJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": a.rematch(r.Context())})
-		return
-	}
-	a.match.mu.Lock()
-	a.match.failed = map[clientKey]time.Time{}
-	a.match.mu.Unlock()
-	rows, _ := a.clientRows(r.Context(), a.downloaderNames(r.Context()), map[clientKey]bool{}, clientListWait)
-	n := 0
-	for _, x := range rows {
-		if x.Outside && x.TitleID == 0 {
-			n++
-		}
-	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": n})
+	// The reader's queue matches: everything waiting or given up is due
+	// again.
+	writeJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": a.rematch(r.Context())})
 }
 
 const pickHelp = `send {"candidate": "<id from the list>"}, {"not_media": true} or {"skip": true}`

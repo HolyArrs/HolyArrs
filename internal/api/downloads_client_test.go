@@ -99,6 +99,7 @@ func TestDownloadsViewListsEveryTorrent(t *testing.T) {
 	before := countDownloads(t, x.s)
 	var out viewRows
 	for range 2 { // a second read finds the same rows and still makes no records
+		feedStore(t, x.api)
 		out = viewRows{}
 		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
 	}
@@ -126,7 +127,8 @@ func TestDownloadsViewListsEveryTorrent(t *testing.T) {
 	if n := countDownloads(t, x.s); n != before {
 		t.Fatalf("outside rows made download records: %d -> %d", before, n)
 	}
-	// One torrents/info per read, without a category: no call per row.
+	// One torrents/info per background read, without a category: no call
+	// per row, and none from the view itself.
 	if n := strings.Count(f.saw(), "torrents/info?"); n != 2 || strings.Contains(f.saw(), "category=") {
 		t.Fatalf("client calls %s", f.saw())
 	}
@@ -139,6 +141,7 @@ func TestDownloadsViewKnownHash(t *testing.T) {
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	exec41(t, x.s, "UPDATE downloads SET external_id = ?", outHash)
+	feedStore(t, x.api)
 	var out viewRows
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=1", "", 200), &out)
 	for _, r := range out.Downloads {
@@ -271,6 +274,7 @@ func TestClientItemsNeedManageLibrary(t *testing.T) {
 	if strings.Contains(f.saw(), "torrents/stop") || strings.Contains(f.saw(), "torrents/delete") {
 		t.Fatalf("a member reached the client: %s", f.saw())
 	}
+	feedStore(t, r.api)
 	out = viewRows{}
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/downloads/view", "", 200), &out)
 	if len(out.Downloads) != 4 {

@@ -62,7 +62,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 	if want == "" {
 		want = "finished"
 	}
-	run := func(mode string) (time.Duration, int64, map[string]int) {
+	run := func(reader bool) (time.Duration, map[string]int) {
 		_ = q.Remove(context.Background(), testHash, true)
 		time.Sleep(2 * time.Second)
 		db, err := store.Open(t.TempDir(), store.Options{})
@@ -81,14 +81,15 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 		}
 		r := &rig{db: db}
 		r.m = &downloader.Manager{Store: db, HealthEvery: time.Hour, Engine: func(domain.Downloader) (downloader.Engine, error) { return q, nil }}
-		r.m.OnList = func(int64, uint64, string, []downloader.Job, error) { r.ownLists.Add(1) }
-		r.sh = &Shadow{Store: &Store{}, DB: db}
-		r.s = &Sync{Store: r.sh.Store, DB: db, Mode: r.sh, Manager: r.m, Lines: testLines}
-		r.m.Sync = r.s
-		r.setMode(t, mode)
+		r.s = &Sync{Store: &Store{}, DB: db, Manager: r.m, Lines: testLines}
 		ctx, cancel := context.WithCancel(context.Background())
 		done := make(chan struct{})
-		go func() { r.s.Around(ctx, r.m.Run); close(done) }()
+		if reader {
+			r.m.Sync = r.s
+			go func() { r.s.Around(ctx, r.m.Run); close(done) }()
+		} else {
+			go func() { r.m.Run(ctx); close(done) }()
+		}
 		time.Sleep(time.Second)
 		mu.Lock()
 		for k := range counts {
@@ -118,7 +119,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 				break
 			}
 			if time.Now().After(deadline) {
-				t.Fatalf("%s: still %q after 3 minutes", mode, st)
+				t.Fatalf("reader %v: still %q after 3 minutes", reader, st)
 			}
 			time.Sleep(20 * time.Millisecond)
 		}
@@ -131,18 +132,15 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 			c[k] = v
 		}
 		mu.Unlock()
-		return took, r.ownLists.Load(), c
+		return took, c
 	}
 	var legacy, on []time.Duration
 	for i := 0; i < 3; i++ {
-		d, own, c := run(ModeLegacy)
-		t.Logf("legacy run %d: %v, Manager lists %d, requests %v", i+1, d, own, c)
+		d, c := run(false)
+		t.Logf("own reads run %d: %v, requests %v", i+1, d, c)
 		legacy = append(legacy, d)
-		d, own, c = run(ModeOn)
-		t.Logf("on run %d: %v, Manager lists %d, requests %v", i+1, d, own, c)
-		if own != 0 {
-			t.Errorf("on: the Manager listed the client %d times", own)
-		}
+		d, c = run(true)
+		t.Logf("reader run %d: %v, requests %v", i+1, d, c)
 		if c["torrents/info"] > 2 {
 			t.Errorf("on: %d torrents/info requests (only targeted reads expected)", c["torrents/info"])
 		}

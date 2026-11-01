@@ -29,7 +29,7 @@ func TestStaleSnapshotHasNoSpeeds(t *testing.T) {
 
 // A good reader read clears the fallback flag, even with nothing active.
 func TestReadClearsFallback(t *testing.T) {
-	r := newRig(t, ModeOn, own(0.2))
+	r := newRig(t, own(0.2))
 	ctx := context.Background()
 	var d domain.Downloader
 	if err := store.Get(ctx, r.db.Read(), "downloaders", r.dlID, &d); err != nil {
@@ -47,7 +47,7 @@ func TestReadClearsFallback(t *testing.T) {
 // A failed DB read does not end the poller; it tries again until stopped.
 func TestPollSurvivesDBError(t *testing.T) {
 	fastTimers(t)
-	r := newRig(t, ModeOn)
+	r := newRig(t)
 	_ = r.db.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 	defer cancel()

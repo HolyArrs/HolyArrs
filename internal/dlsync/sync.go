@@ -40,16 +40,13 @@ var scanEvery = 2 * time.Second
 // restartBackoff is the wait before a poller that panicked starts again.
 var restartBackoff = []time.Duration{2 * time.Second, 5 * time.Second, 15 * time.Second, time.Minute, 300 * time.Second}
 
-// Sync is the background reader (setting downloads.sync = on): one poller
-// per Downloader owns every list read, through the Manager's guarded
-// engine; the Manager and the Downloads view read its Store. It runs
-// inside the "downloads" loop (see Around), so safe mode and the part
-// switch govern it. With any other setting value it reads nothing and
-// writes nothing.
+// Sync is the background reader: one poller per Downloader owns every
+// list read, through the Manager's guarded engine; the Manager and the
+// Downloads view read its Store. It runs inside the "downloads" loop (see
+// Around), so safe mode and the part switch govern it.
 type Sync struct {
 	Store   *Store
 	DB      *store.Store
-	Mode    *Shadow // reads downloads.sync (shared with the shadow hook)
 	Manager Manager
 	Lines   LinesFunc
 	Match   MatchFunc
@@ -69,7 +66,6 @@ type Sync struct {
 	mu      sync.Mutex
 	kicks   map[int64]chan struct{}
 	pollers map[int64]context.CancelFunc
-	wasOn   bool // on during this process's life before (re-entry after legacy)
 	onNow   bool
 }
 
@@ -114,22 +110,9 @@ func (s *Sync) init() {
 	}
 }
 
-// mode reads downloads.sync.
-func (s *Sync) mode(ctx context.Context) string {
-	if s.Mode == nil {
-		return ModeLegacy
-	}
-	return s.Mode.Mode(ctx)
-}
-
-// On is downloader.SyncSource.On: the reader runs and the setting is on.
+// On is downloader.SyncSource.On: the reader runs.
 func (s *Sync) On() bool {
-	if s == nil || !s.started.Load() {
-		return false
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	return s.mode(ctx) == ModeOn
+	return s != nil && s.started.Load()
 }
 
 // ClientStatus is a qBittorrent's state from the reader's last read, when
@@ -253,26 +236,21 @@ func (s *Sync) FinalFlush(loopCtx context.Context) {
 	}
 }
 
-// coordinate keeps one poller per Downloader while the setting is on,
-// flushes the persister and paces the match queue.
+// coordinate keeps one poller per Downloader, flushes the persister and
+// paces the match queue.
 func (s *Sync) coordinate(ctx context.Context, wg *sync.WaitGroup) {
 	var lastMatch time.Time
 	for {
-		on := s.mode(ctx) == ModeOn
-		if on {
-			s.enter(ctx)
-			s.ensurePollers(ctx, wg)
-			if s.persist.due() {
-				if err := s.persist.flush(ctx); err != nil && ctx.Err() == nil {
-					log.Printf("dlsync: flush: %v", err)
-				}
+		s.enter(ctx)
+		s.ensurePollers(ctx, wg)
+		if s.persist.due() {
+			if err := s.persist.flush(ctx); err != nil && ctx.Err() == nil {
+				log.Printf("dlsync: flush: %v", err)
 			}
-			if s.now().Sub(lastMatch) >= time.Second {
-				lastMatch = s.now()
-				s.matchStep(ctx)
-			}
-		} else {
-			s.leave(ctx)
+		}
+		if s.now().Sub(lastMatch) >= time.Second {
+			lastMatch = s.now()
+			s.matchStep(ctx)
 		}
 		if s.sleep(ctx, scanEvery) != nil {
 			s.stopPollers()
@@ -281,8 +259,8 @@ func (s *Sync) coordinate(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-// enter runs once on each switch to on: the last known rows come back as
-// stale, so changes while off are diffed against them.
+// enter runs once per start: the last known rows come back as stale, so
+// changes while HolyArrs was off are diffed against them.
 func (s *Sync) enter(ctx context.Context) {
 	s.mu.Lock()
 	if s.onNow {
@@ -298,34 +276,6 @@ func (s *Sync) enter(ctx context.Context) {
 	for id, jobs := range rows {
 		s.Store.Load(id, jobs)
 	}
-}
-
-// leave runs on each switch away from on: pollers stop and pending writes
-// are flushed. dl_items and the match queue are left alone from then on.
-func (s *Sync) leave(ctx context.Context) {
-	s.mu.Lock()
-	if !s.onNow {
-		s.mu.Unlock()
-		return
-	}
-	s.onNow, s.wasOn = false, true
-	s.mu.Unlock()
-	s.stopPollers()
-	fctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), flushTimeout)
-	defer cancel()
-	if err := s.persist.flush(fctx); err != nil {
-		log.Printf("dlsync: flush on leaving: %v", err)
-	}
-}
-
-// offNote says why stale rows were not seen live.
-func (s *Sync) offNote() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.wasOn {
-		return "while sync was off"
-	}
-	return "while HolyArrs was off"
 }
 
 func (s *Sync) stopPollers() {
@@ -589,7 +539,7 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 	if !ch.Empty() {
 		why := ""
 		if stale {
-			why = s.offNote()
+			why = "while HolyArrs was off"
 		}
 		cur := s.Store.Current(d.ID).Items
 		s.persist.note(d.ID, ch, prev, cur, why)

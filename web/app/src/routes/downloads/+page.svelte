@@ -160,9 +160,9 @@
 		return { ...r, id };
 	}
 
-	// Push updates (setting downloads.sync = on): the view answer carries each
-	// client's rev, and patches on /live keep the rows current between reads.
-	// Without revs (legacy) the page polls exactly as before.
+	// Push updates: the view answer carries each client's rev, and patches on
+	// /live keep the rows current between reads. No revs means the background
+	// reader is not running (safe mode): the page reads every 10 s instead.
 	let sync: Sync | null = null;
 	const pushHealthy = () => sync !== null && live.status.state === 'live';
 	function interest() {
@@ -233,8 +233,7 @@
 	}
 
 	// Live news comes often while something downloads: read again at most
-	// once every 400 ms. While something downloads, a slow poll keeps the
-	// speeds moving between news.
+	// once every 400 ms.
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	function soon() {
 		if (timer) return;
@@ -271,13 +270,9 @@
 		const offs = watch ? [] : ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
 		const decOffs = watch ? [] : ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
 		const offDl = live.on('dl', onDl);
-		// While push updates flow, the rows move with them: no 2 s reads.
-		const poll = setInterval(() => {
-			if (document.visibilityState === 'visible' && rows.some((r) => r.active) && sync === null) soon();
-		}, 2000);
-		// Without a stream (a watcher on legacy, or push whose stream failed) the page reads again every 10 s while visible.
+		// Without a healthy stream (no reader, or the stream failed) the page reads again every 10 s while visible.
 		const watchPoll = setInterval(() => {
-			if ((watch || sync !== null) && document.visibilityState === 'visible' && !pushHealthy()) soon();
+			if (document.visibilityState === 'visible' && !pushHealthy()) soon();
 		}, 10_000);
 		// With push: a slow safety read, and the server is told someone watches (faster client reads).
 		const safety = setInterval(() => {
@@ -296,7 +291,6 @@
 			offDl();
 			dlPush.on = false;
 			clearTimeout(timer);
-			clearInterval(poll);
 			clearInterval(watchPoll);
 			clearInterval(safety);
 			clearInterval(interestPoll);

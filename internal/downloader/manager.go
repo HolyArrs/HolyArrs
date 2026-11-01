@@ -53,10 +53,6 @@ type Manager struct {
 	Link func(ctx context.Context, rel domain.Release) (string, error)
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
-	// OnList, when set, is handed every list SyncOnce already read (or its
-	// error), with the engine generation it came from. The background
-	// reader uses it in shadow mode; it adds no call to any client.
-	OnList func(downloaderID int64, generation uint64, category string, jobs []Job, err error)
 	// Sync, when set and on (downloads.sync = on), is the background reader:
 	// SyncOnce reads its snapshots instead of listing clients, and falls
 	// back to its own guarded List only for a client the reader has not
@@ -686,9 +682,6 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 		}
 		if !fromStore {
 			jobsIn, err = e.List(ctx, dr.Category)
-			if m.OnList != nil {
-				m.OnList(dr.ID, m.Generation(dr.ID), dr.Category, jobsIn, err)
-			}
 			if err != nil {
 				m.downloaderFailed(ctx, dr, err)
 				errs = append(errs, err)

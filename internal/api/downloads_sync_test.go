@@ -29,7 +29,7 @@ func (noClient) ReportRead(context.Context, domain.Downloader, error) {}
 func (noClient) Generation(int64) uint64                              { return 0 }
 func (n noClient) Interval(a int) time.Duration                       { return n.m.Interval(a) }
 
-// With downloads.sync = on the view reads the reader's snapshot only: no
+// The view reads the reader's snapshot only: no
 // client call, no database write, no matcher start; it carries the revs
 // and pages outside rows as before.
 func TestDownloadsViewFromStore(t *testing.T) {
@@ -42,8 +42,7 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&dlr)
 	exec41(t, x.s, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('links', 'downloads_sync', 'on', '', '{}', '', '{}')`)
 
-	sh := &dlsync.Shadow{Store: &dlsync.Store{}, DB: x.s}
-	sy := &dlsync.Sync{Store: sh.Store, DB: x.s, Mode: sh, Manager: noClient{x.api.manager()}}
+	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: x.s, Manager: noClient{x.api.manager()}}
 	x.api.s.DLSync = sy
 	var jobs []downloader.Job
 	for i := range 250 {
@@ -96,11 +95,8 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	if after := version(); after != before {
 		t.Fatalf("the view wrote to the database (data_version %d -> %d)", before, after)
 	}
-	x.api.match.mu.Lock()
-	running := x.api.match.running
-	x.api.match.mu.Unlock()
-	if running {
-		t.Fatal("the view started the old matcher")
+	if n := count(t, x.s, "SELECT COUNT(*) FROM dl_match_queue"); n != 0 {
+		t.Fatalf("the view queued %d matches", n)
 	}
 	if first.OutsideTotal != 250 || first.NextCursor != "200" || len(first.Downloads) != 201 {
 		t.Fatalf("outside %d cursor %q rows %d", first.OutsideTotal, first.NextCursor, len(first.Downloads))

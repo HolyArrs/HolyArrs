@@ -69,8 +69,7 @@ func TestPublishDLAudiences(t *testing.T) {
 	var dlr int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&dlr)
 
-	sh := &dlsync.Shadow{Store: &dlsync.Store{}, DB: x.s}
-	sy := &dlsync.Sync{Store: sh.Store, DB: x.s, Mode: sh, Manager: noClient{x.api.manager()}}
+	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: x.s, Manager: noClient{x.api.manager()}}
 	x.api.s.DLSync = sy
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
