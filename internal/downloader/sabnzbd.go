@@ -241,7 +241,7 @@ func (x sabHistorySlot) job() Job {
 	case "Failed":
 		j.State, j.Progress = StateFailed, 0
 		if x.FailMessage != "" {
-			j.Detail = x.FailMessage
+			j.Detail = cleanLine(x.FailMessage)
 		}
 	default:
 		// Still being repaired or unpacked: downloading at full progress.
