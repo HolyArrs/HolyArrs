@@ -270,6 +270,7 @@ type nzbgetRow struct {
 	DeleteStatus    string     `json:"DeleteStatus"`
 	URLStatus       string     `json:"UrlStatus"`
 	MarkStatus      string     `json:"MarkStatus"`
+	HistoryTime     int64      `json:"HistoryTime"`
 	Parameters      []nzbParam `json:"Parameters"`
 }
 
@@ -399,13 +400,13 @@ func (r nzbgetRow) job(history bool) Job {
 	j := Job{ID: nzbgetMarkerID(r.Parameters), Name: name, Category: r.Category, SavePath: r.DestDir,
 		Size: size, Progress: p, State: nzbgetActiveState(r.Status), Detail: r.Status}
 	if history {
-		j.Progress = 1
+		j.Progress, j.DoneAt = 1, max(r.HistoryTime, 0)
 		switch {
 		case nzbgetHistoryFailed(r):
-			j.State = StateFailed
+			j.State, j.Detail = StateFailed, nzbgetReason(r)
 		case r.Status == "WARNING/SPACE" || r.UnpackStatus == "SPACE":
 			// Out of the queue and stuck on disk space: waiting on the user.
-			j.State = StatePaused
+			j.State, j.Detail = StatePaused, nzbgetReason(r)
 		case strings.HasPrefix(r.Status, "SUCCESS/"):
 			j.State, j.ContentPath = StateFinished, r.FinalDir
 			if j.ContentPath == "" {
@@ -496,7 +497,7 @@ func (n *NZBGet) shareSpeed(ctx context.Context, jobs []Job) {
 }
 
 func (n *NZBGet) Get(ctx context.Context, id string) (Job, error) {
-	match, found, err := n.lookup(ctx, id, n.Category)
+	match, found, err := n.find(ctx, id)
 	if err != nil {
 		return Job{}, err
 	}
@@ -505,9 +506,9 @@ func (n *NZBGet) Get(ctx context.Context, id string) (Job, error) {
 	}
 	r := match.row
 	if match.history {
-		return r.job(true), nil
+		return r.anyJob(true), nil
 	}
-	j := r.job(false)
+	j := r.anyJob(false)
 	var fs []nzbgetFile
 	if err := n.rpc(ctx, "listfiles", []any{0, 0, r.NZBID}, &fs); err != nil {
 		return Job{}, err
@@ -524,7 +525,7 @@ func (n *NZBGet) Get(ctx context.Context, id string) (Job, error) {
 }
 
 func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error {
-	match, found, err := n.lookup(ctx, id, n.Category)
+	match, found, err := n.find(ctx, id)
 	if err != nil {
 		return err
 	}
