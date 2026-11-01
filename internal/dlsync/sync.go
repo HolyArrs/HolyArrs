@@ -464,7 +464,7 @@ func Cadence(adapter string, n int, viewer, outsideActive bool, active, idle tim
 		switch adapter {
 		case "qbittorrent":
 			return qbit
-		case "sabnzbd":
+		case "sabnzbd", "nzbget":
 			return sab
 		}
 		return other
@@ -508,7 +508,9 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		var p MainPoll
 		p, err = s.cursors.Poll(cctx, d.ID, gen, ms)
 		jobs, scope, shared = p.Jobs, "", p.SharedSession
-	case d.Adapter == "sabnzbd" && isSab(e):
+	case (d.Adapter == "sabnzbd" || d.Adapter == "nzbget") && isSab(e):
+		// NZBGet answers the same two reads; with no change counter its
+		// history is read in full each time.
 		var p SabPoll
 		p, err = s.sabs.Poll(cctx, d.ID, gen, e.(SabSource))
 		jobs = p.Jobs

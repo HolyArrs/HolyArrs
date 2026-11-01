@@ -117,6 +117,17 @@ func clientHint(state string) string {
 		return "finishing"
 	case "Running":
 		return "script"
+	// NZBGet's.
+	case "LOADING_PARS", "VERIFYING_SOURCES", "VERIFYING_REPAIRED":
+		return "verifying"
+	case "REPAIRING":
+		return "repairing"
+	case "UNPACKING":
+		return "unpacking"
+	case "MOVING", "RENAMING", "POST_UNPACK_RENAMING", "PP_FINISHED":
+		return "finishing"
+	case "EXECUTING_SCRIPT":
+		return "script"
 	}
 	return ""
 }
