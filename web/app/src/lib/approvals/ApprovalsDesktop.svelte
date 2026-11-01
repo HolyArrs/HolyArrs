@@ -541,7 +541,7 @@
 	.sf-c { margin-left: auto; padding-left: 16px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	/* 5 on phones: a bottom sheet above the tab bar. */
 	.sf-scrim { position: fixed; inset: 0; z-index: 96; background: rgb(0 0 0 / 0.45); }
-	.sf-sheet { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar, 64px) + env(safe-area-inset-bottom, 0px)); z-index: 97; max-height: calc(100dvh - var(--tabbar, 64px) - env(safe-area-inset-bottom, 0px) - 48px); overflow-y: auto; box-sizing: border-box; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line-strong); border-radius: 18px 18px 0 0; background: var(--surface-2); box-shadow: 0 -20px 50px rgb(0 0 0 / 0.45); }
+	.sf-sheet { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 64px) + 14px + env(safe-area-inset-bottom, 0px)); z-index: 97; max-height: calc(100dvh - var(--tabbar, 64px) - env(safe-area-inset-bottom, 0px) - 62px); overflow-y: auto; box-sizing: border-box; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface-2); box-shadow: 0 -20px 50px rgb(0 0 0 / 0.45); }
 	.sf-sheet:focus { outline: none; }
 	.sf-sheet .sf-mi { height: 48px; font-size: 15px; }
 	.sf-grab { width: 40px; height: 4px; margin: 0 auto 6px; border-radius: 2px; background: var(--line-strong); }

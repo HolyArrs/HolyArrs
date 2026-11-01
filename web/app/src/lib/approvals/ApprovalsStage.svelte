@@ -142,12 +142,28 @@
 	});
 	async function choose(now = false) {
 		instant = now;
+		// Processing/Done windows change the banner's layout when the list opens, so measure
+		// the title in that layout (list open, no lift yet) rather than before it.
+		// Processing/Done: the title moves into the list's own header, so the list starts right
+		// under the window controls and never covers the title.
+		if (status) {
+			lift = 0;
+			sheetTop = 72;
+			choosing = true;
+			await tick();
+			frame?.querySelector<HTMLElement>('.sheet')?.focus({ preventScroll: true });
+			return;
+		}
 		const content = frame?.querySelector<HTMLElement>('.ui-billboard .content');
 		// How far the title travels: from where it sits to just under the tabs.
-		lift = content ? Math.max(content.offsetTop - 64, 0) : 0;
+		// Measured against the window itself, so it holds whatever the banner's own layout is
+		// (Processing/Done windows put the banner above the status strip).
+		const top = frame?.getBoundingClientRect().top ?? 0;
+		const box = content?.getBoundingClientRect();
+		lift = box ? Math.max(box.top - top - 64, 0) : 0;
 		// The sheet starts 20 px under the lifted meta line (the block keeps 72 % of its size).
-		const meta = content?.querySelector<HTMLElement>('.meta');
-		sheetTop = meta ? Math.round(64 + (meta.offsetTop + meta.offsetHeight) * 0.72 + 20) : 180;
+		const meta = content?.querySelector<HTMLElement>('.meta')?.getBoundingClientRect();
+		sheetTop = box && meta ? Math.round(64 + (meta.bottom - box.top) * 0.72 + 20) : 180;
 		choosing = true;
 		await tick();
 		frame?.querySelector<HTMLElement>('.sheet')?.focus({ preventScroll: true });
@@ -276,7 +292,7 @@
 			{#if choosing}
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: instant ? 0 : ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
-						<h3 id="sheet-h">{status ? listName : 'What to add'}</h3>
+						<h3 id="sheet-h">{#if status}<span class="sh-title">{picked.name}</span><span class="sh-kind">{listName}</span>{:else}What to add{/if}</h3>
 						{#if pageHref}<a class="tl-link tl-sheet" href={to(pageHref)} data-testid="ask-title-page-sheet">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
 						<button type="button" class="st-hide" aria-label="Hide {status ? listName : 'What to add'}" title="Hide" onclick={closeSheet}><span>Hide</span><Icon name="chevronDown" size={18} /></button>
 					</header>
@@ -370,6 +386,15 @@
 	.sheet { position: absolute; left: 14px; right: 14px; top: var(--sheet-top, 180px); bottom: 14px; z-index: 4; display: flex; flex-direction: column; border-radius: 20px; background: color-mix(in srgb, var(--bg) 84%, transparent); color: var(--text); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.7); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 	.sh-h { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 6px 16px; }
 	.sh-h h3 { font: var(--t-headline); }
+	.sh-h h3:has(.sh-title) { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+	.sh-title { font: 800 20px/1.1 var(--font-display, var(--font-ui)); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.sh-kind { color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; }
+	.frame.status.choosing :global(.ui-billboard .content) { opacity: 0; pointer-events: none; }
+	@media (max-width: 767px) {
+		.sh-h:has(.sh-title) { flex-wrap: wrap; row-gap: 6px; }
+		.sh-h h3:has(.sh-title) { flex: 1 0 100%; flex-direction: column; align-items: flex-start; gap: 2px; }
+		.sh-h:has(.sh-title) .tl-sheet { margin-left: 0; }
+	}
 	/* The picker, slimmer inside the sheet: one hairline box, shorter rows, the sheet does the scrolling. */
 	.sheet :global(.parts) { background: none; box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; }
 	.sheet :global(.head) { min-height: 38px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
