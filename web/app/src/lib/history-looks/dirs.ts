@@ -267,3 +267,78 @@ export function searchChips(s: SearchState, now = new Date()): Chip[] {
 
 /** The address change that clears every chip. */
 export const clearChips = { step: undefined, type: undefined, who: undefined, from: undefined, to: undefined };
+
+/* The Search looks' row: the step in plain words, then at most one extra piece. */
+
+/** What a row's step is: its word, its icon and whether it went wrong. */
+export interface RowStep {
+	label: string;
+	icon: 'wish' | 'check' | 'search' | 'upload' | 'download' | 'folder' | 'copy' | 'subtitle' | 'tv' | 'sparkle' | 'trash' | 'x' | 'alert' | 'info';
+	failed: boolean;
+}
+const problemKinds = new Set(tabKinds('problems') ?? []);
+/** isProblem says whether a kind is one of the Problems tab's kinds. */
+export function isProblem(kind: string): boolean {
+	return problemKinds.has(kind) || [...problemKinds].some((k) => k.endsWith('*') && kind.startsWith(k.slice(0, -1)));
+}
+const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
+	[/^ask_made$/, { label: 'Asked', icon: 'wish' }],
+	[/^ask_approved$/, { label: 'Approved', icon: 'check' }],
+	[/^release_chosen(_by_hand)?$/, { label: 'Chosen', icon: 'search' }],
+	[/^download_(sent|queued)$/, { label: 'Sent', icon: 'upload' }],
+	[/^download_(downloading|stalled|paused)$/, { label: 'Downloading', icon: 'download' }],
+	[/^download_(finished|seeding)$/, { label: 'Downloaded', icon: 'download' }],
+	[/^(import_done|import_partly_done|adopted)$/, { label: 'Imported', icon: 'folder' }],
+	[/^(renamed|rename_planned)$/, { label: 'Renamed', icon: 'copy' }],
+	[/^subtitle_/, { label: 'Subtitles', icon: 'subtitle' }],
+	[/^media_server_told$/, { label: 'In media server', icon: 'tv' }],
+	[/^file_replaced$/, { label: 'Upgraded', icon: 'sparkle' }],
+	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { label: 'Deleted', icon: 'trash' }]
+];
+/** rowStep names what a row's newest step is; a folded download reads its furthest step. */
+export function rowStep(row: HistoryRow, fallback = ''): RowStep {
+	const kinds = row.events.map((e) => e.Kind);
+	const bad = kinds.find(isProblem);
+	if (bad || row.steps.some((s) => s.state === 'failed')) return { label: bad === 'needs_decision' ? 'Needs you' : 'Failed', icon: bad === 'needs_decision' ? 'alert' : 'x', failed: true };
+	const pick = row.steps.length ? (kinds.includes('file_replaced') ? 'file_replaced' : kinds.find((k) => /^import_/.test(k)) ?? kinds.find((k) => /^download_(finished|seeding)$/.test(k)) ?? row.head.Kind) : row.head.Kind;
+	const hit = kindStep.find(([re]) => re.test(pick));
+	return hit ? { ...hit[1], failed: false } : { label: fallback || 'Changed', icon: 'info', failed: false };
+}
+/**
+ * rowExtra is the one extra piece a row shows after its step ('' when the
+ * Events did not keep it): who for asks, quality when chosen or sent, size
+ * when imported, quality when upgraded, language for subtitles, the reason
+ * for a failure.
+ */
+export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => ''): string {
+	if (step.failed) {
+		for (const e of row.events) {
+			const d = e.Data ?? {};
+			const why = str(d.reason) || str(d.error) || str(d.message);
+			if (why) return why.trim().replace(/[.;]\s*$/, '');
+		}
+		return '';
+	}
+	switch (step.label) {
+		case 'Asked':
+		case 'Approved': return who(row.head);
+		case 'Chosen':
+		case 'Sent':
+		case 'Upgraded': return qualityOf(row);
+		case 'Imported': return sizeText(row);
+		case 'Subtitles': return first(row, (d) => str(d.language)).toUpperCase();
+	}
+	return '';
+}
+/** agoShort is a short relative time: "now", "2m", "3h", "Yesterday", then the date. */
+export function agoShort(at: string, now = new Date()): string {
+	const t = new Date(at);
+	const s = Math.max(0, (now.getTime() - t.getTime()) / 1000);
+	if (s < 60) return 'now';
+	if (s < 3600) return `${Math.floor(s / 60)}m`;
+	const y = new Date(now);
+	y.setDate(y.getDate() - 1);
+	if (t.toDateString() === now.toDateString()) return `${Math.floor(s / 3600)}h`;
+	if (t.toDateString() === y.toDateString()) return 'Yesterday';
+	return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
+}

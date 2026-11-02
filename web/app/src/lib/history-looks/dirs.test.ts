@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { dateLabel, dirQuery, lookOf, readDir, readSearch, searchChips, stepKinds, storyOf, textMatches, titleCards, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { agoShort, dateLabel, isProblem, rowExtra, rowStep, dirQuery, lookOf, readDir, readSearch, searchChips, stepKinds, storyOf, textMatches, titleCards, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
+import { downloadSteps, type HistoryRow } from '../history.ts';
 
 let id = 0;
 const ev = (Kind: string, extra: Partial<EventRecord> = {}): EventRecord => ({ ID: ++id, At: '2026-11-01T10:00:00Z', Kind, Summary: Kind, TitleID: null, ...extra });
@@ -70,5 +71,47 @@ describe('history preview looks', () => {
 		expect(textMatches(e, 'alien')).toBe(false);
 		expect(typeMatches('artist', 'music')).toBe(true);
 		expect(typeMatches('show', 'movies')).toBe(false);
+	});
+});
+
+describe('search look rows', () => {
+	const one = (e: EventRecord): HistoryRow => ({ key: `e${e.ID}`, head: e, events: [e], steps: [] });
+	const dl = (...events: EventRecord[]): HistoryRow => ({ key: 'd1', head: events[0], events, steps: downloadSteps(events) });
+
+	it('names the step in plain words', () => {
+		expect(rowStep(one(ev('ask_made'))).label).toBe('Asked');
+		expect(rowStep(one(ev('media_server_told'))).label).toBe('In media server');
+		expect(rowStep(one(ev('file_replaced'))).label).toBe('Upgraded');
+		expect(rowStep(one(ev('title_added')), 'Added').label).toBe('Added');
+		expect(rowStep(dl(ev('import_done'), ev('download_finished'), ev('download_sent'))).label).toBe('Imported');
+		expect(rowStep(dl(ev('download_downloading'), ev('download_sent'))).label).toBe('Downloading');
+		const f = rowStep(dl(ev('download_failed'), ev('download_sent')));
+		expect(f).toEqual({ label: 'Failed', icon: 'x', failed: true });
+		expect(isProblem('library_folder_gone')).toBe(true);
+		expect(isProblem('import_done')).toBe(false);
+	});
+
+	it('adds at most one extra piece, never a placeholder', () => {
+		const who = () => 'Maya';
+		const ask = one(ev('ask_approved'));
+		expect(rowExtra(ask, rowStep(ask), who)).toBe('Maya');
+		const chose = one(ev('release_chosen', { Data: { release: 'Show.S01E01.1080p.WEB' } }));
+		expect(rowExtra(chose, rowStep(chose))).toBe('1080p');
+		const imp = dl(ev('import_done', { Data: { size_bytes: 2_000_000_000 } }), ev('download_sent'));
+		expect(rowExtra(imp, rowStep(imp))).toMatch(/GB/);
+		const sub = one(ev('subtitle_saved', { Data: { language: 'en' } }));
+		expect(rowExtra(sub, rowStep(sub))).toBe('EN');
+		const bad = dl(ev('download_failed', { Data: { reason: 'Tracker said no.' } }), ev('download_sent'));
+		expect(rowExtra(bad, rowStep(bad))).toBe('Tracker said no');
+		const ren = one(ev('renamed'));
+		expect(rowExtra(ren, rowStep(ren))).toBe('');
+	});
+
+	it('says how long ago in a few letters', () => {
+		const now = new Date(2026, 10, 2, 12, 0);
+		expect(agoShort(new Date(2026, 10, 2, 11, 58).toISOString(), now)).toBe('2m');
+		expect(agoShort(new Date(2026, 10, 2, 9, 0).toISOString(), now)).toBe('3h');
+		expect(agoShort(new Date(2026, 10, 1, 9, 0).toISOString(), now)).toBe('Yesterday');
+		expect(agoShort(new Date(2026, 9, 20).toISOString(), now)).toBe('Oct 20');
 	});
 });

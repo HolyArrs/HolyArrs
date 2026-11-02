@@ -194,7 +194,7 @@
 	</div>
 {/if}
 
-<LookDays {filter} {kinds} {titleById} {empty} size="m" {wide} bind:panel panelId="history-search-details" {people} {me} {keep}>
+<LookDays {filter} {kinds} {titleById} {empty} size="m" {wide} bind:panel panelId="history-search-details" {people} {me} {keep} compact>
 	{#snippet actions(row)}<RowActions {row} />{/snippet}
 </LookDays>
 
