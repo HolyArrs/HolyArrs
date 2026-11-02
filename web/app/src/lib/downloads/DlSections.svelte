@@ -914,16 +914,16 @@
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 60, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 30, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
 	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
-	const wMin = (id: ColId) => (id === 'proto' ? SRC_W : Math.max(layout.widths[id], heads[id] ?? 0));
+	const wMin = (id: ColId) => (id === 'proto' ? Math.max(SRC_W, heads.proto ?? 0) : Math.max(layout.widths[id], heads[id] ?? 0));
 	/** heads holds each header's name width, measured after layout and after each sort. */
 	let heads = $state<Partial<Record<ColId, number>>>({});
-	// The Source column is just wide enough for its header word and the client's logo.
-	const SRC_W = 60;
+	// The Source column hugs the client's logo; its header is an icon (wider only while a sort arrow shows).
+	const SRC_W = 30;
 	const vis = $derived.by(() => {
 		if (phone || room <= 0) return visAll;
 		const need = (c: ColId[]) => 48 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
@@ -1388,7 +1388,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto'}<span class="lbl" aria-label="Source"><Icon name="source" size={14} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1816,10 +1816,12 @@
 </div>
 
 <style>
+	/* Source hugs the logo, so its header icon sits centred over the logos. */
 	.ch[data-col='proto'] { justify-content: center; }
+	.ch[data-col='proto'] .lbl { display: flex; }
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	/* Source has no grip (fixed width) but keeps the divider line, at the same spot a grip draws it. */
-	.ch[data-col='proto']::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) + 1px); width: 1px; background: var(--line-strong); pointer-events: none; }
+	.ch[data-col='proto']::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; width: 18px; height: 18px; object-fit: contain; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
@@ -1946,7 +1948,7 @@
 	.sarr { flex: none; margin-left: 4px; color: var(--accent-text); font-weight: 700; }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) - 5px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
+	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) - 6px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
 	.grip:focus-visible { outline: none; }
