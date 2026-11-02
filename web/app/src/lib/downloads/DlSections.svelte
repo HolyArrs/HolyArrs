@@ -2095,7 +2095,7 @@
 	/* Wide, the pill starts right after the divider like every other column's text. */
 	.kcell .kt.wide { justify-content: flex-start; }
 	/* The wide Type: a small pill in the type's own colour (film orange, TV blue, music green, anything else grey). */
-	.kp { padding: 1px 7px; border-radius: 999px; font: var(--t-caption); font-weight: 600; color: var(--kc); background: color-mix(in srgb, var(--kc) 16%, transparent); overflow: hidden; text-overflow: ellipsis; }
+	.kp { padding: 1px 7px; border-radius: 999px; font: var(--t-caption); font-weight: 600; color: color-mix(in srgb, var(--kc) 70%, var(--text)); background: color-mix(in srgb, var(--kc) 16%, transparent); overflow: hidden; text-overflow: ellipsis; }
 	.kp[data-k='film'] { --kc: var(--wait); }
 	.kp[data-k='tv'] { --kc: var(--info); }
 	.kp[data-k='music'] { --kc: var(--ok); }
