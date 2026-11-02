@@ -136,6 +136,7 @@ describe('history detail actions', () => {
 		expect(links.map((l) => l.href)).toEqual(['/title/movie/1', '/downloads?open=7']);
 		expect(links[0].label).toBe('Dune');
 		expect(rowLinks(row(ev('ask_made'))).map((l) => l.key)).toEqual(['downloads', 'requests']);
+		expect(rowLinks(row(ev('ask_made', { Data: { ask_id: 12 } })))[1].href).toBe('/requests?ask=12');
 		expect(rowLinks(row(ev('import_done', { Data: { download_id: 3 } })))[0].href).toBe('/downloads?open=3');
 	});
 });

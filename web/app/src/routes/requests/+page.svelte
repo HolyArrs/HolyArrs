@@ -261,6 +261,14 @@
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
 			tab = approver ? 'waiting' : firstTab(asks);
+			// ?ask=<id> (History's "Go to Requests"): a member's list opens on that ask, picked and scrolled to.
+			// Approvers get its window from the Cards (lib/approvals/ApprovalsDesktop.svelte).
+			const want = Number(new URLSearchParams(location.search).get('ask')) || 0;
+			const a = !approver && want ? asks.find((x) => x.id === want) : undefined;
+			if (!a) return;
+			tab = askTab(a);
+			selectedId = a.id;
+			void tick().then(() => document.querySelector(`[data-ask-id="${a.id}"]`)?.scrollIntoView({ block: 'center' }));
 		});
 		void refreshInbox();
 		myId = session.s.id;
@@ -625,7 +633,7 @@
 			{@render bulkBar()}
 			<ul class="asks" aria-label="Requests">
 				{#each shown as a, i (a.id)}
-					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask">
+					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask" data-ask-id={a.id}>
 						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${a.poster}")`}></div>{/if}
 						{#if choosable}
 							<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={chosen.has(a.id)} onchange={() => toggleChosen(a.id)} />

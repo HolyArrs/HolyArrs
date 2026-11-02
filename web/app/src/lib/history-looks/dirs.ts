@@ -294,6 +294,7 @@ export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	if (titleHref) out.push({ key: 'title', label: row.head.title_name ?? 'Title', href: titleHref });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
 	out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
-	if (row.events.some((e) => /^ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: '/requests' });
+	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
+	if (row.events.some((e) => /^ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
 	return out;
 }

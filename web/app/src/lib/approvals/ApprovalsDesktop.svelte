@@ -266,6 +266,14 @@
 		// Focus the window itself, so no button opens wearing a focus ring.
 		win.focus({ preventScroll: true });
 	}
+	// ?ask=<id> (History's "Go to Requests") opens that ask's window once the asks are here.
+	let wanted = typeof location === 'undefined' ? 0 : Number(new URLSearchParams(location.search).get('ask')) || 0;
+	$effect(() => {
+		const a = wanted ? ctx.viewed.find((x) => x.id === wanted) : undefined;
+		if (!a) return;
+		wanted = 0;
+		void show(a, document.body);
+	});
 	// Closing eases out (scale down and fade), then the dialog closes.
 	let closing: ReturnType<typeof setTimeout> | undefined;
 	function hide() {
