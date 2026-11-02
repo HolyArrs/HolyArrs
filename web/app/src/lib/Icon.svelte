@@ -22,6 +22,8 @@
 		key: 'M8.5 11a4 4 0 1 1 0 .1zM12 12.5h8.5M17.5 12.5v3M20 12.5v2.5',
 		folder: 'M3.5 6.5a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z',
 		source: 'M4 6.5h16M4 12h16M4 17.5h10M18 16l2 2-2 2',
+		// A plug: two prongs, the body, and its cord (the Downloads Source column).
+		plug: 'M9 3.5v4M15 3.5v4M7 7.5h10v3.5a5 5 0 0 1-10 0zM12 16v4.5',
 		downloader: 'M4 14.5h16v5H4zM12 4v7M8.5 7.5 12 11l3.5-3.5M7 17h.01',
 		torrent: 'M6 3.5v8.5a6 6 0 0 0 12 0V3.5M6 8h4M14 8h4',
 		usenet: 'M4 5h16v5.5H4zM4 13.5h16V19H4zM7.5 7.75h.01M7.5 16.25h.01M11 7.75h5M11 16.25h5',
