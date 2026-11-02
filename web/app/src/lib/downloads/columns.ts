@@ -23,7 +23,6 @@ export type ColId =
 	| 'queue'
 	| 'tracker'
 	| 'requested'
-	| 'downloader'
 	| 'source'
 	| 'category';
 
@@ -62,7 +61,6 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true, torrent: true },
 	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
 	{ id: 'requested', label: 'Requested by', on: false, width: 120, missing: true },
-	{ id: 'downloader', label: 'Downloader', on: false, width: 120 },
 	{ id: 'source', label: 'Indexer', on: false, width: 120, missing: true },
 	{ id: 'category', label: 'Category', on: false, width: 100, missing: true }
 ];
