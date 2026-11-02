@@ -1363,7 +1363,7 @@
 		<span class="pcell" class:ph class:named={srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tp">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && r.linked}<span class="ver" data-testid="dl-linked" title="Added outside HolyArrs, matched to this title">Linked</span>{:else if r.outside}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
+			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tp">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && !r.linked}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
 			<span class="rel" title={r.name}>{sub2(r)}</span>
 			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
 		</span>
@@ -1972,7 +1972,8 @@
 	.prg i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
 	.prg.queued i { background: var(--info); }
 	.prg.held i { background: var(--wait); }
-	.prg.bad i { background: var(--fail); }
+	/* A failed row's bar stays neutral: the dot and the status words carry the red, not three things at once. */
+	.prg.bad i { background: var(--text-muted); opacity: 0.3; }
 	.bl, .br { position: relative; overflow: hidden; text-overflow: ellipsis; }
 	.bw { font-weight: 500; }
 	.hcell { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 24px; padding: 0 8px; }
@@ -2005,6 +2006,8 @@
 	.chead + .dlrows { border-top: 0; }
 	.chead:hover { background: none; }
 	.ch { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
+	/* Number columns: the heading sits over its right-aligned values. */
+	.ch.end { justify-content: flex-end; }
 	/* Every column name starts right after the divider line, as in qBittorrent; numbers below stay right-aligned. */
 	.ch { cursor: grab; user-select: none; touch-action: none; }
 	.ch.moving { opacity: 0.4; }
@@ -2600,13 +2603,15 @@
 	.phd .xtab.on, .phd .xtab.on:hover { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); }
 	.phd .xtab:focus-visible { border-radius: 999px; box-shadow: var(--focus-ring); }
 	.phd .ink { display: none; }
-	.pb .big { width: 120px; height: 180px; border: 1px solid var(--line); box-shadow: 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.pb .big { width: 120px; height: 180px; border: 1px solid var(--line); box-shadow: none; }
 	.pb .big.square { height: 120px; }
 	.facts { width: auto; justify-self: stretch; padding: 2px 0; border-color: var(--line); border-radius: var(--r-card); background: color-mix(in srgb, var(--surface-1) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-	.fcols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); overflow: hidden; }
+	/* Each column is its own height, so a divider ends at its content instead of running on into empty space. */
+	.fcols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); align-items: start; overflow: hidden; }
 	.fcol + .fcol { border-left: 0; }
 	.fcol { border-right: 1px solid var(--line); margin-right: -1px; }
-	.fcap { padding: 12px 16px 4px; }
+	/* Sentence case, like the column headings: one voice on the page. */
+	.fcap { padding: 12px 16px 4px; letter-spacing: 0; text-transform: none; }
 	.hlink { margin: 10px 16px 2px; font-weight: 600; }
 	.pb .lgw, .pb .tblw, .pb .quiet0 { border-radius: var(--r-card); border-color: var(--line); }
 	@media (min-width: 641px) {
