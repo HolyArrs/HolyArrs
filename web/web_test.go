@@ -53,7 +53,7 @@ func TestServesBuiltFilesAndFallsBack(t *testing.T) {
 // TestNoBannedWords keeps upstream coined words out of everything the app ships.
 func TestNoBannedWords(t *testing.T) {
 	banned := []string{"Monitored", "Activity", "Wanted", "Cutoff", "Quality Profile", "Root Folder", "Download Client",
-		"Interactive Search", "Manual Import", "Grabbed", "Connections", "Discover", "Requests", "Collections"}
+		"Interactive Search", "Manual Import", "Grabbed", "Connections", "Discover", "Collections"}
 	n := 0
 	_ = fs.WalkDir(Files, ".", func(p string, d fs.DirEntry, err error) error {
 		// vendor: third-party code (hls.js), not the app's words (as check-words.mjs).

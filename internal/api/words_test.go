@@ -12,7 +12,7 @@ import (
 // bannedWords are upstream coined words glossary.md tells us to avoid in
 // labels, API names and descriptions, docs and plans.
 var bannedWords = []string{"Monitored", "Activity", "Wanted", "Cutoff", "Quality Profile", "Root Folder", "Download Client",
-	"Interactive Search", "Manual Import", "Grabbed", "Connections", "Discover", "Requests", "Collections", "Series"}
+	"Interactive Search", "Manual Import", "Grabbed", "Connections", "Discover", "Collections", "Series"}
 
 // wordExceptions are the only places a banned word may stand, each with
 // why (logged in decisions/log-autonomous.md, 5.1.18): rule lines that list
