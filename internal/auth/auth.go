@@ -763,6 +763,7 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	var name, hash string
 	err := a.s.Read().QueryRowContext(r.Context(), "SELECT id, name, password_hash FROM users WHERE name = ? AND state = 'active'", c.Name).
 		Scan(&id, &name, &hash)
+	known := err == nil // a typed name that is no user may be a password typed in the wrong box
 	if err != nil || hash == "" {
 		// Same work whether the name is unknown or has no password (people
 		// who sign in only through Plex, Jellyfin or Emby).
@@ -772,7 +773,11 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	good := CheckPassword(hash, c.Password) && err == nil
 	if !good {
 		log.Printf("auth: failed sign-in from %s", r.RemoteAddr)
-		a.event(r, domain.System, "sign_in_failed", "Sign-in failed for "+truncate(c.Name, 64), map[string]any{"name": truncate(c.Name, 64)})
+		who := "unknown name"
+		if known {
+			who = name
+		}
+		a.failedEvent(r, who)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
@@ -1119,4 +1124,27 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) event(r *http.Request, by domain.Actor, kind, summary string, data map[string]any) {
 	data["ip"] = strings.TrimPrefix(a.ClientKey(r), "ip:")
 	_ = a.s.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: by, Kind: kind, Summary: summary, Data: data})
+}
+
+// failedEvent logs a failed sign-in. Repeats from the same address within
+// 10 minutes add to the newest row's count instead of making new rows.
+func (a *Auth) failedEvent(r *http.Request, name string) {
+	ip := strings.TrimPrefix(a.ClientKey(r), "ip:")
+	now := a.now().UTC()
+	ctx := context.WithoutCancel(r.Context())
+	var n int64
+	_ = a.s.WriteEvents(ctx, func(tx *sql.Tx) error {
+		res, err := tx.Exec(`UPDATE events SET data = json_set(data, '$.count', coalesce(json_extract(data, '$.count'), 1) + 1, '$.name', ?),
+			at = ?, updated_at = ? WHERE id = (SELECT id FROM events WHERE kind = 'sign_in_failed' AND json_extract(data, '$.ip') = ? AND at >= ? ORDER BY id DESC LIMIT 1)`,
+			name, store.FormatTime(now), store.FormatTime(now), ip, store.FormatTime(now.Add(-10*time.Minute)))
+		if err == nil {
+			n, err = res.RowsAffected()
+		}
+		return err
+	})
+	if n > 0 {
+		return
+	}
+	_ = a.s.AddEvent(ctx, &domain.Event{At: now, Kind: "sign_in_failed", Summary: "Sign-in failed for " + name,
+		Data: map[string]any{"name": name, "ip": ip, "count": 1}})
 }

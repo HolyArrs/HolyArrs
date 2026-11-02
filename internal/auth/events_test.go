@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -47,5 +48,28 @@ func TestAuthEvents(t *testing.T) {
 		if !seen[kind] {
 			t.Errorf("no %s event (have %v)", kind, seen)
 		}
+	}
+}
+
+// A name that is no user is never stored (it may be a password), and
+// repeats from one address within 10 minutes share one row with a count.
+func TestFailedSignInUnknownNameAndCollapse(t *testing.T) {
+	f := gated(t, Options{})
+	ownerOf(t, f)
+	c := client(t)
+	for range 3 {
+		call(t, c, "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"hunter2-secret","password":"x"}`, nil)
+	}
+	f.clock.add(11 * time.Minute)
+	call(t, c, "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"luis","password":"wrong one"}`, nil)
+	es, _, err := f.s.Events(context.Background(), store.EventFilter{Kinds: []string{"sign_in_failed"}})
+	if err != nil || len(es) != 2 {
+		t.Fatalf("rows %d %v", len(es), err)
+	}
+	if es[1].Data["name"] != "unknown name" || es[1].Data["count"] != float64(3) || strings.Contains(es[1].Summary, "hunter2") {
+		t.Fatalf("collapsed row %+v", es[1])
+	}
+	if es[0].Data["name"] != "luis" || es[0].Data["count"] != float64(1) {
+		t.Fatalf("new row %+v", es[0])
 	}
 }

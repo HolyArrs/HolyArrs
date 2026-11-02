@@ -89,6 +89,13 @@ func (w Who) Has(p Perm) bool {
 	return slices.Contains(w.Perms, p)
 }
 
+// MaySeeAudit reports whether the person may read audit Events (sign-ins,
+// API keys, settings changes): the owner, admins and people with the
+// settings permission, and of API keys only admin-scoped ones.
+func (w Who) MaySeeAudit() bool {
+	return (w.Has(needUsers) || w.Has(PermSettings)) && w.HasScope(ScopeAdmin)
+}
+
 // Effective is the full list of permissions the person holds.
 func (w Who) Effective() []Perm {
 	out := []Perm{}

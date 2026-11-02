@@ -75,6 +75,9 @@ type EventFilter struct {
 	SourceID int64
 	// HideFeed drops the routine feed checks.
 	HideFeed bool
+	// HideKinds drops Events of these exact kinds (from the list and the
+	// count), whatever Kinds asks for.
+	HideKinds []string
 }
 
 // Events lists the Events that match f, newest first, and how many match
@@ -140,6 +143,12 @@ func (s *Store) Events(ctx context.Context, f EventFilter) ([]domain.Event, int,
 		}
 		where = append(where, "(json_extract(data, '$.release_id') IN (SELECT value FROM json_each(?)) OR json_extract(data, '$.source_id') = ?)")
 		args = append(args, ids, f.SourceID)
+	}
+	if len(f.HideKinds) > 0 {
+		where = append(where, "kind NOT IN ("+strings.TrimSuffix(strings.Repeat("?,", len(f.HideKinds)), ",")+")")
+		for _, k := range f.HideKinds {
+			args = append(args, k)
+		}
 	}
 	if f.HideFeed {
 		where = append(where, "kind <> 'feed_checked'")

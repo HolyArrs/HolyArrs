@@ -1097,6 +1097,11 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 		}
 		f.Offset = n
 	}
+	// The audit trail (sign-ins, API keys, settings changes) is only for
+	// the owner and people who manage users or settings.
+	if who, signed := auth.From(r.Context()); signed && !who.MaySeeAudit() {
+		f.HideKinds = store.AuditEventKinds
+	}
 	es, total, err := a.s.Store.Events(r.Context(), f)
 	if err != nil {
 		internal(w, err)
