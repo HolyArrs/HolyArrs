@@ -1112,6 +1112,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		e := &domain.Event{Actor: by, Kind: "file_replaced", TitleID: &titleID, SlotID: &slotID, DownloadID: &dlID,
 			Summary: "Replaced " + up.oldName + " with a better copy", Data: map[string]any{"old_file_id": up.old.ID, "new_file_id": fileID, "moved_to": replacedTo},
 			GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
+		im.upgradeFacts(ctx, e.Data, up.old.ID, fileID)
 		if im.Store.AddEvent(ctx, e) == nil {
 			im.publish("event", e)
 		}

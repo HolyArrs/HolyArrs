@@ -926,6 +926,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		e := &domain.Event{Actor: by, Kind: "file_replaced", TitleID: &titleID, SlotID: &firstSlot, DownloadID: &dlID,
 			Summary: "Replaced " + fileName(f) + " with a better copy", Data: map[string]any{"old_file_id": oldID, "new_file_id": newID, "moved_to": replacedTo[oldID]},
 			GroupKey: group}
+		im.upgradeFacts(ctx, e.Data, oldID, newID)
 		if im.Store.AddEvent(ctx, e) == nil {
 			im.publish("event", e)
 		}
