@@ -17,7 +17,9 @@
 	// gradient in the genre's hue when there is none or it fails to load).
 	type Genre = { key: string; name: string; href: string; art: string; hue: number };
 	let { tiles = [], genres, type, onopen }: { tiles?: (BrowseTile & { section: string })[]; genres?: Genre[]; type: ExploreType; onopen?: (t: BrowseTile & { section: string }) => void } = $props();
-	type Entry = { key: string; name: string; label: string; href: string; art: string; all?: boolean; tile?: BrowseTile & { section: string }; tint?: string };
+	/** n items picked evenly across the list. */
+	const spread = <T,>(xs: T[], n: number): T[] => (xs.length <= n ? xs : Array.from({ length: n }, (_, i) => xs[Math.floor((i * xs.length) / n)]));
+	type Entry = { key: string; name: string; label: string; href: string; art: string; arts?: string[]; all?: boolean; tile?: BrowseTile & { section: string }; tint?: string };
 	const tint = (hue: number) => `hsl(${(((hue % 24) + 24) % 24) * 15} 52% 36%)`;
 	let failed = $state<Record<string, boolean>>({});
 	const entries = $derived<Entry[]>(genres ? [
@@ -33,8 +35,9 @@
 			art: t.backdrop ? sized(t.backdrop, 'backdrop', 240) : '',
 			tile: t
 		})),
-		// All categories borrows the last tile's still that has one.
-		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: (() => { const b = tiles.findLast((t) => t.backdrop)?.backdrop; return b ? sized(b, 'backdrop', 240) : ''; })(), all: true }
+		// All categories: a strip of four stills from tiles spread across the row
+		// (never the tile right beside it), so it reads as every category at once.
+		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: '', arts: spread(tiles.slice(0, -1).filter((t) => t.backdrop).map((t) => sized(t.backdrop!, 'backdrop', 240)), 4), all: true }
 	]);
 </script>
 
@@ -43,6 +46,7 @@
 		{#snippet card(e: Entry)}
 			<a class="cat" class:all={e.all} class:tinted={e.tint && (!e.art || failed[e.key])} href={e.href} style="--chars: {Math.max(e.name.length, 6)}" style:--tint={e.tint} onclick={() => e.tile && onopen?.(e.tile)}>
 				{#if e.art && !failed[e.key]}<img class="art" src={e.art} alt="" loading="lazy" decoding="async" onerror={() => (failed[e.key] = true)} />{/if}
+				{#if e.arts?.length}<span class="art mosaic">{#each e.arts as a, i (i)}<img src={a} alt="" loading="lazy" decoding="async" />{/each}</span>{/if}
 				<span class="txt">
 					<small>{e.label}</small>
 					<strong>{e.name}{#if e.all}<Icon name="chevronRight" size={18} />{/if}</strong>
@@ -82,6 +86,8 @@
 	.cat:active { transform: scale(.98); }
 	.cat:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg, #0b0708), 0 0 0 4px #d0202a; }
 	.cat:focus:not(:focus-visible) { outline: none; }
+	.mosaic { display: flex; gap: 2px; }
+	.mosaic img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; }
 	.cat.all { background: linear-gradient(120deg, #3a0609, #120a0b 70%); }
 	.cat.all small { color: #ffc9cb; }
 	/* A music genre with no picture: its hue as a dark gradient, never a broken image. */
