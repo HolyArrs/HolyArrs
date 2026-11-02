@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Releases on the About tab: the newest one open with its notes, older ones
+	// Every release, at the foot of the Updates tab: the newest one open with its notes, older ones
 	// folded to one line each, and only three shown until "Show more". The app
 	// knows just the current and newest release today; ?releases=demo fills in
 	// a made-up history so the many-release case can be seen.
@@ -40,10 +40,7 @@
 </script>
 
 <section class="st-plate" aria-labelledby="s-rel">
-	<h2 id="s-rel">Releases{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
-	{#if upd && !upd.on}<p class="meta">The update check is off.</p>
-	{:else if upd?.problem}<p class="meta">{upd.problem}</p>
-	{:else if upd?.checked_at}<p class="meta">Checked {ago(upd.checked_at)}</p>{/if}
+	<h2 id="s-rel">All releases{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
 
 	<ol class="rels">
 		{#each list.slice(0, shown) as r, i (r.version)}
@@ -74,7 +71,6 @@
 
 <style>
 	.cnt { padding: 2px 8px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; color: var(--text-muted); }
-	.meta { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
 	.rels { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 	.rel { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-1); overflow: hidden; }
 	.rel.open { border-color: var(--line-strong); box-shadow: 0 8px 20px -14px rgb(0 0 0 / 0.35); }

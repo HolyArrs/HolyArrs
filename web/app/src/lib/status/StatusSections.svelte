@@ -1,17 +1,19 @@
 <script lang="ts">
 	// The Status page body, laid out the way the *arr status pages are: frosted
-	// plates in four tabs. Status: Health, the parts (PartsViews), Storage.
-	// Jobs: Coming up and Recent runs (RunsViews), then every job. Updates: the
-	// releases list. About: this HolyArrs, its story, Documentation and Donations.
+	// plates in four tabs. Status: Health, the parts (PartsRail), Storage.
+	// Jobs: the timeline, then every job. Updates: where this HolyArrs stands,
+	// how to update, bundled tools, every release. About: this HolyArrs, its
+	// story, Documentation and Donations.
 	import './plate.css';
 	import { onMount } from 'svelte';
 	import { api } from '../api.ts';
 	import { ago, bytes, dateTime } from '../format.ts';
 	import { until } from '../schedules.ts';
 	import { to } from '../paths.ts';
-	import PartsViews from './PartsViews.svelte';
-	import RunsViews from './RunsViews.svelte';
-	import Releases from './Releases.svelte';
+	import PartsRail from './PartsRail.svelte';
+	import RunsTimeline from './RunsTimeline.svelte';
+	import Updates from './Updates.svelte';
+	import type { HealthCheck } from '../types.ts';
 	import { everyKind, needsAttention, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {
@@ -22,8 +24,7 @@
 		busy,
 		oncheck,
 		labelOf,
-		partsView,
-		runsView
+		ytdlp
 	}: {
 		groups: StatusGroup[];
 		tab: string;
@@ -32,8 +33,8 @@
 		busy: string | null;
 		oncheck: (r: StatusRow) => void;
 		labelOf: (r: StatusRow) => string;
-		partsView: 1 | 2 | 3 | 4 | 5;
-		runsView: 1 | 2 | 3 | 4 | 5;
+		/** The trailers health check, which names yt-dlp's version (Updates tab). */
+		ytdlp: HealthCheck | undefined;
 	} = $props();
 
 	type Disk = { path: string; kind: string; label: string; free_bytes: number; total_bytes: number };
@@ -64,16 +65,6 @@
 	const kindWord: Record<string, string> = { movie: 'Movies', show: 'Shows', music: 'Music' };
 	/** usedPct is how full a disk is, 0..100, or null when unknown. */
 	const usedPct = (d: Disk) => (d.total_bytes > 0 && d.free_bytes >= 0 ? Math.round(((d.total_bytes - d.free_bytes) / d.total_bytes) * 100) : null);
-	/** storagePct is how full the disks are as one number; folders on the same disk count once. */
-	const storagePct = $derived.by(() => {
-		if (!disks?.length) return null;
-		const seen = new Map<string, Disk>();
-		for (const d of disks) seen.set(`${d.total_bytes}:${d.free_bytes}`, d);
-		const total = [...seen.values()].reduce((n, d) => n + Math.max(0, d.total_bytes), 0);
-		const free = [...seen.values()].reduce((n, d) => n + Math.max(0, d.free_bytes), 0);
-		return total ? Math.round(((total - free) / total) * 100) : null;
-	});
-	const storageLine = $derived(!disks?.length ? 'No library folders yet' : `${disks.length} folder${disks.length === 1 ? '' : 's'} · ${bytes([...new Map(disks.map((d) => [`${d.total_bytes}:${d.free_bytes}`, d])).values()].reduce((n, d) => n + Math.max(0, d.free_bytes), 0))} free`);
 
 
 	onMount(() => {
@@ -122,7 +113,7 @@
 			{/if}
 		</section>
 
-		<PartsViews {kinds} view={partsView} {canAct} {busy} {oncheck} {storageLine} {storagePct} />
+		<PartsRail {kinds} {canAct} {busy} {oncheck} />
 
 		<section class="st-plate" aria-labelledby="s-disk">
 			<h2 id="s-disk">Storage</h2>
@@ -157,7 +148,7 @@
 			{/if}
 		</section>
 	{:else if tab === 'jobs'}
-		<RunsViews {upcoming} {recent} view={runsView} now={Date.now()} />
+		<RunsTimeline {upcoming} {recent} now={Date.now()} />
 
 		<section class="st-plate" aria-labelledby="s-jobs">
 			<h2 id="s-jobs">All jobs</h2>
@@ -177,7 +168,7 @@
 			</table>
 		</section>
 	{:else if tab === 'updates'}
-		<Releases {upd} />
+		<Updates {upd} docker={about ? about.docker : null} {ytdlp} {canAct} onupd={(u) => (upd = u)} />
 	{:else}
 		<section class="st-plate" aria-labelledby="s-about">
 			<h2 id="s-about">About</h2>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Status: is every linked part working, and did every background job run?
 	// Reads only the existing health, schedules, lists, alerts and metadata
-	// routes. Preview pickers: ?parts=1..5 (shape of the parts), ?runs=1..5 (Coming up / Recent runs).
+	// routes.
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -12,13 +12,12 @@
 	import { checkMetadata } from '#lib/metadata-health.svelte.ts';
 	import type { AlertView, HealthChecks, HealthStates, OutsideList } from '#lib/types.ts';
 	import type { ScheduleRow } from '#lib/schedules.ts';
-	import LookPills from '#lib/status/LookPills.svelte';
 	import Sections from '#lib/status/StatusSections.svelte';
-	import { buildRows, groupOrder, groupRows, headline, needsAttention, viewOf, type StatusInput, type StatusRow } from '#lib/status/status.ts';
+	import { buildRows, groupOrder, groupRows, headline, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
-	const partsView = $derived(viewOf(page.url.searchParams.get('parts')));
-	const runsView = $derived(viewOf(page.url.searchParams.get('runs')));
+	// The trailers check names yt-dlp's version; it is not a part, so it is not a row.
+	const ytdlp = $derived(input?.checks?.find((c) => (c.kind as string) === 'trailers'));
 
 	let input = $state<StatusInput | null>(null);
 	let error = $state('');
@@ -132,15 +131,13 @@
 	{:else if !input}
 		<p class="muted">Loading…</p>
 	{:else}
-		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {partsView} {runsView} />
+		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} />
 	{/if}
 </div>
 
-<LookPills />
-
 <style>
 	.status {
-		max-width: 1600px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+		max-width: 1600px; margin: 0 auto; padding: 0 var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;
 	}
 	.sbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; }

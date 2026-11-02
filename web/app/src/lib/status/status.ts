@@ -208,12 +208,6 @@ export function headline(rows: StatusRow[]): string {
 	return out.join(', ');
 }
 
-/** viewOf reads a preview picker (?parts=, ?runs=): 1..5, else 1. */
-export function viewOf(v: string | null): 1 | 2 | 3 | 4 | 5 {
-	const n = Number(v);
-	return n >= 1 && n <= 5 && Number.isInteger(n) ? (n as 1 | 2 | 3 | 4 | 5) : 1;
-}
-
 /** Which parts a Status section lists, in order; Library lives in Storage, Jobs on its own tab. */
 export const partKinds: { id: GroupId; label: string; add: string; one: string }[] = [
 	{ id: 'sources', label: 'Sources', add: '/settings/sources', one: 'source' },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, viewOf, everyKind, needsAttention } from './status.ts';
+import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, everyKind, needsAttention } from './status.ts';
 import type { ScheduleRow } from '../schedules.ts';
 import type { StageState } from '../types.ts';
 
@@ -58,13 +58,6 @@ describe('status rows', () => {
 	it('drops empty server times', () => {
 		expect(realTime('0001-01-01T00:00:00Z')).toBeUndefined();
 		expect(realTime('2026-11-02T09:00:00Z')).toBe('2026-11-02T09:00:00Z');
-	});
-
-	it('reads the preview pickers', () => {
-		expect(viewOf(null)).toBe(1);
-		expect(viewOf('3')).toBe(3);
-		expect(viewOf('7')).toBe(1);
-		expect(viewOf('x')).toBe(1);
 	});
 
 	it('keeps every kind of part, empty ones included', () => {
