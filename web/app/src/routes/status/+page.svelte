@@ -131,11 +131,13 @@
 	{:else if !input}
 		<p class="muted">Loading…</p>
 	{:else}
-		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} />
+		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} schedules={input.schedules ?? []} />
 	{/if}
 </div>
 
 <style>
+	/* This page ends where its last plate ends: no shared bottom padding, so the Jobs tab fits a screen. */
+	:global(main:has(> .status)) { padding-bottom: 12px; }
 	.status {
 		max-width: 1600px; margin: 0 auto; padding: 0 var(--gutter) 0; box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;
