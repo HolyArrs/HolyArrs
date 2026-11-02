@@ -214,6 +214,17 @@ export function quality(name: string | undefined): string {
 	return [res, tag].filter(Boolean).join(' ');
 }
 
+/** swarmNum keeps a seed or peer count to four characters: 9999, then "10k". */
+export function swarmNum(n: number | undefined | null): string {
+	const v = Math.max(0, n ?? 0);
+	return v >= 10000 ? `${Math.round(v / 1000)}k` : String(v);
+}
+
+/** ratioText keeps a ratio to four characters: 0.51, 12.3, 120. */
+export function ratioText(r: number): string {
+	return r >= 100 ? r.toFixed(0) : r >= 10 ? r.toFixed(1) : r.toFixed(2);
+}
+
 /** shortAge says how old a post is: "5 h", "3 d", "2 y" ('' when unknown). */
 export function shortAge(iso: string | undefined, now = Date.now()): string {
 	const t = iso ? Date.parse(iso) : NaN;

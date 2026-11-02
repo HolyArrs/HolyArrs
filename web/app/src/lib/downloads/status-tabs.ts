@@ -149,10 +149,11 @@ export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
 }
 
 /** statusWord is the row's word in the status column; it follows the sub-tab
- *  words. A download removed outside HolyArrs, or a failed copy already
- *  replaced, still reads Failed; one cleaned up from HolyArrs reads Done. */
+ *  words. A download removed outside HolyArrs, a failed copy already
+ *  replaced, or a torrent the Downloader marks errored or missing its files,
+ *  still reads Failed (the line under it says which); one cleaned up from
+ *  HolyArrs reads Done. */
 export function statusWord(r: RowBits): string {
-	if (r.client_hint === 'errored' || r.client_hint === 'missing') return 'Errored';
 	if (r.phase === 'failed' || r.phase === 'vanished') return 'Failed';
 	switch (stageOf(r)) {
 		case 'checking':
@@ -177,19 +178,53 @@ export function statusWord(r: RowBits): string {
 	return 'Done';
 }
 
-/** statusHint is a quiet line after the status word, or ''. */
+/** statusHint is a quiet sentence for the tooltip after the status word, or ''. */
 export function statusHint(r: RowBits): string {
 	switch (r.client_hint) {
 		case 'idle_seed':
 			return 'Nobody is asking for it right now';
-		case 'missing':
-			return 'Its files are gone from the disk';
-		case 'errored':
-			return 'The Downloader hit an error';
 		case 'moving':
-			return 'Moving to a new folder';
+			return 'To a new folder';
 	}
 	return r.phase === 'stalled' ? 'No data coming in; still trying' : '';
+}
+
+/** stepLine is the short second line under the status word when nothing is
+ *  wrong and the row is not in a queue: the step an import is at, why a
+ *  download failed, or a seeding torrent's ratio. Two words at most, so it
+ *  never repeats the word above it; `detail` is statusDetail's longer line,
+ *  which the tooltip keeps. '' when the word says it all. */
+export function stepLine(r: Pick<RowBits, 'client_hint'>, detail: string): string {
+	switch (r.client_hint) {
+		case 'verifying':
+			return 'Verifying';
+		case 'repairing':
+			return 'Repairing';
+		case 'unpacking':
+			return 'Unpacking';
+		case 'finishing':
+			return 'Finishing';
+		case 'script':
+			return 'Running script';
+		case 'missing':
+			return 'Files missing';
+		case 'errored':
+			return 'Downloader error';
+	}
+	if (detail.startsWith('import failed')) return 'Import failed';
+	if (detail === 'removed outside HolyArrs') return 'Removed outside';
+	if (detail === 'the files did not match') return 'Files did not match';
+	return detail ? detail.charAt(0).toUpperCase() + detail.slice(1) : '';
+}
+
+/** shortReason trims a Downloader's own failure line for the cell: its
+ *  status code in brackets goes, and so does the Downloader's name, which
+ *  the row's Downloader column already says. The tooltip keeps the full line. */
+export function shortReason(s: string): string {
+	return s
+		.replace(/\s*\([A-Z_]+\/[A-Z_]+\)\s*$/, '')
+		.replace(/ in (NZBGet|SABnzbd)\b/, '')
+		.trim();
 }
 
 /** The values older links used, mapped to the nearest group now. */

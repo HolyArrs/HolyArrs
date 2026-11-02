@@ -9,7 +9,7 @@
 	import { tick, untrack } from 'svelte';
 	import { mergeDetail } from './detail-merge.ts';
 	import { page } from '$app/state';
-	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, shortAge, sortRows, toggle as toggleCol, visible, type ColId, type Layout, type SwarmFacet } from './columns.ts';
+	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, ratioText, shortAge, sortRows, swarmNum, toggle as toggleCol, visible, type ColId, type Layout, type SwarmFacet } from './columns.ts';
 	import { replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
@@ -45,7 +45,7 @@
 	import { DUR, easeIn, easeOut, sheetIn, sheetOut } from '../ui/transitions.ts';
 	import { kindOf, manyWords, rowName, rowPath, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
-	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { ALL, counts, emptyOf, pick, showOf, shortReason, stageOf, statusHint, statusWord, stepLine, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
 	import { poster, who } from './shared.ts';
@@ -1371,7 +1371,7 @@
 		<span class="pcell" class:ph class:named={srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tp">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
+			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tphone">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
 			<span class="rel" title={r.name}>{sub2(r)}</span>
 			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
 		</span>
@@ -1390,16 +1390,18 @@
 		{#if hist}
 			{@const s = historyStatus(r, importOf.get(r.id))}
 			{@const cut = s.text.indexOf(': ')}
-			{@const reason = cut > 0 ? s.text.slice(cut + 2) : ''}
+			{@const reason = cut > 0 ? shortReason(s.text.slice(cut + 2)) : ''}
 			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{reason}</span>{/if}</span></span>
 		{:else}
 			{@const t = barTone(r)}
-			{@const more = statusDetail(r, importOf.get(r.id)) || statusHint(r)}
+			{@const detail = statusDetail(r, importOf.get(r.id))}
+			{@const more = detail || statusHint(r)}
 			{@const why = problem(r)}
-			<!-- The word on its own line, the reason under it: the dot and the word carry the tone, the reason stays quiet. -->
-			<!-- A waiting row has no reason: its place in the Downloader's line goes there instead. -->
-			{@const line = !why && stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${ordinal(r.queue_pos)} in line`) : ''}
-			<span class="st {t}" class:ph class:two={!!why || !!line} data-col="status" title={[statusWord(r), why?.text || line, more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid="dl-in-line">{line}</span>{/if}</span></span>
+			<!-- The word on its own line, a short line under it: the dot and the word carry the tone, the line stays quiet. -->
+			<!-- The line is the problem, else a waiting row's place in the Downloader's line, else the step it is at (or why it failed, or a seeding ratio). -->
+			{@const line = why ? '' : stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${ordinal(r.queue_pos)} in line`) : stepLine(r, detail)}
+			{@const under = why?.text || line}
+			<span class="st {t}" class:ph class:two={!!under} data-col="status" title={[statusWord(r), under, more.toLowerCase() === under.toLowerCase() ? '' : more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid={stageOf(r) === 'queued' ? 'dl-in-line' : 'dl-step'}>{line}</span>{/if}</span></span>
 		{/if}
 	{:else if id === 'size'}
 		<span class="num" class:ph data-col="size">{r.size ? bytes(r.size) : dash}</span>
@@ -1414,8 +1416,8 @@
 			{@const st = swarmTotal(r.seeds, r.seeds_total)}
 			{@const pt = swarmTotal(r.peers, r.peers_total)}
 			{@const tip = [st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}
-			<!-- One compact line: a green mark with the seeds, a blue mark with the peers, the ratio as a pill (green from 1.0). -->
-			<span class="sw1" class:ph data-col="swarm" title="{tip} · ratio {r.ratio != null ? r.ratio.toFixed(2) : '–'}"><span class="n"><i class="dot s" aria-hidden="true"></i>{r.seeds ?? 0}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{r.peers ?? 0}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{r.ratio.toFixed(2)}</b>{/if}</span>
+			<!-- One compact line on the header's three tracks: a green mark with the seeds, a blue mark with the peers, the ratio as a pill (green from 1.0). -->
+			<span class="sw1" class:ph data-col="swarm" title="{tip} · ratio {r.ratio != null ? r.ratio.toFixed(2) : '–'}"><span class="n"><i class="dot s" aria-hidden="true"></i>{swarmNum(r.seeds)}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{swarmNum(r.peers)}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{ratioText(r.ratio)}</b>{/if}</span>
 		{/if}
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
@@ -1461,7 +1463,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1922,7 +1924,6 @@
 	.ch[data-col='poster'] .lbl { display: flex; }
 	@media (min-width: 641px) { .ch[data-col='proto']:has(:global(svg)) .lbl, .pcell:not(.named) > .pm, .ch[data-col='poster'] .lbl, .dline > .post, .ch[data-col='kind']:has(:global(svg)) .lbl, .kcell > .kt:not(.wide) { transform: translateX(calc(var(--gap) / 2 - 4px)); } }
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
-	/* Source has no grip (fixed width) but keeps the divider line, at the same spot a grip draws it. */
 	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; flex: none; width: var(--lg, 18px); height: var(--lg, 18px); object-fit: contain; }
 	/* Large Source: the logo, then the client's own name, starting after the divider. */
@@ -1967,7 +1968,7 @@
 	.selbar { position: sticky; top: 0; left: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px var(--gutter, 12px); background: var(--surface-1); border-bottom: 1px solid var(--line); }
 	.selbar .sn { font: var(--t-footnote); color: var(--text-muted); margin-right: 4px; }
 	.selbar .sn b { color: var(--text); }
-	.psel, .qline, .tt .tp, .nm .ep { display: none; }
+	.psel, .qline, .tt .tphone, .nm .ep { display: none; }
 	@keyframes pselIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 	@media (prefers-reduced-motion: reduce) { .psel { animation: none; } }
 	@media (hover: none) { .pk { opacity: 1; } }
@@ -1987,7 +1988,7 @@
 	.tt, .rel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tt { font: var(--t-callout); font-weight: 500; display: flex; align-items: center; min-width: 0; }
 	/* The name shrinks with an ellipsis; the badges never do. */
-	.tt .tn, .tt .tp { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.tt .tn, .tt .tphone { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.tt .ver { flex: none; }
 	.rel { color: var(--text-muted); font: var(--t-caption); }
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
@@ -2074,6 +2075,8 @@
 	.grip { position: absolute; top: 0; bottom: 0; right: calc(-1 * var(--gap) - 3px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
+	/* A fixed-width column has no grip but keeps the divider, at the same spot a grip draws it. */
+	.ch.fixed::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.grip:focus-visible { outline: none; }
 	.cm { display: flex; justify-content: flex-end; }
 	.del { display: flex; justify-content: flex-end; }
@@ -2419,7 +2422,7 @@
 		.dline > [data-col='time'] { display: block; grid-area: time; }
 		.dline > [data-col='title'] { flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
 		.dline > [data-col='title'] .tn { display: none; }
-		.dline > [data-col='title'] .tp { display: inline; }
+		.dline > [data-col='title'] .tphone { display: inline; }
 		.dline > [data-col='title'] .ep { display: block; overflow: hidden; color: var(--text-muted); font: 400 13px/16px var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
 		/* The row's ⋯ menu sits at the card's right edge, beside both lines. */
@@ -2559,16 +2562,16 @@
 
 	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
 	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
-	/* Swarm: one line, two marks and a ratio pill. */
-	.sw1 { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.sw1 .n { display: inline-flex; align-items: center; gap: 5px; }
-	.sw1 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+	/* Swarm: one line, two marks and a ratio pill, on the same three tracks as the header's facet words so each number sits under its word; a four-digit count or a 99.0 ratio still fits the fixed width. */
+	.sw1, .facets { display: grid; grid-template-columns: 42px 42px auto; column-gap: 4px; align-items: center; justify-content: start; }
+	.sw1 { min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.sw1 .n { display: inline-flex; align-items: center; gap: 4px; }
+	.sw1 .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 	.sw1 .dot.p { background: var(--info); }
-	.sw1 .rp { margin-left: auto; padding: 1px 7px; border-radius: 999px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-weight: 500; }
+	.sw1 .rp { justify-self: start; padding: 1px 6px; border-radius: 999px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-weight: 500; font-variant-numeric: tabular-nums; }
 	.sw1 .rp.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 	/* The header's three facets: the picked one is bold and carries the sort line. */
-	.facets { display: flex; gap: 10px; }
-	.fc { position: relative; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
+	.fc { position: relative; justify-self: start; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
 	.fc.on { color: var(--text); font-weight: 600; }
 	.fc:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
 	.fc .sbar { right: 0; bottom: -7px; }

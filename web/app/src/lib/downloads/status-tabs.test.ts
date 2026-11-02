@@ -141,7 +141,27 @@ describe('emptyOf', () => {
 	});
 });
 
-import { statusHint as hintOf } from './status-tabs.ts';
+import { statusHint as hintOf, shortReason, stepLine } from './status-tabs.ts';
+describe('short reason', () => {
+	it('drops the status code and the Downloader name', () => {
+		expect(shortReason('Deleted in NZBGet by hand (DELETED/MANUAL)')).toBe('Deleted by hand');
+		expect(shortReason('Marked bad in NZBGet (FAILURE/BAD)')).toBe('Marked bad');
+		expect(shortReason('136 articles were missing')).toBe('136 articles were missing');
+	});
+});
+describe('step line', () => {
+	it('is two words at most and never repeats the status word', () => {
+		expect(stepLine({ client_hint: 'unpacking' }, 'unpacking')).toBe('Unpacking');
+		expect(stepLine({ client_hint: 'script' }, 'unpacking')).toBe('Running script');
+		expect(stepLine({}, 'up next')).toBe('Up next');
+		expect(stepLine({}, 'placing files')).toBe('Placing files');
+		expect(stepLine({}, 'import failed: no file could be placed')).toBe('Import failed');
+		expect(stepLine({}, 'removed outside HolyArrs')).toBe('Removed outside');
+		expect(stepLine({}, 'the files did not match')).toBe('Files did not match');
+		expect(stepLine({}, 'ratio 1.23')).toBe('Ratio 1.23');
+		expect(stepLine({}, '')).toBe('');
+	});
+});
 describe('client hints', () => {
 	const base = { progress: 0.5, state: 'queued' } as const;
 	it('puts checking and moving under In progress with one-word statuses', () => {
@@ -152,9 +172,11 @@ describe('client hints', () => {
 		expect(pick([r], TABS, 'progress', 'checking')).toHaveLength(1);
 		expect(subCounts([r], TABS.find((t) => t.key === 'progress')).find((s) => s.key === 'checking')?.count).toBe(1);
 	});
-	it('says Errored for client errors and keeps idle seeding under Done', () => {
-		expect(statusWord({ ...base, phase: 'failed', client_hint: 'errored' })).toBe('Errored');
-		expect(statusWord({ ...base, phase: 'failed', client_hint: 'missing' })).toBe('Errored');
+	it('says Failed for client errors, with the cause on the step line, and keeps idle seeding under Done', () => {
+		expect(statusWord({ ...base, phase: 'failed', client_hint: 'errored' })).toBe('Failed');
+		expect(stepLine({ client_hint: 'errored' }, '')).toBe('Downloader error');
+		expect(statusWord({ ...base, phase: 'failed', client_hint: 'missing' })).toBe('Failed');
+		expect(stepLine({ client_hint: 'missing' }, '')).toBe('Files missing');
 		const idle = { progress: 1, phase: 'done', state: 'seeding', client_hint: 'idle_seed' as const };
 		expect(statusWord(idle)).toBe('Seeding');
 		expect(pick([idle], TABS, 'done')).toHaveLength(1);

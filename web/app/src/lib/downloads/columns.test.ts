@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, shortAge, toggle, visible } from './columns.ts';
+import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, ratioText, shortAge, swarmNum, toggle, visible } from './columns.ts';
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
@@ -22,6 +22,14 @@ describe('columns', () => {
 		expect(shortAge('2024-10-01T12:00:00Z', now)).toBe('2 y');
 		expect(shortAge(undefined, now)).toBe('');
 		expect(shortAge('nope', now)).toBe('');
+	});
+	it('keeps swarm numbers and ratios to four characters', () => {
+		expect(swarmNum(9999)).toBe('9999');
+		expect(swarmNum(12345)).toBe('12k');
+		expect(swarmNum(undefined)).toBe('0');
+		expect(ratioText(0.5123)).toBe('0.51');
+		expect(ratioText(99)).toBe('99.0');
+		expect(ratioText(123.4)).toBe('123');
 	});
 	it('offers seeds and peers as one optional Swarm column', () => {
 		expect(visible(defaults())).not.toContain('swarm');
