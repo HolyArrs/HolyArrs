@@ -1,0 +1,25 @@
+/* Overlay pill scrollbar (overlayScroll.ts): floats over the content, rests faint, wakes on scroll. */
+.osb-on { scrollbar-width: none; }
+.osb-on::-webkit-scrollbar { display: none; }
+/* Only the thumb takes the pointer: the lane never blocks the rows' own buttons (the ⋯ menu sits at the right edge). */
+.osb-rail { position: absolute; z-index: 5; border-radius: var(--r-pill); opacity: .35; pointer-events: none;
+	transition: opacity var(--dur) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+.osb-v { right: 3px; width: 12px; top: calc(var(--osb-top, 0px) + 6px); bottom: 6px; }
+.osb-h { bottom: 3px; height: 12px; left: 14px; right: 14px; }
+[data-osb-both] .osb-v { bottom: 18px; }
+[data-osb-both] .osb-h { right: 18px; }
+.osb-rail[hidden] { display: none; }
+.osb-thumb { position: absolute; border-radius: var(--r-pill); pointer-events: auto; cursor: default;
+	background: color-mix(in srgb, var(--text) 30%, transparent);
+	box-shadow: 0 0 0 1px var(--line);
+	transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+.osb-v .osb-thumb { left: 3px; width: 6px; top: 0; height: var(--osb-len); transform: translateY(var(--osb-pos)); }
+.osb-h .osb-thumb { top: 3px; height: 6px; left: 0; width: var(--osb-len); transform: translateX(var(--osb-pos)); }
+[data-osb-active] .osb-rail, .osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { opacity: 1; }
+.osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { background: color-mix(in srgb, var(--surface-2) 70%, transparent); box-shadow: inset 0 0 0 1px var(--line); }
+.osb-rail:has(.osb-thumb:hover) .osb-thumb { background: color-mix(in srgb, var(--text) 45%, transparent); }
+.osb-rail[data-drag] .osb-thumb { background: color-mix(in srgb, var(--accent) 70%, var(--text) 10%); }
+.osb-rail[data-drag] .osb-thumb { transition: background-color var(--dur-fast) var(--ease-out); }
+[data-osb-drag] { user-select: none; }
+@media (prefers-reduced-motion: reduce) { .osb-rail, .osb-thumb { transition: none; } }
+@media (forced-colors: active) { .osb-on { scrollbar-width: auto; } .osb-on::-webkit-scrollbar { display: initial; } .osb-rail { display: none; } }

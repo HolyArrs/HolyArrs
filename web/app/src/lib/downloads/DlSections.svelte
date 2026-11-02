@@ -27,6 +27,7 @@
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
 	import Popover from '../ui/Popover.svelte';
 	import { tip } from './tip.ts';
+	import { overlayScroll } from '../ui/overlayScroll.ts';
 	import { dlScope } from '../search-field.svelte.ts';
 	import { dlTop } from '../dl-top.svelte.ts';
 	import { toasts } from '../toasts.svelte.ts';
@@ -1792,7 +1793,7 @@
 <div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={freeAll.length ? bytes(Math.min(...freeAll)) : ''} today={sumOf('day_down') ? bytes(sumOf('day_down')) : ''} session={sumOf('session_down') ? bytes(sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} /></div>
 <p class="qline" data-testid="dl-qline"><span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{#if freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="listbox" bind:this={listEl} data-testid="dl-listbox">
+<div class="listbox" bind:this={listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
@@ -2094,7 +2095,7 @@
 	.pick { max-width: 88px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); color: var(--text); font: var(--t-footnote); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.hdr { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; padding: 3px var(--dl-gutter); border-bottom: 1px solid var(--line); background: none; }
-	.col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+	.col { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.col > .listbox { flex: 1 1 auto; }
 	.drow.sel > .dline { position: relative; z-index: 1; background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent), 0 5px 10px -6px rgb(0 0 0 / 0.4), 0 -5px 10px -6px rgb(0 0 0 / 0.22); }
 	.drow.sel > .dline:hover { background: var(--surface-2); }
@@ -2550,15 +2551,15 @@
 /* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
 	/* Chrome drops the ::-webkit rules below (and draws its own bar with arrows) once scrollbar-width/-color are set, so those are Firefox only. */
 	@supports not selector(::-webkit-scrollbar) {
-		.listbox, .tw, .pb, .tblw, .lg, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
-		.listbox:hover, .tw:hover, .pb:hover, .tblw:hover, .lg:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
+		.tw, .pb, .tblw, .lg, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
+		.tw:hover, .pb:hover, .tblw:hover, .lg:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
 	}
-	.listbox::-webkit-scrollbar, .tw::-webkit-scrollbar, .pb::-webkit-scrollbar, .tblw::-webkit-scrollbar, .lg::-webkit-scrollbar, .picker::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+	.tw::-webkit-scrollbar, .pb::-webkit-scrollbar, .tblw::-webkit-scrollbar, .lg::-webkit-scrollbar, .picker::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
 	/* The track is a soft rounded lane in the rows' own tint, set in from the card's edges. */
-	.listbox::-webkit-scrollbar-track, .tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track, .tblw::-webkit-scrollbar-track, .lg::-webkit-scrollbar-track, .picker::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
-	.listbox::-webkit-scrollbar-corner, .tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner, .tblw::-webkit-scrollbar-corner { background: transparent; }
-	.listbox::-webkit-scrollbar-button, .tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button, .tblw::-webkit-scrollbar-button, .lg::-webkit-scrollbar-button, .picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-	.listbox::-webkit-scrollbar-thumb, .tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb, .tblw::-webkit-scrollbar-thumb, .lg::-webkit-scrollbar-thumb, .picker::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track, .tblw::-webkit-scrollbar-track, .lg::-webkit-scrollbar-track, .picker::-webkit-scrollbar-track { margin: 4px; border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner, .tblw::-webkit-scrollbar-corner { background: transparent; }
+	.tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button, .tblw::-webkit-scrollbar-button, .lg::-webkit-scrollbar-button, .picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+	.tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb, .tblw::-webkit-scrollbar-thumb, .lg::-webkit-scrollbar-thumb, .picker::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 12px; background: color-mix(in srgb, var(--text) 26%, transparent) padding-box; }
 	/* Desktop: the table is a card set in like the toolbar above it (14px from the side menu). */
 	@media (min-width: 641px) {
 		.body { padding: 0 12px 0 14px; }
@@ -2570,7 +2571,7 @@
 		.hk .hpk, .tg > .pk { margin: 0; translate: none; transform: none; }
 		.tg > .pk { left: 6px; }
 	}
-	.listbox::-webkit-scrollbar-thumb:hover, .tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover, .tblw::-webkit-scrollbar-thumb:hover, .lg::-webkit-scrollbar-thumb:hover, .picker::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
+	.tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover, .tblw::-webkit-scrollbar-thumb:hover, .lg::-webkit-scrollbar-thumb:hover, .picker::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 
 	/* Detail panel in the toolbar's language: a glass card, pill tabs, a status dot, cards inside. */
 	.hs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); }
