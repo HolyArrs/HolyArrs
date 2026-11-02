@@ -1531,6 +1531,7 @@
 		{@const groups = tor ? infoGroups(r, d) : [{ cap: 'Details', rows: simple.filter((x) => x.label !== 'Requested by' && x.value !== 'Not reported yet').map((x) => ({ k: x.label, v: x.value, path: x.label === 'Folder' || x.label === 'Source' } as Fact)).concat(d?.requested_by ? [{ k: 'Requested by', v: d.requested_by, tid: 'dl-info-asker' }] : []) }]}
 		{@const shown = groups.filter((g) => g.rows.length)}
 		<div class="facts" data-testid="dl-info">
+			{#if stageOf(r) === 'failed' || problem(r)?.tone === 'fail'}<a class="hlink" href={to('/downloads/history?step=failed')} data-testid="dl-see-history">See in History</a>{/if}
 			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{CALM_ERR}</span><button type="button" class="xbn" onclick={() => void readDetail(r, 'Info')} data-testid="dl-panel-retry">Retry</button></p>{/if}
 			{#if shown.length}
 				<div class="fcols" style="--fn: {shown.length}">
@@ -2524,6 +2525,7 @@
 	.fr dd.path { direction: rtl; }
 	.fr:last-child { border-bottom-color: transparent; }
 	.prf { flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 0 8px; }
+	.hlink { display: inline-block; margin: 6px 12px 2px; color: var(--accent-text); font: var(--t-footnote); }
 	.fnone { margin: 0; padding: 10px 12px; color: var(--text-muted); font: var(--t-callout); }
 	.calm.slim { margin: 4px 8px 4px; padding: 4px 4px 4px 10px; gap: 8px; border-color: var(--line); background: color-mix(in srgb, var(--surface-3) 50%, var(--surface-2)); font: var(--t-caption); }
 	.calm.slim .xbn { min-height: 24px; }
