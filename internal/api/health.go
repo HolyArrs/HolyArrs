@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/CoderLuii/holyarrs/internal/health"
+	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
 )
 
@@ -13,6 +14,7 @@ func (a *API) healthRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/health/checks", a.healthChecks)
 	m.HandleFunc("POST /api/v1/health/checks/run", a.runHealthChecks)
 	m.HandleFunc("GET /api/v1/health/states", a.healthStates)
+	m.HandleFunc("GET /api/v1/health/disks", a.healthDisks)
 	m.HandleFunc("GET /api/v1/settings/health", a.getHealthSettings)
 	m.HandleFunc("PUT /api/v1/settings/health", a.putHealthSettings)
 }
@@ -97,4 +99,39 @@ func (a *API) putHealthSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	a.s.Health.ResetUpdate(r.Context())
 	a.getHealthSettings(w, r)
+}
+
+// DiskView is one library folder's disk: free and total bytes (-1 unknown).
+type DiskView struct {
+	Path  string `json:"path"`
+	Kind  string `json:"kind"`
+	Label string `json:"label"`
+	Free  int64  `json:"free_bytes"`
+	Total int64  `json:"total_bytes"`
+}
+
+// healthDisks answers free and total space for every library folder, for
+// the Status page's storage bars.
+func (a *API) healthDisks(w http.ResponseWriter, r *http.Request) {
+	rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT path, kind, label FROM library_folders ORDER BY kind, path")
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	defer rows.Close()
+	out := []DiskView{}
+	for rows.Next() {
+		var d DiskView
+		if err := rows.Scan(&d.Path, &d.Kind, &d.Label); err != nil {
+			internal(w, err)
+			return
+		}
+		d.Free, d.Total = importer.FreeSpace(d.Path), importer.DiskSize(d.Path)
+		out = append(out, d)
+	}
+	if err := rows.Err(); err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"disks": out})
 }

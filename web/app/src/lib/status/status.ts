@@ -208,12 +208,10 @@ export function headline(rows: StatusRow[]): string {
 	return out.join(', ');
 }
 
-/** bgOf reads a preview picker (?bg=, ?surface=): 1..13, default 1. */
-export function bgOf(v: string | null): number {
-	const n = Number(v);
-	return Number.isInteger(n) && n >= 1 && n <= 13 ? n : 1;
+/** surfaceOf reads the preview picker ?surface=: 3 (frosted) or 1 (raised). */
+export function surfaceOf(v: string | null): 1 | 3 {
+	return v === '3' ? 3 : 1;
 }
-export const surfaceOf = bgOf;
 
 /** groupCounts splits a group into working, needs attention and off. */
 export function groupCounts(g: StatusGroup): { ok: number; bad: number; off: number } {

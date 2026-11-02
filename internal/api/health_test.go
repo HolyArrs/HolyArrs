@@ -112,3 +112,11 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 		t.Fatalf("empty: %s", b)
 	}
 }
+
+// route: GET /api/v1/health/disks
+func TestHealthDisksOverHTTP(t *testing.T) {
+	srv, _, _ := setup(t)
+	if b := do(t, "GET", srv.URL+"/api/v1/health/disks", "", 200); !strings.Contains(string(b), `"total_bytes":`) || !strings.Contains(string(b), `"kind":"movie"`) {
+		t.Fatalf("disks: %s", b)
+	}
+}

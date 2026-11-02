@@ -14588,6 +14588,21 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/health/disks": {
+      "get": {
+        "description": "Free and total bytes on the disk under every Library folder (-1 when unknown), for the Status page's storage bars.",
+        "operationId": "listHealthDisks",
+        "responses": {
+          "200": {
+            "description": "The disks: path, kind, label, free_bytes, total_bytes."
+          }
+        },
+        "summary": "Free and total space per Library folder",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/health/states": {
       "get": {
         "description": "The state of every stage (background loops and worker pools) and every linked app (each Source, Downloader, subtitle site and media server): off, starting, running, retrying or failed, with a reason in plain words for every state but running. A stage whose pass has not returned past its deadline is failed with stuck true. safe_mode is true when the app started with only the core (HOLYARRS_SAFE_MODE=1 or -safe-mode). The five parts are listed too (kind part, key part:<name>).",
