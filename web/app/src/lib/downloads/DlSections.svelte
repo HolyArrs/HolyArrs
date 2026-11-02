@@ -2598,9 +2598,11 @@
 	.pb .lgw, .pb .tblw, .pb .quiet0 { border-radius: 14px; border-color: var(--line); }
 	@media (min-width: 641px) {
 		/* Like the top of the page: the pane itself is the page, its header and facts are cards on it. */
-		.dpane { margin: 10px 12px 0 14px; background: transparent; overflow: hidden; }
-		.dpane .phd { border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
-		.pb { padding: 10px 0 16px; background: transparent; }
+		/* The pane is the table's twin: the same flat surface and corner, its header split off by a row line. */
+		.dpane { margin: 8px 12px 0 14px; border-radius: var(--r-card); background: var(--surface-2); overflow: hidden; }
+		.dpane .phd { padding: 8px var(--dl-gutter); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
+		.pb { padding: 12px var(--dl-gutter) 16px; background: transparent; }
+		.dpane .facts { background: transparent; box-shadow: none; }
 	}
 	@media (min-width: 1800px) { .pb .big { width: 140px; height: 210px; } .pb .big.square { height: 140px; } }
 	@media (max-width: 767px) {
