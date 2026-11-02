@@ -42,7 +42,7 @@
 	import { size as bytes, categoryWords, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
 	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../motion.ts';
-	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
+	import { DUR, easeIn, easeOut, sheetIn, sheetOut } from '../ui/transitions.ts';
 	import { kindOf, manyWords, rowName, rowPath, type Decision, type DownloadRow } from '../downloaders.ts';
 	import type { ImportRecord, TitleView } from '../types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, stageOf, statusHint, statusWord, subCounts, tabsFor } from './status-tabs.ts';
@@ -798,8 +798,11 @@
 		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], [role="dialog"], .mn')) return;
 		if (e.key === 'Escape') {
 			if (listEsc(picked.size, !!openId) === 'close') {
+				// Escape from inside the pane: the focus goes back to the row the pane was about, never to nowhere.
+				const line = t.closest('.dpane') ? listEl?.querySelector<HTMLElement>(`[data-dl-id="${openId}"] .dline`) : null;
 				openId = 0;
 				e.preventDefault();
+				line?.focus();
 			}
 			return;
 		}
@@ -1833,9 +1836,11 @@
 {/if}
 </div>
 {#if openRow}
+	<div class="sheet" in:sheetIn out:sheetOut data-testid="dl-sheet">
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuenow={paneOpen ? paneH : 0} tabindex="0" class:fixed={!paneOpen} onpointerdown={dragDown} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
+	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? paneH : 0} tabindex="0" class:fixed={!paneOpen} onpointerdown={dragDown} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
 	{@render panel(openRow)}
+	</div>
 {/if}
 </div>
 </div>
@@ -2104,6 +2109,8 @@
 	.dv i { position: absolute; left: 50%; top: 3px; width: 38px; height: 3px; margin-left: -19px; border-radius: 2px; background: var(--line-strong, var(--text-muted)); opacity: 0.6; }
 	.dv:hover i, .dv:focus-visible i { opacity: 1; }
 	.dv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* The divider and the pane rise and fold away together (sheetIn / sheetOut). */
+	.sheet { flex: none; display: flex; flex-direction: column; min-height: 0; }
 	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
 	.phd { flex: none; }
@@ -2430,8 +2437,8 @@
 		.hdr { grid-template-columns: minmax(0, 1fr); }
 			.gen { grid-template-columns: minmax(0, 1fr); }
 	}
-	/* Narrower screens: the actions get their own row under the tabs, never over the panel. */
-	@media (max-width: 1199px) {
+	/* Phones: title, tabs, then the actions on their own row, never over the sheet. */
+	@media (max-width: 640px) {
 		.phd .pt { order: 0; }
 		.phd .xtabs { order: 1; }
 		.phd .pcl { order: 2; margin-left: auto; }
@@ -2563,7 +2570,12 @@
 	/* Desktop: the table is a card set in like the toolbar above it (14px from the side menu). */
 	@media (min-width: 641px) {
 		.body { padding: 0 12px 0 14px; }
-		.col { overflow: clip; border-radius: 14px; }
+		/* The toolbar and the pill row are cards on the page: no page-wide rules under them (they ran off the cards' edges). */
+		.hdr, .tabrow { border-bottom: 0; }
+		/* The list, the divider and the pane are one slab of the table's surface; only its four outer corners are rounded. */
+		.col { overflow: clip; border-radius: var(--r-card); }
+		.col > .listbox { background: var(--surface-2); border-radius: var(--r-card) var(--r-card) 0 0; }
+		.dv { background: var(--surface-2); }
 		/* The table's own frame drew a second line inside the card: the rows' lines are enough. */
 		.col .tin { border-color: transparent; box-shadow: none; }
 		/* The header and row checkboxes sit centred in the same 28px lane. */
@@ -2590,20 +2602,29 @@
 	.phd .ink { display: none; }
 	.pb .big { width: 120px; height: 180px; border: 1px solid var(--line); box-shadow: 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.pb .big.square { height: 120px; }
-	.facts { width: auto; justify-self: stretch; padding: 2px 0; border-color: var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.facts { width: auto; justify-self: stretch; padding: 2px 0; border-color: var(--line); border-radius: var(--r-card); background: color-mix(in srgb, var(--surface-1) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.fcols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); overflow: hidden; }
 	.fcol + .fcol { border-left: 0; }
 	.fcol { border-right: 1px solid var(--line); margin-right: -1px; }
 	.fcap { padding: 12px 16px 4px; }
 	.hlink { margin: 10px 16px 2px; font-weight: 600; }
-	.pb .lgw, .pb .tblw, .pb .quiet0 { border-radius: 14px; border-color: var(--line); }
+	.pb .lgw, .pb .tblw, .pb .quiet0 { border-radius: var(--r-card); border-color: var(--line); }
 	@media (min-width: 641px) {
-		/* Like the top of the page: the pane itself is the page, its header and facts are cards on it. */
-		/* The pane is the table's twin: the same flat surface and corner, its header split off by a row line. */
-		.dpane { margin: 8px 12px 0 14px; border-radius: var(--r-card); background: var(--surface-2); overflow: hidden; }
+		/* The pane is part of the table's slab: same surface, same edges, no frame of its own; the divider's hairline and grip are the seam. */
+		.dpane { margin: 0; border-radius: 0; background: var(--surface-2); overflow: hidden; }
 		.dpane .phd { padding: 8px var(--dl-gutter); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
 		.pb { padding: 12px var(--dl-gutter) 16px; background: transparent; }
-		.dpane .facts { background: transparent; box-shadow: none; }
+		/* The facts sit on the slab with their column hairlines only: no second frame inside the pane. */
+		.dpane .facts { background: transparent; box-shadow: none; border-color: transparent; }
+		/* The title takes the room it needs (up to 42% of the header) and the tabs centre in what is left. */
+		.dpane .pt { flex: 0 1 auto; min-width: 0; max-width: 42%; }
+		.dpane .phd .xtabs { margin-inline: auto; }
+	}
+	/* Narrower desktops: the title fills the first row beside the actions, so the tabs wrap to a second row of their own. Never three rows. */
+	@media (min-width: 641px) and (max-width: 1240px) {
+		.dpane .pt { max-width: none; flex: 1 1 200px; }
+		.dpane .phd .xtabs { order: 2; flex: 0 1 auto; margin: 0 auto 6px 0; }
+		.dpane .pact, .dpane .pcl { order: 1; flex: none; }
 	}
 	@media (min-width: 1800px) { .pb .big { width: 140px; height: 210px; } .pb .big.square { height: 140px; } }
 	@media (max-width: 767px) {

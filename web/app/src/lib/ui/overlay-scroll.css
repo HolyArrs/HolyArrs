@@ -1,25 +1,27 @@
-/* Overlay pill scrollbar (overlayScroll.ts): floats over the content, rests faint, wakes on scroll. */
+/* Overlay scrollbar (overlayScroll.ts): the list's own, made of the segment-pill material.
+   The thumb is a --seg-thumb pill with the pill ring; the lane shows only under the pointer.
+   It floats over the content, rests a little faint and wakes on scroll. */
 .osb-on { scrollbar-width: none; }
 .osb-on::-webkit-scrollbar { display: none; }
 /* Only the thumb takes the pointer: the lane never blocks the rows' own buttons (the ⋯ menu sits at the right edge). */
-.osb-rail { position: absolute; z-index: 5; border-radius: var(--r-pill); opacity: .35; pointer-events: none;
+.osb-rail { position: absolute; z-index: 5; border-radius: var(--r-pill); opacity: .85; pointer-events: none;
 	transition: opacity var(--dur) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
-.osb-v { right: 3px; width: 12px; top: calc(var(--osb-top, 0px) + 6px); bottom: 6px; }
-.osb-h { bottom: 3px; height: 12px; left: 14px; right: 14px; }
-[data-osb-both] .osb-v { bottom: 18px; }
-[data-osb-both] .osb-h { right: 18px; }
+/* Bounded by the list box: --osb-top (toolbar rows and the header above it), --osb-bottom (the pane below it). */
+.osb-v { right: 2px; width: 14px; top: calc(var(--osb-top, 0px) + 6px); bottom: calc(var(--osb-bottom, 0px) + 6px); }
+.osb-h { bottom: calc(var(--osb-bottom, 0px) + 2px); height: 14px; left: 10px; right: 10px; }
+[data-osb-both] .osb-v { bottom: calc(var(--osb-bottom, 0px) + 20px); }
+[data-osb-both] .osb-h { right: 20px; }
 .osb-rail[hidden] { display: none; }
 .osb-thumb { position: absolute; border-radius: var(--r-pill); pointer-events: auto; cursor: default;
-	background: color-mix(in srgb, var(--text) 30%, transparent);
-	box-shadow: 0 0 0 1px var(--line);
-	transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
-.osb-v .osb-thumb { left: 3px; width: 6px; top: 0; height: var(--osb-len); transform: translateY(var(--osb-pos)); }
-.osb-h .osb-thumb { top: 3px; height: 6px; left: 0; width: var(--osb-len); transform: translateX(var(--osb-pos)); }
+	background: var(--seg-thumb, var(--surface-1));
+	box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12);
+	transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+.osb-v .osb-thumb { left: 3px; width: 8px; top: 0; height: var(--osb-len); transform: translateY(var(--osb-pos)); }
+.osb-h .osb-thumb { top: 3px; height: 8px; left: 0; width: var(--osb-len); transform: translateX(var(--osb-pos)); }
 [data-osb-active] .osb-rail, .osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { opacity: 1; }
-.osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { background: color-mix(in srgb, var(--surface-2) 70%, transparent); box-shadow: inset 0 0 0 1px var(--line); }
-.osb-rail:has(.osb-thumb:hover) .osb-thumb { background: color-mix(in srgb, var(--text) 45%, transparent); }
-.osb-rail[data-drag] .osb-thumb { background: color-mix(in srgb, var(--accent) 70%, var(--text) 10%); }
-.osb-rail[data-drag] .osb-thumb { transition: background-color var(--dur-fast) var(--ease-out); }
+/* Under the pointer the lane shows, the same track the segment pills sit in. */
+.osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { background: var(--surface-3); }
+.osb-rail[data-drag] .osb-thumb { box-shadow: 0 0 0 1px var(--text-muted), 0 1px 2px rgb(0 0 0 / 0.12); }
 [data-osb-drag] { user-select: none; }
 @media (prefers-reduced-motion: reduce) { .osb-rail, .osb-thumb { transition: none; } }
 @media (forced-colors: active) { .osb-on { scrollbar-width: auto; } .osb-on::-webkit-scrollbar { display: initial; } .osb-rail { display: none; } }

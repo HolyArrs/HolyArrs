@@ -2,7 +2,7 @@
 // use these so a popover, a toast and a moving card keep the same pace as CSS.
 // Under reduced motion every helper turns into a short crossfade, nothing travels.
 
-import { fade, fly, scale, type TransitionConfig } from 'svelte/transition';
+import { fade, fly, scale, slide, type TransitionConfig } from 'svelte/transition';
 import { flip } from 'svelte/animate';
 import { reducedMotion } from '../motion.ts';
 
@@ -51,6 +51,21 @@ export function dropIn(node: Element): TransitionConfig {
 export function dropOut(node: Element): TransitionConfig {
 	if (reducedMotion()) return calm(node, DUR.fast);
 	return fly(node, { y: 16, duration: DUR.fast, easing: easeIn });
+}
+
+/** On phones the pane is a fixed bottom sheet with its own look; its in-flow wrapper has no height, so nothing to fold. */
+const phone = () => typeof matchMedia === 'function' && matchMedia('(max-width: 640px)').matches;
+/** A sheet rising from the bottom of its card (the Downloads detail pane): one element folds open at the slow pace. */
+export function sheetIn(node: Element): TransitionConfig {
+	if (phone()) return { duration: 0 };
+	if (reducedMotion()) return calm(node, DUR.fast);
+	return slide(node, { duration: DUR.slow, easing: easeOut });
+}
+/** The sheet folding away: quicker, accelerating. */
+export function sheetOut(node: Element): TransitionConfig {
+	if (phone()) return { duration: 0 };
+	if (reducedMotion()) return calm(node, DUR.fast);
+	return slide(node, { duration: DUR.base, easing: easeIn });
 }
 
 /** How long a list item takes to slide to its new place (animate:flip). 0 under reduced motion. */

@@ -52,13 +52,19 @@ export function overlayScroll(node: HTMLElement, opts: OverlayScrollOpts = {}) {
 	const draw = () => {
 		raf = 0;
 		if (!rails || !host) return;
-		// The scroller can start below the card's top (toolbar rows above it): add that gap too.
-		const gap = Math.max(0, Math.round(node.getBoundingClientRect().top - host.getBoundingClientRect().top));
-		host.style.setProperty('--osb-top', `${gap + headH()}px`);
+		// The rails are the list's, not the card's: they start below the toolbar rows and the header
+		// above the scroller, and end above whatever sits under it (the detail pane).
+		// All reads first, then the writes, and the offsets go on the rails themselves: nothing under
+		// the host is restyled on a frame, and the fold redraws every frame.
+		const hr = host.getBoundingClientRect(), nr = node.getBoundingClientRect();
+		const top = Math.max(0, Math.round(nr.top - hr.top)) + headH();
+		const below = Math.max(0, Math.round(hr.bottom - nr.bottom));
 		const v = thumb(rails.v.clientHeight, node.clientHeight, node.scrollHeight, node.scrollTop);
 		const h = thumb(rails.h.clientWidth, node.clientWidth, node.scrollWidth, node.scrollLeft);
 		for (const [ax, t] of [['v', v], ['h', h]] as const) {
 			const r = rails[ax], th = r.firstElementChild as HTMLElement;
+			r.style.setProperty('--osb-top', `${top}px`);
+			r.style.setProperty('--osb-bottom', `${below}px`);
 			r.hidden = t.hidden;
 			th.style.setProperty('--osb-len', `${t.len}px`);
 			th.style.setProperty('--osb-pos', `${t.pos}px`);
@@ -143,7 +149,6 @@ export function overlayScroll(node: HTMLElement, opts: OverlayScrollOpts = {}) {
 		raf = 0; lastH = -1;
 		clearTimeout(timer);
 		for (const a of ['data-osb-active', 'data-osb-both', 'data-osb-drag']) host?.removeAttribute(a);
-		host?.style.removeProperty('--osb-top');
 	};
 	const check = () => (mq?.matches ? mount() : unmount());
 	mq?.addEventListener?.('change', check);
