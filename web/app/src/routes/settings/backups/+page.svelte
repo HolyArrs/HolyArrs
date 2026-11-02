@@ -164,7 +164,7 @@
 					<li>
 						<div class="grow">
 							<div class="mono small ellipsis">{b.name}</div>
-							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {words(b.kind)}</div>
+							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {b.detail || words(b.kind)}</div>
 						</div>
 						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download>Download</AdminLinkButton>
 						<IconButton icon="trash" label="Delete {b.name}" type="button" onclick={() => remove(b)} />

@@ -291,11 +291,41 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return fmt.Errorf("config folder %s: %w", c.ConfigDir, err)
 	}
 	defer unlock()
+	// Listen first, so a long update of the data still answers healthz
+	// (alive) and shows a short page; the real API takes over once ready.
+	swap := &swapHandler{}
+	var updating atomic.Bool
+	swap.set(urlbase.Handler(c.URLBase, startingHandler(&updating)))
+	srv := newServer(c.Addr, swap)
+	ln, err := net.Listen("tcp", c.Addr)
+	if err != nil {
+		return err
+	}
+	served := make(chan error, 1)
+	go func() { served <- srv.Serve(ln) }()
+	defer srv.Close()
+	go func() {
+		<-ctx.Done()
+		sh, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(sh)
+	}()
 	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	s, err := store.Open(c.ConfigDir, store.Options{})
+	s, err := store.Open(c.ConfigDir, store.Options{OnUpdating: func() { updating.Store(true) }})
 	if err != nil {
+		if !needsPerson(err) {
+			return err
+		}
+		// Let holyarrs restore work while this page shows; nothing here
+		// touches the data any more.
+		unlock()
+		// Exiting would only restart into the same refusal: keep saying
+		// what is wrong until a person stops the app.
+		log.Printf("holyarrs: not started: %v", err)
+		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+		<-ctx.Done()
 		return err
 	}
 	defer s.Close()
@@ -670,23 +700,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		optional(l)
 	}
 	startYTDLP(ctx, c.ConfigDir, a, he)
-	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
-	ln, err := net.Listen("tcp", c.Addr)
-	if err != nil {
-		return err
-	}
-	go func() {
-		<-ctx.Done()
-		sh, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = srv.Shutdown(sh)
-	}()
 	pc.Start(ctx)
+	swap.set(urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)
 	if o.ready != nil {
 		o.ready(reg, ln.Addr().String())
 	}
-	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := <-served; err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	if restarting.Load() {
@@ -818,6 +838,9 @@ func main() {
 	}
 	if len(os.Args) > 1 && os.Args[1] == "reset-owner" {
 		os.Exit(resetOwner(os.Args[2:]))
+	}
+	if len(os.Args) > 1 && os.Args[1] == "restore" {
+		os.Exit(restoreCmd(os.Args[2:], os.Stdout, os.Stderr))
 	}
 	if len(os.Args) > 1 && os.Args[1] == "import-secrets" {
 		os.Exit(importSecrets(os.Args[2:], os.Stdout, os.Stderr))

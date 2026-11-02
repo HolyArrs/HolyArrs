@@ -61,7 +61,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	backups, err := filepath.Glob(filepath.Join(dir, "backups", "main-before-0039-*.db"))
+	backups, err := filepath.Glob(filepath.Join(dir, "backups", "main-pre-update-*.db"))
 	if err != nil || len(backups) != 1 {
 		t.Fatalf("migration backup: %v (%v)", backups, err)
 	}

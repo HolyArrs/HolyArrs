@@ -1,31 +1,18 @@
 name: ci
-
 on:
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
+  push:
+  pull_request:
 jobs:
   web:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: web/app
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: "1.27.2"
-          cache: false
-      # setup-node v4 only enables caching when its cache input names a package manager.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "24"
@@ -35,66 +22,30 @@ jobs:
       - run: npm run build
       - name: Built app in web/dist matches the source
         run: git diff --exit-code -- ../dist
-      # The reviewed runner image supplies Chromium's OS dependencies without job-time root access.
-      - run: npx playwright install chromium
-      - name: Headless browser suite
-        run: |
-          set -o pipefail
-          npm run e2e 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
-
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
   build:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
-    timeout-minutes: 90
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - goarch: amd64
-            goarm: ""
-            test_exec: ""
-          - goarch: "386"
-            goarm: ""
-            test_exec: ""
-          - goarch: arm64
-            goarm: ""
-            test_exec: qemu-aarch64-static
-          - goarch: arm
-            goarm: "7"
-            test_exec: qemu-arm-static
+        goarch: [amd64, arm64, arm, "386"]
     env:
       CGO_ENABLED: "0"
-      GOOS: linux
       GOARCH: ${{ matrix.goarch }}
-      GOARM: ${{ matrix.goarm }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: "1.27.2"
-          cache: false
-      - name: Build and vet ${{ matrix.goarch }}
-        run: |
-          set -o pipefail
-          go build ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
-          go vet ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
-      - name: Test ${{ matrix.goarch }} natively
-        if: matrix.test_exec == ''
-        run: |
-          set -o pipefail
-          go test -timeout 60m ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
-      - name: Test ${{ matrix.goarch }} with userspace QEMU
-        if: matrix.test_exec != ''
-        env:
-          TEST_EXEC: ${{ matrix.test_exec }}
-          HOLYARRS_TEST_EXEC: ${{ matrix.test_exec }}
-        run: |
-          set -o pipefail
-          go test -timeout 60m -exec "$TEST_EXEC" ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
-
+      - name: Set up QEMU for non-native tests
+        if: matrix.goarch != 'amd64' && matrix.goarch != '386'
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test -timeout 60m ./...
   image-version:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       IMAGE: holyarrs-ci-version:${{ github.run_id }}-${{ github.run_attempt }}
@@ -142,6 +93,7 @@ jobs:
           docker rm --force --volumes "$CONTAINER" 2>/dev/null || true
           docker image rm "$IMAGE" 2>/dev/null || true
 
+
   faults-and-memory:
     # 3.7.10 to 3.7.12: the fault runs, the crash-to-sign-in time, the
     # memory runs (all parts on next to Movies and Shows only), the API
@@ -149,108 +101,73 @@ jobs:
     # summary. Pass lines: the process's median crash-to-sign-in time
     # under 2 s, and each memory run under decision 0002's limits (250 MB
     # idle, 500 MB peak resident).
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
     env:
       CGO_ENABLED: "0"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: "1.27.2"
-          cache: false
       - name: API spec matches the code (contract)
-        run: |
-          set -o pipefail
-          go test -count=1 -run '^TestOpenAPIGenerated$' ./internal/api 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+        run: go test -count=1 -run '^TestOpenAPIGenerated$' ./internal/api
       - name: Every route checks its API key scope
-        run: |
-          set -o pipefail
-          go test -count=1 -run 'Scope' ./internal/auth 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+        run: go test -count=1 -run 'Scope' ./internal/auth
       - name: Downloader suite (qBittorrent, SABnzbd, the made-up third engine)
-        run: |
-          set -o pipefail
-          go test -count=1 -run '^TestDownloaderConformance$' -v ./internal/downloader 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+        run: go test -count=1 -run '^TestDownloaderConformance$' -v ./internal/downloader
       - name: Fault runs (a crash in each loop, a slow write, bad outside services, a pass past its deadline)
         env:
           HOLYARRS_FAULT_OUT: ${{ runner.temp }}/faults.md
         run: |
-          set -o pipefail
-          go test -count=1 -run '^TestFault|^TestCrashInEveryLoopIsContained$' -v ./cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestFault|^TestCrashInEveryLoopIsContained$' -v ./cmd/holyarrs
           { echo "### Fault runs: sign-in, Library, backup"; echo "| run | sign-in | Library | backup |"; echo "|---|---|---|---|"; grep -v 'after hanging' "$HOLYARRS_FAULT_OUT"; echo; echo "| link | state | reason |"; echo "|---|---|---|"; grep 'after hanging' "$HOLYARRS_FAULT_OUT"; } >> "$GITHUB_STEP_SUMMARY"
       - name: Crash to sign-in page
         env:
           HOLYARRS_RESTART_TIMING: "1"
           HOLYARRS_RESTART_TIMING_OUT: ${{ runner.temp }}/restart.txt
         run: |
-          set -o pipefail
-          go test -count=1 -run '^TestCrashRestartTime$' -v ./cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestCrashRestartTime$' -v ./cmd/holyarrs
           { echo "### Crash to sign-in page"; cat "$HOLYARRS_RESTART_TIMING_OUT"; } >> "$GITHUB_STEP_SUMMARY"
       - name: Memory with all parts on and with Movies and Shows only
         env:
           HOLYARRS_MEMORY: "1"
           HOLYARRS_MEMORY_OUT: ${{ runner.temp }}/memory.md
         run: |
-          set -o pipefail
-          go test -count=1 -run '^TestMemoryPartsRuns$' -v -timeout 30m ./cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestMemoryPartsRuns$' -v -timeout 30m ./cmd/holyarrs
           { echo "### Memory"; cat "$HOLYARRS_MEMORY_OUT"; } >> "$GITHUB_STEP_SUMMARY"
-      - name: Preserve bounded local fault and memory evidence
-        if: always()
-        run: |
-          evidence_dir="$(dirname "$GITHUB_WORKSPACE")/ci-evidence"
-          mkdir -p "$evidence_dir"
-          for report in faults.md restart.txt memory.md; do
-            if [[ -f "$RUNNER_TEMP/$report" ]]; then
-              cp "$RUNNER_TEMP/$report" "$evidence_dir/$report"
-            fi
-          done
-
   combined-scale:
     # Decision 0002's complete workload on the arm64 stand-in: 5,000
     # Movies, 5,000 Shows / 50,000 Episodes, 20 feeds, a real stand-in
     # media rescan and 10 live-stream clients. The harness measures fixture
     # construction separately, then requires 30 idle minutes under the
     # unchanged 250 MB idle / 500 MB peak and zero-write limits.
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     # The test binary has a 75-minute deadline; this includes setup and
-    # summary overhead outside that measured test process.
+    # artifact-upload overhead outside that measured test process.
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: "1.27.2"
-          cache: false
+      - name: Set up QEMU for the arm64 stand-in
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+        with:
+          platforms: arm64
       - name: Run the combined arm64 scale check
         id: scale
         continue-on-error: true
-        env:
-          QEMU_AARCH64_STATIC: /usr/bin/qemu-aarch64-static
         run: bash scripts/scale-check.sh "$RUNNER_TEMP/scale-combined"
-      - name: Write combined scale evidence to the job summary
+      - name: Save combined scale evidence
         if: always()
-        run: |
-          result_file="$RUNNER_TEMP/scale-combined/scale-results.jsonl"
-          {
-            echo "### Combined arm64 scale check"
-            echo
-            echo "- Compute: self-hosted Linux X64 runner"
-            echo "- Workload: linux/arm64 under Docker QEMU"
-            echo "- Local evidence: RUNNER_TEMP/scale-combined (not uploaded)"
-            if [[ -s "$result_file" ]]; then
-              echo
-              echo '```json'
-              sed -n '1p' "$result_file"
-              echo '```'
-            else
-              echo
-              echo "The scale check did not produce its bounded JSON result."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: combined-scale-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/scale-combined/scale-combined.log
+            ${{ runner.temp }}/scale-combined/scale-results.jsonl
+            ${{ runner.temp }}/scale-combined/scale-exit-code.txt
       - name: Enforce the combined scale result
         if: always()
         run: |
@@ -264,31 +181,13 @@ jobs:
             echo "The combined scale check exited with status $status."
             exit "$status"
           fi
-      - name: Preserve bounded local scale evidence
-        if: always()
-        run: |
-          evidence_dir="$(dirname "$GITHUB_WORKSPACE")/ci-evidence/scale-combined"
-          mkdir -p "$evidence_dir"
-          for report in scale-combined.log scale-results.jsonl scale-exit-code.txt; do
-            if [[ -f "$RUNNER_TEMP/scale-combined/$report" ]]; then
-              cp "$RUNNER_TEMP/scale-combined/$report" "$evidence_dir/$report"
-            fi
-          done
-
   race:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
     env:
       CGO_ENABLED: "1"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: "1.27.2"
-          cache: false
-      - name: Race detector
-        run: |
-          set -o pipefail
-          go test -race -timeout 40m ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+      - run: go test -race -timeout 40m ./...

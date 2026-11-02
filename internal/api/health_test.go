@@ -52,14 +52,18 @@ func TestHealthChecksOverHTTP(t *testing.T) {
 // route: PUT /api/v1/settings/health
 func TestHealthSettingsOverHTTP(t *testing.T) {
 	srv, _, _ := setup(t)
-	if b := do(t, "GET", srv.URL+"/api/v1/settings/health", "", 200); string(b) != `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"","update_check":true,"update_check_local":false,"update_prerelease":false,"update_check_default":"https://api.github.com/repos/CoderLuii/holyarrs/releases/latest"}`+"\n" {
+	if b := do(t, "GET", srv.URL+"/api/v1/settings/health", "", 200); string(b) != `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"","update_check":true,"update_check_local":false,"update_prerelease":false,"update_check_every_days":1,"update_check_default":"https://api.github.com/repos/CoderLuii/holyarrs/releases/latest"}`+"\n" {
 		t.Fatalf("defaults %s", b)
 	}
 	b := do(t, "PUT", srv.URL+"/api/v1/settings/health", `{"every_minutes":15,"flap_guard":3,"low_space_mb":2048,"update_check_url":"https://example.com/latest"}`, 200)
 	if !strings.Contains(string(b), `"every_minutes":15`) || !strings.Contains(string(b), `"flap_guard":3`) || !strings.Contains(string(b), "example.com/latest") {
 		t.Fatalf("saved %s", b)
 	}
-	for _, bad := range []string{`{"every_minutes":0,"flap_guard":2}`, `{"every_minutes":5,"flap_guard":0}`, `{"every_minutes":5,"flap_guard":2,"update_check_url":"ftp://x"}`, `nope`} {
+	b = do(t, "PUT", srv.URL+"/api/v1/settings/health", `{"every_minutes":15,"flap_guard":3,"low_space_mb":2048,"update_check_url":"","update_check_every_days":7}`, 200)
+	if !strings.Contains(string(b), `"update_check_every_days":7`) {
+		t.Fatalf("days %s", b)
+	}
+	for _, bad := range []string{`{"every_minutes":0,"flap_guard":2}`, `{"every_minutes":5,"flap_guard":0}`, `{"every_minutes":5,"flap_guard":2,"update_check_url":"ftp://x"}`, `{"every_minutes":5,"flap_guard":2,"update_check_every_days":2}`, `nope`} {
 		do(t, "PUT", srv.URL+"/api/v1/settings/health", bad, 400)
 	}
 }

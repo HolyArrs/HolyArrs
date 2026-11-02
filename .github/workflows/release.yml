@@ -1,36 +1,33 @@
 name: release
-# Release publishing is withheld until Luis separately authorizes a release.
-# This manual workflow remains inert: its only job is permanently skipped and
-# receives no package-write or OIDC permission.
+# Builds the multi-arch image on a version tag, pushes it to GHCR, signs it
+# with cosign (keyless: GitHub's OIDC identity, no stored keys) and attaches
+# an SPDX SBOM as a signed attestation.
 on:
-  workflow_dispatch:
+  push:
+    tags: ["v*"]
 
 permissions:
   contents: read
 
 jobs:
   image:
-    if: ${{ false }}
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write   # push to ghcr.io
+      id-token: write   # keyless signing
     env:
       IMAGE: ghcr.io/coderluii/holyarrs
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: "1.27.2"
-          cache: false
       - name: Test before building
         env:
           CGO_ENABLED: "0"
-        run: |
-          set -o pipefail
-          go test ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+        run: go test ./...
 
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0

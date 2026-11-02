@@ -74,13 +74,16 @@ func TestNoBannedWords(t *testing.T) {
 	}
 	roots := []root{{filepath.Join(repo, "web", "app", "src"), ".svelte .ts .js .html .css"}, {filepath.Join(repo, "docs"), ".md"},
 		{filepath.Join(repo, "README.md"), ".md"}}
+	// The plans folder lives outside the repo, so a repo test only checks it
+	// when asked to (HOLYARRS_REQUIRE_PLANS); otherwise results would depend
+	// on whatever sits next to the clone.
 	plans := filepath.Join(repo, "..", "plans")
-	if st, err := os.Stat(plans); err == nil && st.IsDir() {
+	if os.Getenv("HOLYARRS_REQUIRE_PLANS") == "" {
+		t.Log("HOLYARRS_REQUIRE_PLANS not set: plans outside the repo not checked")
+	} else if st, err := os.Stat(plans); err == nil && st.IsDir() {
 		roots = append(roots, root{plans, ".md"})
-	} else if os.Getenv("HOLYARRS_REQUIRE_PLANS") != "" {
-		t.Fatalf("HOLYARRS_REQUIRE_PLANS is set but %s is not a folder", plans)
 	} else {
-		t.Log("plans folder not next to the repo (CI): plans not checked")
+		t.Fatalf("HOLYARRS_REQUIRE_PLANS is set but %s is not a folder", plans)
 	}
 	checked := 0
 	for _, r := range roots {

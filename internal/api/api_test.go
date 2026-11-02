@@ -181,6 +181,7 @@ func TestSignInGuardsRoutes(t *testing.T) {
 	do(t, "GET", srv.URL+"/api/v1/titles", "", 401)
 	do(t, "GET", srv.URL+"/live", "", 401)
 	do(t, "GET", srv.URL+"/healthz", "", 200)
+	do(t, "GET", srv.URL+"/readyz", "", 200)
 	if b := do(t, "GET", srv.URL+"/login", "", 200); !strings.Contains(string(b), "/_app/immutable/") {
 		t.Fatal("sign-in page missing")
 	}

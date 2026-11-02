@@ -71,7 +71,7 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 	if v, _ := s.Version(); v != mainV || v < 7 {
 		t.Fatalf("version %d, want %d (>= 7)", v, mainV)
 	}
-	backups, _ := filepath.Glob(filepath.Join(dir, "backups", "main-before-0007-*.db"))
+	backups, _ := filepath.Glob(filepath.Join(dir, "backups", "main-pre-update-*.db"))
 	if len(backups) != 1 {
 		t.Fatalf("backups before 0007: %v", backups)
 	}

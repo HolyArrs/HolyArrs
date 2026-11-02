@@ -26,6 +26,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
+	"github.com/CoderLuii/holyarrs/internal/updatelist"
 )
 
 // KindCheck is the Job kind that runs the checks (scheduled every 5 minutes).
@@ -76,6 +77,12 @@ type Engine struct {
 	// ReleaseFeed is the release feed used when the setting is empty
 	// (main sets DefaultReleaseFeed; empty: no check without a setting).
 	ReleaseFeed string
+	// ListKeys are the trusted update list keys (tests); nil means
+	// updatelist.Pinned(). With no key the GitHub releases check is used.
+	ListKeys []updatelist.PublicKey
+	// ListURL and ListCopyURL are the update list and its Pages copy
+	// (tests); empty means updatelist.DefaultURL and updatelist.PagesURL.
+	ListURL, ListCopyURL string
 	// FreeSpace reads free bytes (nil means importer.FreeSpace; -1 unknown).
 	FreeSpace func(dir string) int64
 	// Outside reads the outside-call breaker states (nil means the process
@@ -178,7 +185,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 	defer e.run.Unlock()
 
 	info := e.Update(ctx)
-	if info.On && info.Feed != "" && (info.CheckedAt == nil || !now.UTC().Before(info.CheckedAt.Add(UpdateEvery))) {
+	if info.On && info.Feed != "" && (info.CheckedAt == nil || !now.UTC().Before(info.CheckedAt.Add(e.updateEvery(ctx)))) {
 		return true, nil, nil
 	}
 	var rs []Result

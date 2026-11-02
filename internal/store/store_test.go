@@ -167,7 +167,7 @@ func TestMigrationsAndBackup(t *testing.T) {
 	if v, _ := s.Version(); v != 2 {
 		t.Fatalf("version %d, want 2", v)
 	}
-	backups, _ := filepath.Glob(filepath.Join(dir, "backups", "*before-0002*.db"))
+	backups, _ := filepath.Glob(filepath.Join(dir, "backups", "main-pre-update-0001-to-0002-*.db"))
 	if len(backups) != 1 {
 		t.Fatalf("want one backup before 0002, got %v", backups)
 	}

@@ -147,10 +147,21 @@
 		<form class="sc-form" id="health-form" onsubmit={saveSettings} aria-label="Health check settings">
 			<SettingsCard id="health-settings" title="Health check settings" description="How often HolyArrs checks, and when it looks for a newer version.">
 				<label class="checkline" id="update-check-row"
-					><input id="update-check" type="checkbox" bind:checked={settings.update_check} /> Check once a day for a newer HolyArrs</label
+					><input id="update-check" type="checkbox" bind:checked={settings.update_check} /> Check for a newer HolyArrs</label
 				>
-				<p class="hint">Off: HolyArrs never asks. On: one small request a day to the release feed; nothing is ever installed by itself.</p>
+				<p class="hint">Off: HolyArrs never asks. On: one small request per check to the release feed; nothing is ever installed by itself.</p>
 				<p class="hint" data-testid="update-privacy">{updatePrivacy(update?.version ?? 'version')}</p>
+				{#if settings.update_check}
+					<Field id="hs-days" label="Check for updates every">
+						<select id="hs-days" class="input" bind:value={settings.update_check_every_days}>
+							<option value={1}>day</option>
+							<option value={3}>3 days</option>
+							<option value={7}>7 days</option>
+							<option value={14}>14 days</option>
+							<option value={30}>30 days</option>
+						</select>
+					</Field>
+				{/if}
 				<Field id="hs-low" label="Warn when free space is under (MB)" hint="A health warning goes out when a Library folder's disk has less free space than this.">
 					<input id="hs-low" class="input" type="number" min="0" bind:value={settings.low_space_mb} />
 				</Field>

@@ -297,7 +297,7 @@ func fail(w http.ResponseWriter, code int, msg string) {
 // public routes need no sign-in.
 func public(r *http.Request) bool {
 	switch r.Method + " " + r.URL.Path {
-	case "GET /healthz", "HEAD /healthz", "GET /login", "GET /api/v1/auth/state",
+	case "GET /healthz", "HEAD /healthz", "GET /readyz", "HEAD /readyz", "GET /login", "GET /api/v1/auth/state",
 		"POST /api/v1/auth/login", "POST /api/v1/auth/setup", "POST /api/v1/auth/login/two-factor",
 		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
 		"POST /api/v1/auth/forward/login", "GET /api/v1/public/signin-art",

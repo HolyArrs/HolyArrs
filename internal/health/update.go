@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -33,15 +34,28 @@ const maxRedirects = 3
 
 // Update check settings in the this_app group.
 const (
-	settingUpdateOn    = "update_check"       // "off" turns the check off (no request at all); default on
-	settingUpdateLocal = "update_check_local" // "true": the feed may be on the local network
-	settingUpdateState = "update_state"       // the last answer, so a restart does not ask again
-	settingUpdatePre   = "update_prerelease"  // "true": a pre-release (v1.2.0-rc1) may give a notice; default off
+	settingUpdateOn    = "update_check"            // "off" turns the check off (no request at all); default on
+	settingUpdateLocal = "update_check_local"      // "true": the feed may be on the local network
+	settingUpdateState = "update_state"            // the last answer, so a restart does not ask again
+	settingUpdatePre   = "update_prerelease"       // "true": a pre-release (v1.2.0-rc1) may give a notice; default off
+	settingUpdateDays  = "update_check_every_days" // days between checks, one of UpdateDays; default 1
 )
+
+// UpdateDays are the allowed values of update_check_every_days.
+var UpdateDays = []int{1, 3, 7, 14, 30}
+
+// updateEvery is the time between update checks: the setting, else UpdateEvery.
+func (e *Engine) updateEvery(ctx context.Context) time.Duration {
+	n := e.intSetting(ctx, settingUpdateDays, 1, 1, 30)
+	if !slices.Contains(UpdateDays, n) {
+		n = 1
+	}
+	return time.Duration(n) * UpdateEvery
+}
 
 // Update check limits.
 const (
-	UpdateEvery   = 24 * time.Hour
+	UpdateEvery   = 24 * time.Hour // one day: the default, and the unit of update_check_every_days
 	updateTimeout = 15 * time.Second
 	updateMaxBody = 512 << 10
 )
@@ -61,6 +75,8 @@ type UpdateInfo struct {
 	Link string `json:"link,omitempty"`
 	// NoRelease says the feed answered that nothing is published yet.
 	NoRelease bool `json:"no_release,omitempty"`
+	// Notes is the update list's short notes, plain text.
+	Notes string `json:"notes,omitempty"`
 	// Problem is why the last check did not answer, in plain words.
 	Problem string `json:"problem,omitempty"`
 	Version string `json:"version"`
@@ -109,19 +125,27 @@ func (e *Engine) CheckUpdate(ctx context.Context) UpdateInfo {
 
 func (e *Engine) checkLocked(ctx context.Context, force bool) UpdateInfo {
 	cur := e.updateLocked(ctx)
-	if !cur.On || cur.Feed == "" {
+	listMode := e.listMode()
+	if !cur.On || (cur.Feed == "" && !listMode) {
 		return cur
 	}
-	if !force && cur.CheckedAt != nil && e.now().Sub(*cur.CheckedAt) < UpdateEvery {
+	if !force && cur.CheckedAt != nil && e.now().Sub(*cur.CheckedAt) < e.updateEvery(ctx) {
 		return cur
 	}
 	now := e.now()
 	next := UpdateInfo{CheckedAt: &now}
-	latest, link, none, err := e.readLatest(ctx, cur.Feed)
+	var latest, link string
+	var none bool
+	var err error
+	if listMode {
+		latest, link, next.Notes, none, err = e.readList(ctx)
+	} else {
+		latest, link, none, err = e.readLatest(ctx, cur.Feed)
+	}
 	switch {
 	case err != nil:
 		// Keep what the last good check found.
-		next.Latest, next.Link, next.NoRelease, next.Problem = e.upd.Latest, e.upd.Link, e.upd.NoRelease, err.Error()
+		next.Latest, next.Link, next.Notes, next.NoRelease, next.Problem = e.upd.Latest, e.upd.Link, e.upd.Notes, e.upd.NoRelease, err.Error()
 	case none:
 		next.NoRelease = true
 	default:
@@ -154,13 +178,14 @@ func (e *Engine) saveSetting(ctx context.Context, key, value string) error {
 	})
 }
 
-// update is the health check's part: at most once a day it asks the feed;
+// update is the health check's part: at most once per update_check_every_days
+// it asks the feed;
 // a newer release is a warning. No release yet, a failed check or the
 // check turned off are not.
 func (e *Engine) update(ctx context.Context) ([]Result, error) {
 	e.updMu.Lock()
 	defer e.updMu.Unlock()
-	if !e.updateOn(ctx) || e.feed(ctx) == "" {
+	if !e.updateOn(ctx) || (e.feed(ctx) == "" && !e.listMode()) {
 		return nil, nil
 	}
 	info := e.checkLocked(ctx, false)

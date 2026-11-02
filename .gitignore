@@ -17,3 +17,4 @@ bin/
 /exports/
 /captures/
 /web/app/static/preview-audit/
+deploy/metadata/live/egress.env

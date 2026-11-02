@@ -190,9 +190,9 @@ func TestOptionalDownloadersMigrationRollsBack(t *testing.T) {
 	}); err == nil {
 		t.Fatal("foreign keys not enforced after failed migration")
 	}
-	// Rollback to schema 40 requires the pre-41 backup, never an old binary
+	// Rollback to schema 40 requires the pre-update backup taken at 40, never an old binary
 	// opening this now-schema-41 database.
-	backups, err := filepath.Glob(filepath.Join(dir, "backups", "main-before-0041-*.db"))
+	backups, err := filepath.Glob(filepath.Join(dir, "backups", "main-pre-update-0040-to-*.db"))
 	if err != nil || len(backups) != 1 {
 		t.Fatal("pre-upgrade rollback backup missing")
 	}

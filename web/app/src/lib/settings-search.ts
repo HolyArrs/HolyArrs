@@ -172,7 +172,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/health', 'hs-every', 'Check health every', 'health minutes interval', true),
 	e('/settings/health', 'hs-guard', 'Alert after this many runs in a row', 'health flap', true),
 	e('/settings/health', 'hs-low', 'Warn when free space is under', 'free space low disk MB', true),
-	e('/settings/health', 'update-check', 'Check once a day for a newer HolyArrs', 'update check daily'),
+	e('/settings/health', 'update-check', 'Check for a newer HolyArrs', 'update check daily every days'),
 	e('/settings/health', 'hs-upd', 'Release feed', 'update feed url', true),
 	e('/settings/danger', 'danger-card', 'Restart or shut down HolyArrs', 'restart reboot shutdown safe mode stop danger'),
 

@@ -71,7 +71,7 @@ func TestShortcutBesideMediaIsNoted(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"progress": 0.1, "state": "downloading"})
-	w.fake.files[hash] = []map[string]any{{"name": "Dune/Dune.Part.Two.2024.1080p.mkv", "size": int64(4) << 30}, {"name": "Dune/Downloaded from X.url", "size": 100}}
+	w.fake.files[hash] = []map[string]any{{"name": "Dune/Dune.Part.Two.2024.1080p.mkv", "size": 4 << 30}, {"name": "Dune/Downloaded from X.url", "size": 100}}
 	_, _ = m.SyncOnce(context.Background())
 	if d := w.download(t, id); d.State == "failed" {
 		t.Fatalf("download failed: %v", *d.StateReason)

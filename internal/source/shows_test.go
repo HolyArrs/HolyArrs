@@ -39,7 +39,7 @@ func tvRSS(names ...string) string {
 		}
 		fmt.Fprintf(&b, `<item><title>%s</title><pubDate>%s</pubDate>
 <enclosure url="http://src/%d.torrent" length="%d" type="application/x-bittorrent"/>
-<torznab:attr name="seeders" value="50"/></item>`, n, time.Now().UTC().Format(time.RFC1123Z), i, size<<20)
+<torznab:attr name="seeders" value="50"/></item>`, n, time.Now().UTC().Add(-time.Hour).Format(time.RFC1123Z), i, size<<20)
 	}
 	b.WriteString(`</channel></rss>`)
 	return b.String()

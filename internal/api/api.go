@@ -440,6 +440,9 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
+	// readyz answers 200 once the app has fully started (until then the
+	// start page answers it with 503).
+	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
 	m.Handle("GET /", web.Handler())
 	if a.s.Backups != nil {

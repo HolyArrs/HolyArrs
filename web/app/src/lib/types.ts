@@ -708,6 +708,7 @@ export interface HealthSettings {
 	low_space_mb: number;
 	update_check_url: string;
 	update_check?: boolean;
+	update_check_every_days?: number;
 	update_check_local?: boolean;
 	update_prerelease?: boolean;
 	update_check_default?: string;
@@ -884,6 +885,7 @@ export interface BackupInfo {
 	kind: string;
 	created_at: string;
 	size: number;
+	detail?: string;
 }
 
 export interface ApiKey {

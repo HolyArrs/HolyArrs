@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,6 +44,9 @@ type Options struct {
 	// WriteCap is the time cap for one write transaction (default
 	// DefaultWriteCap; below zero: none). Migrations have no cap.
 	WriteCap time.Duration
+	// OnUpdating, when set, is called before existing data is updated
+	// (pending migrations on a database that already held data).
+	OnUpdating func()
 }
 
 // Store holds the main database and the events database. Reads go through
@@ -123,10 +127,19 @@ func Open(dir string, opt Options) (*Store, error) {
 		return nil, err
 	}
 	backups := filepath.Join(dir, "backups")
-	if err := migrate(s.main, mainMig, backups, "main"); err != nil {
+	// Both files are checked for newer data before either is changed.
+	mainMs, mainCur, err := plan(s.main, mainMig, "main")
+	if err != nil {
 		return nil, err
 	}
-	if err := migrate(s.events, evMig, backups, "events"); err != nil {
+	evMs, evCur, err := plan(s.events, evMig, "events")
+	if err != nil {
+		return nil, err
+	}
+	if err := migrate(s.main, mainPath, mainMs, mainCur, backups, "main", opt.OnUpdating); err != nil {
+		return nil, err
+	}
+	if err := migrate(s.events, evPath, evMs, evCur, backups, "events", opt.OnUpdating); err != nil {
 		return nil, err
 	}
 	ok = true
@@ -150,7 +163,7 @@ func dsn(path string, cacheKiB int, readOnly bool) string {
 	} else {
 		q.Set("_txlock", "immediate")
 	}
-	return "file:" + filepath.ToSlash(path) + "?" + q.Encode()
+	return fileURI(path) + "?" + q.Encode()
 }
 
 func openPool(path string, cacheKiB int, readOnly bool, conns int) (*sql.DB, error) {
@@ -256,4 +269,10 @@ func SchemaVersions() (mainV, eventsV int) {
 		}
 	}
 	return mainV, eventsV
+}
+
+// fileURI is path as a SQLite file: URI; '%', '?' and '#' in a folder name
+// are escaped so they do not end the path.
+func fileURI(path string) string {
+	return "file:" + strings.NewReplacer("%", "%25", "?", "%3F", "#", "%23").Replace(filepath.ToSlash(path))
 }
