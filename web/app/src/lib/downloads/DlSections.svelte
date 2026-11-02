@@ -1386,7 +1386,8 @@
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={headMenu}>
-		<span></span>
+		<!-- Select all: ticked when every row is picked, half-ticked when some are. -->
+		<span class="hk">{#if !watch}<input type="checkbox" class="hpk" checked={list.length > 0 && picked.size === list.length} indeterminate={picked.size > 0 && picked.size < list.length} aria-label="Select all downloads" title="Select all" onchange={() => (picked.size === list.length ? clearPicked() : (picked = new Set(list.map((r) => r.id))))} data-testid="dl-head-pick" />{/if}</span>
 		{#each vis as id (id)}
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1859,6 +1860,10 @@
 	.drow { display: block; border-bottom: 1px solid var(--line); }
 	.tg { position: relative; align-self: stretch; }
 	/* The row checkbox has its own slim column at the left, so it never covers the poster. */
+	.hk { position: relative; align-self: stretch; display: flex; align-items: center; }
+	.hk::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
+	.hpk { width: 16px; height: 16px; margin: 0 0 0 4px; accent-color: var(--accent); cursor: pointer; }
+	.hpk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pk { position: absolute; left: 4px; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; accent-color: var(--accent); opacity: 0; cursor: pointer; z-index: 2; transition: opacity 120ms var(--ease-out); }
 	.drow:hover .pk, .pk.any, .pk:focus-visible { opacity: 1; }
 	.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 9%, transparent); }
