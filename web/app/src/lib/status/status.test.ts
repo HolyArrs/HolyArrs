@@ -60,9 +60,10 @@ describe('status rows', () => {
 		expect(realTime('2026-11-02T09:00:00Z')).toBe('2026-11-02T09:00:00Z');
 	});
 
-	it('reads the preview pickers, 1 to 10', () => {
+	it('reads the preview pickers, 1 to 13', () => {
 		expect(bgOf(null)).toBe(1);
 		expect(bgOf('7')).toBe(7);
-		expect(bgOf('11')).toBe(1);
+		expect(bgOf('13')).toBe(13);
+		expect(bgOf('14')).toBe(1);
 	});
 });

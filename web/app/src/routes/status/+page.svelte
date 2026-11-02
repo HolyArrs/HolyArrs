@@ -1,8 +1,8 @@
 <script lang="ts">
 	// Status: is every linked part working, and did every background job run?
 	// Reads only the existing health, schedules, lists, alerts and metadata
-	// routes. Preview pickers: ?bg=1..10 (page background), ?surface=1..10
-	// (section plates), ?cards= (Parts deck).
+	// routes. Preview pickers: ?bg=1..13 (page background), ?surface=1..13
+	// (section plates), ?pixel=1 (pixel headings), ?cards= (Parts deck).
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -20,6 +20,7 @@
 	const tab = $derived(['jobs', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	const bg = $derived(bgOf(page.url.searchParams.get('bg')));
 	const surface = $derived(surfaceOf(page.url.searchParams.get('surface')));
+	const pixel = $derived(page.url.searchParams.get('pixel') === '1');
 
 	let input = $state<StatusInput | null>(null);
 	let error = $state('');
@@ -118,7 +119,7 @@
 <svelte:head><title>Status · HolyArrs</title></svelte:head>
 
 <div class="backdrop" data-bg={bg} aria-hidden="true"></div>
-<div class="status" data-testid="status-page" data-surface={surface}>
+<div class="status" data-testid="status-page" data-surface={surface} data-pixel={pixel || undefined}>
 	<header class="sbar">
 		<div class="title">
 			<h1>Status</h1>
@@ -265,6 +266,61 @@
 	/* 10 Technical dashed */
 	.status[data-surface='10'] :global(section) { background: transparent; border: 1px dashed var(--line-strong); border-radius: 2px; box-shadow: none; backdrop-filter: none; }
 	.status[data-surface='10'] :global(section h2) { font-family: var(--font-mono, ui-monospace, monospace); font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; border-bottom-style: dashed; }
+
+	/* Retro set, in HolyArrs colours. */
+	@font-face { font-family: 'HolyArrs Pixel'; src: url('/fonts/FK-Raster-Grotesk-Compact-Blended.woff2') format('woff2'); font-display: swap; }
+	/* 11 CRT: scanlines and a soft glow at the edges */
+	.backdrop[data-bg='11'] {
+		background:
+			repeating-linear-gradient(180deg, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 3px),
+			radial-gradient(90% 70% at 50% 40%, color-mix(in srgb, var(--acc) 10%, transparent), transparent 75%), var(--base);
+	}
+	.backdrop[data-bg='11']::after { background: radial-gradient(130% 100% at 50% 50%, transparent 60%, rgb(0 0 0 / 0.55)); }
+	/* 12 Pixel grid: chunky checker, faded */
+	.backdrop[data-bg='12'] {
+		background: conic-gradient(color-mix(in srgb, var(--text) 5%, transparent) 25%, transparent 0 50%, color-mix(in srgb, var(--text) 5%, transparent) 0 75%, transparent 0) 0 0 / 16px 16px, var(--base);
+	}
+	.backdrop[data-bg='12']::after { background: linear-gradient(180deg, transparent 20%, var(--base) 90%); }
+	/* 13 Horizon: sun and floor grid */
+	.backdrop[data-bg='13'] {
+		background:
+			radial-gradient(circle at 50% 108%, color-mix(in srgb, var(--acc) 38%, transparent) 0 14%, transparent 14.2%),
+			linear-gradient(180deg, var(--base) 55%, color-mix(in srgb, var(--acc) 14%, var(--base)) 100%);
+	}
+	.backdrop[data-bg='13']::after {
+		top: 62%;
+		background:
+			linear-gradient(color-mix(in srgb, var(--acc) 40%, transparent) 1px, transparent 1px) 0 0 / 100% 28px,
+			linear-gradient(90deg, color-mix(in srgb, var(--acc) 40%, transparent) 1px, transparent 1px) 50% 0 / 60px 100%;
+		transform: perspective(300px) rotateX(60deg); transform-origin: top; opacity: 0.6;
+		-webkit-mask-image: linear-gradient(transparent, #000 40%); mask-image: linear-gradient(transparent, #000 40%);
+	}
+	/* 11 Window: hard edge, solid offset shadow, title strip */
+	.status[data-surface='11'] :global(section) {
+		border-radius: 0; border: 2px solid var(--text); backdrop-filter: none; background: var(--surface-1);
+		box-shadow: 6px 6px 0 color-mix(in srgb, var(--accent, var(--text)) 70%, transparent);
+	}
+	.status[data-surface='11'] :global(section h2) { margin-top: -18px; padding-top: 10px; background: color-mix(in srgb, var(--accent, var(--text)) 16%, transparent); border-bottom: 2px solid var(--text); box-shadow: none; }
+	/* 12 Bevel: raised 3D edges like old desktop panels, dark */
+	.status[data-surface='12'] :global(section) {
+		border-radius: 2px; border: 0; backdrop-filter: none; background: var(--surface-1);
+		box-shadow: inset 2px 2px 0 rgb(255 255 255 / 0.16), inset -2px -2px 0 rgb(0 0 0 / 0.45), 0 0 0 1px rgb(0 0 0 / 0.5);
+	}
+	.status[data-surface='12'] :global(section h2) { border-bottom: 0; box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.35), 0 2px 0 rgb(255 255 255 / 0.06); }
+	/* 13 Console: dark screen, glowing rule lines */
+	.status[data-surface='13'] :global(section) {
+		border-radius: 6px; backdrop-filter: none; border: 1px solid color-mix(in srgb, var(--accent, #6b8cff) 45%, transparent);
+		background: repeating-linear-gradient(180deg, rgb(255 255 255 / 0.02) 0 1px, transparent 1px 3px), #0b0d10;
+		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6), 0 0 24px -8px color-mix(in srgb, var(--accent, #6b8cff) 50%, transparent), inset 0 0 30px rgb(0 0 0 / 0.6);
+		color: #e8ebf0;
+	}
+	.status[data-surface='13'] :global(section h2) { color: #f2f4f7; border-bottom-color: color-mix(in srgb, var(--accent, #6b8cff) 35%, transparent); }
+	/* Pixel headings (?pixel=1): the site font on titles, tabs and big numbers only */
+	.status[data-pixel] :global(:is(h1, section h2, [role='tab'], .val, .sv, .gv, .rv)) {
+		font-family: 'HolyArrs Pixel', var(--font-ui); letter-spacing: 0.16em; font-weight: 400; text-transform: uppercase;
+	}
+	.status[data-pixel] :global(section h2) { padding-left: 24px; padding-right: 24px; }
+	.status[data-pixel] h1 { font-size: 30px; }
 
 	.status {
 		max-width: 1600px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(150px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;

@@ -208,10 +208,10 @@ export function headline(rows: StatusRow[]): string {
 	return out.join(', ');
 }
 
-/** bgOf reads a preview picker (?bg=, ?surface=): 1..10, default 1. */
+/** bgOf reads a preview picker (?bg=, ?surface=): 1..13, default 1. */
 export function bgOf(v: string | null): number {
 	const n = Number(v);
-	return Number.isInteger(n) && n >= 1 && n <= 10 ? n : 1;
+	return Number.isInteger(n) && n >= 1 && n <= 13 ? n : 1;
 }
 export const surfaceOf = bgOf;
 

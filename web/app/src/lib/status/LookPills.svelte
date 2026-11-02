@@ -1,18 +1,20 @@
 <script lang="ts">
 	// The preview pickers at the bottom of Status: page background and section
-	// surface, 1 to 10 each (?bg=, ?surface=). They follow the address.
+	// surface, 1 to 13 each (?bg=, ?surface=), plus pixel headings (?pixel=1). They follow the address.
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { bgOf } from './status.ts';
 
-	const bgs = ['Glow', 'Aurora', 'Grid', 'Pinstripe', 'Spotlight', 'Contours', 'Mesh', 'Carbon', 'Paper', 'Stars'];
-	const surfaces = ['Raised', 'Flat', 'Frosted', 'Sunken', 'Relief', 'Slab', 'Brackets', 'Gradient edge', 'Paper', 'Dashed'];
+	const bgs = ['Glow', 'Aurora', 'Grid', 'Pinstripe', 'Spotlight', 'Contours', 'Mesh', 'Carbon', 'Paper', 'Stars', 'CRT', 'Pixel grid', 'Horizon'];
+	const surfaces = ['Raised', 'Flat', 'Frosted', 'Sunken', 'Relief', 'Slab', 'Brackets', 'Gradient edge', 'Paper', 'Dashed', 'Window', 'Bevel', 'Console'];
 	const bg = $derived(bgOf(page.url.searchParams.get('bg')));
 	const surface = $derived(bgOf(page.url.searchParams.get('surface')));
+	const pixel = $derived(page.url.searchParams.get('pixel') === '1');
 
-	function pick(key: 'bg' | 'surface', n: number) {
+	function pick(key: 'bg' | 'surface' | 'pixel', n: number) {
 		const u = new URL(page.url.href);
-		u.searchParams.set(key, String(n));
+		if (key === 'pixel' && !n) u.searchParams.delete('pixel');
+		else u.searchParams.set(key, String(n));
 		void goto(u.pathname + u.search);
 	}
 </script>
@@ -29,6 +31,13 @@
 		{#each surfaces as name, i (name)}
 			<button type="button" class="pl" aria-pressed={surface === i + 1} title={name} onclick={() => pick('surface', i + 1)}>{i + 1} · {name}</button>
 		{/each}
+	</div>
+	<div class="row" role="group" aria-label="Retro">
+		<span class="lab">Retro</span>
+		<button type="button" class="pl" aria-pressed={pixel} onclick={() => pick('pixel', pixel ? 0 : 1)}>Pixel headings</button>
+		<button type="button" class="pl" onclick={() => { const u = new URL(page.url.href); u.searchParams.set('bg', '11'); u.searchParams.set('surface', '11'); u.searchParams.set('pixel', '1'); u.searchParams.set('cards', 'b'); void goto(u.pathname + u.search); }}>Retro set 1</button>
+		<button type="button" class="pl" onclick={() => { const u = new URL(page.url.href); u.searchParams.set('bg', '13'); u.searchParams.set('surface', '13'); u.searchParams.set('pixel', '1'); u.searchParams.set('cards', 'e'); void goto(u.pathname + u.search); }}>Retro set 2</button>
+		<button type="button" class="pl" onclick={() => { const u = new URL(page.url.href); u.searchParams.set('bg', '12'); u.searchParams.set('surface', '12'); u.searchParams.set('pixel', '1'); u.searchParams.set('cards', 'j'); void goto(u.pathname + u.search); }}>Retro set 3</button>
 	</div>
 </nav>
 
