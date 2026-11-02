@@ -2,17 +2,19 @@
 // the "who did it" filter, the table's cells and a title's story steps. The
 // looks sit side by side so they can be compared; each reads the same Events.
 import { readFilter, type HistoryFilter, type HistoryRow } from '../history.ts';
-import { showOf, showParam } from '../history-looks.ts';
+import { lookTabs, showOf, showParam, tabKinds } from '../history-looks.ts';
 import { resolutionOf } from '../history-lines.ts';
 import { bytes } from '../format.ts';
 import type { EventRecord } from '../types.ts';
 
-export type Look = 'now' | 'feed' | 'table' | 'story';
+export type Look = 'now' | 'feed' | 'table' | 'story' | 'pill' | 'plain';
 export const looks: { key: Look; label: string }[] = [
 	{ key: 'now', label: 'Now' },
 	{ key: 'feed', label: 'Feed' },
 	{ key: 'table', label: 'Table' },
-	{ key: 'story', label: 'Story' }
+	{ key: 'story', label: 'Story' },
+	{ key: 'pill', label: 'Search+Failed' },
+	{ key: 'plain', label: 'Search' }
 ];
 
 /** lookOf reads ?look= (today's look when missing or unknown). */
@@ -159,3 +161,109 @@ export function titleCards(events: EventRecord[]): TitleCard[] {
 /** canRetry: the row failed somewhere. canBlock: the row is about a release that could be swapped. */
 export const canRetry = (row: HistoryRow) => row.steps.some((s) => s.state === 'failed') || row.events.some((e) => bad.test(e.Kind));
 export const canBlock = (row: HistoryRow) => row.steps.length > 0 || !!releaseOf(row);
+
+/* The search looks (?look=pill|plain): a search bar, a Filter with steps,
+   type, who and dates, and a chip per filter that is on. Routine work
+   (searches, refreshes, scans) is left out of them. */
+
+/** A step of a download's life, as the Filter offers it, and the Event kinds it means. */
+export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
+	{ key: 'asked', label: 'Asked', kinds: ['ask_made'] },
+	{ key: 'approved', label: 'Approved', kinds: ['ask_approved'] },
+	{ key: 'chosen', label: 'Chosen', kinds: ['release_chosen', 'release_chosen_by_hand'] },
+	{ key: 'sent', label: 'Sent', kinds: ['download_sent', 'download_queued'] },
+	{ key: 'downloaded', label: 'Downloaded', kinds: ['download_finished', 'download_seeding'] },
+	{ key: 'imported', label: 'Imported', kinds: ['import_done', 'import_partly_done', 'adopted'] },
+	{ key: 'renamed', label: 'Renamed', kinds: ['renamed', 'rename_planned'] },
+	{ key: 'subtitles', label: 'Subtitles', kinds: ['subtitle_*'] },
+	{ key: 'media', label: 'In media server', kinds: ['media_server_told'] },
+	{ key: 'upgraded', label: 'Upgraded', kinds: ['file_replaced'] },
+	{ key: 'deleted', label: 'Deleted', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+	{ key: 'failed', label: 'Failed', kinds: tabKinds('problems') ?? [] }
+];
+
+/** Every kind but routine work: what the search looks show with no step picked. */
+export const nonRoutineKinds = lookTabs.filter((t) => t.key !== 'routine').flatMap((t) => t.subs.flatMap((s) => s.kinds));
+
+/** stepKinds is what the picked steps ask the server for (every kind but routine when none is picked). */
+export function stepKinds(steps: string[]): string[] {
+	const picked = searchSteps.filter((s) => steps.includes(s.key));
+	return picked.length ? [...new Set(picked.flatMap((s) => s.kinds))] : [...nonRoutineKinds];
+}
+
+export type MediaType = '' | 'movies' | 'shows' | 'music';
+export const typeLabels: Record<Exclude<MediaType, ''>, string> = { movies: 'Movies', shows: 'Shows', music: 'Music' };
+
+/** typeMatches keeps an Event about a title of the picked type (a title's kind: movie, show, artist or album). */
+export function typeMatches(kind: string | undefined, type: MediaType): boolean {
+	if (!type) return true;
+	if (type === 'movies') return kind === 'movie';
+	if (type === 'shows') return kind === 'show';
+	return kind === 'artist' || kind === 'album' || kind === 'music';
+}
+
+/** textMatches keeps an Event whose title, summary, episode, source, release or person holds the text. */
+export function textMatches(e: EventRecord, q: string, people?: Map<number, string>): boolean {
+	const t = q.trim().toLowerCase();
+	if (!t) return true;
+	const d = e.Data ?? {};
+	const who = e.Actor?.kind === 'user' && e.Actor.id != null ? people?.get(e.Actor.id) : '';
+	return [e.title_name, e.Summary, e.episode, who, str(d.source_name), str(d.indexer), str(d.source), str(d.release)].some((v) => v?.toLowerCase().includes(t));
+}
+
+/** Everything a search look reads from the address. */
+export interface SearchState {
+	q: string;
+	steps: string[];
+	type: MediaType;
+	who: Who;
+	from?: string;
+	to?: string;
+}
+
+export function readSearch(params: Params): SearchState {
+	const f = readFilter(params);
+	const steps = (params.get('step') ?? '').split(',').filter((k) => searchSteps.some((s) => s.key === k));
+	const t = params.get('type');
+	const type: MediaType = t === 'movies' || t === 'shows' || t === 'music' ? t : '';
+	return { q: params.get('q') ?? '', steps, type, who: whoOf(params.get('who')), from: f.from, to: f.to };
+}
+
+/** toggleStep is the ?step= value with one step switched on or off. */
+export function toggleStep(steps: string[], key: string): string {
+	return (steps.includes(key) ? steps.filter((s) => s !== key) : [...steps, key]).join(',');
+}
+
+const day = (d: Date) => d.toISOString().slice(0, 10);
+
+/** dateLabel names a date range ("Last 7 days" when it runs from n days ago to now). */
+export function dateLabel(from?: string, to?: string, now = new Date()): string {
+	if (from && !to) {
+		for (const n of [1, 7, 30, 90]) {
+			if (from === day(new Date(now.getTime() - n * 86400000))) return n === 1 ? 'Last 24 hours' : `Last ${n} days`;
+		}
+		return `From ${from}`;
+	}
+	if (from && to) return `${from} to ${to}`;
+	return to ? `Until ${to}` : '';
+}
+
+/** One removable chip under the bar: its label and the address change that clears it. */
+export interface Chip {
+	key: string;
+	label: string;
+	change: Record<string, string | undefined>;
+}
+
+/** searchChips is a chip per filter that is on (the search text has its own box). */
+export function searchChips(s: SearchState, now = new Date()): Chip[] {
+	const out: Chip[] = [];
+	for (const st of searchSteps) if (s.steps.includes(st.key)) out.push({ key: 'step.' + st.key, label: st.label, change: { step: toggleStep(s.steps, st.key) } });
+	if (s.type) out.push({ key: 'type', label: typeLabels[s.type], change: { type: undefined } });
+	if (s.who) out.push({ key: 'who', label: whoLabels[s.who], change: { who: undefined } });
+	if (s.from || s.to) out.push({ key: 'date', label: dateLabel(s.from, s.to, now), change: { from: undefined, to: undefined } });
+	return out;
+}
+
+/** The address change that clears every chip. */
+export const clearChips = { step: undefined, type: undefined, who: undefined, from: undefined, to: undefined };

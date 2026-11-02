@@ -1,7 +1,7 @@
 <script lang="ts">
 	// History. While its new look is chosen, ?look= picks one of four side by
-	// side: today's page (now), the refined feed, a dense table and a story
-	// per title. The pill at the bottom switches between them.
+	// side: today's page (now), the refined feed, a dense table, a story
+	// per title and two search bars (with and without a Failed pill). The pill at the bottom switches between them.
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { api } from '#lib/api.ts';
@@ -11,6 +11,7 @@
 	import DirFeed from '#lib/history-looks/DirFeed.svelte';
 	import DirTable from '#lib/history-looks/DirTable.svelte';
 	import DirStory from '#lib/history-looks/DirStory.svelte';
+	import SearchLook from '#lib/history-looks/SearchLook.svelte';
 	import LookPills from '#lib/history-looks/LookPills.svelte';
 	import { lookOf } from '#lib/history-looks/dirs.ts';
 	import type { TitleView } from '#lib/types.ts';
@@ -43,6 +44,8 @@
 		<DirTable {titles} {titleById} {people} {me} />
 	{:else if look === 'story'}
 		<DirStory {titles} {titleById} {people} {me} />
+	{:else if look === 'pill' || look === 'plain'}
+		<SearchLook {titleById} {people} {me} pill={look === 'pill'} />
 	{:else}
 		<HistoryNow />
 	{/if}
