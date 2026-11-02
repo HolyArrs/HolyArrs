@@ -24,6 +24,33 @@ var settingsAreas = map[string]string{
 	"outside-lists":   "Outside lists",
 }
 
+// settingsItems is each area's table, the name column (never a secret)
+// and the word for one item in an Event summary.
+var settingsItems = map[string]struct{ table, name, one string }{
+	"pick-rules":      {"pick_rules", "name", "Pick rule"},
+	"library-folders": {"library_folders", "COALESCE(NULLIF(label, ''), path)", "Library folder"},
+	"downloaders":     {"downloaders", "name", "Downloader"},
+	"sources":         {"sources", "name", "Source"},
+	"outside-lists":   {"outside_lists", "name", "Outside list"},
+}
+
+// settingsName is an item's name, or the newest item's when id is 0 (just
+// added); "" when it is not known.
+func (a *API) settingsName(ctx context.Context, area string, id int64) string {
+	it, ok := settingsItems[area]
+	if !ok {
+		return ""
+	}
+	q := "SELECT " + it.name + " FROM " + it.table + " WHERE id = ?"
+	args := []any{id}
+	if id == 0 {
+		q, args = "SELECT "+it.name+" FROM "+it.table+" ORDER BY id DESC LIMIT 1", nil
+	}
+	var name string
+	_ = a.s.Store.Read().QueryRowContext(ctx, q, args...).Scan(&name)
+	return name
+}
+
 // settingsChange names the area and action of a request that changes
 // setup, or ok false for any other request.
 func settingsChange(method, path string) (area, label, action string, id int64, ok bool) {
@@ -66,16 +93,28 @@ func (a *API) logSettingsChanges(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
+		name := ""
+		if action == "deleted" {
+			name = a.settingsName(r.Context(), area, id)
+		}
 		sw := &statusWriter{ResponseWriter: w}
 		h.ServeHTTP(sw, r)
 		if sw.code >= 300 {
 			return
 		}
+		ctx := context.WithoutCancel(r.Context())
+		if action != "deleted" {
+			name = a.settingsName(ctx, area, id)
+		}
 		data := map[string]any{"area": area, "action": action}
 		if id != 0 {
 			data["id"] = id
 		}
-		_ = a.s.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: actor(r), Kind: EventSettingsChanged,
-			Summary: whoName(r) + " " + action + " " + label, Data: data})
+		summary := whoName(r) + " " + action + " " + label
+		if name != "" {
+			data["name"] = name
+			summary = settingsItems[area].one + " \"" + name + "\" " + action + " by " + whoName(r)
+		}
+		_ = a.s.Store.AddEvent(ctx, &domain.Event{Actor: actor(r), Kind: EventSettingsChanged, Summary: summary, Data: data})
 	})
 }

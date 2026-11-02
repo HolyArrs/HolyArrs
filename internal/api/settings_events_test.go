@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -49,5 +50,41 @@ func TestClientItemRemoveEvent(t *testing.T) {
 	}
 	if e := es[0]; e.Data["by_hand"] != true || e.Data["delete_files"] != true || e.Data["downloader"] != "Q" || e.Actor.Kind != "user" {
 		t.Fatalf("event %+v", e)
+	}
+}
+
+// A change to a named item keeps its name (read before a delete, after a
+// change or add) in data.name and the summary.
+func TestSettingsChangedName(t *testing.T) {
+	x := seed41(t, domain.SlotDownloading, "downloading")
+	var did int64
+	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
+	h := x.api.logSettingsChanges(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			exec41(t, x.s, "UPDATE downloaders SET name = 'Q2' WHERE id = ?", did)
+		} else {
+			exec41(t, x.s, "UPDATE downloaders SET name = 'gone' WHERE id = ?", did) // the name is read before the delete
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	for _, m := range []string{"PUT", "DELETE"} {
+		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(m, "/api/v1/downloaders/"+itoa(did), nil))
+	}
+	es, _, err := x.s.Events(context.Background(), store.EventFilter{Kinds: []string{EventSettingsChanged}})
+	if err != nil || len(es) != 2 {
+		t.Fatalf("events %v %v", es, err)
+	}
+	sums := map[string]bool{}
+	for _, e := range es {
+		if e.Data["name"] != "Q2" {
+			t.Fatalf("name %+v", e.Data)
+		}
+		sums[e.Summary] = true
+	}
+	if !sums[`Downloader "Q2" changed by The owner`] || !sums[`Downloader "Q2" deleted by The owner`] {
+		t.Fatalf("summaries %v", sums)
+	}
+	if x.api.settingsName(context.Background(), "settings", 0) != "" {
+		t.Fatal("plain settings have no name")
 	}
 }
