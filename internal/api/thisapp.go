@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -20,6 +21,7 @@ const maxLogDownload = 2 << 20
 
 func (a *API) thisAppRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/app/storage", a.storage)
+	m.HandleFunc("GET /api/v1/app/about", a.about)
 	m.HandleFunc("GET /api/v1/logs", a.readLogs)
 	m.HandleFunc("GET /api/v1/logs/download", a.downloadLogs)
 	m.HandleFunc("GET /api/v1/app/update", a.getUpdate)
@@ -195,4 +197,35 @@ func (a *API) downloadLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="holyarrs-log-`+time.Now().UTC().Format("20060102-150405")+`.txt"`)
 	w.Header().Set("Cache-Control", "no-store")
 	_, _ = w.Write(b)
+}
+
+// AboutView is what the Status page's About section shows, like the About
+// block of the apps HolyArrs replaces: versions, database, folders, uptime.
+type AboutView struct {
+	Version   string `json:"version"`
+	Go        string `json:"go"`
+	OS        string `json:"os"`
+	Docker    bool   `json:"docker"`
+	SQLite    string `json:"sqlite"`
+	Migration int    `json:"migration"`
+	ConfigDir string `json:"config_dir"`
+	StartDir  string `json:"start_dir"`
+	UptimeS   int64  `json:"uptime_s"`
+	Started   string `json:"started_at"`
+}
+
+func (a *API) about(w http.ResponseWriter, r *http.Request) {
+	v := AboutView{
+		Version: a.s.Version, Go: runtime.Version(), OS: runtime.GOOS + "/" + runtime.GOARCH,
+		ConfigDir: a.configDir(), UptimeS: int64(time.Since(a.s.Started).Seconds()), Started: a.s.Started.UTC().Format(time.RFC3339),
+	}
+	if _, err := os.Stat("/.dockerenv"); err == nil {
+		v.Docker = true
+	}
+	if exe, err := os.Executable(); err == nil {
+		v.StartDir = filepath.Dir(exe)
+	}
+	_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT sqlite_version()").Scan(&v.SQLite)
+	v.Migration, _ = a.s.Store.Version()
+	writeJSON(w, http.StatusOK, v)
 }

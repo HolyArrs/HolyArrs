@@ -314,6 +314,7 @@ var Routes = map[string]Owner{
 	"POST /api/v1/app/safe-mode":             Core,
 	"POST /api/v1/app/shutdown":              Core,
 	"GET /api/v1/app/storage":                Core,
+	"GET /api/v1/app/about":                  Core,
 	"GET /api/v1/logs":                       Core,
 	"GET /api/v1/logs/download":              Core,
 	"GET /api/v1/schedules":                  Core,

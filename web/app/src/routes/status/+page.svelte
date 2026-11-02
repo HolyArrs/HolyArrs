@@ -16,7 +16,7 @@
 	import Sections from '#lib/status/StatusSections.svelte';
 	import { buildRows, groupOrder, groupRows, headline, needsAttention, surfaceOf, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
-	const tab = $derived(['jobs', 'releases'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
+	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	const surface = $derived(surfaceOf(page.url.searchParams.get('surface')));
 
 	let input = $state<StatusInput | null>(null);

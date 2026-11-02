@@ -7072,6 +7072,21 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/app/about": {
+      "get": {
+        "description": "This HolyArrs: version, Go version, system, whether it runs in Docker, SQLite version, newest database migration, config and start folders, and uptime.",
+        "operationId": "getAbout",
+        "responses": {
+          "200": {
+            "description": "The About values."
+          }
+        },
+        "summary": "About this HolyArrs",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/app/restart": {
       "post": {
         "description": "Two steps (confirm). The process stops cleanly (exit status 75) and Docker's restart policy starts it again, unless the policy is \"no\". Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",

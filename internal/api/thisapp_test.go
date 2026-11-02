@@ -168,3 +168,14 @@ func TestUpdateFeedHoldsNoSecret(t *testing.T) {
 		t.Fatalf("manager sees %q", got)
 	}
 }
+
+// route: GET /api/v1/app/about
+func TestAboutOverHTTP(t *testing.T) {
+	srv, _, _ := setup(t)
+	b := string(do(t, "GET", srv.URL+"/api/v1/app/about", "", 200))
+	for _, want := range []string{`"go":"go`, `"sqlite":"3.`, `"migration":`, `"uptime_s":`} {
+		if !strings.Contains(b, want) {
+			t.Fatalf("missing %s in %s", want, b)
+		}
+	}
+}

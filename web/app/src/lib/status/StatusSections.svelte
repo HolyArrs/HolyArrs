@@ -1,14 +1,15 @@
 <script lang="ts">
 	// The Status page body, laid out the way the *arr status pages are: titled
-	// sections, in three tabs. Status: Health, Parts (two columns), Storage and
-	// About side by side. Jobs: Coming up and Recent runs side by side, then
-	// every job. Releases: the releases list, Documentation and Support.
+	// sections in four tabs. Status: Health, one section per kind of part (two
+	// columns), Storage. Jobs: Coming up and Recent runs, then every job.
+	// Updates: the releases list. About: this HolyArrs, its story,
+	// Documentation and Donations.
 	import { onMount } from 'svelte';
 	import { api } from '../api.ts';
 	import { ago, bytes, dateTime } from '../format.ts';
 	import { until } from '../schedules.ts';
 	import { to } from '../paths.ts';
-	import PartGroups from './PartGroups.svelte';
+	import GroupRows from './GroupRows.svelte';
 	import Releases from './Releases.svelte';
 	import { needsAttention, type StatusGroup, type StatusRow } from './status.ts';
 
@@ -35,8 +36,21 @@
 
 	let disks = $state<Disk[] | null>(null);
 	let upd = $state<Update | null>(null);
+	type About = { version: string; go: string; os: string; docker: boolean; sqlite: string; migration: number; config_dir: string; start_dir: string; uptime_s: number; started_at: string };
+	let about = $state<About | null>(null);
 
 	const parts = $derived(groups.filter((g) => g.id !== 'jobs'));
+	// Library rows are folder and disk checks: they live in Storage, beside each disk.
+	const sections = $derived(parts.filter((g) => g.id !== 'library'));
+	const libRows = $derived(parts.find((g) => g.id === 'library')?.rows ?? []);
+	const folderRows = (d: Disk) => libRows.filter((r) => r.name.endsWith(d.path));
+	const backups = $derived(libRows.find((r) => r.key.startsWith('backups')));
+	const worst = (rs: StatusRow[]) => rs.find((r) => r.tone === 'fail') ?? rs.find((r) => r.tone === 'wait');
+	/** uptime says how long HolyArrs has run: "3 d 4 h", "5 h 12 min", "8 min". */
+	function uptime(sec: number): string {
+		const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+		return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+	}
 	const jobs = $derived(groups.find((g) => g.id === 'jobs')?.rows ?? []);
 	const problems = $derived(needsAttention(groups.flatMap((g) => g.rows)));
 	const upcoming = $derived(jobs.filter((j) => j.nextRun).sort((a, b) => Date.parse(a.nextRun!) - Date.parse(b.nextRun!)));
@@ -60,6 +74,7 @@
 	onMount(() => {
 		api.get<{ disks: Disk[] }>('/health/disks').then((d) => (disks = d.disks), () => (disks = []));
 		api.get<Update>('/app/update').then((u) => (upd = u), () => {});
+		api.get<About>('/app/about').then((a) => (about = a), () => {});
 	});
 </script>
 
@@ -69,7 +84,10 @@
 		<button type="button" role="tab" aria-selected={tab === 'jobs'} onclick={() => ontab('jobs')}>
 			Jobs{#if jobs.some((j) => j.tone === 'fail')}<i class="badge" aria-label="has failures"></i>{/if}
 		</button>
-		<button type="button" role="tab" aria-selected={tab === 'releases'} onclick={() => ontab('releases')}>Releases</button>
+		<button type="button" role="tab" aria-selected={tab === 'updates'} onclick={() => ontab('updates')}>
+			Updates{#if upd?.newer}<i class="badge new" aria-label="update available"></i>{/if}
+		</button>
+		<button type="button" role="tab" aria-selected={tab === 'about'} onclick={() => ontab('about')}>About</button>
 	</div>
 
 	{#if tab === 'parts'}
@@ -99,56 +117,50 @@
 			{/if}
 		</section>
 
-		<section aria-labelledby="s-parts">
-			<h2 id="s-parts">Parts</h2>
-			<PartGroups {parts} {icon} {canAct} {busy} {oncheck} />
-		</section>
-
-		<div class="pair">
-			<section aria-labelledby="s-disk">
-				<h2 id="s-disk">Storage</h2>
-				{#if disks === null}
-					<p class="none">Loading…</p>
-				{:else if !disks.length}
-					<p class="none">No library folders yet.</p>
-				{:else}
-					<ul class="disks">
-						{#each disks as d (d.path)}
-							{@const p = usedPct(d)}
-							<li class="disk">
-								<div class="dtop">
-									<span class="dname">{d.label || kindWord[d.kind] || 'Library'}</span>
-									<span class="dnum">
-										{#if d.free_bytes >= 0}<b>{bytes(d.free_bytes)}</b> free{/if}{#if d.total_bytes > 0} of {bytes(d.total_bytes)}{/if}
-									</span>
-								</div>
-								<div class="dbar" class:warn={p !== null && p >= 85} class:full={p !== null && p >= 95} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p ?? undefined} aria-label="{d.label || d.path} used">
-									<i style:width="{p ?? 0}%"></i>
-								</div>
-								<div class="dfoot"><span class="mono" title={d.path}>{d.path}</span>{#if p !== null}<span>{p}% used</span>{/if}</div>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</section>
-
-			<section aria-labelledby="s-about">
-				<h2 id="s-about">About</h2>
-				<dl class="kv">
-					<dt>Version</dt>
-					<dd>
-						<code>{upd?.version ?? '…'}</code>
-						{#if upd?.newer}<span class="pill warn">Update available</span>{:else if upd?.on && upd.latest}<span class="pill good">Up to date</span>{/if}
-					</dd>
-					<dt>Update check</dt>
-					<dd>{#if !upd}…{:else if !upd.on}Off{:else if upd.problem}{upd.problem}{:else if upd.checked_at}Checked {ago(upd.checked_at)}{:else}Not checked yet{/if}</dd>
-					<dt>Library folders</dt><dd>{disks?.length ?? '…'}</dd>
-					<dt>Linked parts</dt><dd>{linked}</dd>
-					<dt>Background jobs</dt><dd>{jobs.length}</dd>
-					<dt>Needs attention</dt><dd>{#if problems.length}<span class="bad">{problems.length}</span>{:else}None{/if}</dd>
-				</dl>
-			</section>
+		<div class="grid">
+			{#each sections as g (g.id)}
+				<section aria-labelledby="g-{g.id}">
+					<h2 id="g-{g.id}">
+						<span class="gi" aria-hidden="true"><svg viewBox="0 0 20 20"><path d={icon[g.id] ?? icon.lists} /></svg></span>
+						{g.label}<span class="cnt">{g.rows.filter((r) => r.tone === 'ok').length}/{g.rows.length}</span>
+					</h2>
+					<GroupRows rows={g.rows} {canAct} {busy} {oncheck} />
+				</section>
+			{/each}
 		</div>
+
+		<section aria-labelledby="s-disk">
+			<h2 id="s-disk">Storage</h2>
+			{#if disks === null}
+				<p class="none">Loading…</p>
+			{:else if !disks.length}
+				<p class="none">No library folders yet.</p>
+			{:else}
+				<ul class="disks">
+					{#each disks as d (d.path)}
+						{@const p = usedPct(d)}
+						{@const w = worst(folderRows(d))}
+						<li class="disk" class:bad={!!w}>
+							<div class="dtop">
+								<span class="dname">{d.label || kindWord[d.kind] || 'Library'}</span>
+								{#if w}<span class="dstate {w.tone}">{w.word}</span>{:else}<span class="dstate ok">Working</span>{/if}
+								<span class="dnum">
+									{#if d.free_bytes >= 0}<b>{bytes(d.free_bytes)}</b> free{/if}{#if d.total_bytes > 0} of {bytes(d.total_bytes)}{/if}
+								</span>
+							</div>
+							<div class="dbar" class:warn={p !== null && p >= 85} class:full={p !== null && p >= 95} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p ?? undefined} aria-label="{d.label || d.path} used">
+								<i style:width="{p ?? 0}%"></i>
+							</div>
+							<div class="dfoot"><span class="mono" title={d.path}>{d.path}</span>{#if p !== null}<span>{p}% used</span>{/if}</div>
+							{#if w?.reason}<p class="dwhy">{w.reason}{#if canAct && w.fix} <a class="lnk" href={to(w.fix)}>Fix</a>{/if}</p>{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			{#if backups}
+				<p class="bk"><i class="d {backups.tone}" aria-hidden="true"></i>Backups · <b>{backups.word}</b>{#if backups.at} · last checked <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {backups.reason}{/if}</p>
+			{/if}
+		</section>
 	{:else if tab === 'jobs'}
 		<div class="pair">
 			<section aria-labelledby="s-next">
@@ -186,8 +198,38 @@
 				</tbody>
 			</table>
 		</section>
-	{:else}
+	{:else if tab === 'updates'}
 		<Releases {upd} />
+	{:else}
+		<section aria-labelledby="s-about">
+			<h2 id="s-about">About</h2>
+			<dl class="kv">
+				<dt>Version</dt>
+				<dd>
+					<code>{about?.version ?? upd?.version ?? '…'}</code>
+					{#if upd?.newer}<button type="button" class="pill warn" onclick={() => ontab('updates')}>Update available</button>{:else if upd?.on && upd.latest}<span class="pill good">Up to date</span>{/if}
+				</dd>
+				{#if about}
+					<dt>Go</dt><dd>{about.go.replace(/^go/, '')}</dd>
+					<dt>System</dt><dd>{about.os}</dd>
+					<dt>Docker</dt><dd>{about.docker ? 'Yes' : 'No'}</dd>
+					<dt>Database</dt><dd>SQLite {about.sqlite}</dd>
+					<dt>Database migration</dt><dd>{about.migration}</dd>
+					<dt>Config folder</dt><dd><code>{about.config_dir}</code></dd>
+					<dt>Start folder</dt><dd><code>{about.start_dir}</code></dd>
+					<dt>Uptime</dt><dd>{uptime(about.uptime_s)} <span class="muted">· since {dateTime(about.started_at)}</span></dd>
+				{/if}
+			</dl>
+		</section>
+
+		<section aria-labelledby="s-story">
+			<h2 id="s-story">Why HolyArrs</h2>
+			<div class="story">
+				<p>Running a media server meant running six apps next to your download client: one each for shows, movies, music, subtitles, indexers and requests. Each had its own settings, its own logins and its own idea of what was going on.</p>
+				<p>HolyArrs puts the whole trip in one place, from someone asking for a title to it showing up on the media server.</p>
+				<p class="draft">Draft. Luis writes the final version.</p>
+			</div>
+		</section>
 
 		<div class="pair">
 			<section aria-labelledby="s-docs">
@@ -198,11 +240,12 @@
 					<dt>Report a problem</dt><dd class="soon">Arrives with the public release</dd>
 				</dl>
 			</section>
-			<section aria-labelledby="s-support">
-				<h2 id="s-support">Support HolyArrs</h2>
+			<section aria-labelledby="s-support" class="give">
+				<h2 id="s-support">Donations</h2>
+				<p class="gl">HolyArrs is free. If it saves you time, you can help keep it going.</p>
 				<dl class="kv">
-					<dt>Donations</dt><dd class="soon">Arrives with the public release</dd>
-					<dt>Spread the word</dt><dd class="soon">Arrives with the public release</dd>
+					<dt>Sponsor</dt><dd class="soon">Arrives with the public release</dd>
+					<dt>One-time</dt><dd class="soon">Arrives with the public release</dd>
 				</dl>
 			</section>
 		</div>
@@ -230,6 +273,11 @@
 	.seg button { position: relative; min-height: 40px; padding: 0 22px; border: 0; border-radius: var(--r-pill); background: none; color: var(--text-muted); font: 500 14px/1 var(--font-ui); cursor: pointer; }
 	.seg button[aria-selected='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
 	.seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.badge.new { background: var(--wait); }
+	.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
+	.gi { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--surface-2, var(--surface-1)); color: var(--text-muted); }
+	.gi svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+	.cnt { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.badge { position: absolute; top: 8px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
 	.none { margin: 0; color: var(--text-muted); font-size: 14px; }
 
@@ -260,9 +308,17 @@
 	.d.idle { background: var(--text-faint); }
 
 	/* Storage */
-	.disks { display: flex; flex-direction: column; gap: 16px; }
 	.dtop { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 	.dname { font-weight: 600; font-size: 14.5px; color: var(--text); }
+	.dtop .dnum { margin-left: auto; }
+	.dstate { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+	.dstate.ok { color: var(--text-muted); font-weight: 500; }
+	.dstate.fail { color: var(--fail-text); }
+	.disk.bad { padding: 10px 12px; margin: -10px -12px 0; border-radius: 10px; background: color-mix(in srgb, var(--fail) 6%, transparent); }
+	.dwhy { margin: 6px 0 0; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
+	.bk { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--text-muted); }
+	.bk b { color: var(--text); font-weight: 600; }
+	.disks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; }
 	.dnum { font-size: 13px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.dnum b { color: var(--text); font-weight: 600; }
 	.dbar { height: 8px; margin-top: 8px; border-radius: 4px; overflow: hidden; background: color-mix(in srgb, var(--text) 10%, transparent); box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15); }
@@ -306,11 +362,18 @@
 	.kv dd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--text); min-width: 0; overflow-wrap: anywhere; }
 	.kv .bad { color: var(--fail-text); font-weight: 600; }
 	.soon { color: var(--text-muted); font-style: italic; }
+	.muted { color: var(--text-muted); }
+	.story { max-width: 760px; }
+	.story p { margin: 0 0 12px; font-size: 15px; line-height: 1.65; color: var(--text); }
+	.story .draft { margin: 4px 0 0; font-size: 12.5px; font-style: italic; color: var(--text-muted); }
+	.give { background: linear-gradient(160deg, color-mix(in srgb, var(--accent, var(--text)) 7%, var(--surface-1)), var(--surface-1) 60%); }
+	.gl { margin: 0 0 8px; font-size: 14.5px; color: var(--text); }
+	button.pill { border: 0; cursor: pointer; font-family: inherit; }
 	.pill { padding: 3px 9px; border-radius: var(--r-pill); font-size: 12px; font-weight: 600; }
 	.pill.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--text); }
 	.pill.warn { background: color-mix(in srgb, var(--wait) 22%, transparent); color: var(--text); }
 
-	@media (max-width: 900px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+	@media (max-width: 900px) { .pair, .grid, .disks { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {
 		section { padding: 14px 14px 16px; border-radius: 16px; }
 		h2 { margin: 0 -14px 12px; padding: 0 14px 12px; }
