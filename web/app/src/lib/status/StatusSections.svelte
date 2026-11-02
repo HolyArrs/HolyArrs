@@ -8,6 +8,7 @@
 	import { until } from '../schedules.ts';
 	import { to } from '../paths.ts';
 	import PartCards from './PartCards.svelte';
+	import Releases from './Releases.svelte';
 	import { groupCounts, needsAttention, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {
@@ -33,7 +34,6 @@
 
 	let store = $state<{ app: Path[]; library_folders: Path[] } | null>(null);
 	let upd = $state<Update | null>(null);
-	let notesOpen = $state(false);
 
 	const parts = $derived(groups.filter((g) => g.id !== 'jobs'));
 	const jobs = $derived(groups.find((g) => g.id === 'jobs')?.rows ?? []);
@@ -47,6 +47,8 @@
 	// Without storage (it asks for a fresh password), fall back to the free-space checks.
 	const diskChecks = $derived(groups.flatMap((g) => g.rows).filter((r) => r.key.startsWith('disk_space')));
 	const dbBytes = $derived((store?.app ?? []).filter((p) => p.name.endsWith('database')).reduce((n, p) => n + (p.bytes ?? 0), 0));
+	const upcoming = $derived(jobs.filter((j) => j.nextRun).sort((a, b) => Date.parse(a.nextRun!) - Date.parse(b.nextRun!)));
+	const recent = $derived(jobs.filter((j) => j.lastRun).sort((a, b) => Date.parse(b.lastRun!) - Date.parse(a.lastRun!)));
 	const libCount = $derived(store?.library_folders.length ?? 0);
 
 	const icon: Record<string, string> = {
@@ -79,7 +81,6 @@
 		<button type="button" role="tab" aria-selected={tab === 'jobs'} onclick={() => ontab('jobs')}>
 			Jobs{#if jobs.some((j) => j.tone === 'fail')}<i class="badge" aria-label="has failures"></i>{/if}
 		</button>
-		<button type="button" role="tab" aria-selected={tab === 'storage'} onclick={() => ontab('storage')}>Storage</button>
 		<button type="button" role="tab" aria-selected={tab === 'about'} onclick={() => ontab('about')}>About</button>
 	</div>
 
@@ -115,7 +116,25 @@
 			<PartCards {parts} {icon} {cardLine} />
 		</section>
 
-	{:else if tab === 'storage'}
+		<div class="pair">
+			<section aria-labelledby="s-next">
+				<h2 id="s-next">Coming up</h2>
+				<ol class="tl">
+					{#each upcoming.slice(0, 5) as r (r.key)}
+						<li><span class="when">{until(r.nextRun)}</span><i class="d {r.tone}" aria-hidden="true"></i><span class="what">{r.name}</span></li>
+					{:else}<li class="none">No runs planned.</li>{/each}
+				</ol>
+			</section>
+			<section aria-labelledby="s-last">
+				<h2 id="s-last">Recent runs</h2>
+				<ol class="tl">
+					{#each recent.slice(0, 5) as r (r.key)}
+						<li><span class="when"><time datetime={r.lastRun} title={dateTime(r.lastRun)}>{ago(r.lastRun)}</time></span><i class="d {r.tone}" aria-hidden="true"></i><span class="what">{r.name}</span><span class="res {r.tone}">{r.word}</span></li>
+					{:else}<li class="none">Nothing has run yet.</li>{/each}
+				</ol>
+			</section>
+		</div>
+
 		{#if disks.length || diskChecks.length}
 			<section aria-labelledby="s-disk">
 				<h2 id="s-disk">Disk space</h2>
@@ -162,28 +181,7 @@
 			</dl>
 		</section>
 
-		{#if upd}
-			<section aria-labelledby="s-rel">
-				<h2 id="s-rel">Release</h2>
-				<div class="rel">
-					<div class="rh">
-						<span class="rv">{upd.newer && upd.latest ? upd.latest : upd.version}</span>
-						{#if upd.newer}<span class="pill warn">Newer than yours</span>{:else}<span class="pill good">Running</span>{/if}
-						<span class="rsub">
-							{#if !upd.on}Update check is off
-							{:else if upd.problem}{upd.problem}
-							{:else if upd.no_release}Nothing published yet
-							{:else if upd.checked_at}Checked {ago(upd.checked_at)}{/if}
-						</span>
-						<span class="ract">
-							{#if upd.notes}<button type="button" class="btn" aria-expanded={notesOpen} onclick={() => (notesOpen = !notesOpen)}>{notesOpen ? 'Hide notes' : 'Show notes'}</button>{/if}
-							{#if upd.link}<a class="btn" href={upd.link} target="_blank" rel="noopener noreferrer">Release page</a>{/if}
-						</span>
-					</div>
-					{#if notesOpen && upd.notes}<pre class="notes">{upd.notes}</pre>{/if}
-				</div>
-			</section>
-		{/if}
+		<Releases {upd} />
 
 		<section aria-labelledby="s-docs">
 			<h2 id="s-docs">Documentation</h2>
@@ -261,7 +259,7 @@
 		color: var(--accent, var(--text)); font: 500 13.5px/1 var(--font-ui); text-decoration: none; cursor: pointer; white-space: nowrap;
 	}
 	.lnk:hover { background: var(--surface-2, var(--surface-1)); }
-	.lnk:focus-visible, .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.lnk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.lnk:disabled { opacity: 0.5; }
 	.ok-line { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 14.5px; color: var(--text-muted); }
 	.okdot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
@@ -296,17 +294,19 @@
 	.pill.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok-text, var(--text)); }
 	.pill.warn { background: color-mix(in srgb, var(--wait) 22%, transparent); color: var(--text); }
 
+	/* Coming up / Recent runs */
+	.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 22px; }
+	.tl { list-style: none; margin: 0; padding: 0; position: relative; }
+	.tl::before { content: ''; position: absolute; left: 96px; top: 8px; bottom: 8px; width: 1px; background: var(--line); }
+	.tl li { position: relative; display: grid; grid-template-columns: 84px 9px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 40px; font-size: 14px; }
+	.tl .when { font-size: 12.5px; color: var(--text-muted); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.tl .d { width: 9px; height: 9px; box-shadow: 0 0 0 3px var(--surface-1); }
+	.tl .what { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.tl .res { font-size: 12.5px; color: var(--text-muted); }
+	.tl .res.fail { color: var(--fail-text); font-weight: 600; }
+	.tl .none { display: block; color: var(--text-muted); }
+
 	/* Release */
-	.rel { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-1); }
-	.rh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; }
-	.rv { font: 700 18px/1 var(--font-ui); color: var(--text); }
-	.rsub { font-size: 13px; color: var(--text-muted); }
-	.ract { display: flex; gap: 8px; margin-left: auto; }
-	.btn {
-		display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--r-pill);
-		background: var(--surface-2, var(--surface-1)); color: var(--text); font: 500 13.5px/1 var(--font-ui); text-decoration: none; cursor: pointer;
-	}
-	.notes { margin: 0; padding: 12px 14px; border-top: 1px solid var(--line); white-space: pre-wrap; font: 13.5px/1.55 var(--font-ui); color: var(--text); max-height: 320px; overflow: auto; }
 
 	@media (max-width: 767px) {
 		.hrow { grid-template-columns: 22px minmax(0, 1fr); }
@@ -325,6 +325,5 @@
 		.tbl.jobs td { border: 0; padding: 2px 4px; font-size: 13px; color: var(--text-muted); }
 		.tbl.jobs td.jn { font-size: 14px; color: var(--text); }
 		.tbl.jobs td.num { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
-		.ract { margin-left: 0; }
 	}
 </style>

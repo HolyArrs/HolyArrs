@@ -208,19 +208,12 @@ export function headline(rows: StatusRow[]): string {
 	return out.join(', ');
 }
 
-export const looks = [
-	{ key: 'f', label: 'Sections' },
-	{ key: 'd', label: 'Board' },
-	{ key: 'a', label: 'One list' },
-	{ key: 'b', label: 'Problems first' },
-	{ key: 'c', label: 'Two tabs' }
-] as const;
-export type LookKey = (typeof looks)[number]['key'];
-
-/** lookOf reads ?look=, defaulting to Sections. */
-export function lookOf(v: string | null): LookKey {
-	return v === 'a' || v === 'b' || v === 'c' || v === 'd' ? v : 'f';
+/** bgOf reads a preview picker (?bg=, ?surface=): 1..10, default 1. */
+export function bgOf(v: string | null): number {
+	const n = Number(v);
+	return Number.isInteger(n) && n >= 1 && n <= 10 ? n : 1;
 }
+export const surfaceOf = bgOf;
 
 /** groupCounts splits a group into working, needs attention and off. */
 export function groupCounts(g: StatusGroup): { ok: number; bad: number; off: number } {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, lookOf, needsAttention } from './status.ts';
+import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, bgOf, needsAttention } from './status.ts';
 import type { ScheduleRow } from '../schedules.ts';
 import type { StageState } from '../types.ts';
 
@@ -60,10 +60,9 @@ describe('status rows', () => {
 		expect(realTime('2026-11-02T09:00:00Z')).toBe('2026-11-02T09:00:00Z');
 	});
 
-	it('defaults the look to b', () => {
-		expect(lookOf(null)).toBe('f');
-		expect(lookOf('a')).toBe('a');
-		expect(lookOf('zz')).toBe('f');
-		expect(lookOf('b')).toBe('b');
+	it('reads the preview pickers, 1 to 10', () => {
+		expect(bgOf(null)).toBe(1);
+		expect(bgOf('7')).toBe(7);
+		expect(bgOf('11')).toBe(1);
 	});
 });

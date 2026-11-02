@@ -1,7 +1,8 @@
 <script lang="ts">
 	// Status: is every linked part working, and did every background job run?
-	// Four looks for the preview (?look=a|b|c|d|f, default f, Sections). Reads only the
-	// existing health, schedules, lists, alerts and metadata routes.
+	// Reads only the existing health, schedules, lists, alerts and metadata
+	// routes. Preview pickers: ?bg=1..10 (page background), ?surface=1..10
+	// (section plates), ?cards= (Parts deck).
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -13,24 +14,20 @@
 	import type { AlertView, HealthChecks, HealthStates, OutsideList } from '#lib/types.ts';
 	import type { ScheduleRow } from '#lib/schedules.ts';
 	import LookPills from '#lib/status/LookPills.svelte';
-	import Row from '#lib/status/StatusRow.svelte';
-	import Board from '#lib/status/StatusBoard.svelte';
 	import Sections from '#lib/status/StatusSections.svelte';
-	import { buildRows, groupLine, groupOrder, groupRows, headline, lookOf, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
+	import { bgOf, buildRows, groupOrder, groupRows, headline, needsAttention, surfaceOf, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
-	const look = $derived(lookOf(page.url.searchParams.get('look')));
-	const tab = $derived(['jobs', 'storage', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
+	const tab = $derived(['jobs', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
+	const bg = $derived(bgOf(page.url.searchParams.get('bg')));
+	const surface = $derived(surfaceOf(page.url.searchParams.get('surface')));
 
 	let input = $state<StatusInput | null>(null);
 	let error = $state('');
 	let busy = $state<string | null>(null);
-	let open = $state<Record<string, boolean>>({});
 	const canAct = $derived(session.can('settings'));
 
 	const rows = $derived(input ? buildRows({ ...input, now: Date.now() }) : []);
 	const groups = $derived(groupRows(rows));
-	const partGroups = $derived(groups.filter((g) => g.id !== 'jobs'));
-	const jobs = $derived(groups.find((g) => g.id === 'jobs')?.rows ?? []);
 	const problems = $derived(needsAttention(rows));
 	const top = $derived(headline(rows));
 	const labelOf = (r: StatusRow) => groupOrder.find((g) => g.id === r.group)?.label ?? '';
@@ -120,16 +117,8 @@
 
 <svelte:head><title>Status · HolyArrs</title></svelte:head>
 
-{#snippet list(rs: StatusRow[], withKind = false)}
-	<ul class="rows">
-		{#each rs as r (r.key)}
-			<Row row={r} actions={canAct} kind={withKind ? labelOf(r) : ''} busy={busy === r.key} oncheck={canAct ? check : undefined} />
-		{/each}
-	</ul>
-{/snippet}
-
-{#if look === 'f'}<div class="backdrop" aria-hidden="true"></div>{/if}
-<div class="status" data-testid="status-page" data-look={look}>
+<div class="backdrop" data-bg={bg} aria-hidden="true"></div>
+<div class="status" data-testid="status-page" data-surface={surface}>
 	<header class="sbar">
 		<div class="title">
 			<h1>Status</h1>
@@ -144,131 +133,155 @@
 		<p class="notice" role="alert">{error}</p>
 	{:else if !input}
 		<p class="muted">Loading…</p>
-	{:else if look === 'f'}
-		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} />
-	{:else if look === 'd'}
-		<Board {groups} {problems} {canAct} {busy} oncheck={check} {labelOf} />
-	{:else if look === 'a'}
-		{#each groups as g (g.id)}
-			<section class="card" aria-labelledby="g-{g.id}">
-				<h2 id="g-{g.id}">{g.label}</h2>
-				{@render list(g.rows)}
-			</section>
-		{/each}
-	{:else if look === 'b'}
-		<section class="card attn" aria-labelledby="g-attn" data-testid="status-attention">
-			<h2 id="g-attn">Needs attention{#if problems.length} ({problems.length}){/if}</h2>
-			{#if problems.length}
-				{@render list(problems, true)}
-			{:else}
-				<p class="empty">Nothing needs attention.</p>
-			{/if}
-		</section>
-		<section class="card" aria-labelledby="g-all">
-			<h2 id="g-all">All parts</h2>
-			<ul class="folds">
-				{#each partGroups as g (g.id)}
-					<li>
-						<button type="button" class="fold" aria-expanded={!!open[g.id]} onclick={() => (open[g.id] = !open[g.id])}>
-							<span class="fname">{g.label}</span>
-							<span class="fline">{groupLine(g)}</span>
-							<span class="chev" aria-hidden="true">{open[g.id] ? '−' : '+'}</span>
-						</button>
-						{#if open[g.id]}{@render list(g.rows)}{/if}
-					</li>
-				{/each}
-			</ul>
-		</section>
-		{#if jobs.length}
-			<section class="card" aria-labelledby="g-jobs">
-				<h2 id="g-jobs">Jobs</h2>
-				{@render list(jobs)}
-			</section>
-		{/if}
 	{:else}
-		<div class="seg" role="tablist" aria-label="Status view">
-			<button type="button" role="tab" aria-selected={tab === 'parts'} onclick={() => setTab('parts')}>Parts</button>
-			<button type="button" role="tab" aria-selected={tab === 'jobs'} onclick={() => setTab('jobs')}>Jobs</button>
-		</div>
-		<p class="note">History bars need stored results. They come once HolyArrs keeps past checks.</p>
-		{#if tab === 'parts'}
-			{#each partGroups as g (g.id)}
-				<section class="card" aria-labelledby="g-{g.id}">
-					<h2 id="g-{g.id}">{g.label}</h2>
-					{@render list(g.rows)}
-				</section>
-			{/each}
-		{:else}
-			<section class="card">{@render list(jobs)}</section>
-		{/if}
+		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} />
 	{/if}
 </div>
 
 <LookPills />
 
 <style>
-	/* Sections look: soft colour glows, a faint dot grid and grain behind the plates */
+	/* Page backgrounds (?bg=1..10). Each sits fixed behind the page. */
 	.backdrop {
-		position: fixed; inset: 0; z-index: -1; pointer-events: none;
+		--base: var(--bg, var(--surface-0, var(--surface-1)));
+		--acc: var(--accent, #6b8cff);
+		position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--base);
+	}
+	.backdrop::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+	/* 1 Glow + dots */
+	.backdrop[data-bg='1'] {
 		background:
-			radial-gradient(60% 50% at 85% 0%, color-mix(in srgb, var(--accent, #6b8cff) 14%, transparent), transparent 70%),
+			radial-gradient(60% 50% at 85% 0%, color-mix(in srgb, var(--acc) 14%, transparent), transparent 70%),
 			radial-gradient(50% 45% at 0% 100%, color-mix(in srgb, var(--ok) 10%, transparent), transparent 70%),
-			radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px,
-			var(--bg, var(--surface-0, var(--surface-1)));
+			radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px, var(--base);
 	}
-	.backdrop::after {
-		content: ''; position: absolute; inset: 0; opacity: 0.5;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .10 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-		-webkit-mask-image: linear-gradient(#000, transparent 85%); mask-image: linear-gradient(#000, transparent 85%);
+	/* 2 Aurora: big soft colour blobs */
+	.backdrop[data-bg='2'] {
+		background:
+			radial-gradient(40% 35% at 20% 15%, color-mix(in srgb, #7c5cff 22%, transparent), transparent 70%),
+			radial-gradient(35% 30% at 80% 25%, color-mix(in srgb, #00c2a8 18%, transparent), transparent 70%),
+			radial-gradient(45% 40% at 60% 90%, color-mix(in srgb, #ff6b8b 14%, transparent), transparent 70%), var(--base);
 	}
-	.status[data-look='f'] .sbar { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 0; }
-	.status[data-look='d'], .status[data-look='f'] { max-width: 1600px; }
+	/* 3 Fine grid */
+	.backdrop[data-bg='3'] {
+		background:
+			linear-gradient(color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
+			linear-gradient(90deg, color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1px) 0 0 / 32px 32px, var(--base);
+	}
+	.backdrop[data-bg='3']::after { background: radial-gradient(70% 60% at 50% 0%, transparent, var(--base)); }
+	/* 4 Diagonal pinstripe */
+	.backdrop[data-bg='4'] { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--text) 4%, transparent) 0 1px, transparent 1px 12px), var(--base); }
+	.backdrop[data-bg='4']::after { background: linear-gradient(180deg, transparent 40%, var(--base)); }
+	/* 5 Spotlight from above */
+	.backdrop[data-bg='5'] { background: radial-gradient(55% 45% at 50% -5%, color-mix(in srgb, var(--text) 12%, transparent), transparent 70%), var(--base); }
+	.backdrop[data-bg='5']::after { background: radial-gradient(120% 90% at 50% 30%, transparent 55%, rgb(0 0 0 / 0.35)); }
+	/* 6 Contour rings */
+	.backdrop[data-bg='6'] { background: repeating-radial-gradient(circle at 85% 10%, transparent 0 22px, color-mix(in srgb, var(--acc) 9%, transparent) 22px 23px), var(--base); }
+	.backdrop[data-bg='6']::after { background: radial-gradient(80% 80% at 85% 10%, transparent 30%, var(--base) 80%); }
+	/* 7 Mesh gradient */
+	.backdrop[data-bg='7'] {
+		background:
+			radial-gradient(at 0% 0%, color-mix(in srgb, #4f7cff 18%, transparent) 0, transparent 50%),
+			radial-gradient(at 100% 0%, color-mix(in srgb, #b45cff 16%, transparent) 0, transparent 50%),
+			radial-gradient(at 100% 100%, color-mix(in srgb, #ff8a4c 12%, transparent) 0, transparent 50%),
+			radial-gradient(at 0% 100%, color-mix(in srgb, #22c3a6 14%, transparent) 0, transparent 50%), var(--base);
+	}
+	/* 8 Carbon weave */
+	.backdrop[data-bg='8'] {
+		background:
+			linear-gradient(27deg, rgb(0 0 0 / 0.18) 5px, transparent 5px) 0 5px / 20px 20px,
+			linear-gradient(207deg, rgb(0 0 0 / 0.18) 5px, transparent 5px) 10px 0 / 20px 20px,
+			linear-gradient(27deg, rgb(255 255 255 / 0.03) 5px, transparent 5px) 0 10px / 20px 20px,
+			linear-gradient(207deg, rgb(255 255 255 / 0.03) 5px, transparent 5px) 10px 5px / 20px 20px,
+			linear-gradient(90deg, rgb(0 0 0 / 0.06) 10px, transparent 10px) 0 0 / 20px 20px, var(--base);
+	}
+	/* 9 Paper grain, warm */
+	.backdrop[data-bg='9'] { background: linear-gradient(180deg, color-mix(in srgb, #c9a46a 7%, var(--base)), var(--base)); }
+	.backdrop[data-bg='9']::after {
+		opacity: 0.7;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+	}
+	/* 10 Starfield */
+	.backdrop[data-bg='10'] {
+		background:
+			radial-gradient(1px 1px at 10% 20%, color-mix(in srgb, var(--text) 50%, transparent), transparent),
+			radial-gradient(1px 1px at 30% 70%, color-mix(in srgb, var(--text) 35%, transparent), transparent),
+			radial-gradient(1.5px 1.5px at 55% 35%, color-mix(in srgb, var(--text) 45%, transparent), transparent),
+			radial-gradient(1px 1px at 75% 80%, color-mix(in srgb, var(--text) 30%, transparent), transparent),
+			radial-gradient(1px 1px at 90% 15%, color-mix(in srgb, var(--text) 40%, transparent), transparent),
+			radial-gradient(60% 50% at 70% 0%, color-mix(in srgb, #3b5bff 12%, transparent), transparent 70%), var(--base);
+		background-size: 220px 220px, 260px 260px, 300px 300px, 240px 240px, 280px 280px, 100% 100%;
+	}
+
+	/* Section surfaces (?surface=1..10); 1 is the raised plate the sections draw themselves. */
+	/* 2 Flat hairline */
+	.status[data-surface='2'] :global(section) { background: color-mix(in srgb, var(--surface-1) 70%, transparent); box-shadow: none; backdrop-filter: none; border-radius: 10px; }
+	/* 3 Frosted glass */
+	.status[data-surface='3'] :global(section) {
+		background: color-mix(in srgb, var(--surface-1) 45%, transparent); backdrop-filter: blur(28px) saturate(1.6);
+		border-color: color-mix(in srgb, #fff 14%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 20px 50px -30px rgb(0 0 0 / 0.6);
+	}
+	/* 4 Sunken well */
+	.status[data-surface='4'] :global(section) {
+		background: color-mix(in srgb, #000 14%, var(--surface-1)); border-color: transparent;
+		box-shadow: inset 0 2px 10px rgb(0 0 0 / 0.30), inset 0 0 0 1px rgb(0 0 0 / 0.20), 0 1px 0 rgb(255 255 255 / 0.06);
+	}
+	/* 5 Soft relief */
+	.status[data-surface='5'] :global(section) {
+		background: var(--surface-1); border-color: transparent; border-radius: 26px;
+		box-shadow: 10px 10px 24px rgb(0 0 0 / 0.18), -8px -8px 20px rgb(255 255 255 / 0.04), inset 0 1px 0 rgb(255 255 255 / 0.06);
+	}
+	/* 6 Solid slab with accent strip */
+	.status[data-surface='6'] :global(section) {
+		background: var(--surface-1); border-radius: 12px; border-top: 3px solid var(--accent, var(--text)); backdrop-filter: none;
+		box-shadow: 0 2px 0 rgb(0 0 0 / 0.10), 0 16px 30px -22px rgb(0 0 0 / 0.5);
+	}
+	/* 7 Corner brackets */
+	.status[data-surface='7'] :global(section) {
+		border-color: transparent; border-radius: 4px; box-shadow: none;
+		background:
+			linear-gradient(var(--text-muted), var(--text-muted)) top left / 18px 2px no-repeat,
+			linear-gradient(var(--text-muted), var(--text-muted)) top left / 2px 18px no-repeat,
+			linear-gradient(var(--text-muted), var(--text-muted)) top right / 18px 2px no-repeat,
+			linear-gradient(var(--text-muted), var(--text-muted)) top right / 2px 18px no-repeat,
+			linear-gradient(var(--text-muted), var(--text-muted)) bottom left / 18px 2px no-repeat,
+			linear-gradient(var(--text-muted), var(--text-muted)) bottom left / 2px 18px no-repeat,
+			linear-gradient(var(--text-muted), var(--text-muted)) bottom right / 18px 2px no-repeat,
+			linear-gradient(var(--text-muted), var(--text-muted)) bottom right / 2px 18px no-repeat,
+			color-mix(in srgb, var(--surface-1) 75%, transparent);
+	}
+	/* 8 Gradient edge */
+	.status[data-surface='8'] :global(section) {
+		border: 1px solid transparent; border-radius: 18px; backdrop-filter: none;
+		background: linear-gradient(var(--surface-1), var(--surface-1)) padding-box, linear-gradient(135deg, #6b8cff, #b45cff 40%, #22c3a6) border-box;
+		box-shadow: 0 18px 40px -26px color-mix(in srgb, #6b8cff 60%, transparent);
+	}
+	/* 9 Paper card */
+	.status[data-surface='9'] :global(section) {
+		border-radius: 6px; border-color: color-mix(in srgb, #c9a46a 25%, var(--line)); backdrop-filter: none;
+		background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .12 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"), color-mix(in srgb, #c9a46a 5%, var(--surface-1));
+		box-shadow: 4px 4px 0 color-mix(in srgb, #000 12%, transparent);
+	}
+	/* 10 Technical dashed */
+	.status[data-surface='10'] :global(section) { background: transparent; border: 1px dashed var(--line-strong); border-radius: 2px; box-shadow: none; backdrop-filter: none; }
+	.status[data-surface='10'] :global(section h2) { font-family: var(--font-mono, ui-monospace, monospace); font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; border-bottom-style: dashed; }
+
 	.status {
-		max-width: 1080px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+		max-width: 1600px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(150px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;
 	}
-	.sbar {
-		position: sticky; top: var(--topbar, 0px); z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-		margin: 0 calc(-1 * var(--gutter)); padding: 14px var(--gutter);
-		background: color-mix(in srgb, var(--bg, var(--surface-0, var(--surface-1))) 72%, transparent);
-		-webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
-		border-bottom: 1px solid var(--line);
-	}
+	.sbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; }
 	h1 { margin: 0; font: 600 26px/1.15 var(--font-ui); color: var(--text); }
 	.head { margin: 2px 0 0; font-size: 14px; }
 	.head.good { color: var(--text-muted); }
 	.head.bad { color: var(--fail-text); font-weight: 500; }
-	.card { border: 1px solid var(--line); border-radius: var(--r-card, 16px); background: var(--surface-1); overflow: hidden; }
-	h2 { margin: 0; padding: 14px 16px 6px; font: 600 13px/1.2 var(--font-ui); letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-muted); }
-	.rows, .folds { list-style: none; margin: 0; padding: 0; }
-	.empty, .note, .muted { margin: 0; padding: 4px 16px 14px; color: var(--text-muted); font-size: 14px; }
-	.note { padding: 0 2px; font-size: 13px; }
+	.muted { margin: 0; color: var(--text-muted); font-size: 14px; }
 	.notice { color: var(--fail-text); }
-	.fold {
-		display: grid; grid-template-columns: 160px minmax(0, 1fr) 24px; align-items: center; gap: 12px; width: 100%;
-		min-height: 56px; padding: 8px 16px; border: 0; border-top: 1px solid var(--line); background: none;
-		color: var(--text); font: inherit; text-align: left; cursor: pointer;
-	}
-	.folds > li:first-child > .fold { border-top: 0; }
-	.fold:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
-	.fname { font-weight: 500; }
-	.fline { color: var(--text-muted); font-size: 14px; }
-	.chev { color: var(--text-muted); font-size: 18px; text-align: center; }
 	.btn {
 		min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: var(--r-pill);
 		background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 14px/1 var(--font-ui); cursor: pointer;
 	}
 	.btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.btn:disabled { opacity: 0.6; }
-	.seg { display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
-	.seg button { min-height: 44px; padding: 0 20px; border: 0; border-radius: var(--r-pill); background: none; color: var(--text-muted); font: 500 14px/1 var(--font-ui); cursor: pointer; }
-	.seg button[aria-selected='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
-	.seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	@media (max-width: 767px) {
-		.fold { grid-template-columns: minmax(0, 1fr) 24px; }
-		.fline { grid-column: 1; grid-row: 2; }
-		.chev { grid-column: 2; grid-row: 1 / span 2; }
-		h1 { font-size: 22px; }
-		.sbar { position: static; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 0; }
-	}
+	@media (max-width: 767px) { h1 { font-size: 22px; } }
 </style>
