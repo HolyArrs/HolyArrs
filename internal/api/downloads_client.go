@@ -84,6 +84,10 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 		t := time.Unix(j.AddedAt, 0).UTC()
 		row.StartedAt = &t
 	}
+	if j.PostedAt > 0 && d.Protocol == "usenet" {
+		t := time.Unix(j.PostedAt, 0).UTC()
+		row.PostedAt = &t
+	}
 	if ph == "done" {
 		row.Label = "Done"
 	}
@@ -179,13 +183,17 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 		if err != nil {
 			continue
 		}
-		first := []int64{}
+		first, relIDs := []int64{}, []int64{}
 		for _, d := range ds {
 			if len(d.SlotIDs) > 0 {
 				first = append(first, d.SlotIDs[0])
 			}
+			if d.ReleaseID != nil {
+				relIDs = append(relIDs, *d.ReleaseID)
+			}
 		}
 		slots := slotInfos(ctx, db, first)
+		rels := releaseNames(ctx, db, relIDs)
 		for _, d := range ds {
 			i, ok := at[strings.ToLower(d.ExternalID)]
 			if !ok {
@@ -193,6 +201,14 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 			}
 			row := &rows[i]
 			row.Outside = false
+			if d.ReleaseID != nil {
+				if rl, ok := rels[*d.ReleaseID]; ok {
+					row.SourceName, row.SourceID = rl.source, rl.sourceID
+					if rl.posted != nil && row.Protocol == "usenet" {
+						row.PostedAt = rl.posted
+					}
+				}
+			}
 			if len(d.SlotIDs) == 0 {
 				continue
 			}
@@ -336,6 +352,46 @@ func (a *API) titleOwner(ctx context.Context, titleID int64) string {
 	return name
 }
 
+// rowOwners fills each row's Requested by from its Library title, in one
+// read: the person who added the title, else "Added in <client>" for an
+// outside item (nobody asked HolyArrs for it).
+func (a *API) rowOwners(ctx context.Context, rows []DownloadRow) {
+	ids := []int64{}
+	for _, r := range rows {
+		if r.TitleID != 0 {
+			ids = append(ids, r.TitleID)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	who := map[int64]string{}
+	inChunks(ids, func(part []any, marks string) {
+		rs, err := a.read().QueryContext(ctx, `SELECT t.id, u.name FROM titles t JOIN users u ON u.id = json_extract(t.created_by, '$.id')
+			WHERE t.id IN (`+marks+`) AND json_extract(t.created_by, '$.kind') = 'user'`, part...)
+		if err != nil {
+			return
+		}
+		defer rs.Close()
+		for rs.Next() {
+			var id int64
+			var name string
+			if rs.Scan(&id, &name) == nil {
+				who[id] = name
+			}
+		}
+	})
+	for i := range rows {
+		r := &rows[i]
+		if r.TitleID == 0 {
+			continue
+		}
+		if r.RequestedBy = who[r.TitleID]; r.RequestedBy == "" && r.Outside {
+			r.RequestedBy = "Added in " + adapterWord(r.DownloaderKind)
+		}
+	}
+}
+
 // adapterWord is a torrent client's own name for plain sentences.
 func adapterWord(adapter string) string {
 	switch adapter {
@@ -345,6 +401,10 @@ func adapterWord(adapter string) string {
 		return "Transmission"
 	case "deluge":
 		return "Deluge"
+	case "sabnzbd":
+		return "SABnzbd"
+	case "nzbget":
+		return "NZBGet"
 	}
 	return "the Downloader"
 }

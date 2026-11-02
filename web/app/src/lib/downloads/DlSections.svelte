@@ -9,7 +9,7 @@
 	import { tick, untrack } from 'svelte';
 	import { mergeDetail } from './detail-merge.ts';
 	import { page } from '$app/state';
-	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, sortRows, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
+	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, shortAge, sortRows, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
 	import { replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
@@ -33,6 +33,7 @@
 	import { api, message, ApiError } from '../api.ts';
 	import Confirm from '../account/Confirm.svelte';
 	import { ago, dateTime, duration, percent } from '../format.ts';
+	import { session } from '../session.svelte.ts';
 	import { healthLine, quietPeers, logDays, badKind, clientMark, swarmLine, swarmTotal } from './panel-words.ts';
 	// Each client's own app icon (design/assets/clients, licenses in its README).
 	const CLIENT_ICONS = new Set(['qbittorrent', 'transmission', 'deluge', 'sabnzbd', 'nzbget']);
@@ -453,6 +454,10 @@
 			case 'ratio': return tor && r.ratio != null ? r.ratio : undefined;
 			case 'queue': return r.queue_pos || undefined;
 			case 'tracker': return r.tracker;
+			case 'requested': return r.requested_by;
+			case 'source': return r.source_name;
+			case 'category': return categoryWords(r.category);
+			case 'age': return r.posted_at ? -Date.parse(r.posted_at) : undefined;
 		}
 		return undefined;
 	}
@@ -906,7 +911,10 @@
 	const customised = $derived(layout.hidden.length !== COLUMNS.filter((c) => !c.on).length || COLUMNS.some((c) => !c.on && !layout.hidden.includes(c.id)) || layout.order.some((id, i) => id !== IDS[i]));
 	// One layout everywhere: wide screens no longer add columns by themselves.
 	const WIDE: ColId[] = [];
+	// Done has its own default columns: finished rows have no speed, time left or bar, but a finish time.
+	const DONE_SET: ColId[] = ['poster', 'kind', 'title', 'requested', 'proto', 'status', 'size', 'completed'];
 	const visAll = $derived.by(() => {
+		if (isDone && !customised) return DONE_SET.filter((id) => !COL[id].missing);
 		const v = visible(layout);
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
@@ -1363,6 +1371,14 @@
 		<span class="num" class:ph data-col="queue">{r.queue_pos || dash}</span>
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
+	{:else if id === 'requested'}
+		<span class="txt" class:ph data-col="requested" title={r.requested_by ?? ''}>{r.requested_by || dash}</span>
+	{:else if id === 'source'}
+		<span class="txt" class:ph data-col="source" title={r.source_name ?? ''}>{#if r.source_name && r.source_id && session.can('settings')}<a href="/settings/sources/{r.source_id}" onclick={(e) => e.stopPropagation()}>{r.source_name}</a>{:else}{r.source_name || dash}{/if}</span>
+	{:else if id === 'category'}
+		{@const cw = categoryWords(r.category)}<span class="txt" class:ph data-col="category" title={r.category ?? ''}>{cw || dash}</span>
+	{:else if id === 'age'}
+		<span class="num" class:ph data-col="age" title={r.posted_at ?? ''}>{shortAge(r.posted_at) || dash}</span>
 	{:else}
 		<span class="num" class:ph data-col={id}>{dash}</span>
 	{/if}

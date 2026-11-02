@@ -72,6 +72,14 @@ type DownloadRow struct {
 	DownloaderID int64  `json:"downloader_id,omitempty"`
 	Hash         string `json:"hash,omitempty"`
 	Category     string `json:"category,omitempty"`
+	// RequestedBy names who added the row's Library title ("Added in
+	// <client>" for an outside item whose title nobody added by hand).
+	// SourceName and SourceID are the Source the release came from, for
+	// downloads HolyArrs sent; PostedAt when the Usenet post was made.
+	RequestedBy string     `json:"requested_by,omitempty"`
+	SourceName  string     `json:"source_name,omitempty"`
+	SourceID    int64      `json:"source_id,omitempty"`
+	PostedAt    *time.Time `json:"posted_at,omitempty"`
 	// Ratio is a torrent's share ratio as the client reports it; nil unknown.
 	Ratio *float64 `json:"ratio,omitempty"`
 	// Limits are a client torrent's own seeding rules (-2 the client's
@@ -347,6 +355,10 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		if d.ReleaseID != nil {
 			if rl, ok := rels[*d.ReleaseID]; ok {
 				row.Name, row.Size = rl.name, rl.size
+				row.SourceName, row.SourceID = rl.source, rl.sourceID
+				if n.Protocol == "usenet" {
+					row.PostedAt = rl.posted
+				}
 			}
 		}
 		if len(d.SlotIDs) > 0 {
@@ -398,6 +410,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = append(rows, row)
 	}
+	a.rowOwners(ctx, rows)
 	// Managers see everything in their torrent clients, as the client's own
 	// screen does: the torrents HolyArrs did not send come after its own.
 	// Rows come from the background reader's snapshots: a client that is
@@ -488,8 +501,11 @@ func pageOutside(rows []DownloadRow, cursor string, n int) ([]DownloadRow, strin
 
 // releaseLine is a Release's name and size.
 type releaseLine struct {
-	name string
-	size int64
+	name     string
+	size     int64
+	source   string
+	sourceID int64
+	posted   *time.Time
 }
 
 // inChunks calls f on ids in parts small enough for one IN (...) read.
@@ -517,7 +533,8 @@ func inChunks(ids []int64, f func(part []any, marks string)) {
 func releaseNames(ctx context.Context, db *sql.DB, ids []int64) map[int64]releaseLine {
 	out := map[int64]releaseLine{}
 	inChunks(ids, func(part []any, marks string) {
-		rs, err := db.QueryContext(ctx, "SELECT id, name, size FROM releases WHERE id IN ("+marks+")", part...)
+		rs, err := db.QueryContext(ctx, `SELECT r.id, r.name, r.size, r.source_id, COALESCE(s.name, ''), COALESCE(r.published_at, '')
+			FROM releases r LEFT JOIN sources s ON s.id = r.source_id WHERE r.id IN (`+marks+")", part...)
 		if err != nil {
 			return
 		}
@@ -525,7 +542,15 @@ func releaseNames(ctx context.Context, db *sql.DB, ids []int64) map[int64]releas
 		for rs.Next() {
 			var id int64
 			var v releaseLine
-			if rs.Scan(&id, &v.name, &v.size) == nil {
+			var posted string
+			if rs.Scan(&id, &v.name, &v.size, &v.sourceID, &v.source, &posted) == nil {
+				if v.source == "" {
+					v.sourceID = 0
+				}
+				if t, err := time.Parse(time.RFC3339Nano, posted); err == nil {
+					t = t.UTC()
+					v.posted = &t
+				}
 				out[id] = v
 			}
 		}

@@ -191,6 +191,7 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 	if len(added) > 0 {
 		a.knownTitles(ctx, id, added)
 		a.linkedTitles(ctx, id, added)
+		a.rowOwners(ctx, added)
 		for _, row := range added {
 			f := rowFields(row)
 			f["key"] = row.LiveKey

@@ -271,6 +271,7 @@ type nzbgetRow struct {
 	URLStatus       string     `json:"UrlStatus"`
 	MarkStatus      string     `json:"MarkStatus"`
 	HistoryTime     int64      `json:"HistoryTime"`
+	MinPostTime     int64      `json:"MinPostTime"`
 	Parameters      []nzbParam `json:"Parameters"`
 }
 
@@ -398,7 +399,7 @@ func (r nzbgetRow) job(history bool) Job {
 		name = strings.TrimSuffix(r.NZBFilename, ".nzb")
 	}
 	j := Job{ID: nzbgetMarkerID(r.Parameters), Name: name, Category: r.Category, SavePath: r.DestDir,
-		Size: size, Progress: p, State: nzbgetActiveState(r.Status), Detail: r.Status}
+		Size: size, Progress: p, State: nzbgetActiveState(r.Status), Detail: r.Status, PostedAt: max(r.MinPostTime, 0)}
 	if history {
 		j.Progress, j.DoneAt = 1, max(r.HistoryTime, 0)
 		switch {

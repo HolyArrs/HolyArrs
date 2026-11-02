@@ -91,6 +91,9 @@ type Job struct {
 	// LastActivity and SeenComplete are unix seconds (0 unknown);
 	// SeedingTime and TimeActive are seconds; Uploaded is bytes.
 	LastActivity, SeenComplete, SeedingTime, TimeActive, Uploaded int64
+	// PostedAt is unix seconds the Usenet post was made, when the client
+	// reports it (0 unknown, and always for torrents).
+	PostedAt int64
 }
 
 // Health is what an engine says about itself.

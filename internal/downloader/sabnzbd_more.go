@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // The rest of SABnzbd's reads: the whole queue and finished list in pages
@@ -98,6 +99,7 @@ type sabQueueFull struct {
 			Status     string `json:"status"`
 			TimeLeft   string `json:"timeleft"`
 			TimeAdded  int64  `json:"time_added"`
+			AvgAge     string `json:"avg_age"`
 		} `json:"slots"`
 	} `json:"queue"`
 }
@@ -131,7 +133,7 @@ func (s *Sabnzbd) Queue(ctx context.Context) (QueuePage, error) {
 				pos = start + i + 1 // an older SABnzbd without index
 			}
 			raw = append(raw, Job{ID: x.ID, Name: x.Filename, Category: x.Cat, Size: int64(mb * 1024 * 1024), Progress: min(max(pr, 0), 1),
-				ETA: clock(x.TimeLeft), State: sabQueueState(x.Status), Detail: x.Status, AddedAt: x.TimeAdded, QueuePos: pos})
+				ETA: clock(x.TimeLeft), State: sabQueueState(x.Status), Detail: x.Status, AddedAt: x.TimeAdded, QueuePos: pos, PostedAt: sabPostedAt(x.AvgAge, time.Now())})
 		}
 		if len(qu.Queue.Slots) < sabPage || start+len(qu.Queue.Slots) >= qu.Queue.Total {
 			break

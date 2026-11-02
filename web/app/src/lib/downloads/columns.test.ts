@@ -1,17 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, toggle, visible } from './columns.ts';
+import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, shortAge, toggle, visible } from './columns.ts';
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
-	it('defaults show eight columns in order', () => {
-		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'time', 'size']);
+	it('defaults show nine columns in order', () => {
+		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'requested', 'proto', 'progress', 'status', 'time', 'size']);
 		expect(defaults().widths).toMatchObject({ title: 310, progress: 66, status: 130, size: 130, time: 80, quality: 90 });
 	});
-	it('never shows a column the Downloaders do not send', () => {
+	it('offers every column now that the Downloaders send them all', () => {
 		const l = defaults();
 		l.hidden = [];
-		expect(visible(l)).not.toContain('age');
-		expect(COLUMNS.filter((c) => c.missing).map((c) => c.id)).toEqual(['age', 'requested', 'source', 'category']);
+		expect(visible(l)).toContain('age');
+		expect(COLUMNS.filter((c) => c.missing)).toEqual([]);
+		expect(COLUMNS.find((c) => c.id === 'source')?.label).toBe('Found on');
+	});
+	it('reads a post age short', () => {
+		const now = Date.parse('2026-11-02T12:00:00Z');
+		expect(shortAge('2026-11-02T07:00:00Z', now)).toBe('5 h');
+		expect(shortAge('2026-10-30T12:00:00Z', now)).toBe('3 d');
+		expect(shortAge('2024-10-01T12:00:00Z', now)).toBe('2 y');
+		expect(shortAge(undefined, now)).toBe('');
+		expect(shortAge('nope', now)).toBe('');
 	});
 	it('offers seeds and peers as one optional Swarm column', () => {
 		expect(visible(defaults())).not.toContain('swarm');
@@ -25,7 +34,7 @@ describe('columns', () => {
 		l.hidden = toggle(l, 'size');
 		l.widths.title = 400;
 		const back = load(dump(l), null);
-		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'time']);
+		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'requested', 'proto', 'progress', 'time']);
 		expect(back.widths.title).toBe(400);
 		back.hidden = toggle(back, 'size');
 		expect(visible(back)).toContain('size');
@@ -43,7 +52,7 @@ describe('columns', () => {
 		const n = normalize({ order: ['size', 'nope', 'title'] as never, hidden: [], widths: { title: 99999 } as never });
 		expect(n.order.length).toBe(IDS.length);
 		expect(n.order.indexOf('size')).toBeLessThan(n.order.indexOf('title'));
-		expect(n.order.indexOf('proto')).toBe(n.order.indexOf('title') + 1);
+		expect(n.order.indexOf('requested')).toBe(n.order.indexOf('title') + 1);
 		expect(n.widths.title).toBe(3000);
 	});
 	it('move and moveVisible', () => {

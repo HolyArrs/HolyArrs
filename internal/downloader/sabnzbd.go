@@ -203,6 +203,7 @@ type sabQueue struct {
 			Percentage string `json:"percentage"`
 			Status     string `json:"status"`
 			TimeLeft   string `json:"timeleft"`
+			AvgAge     string `json:"avg_age"`
 		} `json:"slots"`
 	} `json:"queue"`
 }
@@ -343,7 +344,7 @@ func (s *Sabnzbd) jobs(ctx context.Context, q url.Values) ([]Job, error) {
 			p = (mb - left) / mb
 		}
 		j := Job{ID: x.ID, Name: x.Filename, Category: x.Cat, Size: int64(mb * 1024 * 1024), Progress: min(max(p, 0), 1),
-			ETA: clock(x.TimeLeft), State: sabQueueState(x.Status), Detail: x.Status}
+			ETA: clock(x.TimeLeft), State: sabQueueState(x.Status), Detail: x.Status, PostedAt: sabPostedAt(x.AvgAge, time.Now())}
 		// SABnzbd gives one speed for the whole queue; the jobs moving
 		// share it evenly so the total stays the real one.
 		if j.State == StateDownloading && moving > 0 {
@@ -414,4 +415,30 @@ func (s *Sabnzbd) Remove(ctx context.Context, id string, deleteFiles bool) error
 		return ErrNotFound
 	}
 	return nil
+}
+
+// sabPostedAt turns a queue slot's post age ("123d", "5h", "40m") into
+// unix seconds, rounded to the age's own unit so the time stays put
+// between reads; 0 when the age is missing or unreadable.
+func sabPostedAt(age string, now time.Time) int64 {
+	age = strings.TrimSpace(age)
+	if len(age) < 2 {
+		return 0
+	}
+	n, err := strconv.Atoi(age[:len(age)-1])
+	if err != nil || n < 0 {
+		return 0
+	}
+	var unit time.Duration
+	switch age[len(age)-1] {
+	case 'd':
+		unit = 24 * time.Hour
+	case 'h':
+		unit = time.Hour
+	case 'm':
+		unit = time.Minute
+	default:
+		return 0
+	}
+	return now.Add(-time.Duration(n) * unit).Truncate(unit).Unix()
 }

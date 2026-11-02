@@ -41,6 +41,7 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'poster', label: 'Poster', on: true, width: 52 },
 	{ id: 'kind', label: 'Type', on: true, width: 84 },
 	{ id: 'title', label: 'Title', on: true, width: 310 },
+	{ id: 'requested', label: 'Requested by', on: true, width: 120 },
 	{ id: 'proto', label: 'Source', on: true, width: 60 },
 	{ id: 'progress', label: 'Progress', on: true, width: 66 },
 	{ id: 'status', label: 'Status', on: true, width: 130 },
@@ -48,16 +49,15 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'size', label: 'Size', on: true, width: 130, num: true },
 	{ id: 'quality', label: 'Quality', on: false, width: 90 },
 	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
-	{ id: 'age', label: 'Age', on: false, width: 70, num: true, missing: true },
+	{ id: 'age', label: 'Age', on: false, width: 70, num: true },
 	// Seeds and peers in one cell: connected (in the swarm) for each.
 	{ id: 'swarm', label: 'Swarm', on: false, width: 130, num: true, torrent: true },
 	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true },
 	{ id: 'completed', label: 'Completed', on: false, width: 100, num: true },
 	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true },
 	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
-	{ id: 'requested', label: 'Requested by', on: false, width: 120, missing: true },
-	{ id: 'source', label: 'Indexer', on: false, width: 120, missing: true },
-	{ id: 'category', label: 'Category', on: false, width: 100, missing: true }
+	{ id: 'source', label: 'Found on', on: false, width: 120 },
+	{ id: 'category', label: 'Category', on: false, width: 100 }
 ];
 
 export const COL: Record<ColId, ColDef> = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColId, ColDef>;
@@ -203,4 +203,15 @@ export function quality(name: string | undefined): string {
 	const hdr = /\bhdr/.test(n);
 	const tag = dv ? 'DV' : hdr ? 'HDR' : '';
 	return [res, tag].filter(Boolean).join(' ');
+}
+
+/** shortAge says how old a post is: "5 h", "3 d", "2 y" ('' when unknown). */
+export function shortAge(iso: string | undefined, now = Date.now()): string {
+	const t = iso ? Date.parse(iso) : NaN;
+	if (!Number.isFinite(t)) return '';
+	const h = Math.max(0, (now - t) / 3600e3);
+	if (h < 1) return `${Math.max(1, Math.round(h * 60))} m`;
+	if (h < 24) return `${Math.floor(h)} h`;
+	const d = h / 24;
+	return d < 365 ? `${Math.floor(d)} d` : `${Math.floor(d / 365)} y`;
 }

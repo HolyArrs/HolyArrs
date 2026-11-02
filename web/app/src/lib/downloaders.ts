@@ -210,6 +210,13 @@ export interface DownloadRow extends DownloadView {
 	queue_pos?: number;
 	/** The host of the tracker a client torrent works with now. */
 	tracker?: string;
+	/** Who asked for the row's title ("Added in <client>" when nobody did; absent with no title). */
+	requested_by?: string;
+	/** The Source the release came from (downloads HolyArrs sent). */
+	source_name?: string;
+	source_id?: number;
+	/** When the Usenet post was made (RFC3339). */
+	posted_at?: string;
 	/** Trackers not all well: error, warning, or announce (none answering). */
 	tracker_problem?: 'error' | 'warning' | 'announce';
 	/** A client torrent's own speed caps in bytes per second (absent: none). */

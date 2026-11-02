@@ -52,6 +52,7 @@ func (a *API) storeRows(ctx context.Context, names map[int64]domain.Downloader, 
 		if len(out) > 0 {
 			a.knownTitles(ctx, d.ID, out)
 			a.linkedTitles(ctx, d.ID, out)
+			a.rowOwners(ctx, out)
 			rows = append(rows, out...)
 		}
 	}
