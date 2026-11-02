@@ -945,7 +945,7 @@
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
 	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'time', 'size'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
-	const FIXED = 32;
+	const FIXED = 20 + 32;
 	let room = $state(0);
 	let titleMin = $state(MIN_W);
 	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
@@ -958,7 +958,7 @@
 	});
 	const wOf = (id: ColId) => (id === 'title' ? tW : wMin(id));
 	// Until a person sets the Title width, it flexes and takes whatever room is left.
-	const tpl = $derived(`0px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
+	const tpl = $derived(`20px ${vis.map((id) => (id === 'title' && !layout.titleSet ? `minmax(${wOf(id)}px, 1fr)` : `${wOf(id)}px`)).join(' ')} ${layout.titleSet || !vis.includes('title') ? 'minmax(0, 1fr)' : '0px'} 32px`);
 	/** inner is the full width of the columns; the table box is at least this wide. */
 	const inner = $derived(vis.reduce((n, id) => n + wOf(id), FIXED) + (vis.length + 3) * gap);
 	const textW = (n: Node) => {
@@ -1858,7 +1858,8 @@
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 	.drow { display: block; border-bottom: 1px solid var(--line); }
 	.tg { position: relative; align-self: stretch; }
-	.pk { position: absolute; left: -2px; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; accent-color: var(--accent); opacity: 0; cursor: pointer; z-index: 2; transition: opacity 120ms var(--ease-out); }
+	/* The row checkbox has its own slim column at the left, so it never covers the poster. */
+	.pk { position: absolute; left: 4px; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; accent-color: var(--accent); opacity: 0; cursor: pointer; z-index: 2; transition: opacity 120ms var(--ease-out); }
 	.drow:hover .pk, .pk.any, .pk:focus-visible { opacity: 1; }
 	.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 	.selbar { position: sticky; top: 0; left: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px var(--gutter, 12px); background: var(--surface-1); border-bottom: 1px solid var(--line); }
