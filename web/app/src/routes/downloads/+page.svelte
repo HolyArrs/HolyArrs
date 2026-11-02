@@ -530,7 +530,7 @@
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
 	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} onretry={retryMany} {watch} {upTotal} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} onretry={retryMany} {watch} {upTotal} {notes} />
 	{#if moreOutside}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit += 200; void load(); }} data-testid="dl-outside-more">Show more torrents</Button></p>{/if}
 {/if}
 </PageLoader>
@@ -602,6 +602,8 @@
 	.pad { padding: var(--s-6) var(--gutter); }
 	.matchpad { padding: 0 var(--gutter); }
 	.notes { list-style: none; margin: 0; padding: var(--s-2) var(--gutter) 0; display: grid; gap: 2px; color: var(--text-muted); font: var(--t-footnote); }
+	/* On desktop the notes live in the status popover (DlSections), behind a dot; the bare list is for phones. */
+	@media (min-width: 641px) { .notes { display: none; } }
 	.more { display: flex; justify-content: center; padding: var(--s-4) var(--gutter); }
 	.matchpad:empty { display: none; }
 	.aside-link { text-align: center; margin-top: -24px; }

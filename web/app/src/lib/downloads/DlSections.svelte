@@ -56,6 +56,7 @@
 
 	let {
 		rows: everyRow,
+		notes = [],
 		importOf,
 		titles,
 		titlesReady = true,
@@ -78,6 +79,8 @@
 		upTotal
 	}: {
 		rows: DownloadRow[];
+		/** Calm notes from the page (a Downloader not answering, a side read that failed): shown in the status popover, with a dot on its trigger. */
+		notes?: string[];
 		importOf: Map<number, ImportRecord>;
 		titles: Map<number, TitleView>;
 		/** False while the Library titles (the posters) are still on their way: posters show a plain tile, not initials. */
@@ -569,6 +572,9 @@
 	// The detail pane under the list: its height is kept in this browser.
 	const PANE_KEY = 'holyarrs.downloads.pane';
 	let paneH = $state(260);
+	// The pane takes the height its content needs (capped so the list keeps rows); a drag on the
+	// divider sets a height by hand, a double-click goes back to fitting.
+	let paneFit = $state(true);
 	let paneOpen = $state(true);
 	// Read the open download's detail now and every 3 seconds while it shows.
 	// The effect depends only on which row, which tab and whether the pane shows:
@@ -650,7 +656,10 @@
 		const el = e.currentTarget as HTMLElement;
 		el.setPointerCapture(e.pointerId);
 		const y0 = e.clientY;
-		const h0 = paneH;
+		const pane = el.parentElement?.querySelector<HTMLElement>('.dpane');
+		const h0 = paneFit && pane ? pane.offsetHeight : paneH;
+		paneFit = false;
+		paneH = h0;
 		const mv = (m: PointerEvent) => (paneH = Math.max(120, Math.min(maxPane(), Math.round(h0 + (y0 - m.clientY)))));
 		const up = () => {
 			el.removeEventListener('pointermove', mv);
@@ -666,7 +675,10 @@
 		if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
 		e.preventDefault();
 		e.stopPropagation();
-		paneH = Math.max(120, Math.min(maxPane(), paneH + (e.key === 'ArrowUp' ? 24 : -24)));
+		const pane = (e.currentTarget as HTMLElement).parentElement?.querySelector<HTMLElement>('.dpane');
+		const h0 = paneFit && pane ? pane.offsetHeight : paneH;
+		paneFit = false;
+		paneH = Math.max(120, Math.min(maxPane(), h0 + (e.key === 'ArrowUp' ? 24 : -24)));
 		savePane();
 	}
 	// The underline under the picked panel tab: measured once per change, moved with transform only.
@@ -1747,7 +1759,7 @@
 		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
 		{ label: 'Requested by', value: '–' }
 	]}
-	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
+	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="phd">
 			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
 			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></span></p>
@@ -1838,15 +1850,16 @@
 {#if openRow}
 	<div class="sheet" in:sheetIn out:sheetOut data-testid="dl-sheet">
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? paneH : 0} tabindex="0" class:fixed={!paneOpen} onpointerdown={dragDown} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
+	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? (paneFit ? 0 : paneH) : 0} tabindex="0" class:fixed={!paneOpen} title="Drag to resize · double-click to fit the content" onpointerdown={dragDown} ondblclick={() => (paneFit = true)} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
 	{@render panel(openRow)}
 	</div>
 {/if}
 </div>
 </div>
-{#snippet morePop()}<Popover label="More status" icon="more" placement="below" align="end" width={280}>{#snippet children()}
+{#snippet morePop()}<span class="mop" class:warn={notes.length > 0}><Popover label="More status" icon="more" placement="below" align="end" width={280}>{#snippet children()}
 	<ul class="mo">
 		<li><i class="dot" class:ok={health === 'Connected'} aria-hidden="true"></i> {health}</li>
+		{#each notes as n (n)}<li class="note" data-testid="dl-note">{n}</li>{/each}
 		{#each clients.filter((c) => c.error) as c (c.id)}<li class="note">{c.name}: {c.error}</li>{/each}
 		{#each clients.filter((c) => c.status?.connection || c.status?.slow_mode != null) as c (c.id)}
 			<li class="cl" data-testid="sb-client">
@@ -1860,7 +1873,7 @@
 			<li data-testid="sb-totals">{#if sumOf('day_down')}<span class="k">Today</span> {bytes(sumOf('day_down'))} · {/if}{#if sumOf('month_down')}<span class="k">Month</span> {bytes(sumOf('month_down'))} · {/if}<span class="k">All time</span> {sumOf('all_time_down') ? bytes(sumOf('all_time_down')) : '–'}</li>
 		{/if}
 	</ul>
-{/snippet}</Popover>{/snippet}
+{/snippet}</Popover></span>{/snippet}
 <!-- Connection health stays readable for screen readers and tests. -->
 <div class="vh"><span data-testid="sb-health">{health}</span></div>
 </div>
@@ -2157,6 +2170,9 @@
 	.slow { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; cursor: pointer; min-height: 32px; }
 	.slow input { width: 18px; height: 18px; accent-color: var(--accent); }
 	.mo { list-style: none; margin: 0; padding: 4px; display: grid; gap: 6px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	/* The status trigger carries an amber dot while there is a note to read. */
+	.mop { position: relative; display: inline-flex; }
+	.mop.warn::after { content: ''; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--wait); box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
 	.mo li.note { color: var(--text-muted); }
 	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }
 	.kcell .kt.none { color: var(--text-muted); }
