@@ -24,6 +24,11 @@ var RoutineEventKinds = []string{
 	"library_scanned", "library_rescanned", "folder_scanned", "file_back", "media_server_told",
 }
 
+// AuditEventKinds are never removed by the clean-up, whatever the keep
+// times say: sign-ins, sign-outs, API keys, settings changes and owner
+// controls are the audit trail.
+var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "control_used"}
+
 // HistoryKeep is how long History keeps Events, in days. 0 keeps them
 // forever.
 type HistoryKeep struct {
@@ -86,14 +91,15 @@ const pruneBatch = 2000
 
 // PruneEvents removes Events older than their keep time, a batch per
 // write, and returns how many went. Nothing in the app reads old Events to
-// decide anything (only to show them), so every kind may go.
+// decide anything (only to show them); AuditEventKinds always stay.
 func (s *Store) PruneEvents(ctx context.Context, k HistoryKeep, now time.Time) (int, error) {
 	in := "'" + strings.Join(RoutineEventKinds, "','") + "'"
+	audit := "'" + strings.Join(AuditEventKinds, "','") + "'"
 	total := 0
 	for _, step := range []struct {
 		days int
 		cond string
-	}{{k.RoutineDays, "kind IN (" + in + ")"}, {k.OtherDays, "kind NOT IN (" + in + ")"}} {
+	}{{k.RoutineDays, "kind IN (" + in + ")"}, {k.OtherDays, "kind NOT IN (" + in + ") AND kind NOT IN (" + audit + ")"}} {
 		if step.days <= 0 {
 			continue
 		}

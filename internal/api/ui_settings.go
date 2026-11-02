@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -92,6 +93,11 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.RoutineDays != nil || in.OtherDays != nil {
+		// History is also the audit trail: only the owner sets how long it lasts.
+		if who, signed := auth.From(r.Context()); !signed || who.Role != auth.RoleOwner {
+			fail(w, http.StatusForbidden, "only the owner may change how long History is kept")
+			return
+		}
 		k := store.ReadHistoryKeep(r.Context(), a.s.Store.Read())
 		if in.RoutineDays != nil {
 			k.RoutineDays = *in.RoutineDays

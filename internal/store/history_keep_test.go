@@ -62,10 +62,11 @@ func TestPruneEvents(t *testing.T) {
 	if k := kinds(); len(k) != 3 || k["search_done"] != 1 || k["import_done"] != 1 || k["settings_changed"] != 1 {
 		t.Fatalf("left: %v", k)
 	}
+	add("sign_in_failed", 900*day) // audit: never removed
 	if n, err := s.PruneEvents(ctx, HistoryKeep{OtherDays: 30}, now); err != nil || n != 1 {
 		t.Fatalf("other: %d %v", n, err)
 	}
-	if k := kinds(); k["import_done"] != 0 || k["settings_changed"] != 1 || k["search_done"] != 1 {
+	if k := kinds(); k["import_done"] != 0 || k["settings_changed"] != 1 || k["search_done"] != 1 || k["sign_in_failed"] != 1 {
 		t.Fatalf("left after other: %v", k)
 	}
 }
