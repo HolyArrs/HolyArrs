@@ -13,8 +13,6 @@ export type ColId =
 	| 'quality'
 	| 'added'
 	| 'swarm'
-	| 'ratio'
-	| 'queue'
 	| 'tracker'
 	| 'requested'
 	| 'source'
@@ -38,7 +36,8 @@ export const COLUMNS: ColDef[] = [
 	// Eight on by default, each filled on nearly every row. Time left lives under the Progress bar;
 	// the finished date lives in the pane's Dates.
 	{ id: 'poster', label: 'Poster', on: true, width: 52 },
-	{ id: 'kind', label: 'Type', on: true, width: 84 },
+	// Off by default: the poster and the title's second line already say movie, show or music.
+	{ id: 'kind', label: 'Type', on: false, width: 84 },
 	{ id: 'title', label: 'Title', on: true, width: 310 },
 	{ id: 'proto', label: 'Downloader', on: true, width: 60 },
 	{ id: 'progress', label: 'Progress', on: true, width: 120 },
@@ -47,10 +46,8 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'requested', label: 'Requested by', on: true, width: 130 },
 	{ id: 'quality', label: 'Quality', on: false, width: 90 },
 	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
-	// Seeds and peers in one cell: connected (in the swarm) for each.
-	{ id: 'swarm', label: 'Swarm', on: false, width: 130, num: true, torrent: true },
-	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true },
-	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true },
+	// The torrent column: seeds and peers on one line, the ratio under them; its header sorts by any of the three.
+	{ id: 'swarm', label: 'Swarm', on: false, width: 150, torrent: true },
 	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
 	// The Source (indexer) it was found on, the same word as Settings > Sources.
 	{ id: 'source', label: 'Source', on: false, width: 120 },
@@ -75,9 +72,14 @@ export interface Layout {
 	sort?: Sort;
 }
 
+/** Which of the Swarm column's three numbers it sorts by. */
+export type SwarmFacet = 'seeds' | 'peers' | 'ratio';
+
 export interface Sort {
 	id: ColId;
 	desc: boolean;
+	/** Swarm only. */
+	facet?: SwarmFacet;
 }
 
 export const KEY = 'holyarrs.downloads.layout';
@@ -114,7 +116,8 @@ export function normalize(v: Partial<Layout> | null | undefined): Layout {
 	const w = (v.widths ?? {}) as Record<string, unknown>;
 	const widths = Object.fromEntries(IDS.map((id) => [id, width(w[id], d.widths[id])])) as Record<ColId, number>;
 	const s = v.sort as Partial<Sort> | undefined;
-	const sort = s && isId(s.id) ? { id: s.id, desc: s.desc === true } : undefined;
+	const facet = s && s.id === 'swarm' && ['seeds', 'peers', 'ratio'].includes(String(s.facet)) ? (s.facet as SwarmFacet) : undefined;
+	const sort = s && isId(s.id) ? { id: s.id, desc: s.desc === true, ...(facet ? { facet } : {}) } : undefined;
 	return { order, hidden, widths, titleSet: v.titleSet === true, sort };
 }
 
@@ -171,7 +174,14 @@ export function toggle(l: Layout, id: ColId): ColId[] {
 
 /** nextSort is a header click: a new column sorts up (numbers and dates
  *  start high), the same column flips, and a third click clears it. */
-export function nextSort(cur: Sort | undefined, id: ColId): Sort | undefined {
+export function nextSort(cur: Sort | undefined, id: ColId, facet?: SwarmFacet): Sort | undefined {
+	// Swarm sorts by one of its three facets; a new facet starts high first, the same facet flips, then clears.
+	if (id === 'swarm') {
+		const f = facet ?? cur?.facet ?? 'seeds';
+		if (!cur || cur.id !== id || cur.facet !== f) return { id, desc: true, facet: f };
+		if (cur.desc) return { id, desc: false, facet: f };
+		return undefined;
+	}
 	const first = !!COL[id].num;
 	if (!cur || cur.id !== id) return { id, desc: first };
 	if (cur.desc === first) return { id, desc: !first };

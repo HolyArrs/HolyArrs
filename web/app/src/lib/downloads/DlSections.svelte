@@ -9,7 +9,7 @@
 	import { tick, untrack } from 'svelte';
 	import { mergeDetail } from './detail-merge.ts';
 	import { page } from '$app/state';
-	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, shortAge, sortRows, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
+	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, shortAge, sortRows, toggle as toggleCol, visible, type ColId, type Layout, type SwarmFacet } from './columns.ts';
 	import { replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
@@ -456,9 +456,12 @@
 			case 'size': return r.size || undefined;
 			case 'quality': return quality(r.name);
 			case 'added': return time(r.started_at);
-			case 'swarm': return tor ? (r.seeds ?? 0) * 1e6 + (r.peers ?? 0) : undefined;
-			case 'ratio': return tor && r.ratio != null ? r.ratio : undefined;
-			case 'queue': return r.queue_pos || undefined;
+			// Swarm sorts by the facet picked in its header: seeds, peers or ratio.
+			case 'swarm': {
+				if (!tor) return undefined;
+				const f = layout.sort?.facet ?? 'seeds';
+				return f === 'ratio' ? (r.ratio ?? undefined) : f === 'peers' ? (r.peers ?? 0) : (r.seeds ?? 0);
+			}
 			case 'tracker': return r.tracker;
 			case 'requested': return r.requested_by;
 			case 'source': return r.source_name;
@@ -964,14 +967,14 @@
 	// One layout everywhere: wide screens no longer add columns by themselves.
 	const WIDE: ColId[] = [];
 	// Done has its own default columns: finished rows have no speed, but a date.
-	const DONE_SET: ColId[] = ['poster', 'kind', 'title', 'proto', 'status', 'size', 'added', 'requested'];
+	const DONE_SET: ColId[] = ['poster', 'title', 'proto', 'status', 'size', 'added', 'requested'];
 	const visAll = $derived.by(() => {
 		if (isDone && !customised) return DONE_SET.filter((id) => !COL[id].missing);
 		const v = visible(layout);
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, size: 90, swarm: 110, ratio: 56, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, size: 90, swarm: 130, added: 90, status: 110 };
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
 	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : Math.max(layout.widths[id], heads[id] ?? 0));
@@ -997,8 +1000,10 @@
 	// Every picked column shows; when they are wider than the view the list scrolls sideways
 	// (columns used to drop out one by one on a narrow view, which read as a glitch).
 	const vis = $derived(visAll);
-	function sortBy(id: ColId) {
-		layout.sort = nextSort(layout.sort, id);
+	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', label: 'Seeds' }, { id: 'peers', label: 'Peers' }, { id: 'ratio', label: 'Ratio' }];
+	const ordinal = (n: number) => { const r = n % 100; return `${n}${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`; };
+	function sortBy(id: ColId, facet?: SwarmFacet) {
+		layout.sort = nextSort(layout.sort, id, facet);
 		save();
 	}
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
@@ -1392,7 +1397,9 @@
 			{@const more = statusDetail(r, importOf.get(r.id)) || statusHint(r)}
 			{@const why = problem(r)}
 			<!-- The word on its own line, the reason under it: the dot and the word carry the tone, the reason stays quiet. -->
-			<span class="st {t}" class:ph class:two={!!why} data-col="status" title={[statusWord(r), why?.text, more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{/if}</span></span>
+			<!-- A waiting row has no reason: its place in the Downloader's line goes there instead. -->
+			{@const line = !why && stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${ordinal(r.queue_pos)} in line`) : ''}
+			<span class="st {t}" class:ph class:two={!!why || !!line} data-col="status" title={[statusWord(r), why?.text || line, more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid="dl-in-line">{line}</span>{/if}</span></span>
 		{/if}
 	{:else if id === 'size'}
 		<span class="num" class:ph data-col="size">{r.size ? bytes(r.size) : dash}</span>
@@ -1401,11 +1408,13 @@
 	{:else if id === 'added'}
 		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
 	{:else if id === 'swarm'}
-		<span class="num" class:ph data-col="swarm" title="Seeds · peers: connected (in the swarm)">{#if r.protocol !== 'torrent'}{dash}{:else}{@render swarmPart(r.seeds, r.seeds_total, r)}<span class="swt">&nbsp;·&nbsp;</span>{@render swarmPart(r.peers, r.peers_total, r)}{/if}</span>
-	{:else if id === 'ratio'}
-		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null ? r.ratio.toFixed(2) : dash}</span>
-	{:else if id === 'queue'}
-		<span class="num" class:ph data-col="queue">{r.queue_pos || dash}</span>
+		<!-- Connected seeds and peers, named; the swarm's totals stay in the tooltip; the ratio on its own line. -->
+		{#if r.protocol !== 'torrent'}<span class="num" class:ph data-col="swarm">{dash}</span>
+		{:else}
+			{@const st = swarmTotal(r.seeds, r.seeds_total)}
+			{@const pt = swarmTotal(r.peers, r.peers_total)}
+			<span class="sw2" class:ph data-col="swarm" title={[st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}><span>{r.seeds ?? 0} {r.seeds === 1 ? 'seed' : 'seeds'} · {r.peers ?? 0} {r.peers === 1 ? 'peer' : 'peers'}</span><span class="sub">{r.ratio != null ? `ratio ${r.ratio.toFixed(2)}` : ''}</span></span>
+		{/if}
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
 	{:else if id === 'requested'}
@@ -1441,11 +1450,6 @@
 	</li>
 {/snippet}
 
-{#snippet swarmPart(n: number | undefined, total: number | undefined, r: DownloadRow)}
-	{@const tot = swarmTotal(n, total)}
-	{#if tot}{n ?? 0}<span class="swt">&nbsp;({tot})</span>{:else if n || ((r.phase === 'downloading' || r.phase === 'stalled') && n != null)}{n}{:else}{dash}{/if}
-{/snippet}
-
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={headMenu}>
@@ -1455,7 +1459,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -2553,7 +2557,15 @@
 
 	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
 	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
-	.swt { color: var(--text-muted); font-weight: 400; }
+	/* Swarm: two lines, the ratio under the counts. */
+	.sw2 { display: flex; flex-direction: column; gap: 1px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+	.sw2 .sub { color: var(--text-muted); font: var(--t-caption); }
+	/* The header's three facets: the picked one is bold and carries the sort line. */
+	.facets { display: flex; gap: 10px; }
+	.fc { position: relative; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
+	.fc.on { color: var(--text); font-weight: 600; }
+	.fc:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
+	.fc .sbar { right: 0; bottom: -7px; }
 	@media (min-width: 1800px) { .pb { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; } .pb .big { width: 200px; height: 300px; } .pb .big.square { height: 200px; } }
 	.pb .big { width: 160px; height: 240px; border-radius: var(--r-card); box-shadow: 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16); }
 	.pb .big :global(.poster) { border-radius: var(--r-card); }

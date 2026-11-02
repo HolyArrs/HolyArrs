@@ -3,8 +3,8 @@ import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quali
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
-	it('defaults show eight columns in order', () => {
-		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'size', 'requested']);
+	it('defaults show seven columns in order', () => {
+		expect(visible(defaults())).toEqual(['poster', 'title', 'proto', 'progress', 'status', 'size', 'requested']);
 		expect(defaults().widths).toMatchObject({ title: 310, progress: 120, status: 150, size: 100, quality: 90 });
 		expect(COLUMNS.find((c) => c.id === 'proto')?.label).toBe('Downloader');
 	});
@@ -35,7 +35,7 @@ describe('columns', () => {
 		l.hidden = toggle(l, 'size');
 		l.widths.title = 400;
 		const back = load(dump(l), null);
-		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'requested']);
+		expect(visible(back)).toEqual(['poster', 'status', 'title', 'proto', 'progress', 'requested']);
 		expect(back.widths.title).toBe(400);
 		back.hidden = toggle(back, 'size');
 		expect(visible(back)).toContain('size');
@@ -90,7 +90,9 @@ describe('sorting', () => {
 		expect(nextSort(undefined, 'title')).toEqual({ id: 'title', desc: false });
 		expect(nextSort({ id: 'title', desc: false }, 'title')).toEqual({ id: 'title', desc: true });
 		expect(nextSort({ id: 'title', desc: true }, 'title')).toBeUndefined();
-		expect(nextSort(undefined, 'ratio')).toEqual({ id: 'ratio', desc: true });
+		expect(nextSort(undefined, 'swarm')).toEqual({ id: 'swarm', desc: true, facet: 'seeds' });
+		expect(nextSort({ id: 'swarm', desc: true, facet: 'seeds' }, 'swarm', 'ratio')).toEqual({ id: 'swarm', desc: true, facet: 'ratio' });
+		expect(nextSort({ id: 'swarm', desc: true, facet: 'ratio' }, 'swarm', 'ratio')).toEqual({ id: 'swarm', desc: false, facet: 'ratio' });
 		expect(nextSort({ id: 'title', desc: true }, 'size')).toEqual({ id: 'size', desc: true });
 	});
 	it('sorts numbers and words with empties last', () => {
@@ -100,19 +102,19 @@ describe('sorting', () => {
 		expect(sortRows([{ v: 'b' }, { v: '' }, { v: 'A' }], (r) => r.v, false).map((r) => r.v)).toEqual(['A', 'b', '']);
 	});
 	it('keeps the sort in the saved layout and optional columns hidden', () => {
-		const l = load(dump({ ...defaults(), sort: { id: 'ratio', desc: true } }), null);
-		expect(l.sort).toEqual({ id: 'ratio', desc: true });
+		const l = load(dump({ ...defaults(), sort: { id: 'swarm', desc: true, facet: 'ratio' } }), null);
+		expect(l.sort).toEqual({ id: 'swarm', desc: true, facet: 'ratio' });
 		expect(load(JSON.stringify({ v: VERSION, sort: { id: 'nope' } }), null).sort).toBeUndefined();
 		const d = defaults();
-		expect(d.hidden).toEqual(expect.arrayContaining(['swarm', 'queue', 'tracker', 'added', 'ratio', 'quality']));
+		expect(d.hidden).toEqual(expect.arrayContaining(['kind', 'swarm', 'tracker', 'added', 'quality']));
 	});
 });
 
 describe('columns added later', () => {
 	it('start hidden in an older saved layout, which keeps its own choices', () => {
-		const old = JSON.stringify({ v: VERSION, order: IDS.filter((id) => !['swarm', 'queue', 'tracker'].includes(id)), hidden: ['added'], widths: {} });
+		const old = JSON.stringify({ v: VERSION, order: IDS.filter((id) => !['swarm', 'tracker'].includes(id)), hidden: ['added'], widths: {} });
 		const l = load(old, null);
-		expect(l.hidden).toEqual(expect.arrayContaining(['swarm', 'queue', 'tracker', 'added']));
-		expect(visible(l)).toContain('ratio');
+		expect(l.hidden).toEqual(expect.arrayContaining(['swarm', 'tracker', 'added']));
+		expect(visible(l)).toContain('kind');
 	});
 });
