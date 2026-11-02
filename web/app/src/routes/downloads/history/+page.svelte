@@ -27,4 +27,9 @@
 
 <svelte:head><title>History · HolyArrs</title></svelte:head>
 
-<SearchLook {titleById} {people} {me} />
+<div class="hist"><SearchLook {titleById} {people} {me} /></div>
+
+<style>
+	/* Phones get the same side gutter as the other pages so rows don't touch the screen edge. */
+	@media (max-width: 767px) { .hist { padding-inline: max(var(--gutter), env(safe-area-inset-left, 0px)) max(var(--gutter), env(safe-area-inset-right, 0px)); } }
+</style>
