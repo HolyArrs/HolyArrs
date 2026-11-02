@@ -30,12 +30,12 @@
 		{#if row.reason}<span class="sub reason">{row.reason}</span>{/if}
 	</span>
 	{#if !isJob && row.at}<time class="at" datetime={row.at} title={dateTime(row.at)}>{ago(row.at)}</time>{/if}
-	{#if actions && (row.fix || (row.check && oncheck))}
+	{#if actions && row.check && oncheck || actions && row.fix && (row.tone === 'fail' || row.tone === 'wait')}
 		<span class="acts">
 			{#if row.check && oncheck}
 				<button type="button" class="btn" disabled={busy} aria-busy={busy} onclick={() => oncheck(row)}>{isJob ? 'Run now' : 'Check now'}</button>
 			{/if}
-			{#if row.fix}<a class="btn" href={to(row.fix)}>Fix</a>{/if}
+			{#if row.fix && (row.tone === 'fail' || row.tone === 'wait')}<a class="btn" href={to(row.fix)}>Fix</a>{/if}
 		</span>
 	{/if}
 </li>
