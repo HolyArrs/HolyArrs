@@ -468,7 +468,8 @@
 		return undefined;
 	}
 	const sum = $derived(totals(allQueue));
-	const upSum = $derived(upTotal ?? sum.up);
+	// Upload comes from the Downloaders themselves once they report: seeding uploads without any downloading row.
+	const upSum = $derived(reporting.length ? sumOf('up_speed') : (upTotal ?? sum.up));
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
 	// The toolbar's Start and Pause act on the open row; its state comes from the client.
 	const canStart = $derived(!!openRow?.can_act && controllable(openRow?.downloader_kind) && isPaused(openRow) && busy !== openRow?.id);
@@ -1371,18 +1372,15 @@
 			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
 		</span>
 	{:else if id === 'progress'}
-		{#if hist && stageOf(r) !== 'failed'}
-			{@const s = historyStatus(r, importOf.get(r.id))}
-			<span class="hic" class:ph class:bad={s.bad} data-col="progress"><span class="ic" aria-hidden="true">{s.bad ? '!' : '✓'}</span></span>
-		{:else}
+			<!-- One bar on every row, 0 to 100: a finished row is full, never a tick in the bar's place, and nothing holds at 99. -->
+			{@const hs = hist && stageOf(r) !== 'failed' ? historyStatus(r, importOf.get(r.id)) : null}
 			{@const raw = percent(r.progress)}
-			{@const pct = stageOf(r) === 'importing' ? raw : Math.min(99, raw)}
-			{@const tone = stageOf(r) === 'paused' ? 'paused' : barTone(r)}
+			{@const pct = hs && !hs.bad ? 100 : raw}
+			{@const tone = hs ? (hs.bad ? 'bad' : 'done') : stageOf(r) === 'paused' ? 'paused' : barTone(r)}
 			{@const dn = (r.speed ?? 0) >= 1024}
 			{@const upOn = (r.up_speed ?? 0) >= 1024}
 			<!-- Speed sits under the bar: SABnzbd and NZBGet only give a whole-client speed, so it no longer needs its own column. -->
 			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn)}<span class="spd" data-testid="dl-row-speed">{dn ? `↓ ${bytes(r.speed)}/s` : ''}{dn && upOn ? ' · ' : ''}{upOn ? `↑ ${bytes(r.up_speed)}/s` : ''}</span>{/if}</span>
-		{/if}
 	{:else if id === 'status'}
 		{#if hist}
 			{@const s = historyStatus(r, importOf.get(r.id))}
@@ -2014,9 +2012,6 @@
 	.st.held .dot { background: var(--wait); }
 	.st.bad .dot { background: var(--fail); }
 	.st.bad { color: var(--fail); }
-	.hic { display: flex; align-items: center; }
-	.ic { display: grid; place-items: center; flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--ok); color: var(--surface-1); font-size: 10px; font-weight: 700; }
-	.hic.bad .ic { background: var(--fail); }
 
 	.dline > .ph { display: none; }
 	/* A column narrowed past its content cuts it off cleanly instead of spilling into the next one. */

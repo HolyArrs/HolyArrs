@@ -33,7 +33,7 @@
 	<!-- Speed: Down and Up. -->
 	<span class="t" role="group" aria-label="Speed">
 		<span class="sg sp dn" data-testid="sb-down"><span class="sl">Down</span><span class="n" data-testid="dl-speed">{@render num(`↓ ${down}`)}</span></span>
-		{#if up}<span class="sg sp x k1" data-testid="sb-up"><span class="sl">Up</span><span class="n" data-testid="dl-up">{@render num(`↑ ${up}`)}</span></span>{/if}
+		{#if up}<span class="sg sp x" data-testid="sb-up"><span class="sl">Up</span><span class="n" data-testid="dl-up">{@render num(`↑ ${up}`)}</span></span>{/if}
 	</span>
 	<!-- Storage: free words over a thin free-space meter, today, time left. -->
 	<span class="t" role="group" aria-label="Storage">
@@ -74,8 +74,10 @@
 	.rv i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 	.rv:hover { background: color-mix(in srgb, var(--fail) 22%, transparent); }
 	.rv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.mr { display: inline-flex; flex: none; }
-	.mr :global(button) { width: 32px; height: 32px; min-width: 0; padding: 0; border-radius: 999px; }
+	/* The More button is a one-segment track, the same material as the pills beside it. */
+	.mr { display: inline-flex; flex: none; padding: 2px; border-radius: 999px; background: var(--surface-2); }
+	.mr :global(button) { width: 28px; height: 28px; min-width: 0; padding: 0; border: 0; border-radius: 999px; background: transparent; box-shadow: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out); }
+	.mr :global(button:hover), .mr :global(button[aria-expanded='true']) { background: color-mix(in srgb, var(--surface-3) 55%, transparent); color: var(--text); }
 	.mr :global(svg) { width: 15px; height: 15px; }
 
 	/* Numbers tick: the new value settles in from just below. */
