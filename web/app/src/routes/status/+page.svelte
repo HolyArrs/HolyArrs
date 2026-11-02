@@ -142,8 +142,8 @@
 		max-width: 1600px; margin: 0 auto; padding: 0 var(--gutter) 0; box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;
 	}
-	.sbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
-	h1 { margin: 0; font: 600 26px/1.15 var(--font-ui); color: var(--text); }
+	.sbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0 8px; }
+	h1 { margin: 0; font: 600 24px/1.15 var(--font-ui); color: var(--text); }
 	.head { margin: 2px 0 0; font-size: 14px; }
 	.head.good { color: var(--text-muted); }
 	.head.bad { color: var(--fail-text); font-weight: 500; }

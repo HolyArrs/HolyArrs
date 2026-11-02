@@ -124,7 +124,7 @@
 
 	/* the day lanes */
 	.day { display: flex; flex-direction: column; padding-left: 28px; border-left: 1px solid var(--line); }
-	.day h3 { margin: 0 0 8px; font: 600 13px/1.2 var(--font-ui); color: var(--text-muted); }
+	.day h3 { margin: 0 0 6px; font: 600 13px/1.2 var(--font-ui); color: var(--text-muted); }
 	.lanes { display: flex; flex-direction: column; }
 	.lane { display: grid; grid-template-columns: minmax(0, 118px) minmax(0, 1fr) 72px; align-items: center; gap: 10px; min-height: 22px; }
 	.ln { font-size: 12.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -134,7 +134,7 @@
 	.dot { position: absolute; top: 4px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: color-mix(in srgb, var(--text) 55%, transparent); }
 	.dot.live { background: var(--accent, var(--text)); }
 	.band { position: absolute; top: 4px; right: 0; height: 6px; border-radius: 3px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--text) 50%, transparent) 0 4px, transparent 4px 8px); }
-	.hours { display: flex; justify-content: space-between; margin: 6px 0 0 128px; padding-right: 82px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.hours { display: flex; justify-content: space-between; margin: 4px 0 0 128px; padding-right: 82px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 	@media (max-width: 1000px) {
 		.halves { grid-template-columns: minmax(0, 1fr); gap: 18px; }

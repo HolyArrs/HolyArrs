@@ -228,7 +228,7 @@
 </div>
 
 <style>
-	.secs { display: flex; flex-direction: column; gap: 22px; }
+	.secs { display: flex; flex-direction: column; gap: 18px; }
 	ul { list-style: none; margin: 0; padding: 0; }
 	.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
 	.seg { display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
@@ -292,15 +292,16 @@
 	.tbl th { padding: 8px 12px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--line); }
 	.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--text); vertical-align: middle; }
 	/* Jobs: the timeline over every job, both drawn tight so the tab fits a screen */
-	.tight { display: flex; flex-direction: column; gap: 14px; }
-	.tight :global(.st-plate) { padding: 12px 18px 14px; }
-	.tight :global(.st-plate > h2) { margin: 0 -18px 10px; padding: 0 18px 10px; font-size: 16px; }
-	.tight :global(.tl li) { min-height: 32px; }
+	.tight { display: flex; flex-direction: column; gap: 12px; }
+	.tight :global(.st-plate) { padding: 10px 18px 12px; }
+	.tight :global(.st-plate > h2) { margin: 0 -18px 8px; padding: 0 18px 8px; font-size: 15px; }
+	.tight :global(.tl li) { min-height: 28px; }
 	.tight :global(.tl .nm) { font-size: 13.5px; }
-	.tight :global(.tl .nowline) { min-height: 24px; }
+	.tight :global(.tl .nowline) { min-height: 22px; }
+	.tight :global(.lane) { min-height: 19px; }
 	.tbl.jobs { font-size: 13.5px; }
 	.tbl.jobs th { padding: 2px 10px 6px; font-size: 12.5px; }
-	.tbl.jobs td { padding: 0 10px; height: 34px; }
+	.tbl.jobs td { padding: 0 10px; height: 32px; }
 	.tbl.jobs tr:last-child td { border-bottom: 0; }
 	.tbl.jobs .lnk { min-height: 32px; }
 	.tbl .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
