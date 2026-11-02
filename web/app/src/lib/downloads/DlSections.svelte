@@ -1829,7 +1829,7 @@
 	@media (min-width: 641px) { .ch[data-col='proto'] .lbl, .pcell > .pm, .ch[data-col='poster'] .lbl, .dline > .post { transform: translateX(calc(var(--gap) / 2 - 1px)); } }
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	/* Source has no grip (fixed width) but keeps the divider line, at the same spot a grip draws it. */
-	.ch[data-col='proto']::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
+	.ch[data-col='proto']::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; width: 18px; height: 18px; object-fit: contain; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
@@ -1861,7 +1861,7 @@
 	.tg { position: relative; align-self: stretch; }
 	/* The row checkbox has its own slim column at the left, so it never covers the poster. */
 	.hk { position: relative; align-self: stretch; display: flex; align-items: center; }
-	.hk::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
+	.hk::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.hpk { width: 16px; height: 16px; margin: 0 0 0 4px; accent-color: var(--accent); cursor: pointer; }
 	.hpk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pk { position: absolute; left: 4px; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; accent-color: var(--accent); opacity: 0; cursor: pointer; z-index: 2; transition: opacity 120ms var(--ease-out); }
@@ -1964,7 +1964,8 @@
 	.sbar.desc { background: var(--fail); }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) - 6px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
+	/* Divider lines run the full height of the header, from its top to the border below, like a table. */
+	.grip { position: absolute; top: 0; bottom: 0; right: calc(-1 * var(--gap) - 6px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
 	.grip:focus-visible { outline: none; }
