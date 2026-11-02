@@ -342,3 +342,42 @@ export function agoShort(at: string, now = new Date()): string {
 	if (t.toDateString() === y.toDateString()) return 'Yesterday';
 	return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
 }
+
+/* The detail actions of the search looks (?acts=find|retry|view), side by side for comparing. */
+export type Acts = 'find' | 'retry' | 'view';
+export const actsList: { key: Acts; label: string }[] = [
+	{ key: 'find', label: 'Find' },
+	{ key: 'retry', label: 'Retry' },
+	{ key: 'view', label: 'View' }
+];
+/** actsOf reads ?acts= ('find' when missing or unknown). */
+export function actsOf(v: string | null): Acts {
+	return v === 'retry' || v === 'view' ? v : 'find';
+}
+const releaseKind = /^(release_chosen(_by_hand)?|download_\w+|import_\w+|adopted|file_replaced)$/;
+/** rowActs lists the buttons a row's details offer under a version, in order. */
+export function rowActs(row: HistoryRow, acts: Acts): ('retry' | 'find')[] {
+	if (acts === 'view') return [];
+	const kinds = row.events.map((e) => e.Kind);
+	const failed = kinds.some(isProblem) || row.steps.some((s) => s.state === 'failed');
+	const release = row.steps.length > 0 || kinds.some((k) => releaseKind.test(k));
+	const out: ('retry' | 'find')[] = [];
+	if (acts === 'retry' && failed) out.push('retry');
+	if (release) out.push('find');
+	return out;
+}
+/** A "Go to" link a row's details offer. */
+export interface GoLink {
+	key: 'title' | 'downloads' | 'requests';
+	label: string;
+	href: string;
+}
+/** rowLinks: the title page, Downloads (opening the download if known) and Requests for asks. */
+export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
+	const out: GoLink[] = [];
+	if (titleHref) out.push({ key: 'title', label: row.head.title_name ?? 'Title', href: titleHref });
+	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
+	out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
+	if (row.events.some((e) => /^ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: '/requests' });
+	return out;
+}

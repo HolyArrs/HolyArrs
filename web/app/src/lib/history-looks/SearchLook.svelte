@@ -11,7 +11,7 @@
 	import { goto } from '$app/navigation';
 	import Icon from '../Icon.svelte';
 	import LookDays from './LookDays.svelte';
-	import RowActions from './RowActions.svelte';
+	import DetailActions from './DetailActions.svelte';
 	import { api } from '../api.ts';
 	import { live } from '../live.svelte.ts';
 	import { dateRangeProblem, type HistoryFilter } from '../history.ts';
@@ -195,7 +195,7 @@
 {/if}
 
 <LookDays {filter} {kinds} {titleById} {empty} size="m" {wide} bind:panel panelId="history-search-details" {people} {me} {keep} compact>
-	{#snippet actions(row)}<RowActions {row} />{/snippet}
+	{#snippet actions(row)}<DetailActions {row} {titleById} />{/snippet}
 </LookDays>
 
 <style>

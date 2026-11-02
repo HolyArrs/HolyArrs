@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agoShort, dateLabel, isProblem, rowExtra, rowStep, dirQuery, lookOf, readDir, readSearch, searchChips, stepKinds, storyOf, textMatches, titleCards, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { actsOf, agoShort, rowActs, rowLinks, dateLabel, isProblem, rowExtra, rowStep, dirQuery, lookOf, readDir, readSearch, searchChips, stepKinds, storyOf, textMatches, titleCards, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
@@ -113,5 +113,31 @@ describe('search look rows', () => {
 		expect(agoShort(new Date(2026, 10, 2, 9, 0).toISOString(), now)).toBe('3h');
 		expect(agoShort(new Date(2026, 10, 1, 9, 0).toISOString(), now)).toBe('Yesterday');
 		expect(agoShort(new Date(2026, 9, 20).toISOString(), now)).toBe('Oct 20');
+	});
+});
+
+describe('history detail actions (?acts=)', () => {
+	const row = (...events: EventRecord[]): HistoryRow => ({ key: 'r' + events[0].ID, head: events[0], events, steps: [] });
+	it('reads the version, falling back to find', () => {
+		expect(actsOf('retry')).toBe('retry');
+		expect(actsOf('view')).toBe('view');
+		expect(actsOf('x')).toBe('find');
+		expect(actsOf(null)).toBe('find');
+	});
+	it('offers Find another on release events, Retry first on failures, nothing in view', () => {
+		const failed = row(ev('download_failed'));
+		expect(rowActs(failed, 'find')).toEqual(['find']);
+		expect(rowActs(failed, 'retry')).toEqual(['retry', 'find']);
+		expect(rowActs(failed, 'view')).toEqual([]);
+		expect(rowActs(row(ev('release_chosen')), 'retry')).toEqual(['find']);
+		expect(rowActs(row(ev('ask_made')), 'find')).toEqual([]);
+		expect(rowActs(row(ev('search_failed')), 'retry')).toEqual(isProblem('search_failed') ? ['retry'] : []);
+	});
+	it('links to the title, the download and Requests for asks', () => {
+		const links = rowLinks(row(ev('download_sent', { DownloadID: 7, title_name: 'Dune' })), '/title/movie/1');
+		expect(links.map((l) => l.href)).toEqual(['/title/movie/1', '/downloads?open=7']);
+		expect(links[0].label).toBe('Dune');
+		expect(rowLinks(row(ev('ask_made'))).map((l) => l.key)).toEqual(['downloads', 'requests']);
+		expect(rowLinks(row(ev('import_done', { Data: { download_id: 3 } })))[0].href).toBe('/downloads?open=3');
 	});
 });
