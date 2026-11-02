@@ -7,6 +7,7 @@
 	import { ago, bytes, dateTime } from '../format.ts';
 	import { until } from '../schedules.ts';
 	import { to } from '../paths.ts';
+	import PartCards from './PartCards.svelte';
 	import { groupCounts, needsAttention, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {
@@ -19,8 +20,8 @@
 		labelOf
 	}: {
 		groups: StatusGroup[];
-		tab: 'parts' | 'jobs';
-		ontab: (t: 'parts' | 'jobs') => void;
+		tab: string;
+		ontab: (t: string) => void;
 		canAct: boolean;
 		busy: string | null;
 		oncheck: (r: StatusRow) => void;
@@ -78,6 +79,8 @@
 		<button type="button" role="tab" aria-selected={tab === 'jobs'} onclick={() => ontab('jobs')}>
 			Jobs{#if jobs.some((j) => j.tone === 'fail')}<i class="badge" aria-label="has failures"></i>{/if}
 		</button>
+		<button type="button" role="tab" aria-selected={tab === 'storage'} onclick={() => ontab('storage')}>Storage</button>
+		<button type="button" role="tab" aria-selected={tab === 'about'} onclick={() => ontab('about')}>About</button>
 	</div>
 
 	{#if tab === 'parts'}
@@ -109,27 +112,10 @@
 
 		<section aria-labelledby="s-parts">
 			<h2 id="s-parts">Parts</h2>
-			<ul class="deck">
-				{#each parts as g (g.id)}
-					{@const c = groupCounts(g)}
-					<li class="card {c.bad ? 'fail' : c.ok ? 'ok' : 'idle'}">
-						<div class="ch">
-							<span class="ct">{g.label}</span>
-							<span class="ci" aria-hidden="true"><svg viewBox="0 0 20 20"><path d={icon[g.id] ?? icon.lists} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-						</div>
-						<p class="cv">{c.ok}<span>/{g.rows.length}</span></p>
-						<p class="cs">{cardLine(g)}</p>
-						<ul class="cl">
-							{#each g.rows.slice(0, 4) as r (r.key)}
-								<li data-testid="status-row" data-tone={r.tone} data-key={r.key}><i class="d {r.tone}" aria-hidden="true"></i><span>{r.name}</span></li>
-							{/each}
-							{#if g.rows.length > 4}<li class="more">+{g.rows.length - 4} more</li>{/if}
-						</ul>
-					</li>
-				{/each}
-			</ul>
+			<PartCards {parts} {icon} {cardLine} />
 		</section>
 
+	{:else if tab === 'storage'}
 		{#if disks.length || diskChecks.length}
 			<section aria-labelledby="s-disk">
 				<h2 id="s-disk">Disk space</h2>
@@ -157,6 +143,7 @@
 			</section>
 		{/if}
 
+	{:else if tab === 'about'}
 		<section aria-labelledby="s-about">
 			<h2 id="s-about">About</h2>
 			<dl class="kv">
@@ -197,6 +184,22 @@
 				</div>
 			</section>
 		{/if}
+
+		<section aria-labelledby="s-docs">
+			<h2 id="s-docs">Documentation</h2>
+			<dl class="kv">
+				<dt>Guides</dt><dd class="soon">Arrives with the public release</dd>
+				<dt>Questions</dt><dd class="soon">Arrives with the public release</dd>
+				<dt>Report a problem</dt><dd class="soon">Arrives with the public release</dd>
+			</dl>
+		</section>
+
+		<section aria-labelledby="s-support">
+			<h2 id="s-support">Support HolyArrs</h2>
+			<dl class="kv">
+				<dt>Donations</dt><dd class="soon">Arrives with the public release</dd>
+			</dl>
+		</section>
 	{:else}
 		<section aria-labelledby="s-jobs">
 			<h2 id="s-jobs">Jobs</h2>
@@ -219,12 +222,23 @@
 </div>
 
 <style>
-	.secs { display: flex; flex-direction: column; gap: 28px; }
+	.secs { display: flex; flex-direction: column; gap: 22px; }
+	/* Every section is a raised plate: lit top edge, soft drop, hairline divider under the title */
+	section {
+		position: relative; padding: 18px 20px 20px; border-radius: 20px;
+		border: 1px solid var(--line);
+		background: linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 94%, #fff 6%), color-mix(in srgb, var(--surface-1) 88%, transparent));
+		-webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.09), 0 1px 2px rgb(0 0 0 / 0.05), 0 18px 40px -26px rgb(0 0 0 / 0.40);
+	}
 	ul { list-style: none; margin: 0; padding: 0; }
 	h2 {
-		margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
-		font: 600 20px/1.2 var(--font-ui); color: var(--text);
+		display: flex; align-items: center; gap: 10px;
+		margin: 0 -20px 16px; padding: 0 20px 14px;
+		border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 rgb(255 255 255 / 0.05);
+		font: 600 18px/1.2 var(--font-ui); color: var(--text);
 	}
+	h2::before { content: ''; width: 4px; height: 16px; border-radius: 2px; background: linear-gradient(var(--accent, var(--text)), color-mix(in srgb, var(--accent, var(--text)) 30%, transparent)); }
 	.seg { display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
 	.seg button { position: relative; min-height: 40px; padding: 0 22px; border: 0; border-radius: var(--r-pill); background: none; color: var(--text-muted); font: 500 14px/1 var(--font-ui); cursor: pointer; }
 	.seg button[aria-selected='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
@@ -232,7 +246,7 @@
 	.badge { position: absolute; top: 8px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
 
 	/* Health: slim, one line per problem */
-	.health { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface-1); }
+	.health { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: color-mix(in srgb, var(--fail) 4%, var(--surface-1)); box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.06); }
 	.hrow { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; min-height: 48px; padding: 6px 14px; border-top: 1px solid var(--line); }
 	.hrow:first-child { border-top: 0; }
 	.hico { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--fail); color: #fff; font: 700 12px/1 var(--font-ui); }
@@ -252,28 +266,6 @@
 	.ok-line { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 14.5px; color: var(--text-muted); }
 	.okdot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
 
-	/* Parts deck, after ChannelWatch's metric cards */
-	.deck { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 14px; }
-	.card {
-		--tint: var(--ok);
-		position: relative; display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 16px;
-		border: 1px solid color-mix(in srgb, var(--tint) 28%, var(--line));
-		background: linear-gradient(145deg, color-mix(in srgb, var(--tint) 12%, var(--surface-1)), var(--surface-1) 70%);
-	}
-	.card.fail { --tint: var(--fail); }
-	.card.idle { --tint: var(--text-faint); }
-	.ch { display: flex; align-items: center; justify-content: space-between; }
-	.ct { font-size: 13.5px; font-weight: 500; color: var(--text); }
-	.ci { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--tint) 18%, transparent); color: var(--tint); }
-	.ci svg { width: 16px; height: 16px; }
-	.cv { margin: 6px 0 0; font: 700 32px/1 var(--font-ui); color: var(--text); font-variant-numeric: tabular-nums; }
-	.cv span { font-size: 17px; font-weight: 500; color: var(--text-muted); }
-	.cs { margin: 0; font-size: 12.5px; color: var(--text-muted); }
-	.card.fail .cs { color: var(--fail-text); }
-	.cl { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--tint) 18%, var(--line)); }
-	.cl li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); min-width: 0; }
-	.cl li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.cl .more { color: var(--text-muted); padding-left: 15px; }
 	.d { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--info); }
 	.d.ok { background: var(--ok); }
 	.d.wait { background: var(--wait); }
@@ -299,6 +291,7 @@
 	.kv dt, .kv dd { margin: 0; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 	.kv dt { font-weight: 600; color: var(--text-muted); }
 	.kv dd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--text); }
+	.soon { color: var(--text-muted); font-style: italic; }
 	.pill { padding: 3px 9px; border-radius: var(--r-pill); font-size: 12px; font-weight: 600; }
 	.pill.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok-text, var(--text)); }
 	.pill.warn { background: color-mix(in srgb, var(--wait) 22%, transparent); color: var(--text); }
@@ -323,6 +316,10 @@
 		.card { padding: 12px; }
 		.cl { display: none; }
 		.kv { grid-template-columns: 130px minmax(0, 1fr); }
+		section { padding: 14px 14px 16px; border-radius: 16px; }
+		h2 { margin: 0 -14px 12px; padding: 0 14px 12px; }
+		.seg { align-self: stretch; overflow-x: auto; }
+		.seg button { flex: 1; padding: 0 12px; }
 		.tbl.jobs thead { display: none; }
 		.tbl.jobs tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 8px 0; border-bottom: 1px solid var(--line); }
 		.tbl.jobs td { border: 0; padding: 2px 4px; font-size: 13px; color: var(--text-muted); }

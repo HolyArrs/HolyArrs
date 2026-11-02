@@ -19,7 +19,7 @@
 	import { buildRows, groupLine, groupOrder, groupRows, headline, lookOf, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const look = $derived(lookOf(page.url.searchParams.get('look')));
-	const tab = $derived(page.url.searchParams.get('tab') === 'jobs' ? 'jobs' : 'parts');
+	const tab = $derived(['jobs', 'storage', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 
 	let input = $state<StatusInput | null>(null);
 	let error = $state('');
@@ -95,7 +95,7 @@
 		}
 	}
 
-	function setTab(t: 'parts' | 'jobs') {
+	function setTab(t: string) {
 		const u = new URL(page.url.href);
 		u.searchParams.set('tab', t);
 		void goto(u.pathname + u.search);
@@ -128,6 +128,7 @@
 	</ul>
 {/snippet}
 
+{#if look === 'f'}<div class="backdrop" aria-hidden="true"></div>{/if}
 <div class="status" data-testid="status-page" data-look={look}>
 	<header class="sbar">
 		<div class="title">
@@ -206,6 +207,21 @@
 <LookPills />
 
 <style>
+	/* Sections look: soft colour glows, a faint dot grid and grain behind the plates */
+	.backdrop {
+		position: fixed; inset: 0; z-index: -1; pointer-events: none;
+		background:
+			radial-gradient(60% 50% at 85% 0%, color-mix(in srgb, var(--accent, #6b8cff) 14%, transparent), transparent 70%),
+			radial-gradient(50% 45% at 0% 100%, color-mix(in srgb, var(--ok) 10%, transparent), transparent 70%),
+			radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px,
+			var(--bg, var(--surface-0, var(--surface-1)));
+	}
+	.backdrop::after {
+		content: ''; position: absolute; inset: 0; opacity: 0.5;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .10 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+		-webkit-mask-image: linear-gradient(#000, transparent 85%); mask-image: linear-gradient(#000, transparent 85%);
+	}
+	.status[data-look='f'] .sbar { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 0; }
 	.status[data-look='d'], .status[data-look='f'] { max-width: 1600px; }
 	.status {
 		max-width: 1080px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
