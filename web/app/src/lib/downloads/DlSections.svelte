@@ -451,11 +451,9 @@
 			case 'proto': return protocolOf(r);
 			case 'progress': return r.progress;
 			case 'status': return statusWord(r);
-			case 'time': return r.active && r.eta ? r.eta : undefined;
 			case 'size': return r.size || undefined;
 			case 'quality': return quality(r.name);
 			case 'added': return time(r.started_at);
-			case 'completed': return time(r.finished_at);
 			case 'swarm': return tor ? (r.seeds ?? 0) * 1e6 + (r.peers ?? 0) : undefined;
 			case 'ratio': return tor && r.ratio != null ? r.ratio : undefined;
 			case 'queue': return r.queue_pos || undefined;
@@ -964,15 +962,15 @@
 	const customised = $derived(layout.hidden.length !== COLUMNS.filter((c) => !c.on).length || COLUMNS.some((c) => !c.on && !layout.hidden.includes(c.id)) || layout.order.some((id, i) => id !== IDS[i]));
 	// One layout everywhere: wide screens no longer add columns by themselves.
 	const WIDE: ColId[] = [];
-	// Done has its own default columns: finished rows have no speed, time left or bar, but a finish time.
-	const DONE_SET: ColId[] = ['poster', 'kind', 'title', 'requested', 'proto', 'status', 'size', 'completed'];
+	// Done has its own default columns: finished rows have no speed, but a date.
+	const DONE_SET: ColId[] = ['poster', 'kind', 'title', 'proto', 'status', 'size', 'added', 'requested'];
 	const visAll = $derived.by(() => {
 		if (isDone && !customised) return DONE_SET.filter((id) => !COL[id].missing);
 		const v = visible(layout);
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, time: 76, size: 140, swarm: 110, ratio: 56, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, size: 90, swarm: 110, ratio: 56, added: 90, status: 110 };
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
 	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : Math.max(layout.widths[id], heads[id] ?? 0));
@@ -1003,7 +1001,7 @@
 		save();
 	}
 	/** A phone shows a fixed card (title, bar, status, time) whatever is picked. */
-	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'time', 'size'];
+	const PHONE: ColId[] = ['poster', 'title', 'progress', 'status', 'size'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
 	const FIXED = 20 + 32;
 	let room = $state(0);
@@ -1367,7 +1365,7 @@
 		<span class="pcell" class:ph class:named={srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tp">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}{#if r.outside && !r.linked}<span class="ver" data-testid="dl-outside">Not from HolyArrs</span>{/if}</span>
+			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tp">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
 			<span class="rel" title={r.name}>{sub2(r)}</span>
 			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
 		</span>
@@ -1379,26 +1377,24 @@
 			{@const tone = hs ? (hs.bad ? 'bad' : 'done') : stageOf(r) === 'paused' ? 'paused' : barTone(r)}
 			{@const dn = (r.speed ?? 0) >= 1024}
 			{@const upOn = (r.up_speed ?? 0) >= 1024}
-			<!-- Speed sits under the bar: SABnzbd and NZBGet only give a whole-client speed, so it no longer needs its own column. -->
-			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn)}<span class="spd" data-testid="dl-row-speed">{dn ? `↓ ${bytes(r.speed)}/s` : ''}{dn && upOn ? ' · ' : ''}{upOn ? `↑ ${bytes(r.up_speed)}/s` : ''}</span>{/if}</span>
+			{@const eta = r.active && r.eta ? duration(r.eta) : ''}
+			<!-- Speed and time left sit under the bar: one line of "how it is going" for the moving rows, nothing for the rest. -->
+			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn || eta)}<span class="spd" data-testid="dl-row-speed">{[dn ? `↓ ${bytes(r.speed)}/s` : '', upOn ? `↑ ${bytes(r.up_speed)}/s` : '', eta ? `${eta} left` : ''].filter(Boolean).join(' · ')}</span>{/if}</span>
 	{:else if id === 'status'}
 		{#if hist}
 			{@const s = historyStatus(r, importOf.get(r.id))}
-			<span class="st" class:ph class:bad={s.bad} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx">{s.text}</span></span>
+			{@const cut = s.text.indexOf(': ')}
+			{@const reason = cut > 0 ? s.text.slice(cut + 2) : ''}
+			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{reason}</span>{/if}</span></span>
 		{:else}
 			{@const t = barTone(r)}
 			{@const more = statusDetail(r, importOf.get(r.id)) || statusHint(r)}
 			{@const why = problem(r)}
-			<span class="st {t}" class:ph data-col="status" title={[statusWord(r), why?.text, more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx">{statusWord(r)}{#if why}<span class="why {why.tone}" data-testid="dl-why"> · {why.text}</span>{/if}</span></span>
-		{/if}
-	{:else if id === 'time'}
-		{#if hist}
-			<span class="num" class:ph data-col="time">{dash}</span>
-		{:else}
-			<span class="num" class:ph data-col="time">{r.active && r.eta ? duration(r.eta) : dash}</span>
+			<!-- The word on its own line, the reason under it: the dot and the word carry the tone, the reason stays quiet. -->
+			<span class="st {t}" class:ph class:two={!!why} data-col="status" title={[statusWord(r), why?.text, more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{/if}</span></span>
 		{/if}
 	{:else if id === 'size'}
-		<span class="num" class:ph data-col="size">{hist ? (r.size ? bytes(r.size) : dash) : sizeLine(r) || dash}</span>
+		<span class="num" class:ph data-col="size">{r.size ? bytes(r.size) : dash}</span>
 	{:else if id === 'quality'}
 		<span class="txt" class:ph data-col="quality" title={r.name}>{quality(r.name) || dash}</span>
 	{:else if id === 'added'}
@@ -1407,14 +1403,15 @@
 		<span class="num" class:ph data-col="swarm" title="Seeds · peers: connected (in the swarm)">{#if r.protocol !== 'torrent'}{dash}{:else}{@render swarmPart(r.seeds, r.seeds_total, r)}<span class="swt">&nbsp;·&nbsp;</span>{@render swarmPart(r.peers, r.peers_total, r)}{/if}</span>
 	{:else if id === 'ratio'}
 		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null ? r.ratio.toFixed(2) : dash}</span>
-	{:else if id === 'completed'}
-		<span class="num" class:ph data-col="completed" title={r.finished_at ?? ''}>{r.finished_at ? ago(r.finished_at) : dash}</span>
 	{:else if id === 'queue'}
 		<span class="num" class:ph data-col="queue">{r.queue_pos || dash}</span>
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
 	{:else if id === 'requested'}
-		<span class="txt" class:ph data-col="requested" title={r.requested_by ?? ''}>{r.requested_by || dash}</span>
+		<!-- Who asked: a person, HolyArrs itself (a wanted title it grabbed on its own), or Outside (added straight in the client). -->
+		{@const person = !r.outside && r.requested_by ? r.requested_by : ''}
+		{@const who = r.outside ? 'Outside' : person || (session.can('manage_library') ? 'HolyArrs' : '')}
+		<span class="txt rq" class:ph class:soft={!person} data-col="requested" title={who}>{#if person}<i class="av" aria-hidden="true">{person.slice(0, 1).toUpperCase()}</i>{/if}{who || dash}</span>
 	{:else if id === 'source'}
 		<span class="txt" class:ph data-col="source" title={r.source_name ?? ''}>{#if r.source_name && r.source_id && session.can('settings')}<a href="/settings/sources/{r.source_id}" onclick={(e) => e.stopPropagation()}>{r.source_name}</a>{:else}{r.source_name || dash}{/if}</span>
 	{:else if id === 'category'}
@@ -1459,7 +1456,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Source"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -2003,9 +2000,16 @@
 	.bl { font-weight: 600; text-shadow: 0 0 3px var(--surface-1); }
 
 	.st { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); }
-	.st .tx { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.st .why.fail { color: var(--fail); }
-	.st .why.wait { color: var(--wait); }
+	.st .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+	.st .sw, .st .why { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.st .why { color: var(--text-muted); font: var(--t-caption); }
+	/* Two lines: the dot sits on the first. */
+	.st.two { align-items: flex-start; }
+	.st.two .dot { margin-top: 4px; }
+	/* Requested by: a person with their initial; HolyArrs itself and Outside stay quiet. */
+	.rq { display: flex; align-items: center; gap: 6px; }
+	.rq.soft { color: var(--text-muted); }
+	.rq .av { display: grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--text); color: var(--bg); font: 600 10px / 1 var(--font-ui); font-style: normal; }
 	.st .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 	.st.paused .dot { background: var(--text-muted); }
 	.st.queued .dot { background: var(--info); }

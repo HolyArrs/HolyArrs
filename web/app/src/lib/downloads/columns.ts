@@ -9,14 +9,12 @@ export type ColId =
 	| 'proto'
 	| 'progress'
 	| 'status'
-	| 'time'
 	| 'size'
 	| 'quality'
 	| 'added'
 	| 'age'
 	| 'swarm'
 	| 'ratio'
-	| 'completed'
 	| 'queue'
 	| 'tracker'
 	| 'requested'
@@ -38,22 +36,23 @@ export interface ColDef {
 }
 
 export const COLUMNS: ColDef[] = [
+	// Eight on by default, each filled on nearly every row. Time left lives under the Progress bar;
+	// the finished date lives in the pane's Dates.
 	{ id: 'poster', label: 'Poster', on: true, width: 52 },
 	{ id: 'kind', label: 'Type', on: true, width: 84 },
 	{ id: 'title', label: 'Title', on: true, width: 310 },
-	{ id: 'requested', label: 'Requested by', on: true, width: 120 },
-	{ id: 'proto', label: 'Source', on: true, width: 60 },
-	{ id: 'progress', label: 'Progress', on: true, width: 66 },
-	{ id: 'status', label: 'Status', on: true, width: 130 },
-	{ id: 'time', label: 'Time left', on: true, width: 80, num: true },
-	{ id: 'size', label: 'Size', on: true, width: 130, num: true },
+	{ id: 'proto', label: 'Downloader', on: true, width: 60 },
+	{ id: 'progress', label: 'Progress', on: true, width: 120 },
+	{ id: 'status', label: 'Status', on: true, width: 150 },
+	{ id: 'size', label: 'Size', on: true, width: 100, num: true },
+	{ id: 'requested', label: 'Requested by', on: true, width: 130 },
 	{ id: 'quality', label: 'Quality', on: false, width: 90 },
 	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
-	{ id: 'age', label: 'Age', on: false, width: 70, num: true },
+	// How old the Usenet post is (retention), not when it was added.
+	{ id: 'age', label: 'Post age', on: false, width: 80, num: true },
 	// Seeds and peers in one cell: connected (in the swarm) for each.
 	{ id: 'swarm', label: 'Swarm', on: false, width: 130, num: true, torrent: true },
 	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true },
-	{ id: 'completed', label: 'Completed', on: false, width: 100, num: true },
 	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true },
 	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
 	{ id: 'source', label: 'Found on', on: false, width: 120 },
@@ -133,7 +132,7 @@ export function load(raw: string | null, oldRaw: string | null): Layout {
 	try {
 		const o = oldRaw ? JSON.parse(oldRaw) : null;
 		if (o && typeof o === 'object') {
-			const map: [string, ColId][] = [['title', 'title'], ['bar', 'progress'], ['st', 'status'], ['size', 'size'], ['time', 'time']];
+			const map: [string, ColId][] = [['title', 'title'], ['bar', 'progress'], ['st', 'status'], ['size', 'size']];
 			for (const [from, to] of map) d.widths[to] = width(o[from], d.widths[to]);
 		}
 	} catch {

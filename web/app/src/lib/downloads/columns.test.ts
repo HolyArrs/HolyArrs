@@ -3,9 +3,10 @@ import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quali
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
-	it('defaults show nine columns in order', () => {
-		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'requested', 'proto', 'progress', 'status', 'time', 'size']);
-		expect(defaults().widths).toMatchObject({ title: 310, progress: 66, status: 130, size: 130, time: 80, quality: 90 });
+	it('defaults show eight columns in order', () => {
+		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'size', 'requested']);
+		expect(defaults().widths).toMatchObject({ title: 310, progress: 120, status: 150, size: 100, quality: 90 });
+		expect(COLUMNS.find((c) => c.id === 'proto')?.label).toBe('Downloader');
 	});
 	it('offers every column now that the Downloaders send them all', () => {
 		const l = defaults();
@@ -34,14 +35,14 @@ describe('columns', () => {
 		l.hidden = toggle(l, 'size');
 		l.widths.title = 400;
 		const back = load(dump(l), null);
-		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'requested', 'proto', 'progress', 'time']);
+		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'requested']);
 		expect(back.widths.title).toBe(400);
 		back.hidden = toggle(back, 'size');
 		expect(visible(back)).toContain('size');
 	});
 	it('carries over the first saved shape (widths only)', () => {
 		const l = load(null, JSON.stringify({ title: 500, bar: 90, st: 140, size: 120, time: 70 }));
-		expect(l.widths).toMatchObject({ title: 500, progress: 90, status: 140, size: 120, time: 70, quality: 90 });
+		expect(l.widths).toMatchObject({ title: 500, progress: 90, status: 140, size: 120, quality: 90 });
 		expect(visible(l)).toEqual(visible(defaults()));
 	});
 	it('ignores junk and unknown versions', () => {
@@ -52,7 +53,7 @@ describe('columns', () => {
 		const n = normalize({ order: ['size', 'nope', 'title'] as never, hidden: [], widths: { title: 99999 } as never });
 		expect(n.order.length).toBe(IDS.length);
 		expect(n.order.indexOf('size')).toBeLessThan(n.order.indexOf('title'));
-		expect(n.order.indexOf('requested')).toBe(n.order.indexOf('title') + 1);
+		expect(n.order.indexOf('proto')).toBe(n.order.indexOf('title') + 1);
 		expect(n.widths.title).toBe(3000);
 	});
 	it('move and moveVisible', () => {
@@ -103,15 +104,15 @@ describe('sorting', () => {
 		expect(l.sort).toEqual({ id: 'ratio', desc: true });
 		expect(load(JSON.stringify({ v: VERSION, sort: { id: 'nope' } }), null).sort).toBeUndefined();
 		const d = defaults();
-		expect(d.hidden).toEqual(expect.arrayContaining(['swarm', 'completed', 'queue', 'tracker', 'added', 'ratio', 'quality']));
+		expect(d.hidden).toEqual(expect.arrayContaining(['swarm', 'queue', 'tracker', 'added', 'ratio', 'quality']));
 	});
 });
 
 describe('columns added later', () => {
 	it('start hidden in an older saved layout, which keeps its own choices', () => {
-		const old = JSON.stringify({ v: VERSION, order: IDS.filter((id) => !['swarm', 'completed', 'queue', 'tracker'].includes(id)), hidden: ['added'], widths: {} });
+		const old = JSON.stringify({ v: VERSION, order: IDS.filter((id) => !['swarm', 'queue', 'tracker'].includes(id)), hidden: ['added'], widths: {} });
 		const l = load(old, null);
-		expect(l.hidden).toEqual(expect.arrayContaining(['swarm', 'completed', 'queue', 'tracker', 'added']));
+		expect(l.hidden).toEqual(expect.arrayContaining(['swarm', 'queue', 'tracker', 'added']));
 		expect(visible(l)).toContain('ratio');
 	});
 });
