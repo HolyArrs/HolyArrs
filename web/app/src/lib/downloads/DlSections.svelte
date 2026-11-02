@@ -1746,7 +1746,7 @@
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? `height: ${paneH}px; --ph: ${paneH}px` : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="phd">
 			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
-			<p class="xt pt"><b>{who(r)}</b><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></p>
+			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: det.id === r.id ? det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: det.id === r.id ? det.detail?.torrent?.seeding_time : undefined, ratio: det.id === r.id ? det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></span></p>
 			{@render tabStrip(r)}
 			{#if paneOpen}
 			<div class="pact" data-testid="dl-pane-actions">
@@ -2546,5 +2546,54 @@
 	@media (max-width: 640px) {
 		.pb { grid-template-columns: minmax(0, 1fr); }
 		.pb .big { display: none; }
+	}
+/* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
+	.listbox, .tw, .pb, .tblw, .lg, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
+	.listbox:hover, .tw:hover, .pb:hover, .tblw:hover, .lg:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
+	.listbox::-webkit-scrollbar, .tw::-webkit-scrollbar, .pb::-webkit-scrollbar, .tblw::-webkit-scrollbar, .lg::-webkit-scrollbar, .picker::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
+	.listbox::-webkit-scrollbar-track, .tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track, .tblw::-webkit-scrollbar-track, .lg::-webkit-scrollbar-track, .picker::-webkit-scrollbar-track, .listbox::-webkit-scrollbar-corner, .tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner, .tblw::-webkit-scrollbar-corner { background: transparent; }
+	.listbox::-webkit-scrollbar-button, .tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button, .tblw::-webkit-scrollbar-button, .lg::-webkit-scrollbar-button, .picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+	.listbox::-webkit-scrollbar-thumb, .tw::-webkit-scrollbar-thumb, .pb::-webkit-scrollbar-thumb, .tblw::-webkit-scrollbar-thumb, .lg::-webkit-scrollbar-thumb, .picker::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 8px; background: color-mix(in srgb, var(--text) 24%, transparent) padding-box; }
+	.listbox::-webkit-scrollbar-thumb:hover, .tw::-webkit-scrollbar-thumb:hover, .pb::-webkit-scrollbar-thumb:hover, .tblw::-webkit-scrollbar-thumb:hover, .lg::-webkit-scrollbar-thumb:hover, .picker::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
+
+	/* Detail panel in the toolbar's language: a glass card, pill tabs, a status dot, cards inside. */
+	.hs { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); }
+	.hdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+	.hdot.paused { background: var(--text-muted); }
+	.hdot.queued { background: var(--info); }
+	.hdot.held { background: var(--wait); }
+	.hdot.bad { background: var(--fail); }
+	.pt { gap: 3px; padding: 8px 0; }
+	.pt b { font: 600 17px / 1.25 var(--font-ui); letter-spacing: -0.01em; }
+	.phd .xtabs { align-self: center; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
+	.phd .xtab { min-height: 32px; height: auto; padding: 0 14px; border-radius: 999px; color: var(--text-muted); transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+	.phd .xtab:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+	.phd .xtab.on, .phd .xtab.on:hover { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); }
+	.phd .xtab:focus-visible { border-radius: 999px; box-shadow: var(--focus-ring); }
+	.phd .ink { display: none; }
+	.pb .big { width: 120px; height: 180px; border: 1px solid var(--line); box-shadow: 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.pb .big.square { height: 120px; }
+	.facts { width: auto; justify-self: stretch; padding: 2px 0; border-color: var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.fcols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); overflow: hidden; }
+	.fcol + .fcol { border-left: 0; }
+	.fcol { border-right: 1px solid var(--line); margin-right: -1px; }
+	.fcap { padding: 12px 16px 4px; }
+	.hlink { margin: 10px 16px 2px; font-weight: 600; }
+	.pb .lgw, .pb .tblw, .pb .quiet0 { border-radius: 14px; border-color: var(--line); }
+	@media (min-width: 641px) {
+		.dpane { margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); overflow: hidden; }
+		.pb { padding: 14px var(--dl-gutter) 16px; }
+	}
+	@media (min-width: 1800px) { .pb .big { width: 140px; height: 210px; } .pb .big.square { height: 140px; } }
+	@media (max-width: 767px) {
+		.pb .big { width: 56px; height: 84px; }
+		.pb .big.square { height: 56px; }
+		.fcol { border-right: 0; margin-right: 0; }
+		.fcol + .fcol { border-top: 1px solid var(--line); }
+	}
+	@media (max-width: 640px) {
+		.pb .big { display: none; }
+		.phd .xtabs { max-width: 100%; }
+		.phd .xtab { padding: 0 12px; }
 	}
 </style>
