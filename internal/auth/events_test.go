@@ -73,3 +73,39 @@ func TestFailedSignInUnknownNameAndCollapse(t *testing.T) {
 		t.Fatalf("new row %+v", es[0])
 	}
 }
+
+// Collapsed rows are per address and name, keep the first attempt's time
+// (last_at holds the newest) and the 10 minutes run from the first attempt.
+func TestFailedSignInCollapseWindow(t *testing.T) {
+	f := gated(t, Options{})
+	ownerOf(t, f)
+	c := client(t)
+	fail := func(name string) {
+		call(t, c, "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"`+name+`","password":"wrong one"}`, nil)
+	}
+	first := f.clock.now().UTC()
+	fail("luis")
+	fail("nobody-here") // other name, same address: its own row
+	f.clock.add(6 * time.Minute)
+	fail("luis") // inside the window: counted
+	f.clock.add(6 * time.Minute)
+	fail("luis") // 12 minutes after the first: a new row, though only 6 after the last
+	es, _, err := f.s.Events(context.Background(), store.EventFilter{Kinds: []string{"sign_in_failed"}})
+	if err != nil || len(es) != 3 {
+		t.Fatalf("rows %d %v", len(es), err)
+	}
+	var luis []map[string]any
+	for _, e := range es {
+		if e.Data["name"] == "luis" {
+			luis = append(luis, e.Data)
+		}
+	}
+	old := es[len(es)-1]
+	if len(luis) != 2 || old.Data["name"] != "luis" || old.Data["count"] != float64(2) || !old.At.Equal(first) ||
+		old.Data["last_at"] != store.FormatTime(first.Add(6*time.Minute)) {
+		t.Fatalf("first luis row %+v at %v", old.Data, old.At)
+	}
+	if es[0].Data["name"] != "luis" || es[0].Data["count"] != float64(1) {
+		t.Fatalf("new window row %+v", es[0].Data)
+	}
+}
