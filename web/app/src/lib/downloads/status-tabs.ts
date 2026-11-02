@@ -224,6 +224,7 @@ export function shortReason(s: string): string {
 	return s
 		.replace(/\s*\([A-Z_]+\/[A-Z_]+\)\s*$/, '')
 		.replace(/ in (NZBGet|SABnzbd)\b/, '')
+		.replace(/ were missing$/, ' missing')
 		.trim();
 }
 

@@ -146,7 +146,7 @@ describe('short reason', () => {
 	it('drops the status code and the Downloader name', () => {
 		expect(shortReason('Deleted in NZBGet by hand (DELETED/MANUAL)')).toBe('Deleted by hand');
 		expect(shortReason('Marked bad in NZBGet (FAILURE/BAD)')).toBe('Marked bad');
-		expect(shortReason('136 articles were missing')).toBe('136 articles were missing');
+		expect(shortReason('136 articles were missing')).toBe('136 articles missing');
 	});
 });
 describe('step line', () => {
