@@ -17,9 +17,9 @@ export const looks: { key: Look; label: string }[] = [
 	{ key: 'plain', label: 'Search' }
 ];
 
-/** lookOf reads ?look= (today's look when missing or unknown). */
+/** lookOf reads ?look= (the chosen search look when missing or unknown). */
 export function lookOf(v: string | null): Look {
-	return looks.some((l) => l.key === v) ? (v as Look) : 'now';
+	return looks.some((l) => l.key === v) ? (v as Look) : 'plain';
 }
 
 /** Who made an Event happen, as the Filter offers it. */

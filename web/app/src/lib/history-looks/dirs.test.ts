@@ -8,8 +8,8 @@ const ev = (Kind: string, extra: Partial<EventRecord> = {}): EventRecord => ({ I
 describe('history preview looks', () => {
 	it('reads the look, falling back to today', () => {
 		expect(lookOf('table')).toBe('table');
-		expect(lookOf('nope')).toBe('now');
-		expect(lookOf(null)).toBe('now');
+		expect(lookOf('nope')).toBe('plain');
+		expect(lookOf(null)).toBe('plain');
 	});
 
 	it('keeps ?look= and drops empty values when the address changes', () => {
