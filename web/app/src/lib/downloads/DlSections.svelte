@@ -1925,7 +1925,8 @@
 	.txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
 	.num { text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-	.chead { position: relative; height: 28px; border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
+	/* The header row is exactly 28px (the ⋯ button may be taller), so every divider line stays inside it, clear of the border below. */
+	.chead { grid-template-rows: minmax(0, 1fr); position: relative; height: 28px; border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.chead + .dlrows { border-top: 0; }
 	.chead:hover { background: none; }
 	.ch { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
