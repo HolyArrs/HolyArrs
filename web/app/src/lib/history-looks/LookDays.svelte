@@ -227,6 +227,8 @@
 						{/each}
 					</ol>
 				</section>
+			{:else}
+				<p class="none miss" data-testid="history-no-match">No Events on this page match. Show more to look further back.</p>
 			{/each}
 		</div>
 
@@ -395,6 +397,7 @@
 	.also time { color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.pact { display: flex; flex-wrap: wrap; gap: 8px; }
 	.none { color: var(--text-faint); font: var(--t-footnote); }
+	.miss { margin: 0; padding: 24px 0; color: var(--text-muted); text-align: center; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 	@media (max-width: 1279px) { .split.wide.on { --pane: 340px; } }
