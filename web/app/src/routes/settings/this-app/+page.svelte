@@ -27,9 +27,16 @@
 	let signinArt = $state(false);
 	// Picture cache size (GB): covers and posters kept on this server.
 	let cacheGB = $state(5);
+	// History keep times in days (0 keeps forever).
+	let keepRoutine = $state(30);
+	let keepOther = $state(0);
+	const keepChoices = [0, 7, 14, 30, 90, 180, 365];
+	const keepWord = (d: number) => (d === 0 ? 'Forever' : d === 365 ? '1 year' : `${d} days`);
 	async function loadAutoplay() {
 		try {
-			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean; artwork_cache_gb?: number }>('/settings/ui');
+			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean; artwork_cache_gb?: number; history_routine_days?: number; history_other_days?: number }>('/settings/ui');
+			keepRoutine = s.history_routine_days ?? 30;
+			keepOther = s.history_other_days ?? 0;
 			cacheGB = s.artwork_cache_gb ?? 5;
 			autoplay = s.autoplay_trailers;
 			keepYTDLP = s.keep_ytdlp_updated !== false;
@@ -55,6 +62,20 @@
 		try {
 			cacheGB = (await api.put<{ artwork_cache_gb: number }>('/settings/ui', { artwork_cache_gb: gb })).artwork_cache_gb;
 			toasts.push(`Pictures may use up to ${cacheGB} GB`, 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+			await loadAutoplay();
+		} finally {
+			autoplayBusy = false;
+		}
+	}
+	async function saveKeep(field: 'history_routine_days' | 'history_other_days', days: number) {
+		autoplayBusy = true;
+		try {
+			const s = await api.put<{ history_routine_days: number; history_other_days: number }>('/settings/ui', { [field]: days });
+			keepRoutine = s.history_routine_days;
+			keepOther = s.history_other_days;
+			toasts.push('History keep time saved', 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 			await loadAutoplay();
@@ -271,6 +292,24 @@
 					{#each [1, 2, 5, 10, 20] as gb (gb)}<option value={gb}>{gb} GB</option>{/each}
 				</select>
 				<span><b>Picture storage</b><br /><span class="hint">Posters, covers and photos are kept on this server so pages open with their pictures. Past this size the pictures seen longest ago are removed; they come back when a page needs them.</span></span>
+			</label>
+		</section>
+	{/if}
+
+	{#if autoplay !== null}
+		<section class="card" id="history-keep-card" aria-labelledby="h-history-keep" data-testid="history-keep-setting">
+			<div class="card-head"><h2 id="h-history-keep" class="h2">History</h2></div>
+			<label class="checkline">
+				<select aria-label="Keep routine work" value={keepRoutine} disabled={autoplayBusy} onchange={(e) => saveKeep('history_routine_days', Number(e.currentTarget.value))}>
+					{#each keepChoices.includes(keepRoutine) ? keepChoices : [...keepChoices, keepRoutine] as d (d)}<option value={d}>{keepWord(d)}</option>{/each}
+				</select>
+				<span><b>Keep routine work</b><br /><span class="hint">Searches, feed checks, refreshed details and folder scans. Older ones are removed once a day.</span></span>
+			</label>
+			<label class="checkline">
+				<select aria-label="Keep everything else" value={keepOther} disabled={autoplayBusy} onchange={(e) => saveKeep('history_other_days', Number(e.currentTarget.value))}>
+					{#each keepChoices.includes(keepOther) ? keepChoices : [...keepChoices, keepOther] as d (d)}<option value={d}>{keepWord(d)}</option>{/each}
+				</select>
+				<span><b>Keep everything else</b><br /><span class="hint">Downloads, imports, upgrades, problems, sign-ins and settings changes.</span></span>
 			</label>
 		</section>
 	{/if}

@@ -628,6 +628,7 @@ var Loops = map[string]Owner{
 var JobKinds = map[string]Owner{
 	"health_check":          Core,
 	"check_library_folders": Core,
+	"clean_history":         Core,
 	// A move checks each part itself (a part that is off is left out).
 	"migrate_move": Core,
 	"migrate_undo": Core,

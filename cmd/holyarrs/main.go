@@ -542,6 +542,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return &http.Client{Transport: t, Timeout: 15 * time.Second}
 	}
 	he.Register(q)
+	// History clean-up: once a day, old Events past their keep time.
+	q.Handle(store.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
+		n, err := s.PruneEvents(ctx, store.ReadHistoryKeep(ctx, s.Read()), time.Now().UTC())
+		r.SetResult(map[string]any{"removed": n})
+		return err
+	})
 	q.ProbeSchedule(health.KindCheck, he.Probe)
 	// Subtitles: searches after imports and better copies, two schedules.
 	subs := &subtitles.Service{Store: s, Live: hub, Vault: vault}

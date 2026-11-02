@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -36,6 +37,10 @@ type UISettings struct {
 	// ArtworkCacheGB is the picture cache's size: 1, 2, 5, 10 or 20 GB.
 	// Default 5 (decision 0002).
 	ArtworkCacheGB int `json:"artwork_cache_gb"`
+	// History keep times in days (0 keeps forever): routine work (searches,
+	// refreshes, scans) and everything else. Defaults 30 and 0.
+	HistoryRoutineDays int `json:"history_routine_days"`
+	HistoryOtherDays   int `json:"history_other_days"`
 }
 
 // settingArtworkCache is the picture cache size in GB; artworkCacheSizes the choices.
@@ -62,7 +67,9 @@ func (a *API) uiSettings(ctx context.Context) UISettings {
 	if err != nil || !artworkCacheSizes[gb] {
 		gb = int(library.DefaultArtworkCap >> 30)
 	}
-	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb}
+	k := store.ReadHistoryKeep(ctx, a.s.Store.Read())
+	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb,
+		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays}
 }
 
 // KeepYTDLPUpdated reads "Keep yt-dlp up to date" (for the weekly job).
@@ -78,9 +85,28 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		KeepYTDLPUpdated *bool `json:"keep_ytdlp_updated"`
 		SigninLibraryArt *bool `json:"signin_library_art"`
 		ArtworkCacheGB   *int  `json:"artwork_cache_gb"`
+		RoutineDays      *int  `json:"history_routine_days"`
+		OtherDays        *int  `json:"history_other_days"`
 	}
 	if !decode(w, r, &in, `send {"autoplay_trailers": true, "keep_ytdlp_updated": true, "signin_library_art": true, "artwork_cache_gb": 5}`) {
 		return
+	}
+	if in.RoutineDays != nil || in.OtherDays != nil {
+		k := store.ReadHistoryKeep(r.Context(), a.s.Store.Read())
+		if in.RoutineDays != nil {
+			k.RoutineDays = *in.RoutineDays
+		}
+		if in.OtherDays != nil {
+			k.OtherDays = *in.OtherDays
+		}
+		if err := a.s.Store.SaveHistoryKeep(r.Context(), k, actor(r)); err != nil {
+			if errors.Is(err, store.ErrHistoryKeep) {
+				fail(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			internal(w, err)
+			return
+		}
 	}
 	if in.ArtworkCacheGB != nil {
 		if !artworkCacheSizes[*in.ArtworkCacheGB] {

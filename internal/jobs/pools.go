@@ -26,6 +26,7 @@ var kindPools = map[string]Pool{
 	// core
 	"health_check":          PoolCore,
 	"check_library_folders": PoolCore,
+	"clean_history":         PoolCore,
 	// outside input and output
 	"search_slot":        PoolIO,
 	"search_season":      PoolIO,

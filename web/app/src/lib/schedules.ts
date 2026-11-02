@@ -107,7 +107,8 @@ const groupOfKind: Record<string, ScheduleGroupId> = {
 	refresh_artists: 'metadata',
 	artist_pictures: 'metadata',
 	sync_outside_lists: 'metadata',
-	health_check: 'upkeep'
+	health_check: 'upkeep',
+	clean_history: 'upkeep'
 };
 
 /** scheduleGroup says which group a schedule belongs in; anything new lands in Upkeep. */

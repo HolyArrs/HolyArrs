@@ -45,6 +45,7 @@ var scheduleInfos = map[string]scheduleInfo{
 	"rescan_library":        {"Rescan the Library", "Looks for files added, changed or removed by hand.", 6 * schHour, 7 * schDay, schHour, ""},
 	"clean_holding":         {"Clean the holding folder", "Removes deleted files whose keep time is over.", 6 * schHour, 7 * schDay, schHour, ""},
 	"health_check":          {"Health checks", "Library folders, free space, Sources, Downloaders, backups and the update check.", schMinute, schDay, schMinute, "/settings/this-app"},
+	"clean_history":         {"Clean up History", "Removes History Events older than their keep time.", 6 * schHour, 7 * schDay, schHour, "/settings/this-app"},
 	"subtitle_missing":      {"Look for missing subtitles", "Searches the subtitle sites for every file missing a wished language.", schHour, 7 * schDay, schHour, "/settings/subtitles"},
 	"subtitle_better":       {"Look for better subtitles", "Searches again for subtitles under their Pass mark.", 6 * schHour, 7 * schDay, schHour, "/settings/subtitles"},
 }
