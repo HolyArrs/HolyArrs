@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, surfaceOf, needsAttention } from './status.ts';
+import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, viewOf, everyKind, needsAttention } from './status.ts';
 import type { ScheduleRow } from '../schedules.ts';
 import type { StageState } from '../types.ts';
 
@@ -60,9 +60,16 @@ describe('status rows', () => {
 		expect(realTime('2026-11-02T09:00:00Z')).toBe('2026-11-02T09:00:00Z');
 	});
 
-	it('reads the surface picker', () => {
-		expect(surfaceOf(null)).toBe(1);
-		expect(surfaceOf('3')).toBe(3);
-		expect(surfaceOf('7')).toBe(1);
+	it('reads the preview pickers', () => {
+		expect(viewOf(null)).toBe(1);
+		expect(viewOf('3')).toBe(3);
+		expect(viewOf('7')).toBe(1);
+		expect(viewOf('x')).toBe(1);
+	});
+
+	it('keeps every kind of part, empty ones included', () => {
+		const ks = everyKind([{ id: 'downloaders', label: 'Downloaders', rows: [] }]);
+		expect(ks.map((k) => k.id)).toEqual(['sources', 'downloaders', 'media', 'subtitles', 'lists', 'alerts', 'metadata']);
+		expect(ks.every((k) => Array.isArray(k.rows))).toBe(true);
 	});
 });

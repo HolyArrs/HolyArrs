@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Status: is every linked part working, and did every background job run?
 	// Reads only the existing health, schedules, lists, alerts and metadata
-	// routes. Preview picker: ?surface=1 (raised plates) or 3 (frosted).
+	// routes. Preview pickers: ?parts=1..5 (shape of the parts), ?runs=1..5 (Coming up / Recent runs).
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -14,10 +14,11 @@
 	import type { ScheduleRow } from '#lib/schedules.ts';
 	import LookPills from '#lib/status/LookPills.svelte';
 	import Sections from '#lib/status/StatusSections.svelte';
-	import { buildRows, groupOrder, groupRows, headline, needsAttention, surfaceOf, type StatusInput, type StatusRow } from '#lib/status/status.ts';
+	import { buildRows, groupOrder, groupRows, headline, needsAttention, viewOf, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
-	const surface = $derived(surfaceOf(page.url.searchParams.get('surface')));
+	const partsView = $derived(viewOf(page.url.searchParams.get('parts')));
+	const runsView = $derived(viewOf(page.url.searchParams.get('runs')));
 
 	let input = $state<StatusInput | null>(null);
 	let error = $state('');
@@ -115,7 +116,7 @@
 
 <svelte:head><title>Status · HolyArrs</title></svelte:head>
 
-<div class="status" data-testid="status-page" data-surface={surface}>
+<div class="status" data-testid="status-page">
 	<header class="sbar">
 		<div class="title">
 			<h1>Status</h1>
@@ -131,18 +132,13 @@
 	{:else if !input}
 		<p class="muted">Loading…</p>
 	{:else}
-		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} />
+		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {partsView} {runsView} />
 	{/if}
 </div>
 
 <LookPills />
 
 <style>
-	/* 3 Frosted: see-through plates with a heavier blur (1, raised, is what the sections draw). */
-	.status[data-surface='3'] :global(section) {
-		background: color-mix(in srgb, var(--surface-1) 55%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
-		border-color: color-mix(in srgb, var(--text) 12%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 20px 50px -30px rgb(0 0 0 / 0.5);
-	}
 	.status {
 		max-width: 1600px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;

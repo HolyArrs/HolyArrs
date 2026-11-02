@@ -3,6 +3,7 @@
 	// folded to one line each, and only three shown until "Show more". The app
 	// knows just the current and newest release today; ?releases=demo fills in
 	// a made-up history so the many-release case can be seen.
+	import './plate.css';
 	import { page } from '$app/state';
 	import { ago } from '../format.ts';
 
@@ -38,7 +39,7 @@
 	const isOpen = (r: Rel, i: number) => open[r.version] ?? i === 0;
 </script>
 
-<section aria-labelledby="s-rel">
+<section class="st-plate" aria-labelledby="s-rel">
 	<h2 id="s-rel">Releases{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
 	{#if upd && !upd.on}<p class="meta">The update check is off.</p>
 	{:else if upd?.problem}<p class="meta">{upd.problem}</p>
@@ -72,18 +73,6 @@
 </section>
 
 <style>
-	section {
-		position: relative; padding: 18px 20px 20px; border-radius: 20px; border: 1px solid var(--line);
-		background: linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 94%, #fff 6%), color-mix(in srgb, var(--surface-1) 88%, transparent));
-		-webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.09), 0 1px 2px rgb(0 0 0 / 0.05), 0 18px 40px -26px rgb(0 0 0 / 0.40);
-	}
-	h2 {
-		display: flex; align-items: center; gap: 10px; margin: 0 -20px 12px; padding: 0 20px 14px;
-		border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 rgb(255 255 255 / 0.05);
-		font: 600 18px/1.2 var(--font-ui); color: var(--text);
-	}
-	h2::before { content: ''; width: 4px; height: 16px; border-radius: 2px; background: linear-gradient(var(--accent, var(--text)), color-mix(in srgb, var(--accent, var(--text)) 30%, transparent)); }
 	.cnt { padding: 2px 8px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; color: var(--text-muted); }
 	.meta { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
 	.rels { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -114,8 +103,6 @@
 	.more:hover, .btn:hover { border-color: var(--line-strong); color: var(--text); }
 	.btn:focus-visible, .more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (max-width: 767px) {
-		section { padding: 14px 14px 16px; border-radius: 16px; }
-		h2 { margin: 0 -14px 12px; padding: 0 14px 12px; }
 		.body { padding-left: 14px; }
 	}
 	@media (prefers-reduced-motion: reduce) { .chev svg { transition: none; } }

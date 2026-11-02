@@ -7,7 +7,8 @@
 	import { to } from '../paths.ts';
 	import type { StatusRow } from './status.ts';
 
-	let { rows, canAct, busy, oncheck }: { rows: StatusRow[]; canAct: boolean; busy: string | null; oncheck: (r: StatusRow) => void } = $props();
+	// flat drops the list's own frame (for rows that sit inside a ledger); compact tightens the rows.
+	let { rows, canAct, busy, oncheck, flat = false, compact = false }: { rows: StatusRow[]; canAct: boolean; busy: string | null; oncheck: (r: StatusRow) => void; flat?: boolean; compact?: boolean } = $props();
 
 	const MAX = 6;
 	let all = $state(false);
@@ -15,10 +16,10 @@
 	const ordered = $derived([...rows].sort((a, b) => rank(a) - rank(b)));
 </script>
 
-<ul class="rows">
+<ul class="prl" class:flat class:compact>
 	{#each all ? ordered : ordered.slice(0, MAX) as r (r.key)}
 		{@const bad = r.tone === 'fail' || r.tone === 'wait'}
-		<li class="row" class:bad data-testid="status-row" data-tone={r.tone} data-key={r.key}>
+		<li class="pr" class:bad data-testid="status-row" data-tone={r.tone} data-key={r.key}>
 			<div class="line">
 				<i class="d {r.tone}" aria-hidden="true"></i>
 				<span class="nm" title={r.name}>{r.name}</span>
@@ -42,12 +43,17 @@
 {/if}
 
 <style>
-	.rows { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface-1); }
-	.row { padding: 0 14px; border-top: 1px solid var(--line); }
-	.row:first-child { border-top: 0; }
-	.row:nth-child(even):not(.bad) { background: color-mix(in srgb, var(--surface-2, var(--surface-1)) 45%, transparent); }
-	.row.bad { background: color-mix(in srgb, var(--fail) 6%, var(--surface-1)); padding-bottom: 10px; }
-	.row.bad[data-tone='wait'] { background: color-mix(in srgb, var(--wait) 7%, var(--surface-1)); }
+	.prl { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface-1); }
+	.prl.flat { border: 0; border-radius: 0; background: none; }
+	.prl.flat .pr { padding: 0 2px; }
+	.prl.flat .pr:nth-child(even):not(.bad) { background: none; }
+	.prl.flat .pr.bad { margin: 0 -8px; padding: 0 8px 10px; border-radius: 8px; }
+	.prl.compact .line { min-height: 38px; }
+	.pr { padding: 0 14px; border-top: 1px solid var(--line); }
+	.pr:first-child { border-top: 0; }
+	.pr:nth-child(even):not(.bad) { background: color-mix(in srgb, var(--surface-2, var(--surface-1)) 45%, transparent); }
+	.pr.bad { background: color-mix(in srgb, var(--fail) 6%, var(--surface-1)); padding-bottom: 10px; }
+	.pr.bad[data-tone='wait'] { background: color-mix(in srgb, var(--wait) 7%, var(--surface-1)); }
 	.line { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 	.nm { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.at { flex: none; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }

@@ -208,9 +208,26 @@ export function headline(rows: StatusRow[]): string {
 	return out.join(', ');
 }
 
-/** surfaceOf reads the preview picker ?surface=: 3 (frosted) or 1 (raised). */
-export function surfaceOf(v: string | null): 1 | 3 {
-	return v === '3' ? 3 : 1;
+/** viewOf reads a preview picker (?parts=, ?runs=): 1..5, else 1. */
+export function viewOf(v: string | null): 1 | 2 | 3 | 4 | 5 {
+	const n = Number(v);
+	return n >= 1 && n <= 5 && Number.isInteger(n) ? (n as 1 | 2 | 3 | 4 | 5) : 1;
+}
+
+/** Which parts a Status section lists, in order; Library lives in Storage, Jobs on its own tab. */
+export const partKinds: { id: GroupId; label: string; add: string; one: string }[] = [
+	{ id: 'sources', label: 'Sources', add: '/settings/sources', one: 'source' },
+	{ id: 'downloaders', label: 'Downloaders', add: '/settings/downloaders', one: 'downloader' },
+	{ id: 'media', label: 'Media server', add: '/settings/media-servers', one: 'media server' },
+	{ id: 'subtitles', label: 'Subtitles', add: '/settings/subtitles', one: 'subtitle site' },
+	{ id: 'lists', label: 'Lists', add: '/settings/outside-lists', one: 'list' },
+	{ id: 'alerts', label: 'Alerts', add: '/settings/alerts', one: 'alert' },
+	{ id: 'metadata', label: 'Metadata server', add: '/settings/this-app', one: 'metadata server' }
+];
+
+/** everyKind gives one group per kind of part, empty kinds included, so the Status grid keeps its shape. */
+export function everyKind(groups: StatusGroup[]): StatusGroup[] {
+	return partKinds.map((k) => ({ id: k.id, label: k.label, rows: groups.find((g) => g.id === k.id)?.rows ?? [] }));
 }
 
 /** groupCounts splits a group into working, needs attention and off. */
