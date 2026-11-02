@@ -919,11 +919,15 @@
 	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
-	const wMin = (id: ColId) => (id === 'proto' ? Math.max(SRC_W, heads.proto ?? 0) : Math.max(layout.widths[id], heads[id] ?? 0));
+	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'proto' ? Math.max(SRC_W, heads.proto ?? 0) : Math.max(layout.widths[id], heads[id] ?? 0));
 	/** heads holds each header's name width, measured after layout and after each sort. */
 	let heads = $state<Partial<Record<ColId, number>>>({});
 	// The Source column hugs the client's logo; its header is an icon (wider only while a sort arrow shows).
 	const SRC_W = 24;
+	// Posters come in three sizes (small, medium, large); dragging the Poster edge snaps between them and the rows grow to fit.
+	const POSTER_W = [32, 46, 62];
+	const posterW = $derived(POSTER_W.includes(layout.widths.poster) ? layout.widths.poster : POSTER_W[0]);
+	const nearPoster = (w: number) => POSTER_W.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
 	const vis = $derived.by(() => {
 		if (phone || room <= 0) return visAll;
 		const need = (c: ColId[]) => 48 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
@@ -1035,7 +1039,7 @@
 	}
 	function resize(id: ColId, w0: number, d: number) {
 		if (id === 'title') layout.titleSet = true;
-		layout.widths[id] = clamp(id, w0 + d);
+		layout.widths[id] = id === 'poster' ? nearPoster(w0 + d) : clamp(id, w0 + d);
 	}
 	function grab(e: PointerEvent, id: ColId) {
 		if (e.button !== 0) return;
@@ -1071,7 +1075,8 @@
 	// Double-click auto-fits that column, as in a spreadsheet.
 	function fitOne(id: ColId) {
 		if (id === 'title') layout.titleSet = true;
-		layout.widths[id] = fitOf(id);
+		// Double-click on Poster steps to the next size (large goes back to small).
+		layout.widths[id] = id === 'poster' ? POSTER_W[(POSTER_W.indexOf(posterW) + 1) % POSTER_W.length] : fitOf(id);
 		save();
 	}
 	function resetAll() {
@@ -1386,7 +1391,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto'}<span class="lbl" aria-label="Source"><Icon name="plug" size={15} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto'}<span class="lbl" aria-label="Source"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1704,7 +1709,7 @@
 
 <svelte:window onpointerdown={outside} onkeydown={listKey} />
 
-<div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px">
+<div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px; --pi: {posterW - 6}px">
 <div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
 <h1 class="sr">Downloads</h1>
 <div class="strip hdr" data-testid="dl-strip">
@@ -1818,7 +1823,9 @@
 	.ch[data-col='proto'] { justify-content: center; }
 	.ch[data-col='proto'] .lbl { display: flex; }
 	/* The next divider sits a gap after the column, so the logo and icon shift half a gap to sit centred between the two lines. */
-	@media (min-width: 641px) { .ch[data-col='proto'] .lbl, .pcell > .pm { transform: translateX(calc(var(--gap) / 2 - 1px)); } }
+	.ch[data-col='poster'] { justify-content: center; }
+	.ch[data-col='poster'] .lbl { display: flex; }
+	@media (min-width: 641px) { .ch[data-col='proto'] .lbl, .pcell > .pm, .ch[data-col='poster'] .lbl, .dline > .post { transform: translateX(calc(var(--gap) / 2 - 1px)); } }
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	/* Source has no grip (fixed width) but keeps the divider line, at the same spot a grip draws it. */
 	.ch[data-col='proto']::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
@@ -1861,7 +1868,7 @@
 	@keyframes pselIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 	@media (prefers-reduced-motion: reduce) { .psel { animation: none; } }
 	@media (hover: none) { .pk { opacity: 1; } }
-	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: 44px; }
+	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: max(44px, calc(var(--pi, 26px) * 1.5 + 6px)); }
 	.drow > .dline { cursor: pointer; }
 	.drow > .dline:hover { background: var(--surface-2); }
 	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
@@ -1869,8 +1876,8 @@
 	.bin:focus-visible, .lk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
-	.post { width: 26px; height: 39px; justify-self: end; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
-	.post.square { height: 28px; --poster-ratio: 1; }
+	.post { width: var(--pi, 26px); height: calc(var(--pi, 26px) * 1.5); justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
+	.post.square { height: var(--pi, 26px); --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 3px; }
 
 	.nm { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
@@ -2256,7 +2263,7 @@
 
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
 	@media (max-width: 640px) {
-		.dlgrid { --gap: 8px; }
+		.dlgrid { --gap: 8px; --pi: 26px !important; }
 		.chead { display: none; }
 		.tin { min-width: 0; }
 		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */

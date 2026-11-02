@@ -23,6 +23,8 @@
 		folder: 'M3.5 6.5a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z',
 		source: 'M4 6.5h16M4 12h16M4 17.5h10M18 16l2 2-2 2',
 		// A plug: two prongs, the body, and its cord (the Downloads Source column).
+		// A picture: a frame, a sun and a hill (the Downloads Poster column).
+		image: 'M4 5h16v14H4zM9 9.5a1.5 1.5 0 1 1-.01 0M4 17l5-5 4 4 2.5-2.5L20 17',
 		plug: 'M9 3.5v4M15 3.5v4M7 7.5h10v3.5a5 5 0 0 1-10 0zM12 16v4.5',
 		downloader: 'M4 14.5h16v5H4zM12 4v7M8.5 7.5 12 11l3.5-3.5M7 17h.01',
 		torrent: 'M6 3.5v8.5a6 6 0 0 0 12 0V3.5M6 8h4M14 8h4',
