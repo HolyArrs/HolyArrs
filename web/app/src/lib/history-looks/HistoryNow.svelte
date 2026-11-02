@@ -40,10 +40,10 @@
 
 	let filter = $state<HistoryFilter>(readFilter(page.url.searchParams, 50));
 	// Every kind is read through the tabs; the old ?kinds= filter does not apply.
-	const shownFilter = $derived({ ...filter, groups: [] });
+	const shownFilter = $derived({ ...filter, groups: [], hideFeed: true });
 	const tabEmpty = $derived.by(() => {
 		const s = tabNow.subs.find((x) => x.key === sub);
-		return { title: filter.title || filter.from || filter.to ? 'Nothing matches' : tabNow.empty, text: s?.hint ?? tabNow.hint };
+		return { title: filter.title || filter.source || filter.from || filter.to ? 'Nothing matches' : tabNow.empty, text: s?.hint ?? tabNow.hint };
 	});
 	function showAll() {
 		show = ALL;
@@ -69,6 +69,8 @@
 	});
 
 	let titles = $state<TitleView[]>([]);
+	// Sources for the Source pick: owners and admins only.
+	let sources = $state<{ id: number; name: string }[] | undefined>();
 	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 	let episodeName = $state('');
 	const titleName = $derived(titles.find((t) => t.id === filter.title)?.name);
@@ -107,6 +109,11 @@
 			.then((r) => (titles = r))
 			.catch(() => {});
 		myId = session.s.id;
+		if (session.can('settings'))
+			void api
+				.get<{ sources: { id: number; name: string }[] }>('/sources')
+				.then((r) => (sources = r.sources.map((x) => ({ id: x.id, name: x.name }))))
+				.catch(() => {});
 		// Member names for "Added to the Library by Maya" (only admins may list them).
 		void api
 			.get<{ users: { id: number; name: string }[] }>('/users')
@@ -129,7 +136,7 @@
 <DlTurnedDown embedded />
 {:else}
 
-<LookBar bind:show bind:sub counts={counts.tabs} subCounts={counts.subs} filter={shownFilter} {titles} {episodeName} onfilter={apply}>
+<LookBar bind:show bind:sub counts={counts.tabs} subCounts={counts.subs} filter={shownFilter} {titles} {episodeName} {sources} onfilter={apply}>
 	{#snippet tools()}
 		<Menu label="Art size" variant="button" text={artLabels[size].replace(' posters', '')} icon="chevronDown" items={sizeItems} width={200} align="start" />
 		{#if wide}<Button variant="secondary" size="md" icon="sidebar" aria-expanded={panel} aria-controls={panelId} data-testid="history-details-toggle" onclick={() => (panel = !panel)}>{panel ? 'Hide details' : 'Show details'}</Button>{/if}

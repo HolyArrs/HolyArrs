@@ -463,14 +463,16 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
-	fs, failures, answered, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false)
+	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false)
 	if err != nil {
 		return err
 	}
-	if answered == 0 && len(failures) > 0 {
-		reason := "no Source answered: " + strings.Join(failures, "; ")
+	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
 		rest(reason)
-		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, nil)
+		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, data)
+		if !failed {
+			return nil
+		}
 		return errors.New(reason)
 	}
 	all := dedupe(fs)

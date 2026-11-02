@@ -58,6 +58,12 @@ export interface HistoryFilter {
 	/** One episode of a show (its id): its own rows and its packs'. */
 	episode?: number;
 	groups: string[];
+	/** One Source's grabs and pauses (owners and admins). */
+	source?: number;
+	/** Show the routine feed checks (hidden by default). */
+	feed?: boolean;
+	/** Ask the server to hide feed checks unless `feed` is on (History's today look). */
+	hideFeed?: boolean;
 	from?: string;
 	to?: string;
 	limit: number;
@@ -87,6 +93,9 @@ export function historyQuery(f: HistoryFilter): string {
 	else if (f.title) q.set('title', String(f.title));
 	const kinds = kindGroups.filter((g) => f.groups.includes(g.key)).flatMap((g) => g.kinds);
 	if (kinds.length) q.set('kind', kinds.join(','));
+	if (f.source) q.set('source', String(f.source));
+	if (f.feed) q.set('feed', '1');
+	else if (f.hideFeed) q.set('feed', '0');
 	if (f.from) q.set('from', f.from);
 	if (f.to) q.set('to', f.to);
 	q.set('limit', String(f.limit));
@@ -105,7 +114,10 @@ export function readFilter(params: { get(name: string): string | null }, limit =
 	};
 	const groups = (params.get('kinds') ?? '').split(',').filter((k) => kindGroups.some((g) => g.key === k));
 	const offset = Math.max(0, Number(params.get('offset')) || 0);
+	const source = Number(params.get('source'));
 	return {
+		source: Number.isInteger(source) && source > 0 ? source : undefined,
+		feed: params.get('feed') === '1' || undefined,
 		title: Number.isInteger(title) && title > 0 ? title : undefined,
 		episode: Number.isInteger(episode) && episode > 0 ? episode : undefined,
 		groups, from: day(params.get('from')), to: day(params.get('to')), limit, offset };
@@ -117,6 +129,8 @@ export function filterParams(f: HistoryFilter): string {
 	if (f.title) q.set('title', String(f.title));
 	if (f.episode) q.set('episode', String(f.episode));
 	if (f.groups.length) q.set('kinds', f.groups.join(','));
+	if (f.source) q.set('source', String(f.source));
+	if (f.feed) q.set('feed', '1');
 	if (f.from) q.set('from', f.from);
 	if (f.to) q.set('to', f.to);
 	if (f.offset) q.set('offset', String(f.offset));

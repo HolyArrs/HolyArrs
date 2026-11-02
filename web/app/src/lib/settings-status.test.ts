@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromServer, groupState, pageState, stateWords, type ServerStatus } from './settings-status.ts';
+import { fromServer, groupState, needsAttention, pageState, stateWords, type ServerStatus } from './settings-status.ts';
 import { filterSections, groups, grouped, sectionFor, sections, visible } from './settings.ts';
 import { searchSettings, settingIndex } from './settings-search.ts';
 
@@ -144,5 +144,14 @@ describe('every setting a search finds is on its page', () => {
 			if (!found) missing.push(`${e.href}#${e.anchor}`);
 		}
 		expect(missing).toEqual([]);
+	});
+});
+
+describe('needsAttention', () => {
+	it('flags the side menu only when something needs a fix', () => {
+		expect(needsAttention(null)).toBe(false);
+		expect(needsAttention(fromServer(null))).toBe(false);
+		expect(needsAttention(fromServer({ items: [], unset: { copies: ['/settings/sources'] }, known: [], metadata_up: true }))).toBe(false);
+		expect(needsAttention(fromServer({ items: [{ group: 'copies', page: '/settings/sources', text: 'The Source A is close to its search limit (8 of 10)', severity: 'warning' }], unset: {}, known: [], metadata_up: true }))).toBe(true);
 	});
 });

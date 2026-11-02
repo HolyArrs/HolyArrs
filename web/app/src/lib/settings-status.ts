@@ -66,3 +66,8 @@ export function stateWords(s: { state: GroupState; count: number }): string {
 	if (s.state === 'ok') return 'All set';
 	return '';
 }
+
+/** needsAttention says whether anything in Settings needs a fix (the side menu's flag). */
+export function needsAttention(a: StatusAnswer | null): boolean {
+	return !!a && a.items.length > 0;
+}

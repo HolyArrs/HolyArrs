@@ -22,6 +22,8 @@
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
 	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
+	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
+	import { needsAttention } from '#lib/settings-status.ts';
 	import { offPartName } from '#lib/parts.ts';
 	import { navigateWithTransition } from '#lib/motion.ts';
 	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
@@ -69,6 +71,20 @@
 		return session.can(need);
 	}
 
+	// Settings attention (people who change settings only): a flag on the Settings row and the phone Manage tab.
+	const settingsOn = $derived(session.s.state === 'signed_in' && allowed('staff') && allowed('settings'));
+	const settingsAttention = $derived(settingsOn && needsAttention(settingsNow.answer));
+	$effect(() => {
+		if (!settingsOn) return;
+		void refreshSettingsStatus();
+		const off = live.on('source', () => void refreshSettingsStatus());
+		const t = setInterval(() => void refreshSettingsStatus(), 120_000);
+		return () => {
+			off();
+			clearInterval(t);
+		};
+	});
+
 	// ── Places ────────────────────────────────────────────────────────────
 	const kinds = $derived(
 		(
@@ -90,7 +106,8 @@
 			decisions: decisions.count,
 			active: activeDownloads,
 			unread: inbox.unread,
-			kid: session.kid
+			kid: session.kid,
+			settingsAttention
 		})
 	);
 	const allItems = $derived(sections.flatMap((s) => s.items));
@@ -268,7 +285,7 @@
 		}
 		const tabbed = ['/', '/explore', '/library', '/search', '/requests'];
 		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
-		t.push({ label: manager ? 'Manage' : 'More', icon: manager ? 'inbox' : 'more', current: elsewhere, dot: inbox.waiting + decisions.count > 0 && manager, onclick: () => (moreOpen = true) });
+		t.push({ label: manager ? 'Manage' : 'More', icon: manager ? 'inbox' : 'more', current: elsewhere, dot: (inbox.waiting + decisions.count > 0 || settingsAttention) && manager, onclick: () => (moreOpen = true) });
 		return t;
 	});
 

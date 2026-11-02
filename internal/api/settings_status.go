@@ -46,6 +46,8 @@ type statusInput struct {
 	States      []supervisor.Status
 	Folders     *int
 	Sources     []namedState
+	// SourcesNear are the words for Sources close to a search or pick limit.
+	SourcesNear []string
 	Downloaders []namedState
 	// NewestBackup is the newest backup's time (RFC 3339), "" for none.
 	NewestBackup *string
@@ -139,9 +141,17 @@ func settingsStatus(in statusInput) statusAnswer {
 	if in.Sources != nil {
 		known("/settings/sources")
 		for _, s := range in.Sources {
-			if s.State == source.StateUnreachable || s.State == source.StateAuthFailed {
+			switch s.State {
+			case source.StateUnreachable, source.StateAuthFailed:
 				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is not answering", "error"}, "source:"+s.Name)
+			case source.KindRateLimited:
+				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " asked HolyArrs to slow down, so it waits a while", "warning"}, "source:"+s.Name)
+			case source.KindBlocked:
+				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is blocked from the local network", "warning"}, "source:"+s.Name)
 			}
+		}
+		for _, text := range in.SourcesNear {
+			add(statusItem{"copies", "/settings/sources", text, "warning"}, "source-near:"+text)
 		}
 	}
 	if in.Downloaders != nil {
@@ -304,7 +314,18 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 	}
 	in.Sources = []namedState{}
 	for _, s := range srcs {
-		in.Sources = append(in.Sources, namedState{s.Name, source.HealthOf(s).State})
+		state := source.HealthOf(s).State
+		// Its own backoff for slowing down or a blocked address is a warning,
+		// not a Source that stopped answering.
+		if s.State == "paused" && s.PauseReason != nil && (*s.PauseReason == source.KindRateLimited || *s.PauseReason == source.KindBlocked) {
+			state = *s.PauseReason
+		}
+		in.Sources = append(in.Sources, namedState{s.Name, state})
+		if s.State != "disabled" {
+			if near, text := source.NearCap(ctx, a.s.Store, s, now); near {
+				in.SourcesNear = append(in.SourcesNear, text)
+			}
+		}
 	}
 	dls, err := store.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {

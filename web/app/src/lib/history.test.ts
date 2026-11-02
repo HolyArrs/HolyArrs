@@ -91,6 +91,20 @@ describe('history', () => {
 		expect(readFilter(new URLSearchParams('from=2024-02-29')).from).toBe('2024-02-29');
 	});
 
+	it('carries the Source pick and the feed checks switch', () => {
+		const f = readFilter(new URLSearchParams('source=4&feed=1'));
+		expect(f.source).toBe(4);
+		expect(f.feed).toBe(true);
+		expect(filterParams(f)).toBe('?source=4&feed=1');
+		const q = new URLSearchParams(historyQuery(f));
+		expect(q.get('source')).toBe('4');
+		expect(q.get('feed')).toBe('1');
+		const none = readFilter(new URLSearchParams('source=x&feed=0'));
+		expect(none.source).toBeUndefined();
+		expect(none.feed).toBeUndefined();
+		expect(historyQuery(none)).toBe('limit=50');
+	});
+
 	it('shows reasons and paths', () => {
 		expect(
 			details({ Data: { reason: 'nothing could be placed', release: 'Arrival.2016.1080p', paths: [{ to: '/movies/Arrival (2016)/Arrival (2016).mkv' }], state: 'x' } })

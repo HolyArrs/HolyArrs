@@ -292,19 +292,21 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
 	}
-	all, failures, answered, err := s.askAll(ctx, r, q, handSearch, isShow)
+	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow)
 	if err != nil {
 		return err
 	}
 	jobID := r.Job.ID
 
-	if answered == 0 && len(failures) > 0 {
-		reason := "no Source answered: " + strings.Join(failures, "; ")
+	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
 		if !show && from != domain.SlotHeld {
 			_ = s.Store.MoveSlot(ctx, slotID, restState(c, from), reason, by)
 			s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": reason})
 		}
-		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, nil)
+		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, data)
+		if !failed {
+			return nil
+		}
 		return errors.New(reason)
 	}
 	all = dedupe(all)

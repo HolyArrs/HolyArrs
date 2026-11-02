@@ -8,6 +8,14 @@ const member: NavInput = { ...owner, allowed: (n) => memberPerms.has(n) };
 const labels = (input: NavInput) => buildNav(input).map((s) => [s.label, s.items.map((i) => i.label)]);
 
 describe('buildNav', () => {
+	it('flags Settings only for people who change settings', () => {
+		const settings = (i: NavInput) => buildNav(i).flatMap((s) => s.items).find((x) => x.href === '/settings');
+		expect(settings({ ...owner, settingsAttention: true })?.dot).toBe(true);
+		expect(settings(owner)?.dot).toBeUndefined();
+		const usersOnly = new Set(['staff', 'users', 'manage']);
+		expect(settings({ ...owner, settingsAttention: true, allowed: (n) => usersOnly.has(n) })?.dot).toBeUndefined();
+		expect(settings({ ...member, settingsAttention: true })).toBeUndefined();
+	});
 	it('gives owners every section, with Requests last under Your stuff', () => {
 		expect(labels(owner)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],

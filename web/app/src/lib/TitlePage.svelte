@@ -44,6 +44,7 @@
 	import { date } from '#lib/format.ts';
 	import { loadAskedBy, type AskedByAnswer } from '#lib/askedby.ts';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
+	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
 	import MovieVersions from '#lib/MovieVersions.svelte';
 	import ShowVersions from '#lib/ShowVersions.svelte';
 	import CopyControls from '#lib/CopyControls.svelte';
@@ -902,7 +903,7 @@
 			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
-			{#snippet byline()}{#if owned}<AskedByLine {askers} seesAll={askedBy.sees_all} />{/if}{/snippet}
+			{#snippet byline()}{#if owned}<AskedByLine {askers} seesAll={askedBy.sees_all} />{#if ownState.kind !== 'have' && ownState.kind !== 'downloading'}<SearchOutcomeLine titleId={owned.id} />{/if}{/if}{/snippet}
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : manage ? (ownTab = 'library') : undefined)} data-testid="hero-library" />

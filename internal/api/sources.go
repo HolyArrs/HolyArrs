@@ -24,6 +24,9 @@ func (a *API) sourceRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/sources/{id}/pause", a.pauseSource)
 	m.HandleFunc("POST /api/v1/sources/{id}/resume", a.resumeSource)
 	m.HandleFunc("GET /api/v1/sources/{id}/stats", a.sourceStats)
+	m.HandleFunc("POST /api/v1/sources/{id}/try", a.trySource)
+	m.HandleFunc("POST /api/v1/sources/check", a.checkSources)
+	m.HandleFunc("GET /api/v1/titles/{id}/search-outcome", a.searchOutcome)
 }
 
 // SourceView is a Source as the API shows it: the key and the proxy
@@ -220,6 +223,35 @@ func (a *API) testSource(w http.ResponseWriter, r *http.Request) {
 		sourceError(w, err)
 		return
 	}
+	a.runTest(w, r, x, false)
+}
+
+// trySource tries a paused Source now: it ends the wait, runs the same
+// check as a test, and on a failure puts the back-off pause back.
+func (a *API) trySource(w http.ResponseWriter, r *http.Request) {
+	id, ok := sourceID(w, r)
+	if !ok {
+		return
+	}
+	var x domain.Source
+	if err := store.Get(r.Context(), a.s.Store.Read(), "sources", id, &x); err != nil {
+		sourceError(w, err)
+		return
+	}
+	if x.State == "paused" {
+		y, err := source.SetPaused(r.Context(), a.s.Store, id, false, actor(r))
+		if err != nil {
+			sourceError(w, err)
+			return
+		}
+		x = y
+	}
+	a.runTest(w, r, x, true)
+}
+
+// runTest checks a Source and writes the answer. repause puts a failing
+// Source back on its back-off pause.
+func (a *API) runTest(w http.ResponseWriter, r *http.Request, x domain.Source, repause bool) {
 	var sec source.SecretReader
 	if a.s.Secrets != nil {
 		sec = a.s.Secrets
@@ -239,6 +271,12 @@ func (a *API) testSource(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"ok": err == nil, "ms": took.Milliseconds()}
 	if err != nil {
 		out["text"] = source.Explain(err)
+		if repause && x.State == "enabled" && a.s.Search != nil {
+			a.s.Search.TryFailed(context.WithoutCancel(r.Context()), x, err)
+			if store.Get(r.Context(), a.s.Store.Read(), "sources", x.ID, &x) == nil {
+				a.publishSource(x)
+			}
+		}
 	} else {
 		out["text"] = "The Source answered."
 		if x.Format == "rss" {

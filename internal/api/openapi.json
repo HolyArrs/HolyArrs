@@ -21883,6 +21883,23 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/sources/check": {
+      "post": {
+        "description": "Runs one test search on every enabled Source and says which answered, failed or were paused, with result counts.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Test search across Sources",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/sources/{id}": {
       "delete": {
         "description": "Its key, Releases and call record go too. Needs a password sign-in or an API key.",
@@ -22210,6 +22227,33 @@
           }
         },
         "summary": "Test a Source",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/sources/{id}/try": {
+      "post": {
+        "description": "Ends a back-off pause early by asking the Source once; a failure starts a fresh wait.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Try a paused Source now",
         "tags": [
           "Sources"
         ],
@@ -24784,6 +24828,33 @@
         "x-holyarrs-part": "title",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/search-outcome": {
+      "get": {
+        "description": "Says whether the latest search for a title came back empty; people who manage settings also see which Sources were paused or failed.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Why a search found nothing",
+        "tags": [
+          "Titles"
+        ],
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/titles/{id}/seasons": {

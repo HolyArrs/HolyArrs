@@ -13,6 +13,7 @@
 		badge = 0,
 		badgeLabel,
 		ring,
+		dot = false,
 		kbd,
 		onclick,
 		testid,
@@ -27,6 +28,8 @@
 		badgeLabel?: string;
 		/** Overall progress 0-100: a ring around the icon. Decorative; the name carries the words. */
 		ring?: number;
+		/** A small flag that something here needs attention. */
+		dot?: boolean;
 		kbd?: string;
 		onclick?: (e: MouseEvent) => void;
 		testid?: string;
@@ -49,7 +52,7 @@
 		clearTimeout(timer);
 		tip = null;
 	}
-	const name = $derived(badge > 0 ? `${label}, ${badgeLabel ?? badge}` : label);
+	const name = $derived((badge > 0 ? `${label}, ${badgeLabel ?? badge}` : label) + (dot ? ', needs attention' : ''));
 </script>
 
 {#snippet body()}
@@ -59,12 +62,13 @@
 	</span>
 	<span class="label">{label}</span>
 	{#if kbd}<kbd class="label" aria-hidden="true">{kbd}</kbd>{/if}
+	{#if dot && !(badge > 0)}<span class="flag" title="Needs attention" aria-hidden="true" data-testid="nav-flag"></span>{/if}
 	{#if badge > 0}<b class="count" aria-hidden="true" data-testid={badgeTestid}>{badge > 99 ? '99+' : badge}</b>{/if}
 {/snippet}
 {#if href}
-	<a class="ui-sbi" class:current {href} aria-current={current ? 'page' : undefined} aria-label={collapsed || badge > 0 ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</a>
+	<a class="ui-sbi" class:current {href} aria-current={current ? 'page' : undefined} aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</a>
 {:else}
-	<button class="ui-sbi" class:current type="button" aria-label={collapsed || badge > 0 ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</button>
+	<button class="ui-sbi" class:current type="button" aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</button>
 {/if}
 {#if tip}<span class="tip" role="presentation" style="left: {tip.x}px; top: {tip.y}px">{label}</span>{/if}
 
@@ -86,6 +90,8 @@
 	.label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity var(--dur-fast) var(--ease-out) var(--label-delay, 0ms); }
 	kbd.label { flex: none; color: var(--text-muted); font: var(--t-footnote); }
 	.count { min-width: 22px; height: 20px; padding: 0 7px; display: grid; place-items: center; flex: none; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; transition: opacity var(--dur-fast) var(--ease-out); }
+	.flag { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
+	:global(.ui-sidebar.collapsed) .ui-sbi .flag { position: absolute; top: 6px; right: 8px; }
 	.current .count { background: var(--surface-1); }
 	:global(.ui-sidebar.collapsed) .ui-sbi .label { opacity: 0; }
 	:global(.ui-sidebar.collapsed) .ui-sbi .count { position: absolute; top: 1px; right: 1px; left: auto; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--accent-fill); color: var(--text-on-red); }

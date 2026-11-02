@@ -24,6 +24,23 @@ type Health struct {
 	State string     `json:"state"`
 	Text  string     `json:"text"`
 	Until *time.Time `json:"until,omitempty"`
+	// Reason tells waits apart: slowed, down, blocked or key (empty when
+	// the Source is not waiting).
+	Reason string `json:"reason,omitempty"`
+}
+
+// reasonWord is the short reason, by pause reason.
+var reasonWord = map[string]string{
+	KindDown:         "down",
+	KindBroken:       "down",
+	KindRateLimited:  "slowed",
+	KindBlocked:      "blocked",
+	KindLoginRefused: "key",
+}
+
+// TryFailed puts a Source tried by hand back on its back-off pause.
+func (s *Searcher) TryFailed(ctx context.Context, src domain.Source, cause error) {
+	s.pause(ctx, src, cause)
 }
 
 // reasonText says why a Source is waiting, by pause reason.
@@ -40,13 +57,17 @@ func HealthOf(src domain.Source) Health {
 	case src.State == "disabled":
 		return Health{State: StateDisabled, Text: "Paused by you. HolyArrs does not use it until you resume it."}
 	case src.State == "paused" && src.PauseReason != nil && *src.PauseReason == KindLoginRefused:
-		return Health{State: StateAuthFailed, Text: "It turned down the key. Check the key, then test it.", Until: src.PausedUntil}
+		return Health{State: StateAuthFailed, Text: "It turned down the key. Check the key, then test it.", Until: src.PausedUntil, Reason: "key"}
 	case src.State == "paused":
 		text := reasonText[KindDown]
 		if src.PauseReason != nil && reasonText[*src.PauseReason] != "" {
 			text = reasonText[*src.PauseReason]
 		}
-		return Health{State: StateUnreachable, Text: text + " HolyArrs tries again on its own.", Until: src.PausedUntil}
+		reason := "down"
+		if src.PauseReason != nil && reasonWord[*src.PauseReason] != "" {
+			reason = reasonWord[*src.PauseReason]
+		}
+		return Health{State: StateUnreachable, Text: text + " HolyArrs tries again on its own.", Until: src.PausedUntil, Reason: reason}
 	}
 	return Health{State: StateWorking, Text: "Working."}
 }

@@ -16,6 +16,8 @@ export interface NavItem {
 	badgeLabel?: string;
 	/** Overall progress, 0-100, drawn as a ring around the icon. */
 	ring?: number;
+	/** A small "needs attention" flag (Settings, for people who change settings). */
+	dot?: boolean;
 }
 
 export interface NavSection {
@@ -37,6 +39,8 @@ export interface NavInput {
 	unread: number;
 	/** A Kid (age-rating limit) never sees music: it carries no rating. */
 	kid?: boolean;
+	/** Something in Settings needs a fix (only known to people who change settings). */
+	settingsAttention?: boolean;
 }
 
 const kindItems: Record<'movie' | 'show' | 'artist', NavItem> = {
@@ -91,7 +95,7 @@ export function buildNav(input: NavInput): NavSection[] {
 				? [
 						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
 						{ href: '/downloads/history', label: 'History', icon: 'clock', need: 'manage_library' },
-						{ href: '/settings', label: 'Settings', icon: 'settings', need: 'staff' }
+						{ href: '/settings', label: 'Settings', icon: 'settings', need: 'staff', ...(input.settingsAttention && input.allowed('settings') ? { dot: true } : {}) }
 					]
 				: []
 		}

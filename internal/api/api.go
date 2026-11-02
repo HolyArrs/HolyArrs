@@ -1053,6 +1053,23 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 			f.Kinds = append(f.Kinds, k)
 		}
 	}
+	// source=<id>: one Source's grabs and pauses (owners and admins see the Source list).
+	if v := q.Get("source"); v != "" {
+		id, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || id <= 0 {
+			fail(w, http.StatusBadRequest, "source must be a Source id")
+			return
+		}
+		f.SourceID = id
+	}
+	// Feed checks are routine: History's today look hides them with feed=0,
+	// unless the kinds ask for them.
+	f.HideFeed = q.Get("feed") == "0"
+	for _, k := range f.Kinds {
+		if k == "feed_checked" || k == "feed_*" {
+			f.HideFeed = false
+		}
+	}
 	if v := q.Get("from"); v != "" {
 		t, err := parseDay(v)
 		if err != nil {

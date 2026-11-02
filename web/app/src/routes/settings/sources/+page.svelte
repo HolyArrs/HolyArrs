@@ -11,7 +11,9 @@
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/EmptyState.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { emptyForm, formBody, formFrom, healthWords, ms, sourceTone, uses, type SourceForm } from '#lib/sources.ts';
+	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
+	import SourceCheck from '#lib/ui/SourceCheck.svelte';
+	import { emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources.ts';
 	import type { SourceHealth, SourceView } from '#lib/types.ts';
 
 	let sources = $state<SourceView[]>([]);
@@ -73,10 +75,10 @@
 		}
 	}
 
-	async function test(s: SourceView) {
+	async function test(s: SourceView, how: 'test' | 'try' = 'test') {
 		testing = s.id;
 		try {
-			const r = await api.post<{ ok: boolean; text: string; ms: number; health: SourceHealth }>(`/sources/${s.id}/test`);
+			const r = await api.post<{ ok: boolean; text: string; ms: number; health: SourceHealth }>(`/sources/${s.id}/${how}`);
 			results[s.id] = { ok: r.ok, text: r.ok ? `${r.text} (${ms(r.ms)})` : r.text };
 		} catch (err) {
 			results[s.id] = { ok: false, text: message(err) };
@@ -106,9 +108,8 @@
 	}
 
 	function until(h: SourceHealth): string {
-		if (!h.until) return '';
-		const t = new Date(h.until);
-		return Number.isNaN(t.getTime()) ? '' : ` Next try ${t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
+		const t = pausedUntil(h);
+		return t ? ` ${t}.` : '';
 	}
 </script>
 
@@ -242,7 +243,7 @@
 						<h2 class="h3"><a href={to(`/settings/sources/${s.id}`)}>{s.name}</a></h2>
 						<div class="mono xs muted ellipsis">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if}</div>
 					</div>
-					<span class="chip {sourceTone(s.health.state)}" data-testid="source-state">{healthWords[s.health.state] ?? words(s.health.state)}</span>
+					<span class="chip {healthTone(s.health)}" data-testid="source-state">{healthWord(s.health)}</span>
 				</div>
 				<p class="small" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
 				<p class="xs muted">
@@ -264,7 +265,7 @@
 						<Button variant="plain" type="button" onclick={() => setPaused(s, false)}>Resume</Button>
 					{:else}
 						<Button variant="plain" type="button" onclick={() => setPaused(s, true)}>Pause</Button>
-						{#if s.state === 'paused'}<Button variant="plain" type="button" onclick={() => setPaused(s, false)}>Try again now</Button>{/if}
+						{#if s.state === 'paused'}<Button type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">Try now</Button>{/if}
 					{/if}
 					<Button variant="plain" href={to(`/settings/sources/${s.id}`)}>Health</Button>
 					<Button variant="plain" type="button" onclick={() => startChange(s)}>Change</Button>
@@ -273,6 +274,7 @@
 			</li>
 		{/each}
 	</ul>
+	{#if sources.length}<SourceCheck />{/if}
 {/if}
 
 <style>

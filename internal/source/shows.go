@@ -739,14 +739,16 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 
-	found, failures, answered, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true)
+	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true)
 	if err != nil {
 		return err
 	}
-	if answered == 0 && len(failures) > 0 {
-		reason := "no Source answered: " + strings.Join(failures, "; ")
+	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
 		rest(reason)
-		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, nil)
+		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, data)
+		if !failed {
+			return nil
+		}
 		return errors.New(reason)
 	}
 	all := dedupe(found)
@@ -863,18 +865,27 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 
 // askAll asks every Source used for this kind of search; tv picks the
 // Sources and categories for shows.
-func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool) ([]found, []string, int, error) {
+func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool) ([]found, []string, int, []skippedSource, error) {
 	now := time.Now().UTC()
 	srcs, err := store.Select[domain.Source](ctx, s.Store.Read(), "sources",
-		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", store.FormatTime(now))
+		"state IN ('enabled', 'paused') ORDER BY priority, id")
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, nil, 0, nil, err
 	}
 	var all []found
 	var failures []string
+	var skipped []skippedSource
 	answered := 0
 	for i, src := range srcs {
 		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) {
+			continue
+		}
+		if src.State == "paused" && (src.PausedUntil == nil || src.PausedUntil.After(now)) {
+			why := "paused"
+			if src.PauseReason != nil && *src.PauseReason != "" {
+				why = *src.PauseReason
+			}
+			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: why})
 			continue
 		}
 		_ = r.Progress(ctx, float64(i)/float64(len(srcs)+1), "searching "+src.Name)
@@ -896,9 +907,10 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		}
 		if err != nil {
 			if ctx.Err() != nil {
-				return nil, nil, 0, ctx.Err()
+				return nil, nil, 0, nil, ctx.Err()
 			}
 			failures = append(failures, src.Name+": "+err.Error())
+			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: failWhy(err)})
 			s.pause(ctx, src, err)
 			continue
 		}
@@ -908,7 +920,58 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 			all = append(all, found{src: src, item: item, keys: secretValues(cl.cfg)})
 		}
 	}
-	return all, failures, answered, nil
+	return all, failures, answered, skipped, nil
+}
+
+// skippedSource is a Source a search could not use: paused, or failed this
+// time. Why is the pause reason or the kind of failure.
+type skippedSource struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Why  string `json:"why"`
+}
+
+// failWhy names the kind of a Source failure, in the pause reason words.
+func failWhy(err error) string {
+	var se *Error
+	if errors.As(err, &se) && se.Kind != "" {
+		return se.Kind
+	}
+	return KindDown
+}
+
+// noAnswer is the search_failed summary and data when no Source answered:
+// some failed, or every one was paused. ok is false when a Source answered
+// or none was tried at all. failed is false when every Source was only
+// paused: the search is written down but is not a failed job.
+func noAnswer(failures []string, answered int, skipped []skippedSource) (reason string, data map[string]any, ok, failed bool) {
+	if answered > 0 || len(skipped) == 0 {
+		return "", nil, false, false
+	}
+	failed = len(failures) > 0
+	if !failed {
+		for _, k := range skipped {
+			failures = append(failures, k.Name+": "+pauseWords(k.Why))
+		}
+	}
+	return "no Source answered: " + strings.Join(failures, "; "), map[string]any{"sources": skipped}, true, failed
+}
+
+// pauseWords says why a Source is paused in plain words.
+func pauseWords(why string) string {
+	switch why {
+	case KindRateLimited:
+		return "slowed down"
+	case KindDown:
+		return "not reachable"
+	case KindLoginRefused:
+		return "login refused"
+	case KindBroken:
+		return "setup broken"
+	case KindBlocked:
+		return "blocked"
+	}
+	return "paused"
 }
 
 // episodeSet builds the show search for one episode Slot.

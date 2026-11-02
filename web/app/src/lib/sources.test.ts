@@ -70,3 +70,24 @@ describe('sources', () => {
 		expect(barHeight(3, 0)).toBe(0);
 	});
 });
+
+describe('source health by reason', async () => {
+	const { healthTone, healthWord, pausedUntil } = await import('./source-health.ts');
+	it('tells waits apart', () => {
+		expect(healthWord({ state: 'unreachable', reason: 'slowed' })).toBe('Slowed down');
+		expect(healthTone({ state: 'unreachable', reason: 'slowed' })).toBe('wait');
+		expect(healthWord({ state: 'unreachable', reason: 'blocked' })).toBe('Blocked');
+		expect(healthWord({ state: 'auth_failed', reason: 'key' })).toBe('Key refused');
+		expect(healthTone({ state: 'unreachable', reason: 'down' })).toBe('fail');
+	});
+	it('falls back to the state', () => {
+		expect(healthWord({ state: 'working' })).toBe('Working');
+		expect(healthTone({ state: 'disabled' })).toBe('idle');
+		expect(healthWord({ state: 'unreachable' })).toBe('Unreachable');
+	});
+	it('says paused until a time', () => {
+		expect(pausedUntil({})).toBe('');
+		expect(pausedUntil({ until: 'nope' })).toBe('');
+		expect(pausedUntil({ until: '2026-11-02T14:05:00Z' })).toMatch(/^Paused until /);
+	});
+});

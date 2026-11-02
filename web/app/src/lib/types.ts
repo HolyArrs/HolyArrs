@@ -818,6 +818,8 @@ export interface SourceHealth {
 	state: 'working' | 'unreachable' | 'auth_failed' | 'disabled';
 	text: string;
 	until?: string;
+	/** Why it waits: slowed, down, blocked or key. */
+	reason?: 'slowed' | 'down' | 'blocked' | 'key';
 }
 
 export interface SourceUse {

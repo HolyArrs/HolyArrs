@@ -70,6 +70,11 @@ type EventFilter struct {
 	// An album's Events also take those naming the album (part_id,
 	// album_id).
 	PartID int64
+	// SourceID keeps the Events of one Source: grabs whose Release came
+	// from it (data.release_id) and those naming it (data.source_id).
+	SourceID int64
+	// HideFeed drops the routine feed checks.
+	HideFeed bool
 }
 
 // Events lists the Events that match f, newest first, and how many match
@@ -125,6 +130,19 @@ func (s *Store) Events(ctx context.Context, f EventFilter) ([]domain.Event, int,
 	} else if f.PartID > 0 {
 		where = append(where, "(json_extract(data, '$.part_id') = ? OR json_extract(data, '$.album_id') = ?)")
 		args = append(args, f.PartID, f.PartID)
+	}
+	if f.SourceID > 0 {
+		// Releases live in the main database, Events in their own: read the
+		// Source's Release ids first and pass them as one JSON list.
+		ids := "[]"
+		if err := s.read.QueryRowContext(ctx, "SELECT coalesce(json_group_array(id), '[]') FROM releases WHERE source_id = ?", f.SourceID).Scan(&ids); err != nil {
+			return nil, 0, err
+		}
+		where = append(where, "(json_extract(data, '$.release_id') IN (SELECT value FROM json_each(?)) OR json_extract(data, '$.source_id') = ?)")
+		args = append(args, ids, f.SourceID)
+	}
+	if f.HideFeed {
+		where = append(where, "kind <> 'feed_checked'")
 	}
 	if !f.From.IsZero() {
 		where, args = append(where, "at >= ?"), append(args, FormatTime(f.From))

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { glide } from '#lib/ui/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -650,7 +651,7 @@
 								</p>
 							{/if}
 							{#if a.note}<p class="line note">“{a.note}”</p>{/if}
-							{#if a.state === 'approved'}<p class="line muted">{approvedLine(a)}</p>{/if}
+							{#if a.state === 'approved'}<p class="line muted">{approvedLine(a)}</p>{#if a.title_id && a.title_id > 0}<SearchOutcomeLine titleId={a.title_id} />{/if}{/if}
 							<div class="actions">
 								{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
 								<button
@@ -700,7 +701,7 @@
 					{#if decided(selected)}<dt>Decision</dt><dd>{decided(selected)}</dd>{/if}
 				</dl>
 				{#if selected.note}<p class="review-note">“{selected.note}”</p>{/if}
-				{#if selected.state === 'approved'}<p class="line muted">{approvedLine(selected)}</p>{/if}
+				{#if selected.state === 'approved'}<p class="line muted">{approvedLine(selected)}</p>{#if selected.title_id && selected.title_id > 0}<SearchOutcomeLine titleId={selected.title_id} />{/if}{/if}
 			</aside>
 		{/if}
 

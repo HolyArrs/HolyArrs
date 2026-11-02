@@ -10,6 +10,7 @@
 	import { fade, slide, type TransitionConfig } from 'svelte/transition';
 	import Chip from '../ui/Chip.svelte';
 	import Icon from '../Icon.svelte';
+	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { ALL, lookTabs, showParam } from '../history-looks.ts';
@@ -24,6 +25,7 @@
 		filter,
 		titles,
 		episodeName = '',
+		sources,
 		onfilter,
 		tools
 	}: {
@@ -34,6 +36,8 @@
 		filter: HistoryFilter;
 		titles: TitleView[];
 		episodeName?: string;
+		/** The Sources to filter by; given only to owners and admins. */
+		sources?: { id: number; name: string }[];
 		onfilter: (change: Partial<HistoryFilter>) => void;
 		/** Page controls beside the finder (poster size, details panel). */
 		tools?: Snippet;
@@ -101,6 +105,15 @@
 			pickTitle(found[hi]);
 		} else if (e.key === 'Escape') finding = false;
 	}
+	// Owners and admins: keep one Source's grabs and pauses, and show the feed checks.
+	const sourceName = $derived(sources?.find((x) => x.id === filter.source)?.name ?? '');
+	const sourceItems = $derived<MenuItem[]>([
+		{ kind: 'heading', label: 'Source' },
+		{ label: 'Every Source', checked: !filter.source, onselect: () => onfilter({ source: undefined }) },
+		...(sources ?? []).map((x) => ({ label: x.name, checked: filter.source === x.id, onselect: () => onfilter({ source: x.id }) })),
+		{ kind: 'separator' },
+		{ label: 'Show feed checks', checked: !!filter.feed, hint: 'Routine checks of the Sources for new Releases', onselect: () => onfilter({ feed: filter.feed ? undefined : true }) }
+	]);
 	const dates = $derived(filter.from && filter.to ? `${filter.from} to ${filter.to}` : filter.from ? `From ${filter.from}` : filter.to ? `Until ${filter.to}` : '');
 </script>
 
@@ -116,7 +129,10 @@
 			{/each}
 		</div>
 		<div class="end">
-		{#if tools}<div class="tools">{@render tools()}</div>{/if}
+		{#if sources || tools}<div class="tools">
+			{#if sources}<span data-testid="look-source"><Menu label="Source and feed checks" variant="button" text={filter.source ? sourceName || 'One Source' : 'Every Source'} icon="chevronDown" items={sourceItems} width={240} align="start" /></span>{/if}
+			{#if tools}{@render tools()}{/if}
+		</div>{/if}
 		<div class="finder" class:has={!!filter.title}>
 			<Icon name="search" size={16} />
 			{#if filter.title}

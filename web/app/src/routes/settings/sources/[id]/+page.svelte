@@ -6,7 +6,9 @@
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import { ago, words } from '#lib/format.ts';
-	import { barHeight, healthWords, ms, opWords, sourceTone, uses } from '#lib/sources.ts';
+	import { barHeight, ms, opWords, uses } from '#lib/sources.ts';
+	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
+	import Button from '#lib/ui/Button.svelte';
 	import type { SourceCall, SourceDay, SourceView } from '#lib/types.ts';
 
 	let src = $state<SourceView | null>(null);
@@ -14,6 +16,22 @@
 	let recent = $state<SourceCall[]>([]);
 	let span = $state(14);
 	let error = $state('');
+	let trying = $state(false);
+	let tried = $state<{ ok: boolean; text: string } | null>(null);
+
+	async function tryNow() {
+		if (!src) return;
+		trying = true;
+		try {
+			const r = await api.post<{ ok: boolean; text: string; ms: number }>(`/sources/${src.id}/try`);
+			tried = { ok: r.ok, text: r.ok ? `${r.text} (${ms(r.ms)})` : r.text };
+		} catch (e) {
+			tried = { ok: false, text: message(e) };
+		} finally {
+			trying = false;
+			await load();
+		}
+	}
 
 	async function load() {
 		try {
@@ -50,15 +68,19 @@
 {:else}
 	<PageHeader back={{ href: to('/settings/sources'), label: 'Sources' }} title={src.name} subtitle={`${words(src.format)} · ${words(src.protocol)} · priority ${src.priority} · ${uses(src)}`}>
 		{#snippet actions()}
-			{#if src}<span class="chip {sourceTone(src.health.state)}" data-testid="health-state">{healthWords[src.health.state]}</span>{/if}
+			{#if src}
+				{#if src.state === 'paused'}<Button type="button" disabled={trying} aria-busy={trying} onclick={tryNow} data-testid="source-try">Try now</Button>{/if}
+				<span class="chip {healthTone(src.health)}" data-testid="health-state">{healthWord(src.health)}</span>
+			{/if}
 		{/snippet}
 	</PageHeader>
 
 	<section class="tiles" aria-label="At a glance">
 		<div class="card tile">
 			<span class="label">State</span>
-			<span class="big">{healthWords[src.health.state]}</span>
-			<span class="xs muted">{src.health.text}</span>
+			<span class="big">{healthWord(src.health)}</span>
+			<span class="xs muted">{src.health.text}{#if pausedUntil(src.health)} {pausedUntil(src.health)}.{/if}</span>
+			{#if tried}<span class="xs" class:bad-text={!tried.ok} class:ok-text={tried.ok} role="status" data-testid="source-tried">{tried.text}</span>{/if}
 		</div>
 		<div class="card tile">
 			<span class="label">Last answer</span>

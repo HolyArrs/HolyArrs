@@ -176,6 +176,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/library-summary":                          needSignedIn,
 	"GET /api/v1/home":                                     needSignedIn,
 	"GET /api/v1/titles/{id}":                              needSignedIn,
+	"GET /api/v1/titles/{id}/search-outcome":               needSignedIn,
 	"GET /api/v1/artwork/{name}":                           needSignedIn,
 	"GET /api/v1/artwork/tmdb/{size}/{file}":               needSignedIn,
 	"GET /api/v1/artwork/img/{kind}/{id}/{file}":           needSignedIn,
@@ -381,6 +382,8 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/sources/{id}/test":                             PermSettings,
 	"POST /api/v1/sources/{id}/pause":                            PermSettings,
 	"POST /api/v1/sources/{id}/resume":                           PermSettings,
+	"POST /api/v1/sources/{id}/try":                              PermSettings,
+	"POST /api/v1/sources/check":                                 PermSettings,
 	"GET /api/v1/downloaders":                                    PermManageLibrary,
 	"POST /api/v1/downloaders":                                   PermSettings,
 	"PUT /api/v1/downloaders/{id}":                               PermSettings,
@@ -702,7 +705,7 @@ func init() {
 		"GET /api/v1/subtitle-sites/kinds", "GET /api/v1/subtitles/languages", "GET /api/v1/subtitles/missing",
 		"GET /api/v1/titles", "GET /api/v1/titles/owned", "GET /api/v1/library/search", "GET /api/v1/search/suggest", "GET /api/v1/titles/lookup", "GET /api/v1/titles/{id}",
 		"GET /api/v1/titles/{id}/albums", "GET /api/v1/titles/{id}/episodes", "GET /api/v1/titles/{id}/releases",
-		"GET /api/v1/titles/{id}/rename", "GET /api/v1/titles/{id}/seasons", "GET /api/v1/titles/{id}/subtitles",
+		"GET /api/v1/titles/{id}/rename", "GET /api/v1/titles/{id}/seasons", "GET /api/v1/titles/{id}/subtitles", "GET /api/v1/titles/{id}/search-outcome",
 		"GET /api/v1/turned-down", "GET /api/v1/users/{id}/avatar", "GET /api/v1/schedules", "GET /api/v1/app/update",
 	} {
 		ReadRoutes[r] = true
