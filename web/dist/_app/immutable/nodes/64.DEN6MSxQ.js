@@ -1,0 +1,1 @@
+import{Ti as e,Xi as t,Zi as n,qi as r,wr as i}from"../chunks/yBcoejDl.js";import{t as a}from"../chunks/6t3saT6c.js";function o(o,s){n(s,!0);let c=r(()=>i.params.kind??``),l=r(()=>i.params.tmdb??``);a(o,{get kind(){return e(c)},get tmdb(){return e(l)}}),t()}export{o as component};

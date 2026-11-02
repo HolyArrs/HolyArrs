@@ -1,0 +1,1 @@
+import{Li as e,gi as t,hi as n,pi as r}from"../chunks/yBcoejDl.js";function i(i,a){var o=t(),s=e(o);r(s,()=>a.children),n(i,o)}export{i as component};

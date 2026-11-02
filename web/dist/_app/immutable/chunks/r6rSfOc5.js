@@ -1,1 +1,0 @@
-import{pt as e}from"./DOoThjEd.js";import{n as t}from"./-CU2KpuK.js";var n=e({count:0,items:[]});async function r(){try{let e=await t.get(`/needs-decision`);n.items=e.items,n.count=e.count}catch{}}export{r as n,n as t};

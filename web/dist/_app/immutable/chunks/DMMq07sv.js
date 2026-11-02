@@ -1,1 +1,0 @@
-function e(e){if(e&&(e.card_art||e.card_logo))return{art:e.card_art,logo:e.card_logo||null,hasTitle:!!e.art_has_title}}function t(e,t,n={}){let r=t.backdrop||(e?.hasTitle?null:e?.art)||null,i=n.art?null:r,a=n.logo?null:e?.logo||t.logo||null;return a?{variant:`logo`,image:i,logo:a}:{variant:`name`,image:i,logo:null}}export{e as n,t};

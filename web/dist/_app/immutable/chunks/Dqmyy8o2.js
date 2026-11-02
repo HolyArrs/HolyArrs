@@ -1,1 +1,0 @@
-import{pt as e}from"./DOoThjEd.js";function t(t=4200){let n=e([]),r=1;function i(e){let t=n.findIndex(t=>t.id===e);t>=0&&n.splice(t,1)}function a(e,a=`info`,o={}){let s=r++;return n.push({id:s,text:e,tone:a,action:o.action}),n.length>4&&n.splice(0,n.length-4),setTimeout(()=>i(s),o.ms??(a===`fail`?t*2:t)),s}return{list:n,push:a,dismiss:i}}var n=t();export{n as t};
