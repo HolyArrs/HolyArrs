@@ -137,10 +137,10 @@
 
 <style>
 	.status {
-		max-width: 1600px; margin: 0 auto; padding: 0 var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+		max-width: 1600px; margin: 0 auto; padding: 0 var(--gutter) 0; box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;
 	}
-	.sbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; }
+	.sbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
 	h1 { margin: 0; font: 600 26px/1.15 var(--font-ui); color: var(--text); }
 	.head { margin: 2px 0 0; font-size: 14px; }
 	.head.good { color: var(--text-muted); }

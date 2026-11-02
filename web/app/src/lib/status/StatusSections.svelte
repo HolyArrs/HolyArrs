@@ -148,7 +148,7 @@
 			{/if}
 		</section>
 	{:else if tab === 'jobs'}
-		<div class="jobs-grid">
+		<div class="tight">
 		<RunsTimeline {upcoming} {recent} now={Date.now()} />
 
 		<section class="st-plate" aria-labelledby="s-jobs">
@@ -287,10 +287,16 @@
 	.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 	.tbl th { padding: 8px 12px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--line); }
 	.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--text); vertical-align: middle; }
-	/* Jobs: the timeline beside every job, so the tab fits a screen; rows kept tight */
-	.jobs-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 22px; align-items: start; }
-	.tbl.jobs th { padding: 6px 10px 8px; }
-	.tbl.jobs td { padding: 0 10px; height: 40px; font-size: 13.5px; }
+	/* Jobs: the timeline over every job, both drawn tight so the tab fits a screen */
+	.tight { display: flex; flex-direction: column; gap: 14px; }
+	.tight :global(.st-plate) { padding: 12px 18px 14px; }
+	.tight :global(.st-plate > h2) { margin: 0 -18px 10px; padding: 0 18px 10px; font-size: 16px; }
+	.tight :global(.tl li) { min-height: 32px; }
+	.tight :global(.tl .nm) { font-size: 13.5px; }
+	.tight :global(.tl .nowline) { min-height: 24px; }
+	.tbl.jobs { font-size: 13.5px; }
+	.tbl.jobs th { padding: 2px 10px 6px; font-size: 12.5px; }
+	.tbl.jobs td { padding: 0 10px; height: 34px; }
 	.tbl.jobs tr:last-child td { border-bottom: 0; }
 	.tbl.jobs .lnk { min-height: 32px; }
 	.tbl .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -322,7 +328,6 @@
 	.pill.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--text); }
 	.pill.warn { background: color-mix(in srgb, var(--wait) 22%, transparent); color: var(--text); }
 
-	@media (max-width: 1180px) { .jobs-grid { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 900px) { .pair, .disks { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {
 		.seg { align-self: stretch; }
