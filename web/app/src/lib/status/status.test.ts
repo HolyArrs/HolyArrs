@@ -61,8 +61,9 @@ describe('status rows', () => {
 	});
 
 	it('defaults the look to b', () => {
-		expect(lookOf(null)).toBe('b');
+		expect(lookOf(null)).toBe('d');
 		expect(lookOf('a')).toBe('a');
-		expect(lookOf('zz')).toBe('b');
+		expect(lookOf('zz')).toBe('d');
+		expect(lookOf('b')).toBe('b');
 	});
 });

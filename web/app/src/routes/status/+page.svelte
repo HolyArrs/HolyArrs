@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Status: is every linked part working, and did every background job run?
-	// Three looks for the preview (?look=a|b|c, default b). Reads only the
+	// Four looks for the preview (?look=a|b|c|d, default d, the Board). Reads only the
 	// existing health, schedules, lists, alerts and metadata routes.
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -14,6 +14,7 @@
 	import type { ScheduleRow } from '#lib/schedules.ts';
 	import LookPills from '#lib/status/LookPills.svelte';
 	import Row from '#lib/status/StatusRow.svelte';
+	import Board from '#lib/status/StatusBoard.svelte';
 	import { buildRows, groupLine, groupOrder, groupRows, headline, lookOf, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const look = $derived(lookOf(page.url.searchParams.get('look')));
@@ -127,7 +128,7 @@
 {/snippet}
 
 <div class="status" data-testid="status-page" data-look={look}>
-	<header class="bar">
+	<header class="sbar">
 		<div class="title">
 			<h1>Status</h1>
 			{#if input}<p class="head {problems.length ? 'bad' : 'good'}" data-testid="status-headline">{top}</p>{/if}
@@ -141,6 +142,8 @@
 		<p class="notice" role="alert">{error}</p>
 	{:else if !input}
 		<p class="muted">Loading…</p>
+	{:else if look === 'd'}
+		<Board {groups} {problems} {canAct} {busy} oncheck={check} {labelOf} />
 	{:else if look === 'a'}
 		{#each groups as g (g.id)}
 			<section class="card" aria-labelledby="g-{g.id}">
@@ -200,12 +203,13 @@
 <LookPills />
 
 <style>
+	.status[data-look='d'] { max-width: 1600px; }
 	.status {
-		max-width: 1080px; margin: 0 auto; padding: 0 var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+		max-width: 1080px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;
 	}
-	.bar {
-		position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+	.sbar {
+		position: sticky; top: var(--topbar, 0px); z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px;
 		margin: 0 calc(-1 * var(--gutter)); padding: 14px var(--gutter);
 		background: color-mix(in srgb, var(--bg, var(--surface-0, var(--surface-1))) 72%, transparent);
 		-webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
@@ -246,5 +250,6 @@
 		.fline { grid-column: 1; grid-row: 2; }
 		.chev { grid-column: 2; grid-row: 1 / span 2; }
 		h1 { font-size: 22px; }
+		.sbar { position: static; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 0; }
 	}
 </style>

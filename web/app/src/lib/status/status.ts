@@ -209,13 +209,21 @@ export function headline(rows: StatusRow[]): string {
 }
 
 export const looks = [
+	{ key: 'd', label: 'Board' },
 	{ key: 'a', label: 'One list' },
 	{ key: 'b', label: 'Problems first' },
 	{ key: 'c', label: 'Two tabs' }
 ] as const;
 export type LookKey = (typeof looks)[number]['key'];
 
-/** lookOf reads ?look=, defaulting to b. */
+/** lookOf reads ?look=, defaulting to the board. */
 export function lookOf(v: string | null): LookKey {
-	return v === 'a' || v === 'c' ? v : 'b';
+	return v === 'a' || v === 'b' || v === 'c' ? v : 'd';
+}
+
+/** groupCounts splits a group into working, needs attention and off. */
+export function groupCounts(g: StatusGroup): { ok: number; bad: number; off: number } {
+	const ok = g.rows.filter((r) => r.tone === 'ok').length;
+	const off = g.rows.filter((r) => r.tone === 'idle').length;
+	return { ok, bad: g.rows.length - ok - off, off };
 }
