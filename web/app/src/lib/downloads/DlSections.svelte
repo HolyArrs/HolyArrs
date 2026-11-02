@@ -972,8 +972,6 @@
 	});
 	/** The least width each number column needs to show its text whole. */
 	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, time: 76, size: 140, swarm: 110, ratio: 56, added: 90, status: 110 };
-	/** Columns drop out, least important first, when the list is too narrow for all of them. */
-	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'quality', 'added', 'age', 'swarm', 'ratio', 'requested', 'source', 'category', 'time', 'size'];
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
 	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : Math.max(layout.widths[id], heads[id] ?? 0));
@@ -996,16 +994,9 @@
 	const kindWide = $derived(kindW > KIND_W[0]);
 	const posterW = $derived(POSTER_W.includes(layout.widths.poster) ? layout.widths.poster : POSTER_W[0]);
 	const near = (set: number[], w: number) => set.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
-	const vis = $derived.by(() => {
-		if (phone || room <= 0) return visAll;
-		const need = (c: ColId[]) => 48 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
-		let cur = [...visAll];
-		for (const d of DROP) {
-			if (need(cur) <= room) break;
-			cur = cur.filter((x) => x !== d);
-		}
-		return cur;
-	});
+	// Every picked column shows; when they are wider than the view the list scrolls sideways
+	// (columns used to drop out one by one on a narrow view, which read as a glitch).
+	const vis = $derived(visAll);
 	function sortBy(id: ColId) {
 		layout.sort = nextSort(layout.sort, id);
 		save();
