@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agoShort, canFind, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
@@ -108,6 +108,13 @@ describe('search look rows', () => {
 
 describe('history detail actions', () => {
 	const row = (...events: EventRecord[]): HistoryRow => ({ key: 'r' + events[0].ID, head: events[0], events, steps: [] });
+	it('finds the release, Slot and title to block for Find another', () => {
+		expect(findTarget(row(ev('release_chosen', { TitleID: 7, SlotID: 9, Data: { release_id: 5 } })))).toEqual({ releaseId: 5, slotId: 9, titleId: 7 });
+		expect(findTarget(row(ev('download_failed', { TitleID: 7, Data: { release_id: 5 } })))).toEqual({ releaseId: 5, slotId: 0, titleId: 7 });
+		expect(findTarget(row(ev('download_failed', { TitleID: 7, DownloadID: 2 })))).toBeNull();
+		expect(findTarget(row(ev('release_chosen', { Data: { release_id: 5 } })))).toBeNull();
+		expect(findTarget(row(ev('ask_made', { TitleID: 7, Data: { release_id: 5 } })))).toBeNull();
+	});
 	it('offers Find another only on events tied to an actual release', () => {
 		expect(canFind(row(ev('release_chosen', { Data: { release: 'Dune.2021.2160p' } })))).toBe(true);
 		expect(canFind(row(ev('download_failed', { DownloadID: 4 })))).toBe(true);

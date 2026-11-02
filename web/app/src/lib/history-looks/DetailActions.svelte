@@ -1,21 +1,22 @@
 <script lang="ts">
-	// A row's detail actions: "Find another" for rows about a release (it
-	// says it is coming soon for now), then "Go to" links.
+	// A row's detail actions: "Find another" for rows about a release (turns
+	// the release down, then searches its Slot again), then "Go to" links.
 	import { tick } from 'svelte';
 	import Button from '../ui/Button.svelte';
 	import { toasts } from '../toasts.svelte.ts';
+	import { api, message } from '../api.ts';
 	import { to } from '../paths.ts';
 	import { titleHref } from '../history-views.ts';
-	import { canFind, qualityOf, rowLinks } from './dirs.ts';
+	import { canFind, findTarget, qualityOf, rowLinks } from './dirs.ts';
 	import type { HistoryRow } from '../history.ts';
 	import type { TitleView } from '../types.ts';
 
 	let { row, titleById }: { row: HistoryRow; titleById: Map<number, TitleView> } = $props();
 	const find = $derived(canFind(row));
 	const links = $derived(rowLinks(row, titleHref(row.head.TitleID, titleById)));
-	const soon = (what: string) => toasts.push(`${what}: coming soon.`, 'info');
 
 	let asking = $state(false);
+	let busy = $state(false);
 	let box = $state<HTMLDivElement>();
 	let opener = $state<HTMLDivElement>();
 	$effect(() => {
@@ -27,9 +28,27 @@
 		await tick();
 		box?.querySelector<HTMLButtonElement>('[data-testid="history-find-confirm"]')?.focus();
 	}
-	async function stop(done = false) {
+	async function confirm() {
+		const t = findTarget(row);
+		if (!t) {
+			toasts.push('HolyArrs no longer knows which release this was.', 'fail');
+			return;
+		}
+		busy = true;
+		try {
+			const slot = t.slotId > 0 ? { slot_id: t.slotId } : undefined;
+			await api.post(`/releases/${t.releaseId}/turn-down`, slot);
+			await api.post(`/titles/${t.titleId}/search`, slot);
+			toasts.push('Blocked. Searching for another release.', 'ok');
+			await stop();
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busy = false;
+		}
+	}
+	async function stop() {
 		asking = false;
-		if (done) soon('Find another');
 		await tick();
 		opener?.querySelector<HTMLElement>('[data-testid="history-find"]')?.focus();
 	}
@@ -45,7 +64,7 @@
 			<div class="ask" role="group" aria-label="Find another release" bind:this={box} onkeydown={(ev) => ev.key === 'Escape' && (ev.stopPropagation(), stop())}>
 				<p>Block this release and search again for {qualityOf(row) || 'the same quality'}?</p>
 				<div class="btns">
-					<Button variant="primary" data-testid="history-find-confirm" onclick={() => stop(true)}>Confirm</Button>
+					<Button variant="primary" data-testid="history-find-confirm" disabled={busy} busy={busy} onclick={confirm}>Confirm</Button>
 					<Button variant="plain" data-testid="history-find-cancel" onclick={() => stop()}>Cancel</Button>
 				</div>
 			</div>

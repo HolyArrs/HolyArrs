@@ -271,6 +271,17 @@ export function canFind(row: HistoryRow): boolean {
 	});
 }
 
+/** findTarget: the release to block, its Slot and its title for "Find another", or null when the Events did not keep them. */
+export function findTarget(row: HistoryRow): { releaseId: number; slotId: number; titleId: number } | null {
+	for (const e of row.events) {
+		if (!findKind.test(e.Kind)) continue;
+		const releaseId = num(e.Data?.release_id);
+		const titleId = e.TitleID ?? row.head.TitleID ?? 0;
+		if (releaseId > 0 && titleId > 0) return { releaseId, slotId: e.SlotID ?? row.head.SlotID ?? 0, titleId };
+	}
+	return null;
+}
+
 /** A "Go to" link a row's details offer. */
 export interface GoLink {
 	key: 'title' | 'downloads' | 'requests';
