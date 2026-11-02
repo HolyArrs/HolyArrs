@@ -914,7 +914,7 @@
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 30, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
 	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
@@ -923,7 +923,7 @@
 	/** heads holds each header's name width, measured after layout and after each sort. */
 	let heads = $state<Partial<Record<ColId, number>>>({});
 	// The Source column hugs the client's logo; its header is an icon (wider only while a sort arrow shows).
-	const SRC_W = 30;
+	const SRC_W = 24;
 	const vis = $derived.by(() => {
 		if (phone || room <= 0) return visAll;
 		const need = (c: ColId[]) => 48 + FIXED + (c.length + 3) * gap + c.reduce((n, id) => n + (id === 'title' ? TITLE_MIN : wMin(id)), 0);
@@ -966,9 +966,7 @@
 	function minOf(id: ColId): number {
 		const l = grid?.querySelector<HTMLElement>(`.chead [data-col="${id}"] .lbl`);
 		const w = l ? textW(l) : 0;
-		// The sort arrow counts too, so a sorted column never cuts its own name.
-		const a = l?.parentElement?.querySelector<HTMLElement>('.sarr');
-		return w > 0 ? Math.ceil(w + (a ? a.offsetWidth + 4 : 0)) + 2 : MIN_W;
+		return w > 0 ? Math.ceil(w) + 2 : MIN_W;
 	}
 	// Dragging stops at the column's own name; MINW only sets how narrow double-click fit goes.
 	const clamp = (id: ColId, v: number) => Math.round(Math.max(minOf(id), Math.min(MAX_W, v)));
@@ -1388,7 +1386,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto'}<span class="lbl" aria-label="Source"><Icon name="plug" size={15} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto'}<span class="lbl" aria-label="Source"><Icon name="plug" size={15} /></span>{:else}<span class="lbl">{c.label}</span>{/if}{#if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1945,7 +1943,9 @@
 	.tfld.tier { flex: 0 0 72px; }
 	.tfld:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	tr.fixed td { color: var(--text-muted); }
-	.sarr { flex: none; margin-left: 4px; color: var(--accent-text); font-weight: 700; }
+	/* Sorting shows as a line under the column name (blue going up, red going down), so it takes no width. */
+	.sbar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 1px; background: var(--info); }
+	.sbar.desc { background: var(--fail); }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) - 6px); width: 12px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
