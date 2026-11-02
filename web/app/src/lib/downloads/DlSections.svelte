@@ -918,7 +918,10 @@
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
 	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'downloader', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
 	const TITLE_MIN = 220;
-	const wMin = (id: ColId) => (id === 'proto' ? SRC_W : layout.widths[id]);
+	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
+	const wMin = (id: ColId) => (id === 'proto' ? SRC_W : Math.max(layout.widths[id], heads[id] ?? 0));
+	/** heads holds each header's name width, measured after layout and after each sort. */
+	let heads = $state<Partial<Record<ColId, number>>>({});
 	// The Source column is just wide enough for its header word and the client's logo.
 	const SRC_W = 60;
 	const vis = $derived.by(() => {
@@ -944,7 +947,7 @@
 	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
 	const tW = $derived.by(() => {
 		if (!vis.includes('title')) return 0;
-		if (room <= 0) return layout.widths.title;
+		if (room <= 0 || layout.titleSet) return wMin('title');
 		// A Title nobody has sized takes what is left (with a little slack); a sized one only gives way when the room is short.
 		const rest = vis.reduce((n, id) => (id === 'title' ? n : n + wMin(id)), (layout.titleSet ? 0 : 48) + FIXED + (vis.length + 3) * gap);
 		return Math.max(TITLE_MIN, Math.min(layout.widths.title, Math.floor(room - rest)));
@@ -979,11 +982,23 @@
 				for (const t of el.querySelectorAll('.tt, .rel')) w = Math.max(w, textW(t));
 				continue;
 			}
-			const tx = el.classList.contains('ch') ? el.querySelector('.lbl') : (el.querySelector('.tx') ?? el);
+			const tx = el.classList.contains('ch') ? el.querySelector('.lbl') : (el.querySelector('.tx, .kt') ?? el);
 			w = Math.max(w, tx ? textW(tx) + (el.classList.contains('st') ? 14 : 0) : 0);
 		}
 		return clamp(id, Math.max(Math.ceil(w) + 14, MINW[id] ?? 0));
 	}
+	function measureHeads() {
+		const m: Partial<Record<ColId, number>> = {};
+		for (const id of vis) if (grid?.querySelector(`.chead [data-col="${id}"] .lbl`)) m[id] = minOf(id);
+		heads = m;
+	}
+	// A new sort arrow or column set changes the header widths, so measure again once it has drawn.
+	$effect(() => {
+		void layout.sort;
+		void vis;
+		const t = setTimeout(measureHeads, 0);
+		return () => clearTimeout(t);
+	});
 	$effect(() => {
 		if (!grid) return;
 		gap = parseFloat(getComputedStyle(grid).getPropertyValue('--gap')) || 10;
@@ -992,6 +1007,7 @@
 			room = (listEl ?? g).clientWidth;
 			phone = matchMedia('(max-width: 640px)').matches;
 			titleMin = minOf('title');
+			measureHeads();
 		});
 		ro.observe(g);
 		if (listEl) ro.observe(listEl);
@@ -1372,7 +1388,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns"><span class="lbl">{c.label}</span>{#if so}<span class="sarr" aria-hidden="true" data-testid="dl-sort">{so.desc ? '↓' : '↑'}</span>{/if}{#if id !== 'proto'}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1802,6 +1818,8 @@
 <style>
 	.ch[data-col='proto'] { justify-content: center; }
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
+	/* Source has no grip (fixed width) but keeps the divider line, at the same spot a grip draws it. */
+	.ch[data-col='proto']::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) + 1px); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.pm.logo, .pm:has(.cico) { width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 	.cico { display: block; width: 18px; height: 18px; object-fit: contain; }
 	.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); font: var(--t-callout); font-variant-numeric: tabular-nums; }
