@@ -123,6 +123,8 @@
 			prefetchTrailer(preview.kind, preview.tmdb);
 		}
 	}
+	// Over the round action the preview never opens, so it can't cover the button.
+	const onAct = (e: PointerEvent) => !!(e.target as Element | null)?.closest?.('.act');
 	function leave() {
 		if (!root?.contains(document.activeElement)) hot = false;
 		opener.cancel();
@@ -199,7 +201,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-poster" class:gone class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
+<div class="ui-poster" class:gone class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (onAct(e) ? opener.cancel() : (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter()))} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl} style:background-color={tint}>
 			{#if !image || failed || !loaded}

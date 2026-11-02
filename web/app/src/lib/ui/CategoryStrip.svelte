@@ -33,7 +33,8 @@
 			art: t.backdrop ? sized(t.backdrop, 'backdrop', 240) : '',
 			tile: t
 		})),
-		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: '', all: true }
+		// All categories borrows the last tile's still that has one.
+		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: (() => { const b = tiles.findLast((t) => t.backdrop)?.backdrop; return b ? sized(b, 'backdrop', 240) : ''; })(), all: true }
 	]);
 </script>
 

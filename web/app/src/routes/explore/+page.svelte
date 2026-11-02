@@ -156,6 +156,10 @@
 		else url.searchParams.set('type', t);
 		url.searchParams.delete('genre');
 		void goto(url, { replace: true, shallow: true, reset: false });
+		// A new tab starts at its top, never at the last tab's scroll.
+		settleCancel?.();
+		back = null;
+		scrollTo({ top: 0, behavior: 'instant' });
 		void loadHead();
 	}
 
