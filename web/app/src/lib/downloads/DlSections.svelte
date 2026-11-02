@@ -1856,12 +1856,15 @@
 			{@const s = c.status}
 			{@const usenet = c.protocol === 'usenet'}
 			{@const tone = c.error ? 'warn' : s?.connection === 'disconnected' ? 'bad' : s?.connection === 'firewalled' ? 'warn' : s?.paused ? 'held' : 'ok'}
+			<!-- The dot carries the state; a word appears only when something is off, so a card never says "Connected" while its neighbours seem not to. -->
+			{@const word = c.error ? '' : s?.connection && s.connection !== 'connected' ? CONN_WORD[s.connection] : s?.paused ? 'Paused' : ''}
+			{@const hint = c.error ? 'Not answering' : s?.connection ? CONN_HINT[s.connection] : s?.paused ? 'Paused' : 'Answering'}
 			<div class="mc" class:warn={!!c.error} data-testid="sb-client">
 				<div class="mch">
-					<i class="dot {tone}" aria-hidden="true"></i>
+					<i class="dot {tone}" role="img" aria-label={hint} title={hint}></i>
 					<b class="cname">{c.name}</b>
 					<span class="kind">{usenet ? 'Usenet' : 'Torrent'}</span>
-					{#if s?.connection}<span class="cn" data-testid="sb-connection" title={CONN_HINT[s.connection]}>{CONN_WORD[s.connection]}</span>{/if}
+					{#if word}<span class="cn" data-testid="sb-connection">{word}</span>{/if}
 					{#if c.error}<button type="button" class="xbn quiet retry" onclick={() => void readClients()} data-testid="sb-retry">Retry</button>{/if}
 				</div>
 				{#if c.error}<p class="mnote">{c.error}</p>
