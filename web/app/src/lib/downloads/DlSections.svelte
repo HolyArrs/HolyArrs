@@ -1817,6 +1817,8 @@
 	/* Source hugs the logo, so its header icon sits centred over the logos. */
 	.ch[data-col='proto'] { justify-content: center; }
 	.ch[data-col='proto'] .lbl { display: flex; }
+	/* The next divider sits a gap after the column, so the logo and icon shift half a gap to sit centred between the two lines. */
+	@media (min-width: 641px) { .ch[data-col='proto'] .lbl, .pcell > .pm { transform: translateX(calc(var(--gap) / 2 - 1px)); } }
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	/* Source has no grip (fixed width) but keeps the divider line, at the same spot a grip draws it. */
 	.ch[data-col='proto']::after { content: ''; position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
@@ -1944,7 +1946,7 @@
 	.tfld:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	tr.fixed td { color: var(--text-muted); }
 	/* Sorting shows as a line under the column name (blue going up, red going down), so it takes no width. */
-	.sbar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 1px; background: var(--info); }
+	.sbar { position: absolute; left: 0; right: calc(1px - var(--gap)); bottom: 0; height: 2px; border-radius: 1px; background: var(--info); }
 	.sbar.desc { background: var(--fail); }
 	.ch.sorted .lbl { color: var(--text); }
 	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
