@@ -95,6 +95,9 @@ type DownloadRow struct {
 	Tracker  string `json:"tracker,omitempty"`
 	// TrackerProblem: error, warning or announce (no tracker answered).
 	TrackerProblem string `json:"tracker_problem,omitempty"`
+	// Availability is a downloading torrent's full copies in the swarm
+	// (under 1: nobody holds every piece); nil when unknown.
+	Availability *float64 `json:"availability,omitempty"`
 	// LiveKey is the row's key in push updates ("<downloader id>:<external
 	// id>"); empty for rows no client item backs.
 	LiveKey string `json:"live_key,omitempty"`

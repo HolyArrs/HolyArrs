@@ -41,7 +41,10 @@ func liveKey(downloaderID int64, externalID string) string {
 func ownNumbers(j downloader.Job) map[string]any {
 	m := map[string]any{
 		"progress": j.Progress, "speed": j.Speed, "up_speed": j.UpSpeed, "seeds": j.Seeds, "peers": j.Peers,
-		"seeds_total": j.SeedsTotal, "peers_total": j.PeersTotal, "ratio": j.Ratio, "eta": nil,
+		"seeds_total": j.SeedsTotal, "peers_total": j.PeersTotal, "ratio": j.Ratio, "eta": nil, "availability": nil,
+	}
+	if j.Availability != nil && j.Progress < 1 {
+		m["availability"] = *j.Availability
 	}
 	if j.ETA > 0 {
 		m["eta"] = j.ETA

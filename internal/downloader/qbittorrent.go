@@ -280,6 +280,7 @@ type qbitTorrent struct {
 	NumLeechs   int      `json:"num_leechs"`
 	NumComplete int      `json:"num_complete"`
 	NumIncompl  int      `json:"num_incomplete"`
+	Avail       *float64 `json:"availability"`
 	ETA         int64    `json:"eta"`
 	State       string   `json:"state"`
 	AddedOn     int64    `json:"added_on"`
@@ -319,7 +320,17 @@ func jobFromTorrent(t qbitTorrent) Job {
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
 		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: HostOnly(t.Tracker), TrackerProblem: t.problem(),
 		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0),
-		LastActivity: max(t.LastAct, 0), SeedingTime: max(t.SeedTime, 0), SeenComplete: max(t.SeenDone, 0), Uploaded: max(t.Uploaded, 0), TimeActive: max(t.TimeActive, 0)}
+		LastActivity: max(t.LastAct, 0), SeedingTime: max(t.SeedTime, 0), SeenComplete: max(t.SeenDone, 0), Uploaded: max(t.Uploaded, 0), TimeActive: max(t.TimeActive, 0), Availability: t.avail()}
+}
+
+// avail is the swarm's full copies; nil when not sent (qBittorrent sends -1
+// for a paused or finished torrent).
+func (t qbitTorrent) avail() *float64 {
+	if t.Avail == nil || *t.Avail < 0 {
+		return nil
+	}
+	a := *t.Avail
+	return &a
 }
 
 // problem reads the tracker flags (sent by newer clients) or, without

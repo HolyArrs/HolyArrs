@@ -15,7 +15,8 @@
 	import Poster from '../Poster.svelte';
 	import Icon from '../Icon.svelte';
 	import Chip from '../ui/Chip.svelte';
-	import Menu from '../ui/Menu.svelte';
+	import Menu, { type MenuItem } from '../ui/Menu.svelte';
+	import { rowItems, type RowItem } from './rowmenu.ts';
 	import TopMenu from './TopMenu.svelte';
 	import { to } from '../paths.ts';
 	import DlBar from './DlBar.svelte';
@@ -49,6 +50,7 @@
 	import { poster, who } from './shared.ts';
 	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { longPress, phoneTitle, subLine } from './phone.ts';
+	import { problem } from './problem.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
@@ -513,6 +515,21 @@
 		selecting = false;
 	};
 	// Torrents a torrent Downloader can steer by hash: seeding rules and more.
+	// The row ⋯ menu: one place for a row's actions, the same items on desktop and phone.
+	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Resume', retry: 'Try again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', library: 'Open in Library', remove: 'Remove' };
+	function rowMenu(r: DownloadRow): MenuItem[] {
+		const off = busy === r.id;
+		const items: MenuItem[] = rowItems(r).map((k): MenuItem => {
+			const label = ROW_WORD[k];
+			if (k === 'library') return { label, icon: 'film', href: to(`/library/${r.title_id}`) };
+			if (k === 'remove') return { label, icon: 'trash', destructive: true, disabled: off, onselect: () => onremove(r) };
+			if (k === 'pause' || k === 'resume') return { label, icon: k === 'pause' ? 'pause' : 'play', disabled: off, onselect: () => onact?.(r, k) };
+			if (k === 'retry') return { label, icon: 'refresh', disabled: off, onselect: () => (onretry ? onretry([r]) : onact?.(r, 'retry')) };
+			return { label, disabled: off, onselect: () => onbulk?.([r], k) };
+		});
+		if (!r.can_act) items.unshift({ kind: 'heading', label: 'HolyArrs cannot change this one' });
+		return items;
+	}
 	const steerable = (r: DownloadRow) => !!onsteer && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent';
 	const STEER: { mode: SteerMode; label: string; short: string }[] = [
 		{ mode: 'location', label: 'Set location…', short: 'Set location' },
@@ -1347,7 +1364,8 @@
 		{:else}
 			{@const t = barTone(r)}
 			{@const more = statusDetail(r, importOf.get(r.id)) || statusHint(r)}
-			<span class="st {t}" class:ph data-col="status" title={more ? `${statusWord(r)} · ${more}` : statusWord(r)}><span class="dot" aria-hidden="true"></span><span class="tx">{statusWord(r)}</span></span>
+			{@const why = problem(r)}
+			<span class="st {t}" class:ph data-col="status" title={[statusWord(r), why?.text, more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx">{statusWord(r)}{#if why}<span class="why {why.tone}" data-testid="dl-why"> · {why.text}</span>{/if}</span></span>
 		{/if}
 	{:else if id === 'time'}
 		{#if hist}
@@ -1386,7 +1404,8 @@
 
 {#snippet bin(r: DownloadRow)}
 	<span class="del" data-col="bin">
-		{#if !watch}<button type="button" class="bin" tabindex={tabRow === r.id ? 0 : -1} aria-label="Remove {who(r)}" title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} disabled={!r.can_act || busy === r.id} onclick={() => onremove(r)} data-testid="dl-remove"><Icon name="trash" size={16} /></button>{/if}
+		{#if watch}{:else if rowItems(r).length}<span class="rm" data-testid="dl-row-menu"><Menu label="Actions for {who(r)}" icon="more" width={210} items={rowMenu(r)} tabindex={tabRow === r.id ? 0 : -1} /></span>
+		{:else}<button class="bin" type="button" disabled title="HolyArrs cannot change this one" aria-label="HolyArrs cannot change this one" tabindex={tabRow === r.id ? 0 : -1}><Icon name="more" size={19} /></button>{/if}
 	</span>
 {/snippet}
 
@@ -1936,6 +1955,8 @@
 
 	.st { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); }
 	.st .tx { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.st .why.fail { color: var(--fail); }
+	.st .why.wait { color: var(--wait); }
 	.st .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 	.st.paused .dot { background: var(--text-muted); }
 	.st.queued .dot { background: var(--info); }

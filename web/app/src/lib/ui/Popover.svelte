@@ -20,7 +20,8 @@
 		width = 240,
 		children,
 		onopen,
-		ontriggerkey
+		ontriggerkey,
+		tabindex
 	}: {
 		/** Accessible name of the trigger. */
 		label: string;
@@ -40,6 +41,8 @@
 		onopen?: (panel: HTMLElement) => void;
 		/** Keys pressed on the trigger (a Menu opens on the arrow keys). */
 		ontriggerkey?: (e: KeyboardEvent) => void;
+		/** Trigger tab stop, for rows that keep one roving stop. */
+		tabindex?: number;
 	} = $props();
 
 	const id = $props.id();
@@ -123,6 +126,7 @@
 		bind:this={button}
 		class="trigger {variant}"
 		type="button"
+		{tabindex}
 		aria-label={variant === 'icon' || trigger ? label : undefined}
 		title={variant === 'icon' && !trigger ? label : undefined}
 		aria-haspopup={haspopup}

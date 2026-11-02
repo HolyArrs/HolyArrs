@@ -23,7 +23,8 @@
 		align = 'end',
 		placement = 'below',
 		width = 220,
-		open = $bindable(false)
+		open = $bindable(false),
+		tabindex
 	}: {
 		label: string;
 		items: MenuItem[];
@@ -35,6 +36,7 @@
 		placement?: 'below' | 'above';
 		width?: number;
 		open?: boolean;
+		tabindex?: number;
 	} = $props();
 
 	function entries(panel: HTMLElement) {
@@ -82,7 +84,7 @@
 	}
 </script>
 
-<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} bind:open haspopup="menu" panelRole="none" onopen={focusFirst} ontriggerkey={triggerKey}>
+<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} {tabindex} bind:open haspopup="menu" panelRole="none" onopen={focusFirst} ontriggerkey={triggerKey}>
 	{#snippet children(close)}
 		<div class="ui-menu" role="menu" aria-label={label} tabindex="-1" onkeydown={nav}>
 			{#each items as item, i (i)}

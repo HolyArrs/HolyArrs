@@ -94,6 +94,9 @@ type Job struct {
 	// PostedAt is unix seconds the Usenet post was made, when the client
 	// reports it (0 unknown, and always for torrents).
 	PostedAt int64
+	// Availability is how many full copies the swarm holds (torrents;
+	// nil when the client does not report it).
+	Availability *float64
 }
 
 // Health is what an engine says about itself.

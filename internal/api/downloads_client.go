@@ -72,6 +72,9 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 		QueuePos: j.QueuePos, Tracker: j.Tracker, TrackerProblem: j.TrackerProblem,
 		LimitDown: j.LimitDown, LimitUp: j.LimitUp, LiveKey: liveKey(d.ID, j.ID),
 	}
+	if j.Progress < 1 {
+		row.Availability = j.Availability
+	}
 	if j.DoneAt > 0 {
 		t := time.Unix(j.DoneAt, 0).UTC()
 		row.FinishedAt = &t

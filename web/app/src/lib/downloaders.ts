@@ -219,6 +219,8 @@ export interface DownloadRow extends DownloadView {
 	posted_at?: string;
 	/** Trackers not all well: error, warning, or announce (none answering). */
 	tracker_problem?: 'error' | 'warning' | 'announce';
+	/** A downloading torrent's full copies in the swarm (under 1: nobody holds every piece). */
+	availability?: number;
 	/** A client torrent's own speed caps in bytes per second (absent: none). */
 	limit_down?: number;
 	limit_up?: number;

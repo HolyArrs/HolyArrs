@@ -25,6 +25,8 @@ const decideChip = () => page.locator('[data-testid="status-subchip"][data-key="
 const showProblems = () => page.locator('[data-testid="status-chip"][data-key="problems"] button').click();
 const col = (r: ReturnType<typeof iron>, id: string) => r.locator(`[data-col="${id}"]`);
 // A row opens its details panel in place; Mark failed is in the panel, Remove is the bin on the row.
+const rowMenu = (r: ReturnType<typeof iron>) => r.getByTestId('dl-row-menu').getByRole('button').first();
+const removeFromMenu = async (r: ReturnType<typeof iron>) => { await rowMenu(r).click(); await page.getByRole('menuitem', { name: 'Remove' }).click(); };
 const openRow = (r: ReturnType<typeof iron>) => r.getByTestId('dl-line').click();
 
 test('the Downloads screen shows progress, speed and time left, and follows it live', async () => {
@@ -35,7 +37,7 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	await expect(col(r, 'progress')).toContainText('40%');
 	await expect(col(r, 'speed')).toContainText('/s');
 	await expect(col(r, 'time')).not.toHaveText('–');
-	await expect(r.getByTestId('dl-remove')).toBeEnabled();
+	await expect(rowMenu(r)).toBeEnabled();
 	await openRow(r);
 	await expect(r.getByRole('button', { name: 'Mark failed' })).toBeVisible();
 	await openRow(r);
@@ -48,7 +50,7 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 
 test('Remove asks first, starts from the settings and can turn the Release down and search again', async () => {
 	const r = iron();
-	await r.getByTestId('dl-remove').click();
+	await removeFromMenu(r);
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByRole('heading', { name: 'Remove this download?' })).toBeVisible();
 	await expect(dialog.getByLabel('Delete its files')).toBeChecked();
@@ -58,7 +60,7 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await expect(dialog).toBeHidden();
 
 	const before = (await (await fetch(`${qbit}/state`)).json()).deleted.length;
-	await r.getByTestId('dl-remove').click();
+	await removeFromMenu(r);
 	await dialog.getByLabel('Add its Release to Turned down').check();
 	await expect(dialog.getByLabel('Search again')).toBeChecked();
 	await dialog.getByRole('button', { name: 'Remove', exact: true }).click();

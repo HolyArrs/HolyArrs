@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 )
@@ -71,5 +72,25 @@ func TestClientRowPostedAt(t *testing.T) {
 	q := domain.Downloader{ID: 1, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent"}
 	if r := clientRow(q, downloader.Job{ID: outHash, PostedAt: 1700000000}); r.PostedAt != nil {
 		t.Fatalf("torrent row %+v", r.PostedAt)
+	}
+}
+
+// Which Source and who asked stay with people who manage the Library: a
+// member watching their own ask sees neither; the owner sees both.
+func TestDownloadRowFieldsHiddenFromMember(t *testing.T) {
+	x := seed41(t, domain.SlotDownloading, "downloading")
+	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES
+		(1, 't', '{}', 't', '{}', 'owner', 'owner', 'x'), (2, 't', '{}', 't', '{}', 'ana', 'member', 'x')`)
+	exec41(t, x.s, `UPDATE titles SET created_by = '{"kind":"user","id":2}'`)
+	exec41(t, x.s, `INSERT INTO asks (id, created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, title_id, asked_by, asked_at)
+		SELECT 1, 't', '{}', 't', '{}', 'movie', '1', 'Salt Choir', 'approved', t.id, 2, 't' FROM titles t LIMIT 1`)
+	exec41(t, x.s, `INSERT INTO ask_people (ask_id, user_id, asked_at) VALUES (1, 2, 't')`)
+	mine := viewAs(t, x, auth.Who{UserID: 2, Role: auth.RoleMember, Perms: []auth.Perm{auth.PermAsk}, Via: "session"})
+	if len(mine) != 1 || mine[0].SourceName != "" || mine[0].SourceID != 0 || mine[0].RequestedBy != "" {
+		t.Fatalf("member row %+v", mine)
+	}
+	own := viewAs(t, x, auth.Who{UserID: 1, Role: auth.RoleOwner, Via: "session"})
+	if len(own) != 1 || own[0].SourceName != "Lab" || own[0].SourceID == 0 || own[0].RequestedBy != "ana" {
+		t.Fatalf("owner row %+v", own)
 	}
 }
