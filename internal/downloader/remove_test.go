@@ -16,6 +16,7 @@ var luis = domain.Actor{Kind: "user", ID: 1}
 // the Release is not turned down, nothing is searched, the Slot is wanted.
 func TestRemoveKeepsTheReleaseByDefault(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis"); err != nil {
 		t.Fatal(err)
@@ -45,6 +46,7 @@ func TestRemoveKeepsTheReleaseByDefault(t *testing.T) {
 // searched; files kept in the Downloader when asked.
 func TestRemoveTurnDownAndSearchAgain(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: false, TurnDown: true, SearchAgain: true}, luis, "luis"); err != nil {
 		t.Fatal(err)
@@ -113,5 +115,16 @@ func TestRemoveAndMarkFailedLeaveFinishedDownloads(t *testing.T) {
 	}
 	if len(w.fake.deleted) != 0 {
 		t.Fatalf("files deleted: %v", w.fake.deleted)
+	}
+}
+
+// With "HolyArrs can change this Downloader" off, a grab is still sent but a
+// Remove never reaches the client.
+func TestSwitchOffSendsButNeverRemoves(t *testing.T) {
+	w, m := setup(t)
+	id := grabbed(t, w, m)
+	_ = m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis")
+	if len(w.fake.deleted) != 0 {
+		t.Fatalf("deleted %v with the switch off", w.fake.deleted)
 	}
 }

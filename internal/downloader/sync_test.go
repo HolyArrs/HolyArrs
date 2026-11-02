@@ -286,6 +286,47 @@ func TestReadOnlyListedByIDOrAddress(t *testing.T) {
 	}
 }
 
+// The "HolyArrs can change this Downloader" switch decides, and the
+// environment list is a hard override that keeps a Downloader read only.
+func TestReadOnlyFollowsSwitchAndEnv(t *testing.T) {
+	t.Setenv(ReadOnlyEnv, "")
+	off := domain.Downloader{ID: 3, URL: "http://nzbget:6789"}
+	on := off
+	on.Writable = true
+	if !ReadOnlyFor(off) || ReadOnlyFor(on) || ReadOnlyByEnv(on) {
+		t.Fatal("switch off must be read only, switch on writable")
+	}
+	t.Setenv(ReadOnlyEnv, "1,3")
+	if !ReadOnlyFor(on) || !ReadOnlyByEnv(on) {
+		t.Fatal("a listed Downloader stays read only with its switch on")
+	}
+}
+
+// The Manager reads the switch each time it builds an engine: after Forget,
+// a flipped switch takes effect with no restart.
+func TestManagerEngineFollowsSwitch(t *testing.T) {
+	t.Setenv(ReadOnlyEnv, "")
+	var requests atomic.Int64
+	srv := failingServer(t, &requests)
+	m := &Manager{}
+	d := domain.Downloader{ID: 9, Adapter: "qbittorrent", Protocol: "torrent", URL: srv.URL, AllowLocal: true}
+	e, err := m.engine(context.Background(), d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Remove(context.Background(), testHash, false); !errors.Is(err, ErrReadOnly) {
+		t.Fatalf("switch off: %v", err)
+	}
+	m.Forget(d.ID)
+	d.Writable = true
+	if e, err = m.engine(context.Background(), d); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Remove(context.Background(), testHash, false); errors.Is(err, ErrReadOnly) {
+		t.Fatal("switch on still read only")
+	}
+}
+
 type syncStub struct {
 	Engine
 	err error

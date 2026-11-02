@@ -27,7 +27,7 @@ export interface LookTab {
 
 export const ALL = 'all';
 
-const download = ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed', 'release_held', 'held_removed', 'download_sent', 'download_queued', 'download_downloading', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_removed'];
+const download = ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed', 'release_held', 'held_removed', 'download_sent', 'download_queued', 'download_downloading', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_removed', 'download_changed'];
 
 export const lookTabs: LookTab[] = [
 	{ key: ALL, label: 'All', hint: 'Every Event, newest first.', empty: 'No history yet.', subs: [] },

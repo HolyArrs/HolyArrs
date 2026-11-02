@@ -47,6 +47,8 @@ type Input struct {
 	Priority    *int             `json:"priority"`
 	PathMap     []domain.PathMap `json:"path_map"`
 	AllowLocal  *bool            `json:"allow_local_network"`
+	// Writable is "HolyArrs can change this Downloader" (on when new).
+	Writable *bool `json:"writable"`
 }
 
 func hostOf(raw string) string {
@@ -128,6 +130,11 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 	}
 	if in.AllowLocal != nil {
 		d.AllowLocal = *in.AllowLocal
+	}
+	if in.Writable != nil {
+		d.Writable = *in.Writable
+	} else if isNew {
+		d.Writable = true
 	}
 	if isNew {
 		d.AfterImport, d.State = "leave", "ok"

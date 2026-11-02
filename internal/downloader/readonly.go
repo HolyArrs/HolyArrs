@@ -12,7 +12,7 @@ import (
 )
 
 // ErrReadOnly is a change refused because the Downloader is marked read
-// only for this HolyArrs (HOLYARRS_READONLY_DOWNLOADERS). It never reaches
+// only for this HolyArrs (its switch is off, or HOLYARRS_READONLY_DOWNLOADERS). It never reaches
 // the client.
 var ErrReadOnly = errors.New("this Downloader is read only here; HolyArrs does not change it")
 
@@ -20,9 +20,16 @@ var ErrReadOnly = errors.New("this Downloader is read only here; HolyArrs does n
 // list of Downloader ids and/or base addresses.
 const ReadOnlyEnv = "HOLYARRS_READONLY_DOWNLOADERS"
 
-// readOnlyFor says whether d is listed in HOLYARRS_READONLY_DOWNLOADERS, by
-// id or by base address (so a recreated Downloader row stays covered).
+// readOnlyFor says whether HolyArrs may not change d: its "HolyArrs can
+// change this Downloader" switch is off, or it is listed in
+// HOLYARRS_READONLY_DOWNLOADERS (a hard override).
 func readOnlyFor(d domain.Downloader) bool {
+	return !d.Writable || ReadOnlyByEnv(d)
+}
+
+// ReadOnlyByEnv says whether d is listed in HOLYARRS_READONLY_DOWNLOADERS, by
+// id or by base address (so a recreated Downloader row stays covered).
+func ReadOnlyByEnv(d domain.Downloader) bool {
 	return readOnlyListed(os.Getenv(ReadOnlyEnv), d)
 }
 
@@ -84,8 +91,15 @@ func shapeOf(e any) uint64 {
 // exactly the inner engine's optional parts, so feature checks by type
 // assertion see the same engine; an engine of an unknown shape keeps only
 // the five Engine methods (fewer controls, never a write).
-func readOnly(inner Engine) Engine {
-	c := &roCore{inner: inner}
+func readOnly(inner Engine) Engine { return readOnlyWrap(inner, false) }
+
+// readOnlyAdds is readOnly that still lets new downloads through (Add and
+// AddTorrents): a Downloader whose "HolyArrs can change this Downloader"
+// switch is off takes grabs, but nothing already in it is changed.
+func readOnlyAdds(inner Engine) Engine { return readOnlyWrap(inner, true) }
+
+func readOnlyWrap(inner Engine, allowAdd bool) Engine {
+	c := &roCore{inner: inner, allowAdd: allowAdd}
 	switch shapeOf(inner) {
 	case shapeOf(&Qbittorrent{}):
 		return roQbit{c, roController{c}, roTorrentController{c}, roTorrentInspector{c}, roAllLister{c}, roTorrentAdder{c},
@@ -100,6 +114,18 @@ type readOnlyMarker interface{ readOnlyInner() Engine }
 
 func isReadOnly(e Engine) bool { _, ok := e.(readOnlyMarker); return ok }
 
+// addAllowed says whether e takes new downloads: not read only, or read
+// only by its switch (which still lets grabs through).
+func addAllowed(e Engine) bool {
+	r, ok := e.(*roCore)
+	if !ok {
+		if m, isRO := e.(interface{ readOnlyCore() *roCore }); isRO {
+			r, ok = m.readOnlyCore(), true
+		}
+	}
+	return !isReadOnly(e) || ok && r.allowAdd
+}
+
 // unwrapReadOnly gives the engine under a read-only wrapper (for reads that
 // need the concrete adapter, such as SABnzbd's category check).
 func unwrapReadOnly(e Engine) Engine {
@@ -109,11 +135,20 @@ func unwrapReadOnly(e Engine) Engine {
 	return e
 }
 
-type roCore struct{ inner Engine }
+type roCore struct {
+	inner    Engine
+	allowAdd bool
+}
 
-func (r *roCore) readOnlyInner() Engine                           { return r.inner }
-func (r *roCore) Health(ctx context.Context) (Health, error)      { return r.inner.Health(ctx) }
-func (r *roCore) Add(context.Context, AddRequest) (string, error) { return "", ErrReadOnly }
+func (r *roCore) readOnlyInner() Engine                      { return r.inner }
+func (r *roCore) readOnlyCore() *roCore                      { return r }
+func (r *roCore) Health(ctx context.Context) (Health, error) { return r.inner.Health(ctx) }
+func (r *roCore) Add(ctx context.Context, req AddRequest) (string, error) {
+	if r.allowAdd {
+		return r.inner.Add(ctx, req)
+	}
+	return "", ErrReadOnly
+}
 func (r *roCore) List(ctx context.Context, category string) ([]Job, error) {
 	return r.inner.List(ctx, category)
 }
@@ -198,7 +233,10 @@ func (r roAllLister) ListAll(ctx context.Context) ([]Job, error) {
 
 type roTorrentAdder struct{ c *roCore }
 
-func (roTorrentAdder) AddTorrents(context.Context, AddBatch) (AddOutcome, error) {
+func (r roTorrentAdder) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, error) {
+	if r.c.allowAdd {
+		return r.c.inner.(TorrentAdder).AddTorrents(ctx, b)
+	}
 	return AddOutcome{}, ErrReadOnly
 }
 

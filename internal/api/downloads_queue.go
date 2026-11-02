@@ -11,7 +11,11 @@ import (
 func (a *API) usenetQueueRoutes(m *http.ServeMux) {
 	move := func(where string) http.HandlerFunc {
 		return a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {
-			return asUsenetQueue(e, func(q downloader.UsenetQueue) error { return q.MoveItem(r.Context(), id, where) })
+			err := asUsenetQueue(e, func(q downloader.UsenetQueue) error { return q.MoveItem(r.Context(), id, where) })
+			if err == nil {
+				a.itemChanged(r, id, "move_"+where, "moved "+where)
+			}
+			return err
 		})
 	}
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/up", move(downloader.MoveUp))
@@ -45,6 +49,10 @@ func (a *API) itemPriority(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {
-		return asUsenetQueue(e, func(q downloader.UsenetQueue) error { return q.SetPriority(r.Context(), id, in.Priority) })
+		err := asUsenetQueue(e, func(q downloader.UsenetQueue) error { return q.SetPriority(r.Context(), id, in.Priority) })
+		if err == nil {
+			a.itemChanged(r, id, "priority", "set the priority to "+in.Priority+" for")
+		}
+		return err
 	})(w, r)
 }

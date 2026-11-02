@@ -85,7 +85,13 @@ func TestOptionalDownloadersMigrationKeepsData(t *testing.T) {
 	if v, err := version(s.Read()); err != nil || v < 42 {
 		t.Fatalf("schema=%d error=%v", v, err)
 	}
-	if got := downloaderRows(t, s.Read(), "SELECT * FROM downloaders ORDER BY id"); !reflect.DeepEqual(got, before) {
+	got := downloaderRows(t, s.Read(), "SELECT * FROM downloaders ORDER BY id")
+	for i := range got { // later migrations add columns at the end; the saved ones stay as they were
+		if len(before) > 0 && len(got[i]) > len(before[0]) {
+			got[i] = got[i][:len(before[0])]
+		}
+	}
+	if !reflect.DeepEqual(got, before) {
 		t.Fatal("saved Downloader row changed during rebuild")
 	}
 	if got := downloaderRows(t, s.Read(), "SELECT id, created_at, created_by, updated_at, updated_by, downloader_id, release_id, slot_ids, external_id, progress, speed, eta, state, state_reason, files_seen, save_path, started_at, finished_at, started_by FROM downloads ORDER BY id"); !reflect.DeepEqual(got, deps) {

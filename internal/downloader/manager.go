@@ -131,9 +131,11 @@ func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, erro
 	} else {
 		e, err = m.EngineFor(ctx, d)
 		if err == nil {
-			if readOnlyFor(d) {
-				// Inside the guard: refused writes never reach outside or the client.
+			// Inside the guard: refused writes never reach outside or the client.
+			if ReadOnlyByEnv(d) {
 				e = readOnly(e)
+			} else if !d.Writable {
+				e = readOnlyAdds(e) // takes grabs, changes nothing already there
 			}
 			instance := fmt.Sprintf("%p", m)
 			if m.Store != nil {

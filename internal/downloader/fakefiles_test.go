@@ -57,6 +57,7 @@ func TestFakeFiles(t *testing.T) {
 // when it finishes; the Release is turned down and the Slot searched again.
 func TestFakeFilesFailWhileDownloading(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"progress": 0.1, "state": "downloading"})
 	w.fake.files[hash] = []map[string]any{{"name": "Dune/Dune.Part.Two.2024.1080p.zip", "size": 100}, {"name": "Dune/PASSWORD.txt", "size": 1}}
@@ -90,6 +91,7 @@ func TestShortcutBesideMediaIsNoted(t *testing.T) {
 
 func TestShortcutOnlyFails(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"progress": 0.1, "state": "downloading"})
 	w.fake.files[hash] = []map[string]any{{"name": "Dune/Watch Dune online.url", "size": 100}}

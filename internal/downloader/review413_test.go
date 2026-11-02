@@ -19,6 +19,7 @@ func removalPending(t *testing.T, w *world, id int64) sql.NullBool {
 // removal is recorded and done on a later sync, with the same file choice.
 func TestRemoveRetriesWhenTheDownloaderWasDown(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	w.fake.mu.Lock()
 	w.fake.refuse = true

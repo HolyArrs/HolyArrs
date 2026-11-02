@@ -354,6 +354,8 @@ type Downloader struct {
 	LastError    string     `db:"last_error"`
 	CheckedAt    *time.Time `db:"checked_at"`
 	Removed      bool       `db:"removed"` // removed by a person but kept for its Download history
+	// Writable is "HolyArrs can change this Downloader"; off, HolyArrs only reads it.
+	Writable bool `db:"writable"`
 }
 
 // SeenFile is one file a Download reports.

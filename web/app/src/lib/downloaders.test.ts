@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decisionName, episodeStateWords, groupDecisions, manyWords, phaseTone, removeBody, removeStart, rowName, split, whyWords, type Decision, type DownloadRow } from './downloaders.ts';
+import { decisionName, episodeStateWords, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords, type Decision, type DownloadRow } from './downloaders.ts';
 import { downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 
 const saved: DownloaderView = {
@@ -14,6 +14,8 @@ const saved: DownloaderView = {
 	priority: 2,
 	path_map: [{ theirs: '/data/downloads', ours: '/downloads' }],
 	allow_local_network: true,
+	writable: true,
+	writable_locked: false,
 	health: { state: 'working', label: 'Working', text: 'It answered the last check.' },
 	active_downloads: 1
 };
@@ -43,6 +45,7 @@ describe('downloaders', () => {
 
 	it('starts a new Downloader on the local network', () => {
 		expect(emptyForm().allow_local_network).toBe(true);
+		expect(emptyForm().writable).toBe(true);
 		expect(emptyForm('sabnzbd').category).toBe('movies');
 		expect(emptyForm('qbittorrent').category).toBe('holyarrs');
 	});
@@ -82,7 +85,8 @@ describe('downloaders', () => {
 			category: 'movies',
 			priority: 2,
 			path_map: [{ theirs: '/data/downloads', ours: '/downloads' }],
-			allow_local_network: true
+			allow_local_network: true,
+			writable: true
 		});
 	});
 
@@ -218,5 +222,19 @@ describe('albums on the Downloads screen and Needs a decision', () => {
 		expect(groups).toHaveLength(1);
 		expect(groups[0].pack).toBe(true);
 		expect(groups[0].items.map((d) => d.slot_id)).toEqual([1, 3]);
+	});
+});
+
+describe('removeFilesWords', () => {
+	it('names the folder of one row, or its files in the client', () => {
+		expect(removeFilesWords([{ path: '/downloads/Film.2020', downloader: 'qBittorrent' }])).toBe('Deletes /downloads/Film.2020 in qBittorrent.');
+		expect(removeFilesWords([{ downloader: 'SABnzbd' }])).toBe('Deletes its files in SABnzbd.');
+		expect(removeFilesWords([{ downloader: '' }])).toBe('Deletes its files in the Downloader.');
+	});
+	it('lists up to three folders for many rows', () => {
+		const rows = ['/a', '/b', '/c', '/d'].map((path) => ({ path, downloader: 'qBittorrent' }));
+		expect(removeFilesWords(rows)).toBe('Deletes /a, /b, /c and the files of 1 more in qBittorrent.');
+		expect(removeFilesWords([{ downloader: 'A' }, { downloader: 'B' }])).toBe('Deletes their files in A, B.');
+		expect(removeFilesWords([])).toBe('');
 	});
 });

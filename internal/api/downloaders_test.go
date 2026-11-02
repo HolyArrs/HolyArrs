@@ -210,7 +210,7 @@ func TestMarkFailedRoute(t *testing.T) {
 		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
-		dr := &domain.Downloader{Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: qb.URL, Category: "holyarrs", Priority: 1,
+		dr := &domain.Downloader{Writable: true, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: qb.URL, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 		if _, err := store.Insert(tx, "downloaders", dr, domain.System); err != nil {
 			return err

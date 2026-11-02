@@ -72,6 +72,10 @@ func clientRow(d domain.Downloader, j downloader.Job) DownloadRow {
 		QueuePos: j.QueuePos, Tracker: j.Tracker, TrackerProblem: j.TrackerProblem,
 		LimitDown: j.LimitDown, LimitUp: j.LimitUp, LiveKey: liveKey(d.ID, j.ID),
 	}
+	row.Path = j.ContentPath
+	if row.Path == "" {
+		row.Path = j.SavePath
+	}
 	if j.Progress < 1 {
 		row.Availability = j.Availability
 	}
@@ -225,23 +229,29 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 // Client item routes: the client controls, addressed by Downloader id and
 // the client's own item id (a torrent's info hash).
 func (a *API) clientItemRoutes(m *http.ServeMux) {
-	write := func(f func(ctx context.Context, e downloader.Engine, id string) error) http.HandlerFunc {
-		return a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error { return f(r.Context(), e, id) })
+	write := func(action, verb string, f func(ctx context.Context, e downloader.Engine, id string) error) http.HandlerFunc {
+		return a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {
+			err := f(r.Context(), e, id)
+			if err == nil {
+				a.itemChanged(r, id, action, verb)
+			}
+			return err
+		})
 	}
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/pause", write(func(ctx context.Context, e downloader.Engine, id string) error {
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/pause", write("pause", "paused", func(ctx context.Context, e downloader.Engine, id string) error {
 		return asController(e, func(c downloader.Controller) error { return c.PauseItem(ctx, id) })
 	}))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/resume", write(func(ctx context.Context, e downloader.Engine, id string) error {
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/resume", write("resume", "resumed", func(ctx context.Context, e downloader.Engine, id string) error {
 		return asController(e, func(c downloader.Controller) error { return c.ResumeItem(ctx, id) })
 	}))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/top", write(func(ctx context.Context, e downloader.Engine, id string) error {
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/top", write("top", "moved to the top", func(ctx context.Context, e downloader.Engine, id string) error {
 		return asController(e, func(c downloader.Controller) error { return c.MoveTop(ctx, id) })
 	}))
 	a.usenetQueueRoutes(m)
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/recheck", write(func(ctx context.Context, e downloader.Engine, id string) error {
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/recheck", write("recheck", "rechecked", func(ctx context.Context, e downloader.Engine, id string) error {
 		return asTorrent(e, func(t downloader.TorrentController) error { return t.Recheck(ctx, id) })
 	}))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/reannounce", write(func(ctx context.Context, e downloader.Engine, id string) error {
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/reannounce", write("reannounce", "reannounced", func(ctx context.Context, e downloader.Engine, id string) error {
 		return asTorrent(e, func(t downloader.TorrentController) error { return t.Reannounce(ctx, id) })
 	}))
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/remove", a.removeItem)

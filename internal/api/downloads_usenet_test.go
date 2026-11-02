@@ -64,7 +64,7 @@ func addSab(t *testing.T, st *store.Store, url string) int64 {
 	t.Helper()
 	var did int64
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
-		dr := &domain.Downloader{Name: "S", Adapter: "sabnzbd", Protocol: "usenet", URL: url, Category: "holyarrs", Priority: 1,
+		dr := &domain.Downloader{Writable: true, Name: "S", Adapter: "sabnzbd", Protocol: "usenet", URL: url, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 		_, err := store.Insert(tx, "downloaders", dr, domain.System)
 		did = dr.ID

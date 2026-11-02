@@ -24,6 +24,10 @@ export interface DownloaderView {
 	priority: number;
 	path_map: PathMap[];
 	allow_local_network: boolean;
+	/** "HolyArrs can change this Downloader"; off, HolyArrs only reads it. */
+	writable: boolean;
+	/** HOLYARRS_READONLY_DOWNLOADERS keeps it read only whatever the switch says. */
+	writable_locked: boolean;
 	health: DownloaderHealth;
 	checked_at?: string;
 	active_downloads: number;
@@ -128,6 +132,7 @@ export interface DownloaderForm {
 	priority: number;
 	path_map: PathMap[];
 	allow_local_network: boolean;
+	writable: boolean;
 }
 
 /** emptyForm starts a new Downloader. Downloaders usually run at home, so
@@ -142,7 +147,8 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 		category: kind === 'sabnzbd' ? 'movies' : 'holyarrs',
 		priority: 1,
 		path_map: [],
-		allow_local_network: true
+		allow_local_network: true,
+		writable: true
 	};
 }
 
@@ -157,7 +163,8 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 		category: d.category,
 		priority: d.priority,
 		path_map: d.path_map.map((p) => ({ ...p })),
-		allow_local_network: d.allow_local_network
+		allow_local_network: d.allow_local_network,
+		writable: d.writable
 	};
 }
 
@@ -172,7 +179,8 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		category: f.category.trim(),
 		priority: Number(f.priority) || 1,
 		path_map: f.path_map.map((p) => ({ theirs: p.theirs.trim(), ours: p.ours.trim() })).filter((p) => p.theirs || p.ours),
-		allow_local_network: f.allow_local_network
+		allow_local_network: f.allow_local_network,
+		writable: f.writable
 	};
 }
 
@@ -185,6 +193,8 @@ export interface DownloadRow extends DownloadView {
 	year?: number;
 	version: string;
 	downloader: string;
+	/** The folder or file the Downloader holds it in, as it sees it. */
+	path?: string;
 	/** The Downloader's adapter (qbittorrent, sabnzbd...) and its protocol. */
 	downloader_kind?: string;
 	protocol?: string;
@@ -419,4 +429,21 @@ export function whyWords(d: Pick<Decision, 'why' | 'has_copy'>): string {
 			return 'Its download was removed outside HolyArrs and is not replaced by itself (setting).';
 	}
 	return 'HolyArrs ran out of Releases that pass the Pick rules.';
+}
+
+/** removeFilesWords says what "Also delete files" deletes: the folder of
+ * each row when known, otherwise its files in the Downloader. */
+export function removeFilesWords(rows: Pick<DownloadRow, 'path' | 'downloader'>[]): string {
+	if (!rows.length) return '';
+	if (rows.length === 1) {
+		const r = rows[0];
+		const client = r.downloader || 'the Downloader';
+		return r.path ? `Deletes ${r.path} in ${client}.` : `Deletes its files in ${client}.`;
+	}
+	const paths = rows.map((r) => r.path).filter((p): p is string => !!p);
+	const clients = [...new Set(rows.map((r) => r.downloader || 'the Downloader'))].join(', ');
+	if (!paths.length) return `Deletes their files in ${clients}.`;
+	const shown = paths.slice(0, 3).join(', ');
+	const rest = rows.length - Math.min(paths.length, 3);
+	return `Deletes ${shown}${rest ? ` and the files of ${rest} more` : ''} in ${clients}.`;
 }

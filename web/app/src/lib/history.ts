@@ -16,7 +16,7 @@ export const kindGroups: KindGroup[] = [
 	{ key: 'hold', label: 'Held', kinds: ['release_held', 'held_removed'] },
 	{ key: 'choose', label: 'Chosen', kinds: ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed'] },
 	{ key: 'grab', label: 'Sent to download', kinds: ['download_sent'] },
-	{ key: 'download', label: 'Downloading', kinds: ['download_downloading', 'download_queued', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding'] },
+	{ key: 'download', label: 'Downloading', kinds: ['download_downloading', 'download_queued', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_changed'] },
 	{ key: 'fail', label: 'Failed', kinds: ['download_failed', 'download_vanished', 'import_failed', 'import_rejected', 'file_hold_failed'] },
 	{ key: 'import', label: 'Imported', kinds: ['import_done', 'import_partly_done', 'file_replaced', 'free_space_low'] },
 	{ key: 'rename', label: 'Renamed', kinds: ['renamed', 'rename_planned'] },

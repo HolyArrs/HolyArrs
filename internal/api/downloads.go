@@ -41,6 +41,9 @@ type DownloadRow struct {
 	Year       *int   `json:"year,omitempty"`
 	Version    string `json:"version"`
 	Downloader string `json:"downloader"`
+	// Path is the folder or file the Downloader holds it in, as it sees it
+	// (the Remove confirm names it when files go too). Empty when unknown.
+	Path string `json:"path,omitempty"`
 	// DownloaderKind is the Downloader's adapter (qbittorrent, sabnzbd...) and
 	// Protocol its torrent or usenet.
 	DownloaderKind string     `json:"downloader_kind,omitempty"`
@@ -343,7 +346,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	rows := make([]DownloadRow, 0, len(ds))
 	shown := map[clientKey]bool{}
 	for _, d := range ds {
-		row := DownloadRow{DownloadView: downloadView(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID}
+		row := DownloadRow{DownloadView: downloadView(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID, Path: d.SavePath}
 		if d.ExternalID != "" {
 			shown[clientKey{d.DownloaderID, strings.ToLower(d.ExternalID)}] = true
 			row.LiveKey = liveKey(d.DownloaderID, d.ExternalID)

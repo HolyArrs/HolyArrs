@@ -72,6 +72,7 @@ func wantFailedPath(t *testing.T, w *world, id int64, reason string, removed boo
 
 func TestDownloaderFailureTurnsDownRemovesAndSearches(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"state": "error"})
 	if n, _ := m.SyncOnce(context.Background()); n != 0 {
@@ -96,6 +97,7 @@ func TestFailedKeptInTheDownloaderWhenSettingOff(t *testing.T) {
 
 func TestDangerousFilesFailTheDownload(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	w.fake.set(hash, map[string]any{"progress": 1.0, "state": "stalledUP"})
 	w.fake.files[hash] = []map[string]any{{"name": "Dune/Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.mkv.exe", "size": 100}, {"name": "Dune/readme.txt", "size": 1}}
@@ -120,6 +122,7 @@ func TestDangerousFilesAllowedWhenSettingOff(t *testing.T) {
 
 func TestMarkFailedByHand(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	if err := m.MarkFailed(context.Background(), id, domain.Actor{Kind: "user", ID: 1}, "luis"); err != nil {
 		t.Fatal(err)
@@ -137,6 +140,7 @@ func TestMarkFailedByHand(t *testing.T) {
 
 func TestMarkFailedWhileStalled(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	w.clock = w.clock.Add(11 * time.Minute)
 	_, _ = m.SyncOnce(context.Background())
@@ -152,6 +156,7 @@ func TestMarkFailedWhileStalled(t *testing.T) {
 // Fake clock: stalled after the stall time, acted on after the act time.
 func TestStalledThenActedOn(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	m.StallAfter, m.ActAfter = 0, 0 // read the settings: 6 h and 24 h
 	id := grabbed(t, w, m)
 	ctx := context.Background()
@@ -303,6 +308,7 @@ func TestReadFinishedFolderAndFile(t *testing.T) {
 // Lying files: the importer rejected the Download; it leaves the Downloader.
 func TestDiscardAfterRejectedImport(t *testing.T) {
 	w, m := setup(t)
+	letChange(t, m) // it removes an item already in the Downloader
 	id := grabbed(t, w, m)
 	if err := m.Discard(context.Background(), id); err != nil {
 		t.Fatal(err)
@@ -314,5 +320,17 @@ func TestDiscardAfterRejectedImport(t *testing.T) {
 	_ = m.Discard(context.Background(), id)
 	if len(w.fake.deleted) != 1 {
 		t.Fatal("removed with the setting off")
+	}
+}
+
+// letChange turns on "HolyArrs can change this Downloader" for the test
+// Downloader: with it off, HolyArrs sends grabs but removes nothing.
+func letChange(t *testing.T, m *Manager) {
+	t.Helper()
+	if err := m.Store.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloaders SET writable = 1")
+		return err
+	}); err != nil {
+		t.Fatal(err)
 	}
 }

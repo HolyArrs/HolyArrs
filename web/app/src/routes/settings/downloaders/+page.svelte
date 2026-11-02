@@ -100,6 +100,9 @@
 		formError = '';
 	}
 
+	// HOLYARRS_READONLY_DOWNLOADERS keeps a Downloader read only; its switch shows locked.
+	const writableLocked = $derived(!isNew && !!editing?.writable_locked);
+
 	function startChange(d: DownloaderView) {
 		isNew = false;
 		editing = d;
@@ -118,7 +121,7 @@
 
 	function pickKind(k: DownloaderForm['kind']) {
 		const fresh = emptyForm(k);
-		form = { ...fresh, url: form.url !== 'http://' ? form.url : fresh.url, allow_local_network: form.allow_local_network };
+		form = { ...fresh, url: form.url !== 'http://' ? form.url : fresh.url, allow_local_network: form.allow_local_network, writable: form.writable };
 		qbitWay = 'key';
 	}
 
@@ -344,6 +347,10 @@
 				<input type="checkbox" bind:checked={form.allow_local_network} />
 				<span><b>May reach the local network</b><br /><span class="hint">On: it may run on this machine or your home network (the usual case). Off: only addresses on the internet.</span></span>
 			</label>
+			<label class="checkline" class:off={writableLocked}>
+				<input type="checkbox" bind:checked={form.writable} disabled={writableLocked} data-testid="dl-form-writable" />
+				<span><b>HolyArrs can change this Downloader</b><br /><span class="hint">{writableLocked ? 'Locked to read only by this server’s settings (HOLYARRS_READONLY_DOWNLOADERS).' : 'On: pause, resume, remove, moves and priority go to it. Off: HolyArrs still sends new downloads but never changes or removes what is in it.'}</span></span>
+			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
@@ -380,6 +387,7 @@
 					{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'torrents'} · priority {d.priority} · category {d.category}
 					{#if d.secret} · {d.kind === 'sabnzbd' || (d.kind === 'qbittorrent' && !d.username) ? 'key' : 'password'} {d.secret}{/if}
 					{#if d.allow_local_network} · may reach the local network{/if}
+					· {d.writable && !d.writable_locked ? 'HolyArrs can change it' : d.writable_locked ? 'read only' : 'hands off'}
 					· {d.active_downloads} active {d.active_downloads === 1 ? 'download' : 'downloads'}
 					{#if d.checked_at} · checked {ago(d.checked_at)}{/if}
 				</p>

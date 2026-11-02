@@ -52,15 +52,15 @@ func TestCheckAllSources(t *testing.T) {
 
 	a := New(Server{Store: st, Metadata: metadata.Lab(), Version: "test"})
 	m := http.NewServeMux()
-	m.HandleFunc("POST /check", a.checkSources)
-	srv := httptest.NewServer(m)
+	m.HandleFunc("POST /api/v1/sources/check", a.checkSources)
+	srv := httptest.NewServer(wrapMux(m))
 	t.Cleanup(srv.Close)
 
 	var out struct {
 		Query   string        `json:"query"`
 		Sources []SourceCheck `json:"sources"`
 	}
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/check", `{"query":"The Matrix"}`, 200), &out)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources/check", `{"query":"The Matrix"}`, 200), &out)
 	by := map[string]SourceCheck{}
 	for _, c := range out.Sources {
 		by[c.Name] = c
@@ -86,7 +86,7 @@ func TestCheckAllSources(t *testing.T) {
 		t.Fatalf("state %s calls %d", state, calls)
 	}
 	// An empty body uses the default title.
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/check", "", 200), &out)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources/check", "", 200), &out)
 	if !strings.Contains(out.Query, "Matrix") {
 		t.Fatalf("query %q", out.Query)
 	}

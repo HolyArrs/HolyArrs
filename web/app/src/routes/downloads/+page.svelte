@@ -8,7 +8,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { decisionName, manyWords, removeBody, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
 	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
 	import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync } from '#lib/downloads/dlstore.ts';
@@ -361,6 +361,14 @@
 					bad.push(message(err));
 				}
 			}
+			// Usenet client items have no torrent bulk call: one call each.
+			for (const r of outsideRows.filter((x) => x.protocol && x.protocol !== 'torrent' && x.downloader_id && x.hash)) {
+				try {
+					await api.post(`/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash!)}/remove`, { delete_files: choice.delete_files });
+				} catch (err) {
+					bad.push(`${who(r)}: ${message(err)}`);
+				}
+			}
 			for (const r of list.filter((x) => !x.client_item)) {
 				try {
 					await api.post(`/downloads/${r.id}/remove`, removeBody(list.length === 1 ? choice : { delete_files: choice.delete_files, turn_down: false, search_again: false }));
@@ -541,7 +549,7 @@
 			{/if}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.delete_files} data-testid="dl-remove-files" />
-				<span><b>Also delete files</b><br /><span class="hint">Off: {target?.downloader || 'the Downloader'} keeps what it fetched.</span></span>
+				<span><b>Also delete files</b><br /><span class="hint" data-testid="dl-remove-files-hint">{choice.delete_files ? removeFilesWords(targets) : `Off: ${target?.downloader || 'the Downloader'} keeps what it fetched.`}</span></span>
 			</label>
 			{#if target && !target.client_item}
 			<label class="checkline">

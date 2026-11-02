@@ -137,6 +137,7 @@ func (a *API) retryItem(w http.ResponseWriter, r *http.Request) {
 	if newID == "" {
 		newID = old
 	}
+	a.itemChangedEvent(r, did, newID, "retry", "sent back to try again")
 	if err := a.rekeyItem(r.Context(), did, old, newID); err != nil {
 		internal(w, err)
 		return

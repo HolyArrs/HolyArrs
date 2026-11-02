@@ -73,7 +73,7 @@ func (g *guardedEngine) Health(ctx context.Context) (h Health, err error) {
 	return
 }
 func (g *guardedEngine) Add(ctx context.Context, r AddRequest) (id string, err error) {
-	if isReadOnly(g.Engine) {
+	if !addAllowed(g.Engine) {
 		return "", ErrReadOnly
 	}
 	err = g.run(ctx, func() error { var e error; id, e = g.Engine.Add(ctx, r); return e })

@@ -50,6 +50,10 @@ type DownloaderView struct {
 	Priority   int                   `json:"priority"`
 	PathMap    []domain.PathMap      `json:"path_map"`
 	AllowLocal bool                  `json:"allow_local_network"`
+	// Writable is "HolyArrs can change this Downloader"; WritableLocked
+	// says HOLYARRS_READONLY_DOWNLOADERS keeps it read only whatever the switch.
+	Writable       bool `json:"writable"`
+	WritableLocked bool `json:"writable_locked"`
 	Health     downloader.HealthView `json:"health"`
 	CheckedAt  *time.Time            `json:"checked_at,omitempty"`
 	Active     int                   `json:"active_downloads"`
@@ -57,7 +61,8 @@ type DownloaderView struct {
 
 func downloaderView(d domain.Downloader, active int) DownloaderView {
 	v := DownloaderView{ID: d.ID, Name: d.Name, Kind: d.Adapter, Protocol: d.Protocol, URL: d.URL, Username: d.Username, Category: d.Category,
-		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: downloader.HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active}
+		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: downloader.HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
+		Writable: d.Writable, WritableLocked: downloader.ReadOnlyByEnv(d)}
 	if v.PathMap == nil {
 		v.PathMap = []domain.PathMap{}
 	}
@@ -110,7 +115,7 @@ func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }
 
-const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network`
+const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network, writable`
 
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {

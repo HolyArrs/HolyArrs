@@ -258,6 +258,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'download_finished': return t(TAG.getting, join('Downloaded', res, sizeOf(d), 'bringing it into the Library'));
 		case 'download_seeding': return t(TAG.came, join('Sharing it back', res));
 		case 'download_removed': return t(TAG.changed, 'Removed from the downloader');
+		case 'download_changed': return t(TAG.changed, e.Summary || 'Changed in the downloader');
 		case 'download_failed': return t(TAG.failed, join('Download failed', plainWhy(str(d.reason))));
 		case 'download_vanished': return t(TAG.failed, join('Download disappeared from the downloader', 'HolyArrs will look again'));
 		case 'download_not_removed': return t(TAG.failed, 'Could not remove it from the downloader');

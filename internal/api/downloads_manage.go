@@ -190,11 +190,24 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 		if in.Action == "remove" {
 			err := t.RemoveMany(r.Context(), in.Hashes, in.DeleteFiles)
 			if err == nil {
+				if len(in.Hashes) == 1 {
+					a.itemRemovedEvent(r, id, in.Hashes[0], in.DeleteFiles)
+				} else {
+					verb := "removed"
+					if in.DeleteFiles {
+						verb = "removed (with their files)"
+					}
+					a.manyChangedEvent(r, id, in.Hashes, "remove", verb, map[string]any{"delete_files": in.DeleteFiles})
+				}
 				a.forgetTorrents(r.Context(), id, in.Hashes)
 			}
 			return err
 		}
-		return t.Bulk(r.Context(), in.Action, in.Hashes)
+		err := t.Bulk(r.Context(), in.Action, in.Hashes)
+		if err == nil {
+			a.manyChangedEvent(r, id, in.Hashes, in.Action, bulkVerbs[in.Action], nil)
+		}
+		return err
 	})
 	if errors.Is(err, downloader.ErrQueueOff) {
 		fail(w, http.StatusConflict, err.Error())
@@ -205,6 +218,13 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
+}
+
+// bulkVerbs say a bulk action in History's words.
+var bulkVerbs = map[string]string{
+	downloader.BulkStart: "resumed", downloader.BulkPause: "paused", downloader.BulkRecheck: "rechecked", downloader.BulkReannounce: "reannounced",
+	downloader.BulkTop: "moved to the top", downloader.BulkBottom: "moved to the bottom", downloader.BulkUp: "moved up", downloader.BulkDown: "moved down",
+	downloader.BulkForce: "force-started", downloader.BulkUnforce: "stopped force-starting",
 }
 
 // bulkHashesOK checks a selection: 1 to 1000 info hashes.
@@ -529,6 +549,7 @@ func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 		itemError(w, err)
 		return
 	}
+	a.manyChangedEvent(r, id, in.Hashes, "move", "moved the files of", map[string]any{"folder": folder})
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes), "folder": folder})
 }
 
