@@ -266,10 +266,11 @@
 	.dnum { font-size: 13px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.dnum b { color: var(--text); font-weight: 600; }
 	.dbar { height: 8px; margin-top: 8px; border-radius: 4px; overflow: hidden; background: color-mix(in srgb, var(--text) 10%, transparent); box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15); }
-	.dbar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--accent, var(--info)) 70%, var(--ok)), var(--accent, var(--info))); }
+	.dbar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--text) 40%, transparent), color-mix(in srgb, var(--text) 62%, transparent)); }
 	.dbar.warn i { background: var(--wait); }
 	.dbar.full i { background: var(--fail); }
 	.dfoot { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+	.dfoot span:last-child { flex: none; }
 	.dfoot .mono { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	/* Coming up / Recent runs */
