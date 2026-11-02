@@ -43,6 +43,13 @@
 		genrePath,
 		genresFor,
 		parseGenre,
+		enoughCards,
+		genreRowPath,
+		genreCardHref,
+		genreRowAfter,
+		GENRE_ROW_MAX,
+		ROW_MIN,
+		type GenreRowCard,
 		type GenreAnswer,
 		type ExploreType,
 		type ExploreCard,
@@ -85,6 +92,7 @@
 	import { EAGER_ROWS, stableRows } from '#lib/row-window.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { onTheaterExit } from '#lib/theater.svelte.ts';
+	import { whenIdle } from '#lib/lazy-art.ts';
 
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -309,10 +317,18 @@
 				art[`name:${x.name.toLowerCase()}`] ??= src;
 			}
 			browseArt = { ...browseArt, [t]: art };
+			// Fetched ahead into the browser's cache, so the tiles are filled the first time the picker opens.
+			for (const src of new Set(Object.values(art))) new Image().src = src;
 		} catch {
 			// No art: the tiles keep their colour.
 		}
 	}
+	// The picker's art is read ahead (once the head is in, when the browser is idle), not on first open.
+	$effect(() => {
+		const t = type;
+		if (!headLoaded || (t !== 'movies' && t !== 'shows')) return;
+		return whenIdle(() => void loadBrowseArt(t), 300);
+	});
 	// Genres Browse has no tile of their own (TMDB's combined TV genres) borrow a
 	// picture from the closest Browse tiles, tried in order.
 	const genreArtAlias: Record<string, string[]> = {
@@ -518,9 +534,26 @@
 			() => {}
 		);
 	});
-	const newCards = $derived(newServices && !genreOn ? leaveOut(newServices.cards, taken) : []);
-	const rows = $derived(type === 'music' ? [] : markTransitions(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken)));
+	const newCards = $derived.by(() => {
+		const c = newServices && !genreOn ? leaveOut(newServices.cards, taken) : [];
+		return c.length >= ROW_MIN ? c : [];
+	});
+	const rows = $derived(type === 'music' ? [] : markTransitions(enoughCards(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken))));
 	/** Where Browse by genre goes: after this row index (-1: not shown). */
+	const genreAt = $derived(genreOn ? -1 : genreRowAfter(rows));
+	// Browse by genre: read once per tab after the head (the page the server already built).
+	let genreCards = $state<GenreRowCard[]>([]);
+	let genreCardsFor = '';
+	$effect(() => {
+		const t = type;
+		if (!headLoaded || t === 'music' || genreCardsFor === t) return;
+		genreCardsFor = t;
+		genreCards = [];
+		api.get<{ genres: GenreRowCard[] | null }>(genreRowPath(t), gone.signal).then(
+			(a) => genreCardsFor === t && (genreCards = (a.genres ?? []).filter((g) => g.backdrop).slice(0, GENRE_ROW_MAX)),
+			() => genreCardsFor === t && (genreCardsFor = '')
+		);
+	});
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
 
 	const viewerZone = (() => {
@@ -643,7 +676,8 @@
 		return to(`/search?q=${encodeURIComponent(c.name)}${kind}`);
 	}
 
-	const quick = (c: ExploreCard, act: 'add' | 'ask') => void flow?.open(c, act);
+	// Ask is one tap (no sheet); Add opens its sheet (folder and Pick rules).
+	const quick = (c: ExploreCard, act: 'add' | 'ask') => void (act === 'ask' ? flow?.askNow(c) : flow?.open(c, act));
 
 	/** Movies and shows draw wide title cards; artists keep their square cards. */
 	const wideKind = (k: string): boolean => k === 'movie' || k === 'show';
@@ -915,6 +949,15 @@
 				</Shelf>
 				</div>
 				{/if}
+				{#if ri === genreAt && genreCards.length >= ROW_MIN}
+					<div class="row-wrap wide-row" data-row="genre_browse" data-row-id="genre_browse">
+						<Shelf title="Browse by genre" item="var(--title-item)" items={genreCards} key={(g) => `${g.kind}:${g.id}`} defer placeholder="wide" lines={1}>
+							{#snippet card(g: GenreRowCard)}
+								<WideCard cover title={g.name} href={to(genreCardHref(g))} image={g.backdrop} />
+							{/snippet}
+						</Shelf>
+					</div>
+				{/if}
 			{/each}
 			{#if tailMore && !genreOn}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
 		{/if}
@@ -941,6 +984,9 @@
 	/* Reduced motion: the same compact size, without the animation. */
 	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb), .genre-pick :global(.trigger) { transition: none; } }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } .music-banner { margin-top: 28px; } }
+	/* Phones: the pills share the row with Genres (never wider than the screen); a long genre name ends in an ellipsis. */
+	@media (max-width: 767px) { .types { max-width: 100%; } .types :global(.ui-seg) { flex: 1 1 auto; width: auto; min-width: 0; } .genre-pick { flex: none; min-width: 0; } .genre-pick :global(.trigger) { max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+	@media (max-width: 479px) { .types :global(.ui-seg button) { padding: 0 6px; font-size: 13px; min-width: 0; } .genre-pick { margin-left: 6px; } .genre-pick :global(.trigger) { padding: 0 12px; font-size: 13px; } }
 	/* Phones: the words win, the glyphs step aside, so no label is clipped. */
 	@media (min-width: 360px) and (max-width: 479px) { .types :global(.ui-seg button svg) { display: none; } }
 	@media (max-width: 359px) {

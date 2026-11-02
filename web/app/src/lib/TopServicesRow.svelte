@@ -156,11 +156,11 @@
 					{#if ranked}
 						<div class="ranked">
 							<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
-							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} /></div>
+							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image ?? c.art?.art ?? null} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} /></div>
 							<span class="sr">Number {c.rank}</span>
 						</div>
 					{:else}
-						<PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} />
+						<PosterCard title={c.name} href={href(c)} image={c.image ?? c.art?.art ?? null} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} />
 					{/if}
 				{/snippet}
 			</Shelf>

@@ -3,7 +3,7 @@
 	import Icon from '../Icon.svelte';
 	import { dragScroll } from '../drag-scroll.ts';
 	import IconButton from './IconButton.svelte';
-	import { nearView, setShelfNear } from '../lazy-art.ts';
+	import { nearView, setShelfNear, whenIdle } from '../lazy-art.ts';
 	import { mountNow, nextLimit, ROW_FIRST } from '../row-window.ts';
 	import { rove } from '../rove.ts';
 
@@ -97,14 +97,16 @@
 			mounted = true;
 			return {};
 		}
-		const io = new IntersectionObserver((es) => {
-			if (es.some((e) => e.isIntersecting)) {
-				io.disconnect();
-				mounted = true;
-			}
-		}, { rootMargin: '0px 0px 150% 0px' });
+		const go = () => {
+			io.disconnect();
+			stop();
+			mounted = true;
+		};
+		const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && go(), { rootMargin: '0px 0px 150% 0px' });
 		io.observe(node);
-		return { destroy: () => io.disconnect() };
+		// An observer that never fires still mounts the row once the browser is idle.
+		const stop = whenIdle(go);
+		return { destroy: () => { io.disconnect(); stop(); } };
 	}
 	$effect(() => {
 		if (!scroller) return;

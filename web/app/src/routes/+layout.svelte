@@ -396,13 +396,17 @@
 			resetActiveDownloads();
 			return;
 		}
+		// Reading the list can itself send "download" events, so live
+		// refreshes keep at least 10 s apart instead of looping.
 		let timer: ReturnType<typeof setTimeout> | undefined;
+		let last = 0;
 		const soon = () => {
 			if (timer) return;
 			timer = setTimeout(() => {
 				timer = undefined;
+				last = Date.now();
 				void refreshActiveDownloads();
-			}, 800);
+			}, Math.max(800, last + 10_000 - Date.now()));
 		};
 		void refreshActiveDownloads();
 		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));

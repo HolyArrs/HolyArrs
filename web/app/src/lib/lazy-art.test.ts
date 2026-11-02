@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { nearView, whenLoaded } from './lazy-art.ts';
+import { FALLBACK_MS, nearView, whenIdle, whenLoaded } from './lazy-art.ts';
 
 describe('nearView', () => {
 	it('loads at once where there is no IntersectionObserver', () => {
@@ -25,6 +25,30 @@ describe('nearView', () => {
 		expect(near).toHaveBeenCalledOnce();
 		expect(disconnect).toHaveBeenCalled();
 		vi.unstubAllGlobals();
+	});
+});
+
+describe('idle fallback', () => {
+	it('loads a row whose observer never fires, once', () => {
+		vi.useFakeTimers();
+		vi.stubGlobal('IntersectionObserver', class {
+			observe() {}
+			disconnect() {}
+		});
+		const near = vi.fn();
+		nearView({} as Element, near);
+		vi.advanceTimersByTime(FALLBACK_MS + 50);
+		expect(near).toHaveBeenCalledOnce();
+		vi.unstubAllGlobals();
+		vi.useRealTimers();
+	});
+	it('can be cancelled', () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		whenIdle(fn, 100)();
+		vi.advanceTimersByTime(500);
+		expect(fn).not.toHaveBeenCalled();
+		vi.useRealTimers();
 	});
 });
 

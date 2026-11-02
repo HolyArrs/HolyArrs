@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { api, message } from './api.ts';
+	import { api, message, ApiError } from './api.ts';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './requests.svelte.ts';
@@ -71,6 +71,23 @@
 			else if (d.show) askShow?.open(d.show);
 		} catch (e) {
 			toasts.push(message(e), 'fail');
+		} finally {
+			asking = '';
+		}
+	}
+
+	/** askNow: one tap asks for the whole title (every season of a show) with no sheet; the card then reads as asked. */
+	export async function askNow(c: ExploreCard) {
+		const tmdb = cardTmdb(c);
+		if (!tmdb || asking || (c.kind !== 'movie' && c.kind !== 'show')) return;
+		current = c;
+		asking = c.key;
+		try {
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', c.kind === 'movie' ? { id: `tmdb:${tmdb}`, follow: true } : { kind: 'show', id: `tmdb:${tmdb}`, seasons: [], follow: true });
+			asked(r, c.name);
+		} catch (err) {
+			if (err instanceof ApiError && err.status === 409) refused(err.body);
+			toasts.push(message(err), 'fail');
 		} finally {
 			asking = '';
 		}

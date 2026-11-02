@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api.ts';
 import {
+	enoughCards,
+	genreCardHref,
+	genreRowAfter,
 	discoverTitles,
 	becauseYouHave,
 	cardAction,
@@ -383,5 +386,22 @@ describe('on your services', () => {
 		expect(discoverPath({ row: 'services', services: [8, 337], region: 'US', kind: 'show' })).toBe('/discover?row=services&kind=show&services=8%7C337&region=US');
 		expect(discoverTitles.best).toBe('Best new releases');
 		expect('popular' in discoverTitles).toBe(false);
+	});
+});
+
+describe('row sizes and Browse by genre', () => {
+	it('drops rows under 8 cards but keeps kept rows', () => {
+		const row = (n: number, keep = false) => ({ cards: Array.from({ length: n }), keep });
+		expect(enoughCards([row(7), row(8), row(0, true)]).map((r) => r.cards.length)).toEqual([8, 0]);
+	});
+	it('goes after row 6, never next to a genre row', () => {
+		const rows = (types: string[]) => types.map((type) => ({ type }));
+		expect(genreRowAfter(rows(['a', 'b', 'c', 'd', 'e', 'f', 'g']))).toBe(5);
+		expect(genreRowAfter(rows(['a', 'b', 'c', 'd', 'e', 'f', 'genre', 'h', 'i']))).toBe(7);
+		expect(genreRowAfter(rows(['a', 'b', 'c']))).toBe(-1);
+	});
+	it('opens the genre page of its kind', () => {
+		expect(genreCardHref({ kind: 'show', id: 18 })).toBe('/explore?type=shows&genre=18');
+		expect(genreCardHref({ kind: 'movie', id: 28, both: true })).toBe('/explore?genre=28');
 	});
 });
