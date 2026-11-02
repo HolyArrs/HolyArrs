@@ -13,7 +13,7 @@ describe('columns', () => {
 		l.hidden = [];
 		expect(visible(l)).toContain('added');
 		expect(COLUMNS.filter((c) => c.missing)).toEqual([]);
-		expect(COLUMNS.find((c) => c.id === 'source')?.label).toBe('Found on');
+		expect(COLUMNS.find((c) => c.id === 'source')?.label).toBe('Source');
 	});
 	it('reads a post age short', () => {
 		const now = Date.parse('2026-11-02T12:00:00Z');

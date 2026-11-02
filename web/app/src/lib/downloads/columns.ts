@@ -52,7 +52,8 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true },
 	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true },
 	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
-	{ id: 'source', label: 'Found on', on: false, width: 120 },
+	// The Source (indexer) it was found on, the same word as Settings > Sources.
+	{ id: 'source', label: 'Source', on: false, width: 120 },
 	{ id: 'category', label: 'Category', on: false, width: 100 }
 ];
 
