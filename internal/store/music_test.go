@@ -63,7 +63,7 @@ func TestMusicMigrationKeepsMoviesAndShows(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	if b, _ := filepath.Glob(filepath.Join(dir, "backups", "main-before-0024-*.db")); len(b) != 1 {
+	if b, _ := filepath.Glob(filepath.Join(dir, "backups", "main-pre-update-*-to-*.db")); len(b) != 1 {
 		t.Fatalf("backups before 0024: %v", b)
 	}
 	for id, kind := range map[int64]string{1: "movie", 2: "show"} {

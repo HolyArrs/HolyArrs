@@ -55,7 +55,7 @@ func TestShowsMigrationKeepsMovies(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	if b, _ := filepath.Glob(filepath.Join(dir, "backups", "main-before-0020-*.db")); len(b) != 1 {
+	if b, _ := filepath.Glob(filepath.Join(dir, "backups", "main-pre-update-*-to-*.db")); len(b) != 1 {
 		t.Fatalf("backups before 0020: %v", b)
 	}
 	var back domain.Title

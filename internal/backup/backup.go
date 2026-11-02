@@ -16,8 +16,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -29,7 +33,14 @@ const (
 	KindScheduled = "scheduled"
 	KindManual    = "manual" // kept until the person deletes it
 	KindUpdate    = "update" // kept until the next update starts fine
+	// KindPreUpdate is the copy of the data taken right before an update
+	// changed it: the way back. Never removed by Prune; the newest
+	// KeepPreUpdate are kept, older ones dropped only after a good start.
+	KindPreUpdate = "pre-update"
 )
+
+// KeepPreUpdate is how many pre-update backups are kept.
+const KeepPreUpdate = 3
 
 // Preset is a ready-made schedule and keep rule.
 type Preset string
@@ -77,6 +88,9 @@ type Meta struct {
 	Kind         string    `json:"kind"`
 	CreatedAt    time.Time `json:"created_at"`
 	Note         string    `json:"note"`
+	// Detail says what the backup is, such as "before updating from 0.3.0
+	// to 0.4.0" (pre-update backups only).
+	Detail string `json:"detail,omitempty"`
 }
 
 // Manager makes, lists, prunes and restores backups.
@@ -122,7 +136,7 @@ func (m *Manager) backupDir() string { return filepath.Join(m.Dir, "backups") }
 
 const stampLayout = "20060102T150405.000Z"
 
-var nameRx = regexp.MustCompile(`^holyarrs-backup-(scheduled|manual|update)-(\d{8}T\d{6}\.\d{3}Z)\.zip$`)
+var nameRx = regexp.MustCompile(`^holyarrs-backup-(scheduled|manual|update|pre-update)-(\d{8}T\d{6}\.\d{3}Z)\.zip$`)
 
 func fileName(kind string, at time.Time) string {
 	return "holyarrs-backup-" + kind + "-" + at.UTC().Format(stampLayout) + ".zip"
@@ -134,6 +148,7 @@ type Info struct {
 	Kind      string    `json:"kind"`
 	CreatedAt time.Time `json:"created_at"`
 	Size      int64     `json:"size"`
+	Detail    string    `json:"detail,omitempty"`
 	Path      string    `json:"-"`
 }
 
@@ -165,10 +180,39 @@ func (m *Manager) List() ([]Info, error) {
 		if err != nil {
 			continue
 		}
-		out = append(out, Info{Name: e.Name(), Kind: kind, CreatedAt: at, Size: fi.Size(), Path: filepath.Join(m.backupDir(), e.Name())})
+		info := Info{Name: e.Name(), Kind: kind, CreatedAt: at, Size: fi.Size(), Path: filepath.Join(m.backupDir(), e.Name())}
+		if kind == KindPreUpdate {
+			info.Detail = readDetail(info.Path)
+		}
+		out = append(out, info)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
 	return out, nil
+}
+
+// readDetail reads the detail from a backup's backup.json ("" on any error).
+func readDetail(path string) string {
+	zr, err := zip.OpenReader(path)
+	if err != nil {
+		return ""
+	}
+	defer zr.Close()
+	for _, zf := range zr.File {
+		if zf.Name != MetaFile {
+			continue
+		}
+		rc, err := zf.Open()
+		if err != nil {
+			return ""
+		}
+		defer rc.Close()
+		var meta Meta
+		if json.NewDecoder(io.LimitReader(rc, 1<<16)).Decode(&meta) != nil {
+			return ""
+		}
+		return meta.Detail
+	}
+	return ""
 }
 
 // Create makes a backup of the running databases.
@@ -182,11 +226,12 @@ func (m *Manager) Create(_ context.Context, kind string) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	return m.write(kind, map[string]string{store.MainFile: mainCopy, store.EventsFile: evCopy})
+	return m.write(kind, map[string]string{store.MainFile: mainCopy, store.EventsFile: evCopy}, nil)
 }
 
 // write zips the files with a backup.json into the backups folder.
-func (m *Manager) write(kind string, files map[string]string) (Info, error) {
+// edit, when set, changes the backup.json before it is written.
+func (m *Manager) write(kind string, files map[string]string, edit func(*Meta)) (Info, error) {
 	if err := os.MkdirAll(m.backupDir(), 0o750); err != nil {
 		return Info{}, err
 	}
@@ -199,6 +244,9 @@ func (m *Manager) write(kind string, files map[string]string) (Info, error) {
 	}
 	sm, se := store.SchemaVersions()
 	meta := Meta{App: "holyarrs", Version: m.Version, SchemaMain: sm, SchemaEvents: se, Kind: kind, CreatedAt: at, Note: KeyNote}
+	if edit != nil {
+		edit(&meta)
+	}
 	name := fileName(kind, at)
 	final := filepath.Join(m.backupDir(), name)
 	part := final + ".part"
@@ -247,7 +295,7 @@ func (m *Manager) write(kind string, files map[string]string) (Info, error) {
 	}
 	ok = true
 	fi, _ := os.Stat(final)
-	return Info{Name: name, Kind: kind, CreatedAt: at, Size: fi.Size(), Path: final}, nil
+	return Info{Name: name, Kind: kind, CreatedAt: at, Size: fi.Size(), Detail: meta.Detail, Path: final}, nil
 }
 
 func addFile(zw *zip.Writer, name, path string) error {
@@ -416,10 +464,23 @@ func (m *Manager) Pass(ctx context.Context) error {
 	return err
 }
 
-var migrationCopyRx = regexp.MustCompile(`^(main|events)-before-\d{4}-.*\.db$`)
+// migrationCopyRx matches the store's pinned pre-update copies
+// (main-pre-update-0039-to-0040-<time>.db) and older builds' copies made
+// before each migration (main-before-0039-<time>.db).
+var migrationCopyRx = regexp.MustCompile(`^(main|events)-(?:before-(\d{4})|pre-update-(\d{4})-to-(\d{4}))-.*\.db$`)
+
+type rawCopy struct {
+	label    string
+	path     string
+	from, to int
+	mod      time.Time
+}
 
 // AdoptMigrationCopies turns the raw database copies the store makes before
-// each migration into update backups with a version file.
+// an update into pre-update backups with a version file. The newest main
+// and events copies go into one backup, so restoring it takes both back.
+// A copy that does not match its sha256 file is left where it is and
+// logged. It needs no open store (the restore command uses it too).
 func (m *Manager) AdoptMigrationCopies() (int, error) {
 	es, err := os.ReadDir(m.backupDir())
 	if errors.Is(err, os.ErrNotExist) {
@@ -428,32 +489,133 @@ func (m *Manager) AdoptMigrationCopies() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	n := 0
+	var raws []rawCopy
 	for _, e := range es {
 		mm := migrationCopyRx.FindStringSubmatch(e.Name())
 		if mm == nil || e.IsDir() {
 			continue
 		}
-		inner := store.MainFile
-		if mm[1] == "events" {
-			inner = store.EventsFile
-		}
 		p := filepath.Join(m.backupDir(), e.Name())
-		if _, err := m.write(KindUpdate, map[string]string{inner: p}); err != nil {
+		if err := store.CheckBackupSum(p); err != nil {
+			log.Printf("backup: not adopting %s: %v", e.Name(), err)
+			continue
+		}
+		c := rawCopy{label: mm[1], path: p}
+		if mm[2] != "" {
+			c.to, _ = strconv.Atoi(mm[2])
+			c.from = c.to - 1
+		} else {
+			c.from, _ = strconv.Atoi(mm[3])
+			c.to, _ = strconv.Atoi(mm[4])
+		}
+		if fi, err := e.Info(); err == nil {
+			c.mod = fi.ModTime()
+		}
+		raws = append(raws, c)
+	}
+	sort.SliceStable(raws, func(i, j int) bool { return raws[i].mod.After(raws[j].mod) })
+	// The newest copy of each database together, every other copy on its
+	// own; older groups first, so backup times keep their order.
+	var groups [][]rawCopy
+	var first []rawCopy
+	seen := map[string]bool{}
+	for i := len(raws) - 1; i >= 0; i-- {
+		c := raws[i]
+		newest := true
+		for _, d := range raws[:i] {
+			if d.label == c.label {
+				newest = false
+				break
+			}
+		}
+		if newest && !seen[c.label] {
+			seen[c.label] = true
+			first = append(first, c)
+			continue
+		}
+		groups = append(groups, []rawCopy{c})
+	}
+	if len(first) > 0 {
+		groups = append(groups, first)
+	}
+	prev := m.lastVersion()
+	n := 0
+	for _, g := range groups {
+		files := map[string]string{}
+		var parts []string
+		for _, c := range g {
+			inner := store.MainFile
+			if c.label == "events" {
+				inner = store.EventsFile
+			}
+			files[inner] = c.path
+			parts = append(parts, fmt.Sprintf("%s %d to %d", c.label, c.from, c.to))
+		}
+		sort.Strings(parts)
+		edit := func(meta *Meta) {
+			meta.SchemaMain, meta.SchemaEvents = 0, 0
+			for _, c := range g {
+				if c.label == "main" {
+					meta.SchemaMain = c.from
+				} else {
+					meta.SchemaEvents = c.from
+				}
+			}
+			if prev != "" && prev != m.Version {
+				meta.Version = prev
+				meta.Detail = fmt.Sprintf("before updating from %s to %s", prev, m.Version)
+			} else {
+				meta.Detail = "before updating the data (" + strings.Join(parts, ", ") + ")"
+			}
+		}
+		if _, err := m.write(KindPreUpdate, files, edit); err != nil {
 			return n, err
 		}
-		if err := os.Remove(p); err != nil {
-			return n, err
+		for _, c := range g {
+			if err := os.Remove(c.path); err != nil {
+				return n, err
+			}
+			_ = os.Remove(c.path + ".sha256")
+			n++
 		}
-		n++
 	}
 	return n, nil
 }
 
-// AfterStart backs up when this build's version differs from the last one
-// that ran, then drops update backups older than that one: the previous
-// update is now known to start fine.
+// lastVersion is the version of the build that ran before this one, when a
+// store is open ("" otherwise).
+func (m *Manager) lastVersion() string {
+	if m.Store == nil {
+		return ""
+	}
+	v, err := m.setting(context.Background(), settingVersion)
+	if err != nil {
+		return ""
+	}
+	return v
+}
+
+// AfterStart runs once the app started fine. It keeps the newest
+// KeepPreUpdate pre-update backups (older ones go only now, after a good
+// start). When this build's version differs from the last one that ran it
+// makes an update backup and drops older update backups; pre-update
+// backups are never dropped by that.
 func (m *Manager) AfterStart(ctx context.Context) error {
+	all, err := m.List()
+	if err != nil {
+		return err
+	}
+	kept := 0
+	for _, x := range all {
+		if x.Kind != KindPreUpdate {
+			continue
+		}
+		if kept++; kept > KeepPreUpdate {
+			if err := os.Remove(x.Path); err != nil {
+				log.Printf("backup: dropping old pre-update backup %s: %v", x.Name, err)
+			}
+		}
+	}
 	last, err := m.setting(ctx, settingVersion)
 	if err != nil {
 		return err
@@ -478,6 +640,31 @@ func (m *Manager) AfterStart(ctx context.Context) error {
 		}
 	}
 	return m.setSetting(ctx, settingVersion, m.Version, domain.System)
+}
+
+// NewestPreUpdate returns the newest pre-update backup.
+func (m *Manager) NewestPreUpdate() (Info, error) {
+	all, err := m.List()
+	if err != nil {
+		return Info{}, err
+	}
+	for _, x := range all {
+		if x.Kind == KindPreUpdate {
+			return x, nil
+		}
+	}
+	return Info{}, errors.New("there is no pre-update backup")
+}
+
+// StageNamed checks a backup from the backups folder and stages it, like an
+// upload.
+func (m *Manager) StageNamed(ctx context.Context, name string) error {
+	f, err := m.Open(name)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return m.Stage(ctx, f)
 }
 
 func (m *Manager) path(name string) (string, error) {
@@ -642,9 +829,172 @@ func Staged(dir string) bool {
 // swaps without depending on platform-specific file locking.
 var applyRename = os.Rename
 
+// JournalFile, in the config folder, lists the moves of a restore in
+// progress. If it is still there at the next start, the restore was cut
+// off: it is finished, or undone, before the store opens.
+const JournalFile = "restore.journal"
+
+type journalMove struct {
+	From string `json:"from"` // relative to the config folder
+	To   string `json:"to"`
+}
+
+type journal struct {
+	Keep  string        `json:"keep"`
+	Moves []journalMove `json:"moves"`
+}
+
+func writeJournal(dir string, j journal) error {
+	b, err := json.Marshal(j)
+	if err != nil {
+		return err
+	}
+	p := filepath.Join(dir, JournalFile)
+	// A killed restore can leave the .tmp behind, and on Windows a file
+	// another process just let go of can still refuse to open or rename for
+	// a moment, so a stale one is removed and sharing errors are retried.
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		if err := os.Remove(p + ".tmp"); err != nil && !errors.Is(err, os.ErrNotExist) && !sharingErr(err) {
+			return err
+		}
+		err := store.WriteFileSynced(p, b, 0o600)
+		if err == nil || !sharingErr(err) || time.Now().After(deadline) {
+			return err
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+// sharingErr reports errors Windows gives while another handle or mapping
+// still holds a file (sharing violation, lock violation, access denied,
+// user-mapped section).
+func sharingErr(err error) bool {
+	if err == nil || runtime.GOOS != "windows" {
+		return false
+	}
+	var en syscall.Errno
+	if errors.As(err, &en) {
+		switch en {
+		case 5, 32, 33, 1224: // access denied, sharing, lock, user-mapped section
+			return true
+		}
+	}
+	return errors.Is(err, os.ErrPermission)
+}
+
+func removeJournal(dir string) error {
+	if err := os.Remove(filepath.Join(dir, JournalFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return store.SyncDir(dir)
+}
+
+func syncMoveDirs(dir string, j journal) error {
+	seen := map[string]bool{}
+	for _, m := range j.Moves {
+		for _, p := range []string{m.From, m.To} {
+			d := filepath.Dir(filepath.Join(dir, p))
+			if seen[d] {
+				continue
+			}
+			seen[d] = true
+			if err := store.SyncDir(d); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func present(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
+}
+
+// undoMoves puts back moves that were done, newest first.
+func undoMoves(dir string, done []journalMove) error {
+	var errs []error
+	for i := len(done) - 1; i >= 0; i-- {
+		if err := applyRename(filepath.Join(dir, done[i].To), filepath.Join(dir, done[i].From)); err != nil {
+			errs = append(errs, fmt.Errorf("putting %s back: %w", done[i].From, err))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// donePrefix counts the moves done before a stop. Moves run in order, so
+// the done ones are the leading ones whose file is at the new name only.
+func donePrefix(dir string, j journal) int {
+	n := 0
+	for _, m := range j.Moves {
+		if present(filepath.Join(dir, m.From)) || !present(filepath.Join(dir, m.To)) {
+			break
+		}
+		n++
+	}
+	return n
+}
+
+// recoverJournal finishes a restore that was cut off, or undoes it when it
+// cannot be finished, so the live files are never a mix of old and new.
+func recoverJournal(dir string) error {
+	b, err := os.ReadFile(filepath.Join(dir, JournalFile))
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var j journal
+	if err := json.Unmarshal(b, &j); err != nil || len(j.Moves) == 0 {
+		// Written through a synced rename, so a bad journal was never used.
+		log.Printf("backup: ignoring an unreadable %s", JournalFile)
+		return removeJournal(dir)
+	}
+	done := donePrefix(dir, j)
+	forward := func() error {
+		for _, m := range j.Moves[done:] {
+			from, to := filepath.Join(dir, m.From), filepath.Join(dir, m.To)
+			if !present(from) || present(to) {
+				return fmt.Errorf("%s -> %s: the files are not where the journal expects", m.From, m.To)
+			}
+			if err := applyRename(from, to); err != nil {
+				return err
+			}
+			done++
+		}
+		return nil
+	}
+	if err := forward(); err != nil {
+		log.Printf("backup: a restore was cut off and cannot be finished (%v); undoing it", err)
+		if uerr := undoMoves(dir, j.Moves[:done]); uerr != nil {
+			return fmt.Errorf("a restore was cut off and could not be undone: %w", errors.Join(err, uerr))
+		}
+		if err := syncMoveDirs(dir, j); err != nil {
+			return err
+		}
+		log.Printf("backup: the cut-off restore was undone; the data from before it is back in place")
+		return removeJournal(dir)
+	}
+	if err := syncMoveDirs(dir, j); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(filepath.Join(dir, StagedDir)); err != nil {
+		return err
+	}
+	log.Printf("backup: a restore was cut off and has been finished; the replaced databases are in %s", filepath.Join(dir, j.Keep))
+	return removeJournal(dir)
+}
+
 // ApplyStaged swaps a staged restore in. Call it before the store opens.
-// The databases it replaces are kept in backups/before-restore-<time>.
+// The databases it replaces are kept in backups/before-restore-<time>. The
+// moves are written to a journal first, so a restore cut off part way is
+// finished (or undone) on the next call.
 func ApplyStaged(dir string) (bool, error) {
+	if err := recoverJournal(dir); err != nil {
+		return false, err
+	}
 	staged := filepath.Join(dir, StagedDir)
 	if !Staged(dir) {
 		if _, err := os.Stat(staged); err == nil {
@@ -652,56 +1002,46 @@ func ApplyStaged(dir string) (bool, error) {
 		}
 		return false, nil
 	}
-	keep := filepath.Join(dir, "backups", "before-restore-"+time.Now().UTC().Format(stampLayout))
+	keepRel := filepath.Join("backups", "before-restore-"+time.Now().UTC().Format(stampLayout))
+	keep := filepath.Join(dir, keepRel)
 	if err := os.MkdirAll(keep, 0o750); err != nil {
 		return false, err
 	}
-	type movedFile struct{ from, to string }
-	var old, installed []movedFile
-	rollback := func(cause error) error {
-		var errs []error
-		// Put staged databases back first, so their live names are free for
-		// the coherent old database sets below. This also leaves the staged
-		// restore retryable after a recoverable failure.
-		for i := len(installed) - 1; i >= 0; i-- {
-			m := installed[i]
-			if err := applyRename(m.to, m.from); err != nil {
-				errs = append(errs, fmt.Errorf("putting staged %s back: %w", filepath.Base(m.from), err))
-			}
-		}
-		for i := len(old) - 1; i >= 0; i-- {
-			m := old[i]
-			if err := applyRename(m.to, m.from); err != nil {
-				errs = append(errs, fmt.Errorf("restoring %s: %w", filepath.Base(m.from), err))
-			}
-		}
-		if len(errs) == 0 {
-			_ = os.Remove(keep)
-			return cause
-		}
-		return errors.Join(append([]error{cause}, errs...)...)
-	}
+	j := journal{Keep: keepRel}
 	for _, db := range []string{store.MainFile, store.EventsFile} {
 		if _, err := os.Stat(filepath.Join(staged, db)); err != nil {
 			continue // not in the backup: keep the current one
 		}
 		for _, suffix := range []string{"", "-wal", "-shm"} {
-			cur := filepath.Join(dir, db+suffix)
-			if _, err := os.Stat(cur); err == nil {
-				kept := filepath.Join(keep, db+suffix)
-				if err := applyRename(cur, kept); err != nil {
-					return false, rollback(err)
-				}
-				old = append(old, movedFile{from: cur, to: kept})
+			if present(filepath.Join(dir, db+suffix)) {
+				j.Moves = append(j.Moves, journalMove{From: db + suffix, To: filepath.Join(keepRel, db+suffix)})
 			}
 		}
-		from, to := filepath.Join(staged, db), filepath.Join(dir, db)
-		if err := applyRename(from, to); err != nil {
-			return false, rollback(err)
+		j.Moves = append(j.Moves, journalMove{From: filepath.Join(StagedDir, db), To: db})
+	}
+	if err := writeJournal(dir, j); err != nil {
+		return false, err
+	}
+	for i, m := range j.Moves {
+		if err := applyRename(filepath.Join(dir, m.From), filepath.Join(dir, m.To)); err != nil {
+			// Put staged databases back too, so the restore stays retryable.
+			if uerr := undoMoves(dir, j.Moves[:i]); uerr != nil {
+				return false, errors.Join(err, uerr)
+			}
+			_ = os.Remove(keep)
+			if rerr := removeJournal(dir); rerr != nil {
+				return false, errors.Join(err, rerr)
+			}
+			return false, err
 		}
-		installed = append(installed, movedFile{from: from, to: to})
+	}
+	if err := syncMoveDirs(dir, j); err != nil {
+		return true, err
 	}
 	if err := os.RemoveAll(staged); err != nil {
+		return true, err
+	}
+	if err := removeJournal(dir); err != nil {
 		return true, err
 	}
 	log.Printf("backup: restored the staged backup; the replaced databases are in %s", keep)

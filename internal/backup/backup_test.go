@@ -4,7 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -228,16 +230,44 @@ func TestAdoptMigrationCopies(t *testing.T) {
 	}
 	b, _ := os.ReadFile(src)
 	_ = os.WriteFile(raw, b, 0o600)
-	before, _ := filepath.Glob(filepath.Join(m.backupDir(), "*-before-*.db"))
+	pinned := filepath.Join(m.backupDir(), "events-pre-update-0001-to-0002-20261023T030000.000Z.db")
+	_ = os.WriteFile(pinned, b, 0o600)
+	sum := sha256.Sum256(b)
+	_ = os.WriteFile(pinned+".sha256", []byte(hex.EncodeToString(sum[:])+"  x\n"), 0o600)
+	bad := filepath.Join(m.backupDir(), "main-pre-update-0001-to-0002-20261023T040000.000Z.db")
+	_ = os.WriteFile(bad, b, 0o600)
+	_ = os.WriteFile(bad+".sha256", []byte("00  x\n"), 0o600)
 	n, err := m.AdoptMigrationCopies()
-	if err != nil || n != len(before) {
+	if err != nil || n != 2 {
 		t.Fatalf("adopted %d %v", n, err)
 	}
-	if _, err := os.Stat(raw); !os.IsNotExist(err) {
-		t.Fatal("raw copy left behind")
+	for _, p := range []string{raw, pinned, pinned + ".sha256"} {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			t.Fatalf("raw copy left behind: %s", p)
+		}
 	}
-	if kept(t, m, KindUpdate) != n {
-		t.Fatal("no update backup made from each migration copy")
+	if _, err := os.Stat(bad); err != nil {
+		t.Fatal("a copy that fails its sha256 must stay put")
+	}
+	if kept(t, m, KindPreUpdate) != 1 {
+		t.Fatal("the newest main and events copies should make one pre-update backup")
+	}
+	all, _ := m.List()
+	var meta Meta
+	zr, err := zip.OpenReader(all[0].Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range zr.File {
+		if f.Name == MetaFile {
+			rc, _ := f.Open()
+			_ = json.NewDecoder(rc).Decode(&meta)
+			rc.Close()
+		}
+	}
+	zr.Close()
+	if meta.SchemaMain != 8 || meta.SchemaEvents != 1 || meta.Kind != KindPreUpdate || all[0].Detail == "" {
+		t.Fatalf("meta %+v, detail %q", meta, all[0].Detail)
 	}
 	_ = dir
 }
@@ -427,4 +457,93 @@ func TestStageCapsTotalUnpackedSize(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "too large") {
 		t.Fatalf("total size not capped: %v", err)
 	}
+}
+
+// crashAfterFirstMove stages a restore over old databases and stops
+// ApplyStaged right after its first move, as a power cut would.
+func crashAfterFirstMove(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	staged := filepath.Join(dir, StagedDir)
+	if err := os.MkdirAll(staged, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(staged, readyFile), []byte("ready"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, db := range []string{store.MainFile, store.EventsFile} {
+		if err := os.WriteFile(filepath.Join(dir, db), []byte("old-"+db), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(staged, db), []byte("new-"+db), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	original := applyRename
+	t.Cleanup(func() { applyRename = original })
+	type crash struct{}
+	applyRename = func(from, to string) error {
+		if err := original(from, to); err != nil {
+			return err
+		}
+		panic(crash{})
+	}
+	func() {
+		defer func() {
+			if _, ok := recover().(crash); !ok {
+				t.Fatal("ApplyStaged did not reach its first move")
+			}
+		}()
+		_, _ = ApplyStaged(dir)
+	}()
+	applyRename = original
+	if _, err := os.Stat(filepath.Join(dir, JournalFile)); err != nil {
+		t.Fatalf("no journal after the cut: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, store.MainFile)); err == nil {
+		t.Fatal("first move did not happen")
+	}
+	return dir
+}
+
+func wantFiles(t *testing.T, dir, prefix string) {
+	t.Helper()
+	for _, db := range []string{store.MainFile, store.EventsFile} {
+		got, err := os.ReadFile(filepath.Join(dir, db))
+		if err != nil || string(got) != prefix+db {
+			t.Fatalf("%s = %q, %v; want %q", db, got, err, prefix+db)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dir, JournalFile)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("journal left behind: %v", err)
+	}
+}
+
+func TestRestoreCutOffAfterFirstMoveIsFinished(t *testing.T) {
+	dir := crashAfterFirstMove(t)
+	done, err := ApplyStaged(dir)
+	if err != nil || done {
+		t.Fatalf("apply after cut = %v, %v", done, err)
+	}
+	wantFiles(t, dir, "new-")
+	if Staged(dir) {
+		t.Fatal("staged restore still waiting")
+	}
+	old, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", store.MainFile))
+	if len(old) != 1 {
+		t.Fatalf("replaced database not kept: %v", old)
+	}
+}
+
+func TestRestoreCutOffThatCannotFinishIsUndone(t *testing.T) {
+	dir := crashAfterFirstMove(t)
+	// The staged copy and the ready mark went missing: finishing would
+	// leave no main database, so the cut-off restore is undone.
+	if err := os.RemoveAll(filepath.Join(dir, StagedDir)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ApplyStaged(dir); err != nil {
+		t.Fatal(err)
+	}
+	wantFiles(t, dir, "old-")
 }

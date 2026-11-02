@@ -99,3 +99,21 @@ func TestUpdateFeedSettingWinsAndPlainText(t *testing.T) {
 		t.Fatalf("%+v", i)
 	}
 }
+
+func TestUpdateCheckEveryDays(t *testing.T) {
+	w := newWorld(t)
+	f := newFeed(t)
+	w.e.ReleaseFeed = f.srv.URL
+	w.exec(t, "INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', 'update_check_every_days', '7', 't', '{}', 't', '{}')")
+	w.run(t)
+	w.now = w.now.Add(6 * UpdateEvery)
+	w.run(t)
+	if f.calls.Load() != 1 {
+		t.Fatalf("asked %d times within a week", f.calls.Load())
+	}
+	w.now = w.now.Add(UpdateEvery)
+	w.run(t)
+	if f.calls.Load() != 2 {
+		t.Fatalf("asked %d times after a week", f.calls.Load())
+	}
+}

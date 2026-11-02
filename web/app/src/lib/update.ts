@@ -29,5 +29,5 @@ export function releaseLink(link: string | undefined): string {
 
 // What the update check sends, said once where it is turned on.
 export function updatePrivacy(version: string): string {
-	return `Once a day HolyArrs asks api.github.com for the newest release, sending only the header User-Agent: HolyArrs/${version}. No account, no list of your media, no other data.`;
+	return `On each check HolyArrs asks api.github.com for the newest release, sending only the header User-Agent: HolyArrs/${version}. No account, no list of your media, no other data.`;
 }

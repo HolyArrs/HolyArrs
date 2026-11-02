@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -15,6 +16,13 @@ const LockFile = ".holyarrs.lock"
 // ErrDirLocked means another process holds the config folder's lock.
 var ErrDirLocked = errors.New("the config folder is in use by a running HolyArrs")
 
+// errLockUnsupported means the filesystem cannot lock files (some network
+// or FUSE mounts). The folder is used without a lock.
+var errLockUnsupported = errors.New("file locks not supported")
+
+// lockFile takes the lock; tests replace it.
+var lockFile = sysLockFile
+
 // LockDir takes the config folder's lock without waiting. The lock goes
 // with the process: the system releases it when the process ends, however
 // it ends. unlock releases it earlier and may be called more than once.
@@ -25,6 +33,10 @@ func LockDir(dir string) (unlock func(), err error) {
 	}
 	if err := lockFile(f); err != nil {
 		f.Close()
+		if errors.Is(err, errLockUnsupported) {
+			log.Printf("store: warning: file locks not supported here (%s); do not run two HolyArrs on this folder", dir)
+			return func() {}, nil
+		}
 		return nil, err
 	}
 	var once sync.Once

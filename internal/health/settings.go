@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -35,13 +36,16 @@ type Settings struct {
 	// UpdatePrerelease lets a pre-release (v1.2.0-rc1) give a notice;
 	// default off. Nil in a change keeps the current value.
 	UpdatePrerelease *bool `json:"update_prerelease,omitempty"`
+	// UpdateCheckEveryDays is the days between update checks (1, 3, 7, 14
+	// or 30; default 1). Nil in a change keeps the current value.
+	UpdateCheckEveryDays *int `json:"update_check_every_days,omitempty"`
 	// UpdateCheckDefault is the feed used when UpdateCheckURL is empty
 	// (answered only).
 	UpdateCheckDefault string `json:"update_check_default"`
 }
 
 // ErrSettings refuses settings out of range.
-var ErrSettings = errors.New("every_minutes is 1 to 1440, flap_guard 1 to 20, low_space_mb 0 to 16777216, and update_check_url an http or https link without a name, password, query or fragment (it may hold no secret), or empty")
+var ErrSettings = errors.New("every_minutes is 1 to 1440, flap_guard 1 to 20, low_space_mb 0 to 16777216, and update_check_url an http or https link without a name, password, query or fragment (it may hold no secret), or empty; update_check_every_days is 1, 3, 7, 14 or 30")
 
 // ReadSettings reads the health check settings.
 func ReadSettings(ctx context.Context, s *store.Store) (Settings, error) {
@@ -50,7 +54,8 @@ func ReadSettings(ctx context.Context, s *store.Store) (Settings, error) {
 		UpdateCheckURL: e.setting(ctx, settingUpdateURL), EveryMinutes: 5, UpdateCheckDefault: DefaultReleaseFeed}
 	on, local := e.updateOn(ctx), e.setting(ctx, settingUpdateLocal) == "true"
 	pre := e.setting(ctx, settingUpdatePre) == "true"
-	out.UpdateCheck, out.UpdateCheckLocal, out.UpdatePrerelease = &on, &local, &pre
+	days := int(e.updateEvery(ctx) / UpdateEvery)
+	out.UpdateCheck, out.UpdateCheckLocal, out.UpdatePrerelease, out.UpdateCheckEveryDays = &on, &local, &pre, &days
 	var every int
 	err := s.Read().QueryRowContext(ctx, "SELECT every_seconds FROM schedules WHERE kind = ?", KindCheck).Scan(&every)
 	if err == nil && every > 0 {
@@ -65,6 +70,9 @@ func ReadSettings(ctx context.Context, s *store.Store) (Settings, error) {
 func SaveSettings(ctx context.Context, s *store.Store, in Settings, by domain.Actor) error {
 	in.UpdateCheckURL = strings.TrimSpace(in.UpdateCheckURL)
 	if in.EveryMinutes < 1 || in.EveryMinutes > 1440 || in.FlapGuard < 1 || in.FlapGuard > 20 || in.LowSpaceMB < 0 || in.LowSpaceMB > 1<<24 {
+		return ErrSettings
+	}
+	if in.UpdateCheckEveryDays != nil && !slices.Contains(UpdateDays, *in.UpdateCheckEveryDays) {
 		return ErrSettings
 	}
 	if in.UpdateCheckURL != "" {
@@ -82,6 +90,9 @@ func SaveSettings(ctx context.Context, s *store.Store, in Settings, by domain.Ac
 		}
 		if in.UpdatePrerelease != nil {
 			vals[settingUpdatePre] = strconv.FormatBool(*in.UpdatePrerelease)
+		}
+		if in.UpdateCheckEveryDays != nil {
+			vals[settingUpdateDays] = strconv.Itoa(*in.UpdateCheckEveryDays)
 		}
 		if in.UpdateCheckLocal != nil {
 			vals[settingUpdateLocal] = strconv.FormatBool(*in.UpdateCheckLocal)
