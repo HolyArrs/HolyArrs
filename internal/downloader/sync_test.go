@@ -28,7 +28,7 @@ var notOptional = map[string]bool{"Engine": true, "Publisher": true, "SyncSource
 // Every method of the registry, sorted into reads and writes. A method in
 // neither fails TestEveryRegistryMethodIsClassified.
 var writeMethods = map[string]bool{
-	"Add": true, "Remove": true, "PauseItem": true, "ResumeItem": true, "PauseAll": true, "ResumeAll": true, "MoveTop": true,
+	"Add": true, "Remove": true, "PauseItem": true, "ResumeItem": true, "PauseAll": true, "ResumeAll": true, "MoveTop": true, "MoveItem": true, "SetPriority": true,
 	"SetSpeedLimit": true, "Recheck": true, "Reannounce": true, "SetFilePriority": true, "Retry": true, "AddTorrents": true,
 	"Bulk": true, "RemoveMany": true, "SetShareLimits": true, "SetSlowMode": true, "AddTrackers": true, "EditTracker": true,
 	"RemoveTrackers": true, "SetLocation": true, "SetTorrentLimits": true,

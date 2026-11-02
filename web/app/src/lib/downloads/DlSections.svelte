@@ -16,7 +16,7 @@
 	import Icon from '../Icon.svelte';
 	import Chip from '../ui/Chip.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
-	import { rowItems, type RowItem } from './rowmenu.ts';
+	import { PRIORITIES, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import TopMenu from './TopMenu.svelte';
 	import { to } from '../paths.ts';
 	import DlBar from './DlBar.svelte';
@@ -516,11 +516,30 @@
 	};
 	// Torrents a torrent Downloader can steer by hash: seeding rules and more.
 	// The row ⋯ menu: one place for a row's actions, the same items on desktop and phone.
-	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Resume', retry: 'Try again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', library: 'Open in Library', remove: 'Remove' };
+	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Resume', retry: 'Try again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', priority: 'Priority', library: 'Open in Library', remove: 'Remove' };
+	// Usenet jobs move and take a priority one job at a time (no bulk call).
+	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
+	const MOVED: Record<string, string> = { up: 'Moved up.', down: 'Moved down.', top: 'Moved to top.', bottom: 'Moved to bottom.' };
+	let queueBusy = $state(0);
+	async function usenetCall(r: DownloadRow, run: () => Promise<unknown>, done: string) {
+		queueBusy = r.id;
+		try {
+			await run();
+			toasts.push(done, 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			if (queueBusy === r.id) queueBusy = 0;
+		}
+	}
+	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? 'Moved.');
+	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), `Priority set to ${label}.`);
 	function rowMenu(r: DownloadRow): MenuItem[] {
-		const off = busy === r.id;
-		const items: MenuItem[] = rowItems(r).map((k): MenuItem => {
+		const off = busy === r.id || queueBusy === r.id;
+		const items: MenuItem[] = rowItems(r).flatMap((k): MenuItem | MenuItem[] => {
 			const label = ROW_WORD[k];
+			if (k === 'priority') return [{ kind: 'heading', label }, ...PRIORITIES.map((p): MenuItem => ({ label: p.label, disabled: off, onselect: () => void usenetPriority(r, p.key, p.label) }))];
+			if ((k === 'up' || k === 'down' || k === 'top' || k === 'bottom') && usenetQueued(r)) return { label, disabled: off, onselect: () => void usenetMove(r, k) };
 			if (k === 'library') return { label, icon: 'film', href: to(`/library/${r.title_id}`) };
 			if (k === 'remove') return { label, icon: 'trash', destructive: true, disabled: off, onselect: () => onremove(r) };
 			if (k === 'pause' || k === 'resume') return { label, icon: k === 'pause' ? 'pause' : 'play', disabled: off, onselect: () => onact?.(r, k) };

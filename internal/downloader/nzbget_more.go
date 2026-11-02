@@ -147,13 +147,8 @@ func (n *NZBGet) Status(ctx context.Context) (ClientStatus, error) {
 	return ClientStatus{Speed: q.Head.Speed, TimeLeft: q.Head.TimeLeft}, nil
 }
 
-// The queue controls are not offered yet: their commands are not in the
-// adapter manual. The server answers ErrNotSupported without a call.
-func (n *NZBGet) PauseItem(context.Context, string) error           { return ErrNotSupported }
-func (n *NZBGet) ResumeItem(context.Context, string) error          { return ErrNotSupported }
-func (n *NZBGet) PauseAll(context.Context) error                    { return ErrNotSupported }
-func (n *NZBGet) ResumeAll(context.Context) error                   { return ErrNotSupported }
-func (n *NZBGet) MoveTop(context.Context, string) error             { return ErrNotSupported }
+// Pause, resume and queue moves live in usenet_queue.go. The speed cap
+// is not offered yet (not in the adapter manual).
 func (n *NZBGet) SetSpeedLimit(context.Context, int64, int64) error { return ErrNotSupported }
 
 // Retry sends a failed history job back to the queue (HistoryRedownload).

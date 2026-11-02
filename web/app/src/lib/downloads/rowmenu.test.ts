@@ -19,8 +19,14 @@ describe('row actions menu', () => {
 		const job = { can_act: true, protocol: 'usenet', downloader_kind: 'sabnzbd', downloader_id: 2, hash: 'n', client_item: true, phase: 'failed' };
 		expect(rowItems(job)).toEqual(['retry', 'remove']);
 	});
-	it('gives a live SABnzbd job pause and remove only', () => {
-		expect(rowItems({ can_act: true, protocol: 'usenet', downloader_kind: 'sabnzbd', downloader_id: 2, hash: 'n', phase: 'downloading' })).toEqual(['pause', 'remove']);
+	it('gives a live SABnzbd or NZBGet job pause, queue moves, priority and remove', () => {
+		for (const kind of ['sabnzbd', 'nzbget'])
+			expect(rowItems({ can_act: true, protocol: 'usenet', downloader_kind: kind, downloader_id: 2, hash: 'n', phase: 'downloading' })).toEqual(['pause', 'up', 'down', 'top', 'bottom', 'priority', 'remove']);
+		expect(rowItems({ can_act: true, protocol: 'usenet', downloader_kind: 'nzbget', downloader_id: 2, hash: 'nzbid-4', phase: 'paused', state: 'paused' })[0]).toBe('resume');
+	});
+	it('keeps queue moves and priority off finished Usenet jobs', () => {
+		expect(rowItems({ can_act: true, protocol: 'usenet', downloader_kind: 'nzbget', downloader_id: 2, hash: 'n', phase: 'done' })).toEqual(['remove']);
+		expect(rowItems({ can_act: false, protocol: 'usenet', downloader_kind: 'sabnzbd', downloader_id: 2, hash: 'n', phase: 'downloading' })).toEqual([]);
 	});
 	it('keeps Transmission rows to remove', () => {
 		expect(rowItems({ ...tor, downloader_kind: 'transmission' })).toEqual(['remove']);

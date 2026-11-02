@@ -420,6 +420,10 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/downloaders/{id}/items/{hash}/pause":           PermManageLibrary,
 	"POST /api/v1/downloaders/{id}/items/{hash}/resume":          PermManageLibrary,
 	"POST /api/v1/downloaders/{id}/items/{hash}/top":             PermManageLibrary,
+	"POST /api/v1/downloaders/{id}/items/{hash}/up":              PermManageLibrary,
+	"POST /api/v1/downloaders/{id}/items/{hash}/down":            PermManageLibrary,
+	"POST /api/v1/downloaders/{id}/items/{hash}/bottom":          PermManageLibrary,
+	"POST /api/v1/downloaders/{id}/items/{hash}/priority":        PermManageLibrary,
 	"POST /api/v1/downloaders/{id}/items/{hash}/recheck":         PermManageLibrary,
 	"POST /api/v1/downloaders/{id}/items/{hash}/reannounce":      PermManageLibrary,
 	"POST /api/v1/downloaders/{id}/items/{hash}/remove":          PermManageLibrary, // outside torrents also need PermSettings (checked in the handler)

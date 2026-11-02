@@ -237,6 +237,7 @@ func (a *API) clientItemRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/top", write(func(ctx context.Context, e downloader.Engine, id string) error {
 		return asController(e, func(c downloader.Controller) error { return c.MoveTop(ctx, id) })
 	}))
+	a.usenetQueueRoutes(m)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/recheck", write(func(ctx context.Context, e downloader.Engine, id string) error {
 		return asTorrent(e, func(t downloader.TorrentController) error { return t.Recheck(ctx, id) })
 	}))

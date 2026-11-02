@@ -11399,6 +11399,47 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/items/{hash}/bottom": {
+      "post": {
+        "description": "Works on any job in a SABnzbd or NZBGet queue, HolyArrs' own or not. Already at that end is not an error.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new order or priority shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, or the client does not have that job in its queue."
+          },
+          "409": {
+            "description": "The Downloader does not offer this control (only SABnzbd and NZBGet do)."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Move a Usenet job to the bottom of the queue",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloaders/{id}/items/{hash}/detail": {
       "get": {
         "description": "The client's own detail of any torrent it holds, by info hash. The log is always empty: a torrent HolyArrs did not send has no history here.",
@@ -11466,6 +11507,47 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/down": {
+      "post": {
+        "description": "Works on any job in a SABnzbd or NZBGet queue, HolyArrs' own or not. Already at that end is not an error.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new order or priority shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, or the client does not have that job in its queue."
+          },
+          "409": {
+            "description": "The Downloader does not offer this control (only SABnzbd and NZBGet do)."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Move a Usenet job down one place",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/downloaders/{id}/items/{hash}/files": {
@@ -11638,6 +11720,50 @@
           }
         },
         "summary": "Pause one item in a torrent Downloader, by its info hash",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/priority": {
+      "post": {
+        "description": "Body {\"priority\": \"low\", \"normal\", \"high\" or \"force\"}. SABnzbd and NZBGet each map these to their own levels.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new order or priority shows after the next sync, read from the Downloader."
+          },
+          "400": {
+            "description": "The body is not one of the listed priorities."
+          },
+          "404": {
+            "description": "No such Downloader, or the client does not have that job in its queue."
+          },
+          "409": {
+            "description": "The Downloader does not offer this control (only SABnzbd and NZBGet do)."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Set a Usenet job's priority",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
@@ -12118,6 +12244,47 @@
           }
         },
         "summary": "Remove trackers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/items/{hash}/up": {
+      "post": {
+        "description": "Works on any job in a SABnzbd or NZBGet queue, HolyArrs' own or not. Already at that end is not an error.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done; the new order or priority shows after the next sync, read from the Downloader."
+          },
+          "404": {
+            "description": "No such Downloader, or the client does not have that job in its queue."
+          },
+          "409": {
+            "description": "The Downloader does not offer this control (only SABnzbd and NZBGet do)."
+          },
+          "502": {
+            "description": "The Downloader refused or could not be reached."
+          }
+        },
+        "summary": "Move a Usenet job up one place",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"

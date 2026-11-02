@@ -13,15 +13,16 @@ type RetryBits = Pick<DownloadRow, 'phase' | 'protocol' | 'client_item' | 'hash'
 
 /** retryable says a row is a failed Usenet job the Downloader still holds
  *  and HolyArrs did not send (its own failed downloads were searched again).
- *  NZBGet takes Try again but not the queue controls yet. */
+ *  NZBGet takes Try again too. */
 export function retryable(r: RetryBits & { downloader_kind?: string }): boolean {
 	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !!r.client_item && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
 }
 
 /** pausable says whether Pause/Resume means anything: a Usenet job in the
- *  finished list (done or failed) cannot be paused. */
+ *  finished list (done or failed) cannot be paused. NZBGet takes pause and
+ *  resume though not the other row controls. */
 export function pausable(r: { protocol?: string; phase?: string; downloader_kind?: string }): boolean {
-	return controllable(r.downloader_kind) && !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
+	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
 }
 
 /** controllable says the Downloader kind takes pause, resume, retry and the

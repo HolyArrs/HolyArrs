@@ -65,6 +65,7 @@ var optionalInterfaces = []reflect.Type{
 	reflect.TypeFor[Syncer](),
 	reflect.TypeFor[QueueReader](),
 	reflect.TypeFor[UsenetInspector](),
+	reflect.TypeFor[UsenetQueue](),
 }
 
 func shapeOf(e any) uint64 {
@@ -90,7 +91,7 @@ func readOnly(inner Engine) Engine {
 		return roQbit{c, roController{c}, roTorrentController{c}, roTorrentInspector{c}, roAllLister{c}, roTorrentAdder{c},
 			roTorrentFolders{c}, roTorrentBulk{c}, roShareLimiter{c}, roSlowModer{c}, roTrackerEditor{c}, roMover{c}, roMainSyncer{c}}
 	case shapeOf(&Sabnzbd{}):
-		return roSab{c, roController{c}, roRetrier{c}, roHistoryReader{c}, roQueueReader{c}, roUsenetInspector{c}}
+		return roSab{c, roController{c}, roRetrier{c}, roHistoryReader{c}, roQueueReader{c}, roUsenetInspector{c}, roUsenetQueue{c}}
 	}
 	return c
 }
@@ -142,7 +143,13 @@ type roSab struct {
 	roHistoryReader
 	roQueueReader
 	roUsenetInspector
+	roUsenetQueue
 }
+
+type roUsenetQueue struct{ c *roCore }
+
+func (roUsenetQueue) MoveItem(context.Context, string, string) error    { return ErrReadOnly }
+func (roUsenetQueue) SetPriority(context.Context, string, string) error { return ErrReadOnly }
 
 type roController struct{ c *roCore }
 

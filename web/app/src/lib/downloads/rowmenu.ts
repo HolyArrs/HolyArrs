@@ -1,7 +1,24 @@
 import { pausable, retryable } from './usenet.ts';
 
 /** One entry in a row's ⋯ menu; the page maps each key to its handler. */
-export type RowItem = 'pause' | 'resume' | 'retry' | 'up' | 'down' | 'top' | 'bottom' | 'library' | 'remove';
+export type RowItem = 'pause' | 'resume' | 'retry' | 'up' | 'down' | 'top' | 'bottom' | 'priority' | 'library' | 'remove';
+
+/** The Usenet priorities the server takes, in menu order. */
+export const PRIORITIES = [
+	{ key: 'low', label: 'Low' },
+	{ key: 'normal', label: 'Normal' },
+	{ key: 'high', label: 'High' },
+	{ key: 'force', label: 'Force' }
+] as const;
+export type Priority = (typeof PRIORITIES)[number]['key'];
+
+// A Usenet job still in a SABnzbd or NZBGet queue takes order and priority.
+const QUEUED = new Set(['waiting', 'downloading', 'paused', 'stalled']);
+
+/** usenetQueued says a row is a Usenet job still in its client's queue. */
+export function usenetQueued(r: { protocol?: string; downloader_kind?: string; phase?: string; downloader_id?: number; hash?: string }): boolean {
+	return r.protocol === 'usenet' && (r.downloader_kind === 'sabnzbd' || r.downloader_kind === 'nzbget') && !!r.downloader_id && !!r.hash && QUEUED.has(r.phase ?? '');
+}
 
 type RowBits = Parameters<typeof retryable>[0] & {
 	can_act?: boolean;
@@ -19,8 +36,9 @@ type RowBits = Parameters<typeof retryable>[0] & {
 
 /** rowItems lists what a row's ⋯ menu offers, in order. A read-only row
  *  (can_act false) gets only Open in Library: nothing that changes the client.
- *  Queue moves are qBittorrent torrents only (the client bulk call); neither
- *  SABnzbd nor NZBGet takes a job priority from HolyArrs yet. */
+ *  Queue moves are qBittorrent torrents (the client bulk call) and SABnzbd
+ *  or NZBGet jobs still queued (one call per job), which also take a
+ *  priority. */
 export function rowItems(r: RowBits): RowItem[] {
 	const out: RowItem[] = [];
 	const lib = !!r.title_id && (!!r.linked || !r.outside);
@@ -28,6 +46,7 @@ export function rowItems(r: RowBits): RowItem[] {
 		if (pausable(r)) out.push(r.state === 'paused' ? 'resume' : 'pause');
 		if (retryable(r)) out.push('retry');
 		if (!!r.downloader_id && !!r.hash && r.protocol === 'torrent' && (!r.downloader_kind || r.downloader_kind === 'qbittorrent')) out.push('up', 'down', 'top', 'bottom');
+		else if (usenetQueued(r)) out.push('up', 'down', 'top', 'bottom', 'priority');
 	}
 	if (lib) out.push('library');
 	if (r.can_act) out.push('remove');
