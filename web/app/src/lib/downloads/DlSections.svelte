@@ -1000,6 +1000,8 @@
 	// Every picked column shows; when they are wider than the view the list scrolls sideways
 	// (columns used to drop out one by one on a narrow view, which read as a glitch).
 	const vis = $derived(visAll);
+	// Preview only: ?swarm=1|2|3 picks the Swarm cell's look while Luis compares them. Remove once chosen.
+	const swarmLook = typeof location === 'undefined' ? 1 : Number(new URLSearchParams(location.search).get('swarm')) || 1;
 	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', label: 'Seeds' }, { id: 'peers', label: 'Peers' }, { id: 'ratio', label: 'Ratio' }];
 	const ordinal = (n: number) => { const r = n % 100; return `${n}${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`; };
 	function sortBy(id: ColId, facet?: SwarmFacet) {
@@ -1413,7 +1415,15 @@
 		{:else}
 			{@const st = swarmTotal(r.seeds, r.seeds_total)}
 			{@const pt = swarmTotal(r.peers, r.peers_total)}
-			<span class="sw2" class:ph data-col="swarm" title={[st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}><span>{r.seeds ?? 0} {r.seeds === 1 ? 'seed' : 'seeds'} · {r.peers ?? 0} {r.peers === 1 ? 'peer' : 'peers'}</span><span class="sub">{r.ratio != null ? `ratio ${r.ratio.toFixed(2)}` : ''}</span></span>
+			{@const tip = [st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}
+			{#if swarmLook === 2}
+				<span class="sw1" class:ph data-col="swarm" title={tip}><span class="n"><i class="dot s" aria-hidden="true"></i>{r.seeds ?? 0}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{r.peers ?? 0}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{r.ratio.toFixed(2)}</b>{/if}</span>
+			{:else if swarmLook === 3}
+				{@const h = (r.seeds ?? 0) >= 3 ? 'Healthy' : (r.seeds ?? 0) > 0 || (r.peers ?? 0) > 0 ? 'Thin' : 'Dead'}
+				<span class="sw3" class:ph class:thin={h === 'Thin'} class:dead={h === 'Dead'} data-col="swarm" title={tip}><i class="dot" aria-hidden="true"></i><span class="tx"><span>{h}</span><span class="sub">{r.seeds ?? 0} {r.seeds === 1 ? 'seed' : 'seeds'} · {r.peers ?? 0} {r.peers === 1 ? 'peer' : 'peers'}{r.ratio != null ? ` · ${r.ratio.toFixed(2)}` : ''}</span></span></span>
+			{:else}
+				<span class="sw2" class:ph data-col="swarm" title={tip}><span>{r.seeds ?? 0} {r.seeds === 1 ? 'seed' : 'seeds'} · {r.peers ?? 0} {r.peers === 1 ? 'peer' : 'peers'}</span><span class="sub">{r.ratio != null ? `ratio ${r.ratio.toFixed(2)}` : ''}</span></span>
+			{/if}
 		{/if}
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
@@ -2560,6 +2570,20 @@
 	/* Swarm: two lines, the ratio under the counts. */
 	.sw2 { display: flex; flex-direction: column; gap: 1px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 	.sw2 .sub { color: var(--text-muted); font: var(--t-caption); }
+	/* View 2: one line, two marks and a ratio pill. */
+	.sw1 { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.sw1 .n { display: inline-flex; align-items: center; gap: 5px; }
+	.sw1 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+	.sw1 .dot.p { background: var(--info); }
+	.sw1 .rp { margin-left: auto; padding: 1px 7px; border-radius: 999px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-weight: 500; }
+	.sw1 .rp.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+	/* View 3: a health word first, the numbers under it. */
+	.sw3 { display: flex; align-items: flex-start; gap: 6px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.sw3 .dot { flex: none; margin-top: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+	.sw3.thin .dot { background: var(--wait); }
+	.sw3.dead .dot { background: var(--fail); }
+	.sw3 .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
+	.sw3 .sub { color: var(--text-muted); font: var(--t-caption); }
 	/* The header's three facets: the picked one is bold and carries the sort line. */
 	.facets { display: flex; gap: 10px; }
 	.fc { position: relative; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
