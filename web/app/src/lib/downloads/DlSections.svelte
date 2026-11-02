@@ -2563,6 +2563,8 @@
 	@media (min-width: 641px) {
 		.body { padding: 0 12px 0 14px; }
 		.col { overflow: clip; border-radius: 14px; }
+		/* The table's own frame drew a second line inside the card: the rows' lines are enough. */
+		.col .tin { border-color: transparent; box-shadow: none; }
 		/* The header and row checkboxes sit centred in the same 28px lane. */
 		.hk, .tg:has(> .pk) { display: flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 0 !important; }
 		.hk .hpk, .tg > .pk { margin: 0; translate: none; transform: none; }
