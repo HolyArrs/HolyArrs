@@ -1847,23 +1847,40 @@
 {/if}
 </div>
 </div>
-{#snippet morePop()}<span class="mop" class:warn={notes.length > 0}><Popover label="More status" icon="more" placement="below" align="end" width={280}>{#snippet children()}
-	<ul class="mo">
-		<li><i class="dot" class:ok={health === 'Connected'} aria-hidden="true"></i> {health}</li>
-		{#each notes as n (n)}<li class="note" data-testid="dl-note">{n}</li>{/each}
-		{#each clients.filter((c) => c.error) as c (c.id)}<li class="note">{c.name}: {c.error}</li>{/each}
-		{#each clients.filter((c) => c.status?.connection || c.status?.slow_mode != null) as c (c.id)}
-			<li class="cl" data-testid="sb-client">
-				{#if c.status?.connection}<span class="cn {c.status.connection}" data-testid="sb-connection" title={CONN_HINT[c.status.connection]}><i class="dot" aria-hidden="true"></i>{CONN_WORD[c.status.connection]}</span>{/if}
-				<span class="cname">{c.name}</span>
-				{#if c.status?.slow_mode != null}<label class="slow"><span>Slow mode</span><input type="checkbox" role="switch" checked={c.status.slow_mode} disabled={watch || slowBusy === c.id} onchange={(e) => setSlow(c, e.currentTarget.checked)} data-testid="sb-slow" /></label>{/if}
-			</li>
+{#snippet morePop()}<span class="mop" class:warn={notes.length > 0 || clients.some((c) => c.error)}><Popover label="More status" icon="more" placement="below" align="end" width={320}>{#snippet children()}
+	<!-- One card per Downloader (its state, its own numbers, its own control), then the totals as tiles. -->
+	<div class="mo" data-testid="sb-status">
+		{#each notes.filter((n) => !clients.some((c) => n.startsWith(c.name))) as n (n)}<p class="mnote" data-testid="dl-note">{n}</p>{/each}
+		{#if !clients.length}<p class="mnote">{health}</p>{/if}
+		{#each clients as c (c.id)}
+			{@const s = c.status}
+			{@const usenet = c.protocol === 'usenet'}
+			{@const tone = c.error ? 'warn' : s?.connection === 'disconnected' ? 'bad' : s?.connection === 'firewalled' ? 'warn' : s?.paused ? 'held' : 'ok'}
+			<div class="mc" class:warn={!!c.error} data-testid="sb-client">
+				<div class="mch">
+					<i class="dot {tone}" aria-hidden="true"></i>
+					<b class="cname">{c.name}</b>
+					<span class="kind">{usenet ? 'Usenet' : 'Torrent'}</span>
+					{#if s?.connection}<span class="cn" data-testid="sb-connection" title={CONN_HINT[s.connection]}>{CONN_WORD[s.connection]}</span>{/if}
+					{#if c.error}<button type="button" class="xbn quiet retry" onclick={() => void readClients()} data-testid="sb-retry">Retry</button>{/if}
+				</div>
+				{#if c.error}<p class="mnote">{c.error}</p>
+				{:else if s}
+					<div class="mcg">
+						<span><small>Down</small>{bytes(s.speed)}/s</span>
+						{#if usenet}<span><small>Free</small>{s.free_space ? bytes(s.free_space) : '–'}</span><span><small>Today</small>{s.day_down ? bytes(s.day_down) : '–'}</span>
+						{:else}<span><small>Up</small>{bytes(s.up_speed)}/s</span><span data-testid="sb-session"><small>Session</small>↑ {bytes(s.session_up)}</span>{/if}
+					</div>
+					{#if s.slow_mode != null}<label class="slow"><span>Slow mode</span><input type="checkbox" role="switch" checked={s.slow_mode} disabled={watch || slowBusy === c.id} onchange={(e) => setSlow(c, e.currentTarget.checked)} data-testid="sb-slow" /></label>{/if}
+				{/if}
+			</div>
 		{/each}
-		{#if sumOf('session_down') || sumOf('session_up')}<li data-testid="sb-session"><span class="k">This session</span> ↓ {bytes(sumOf('session_down'))} · ↑ {bytes(sumOf('session_up'))}</li>{/if}
-		{#if sumOf('day_down') || sumOf('month_down') || sumOf('all_time_down')}
-			<li data-testid="sb-totals">{#if sumOf('day_down')}<span class="k">Today</span> {bytes(sumOf('day_down'))} · {/if}{#if sumOf('month_down')}<span class="k">Month</span> {bytes(sumOf('month_down'))} · {/if}<span class="k">All time</span> {sumOf('all_time_down') ? bytes(sumOf('all_time_down')) : '–'}</li>
-		{/if}
-	</ul>
+		<div class="mt" data-testid="sb-totals">
+			<span><small>Today</small><b>{sumOf('day_down') ? bytes(sumOf('day_down')) : '–'}</b></span>
+			<span><small>This month</small><b>{sumOf('month_down') ? bytes(sumOf('month_down')) : '–'}</b></span>
+			<span><small>All time</small><b>{sumOf('all_time_down') ? bytes(sumOf('all_time_down')) : '–'}</b></span>
+		</div>
+	</div>
 {/snippet}</Popover></span>{/snippet}
 <!-- Connection health stays readable for screen readers and tests. -->
 <div class="vh"><span data-testid="sb-health">{health}</span></div>
@@ -2152,19 +2169,30 @@
 	.pb .xbt { margin-top: 6px; }
 	.pb .xbn { min-height: 26px; padding: 0 10px; font: var(--t-caption); font-weight: 500; }
 	.note { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--text-muted); font: var(--t-caption); }
-	.cl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
-	.cn { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
-	.cn.connected .dot { background: var(--ok); }
-	.cn.firewalled .dot { background: var(--wait); }
-	.cn.disconnected .dot { background: var(--fail); }
-	.cname { color: var(--text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 60px; }
-	.slow { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; cursor: pointer; min-height: 32px; }
+	/* The status popover: one card per Downloader, then the totals as tiles. */
+	.mo { margin: 0; padding: 6px; display: grid; gap: 8px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.mnote { margin: 0; padding: 0 4px; color: var(--text-muted); }
+	.mc { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.mc.warn { box-shadow: 0 0 0 1px color-mix(in srgb, var(--wait) 45%, transparent); }
+	.mch { display: flex; align-items: center; gap: 8px; min-width: 0; }
+	.mch .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+	.mch .dot.held { background: var(--text-muted); }
+	.mch .dot.warn { background: var(--wait); }
+	.mch .dot.bad { background: var(--fail); }
+	.cname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+	.mch .kind { flex: none; padding: 1px 8px; border-radius: 999px; box-shadow: 0 0 0 1px var(--line-strong); color: var(--text-muted); font: var(--t-caption); }
+	.mch .cn { flex: none; color: var(--text-muted); font: var(--t-caption); }
+	.mch .retry { flex: none; min-height: 24px; padding: 0 8px; border-radius: 999px; box-shadow: 0 0 0 1px var(--line-strong); }
+	.mcg, .mt { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+	.mcg > span, .mt > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+	.mcg small, .mt small { color: var(--text-muted); font: var(--t-caption); }
+	.mt > span { padding: 8px 10px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.mt b { font: 600 15px / 1.2 var(--font-ui); }
+	.slow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding-top: 6px; border-top: 1px solid var(--line); cursor: pointer; min-height: 28px; color: var(--text-muted); }
 	.slow input { width: 18px; height: 18px; accent-color: var(--accent); }
-	.mo { list-style: none; margin: 0; padding: 4px; display: grid; gap: 6px; font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	/* The status trigger carries an amber dot while there is a note to read. */
 	.mop { position: relative; display: inline-flex; }
 	.mop.warn::after { content: ''; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--wait); box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
-	.mo li.note { color: var(--text-muted); }
 	.kcell, .pcell { display: flex; align-items: center; min-width: 0; }
 	.kcell .kt.none { color: var(--text-muted); }
 	/* Wide, the pill starts right after the divider like every other column's text. */
@@ -2194,7 +2222,6 @@
 	/* The status pills: the picked pill carries its own background and opens to hold its sub-options. */
 	.tabrow { display: flex; flex: none; align-items: center; height: 44px; min-width: 0; padding: 0 var(--dl-gutter); border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.tabrow::-webkit-scrollbar { display: none; }
-	.mo li .dot { display: inline-block; vertical-align: 1px; }
 	.tabrow { container: tr / inline-size; }
 	.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 	.tabs { display: flex; flex: none; align-items: center; gap: 2px; width: max-content; padding: 2px; border-radius: 999px; background: var(--surface-2); }
