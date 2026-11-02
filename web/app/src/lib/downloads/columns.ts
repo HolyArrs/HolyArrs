@@ -30,6 +30,8 @@ export interface ColDef {
 	torrent?: boolean;
 	/** The Downloaders do not send this yet: listed in the picker, but cannot be shown. */
 	missing?: boolean;
+	/** One width, no resize grip: its cell is one compact line. */
+	fixed?: boolean;
 }
 
 export const COLUMNS: ColDef[] = [
@@ -46,8 +48,8 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'requested', label: 'Requested by', on: true, width: 130 },
 	{ id: 'quality', label: 'Quality', on: false, width: 90 },
 	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
-	// The torrent column: seeds and peers on one line, the ratio under them; its header sorts by any of the three.
-	{ id: 'swarm', label: 'Swarm', on: false, width: 150, torrent: true },
+	// The torrent column: seeds, peers and the ratio on one compact line; its header sorts by any of the three.
+	{ id: 'swarm', label: 'Swarm', on: false, width: 132, torrent: true, fixed: true },
 	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
 	// The Source (indexer) it was found on, the same word as Settings > Sources.
 	{ id: 'source', label: 'Source', on: false, width: 120 },

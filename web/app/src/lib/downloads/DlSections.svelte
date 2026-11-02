@@ -977,7 +977,7 @@
 	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, size: 90, swarm: 130, added: 90, status: 110 };
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
-	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : Math.max(layout.widths[id], heads[id] ?? 0));
+	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : COL[id].fixed ? COL[id].width : Math.max(layout.widths[id], heads[id] ?? 0));
 	/** heads holds each header's name width, measured after layout and after each sort. */
 	let heads = $state<Partial<Record<ColId, number>>>({});
 	// The Source column hugs the client's logo; its header is an icon (wider only while a sort arrow shows).
@@ -1000,8 +1000,6 @@
 	// Every picked column shows; when they are wider than the view the list scrolls sideways
 	// (columns used to drop out one by one on a narrow view, which read as a glitch).
 	const vis = $derived(visAll);
-	// Preview only: ?swarm=1|2|3 picks the Swarm cell's look while Luis compares them. Remove once chosen.
-	const swarmLook = typeof location === 'undefined' ? 1 : Number(new URLSearchParams(location.search).get('swarm')) || 1;
 	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', label: 'Seeds' }, { id: 'peers', label: 'Peers' }, { id: 'ratio', label: 'Ratio' }];
 	const ordinal = (n: number) => { const r = n % 100; return `${n}${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`; };
 	function sortBy(id: ColId, facet?: SwarmFacet) {
@@ -1416,14 +1414,8 @@
 			{@const st = swarmTotal(r.seeds, r.seeds_total)}
 			{@const pt = swarmTotal(r.peers, r.peers_total)}
 			{@const tip = [st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}
-			{#if swarmLook === 2}
-				<span class="sw1" class:ph data-col="swarm" title={tip}><span class="n"><i class="dot s" aria-hidden="true"></i>{r.seeds ?? 0}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{r.peers ?? 0}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{r.ratio.toFixed(2)}</b>{/if}</span>
-			{:else if swarmLook === 3}
-				{@const h = (r.seeds ?? 0) >= 3 ? 'Healthy' : (r.seeds ?? 0) > 0 || (r.peers ?? 0) > 0 ? 'Thin' : 'Dead'}
-				<span class="sw3" class:ph class:thin={h === 'Thin'} class:dead={h === 'Dead'} data-col="swarm" title={tip}><i class="dot" aria-hidden="true"></i><span class="tx"><span>{h}</span><span class="sub">{r.seeds ?? 0} {r.seeds === 1 ? 'seed' : 'seeds'} · {r.peers ?? 0} {r.peers === 1 ? 'peer' : 'peers'}{r.ratio != null ? ` · ${r.ratio.toFixed(2)}` : ''}</span></span></span>
-			{:else}
-				<span class="sw2" class:ph data-col="swarm" title={tip}><span>{r.seeds ?? 0} {r.seeds === 1 ? 'seed' : 'seeds'} · {r.peers ?? 0} {r.peers === 1 ? 'peer' : 'peers'}</span><span class="sub">{r.ratio != null ? `ratio ${r.ratio.toFixed(2)}` : ''}</span></span>
-			{/if}
+			<!-- One compact line: a green mark with the seeds, a blue mark with the peers, the ratio as a pill (green from 1.0). -->
+			<span class="sw1" class:ph data-col="swarm" title="{tip} · ratio {r.ratio != null ? r.ratio.toFixed(2) : '–'}"><span class="n"><i class="dot s" aria-hidden="true"></i>{r.seeds ?? 0}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{r.peers ?? 0}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{r.ratio.toFixed(2)}</b>{/if}</span>
 		{/if}
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
@@ -1469,7 +1461,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex="-1" onpointerdown={(e) => headDown(e, id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(id); } }} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -2567,23 +2559,13 @@
 
 	/* Info: one raised surface, a dense label/value grid with small group captions inline. */
 	.pb { grid-template-columns: max-content minmax(0, 1fr); gap: 20px; }
-	/* Swarm: two lines, the ratio under the counts. */
-	.sw2 { display: flex; flex-direction: column; gap: 1px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
-	.sw2 .sub { color: var(--text-muted); font: var(--t-caption); }
-	/* View 2: one line, two marks and a ratio pill. */
+	/* Swarm: one line, two marks and a ratio pill. */
 	.sw1 { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.sw1 .n { display: inline-flex; align-items: center; gap: 5px; }
 	.sw1 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 	.sw1 .dot.p { background: var(--info); }
 	.sw1 .rp { margin-left: auto; padding: 1px 7px; border-radius: 999px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-weight: 500; }
 	.sw1 .rp.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
-	/* View 3: a health word first, the numbers under it. */
-	.sw3 { display: flex; align-items: flex-start; gap: 6px; min-width: 0; font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.sw3 .dot { flex: none; margin-top: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-	.sw3.thin .dot { background: var(--wait); }
-	.sw3.dead .dot { background: var(--fail); }
-	.sw3 .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
-	.sw3 .sub { color: var(--text-muted); font: var(--t-caption); }
 	/* The header's three facets: the picked one is bold and carries the sort line. */
 	.facets { display: flex; gap: 10px; }
 	.fc { position: relative; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
