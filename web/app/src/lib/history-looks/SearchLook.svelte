@@ -20,11 +20,21 @@
 	import { reducedMotion } from '../motion.ts';
 	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whoLabels, whoMatches, type MediaType, type Who } from './dirs.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
+	import { session } from '../session.svelte.ts';
 
 	let { titleById, people, me, pill = false }: { titleById: Map<number, TitleView>; people: Map<number, string>; me?: number; pill?: boolean } = $props();
 
 	const st = $derived(readSearch(page.url.searchParams));
-	const chips = $derived(searchChips(st));
+	// Owners and admins can narrow to one Source's grabs and pauses; feed checks stay hidden unless asked for.
+	const srcId = $derived(Number(page.url.searchParams.get('source')) || undefined);
+	const feedOn = $derived(page.url.searchParams.get('feed') === '1');
+	let sources = $state<{ id: number; name: string }[]>([]);
+	const srcName = $derived(sources.find((x) => x.id === srcId)?.name ?? 'One Source');
+	const chips = $derived([
+		...searchChips(st),
+		...(srcId ? [{ key: 'source', label: srcName, change: { source: undefined } }] : []),
+		...(feedOn ? [{ key: 'feed', label: 'Feed checks', change: { feed: undefined } }] : [])
+	]);
 	const kinds = $derived(stepKinds(st.steps));
 	// The server filters by title id: text that names one Library title exactly goes there.
 	const exact = $derived.by(() => {
@@ -33,7 +43,7 @@
 		const hits = [...titleById.values()].filter((x) => x.name.toLowerCase() === t);
 		return hits.length === 1 ? hits[0].id : undefined;
 	});
-	const filter = $derived<HistoryFilter>({ title: exact, from: st.from, to: st.to, groups: [], limit: 200, offset: 0 });
+	const filter = $derived<HistoryFilter>({ title: exact, from: st.from, to: st.to, source: srcId, feed: feedOn || undefined, hideFeed: true, groups: [], limit: 200, offset: 0 });
 	const keep = $derived.by(() => {
 		const { q, type, who } = st;
 		if (!q.trim() && !type && !who) return undefined;
@@ -68,6 +78,13 @@
 			/* keep the last count */
 		}
 	}
+	onMount(() => {
+		if (session.can('settings'))
+			void api
+				.get<{ sources: { id: number; name: string }[] }>('/sources')
+				.then((r) => (sources = r.sources.map((x) => ({ id: x.id, name: x.name }))))
+				.catch(() => {});
+	});
 	onMount(() => {
 		if (!pill) return;
 		void countFailed();
@@ -147,8 +164,17 @@
 		<label class="fl"><span class="fh">From</span><input class="fc" type="date" value={st.from ?? ''} max={st.to} onchange={(e) => set({ from: e.currentTarget.value })} /></label>
 		<label class="fl"><span class="fh">To</span><input class="fc" type="date" value={st.to ?? ''} min={st.from} onchange={(e) => set({ to: e.currentTarget.value })} /></label>
 	</div>
+	{#if sources.length}
+		<label class="fl"><span class="fh">Source</span>
+			<select class="fc" value={srcId ?? ''} onchange={(e) => set({ source: e.currentTarget.value || undefined })}>
+				<option value="">Every Source</option>
+				{#each sources as x (x.id)}<option value={x.id}>{x.name}</option>{/each}
+			</select>
+		</label>
+	{/if}
+	<label class="fl ck"><input type="checkbox" checked={feedOn} onchange={(e) => set({ feed: e.currentTarget.checked ? '1' : undefined })} /><span>Show feed checks</span></label>
 	{#if problem}<p class="bad" role="alert">{problem}</p>{/if}
-	{#if chips.length}<button type="button" class="clear" onclick={() => set(clearChips)}>Clear filters</button>{/if}
+	{#if chips.length}<button type="button" class="clear" onclick={() => set({ ...clearChips, source: undefined, feed: undefined })}>Clear filters</button>{/if}
 {/snippet}
 
 <h1 class="sr-only">History</h1>
@@ -226,6 +252,7 @@
 	.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: 320px; max-height: min(560px, 75vh); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); }
 	.menu:focus, .sheet:focus { outline: none; }
 	.fl { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+	.fl.ck { flex-direction: row; align-items: center; gap: 8px; font: 500 13px/1.2 var(--font-ui); color: var(--text); cursor: pointer; }
 	.fh { color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
 	.steps { display: flex; flex-wrap: wrap; gap: 5px; }
 	.step { height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); color: var(--text); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
