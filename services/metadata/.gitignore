@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.pem
+.env*
+bin/
+
+# built server binaries
+/metadata
+/metadata.exe

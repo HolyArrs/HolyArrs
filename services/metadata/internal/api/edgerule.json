@@ -1,0 +1,41 @@
+{
+  "description": "HolyArrs shared catalogue",
+  "enabled": true,
+  "action": "set_cache_settings",
+  "action_parameters": {
+    "cache": true,
+    "edge_ttl": {"mode": "respect_origin"},
+    "browser_ttl": {"mode": "respect_origin"}
+  },
+  "host": "holyarrs-api.coderluii.dev",
+  "paths": [
+    "/v1/control",
+    "/v1/lists/music-trending",
+    "/v1/lists/service-top",
+    "/v1/music/charts",
+    "/v1/music/pools",
+    "/v1/music/lists/shelves",
+    "/v1/music/new",
+    "/v1/music/genres/tile/",
+    "/v1/music/genres",
+    "/v1/music/musicbrainz/artist/",
+    "/v1/music/musicbrainz/release-group/",
+    "/v1/music/musicbrainz/release/",
+    "/v1/music/musicbrainz/recording/",
+    "/v1/music/packages",
+    "/v1/music/album/",
+    "/v1/music/popularity",
+    "/v1/music/similar/",
+    "/v1/music/cover/",
+    "/v1/music/videos/",
+    "/v1/music/pictures",
+    "/v1/art/",
+    "/v1/img/",
+    "/v1/music/top-songs/",
+    "/v1/music/discography/",
+    "/v1/music/album-details",
+    "/v1/music/deezer/",
+    "/v1/wikidata/artist/",
+    "/v1/shows/tvmaze/"
+  ]
+}

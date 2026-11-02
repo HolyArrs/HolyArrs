@@ -1,0 +1,72 @@
+{
+  "contents": {"twoColumnBrowseResultsRenderer": {
+    "tabs": [{"tabRenderer": {"content": {"sectionListRenderer": {"contents": [{"musicResponsiveHeaderRenderer": {"title": {"runs": [{"text": "Videos"}]}}}]}}}}],
+    "secondaryContents": {"sectionListRenderer": {"contents": [{"musicPlaylistShelfRenderer": {"playlistId": "OLAKvideos", "contents": [
+      {"musicResponsiveListItemRenderer": {
+        "overlay": {"musicItemThumbnailOverlayRenderer": {"content": {"musicPlayButtonRenderer": {"playNavigationEndpoint": {"watchEndpoint": {"videoId": "ownVideo001", "playlistId": "OLAKvideos", "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"musicVideoType": "MUSIC_VIDEO_TYPE_OMV"}}}}}}}},
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Hit Song", "navigationEndpoint": {"watchEndpoint": {"videoId": "ownVideo001"}}}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "DRAKE"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"runs": [{"text": "3:45"}]}}}],
+        "playlistItemData": {"playlistSetVideoId": "56B44F6D10557CC6", "videoId": "ownVideo001"}
+      }},
+      {"musicResponsiveListItemRenderer": {
+        "overlay": {"musicItemThumbnailOverlayRenderer": {"content": {"musicPlayButtonRenderer": {"playNavigationEndpoint": {"watchEndpoint": {"videoId": "ownVideo002", "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"musicVideoType": "MUSIC_VIDEO_TYPE_OMV"}}}}}}}},
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Second Song"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "DRAKE"}, {"text": " & "}, {"text": "Future"}]}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"runs": [{"text": "4:10"}]}}}],
+        "playlistItemData": {"videoId": "ownVideo002"}
+      }},
+      {"musicResponsiveListItemRenderer": {
+        "overlay": {"musicItemThumbnailOverlayRenderer": {"content": {"musicPlayButtonRenderer": {"playNavigationEndpoint": {"watchEndpoint": {"videoId": "teaserVid01", "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"musicVideoType": "MUSIC_VIDEO_TYPE_OMV"}}}}}}}},
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Teaser"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "DRAKE"}]}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"runs": [{"text": "0:30"}]}}}],
+        "playlistItemData": {"videoId": "teaserVid01"}
+      }},
+      {"musicResponsiveListItemRenderer": {
+        "overlay": {"musicItemThumbnailOverlayRenderer": {"content": {"musicPlayButtonRenderer": {"playNavigationEndpoint": {"watchEndpoint": {"videoId": "audioVid001", "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"musicVideoType": "MUSIC_VIDEO_TYPE_OMV"}}}}}}}},
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Third Song (Official Audio)"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "DRAKE"}]}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"runs": [{"text": "3:10"}]}}}],
+        "playlistItemData": {"videoId": "audioVid001"}
+      }},
+      {"musicResponsiveListItemRenderer": {
+        "overlay": {"musicItemThumbnailOverlayRenderer": {"content": {"musicPlayButtonRenderer": {"playNavigationEndpoint": {"watchEndpoint": {"videoId": "stillVid001", "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"musicVideoType": "MUSIC_VIDEO_TYPE_OMV"}}}}}}}},
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Still Song"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "DRAKE"}]}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"runs": [{"text": "3:00"}]}}}],
+        "playlistItemData": {"videoId": "stillVid001"}
+      }},
+      {"musicResponsiveListItemRenderer": {
+        "overlay": {"musicItemThumbnailOverlayRenderer": {"content": {"musicPlayButtonRenderer": {"playNavigationEndpoint": {"watchEndpoint": {"videoId": "unclearVid1", "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"musicVideoType": "MUSIC_VIDEO_TYPE_OMV"}}}}}}}},
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Unclear Song"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "DRAKE"}]}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"runs": [{"text": "3:20"}]}}}],
+        "playlistItemData": {"videoId": "unclearVid1"}
+      }},
+      {"musicResponsiveListItemRenderer": {
+        "overlay": {"musicItemThumbnailOverlayRenderer": {"content": {"musicPlayButtonRenderer": {"playNavigationEndpoint": {"watchEndpoint": {"videoId": "guestVideo1", "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"musicVideoType": "MUSIC_VIDEO_TYPE_OMV"}}}}}}}},
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Guest Spot"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Rihanna"}, {"text": " & "}, {"text": "DRAKE"}]}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"runs": [{"text": "4:00"}]}}}],
+        "playlistItemData": {"videoId": "guestVideo1"}
+      }},
+      {"continuationItemRenderer": {"continuationEndpoint": {"continuationCommand": {"token": "4qmFsgI"}}}}
+    ]}}]}}
+  }}
+}

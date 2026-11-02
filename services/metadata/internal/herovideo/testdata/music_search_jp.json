@@ -1,0 +1,13 @@
+{
+  "contents": {"tabbedSearchResultsRenderer": {"tabs": [{"tabRenderer": {"title": "YT Music", "selected": true, "content": {"sectionListRenderer": {
+    "contents": [{"musicShelfRenderer": {"title": {"runs": [{"text": "アーティスト"}]}, "contents": [
+      {"musicResponsiveListItemRenderer": {
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "米津玄師"}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "アーティスト"}]}}}
+        ],
+        "navigationEndpoint": {"browseEndpoint": {"browseId": "UCkenshikenshikenshikens", "browseEndpointContextSupportedConfigs": {"browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ARTIST"}}}}
+      }}
+    ]}}]
+  }}}}]}}
+}
