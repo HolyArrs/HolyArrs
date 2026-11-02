@@ -11,7 +11,7 @@ describe('columns', () => {
 	it('offers every column now that the Downloaders send them all', () => {
 		const l = defaults();
 		l.hidden = [];
-		expect(visible(l)).toContain('age');
+		expect(visible(l)).toContain('added');
 		expect(COLUMNS.filter((c) => c.missing)).toEqual([]);
 		expect(COLUMNS.find((c) => c.id === 'source')?.label).toBe('Found on');
 	});

@@ -12,7 +12,6 @@ export type ColId =
 	| 'size'
 	| 'quality'
 	| 'added'
-	| 'age'
 	| 'swarm'
 	| 'ratio'
 	| 'queue'
@@ -48,8 +47,6 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'requested', label: 'Requested by', on: true, width: 130 },
 	{ id: 'quality', label: 'Quality', on: false, width: 90 },
 	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
-	// How old the Usenet post is (retention), not when it was added.
-	{ id: 'age', label: 'Post age', on: false, width: 80, num: true },
 	// Seeds and peers in one cell: connected (in the swarm) for each.
 	{ id: 'swarm', label: 'Swarm', on: false, width: 130, num: true, torrent: true },
 	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true },

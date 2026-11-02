@@ -226,6 +226,8 @@
 		const swarm = [f('Seeds', t ? swarmLine(t.seeds, t.seeds_total) : ''), f('Peers', t ? swarmLine(t.peers, t.peers_total) : ''), f('Private', t?.private == null ? '' : t.private ? 'Yes' : 'No')];
 		const dates = [
 			f('Added', dateTime(t?.added_at ?? r.started_at)),
+			// Usenet: how old the post is on the newsgroups (retention), a pane fact rather than a column.
+			f('Posted', r.posted_at ? `${shortAge(r.posted_at)} ago` : ''),
 			f('Done', dateTime(t?.done_at ?? r.finished_at)),
 			f('Time active', t?.time_active ? duration(t.time_active) : ''),
 			seeding ? null : seedTime,
@@ -461,7 +463,6 @@
 			case 'requested': return r.requested_by;
 			case 'source': return r.source_name;
 			case 'category': return categoryWords(r.category);
-			case 'age': return r.posted_at ? -Date.parse(r.posted_at) : undefined;
 		}
 		return undefined;
 	}
@@ -1416,8 +1417,6 @@
 		<span class="txt" class:ph data-col="source" title={r.source_name ?? ''}>{#if r.source_name && r.source_id && session.can('settings')}<a href="/settings/sources/{r.source_id}" onclick={(e) => e.stopPropagation()}>{r.source_name}</a>{:else}{r.source_name || dash}{/if}</span>
 	{:else if id === 'category'}
 		{@const cw = categoryWords(r.category)}<span class="txt" class:ph data-col="category" title={r.category ?? ''}>{cw || dash}</span>
-	{:else if id === 'age'}
-		<span class="num" class:ph data-col="age" title={r.posted_at ?? ''}>{shortAge(r.posted_at) || dash}</span>
 	{:else}
 		<span class="num" class:ph data-col={id}>{dash}</span>
 	{/if}
