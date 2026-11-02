@@ -1351,7 +1351,7 @@
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
 	{#if id === 'poster'}
-		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady && !(r.client_item && !r.title) ? r.title || r.name : ''} /></span>
+		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
 	{:else if id === 'kind'}
 		{@const kw = kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category)}{@const ki = kindIcon(kw)}<span class="kcell" class:ph data-col="kind"><span class="kt" class:none={!ki} class:wide={kindWide} data-testid="dl-kind" role="img" aria-label={kw || 'No type yet'} use:tip={kw ? (kindOf(r) ? kw : `${kw} (from the client's category)`) : 'No type yet'}>{#if kindWide && kw}<span class="kp" data-k={ki ?? 'other'}>{kw}</span>{:else if ki}<Icon name={ki} size={16} />{:else}{dash}{/if}</span></span>
 	{:else if id === 'proto'}
@@ -1761,7 +1761,7 @@
 		</div>
 		{#if paneOpen}
 		<div class="pb" data-testid="dl-panel" data-card="d">
-			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady && !(r.client_item && !r.title) ? r.title || r.name : ''} /></span>
+			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
 			<div class="xb">
 				{#key tabNow(r)}<div class="tview">{@render tabsView(r, simple)}</div>{/key}
 				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
@@ -2548,8 +2548,11 @@
 		.pb .big { display: none; }
 	}
 /* Themed scrollbars: thin, rounded thumb, clear track, no arrow buttons (light and dark via tokens). */
-	.listbox, .tw, .pb, .tblw, .lg, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
-	.listbox:hover, .tw:hover, .pb:hover, .tblw:hover, .lg:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
+	/* Chrome drops the ::-webkit rules below (and draws its own bar with arrows) once scrollbar-width/-color are set, so those are Firefox only. */
+	@supports not selector(::-webkit-scrollbar) {
+		.listbox, .tw, .pb, .tblw, .lg, .picker { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
+		.listbox:hover, .tw:hover, .pb:hover, .tblw:hover, .lg:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }
+	}
 	.listbox::-webkit-scrollbar, .tw::-webkit-scrollbar, .pb::-webkit-scrollbar, .tblw::-webkit-scrollbar, .lg::-webkit-scrollbar, .picker::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
 	.listbox::-webkit-scrollbar-track, .tw::-webkit-scrollbar-track, .pb::-webkit-scrollbar-track, .tblw::-webkit-scrollbar-track, .lg::-webkit-scrollbar-track, .picker::-webkit-scrollbar-track, .listbox::-webkit-scrollbar-corner, .tw::-webkit-scrollbar-corner, .pb::-webkit-scrollbar-corner, .tblw::-webkit-scrollbar-corner { background: transparent; }
 	.listbox::-webkit-scrollbar-button, .tw::-webkit-scrollbar-button, .pb::-webkit-scrollbar-button, .tblw::-webkit-scrollbar-button, .lg::-webkit-scrollbar-button, .picker::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
