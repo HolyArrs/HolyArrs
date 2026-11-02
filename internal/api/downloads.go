@@ -355,7 +355,10 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		if d.ReleaseID != nil {
 			if rl, ok := rels[*d.ReleaseID]; ok {
 				row.Name, row.Size = rl.name, rl.size
-				row.SourceName, row.SourceID = rl.source, rl.sourceID
+				// Which Source and who asked are for people who manage the Library.
+				if manage {
+					row.SourceName, row.SourceID = rl.source, rl.sourceID
+				}
 				if n.Protocol == "usenet" {
 					row.PostedAt = rl.posted
 				}
@@ -410,7 +413,9 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = append(rows, row)
 	}
-	a.rowOwners(ctx, rows)
+	if manage {
+		a.rowOwners(ctx, rows)
+	}
 	// Managers see everything in their torrent clients, as the client's own
 	// screen does: the torrents HolyArrs did not send come after its own.
 	// Rows come from the background reader's snapshots: a client that is

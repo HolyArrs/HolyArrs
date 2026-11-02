@@ -3,21 +3,21 @@ package api
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 )
 
-// HolyArrs' own row names the Source it came from, when the post was made
-// and who added its Library title.
+// HolyArrs' own row names the Source it came from and who added its
+// Library title.
 func TestDownloadRowSourcePostedRequested(t *testing.T) {
 	x := seed41(t, domain.SlotDownloading, "downloading")
 	exec41(t, x.s, "UPDATE releases SET published_at = '2026-01-02T03:04:05Z'")
 	var out viewRows
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
 	r := out.Downloads[0]
-	if r.SourceName != "Lab" || r.SourceID == 0 || r.PostedAt == nil || !r.PostedAt.Equal(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)) || r.RequestedBy != "" {
+	// A torrent has no Usenet post date, even when its release has one.
+	if r.SourceName != "Lab" || r.SourceID == 0 || r.PostedAt != nil || r.RequestedBy != "" {
 		t.Fatalf("own row %+v", r)
 	}
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (7, 't', '{}', 't', '{}', 'mara', 'member', 'x')`)
