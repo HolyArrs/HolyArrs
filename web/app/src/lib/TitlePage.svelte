@@ -9,7 +9,7 @@
 	import { seasonWords } from '#lib/shows.ts';
 	import { detailPath, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
 	import { preloadHero } from '#lib/tmdb-image.ts';
-	import type { Ask, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
+	import type { Ask, EventRecord, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -28,6 +28,9 @@
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
 	import Icon from '#lib/Icon.svelte';
+	import CompactRow from '#lib/history-looks/CompactRow.svelte';
+	import { isRoutine } from '#lib/history-looks/dirs.ts';
+	import { groupDownloads } from '#lib/history.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import { qualityBadges } from '#lib/title-page.ts';
@@ -94,13 +97,16 @@
 	const manage = $derived(session.can('manage_library'));
 	// An owned title: its library record (files, versions, status), shown on this same page.
 	let owned = $state<TitleView | null>(null);
-	let ownedEvents = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
+	let ownedEvents = $state<EventRecord[]>([]);
+	// Routine work stays out of the title page; History shows it all.
+	const ownedRows = $derived(groupDownloads(ownedEvents.filter((e) => !isRoutine(e.Kind))));
+	const ownedTitles = $derived(new Map(owned ? [[owned.id, owned]] : []));
 	let ownedFor = 0;
 	async function loadOwned(id: number) {
 		ownedFor = id;
 		try {
 			// Both asks go out together (one round trip, not two in a row).
-			const events = api.get<{ events?: typeof ownedEvents }>(`/events?title=${id}&limit=8`).catch(() => ({ events: [] }));
+			const events = api.get<{ events?: typeof ownedEvents }>(`/events?title=${id}&limit=30`).catch(() => ({ events: [] }));
 			owned = await api.get<TitleView>(`/titles/${id}`);
 			ownedEvents = (await events).events ?? [];
 		} catch {
@@ -380,8 +386,6 @@
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
 		return { id: x.id, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : ''), m.audio_codec].filter(Boolean).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
-	const evIcon = (k = ''): 'check' | 'search' | 'clock' | 'refresh' | 'copy' | 'trash' | 'plus' => (/import|got|done|adopt/.test(k) ? 'check' : /grab|sent|chose|search/.test(k) ? 'search' : /fail|stall|missing/.test(k) ? 'clock' : /rename/.test(k) ? 'copy' : /delete/.test(k) ? 'trash' : /add/.test(k) ? 'plus' : 'refresh');
-	const evTone = (k = '', s = '') => (/fail|stall|not on disk|missing|^no release|0 found/.test(`${k} ${s}`.toLowerCase().trim()) || /^no release/i.test(s) ? 'failed' : /import|adopt/.test(k) ? 'have' : '');
 	let libAll = $state(false);
 	let renameOpen = $state(false);
 	let deleteOpen = $state(false);
@@ -1119,12 +1123,12 @@
 					</div>
 					<aside class="lib-side">
 					<h3 class="lib-h">History</h3>
-					<ol class="lib-tl">
-						{#each libAll ? ownedEvents : ownedEvents.slice(0, 5) as e (e.ID)}
-							<li class={evTone(e.Kind, e.Summary)}><span class="lib-tl-ico"><Icon name={/^no release/i.test(e.Summary ?? '') ? 'search' : evIcon(e.Kind)} size={14} /></span><span class="lib-tl-text">{(e.Summary ?? e.Kind ?? '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
-						{:else}<li class="muted">Nothing has happened yet.</li>{/each}
-					</ol>
-					{#if ownedEvents.length > 5}<button type="button" class="lib-link" onclick={() => (libAll = !libAll)}>{libAll ? 'Show less' : `Show all ${ownedEvents.length}`}</button>{/if}
+					<div class="lib-hist">
+						{#each libAll ? ownedRows : ownedRows.slice(0, 5) as r (r.key)}
+							<CompactRow row={r} ctx={{ titles: ownedTitles }} titleById={ownedTitles} onclick={() => goto(to(`/downloads/history?title=${o.id}`))} />
+						{:else}<p class="muted">Nothing has happened yet.</p>{/each}
+					</div>
+					{#if ownedRows.length > 5}<button type="button" class="lib-link" onclick={() => (libAll = !libAll)}>{libAll ? 'Show less' : `Show all ${ownedRows.length}`}</button>{/if}
 
 					{#if manage}
 						<h3 class="lib-h">Settings</h3>
@@ -1565,13 +1569,6 @@
 	.lib-file-name { color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
 	.lib-file.add { place-items: center; place-content: center; gap: 6px; min-height: 120px; background: none; border: 1.5px dashed color-mix(in srgb, var(--text) 18%, transparent); color: var(--text); font: 600 14px/1.2 var(--font-ui); text-decoration: none; text-align: center; }
 	.lib-file.add small { color: var(--text-muted); font-weight: 500; }
-	.lib-tl { position: relative; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
-	.lib-tl li { position: relative; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px; padding: 9px 0; font: 500 14px/1.35 var(--font-ui); }
-	.lib-tl li:not(:last-child)::after { content: ''; position: absolute; left: 13.5px; top: 34px; bottom: -8px; width: 1px; background: color-mix(in srgb, var(--text) 12%, transparent); }
-	.lib-tl-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 99px; background: var(--surface-2); color: var(--text-muted); }
-	.lib-tl li.have .lib-tl-ico { color: #30a46c; }
-	.lib-tl li.failed .lib-tl-ico { color: var(--danger, #e5484d); }
-	.lib-tl-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
@@ -1589,6 +1586,7 @@
 	.lib-switch.on::after { transform: translateX(18px); }
 	@media (max-width: 600px) { .lib-status { padding: 18px; } .lib-btn { flex: 1; justify-content: center; } .lib-files { grid-template-columns: 1fr; } .lib-seasons { grid-template-columns: 1fr 1fr; } }
 	.own-h { margin: 28px 0 12px; font: 600 13px/1.2 var(--font-ui); color: var(--text-dim, #8a8a8a); }
+	.lib-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
 	.own-history li { display: flex; justify-content: space-between; gap: 16px; }
 	@media (max-width: 899px) { .own-tools.cols { grid-template-columns: minmax(0, 1fr); } .own-files li { grid-template-columns: 1fr; } }

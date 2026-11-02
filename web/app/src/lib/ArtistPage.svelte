@@ -22,7 +22,9 @@
 	import { audienceStatus } from './title-status.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { decided } from './requests.ts';
-	import { groupLabel, kindTone } from './history.ts';
+	import { groupDownloads } from './history.ts';
+	import CompactRow from './history-looks/CompactRow.svelte';
+	import { isRoutine } from './history-looks/dirs.ts';
 	import AskArtistDialog from './AskArtistDialog.svelte';
 	import RenamePreview from './RenamePreview.svelte';
 	import ShowDeleteDialog from './ShowDeleteDialog.svelte';
@@ -73,6 +75,9 @@
 	let refreshing = $state(false);
 	let history = $state<EventRecord[]>([]);
 	let historyTotal = $state(0);
+	// Routine work stays out of the title page; History shows it all.
+	const historyRows = $derived(groupDownloads(history.filter((e) => !isRoutine(e.Kind))).slice(0, 8));
+	const historyTitles = $derived(new Map([[title.id, title]]));
 	let asker: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	const visibleDisambiguation = $derived(artist?.disambiguation?.trim() ?? '');
 	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
@@ -143,7 +148,7 @@
 	async function loadHistory() {
 		if (!staff) return;
 		try {
-			const h = await api.get<EventPage>(`/events?title=${title.id}&limit=8`);
+			const h = await api.get<EventPage>(`/events?title=${title.id}&limit=30`);
 			history = h.events;
 			historyTotal = h.total;
 		} catch {
@@ -406,18 +411,14 @@
 			{#snippet head()}
 				{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
 			{/snippet}
-			{#if history.length === 0}
+			{#if historyRows.length === 0}
 				<p class="small muted">Nothing yet.</p>
 			{:else}
-				<ol class="rows hist">
-					{#each history as e (e.ID)}
-						<li>
-							<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-							<span class="grow small">{e.Summary}</span>
-							<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
-						</li>
+				<div class="hist">
+					{#each historyRows as r (r.key)}
+						<CompactRow row={r} ctx={{ titles: historyTitles }} titleById={historyTitles} onclick={() => goto(to(`/downloads/history?title=${title.id}`))} />
 					{/each}
-				</ol>
+				</div>
 			{/if}
 		</TitleSection>
 	</LibrarySection>

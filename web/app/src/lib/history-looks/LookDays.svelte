@@ -15,6 +15,7 @@
 	import EventSheet from '../history-designs/EventSheet.svelte';
 	import VerbMark from '../history-designs/VerbMark.svelte';
 	import StateDot from './StateDot.svelte';
+	import CompactRow from './CompactRow.svelte';
 	import LookFrame from './LookFrame.svelte';
 	import { EventFeed } from './feed.svelte.ts';
 	import { api } from '../api.ts';
@@ -25,7 +26,7 @@
 	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
 	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
-	import { agoShort, isRoutine, partOf, rowExtra, rowStep } from './dirs.ts';
+	import { isRoutine } from './dirs.ts';
 	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
@@ -172,14 +173,7 @@
 	{@const t = titleById.get(e.TitleID ?? 0)}
 	{@const on = split && picked?.key === r.key}
 	{#if compact}
-		{@const s = rowStep(r, w.tag.word)}
-		{@const x = rowExtra(r, s, who)}
-		{@const part = partOf(r)}
-		<button type="button" class="hit c" class:bad={s.failed} class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
-			<span class="post" class:square={t?.kind === 'artist'}>{#if e.title_name}<Poster src={artOf(e, titleById)} name={e.title_name} />{:else}<span class="sys"><Icon name="settings" size={12} /></span>{/if}</span>
-			<span class="cl1"><span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#if part}<span class="bit">{` · ${part}`}</span>{/if}</span><time class="ago" datetime={e.At} title={dateTime(e.At)}>{agoShort(e.At)}</time></span>
-			<span class="cl2"><span class="stp"><Icon name={s.icon} size={14} />{s.label}</span>{#if x}<span class="ex">{` · ${x}`}</span>{/if}</span>
-		</button>
+		<CompactRow row={r} {ctx} {titleById} {who} {on} controls={wide ? panelId : undefined} onclick={() => choose(r)} />
 	{:else}
 	<button type="button" class="hit {w.tag.tone}" class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
 		<time class="clk" datetime={e.At}>{clock(e.At)}</time>
@@ -416,23 +410,6 @@
 
 	/* The Search looks' row: one frame for every Event, two lines at most. */
 	.compact .rail::before { display: none; }
-	.hit.c { grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 12px; row-gap: 2px; min-height: 56px; padding: 8px 12px; }
-	.hit.c .post { grid-row: 1 / 3; width: 32px; }
-	.hit.c .sys { width: 32px; }
-	.cl1 { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-	.hit.c .what { flex: 1 1 auto; font: var(--t-callout); }
-	.ago { flex: none; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.cl2 { display: flex; align-items: center; min-width: 0; overflow: hidden; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
-	.stp { flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
-	.ex { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
-	.hit.c.bad { box-shadow: inset 2px 0 0 var(--fail); }
-	.hit.c.bad .stp, .hit.c.bad .ex { color: var(--fail-text); }
-	.hit.c.bad .stp :global(svg) { color: var(--fail); }
-	.hit.c.bad:focus-visible { box-shadow: inset 2px 0 0 var(--fail), var(--focus-ring); }
-	/* The picked row: a neutral lift, never the red of a failure. */
-	.hit.c.on { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
-	.hit.c.bad.on { box-shadow: inset 2px 0 0 var(--fail), inset 0 0 0 1px var(--line-strong); }
-	@media (max-width: 767px) { .hit.c { column-gap: 10px; padding: 8px 10px; } }
 	@media (prefers-reduced-motion: reduce) {
 		.split, .hit, .chev, .dh, .pane, .pane[hidden] { transition: none; }
 		.pane[hidden] { translate: none; }
