@@ -34,26 +34,37 @@ export interface ColDef {
 	fixed?: boolean;
 }
 
+// Each default width is its widest usual content plus 14px of air, measured in the app's
+// font (12px cells, 11px second lines and headers), so a fresh table reads as auto-fitted:
+// no column wider than what it shows. Poster, Type and Downloader snap to their own sizes.
 export const COLUMNS: ColDef[] = [
-	// Eight on by default, each filled on nearly every row. Time left lives under the Progress bar;
+	// Seven on by default, each filled on nearly every row. Time left lives under the Progress bar;
 	// the finished date lives in the pane's Dates.
-	{ id: 'poster', label: 'Poster', on: true, width: 52 },
+	{ id: 'poster', label: 'Poster', on: true, width: 32 },
 	// Off by default: the poster and the title's second line already say movie, show or music.
-	{ id: 'kind', label: 'Type', on: false, width: 84 },
+	{ id: 'kind', label: 'Type', on: false, width: 24 },
 	{ id: 'title', label: 'Title', on: true, width: 310 },
-	{ id: 'proto', label: 'Downloader', on: true, width: 60 },
-	{ id: 'progress', label: 'Progress', on: true, width: 120 },
-	{ id: 'status', label: 'Status', on: true, width: 150 },
-	{ id: 'size', label: 'Size', on: true, width: 100, num: true },
-	{ id: 'requested', label: 'Requested by', on: true, width: 130 },
-	{ id: 'quality', label: 'Quality', on: false, width: 90 },
-	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
+	{ id: 'proto', label: 'Downloader', on: true, width: 24 },
+	// The bar, with "↓ 12.4 MB/s · 1 h 20 min left" under it.
+	{ id: 'progress', label: 'Progress', on: true, width: 130 },
+	// "Downloading" with "Files did not match" under it.
+	{ id: 'status', label: 'Status', on: true, width: 120 },
+	// "957 MB", "12.5 GB".
+	{ id: 'size', label: 'Size', on: true, width: 60, num: true },
+	// An initial and a two-word name.
+	{ id: 'requested', label: 'Requested by', on: true, width: 112 },
+	// "2160p HDR".
+	{ id: 'quality', label: 'Quality', on: false, width: 80 },
+	// "12 min ago".
+	{ id: 'added', label: 'Added', on: false, width: 76, num: true },
 	// The torrent column: seeds, peers and the ratio on one compact line; its header sorts by any of the three.
 	{ id: 'swarm', label: 'Swarm', on: false, width: 132, torrent: true, fixed: true },
-	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
-	// The Source (indexer) it was found on, the same word as Settings > Sources.
-	{ id: 'source', label: 'Source', on: false, width: 120 },
-	{ id: 'category', label: 'Category', on: false, width: 100 }
+	// "tracker.torrentleech.org".
+	{ id: 'tracker', label: 'Tracker', on: false, width: 150, torrent: true },
+	// The Source (indexer) it was found on, the same word as Settings > Sources: "TorrentLeech".
+	{ id: 'source', label: 'Source', on: false, width: 96 },
+	// "movies-radarr".
+	{ id: 'category', label: 'Category', on: false, width: 96 }
 ];
 
 export const COL: Record<ColId, ColDef> = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColId, ColDef>;
@@ -87,7 +98,9 @@ export interface Sort {
 export const KEY = 'holyarrs.downloads.layout';
 /** The first shape: widths only, keyed title/bar/st/size/time. */
 export const OLD_KEY = 'holyarrs.downloads.columns';
-export const VERSION = 2;
+export const VERSION = 3;
+/** The widths version 2 gave by default: a saved width still at one of them takes the new default. */
+const V2_WIDTHS: Partial<Record<ColId, number>> = { poster: 52, kind: 84, proto: 60, progress: 120, status: 150, size: 100, requested: 130, quality: 90, added: 90, tracker: 140, source: 120, category: 100 };
 
 export function defaults(): Layout {
 	return {
@@ -128,6 +141,12 @@ export function load(raw: string | null, oldRaw: string | null): Layout {
 	try {
 		const v = raw ? JSON.parse(raw) : null;
 		if (v && typeof v === 'object' && v.v === VERSION) return normalize(v);
+		// A version 2 layout keeps its order, visibility and sort; widths left at version 2's defaults take the tighter ones.
+		if (v && typeof v === 'object' && v.v === 2) {
+			const w = { ...((v.widths ?? {}) as Record<string, unknown>) };
+			for (const [id, d] of Object.entries(V2_WIDTHS)) if (w[id] === d) delete w[id];
+			return normalize({ ...v, widths: w as Record<ColId, number> });
+		}
 	} catch {
 		/* unreadable: fall through */
 	}

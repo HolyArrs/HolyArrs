@@ -15,7 +15,7 @@ describe('problem', () => {
 	});
 	it('names tracker problems', () => {
 		expect(problem(row({ protocol: 'torrent', tracker_problem: 'error' }))).toEqual({ text: 'tracker error', tone: 'fail' });
-		expect(problem(row({ protocol: 'torrent', tracker_problem: 'announce' }))?.text).toBe('no tracker answered');
+		expect(problem(row({ protocol: 'torrent', tracker_problem: 'announce' }))?.text).toBe('no tracker reply');
 		expect(problem(row({ protocol: 'torrent', tracker_problem: 'warning' }))).toEqual({ text: 'tracker warning', tone: 'wait' });
 	});
 	it('says no full copy under one copy, red once stalled', () => {

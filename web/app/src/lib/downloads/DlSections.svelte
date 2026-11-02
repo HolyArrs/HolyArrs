@@ -974,7 +974,7 @@
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, size: 90, swarm: 130, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 32, kind: 24, proto: 24, progress: 130, size: 56, swarm: 132, added: 70, status: 100 };
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
 	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : COL[id].fixed ? COL[id].width : Math.max(layout.widths[id], heads[id] ?? 0));

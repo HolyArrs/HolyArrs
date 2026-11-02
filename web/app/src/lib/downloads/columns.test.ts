@@ -5,7 +5,7 @@ import { stepToward } from './sections.ts';
 describe('columns', () => {
 	it('defaults show seven columns in order', () => {
 		expect(visible(defaults())).toEqual(['poster', 'title', 'proto', 'progress', 'status', 'size', 'requested']);
-		expect(defaults().widths).toMatchObject({ title: 310, progress: 120, status: 150, size: 100, quality: 90 });
+		expect(defaults().widths).toMatchObject({ title: 310, progress: 130, status: 120, size: 60, quality: 80 });
 		expect(COLUMNS.find((c) => c.id === 'proto')?.label).toBe('Downloader');
 	});
 	it('offers every column now that the Downloaders send them all', () => {
@@ -50,8 +50,15 @@ describe('columns', () => {
 	});
 	it('carries over the first saved shape (widths only)', () => {
 		const l = load(null, JSON.stringify({ title: 500, bar: 90, st: 140, size: 120, time: 70 }));
-		expect(l.widths).toMatchObject({ title: 500, progress: 90, status: 140, size: 120, quality: 90 });
+		expect(l.widths).toMatchObject({ title: 500, progress: 90, status: 140, size: 120, quality: 80 });
 		expect(visible(l)).toEqual(visible(defaults()));
+	});
+	it('carries a version 2 layout over, swapping its old default widths for the new ones', () => {
+		const old = JSON.stringify({ v: 2, order: IDS, hidden: ['kind'], widths: { size: 100, status: 170, title: 400 }, sort: { id: 'size', desc: true } });
+		const l = load(old, null);
+		expect(l.widths).toMatchObject({ size: 60, status: 170, title: 400, progress: 130 });
+		expect(l.hidden).toContain('kind');
+		expect(l.sort).toEqual({ id: 'size', desc: true });
 	});
 	it('ignores junk and unknown versions', () => {
 		expect(load('{bad', null)).toEqual(defaults());
