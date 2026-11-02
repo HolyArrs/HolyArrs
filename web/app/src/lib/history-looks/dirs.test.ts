@@ -1,23 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { actsOf, agoShort, rowActs, rowLinks, dateLabel, isProblem, rowExtra, rowStep, dirQuery, lookOf, readDir, readSearch, searchChips, stepKinds, storyOf, textMatches, titleCards, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { agoShort, canFind, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
 let id = 0;
 const ev = (Kind: string, extra: Partial<EventRecord> = {}): EventRecord => ({ ID: ++id, At: '2026-11-01T10:00:00Z', Kind, Summary: Kind, TitleID: null, ...extra });
 
-describe('history preview looks', () => {
-	it('reads the look, falling back to today', () => {
-		expect(lookOf('table')).toBe('table');
-		expect(lookOf('nope')).toBe('plain');
-		expect(lookOf(null)).toBe('plain');
-	});
-
-	it('keeps ?look= and drops empty values when the address changes', () => {
+describe('history filters', () => {
+	it('drops empty values and the offset when the address changes', () => {
 		const q = new URLSearchParams('look=feed&title=4&offset=50');
 		expect(dirQuery(q, { title: undefined, who: 'me' })).toBe('?look=feed&who=me');
-		expect(readDir(new URLSearchParams('show=problems.imports&who=people')).who).toBe('people');
-		expect(readDir(new URLSearchParams('show=problems.imports')).sub).toBe('imports');
 	});
 
 	it('tells who made an Event happen', () => {
@@ -26,20 +18,6 @@ describe('history preview looks', () => {
 		expect(whoMatches(mine, 'me', 3)).toBe(false);
 		expect(whoMatches(mine, 'holyarrs')).toBe(false);
 		expect(whoMatches(ev('search_done', { Actor: { kind: 'job' } }), 'holyarrs')).toBe(true);
-	});
-
-	it('lays out a story; a newer success clears an older failure', () => {
-		const s = storyOf([ev('import_done'), ev('import_failed'), ev('download_failed'), ev('ask_made')]);
-		const by = Object.fromEntries(s.map((x) => [x.key, x.state]));
-		expect(by.imported).toBe('done');
-		expect(by.downloaded).toBe('failed');
-		expect(by.requested).toBe('done');
-		expect(by.upgraded).toBe('waiting');
-	});
-
-	it('folds Events into one card per title, newest first', () => {
-		const cards = titleCards([ev('import_done', { TitleID: 1, title_name: 'Dune' }), ev('download_sent', { TitleID: 1 }), ev('import_failed', { TitleID: 2, title_name: 'Alien' }), ev('health_broken')]);
-		expect(cards.map((c) => [c.name, c.count, c.problem])).toEqual([['Dune', 2, false], ['Alien', 1, true]]);
 	});
 
 	it('maps steps to kinds and leaves routine work out', () => {
@@ -116,22 +94,23 @@ describe('search look rows', () => {
 	});
 });
 
-describe('history detail actions (?acts=)', () => {
+describe('history detail actions', () => {
 	const row = (...events: EventRecord[]): HistoryRow => ({ key: 'r' + events[0].ID, head: events[0], events, steps: [] });
-	it('reads the version, falling back to find', () => {
-		expect(actsOf('retry')).toBe('retry');
-		expect(actsOf('view')).toBe('view');
-		expect(actsOf('x')).toBe('find');
-		expect(actsOf(null)).toBe('find');
+	it('offers Find another only on events tied to an actual release', () => {
+		expect(canFind(row(ev('release_chosen', { Data: { release: 'Dune.2021.2160p' } })))).toBe(true);
+		expect(canFind(row(ev('download_failed', { DownloadID: 4 })))).toBe(true);
+		expect(canFind(row(ev('import_failed', { Data: { download_id: 3 } })))).toBe(true);
+		expect(canFind(row(ev('file_replaced', { Data: { release: 'x' } })))).toBe(true);
+		expect(canFind(row(ev('release_chosen')))).toBe(false);
+		expect(canFind(row(ev('adopted', { Data: { release: 'x' } })))).toBe(false);
+		expect(canFind(row(ev('health_broken', { DownloadID: 2 })))).toBe(false);
+		expect(canFind(row(ev('ask_made')))).toBe(false);
+		expect(canFind(row(ev('title_refreshed')))).toBe(false);
 	});
-	it('offers Find another on release events, Retry first on failures, nothing in view', () => {
-		const failed = row(ev('download_failed'));
-		expect(rowActs(failed, 'find')).toEqual(['find']);
-		expect(rowActs(failed, 'retry')).toEqual(['retry', 'find']);
-		expect(rowActs(failed, 'view')).toEqual([]);
-		expect(rowActs(row(ev('release_chosen')), 'retry')).toEqual(['find']);
-		expect(rowActs(row(ev('ask_made')), 'find')).toEqual([]);
-		expect(rowActs(row(ev('search_failed')), 'retry')).toEqual(isProblem('search_failed') ? ['retry'] : []);
+	it('tells routine work apart', () => {
+		expect(isRoutine('title_refreshed')).toBe(true);
+		expect(isRoutine('import_done')).toBe(false);
+		expect(isProblem('download_failed')).toBe(true);
 	});
 	it('links to the title, the download and Requests for asks', () => {
 		const links = rowLinks(row(ev('download_sent', { DownloadID: 7, title_name: 'Dune' })), '/title/movie/1');

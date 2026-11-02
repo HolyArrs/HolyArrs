@@ -1,19 +1,17 @@
 <script lang="ts">
-	// The detail actions of the search looks, in three versions to compare
-	// (?acts=find|retry|view): buttons for the row, then "Go to" links.
-	// Preview only: the buttons say they are coming soon.
+	// A row's detail actions: "Find another" for rows about a release (it
+	// says it is coming soon for now), then "Go to" links.
 	import { tick } from 'svelte';
-	import { page } from '$app/state';
 	import Button from '../ui/Button.svelte';
 	import { toasts } from '../toasts.svelte.ts';
 	import { to } from '../paths.ts';
 	import { titleHref } from '../history-views.ts';
-	import { actsOf, qualityOf, rowActs, rowLinks } from './dirs.ts';
+	import { canFind, qualityOf, rowLinks } from './dirs.ts';
 	import type { HistoryRow } from '../history.ts';
 	import type { TitleView } from '../types.ts';
 
 	let { row, titleById }: { row: HistoryRow; titleById: Map<number, TitleView> } = $props();
-	const acts = $derived(rowActs(row, actsOf(page.url.searchParams.get('acts'))));
+	const find = $derived(canFind(row));
 	const links = $derived(rowLinks(row, titleHref(row.head.TitleID, titleById)));
 	const soon = (what: string) => toasts.push(`${what}: coming soon.`, 'info');
 
@@ -38,10 +36,9 @@
 </script>
 
 <div class="da" data-testid="history-acts">
-	{#if acts.length}
+	{#if find}
 		<div class="btns" bind:this={opener}>
-			{#if acts.includes('retry')}<Button variant="secondary" icon="refresh" data-testid="history-retry" onclick={() => soon('Retry')}>Retry</Button>{/if}
-			{#if acts.includes('find') && !asking}<Button variant="secondary" icon="declined" data-testid="history-find" onclick={ask}>Find another</Button>{/if}
+			{#if !asking}<Button variant="secondary" icon="declined" data-testid="history-find" onclick={ask}>Find another</Button>{/if}
 		</div>
 		{#if asking}
 			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->

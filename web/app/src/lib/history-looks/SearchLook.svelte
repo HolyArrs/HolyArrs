@@ -1,10 +1,10 @@
 <script lang="ts">
-	// Looks E and F (?look=pill|plain): no tabs, a search bar, a live dot and
-	// one glass Filter (steps, type, who, dates). Each filter that is on shows
-	// as a removable chip under the bar. Look E adds a fixed "Failed n" pill
-	// for problems of the last 24 hours that toggles the Failed step. Routine
-	// work is left out; the list is the same day-grouped timeline.
-	import { onMount, tick } from 'svelte';
+	// History's bar and list: a search bar, a live dot and one glass Filter
+	// (steps, type, who, dates, Source). Each filter that is on shows as a
+	// removable chip under the bar. Routine work is left out; every filter
+	// lives in the address, so Back and links show the same list.
+	// Old ?look= and ?acts= links are simply ignored.
+	import { onMount, tick, untrack } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { page } from '$app/state';
@@ -14,26 +14,27 @@
 	import DetailActions from './DetailActions.svelte';
 	import { api } from '../api.ts';
 	import { live } from '../live.svelte.ts';
-	import { dateRangeProblem, type HistoryFilter } from '../history.ts';
-	import { eventsQuery, settle } from '../history-views.ts';
-	import { tabKinds } from '../history-looks.ts';
+	import { dateRangeProblem, readFilter, type HistoryFilter } from '../history.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whoLabels, whoMatches, type MediaType, type Who } from './dirs.ts';
-	import type { EventPage, EventRecord, TitleView } from '../types.ts';
+	import type { EventRecord, TitleView } from '../types.ts';
 	import { session } from '../session.svelte.ts';
 
-	let { titleById, people, me, pill = false }: { titleById: Map<number, TitleView>; people: Map<number, string>; me?: number; pill?: boolean } = $props();
+	let { titleById, people, me }: { titleById: Map<number, TitleView>; people: Map<number, string>; me?: number } = $props();
 
 	const st = $derived(readSearch(page.url.searchParams));
-	// Owners and admins can narrow to one Source's grabs and pauses; feed checks stay hidden unless asked for.
+	// Owners and admins can narrow to one Source's grabs and pauses; feed checks stay hidden.
 	const srcId = $derived(Number(page.url.searchParams.get('source')) || undefined);
-	const feedOn = $derived(page.url.searchParams.get('feed') === '1');
 	let sources = $state<{ id: number; name: string }[]>([]);
 	const srcName = $derived(sources.find((x) => x.id === srcId)?.name ?? 'One Source');
+	// Links from a title or an episode page keep the list to that title (?title=, ?episode=).
+	const link = $derived(readFilter(page.url.searchParams));
+	let episodeName = $state('');
 	const chips = $derived([
+		...(link.title ? [{ key: 'title', label: titleById.get(link.title)?.name ?? 'One title', change: { title: undefined, episode: undefined } }] : []),
+		...(link.episode ? [{ key: 'episode', label: episodeName || 'One episode', change: { episode: undefined } }] : []),
 		...searchChips(st),
-		...(srcId ? [{ key: 'source', label: srcName, change: { source: undefined } }] : []),
-		...(feedOn ? [{ key: 'feed', label: 'Feed checks', change: { feed: undefined } }] : [])
+		...(srcId ? [{ key: 'source', label: srcName, change: { source: undefined } }] : [])
 	]);
 	const kinds = $derived(stepKinds(st.steps));
 	// The server filters by title id: text that names one Library title exactly goes there.
@@ -43,22 +44,37 @@
 		const hits = [...titleById.values()].filter((x) => x.name.toLowerCase() === t);
 		return hits.length === 1 ? hits[0].id : undefined;
 	});
-	const filter = $derived<HistoryFilter>({ title: exact, from: st.from, to: st.to, source: srcId, feed: feedOn || undefined, hideFeed: true, groups: [], limit: 200, offset: 0 });
+	const filter = $derived<HistoryFilter>({ title: link.title ?? exact, episode: link.episode, from: st.from, to: st.to, source: srcId, hideFeed: true, groups: [], limit: 200, offset: 0 });
 	const keep = $derived.by(() => {
 		const { q, type, who } = st;
 		if (!q.trim() && !type && !who) return undefined;
-		return (e: EventRecord) => (exact ? true : textMatches(e, q, people)) && typeMatches(e.TitleID ? titleById.get(e.TitleID)?.kind : undefined, type) && whoMatches(e, who, me);
+		return (e: EventRecord) => (exact && !link.title ? true : textMatches(e, q, people)) && typeMatches(e.TitleID ? titleById.get(e.TitleID)?.kind : undefined, type) && whoMatches(e, who, me);
 	});
-	const empty = $derived({ title: chips.length || st.q ? 'Nothing matches' : 'No history yet.', text: 'Every download step, newest first. Routine work is left out.' });
-	const problem = $derived(dateRangeProblem(st));
+	const problem = $derived(dateRangeProblem(st) ? 'The start date is after the end date.' : '');
+	const filtered = $derived(chips.length > 0 || !!st.q.trim());
+	const empty = $derived(
+		problem
+			? { title: problem, text: 'Change the dates in Filter.' }
+			: filtered
+				? { title: 'Nothing matches these filters.', text: 'Try fewer filters or other words.' }
+				: { title: 'No events yet.', text: 'Every step from the ask to the media server shows here, newest first.' }
+	);
+	const clearAll = () => {
+		text = '';
+		set({ ...clearChips, q: undefined, title: undefined, episode: undefined });
+	};
 	const ms = (n: number) => (reducedMotion() ? 0 : n);
 
 	function set(change: Record<string, string | undefined>) {
 		void goto(page.url.pathname + dirQuery(page.url.searchParams, change), { replace: true, reset: false });
 	}
 
-	// The search box writes ?q= a moment after typing stops.
+	// The search box writes ?q= a moment after typing stops, and follows the address (Back, links).
 	let text = $state(page.url.searchParams.get('q') ?? '');
+	$effect(() => {
+		const q = page.url.searchParams.get('q') ?? '';
+		if (untrack(() => text.trim()) !== q) text = q;
+	});
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	function typed(v: string) {
 		text = v;
@@ -66,18 +82,6 @@
 		timer = setTimeout(() => set({ q: v.trim() || undefined }), 250);
 	}
 
-	// Look E: problems of the last 24 hours.
-	let failed = $state(0);
-	const failedOn = $derived(st.steps.includes('failed'));
-	async function countFailed() {
-		const since = Date.now() - 86400000;
-		try {
-			const p = await api.get<EventPage>('/events?' + eventsQuery({ from: new Date(since).toISOString().slice(0, 10), groups: [], limit: 200, offset: 0 }, { kinds: tabKinds('problems') }));
-			failed = p.events.filter((e) => Date.parse(e.At) >= since).length;
-		} catch {
-			/* keep the last count */
-		}
-	}
 	onMount(() => {
 		if (session.can('settings'))
 			void api
@@ -85,17 +89,6 @@
 				.then((r) => (sources = r.sources.map((x) => ({ id: x.id, name: x.name }))))
 				.catch(() => {});
 	});
-	onMount(() => {
-		if (!pill) return;
-		void countFailed();
-		const s = settle(() => void countFailed(), 2000);
-		const offs = [live.on('event', s.poke), live.on('resync', s.poke)];
-		return () => {
-			offs.forEach((o) => o());
-			s.stop();
-		};
-	});
-
 	let wide = $state(false);
 	let phone = $state(false);
 	let panel = $state(true);
@@ -172,9 +165,8 @@
 			</select>
 		</label>
 	{/if}
-	<label class="fl ck"><input type="checkbox" checked={feedOn} onchange={(e) => set({ feed: e.currentTarget.checked ? '1' : undefined })} /><span>Show feed checks</span></label>
 	{#if problem}<p class="bad" role="alert">{problem}</p>{/if}
-	{#if chips.length}<button type="button" class="clear" onclick={() => set({ ...clearChips, source: undefined, feed: undefined })}>Clear filters</button>{/if}
+	{#if chips.length}<button type="button" class="clear" onclick={() => clearAll()}>Clear filters</button>{/if}
 {/snippet}
 
 <h1 class="sr-only">History</h1>
@@ -198,9 +190,6 @@
 				</div>
 			{/if}
 		</div>
-		{#if pill}
-			<button type="button" class="failed" class:hot={failed > 0} aria-pressed={failedOn} aria-label="Failed in the last 24 hours: {failed}" data-testid="history-failed-pill" onclick={() => set({ step: toggleStep(st.steps, 'failed') })}>Failed <b>{failed}</b></button>
-		{/if}
 	</div>
 </div>
 {#if chips.length}
@@ -208,7 +197,7 @@
 		{#each chips as c (c.key)}
 			<button type="button" class="chip" aria-label="Remove {c.label}" onclick={() => set(c.change)}>{c.label}<Icon name="x" size={12} /></button>
 		{/each}
-		<button type="button" class="all" onclick={() => set(clearChips)}>Clear all</button>
+		<button type="button" class="all" onclick={clearAll}>Clear all</button>
 	</div>
 {/if}
 {#if open && phone}
@@ -220,7 +209,7 @@
 	</div>
 {/if}
 
-<LookDays {filter} {kinds} {titleById} {empty} size="m" {wide} bind:panel panelId="history-search-details" {people} {me} {keep} compact>
+<LookDays {filter} {kinds} {titleById} {empty} onall={filtered ? clearAll : undefined} size="m" {wide} bind:panel panelId="history-search-details" {people} {me} {keep} bind:episodeName compact>
 	{#snippet actions(row)}<DetailActions {row} {titleById} />{/snippet}
 </LookDays>
 
@@ -235,13 +224,9 @@
 	.live.off .dot { background: var(--text-muted); }
 	.right { flex: none; display: flex; align-items: center; gap: 8px; }
 	.anchor { position: relative; }
-	.sf-btn, .failed { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
+	.sf-btn { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
 	.sf-btn:hover, .sf-btn[aria-expanded='true'] { background: var(--surface-2); }
-	.failed { color: var(--text-muted); opacity: 0.7; }
-	.failed b { font-weight: 600; font-variant-numeric: tabular-nums; }
-	.failed.hot { opacity: 1; color: var(--fail-text); border-color: color-mix(in srgb, var(--fail) 40%, var(--line)); background: color-mix(in srgb, var(--fail) 10%, var(--surface-1)); }
-	.failed[aria-pressed='true'] { opacity: 1; box-shadow: 0 0 0 1px var(--fail); }
-	.sf-btn:focus-visible, .failed:focus-visible, .clear:focus-visible, .done:focus-visible, .chip:focus-visible, .all:focus-visible, .step:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.sf-btn:focus-visible, .clear:focus-visible, .done:focus-visible, .chip:focus-visible, .all:focus-visible, .step:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.funnel { color: var(--text-muted); }
 	.badge { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--info); color: var(--bg); font: 600 11px/18px var(--font-ui); text-align: center; }
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 14px; }
@@ -252,7 +237,6 @@
 	.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: 320px; max-height: min(560px, 75vh); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface-2); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55); }
 	.menu:focus, .sheet:focus { outline: none; }
 	.fl { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-	.fl.ck { flex-direction: row; align-items: center; gap: 8px; font: 500 13px/1.2 var(--font-ui); color: var(--text); cursor: pointer; }
 	.fh { color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
 	.steps { display: flex; flex-wrap: wrap; gap: 5px; }
 	.step { height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); color: var(--text); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
@@ -269,7 +253,7 @@
 	.sht { color: var(--text); font: 600 15px/1.2 var(--font-ui); }
 	.done { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	@media (pointer: coarse) {
-		.search, .sf-btn, .failed, .fc, .clear, .chip, .all, .step { height: 44px; }
+		.search, .sf-btn, .fc, .clear, .chip, .all, .step { height: 44px; }
 		.search input, .fc { font-size: 16px; }
 	}
 	@media (max-width: 767px) {
@@ -280,5 +264,5 @@
 		.sf-btn { width: 100%; }
 		.badge { margin-left: auto; }
 	}
-	@media (prefers-reduced-motion: reduce) { .sf-btn, .failed { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .sf-btn { transition: none; } }
 </style>

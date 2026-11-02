@@ -4,7 +4,6 @@ import { api, message } from '../api.ts';
 import { live } from '../live.svelte.ts';
 import { createLatestOnly, dateRangeProblem, type HistoryFilter } from '../history.ts';
 import { eventsQuery, settle } from '../history-views.ts';
-import { lookTabs, tabKinds, ALL } from '../history-looks.ts';
 import type { EventPage, EventRecord } from '../types.ts';
 
 export class EventFeed {
@@ -26,6 +25,7 @@ export class EventFeed {
 		if (dateRangeProblem(filter) || (kinds && !kinds.length)) {
 			this.events = [];
 			this.total = 0;
+			this.error = '';
 			this.loaded = true;
 			return;
 		}
@@ -39,7 +39,13 @@ export class EventFeed {
 			this.offset = offset;
 			this.error = '';
 		} catch (e) {
-			if (ok()) this.error = message(e);
+			if (!ok()) return;
+			this.error = message(e);
+			// A failed reload must not leave the rows of the last filter on screen.
+			if (!append) {
+				this.events = [];
+				this.total = 0;
+			}
 		} finally {
 			if (ok()) {
 				this.loaded = true;
@@ -56,32 +62,5 @@ export class EventFeed {
 			offs.forEach((o) => o());
 			s.stop();
 		};
-	}
-}
-
-/** Counts per tab (and per sub-tab of the open one) for the tab chips, read with limit=1. */
-export class TabCounts {
-	tabs = $state<Record<string, number>>({});
-	subs = $state<Record<string, number>>({});
-	#latest = createLatestOnly();
-
-	async load(filter: HistoryFilter, open: string) {
-		const ok = this.#latest();
-		if (dateRangeProblem(filter)) return;
-		const count = async (kinds: string[] | undefined) => {
-			try {
-				return (await api.get<EventPage>('/events?' + eventsQuery(filter, { kinds, limit: 1, offset: 0 }))).total;
-			} catch {
-				return -1;
-			}
-		};
-		const tab = lookTabs.find((t) => t.key === open);
-		const [tabs, subs] = await Promise.all([
-			Promise.all(lookTabs.map(async (t) => [t.key, await count(tabKinds(t.key))] as const)),
-			Promise.all((tab && tab.key !== ALL ? tab.subs : []).map(async (s) => [s.key, await count(s.kinds)] as const))
-		]);
-		if (!ok()) return;
-		this.tabs = Object.fromEntries(tabs.filter(([, n]) => n >= 0));
-		this.subs = Object.fromEntries(subs.filter(([, n]) => n >= 0));
 	}
 }

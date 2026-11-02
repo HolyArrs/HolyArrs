@@ -25,7 +25,7 @@
 	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
 	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
-	import { agoShort, partOf, rowExtra, rowStep } from './dirs.ts';
+	import { agoShort, isRoutine, partOf, rowExtra, rowStep } from './dirs.ts';
 	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
@@ -139,13 +139,13 @@
 		moreFor = id;
 		more = [];
 		if (!id) return;
-		api.get<EventPage>(`/events?title=${id}&limit=8`)
+		api.get<EventPage>(`/events?title=${id}&limit=30`)
 			.then((p) => {
 				if (moreFor === id) more = p.events;
 			})
 			.catch(() => {});
 	});
-	const others = $derived(filter.title ? [] : more.filter((e) => !picked?.events.some((x) => x.ID === e.ID)).slice(0, 6));
+	const others = $derived(filter.title ? [] : more.filter((e) => !isRoutine(e.Kind) && !picked?.events.some((x) => x.ID === e.ID)).slice(0, 6));
 
 	function unfold(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.base, easing: easeOut });
@@ -426,6 +426,9 @@
 	.hit.c.bad .stp, .hit.c.bad .ex { color: var(--fail-text); }
 	.hit.c.bad .stp :global(svg) { color: var(--fail); }
 	.hit.c.bad:focus-visible { box-shadow: inset 2px 0 0 var(--fail), var(--focus-ring); }
+	/* The picked row: a neutral lift, never the red of a failure. */
+	.hit.c.on { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
+	.hit.c.bad.on { box-shadow: inset 2px 0 0 var(--fail), inset 0 0 0 1px var(--line-strong); }
 	@media (max-width: 767px) { .hit.c { column-gap: 10px; padding: 8px 10px; } }
 	@media (prefers-reduced-motion: reduce) {
 		.split, .hit, .chev, .dh, .pane, .pane[hidden] { transition: none; }

@@ -1,26 +1,10 @@
-// History preview looks (?look=now|feed|table|story): the address they share,
-// the "who did it" filter, the table's cells and a title's story steps. The
-// looks sit side by side so they can be compared; each reads the same Events.
-import { readFilter, type HistoryFilter, type HistoryRow } from '../history.ts';
-import { lookTabs, showOf, showParam, tabKinds } from '../history-looks.ts';
+// History: the address it reads, the "who did it" filter, a row's step and
+// extra piece, and the actions a row's details offer.
+import { readFilter, type HistoryRow } from '../history.ts';
+import { lookTabs, tabKinds } from '../history-looks.ts';
 import { resolutionOf } from '../history-lines.ts';
 import { bytes } from '../format.ts';
 import type { EventRecord } from '../types.ts';
-
-export type Look = 'now' | 'feed' | 'table' | 'story' | 'pill' | 'plain';
-export const looks: { key: Look; label: string }[] = [
-	{ key: 'now', label: 'Now' },
-	{ key: 'feed', label: 'Feed' },
-	{ key: 'table', label: 'Table' },
-	{ key: 'story', label: 'Story' },
-	{ key: 'pill', label: 'Search+Failed' },
-	{ key: 'plain', label: 'Search' }
-];
-
-/** lookOf reads ?look= (the chosen search look when missing or unknown). */
-export function lookOf(v: string | null): Look {
-	return looks.some((l) => l.key === v) ? (v as Look) : 'plain';
-}
 
 /** Who made an Event happen, as the Filter offers it. */
 export type Who = '' | 'me' | 'people' | 'holyarrs';
@@ -39,22 +23,9 @@ export function whoMatches(e: Pick<EventRecord, 'Actor'>, who: Who, me?: number)
 	return true;
 }
 
-/** Everything a preview look reads from the address. */
-export interface DirState {
-	show: string;
-	sub: string;
-	who: Who;
-	filter: HistoryFilter;
-}
-
 type Params = { get(name: string): string | null; toString(): string };
 
-export function readDir(params: Params): DirState {
-	const { show, sub } = showOf(params.get('show'));
-	return { show, sub, who: whoOf(params.get('who')), filter: { ...readFilter(params, 200), groups: [], offset: 0 } };
-}
-
-/** dirQuery is the address for a change, keeping ?look= and dropping empty values. */
+/** dirQuery is the address for a change, dropping empty values. */
 export function dirQuery(params: Params, change: Record<string, string | number | undefined>): string {
 	const q = new URLSearchParams(params.toString());
 	for (const [k, v] of Object.entries(change)) {
@@ -65,9 +36,6 @@ export function dirQuery(params: Params, change: Record<string, string | number 
 	const s = q.toString();
 	return s ? '?' + s : '';
 }
-
-/** showChange is the ?show= value for a tab and sub-tab. */
-export const showChange = (show: string, sub = '') => ({ show: showParam(show, sub) });
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -86,9 +54,6 @@ export function releaseOf(row: HistoryRow): string {
 export function qualityOf(row: HistoryRow): string {
 	return first(row, (d) => str(d.quality)) || resolutionOf(releaseOf(row));
 }
-export function sourceOf(row: HistoryRow): string {
-	return first(row, (d) => str(d.source_name) || str(d.indexer) || str(d.source));
-}
 export function sizeOf(row: HistoryRow): number {
 	for (const e of row.events) {
 		const d = e.Data ?? {};
@@ -102,65 +67,6 @@ export const sizeText = (row: HistoryRow) => (sizeOf(row) ? bytes(sizeOf(row)) :
 export function partOf(row: HistoryRow): string {
 	return row.head.episode || first(row, (d) => str(d.album)) || '';
 }
-
-/** The steps of a title's story, in the order they happen. */
-export type StoryKey = 'requested' | 'approved' | 'searched' | 'chosen' | 'downloaded' | 'imported' | 'subtitles' | 'upgraded';
-export interface StoryStep {
-	key: StoryKey;
-	label: string;
-	state: 'done' | 'failed' | 'waiting';
-	/** The newest Event of the step, if any. */
-	last?: EventRecord;
-	count: number;
-}
-
-const storyKinds: { key: StoryKey; label: string; done: RegExp; failed?: RegExp }[] = [
-	{ key: 'requested', label: 'Requested', done: /^ask_made$/ },
-	{ key: 'approved', label: 'Approved', done: /^ask_approved$/, failed: /^ask_turned_down$/ },
-	{ key: 'searched', label: 'Searched', done: /^(search_done|feed_checked)$/, failed: /^(search_failed|stopped_looking)$/ },
-	{ key: 'chosen', label: 'Chosen', done: /^release_chosen(_by_hand)?$/, failed: /^needs_decision$/ },
-	{ key: 'downloaded', label: 'Downloaded', done: /^download_(finished|seeding)$/, failed: /^download_(failed|vanished)$/ },
-	{ key: 'imported', label: 'Imported', done: /^(import_done|import_partly_done|adopted)$/, failed: /^(import_failed|import_rejected|file_hold_failed)$/ },
-	{ key: 'subtitles', label: 'Subtitles', done: /^subtitle_(saved|upgraded|synced)$/, failed: /^subtitle_/ },
-	{ key: 'upgraded', label: 'Upgraded', done: /^file_replaced$/ }
-];
-
-/** storyOf lays a title's Events (newest first) out as its story; a later success clears an older failure. */
-export function storyOf(events: EventRecord[]): StoryStep[] {
-	return storyKinds.map((s) => {
-		const hits = events.filter((e) => s.done.test(e.Kind) || s.failed?.test(e.Kind));
-		const last = hits[0];
-		const state = !last ? 'waiting' : s.done.test(last.Kind) ? 'done' : 'failed';
-		return { key: s.key, label: s.label, state, last, count: hits.length };
-	});
-}
-
-/** One card of the Story look: a title and its newest Event. */
-export interface TitleCard {
-	id: number;
-	name: string;
-	last: EventRecord;
-	count: number;
-	problem: boolean;
-}
-
-const bad = /failed|rejected|vanished|needs_decision/;
-
-/** titleCards folds Events (newest first) into one card per title, newest first. */
-export function titleCards(events: EventRecord[]): TitleCard[] {
-	const out = new Map<number, TitleCard>();
-	for (const e of events) {
-		if (!e.TitleID) continue;
-		const c = out.get(e.TitleID);
-		if (c) c.count++;
-		else out.set(e.TitleID, { id: e.TitleID, name: e.title_name ?? 'Untitled', last: e, count: 1, problem: bad.test(e.Kind) });
-	}
-	return [...out.values()];
-}
-
-/** canRetry: the row failed somewhere. canBlock: the row is about a release that could be swapped. */
-export const canRetry = (row: HistoryRow) => row.steps.some((s) => s.state === 'failed') || row.events.some((e) => bad.test(e.Kind));
-export const canBlock = (row: HistoryRow) => row.steps.length > 0 || !!releaseOf(row);
 
 /* The search looks (?look=pill|plain): a search bar, a Filter with steps,
    type, who and dates, and a chip per filter that is on. Routine work
@@ -266,7 +172,7 @@ export function searchChips(s: SearchState, now = new Date()): Chip[] {
 }
 
 /** The address change that clears every chip. */
-export const clearChips = { step: undefined, type: undefined, who: undefined, from: undefined, to: undefined };
+export const clearChips = { step: undefined, type: undefined, who: undefined, from: undefined, to: undefined, source: undefined };
 
 /* The Search looks' row: the step in plain words, then at most one extra piece. */
 
@@ -343,29 +249,22 @@ export function agoShort(at: string, now = new Date()): string {
 	return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
 }
 
-/* The detail actions of the search looks (?acts=find|retry|view), side by side for comparing. */
-export type Acts = 'find' | 'retry' | 'view';
-export const actsList: { key: Acts; label: string }[] = [
-	{ key: 'find', label: 'Find' },
-	{ key: 'retry', label: 'Retry' },
-	{ key: 'view', label: 'View' }
-];
-/** actsOf reads ?acts= ('find' when missing or unknown). */
-export function actsOf(v: string | null): Acts {
-	return v === 'retry' || v === 'view' ? v : 'find';
+const routineKinds = new Set(tabKinds('routine') ?? []);
+/** isRoutine says whether a kind is background routine work (feed checks, searches, refreshes, scans). */
+export function isRoutine(kind: string): boolean {
+	return routineKinds.has(kind) || [...routineKinds].some((k) => k.endsWith('*') && kind.startsWith(k.slice(0, -1)));
 }
-const releaseKind = /^(release_chosen(_by_hand)?|download_\w+|import_\w+|adopted|file_replaced)$/;
-/** rowActs lists the buttons a row's details offer under a version, in order. */
-export function rowActs(row: HistoryRow, acts: Acts): ('retry' | 'find')[] {
-	if (acts === 'view') return [];
-	const kinds = row.events.map((e) => e.Kind);
-	const failed = kinds.some(isProblem) || row.steps.some((s) => s.state === 'failed');
-	const release = row.steps.length > 0 || kinds.some((k) => releaseKind.test(k));
-	const out: ('retry' | 'find')[] = [];
-	if (acts === 'retry' && failed) out.push('retry');
-	if (release) out.push('find');
-	return out;
+
+const findKind = /^(release_chosen(_by_hand)?|download_\w+|import_\w+|file_replaced)$/;
+/** canFind: the row is about an actual release (a release name or a download id), so another one can be looked for. */
+export function canFind(row: HistoryRow): boolean {
+	return row.events.some((e) => {
+		if (!findKind.test(e.Kind)) return false;
+		const d = e.Data ?? {};
+		return !!str(d.release) || e.DownloadID != null || typeof d.download_id === 'number';
+	});
 }
+
 /** A "Go to" link a row's details offer. */
 export interface GoLink {
 	key: 'title' | 'downloads' | 'requests';

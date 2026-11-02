@@ -22,7 +22,7 @@
 		empty: { title: string; text: string };
 		onretry: () => void;
 		onmore: () => void;
-		/** Shown on an empty tab: back to every Event. */
+		/** Shown on an empty, filtered list: clears the filters. */
 		onall?: () => void;
 		children: Snippet;
 	} = $props();
@@ -37,7 +37,7 @@
 		<span class="eic"><Icon name="clock" size={22} stroke={2} /></span>
 		<p class="et">{empty.title}</p>
 		<p class="es">{empty.text}</p>
-		{#if onall}<button type="button" class="elink" onclick={onall}>Show every Event</button>{/if}
+		{#if onall}<button type="button" class="elink" onclick={onall} data-testid="history-clear-empty">Clear filters</button>{/if}
 	</div>
 {:else}
 	{#if feed.error}<LoadError hasData message="History could not be loaded." onretry={onretry} />{/if}
