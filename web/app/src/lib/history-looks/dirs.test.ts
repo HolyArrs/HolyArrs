@@ -83,6 +83,18 @@ describe('search look rows', () => {
 		expect(rowExtra(bad, rowStep(bad))).toBe('Tracker said no');
 		const ren = one(ev('renamed'));
 		expect(rowExtra(ren, rowStep(ren))).toBe('');
+		const up = one(ev('file_replaced', { Data: { old_quality: '720p HDTV', new_quality: '1080p WEB-DL' } }));
+		expect(rowExtra(up, rowStep(up))).toBe('720p HDTV → 1080p WEB-DL');
+		const upHalf = one(ev('file_replaced', { Data: { new_quality: '1080p WEB-DL', release: 'Show.S01E01.2160p.WEB' } }));
+		expect(rowExtra(upHalf, rowStep(upHalf))).toBe('4K');
+	});
+
+	it('labels the System kinds without calling them routine', () => {
+		for (const k of ['signed_in', 'sign_in_failed', 'signed_out', 'api_key_created', 'api_key_deleted', 'settings_changed']) {
+			expect(rowStep(one(ev(k))).label).toBe('System');
+			expect(isRoutine(k)).toBe(false);
+		}
+		expect(stepKinds(['system'])).toContain('settings_changed');
 	});
 
 	it('says how long ago in a few letters', () => {

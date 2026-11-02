@@ -65,7 +65,8 @@ export const lookTabs: LookTab[] = [
 			{ key: 'renamed', label: 'Renamed', hint: 'Files and folders renamed.', kinds: ['renamed', 'rename_planned'] },
 			{ key: 'deleted', label: 'Deleted', hint: 'Titles, episodes and files deleted or held.', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
 			{ key: 'subtitles', label: 'Subtitles', hint: 'Subtitles saved, upgraded, synced or not found.', kinds: ['subtitle_*'] },
-			{ key: 'asks', label: 'Asks', hint: 'Asks made, approved or turned down.', kinds: ['ask_*'] }
+			{ key: 'asks', label: 'Asks', hint: 'Asks made, approved or turned down.', kinds: ['ask_*'] },
+			{ key: 'system', label: 'System', hint: 'Sign-ins, API keys and settings changes.', kinds: ['sign*', 'api_key_*', 'settings_changed'] }
 		]
 	},
 	{

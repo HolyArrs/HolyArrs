@@ -296,6 +296,7 @@ func (a *API) removeItem(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			if did, perr := strconv.ParseInt(r.PathValue("id"), 10, 64); perr == nil {
 				a.forgetTorrents(r.Context(), did, []string{r.PathValue("hash")})
+				a.itemRemovedEvent(r, did, id, in.DeleteFiles)
 			}
 		}
 		return err

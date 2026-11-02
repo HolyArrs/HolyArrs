@@ -85,7 +85,8 @@ export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
 	{ key: 'media', label: 'In media server', kinds: ['media_server_told'] },
 	{ key: 'upgraded', label: 'Upgraded', kinds: ['file_replaced'] },
 	{ key: 'deleted', label: 'Deleted', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
-	{ key: 'failed', label: 'Failed', kinds: tabKinds('problems') ?? [] }
+	{ key: 'failed', label: 'Failed', kinds: tabKinds('problems') ?? [] },
+	{ key: 'system', label: 'System', kinds: tabKinds('changes', 'system') ?? [] }
 ];
 
 /** Every kind but routine work: what the search looks show with no step picked. */
@@ -199,7 +200,8 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^subtitle_/, { label: 'Subtitles', icon: 'subtitle' }],
 	[/^media_server_told$/, { label: 'In media server', icon: 'tv' }],
 	[/^file_replaced$/, { label: 'Upgraded', icon: 'sparkle' }],
-	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { label: 'Deleted', icon: 'trash' }]
+	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { label: 'Deleted', icon: 'trash' }],
+	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed)$/, { label: 'System', icon: 'info' }]
 ];
 /** rowStep names what a row's newest step is; a folded download reads its furthest step. */
 export function rowStep(row: HistoryRow, fallback = ''): RowStep {
@@ -213,7 +215,7 @@ export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 /**
  * rowExtra is the one extra piece a row shows after its step ('' when the
  * Events did not keep it): who for asks, quality when chosen or sent, size
- * when imported, quality when upgraded, language for subtitles, the reason
+ * when imported, quality when upgraded (old → new when both were kept), language for subtitles, the reason
  * for a failure.
  */
 export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => ''): string {
@@ -229,8 +231,12 @@ export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) =
 		case 'Asked':
 		case 'Approved': return who(row.head);
 		case 'Chosen':
-		case 'Sent':
-		case 'Upgraded': return qualityOf(row);
+		case 'Sent': return qualityOf(row);
+		case 'Upgraded': {
+			const was = first(row, (d) => str(d.old_quality));
+			const now = first(row, (d) => str(d.new_quality));
+			return was && now ? `${was} → ${now}` : qualityOf(row);
+		}
 		case 'Imported': return sizeText(row);
 		case 'Subtitles': return first(row, (d) => str(d.language)).toUpperCase();
 	}

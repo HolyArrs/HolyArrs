@@ -772,6 +772,7 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	good := CheckPassword(hash, c.Password) && err == nil
 	if !good {
 		log.Printf("auth: failed sign-in from %s", r.RemoteAddr)
+		a.event(r, domain.System, "sign_in_failed", "Sign-in failed for "+truncate(c.Name, 64), map[string]any{"name": truncate(c.Name, 64)})
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
@@ -821,6 +822,7 @@ func (a *Auth) startSessionAs(w http.ResponseWriter, r *http.Request, userID int
 		return
 	}
 	a.setCookie(w, r, tok, int(AbsoluteTimeout.Seconds()))
+	a.event(r, domain.Actor{Kind: "user", ID: userID}, "signed_in", name+" signed in", map[string]any{"name": name, "method": method})
 	writeJSON(w, code, map[string]string{"name": name, "csrf": csrf})
 }
 
@@ -897,6 +899,9 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 }
 
 func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
+	if who, ok := From(r.Context()); ok && who.UserID != 0 {
+		a.event(r, Actor(r.Context()), "signed_out", who.Name+" signed out", map[string]any{"name": who.Name})
+	}
 	if ck, err := r.Cookie(CookieName); err == nil {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 			return deletePresentedFamily(tx, ck.Value)
@@ -1017,6 +1022,7 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
 	}
+	a.event(r, Actor(r.Context()), "api_key_created", "API key "+body.Label+" created", map[string]any{"key_id": id, "label": body.Label, "scopes": body.Scopes})
 	writeJSON(w, http.StatusCreated, map[string]any{"id": id, "label": body.Label, "scopes": body.Scopes, "key": k,
 		"note": "This key is shown only now. Send it in the " + APIKeyHeader + " header."})
 }
@@ -1086,8 +1092,10 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var n int64
+	var label string
 	who, _ := From(r.Context())
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		_ = tx.QueryRow("SELECT label FROM api_keys WHERE id = ?", id).Scan(&label)
 		res, err := tx.Exec("DELETE FROM api_keys WHERE id = ? AND (? OR owner_user_id = ?)", id, who.Role == RoleOwner, who.UserID)
 		if err == nil {
 			n, err = res.RowsAffected()
@@ -1102,5 +1110,13 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no such key")
 		return
 	}
+	a.event(r, Actor(r.Context()), "api_key_deleted", "API key "+label+" deleted", map[string]any{"key_id": id, "label": label})
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// event writes a sign-in or API key Event with the caller's address. It
+// never holds a password or a key.
+func (a *Auth) event(r *http.Request, by domain.Actor, kind, summary string, data map[string]any) {
+	data["ip"] = strings.TrimPrefix(a.ClientKey(r), "ip:")
+	_ = a.s.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: by, Kind: kind, Summary: summary, Data: data})
 }
