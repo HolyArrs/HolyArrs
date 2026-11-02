@@ -20,7 +20,7 @@
 
 	function pick(key: string) {
 		const u = new URL(page.url.href);
-		if (key === 'now') u.searchParams.delete('look');
+		if (key === 'plain') u.searchParams.delete('look');
 		else u.searchParams.set('look', key);
 		// Each look reads its own filters; only the look itself carries over.
 		for (const k of ['title', 'episode', 'offset', 'q', 'step', 'type']) u.searchParams.delete(k);
