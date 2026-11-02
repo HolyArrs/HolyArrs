@@ -148,6 +148,7 @@
 			{/if}
 		</section>
 	{:else if tab === 'jobs'}
+		<div class="jobs-grid">
 		<RunsTimeline {upcoming} {recent} now={Date.now()} />
 
 		<section class="st-plate" aria-labelledby="s-jobs">
@@ -167,6 +168,7 @@
 				</tbody>
 			</table>
 		</section>
+		</div>
 	{:else if tab === 'updates'}
 		<Updates {upd} docker={about ? about.docker : null} {ytdlp} {canAct} onupd={(u) => (upd = u)} />
 	{:else}
@@ -285,6 +287,12 @@
 	.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 	.tbl th { padding: 8px 12px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--line); }
 	.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--text); vertical-align: middle; }
+	/* Jobs: the timeline beside every job, so the tab fits a screen; rows kept tight */
+	.jobs-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 22px; align-items: start; }
+	.tbl.jobs th { padding: 6px 10px 8px; }
+	.tbl.jobs td { padding: 0 10px; height: 40px; font-size: 13.5px; }
+	.tbl.jobs tr:last-child td { border-bottom: 0; }
+	.tbl.jobs .lnk { min-height: 32px; }
 	.tbl .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.mono, code { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12.5px; }
 	code { padding: 3px 7px; border-radius: 6px; background: var(--surface-2, var(--surface-1)); }
@@ -314,6 +322,7 @@
 	.pill.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--text); }
 	.pill.warn { background: color-mix(in srgb, var(--wait) 22%, transparent); color: var(--text); }
 
+	@media (max-width: 1180px) { .jobs-grid { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 900px) { .pair, .disks { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {
 		.seg { align-self: stretch; }
@@ -324,7 +333,7 @@
 		.kv { grid-template-columns: 130px minmax(0, 1fr); }
 		.tbl.jobs thead { display: none; }
 		.tbl.jobs tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 8px 0; border-bottom: 1px solid var(--line); }
-		.tbl.jobs td { border: 0; padding: 2px 4px; font-size: 13px; color: var(--text-muted); }
+		.tbl.jobs td { border: 0; padding: 2px 4px; height: auto; font-size: 13px; color: var(--text-muted); }
 		.tbl.jobs td.jn { font-size: 14px; color: var(--text); }
 		.tbl.jobs td.num { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
 	}
