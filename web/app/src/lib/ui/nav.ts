@@ -95,6 +95,7 @@ export function buildNav(input: NavInput): NavSection[] {
 				? [
 						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
 						{ href: '/downloads/history', label: 'History', icon: 'clock', need: 'manage_library' },
+						{ href: '/status', label: 'Status', icon: 'shield', need: 'manage_library' },
 						{ href: '/settings', label: 'Settings', icon: 'settings', need: 'staff', ...(input.settingsAttention && input.allowed('settings') ? { dot: true } : {}) }
 					]
 				: []

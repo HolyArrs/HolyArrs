@@ -21,7 +21,7 @@ describe('buildNav', () => {
 			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music']],
 			['Your stuff', ['Calendar', 'Requests']],
-			['Manage', ['Downloads', 'History', 'Settings']]
+			['Manage', ['Downloads', 'History', 'Status', 'Settings']]
 		]);
 	});
 	it('hides Music from a Kid, because music has no age ratings', () => {
