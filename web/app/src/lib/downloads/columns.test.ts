@@ -3,9 +3,9 @@ import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quali
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
-	it('defaults show eleven columns in order', () => {
-		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'speed', 'time', 'size', 'quality', 'ratio']);
-		expect(defaults().widths).toMatchObject({ title: 310, progress: 66, status: 130, size: 130, time: 80, speed: 90, quality: 90 });
+	it('defaults show eight columns in order', () => {
+		expect(visible(defaults())).toEqual(['poster', 'kind', 'title', 'proto', 'progress', 'status', 'time', 'size']);
+		expect(defaults().widths).toMatchObject({ title: 310, progress: 66, status: 130, size: 130, time: 80, quality: 90 });
 	});
 	it('never shows a column the Downloaders do not send', () => {
 		const l = defaults();
@@ -13,26 +13,26 @@ describe('columns', () => {
 		expect(visible(l)).not.toContain('age');
 		expect(COLUMNS.filter((c) => c.missing).map((c) => c.id)).toEqual(['age', 'requested', 'source', 'category']);
 	});
-	it('offers Seeds and Peers as optional torrent columns', () => {
-		expect(visible(defaults())).not.toContain('seeds');
+	it('offers seeds and peers as one optional Swarm column', () => {
+		expect(visible(defaults())).not.toContain('swarm');
 		const l = defaults();
-		l.hidden = toggle({ ...l, hidden: toggle(l, 'seeds') }, 'peers');
-		expect(visible(l)).toEqual(expect.arrayContaining(['seeds', 'peers']));
+		l.hidden = toggle(l, 'swarm');
+		expect(visible(l)).toContain('swarm');
 	});
 	it('saves and loads order, visibility and widths', () => {
 		const l = defaults();
 		l.order = moveVisible(l, 'status', 1);
-		l.hidden = toggle(l, 'quality');
+		l.hidden = toggle(l, 'size');
 		l.widths.title = 400;
 		const back = load(dump(l), null);
-		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'speed', 'time', 'size', 'ratio']);
+		expect(visible(back)).toEqual(['poster', 'status', 'kind', 'title', 'proto', 'progress', 'time']);
 		expect(back.widths.title).toBe(400);
-		back.hidden = toggle(back, 'quality');
-		expect(visible(back)).toContain('quality');
+		back.hidden = toggle(back, 'size');
+		expect(visible(back)).toContain('size');
 	});
 	it('carries over the first saved shape (widths only)', () => {
 		const l = load(null, JSON.stringify({ title: 500, bar: 90, st: 140, size: 120, time: 70 }));
-		expect(l.widths).toMatchObject({ title: 500, progress: 90, status: 140, size: 120, time: 70, speed: 90 });
+		expect(l.widths).toMatchObject({ title: 500, progress: 90, status: 140, size: 120, time: 70, quality: 90 });
 		expect(visible(l)).toEqual(visible(defaults()));
 	});
 	it('ignores junk and unknown versions', () => {
@@ -89,21 +89,20 @@ describe('sorting', () => {
 		expect(sortRows(rows, (r) => r.v, true).map((r) => r.v)).toEqual([10, 2, 1, undefined]);
 		expect(sortRows([{ v: 'b' }, { v: '' }, { v: 'A' }], (r) => r.v, false).map((r) => r.v)).toEqual(['A', 'b', '']);
 	});
-	it('keeps the sort in the saved layout and new columns hidden except Ratio', () => {
+	it('keeps the sort in the saved layout and optional columns hidden', () => {
 		const l = load(dump({ ...defaults(), sort: { id: 'ratio', desc: true } }), null);
 		expect(l.sort).toEqual({ id: 'ratio', desc: true });
 		expect(load(JSON.stringify({ v: VERSION, sort: { id: 'nope' } }), null).sort).toBeUndefined();
 		const d = defaults();
-		expect(d.hidden).toEqual(expect.arrayContaining(['up', 'completed', 'queue', 'tracker', 'added']));
-		expect(d.hidden).not.toContain('ratio');
+		expect(d.hidden).toEqual(expect.arrayContaining(['swarm', 'completed', 'queue', 'tracker', 'added', 'ratio', 'quality']));
 	});
 });
 
 describe('columns added later', () => {
-	it('start hidden in an older saved layout, Ratio shown', () => {
-		const old = JSON.stringify({ v: VERSION, order: IDS.filter((id) => !['up', 'completed', 'queue', 'tracker'].includes(id)), hidden: ['added'], widths: {} });
+	it('start hidden in an older saved layout, which keeps its own choices', () => {
+		const old = JSON.stringify({ v: VERSION, order: IDS.filter((id) => !['swarm', 'completed', 'queue', 'tracker'].includes(id)), hidden: ['added'], widths: {} });
 		const l = load(old, null);
-		expect(l.hidden).toEqual(expect.arrayContaining(['up', 'completed', 'queue', 'tracker', 'added']));
+		expect(l.hidden).toEqual(expect.arrayContaining(['swarm', 'completed', 'queue', 'tracker', 'added']));
 		expect(visible(l)).toContain('ratio');
 	});
 });

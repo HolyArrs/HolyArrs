@@ -444,16 +444,13 @@
 			case 'proto': return protocolOf(r);
 			case 'progress': return r.progress;
 			case 'status': return statusWord(r);
-			case 'speed': return moving(r) ? r.speed : undefined;
 			case 'time': return r.active && r.eta ? r.eta : undefined;
 			case 'size': return r.size || undefined;
 			case 'quality': return quality(r.name);
 			case 'added': return time(r.started_at);
 			case 'completed': return time(r.finished_at);
-			case 'seeds': return tor ? r.seeds : undefined;
-			case 'peers': return tor ? r.peers : undefined;
+			case 'swarm': return tor ? (r.seeds ?? 0) * 1e6 + (r.peers ?? 0) : undefined;
 			case 'ratio': return tor && r.ratio != null ? r.ratio : undefined;
-			case 'up': return tor ? r.up_speed : undefined;
 			case 'queue': return r.queue_pos || undefined;
 			case 'tracker': return r.tracker;
 		}
@@ -907,15 +904,16 @@
 	}
 	// A layout nobody has changed shows more columns when the screen is wide (they drop out again when it is not).
 	const customised = $derived(layout.hidden.length !== COLUMNS.filter((c) => !c.on).length || COLUMNS.some((c) => !c.on && !layout.hidden.includes(c.id)) || layout.order.some((id, i) => id !== IDS[i]));
-	const WIDE: ColId[] = ['seeds', 'peers', 'added'];
+	// One layout everywhere: wide screens no longer add columns by themselves.
+	const WIDE: ColId[] = [];
 	const visAll = $derived.by(() => {
 		const v = visible(layout);
 		return customised ? v : [...v, ...WIDE.filter((id) => !v.includes(id) && !COL[id].missing)];
 	});
 	/** The least width each number column needs to show its text whole. */
-	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, speed: 84, time: 76, size: 140, seeds: 56, peers: 56, ratio: 56, added: 90, status: 110 };
+	const MINW: Partial<Record<ColId, number>> = { poster: 44, kind: 84, proto: 24, progress: 66, time: 76, size: 140, swarm: 110, ratio: 56, added: 90, status: 110 };
 	/** Columns drop out, least important first, when the list is too narrow for all of them. */
-	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'up', 'quality', 'added', 'age', 'seeds', 'peers', 'ratio', 'requested', 'source', 'category', 'speed', 'time', 'size'];
+	const DROP: ColId[] = ['tracker', 'queue', 'completed', 'quality', 'added', 'age', 'swarm', 'ratio', 'requested', 'source', 'category', 'time', 'size'];
 	const TITLE_MIN = 220;
 	// A saved width never draws narrower than the column's own name (older layouts, or a sort arrow added later).
 	const wMin = (id: ColId) => (id === 'poster' ? posterW : id === 'kind' ? kindW : id === 'proto' ? srcW : Math.max(layout.widths[id], heads[id] ?? 0));
@@ -1329,7 +1327,10 @@
 			{@const raw = percent(r.progress)}
 			{@const pct = stageOf(r) === 'importing' ? raw : Math.min(99, raw)}
 			{@const tone = stageOf(r) === 'paused' ? 'paused' : barTone(r)}
-			<span class="prg {tone}" class:ph data-col="progress" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>
+			{@const dn = (r.speed ?? 0) >= 1024}
+			{@const upOn = (r.up_speed ?? 0) >= 1024}
+			<!-- Speed sits under the bar: SABnzbd and NZBGet only give a whole-client speed, so it no longer needs its own column. -->
+			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn)}<span class="spd" data-testid="dl-row-speed">{dn ? `↓ ${bytes(r.speed)}/s` : ''}{dn && upOn ? ' · ' : ''}{upOn ? `↑ ${bytes(r.up_speed)}/s` : ''}</span>{/if}</span>
 		{/if}
 	{:else if id === 'status'}
 		{#if hist}
@@ -1340,8 +1341,6 @@
 			{@const more = statusDetail(r, importOf.get(r.id)) || statusHint(r)}
 			<span class="st {t}" class:ph data-col="status" title={more ? `${statusWord(r)} · ${more}` : statusWord(r)}><span class="dot" aria-hidden="true"></span><span class="tx">{statusWord(r)}</span></span>
 		{/if}
-	{:else if id === 'speed'}
-		<span class="num" class:ph data-col="speed">{!hist && moving(r) ? `${bytes(r.speed)}/s` : dash}</span>
 	{:else if id === 'time'}
 		{#if hist}
 			<span class="num" class:ph data-col="time">{dash}</span>
@@ -1354,14 +1353,10 @@
 		<span class="txt" class:ph data-col="quality" title={r.name}>{quality(r.name) || dash}</span>
 	{:else if id === 'added'}
 		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
-	{:else if id === 'seeds' || id === 'peers'}
-		{@const n = id === 'seeds' ? r.seeds : r.peers}
-		{@const tot = swarmTotal(n, id === 'seeds' ? r.seeds_total : r.peers_total)}
-		<span class="num" class:ph data-col={id} title={tot ? `${n ?? 0} connected of ${tot} in the swarm` : undefined}>{#if r.protocol !== 'torrent'}{dash}{:else if tot}{n ?? 0}<span class="swt">&nbsp;({tot})</span>{:else if n || ((r.phase === 'downloading' || r.phase === 'stalled') && n != null)}{n}{:else}{dash}{/if}</span>
+	{:else if id === 'swarm'}
+		<span class="num" class:ph data-col="swarm" title="Seeds · peers: connected (in the swarm)">{#if r.protocol !== 'torrent'}{dash}{:else}{@render swarmPart(r.seeds, r.seeds_total, r)}<span class="swt">&nbsp;·&nbsp;</span>{@render swarmPart(r.peers, r.peers_total, r)}{/if}</span>
 	{:else if id === 'ratio'}
 		<span class="num" class:ph data-col="ratio">{r.protocol === 'torrent' && r.ratio != null ? r.ratio.toFixed(2) : dash}</span>
-	{:else if id === 'up'}
-		<span class="num" class:ph data-col="up">{r.protocol === 'torrent' && r.up_speed ? `${bytes(r.up_speed)}/s` : dash}</span>
 	{:else if id === 'completed'}
 		<span class="num" class:ph data-col="completed" title={r.finished_at ?? ''}>{r.finished_at ? ago(r.finished_at) : dash}</span>
 	{:else if id === 'queue'}
@@ -1389,6 +1384,11 @@
 			{@render bin(r)}
 		</div>
 	</li>
+{/snippet}
+
+{#snippet swarmPart(n: number | undefined, total: number | undefined, r: DownloadRow)}
+	{@const tot = swarmTotal(n, total)}
+	{#if tot}{n ?? 0}<span class="swt">&nbsp;({tot})</span>{:else if n || ((r.phase === 'downloading' || r.phase === 'stalled') && n != null)}{n}{:else}{dash}{/if}
 {/snippet}
 
 {#snippet header()}
@@ -2104,6 +2104,8 @@
 	.pcell { justify-content: center; }
 	.pm { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); }
 	.prg.paused i { background: var(--text-muted); }
+	.pgw { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	.spd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; }
 	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
 	.app { --dl-gutter: 10px; --dl-icon: 16px; --dl-icon-sm: 14px; }
 	.app :global(svg.icon), .app :global(.ui-ibtn svg) { width: var(--dl-icon); height: var(--dl-icon); }
@@ -2343,7 +2345,7 @@
 		.pa:focus-visible, .plk:focus-visible, .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 		.listbox:has(.psel) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
-		.dline > [data-col='progress'] .bl { display: none; }
+		.dline > [data-col='progress'] .bl, .spd { display: none; }
 		.dline > .spare { display: none; }
 		.tg { grid-area: tg; }
 		.post { grid-area: post; align-self: start; justify-self: center; }

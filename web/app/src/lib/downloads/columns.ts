@@ -9,16 +9,13 @@ export type ColId =
 	| 'proto'
 	| 'progress'
 	| 'status'
-	| 'speed'
 	| 'time'
 	| 'size'
 	| 'quality'
 	| 'added'
 	| 'age'
-	| 'seeds'
-	| 'peers'
+	| 'swarm'
 	| 'ratio'
-	| 'up'
 	| 'completed'
 	| 'queue'
 	| 'tracker'
@@ -47,18 +44,16 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'proto', label: 'Source', on: true, width: 60 },
 	{ id: 'progress', label: 'Progress', on: true, width: 66 },
 	{ id: 'status', label: 'Status', on: true, width: 130 },
-	{ id: 'speed', label: 'Speed', on: true, width: 90, num: true },
 	{ id: 'time', label: 'Time left', on: true, width: 80, num: true },
 	{ id: 'size', label: 'Size', on: true, width: 130, num: true },
-	{ id: 'quality', label: 'Quality', on: true, width: 90 },
+	{ id: 'quality', label: 'Quality', on: false, width: 90 },
 	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
 	{ id: 'age', label: 'Age', on: false, width: 70, num: true, missing: true },
-	{ id: 'seeds', label: 'Seeds', on: false, width: 70, num: true, torrent: true },
-	{ id: 'peers', label: 'Peers', on: false, width: 70, num: true, torrent: true },
-	{ id: 'ratio', label: 'Ratio', on: true, width: 60, num: true, torrent: true },
-	{ id: 'up', label: 'Upload speed', on: false, width: 100, num: true, torrent: true },
+	// Seeds and peers in one cell: connected (in the swarm) for each.
+	{ id: 'swarm', label: 'Swarm', on: false, width: 130, num: true, torrent: true },
+	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true },
 	{ id: 'completed', label: 'Completed', on: false, width: 100, num: true },
-	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true, torrent: true },
+	{ id: 'queue', label: 'Queue', on: false, width: 64, num: true },
 	{ id: 'tracker', label: 'Tracker', on: false, width: 140, torrent: true },
 	{ id: 'requested', label: 'Requested by', on: false, width: 120, missing: true },
 	{ id: 'source', label: 'Indexer', on: false, width: 120, missing: true },
