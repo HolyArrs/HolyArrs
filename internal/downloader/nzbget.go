@@ -552,5 +552,15 @@ func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error 
 	if !ok {
 		return errors.New("NZBGet refused to remove the job")
 	}
+	// NZBGet answers yes to a park-delete of a job with nothing downloaded
+	// yet but leaves it queued; with no data to keep, a plain delete is safe.
+	if command == "GroupParkDelete" {
+		if again, still, err := n.find(ctx, id); err == nil && still && !again.history &&
+			nzbgetSize(again.row.RemainingSizeLo, again.row.RemainingSizeHi) >= nzbgetSize(again.row.FileSizeLo, again.row.FileSizeHi) {
+			if err := n.rpc(ctx, "editqueue", []any{"GroupDelete", "", []int{match.row.NZBID}}, &ok); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
