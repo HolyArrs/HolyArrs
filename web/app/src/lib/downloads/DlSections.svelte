@@ -1833,7 +1833,7 @@
 	/* The next divider sits a gap after the column, so the logo and icon shift half a gap to sit centred between the two lines. */
 	.ch[data-col='poster'] { justify-content: center; }
 	.ch[data-col='poster'] .lbl { display: flex; }
-	@media (min-width: 641px) { .ch[data-col='proto'] .lbl, .pcell > .pm, .ch[data-col='poster'] .lbl, .dline > .post, .ch[data-col='kind']:has(:global(svg)) .lbl, .kcell > .kt:not(.wide) { transform: translateX(calc(var(--gap) / 2 - 1px)); } }
+	@media (min-width: 641px) { .ch[data-col='proto'] .lbl, .pcell > .pm, .ch[data-col='poster'] .lbl, .dline > .post, .ch[data-col='kind']:has(:global(svg)) .lbl, .kcell > .kt:not(.wide) { transform: translateX(calc(var(--gap) / 2 - 4px)); } }
 	.ch[data-col='proto'] .lbl { overflow: visible; text-overflow: clip; }
 	/* Source has no grip (fixed width) but keeps the divider line, at the same spot a grip draws it. */
 	.ch[data-col='proto']::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
