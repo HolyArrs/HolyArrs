@@ -2335,7 +2335,7 @@
 		.chead { display: none; }
 		.tin { min-width: 0; }
 		/* Three short lines in about 64px: title and badge, episode, then status with bar and time on the right. */
-		.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto; grid-template-areas: 'tg post nm nm nm' 'tg post st bar time'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
+		.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
 		.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 		.dline > [data-col] { display: none; }
@@ -2350,7 +2350,8 @@
 		.dline > [data-col='title'] .tp { display: inline; }
 		.dline > [data-col='title'] .ep { display: block; overflow: hidden; color: var(--text-muted); font: 400 13px/16px var(--font-ui); text-overflow: ellipsis; white-space: nowrap; }
 		.dline > [data-col='time'] { justify-self: end; color: var(--text-muted); font: var(--t-footnote); }
-		.dline > [data-col='bin'] { display: none; }
+		/* The row's ⋯ menu sits at the card's right edge, beside both lines. */
+		.dline > [data-col='bin'] { display: flex; grid-area: mn; align-self: center; justify-content: center; }
 		/* Not picking: the box stays for screen readers, out of sight and out of the way. */
 		.tg .pk:not(.any) { width: 1px; height: 1px; margin: 0; opacity: 0; clip-path: inset(50%); overflow: hidden; pointer-events: none; }
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
@@ -2360,7 +2361,7 @@
 		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
 		.tg { align-self: center; }
 		.tg .pk.any { width: 20px; height: 20px; margin-left: 4px; }
-		.dline:has(.pk.any) { grid-template-columns: 32px 36px minmax(0, 1fr) 40px auto; }
+		.dline:has(.pk.any) { grid-template-columns: 32px 36px minmax(0, 1fr) 40px auto 44px; }
 		/* The status line: full width for the tabs, with speed and free space as a quiet line under it. */
 		.tabrow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); padding-right: 24px; }
 		.tabrow :global([data-testid='dl-stat']) { display: none; }
