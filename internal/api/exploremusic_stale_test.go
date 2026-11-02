@@ -124,14 +124,13 @@ func TestExploreMusicV7ETag(t *testing.T) {
 // The prewarm builds the member and region pairs asked for lately.
 func TestExploreMusicV7PrewarmAsked(t *testing.T) {
 	r, _, _ := v7Rig(t, "household_large.json")
+	// The prewarm runs on the wall clock, so the ask is dated by it too (the
+	// rig's fixed clock drifts out of the recent window as the days pass).
 	now := time.Now().UTC()
-	if r.api.musicv2.now != nil {
-		now = r.api.musicv2.now().UTC()
-	}
 	r.api.rememberMusicV7Ask(7, "JP", now)
 	r.api.prewarmMusicV7(context.Background())
-	k := musicscore.PlanKey{Member: 7, Date: musicscore.Day(time.Now().UTC()), View: "JP"}
-	if _, ok := r.api.musicv2.plans.Current(k, time.Now().UTC()); !ok {
+	k := musicscore.PlanKey{Member: 7, Date: musicscore.Day(now), View: "JP"}
+	if _, ok := r.api.musicv2.plans.Current(k, now); !ok {
 		t.Fatal("asked member 7 / JP not prewarmed")
 	}
 }

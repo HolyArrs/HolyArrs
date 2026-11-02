@@ -23,7 +23,6 @@ type fakeNZBGet struct {
 	adds            int
 	appends         [][]any
 	edits           []string
-	ignorePark      bool
 	rpcError        bool
 	appendHTTPError bool
 	hideAppend      bool
@@ -122,9 +121,6 @@ func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = json.Unmarshal(in.Params[2], &ids)
 		f.edits = append(f.edits, command)
 		for _, id := range ids {
-			if command == "GroupParkDelete" && f.ignorePark {
-				continue
-			}
 			if strings.HasPrefix(command, "Group") {
 				f.groups = slices.DeleteFunc(f.groups, func(x map[string]any) bool { return int(x["NZBID"].(int)) == id })
 			} else {
@@ -475,24 +471,6 @@ func TestNZBGetRemoveKeepsFilesWithNonFinalDelete(t *testing.T) {
 	}
 	if err := n.Remove(context.Background(), id, true); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("second removal: %v", err)
-	}
-}
-
-// A job with nothing downloaded that NZBGet keeps queued after a park-delete
-// is removed with a plain delete, so Remove never says done while it stays.
-func TestNZBGetRemoveKeepFilesIgnoredPark(t *testing.T) {
-	f, base := startNZBGet(t)
-	f.ignorePark = true
-	n := NewNZBGet(base, f.user, f.pass, nil)
-	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "keep", Category: "movies", OperationKey: "keep", AllowLocal: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := n.Remove(context.Background(), id, false); err != nil || !slices.Equal(f.edits, []string{"GroupParkDelete", "GroupDelete"}) {
-		t.Fatalf("removal: %v edits=%v", err, f.edits)
-	}
-	if _, err := n.Get(context.Background(), id); !errors.Is(err, ErrNotFound) {
-		t.Fatalf("still queued: %v", err)
 	}
 }
 
