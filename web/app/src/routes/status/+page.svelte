@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Status: is every linked part working, and did every background job run?
-	// Four looks for the preview (?look=a|b|c|d|e, default e, the split view). Reads only the
+	// Four looks for the preview (?look=a|b|c|d|f, default f, Sections). Reads only the
 	// existing health, schedules, lists, alerts and metadata routes.
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -15,7 +15,7 @@
 	import LookPills from '#lib/status/LookPills.svelte';
 	import Row from '#lib/status/StatusRow.svelte';
 	import Board from '#lib/status/StatusBoard.svelte';
-	import Split from '#lib/status/StatusSplit.svelte';
+	import Sections from '#lib/status/StatusSections.svelte';
 	import { buildRows, groupLine, groupOrder, groupRows, headline, lookOf, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const look = $derived(lookOf(page.url.searchParams.get('look')));
@@ -143,8 +143,8 @@
 		<p class="notice" role="alert">{error}</p>
 	{:else if !input}
 		<p class="muted">Loading…</p>
-	{:else if look === 'e'}
-		<Split {groups} {canAct} {busy} oncheck={check} {labelOf} />
+	{:else if look === 'f'}
+		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} />
 	{:else if look === 'd'}
 		<Board {groups} {problems} {canAct} {busy} oncheck={check} {labelOf} />
 	{:else if look === 'a'}
@@ -206,7 +206,7 @@
 <LookPills />
 
 <style>
-	.status[data-look='d'], .status[data-look='e'] { max-width: 1600px; }
+	.status[data-look='d'], .status[data-look='f'] { max-width: 1600px; }
 	.status {
 		max-width: 1080px; margin: 0 auto; padding: var(--topbar, 0px) var(--gutter) calc(120px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;

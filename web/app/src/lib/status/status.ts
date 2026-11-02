@@ -209,7 +209,7 @@ export function headline(rows: StatusRow[]): string {
 }
 
 export const looks = [
-	{ key: 'e', label: 'Split' },
+	{ key: 'f', label: 'Sections' },
 	{ key: 'd', label: 'Board' },
 	{ key: 'a', label: 'One list' },
 	{ key: 'b', label: 'Problems first' },
@@ -217,9 +217,9 @@ export const looks = [
 ] as const;
 export type LookKey = (typeof looks)[number]['key'];
 
-/** lookOf reads ?look=, defaulting to the split view. */
+/** lookOf reads ?look=, defaulting to Sections. */
 export function lookOf(v: string | null): LookKey {
-	return v === 'a' || v === 'b' || v === 'c' || v === 'd' ? v : 'e';
+	return v === 'a' || v === 'b' || v === 'c' || v === 'd' ? v : 'f';
 }
 
 /** groupCounts splits a group into working, needs attention and off. */
