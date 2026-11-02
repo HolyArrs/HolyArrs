@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRows, groupLine, groupRows, headline, jobTone, linkId, lookOf, needsAttention } from './status.ts';
+import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, lookOf, needsAttention } from './status.ts';
 import type { ScheduleRow } from '../schedules.ts';
 import type { StageState } from '../types.ts';
 
@@ -53,6 +53,11 @@ describe('status rows', () => {
 		expect(groupLine(groupRows(rows)[0])).toBe('2 of 4 working · 1 needs attention · 1 off');
 		expect(headline(rows)).toBe('1 part needs attention');
 		expect(headline([])).toBe('Everything is working');
+	});
+
+	it('drops empty server times', () => {
+		expect(realTime('0001-01-01T00:00:00Z')).toBeUndefined();
+		expect(realTime('2026-11-02T09:00:00Z')).toBe('2026-11-02T09:00:00Z');
 	});
 
 	it('defaults the look to b', () => {

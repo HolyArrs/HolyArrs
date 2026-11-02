@@ -95,6 +95,11 @@ export function linkId(key: string): number | null {
 
 const LATE_MS = 10 * 60_000;
 
+/** realTime drops the server's empty time (year 1), so rows never say "739921 d ago". */
+export function realTime(s: string | null | undefined): string | undefined {
+	return s && !s.startsWith('0001-') ? s : undefined;
+}
+
 /** jobTone says how a background job stands: failed, late, not run yet, off or OK. */
 export function jobTone(s: ScheduleRow, now = Date.now()): { tone: Tone; word: string; reason: string } {
 	if (!s.enabled) return { tone: 'idle', word: 'Off', reason: 'Automatic runs are turned off.' };
@@ -117,7 +122,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		if (!m) continue;
 		const id = linkId(s.key);
 		const check: CheckAction | undefined = id && (s.kind === 'source' || s.kind === 'downloader') ? { kind: s.kind, id } : undefined;
-		rows.push({ group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: s.reason, at: s.since, fix: m.fix, check });
+		rows.push({ group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: s.reason, at: realTime(s.since), fix: m.fix, check });
 	}
 	for (const c of i.checks ?? []) {
 		if (!checkFix[c.kind]) continue; // sources and downloaders come from their linked state
