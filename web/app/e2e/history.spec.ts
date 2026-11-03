@@ -71,10 +71,12 @@ test('history: day by day, with a Filter, one title and a details panel', async 
 test('history on the movie page links to the movie in History', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Cinder Waltz/ }).first().click();
-	const card = page.getByTestId('title-history');
-	await expect(card.getByRole('heading', { name: 'History' })).toBeVisible();
-	await expect(card.locator('li').first()).toBeVisible();
-	await card.getByRole('link', { name: /All \d+ rows/ }).click();
+	// The movie's History sits in its Library tab; a row opens History kept to the movie.
+	await page.getByRole('tab', { name: /^Library/ }).click();
+	await expect(page.getByRole('heading', { name: 'History', exact: true })).toBeVisible();
+	const row = page.getByTestId('history-row').first();
+	await expect(row).toBeVisible();
+	await row.click();
 	await expect(page).toHaveURL(/\/downloads\/history\?title=\d+/);
 	await expect(page.getByTestId('history-chips')).toContainText('Cinder Waltz');
 });
