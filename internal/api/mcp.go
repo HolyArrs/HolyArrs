@@ -38,8 +38,10 @@ const settingMCP = "mcp_enabled"
 
 // mcpVersions are the MCP protocol versions answered, newest first. The
 // older two only differ in what this server never uses, so clients that
-// still send them keep working.
-var mcpVersions = []string{"2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26"}
+// still send them keep working. 2026-07-28 is left out: it needs a
+// resultType on every answer, and clients refuse tool lists without it
+// (Claude Code, checked live 2026-11-03); they use 2025-11-25 instead.
+var mcpVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26"}
 
 // AI limits per key: reads a minute, actions an hour, and how long a
 // confirm token lives.

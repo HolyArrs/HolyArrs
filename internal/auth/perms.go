@@ -256,6 +256,16 @@ var RoutePerms = map[string]Perm{
 	"GET /mcp":                needSignedIn,
 	"GET /api/v1/settings/ai": needSignedIn,
 	"PUT /api/v1/settings/ai": needOwner,
+	// AI app sign-in (aioauth.go): the app's own calls are public; allowing it
+	// needs the person's browser session.
+	"GET /.well-known/oauth-protected-resource":           NeedPublic,
+	"GET /.well-known/oauth-protected-resource/{path...}": NeedPublic,
+	"GET /.well-known/oauth-authorization-server":         NeedPublic,
+	"POST /oauth/register":                                NeedPublic,
+	"GET /oauth/authorize":                                NeedPublic,
+	"POST /oauth/token":                                   NeedPublic,
+	"GET /api/v1/auth/ai-connect":                         needSignedIn,
+	"POST /api/v1/auth/ai-connect":                        PermSettings, // as for making a key: the app gets one
 
 	// Requests: everyone sees their own asks and messages; asking needs
 	// ask, deciding needs approve.
@@ -683,6 +693,13 @@ var RouteScopes = map[string]string{
 	"POST /mcp":                                                  ScopeMCP,
 	"GET /mcp":                                                   ScopeMCP,
 	"GET /api/v1/settings/ai":                                    ScopeAdmin,
+	"GET /.well-known/oauth-protected-resource":                  ScopeAdmin, // public; a key never needs it
+	"GET /.well-known/oauth-protected-resource/{path...}":        ScopeAdmin, // public; a key never needs it
+	"GET /.well-known/oauth-authorization-server":                ScopeAdmin, // public; a key never needs it
+	"POST /oauth/register":                                       ScopeAdmin, // public; a key never needs it
+	"GET /oauth/authorize":                                       ScopeAdmin, // public; a key never needs it
+	"POST /oauth/token":                                          ScopeAdmin, // public; a key never needs it
+	"POST /api/v1/auth/ai-connect":                               ScopeAdmin, // browser session only
 	"GET /sonarr/":                                               ScopeCompat,
 	"POST /sonarr/":                                              ScopeCompat,
 	"PUT /sonarr/":                                               ScopeCompat,
@@ -777,6 +794,8 @@ func init() {
 		"GET /api/v1/collections/{id}",
 		"GET /api/v1/library/copies",
 		"GET /api/v1/reports",
+		// The Allow page reads what is asking; allowing it needs a fresh password.
+		"GET /api/v1/auth/ai-connect",
 
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",

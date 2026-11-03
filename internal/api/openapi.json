@@ -8805,6 +8805,32 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/auth/ai-connect": {
+      "get": {
+        "description": "Takes the AI app's sign-in request (the /oauth/authorize query) and says which app is asking, where it returns to, and the address to send it back to on Cancel. Browser session only.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "What an AI app signing in is asking for",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Send {\"query\": \"<the sign-in request>\"}. Answers {\"redirect\": ...}: the app's return address with a one-time code it swaps at /oauth/token for its own AI key. Browser session and CSRF token only.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Allow an AI app that is signing in",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/forward/link": {
       "post": {
         "description": "Explicitly links a trusted direct-peer identity to the current local account after recent local password assurance. Requires browser session and CSRF; the live session is rechecked atomically.",
