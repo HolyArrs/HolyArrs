@@ -36,6 +36,9 @@ type ShowAddOptions struct {
 	WhyAdded string `json:"-"`
 	// Adopt keeps a show folder found on disk as it is, with its files.
 	Adopt *ShowAdoption `json:"-"`
+	// SeasonNumbers, when not nil, are exactly the seasons kept up to
+	// date (Seasons is then none): the old-app API's per-season choice.
+	SeasonNumbers []int `json:"-"`
 }
 
 // ShowAlreadyAddedError says the show is already in the Library.
@@ -144,6 +147,9 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	defs, err := ReadShowDefaults(ctx, db)
 	if err != nil {
 		return 0, 0, err
+	}
+	if opt.SeasonNumbers != nil {
+		opt.Seasons = SeasonsNone
 	}
 	if opt.Seasons == "" {
 		opt.Seasons = defs.SeasonChoice
@@ -280,6 +286,20 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		sync, err = syncShowTx(ctx, tx, t, sh, defs, choice, now, by)
 		if err != nil {
 			return err
+		}
+		// Seasons named one by one start kept up to date with all their
+		// episodes, in the same write, so the scan and search after the
+		// add already see them.
+		if keep {
+			ts, who := store.FormatTime(now), actorText(by)
+			for _, n := range opt.SeasonNumbers {
+				if _, err := tx.Exec("UPDATE parts SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE title_id = ? AND kind = 'season' AND number = ?", ts, who, t.ID, n); err != nil {
+					return err
+				}
+				if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?)", ts, who, t.ID, n); err != nil {
+					return err
+				}
+			}
 		}
 		// More Versions after the episodes, so each gets one Slot per episode.
 		for _, mv := range opt.MoreVersions {

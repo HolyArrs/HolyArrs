@@ -567,6 +567,22 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/schedules/{kind}/run": PermManageLibrary,
 	"PUT /api/v1/schedules/{kind}":      PermSettings,
 
+	// The old-app API (decision 0008): one row per method on each prefix;
+	// every route behind them reads or changes the Library.
+	"GET /sonarr/":    PermManageLibrary,
+	"POST /sonarr/":   PermManageLibrary,
+	"PUT /sonarr/":    PermManageLibrary,
+	"DELETE /sonarr/": PermManageLibrary,
+	"GET /radarr/":    PermManageLibrary,
+	"POST /radarr/":   PermManageLibrary,
+	"PUT /radarr/":    PermManageLibrary,
+	"DELETE /radarr/": PermManageLibrary,
+	// Its settings: the switch, and one key per side.
+	"GET /api/v1/settings/old-app-api":                PermSettings,
+	"PUT /api/v1/settings/old-app-api":                PermSettings,
+	"POST /api/v1/settings/old-app-api/keys/{side}":   PermSettings,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}": PermSettings,
+
 	// The move tool (6.1): reading an old app's setup reaches other
 	// machines with keys the owner types and keeps what it read, so it is
 	// for the owner and admins with a password sign-in and the admin scope.
@@ -582,6 +598,13 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/migrate/moves/{id}":        needUsers,
 	"GET /api/v1/migrate/moves/{id}/report": needUsers,
 	"POST /api/v1/migrate/moves/{id}/undo":  needUsers,
+
+	// Reports: anyone signed in reports a problem and sees their own;
+	// fixing and opening again needs manage_library.
+	"GET /api/v1/reports":              needSignedIn,
+	"POST /api/v1/reports":             needSignedIn,
+	"POST /api/v1/reports/{id}/fix":    PermManageLibrary,
+	"POST /api/v1/reports/{id}/reopen": PermManageLibrary,
 }
 
 // API key scopes. A key holds one or more; a session holds them all.
@@ -599,10 +622,14 @@ const (
 	// ScopeMCP is an AI key: it reaches only the AI connection route
 	// (/api/v1/mcp), and all does not include it.
 	ScopeMCP = "mcp"
+	// ScopeCompat is held only by old-app API keys (/sonarr/ and
+	// /radarr/, decision 0008); no HolyArrs API key can be made with it,
+	// and all does not include it.
+	ScopeCompat = "compat"
 )
 
 // Scopes lists the scopes a key may be given.
-var Scopes = []string{ScopeHealthRead, ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll, ScopeMCP}
+var Scopes = []string{ScopeHealthRead, ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll, ScopeMCP, ScopeCompat}
 
 // ScopeNotes says in plain words what each scope reaches; the OpenAPI
 // spec publishes it.
@@ -614,6 +641,7 @@ var ScopeNotes = map[string]string{
 	ScopeControl:    "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
 	ScopeAll:        "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
 	ScopeMCP:        "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",
+	ScopeCompat:     "The old-app API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
 }
 
 // RouteScopes names routes whose scope is not the one the method and
@@ -655,6 +683,17 @@ var RouteScopes = map[string]string{
 	"POST /mcp":                                                  ScopeMCP,
 	"GET /mcp":                                                   ScopeMCP,
 	"GET /api/v1/settings/ai":                                    ScopeAdmin,
+	"GET /sonarr/":                                               ScopeCompat,
+	"POST /sonarr/":                                              ScopeCompat,
+	"PUT /sonarr/":                                               ScopeCompat,
+	"DELETE /sonarr/":                                            ScopeCompat,
+	"GET /radarr/":                                               ScopeCompat,
+	"POST /radarr/":                                              ScopeCompat,
+	"PUT /radarr/":                                               ScopeCompat,
+	"DELETE /radarr/":                                            ScopeCompat,
+	"GET /api/v1/settings/old-app-api":                           ScopeAdmin,
+	"POST /api/v1/settings/old-app-api/keys/{side}":              ScopeAdmin,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}":            ScopeAdmin,
 
 	// My account's sign-in and the keys themselves.
 	"GET /api/v1/auth/keys":                     ScopeAdmin,
@@ -737,6 +776,7 @@ func init() {
 		"GET /api/v1/collections",
 		"GET /api/v1/collections/{id}",
 		"GET /api/v1/library/copies",
+		"GET /api/v1/reports",
 
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",
@@ -783,7 +823,7 @@ func ScopesCover(held []string, scope string) bool {
 	if scope == ScopeHealthRead && slices.Contains(held, ScopeRead) {
 		return true
 	}
-	return scope != ScopeControl && scope != ScopeMCP && slices.Contains(held, ScopeAll)
+	return scope != ScopeControl && scope != ScopeMCP && scope != ScopeCompat && slices.Contains(held, ScopeAll)
 }
 
 // RouteScope is the scope an API key needs for a route pattern: the
@@ -839,7 +879,7 @@ func Gate(m *http.ServeMux) http.Handler {
 			return
 		}
 		if !who.Has(need) {
-			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" {
+			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" && CompatSide(r.URL.Path) == "" {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}

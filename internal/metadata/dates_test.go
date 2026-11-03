@@ -35,7 +35,7 @@ func TestTMDBReleaseDates(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Query().Get("append_to_response") != "release_dates,images,credits,alternative_titles,translations" {
+				if r.URL.Query().Get("append_to_response") != "release_dates,images,credits,translations" {
 					t.Errorf("query %v", r.URL.Query())
 				}
 				_, _ = w.Write([]byte(c.body))

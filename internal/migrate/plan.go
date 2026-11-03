@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"path"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -187,6 +188,11 @@ type TitlePlan struct {
 	// Unresolved says why the folder could not be placed ("" when it can).
 	Unresolved string           `json:"unresolved,omitempty"`
 	Music      *MusicPolicyPlan `json:"music,omitempty"`
+	// ReleaseGate and GateDelayDays are a movie's Release gate from
+	// Radarr's release stage and availability delay ("" and nil: this
+	// server's defaults).
+	ReleaseGate   string `json:"release_gate,omitempty"`
+	GateDelayDays *int   `json:"gate_delay_days,omitempty"`
 }
 
 // MusicPolicyPlan is the supported part of an artist's Lidarr monitoring
@@ -529,7 +535,15 @@ func (b *builder) cover(fields ...string) {
 func (b *builder) snapshot(s *Snapshot) {
 	// The read's own facts are not settings.
 	b.cover("kind", "via", "version", "schema", "read_at")
-	b.p.NeedsInput = append(b.p.NeedsInput, prefix(string(s.Kind), s.NeedsReentry)...)
+	// An import list's sign-in has nowhere to go here: its own Not moved
+	// line says so (leftBehind) instead of asking for it.
+	var needs []string
+	for _, n := range s.NeedsReentry {
+		if !strings.HasPrefix(n, `import list "`) {
+			needs = append(needs, n)
+		}
+	}
+	b.p.NeedsInput = append(b.p.NeedsInput, prefix(string(s.Kind), needs)...)
 	b.cover("needs_reentry")
 	b.p.Notes = append(b.p.Notes, prefix(string(s.Kind), s.Notes)...)
 	b.cover("notes")
@@ -634,7 +648,7 @@ func matchPreset(k Kind, p Profile) (string, string) {
 }
 
 func (b *builder) profiles(s *Snapshot) {
-	b.cover("quality_profiles", "custom_formats", "delay_profiles", "language_profiles", "metadata_profiles")
+	b.cover("quality_profiles", "custom_formats", "release_profiles", "delay_profiles", "language_profiles", "metadata_profiles")
 	for i, p := range s.QualityProfiles {
 		preset, why := matchPreset(s.Kind, p)
 		b.presets[string(s.Kind)+":"+strconv.FormatInt(p.ID, 10)] = preset
@@ -642,16 +656,126 @@ func (b *builder) profiles(s *Snapshot) {
 			Detail: "becomes " + preset, Why: why, Rules: &RulesPlan{App: string(s.Kind), Profile: clip(p.Name, maxName), Preset: preset}})
 	}
 	for i, f := range s.CustomFormats {
-		b.not(GroupRules, b.from("custom_formats", i), f.Name, "Pick rules have no custom formats; their steps and words cover the common cases")
+		b.not(GroupRules, b.from("custom_formats", i), f.Name, "format scoring rules do not move; Pick rules score a fixed list of traits")
 	}
-	for i := range s.DelayProfiles {
-		b.not(GroupRules, b.from("delay_profiles", i), "wait before grabbing", "a wait before grabbing is not part of HolyArrs yet; releases are chosen as soon as they pass the Pick rules")
+	for i, rw := range s.ReleaseProfiles {
+		name := rw.Name
+		if name == "" {
+			name = "release words"
+		}
+		var parts []string
+		if w := wordList(rw.Settings["required"]); w != "" {
+			parts = append(parts, "must contain "+w)
+		}
+		if w := wordList(rw.Settings["ignored"]); w != "" {
+			parts = append(parts, "must not contain "+w)
+		}
+		// The words are cut short enough that the scope always fits maxName.
+		what := name
+		if len(parts) > 0 {
+			what += ": " + strings.Join(parts, " / ")
+		}
+		scope := tagScope(wordList(rw.Settings["tags"]))
+		if w := wordList(rw.Settings["excluded_tags"]); w != "" {
+			scope = strings.TrimSuffix(scope, ")") + " except tags: " + clip(w, 40) + ")"
+		}
+		what = clip(what, 90) + " " + scope
+		why := "Pick rules test a fixed list of traits, not free words; add a must-have or never trait under Pick rules if one fits"
+		if !boolean(rw.Settings["enabled"]) {
+			why = "it was turned off there"
+		}
+		b.not(GroupRules, b.from("release_profiles", i), what, why)
+	}
+	for i, d := range s.DelayProfiles {
+		prefer := d.PreferredProtocol
+		if prefer == "" {
+			prefer = "either"
+		}
+		values := fmt.Sprintf("prefer %s, Usenet %d min, torrent %d min", prefer, d.UsenetDelay, d.TorrentDelay)
+		if !d.EnableUsenet {
+			values += ", Usenet off"
+		}
+		if !d.EnableTorrent {
+			values += ", torrent off"
+		}
+		why := "HolyArrs has waits in Pick rules (prefer, Usenet and torrent minutes) but this one was not carried over: " + values + "; set them under Pick rules"
+		switch {
+		case !d.EnableUsenet || !d.EnableTorrent:
+			why += "; Pick rules cannot turn a protocol off, so pause those Sources instead"
+		case len(d.Tags) == 0 && strings.EqualFold(d.PreferredProtocol, "usenet") && d.UsenetDelay == 0 && d.TorrentDelay == 0:
+			// The old app's untouched default; copying it would only switch
+			// the ready-made Pick rules to prefer Usenet.
+			why = "the old app's default: no wait, Usenet preferred only to break ties; nothing to set here"
+		}
+		b.not(GroupRules, b.from("delay_profiles", i), "wait before grabbing "+tagScope(strings.Join(d.Tags, ", ")), why)
 	}
 	for i, n := range s.LanguageProfiles {
 		b.not(GroupRules, b.from("language_profiles", i), n.Name, "language profiles are not moved; Pick rules set the languages")
 	}
 	// Lidarr metadata profiles are accounted where a moved artist actually
 	// consumes their individual fields in titleList.
+}
+
+// tagScope says which titles a rule served: "(tags: a, b)" or "(every title)".
+func tagScope(tags string) string {
+	if tags == "" {
+		return "(every title)"
+	}
+	return "(tags: " + clip(tags, 100) + ")"
+}
+
+// wordList joins a kept list of words or names ("" when there are none).
+func wordList(v any) string {
+	var out []string
+	for _, e := range list(v) {
+		if w := str(e); w != "" {
+			out = append(out, w)
+		}
+	}
+	return clip(strings.Join(out, ", "), 120)
+}
+
+// mediaWord is the kind of title an app's links served ("" for the others).
+func mediaWord(k Kind) string {
+	return map[Kind]string{Radarr: "movie", Sonarr: "show", Lidarr: "music"}[k]
+}
+
+// tagNote is the Detail words for a moved Source, Downloader or Alert of
+// Radarr, Sonarr or Lidarr that served only tagged titles there ("" when
+// it had no tags).
+func tagNote(k Kind, tags []string) string {
+	if mediaWord(k) == "" || len(tags) == 0 {
+		return ""
+	}
+	return "; only for titles tagged " + clip(strings.Join(tags, ", "), 100) + " there; here it serves every " + mediaWord(k) + " title"
+}
+
+// addTagged adds a Source, Downloader or Alert and, once it is planned and
+// had tags, lists its tags as not moved.
+func (b *builder) addTagged(k Kind, group string, it Item, tags []string) {
+	note := tagNote(k, tags)
+	it.Detail += note
+	before := len(b.items[group].Items)
+	b.add(group, it)
+	if note != "" && len(b.items[group].Items) > before {
+		check := "HolyArrs has no tags; check it before you resume it"
+		if group == GroupAlerts {
+			check = "HolyArrs has no tags; check it before you turn it on"
+		}
+		b.not(group, it.From+".tags", clip(it.Name, 80)+" (tags: "+clip(strings.Join(tags, ", "), 100)+")", check)
+	}
+}
+
+// sharesTag says whether two tag lists have a name in common.
+func sharesTag(a, b []string) bool {
+	for _, x := range a {
+		for _, y := range b {
+			if strings.EqualFold(x, y) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func allowedMusicValues(v any, names map[string]string) (out, unsupported []string) {
@@ -834,11 +958,34 @@ func (b *builder) place(t Title) (lib, folder, why string) {
 	return f.Path, rest, ""
 }
 
+// releaseGates are Radarr's release stages (words or the backup's numbers)
+// as Release gate choices.
+var releaseGates = map[string]string{"tba": "announced", "0": "announced", "announced": "announced", "1": "announced",
+	"incinemas": "in_cinemas", "2": "in_cinemas", "released": "released", "3": "released"}
+
+// gateWords say a Release gate choice in the plan's details.
+var gateWords = map[string]string{"announced": "announced", "in_cinemas": "in cinemas", "released": "released", "": "this server's default"}
+
 func (b *builder) titleList(s *Snapshot) {
 	b.cover("titles")
 	extras := map[string]int{}
 	tags := 0
 	usedMetadata := map[int64]bool{}
+	// Radarr's availability delay is stamped on each moved movie (0 to 365
+	// days); this server's default for new movies is left as it is.
+	var delay *int
+	delayNote := ""
+	if v, ok := s.Settings["availability_delay"]; ok && s.Kind == Radarr {
+		d := int(num(v))
+		switch {
+		case d > 365:
+			d, delayNote = 365, ", cut to 365"
+		case d < 0:
+			d = 0
+		}
+		delay = &d
+	}
+	gated := 0
 	for i, t := range s.Titles {
 		from := b.from("titles", i)
 		kind, id := idFor(s.Kind, t)
@@ -871,6 +1018,23 @@ func (b *builder) titleList(s *Snapshot) {
 				tp.SeasonsOff = append(tp.SeasonsOff, se.Number)
 			}
 		}
+		gateNote := ""
+		if kind == "movie" {
+			if v := str(anyKey(t.Extra, "minimum_availability")); v != "" {
+				if g, ok := releaseGates[strings.ToLower(v)]; ok {
+					tp.ReleaseGate = g
+				} else {
+					b.not(GroupTitles, from+".minimum_availability", clip(name, 140)+": release stage "+clip(v, 40), "unknown release stage "+clip(v, 40)+"; the title takes this server's default")
+				}
+			}
+			tp.GateDelayDays = delay
+			if tp.ReleaseGate != "" || delay != nil {
+				gateNote = "; release gate: " + gateWords[tp.ReleaseGate]
+				if delay != nil {
+					gateNote += fmt.Sprintf(" (+%d days%s)", *delay, delayNote)
+				}
+			}
+		}
 		tp.Library, tp.Folder, tp.Unresolved = b.place(t)
 		b.titles[kind+":"+id] = name
 		for _, v := range t.IDs {
@@ -886,12 +1050,16 @@ func (b *builder) titleList(s *Snapshot) {
 		if !t.Monitored {
 			detail += "; Keep up to date off"
 		}
+		detail += gateNote
 		if t.Year > 0 {
 			name = fmt.Sprintf("%s (%d)", name, t.Year)
 		}
 		key := "title:" + kind + ":" + id
 		before := len(b.items[GroupTitles].Items)
 		b.add(GroupTitles, Item{Key: key, Name: name, From: from, Detail: detail, Title: tp})
+		if tp.GateDelayDays != nil && len(b.items[GroupTitles].Items) > before {
+			gated++
+		}
 		if s.Kind == Lidarr && len(b.items[GroupTitles].Items) > before {
 			profileID := num(anyKey(t.Extra, "metadata_profile_id"))
 			for j, mp := range s.MetadataProfiles {
@@ -927,7 +1095,7 @@ func (b *builder) titleList(s *Snapshot) {
 			}
 		}
 		for k := range t.Extra {
-			if s.Kind == Lidarr && (k == "new_albums" || k == "metadata_profile_id") {
+			if s.Kind == Lidarr && (k == "new_albums" || k == "metadata_profile_id") || s.Kind == Radarr && k == "minimum_availability" {
 				continue
 			}
 			extras[k]++
@@ -945,6 +1113,15 @@ func (b *builder) titleList(s *Snapshot) {
 	if tags > 0 {
 		b.not(GroupTitles, b.from("titles", -1)+".tags", fmt.Sprintf("tags on titles (%d)", tags), "HolyArrs has no tags")
 	}
+	if delay != nil {
+		from := b.from("settings", -1) + ".availability_delay"
+		if gated > 0 {
+			b.p.Mapped = append(b.p.Mapped, from)
+			b.p.Notes = append(b.p.Notes, fmt.Sprintf("%s: the availability delay (%d days) is set on each moved movie; this server's default for new movies stays as it is", s.Kind, *delay))
+		} else {
+			b.not(GroupTitles, from, "availability delay", "no moved movie takes it; set the delay under Settings > Movies and TV defaults if you want it")
+		}
+	}
 	if s.Kind == Lidarr {
 		for i, mp := range s.MetadataProfiles {
 			if !usedMetadata[mp.ID] {
@@ -957,6 +1134,11 @@ func (b *builder) titleList(s *Snapshot) {
 func (b *builder) exclusions(s *Snapshot) {
 	b.cover("exclusions")
 	kind := map[Kind]string{Radarr: "movie", Sonarr: "show", Lidarr: "artist"}[s.Kind]
+	// A live read whose exclusions route failed says so in the reader's
+	// notes (a read kept before live reads had the backup-only note).
+	if slices.Contains(s.Notes, "the app has no exclusions list; skipped") || slices.Contains(s.Notes, "exclusion lists are read from a backup only") {
+		b.not(GroupNeverAdd, b.from("exclusions", -1), "exclusions", "they could not be read through the API; read a backup to bring them")
+	}
 	for i, e := range s.Exclusions {
 		from := b.from("exclusions", i)
 		ids := map[string]string{}
@@ -1045,7 +1227,10 @@ func webURL(raw string) string {
 }
 
 func (b *builder) indexers(s *Snapshot) {
-	b.cover("indexers")
+	b.cover("indexers", "indexer_proxies")
+	for i, px := range s.IndexerProxies {
+		b.not(GroupSources, b.from("indexer_proxies", i), px.Name, "HolyArrs sets one proxy address per Source; set it on the Sources that used it")
+	}
 	for i, ix := range s.Indexers {
 		from := b.from("indexers", i)
 		kind := strings.ToLower(ix.Kind)
@@ -1111,7 +1296,14 @@ func (b *builder) indexers(s *Snapshot) {
 			it.Needs = "your key"
 			it.Detail = format + " at " + u + "; added paused until you type its key and resume it"
 		}
-		b.add(GroupSources, it)
+		// Prowlarr's indexer tags only pick apps and proxies: a proxy
+		// sharing one of them was used for this indexer.
+		for _, px := range s.IndexerProxies {
+			if sharesTag(ix.Tags, px.Tags) {
+				it.Detail += "; used proxy " + clip(px.Name, 80) + " there; set a proxy on this Source"
+			}
+		}
+		b.addTagged(s.Kind, GroupSources, it, ix.Tags)
 		keys := make([]string, 0, len(ix.Settings))
 		for k := range ix.Settings {
 			keys = append(keys, k)
@@ -1182,8 +1374,8 @@ func (b *builder) downloaders(s *Snapshot) {
 		}
 		cat := setStr(d.Settings, "movieCategory", "tvCategory", "musicCategory", "category")
 		locked := hasField(d.NeedsReentry, "password", "apiKey")
-		b.addDownloader(from, d.Name, &DownloaderPlan{Adapter: adapter, URL: u, Username: clip(setStr(d.Settings, "username"), 100),
-			Category: clean64(cat), Priority: d.Priority, NeedsInput: locked})
+		b.addDownloader(s.Kind, from, d.Name, &DownloaderPlan{Adapter: adapter, URL: u, Username: clip(setStr(d.Settings, "username"), 100),
+			Category: clean64(cat), Priority: d.Priority, NeedsInput: locked}, d.Tags)
 	}
 	if d := s.Downloader; d != nil {
 		adapter := map[Kind]string{QBittorrent: "qbittorrent", SABnzbd: "sabnzbd"}[s.Kind]
@@ -1192,8 +1384,8 @@ func (b *builder) downloaders(s *Snapshot) {
 		if u == "" || adapter == "" || metadataHost(u) {
 			b.not(GroupDownloaders, from, string(s.Kind), "no usable address")
 		} else {
-			b.addDownloader(from, map[string]string{"qbittorrent": "qBittorrent", "sabnzbd": "SABnzbd"}[adapter],
-				&DownloaderPlan{Adapter: adapter, URL: u, Username: clip(d.Username, 100), NeedsInput: d.NeedsPassword || adapter == "sabnzbd"})
+			b.addDownloader(s.Kind, from, map[string]string{"qbittorrent": "qBittorrent", "sabnzbd": "SABnzbd"}[adapter],
+				&DownloaderPlan{Adapter: adapter, URL: u, Username: clip(d.Username, 100), NeedsInput: d.NeedsPassword || adapter == "sabnzbd"}, nil)
 		}
 		if d.SavePath != "" || d.CompletePath != "" {
 			b.not(GroupDownloaders, from+".save_path", "download folders", "the Downloader keeps its own folders; HolyArrs reads where each download lands")
@@ -1215,7 +1407,7 @@ func clean64(s string) string {
 	return s
 }
 
-func (b *builder) addDownloader(from, name string, d *DownloaderPlan) {
+func (b *builder) addDownloader(app Kind, from, name string, d *DownloaderPlan, tags []string) {
 	if d.Priority < 1 || d.Priority > 50 {
 		d.Priority = 1
 	}
@@ -1228,7 +1420,7 @@ func (b *builder) addDownloader(from, name string, d *DownloaderPlan) {
 		}
 		it.Detail = d.Adapter + " at " + d.URL + "; added paused until you type " + it.Needs + " and resume it"
 	}
-	b.add(GroupDownloaders, it)
+	b.addTagged(app, GroupDownloaders, it, tags)
 }
 
 // namingKeys maps their naming settings (lower case) to ours.
@@ -1627,6 +1819,8 @@ func (b *builder) people(s *Snapshot) {
 		b.add(GroupWishlist, Item{Key: "wishlist_defaults", Name: "Request defaults", From: b.from("settings", -1),
 			Detail: "default weekly limits", AskSettings: as})
 	}
+	// Radarr's availability delay is a Release gate setting (titleList).
+	recognized["availability_delay"] = s.Kind == Radarr
 	keys := make([]string, 0, len(s.Settings))
 	for k := range s.Settings {
 		keys = append(keys, k)
@@ -1772,9 +1966,9 @@ func (b *builder) alerts(s *Snapshot) {
 			continue
 		}
 		needs := map[string]string{"discord": "its Discord link", "webhook": "its address", "email": "the mail password"}[ap.Kind]
-		b.add(GroupAlerts, Item{Key: "alert:" + strings.ToLower(clip(n.Name, 80)), Name: clip(n.Name, 80), From: from, Alert: ap,
+		b.addTagged(s.Kind, GroupAlerts, Item{Key: "alert:" + strings.ToLower(clip(n.Name, 80)), Name: clip(n.Name, 80), From: from, Alert: ap,
 			Detail: ap.Kind + "; added off until you type " + needs, Needs: needs,
-			Why: "Alerts speak for every moment at first; pick the moments again"})
+			Why: "Alerts speak for every moment at first; pick the moments again"}, n.Tags)
 	}
 }
 
@@ -1785,7 +1979,29 @@ func (b *builder) leftBehind(s *Snapshot) {
 		b.not(GroupOther, b.from("tags", i), t.Label, "HolyArrs has no tags")
 	}
 	for i, l := range s.ImportLists {
-		b.not(GroupOther, b.from("import_lists", i), l.Name, "add it again under Settings > Outside lists (its sign-in cannot come over)")
+		kind := strings.ToLower(l.Kind)
+		var why string
+		switch {
+		case s.Kind == Sonarr:
+			why = "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr"
+		case s.Kind == Lidarr:
+			why = "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr"
+		case strings.Contains(kind, "radarr") || strings.Contains(kind, "sonarr"):
+			why = "HolyArrs is one app; it does not copy from another instance"
+		// Best effort: the TMDB list kind and the Trakt list kinds other than
+		// popular lists can be added again here; the other kinds cannot.
+		case kind == "tmdblistimport" || (strings.Contains(kind, "trakt") && !strings.Contains(kind, "popular")):
+			why = "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists"
+			if strings.Contains(kind, "trakt") {
+				why += " (a private list needs to be made public first)"
+			}
+		default:
+			why = "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr"
+		}
+		if len(l.NeedsReentry) > 0 {
+			why += "; its sign-in does not come over"
+		}
+		b.not(GroupOther, b.from("import_lists", i), l.Name, why)
 	}
 	for i, m := range s.Metadata {
 		b.not(GroupOther, b.from("metadata", i), m.Name, "HolyArrs writes no metadata files for media players")

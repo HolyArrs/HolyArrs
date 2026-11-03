@@ -26,6 +26,7 @@ export const kindGroups: KindGroup[] = [
 	{ key: 'decide', label: 'Needs a decision', kinds: ['needs_decision', 'stopped_looking'] },
 	{ key: 'health', label: 'Health', kinds: ['health_*'] },
 	{ key: 'wishlist', label: 'Requests', kinds: ['ask_*'] },
+	{ key: 'reports', label: 'Reported problems', kinds: ['report_*'] },
 	{ key: 'links', label: 'Alerts and media servers', kinds: ['alert_failed', 'media_server_*'] },
 	{ key: 'ai', label: 'AI', kinds: ['ai_*'] },
 	{ key: 'system', label: 'System', kinds: ['sign*', 'api_key_*', 'settings_changed'] }

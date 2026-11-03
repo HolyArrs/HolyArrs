@@ -493,6 +493,24 @@ func wantsPage(r *http.Request) bool {
 // Middleware lets only signed-in requests through.
 func (a *Auth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// The old-app API takes only its own keys. Like an API key, such a
+		// key is no browser credential, so the host and origin checks do
+		// not apply (Seerr calls from a Docker neighbour by name). A
+		// missing or wrong key gets a bare 401, as the old apps answer.
+		if id, ok := compatLink(r); ok {
+			http.Redirect(w, r, "/library/"+id, http.StatusFound)
+			return
+		}
+		if side := CompatSide(r.URL.Path); side != "" {
+			k, _ := compatKey(r)
+			who, ok := a.checkCompatKey(r.Context(), side, k)
+			if !ok {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, who)))
+			return
+		}
 		if public(r) {
 			if unsafeMethod(r.Method) && !a.guarded(r) {
 				fail(w, http.StatusForbidden, "request from another site or host name refused")
@@ -1075,6 +1093,10 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 	for _, sc := range body.Scopes {
 		if !slices.Contains(Scopes, sc) {
 			fail(w, http.StatusBadRequest, "scopes are "+strings.Join(Scopes, ", ")+" (all includes read, write and admin)")
+			return
+		}
+		if sc == ScopeCompat {
+			fail(w, http.StatusBadRequest, "old-app API keys are made with POST /api/v1/settings/old-app-api/keys/{side}, not here")
 			return
 		}
 		if !who.HasScope(sc) {

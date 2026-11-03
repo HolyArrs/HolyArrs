@@ -3,6 +3,8 @@ package migrate
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -11,9 +13,12 @@ import (
 )
 
 // radarrAPI is a Radarr 6 answering the API calls the manual lists.
-func radarrAPI(t *testing.T) (string, string) {
+func radarrAPI(t *testing.T) (string, string) { return radarrAPIWith(t, nil) }
+
+// radarrAPIWith adds or replaces routes of radarrAPI.
+func radarrAPIWith(t *testing.T, extra map[string]any) (string, string) {
 	key := "S3CR3T_RADARR_KEY"
-	srv := fakeAPI(t, "X-Api-Key", key, map[string]any{
+	routes := map[string]any{
 		"/api/v3/system/status": map[string]any{"appName": "Radarr", "version": "6.4.4", "migrationVersion": 242},
 		"/api/v3/movie": []any{
 			map[string]any{"id": 1, "tmdbId": 603, "imdbId": "tt0133093", "title": "The Matrix", "year": 1999,
@@ -56,7 +61,11 @@ func radarrAPI(t *testing.T) (string, string) {
 		"/api/v3/notification": []any{map[string]any{"id": 1, "name": "Discord", "implementation": "Discord", "onGrab": true,
 			"fields": []any{map[string]any{"name": "webHookUrl", "value": "https://discord.example/api/webhooks/1/S3CR3T_HOOK"}}}},
 		"/api/v3/metadata": []any{map[string]any{"id": 1, "name": "Kodi", "implementation": "XbmcMetadata", "enable": false, "fields": []any{}}},
-	})
+	}
+	for k, v := range extra {
+		routes[k] = v
+	}
+	srv := fakeAPI(t, "X-Api-Key", key, routes)
 	return srv.URL, key
 }
 
@@ -249,7 +258,10 @@ func TestRadarrOlderBackup(t *testing.T) {
 // sonarrAPI answers as Sonarr 4 (or, with v5, as the v5 build: naming
 // under /settings/naming, notifications under /connection, no language
 // profiles).
-func sonarrAPI(t *testing.T, v5 bool) (string, string) {
+func sonarrAPI(t *testing.T, v5 bool) (string, string) { return sonarrAPIWith(t, v5, nil) }
+
+// sonarrAPIWith adds or replaces routes of sonarrAPI.
+func sonarrAPIWith(t *testing.T, v5 bool, extra map[string]any) (string, string) {
 	key := "S3CR3T_SONARR_KEY"
 	routes := map[string]any{
 		"/api/v3/system/status": map[string]any{"appName": "Sonarr", "version": "4.0.20.0", "migrationVersion": 217},
@@ -277,6 +289,9 @@ func sonarrAPI(t *testing.T, v5 bool) (string, string) {
 		routes["/api/v3/config/naming"] = naming
 		routes["/api/v3/notification"] = []any{}
 		routes["/api/v3/languageprofile"] = []any{map[string]any{"id": 1, "name": "English"}}
+	}
+	for k, v := range extra {
+		routes[k] = v
 	}
 	srv := fakeAPI(t, "X-Api-Key", key, routes)
 	return srv.URL, key
@@ -385,5 +400,220 @@ func TestUnreachableErrorHoldsNoKey(t *testing.T) {
 	_, err := Read(context.Background(), Source{Kind: Radarr, URL: u, Key: "S3CR3T_RADARR", AllowLocal: true})
 	if !errors.Is(err, ErrUnreachable) || strings.Contains(err.Error(), secretMark) {
 		t.Fatalf("error %v", err)
+	}
+}
+
+// TestArrExclusionsLive: exclusions come over on a live read as well: a
+// plain list (Sonarr v3, Radarr) or the paging envelope (Sonarr v5), read
+// page by page. When the route fails, the plan says to read a backup.
+func TestArrExclusionsLive(t *testing.T) {
+	u, key := sonarrAPIWith(t, false, map[string]any{
+		"/api/v3/importlistexclusion": []any{map[string]any{"id": 1, "tvdbId": 121361, "title": "Game of Thrones"}}})
+	s := read(t, api(Sonarr, u, key))
+	if len(s.Exclusions) != 1 || s.Exclusions[0].IDs["tvdb"] != "121361" || s.Exclusions[0].Name != "Game of Thrones" {
+		t.Fatalf("sonarr v3 %+v", s.Exclusions)
+	}
+	u, key = radarrAPIWith(t, map[string]any{
+		"/api/v3/exclusions": []any{map[string]any{"id": 1, "tmdbId": 680, "movieTitle": "Pulp Fiction", "movieYear": 1994}}})
+	s = read(t, api(Radarr, u, key))
+	if len(s.Exclusions) != 1 || s.Exclusions[0].IDs["tmdb"] != "680" || s.Exclusions[0].Year != 1994 || hasNote(s, "exclusion") {
+		t.Fatalf("radarr %+v %v", s.Exclusions, s.Notes)
+	}
+	if _, ok := notMoved(BuildPlan([]Input{{1, s}}, Choices{}), "radarr exclusions"); ok {
+		t.Fatal("read exclusions must not be reported as missing")
+	}
+	// Sonarr v5 pages: three records, two to a page whatever size is asked.
+	recs := []any{
+		map[string]any{"id": 3, "tvdbId": 1, "title": "One"},
+		map[string]any{"id": 2, "tvdbId": 2, "title": "Two"},
+		map[string]any{"id": 1, "tvdbId": 3, "title": "Three"},
+	}
+	u, key = sonarrAPIWith(t, true, map[string]any{"/api/v3/importlistexclusion": func(r *http.Request) any {
+		switch r.URL.Query().Get("page") {
+		case "", "1":
+			return map[string]any{"page": 1, "pageSize": 2, "totalRecords": 3, "records": recs[:2]}
+		case "2":
+			return map[string]any{"page": 2, "pageSize": 2, "totalRecords": 3, "records": recs[2:]}
+		}
+		return map[string]any{"totalRecords": 3, "records": []any{}}
+	}})
+	s = read(t, api(Sonarr, u, key))
+	if len(s.Exclusions) != 3 || s.Exclusions[2].IDs["tvdb"] != "3" {
+		t.Fatalf("sonarr v5 pages %+v", s.Exclusions)
+	}
+	// A later page that answers badly skips the list, not the whole read.
+	u, key = sonarrAPIWith(t, true, map[string]any{"/api/v3/importlistexclusion": func(r *http.Request) any {
+		if p := r.URL.Query().Get("page"); p == "" || p == "1" {
+			return map[string]any{"page": 1, "pageSize": 2, "totalRecords": 3, "records": recs[:2]}
+		}
+		return "not json"
+	}})
+	s = read(t, api(Sonarr, u, key))
+	if len(s.Exclusions) != 0 || len(s.Titles) == 0 {
+		t.Fatalf("bad later page %+v %v", s.Exclusions, s.Notes)
+	}
+	if _, ok := notMoved(BuildPlan([]Input{{1, s}}, Choices{}), "sonarr exclusions"); !ok {
+		t.Fatal("a skipped list must be reported")
+	}
+	// No route: a Not moved line under the Never-add list.
+	u, key = radarrAPI(t)
+	s = read(t, api(Radarr, u, key))
+	n, ok := notMoved(BuildPlan([]Input{{1, s}}, Choices{}), "radarr exclusions")
+	if !ok || n.Group != GroupNeverAdd || !strings.Contains(n.Why, "read a backup") {
+		t.Fatalf("missing route %+v %v", n, s.Notes)
+	}
+	// A backup still reads them, with no such line.
+	p := filepath.Join(t.TempDir(), "radarr.db")
+	makeDB(t, p, radarrDB()...)
+	s = read(t, file(Radarr, p))
+	if len(s.Exclusions) != 1 || s.Exclusions[0].IDs["tmdb"] != "680" {
+		t.Fatalf("backup %+v", s.Exclusions)
+	}
+	if _, ok := notMoved(BuildPlan([]Input{{1, s}}, Choices{}), "radarr exclusions"); ok {
+		t.Fatal("a backup read must not report exclusions as missing")
+	}
+}
+
+// TestArrReleaseWords: release word rules are read in each shape (Sonarr 4
+// and 5 through the API, an older Radarr backup with comma text), and
+// Lidarr's format scoring rules are read too.
+func TestArrReleaseWords(t *testing.T) {
+	u, key := sonarrAPIWith(t, false, map[string]any{"/api/v3/releaseprofile": []any{
+		map[string]any{"id": 1, "name": "No HC", "enabled": true, "required": []any{"x265", "hevc"}, "ignored": []any{"HC"}, "indexerId": 0, "tags": []int{}}}})
+	s := read(t, api(Sonarr, u, key))
+	if len(s.ReleaseProfiles) != 1 {
+		t.Fatalf("sonarr 4 %+v", s.ReleaseProfiles)
+	}
+	rw := s.ReleaseProfiles[0].Settings
+	if s.ReleaseProfiles[0].Name != "No HC" || fmt.Sprint(rw["required"]) != "[x265 hevc]" || fmt.Sprint(rw["ignored"]) != "[HC]" || rw["enabled"] != true || rw["indexer_ids"] != nil || rw["tags"] != nil {
+		t.Fatalf("sonarr 4 %+v", rw)
+	}
+	u, key = sonarrAPIWith(t, true, map[string]any{
+		"/api/v3/tag": []any{map[string]any{"id": 1, "label": "anime"}, map[string]any{"id": 2, "label": "kids"}},
+		"/api/v3/releaseprofile": []any{map[string]any{"id": 2, "name": "Anime groups", "enabled": false, "required": []any{"SubsPlease"}, "ignored": []any{},
+			"indexerIds": []int{3}, "tags": []int{1}, "excludedTags": []int{2}}}})
+	s = read(t, api(Sonarr, u, key))
+	rw = s.ReleaseProfiles[0].Settings
+	if fmt.Sprint(rw["tags"]) != "[anime]" || fmt.Sprint(rw["excluded_tags"]) != "[kids]" || fmt.Sprint(rw["indexer_ids"]) != "[3]" || rw["enabled"] != false {
+		t.Fatalf("sonarr 5 %+v", rw)
+	}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	if n, ok := notMoved(p, "sonarr release_profiles[0]"); !ok || n.Group != GroupRules || n.What != "Anime groups: must contain SubsPlease (tags: anime except tags: kids)" || n.Why != "it was turned off there" {
+		t.Fatalf("turned-off rule line %+v", n)
+	}
+
+	db := filepath.Join(t.TempDir(), "radarr.db")
+	makeDB(t, db, append(radarrDB(),
+		`CREATE TABLE ReleaseProfiles (Id INTEGER PRIMARY KEY, Name TEXT, Enabled INTEGER, Required TEXT, Ignored TEXT, Tags TEXT, IndexerId INTEGER)`,
+		`INSERT INTO ReleaseProfiles VALUES (1, NULL, 1, 'x265, hevc', 'cam,ts', '[1]', 2)`)...)
+	s = read(t, file(Radarr, db))
+	rw = s.ReleaseProfiles[0].Settings
+	if fmt.Sprint(rw["required"]) != "[x265 hevc]" || fmt.Sprint(rw["ignored"]) != "[cam ts]" || fmt.Sprint(rw["tags"]) != "[kids]" || fmt.Sprint(rw["indexer_ids"]) != "[2]" {
+		t.Fatalf("radarr backup %+v", rw)
+	}
+	p = BuildPlan([]Input{{1, s}}, Choices{})
+	n, ok := notMoved(p, "radarr release_profiles[0]")
+	if !ok || n.What != "release words: must contain x265, hevc / must not contain cam, ts (tags: kids)" || !strings.Contains(n.Why, "fixed list of traits, not free words") {
+		t.Fatalf("radarr rule line %+v", n)
+	}
+	if n, ok := notMoved(p, "radarr custom_formats[0]"); !ok || n.Why != "format scoring rules do not move; Pick rules score a fixed list of traits" {
+		t.Fatalf("format line %+v", n)
+	}
+
+	key = "S3CR3T_LIDARR"
+	srv := fakeAPI(t, "X-Api-Key", key, map[string]any{
+		"/api/v1/system/status": map[string]any{"appName": "Lidarr", "version": "3.1.0.4875"},
+		"/api/v1/artist":        []any{},
+		"/api/v1/customformat":  []any{map[string]any{"id": 1, "name": "Vinyl", "specifications": []any{}}},
+	})
+	s = read(t, api(Lidarr, srv.URL, key))
+	if len(s.CustomFormats) != 1 || s.CustomFormats[0].Name != "Vinyl" {
+		t.Fatalf("lidarr formats %+v", s.CustomFormats)
+	}
+	if _, ok := notMoved(BuildPlan([]Input{{1, s}}, Choices{}), "lidarr custom_formats[0]"); !ok {
+		t.Fatal("a Lidarr format must be on the not-moved list")
+	}
+}
+
+// TestRadarrAvailabilityDelay: the delay is read from /config/indexer or
+// from a backup's Config table; a backup without it sets nothing.
+func TestRadarrAvailabilityDelay(t *testing.T) {
+	u, key := radarrAPIWith(t, map[string]any{"/api/v3/config/indexer": map[string]any{"id": 1, "availabilityDelay": 400, "maximumSize": 0}})
+	s := read(t, api(Radarr, u, key))
+	if s.Settings["availability_delay"] != int64(400) || len(s.Settings) != 1 {
+		t.Fatalf("api %+v", s.Settings)
+	}
+	p := filepath.Join(t.TempDir(), "radarr.db")
+	makeDB(t, p, append(radarrDB(), `CREATE TABLE Config (Id INTEGER PRIMARY KEY, Key TEXT, Value TEXT)`,
+		`INSERT INTO Config VALUES (1, 'apikey', 'S3CR3T_IN_CONFIG'), (2, 'availabilitydelay', '7')`)...)
+	if s := read(t, file(Radarr, p)); s.Settings["availability_delay"] != int64(7) || len(s.Settings) != 1 {
+		t.Fatalf("backup %+v", s.Settings)
+	}
+	q := filepath.Join(t.TempDir(), "radarr.db")
+	makeDB(t, q, append(radarrDB(), `CREATE TABLE Config (Id INTEGER PRIMARY KEY, Key TEXT, Value TEXT)`, `INSERT INTO Config VALUES (1, 'apikey', 'S3CR3T_IN_CONFIG')`)...)
+	if s := read(t, file(Radarr, q)); s.Settings != nil {
+		t.Fatalf("backup without the key %+v", s.Settings)
+	}
+	r := filepath.Join(t.TempDir(), "radarr.db")
+	makeDB(t, r, radarrDB()...)
+	if s := read(t, file(Radarr, r)); s.Settings != nil {
+		t.Fatalf("backup without Config %+v", s.Settings)
+	}
+}
+
+// TestProwlarrIndexerProxies: proxies are read from the API and from a
+// backup, their secrets named; a moved indexer sharing a proxy's tag says
+// which proxy it used.
+func TestProwlarrIndexerProxies(t *testing.T) {
+	key := "S3CR3T_PROWLARR"
+	srv := fakeAPI(t, "X-Api-Key", key, map[string]any{
+		"/api/v1/system/status": map[string]any{"appName": "Prowlarr", "version": "2.0.5"},
+		"/api/v1/tag":           []any{map[string]any{"id": 1, "label": "flare"}, map[string]any{"id": 2, "label": "socks"}},
+		"/api/v1/indexer": []any{map[string]any{"id": 1, "name": "Feed", "implementation": "Torznab", "protocol": "torrent", "enable": true, "priority": 25, "tags": []int{1},
+			"fields": []any{map[string]any{"name": "baseUrl", "value": "https://feed.example/api"}}}},
+		"/api/v1/indexerproxy": []any{
+			map[string]any{"id": 1, "name": "Flare", "implementation": "FlareSolverr", "tags": []int{1},
+				"fields": []any{map[string]any{"name": "host", "value": "http://flaresolverr:8191/"}, map[string]any{"name": "requestTimeout", "value": 60}}},
+			map[string]any{"id": 2, "name": "Socks", "implementation": "Socks5", "tags": []int{2},
+				"fields": []any{map[string]any{"name": "host", "value": "proxy"}, map[string]any{"name": "port", "value": 1080},
+					map[string]any{"name": "password", "value": "S3CR3T_PROXY", "privacy": "password"}}},
+		},
+	})
+	s := read(t, api(Prowlarr, srv.URL, key))
+	if len(s.IndexerProxies) != 2 || s.IndexerProxies[0].Name != "Flare" || !slices.Equal(s.IndexerProxies[0].Tags, []string{"flare"}) || !hasReentry(s, `indexer proxy "Socks": password`) {
+		t.Fatalf("proxies %+v %v", s.IndexerProxies, s.NeedsReentry)
+	}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	for i := range s.IndexerProxies {
+		if n, ok := notMoved(p, fmt.Sprintf("prowlarr indexer_proxies[%d]", i)); !ok || n.Group != GroupSources || !strings.Contains(n.Why, "one proxy address per Source") {
+			t.Fatalf("proxy %d line %+v", i, n)
+		}
+	}
+	src := item(t, p, GroupSources, "source:feed")
+	if !strings.Contains(src.Detail, "used proxy Flare there; set a proxy on this Source") || strings.Contains(src.Detail, "Socks") || strings.Contains(src.Detail, "only for titles tagged") {
+		t.Fatalf("source detail %q", src.Detail)
+	}
+	if _, ok := notMoved(p, "prowlarr indexers[0].tags"); ok {
+		t.Fatal("Prowlarr indexer tags only pick apps and proxies; no tag line")
+	}
+	if !slices.Contains(p.NeedsInput, `prowlarr: indexer proxy "Socks": password`) {
+		t.Fatalf("proxy secret not asked for: %v", p.NeedsInput)
+	}
+
+	zp := filepath.Join(t.TempDir(), "prowlarr_backup.zip")
+	makeZip(t, zp, map[string][]byte{"prowlarr.db": dbBytes(t,
+		`CREATE TABLE VersionInfo (Version INTEGER)`, `INSERT INTO VersionInfo VALUES (40)`,
+		`CREATE TABLE Tags (Id INTEGER PRIMARY KEY, Label TEXT)`, `INSERT INTO Tags VALUES (1, 'flare')`,
+		`CREATE TABLE Indexers (Id INTEGER PRIMARY KEY, Name TEXT, Implementation TEXT, ConfigContract TEXT, Settings TEXT, Enable INTEGER, Priority INTEGER, Tags TEXT)`,
+		`INSERT INTO Indexers VALUES (1, 'Feed', 'Torznab', 'TorznabSettings', '{"baseUrl":"https://feed.example/api"}', 1, 25, '[1]')`,
+		`CREATE TABLE IndexerProxies (Id INTEGER PRIMARY KEY, Name TEXT, Implementation TEXT, ConfigContract TEXT, Settings TEXT, Tags TEXT)`,
+		`INSERT INTO IndexerProxies VALUES (1, 'Flare', 'FlareSolverr', 'FlareSolverrSettings', '{"host":"http://flaresolverr:8191/","requestTimeout":60}', '[1]')`,
+	)})
+	b := read(t, file(Prowlarr, zp))
+	if len(b.IndexerProxies) != 1 || b.IndexerProxies[0].Name != "Flare" || !slices.Equal(b.IndexerProxies[0].Tags, []string{"flare"}) {
+		t.Fatalf("backup proxies %+v", b.IndexerProxies)
+	}
+	if d := item(t, BuildPlan([]Input{{1, b}}, Choices{}), GroupSources, "source:feed").Detail; !strings.Contains(d, "used proxy Flare there") {
+		t.Fatalf("backup source detail %q", d)
 	}
 }

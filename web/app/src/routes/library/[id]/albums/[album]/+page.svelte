@@ -32,6 +32,8 @@
 	import { NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/reask.ts';
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/types.ts';
+	import ReportSheet from '#lib/reports/ReportSheet.svelte';
+	import { hasFile } from '#lib/reports.ts';
 
 	const titleId = $derived(Number(page.params.id));
 	const albumId = $derived(Number(page.params.album));
@@ -172,6 +174,10 @@
 		{ kind: 'separator' },
 		{ label: 'Delete album', icon: 'trash', destructive: true, onselect: () => deleter?.open({ albumId, label: album?.name ?? 'Album' }) }
 	]);
+	// Report a problem (#95): anyone, once a track of the album has a file; members get it as their only More item.
+	let reportOpen = $state(false);
+	const mayReport = $derived(!!artist && (tracks ?? []).some(hasFile));
+	const moreItems = $derived<MenuItem[]>([...(staff ? heroItems : []), ...(mayReport ? [...(staff ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	function toLibrary() {
 		const h = document.getElementById('h-library');
 		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
@@ -262,10 +268,13 @@
 			{#snippet actions()}
 				{#if staff}
 					<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
-					<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
+					<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
+				{:else if mayReport}
+					<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
 				{/if}
 			{/snippet}
 		</TitleHero>
+		{#if artist && mayReport}<ReportSheet bind:open={reportOpen} title={artist} album={{ id: album.id, name: album.name, tracks: tracks ?? [] }} />{/if}
 
 		<TitleSection id="h-tracks" title="Tracks" primary>
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}

@@ -63,9 +63,10 @@
 	.sm button { min-height: 28px; padding: 0 10px; font-size: 13px; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { button { min-height: 40px; } }
-	/* Phones: every segment is a 44px-tall target, whatever height a page draws it at. */
+	/* Phones: every segment is a 44px-tall target, whatever height a page draws it at
+	   (a page that scales the control down raises --seg-hit to match). */
 	@media (max-width: 767px) and (pointer: coarse) {
 		button { position: relative; }
-		button::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+		button::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: var(--seg-hit, 44px); transform: translateY(-50%); }
 	}
 </style>

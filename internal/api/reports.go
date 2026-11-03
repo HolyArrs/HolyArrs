@@ -1,0 +1,167 @@
+package api
+
+import (
+	"errors"
+	"net/http"
+	"slices"
+	"strconv"
+
+	"github.com/CoderLuii/holyarrs/internal/asks"
+	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// Reports (#95): anyone signed in reports a problem with a title in the
+// Library; the owner and admins (manage_library) see every report and mark
+// it fixed or open it again; everyone else sees only their own.
+func (a *API) reportRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/reports", a.listReports)
+	m.HandleFunc("POST /api/v1/reports", a.makeReport)
+	m.HandleFunc("POST /api/v1/reports/{id}/fix", a.fixReport)
+	m.HandleFunc("POST /api/v1/reports/{id}/reopen", a.reopenReport)
+}
+
+// mayManageReports says whether the signed-in person sees and closes every
+// report (manage_library; everyone without sign-in in tests).
+func mayManageReports(r *http.Request) bool {
+	who, ok := auth.From(r.Context())
+	return !ok || who.Has(auth.PermManageLibrary)
+}
+
+func reportError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, asks.ErrReportKind), errors.Is(err, asks.ErrReportPart), errors.Is(err, asks.ErrNoteLength):
+		fail(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, asks.ErrNotInLibrary):
+		fail(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, asks.ErrReportedAlready), errors.Is(err, asks.ErrReportFixed), errors.Is(err, asks.ErrReportOpen):
+		fail(w, http.StatusConflict, err.Error())
+	case errors.Is(err, asks.ErrTooManyReports):
+		fail(w, http.StatusTooManyRequests, err.Error())
+	case errors.Is(err, store.ErrNotFound):
+		fail(w, http.StatusNotFound, "no such report")
+	default:
+		internal(w, err)
+	}
+}
+
+// reportLinks turns the stored poster into a link and marks the reader's own.
+func (a *API) reportLinks(r *http.Request, vs []asks.ReportView) []asks.ReportView {
+	me := a.person(r).UserID
+	for i := range vs {
+		if vs[i].Poster != "" {
+			vs[i].Poster = artworkLinks([]string{vs[i].Poster})[0]
+		}
+		vs[i].Mine = vs[i].MadeBy != nil && vs[i].MadeBy.ID == me
+	}
+	return vs
+}
+
+// listReports lists every report for managers, else the person's own.
+// ?state=open|fixed, ?title_id=<id> and ?mine=1 narrow the list.
+func (a *API) listReports(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	state := q.Get("state")
+	if state != "" && state != domain.ReportOpen && state != domain.ReportFixed {
+		fail(w, http.StatusBadRequest, "state must be open or fixed")
+		return
+	}
+	var titleID int64
+	if s := q.Get("title_id"); s != "" {
+		id, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			fail(w, http.StatusBadRequest, "title_id must be a number")
+			return
+		}
+		titleID = id
+	}
+	all := mayManageReports(r) && q.Get("mine") != "1"
+	vs, err := a.s.Asks.ListReports(r.Context(), a.person(r), all, state, titleID, limit(r, 200))
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	// A title above the reader's Kid limit stays hidden, even their own
+	// report of it after the limit was lowered.
+	vs = slices.DeleteFunc(vs, func(v asks.ReportView) bool { return !ratings.Allows(a.kidMax(r), v.TitleKind, v.Rating) })
+	out := map[string]any{"reports": a.reportLinks(r, vs)}
+	if mayManageReports(r) {
+		n, _ := asks.OpenReports(r.Context(), a.s.Store.Read())
+		out["open"] = n
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+const reportHelp = `send {"title_id": <Library title id>, "kind": "picture|sound|subtitles|wont_play|other", "note": "..."}; "season", "item_id" (an episode or track), "album_id" and "version_id" narrow it`
+
+func (a *API) makeReport(w http.ResponseWriter, r *http.Request) {
+	var in asks.ReportInput
+	if !decode(w, r, &in, reportHelp) {
+		return
+	}
+	// The same title check as GET /titles/{id}: no such title and a title
+	// above a Kid's limit answer alike, and a title of a part that is off waits.
+	var t domain.Title
+	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", in.TitleID, &t); err != nil || !a.titleAllowed(r, t) {
+		if err != nil && !errors.Is(err, store.ErrNotFound) {
+			internal(w, err)
+			return
+		}
+		fail(w, http.StatusNotFound, "no such Title")
+		return
+	}
+	if p, known := parts.ForTitleKind(t.Kind); known && !a.partIsOn(p) {
+		writeJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
+		return
+	}
+	v, err := a.s.Asks.Report(r.Context(), a.person(r), in)
+	if err != nil {
+		reportError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"report": a.reportLinks(r, []asks.ReportView{v})[0]})
+}
+
+func reportID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, "no such report")
+		return 0, false
+	}
+	return id, true
+}
+
+func (a *API) fixReport(w http.ResponseWriter, r *http.Request) {
+	id, ok := reportID(w, r)
+	if !ok {
+		return
+	}
+	var body struct {
+		Reply string `json:"reply"`
+	}
+	if r.ContentLength != 0 && !decode(w, r, &body, `send {} or {"reply": "what was done"}`) {
+		return
+	}
+	v, err := a.s.Asks.FixReport(r.Context(), a.person(r), id, body.Reply)
+	if err != nil {
+		reportError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []asks.ReportView{v})[0]})
+}
+
+func (a *API) reopenReport(w http.ResponseWriter, r *http.Request) {
+	id, ok := reportID(w, r)
+	if !ok {
+		return
+	}
+	v, err := a.s.Asks.ReopenReport(r.Context(), a.person(r), id)
+	if err != nil {
+		reportError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []asks.ReportView{v})[0]})
+}
