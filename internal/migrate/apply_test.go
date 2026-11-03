@@ -556,7 +556,7 @@ func TestMoveOutsideLists(t *testing.T) {
 	}
 	dry := l.mv.Run(ctx, 0, l.plan(t), true, by, nil)
 	for _, k := range []string{"outside_list:tmdb_list:8136", "outside_list:trakt_list:sean/watchlist"} {
-		if got := lineOf(t, dry, k); got.Result != ResCreate || !strings.Contains(got.Detail, "paused until you check it and turn it on") {
+		if got := lineOf(t, dry, k); got.Result != ResCreate || !strings.Contains(got.Detail, "paused until you check it and turn it on") || !strings.Contains(got.Detail, " list ") {
 			t.Fatalf("dry run %s %+v", k, got)
 		}
 	}

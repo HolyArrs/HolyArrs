@@ -842,7 +842,7 @@ func (r *run) outsideList(it Item) (string, string) {
 		return ResAlready, "an Outside list for this list is here"
 	}
 	lib := filepath.Clean(filepath.FromSlash(o.Library))
-	what := o.Ref + " into " + o.Library + ", paused until you check it and turn it on"
+	what := map[string]string{lists.KindTMDB: "TMDB list ", lists.KindTrakt: "Trakt list "}[o.Kind] + o.Ref + " into " + o.Library + ", paused until you check it and turn it on"
 	if r.dry {
 		if r.id("SELECT id FROM library_folders WHERE path = ?", lib) == 0 && !isDir(lib) {
 			return ResNotFound, "no folder at " + o.Library + " on this server; add a path rule"
