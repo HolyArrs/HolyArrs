@@ -49,13 +49,22 @@ while ($true) {
 }
 
 "e2e lock: held by $Who"
+# The command runs as its own process with its output in a log file, so a
+# caller piping or redirecting this script can never break the run, and its
+# stderr lines are never turned into errors here.
+$logDir = Join-Path $state 'e2e-logs'
+New-Item -ItemType Directory -Force $logDir | Out-Null
+$log = Join-Path $logDir ("{0}-{1}.log" -f ($Who -replace '[^\w.-]', '_'), (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$code = 1
 try {
   # Encoded, so quotes inside the command reach the child shell unchanged.
-  & powershell -NoProfile -EncodedCommand ([Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command)))
-  $code = $LASTEXITCODE
+  $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes("& { $Command } *>&1 | Out-File -FilePath '$log' -Encoding utf8; exit `$LASTEXITCODE"))
+  $p = Start-Process -FilePath powershell -ArgumentList '-NoProfile', '-EncodedCommand', $enc -WorkingDirectory (Get-Location).Path -NoNewWindow -PassThru -Wait
+  $code = $p.ExitCode
 } finally {
   $h = Read-Holder
   if ($h -and $h.Pid -eq $PID) { Remove-Item -Recurse -Force $lock -ErrorAction SilentlyContinue }
-  "e2e lock: released"
 }
+if (Test-Path $log) { Get-Content $log -Tail 40 | ForEach-Object { "  $_" } }
+"e2e lock: released; exit $code; full log $log"
 exit $code
