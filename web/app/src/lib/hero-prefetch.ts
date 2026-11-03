@@ -7,6 +7,7 @@
 import { appPicture, coverFor } from './music/music-pages.ts';
 import { pictureFor } from './pictures.ts';
 import { remembered, type DetailKind } from './title-details.ts';
+import { proxied } from './tmdb-image.ts';
 
 const album = /\/music\/album\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;
 const artist = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;
@@ -29,7 +30,7 @@ function warm(url: string): void {
 	asked.add(url);
 	const im = new Image();
 	im.decoding = 'async';
-	im.src = url;
+	im.src = proxied(url);
 }
 
 /** heroAhead preloads the hero behind a link: music pictures here, a

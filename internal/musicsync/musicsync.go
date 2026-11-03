@@ -60,10 +60,6 @@ type artistEntry struct {
 	pics metadata.ArtistPictures
 }
 
-type albumEntry struct {
-	artist string
-	cover  *metadata.PictureRecord
-}
 
 // Stats describe the local copy.
 type Stats struct {
@@ -89,8 +85,12 @@ type Sync struct {
 	OnSynced func(ctx context.Context)
 
 	mu      sync.RWMutex
+	// artists is the covered artists, kept in memory (about 20k, read on
+	// every artist check). Albums are not: their half a million rows stay in
+	// music_package_albums and are read by key (album), which keeps about
+	// 110 MB out of memory.
 	artists map[string]artistEntry
-	albums  map[string]albumEntry
+	albums  int // how many albums are listed (for Stats)
 	loaded  bool
 	// synced is true once a whole copy reached the server's latest: only
 	// then is an artist missing here really not covered.
@@ -106,10 +106,9 @@ type Sync struct {
 	wants  chan string
 }
 
-// Load reads the index (artists, albums, picture records) from disk.
+// Load reads the artist index and picture records from disk.
 func (s *Sync) Load(ctx context.Context) error {
 	arts := map[string]artistEntry{}
-	albs := map[string]albumEntry{}
 	db := s.Store.Read()
 	rows, err := db.QueryContext(ctx, "SELECT mbid, rank, pictures FROM music_packages")
 	if err != nil {
@@ -130,29 +129,7 @@ func (s *Sync) Load(ctx context.Context) error {
 	if err := rows.Err(); err != nil {
 		return err
 	}
-	rows, err = db.QueryContext(ctx, "SELECT rg, artist, cover FROM music_package_albums")
-	if err != nil {
-		return err
-	}
-	for rows.Next() {
-		var rg, artist, cover string
-		if err := rows.Scan(&rg, &artist, &cover); err != nil {
-			rows.Close()
-			return err
-		}
-		e := albumEntry{artist: artist}
-		if cover != "" {
-			var c metadata.PictureRecord
-			if json.Unmarshal([]byte(cover), &c) == nil {
-				e.cover = &c
-			}
-		}
-		albs[rg] = e
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return err
-	}
+	albs := s.albumCount(ctx)
 	var cursor int64
 	var at string
 	_ = db.QueryRowContext(ctx, "SELECT cursor, synced_at FROM music_package_sync WHERE id = 1").Scan(&cursor, &at)
@@ -162,7 +139,7 @@ func (s *Sync) Load(ctx context.Context) error {
 	s.artists, s.albums, s.loaded = arts, albs, true
 	// A copy made before (cursor past 0) answers coverage until this one ends.
 	s.synced = s.synced || cursor > 0
-	s.stats.Packages, s.stats.Albums, s.stats.Bytes, s.stats.Cursor = len(arts), len(albs), size, cursor
+	s.stats.Packages, s.stats.Albums, s.stats.Bytes, s.stats.Cursor = len(arts), albs, size, cursor
 	if t, err := time.Parse(store.TimeLayout, at); err == nil {
 		s.stats.LastSync = t
 	}
@@ -247,10 +224,12 @@ func (s *Sync) SyncOnce(ctx context.Context) (int, error) {
 func (s *Sync) finish(start time.Time, cursor int64, changed int, whole bool) {
 	var size int64
 	_ = s.Store.Read().QueryRow("SELECT coalesce(sum(length(body)), 0) FROM music_packages").Scan(&size)
+	albs := s.albumCount(context.Background())
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.synced = s.synced || whole
-	s.stats.Packages, s.stats.Albums, s.stats.Bytes, s.stats.Cursor = len(s.artists), len(s.albums), size, cursor
+	s.albums = albs
+	s.stats.Packages, s.stats.Albums, s.stats.Bytes, s.stats.Cursor = len(s.artists), albs, size, cursor
 	s.stats.LastSync, s.stats.Took, s.stats.Changed = time.Now().UTC(), time.Since(start), changed
 }
 
@@ -308,14 +287,11 @@ func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) ([]*met
 	}
 	out := make([]*metadata.MusicPackage, 0, len(rows))
 	s.mu.Lock()
-	if s.artists == nil || s.albums == nil {
-		s.artists, s.albums = map[string]artistEntry{}, map[string]albumEntry{}
+	if s.artists == nil {
+		s.artists = map[string]artistEntry{}
 	}
 	for _, r := range rows {
 		s.artists[r.p.MBID] = artistEntry{rank: r.p.Rank, pics: artistPictures(r.p)}
-		for _, g := range r.p.ReleaseGroups {
-			s.albums[strings.ToLower(g.ID)] = albumEntry{artist: r.p.MBID, cover: g.Cover}
-		}
 		out = append(out, r.p)
 	}
 	s.mu.Unlock()
@@ -455,11 +431,32 @@ func (s *Sync) Covers(mbid string) bool {
 	return ok
 }
 
+// album reads one listed album (its artist and cover) by key. A read error
+// counts as not listed, like a miss, so callers fall back to the live path.
+func (s *Sync) album(ctx context.Context, rg string) (artist string, cover *metadata.PictureRecord, ok bool) {
+	var raw string
+	if err := s.Store.Read().QueryRowContext(ctx, "SELECT artist, cover FROM music_package_albums WHERE rg = ?", strings.ToLower(rg)).Scan(&artist, &raw); err != nil {
+		return "", nil, false
+	}
+	if raw != "" {
+		var c metadata.PictureRecord
+		if json.Unmarshal([]byte(raw), &c) == nil {
+			cover = &c
+		}
+	}
+	return artist, cover, true
+}
+
+// albumCount is how many albums the packages list.
+func (s *Sync) albumCount(ctx context.Context) int {
+	var n int
+	_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM music_package_albums").Scan(&n)
+	return n
+}
+
 // HasAlbum says a package lists the release group.
 func (s *Sync) HasAlbum(rg string) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	_, ok := s.albums[strings.ToLower(rg)]
+	_, _, ok := s.album(context.Background(), rg)
 	return ok
 }
 
@@ -473,10 +470,8 @@ func (s *Sync) ArtistPictures(mbid string) (metadata.ArtistPictures, bool) {
 
 // AlbumCover answers a listed album's cover record (nil when none stored).
 func (s *Sync) AlbumCover(rg string) (*metadata.PictureRecord, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	e, ok := s.albums[strings.ToLower(rg)]
-	return e.cover, ok
+	_, cover, ok := s.album(context.Background(), rg)
+	return cover, ok
 }
 
 // LocalArtist answers metadata.LocalMusic.
@@ -504,13 +499,11 @@ func (s *Sync) LocalArtist(ctx context.Context, mbid string) (metadata.Artist, b
 
 // LocalPressings answers metadata.LocalMusic.
 func (s *Sync) LocalPressings(ctx context.Context, rg string) ([]metadata.Pressing, bool, error) {
-	s.mu.RLock()
-	e, ok := s.albums[strings.ToLower(rg)]
-	s.mu.RUnlock()
+	artist, _, ok := s.album(ctx, rg)
 	if !ok {
 		return nil, false, nil
 	}
-	p, ok := s.Package(ctx, e.artist)
+	p, ok := s.Package(ctx, artist)
 	if !ok {
 		return nil, false, nil
 	}
@@ -518,11 +511,9 @@ func (s *Sync) LocalPressings(ctx context.Context, rg string) ([]metadata.Pressi
 }
 
 // LocalAlbumArtist answers metadata.LocalMusic.
-func (s *Sync) LocalAlbumArtist(_ context.Context, rg string) (string, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	e, ok := s.albums[strings.ToLower(rg)]
-	return e.artist, ok
+func (s *Sync) LocalAlbumArtist(ctx context.Context, rg string) (string, bool) {
+	artist, _, ok := s.album(ctx, rg)
+	return artist, ok
 }
 
 // Uncovered answers metadata.LocalMusic: once the copy is whole, an artist

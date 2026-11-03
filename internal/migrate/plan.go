@@ -263,7 +263,7 @@ type SourcePlan struct {
 
 // DownloaderPlan is a Downloader to add.
 type DownloaderPlan struct {
-	Adapter    string `json:"kind"` // qbittorrent, sabnzbd
+	Adapter    string `json:"kind"` // qbittorrent, transmission, deluge, sabnzbd, nzbget
 	URL        string `json:"url"`
 	Username   string `json:"username,omitempty"`
 	Category   string `json:"category,omitempty"`
@@ -1560,14 +1560,12 @@ func (b *builder) downloaders(s *Snapshot) {
 	for i, d := range s.DownloadClients {
 		from := b.from("download_clients", i)
 		var adapter string
-		switch strings.ToLower(d.Kind) {
-		case "qbittorrent":
-			adapter = "qbittorrent"
-		case "sabnzbd":
-			adapter = "sabnzbd"
+		switch k := strings.ToLower(d.Kind); k {
+		case "qbittorrent", "sabnzbd", "transmission", "deluge", "nzbget":
+			adapter = k
 		}
 		if adapter == "" {
-			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent and SABnzbd only")
+			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent, Transmission, Deluge, SABnzbd and NZBGet only")
 			continue
 		}
 		port, _ := setNum(d.Settings, "port")

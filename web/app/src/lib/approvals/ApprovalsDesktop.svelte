@@ -462,7 +462,7 @@
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page for {a.name}" title="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page"><Icon name="arrowUpRight" size={16} /></a>{/if}
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
-						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${a.poster}")`}></span>{/if}
+						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></span>{/if}
 					</div>
 					<div class="top">
 						<div class="ban-cap"><h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title="Asked for a 4K copy, approved on its own">4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { proxied } from '#lib/tmdb-image.ts';
 	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { glide } from '#lib/ui/transitions.ts';
@@ -635,7 +636,7 @@
 			<ul class="asks" aria-label="Requests">
 				{#each shown as a, i (a.id)}
 					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask" data-ask-id={a.id}>
-						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${a.poster}")`}></div>{/if}
+						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></div>{/if}
 						{#if choosable}
 							<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={chosen.has(a.id)} onchange={() => toggleChosen(a.id)} />
 						{/if}

@@ -304,8 +304,18 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 
 	// Undo removes what the first move made, never the file.
 	ctx := context.Background()
-	if u := l.undo(t, mv.ID); u.State != "undone" {
+	u := l.undo(t, mv.ID)
+	if u.State != "undone" {
 		t.Fatalf("undo %+v", u)
+	}
+	// Undo lines carry the names and groups the move gave them, not raw keys.
+	if u.Report == nil || len(u.Report.Lines) == 0 {
+		t.Fatal("undo report has no lines")
+	}
+	for _, ln := range u.Report.Lines {
+		if ln.Name == ln.Key || strings.Contains(ln.Name, ":") && strings.HasPrefix(ln.Name, ln.Group) {
+			t.Errorf("undo line shows its key: %+v", ln)
+		}
 	}
 	if _, err := os.Stat(l.file); err != nil {
 		t.Fatalf("undo touched the media file: %v", err)
@@ -556,7 +566,7 @@ func TestMoveOutsideLists(t *testing.T) {
 	}
 	dry := l.mv.Run(ctx, 0, l.plan(t), true, by, nil)
 	for _, k := range []string{"outside_list:tmdb_list:8136", "outside_list:trakt_list:sean/watchlist"} {
-		if got := lineOf(t, dry, k); got.Result != ResCreate || !strings.Contains(got.Detail, "paused until you check it and turn it on") {
+		if got := lineOf(t, dry, k); got.Result != ResCreate || !strings.Contains(got.Detail, "paused until you check it and turn it on") || !strings.Contains(got.Detail, " list ") {
 			t.Fatalf("dry run %s %+v", k, got)
 		}
 	}

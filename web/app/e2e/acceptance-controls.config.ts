@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const port = process.env.HOLYARRS_E2E_PORT ?? '18734';
+// server.mjs listens on HOLYARRS_E2E_PORT (its own default is 18741): hand it
+// this config's port, or the webServer wait below never sees it start.
+process.env.HOLYARRS_E2E_PORT = port;
 
 export default defineConfig({
 	testDir: '.',
