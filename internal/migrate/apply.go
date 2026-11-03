@@ -1321,7 +1321,7 @@ func (r *run) downloader(it Item) (string, string) {
 		return ResCreate, what
 	}
 	proto := "torrent"
-	if d.Adapter == "sabnzbd" {
+	if d.Adapter == "sabnzbd" || d.Adapter == "nzbget" {
 		proto = "usenet"
 	}
 	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
