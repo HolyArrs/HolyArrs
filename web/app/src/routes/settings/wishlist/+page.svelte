@@ -22,7 +22,8 @@
 		show_library_folder_id: 0,
 		show_pick_rules_id: 0,
 		music_library_folder_id: 0,
-		music_pick_rules_id: 0
+		music_pick_rules_id: 0,
+		plex_watchlists: false
 	});
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
@@ -177,6 +178,12 @@
 					</select>
 				</Field>
 			{/snippet}
+		</SettingsCard>
+		<SettingsCard id="plex-watchlists" title="Plex watchlists" description="New titles on a person's Plex watchlist become their asks.">
+			<label class="checkline">
+				<input id="plex-watchlists-on" type="checkbox" bind:checked={settings.plex_watchlists} />
+				<span><b>Ask from Plex watchlists</b><br /><span class="hint">Each person with a linked Plex account turns it on for themselves in My account. Their weekly limits, auto-approve and age-rating limits apply as for any ask. HolyArrs reads the newest 20 entries every few minutes.</span></span>
+			</label>
 		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>

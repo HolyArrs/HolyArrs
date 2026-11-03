@@ -42,6 +42,7 @@ export default defineConfig({
 		{ name: 'musicplaceholder', testMatch: 'music-placeholder.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'phone', testMatch: 'phone.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['desktop'] },
 		{ name: 'accounts', testMatch: 'accounts.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
+		{ name: 'plexwatchlist', testMatch: 'plex-watchlist.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'a11y', testMatch: 'a11y.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'movies', testMatch: 'movies.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'lists', testMatch: 'lists.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },

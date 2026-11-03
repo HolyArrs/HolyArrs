@@ -388,7 +388,7 @@ export interface Ask {
 	title_id?: number;
 	asked_by: Who;
 	asked_at: string;
-	people: (Who & { asked_at: string })[];
+	people: (Who & { asked_at: string; from_watchlist?: boolean })[];
 	decided_by?: Who;
 	decided_at?: string;
 	note?: string;
@@ -438,6 +438,8 @@ export interface AskSettings {
 	show_pick_rules_id: number;
 	music_library_folder_id: number;
 	music_pick_rules_id: number;
+	/** People may have their Plex watchlist asked for as them. */
+	plex_watchlists?: boolean;
 }
 
 export interface AppMessage {

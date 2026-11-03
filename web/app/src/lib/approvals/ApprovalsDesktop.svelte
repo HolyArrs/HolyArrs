@@ -23,6 +23,7 @@
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../requests.ts';
 	import { askedFor } from './asked-for.ts';
+	import { watchlistLine } from '../account/watchlist.ts';
 	import type { Ask } from '../types.ts';
 
 	let { ctx }: { ctx: ApprovalsCtx } = $props();
@@ -474,7 +475,7 @@
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time></span></span></span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist"> · from Plex watchlist</span>{/if}</span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}

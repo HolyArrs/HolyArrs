@@ -44,6 +44,9 @@ type Settings struct {
 	// defaults).
 	MusicLibraryFolderID int64 `json:"music_library_folder_id"`
 	MusicPickRulesID     int64 `json:"music_pick_rules_id"`
+	// PlexWatchlists lets people have their Plex watchlist asked for as
+	// them (each turns it on for themselves; off by default).
+	PlexWatchlists bool `json:"plex_watchlists"`
 }
 
 // PerWeekOf is the default weekly limit for one kind.
@@ -58,7 +61,7 @@ func (s Settings) PerWeekOf(kind string) int {
 }
 
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
-	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week"}
+	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists"}
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
@@ -98,6 +101,8 @@ func ReadSettings(ctx context.Context, db store.Lister) (Settings, error) {
 			s.MusicLibraryFolderID = n
 		case "ask_music_pick_rules_id":
 			s.MusicPickRulesID = n
+		case "ask_plex_watchlists":
+			s.PlexWatchlists = v == "true"
 		}
 	}
 	return s, rows.Err()
@@ -161,7 +166,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 		now := store.FormatTime(time.Now())
 		vals := []string{strconv.Itoa(s.MoviesPerWeek), strconv.FormatInt(s.LibraryFolderID, 10), strconv.FormatInt(s.PickRulesID, 10), strconv.FormatBool(s.SearchOnApprove),
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
-			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek)}
+			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists)}
 		for i, k := range settingKeys {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,

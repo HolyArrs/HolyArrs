@@ -597,15 +597,56 @@ export function startFakes() {
 	trakt.listen(traktPort, '127.0.0.1');
 	let nextPin = 100;
 	const confirmed = new Set();
+	// PUT /lab/plex-user names who the next pin signs in as (default plexkid),
+	// so two Plex accounts can be told apart.
+	/** @type {Map<string, { id: number, username: string, email?: string }>} */
+	const plexUsers = new Map();
+	/** @type {{ id: number, username: string, email?: string } | null} */
+	let nextPlexUser = null;
+	// Plex's discover service (/discover/...): each token's watchlist, set by
+	// PUT /lab/watchlist {token, items}; token "*" is every known token's.
+	/** @type {Map<string, unknown[]>} */
+	const plexWatchlists = new Map();
 	let plexMovieRoot = '';
 	/** @type {{ section: string, path: string }[]} */
 	const plexScans = [];
 	const plex = createServer(async (req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
-		if (req.method === 'POST' && url.pathname === '/api/v2/pins') return send(res, 201, { id: ++nextPin, code: `CODE${nextPin}` });
+		if (req.method === 'POST' && url.pathname === '/api/v2/pins') {
+			++nextPin;
+			if (nextPlexUser) plexUsers.set(`ptok${nextPin}`, nextPlexUser);
+			nextPlexUser = null;
+			return send(res, 201, { id: nextPin, code: `CODE${nextPin}` });
+		}
+		if (req.method === 'PUT' && url.pathname === '/lab/plex-user') {
+			nextPlexUser = JSON.parse((await body(req)) || 'null');
+			return send(res, 204, '');
+		}
+		if (req.method === 'PUT' && url.pathname === '/lab/watchlist') {
+			const b = JSON.parse((await body(req)) || '{}');
+			plexWatchlists.set(String(b.token ?? '*'), Array.isArray(b.items) ? b.items : []);
+			return send(res, 204, '');
+		}
+		if (url.pathname.startsWith('/discover/')) {
+			const tok = String(req.headers['x-plex-token'] ?? '');
+			if (!/^ptok\d+$/.test(tok) || req.headers.accept !== 'application/json') return send(res, 401, '', 'text/plain');
+			const items = /** @type {{ ratingKey?: unknown }[]} */ (plexWatchlists.get(tok) ?? plexWatchlists.get('*') ?? []);
+			if (req.method === 'GET' && url.pathname === '/discover/library/sections/watchlist/all') {
+				const list = items.slice(Number(url.searchParams.get('X-Plex-Container-Start') ?? 0), Number(url.searchParams.get('X-Plex-Container-Size') ?? 20));
+				return send(res, 200, { MediaContainer: { size: list.length, totalSize: items.length, Metadata: list } });
+			}
+			const one = url.pathname.match(/^\/discover\/library\/metadata\/([^/]+)$/);
+			if (req.method === 'GET' && one) {
+				const list = items.filter((m) => String(m.ratingKey) === decodeURIComponent(one[1]));
+				return send(res, 200, { MediaContainer: { size: list.length, Metadata: list } });
+			}
+		}
 		const pin = url.pathname.match(/^\/api\/v2\/pins\/(\d+)$/);
 		if (req.method === 'GET' && pin) return send(res, 200, { id: Number(pin[1]), authToken: confirmed.has(pin[1]) ? `ptok${pin[1]}` : null });
-		if (req.method === 'GET' && url.pathname === '/api/v2/user') return send(res, 200, { id: 9001, uuid: 'u', username: 'plexkid', email: 'kid@example.test' });
+		if (req.method === 'GET' && url.pathname === '/api/v2/user') {
+			const u = plexUsers.get(String(req.headers['x-plex-token'] ?? '')) ?? { id: 9001, username: 'plexkid', email: 'kid@example.test' };
+			return send(res, 200, { uuid: 'u', email: '', ...u });
+		}
 		if (req.method === 'GET' && url.pathname === '/api/v2/resources') return send(res, 200, [{ clientIdentifier: 'fake-server', provides: 'server' }]);
 		// The page the person sees on "Plex": opening it confirms the pin.
 		if (req.method === 'GET' && url.pathname === '/app/auth') {

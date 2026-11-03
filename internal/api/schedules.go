@@ -39,6 +39,7 @@ var scheduleInfos = map[string]scheduleInfo{
 	"artist_pictures":       {"Find artist pictures", "Fills missing artist photos, wide backgrounds and logos from the HolyArrs metadata server.", schHour, 7 * schDay, schHour, ""},
 	"check_library_folders": {"Check Library folders", "Checks that every Library folder can be read and written.", schHour, schDay, schHour, ""},
 	"sync_outside_lists":    {"Read Outside lists", "Adds what TMDB and Trakt lists hold now.", 15 * schMinute, schDay, 5 * schMinute, ""},
+	"sync_plex_watchlists":  {"Read Plex watchlists", "Asks for what is new on the Plex watchlists of people who turned it on.", 3 * schMinute, schHour, schMinute, "/settings/wishlist"},
 	"feed_check":            {"Feed check", "Reads the newest Releases of every Source with a feed.", 10 * schMinute, 120 * schMinute, schMinute, "/settings/search"},
 	"grab_held":             {"Try Held releases again", "Sends Held releases whose wait is over.", schMinute, schHour, schMinute, ""},
 	"search_missing":        {"Search for missing", "Searches the Sources for missing titles, a few at a time.", 6 * schHour, 7 * schDay, schHour, "/settings/search"},

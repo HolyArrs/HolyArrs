@@ -118,6 +118,8 @@ type Server struct {
 	Alerts *alerts.Sender
 	// Asks runs Requests; New makes one when nil.
 	Asks *asks.Service
+	// Watchlists reads Plex watchlists (nil: no person can be read).
+	Watchlists *asks.Watchlists
 	// Downloads follows Downloaders and Downloads; made on first use when nil.
 	Downloads *downloader.Manager
 	// Search runs searches, hand choices and the Held and Turned down
@@ -443,6 +445,7 @@ func (a *API) Handler() http.Handler {
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
+	a.watchlistRoutes(m)
 	a.reportRoutes(m)
 	a.askedByRoutes(m)
 	a.profileRoutes(m)

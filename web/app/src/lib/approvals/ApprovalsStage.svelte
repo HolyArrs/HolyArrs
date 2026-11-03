@@ -31,6 +31,7 @@
 	import { askTab } from '../requests.ts';
 	import { askHref } from './approvals.ts';
 	import { askedFor } from './asked-for.ts';
+	import { watchlistLine } from '../account/watchlist.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import type { Ask } from '../types.ts';
 
@@ -277,7 +278,7 @@
 					{#snippet meta()}
 						<p class="facts"><span>{kindOf(picked)}</span>{#if picked.four_k}<span>4K copy</span>{/if}{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
 						{#each [ctx.who(picked)] as w (w.id)}
-							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> asked <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time></span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
+							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> asked <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time>{#if watchlistLine(picked.people, undefined)}{' '}from a Plex watchlist{/if}</span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
 						{/each}
 						{#if picked.note}<p class="said">&ldquo;{picked.note}&rdquo;</p>{/if}
 					{/snippet}

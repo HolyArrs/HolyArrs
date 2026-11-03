@@ -22,6 +22,7 @@
 	import { autoplayPref, setAutoplayPref, type AutoplayPref } from './trailer.ts';
 	import { profile, loadProfile, saveDisplayName } from './account/profile.svelte.ts';
 	import { displayNameError, roleWord, shownName } from './account/profile.ts';
+	import { showWatchlistCard, watchlistStateWord, type PlexWatchlist } from './account/watchlist.ts';
 
 	// Display name: edited inline; Save is on once it differs.
 	let nameDraft = $state('');
@@ -76,6 +77,34 @@
 			resetBusy = false;
 		}
 	}
+	// Plex watchlist: new entries are asked for as me (when the owner allows it).
+	let watch = $state<PlexWatchlist | null>(null);
+	let watchBusy = $state(false);
+	async function setWatch(kind: 'movies' | 'shows', on: boolean) {
+		if (!watch) return;
+		watchBusy = true;
+		try {
+			watch = await api.put<PlexWatchlist>('/my/plex-watchlist', { movies: watch.movies, shows: watch.shows, [kind]: on });
+			toasts.push(on ? 'HolyArrs reads your Plex watchlist now and every few minutes.' : 'Saved.', 'ok');
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+			watch = await api.get<PlexWatchlist>('/my/plex-watchlist').catch(() => watch);
+		} finally {
+			watchBusy = false;
+		}
+	}
+	async function checkWatch() {
+		watchBusy = true;
+		try {
+			await api.post('/my/plex-watchlist/check', {});
+			toasts.push('Reading your Plex watchlist now.', 'ok');
+			setTimeout(() => void api.get<PlexWatchlist>('/my/plex-watchlist').then((r) => (watch = r)).catch(() => {}), 4000);
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			watchBusy = false;
+		}
+	}
 	let savedTargets = $state('');
 	const alertsDirty = $derived(savedTargets !== '' && JSON.stringify(targets) !== savedTargets);
 	let tgBusy = $state(false);
@@ -92,6 +121,10 @@
 				targets = r;
 				savedTargets = JSON.stringify(r);
 			})
+			.catch(() => {});
+		api
+			.get<PlexWatchlist>('/my/plex-watchlist')
+			.then((r) => (watch = r))
 			.catch(() => {});
 		api
 			.get<{ follows: Followed[] }>('/my/follows')
@@ -643,6 +676,52 @@
 	</div>
 </SettingsCard>
 
+{#if showWatchlistCard(watch) && watch}
+	<SettingsCard id="watchlist-me" title="Plex watchlist" description="Titles you add to your Plex watchlist are asked for as you." icon="requests">
+		{#if !watch.can_read}
+			<p class="hint" data-testid="watchlist-cannot-read">HolyArrs has no Plex sign-in saved for you yet, so your watchlist can’t be read.</p>
+		{/if}
+		<div class="srow">
+			<div class="txt"><span class="label">Movies</span><span class="hint">Asked like any of your asks; your weekly limit applies.</span></div>
+			<div class="ctl">
+				<label class="switch">
+					<input type="checkbox" checked={watch.movies} disabled={watchBusy || (!watch.can_read && !watch.movies)} onchange={(e) => setWatch('movies', e.currentTarget.checked)} data-testid="watchlist-movies" />
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">Ask for movies on my Plex watchlist</span>
+				</label>
+			</div>
+		</div>
+		<div class="srow">
+			<div class="txt"><span class="label">Shows</span><span class="hint">The whole show is asked for.</span></div>
+			<div class="ctl">
+				<label class="switch">
+					<input type="checkbox" checked={watch.shows} disabled={watchBusy || (!watch.can_read && !watch.shows)} onchange={(e) => setWatch('shows', e.currentTarget.checked)} data-testid="watchlist-shows" />
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">Ask for shows on my Plex watchlist</span>
+				</label>
+			</div>
+		</div>
+		{#if watch.movies || watch.shows}
+			<div class="srow">
+				<div class="txt">
+					<span class="label">Last read</span>
+					<span class="hint">{#if watch.checked_at}<time datetime={watch.checked_at}>{new Date(watch.checked_at).toLocaleString()}</time>{:else}Not yet{/if}{#if watch.plex_name}{' '}· Plex: {watch.plex_name}{/if}</span>
+				</div>
+				<div class="ctl"><Button variant="secondary" disabled={watchBusy || !watch.can_read} onclick={checkWatch}>Read now</Button></div>
+			</div>
+			{#if watch.error}<p class="form-error" role="alert" data-testid="watchlist-error">{watch.error}</p>{/if}
+		{/if}
+		{#if watch.items.length}
+			<ul class="follows" data-testid="watchlist-items" aria-label="Newest on your Plex watchlist">
+				{#each watch.items as it, i (i)}
+					<li title={it.note || undefined}>
+						<span class="wl-name">{it.name}{#if it.year}&nbsp;({it.year}){/if}</span>
+						<span class="xs muted">{it.kind === 'show' ? 'Show' : 'Movie'} · {watchlistStateWord(it.state)}</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</SettingsCard>
+{/if}
+
 <SettingsCard id="sessions-me" title="Devices" description="Where you are signed in. Sign out any you don't know." icon="tv">
 	<Sessions path="/auth/sessions" first={5} />
 </SettingsCard>
@@ -695,7 +774,8 @@
 	.cmd { font-size: 13px; padding: 4px 8px; border-radius: 6px; background: var(--surface-2); white-space: nowrap; }
 	.follows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; min-width: 0; }
 	.follows li { display: flex; align-items: center; gap: 10px; min-height: 44px; border-top: 1px solid var(--line); }
-	.follows li a { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.follows li a, .follows .wl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.follows .xs { flex: none; }
 	@media (prefers-reduced-motion: reduce) { .box { transition: none; } }
 	@media (max-width: 600px) {
 		.boxes { grid-template-columns: minmax(0, 1fr); }
