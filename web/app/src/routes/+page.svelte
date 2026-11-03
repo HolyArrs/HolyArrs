@@ -5,7 +5,7 @@
 	import { afterHandoff } from '#lib/loader.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { askProgressLine, attention, fallbackRows, groupAttention, homeStrip, libraryCards, n, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { askProgressLine, attention, downloadMoved, fallbackRows, groupAttention, homeStrip, libraryCards, n, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { bytes } from '#lib/format.ts';
 	import { homeFacts, homeLine } from '#lib/home-line.ts';
 	import { personName } from '#lib/plain.ts';
@@ -156,7 +156,15 @@
 			clearTimeout(timer);
 			timer = setTimeout(loadAll, 250);
 		};
-		const offs = [live.on('title', soonLoad), live.on('import', soonLoad), live.on('resync', soonLoad), live.on('health', soonLoad), live.on('download', soonLoad)];
+		// A download's progress ticks every few seconds; Home re-reads on a new state, or at most once a minute for progress.
+		const seen = new Map<number, string>();
+		let lastTick = Date.now();
+		const onDownload = (x: unknown) => {
+			if (!downloadMoved(seen, x) && Date.now() - lastTick < 60000) return;
+			lastTick = Date.now();
+			soonLoad();
+		};
+		const offs = [live.on('title', soonLoad), live.on('import', soonLoad), live.on('resync', soonLoad), live.on('health', soonLoad), live.on('download', onDownload)];
 		return () => {
 			clearTimeout(timer);
 			offs.forEach((off) => off());
@@ -402,7 +410,7 @@
 	.setup h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.setup h3 { font: var(--t-headline); margin-top: 8px; }
 	.setup-main > p:not(.kicker) { color: var(--text-muted); max-width: 52ch; margin-bottom: 8px; }
-	.segs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: min(320px, 100%); margin: 4px 0; }
+	.segs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; width: min(320px, 100%); margin: 4px 0; }
 	.segs i { height: 4px; border-radius: 2px; background: var(--surface-3); }
 	.segs i.on { background: var(--ok); }
 	.steps { list-style: none; margin: 0; padding: 12px; background: var(--surface-2); display: flex; flex-direction: column; justify-content: center; }

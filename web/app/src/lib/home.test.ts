@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, libraryCards, n, arrivedTitle, askProgressLine, attention, fallbackRows, groupAttention, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, askProgressLine, attention, downloadMoved, fallbackRows, groupAttention, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
 import type { HealthCheck } from './types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -125,5 +125,13 @@ describe('Your Library cards', () => {
 		const [m] = libraryCards({ movie: { titles: 0, parts: 0, items: 0, on_disk: 0, missing: 0, downloading: 0, size: 0 } });
 		expect(m.segments.every((s) => s.share === 0)).toBe(true);
 		expect(n(12345)).toBe('12,345');
+	});
+	it('re-reads Home on a new download or state, not on progress ticks', () => {
+		const seen = new Map<number, string>();
+		expect(downloadMoved(seen, { ID: 7, State: 'downloading', Progress: 0.1 })).toBe(true);
+		expect(downloadMoved(seen, { ID: 7, State: 'downloading', Progress: 0.2 })).toBe(false);
+		expect(downloadMoved(seen, { ID: 7, State: 'failed' })).toBe(true);
+		expect(downloadMoved(seen, { id: 8, state: 'queued' })).toBe(true);
+		expect(downloadMoved(seen, null)).toBe(true);
 	});
 });

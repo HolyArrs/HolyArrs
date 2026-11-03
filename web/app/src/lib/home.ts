@@ -366,3 +366,17 @@ export function askProgressLine(p: AskProgress | undefined): string {
 	const pct = Math.round(Math.max(0, Math.min(1, p.progress)) * 100);
 	return p.eta ? `Downloading ${pct}% · ${duration(p.eta)} left` : `Downloading ${pct}%`;
 }
+
+/**
+ * downloadMoved says a live download event changes what Home shows: a new download or a new state.
+ * Progress ticks alone do not, so Home is not re-read every few seconds while things download.
+ */
+export function downloadMoved(seen: Map<number, string>, x: unknown): boolean {
+	const d = x as { ID?: number; id?: number; State?: string; state?: string } | null;
+	const id = d?.ID ?? d?.id;
+	const state = d?.State ?? d?.state;
+	if (!id || !state) return true;
+	if (seen.get(id) === state) return false;
+	seen.set(id, state);
+	return true;
+}
