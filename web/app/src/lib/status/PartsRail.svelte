@@ -118,4 +118,7 @@
 		.kinds button { flex: none; min-height: 40px; }
 		.kinds .kc { display: none; }
 	}
+	@media (max-width: 767px) and (pointer: coarse) {
+		.kinds button { min-height: 44px; }
+	}
 </style>
