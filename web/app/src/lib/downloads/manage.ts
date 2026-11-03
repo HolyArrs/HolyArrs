@@ -189,7 +189,7 @@ export function problemWords(n: number): string {
 
 /** What the toolbar's Start, Pause and Remove work on: the ticked rows when
  *  there are any, else the open row. */
-export type ToolTarget = { protocol?: string; downloader_kind?: string; state?: string; can_act: boolean; phase?: string };
+export type ToolTarget = { protocol?: string; downloader_kind?: string; state?: string; can_act: boolean; client_locked?: boolean; phase?: string };
 
 /** toolbarTargets picks the rows a toolbar button means and says why it is
  *  off: nothing picked, every pick read-only, or none in the right state.
@@ -199,7 +199,7 @@ export function toolbarTargets<T extends ToolTarget>(picked: T[], open: T | unde
 	const pool = picked.length ? picked : open ? [open] : [];
 	if (!pool.length) return { rows: [], why: 'select a download' };
 	const live = pool.filter((r) => r.can_act && able(r));
-	if (!live.length) return { rows: [], why: pool.every((r) => !r.can_act) ? 'this Downloader is read-only' : 'not for this Downloader' };
+	if (!live.length) return { rows: [], why: pool.every((r) => !r.can_act || r.client_locked) ? 'this Downloader is read-only' : 'not for this Downloader' };
 	const rows = want === 'any' ? live : live.filter((r) => (r.state === 'paused') === (want === 'paused'));
 	if (!rows.length) return { rows: [], why: want === 'paused' ? 'select a paused download' : 'select a running download' };
 	return { rows, why: '' };

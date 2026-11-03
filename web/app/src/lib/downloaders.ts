@@ -204,6 +204,8 @@ export interface DownloadRow extends DownloadView {
 	updated_at: string;
 	slot_state?: string;
 	can_act: boolean;
+	/** HolyArrs may not change this row's Downloader: only its own records (Remove, Mark failed). */
+	client_locked?: boolean;
 	/** A failed copy HolyArrs turned down and moved on from (searching again or another copy on its way). */
 	replaced?: boolean;
 	kind?: 'movie' | 'show' | 'artist';

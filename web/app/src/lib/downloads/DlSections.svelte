@@ -16,7 +16,7 @@
 	import Icon from '../Icon.svelte';
 	import Chip from '../ui/Chip.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
-	import { PRIORITIES, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
+	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import TopMenu from './TopMenu.svelte';
 	import { to } from '../paths.ts';
 	import DlBar from './DlBar.svelte';
@@ -513,7 +513,7 @@
 	const pickedRows = $derived(list.filter((r) => picked.has(r.id)));
 	// The toolbar's Start, Pause and Remove mean the ticked rows, else the open row.
 	// Start and Pause follow pausable, as the pane's own button does (NZBGet takes those two).
-	const able = (r: DownloadRow) => pausable(r) && busy !== r.id;
+	const able = (r: DownloadRow) => pausable(r) && !r.client_locked && busy !== r.id;
 	const startT = $derived(toolbarTargets(pickedRows, openRow, 'paused', able));
 	const pauseT = $derived(toolbarTargets(pickedRows, openRow, 'running', able));
 	const removeT = $derived(toolbarTargets(pickedRows, openRow, 'any', (r) => busy !== r.id));
@@ -598,9 +598,9 @@
 		return items;
 	}
 	// Only qBittorrent takes location, speed and seeding changes; read-only rows never do.
-	const steerable = (r: DownloadRow) => !!onsteer && r.can_act && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
+	const steerable = (r: DownloadRow) => !!onsteer && clientOk(r) && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
 	// The selection bars send only rows HolyArrs may change, so one read-only row cannot fail the rest.
-	const actable = (rows: DownloadRow[]) => rows.filter((r) => r.can_act);
+	const actable = (rows: DownloadRow[]) => rows.filter(clientOk);
 	// The selection bar's checks and queue moves are torrent calls: only shown when a ticked torrent takes them.
 	const bulkRows = $derived(actable(pickedRows).filter((r) => protocolOf(r) === 'torrent' && controllable(r.downloader_kind) && !!r.downloader_id && !!r.hash));
 	const STEER: { mode: SteerMode; label: string; short: string }[] = [
@@ -1532,8 +1532,8 @@
 	{@const more = watch ? [] : paneMenu(r)}
 	<div class="xbt" data-testid="dl-actions">
 		{#if !watch}
-			{#if retryable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
-			{:else if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
+			{#if retryable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
+			{:else if pausable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
 			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
 		{/if}
 		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">Open in Library</a>{/if}
@@ -1625,7 +1625,7 @@
 			{/if}
 			<div class="fbar" hidden={files.length === 1}>
 				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
-				{#if fsel.size && !watch && r.can_act}
+				{#if fsel.size && !watch && clientOk(r)}
 					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} selected</span>
 					{#each PRIOS as o (o.v)}<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(r, indexesUnder(files, fsel), o.v)} data-testid="dl-files-prio-{o.v}">{o.label}</button>{/each}
 					<button type="button" class="xbn" onclick={() => (fsel = new Set())} data-testid="dl-files-clear">Clear</button>
@@ -1640,7 +1640,7 @@
 						<td class="c-name"><span class="fn" title={f.name}>{f.name.split('/').pop()}</span></td>
 						<td class="c-num c-size">{bytes(f.size)}</td>
 						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !r.can_act} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
+						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !clientOk(r)} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
 					</tr></tbody>
 				</table></div>
 			{:else if !shownF.length}
@@ -1656,11 +1656,11 @@
 						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<tr class:sel={sel[`${r.id}:f`] === x.key || fsel.has(x.key)} class:off={skipped} tabindex={ri === 0 ? 0 : -1} aria-selected={fsel.has(x.key)} onclick={(e) => fileClick(e, r, keys, x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileClick(e, r, keys, x.key); } }} data-testid="dl-filerow">
-							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !r.can_act} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
+							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !clientOk(r)} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
 							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${x.key}`]} aria-label="{closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${x.key}`] = !closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
 							<td class="c-num c-size">{bytes(x.size)}</td>
 							<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !r.can_act} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
+							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !clientOk(r)} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
 							<td class="c-num c-rem">{bytes(Math.max(0, x.size - x.done))}</td>
 						</tr>
 					{/each}
@@ -1716,7 +1716,7 @@
 					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
 				</tbody>
 			</table></div>
-			{#if !watch && r.can_act && r.downloader_id && r.hash}
+			{#if !watch && clientOk(r) && r.downloader_id && r.hash}
 				{@const chosen = trs.find((x) => x.ref && sel[`${r.id}:t`] === x.ref)}
 				<div class="tred" data-testid="dl-tracker-edit">
 					{#if chosen}

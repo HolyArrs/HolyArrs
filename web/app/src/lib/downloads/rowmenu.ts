@@ -23,6 +23,7 @@ export function usenetQueued(r: { protocol?: string; downloader_kind?: string; p
 
 type RowBits = Parameters<typeof retryable>[0] & {
 	can_act?: boolean;
+	client_locked?: boolean;
 	state?: string;
 	protocol?: string;
 
@@ -40,10 +41,13 @@ type RowBits = Parameters<typeof retryable>[0] & {
  *  Queue moves are qBittorrent torrents (the client bulk call) and SABnzbd
  *  or NZBGet jobs still queued (one call per job), which also take a
  *  priority. */
+/** clientOk: HolyArrs may change this row in its Downloader (not only its own records). */
+export const clientOk = (r: { can_act?: boolean; client_locked?: boolean }) => !!r.can_act && !r.client_locked;
+
 export function rowItems(r: RowBits): RowItem[] {
 	const out: RowItem[] = [];
 	const lib = !!r.title_id && (!!r.linked || !r.outside);
-	if (r.can_act) {
+	if (clientOk(r)) {
 		if (pausable(r)) out.push(r.state === 'paused' ? 'resume' : 'pause');
 		if (retryable(r)) out.push('retry');
 		if (!!r.downloader_id && !!r.hash && r.protocol === 'torrent' && (!r.downloader_kind || r.downloader_kind === 'qbittorrent')) out.push('up', 'down', 'top', 'bottom');
@@ -64,9 +68,10 @@ export function paneExtras(r: RowBits, opts: { steer: boolean; fail: boolean }):
 	if (!r.can_act) return [];
 	const out: PaneExtra[] = [];
 	const torrent = protocolOf(r) === 'torrent';
-	if (torrent && controllable(r.downloader_kind)) out.push('recheck', 'reannounce');
+	const client = clientOk(r);
+	if (client && torrent && controllable(r.downloader_kind)) out.push('recheck', 'reannounce');
 	// Force start and the sheets are qBittorrent calls: Transmission and Deluge refuse them.
-	if (torrent && controllable(r.downloader_kind) && opts.steer && !!r.downloader_id && !!r.hash) out.push('force', 'steer');
+	if (client && torrent && controllable(r.downloader_kind) && opts.steer && !!r.downloader_id && !!r.hash) out.push('force', 'steer');
 	if (opts.fail) out.push('fail');
 	return out;
 }
