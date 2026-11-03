@@ -184,7 +184,7 @@ export const tmdbMovies = [
 	// Only the Library select bar tests use these (library-bulk.spec.ts).
 	{ id: 900451, title: 'Bramble Foundry', release_date: '2016-02-12', imdb_id: 'tt9004510', overview: 'A foundry that casts bells out of hedgerow thorns.', dates: [[3, '2016-02-12'], [4, '2016-04-01']] },
 	{ id: 900452, title: 'Lichen Postcard', release_date: '2013-11-03', imdb_id: 'tt9004520', overview: 'A postcard that grows a new picture every spring.', dates: [[3, '2013-11-03'], [4, '2014-01-10']] },
-	// Only library-missing.spec.ts adds these: Search every missing one finds them.
+	// Only library-missing.spec.ts adds these: Search all missing finds them.
 	{ id: 900271, title: 'Hollow Compass', release_date: '2015-02-02', imdb_id: 'tt9002710', overview: 'A compass that points at whatever was lost last.', dates: [[3, '2015-02-02'], [4, '2015-04-01']] },
 	{ id: 900272, title: 'Brass Meadow', release_date: '2014-06-06', imdb_id: 'tt9002720', overview: 'A meadow of brass flowers that ring in the wind.', dates: [[3, '2014-06-06'], [4, '2014-08-01']] }
 ];
@@ -252,7 +252,7 @@ export const fakeShows = [
 		episodes: [[1, 1, 'Points', '2018-03-04'], [1, 2, 'Signal Box', '2018-03-11']]
 	},
 	{
-		// Only library-missing.spec.ts adds it: Search every missing one searches
+		// Only library-missing.spec.ts adds it: Search all missing searches
 		// season 1 as a season and S02E01 alone; S02E02 is not out yet.
 		tmdb: 800271, tvdb: 810271, tvmaze: 820271, imdb: 'tt8002710', name: 'Gilded Bracken', first: '2022-02-06', status: 'Returning Series', network: 'Lab Seven',
 		overview: 'Ferns in a hillside wood turn to gold one leaf at a time.',

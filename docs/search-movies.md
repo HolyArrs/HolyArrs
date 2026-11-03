@@ -56,7 +56,7 @@ The **Searches** block on Home shows each search while it runs, with how far it 
 | Also Find a better copy each night | The nightly search also looks for better copies of movies below Good enough. | Off |
 | Try the next Downloader | When a Downloader cannot take a Release, hand it to the next one of the same kind. | On |
 
-The same page has **Check feeds now**, **Search every missing one** (movies, and episodes unless that is turned off) and **Find a better copy for all**, which start at once instead of waiting for the timer.
+The same page has **Check feeds now** and **Find a better copy for all**, which start at once instead of waiting for the timer. To search for everything missing at once, open the Library's Missing list (Filter, Missing) and press **Search all missing** at the top; it asks first and says how many titles. With a kind picked (Movies, TV shows, Music) it searches only that kind.
 
 ## Early and fake Releases
 

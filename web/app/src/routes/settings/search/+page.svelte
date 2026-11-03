@@ -119,7 +119,7 @@
 					<input id="missing-episodes" type="checkbox" bind:checked={settings.missing_search_shows} />
 					<span
 						><b>Search for missing episodes too</b><br /><span class="hint"
-							>The nightly search and Search every missing one also cover episodes that have aired, a whole season at a time when several are missing.</span
+							>The nightly search and the Library's Search all missing also cover episodes that have aired, a whole season at a time when several are missing.</span
 						></span
 					>
 				</label>
@@ -158,7 +158,7 @@
 					<input id="missing-albums" type="checkbox" bind:checked={settings.missing_search_music} data-testid="missing-music" />
 					<span
 						><b>Search for missing albums too</b><br /><span class="hint"
-							>The nightly search and Search every missing one also cover albums that are out, one search per album.</span
+							>The nightly search and the Library's Search all missing also cover albums that are out, one search per album.</span
 						></span
 					>
 				</label>
@@ -235,7 +235,6 @@
 	<SettingsCard id="search-now" title="Search now" description="Start a search without waiting for the timer. Home shows it running and what it found.">
 		<div class="row now">
 			<Button type="button" disabled={!!now} aria-busy={now === '/search/feed-check'} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</Button>
-			<Button type="button" disabled={!!now} aria-busy={now === '/search/missing'} onclick={() => run('/search/missing', 'Searching for every missing movie and episode.')}>Search every missing one</Button>
 			<Button type="button" disabled={!!now} aria-busy={now === '/search/better'} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</Button>
 		</div>
 	</SettingsCard>

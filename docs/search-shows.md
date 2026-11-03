@@ -67,7 +67,7 @@ The **Searches** block on Home names the show and the episode or season of each 
 
 | Setting | What it does | Default |
 | --- | --- | --- |
-| Search for missing episodes too | The nightly search and **Search every missing one** also cover aired episodes, a whole season at a time when several are missing. | On |
+| Search for missing episodes too | The nightly search and the Library's **Search all missing** also cover aired episodes, a whole season at a time when several are missing. | On |
 | A season pack is taken when | **Every episode in it would be new or better**, or **at least one would be**. With the second, a pack fills only the episodes it improves; your other copies stay. | Every episode |
 | Season pack or single episodes | **Best copy first; a season pack wins when they are equal**, or **a season pack whenever one passes the Pick rules**. | Best copy first |
 | Take Releases with several seasons | Off: a Release with seasons 1 to 3, or a whole show, is turned away. On: it fills every missing episode it holds. | Off |

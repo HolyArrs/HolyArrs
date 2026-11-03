@@ -504,13 +504,16 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	for _, st := range states {
 		args = append(args, st)
 	}
+	// A person may keep a bulk search to one kind (movie, show or artist).
+	only, _ := r.Job.Params["kind"].(string)
+	args = append(args, only, only)
 	// Episodes count when the show and their season are kept up to date
 	// too, and only once they are out (setting missing_search_shows, on by
 	// default).
 	args = append(args, Setting(ctx, db, SettingMissingShows) != "false", Setting(ctx, db, SettingMissingMusic) != "false")
 	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
 		JOIN titles t ON t.id = i.title_id
-		WHERE s.state IN (` + ph + `) AND i.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND t.state = 'active' AND s.active_download_id IS NULL
+		WHERE s.state IN (` + ph + `) AND (? = '' OR t.kind = ?) AND i.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND t.state = 'active' AND s.active_download_id IS NULL
 		AND (t.kind = 'movie' OR (? AND t.kind = 'show' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
 			AND (i.part_id IS NULL OR EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.dropped_at IS NULL)))
 			OR (? AND t.kind = 'artist' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
