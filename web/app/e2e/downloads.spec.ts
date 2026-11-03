@@ -45,7 +45,9 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	await fetch(`${qbit}/set?progress=0.7&eta=120`);
 	await expect(col(r, 'progress')).toContainText('70%', { timeout: 15_000 });
 	await expect(pane()).toContainText('2m', { timeout: 15_000 });
-	await openRow(r);
+	// A click opens a row's details; Escape from the row closes them.
+	await r.getByTestId('dl-line').focus();
+	await page.keyboard.press('Escape');
 	await expect(pane()).toBeHidden();
 });
 
