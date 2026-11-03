@@ -8,7 +8,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/requests.svelte.ts';
 	import { seasonWords } from '#lib/shows.ts';
-	import { detailPath, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
+	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
 	import { preloadHero } from '#lib/tmdb-image.ts';
 	import type { Ask, EventRecord, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
@@ -493,8 +493,10 @@
 	}
 
 	function movieAsked(r: { ask: Ask; joined: boolean; already: boolean }) {
-		if (details) details = { ...details, ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length } };
-		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
+		const brief = { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length };
+		if (details) details = r.ask.four_k ? { ...details, ask4k: brief } : { ...details, ask: brief };
+		if (r.ask.four_k) toasts.push(r.joined ? `Someone asked for ${r.ask.name} in 4K already; you are on the ask too.` : `Asked for ${r.ask.name} in 4K. You will hear when it is approved.`, 'ok');
+		else if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
 		else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too and will hear when it is ready.`, 'ok');
 		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
 		void refreshInbox();
@@ -929,6 +931,7 @@
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : setTab('library'))} data-testid="hero-library" />
 					{#if manage}<ActionMenu label="More actions" caption="More" icon="more" items={ownMenu} />{/if}
+					{#if mayAsk}{@render ask4kButton(d)}{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
 						<ActionButton icon="plus" label="Add {d.name} to the library" caption={view.newWords ? 'Add to library' : 'Add'} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
@@ -937,7 +940,8 @@
 					{/if}
 				{:else if mayAsk && !d.neverAdd}
 					{#if d.kind === 'movie'}
-						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={view.newWords ? (d.ask?.mine ? 'Requested' : d.ask ? 'Request too' : 'Request') : d.ask?.mine ? 'Asked' : d.ask ? 'Ask too' : 'Ask'} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask })} />
+						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={view.newWords ? (d.ask?.mine ? 'Requested' : d.ask ? 'Request too' : 'Request') : d.ask?.mine ? 'Asked' : d.ask ? 'Ask too' : 'Ask'} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask, ask4k: d.ask4k })} />
+						{@render ask4kButton(d)}
 					{:else if d.show}
 						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={view.newWords ? (d.ask ? 'Request too' : 'Request') : d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
@@ -946,6 +950,12 @@
 			{/snippet}
 		</TitleHero>
 
+		{#snippet ask4kButton(t: TitleDetails)}
+			{@const offer = fourKOffer({ ...t, titleId: t.titleId ?? owned?.id })}
+			{#if offer}
+				<ActionButton icon="wish" pill label={offer === 'asked' ? `Asked for ${t.name} in 4K` : `Ask for ${t.name} in 4K`} caption={offer === 'asked' ? (view.newWords ? 'Requested 4K' : 'Asked 4K') : view.newWords ? 'Request 4K' : 'Ask 4K'} disabled={offer === 'asked'} onclick={() => askMovieDialog?.open({ tmdb: t.tmdb, name: t.name, year: t.year, ask4k: t.ask4k, fourKOnly: true })} data-testid="hero-ask-4k" />
+			{/if}
+		{/snippet}
 		{#snippet castRow()}
 			{#if d.cast.length}
 				<Shelf title="Cast and crew" item="112px" anchor="title-cast" whole onseeall={() => (allCast = true)}>

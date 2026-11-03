@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/asks"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -226,6 +227,10 @@ type LookupView struct {
 	NeverAdd bool  `json:"never_add"`
 	// Ask is the open request for it, if someone asked.
 	Ask *askBrief `json:"ask,omitempty"`
+	// Ask4K is the open request for a 4K copy, if someone asked.
+	Ask4K *askBrief `json:"ask_4k,omitempty"`
+	// Has4K: the Library copy has a 4K Version, so no 4K ask is needed.
+	Has4K bool `json:"has_4k,omitempty"`
 }
 
 // lookupTitles finds movies to add by name, "tmdb:<id>" or "imdb:<tt id>".
@@ -274,6 +279,16 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 			if v.Ask, err = a.openAsk(r.Context(), id, a.person(r).UserID); err != nil {
 				internal(w, err)
 				return
+			}
+			if v.Ask4K, err = a.openMovieAsk(r.Context(), id, a.person(r).UserID, true); err != nil {
+				internal(w, err)
+				return
+			}
+			if v.TitleID != 0 {
+				if v.Has4K, err = asks.HasFourK(r.Context(), db, v.TitleID); err != nil {
+					internal(w, err)
+					return
+				}
 			}
 		}
 		out = append(out, v)
