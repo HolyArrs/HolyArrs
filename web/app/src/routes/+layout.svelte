@@ -331,6 +331,8 @@
 		if (p.startsWith('/downloads')) return allowed('manage_library');
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/requests')) return allowed('wishlist');
+		// Status sits under Manage, as in the side menu.
+		if (p.startsWith('/status')) return allowed('manage_library');
 		if (p === '/settings/users') return session.can('users');
 		if (p === '/settings/account' || p === '/settings/appearance') return true;
 		// People who manage the Library may look at Pick rules and Movies and TV defaults, read only.

@@ -51,7 +51,7 @@
 			if (firstRun) {
 				folderKind = firstFolderKind(parts);
 				step = 'folder';
-				await goto(to('/welcome?first=1&step=folder'), { replaceState: true, keepFocus: true, noScroll: true });
+				await goto(to('/welcome?first=1&step=folder'), { replace: true });
 			}
 			else await home();
 		} catch (e) {

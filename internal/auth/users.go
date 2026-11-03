@@ -458,6 +458,9 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
 			return err
 		}
+		if err := endOutsideLinks(tx, id); err != nil {
+			return err
+		}
 		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", id)
 		return err
 	})
@@ -805,7 +808,11 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND hash != ?", who.UserID, keep); err != nil {
 			return err
 		}
-		// A key made by someone who knew the old password must stop too.
+		// A key or outside sign-in linked by someone who knew the old
+		// password must stop too.
+		if err := endOutsideLinks(tx, who.UserID); err != nil {
+			return err
+		}
 		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", who.UserID)
 		return err
 	})
