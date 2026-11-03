@@ -348,9 +348,17 @@ test('two members ask for different seasons of a show: one ask, both askers on i
 test('a member asks for one album of an artist from its page', async ({ browser }) => {
 	test.setTimeout(120_000);
 	const nell = await member(browser, 'nell');
+	// The fake metadata server has no music, so a member's artist lookup goes
+	// to the fake MusicBrainz behind every other caller and can take long.
+	// The owner looks Wicker Owls up first (ahead of the queue), so nell's
+	// page is answered from the kept copy.
+	const seen = await own.request.get(`/api/v1/artists/lookup?term=${encodeURIComponent(`mbid:${owls}`)}`, { timeout: 60_000 });
+	expect(await seen.text()).toContain('Wicker Owls');
 	await nell.goto(`/music/artist/${owls}`);
 	await expect(nell.getByRole('heading', { level: 1, name: 'Wicker Owls' })).toBeVisible(slow);
-	const ask = nell.getByTestId('artist-ask');
+	// The hero's Ask and the slim bar's copy share a test id; the slim bar is
+	// hidden from the accessibility tree until it slides in.
+	const ask = nell.getByRole('button').and(nell.getByTestId('artist-ask'));
 	await expect(ask).toBeEnabled(slow);
 	await ask.click();
 	const sheet = nell.getByRole('dialog', { name: 'Ask for Wicker Owls' });

@@ -612,6 +612,9 @@
 		try {
 			if (on) await api.put(`/metadata/album/${a.mbid}/follow`, { name: a.name, artist: hero?.name ?? '', release_date: a.release_date ?? '' });
 			else await api.del(`/metadata/album/${a.mbid}/follow`);
+			// The browser keeps the page answer a minute (max-age=60): fetch it
+			// afresh so a reload or a return visit shows the bell as it is now.
+			await fetch(to(`/api/v1/music/artists/${mbid}?similar=0`), { cache: 'reload', headers: { Accept: 'application/json' }, credentials: 'same-origin' }).catch(() => {});
 			toasts.push(on ? `You will hear when ${a.name} is out.` : `Stopped following ${a.name}.`, 'ok');
 		} catch (e) {
 			follows = new Map([...follows, [a.mbid, !on]]);
