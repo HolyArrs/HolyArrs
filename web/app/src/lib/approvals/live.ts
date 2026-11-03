@@ -1,5 +1,6 @@
 // Where an approved ask is in the pipeline right now, from the local searches
 // and downloads lists (no outside calls): one small entry per Library title.
+import { notAlbumName } from './ask-parts.ts';
 import type { SearchView } from '../types.ts';
 import type { DownloadRow } from '../downloaders.ts';
 import type { LifeFacts } from './lifecycle.ts';
@@ -49,6 +50,16 @@ export interface PartCounts {
 	key: string | number;
 	/** Whole part is in the Library. */
 	complete: boolean;
+	/** false: not counted in "n more available" (a single, remix, bootleg, or a season with nothing aired yet). */
+	real?: boolean;
+}
+
+// Title words that mark a release as not a real album (MusicBrainz sometimes leaves these untyped).
+const NOT_ALBUM = /\b(demos?|bootlegs?|outtakes?|unreleased|rehearsals?|b-sides|leaked|snippets?|remix(es)?|remixed)\b/i;
+
+/** realAlbum says an album is a studio album: type album, no secondary types (live, compilation, remix…), no bootleg words. */
+export function realAlbum(a: { type?: string; secondary_types?: string[] | null; name?: string }): boolean {
+	return (a.type ?? '').toLowerCase() === 'album' && !(a.secondary_types ?? []).length && !notAlbumName.test(a.name ?? '');
 }
 
 /**
@@ -60,5 +71,5 @@ export function partialFacts(unit: 'seasons' | 'albums', parts: PartCounts[], as
 	if (!parts.length) return {};
 	const want = asked.length ? parts.filter((p) => asked.includes(p.key)) : parts;
 	if (!want.length) return {};
-	return { partial: { have: want.filter((p) => p.complete).length, total: want.length, unit }, more: parts.length - want.length };
+	return { partial: { have: want.filter((p) => p.complete).length, total: want.length, unit }, more: parts.filter((p) => p.real !== false && !want.includes(p)).length };
 }

@@ -35,3 +35,30 @@ Once a day, when the check is on, HolyArrs makes one GET request to `api.github.
 | `GET /api/v1/app/update` | run the Library (read scope) | `on`, `feed` (only for people who may change settings, as scheme, host and path), `checked_at`, `latest`, `newer`, `link`, `no_release`, `problem`, `version`; never asks the feed |
 | `POST /api/v1/app/update/check` | settings (write scope) | asks now (nothing when off) |
 | `PUT /api/v1/settings/health` | settings | `update_check`, `update_check_url`, `update_check_local`, `update_prerelease` |
+
+## A backup before every update of the data
+
+A new version may need to change how the data is stored. Before it changes anything, HolyArrs:
+
+1. Checks there is room for a copy and for the update (`HOLYARRS_SKIP_SPACE_CHECK=yes` skips this). Too little room: nothing is changed and the page says so.
+2. Copies each database to `backups/`, checks the copy and writes its sha256 next to it. If the copy fails three times, nothing is changed and the page says so.
+3. Runs each step of the update in its own transaction and checks the result. A step that fails is rolled back and the app stops on a page that says what happened. Steps that finished before it stay; the copy from before the whole update is kept, and starting the same version again carries on from the failed step with that same copy.
+
+On the first good start the copy becomes a pre-update backup (`holyarrs-backup-pre-update-<time>.zip`, "before updating from 1.1.0 to 1.2.0"). It shows in Settings > Backups and restore and in `holyarrs restore --list`. The newest 3 are kept; the backup schedule never removes them and older ones go only after a good start. A fresh install has nothing to copy, so it makes none. An update that does not change the data makes no pre-update backup (the usual update backup is still made).
+
+## Going back
+
+HolyArrs cannot change its own image, so going back is two steps: you run the older image, and HolyArrs puts the older data back.
+
+1. Settings > This app > Updates shows "Go back to <version>" when there is a pre-update backup for the update to the version you run. It shows the image to use (`ghcr.io/coderluii/holyarrs:<version>`, with a Copy button). If you pull from another registry, change only the tag.
+2. Change the image in your compose file (or `docker run`) to that tag and start the container (`docker compose up -d`).
+3. If the update did not change the data, the older version just starts. If it did, the older version sees newer data and shows a page instead of the app. That page offers "Put back the data from before the update". To confirm, type the one-time code it wrote to the log (`docker logs <container>`, look for "one-time code").
+4. HolyArrs checks the backup, puts it in place, and stops; Docker's restart policy starts it again on that data. Without a restart policy, start the container.
+
+Notes:
+
+- Anything changed after the update (new titles, settings, history) is not in that backup.
+- Nothing is deleted. The newer data moves to `backups/before-restore-<time>/`, so going back can be undone.
+- After going back more than one version (1.2.0 to 1.0.0), HolyArrs picks the newest pre-update backup that version can read: the one taken before the update from 1.0.0.
+- The page is open to anyone who can reach HolyArrs, and no accounts can be read while the data is refused, so the button needs the code from the log. After 10 wrong codes it refuses until the next start, which writes a new code.
+- Without the page: `docker exec <container> /holyarrs restore --pre-update`, then `docker restart <container>`. Without Docker: stop HolyArrs, run `holyarrs restore --pre-update`, start it again.

@@ -316,8 +316,8 @@
 		liveBusy = true;
 		try {
 			const [d, s] = await Promise.all([
-				// The newest 500 downloads (the most the list gives): enough for every ask still being got.
-				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=500'),
+				// Every download still in play for an approved ask (no row cap), so the failed count is exact.
+				api.get<{ downloads: DownloadRow[] }>('/downloads/view?asked=1'),
 				api.get<{ running: SearchView[] }>('/searches')
 			]);
 			titleLive = liveByTitle(d.downloads, s.running ?? []);

@@ -7,7 +7,7 @@ build:
 	go build -trimpath -ldflags="-s -w" -o bin/$(BINARY) ./cmd/holyarrs
 
 test:
-	go test ./...
+	go test -timeout 25m ./... # internal/api alone runs past Go's 10 min default
 
 vet:
 	go vet ./...

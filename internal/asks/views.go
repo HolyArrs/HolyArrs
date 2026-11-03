@@ -19,6 +19,8 @@ var StateLabels = map[string]string{
 type Who struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+	// DisplayName is the person's chosen name, when set (sent for the decider only).
+	DisplayName string `json:"display_name,omitempty"`
 }
 
 // Asker is someone who asked, and when.
@@ -82,9 +84,20 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		names[id] = n
 		return n
 	}
+	shown := map[int64]string{}
+	displayName := func(id int64) string {
+		if n, ok := shown[id]; ok {
+			return n
+		}
+		var n string
+		_ = db.QueryRowContext(ctx, "SELECT display_name FROM user_profiles WHERE user_id = ?", id).Scan(&n)
+		n = strings.TrimSpace(n)
+		shown[id] = n
+		return n
+	}
 	for _, a := range as {
 		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, FutureOnly: a.FutureOnly, FourK: a.FourK, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
-			TitleID: a.TitleID, AskedBy: Who{a.AskedBy, userName(a.AskedBy)}, AskedAt: a.AskedAt, DecidedAt: a.DecidedAt, Note: a.Note,
+			TitleID: a.TitleID, AskedBy: Who{ID: a.AskedBy, Name: userName(a.AskedBy)}, AskedAt: a.AskedAt, DecidedAt: a.DecidedAt, Note: a.Note,
 			AutoApproved: a.AutoApproved, AvailableAt: a.AvailableAt, People: []Asker{}}
 		if v.Seasons == nil {
 			v.Seasons = []int{}
@@ -114,14 +127,14 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 			}
 		}
 		if a.DecidedBy != nil {
-			v.DecidedBy = &Who{*a.DecidedBy, userName(*a.DecidedBy)}
+			v.DecidedBy = &Who{ID: *a.DecidedBy, Name: userName(*a.DecidedBy), DisplayName: displayName(*a.DecidedBy)}
 		}
 		ps, err := s.people(ctx, a.ID)
 		if err != nil {
 			return nil, err
 		}
 		for _, p := range ps {
-			v.People = append(v.People, Asker{Who{p.ID, p.Name}, p.AskedAt})
+			v.People = append(v.People, Asker{Who{ID: p.ID, Name: p.Name}, p.AskedAt})
 		}
 		out = append(out, v)
 	}
