@@ -13,7 +13,9 @@ const EXCEPTIONS = [
 	// 27 letters cannot each be 44px on a phone; each is a 24px target (WCAG 2.5.8).
 	{ k: /^button\.rail-l$/, why: 'A–Z rail' },
 	// The whole row card opens the same title and is far taller than 44px.
-	{ k: /^a$/, path: /^\/library/, why: 'Library row title link (the row is the target)' }
+	{ k: /^a$/, path: /^\/library/, why: 'Library row title link (the row is the target)' },
+	// The 72x72 cover link in the same row opens the same album.
+	{ k: /^a\.s-name$/, path: /^\/music\//, why: 'Music song name link (the cover beside it is the target)' }
 ];
 const t = readFileSync(process.env.HOLYARRS_SHOWCASE_LOGIN, 'utf8');
 const name = (t.match(/(?:name|user(?:name)?)\s*[:=]\s*(\S+)/i) || [])[1];
