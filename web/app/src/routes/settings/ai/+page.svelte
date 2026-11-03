@@ -117,6 +117,29 @@
 		}
 	}
 
+	// Apps that do not register themselves (Gemini) get a client ID made from
+	// the return address they show.
+	let redirectURI = $state('');
+	let clientID = $state('');
+	let clientError = $state('');
+	async function makeClientID(e: SubmitEvent) {
+		e.preventDefault();
+		clientError = '';
+		clientID = '';
+		try {
+			const r = await fetch(`${getBase()}/oauth/register`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ client_name: chosen.name, redirect_uris: [redirectURI.trim()] })
+			});
+			const out = await r.json();
+			if (!r.ok) throw new Error(out.error_description ?? 'HolyArrs did not accept that address.');
+			clientID = out.client_id;
+		} catch (err) {
+			clientError = message(err);
+		}
+	}
+
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
@@ -217,6 +240,22 @@
 						</li>
 					{/each}
 				</ol>
+				{#if chosen.clientIdHelper}
+					<form class="client-id" onsubmit={makeClientID} data-testid="ai-client-id">
+						<label class="small" for="ai-redirect">{chosen.name}'s redirect URI</label>
+						<div class="keyrow">
+							<input id="ai-redirect" class="input grow" bind:value={redirectURI} placeholder="https://…" autocomplete="off" />
+							<Button type="submit" disabled={!redirectURI.trim()}>Make client ID</Button>
+						</div>
+						{#if clientError}<p class="notice warn">{clientError}</p>{/if}
+						{#if clientID}
+							<div class="codebox">
+								<pre>{clientID}</pre>
+								<Button icon="copy" size="sm" type="button" onclick={() => copy(clientID)}>Copy</Button>
+							</div>
+						{/if}
+					</form>
+				{/if}
 				{#if chosen.agent && signIn}
 					<button type="button" class="linkish small" aria-expanded={showPrompt} onclick={() => (showPrompt = !showPrompt)}>
 						Or let {chosen.name} set itself up
@@ -367,6 +406,10 @@
 	}
 	.needs {
 		margin: 0;
+	}
+	.client-id {
+		display: grid;
+		gap: var(--s-2);
 	}
 	.steps p {
 		margin: 0 0 var(--s-2);

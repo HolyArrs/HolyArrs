@@ -19,6 +19,8 @@ export type AppData = {
   note: string;
   /** live: tried with HolyArrs; docs or second-hand: not yet. */
   source: string;
+  /** The app does not register itself: Settings makes it a client ID. */
+  clientIdHelper?: boolean;
 };
 
 export const APP_DATA: AppData[] = [
@@ -68,7 +70,7 @@ export const APP_DATA: AppData[] = [
     key: [],
     check: "HolyArrs shows as connected under Customize › Connectors.",
     note: "Add it on web or desktop; the phone app then lists it.",
-    source: "docs",
+    source: "live",
   },
   {
     slug: "claude-desktop-bridge",
@@ -237,7 +239,7 @@ export const APP_DATA: AppData[] = [
       { text: "Start gemini and run /mcp list.", code: "/mcp list" },
     ],
     check: "gemini mcp list shows holyarrs as connected.",
-    note: 'Sign-in to a private https name (like .ts.net) needs "oauth": { "allowPrivateNetwork": true } in the holyarrs entry.',
+    note: "Personal Google accounts can no longer sign in to Gemini CLI; Google points them to Antigravity.",
     source: "docs",
   },
   {
@@ -308,19 +310,24 @@ export const APP_DATA: AppData[] = [
     cloud: true,
     needs: "US, 18+, personal Google account, English, Gemini chat history on.",
     signin: [
+      { text: "In Gemini, open Connected Apps and press + Custom." },
       {
-        text: "On a computer, open gemini.google.com › Settings › Connected Apps › Custom apps.",
+        text: "Paste the address. Under Additional settings, press Copy redirect URI.",
+        code: "{url}",
       },
       {
-        text: "Add a custom app, paste the address and press Next.",
-        code: "{url}",
+        text: "In HolyArrs, open Settings › AI connections › Gemini app, paste it and press Make client ID.",
+      },
+      {
+        text: "Paste that Client ID into Gemini, leave Client secret empty, press Next.",
       },
       { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [],
-    check: "HolyArrs shows under Custom apps, on web and mobile.",
-    note: "Leave Advanced features closed; HolyArrs registers Gemini automatically.",
-    source: "docs",
+    check: "In a chat, type @, pick HolyArrs and ask a question.",
+    note: "Gemini does not register itself, so it needs this client ID.",
+    source: "live",
+    clientIdHelper: true,
   },
   {
     slug: "vs-code-copilot",
@@ -488,7 +495,7 @@ export const APP_DATA: AppData[] = [
     key: [],
     check: "The connector shows as connected and lists its tools.",
     note: "Grok's help names no sign-in types, so browser sign-in is unconfirmed.",
-    source: "docs",
+    source: "live",
   },
   {
     slug: "perplexity",
@@ -515,7 +522,7 @@ export const APP_DATA: AppData[] = [
     key: [],
     check: "Switch HolyArrs on under Sources; its card lists the tools.",
     note: "On a client_secret error, set Authentication to API Key and paste an AI key (unconfirmed).",
-    source: "docs",
+    source: "live",
   },
   {
     slug: "perplexity-mac-helper",
@@ -1430,7 +1437,7 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Type /tools in the chat; HolyArrs tools are listed.",
     note: "-H on the ollmcp command sets the Ollama host, not a header.",
-    source: "docs",
+    source: "live",
   },
   {
     slug: "llama-cpp",

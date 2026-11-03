@@ -37,6 +37,13 @@ describe('ai-connect', () => {
 		// The Make a key button replaces the "make a key" step.
 		expect(key).not.toContain('press Make a key');
 	});
+	it('gives the Gemini app a client ID form in place of its HolyArrs step', () => {
+		const g = app('gemini-app');
+		expect(g.clientIdHelper).toBe(true);
+		expect(all(g.steps(https))).toContain('Copy redirect URI');
+		expect(all(g.steps(https))).not.toContain('In HolyArrs, open Settings');
+		expect(app('claude-app').clientIdHelper).toBeFalsy();
+	});
 	it('never puts a key in an agent prompt', () => {
 		expect(agentPrompt('Codex', 'https://m.example/api/v1/mcp')).not.toMatch(/Bearer|hak_/);
 	});

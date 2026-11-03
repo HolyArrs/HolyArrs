@@ -82,6 +82,8 @@ export type AIApp = {
 	check?: string;
 	/** Not run against HolyArrs yet: the steps follow the maker's docs. */
 	untried?: boolean;
+	/** The app does not register itself: the guide makes it a client ID. */
+	clientIdHelper?: boolean;
 	steps: (c: Ctx) => Step[];
 };
 
@@ -115,6 +117,7 @@ export function dataApp(d: AppData): AIApp {
 		check: d.check || undefined,
 		untried: d.source !== 'live',
 		agent: ['claude-code', 'codex-cli', 'gemini-cli'].includes(d.slug),
+		clientIdHelper: d.clientIdHelper,
 		steps: (c) => {
 			const list = c.signIn && d.signin.length ? d.signin : d.key.length ? d.key : d.signin;
 			return list
