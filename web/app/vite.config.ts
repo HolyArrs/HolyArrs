@@ -1,6 +1,7 @@
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { fewerChunks } from './build-chunks.ts';
+import { bundledPackages } from './bundled-packages.ts';
 import { defineConfig } from 'vitest/config';
 
 // The app is built into ../dist, which the Go program embeds and serves at /.
@@ -17,7 +18,9 @@ export default defineConfig({
 			version: { name: 'holyarrs' }
 		}),
 		// A few bigger shared script files instead of 120+ small ones (build-chunks.ts).
-		fewerChunks()
+		fewerChunks(),
+		// The npm packages the built app ships, for the third-party notices (bundled-packages.ts).
+		bundledPackages()
 	],
 	server: {
 		proxy: {

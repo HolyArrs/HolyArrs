@@ -36,6 +36,20 @@ jobs:
       # web/dist: images build their own pages (Dockerfile web stage), and a
       # build on another system names its chunk files differently.
       - run: npm run build
+      # The package list is source: a fresh build must write the same one
+      # (untracked counts too, so a list never committed fails).
+      - name: Bundled package list matches the build
+        run: |
+          git status --porcelain -- bundled-packages.json
+          test -z "$(git status --porcelain -- bundled-packages.json)"
+      # Every Go module the program links and every package the built app
+      # holds is in the notices, each with its licence texts.
+      - name: Third-party notices list every shipped part
+        run: |
+          python3 ../../scripts/notices.py --check
+          python3 ../../scripts/notices.py
+          git status --porcelain -- ../../THIRD_PARTY_NOTICES.md ../../docs/third-party-notices.md
+          test -z "$(git status --porcelain -- ../../THIRD_PARTY_NOTICES.md ../../docs/third-party-notices.md)"
       # The reviewed runner image supplies Chromium's OS dependencies without job-time root access.
       - run: npx playwright install chromium
       - name: Headless browser suite
