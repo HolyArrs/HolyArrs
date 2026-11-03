@@ -51,9 +51,9 @@ export function daysWord(sec: number): string {
 }
 
 /** The quiet line shown instead of an empty peers table while seeding. */
-export function quietPeers(lastActivity: string | undefined, now = Date.now()): string {
-	if (!lastActivity) return '0 connected now';
-	const sec = Math.max(0, (now - new Date(lastActivity).getTime()) / 1000);
+export function quietPeers(lastSeen: string | undefined, now = Date.now()): string {
+	if (!lastSeen) return '0 connected now';
+	const sec = Math.max(0, (now - new Date(lastSeen).getTime()) / 1000);
 	return `0 connected now · last activity ${sec < 60 ? 'just now' : daysWord(sec) + ' ago'}`;
 }
 

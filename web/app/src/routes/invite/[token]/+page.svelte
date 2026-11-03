@@ -13,7 +13,7 @@
 	const linkPart = $derived(page.params.token ?? '');
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
-	let invite = $state<{ role: string } | null>(null);
+	let invite = $state<{ role: string; max_rating?: string } | null>(null);
 	let gone = $state('');
 	let name = $state('');
 	let pw = $state('');
@@ -24,7 +24,7 @@
 	onMount(async () => {
 		void session.loadMinPassword();
 		try {
-			invite = await api.get<{ role: string }>(`/auth/invites/${encodeURIComponent(linkPart)}`);
+			invite = await api.get<{ role: string; max_rating?: string }>(`/auth/invites/${encodeURIComponent(linkPart)}`);
 		} catch (e) {
 			gone = message(e);
 		}
@@ -64,7 +64,7 @@
 		{:else if !invite}
 			<div class="sk" style="height: 220px; margin-top: var(--s-4)"></div>
 		{:else}
-			<p class="lead">You were invited as {invite.role === 'admin' ? 'an Admin' : 'a Member'}. Pick the name and password you will sign in with.</p>
+			<p class="lead">You were invited as {invite.role === 'admin' ? 'an Admin' : invite.max_rating ? `a Kid (titles rated up to ${invite.max_rating})` : 'a Member'}. Pick the name and password you will sign in with.</p>
 			<form onsubmit={submit} novalidate>
 				<div class="field">
 					<label for="name">Name</label>

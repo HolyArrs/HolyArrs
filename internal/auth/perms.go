@@ -180,6 +180,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/titles/owned":                             needSignedIn,
 	"GET /api/v1/library/search":                           needSignedIn,
 	"GET /api/v1/search/suggest":                           needSignedIn,
+	"GET /api/v1/search":                                    needSignedIn,
 	"GET /api/v1/library-summary":                          needSignedIn,
 	"GET /api/v1/home":                                     needSignedIn,
 	"GET /api/v1/titles/{id}":                              needSignedIn,
@@ -244,6 +245,15 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/albums/{id}/tracks":                       needSignedIn,
 	"GET /api/v1/albums/{id}/cover":                        needSignedIn,
 	"GET /api/v1/openapi.json":                             needSignedIn,
+
+	// AI connections: the route checks the key itself; the tools check
+	// the person's permissions one by one.
+	"POST /api/v1/mcp":        needSignedIn,
+	"GET /api/v1/mcp":         needSignedIn,
+	"POST /mcp":               needSignedIn,
+	"GET /mcp":                needSignedIn,
+	"GET /api/v1/settings/ai": needSignedIn,
+	"PUT /api/v1/settings/ai": needOwner,
 
 	// Requests: everyone sees their own asks and messages; asking needs
 	// ask, deciding needs approve.
@@ -579,10 +589,13 @@ const (
 	// ScopeAll is what every key made before scopes holds: read, write
 	// and admin together (every route but the controls).
 	ScopeAll = "all"
+	// ScopeMCP is an AI key: it reaches only the AI connection route
+	// (/api/v1/mcp), and all does not include it.
+	ScopeMCP = "mcp"
 )
 
 // Scopes lists the scopes a key may be given.
-var Scopes = []string{ScopeHealthRead, ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll}
+var Scopes = []string{ScopeHealthRead, ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll, ScopeMCP}
 
 // ScopeNotes says in plain words what each scope reaches; the OpenAPI
 // spec publishes it.
@@ -593,6 +606,7 @@ var ScopeNotes = map[string]string{
 	ScopeAdmin:      "People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore) and the outside-service key settings: every route only the owner or an admin may use, the key and sign-in routes of My account, and every GET route not marked read. Making or promoting an admin also needs the control scope.",
 	ScopeControl:    "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
 	ScopeAll:        "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
+	ScopeMCP:        "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",
 }
 
 // RouteScopes names routes whose scope is not the one the method and
@@ -629,6 +643,11 @@ var RouteScopes = map[string]string{
 	"POST /api/v1/app/restart":                                   ScopeControl,
 	"POST /api/v1/app/safe-mode":                                 ScopeControl,
 	"POST /api/v1/app/shutdown":                                  ScopeControl,
+	"POST /api/v1/mcp":                                           ScopeMCP,
+	"GET /api/v1/mcp":                                            ScopeMCP,
+	"POST /mcp":                                                  ScopeMCP,
+	"GET /mcp":                                                   ScopeMCP,
+	"GET /api/v1/settings/ai":                                    ScopeAdmin,
 
 	// My account's sign-in and the keys themselves.
 	"GET /api/v1/auth/keys":                     ScopeAdmin,
@@ -724,7 +743,7 @@ func init() {
 		"GET /api/v1/settings/shows", "GET /api/v1/settings/status", "GET /api/v1/settings/subtitles", "GET /api/v1/settings/title-defaults", "GET /api/v1/shows/lookup",
 		"GET /api/v1/sources", "GET /api/v1/sources/{id}/stats", "GET /api/v1/subtitle-sites",
 		"GET /api/v1/subtitle-sites/kinds", "GET /api/v1/subtitles/languages", "GET /api/v1/subtitles/missing",
-		"GET /api/v1/titles", "GET /api/v1/titles/owned", "GET /api/v1/library/search", "GET /api/v1/search/suggest", "GET /api/v1/titles/lookup", "GET /api/v1/titles/{id}",
+		"GET /api/v1/titles", "GET /api/v1/titles/owned", "GET /api/v1/library/search", "GET /api/v1/search/suggest", "GET /api/v1/search", "GET /api/v1/titles/lookup", "GET /api/v1/titles/{id}",
 		"GET /api/v1/titles/{id}/albums", "GET /api/v1/titles/{id}/episodes", "GET /api/v1/titles/{id}/releases",
 		"GET /api/v1/titles/{id}/rename", "GET /api/v1/titles/{id}/seasons", "GET /api/v1/titles/{id}/subtitles", "GET /api/v1/titles/{id}/search-outcome",
 		"GET /api/v1/turned-down", "GET /api/v1/users/{id}/avatar", "GET /api/v1/schedules", "GET /api/v1/app/update",
@@ -751,7 +770,7 @@ func ScopesCover(held []string, scope string) bool {
 	if scope == ScopeHealthRead && slices.Contains(held, ScopeRead) {
 		return true
 	}
-	return scope != ScopeControl && slices.Contains(held, ScopeAll)
+	return scope != ScopeControl && scope != ScopeMCP && slices.Contains(held, ScopeAll)
 }
 
 // RouteScope is the scope an API key needs for a route pattern: the

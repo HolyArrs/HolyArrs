@@ -1,0 +1,655 @@
+[
+  {
+    "at": "2026-11-03T08:42:06.32356794Z",
+    "searches": {
+      "recent": [],
+      "running": []
+    },
+    "downloads": {
+      "clients": [],
+      "downloads": [],
+      "next_cursor": "",
+      "outside_total": 0,
+      "totals": {
+        "speed": 0,
+        "up_speed": 0
+      }
+    },
+    "ask": {
+      "albums": [],
+      "asked_at": "2026-11-03T08:42:06.316503687Z",
+      "asked_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "auto_approved": false,
+      "decided_at": "2026-11-03T08:42:06.317971193Z",
+      "decided_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "episodes": [],
+      "four_k": false,
+      "future_only": false,
+      "id": 1,
+      "kind": "movie",
+      "mine": true,
+      "name": "Dune: Part Two",
+      "people": [
+        {
+          "asked_at": "2026-11-03T08:42:06.316503687Z",
+          "id": 1,
+          "name": "ana"
+        }
+      ],
+      "ref": "tmdb:693134",
+      "seasons": [],
+      "state": "approved",
+      "state_label": "Approved",
+      "title_id": 1,
+      "tmdb_id": "693134",
+      "year": 2024
+    }
+  },
+  {
+    "at": "2026-11-03T08:42:06.525604969Z",
+    "searches": {
+      "recent": [],
+      "running": [
+        {
+          "job_id": 3,
+          "kind": "search_slot",
+          "state": "running",
+          "by_hand": false,
+          "only_show": false,
+          "title_id": 1,
+          "title_name": "Dune: Part Two",
+          "version": "Main",
+          "progress": 0,
+          "note": "searching Lab",
+          "started_at": "2026-11-03T08:42:06.322905462Z",
+          "found": 0,
+          "refused": 0
+        }
+      ]
+    },
+    "downloads": {
+      "clients": [],
+      "downloads": [],
+      "next_cursor": "",
+      "outside_total": 0,
+      "totals": {
+        "speed": 0,
+        "up_speed": 0
+      }
+    },
+    "ask": {
+      "albums": [],
+      "asked_at": "2026-11-03T08:42:06.316503687Z",
+      "asked_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "auto_approved": false,
+      "decided_at": "2026-11-03T08:42:06.317971193Z",
+      "decided_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "episodes": [],
+      "four_k": false,
+      "future_only": false,
+      "id": 1,
+      "kind": "movie",
+      "mine": true,
+      "name": "Dune: Part Two",
+      "people": [
+        {
+          "asked_at": "2026-11-03T08:42:06.316503687Z",
+          "id": 1,
+          "name": "ana"
+        }
+      ],
+      "ref": "tmdb:693134",
+      "seasons": [],
+      "state": "approved",
+      "state_label": "Approved",
+      "title_id": 1,
+      "tmdb_id": "693134",
+      "year": 2024
+    }
+  },
+  {
+    "at": "2026-11-03T08:42:10.379902967Z",
+    "searches": {
+      "recent": [
+        {
+          "job_id": 3,
+          "kind": "search_slot",
+          "state": "done",
+          "by_hand": false,
+          "only_show": false,
+          "title_id": 1,
+          "title_name": "Dune: Part Two",
+          "version": "Main",
+          "progress": 1,
+          "note": "searching Lab",
+          "started_at": "2026-11-03T08:42:06.322905462Z",
+          "ended_at": "2026-11-03T08:42:10.334253955Z",
+          "found": 13,
+          "refused": 12,
+          "outcome": "chosen",
+          "picked": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+        }
+      ],
+      "running": []
+    },
+    "downloads": {
+      "clients": [],
+      "downloads": [
+        {
+          "id": 1,
+          "state": "queued",
+          "label": "Waiting its turn",
+          "text": "The Downloader has it and will start it when there is room.",
+          "progress": 0,
+          "speed": 0,
+          "up_speed": 0,
+          "seeds": 0,
+          "peers": 0,
+          "active": true,
+          "phase": "waiting",
+          "name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
+          "title_id": 1,
+          "title": "Dune: Part Two",
+          "year": 2024,
+          "version": "Main",
+          "downloader": "Lab qBittorrent",
+          "path": "/data/downloads/incomplete/holyarrs-lab139",
+          "downloader_kind": "qbittorrent",
+          "protocol": "torrent",
+          "size": 29588180,
+          "updated_at": "2026-11-03T08:42:10.375822813Z",
+          "slot_state": "downloading",
+          "can_act": true,
+          "kind": "movie",
+          "downloader_id": 1,
+          "hash": "29be7bfa8759643f2d5dac9f94d516c3378696ed",
+          "requested_by": "ana",
+          "source_name": "Lab",
+          "source_id": 1,
+          "live_key": "1:29be7bfa8759643f2d5dac9f94d516c3378696ed"
+        }
+      ],
+      "next_cursor": "",
+      "outside_total": 0,
+      "totals": {
+        "speed": 0,
+        "up_speed": 0
+      }
+    },
+    "ask": {
+      "albums": [],
+      "asked_at": "2026-11-03T08:42:06.316503687Z",
+      "asked_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "auto_approved": false,
+      "decided_at": "2026-11-03T08:42:06.317971193Z",
+      "decided_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "episodes": [],
+      "four_k": false,
+      "future_only": false,
+      "id": 1,
+      "kind": "movie",
+      "mine": true,
+      "name": "Dune: Part Two",
+      "people": [
+        {
+          "asked_at": "2026-11-03T08:42:06.316503687Z",
+          "id": 1,
+          "name": "ana"
+        }
+      ],
+      "ref": "tmdb:693134",
+      "seasons": [],
+      "state": "approved",
+      "state_label": "Approved",
+      "title_id": 1,
+      "tmdb_id": "693134",
+      "year": 2024
+    }
+  },
+  {
+    "at": "2026-11-03T08:42:11.803000529Z",
+    "searches": {
+      "recent": [
+        {
+          "job_id": 3,
+          "kind": "search_slot",
+          "state": "done",
+          "by_hand": false,
+          "only_show": false,
+          "title_id": 1,
+          "title_name": "Dune: Part Two",
+          "version": "Main",
+          "progress": 1,
+          "note": "searching Lab",
+          "started_at": "2026-11-03T08:42:06.322905462Z",
+          "ended_at": "2026-11-03T08:42:10.334253955Z",
+          "found": 13,
+          "refused": 12,
+          "outcome": "chosen",
+          "picked": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+        }
+      ],
+      "running": []
+    },
+    "downloads": {
+      "clients": [],
+      "downloads": [
+        {
+          "id": 1,
+          "state": "downloading",
+          "label": "Downloading",
+          "text": "49% done.",
+          "progress": 0.4961462313667147,
+          "speed": 0,
+          "up_speed": 0,
+          "seeds": 0,
+          "peers": 0,
+          "active": true,
+          "phase": "downloading",
+          "name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
+          "title_id": 1,
+          "title": "Dune: Part Two",
+          "year": 2024,
+          "version": "Main",
+          "downloader": "Lab qBittorrent",
+          "path": "/data/downloads/incomplete/holyarrs-lab139",
+          "downloader_kind": "qbittorrent",
+          "protocol": "torrent",
+          "size": 29588180,
+          "started_at": "2026-11-03T08:42:11.800949644Z",
+          "updated_at": "2026-11-03T08:42:11.801015261Z",
+          "slot_state": "downloading",
+          "can_act": true,
+          "kind": "movie",
+          "downloader_id": 1,
+          "hash": "29be7bfa8759643f2d5dac9f94d516c3378696ed",
+          "requested_by": "ana",
+          "source_name": "Lab",
+          "source_id": 1,
+          "live_key": "1:29be7bfa8759643f2d5dac9f94d516c3378696ed"
+        }
+      ],
+      "next_cursor": "",
+      "outside_total": 0,
+      "totals": {
+        "speed": 0,
+        "up_speed": 0
+      }
+    },
+    "ask": {
+      "albums": [],
+      "asked_at": "2026-11-03T08:42:06.316503687Z",
+      "asked_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "auto_approved": false,
+      "decided_at": "2026-11-03T08:42:06.317971193Z",
+      "decided_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "episodes": [],
+      "four_k": false,
+      "future_only": false,
+      "id": 1,
+      "kind": "movie",
+      "mine": true,
+      "name": "Dune: Part Two",
+      "people": [
+        {
+          "asked_at": "2026-11-03T08:42:06.316503687Z",
+          "id": 1,
+          "name": "ana"
+        }
+      ],
+      "ref": "tmdb:693134",
+      "seasons": [],
+      "state": "approved",
+      "state_label": "Approved",
+      "title_id": 1,
+      "tmdb_id": "693134",
+      "year": 2024
+    }
+  },
+  {
+    "at": "2026-11-03T08:42:13.150395813Z",
+    "searches": {
+      "recent": [
+        {
+          "job_id": 3,
+          "kind": "search_slot",
+          "state": "done",
+          "by_hand": false,
+          "only_show": false,
+          "title_id": 1,
+          "title_name": "Dune: Part Two",
+          "version": "Main",
+          "progress": 1,
+          "note": "searching Lab",
+          "started_at": "2026-11-03T08:42:06.322905462Z",
+          "ended_at": "2026-11-03T08:42:10.334253955Z",
+          "found": 13,
+          "refused": 12,
+          "outcome": "chosen",
+          "picked": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+        }
+      ],
+      "running": []
+    },
+    "downloads": {
+      "clients": [],
+      "downloads": [
+        {
+          "id": 1,
+          "state": "finished",
+          "label": "Waiting to import",
+          "text": "The Downloader is done; HolyArrs will import it next.",
+          "progress": 1,
+          "speed": 0,
+          "up_speed": 0,
+          "seeds": 0,
+          "peers": 0,
+          "active": false,
+          "phase": "waiting_to_import",
+          "name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
+          "title_id": 1,
+          "title": "Dune: Part Two",
+          "year": 2024,
+          "version": "Main",
+          "downloader": "Lab qBittorrent",
+          "path": "/data/downloads/incomplete/holyarrs-lab139",
+          "downloader_kind": "qbittorrent",
+          "protocol": "torrent",
+          "size": 29588180,
+          "started_at": "2026-11-03T08:42:11.800949644Z",
+          "finished_at": "2026-11-03T08:42:13.147843998Z",
+          "updated_at": "2026-11-03T08:42:13.147920166Z",
+          "slot_state": "downloading",
+          "can_act": false,
+          "kind": "movie",
+          "downloader_id": 1,
+          "hash": "29be7bfa8759643f2d5dac9f94d516c3378696ed",
+          "requested_by": "ana",
+          "source_name": "Lab",
+          "source_id": 1,
+          "live_key": "1:29be7bfa8759643f2d5dac9f94d516c3378696ed"
+        }
+      ],
+      "next_cursor": "",
+      "outside_total": 0,
+      "totals": {
+        "speed": 0,
+        "up_speed": 0
+      }
+    },
+    "ask": {
+      "albums": [],
+      "asked_at": "2026-11-03T08:42:06.316503687Z",
+      "asked_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "auto_approved": false,
+      "decided_at": "2026-11-03T08:42:06.317971193Z",
+      "decided_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "episodes": [],
+      "four_k": false,
+      "future_only": false,
+      "id": 1,
+      "kind": "movie",
+      "mine": true,
+      "name": "Dune: Part Two",
+      "people": [
+        {
+          "asked_at": "2026-11-03T08:42:06.316503687Z",
+          "id": 1,
+          "name": "ana"
+        }
+      ],
+      "ref": "tmdb:693134",
+      "seasons": [],
+      "state": "approved",
+      "state_label": "Approved",
+      "title_id": 1,
+      "tmdb_id": "693134",
+      "year": 2024
+    }
+  },
+  {
+    "at": "2026-11-03T08:42:13.353881075Z",
+    "searches": {
+      "recent": [
+        {
+          "job_id": 3,
+          "kind": "search_slot",
+          "state": "done",
+          "by_hand": false,
+          "only_show": false,
+          "title_id": 1,
+          "title_name": "Dune: Part Two",
+          "version": "Main",
+          "progress": 1,
+          "note": "searching Lab",
+          "started_at": "2026-11-03T08:42:06.322905462Z",
+          "ended_at": "2026-11-03T08:42:10.334253955Z",
+          "found": 13,
+          "refused": 12,
+          "outcome": "chosen",
+          "picked": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+        }
+      ],
+      "running": []
+    },
+    "downloads": {
+      "clients": [],
+      "downloads": [
+        {
+          "id": 1,
+          "state": "finished",
+          "label": "Importing",
+          "text": "HolyArrs is putting the files in the library.",
+          "progress": 1,
+          "speed": 0,
+          "up_speed": 0,
+          "seeds": 0,
+          "peers": 0,
+          "active": false,
+          "phase": "importing",
+          "name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
+          "title_id": 1,
+          "title": "Dune: Part Two",
+          "year": 2024,
+          "version": "Main",
+          "downloader": "Lab qBittorrent",
+          "path": "/data/downloads/incomplete/holyarrs-lab139",
+          "downloader_kind": "qbittorrent",
+          "protocol": "torrent",
+          "size": 29588180,
+          "started_at": "2026-11-03T08:42:11.800949644Z",
+          "finished_at": "2026-11-03T08:42:13.147843998Z",
+          "updated_at": "2026-11-03T08:42:13.147920166Z",
+          "slot_state": "importing",
+          "can_act": false,
+          "kind": "movie",
+          "downloader_id": 1,
+          "hash": "29be7bfa8759643f2d5dac9f94d516c3378696ed",
+          "requested_by": "ana",
+          "source_name": "Lab",
+          "source_id": 1,
+          "live_key": "1:29be7bfa8759643f2d5dac9f94d516c3378696ed"
+        }
+      ],
+      "next_cursor": "",
+      "outside_total": 0,
+      "totals": {
+        "speed": 0,
+        "up_speed": 0
+      }
+    },
+    "ask": {
+      "albums": [],
+      "asked_at": "2026-11-03T08:42:06.316503687Z",
+      "asked_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "auto_approved": false,
+      "decided_at": "2026-11-03T08:42:06.317971193Z",
+      "decided_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "episodes": [],
+      "four_k": false,
+      "future_only": false,
+      "id": 1,
+      "kind": "movie",
+      "mine": true,
+      "name": "Dune: Part Two",
+      "people": [
+        {
+          "asked_at": "2026-11-03T08:42:06.316503687Z",
+          "id": 1,
+          "name": "ana"
+        }
+      ],
+      "ref": "tmdb:693134",
+      "seasons": [],
+      "state": "approved",
+      "state_label": "Approved",
+      "title_id": 1,
+      "tmdb_id": "693134",
+      "year": 2024
+    }
+  },
+  {
+    "at": "2026-11-03T08:42:13.961893135Z",
+    "searches": {
+      "recent": [
+        {
+          "job_id": 3,
+          "kind": "search_slot",
+          "state": "done",
+          "by_hand": false,
+          "only_show": false,
+          "title_id": 1,
+          "title_name": "Dune: Part Two",
+          "version": "Main",
+          "progress": 1,
+          "note": "searching Lab",
+          "started_at": "2026-11-03T08:42:06.322905462Z",
+          "ended_at": "2026-11-03T08:42:10.334253955Z",
+          "found": 13,
+          "refused": 12,
+          "outcome": "chosen",
+          "picked": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+        }
+      ],
+      "running": []
+    },
+    "downloads": {
+      "clients": [],
+      "downloads": [
+        {
+          "id": 1,
+          "state": "finished",
+          "label": "Done",
+          "text": "In the library.",
+          "progress": 1,
+          "speed": 0,
+          "up_speed": 0,
+          "seeds": 0,
+          "peers": 0,
+          "active": false,
+          "phase": "done",
+          "name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
+          "title_id": 1,
+          "title": "Dune: Part Two",
+          "year": 2024,
+          "version": "Main",
+          "downloader": "Lab qBittorrent",
+          "path": "/data/downloads/incomplete/holyarrs-lab139",
+          "downloader_kind": "qbittorrent",
+          "protocol": "torrent",
+          "size": 29588180,
+          "started_at": "2026-11-03T08:42:11.800949644Z",
+          "finished_at": "2026-11-03T08:42:13.147843998Z",
+          "updated_at": "2026-11-03T08:42:13.147920166Z",
+          "slot_state": "in_library",
+          "can_act": false,
+          "kind": "movie",
+          "downloader_id": 1,
+          "hash": "29be7bfa8759643f2d5dac9f94d516c3378696ed",
+          "requested_by": "ana",
+          "source_name": "Lab",
+          "source_id": 1,
+          "live_key": "1:29be7bfa8759643f2d5dac9f94d516c3378696ed"
+        }
+      ],
+      "next_cursor": "",
+      "outside_total": 0,
+      "totals": {
+        "speed": 0,
+        "up_speed": 0
+      }
+    },
+    "ask": {
+      "albums": [],
+      "asked_at": "2026-11-03T08:42:06.316503687Z",
+      "asked_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "auto_approved": false,
+      "available_at": "2026-11-03T08:42:13.840905626Z",
+      "decided_at": "2026-11-03T08:42:06.317971193Z",
+      "decided_by": {
+        "id": 1,
+        "name": "ana"
+      },
+      "episodes": [],
+      "four_k": false,
+      "future_only": false,
+      "id": 1,
+      "kind": "movie",
+      "mine": true,
+      "name": "Dune: Part Two",
+      "people": [
+        {
+          "asked_at": "2026-11-03T08:42:06.316503687Z",
+          "id": 1,
+          "name": "ana"
+        }
+      ],
+      "ref": "tmdb:693134",
+      "seasons": [],
+      "state": "available",
+      "state_label": "Ready to watch",
+      "title_id": 1,
+      "tmdb_id": "693134",
+      "year": 2024
+    }
+  }
+]

@@ -544,10 +544,11 @@ func Seasons(ctx context.Context, db store.Lister, titleID int64, now time.Time)
 	if len(parts) == 0 {
 		return out, nil
 	}
-	// One query for every season of the show instead of one per season.
+	// One query for every season of the show instead of one per season. The
+	// main Version is looked up once (by the show's id), not once per episode.
 	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
-		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
-		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID)
+		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
+		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID, titleID)
 	if err != nil {
 		return nil, err
 	}

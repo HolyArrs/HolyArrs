@@ -57,7 +57,9 @@ func titleSize(ctx context.Context, db store.Lister, titleID int64) (int64, erro
 // lastAired is the newest air date of a show's episodes on or before now;
 // nil when nothing has aired yet.
 func lastAired(ctx context.Context, db store.Lister, titleID int64, now time.Time) (*time.Time, error) {
-	rows, err := db.QueryContext(ctx, `SELECT air_date FROM items WHERE title_id = ? AND kind = 'episode' AND air_date IS NOT NULL`, titleID)
+	// Stored times share one fixed-width UTC layout, so SQLite can pick the
+	// newest aired one instead of the server parsing every episode.
+	rows, err := db.QueryContext(ctx, `SELECT max(air_date) FROM items WHERE title_id = ? AND kind = 'episode' AND air_date IS NOT NULL AND air_date <= ?`, titleID, store.FormatTime(now))
 	if err != nil {
 		return nil, err
 	}

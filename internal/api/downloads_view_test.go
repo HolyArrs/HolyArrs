@@ -288,3 +288,27 @@ func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 		t.Fatalf("one big page: %d rows next %q", len(v.Downloads), v.NextCursor)
 	}
 }
+
+// ?asked=1 reads only downloads for titles with an approved ask, past the
+// usual 500-row cap, so the Requests page can count failed asks exactly.
+func TestDownloadsViewAsked(t *testing.T) {
+	x := seed41(t, domain.SlotDownloading, "failed")
+	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (2, 't', '{}', 't', '{}', 'ana', 'member', 'x')`)
+	get := func() int {
+		var out viewRows
+		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?asked=1", "", 200), &out)
+		return len(out.Downloads)
+	}
+	if n := get(); n != 0 {
+		t.Fatalf("no ask yet, got %d rows", n)
+	}
+	exec41(t, x.s, `INSERT INTO asks (id, created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, title_id, asked_by, asked_at)
+		SELECT 1, 't', '{}', 't', '{}', 'movie', '1', 'Salt Choir', 'asked', t.id, 2, 't' FROM titles t LIMIT 1`)
+	if n := get(); n != 0 {
+		t.Fatalf("ask not approved, got %d rows", n)
+	}
+	exec41(t, x.s, `UPDATE asks SET state = 'approved'`)
+	if n := get(); n != 1 {
+		t.Fatalf("approved ask, got %d rows", n)
+	}
+}

@@ -12,7 +12,7 @@ export type Tier = 'important' | 'changes' | 'routine';
 const groupTier: Record<string, Tier> = {
 	import: 'important', fail: 'important', delete: 'important', decide: 'important', health: 'important',
 	add: 'changes', hold: 'changes', choose: 'changes', grab: 'changes', download: 'changes', rename: 'changes',
-	subtitles: 'changes', wishlist: 'changes', links: 'changes',
+	subtitles: 'changes', wishlist: 'changes', links: 'changes', ai: 'changes',
 	search: 'routine', scan: 'routine'
 };
 
@@ -100,6 +100,7 @@ export function verbOf(kind: string): Verb {
 		case 'decide': return { word: 'Needs a decision', icon: 'alert', tone: 'wait' };
 		case 'health': return { word: 'Health', icon: 'alert', tone: 'fail' };
 		case 'wishlist': return { word: 'Requests', icon: 'wish', tone: 'info' };
+		case 'ai': return kind === 'ai_action_failed' ? { word: 'Not done', icon: 'sparkle', tone: 'fail' } : { word: 'By AI', icon: 'sparkle', tone: 'info' };
 		case 'links': return { word: kind === 'alert_failed' ? 'Alert failed' : 'Media server', icon: 'bell', tone: /failed|unreachable/.test(kind) ? 'fail' : 'idle' };
 	}
 	return { word: 'Other', icon: 'info', tone: 'idle' };

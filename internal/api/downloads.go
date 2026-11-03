@@ -325,7 +325,15 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		where += " AND downloader_id = ?"
 		args = append(args, only)
 	}
-	ds, err := store.Select[domain.Download](r.Context(), a.read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, limit(r, 100))...)
+	// ?asked=1 reads every download for a title with an approved ask, with
+	// no 500-row cap, so the Requests page counts failed asks exactly.
+	n := limit(r, 100)
+	if r.URL.Query().Get("asked") == "1" {
+		where += ` AND EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
+			JOIN asks a ON a.title_id = i.title_id WHERE a.state = 'approved')`
+		n = -1
+	}
+	ds, err := store.Select[domain.Download](r.Context(), a.read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, n)...)
 	if err != nil {
 		internal(w, err)
 		return
@@ -380,6 +388,10 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		row.Phase = phase(d, row.SlotState)
+		// The save folder on the host is for people who manage the Library.
+		if !manage {
+			row.Path = ""
+		}
 		if row.Kind == "artist" && len(d.SlotIDs) > 0 {
 			row.Album, row.Year = "", nil
 			if si, ok := slots[d.SlotIDs[0]]; ok && si.album.Valid {

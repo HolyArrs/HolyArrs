@@ -527,6 +527,8 @@
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>
 
 <PageLoader loading={!loaded} label="Loading Downloads">
+<!-- One heading in every state (loading, error, empty, list), for screen readers and the menu check. -->
+<h1 class="sr">Downloads</h1>
 {#if error && allRows.length === 0}
 	<div class="pad"><LoadError hasData={false} message="Downloads could not be loaded." onretry={load} /></div>
 {:else if allRows.length === 0}
@@ -607,6 +609,7 @@
 </Sheet>
 
 <style>
+	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	.lim { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px; min-width: 0; }
 	.lim legend { font: var(--t-headline); margin-bottom: 6px; padding: 0; }
 	.lim label { display: flex; flex-direction: column; gap: 4px; font: var(--t-subhead); color: var(--text-muted); flex: 1 1 120px; min-width: 0; }

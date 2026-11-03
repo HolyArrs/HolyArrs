@@ -522,6 +522,7 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 		}
 		byItem[s.ItemID] = append(byItem[s.ItemID], es)
 	}
+	trimEpisodeSlots(r.Context(), byItem)
 	out := make([]TrackView, 0, len(its))
 	for _, it := range its {
 		v := TrackView{ID: it.ID, Name: strOr(it.Name), LengthMS: it.LengthMS, RecordingID: strOr(it.RecordingID), ReleaseDate: it.AirDate,

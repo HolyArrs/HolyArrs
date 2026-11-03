@@ -435,6 +435,10 @@ func stripCategoryOK(id string) bool {
 	return true
 }
 
+// stripDayCategoriesMax caps the categories one member counts in a day;
+// real use stays far below it.
+const stripDayCategoriesMax = 200
+
 // exploreStripCounts answers POST /api/v1/explore/strip/counts {event,
 // categories}: the strip showed these categories, or one was opened. The
 // counts stay on this server and reorder only this member's strip.
@@ -462,7 +466,21 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 	}
 	member, day := a.person(r).UserID, explore.Day(a.exploreNow())
 	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+		// A member's day holds at most stripDayCategoriesMax categories, so
+		// made-up names cannot grow the database without end; past it only
+		// categories already counted that day move.
+		var have int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM explore_category_counts WHERE member_id = ? AND day = ?`, member, day).Scan(&have); err != nil {
+			return err
+		}
 		for c := range seen {
+			if have >= stripDayCategoriesMax {
+				if _, err := tx.Exec(`UPDATE explore_category_counts SET `+field+` = `+field+` + 1 WHERE member_id = ? AND category_id = ? AND day = ?`, member, c, day); err != nil {
+					return err
+				}
+				continue
+			}
+			have++
 			if _, err := tx.Exec(`INSERT INTO explore_category_counts (member_id, category_id, day, `+field+`) VALUES (?, ?, ?, 1)
 				ON CONFLICT (member_id, category_id, day) DO UPDATE SET `+field+` = `+field+` + 1`, member, c, day); err != nil {
 				return err
