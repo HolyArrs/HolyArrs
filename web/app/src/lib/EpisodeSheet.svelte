@@ -5,6 +5,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/format.ts';
 	import { qualityBadges } from '#lib/title-page.ts';
+	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
 
 	// One episode, from the Library tab: its picture and story, where it stands,
 	// its file (quality, size, languages), keep up to date, and what happened to it.
@@ -126,6 +127,11 @@
 					{/if}
 					<p class="es-name" title={fileFacts.name}>{fileFacts.name}</p>
 				</article>
+			{/if}
+
+			{#if manage && ep.season != null}
+				<!-- Subtitles of this one episode: what is missing, choose one from a Subtitle site. -->
+				<div data-testid="episode-subtitles">{#key ep.id}<SubtitlePanel {titleId} movie={false} itemId={ep.id} label={`S${String(ep.season).padStart(2, '0')}E${String(ep.episode).padStart(2, '0')}`} />{/key}</div>
 			{/if}
 
 			{#if manage}

@@ -2,6 +2,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { openLibraryTab, openSeasonNamed } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -135,9 +136,11 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await adopt('Shows: ', 'Fennel Clock', 'Adopt 1 show', '1 show is now in the Library');
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
-	await page.getByTestId('season').first().locator('summary').click();
-	await page.getByRole('button', { name: 'Subtitles of S01E01' }).click();
-	const dialog = page.getByTestId('episode-subtitles-dialog');
+	// An episode's subtitles live in its sheet, opened from its row on the Library tab.
+	await openLibraryTab(page);
+	await openSeasonNamed(page, 'Season 1');
+	await page.getByRole('button', { name: /^Episode 1:/ }).first().click();
+	const dialog = page.getByTestId('episode-subtitles');
 	await expect(dialog.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
 	await expect(dialog.getByTestId('subtitle-missing')).toContainText('English');
 	await dialog.getByTestId('subtitle-choose').click();
