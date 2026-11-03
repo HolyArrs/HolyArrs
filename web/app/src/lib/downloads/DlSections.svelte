@@ -1574,7 +1574,7 @@
 			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
 			{#if so.length}
 				<div class="subwrap" inert={!open}>
-					<div class="subin" role="group" aria-label="{c.label}: show" data-testid={open ? 'dl-subseg' : undefined}>
+					<div class="subin" data-testid={open ? 'dl-subseg' : undefined}>
 						{#each so as x (x.key)}
 							<button type="button" role="tab" class="stab" class:on={open && subOn === x.key} aria-selected={open && subOn === x.key} tabindex="-1" data-nav onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }} data-testid={open ? 'dl-subseg-item' : undefined} data-key={x.key} data-count={x.count}>{x.label}<b>{x.count}</b></button>
 						{/each}
