@@ -37,12 +37,19 @@ while ($true) {
     break
   } catch {}
   $h = Read-Holder
-  # Last sign of life: the holder file's last touch, or (while it is being
-  # written) the lock folder's last change. Creation times are not used: Windows
-  # can hand a new folder the creation time of an old one with the same name.
+  # Last sign of life: the holder file's last touch (folder creation times are
+  # not used: Windows can hand a new folder an old one's creation time). A holder file that cannot be read (being written or touched) is never stale,
+  # and neither is any lock while the harness's app or fake TMDB port is in use:
+  # a run is still up, whoever holds the lock.
   $seen = $null
-  try { $seen = (Get-Item $info -ErrorAction Stop).LastWriteTime } catch { try { $seen = (Get-Item $lock -ErrorAction Stop).LastWriteTime } catch {} }
-  if ($seen -and ((Get-Date) - $seen).TotalMinutes -gt $StaleMinutes) {
+  try { $seen = (Get-Item $info -ErrorAction Stop).LastWriteTime } catch {}
+  # Tried by opening them: a listing of connections can miss other sessions' ports.
+  $busy = $false
+  foreach ($port in 18741, 18744) {
+    $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
+    try { $probe.Start() } catch { $busy = $true } finally { $probe.Stop() }
+  }
+  if ($seen -and -not $busy -and ((Get-Date) - $seen).TotalMinutes -gt $StaleMinutes) {
     "e2e lock: taking over a stale lock ($(if ($h) { "$($h.Who), pid $($h.Pid), since $($h.At)" } else { 'no holder file' }))"
     Remove-Item -Recurse -Force $lock -ErrorAction SilentlyContinue
     continue
