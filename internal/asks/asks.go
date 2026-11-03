@@ -958,6 +958,10 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 // CheckReady marks approved asks whose movie has a file in the Library as
 // available and tells the people who asked. It returns how many it marked.
 func (s *Service) CheckReady(ctx context.Context) (int, error) {
+	// Followed movies whose file is now in are told here too, right after their import.
+	if _, err := s.TellMovieFollows(ctx); err != nil {
+		log.Printf("asks: followed movies ready: %v", err)
+	}
 	// A 4K ask is ready once its 4K copy is in (labelled 4K or on the 4K Pick rules).
 	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", `kind = 'movie' AND state = 'approved' AND title_id IS NOT NULL AND EXISTS (
 		SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = asks.title_id AND sl.state IN ('in_library', 'better_wanted')
