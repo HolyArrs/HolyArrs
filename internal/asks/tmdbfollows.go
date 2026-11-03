@@ -116,8 +116,8 @@ func (s *Service) libraryMovie(ctx context.Context, tmdbID string) (int64, error
 
 // FollowMovieTMDB follows a movie by its TMDB id. A movie in the Library
 // is followed as that title; otherwise the follow waits for the movie
-// (often one not out yet), the person hears once when it lands, and from
-// then on follows the Library title. A Kid follows only movies their limit
+// (often one not out yet), follows the Library title once it is added,
+// and the person hears once its file is in. A Kid follows only movies their limit
 // allows, as when asking.
 func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) error {
 	if !tmdbIDOK(tmdbID) {
@@ -182,73 +182,146 @@ func (s *Service) IsFollowingMovieTMDB(ctx context.Context, userID int64, tmdbID
 	return n > 0, err
 }
 
-// landMovieFollows tells the people waiting for a just-added movie that it
-// is in the Library (an in-app message and the Ready alert) and moves their
-// follows onto the Library title. Kids whose limit does not allow it are
-// dropped without a notice.
-func (s *Service) landMovieFollows(ctx context.Context, titleID int64, name, tmdbID string) (int, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), u.max_rating
-		FROM tmdb_movie_follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
+// landMovieFollows moves the follows of the people waiting for a
+// just-added movie onto its Library title. They are told once its file is
+// in (TellMovieFollows), not at the add: the add only means HolyArrs will
+// look for it. Kids whose limit does not allow it are dropped without a
+// notice. It returns how many follows it moved.
+func (s *Service) landMovieFollows(ctx context.Context, titleID int64, tmdbID string) (int, error) {
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.max_rating FROM tmdb_movie_follows f JOIN users u ON u.id = f.user_id
 		WHERE f.tmdb_id = ? AND u.state != 'disabled' ORDER BY u.id`, tmdbID)
 	if err != nil {
 		return 0, err
 	}
-	var tell []person
+	var ids []int64
 	var maxes []string
 	for rows.Next() {
-		var p person
+		var id int64
 		var max string
-		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &max); err != nil {
+		if err := rows.Scan(&id, &max); err != nil {
 			rows.Close()
 			return 0, err
 		}
-		p.Name = strings.TrimSpace(p.Name)
-		tell, maxes = append(tell, p), append(maxes, max)
+		ids, maxes = append(ids, id), append(maxes, max)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		return 0, err
 	}
-	kept := tell[:0]
-	for i, p := range tell {
+	keep := map[int64]bool{}
+	for i, id := range ids {
 		if maxes[i] != "" {
-			switch err := libraryOverLimit(ctx, s.Store.Read(), Person{UserID: p.ID, MaxRating: maxes[i]}, "movie", titleID); {
+			switch err := libraryOverLimit(ctx, s.Store.Read(), Person{UserID: id, MaxRating: maxes[i]}, "movie", titleID); {
 			case errors.Is(err, ErrAboveLimit):
 				continue
 			case err != nil:
 				return 0, err
 			}
 		}
-		kept = append(kept, p)
+		keep[id] = true
 	}
-	tell = kept
 	now := store.FormatTime(s.now())
-	text := name + " is in the Library"
+	moved := 0
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.Exec("DELETE FROM tmdb_movie_follows WHERE tmdb_id = ?", tmdbID); err != nil {
-			return err
-		}
-		for _, p := range tell {
-			if _, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.ID, titleID, now); err != nil {
+		moved = 0
+		for _, id := range ids {
+			if !keep[id] {
+				// Dropped: no follow and no notice later.
+				if _, err := tx.Exec("DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?", id, tmdbID); err != nil {
+					return err
+				}
+				continue
+			}
+			// The waiting row stays until the file is in: it says who is still to be told.
+			res, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", id, titleID, now)
+			if err != nil {
 				return err
 			}
-		}
-		for _, p := range tell {
-			if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, title_id) VALUES (?, ?, 'ready', ?, ?)", now, p.ID, text+".", titleID); err != nil {
-				return err
+			if n, _ := res.RowsAffected(); n > 0 {
+				moved++
 			}
 		}
 		return nil
 	})
-	if err != nil || len(tell) == 0 {
+	return moved, err
+}
+
+// TellMovieFollows tells the people who followed a movie before it was in
+// the Library that it is ready to watch, once its file is in (an in-app
+// message and the Ready alert), once each. People who stopped following
+// it in the meantime are not told. It returns how many people it told.
+func (s *Service) TellMovieFollows(ctx context.Context) (int, error) {
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT t.id, t.name, f.tmdb_id, u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, '')
+		FROM tmdb_movie_follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
+		JOIN titles t ON t.kind = 'movie' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') = f.tmdb_id
+		JOIN follows fo ON fo.user_id = f.user_id AND fo.title_id = t.id
+		WHERE u.state != 'disabled' AND EXISTS (SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id
+			WHERE i.title_id = t.id AND sl.state IN ('in_library', 'better_wanted'))
+		ORDER BY t.id, u.id`)
+	if err != nil {
 		return 0, err
 	}
-	m := alerts.Message{Moment: alerts.MomentReady, Subject: text, Text: text + ". You followed it, so here it is."}
-	for _, p := range tell {
-		m.People = append(m.People, alerts.Person{Name: p.Name, Email: p.Email, DiscordID: p.DiscordID})
+	type movie struct {
+		id           int64
+		name, tmdbID string
+		people       []person
 	}
-	s.send(ctx, m)
-	return len(tell), nil
+	var ms []*movie
+	for rows.Next() {
+		var id int64
+		var name, tmdbID string
+		var p person
+		if err := rows.Scan(&id, &name, &tmdbID, &p.ID, &p.Name, &p.Email, &p.DiscordID); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		if len(ms) == 0 || ms[len(ms)-1].id != id {
+			ms = append(ms, &movie{id: id, name: name, tmdbID: tmdbID})
+		}
+		p.Name = strings.TrimSpace(p.Name)
+		ms[len(ms)-1].people = append(ms[len(ms)-1].people, p)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	told := 0
+	for _, m := range ms {
+		now := store.FormatTime(s.now())
+		text := m.name + " is in the Library"
+		var tell []person
+		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+			tell = tell[:0]
+			for _, p := range m.people {
+				// Only the check that removes the waiting row tells (two checks can run at once).
+				res, err := tx.Exec("DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?", p.ID, m.tmdbID)
+				if err != nil {
+					return err
+				}
+				if n, _ := res.RowsAffected(); n == 0 {
+					continue
+				}
+				if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, title_id) VALUES (?, ?, 'ready', ?, ?)", now, p.ID, text+" and ready to watch.", m.id); err != nil {
+					return err
+				}
+				tell = append(tell, p)
+			}
+			return nil
+		})
+		if err != nil {
+			return told, err
+		}
+		if len(tell) == 0 {
+			continue
+		}
+		told += len(tell)
+		msg := alerts.Message{Moment: alerts.MomentReady, Subject: text, Text: text + " and ready to watch. You followed it, so here it is."}
+		for _, p := range tell {
+			msg.People = append(msg.People, alerts.Person{Name: p.Name, Email: p.Email, DiscordID: p.DiscordID})
+		}
+		s.send(ctx, msg)
+	}
+	return told, nil
 }
 
 // WatchTMDBFollows moves the waiting follows of a show onto its Library
@@ -275,8 +348,9 @@ func (s *Service) WatchTMDBFollows() {
 }
 
 // LandTMDBFollows moves the waiting follows of a just-added show to the
-// title and sends each person a notice; for a movie it tells the people
-// waiting for it. It returns how many were told.
+// title and sends each person a notice, and returns how many were told.
+// For a movie it moves the follows only (they hear once its file is in,
+// TellMovieFollows) and returns how many follows it moved.
 func (s *Service) LandTMDBFollows(ctx context.Context, titleID int64) (int, error) {
 	var name, tmdbID, kind string
 	err := s.Store.Read().QueryRowContext(ctx, "SELECT name, coalesce(json_extract(source_ids, '$.tmdb'), ''), kind FROM titles WHERE id = ? AND kind IN ('show', 'movie')", titleID).Scan(&name, &tmdbID, &kind)
@@ -287,7 +361,7 @@ func (s *Service) LandTMDBFollows(ctx context.Context, titleID int64) (int, erro
 		return 0, err
 	}
 	if kind == "movie" {
-		return s.landMovieFollows(ctx, titleID, name, tmdbID)
+		return s.landMovieFollows(ctx, titleID, tmdbID)
 	}
 	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), coalesce(x.new_episodes, 1), u.max_rating
 		FROM tmdb_follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
