@@ -1,3 +1,14 @@
+# Web stage: builds the app's pages from this commit's source and lockfile,
+# so an image from any commit always shows that commit's pages (the
+# committed web/dist is only for local go builds). It runs on the build
+# machine for every target; Node never reaches the final image.
+FROM --platform=$BUILDPLATFORM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS web
+WORKDIR /src/web/app
+COPY web/app/package.json web/app/package-lock.json ./
+RUN npm ci --ignore-scripts --no-audit --no-fund
+COPY web/app/ ./
+RUN npm run build
+
 # Build stage: runs on the build machine and cross-compiles for the target,
 # so multi-arch builds (amd64, arm64, armv7) need no emulation.
 FROM --platform=$BUILDPLATFORM golang:1.27.2@sha256:007a316059246276cb214df93950be77837545dc78007a73e0291a4963d5d3bf AS build
@@ -12,6 +23,9 @@ WORKDIR /src
 COPY go.mod go.sum* ./
 RUN go mod download
 COPY . .
+# The pages just built replace the committed copy before the program embeds them.
+RUN rm -rf web/dist
+COPY --from=web /src/web/dist ./web/dist
 RUN set -eu; \
     ldflags="-s -w"; \
     if [ -n "${VERSION:-}" ]; then ldflags="$ldflags -X main.version=$VERSION"; fi; \

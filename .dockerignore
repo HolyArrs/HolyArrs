@@ -4,3 +4,5 @@ config/
 *.db-wal
 *.db-shm
 .git/
+web/app/node_modules/
+web/app/.svelte-kit/
