@@ -96,7 +96,7 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	const places: [string, RegExp, string][] = [
 		['Movies', /\/library\?kind=movie$/, 'Movies'],
 		['Downloads', /\/downloads$/, 'Downloads'],
-		['Calendar', /\/calendar$/, 'Calendar'],
+		['Calendar', /\/calendar(\?view=[a-z]+)?$/, 'Calendar'],
 		['History', /\/downloads\/history$/, 'History'],
 		['Settings', /\/settings$/, 'Settings'],
 		['Home', /\/$/, 'Home']
