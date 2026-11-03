@@ -295,6 +295,9 @@ type Source struct {
 	ProxySecretRef *int64 `db:"proxy_secret_ref"`
 	// ProxyAllowLocal lets the proxy itself be on the local network.
 	ProxyAllowLocal bool `db:"proxy_allow_local_network"`
+	// PathSecretRef holds the passkeys an rss address keeps in its path;
+	// the stored URL has a marker in their place.
+	PathSecretRef *int64 `db:"path_secret_ref"`
 }
 
 // Release is one search result.

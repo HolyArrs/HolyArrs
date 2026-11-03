@@ -29,8 +29,8 @@ func (a *API) sourceRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/titles/{id}/search-outcome", a.searchOutcome)
 }
 
-// SourceView is a Source as the API shows it: the key and the proxy
-// password are masked, never sent.
+// SourceView is a Source as the API shows it: the key, a passkey in the
+// address path and the proxy password are masked, never sent.
 type SourceView struct {
 	ID         int64               `json:"id"`
 	Name       string              `json:"name"`
@@ -57,7 +57,7 @@ type SourceView struct {
 }
 
 func sourceView(x domain.Source, sum source.Summary) SourceView {
-	v := SourceView{ID: x.ID, Name: x.Name, Protocol: x.Protocol, Format: x.Format, URL: x.URL, UseFor: x.UseFor, Kinds: x.Kinds,
+	v := SourceView{ID: x.ID, Name: x.Name, Protocol: x.Protocol, Format: x.Format, URL: source.MaskURL(x.URL), UseFor: x.UseFor, Kinds: x.Kinds,
 		Categories: x.Categories, MinSeeders: x.MinSeeders, Limits: x.Limits, Priority: x.Priority, State: x.State, Health: source.HealthOf(x),
 		AllowLocal: x.AllowLocal, Proxy: x.ProxyURL, ProxyAllowLocal: x.ProxyAllowLocal, Summary: sum}
 	if v.Kinds == nil {
@@ -109,7 +109,8 @@ func readSource(w http.ResponseWriter, r *http.Request) (source.Input, bool) {
 
 func sourceError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, source.ErrNameUsed), errors.Is(err, source.ErrKeyAgain), errors.Is(err, source.ErrKeyAgainProxy), errors.Is(err, source.ErrProxyAgain):
+	case errors.Is(err, source.ErrNameUsed), errors.Is(err, source.ErrKeyAgain), errors.Is(err, source.ErrKeyAgainProxy), errors.Is(err, source.ErrProxyAgain),
+		errors.Is(err, source.ErrPathKey):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, source.ErrNoVault):
 		fail(w, http.StatusServiceUnavailable, err.Error())

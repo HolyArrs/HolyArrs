@@ -142,6 +142,9 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 	}
 	key = in.APIKey
 	if raw := strings.TrimSpace(in.URL); raw != "" || isNew {
+		// A typed address never holds a real path marker: break any, so a
+		// stored passkey is never filled into it.
+		raw = strings.ReplaceAll(raw, pathMark, "HOLYARRS-PATHKEY")
 		if src.Format == "rss" {
 			var q string
 			raw, q = splitRSS(raw)
@@ -281,11 +284,20 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 	if err != nil {
 		return src, err
 	}
+	var path []string
+	if src.Format == "rss" {
+		if src.URL, path, _, err = hidePath(src.URL, nil); err != nil {
+			return src, err
+		}
+	}
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, src.Name, 0); err != nil {
 			return err
 		}
 		if err := putSecret(tx, v, &src.SecretRef, "source_api_key", key, by); err != nil {
+			return err
+		}
+		if err := putSecret(tx, v, &src.PathSecretRef, "source_path_key", strings.Join(path, "/"), by); err != nil {
 			return err
 		}
 		if err := putSecret(tx, v, &src.ProxySecretRef, "source_proxy_password", pass, by); err != nil {
@@ -318,6 +330,28 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 	if err != nil {
 		return old, err
 	}
+	// A sent address is checked for path passkeys again; a masked one keeps
+	// the stored value, but only on the same host.
+	urlSent := strings.TrimSpace(in.URL) != ""
+	var path, oldPath []string
+	pathKept := src.PathSecretRef != nil && !urlSent
+	if urlSent && src.Format == "rss" {
+		if old.PathSecretRef != nil && hostOf(src.URL) == hostOf(old.URL) && hasMasked(src.URL) {
+			if v == nil {
+				return old, ErrNoVault
+			}
+			plain, err := v.Get(ctx, *old.PathSecretRef)
+			if err != nil {
+				return old, fmt.Errorf("reading the Source passkey: %w", err)
+			}
+			oldPath = splitKeys(plain)
+		}
+		var reused bool
+		if src.URL, path, reused, err = hidePath(src.URL, oldPath); err != nil {
+			return old, err
+		}
+		pathKept = reused
+	}
 	if src.SecretRef != nil && key == "" && !in.ClearKey && hostOf(src.URL) != hostOf(old.URL) {
 		return old, ErrKeyAgain
 	}
@@ -326,7 +360,7 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		return old, ErrProxyAgain
 	}
 	// An http Source sends its key in the clear to whatever proxy carries it.
-	if src.SecretRef != nil && key == "" && !in.ClearKey && strings.HasPrefix(src.URL, "http://") &&
+	if (src.SecretRef != nil && key == "" && !in.ClearKey || pathKept) && strings.HasPrefix(src.URL, "http://") &&
 		src.ProxyURL != "" && src.ProxyURL != old.ProxyURL {
 		return old, ErrKeyAgainProxy
 	}
@@ -341,6 +375,14 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		}
 		if err := putSecret(tx, v, &src.SecretRef, "source_api_key", key, by); err != nil {
 			return err
+		}
+		if urlSent && !(pathKept && slices.Equal(path, oldPath)) {
+			if err := dropSecret(tx, &src.PathSecretRef); err != nil {
+				return err
+			}
+			if err := putSecret(tx, v, &src.PathSecretRef, "source_path_key", strings.Join(path, "/"), by); err != nil {
+				return err
+			}
 		}
 		if src.ProxyURL == "" {
 			if err := dropSecret(tx, &src.ProxySecretRef); err != nil {
@@ -368,6 +410,9 @@ func Remove(ctx context.Context, s *store.Store, id int64) error {
 			return err
 		}
 		if err := dropSecret(tx, &src.ProxySecretRef); err != nil {
+			return err
+		}
+		if err := dropSecret(tx, &src.PathSecretRef); err != nil {
 			return err
 		}
 		_, err := tx.Exec("DELETE FROM sources WHERE id = ?", id)
@@ -412,6 +457,16 @@ func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config
 	var err error
 	if cfg.APIKey, err = open(src.SecretRef); err != nil {
 		return cfg, fmt.Errorf("reading the Source key: %w", err)
+	}
+	if strings.Contains(src.URL, pathMark) {
+		plain, err := open(src.PathSecretRef)
+		if err != nil {
+			return cfg, fmt.Errorf("reading the Source passkey: %w", err)
+		}
+		cfg.PathKeys = splitKeys(plain)
+		if cfg.URL, err = revealPath(src.URL, cfg.PathKeys); err != nil {
+			return cfg, err
+		}
 	}
 	if src.ProxyURL != "" {
 		p, err := url.Parse(src.ProxyURL)

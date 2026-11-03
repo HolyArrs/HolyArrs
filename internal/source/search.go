@@ -99,21 +99,31 @@ const hidden = "HOLYARRSKEY"
 
 // secretValues lists the key values a result link may carry: a
 // Torznab/Newznab apikey, or the values in an rss Source's key (its
-// address's query, where feeds keep their passkey).
+// address's query, where feeds keep their passkey), then the passkeys
+// its address path holds.
 func secretValues(cfg Config) []string {
-	if cfg.APIKey == "" {
+	if cfg.APIKey == "" && len(cfg.PathKeys) == 0 {
 		return nil
 	}
-	if cfg.Format != "rss" {
-		return []string{cfg.APIKey}
-	}
 	var out []string
-	// Feeds separate values with & or ; (u=1;tp=PASSKEY).
-	for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
-		_, v, _ := strings.Cut(part, "=")
-		if u, err := url.QueryUnescape(v); err == nil {
-			v = u
+	if cfg.Format != "rss" {
+		if cfg.APIKey != "" {
+			out = append(out, cfg.APIKey)
 		}
+	} else {
+		// Feeds separate values with & or ; (u=1;tp=PASSKEY).
+		for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
+			_, v, _ := strings.Cut(part, "=")
+			if u, err := url.QueryUnescape(v); err == nil {
+				v = u
+			}
+			if len(v) >= 4 && !slices.Contains(out, v) {
+				out = append(out, v)
+			}
+		}
+	}
+	// Path passkeys come after, so markers stored before keep their number.
+	for _, v := range cfg.PathKeys {
 		if len(v) >= 4 && !slices.Contains(out, v) {
 			out = append(out, v)
 		}
