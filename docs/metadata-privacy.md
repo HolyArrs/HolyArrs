@@ -31,7 +31,8 @@ from.
 - Your library: which titles you have, what is downloading, your history.
 - Accounts: user names, passwords, sign-in sessions, who asked for what.
 - Keys and addresses of your downloaders, sources, media servers and lists.
-- Usage counts or crash reports. HolyArrs has no telemetry.
+- Crash reports. Apart from the per-country install count above, HolyArrs has
+  no telemetry.
 
 ## Using your own key instead
 
