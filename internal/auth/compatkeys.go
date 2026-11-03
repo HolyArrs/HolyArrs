@@ -61,14 +61,15 @@ func compatKey(r *http.Request) (string, bool) {
 
 // compatLink matches the page link Seerr shows admins to open a title in
 // the old app (/sonarr/series/<id>, /radarr/movie/<id>, no API path). A
-// browser follows it with no key, so it goes to the HolyArrs title page.
+// browser follows it with no key, so it goes to the HolyArrs title page:
+// a show's slug is its Library id, a movie's is its TMDB id.
 func compatLink(r *http.Request) (string, bool) {
 	if r.Method != http.MethodGet {
 		return "", false
 	}
-	for _, p := range []string{"/sonarr/series/", "/radarr/movie/"} {
+	for p, to := range map[string]string{"/sonarr/series/": "/library/", "/radarr/movie/": "/title/movie/"} {
 		if id, ok := strings.CutPrefix(r.URL.Path, p); ok && id != "" && strings.Trim(id, "0123456789") == "" {
-			return id, true
+			return to + id, true
 		}
 	}
 	return "", false
