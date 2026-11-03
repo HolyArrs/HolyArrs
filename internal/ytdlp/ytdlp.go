@@ -214,23 +214,17 @@ func (t *Tool) update(ctx context.Context) (string, error) {
 		return "", errors.New("the release lists no checksum for " + asset)
 	}
 	dest := filepath.Join(t.DataDir, exe())
-	if b, err := os.ReadFile(dest); err == nil {
-		if h := sha256.Sum256(b); hex.EncodeToString(h[:]) == want {
-			return Version(ctx, dest)
-		}
-	}
-	bin, err := get(asset, 128<<20)
-	if err != nil {
-		return "", err
-	}
-	if h := sha256.Sum256(bin); hex.EncodeToString(h[:]) != want {
-		return "", errors.New("checksum mismatch")
+	if fileSum(dest) == want {
+		return Version(ctx, dest)
 	}
 	if err := os.MkdirAll(t.DataDir, 0o755); err != nil {
 		return "", err
 	}
+	// The release (about 35 MB) goes straight to the file while it is hashed,
+	// never whole in memory (a spike on a small board).
 	tmp := dest + ".new"
-	if err := os.WriteFile(tmp, bin, 0o755); err != nil {
+	if err := t.download(ctx, cl, base+asset, tmp, 128<<20, want); err != nil {
+		os.Remove(tmp)
 		return "", err
 	}
 	v, err := Version(ctx, tmp)
@@ -267,6 +261,53 @@ func (t *Tool) update(ctx context.Context) (string, error) {
 		}
 	}
 	return v, nil
+}
+
+// fileSum is a file's SHA-256 in hex, read in pieces ("" when unreadable).
+func fileSum(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// download writes url to path (made runnable) while hashing it; the file
+// must be at most limit bytes and match want.
+func (t *Tool) download(ctx context.Context, cl *http.Client, url, path string, limit int64, want string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return errors.New("release download failed")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("release download status " + resp.Status)
+	}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o755)
+	if err != nil {
+		return err
+	}
+	h := sha256.New()
+	n, err := io.Copy(io.MultiWriter(f, h), io.LimitReader(resp.Body, limit+1))
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil || n > limit {
+		return errors.New("release download failed")
+	}
+	if hex.EncodeToString(h.Sum(nil)) != want {
+		return errors.New("checksum mismatch")
+	}
+	return nil
 }
 
 func pinnedKeyring() (openpgp.EntityList, error) {

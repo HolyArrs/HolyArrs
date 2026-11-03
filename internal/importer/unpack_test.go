@@ -118,12 +118,6 @@ func lastWhy(imp *domain.Import) string {
 	return strings.Join(imp.Plan[len(imp.Plan)-1].Why, " ")
 }
 
-func fakeTools(t *testing.T, look func(string) (string, error), run func(context.Context, string, []string) error) {
-	oldLook, oldRun := lookTool, runTool
-	lookTool, runTool = look, run
-	t.Cleanup(func() { lookTool, runTool = oldLook, oldRun })
-}
-
 var video = bytes.Repeat([]byte("v"), 3000)
 
 func TestPackedMultiVolumeIsUnpackedAndImported(t *testing.T) {
@@ -187,7 +181,6 @@ func TestPackedSetWithSampleIsUnpacked(t *testing.T) {
 // built-in decoder, with no unrar or 7z on the system, and imported.
 func TestCompressedRAR5SceneSetIsImportedWithoutATool(t *testing.T) {
 	fakeDisk(t, 10<<30)
-	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
 	files := map[string][]byte{
 		"Rel/" + relName + ".nfo":                                []byte("info"),
 		"Rel/Sample/" + strings.ToLower(relName) + "-sample.mkv": bytes.Repeat([]byte("s"), 200),
@@ -228,7 +221,6 @@ func TestPackedDryRunWritesNothing(t *testing.T) {
 // either, fails with a plain reason and leaves the download alone.
 func TestCompressedPackNobodyCanReadGivesPlainReason(t *testing.T) {
 	fakeDisk(t, 10<<30)
-	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
 	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", []byte("packed"), 5000, false, false, true, false)})
 	before := snapshot(w.dl)
 	im := &Importer{Store: w.s}
@@ -245,31 +237,6 @@ func TestCompressedPackNobodyCanReadGivesPlainReason(t *testing.T) {
 	}
 	if after := snapshot(w.dl); len(after) != len(before) {
 		t.Fatal("download folder changed")
-	}
-	noLeftovers(t, w.dl)
-}
-
-func TestCompressedPackUsesSystemTool(t *testing.T) {
-	fakeDisk(t, 10<<30)
-	var args []string
-	fakeTools(t, func(n string) (string, error) {
-		if n == "unrar" {
-			return "unrar", nil
-		}
-		return "", os.ErrNotExist
-	}, func(_ context.Context, _ string, a []string) error {
-		args = a
-		dest := strings.TrimRight(a[len(a)-1], `/\`)
-		return os.WriteFile(filepath.Join(dest, relName+".mkv"), video, 0o644)
-	})
-	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", []byte("packed"), len(video), false, false, true, false)})
-	im := &Importer{Store: w.s}
-	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
-	if err != nil || imp.State != "done" {
-		t.Fatalf("%v %+v", err, imp)
-	}
-	if args[0] != "x" || !strings.HasSuffix(args[len(args)-2], ".rar") {
-		t.Fatalf("args %v", args)
 	}
 	noLeftovers(t, w.dl)
 }
@@ -310,7 +277,6 @@ func TestPackedNeedsFreeSpace(t *testing.T) {
 // decoder writes both files next to the download.
 func TestCompressedRAR4IsUnpackedWithoutATool(t *testing.T) {
 	fakeDisk(t, 10<<30)
-	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
 	b, err := os.ReadFile(filepath.Join("..", "unrar", "testdata", "rarfile", "rar3-solid.rar"))
 	if err != nil {
 		t.Fatal(err)

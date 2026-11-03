@@ -11,6 +11,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/compat"
+	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
@@ -180,10 +181,21 @@ func (a *API) putOldAppAPI(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in, `send {"enabled": true} and/or {"delete_files": false}`) {
 		return
 	}
+	if err := a.saveOldAppSwitches(r.Context(), actor(r), in.Enabled, in.DeleteFiles); err != nil {
+		internal(w, err)
+		return
+	}
+	a.getOldAppAPI(w, r)
+}
+
+// saveOldAppSwitches saves the old-app API's on/off and delete-files
+// switches; a nil one is left as it is. Setup steps in this package (such
+// as connecting Prowlarr) turn the API on through it.
+func (a *API) saveOldAppSwitches(ctx context.Context, who domain.Actor, enabled, deleteFiles *bool) error {
 	now := store.FormatTime(time.Now())
-	by, _ := json.Marshal(actor(r))
-	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
-		for key, v := range map[string]*bool{settingOldAppAPI: in.Enabled, settingOldAppDelete: in.DeleteFiles} {
+	by, _ := json.Marshal(who)
+	return a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+		for key, v := range map[string]*bool{settingOldAppAPI: enabled, settingOldAppDelete: deleteFiles} {
 			if v == nil {
 				continue
 			}
@@ -196,11 +208,6 @@ func (a *API) putOldAppAPI(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
-	if err != nil {
-		internal(w, err)
-		return
-	}
-	a.getOldAppAPI(w, r)
 }
 
 // makeOldAppKey makes (or replaces) one side's key and shows it once. The

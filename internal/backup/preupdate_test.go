@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -84,5 +85,25 @@ func TestThreeNewestPreUpdateBackupsKept(t *testing.T) {
 	}
 	if err := m.Prune(Balanced); err != nil || kept(t, m, KindPreUpdate) != 3 {
 		t.Fatalf("prune touched pre-update backups: %v", err)
+	}
+}
+
+// Left-over update backups (made before older ones were dropped) go on the
+// next good start even when no update ran, so only the newest stays.
+func TestOldUpdateBackupsDroppedWithoutAnUpdate(t *testing.T) {
+	dir := t.TempDir()
+	startAt(t, dir, "1.0.0", 1)
+	m := &Manager{Dir: dir}
+	now := time.Now().UTC()
+	makeAt(t, m, KindUpdate, now.Add(-3*time.Hour), now.Add(-2*time.Hour), now.Add(-time.Hour))
+	m = startAt(t, dir, "1.0.0", 1)
+	if n := kept(t, m, KindUpdate); n != 1 {
+		t.Fatalf("%d update backups kept, want 1", n)
+	}
+	all, _ := m.List()
+	for _, b := range all {
+		if b.Kind == KindUpdate && !b.CreatedAt.Equal(now.Add(-time.Hour).Truncate(time.Millisecond)) {
+			t.Fatalf("kept %s, want the newest", b.Name)
+		}
 	}
 }
