@@ -697,6 +697,10 @@
             "description": "Telegram chat a telegram Alert writes to: a number (negative for a group or channel) or @channelname.",
             "type": "string"
           },
+          "clear_app_token": {
+            "description": "ntfy only: drops the stored access token when no new app_token is sent. Gotify and Pushover need their token, so it is refused for them without a new one.",
+            "type": "boolean"
+          },
           "enabled": {
             "type": "boolean"
           },

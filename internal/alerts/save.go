@@ -41,10 +41,13 @@ type Input struct {
 	// ServerURL is an ntfy or Gotify server (ntfy: empty means ntfy.sh),
 	// Topic the ntfy topic and UserKey the Pushover user key. AppToken is the
 	// ntfy access token, the Gotify app token or the Pushover app token.
-	ServerURL string `json:"server_url"`
-	Topic     string `json:"topic"`
-	UserKey   string `json:"user_key"`
-	AppToken  string `json:"app_token"`
+	// ClearToken drops a stored ntfy access token (the only optional one)
+	// when no new token is sent.
+	ServerURL  string `json:"server_url"`
+	Topic      string `json:"topic"`
+	UserKey    string `json:"user_key"`
+	AppToken   string `json:"app_token"`
+	ClearToken bool   `json:"clear_app_token"`
 }
 
 // fill checks in and copies it onto a. New Alerts speak for every moment
@@ -182,12 +185,12 @@ func fillApp(in Input, a *domain.Alert, isNew bool) error {
 		if CheckServerURL(server, a.AllowLocal) != nil {
 			return ErrServer
 		}
-		if (isNew || token != "") && checkAppToken(token, ErrGotifyToken) != nil {
+		if (isNew || token != "" || in.ClearToken) && checkAppToken(token, ErrGotifyToken) != nil {
 			return ErrGotifyToken
 		}
 		a.ServerURL = server
 	case "pushover":
-		if (isNew || token != "") && checkPushKey(token, ErrPushToken) != nil {
+		if (isNew || token != "" || in.ClearToken) && checkPushKey(token, ErrPushToken) != nil {
 			return ErrPushToken
 		}
 		user := strings.TrimSpace(in.UserKey)
@@ -268,7 +271,8 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		}
 	}
 	// And an ntfy or Gotify token never goes to another server.
-	if (a.Kind == "ntfy" || a.Kind == "gotify") && a.PasswordSecretID != nil && strings.TrimSpace(in.AppToken) == "" &&
+	dropToken := a.Kind == "ntfy" && in.ClearToken && strings.TrimSpace(in.AppToken) == ""
+	if (a.Kind == "ntfy" || a.Kind == "gotify") && a.PasswordSecretID != nil && strings.TrimSpace(in.AppToken) == "" && !dropToken &&
 		originOf(a.ServerURL) != originOf(old.ServerURL) {
 		return old, ErrTokenAgain
 	}
@@ -295,6 +299,12 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		}
 		if err := put(&a.PasswordSecretID, passKind, pass); err != nil {
 			return err
+		}
+		if dropToken && a.PasswordSecretID != nil {
+			if _, err := tx.Exec("DELETE FROM secrets WHERE id = ?", *a.PasswordSecretID); err != nil {
+				return err
+			}
+			a.PasswordSecretID = nil
 		}
 		return store.Update(tx, "alerts", &a, by)
 	})

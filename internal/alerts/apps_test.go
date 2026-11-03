@@ -391,3 +391,78 @@ func TestAppSaveChecks(t *testing.T) {
 		}
 	}
 }
+
+// A stored ntfy access token can be dropped (it is optional): the secret
+// leaves the vault and the next send carries no Authorization. Gotify and
+// Pushover tokens are needed, so asking to drop one without a new one is
+// refused.
+func TestNtfyTokenCanBeRemoved(t *testing.T) {
+	s, v := open(t)
+	ctx := context.Background()
+	base, got := fakeApp(t, ok200)
+	in := Input{Name: "Phone", Kind: "ntfy", ServerURL: base, Topic: "holyarrs", AppToken: ntfyToken, AllowLocal: &yes}
+	a, err := Add(ctx, s, v, in, domain.System)
+	if err != nil || a.PasswordSecretID == nil {
+		t.Fatalf("add %+v %v", a, err)
+	}
+	was := *a.PasswordSecretID
+	edit := in
+	edit.Kind, edit.AppToken, edit.ClearToken = "", "", true
+	b, err := Change(ctx, s, v, a.ID, edit, domain.System)
+	if err != nil || b.PasswordSecretID != nil {
+		t.Fatalf("change %+v %v", b, err)
+	}
+	var fresh domain.Alert
+	if err := store.Get(ctx, s.Read(), "alerts", a.ID, &fresh); err != nil || fresh.PasswordSecretID != nil {
+		t.Fatalf("stored %+v %v", fresh, err)
+	}
+	if _, err := v.Get(ctx, was); err == nil {
+		t.Fatal("the dropped token is still in the vault")
+	}
+	snd := &Sender{Store: s, Vault: v, Backoff: []time.Duration{}}
+	if err := snd.SendOne(ctx, fresh, Message{Moment: MomentReady, Subject: "Dune is ready", Text: "Watch it now."}); err != nil {
+		t.Fatal(err)
+	}
+	if c := got(); len(c) != 1 || c[0].header.Get("Authorization") != "" {
+		t.Fatalf("calls %+v", c)
+	}
+	// Dropping it while moving to another server needs no token.
+	edit.ServerURL = "https://elsewhere.example.com"
+	if _, err := Change(ctx, s, v, a.ID, Input{Name: "Phone", ServerURL: base, Topic: "holyarrs", AppToken: ntfyToken}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if c, err := Change(ctx, s, v, a.ID, edit, domain.System); err != nil || c.PasswordSecretID != nil || c.ServerURL != "https://elsewhere.example.com" {
+		t.Fatalf("drop and move %+v %v", c, err)
+	}
+	// A new token sent with the box ticked replaces the stored one.
+	edit.AppToken = ntfyToken
+	if c, err := Change(ctx, s, v, a.ID, edit, domain.System); err != nil || c.PasswordSecretID == nil {
+		t.Fatalf("new token %+v %v", c, err)
+	}
+	for _, in := range []Input{
+		{Name: "G", Kind: "gotify", ServerURL: "https://gotify.example.com", AppToken: gotifyToken},
+		{Name: "P", Kind: "pushover", UserKey: pushUser, AppToken: pushToken},
+	} {
+		x, err := Add(ctx, s, v, in, domain.System)
+		if err != nil {
+			t.Fatal(err)
+		}
+		e := in
+		e.Kind, e.AppToken, e.ClearToken = "", "", true
+		if _, err := Change(ctx, s, v, x.ID, e, domain.System); err == nil || !IsInputError(err) {
+			t.Fatalf("%s: dropped a needed token: %v", in.Kind, err)
+		}
+		if y := mustGet(t, s, x.ID); y.PasswordSecretID == nil || *y.PasswordSecretID != *x.PasswordSecretID {
+			t.Fatalf("%s: token changed %+v", in.Kind, y)
+		}
+	}
+}
+
+func mustGet(t *testing.T, s *store.Store, id int64) domain.Alert {
+	t.Helper()
+	var a domain.Alert
+	if err := store.Get(context.Background(), s.Read(), "alerts", id, &a); err != nil {
+		t.Fatal(err)
+	}
+	return a
+}

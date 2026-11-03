@@ -585,6 +585,7 @@ func TestAppAlertsOverHTTP(t *testing.T) {
 		{"name": "P", "kind": "pushover", "allow_local_network": true, "user_key": pushUser, "app_token": pushTok},
 	}
 	var answers string
+	var ntfyID int64
 	for _, in := range adds {
 		b := r.owner.call("POST", "/api/v1/alerts", body(in), 201)
 		answers += string(b)
@@ -598,6 +599,7 @@ func TestAppAlertsOverHTTP(t *testing.T) {
 			if al.ServerURL != app.URL || al.Topic != "holyarrs" {
 				t.Fatalf("view %+v", al)
 			}
+			ntfyID = al.ID
 		case "pushover":
 			if al.UserKey != pushUser {
 				t.Fatalf("view %+v", al)
@@ -622,6 +624,14 @@ func TestAppAlertsOverHTTP(t *testing.T) {
 	if len(got) != 3 || got[0] != "/holyarrs|Bearer "+ntfyTok+"|This is a test from HolyArrs. If you can read it, the Alert N works." ||
 		!strings.HasPrefix(got[1], "/message|"+gotifyTok+"|{") || !strings.HasPrefix(got[2], "/1/messages.json||") || pushForm(got[2]).Get("token") != pushTok {
 		t.Fatalf("sent %q", got)
+	}
+	// The optional ntfy token can be dropped; the masked value sent with it
+	// does not keep it.
+	b := r.owner.call("PUT", "/api/v1/alerts/"+itoa(ntfyID), body(map[string]any{"name": "N", "allow_local_network": true, "server_url": app.URL, "topic": "holyarrs", "app_token": secrets.Masked, "clear_app_token": true}), 200)
+	var al AlertView
+	_ = json.Unmarshal(b, &al)
+	if al.AppToken != "" {
+		t.Fatalf("token kept after removal: %+v", al)
 	}
 }
 

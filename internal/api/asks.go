@@ -634,7 +634,7 @@ func (a *API) listAlerts(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"alerts": out, "moments": alerts.Moments})
 }
 
-const alertHelp = `send name, kind (discord, email, webhook, telegram, ntfy, gotify or pushover), moments, and for Discord url; for email smtp_host, smtp_port, smtp_security, smtp_from, smtp_user, smtp_pass, staff_to; for a webhook url, secret and webhook_auth (sign, bearer or none); for Telegram bot_token and chat_id; for ntfy server_url (default https://ntfy.sh), topic and app_token (optional access token); for Gotify server_url and app_token; for Pushover user_key and app_token; allow_local_network lets it reach the local network`
+const alertHelp = `send name, kind (discord, email, webhook, telegram, ntfy, gotify or pushover), moments, and for Discord url; for email smtp_host, smtp_port, smtp_security, smtp_from, smtp_user, smtp_pass, staff_to; for a webhook url, secret and webhook_auth (sign, bearer or none); for Telegram bot_token and chat_id; for ntfy server_url (default https://ntfy.sh), topic and app_token (optional access token; clear_app_token drops a stored one); for Gotify server_url and app_token; for Pushover user_key and app_token; allow_local_network lets it reach the local network`
 
 // readAlert reads an Alert body; the masked placeholder keeps the stored secret.
 func readAlert(w http.ResponseWriter, r *http.Request) (alerts.Input, bool) {

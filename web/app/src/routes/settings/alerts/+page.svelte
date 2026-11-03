@@ -13,6 +13,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests.ts';
 	import type { AlertView, Moment } from '#lib/types.ts';
+	import { switchKind } from './kind.ts';
 
 	type Kind = 'discord' | 'email' | 'webhook' | 'telegram' | 'ntfy' | 'gotify' | 'pushover';
 	const allMoments: Moment[] = [...askMoments, ...libraryMoments];
@@ -50,6 +51,7 @@
 		topic: '',
 		user_key: '',
 		app_token: '',
+		clear_app_token: false,
 		allow_local_network: false
 	});
 	let busy = $state(false);
@@ -105,7 +107,7 @@
 	function startAdd() {
 		isNew = true;
 		editing = { id: 0, name: '', kind: 'discord', enabled: true, moments: [...allMoments] };
-		form = { name: '', kind: 'discord', enabled: true, moments: [...allMoments], url: '', smtp_host: '', smtp_port: 587, smtp_security: 'starttls', smtp_from: '', smtp_user: '', smtp_pass: '', staff_to: '', secret: '', webhook_auth: 'sign', bot_token: '', chat_id: '', server_url: '', topic: '', user_key: '', app_token: '', allow_local_network: false };
+		form = { name: '', kind: 'discord', enabled: true, moments: [...allMoments], url: '', smtp_host: '', smtp_port: 587, smtp_security: 'starttls', smtp_from: '', smtp_user: '', smtp_pass: '', staff_to: '', secret: '', webhook_auth: 'sign', bot_token: '', chat_id: '', server_url: '', topic: '', user_key: '', app_token: '', clear_app_token: false, allow_local_network: false };
 		formError = '';
 	}
 
@@ -133,6 +135,7 @@
 			topic: a.topic ?? '',
 			user_key: a.user_key ?? '',
 			app_token: '', // empty keeps the stored one
+			clear_app_token: false,
 			allow_local_network: a.allow_local_network ?? false
 		};
 		formError = '';
@@ -208,7 +211,7 @@
 			</Field>
 			{#if isNew}
 				<Field id="al-kind" label="Kind">
-					<select id="al-kind" class="input" bind:value={form.kind}>
+					<select id="al-kind" class="input" bind:value={() => form.kind, (k) => (form = switchKind(form, k))}>
 						<option value="discord">Discord</option>
 						<option value="telegram">Telegram</option>
 						<option value="ntfy">ntfy</option>
@@ -247,9 +250,15 @@
 				<Field id="al-ntfy-topic" label="Topic" hint="The topic you subscribe to in the ntfy app. Letters, digits, - and _ only. On ntfy.sh anyone who knows it can read it, so pick a name that is hard to guess.">
 					<input id="al-ntfy-topic" class="input mono" bind:value={form.topic} maxlength="64" autocomplete="off" spellcheck="false" placeholder="holyarrs-alerts" />
 				</Field>
-				<Field id="al-ntfy-token" label="Access token" hint={isNew ? 'Optional, only for a topic that needs a sign-in. In ntfy: Account, Access tokens. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one; another server needs it typed again.'}>
-					<input id="al-ntfy-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? 'tk_…' : editing?.app_token ? 'Stored' : 'None'} />
+				<Field id="al-ntfy-token" label="Access token" hint={isNew || !editing?.app_token ? 'Optional, only for a topic that needs a sign-in. In ntfy: Account, Access tokens. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one; another server needs it typed again.'}>
+					<input id="al-ntfy-token" class="input mono" type="password" bind:value={form.app_token} disabled={form.clear_app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew || !editing?.app_token ? 'tk_…' : 'Stored'} />
 				</Field>
+				{#if !isNew && editing?.app_token}
+					<label class="checkline">
+						<input id="al-ntfy-clear" type="checkbox" bind:checked={form.clear_app_token} onchange={() => (form.app_token = '')} />
+						<span><b>Remove the token</b><br /><span class="hint">For a topic that no longer needs a sign-in, or a token you deleted in ntfy.</span></span>
+					</label>
+				{/if}
 			{:else if form.kind === 'gotify'}
 				<Field id="al-gotify-server" label="Server address" hint="Where your Gotify server answers. One at home needs May reach the local network.">
 					<input id="al-gotify-server" class="input mono" bind:value={form.server_url} autocomplete="off" spellcheck="false" placeholder="https://gotify.example.com" />
