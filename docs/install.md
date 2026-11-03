@@ -229,6 +229,21 @@ your private network.
   warning means imports work by copying and use extra space.
 - Do not point two independent HolyArrs containers at the same config folder.
 
+## Security basics
+
+- Do not forward port `18730` on your router. Reach HolyArrs from outside
+  through a VPN such as Tailscale, or through a reverse proxy with HTTPS
+  (see [Host names and reverse proxies](#host-names-and-reverse-proxies)).
+- Treat `setup-code.txt` like a password until the owner is made; it is
+  deleted afterwards.
+- Back up the master key away from the config folder
+  ([Keep the master key](#keep-the-master-key)).
+- Keep the image up to date ([updates](updates.md)).
+- Report security problems privately as described in
+  [SECURITY.md](../SECURITY.md).
+
+On a Synology, QNAP, TrueNAS or Unraid box, see [Install on a NAS](nas.md).
+
 ## If startup fails
 
 | Message or symptom | Check |

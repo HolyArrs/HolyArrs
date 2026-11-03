@@ -1,6 +1,6 @@
 # HolyArrs documentation
 
-Start with [Install HolyArrs with Docker](install.md). The current image is a
+Start with [Install HolyArrs with Docker](install.md), or [Install on a NAS](nas.md). The current image is a
 local build and has not been published to a registry.
 
 ## Explore and trailers
