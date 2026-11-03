@@ -26,6 +26,17 @@ describe('came-from history index', () => {
 		expect(cameFrom()).toEqual({ path: '/title/show/124364', label: 'FROM', y: 0 });
 		for (const k of ['sessionStorage', 'document', 'location', 'history']) delete g[k];
 	});
+	it('gives Back to Search the same index under either key', async () => {
+		const g = globalThis as Record<string, unknown>;
+		const { historyIndex } = await import('./came-from.svelte.ts');
+		g.history = { state: { 'sveltekit:metadata': { historyIndex: 4 } } };
+		expect(historyIndex()).toBe('4');
+		g.history = { state: { 'sveltekit:history': 2 } };
+		expect(historyIndex()).toBe('2');
+		g.history = { state: null };
+		expect(historyIndex()).toBe(null);
+		delete g.history;
+	});
 });
 
 import { isAuthPath as _isAuth } from './came-from.svelte';
