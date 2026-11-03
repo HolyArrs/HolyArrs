@@ -478,7 +478,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	if bearer {
 		s.refundClient(address)
 	}
-	if bearer && !s.allowBucket("auth|"+address, s.opts.ClientAuthPerMinute, s.opts.ClientAuthBurst) {
+	if bearer && !s.allowBucket("auth|"+addressGroup(address), s.opts.ClientAuthPerMinute, s.opts.ClientAuthBurst) {
 		s.rejected.Add(1)
 		problem(w, 429, "client_limit", time.Minute/time.Duration(max(1, int(s.opts.ClientAuthPerMinute))))
 		return
@@ -785,7 +785,7 @@ func (s *Server) allowFor(token string, ahead bool) (func(), bool) {
 }
 
 func (s *Server) allowClient(address string) bool {
-	return s.allowBucket(address, s.opts.ClientPerMinute, s.opts.ClientBurst)
+	return s.allowBucket(addressGroup(address), s.opts.ClientPerMinute, s.opts.ClientBurst)
 }
 
 // refundClient gives back the one an install-credential read took from
@@ -793,7 +793,7 @@ func (s *Server) allowClient(address string) bool {
 func (s *Server) refundClient(address string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if a := s.clients[address]; a != nil {
+	if a := s.clients[addressGroup(address)]; a != nil {
 		a.tokens = min(float64(s.opts.ClientBurst), a.tokens+1)
 	}
 }

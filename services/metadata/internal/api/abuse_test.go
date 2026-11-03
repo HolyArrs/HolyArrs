@@ -307,3 +307,20 @@ func TestConcurrentBadBearersLimited(t *testing.T) {
 		}
 	}
 }
+
+// Security 33: the address limit groups IPv6 by /64, so rotating source
+// addresses inside one /64 shares one bucket.
+func TestClientAddressLimitGroupsIPv6By64(t *testing.T) {
+	s, _, _ := setup(Options{Burst: 100, PerMinute: 100000, ClientPerMinute: 1, ClientBurst: 3, TrustedProxies: testProxy()})
+	for i := range 3 {
+		if w := reqFrom(s, lookup, "wrong", "2001:db8:1:2::"+string(rune('a'+i))); w.Code != 401 {
+			t.Fatalf("status %d", w.Code)
+		}
+	}
+	if w := reqFrom(s, lookup, "synthetic-test-token", "2001:db8:1:2::ff"); w.Code != 429 {
+		t.Fatalf("same /64 not limited: %d", w.Code)
+	}
+	if w := reqFrom(s, lookup, "synthetic-test-token", "2001:db8:1:3::1"); w.Code != 200 {
+		t.Fatalf("other /64 %d", w.Code)
+	}
+}
