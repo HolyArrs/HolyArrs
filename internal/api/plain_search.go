@@ -45,7 +45,8 @@ func (a *API) plainSearch(w http.ResponseWriter, r *http.Request) {
 	// A plain name is already searched outside by Search's own rows.
 	if !q.Plain && q.Kind != "music" {
 		more, note := a.plainMore(ctx, r, q)
-		out["more"] = more
+		// Library titles are already in titles.
+		out["more"] = slices.DeleteFunc(more, func(v discoverItemView) bool { return v.InLibrary })
 		if note != "" {
 			out["note"] = note
 		}
