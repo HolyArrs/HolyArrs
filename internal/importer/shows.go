@@ -922,6 +922,18 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if len(placedLabels) > 0 {
 		summary += " (" + strings.Join(placedLabels, ", ") + ")"
 	}
+	if placed == 0 && imp.State == "failed" {
+		// Nothing placed: History says why, as the Slots do.
+		why := unpackWhy
+		for _, id := range d.SlotIDs {
+			if why == "" && slots[id].reason != "" {
+				why = slots[id].reason
+			}
+		}
+		if why != "" {
+			summary = "Import failed: " + why
+		}
+	}
 	e := &domain.Event{Actor: by, Kind: "import_" + imp.State, TitleID: &titleID, SlotID: &firstSlot, DownloadID: &dlID, Summary: summary,
 		Data: map[string]any{"import_id": imp.ID, "result": imp.Result, "from": imp.FromPath, "paths": planPaths(imp.Plan), "slot_ids": d.SlotIDs,
 			"placed_slot_ids": placedIDs}, GroupKey: group}

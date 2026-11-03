@@ -10,8 +10,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
+	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -27,6 +30,9 @@ const (
 	whyNoSpace  = "Not enough free space to unpack the RAR files next to the download"
 	whySafely   = "The RAR files could not be unpacked safely"
 	whyTooBig   = "The RAR files would unpack to more than is allowed"
+	whyOldRar   = "Packed in a RAR format from before RAR 1.5, which HolyArrs cannot unpack"
+	whyNotRar   = "Packed in .7z or .zip files; HolyArrs unpacks only RAR files"
+	whyDiskFull = "The disk filled up while the RAR files were being unpacked; nothing was imported"
 )
 
 const (
@@ -53,6 +59,19 @@ var (
 )
 
 var errNoTool = errors.New("no unrar or 7z on this system")
+
+// extractCompressed is the built-in decoder; tests replace it.
+var extractCompressed = unrar.ExtractCompressed
+
+// diskFull says a write failed because the disk is full (ENOSPC, or
+// ERROR_DISK_FULL and ERROR_HANDLE_DISK_FULL on Windows).
+func diskFull(err error) bool {
+	var en syscall.Errno
+	if !errors.As(err, &en) {
+		return false
+	}
+	return en == syscall.ENOSPC || (runtime.GOOS == "windows" && (en == 112 || en == 39))
+}
 
 // unpackRars handles a download that holds no media but a RAR set. It
 // unpacks into a folder next to the download (never inside it, so a seeding
@@ -83,6 +102,13 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		}
 	}
 	if len(firsts) == 0 {
+		// No video and no RAR set, but a .7z or .zip: say so plainly
+		// rather than only "not a video file".
+		for _, c := range cands {
+			if e := strings.ToLower(filepath.Ext(c.Path)); e == ".7z" || e == ".zip" {
+				return nil, noop, whyNotRar
+			}
+		}
 		return nil, noop, ""
 	}
 	sort.Strings(firsts)
@@ -98,6 +124,8 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		if err != nil {
 			log.Printf("importer: reading RAR set %s: %v", first, err)
 			switch {
+			case errors.Is(err, unrar.ErrOldFormat):
+				return nil, noop, whyOldRar
 			case errors.Is(err, unrar.ErrUnsafePath):
 				return nil, noop, whyUnsafe
 			case errors.Is(err, unrar.ErrUnrecognised):
@@ -161,10 +189,10 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 			// What the decoder refused on purpose (a path, a link, too big a
 			// window, too much output) never goes on to the tool.
 			dctx, dcancel := context.WithTimeout(ctx, unpackTimeout)
-			err = unrar.ExtractCompressed(dctx, s.first, dest, limit)
+			err = extractCompressed(dctx, s.first, dest, limit)
 			dcancel()
 			if err != nil && !errors.Is(err, unrar.ErrUnsafePath) && !errors.Is(err, unrar.ErrTooBig) && !errors.Is(err, unrar.ErrEncrypted) &&
-				!errors.Is(err, unrar.ErrUnrecognised) && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
+				!errors.Is(err, unrar.ErrUnrecognised) && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) && !diskFull(err) {
 				log.Printf("importer: built-in RAR decoder on %s: %v", s.first, err)
 				if os.RemoveAll(dest) == nil && os.MkdirAll(dest, 0o755) == nil {
 					if terr := extractWithTool(ctx, s.first, dest, limit); !errors.Is(terr, errNoTool) {
@@ -178,6 +206,8 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		if err != nil {
 			log.Printf("importer: unpacking RAR set %s: %v", s.first, err)
 			switch {
+			case diskFull(err):
+				return fail(whyDiskFull)
 			case errors.Is(err, unrar.ErrUnsafePath):
 				return fail(whyUnsafe)
 			case errors.Is(err, unrar.ErrEncrypted):

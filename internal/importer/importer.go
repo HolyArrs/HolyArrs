@@ -1118,6 +1118,10 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if how != "" {
 		summary += " by " + how
 	}
+	if placed == 0 && imp.State == "failed" {
+		// Nothing placed: History says why, as the Slot does.
+		summary = "Import failed: " + reason
+	}
 	slotID, dlID, titleID := sl.ID, d.ID, ti.ID
 	e := &domain.Event{Actor: by, Kind: "import_" + imp.State, TitleID: &titleID, SlotID: &slotID, DownloadID: &dlID, Summary: summary,
 		Data: map[string]any{"import_id": imp.ID, "result": imp.Result, "from": imp.FromPath, "paths": planPaths(imp.Plan)}, GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
