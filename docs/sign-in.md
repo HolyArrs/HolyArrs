@@ -14,6 +14,18 @@ Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins f
 
 API: `GET /api/v1/auth/settings` shows `min_password_length`; `PUT /api/v1/auth/settings` with `{"min_password_length": 12}` changes it (owner only, 4 to 64, anything else answers 400).
 
+## Skip sign-in on the local network
+
+Settings > Sign-in > Local network lets devices on your own networks open HolyArrs as the owner without a password. It is off by default.
+
+- It works only for the networks listed under the switch, one per line: a range like `192.168.1.0/24` or `fd00::/8`, or one address like `192.168.1.20`. Up to 32. Anything else answers 400 naming the entry.
+- It cannot be turned on with an empty list, and the list cannot be emptied while it is on.
+- Behind a reverse proxy, the address checked is the one the proxy forwards, and only when the proxy is in `HOLYARRS_TRUSTED_PROXIES`.
+- Making API keys, changing sign-in settings, reading or replacing secrets and restoring backups still need a password sign-in.
+- Installs that had it on before the list existed were given the ranges it trusted then (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`, loopback and link-local), so nothing broke on the upgrade. Narrow the list to your own network.
+
+API: `GET /api/v1/auth/settings` shows `skip_login_local_network` and `local_networks`; `PUT /api/v1/auth/settings` with `{"skip_login_local_network": true, "local_networks": ["192.168.1.0/24"]}` changes them (owner only).
+
 ## Single sign-on and trusted proxy sign-in
 
 HolyArrs can offer an OpenID Connect provider or sign-in through a trusted reverse proxy. Both are optional. When enabled, each appears as an explicit button on the sign-in page; merely visiting HolyArrs never signs someone in from proxy headers.
