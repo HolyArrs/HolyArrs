@@ -79,8 +79,8 @@ describe('home', () => {
 	});
 
 	it('follows the flap guard when the server sends the confirmed state', () => {
-		const flaky = { ...check('d', 'error', 'downloader'), confirmed: 'ok' };
-		const held = { ...check('s', 'ok', 'source'), confirmed: 'warning' };
+		const flaky = { ...check('d', 'error', 'downloader'), confirmed: 'ok' as const };
+		const held = { ...check('s', 'ok', 'source'), confirmed: 'warning' as const };
 		expect(shownState(flaky)).toBe('ok');
 		expect(shownState(held)).toBe('warning');
 		expect(shownState(check('x', 'error'))).toBe('error');
