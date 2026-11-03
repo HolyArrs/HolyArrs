@@ -201,7 +201,7 @@
 	function took(r: SignInSettings) {
 		skipLocal = r.skip_login_local_network;
 		requireAdmins = r.require_two_factor_admins;
-		minLength = r.min_password_length ?? 4;
+		minLength = r.min_password_length ?? 12;
 		ways = { plex: { ...blank(), ...r.plex }, jellyfin: { ...blank(), ...r.jellyfin }, emby: { ...blank(), ...r.emby } };
 		savedJoin = { plex: ways.plex.join, jellyfin: ways.jellyfin.join, emby: ways.emby.join };
 		if (r.plex_owner) plexOwner = r.plex_owner;

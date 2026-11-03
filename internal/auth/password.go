@@ -32,21 +32,27 @@ const (
 	keyLen  = 32
 	// MinPassword is the hard floor for a password's length in bytes; the
 	// owner's min_password_length setting can only raise it, up to
-	// MaxMinPassword. MaxPassword is the longest password taken.
-	MinPassword    = 4
-	MaxMinPassword = 64
-	MaxPassword    = 1024
+	// MaxMinPassword. DefaultMinPassword applies until the owner picks one.
+	// MaxPassword is the longest password taken.
+	MinPassword        = 4
+	DefaultMinPassword = 12
+	MaxMinPassword     = 64
+	MaxPassword        = 1024
 	// keyMinLength is the sign-in setting with the owner's minimum length.
 	keyMinLength = "min_password_length"
 )
 
 // MinPasswordLength reads the owner's minimum password length from the
-// settings, clamped to MinPassword..MaxMinPassword; MinPassword when unset.
+// settings, clamped to MinPassword..MaxMinPassword; DefaultMinPassword when
+// unset or unreadable.
 func MinPasswordLength(ctx context.Context, db *sql.DB) int {
 	var v string
 	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", settingsGroup, signInPrefix+keyMinLength).Scan(&v)
 	n, err := strconv.Atoi(v)
-	if err != nil || n < MinPassword {
+	if err != nil {
+		return DefaultMinPassword
+	}
+	if n < MinPassword {
 		return MinPassword
 	}
 	return min(n, MaxMinPassword)

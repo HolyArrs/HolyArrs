@@ -79,7 +79,7 @@ export function createSession(client: Client = defaultClient) {
 		maxRating: '',
 		ways: ['password'],
 		safeMode: false,
-		minPassword: 4
+		minPassword: 12
 	});
 
 	interface AuthState {
@@ -89,7 +89,7 @@ export function createSession(client: Client = defaultClient) {
 		min_password_length?: number;
 	}
 	function tookState(st: AuthState) {
-		s.minPassword = Math.max(4, st.min_password_length ?? 4);
+		s.minPassword = Math.max(4, st.min_password_length ?? 12);
 		if (st.ways) s.ways = st.ways;
 		if (st.safe_mode !== undefined) s.safeMode = !!st.safe_mode;
 	}
