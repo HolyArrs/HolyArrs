@@ -80,20 +80,28 @@ func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) 
 	for _, pm := range dr.PathMap {
 		roots = append(roots, pm.Ours)
 	}
-	inside := false
+	fi, err := os.Lstat(local)
+	if err != nil || fi.Mode()&os.ModeSymlink != 0 || !fi.IsDir() {
+		return ""
+	}
+	// Compare real paths: a linked parent folder must not lead outside a share.
+	real, err := filepath.EvalSymlinks(local)
+	if err != nil {
+		return ""
+	}
 	for _, r := range roots {
-		if r = filepath.Clean(r); r != "" && r != "." && local != r && underAny(local, []string{r}) {
-			inside = true
+		if r = filepath.Clean(r); r == "" || r == "." {
+			continue
+		}
+		rr, err := filepath.EvalSymlinks(r)
+		if err != nil {
+			continue
+		}
+		if real != rr && underAny(real, []string{rr}) {
+			return real
 		}
 	}
-	if !inside {
-		return ""
-	}
-	fi, err := os.Lstat(local)
-	if err != nil || fi.Mode()&os.ModeSymlink != 0 {
-		return ""
-	}
-	return local
+	return ""
 }
 
 var jobSuffix = regexp.MustCompile(`\.\d{1,3}$`)
