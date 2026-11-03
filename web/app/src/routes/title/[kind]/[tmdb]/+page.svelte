@@ -8,4 +8,4 @@
 	const tmdb = $derived(page.params.tmdb ?? '');
 </script>
 
-<TitlePage {kind} {tmdb} />
+{#key `${kind}/${tmdb}`}<TitlePage {kind} {tmdb} />{/key}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { goto, snapshot } from '$app/navigation';
+	import { goto, replaceState, snapshot } from '$app/navigation';
+	import { page } from '$app/state';
 	import { to } from '#lib/paths.ts';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -114,6 +115,14 @@
 		}
 	}
 	let ownTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && ['episodes', 'library'].includes(new URLSearchParams(location.search).get('tab') ?? '') ? 'library' : 'overview');
+	// Keep the open tab in the address, so reload and Back land on the same tab.
+	function setTab(v: typeof ownTab) {
+		ownTab = v;
+		const url = new URL(location.href);
+		if (v === 'overview') url.searchParams.delete('tab');
+		else url.searchParams.set('tab', v);
+		replaceState(url, page.state);
+	}
 	// The tabs of an owned title: Overview (this page) and Library (status, seasons and episodes, files, activity, settings).
 	const ownTabs = $derived.by(() => {
 		const o = owned;
@@ -291,7 +300,7 @@
 	let movieVersions: ReturnType<typeof MovieVersions> | undefined = $state();
 	let showVersions: ReturnType<typeof ShowVersions> | undefined = $state();
 	async function addVersion() {
-		ownTab = 'library';
+		setTab('library');
 		await tick();
 		await (owned?.kind === 'show' ? showVersions : movieVersions)?.openAdd();
 	}
@@ -910,7 +919,7 @@
 			{#snippet byline()}{#if owned}<AskedByLine {askers} seesAll={askedBy.sees_all} />{#if ownState.kind !== 'have' && ownState.kind !== 'downloading'}<SearchOutcomeLine titleId={owned.id} />{/if}{/if}{/snippet}
 			{#snippet actions()}
 				{#if owned}
-					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : manage ? (ownTab = 'library') : undefined)} data-testid="hero-library" />
+					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : setTab('library'))} data-testid="hero-library" />
 					{#if manage}<ActionMenu label="More actions" caption="More" icon="more" items={ownMenu} />{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
@@ -1042,7 +1051,7 @@
 							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:transform="translateX({libHead.pct - 100}%)"></span></div>{/if}
 						</div>
 						{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
-						{#if manage}<button type="button" class="lib-btn" onclick={() => openPick(null)}><Icon name="grid" size={16} />Pick a release</button>{/if}
+						{#if manage}<button type="button" class="lib-btn" onclick={() => openPick(null)}><Icon name="grid" size={16} />Choose a release</button>{/if}
 					</section>
 
 					{#if o.show}
@@ -1071,7 +1080,7 @@
 										{#if manage}
 											<span class="lib-sr-acts">
 												<button type="button" class="lib-ico" title="Get the missing episodes" aria-label="Get the missing episodes of season {se.number}" disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, `Looking for the missing episodes of season ${se.number}.`)}><Icon name="search" size={15} /></button>
-												<button type="button" class="lib-ico" title="Pick a release for this season" aria-label="Pick a release for season {se.number}" onclick={() => openPick({ label: se.number === 0 ? 'Specials' : `Season ${se.number}`, query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
+												<button type="button" class="lib-ico" title="Choose a release for this season" aria-label="Choose a release for season {se.number}" onclick={() => openPick({ label: se.number === 0 ? 'Specials' : `Season ${se.number}`, query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
 												<button type="button" class="lib-ico" title="Files, rename and history" aria-label="Files, rename and history of season {se.number}" onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
 											</span>
 										{/if}
@@ -1093,7 +1102,7 @@
 													{#if manage && st}
 														<span class="lib-ep-acts">
 															<button type="button" class="lib-ico" title="Look for it now" aria-label="Look for episode {e.episode}" disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`); }}><Icon name="search" size={14} /></button>
-															<button type="button" class="lib-ico" title="Pick a release for this episode" aria-label="Pick a release for episode {e.episode}" disabled={!aired} onclick={(ev) => { ev.stopPropagation(); openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
+															<button type="button" class="lib-ico" title="Choose a release for this episode" aria-label="Choose a release for episode {e.episode}" disabled={!aired} onclick={(ev) => { ev.stopPropagation(); openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
 														</span>
 													{/if}
 												</div>
@@ -1105,7 +1114,8 @@
 								</section>
 							{/each}
 						</div>
-					{:else if libFiles.length}						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
+					{:else}
+						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
 						<div class="lib-files">
 							{#each libFiles as f (f.id)}
 								<article class="lib-file">
@@ -1116,6 +1126,8 @@
 									{/if}
 									<p class="lib-file-name" title={f.name}>{f.name}</p>
 								</article>
+							{:else}
+								<p class="muted">No file yet.</p>
 							{/each}
 							{#if manage}<button type="button" class="lib-file add" onclick={() => void addVersion()}><Icon name="plus" size={18} />Add another version<small>Keep a 4K and an HD copy side by side</small></button>{/if}
 						</div>
@@ -1137,7 +1149,7 @@
 								<span><b>Keep up to date</b><small>Grab it when it comes out and upgrade when a better copy shows up</small></span>
 								<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
 							</button>
-							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Quality</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></button>
+							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Pick rules</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></button>
 								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, quality, episode order, folder' : 'Quality and folder'}</small></span><Icon name="tools" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
@@ -1186,7 +1198,7 @@
 		{#snippet ownTabBar()}
 			<div class="own-tabs" role="tablist" data-testid="own-tabs">
 				{#each ownTabs as t (t.v)}
-					<button type="button" role="tab" aria-selected={ownTab === t.v} class:on={ownTab === t.v} onclick={() => (ownTab = t.v)}>
+					<button type="button" role="tab" aria-selected={ownTab === t.v} class:on={ownTab === t.v} onclick={() => setTab(t.v)}>
 						{t.label}{#if t.count}<span class="own-count">{t.count}</span>{/if}{#if t.alert}<span class="own-badge" aria-label="Needs attention">!</span>{/if}
 					</button>
 				{/each}
@@ -1198,7 +1210,7 @@
 			{/if}
 		{/snippet}
 		{#if owned}
-			<!-- Underline tabs under the hero: Overview, Episodes (shows), Library. -->
+			<!-- Underline tabs under the hero: Overview and Library. -->
 			{@render ownTabBar()}
 			{#if ownTab !== 'overview'}<section class="own-pane" data-testid="own-pane">{@render ownPane()}</section>{/if}
 			{@const o = owned}
@@ -1426,9 +1438,9 @@
 	.own-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 4px; }
 	.own-chip, .own-state { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: 600 13px/1 var(--font-ui); }
 	.own-state { color: var(--text); }
-	.own-state.have { background: color-mix(in srgb, #34c759 18%, var(--surface-2)); }
-	.own-state.downloading { background: color-mix(in srgb, #0a84ff 18%, var(--surface-2)); }
-	.own-state.failed { background: color-mix(in srgb, #ff453a 22%, var(--surface-2)); }
+	.own-state.have { background: color-mix(in srgb, var(--ok) 18%, var(--surface-2)); }
+	.own-state.downloading { background: color-mix(in srgb, var(--info) 18%, var(--surface-2)); }
+	.own-state.failed { background: color-mix(in srgb, var(--fail) 22%, var(--surface-2)); }
 	.own-cap, .own-glabel { color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.own-pill { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--text); font: 600 13.5px/1 var(--font-ui); text-decoration: none; cursor: pointer; }
 	.own-pill:hover { background: var(--surface-2); }
@@ -1449,23 +1461,23 @@
 	.own-eps { display: grid; gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
 	.own-eps li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--line); font: 500 14.5px/1.3 var(--font-ui); }
 	.own-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-faint); }
-	.own-dot.have { background: #34c759; }
-	.own-dot.downloading { background: #0a84ff; animation: own-pulse 1.4s ease-in-out infinite; }
-	.own-dot.failed { background: #ff453a; }
+	.own-dot.have { background: var(--ok); }
+	.own-dot.downloading { background: var(--info); animation: own-pulse 1.4s ease-in-out infinite; }
+	.own-dot.failed { background: var(--fail); }
 	@keyframes own-pulse { 50% { opacity: .35; } }
 	@media (prefers-reduced-motion: reduce) { .own-dot.downloading { animation: none; } }
 	.own-st { font: 600 12.5px/1 var(--font-ui); color: var(--text-muted); }
-	.own-st.failed { color: #ff453a; }
-	.own-st.have { color: #34c759; }
+	.own-st.failed { color: var(--fail); }
+	.own-st.have { color: var(--ok); }
 	
-	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #ff453a; color: #fff; font-size: 11px; }
+	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--fail); color: #fff; font-size: 11px; }
 	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
 	.own-tools { display: grid; gap: 18px; margin-top: 12px; }
 	.own-tools.cols { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
 	.own-group { display: grid; gap: 4px; align-content: start; }
 	.own-tool { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: 10px; border: 0; background: none; color: var(--text); font: 500 14.5px/1 var(--font-ui); text-decoration: none; text-align: left; cursor: pointer; }
 	.own-tool:hover { background: var(--surface-2); }
-	.own-tool.danger { color: #ff453a; }
+	.own-tool.danger { color: var(--fail); }
 	.own-files { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
 	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1480,14 +1492,14 @@
 	}
 	.lib-h { margin: 28px 0 12px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.lib-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 22px 24px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--text) 10%, transparent); }
-	.lib-status.failed { background: color-mix(in srgb, var(--danger, #e5484d) 10%, var(--surface-2)); }
+	.lib-status.failed { background: color-mix(in srgb, var(--fail) 10%, var(--surface-2)); }
 	.lib-st-text { flex: 1 1 320px; min-width: 0; }
 	.lib-st-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 22px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.lib-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 20px; }
 	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
-	.lib-bar span { display: block; width: 100%; height: 100%; border-radius: 99px; background: #3e8ef7; transition: transform var(--dur-slow) var(--ease-out); }
+	.lib-bar span { display: block; width: 100%; height: 100%; border-radius: 99px; background: var(--info); transition: transform var(--dur-slow) var(--ease-out); }
 	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
@@ -1499,12 +1511,12 @@
 	.lib-sr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 4px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 	.lib-sr-main b { font: 650 16px/1 var(--font-ui); white-space: nowrap; }
 	.lib-count { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text-muted); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.lib-count.full { background: color-mix(in srgb, #30a46c 16%, transparent); color: #30a46c; }
-	.lib-count.part { background: color-mix(in srgb, #d4a72c 16%, transparent); color: #d4a72c; }
-	.lib-count.none { background: color-mix(in srgb, var(--danger, #e5484d) 14%, transparent); color: var(--danger, #e5484d); }
+	.lib-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+	.lib-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait); }
+	.lib-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); }
 	.lib-sr-note { color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; }
-	.lib-sr-note.dl { color: #3e8ef7; }
-	.lib-sr-note.fail { color: var(--danger, #e5484d); }
+	.lib-sr-note.dl { color: var(--info); }
+	.lib-sr-note.fail { color: var(--fail); }
 	.lib-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-sr.open .lib-chev { transform: rotate(180deg); }
 	.lib-sr-acts, .lib-ep-acts { display: flex; gap: 2px; }
@@ -1512,14 +1524,14 @@
 	.lib-ico:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
 	.lib-ico:disabled { opacity: .3; cursor: default; }
 	.lib-keep { flex: none; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
-	.lib-keep.on { border-color: #30a46c; background: #30a46c; color: #fff; }
+	.lib-keep.on { border-color: var(--ok); background: var(--ok); color: #fff; }
 	.lib-keep.sm { width: 18px; height: 18px; border-radius: 5px; }
 	.lib-sr .lib-eps { padding: 0 6px 8px; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
 	.lib-sr .lib-ep { grid-template-columns: 18px 96px minmax(0, 1fr) auto auto; }
 	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:focus-visible { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.lib-ep.future .lib-ep-still img { filter: grayscale(.8) brightness(.55); }
 	.lib-ep-st.future { color: var(--text-muted); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
-	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, #3e8ef7 18%, transparent); color: #3e8ef7; font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 18%, transparent); color: var(--info); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
 	@media (max-width: 600px) {
 		.lib-sr-note { display: none; }
 		.lib-sr .lib-ep { grid-template-columns: 18px 84px minmax(0, 1fr) auto; }
@@ -1544,9 +1556,9 @@
 	.lib-ep-text b { font: 600 15px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-ep-text small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
 	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
-	.lib-ep-st.have { color: #30a46c; background: color-mix(in srgb, #30a46c 12%, transparent); }
-	.lib-ep-st.downloading { color: #3e8ef7; background: color-mix(in srgb, #3e8ef7 12%, transparent); }
-	.lib-ep-st.failed { color: var(--danger, #e5484d); background: color-mix(in srgb, var(--danger, #e5484d) 12%, transparent); }
+	.lib-ep-st.have { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+	.lib-ep-st.downloading { color: var(--info); background: color-mix(in srgb, var(--info) 12%, transparent); }
+	.lib-ep-st.failed { color: var(--fail); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity var(--dur-fast) var(--ease-out); }
 	.lib-ep:hover .lib-ep-go, .lib-ep-go:focus-visible { opacity: 1; }
 	@media (max-width: 600px) {
@@ -1572,7 +1584,7 @@
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
-	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--danger, #e5484d); }
+	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail); }
 	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
 	.lib-row + .lib-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
@@ -1582,10 +1594,10 @@
 	.lib-row :global(svg) { flex: none; color: var(--text-muted); }
 	.lib-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
 	.lib-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
-	.lib-switch.on { background: #30a46c; }
+	.lib-switch.on { background: var(--ok); }
 	.lib-switch.on::after { transform: translateX(18px); }
 	@media (max-width: 600px) { .lib-status { padding: 18px; } .lib-btn { flex: 1; justify-content: center; } .lib-files { grid-template-columns: 1fr; } .lib-seasons { grid-template-columns: 1fr 1fr; } }
-	.own-h { margin: 28px 0 12px; font: 600 13px/1.2 var(--font-ui); color: var(--text-dim, #8a8a8a); }
+	.own-h { margin: 28px 0 12px; font: 600 13px/1.2 var(--font-ui); color: var(--text-faint); }
 	.lib-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
 	.own-history li { display: flex; justify-content: space-between; gap: 16px; }

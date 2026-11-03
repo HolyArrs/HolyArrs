@@ -70,7 +70,7 @@ test('Library filters, find by name, posters and list', async () => {
 	await expect(page.locator('.grid')).not.toContainText('The Lantern Keepers');
 
 	await libraryStatus(page, 'better');
-	await expect(page.getByText('Nothing matches this filter.')).toBeVisible();
+	await expect(page.getByText('Nothing matches these filters.')).toBeVisible();
 
 	await libraryStatus(page, 'all');
 	await page.getByLabel('Find in the Library').fill('harbour');

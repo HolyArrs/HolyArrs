@@ -347,7 +347,7 @@
 		{ label: 'Held files', href: to('/library/held') },
 		{ label: 'Turned down releases', href: to('/library/turned-down') },
 		...(partOn('subtitles') ? ([{ label: 'Missing subtitles', href: to('/library/missing-subtitles') }] as MenuItem[]) : []),
-		{ label: 'File codecs', href: to('/library/copies') },
+		{ label: 'Video codecs', href: to('/library/copies') },
 		{ label: 'Rename files', href: to('/library/rename') },
 		{ label: 'Import a library', href: to('/library/import') }
 	]);
@@ -466,13 +466,13 @@
 			e.preventDefault();
 			if (!selecting) startSelecting(t.id);
 			else togglePick(t.id);
-		} else if (e.key === 'Enter') { e.preventDefault(); void goto(titleLink(t.id)); }
+		} else if (e.key === 'Enter') { e.preventDefault(); void goto(openLink(t)); }
 	}
 	function rowClick(e: MouseEvent, t: TitleView) {
 		const target = e.target as HTMLElement;
 		if (target.closest('a, button, input, label, [role="menu"]')) return;
 		if (selecting) togglePick(t.id);
-		else void goto(titleLink(t.id));
+		else void goto(openLink(t));
 	}
 
 	// ── Selecting and the bulk bar ──
@@ -536,7 +536,7 @@
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/search`, {}));
 		busy = false;
-		report('searching now', failed, ids.length);
+		report('being looked for now', failed, ids.length);
 	}
 	async function refreshTitle(t: TitleView) {
 		try {
@@ -611,6 +611,10 @@
 	function titleLink(id: number): string {
 		const url = page.shallow?.url ?? page.url;
 		return to(`/library/${id}?returnTo=${encodeURIComponent(url.pathname + url.search)}`);
+	}
+	// Where a title opens: artists go to their music page from every view, the rest to the title page.
+	function openLink(t: TitleView): string {
+		return t.kind === 'artist' && t.ids?.musicbrainz ? artistHref(t.ids.musicbrainz) : titleLink(t.id);
 	}
 	function requestedBy(t: TitleView): string {
 		return peopleNames(linkedPeople(t).map((p) => p.name));
@@ -802,7 +806,7 @@
 <div class="library" class:selecting>
 	<PageHeader title={kindTitle} subtitle={loaded && !error ? `${shown.length} ${shown.length === 1 ? 'title' : 'titles'}${filtersOn || q ? ' match' : ''}` : undefined}>
 		{#snippet actions()}
-			{#if session.can('manage_library')}<Menu label="Add and Library tools" variant="button" text="Add" icon="plus" items={addItems} width={250} />{/if}
+			{#if canManage}<Menu label="Add and Library tools" variant="button" text="Add" icon="plus" items={addItems} width={250} />{/if}
 		{/snippet}
 	</PageHeader>
 
@@ -842,15 +846,15 @@
 			{#if error}
 				<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
 			{:else if titles.length === 0}
-				<EmptyState icon="library" title="Your Library is empty" text={session.can('manage_library') ? 'Find a movie, a show or an artist on the Search page and add it. HolyArrs then keeps it up to date.' : 'Nothing has been added yet. Look for a movie, a show or an artist on the Search page.'} action={{ label: 'Search for a movie', href: to('/search'), icon: 'search' }} />
+				<EmptyState icon="library" title="Your Library is empty" text={canManage ? 'Find a movie, a show or an artist on the Search page and add it. HolyArrs then keeps it up to date.' : 'Nothing has been added yet. Look for a movie, a show or an artist on the Search page.'} action={{ label: 'Search for a movie', href: to('/search'), icon: 'search' }} />
 				<div class="empty-more">
 					<Button href={to('/search?kind=show')}>Search for a show</Button>
 					<Button href={to('/search?kind=music')}>Search for an artist</Button>
-					{#if session.can('manage_library')}<Button href={to('/library/import')}>Import a library</Button>{/if}
+					{#if canManage}<Button href={to('/library/import')}>Import a library</Button>{/if}
 					{#if session.can('settings')}<Button href={to('/settings/library-folders')}>Library folders</Button>{/if}
 				</div>
 			{:else if shown.length === 0}
-				<EmptyState compact icon="search" title="Nothing matches this filter." action={filtersOn || q ? { label: 'Clear', onclick: clearFilters } : undefined} />
+				<EmptyState compact icon="search" title="Nothing matches these filters." text="Try fewer filters or other words." action={filtersOn || q ? { label: 'Clear', onclick: clearFilters } : undefined} />
 			{:else if view === 'posters'}
 				{#if grouped}<p class="group-note">Grouped by series in the Banners and Overview views.</p>{/if}
 				<ul class="grid" class:selecting style="--poster-min: {gridMin}px" style:--poster-min-phone={kind === 'artist' ? `${squarePhoneMin[posterSize]}px` : undefined} aria-label="{kindTitle} titles" bind:this={gridEl}>
@@ -858,7 +862,7 @@
 						{@const p = progressOf(t)}
 						{@const ls = who === 'staff' ? libraryState(t) : null}
 						<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: moveMs, easing: easeOut }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-							<LibraryPoster title={t.name} year={t.year} href={t.kind === 'artist' && t.ids?.musicbrainz ? artistHref(t.ids.musicbrainz) : titleLink(t.id)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} canManage={session.can('manage_library')} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
+							<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 							{#if selecting}
 								<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 							{/if}
@@ -928,7 +932,7 @@
 													{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
 												</span>
 												<span class="name">
-													<a href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>
+													<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
 													<span class="sub">
 														{#if kind === 'all'}{kindLabel[t.kind]}{#if t.year} · {t.year}{/if}{/if}
 														{#if st && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<StatusPill kind={st.kind} label={st.label} />{/if}
@@ -968,9 +972,9 @@
 											</div>
 										{:else}
 											<div class="ov" class:music={t.kind === 'artist'}>
-												<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={titleLink(t.id)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
+												<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 												<div class="ov-main">
-													<h2><a href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h2>
+													<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h2>
 													{#if t.kind === 'artist'}
 														{#if t.artist?.bio}<p class="ov-text ov-bio">{t.artist.bio}</p>{/if}
 													{:else}
@@ -1182,9 +1186,6 @@
 	.ov.music .ov-poster { align-self: start; }
 
 	/* Loading rows match the banner shape */
-	.sk-row { display: grid; grid-template-columns: var(--bw, 420px) 1fr 1fr; align-items: center; gap: 16px 60px; padding: 0 20px 0 0; }
-	.sk-banner { display: block; aspect-ratio: var(--banner-ratio, 1000 / 185); }
-	.sk-banner :global(.ui-sk) { height: 100%; border-radius: 0; }
 
 	/* Posters */
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--poster-min, 172px), 1fr)); gap: 26px 18px; margin: 0; padding: 0; list-style: none; }
@@ -1203,7 +1204,6 @@
 	@keyframes pick-in { from { opacity: 0; } }
 	@media (prefers-reduced-motion: reduce) { .pick[aria-pressed='true'] .pick-dot, .grid .pick { animation: none; } }
 	.pick-box { width: 18px; height: 18px; accent-color: var(--accent); }
-	.card-notes { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 	.requester { color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
 	.last-opened-label { font: var(--t-footnote); font-weight: 600; color: var(--text); }
 	.row-notes { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: -6px 0 0; padding: 0 12px 10px 54px; }
@@ -1259,7 +1259,5 @@
 		.ov-bio { -webkit-line-clamp: 2; line-clamp: 2; }
 		.grid { grid-template-columns: repeat(auto-fill, minmax(var(--poster-min-phone, calc(var(--poster-min, 172px) * 0.66)), 1fr)); gap: 18px 12px; }
 		.fold, .row-notes { padding-left: 12px; }
-		.sk-row { grid-template-columns: 1fr; padding: 0 0 12px; }
-		.sk-row > :global(.stack), .sk-row > :global(.line) { display: none; }
 	}
 </style>

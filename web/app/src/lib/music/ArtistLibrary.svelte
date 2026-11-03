@@ -248,10 +248,10 @@
 	.al-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 20px; }
 	.al-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.dot { flex: none; width: 9px; height: 9px; border-radius: 99px; background: var(--text-muted); }
-	.dot.have { background: #30a46c; }
-	.dot.part { background: #d4a72c; }
-	.dot.downloading { background: #3e8ef7; }
-	.dot.failed { background: var(--danger, #e5484d); }
+	.dot.have { background: var(--ok); }
+	.dot.part { background: var(--wait); }
+	.dot.downloading { background: var(--info); }
+	.dot.failed { background: var(--fail); }
 	.al-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
 	.al-btn.primary { background: var(--text); color: var(--bg); }
 	.al-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; }
@@ -271,9 +271,9 @@
 	.al-name b { font: 650 15px/1.2 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.al-name small { color: var(--text-muted); font: 500 12.5px/1.2 var(--font-ui); }
 	.al-count { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text-muted); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.al-count.full { background: color-mix(in srgb, #30a46c 16%, transparent); color: #30a46c; }
-	.al-count.part { background: color-mix(in srgb, #d4a72c 16%, transparent); color: #d4a72c; }
-	.al-count.none { background: color-mix(in srgb, var(--danger, #e5484d) 14%, transparent); color: var(--danger, #e5484d); }
+	.al-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+	.al-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait); }
+	.al-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); }
 	.al-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.al-row.open .al-chev { transform: rotate(180deg); }
 	.al-acts { display: flex; gap: 2px; }
@@ -281,7 +281,7 @@
 	.al-ico:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
 	.al-ico:disabled { opacity: .3; cursor: default; }
 	.al-keep { flex: none; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
-	.al-keep.on { border-color: #30a46c; background: #30a46c; color: #fff; }
+	.al-keep.on { border-color: var(--ok); background: var(--ok); color: #fff; }
 	.al-tracks { display: grid; margin: 0; padding: 0 8px 8px; list-style: none; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
 	.al-tr { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto 32px; align-items: center; gap: 12px; min-height: 42px; padding: 0 8px; border-radius: 8px; font: 500 14px/1.2 var(--font-ui); }
 	.al-tr:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
@@ -290,15 +290,15 @@
 	.al-tr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.al-tr-len { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.al-tr-st { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 9px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
-	.al-tr-st.have { color: #30a46c; background: color-mix(in srgb, #30a46c 12%, transparent); }
-	.al-tr-st.downloading { color: #3e8ef7; background: color-mix(in srgb, #3e8ef7 12%, transparent); }
-	.al-tr-st.failed { color: var(--danger, #e5484d); background: color-mix(in srgb, var(--danger, #e5484d) 12%, transparent); }
+	.al-tr-st.have { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+	.al-tr-st.downloading { color: var(--info); background: color-mix(in srgb, var(--info) 12%, transparent); }
+	.al-tr-st.failed { color: var(--fail); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.al-tl { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.35 var(--font-ui); }
 	.al-tl li { display: flex; justify-content: space-between; gap: 12px; }
 	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.al-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
-	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--danger, #e5484d); }
+	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail); }
 	.al-rowbtn { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 	.al-rowbtn + .al-rowbtn { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.al-rowbtn span { display: grid; gap: 3px; min-width: 0; }
@@ -307,7 +307,7 @@
 	.al-rowbtn :global(svg) { flex: none; color: var(--text-muted); }
 	.al-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); }
 	.al-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
-	.al-switch.on { background: #30a46c; }
+	.al-switch.on { background: var(--ok); }
 	.al-switch.on::after { transform: translateX(18px); }
 	@media (max-width: 600px) {
 		.al-status { padding: 18px; }
