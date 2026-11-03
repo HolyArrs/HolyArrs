@@ -23,7 +23,7 @@
 	import type { ApprovalsCtx } from './approvals.ts';
 	import { artistIdOf, artistPhoto, askArtist } from './details.svelte.ts';
 	import { lifecycle, upcoming, type Life, type LifeFacts } from './lifecycle.ts';
-	import { partialFacts } from './live.ts';
+	import { partialFacts, realAlbum } from './live.ts';
 	import { api } from '../api.ts';
 	import type { AlbumSummary, TitleView } from '../types.ts';
 	import { shortDate, whenDate } from './inbox.ts';
@@ -80,10 +80,10 @@
 		const load =
 			a.kind === 'show'
 				? api.get<TitleView>(`/titles/${id}`, ctl.signal).then((t) =>
-						partialFacts('seasons', (t.show?.seasons ?? []).filter((s) => s.number > 0 && !s.dropped).map((s) => ({ key: s.number, complete: s.aired > 0 && s.in_library >= s.aired })), a.seasons ?? [])
+						partialFacts('seasons', (t.show?.seasons ?? []).filter((s) => s.number > 0 && !s.dropped).map((s) => ({ key: s.number, complete: s.aired > 0 && s.in_library >= s.aired, real: s.aired > 0 })), a.seasons ?? [])
 					)
 				: api.get<{ albums: AlbumSummary[] }>(`/titles/${id}/albums`, ctl.signal).then((r) =>
-						partialFacts('albums', r.albums.filter((x) => !x.dropped).map((x) => ({ key: x.mbid, complete: x.tracks > 0 && x.in_library >= x.tracks })), (a.albums ?? []).map((x) => x.mbid))
+						partialFacts('albums', r.albums.filter((x) => !x.dropped).map((x) => ({ key: x.mbid, complete: x.tracks > 0 && x.in_library >= x.tracks, real: realAlbum(x) })), (a.albums ?? []).map((x) => x.mbid))
 					);
 		load.then((facts) => !ctl.signal.aborted && (partial = { id, facts })).catch(() => {});
 		return () => ctl.abort();
