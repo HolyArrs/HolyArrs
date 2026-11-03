@@ -368,11 +368,11 @@
 		<Avatar name={shownName(profile.displayName, personName(session.s.name, 'You'))} src={preview || session.s.avatar} size={44} label="Your profile picture" />
 		<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" bind:this={avatarInput} onchange={pickAvatar} disabled={avatarBusy} aria-label="Choose a profile picture" />
 		{#if picked}
-			<Button size="sm" variant="primary" type="button" onclick={saveAvatar} busy={avatarBusy}>Save</Button>
-			<Button size="sm" variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>Cancel</Button>
+			<Button variant="primary" type="button" onclick={saveAvatar} busy={avatarBusy}>Save</Button>
+			<Button variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>Cancel</Button>
 		{:else}
-			<Button size="sm" type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? 'Change picture' : 'Add picture'}</Button>
-			{#if session.s.avatar}<Button size="sm" variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>Remove</Button>{/if}
+			<Button type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? 'Change picture' : 'Add picture'}</Button>
+			{#if session.s.avatar}<Button variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>Remove</Button>{/if}
 		{/if}
 		<span class="hint" title="JPEG, PNG or WebP up to 5 MB; cropped to a square.">Up to 5 MB.</span>
 	</div>
@@ -382,14 +382,14 @@
 			{#if nameEditing}
 				<form class="dn" onsubmit={saveName} novalidate>
 					<input class="input" aria-labelledby="dn-label" bind:value={nameDraft} maxlength="64" autocomplete="nickname" placeholder={session.s.name} />
-					<Button size="sm" variant="primary" type="submit" busy={nameBusy} disabled={nameBusy || nameDraft.trim() === profile.displayName || !!nameProblem}>Save</Button>
-					<Button size="sm" variant="plain" type="button" onclick={() => (nameEditing = false)} disabled={nameBusy}>Cancel</Button>
+					<Button variant="primary" type="submit" busy={nameBusy} disabled={nameBusy || nameDraft.trim() === profile.displayName || !!nameProblem}>Save</Button>
+					<Button variant="plain" type="button" onclick={() => (nameEditing = false)} disabled={nameBusy}>Cancel</Button>
 				</form>
 				{#if nameError || nameProblem}<p class="form-error" role="alert">{nameError || nameProblem}</p>{/if}
 			{:else}
 				<div class="line">
 					<span class="value">{profile.displayName || session.s.name}</span>
-					<Button size="sm" variant="plain" type="button" onclick={startName} data-testid="edit-display-name">Edit</Button>
+					<Button variant="plain" type="button" onclick={startName} data-testid="edit-display-name">Edit</Button>
 				</div>
 			{/if}
 		</div>
@@ -425,14 +425,14 @@
 						<input id="pw-again" class="input" type="password" placeholder="Confirm new password" bind:value={again} autocomplete="new-password" />
 						{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
 						<div class="row acts">
-							<Button size="sm" variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>Change password</Button>
-							<Button size="sm" variant="plain" type="button" onclick={() => (pwOpen = false)}>Cancel</Button>
+							<Button variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>Change password</Button>
+							<Button variant="plain" type="button" onclick={() => (pwOpen = false)}>Cancel</Button>
 						</div>
 						<span class="hint">Signs out your other devices.</span>
 					</form>
 				</Confirm>
 			{:else}
-				<div class="line"><Button size="sm" type="button" onclick={() => (pwOpen = true)} data-testid="change-password">Change password</Button></div>
+				<div class="line"><Button type="button" onclick={() => (pwOpen = true)} data-testid="change-password">Change password</Button></div>
 			{/if}
 		</div>
 	</div>
@@ -456,7 +456,7 @@
 	{/if}
 	<div class="srow" id="recommendations-me">
 		<div class="txt"><span class="label">Recommendations</span><span class="hint" title="Explore's category strip learns from the categories you open. This stays on this server.">Explore learns from what you open.</span></div>
-		<div class="ctl"><Button size="sm" variant="secondary" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset</Button></div>
+		<div class="ctl"><Button variant="secondary" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset</Button></div>
 	</div>
 </SettingsCard>
 
@@ -466,7 +466,7 @@
 		<div class="ctl">
 			<span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? 'On' : 'Off'}</span>
 			{#if !tfOpen && !setup}
-				<Button size="sm" variant="secondary" type="button" onclick={openTwoFactor} busy={tfBusy} data-testid="two-factor-open">{session.s.twoFactor ? 'Manage' : 'Set up'}</Button>
+				<Button variant="secondary" type="button" onclick={openTwoFactor} busy={tfBusy} data-testid="two-factor-open">{session.s.twoFactor ? 'Manage' : 'Set up'}</Button>
 			{/if}
 		</div>
 		{#if codes.length || tfOpen || setup || tfError}
@@ -478,8 +478,8 @@
 							{#each codes as c (c)}<li>{c}</li>{/each}
 						</ul>
 						<div class="row acts">
-							<Button size="sm" icon="copy" type="button" onclick={copyCodes}>Copy</Button>
-							<Button size="sm" variant="secondary" type="button" onclick={() => (codes = [])}>Done</Button>
+							<Button icon="copy" type="button" onclick={copyCodes}>Copy</Button>
+							<Button variant="secondary" type="button" onclick={() => (codes = [])}>Done</Button>
 						</div>
 					</div>
 				{/if}
@@ -495,10 +495,10 @@
 								<div class="row acts">
 									<label class="sr-only" for="off-code">Code</label>
 									<input id="off-code" class="input mono six" placeholder="Code" bind:value={offCode} autocomplete="one-time-code" inputmode="text" maxlength="11" />
-									<Button size="sm" variant={offMode === 'off' ? 'destructive' : 'secondary'} type="submit" disabled={tfBusy || !offCode.trim()} busy={tfBusy}>
+									<Button variant={offMode === 'off' ? 'destructive' : 'secondary'} type="submit" disabled={tfBusy || !offCode.trim()} busy={tfBusy}>
 										{offMode === 'off' ? 'Turn off' : 'Make codes'}
 									</Button>
-									<Button size="sm" variant="secondary" type="button" onclick={() => (tfOpen = false)}>Cancel</Button>
+									<Button variant="plain" type="button" onclick={() => (tfOpen = false)}>Cancel</Button>
 								</div>
 							</form>
 						{:else if setup}
@@ -512,11 +512,11 @@
 							<form class="row acts" onsubmit={enable}>
 								<label class="sr-only" for="tf-code">Six-digit code</label>
 								<input id="tf-code" class="input mono six" bind:value={code} autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="123456" />
-								<Button size="sm" variant="primary" type="submit" disabled={tfBusy || code.trim().length !== 6} busy={tfBusy}>Turn on</Button>
-								<Button size="sm" variant="secondary" type="button" onclick={() => { setup = null; tfOpen = false; }}>Cancel</Button>
+								<Button variant="primary" type="submit" disabled={tfBusy || code.trim().length !== 6} busy={tfBusy}>Turn on</Button>
+								<Button variant="plain" type="button" onclick={() => { setup = null; tfOpen = false; }}>Cancel</Button>
 							</form>
 						{:else}
-							<div class="row acts"><Button size="sm" variant="primary" type="button" onclick={startTwoFactor} busy={tfBusy}>Continue</Button></div>
+							<div class="row acts"><Button variant="primary" type="button" onclick={startTwoFactor} busy={tfBusy}>Continue</Button></div>
 						{/if}
 					</Confirm>
 				{/if}
@@ -527,19 +527,19 @@
 	{#if hasLinkWay}
 		<div class="srow" id="linked-me">
 			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="HolyArrs matches the provider's stable account id and never links accounts by email address.">Matched by account id, never by email.</span></div>
-			<div class="ctl">{#if !linkOpen}<Button size="sm" variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			<div class="ctl">{#if !linkOpen}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
 			{#if linkOpen || linkError}
 				<div class="below">
 					{#if linkOpen}
 						<Confirm action="link" onCancel={() => (linkOpen = false)}>
 							<div class="row acts">
 								{#if session.s.ways.includes('oidc')}
-									<Button size="sm" type="button" onclick={startOIDCLink} busy={linkBusy}>Single sign-on</Button>
+									<Button type="button" onclick={startOIDCLink} busy={linkBusy}>Single sign-on</Button>
 								{/if}
 								{#if session.s.ways.includes('forward_auth')}
-									<Button size="sm" type="button" onclick={linkForwardAuth} busy={linkBusy}>Trusted proxy</Button>
+									<Button type="button" onclick={linkForwardAuth} busy={linkBusy}>Trusted proxy</Button>
 								{/if}
-								<Button size="sm" variant="secondary" type="button" onclick={() => (linkOpen = false)}>Cancel</Button>
+								<Button variant="plain" type="button" onclick={() => (linkOpen = false)}>Cancel</Button>
 							</div>
 						</Confirm>
 					{/if}
@@ -563,7 +563,7 @@
 			<div class="ctl"><input id="tg-email" class="input" type="email" bind:value={targets.email} autocomplete="email" /></div>
 		</div>
 		<div class="srow">
-			<div class="txt"><label for="tg-discord">Discord user id</label><span class="hint" title="In Discord turn on Developer Mode, then right-click your name and Copy User ID. Discord Alerts then name you.">Developer Mode, then Copy User ID.</span></div>
+			<div class="txt"><label for="tg-discord">Discord user ID</label><span class="hint" title="In Discord turn on Developer Mode, then right-click your name and Copy User ID. Discord Alerts then name you.">Developer Mode, then Copy User ID.</span></div>
 			<div class="ctl"><input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" /></div>
 		</div>
 		<div class="srow">
@@ -586,7 +586,7 @@
 					<li>
 						<a href={to(`/library/${f.title_id}`)}>{f.name}{#if f.year}&nbsp;({f.year}){/if}</a>
 						<span class="xs muted">{f.kind === 'artist' ? 'Artist' : 'Show'}</span>
-						<Button size="sm" variant="secondary" onclick={() => unfollow(f)}>Unfollow</Button>
+						<Button variant="secondary" onclick={() => unfollow(f)}>Unfollow</Button>
 					</li>
 				{/each}
 			</ul>
@@ -603,9 +603,9 @@
 
 <style>
 	/* Profile full width; Preferences and Security pair up; Alerts (with its inputs) and Devices full width. */
-	.acct { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+	/* One column, like every Settings page. */
+	.acct { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 	.acct > :global(*) { margin: 0; }
-	.acct > :global(:is(#profile-me, #alerts-me, #sessions-me, .notice)) { grid-column: 1 / -1; }
 	.pfp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 	.value { font: var(--t-callout); font-weight: 400; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
 	/* Profile: each field in its own labelled box. */
@@ -635,7 +635,8 @@
 	.six { max-width: 140px; }
 	.modes { border: 0; padding: 0; margin: 0; display: flex; gap: 16px; flex-wrap: wrap; }
 	.modes .checkline { min-height: 32px; padding: 0; align-items: center; }
-	.fresh { padding: 12px; border: 1px solid var(--line); background: var(--surface-2); border-radius: var(--r-btn); }
+	/* Shown-once secrets look the same as on Users and Sign-in: a red edge. */
+	.fresh { padding: var(--s-4); border: 1px solid var(--ha-red); background: var(--ha-red-soft); border-radius: var(--r-btn); }
 	.codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 2px 12px; margin: 8px 0; list-style: none; padding: 0; }
 	.steps { margin: 0 0 0 var(--s-5); display: grid; gap: 6px; list-style: decimal; }
 	.key { display: block; margin-top: 6px; padding: 8px 10px; background: var(--surface-2); border-radius: var(--r-sm); overflow-wrap: anywhere; }
@@ -644,9 +645,6 @@
 	.follows li { display: flex; align-items: center; gap: 10px; min-height: 44px; border-top: 1px solid var(--line); }
 	.follows li a { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	@media (prefers-reduced-motion: reduce) { .box { transition: none; } }
-	@media (max-width: 760px) {
-		.acct { grid-template-columns: minmax(0, 1fr); }
-	}
 	@media (max-width: 600px) {
 		.boxes { grid-template-columns: minmax(0, 1fr); }
 		.dn .input { flex-basis: 100%; min-height: 40px; }
