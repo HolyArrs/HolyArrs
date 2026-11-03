@@ -76,6 +76,7 @@ type ScheduleView struct {
 
 func (a *API) scheduleRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/schedules", a.listSchedules)
+	m.HandleFunc("GET /api/v1/jobs/active", a.activeJobs)
 	m.HandleFunc("POST /api/v1/schedules/{kind}/run", a.runSchedule)
 	m.HandleFunc("PUT /api/v1/schedules/{kind}", a.putSchedule)
 }
@@ -169,6 +170,47 @@ func (a *API) listSchedules(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.SliceStable(loops, func(i, j int) bool { return loops[i].Name < loops[j].Name })
 	writeJSON(w, http.StatusOK, map[string]any{"schedules": out, "loops": loops, "safe_mode": a.s.SafeMode})
+}
+
+// ActiveJob is one Job running or waiting right now, for the Status page's
+// live board.
+type ActiveJob struct {
+	ID    int64  `json:"id"`
+	Kind  string `json:"kind"`
+	Label string `json:"label"`
+	// State: running or queued.
+	State string `json:"state"`
+	// Progress is 0 to 1; 0 while a Job has not said how far it is.
+	Progress  float64    `json:"progress"`
+	Note      string     `json:"note,omitempty"`
+	QueuedAt  time.Time  `json:"queued_at"`
+	StartedAt *time.Time `json:"started_at,omitempty"`
+	// ByPerson is true when a person asked for the run (Run now), not the clock.
+	ByPerson bool `json:"by_person"`
+}
+
+// activeJobs lists the Jobs running or waiting right now, running first,
+// then by their place in line.
+func (a *API) activeJobs(w http.ResponseWriter, r *http.Request) {
+	js, err := store.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs",
+		"state IN ('running', 'queued') ORDER BY CASE state WHEN 'running' THEN 0 ELSE 1 END, run_after, id LIMIT 50")
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	out := []ActiveJob{}
+	for _, j := range js {
+		label := strings.ReplaceAll(j.Kind, "_", " ")
+		if info, ok := scheduleInfos[j.Kind]; ok {
+			label = info.Label
+		}
+		v := ActiveJob{ID: j.ID, Kind: j.Kind, Label: label, State: j.State, Progress: j.Progress, QueuedAt: j.CreatedAt, StartedAt: j.StartedAt, ByPerson: j.AskedBy.Kind == "user"}
+		if j.ProgressNote != nil {
+			v.Note = applog.RedactPatterns(*j.ProgressNote)
+		}
+		out = append(out, v)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"jobs": out})
 }
 
 func (a *API) scheduleOf(w http.ResponseWriter, r *http.Request) (domain.Schedule, bool) {

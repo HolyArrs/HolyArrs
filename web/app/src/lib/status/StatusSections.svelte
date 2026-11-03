@@ -14,7 +14,6 @@
 	import RunsTimeline from './RunsTimeline.svelte';
 	import Updates from './Updates.svelte';
 	import type { HealthCheck } from '../types.ts';
-	import type { ScheduleRow } from '../schedules.ts';
 	import { everyKind, needsAttention, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {
@@ -25,8 +24,7 @@
 		busy,
 		oncheck,
 		labelOf,
-		ytdlp,
-		schedules
+		ytdlp
 	}: {
 		groups: StatusGroup[];
 		tab: string;
@@ -37,8 +35,6 @@
 		labelOf: (r: StatusRow) => string;
 		/** The trailers health check, which names yt-dlp's version (Updates tab). */
 		ytdlp: HealthCheck | undefined;
-		/** Every job as the server sends it, for the next-24-hours lanes. */
-		schedules: ScheduleRow[];
 	} = $props();
 
 	type Disk = { path: string; kind: string; label: string; free_bytes: number; total_bytes: number };
@@ -153,7 +149,7 @@
 		</section>
 	{:else if tab === 'jobs'}
 		<div class="tight">
-		<RunsTimeline {upcoming} {recent} {schedules} now={Date.now()} />
+		<RunsTimeline {upcoming} {recent} now={Date.now()} />
 
 		<section class="st-plate" aria-labelledby="s-jobs">
 			<h2 id="s-jobs">All jobs</h2>
@@ -298,7 +294,6 @@
 	.tight :global(.tl li) { min-height: 28px; }
 	.tight :global(.tl .nm) { font-size: 13.5px; }
 	.tight :global(.tl .nowline) { min-height: 22px; }
-	.tight :global(.lane) { min-height: 19px; }
 	.tbl.jobs { font-size: 13.5px; }
 	.tbl.jobs th { padding: 2px 10px 6px; font-size: 12.5px; }
 	.tbl.jobs td { padding: 0 10px; height: 32px; }

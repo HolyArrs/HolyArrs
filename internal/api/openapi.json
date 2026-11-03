@@ -14880,6 +14880,21 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/jobs/active": {
+      "get": {
+        "description": "The Jobs running or waiting right now, running first, then by place in line: id, kind, label, state (running or queued), progress 0 to 1, a short note on what the Job is doing, queued_at, started_at and by_person (a Run now rather than the clock). For the Status page's live board.",
+        "operationId": "listActiveJobs",
+        "responses": {
+          "200": {
+            "description": "The active Jobs."
+          }
+        },
+        "summary": "Jobs running or waiting now",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/jobs/{id}": {
       "get": {
         "description": "Its state, progress and result (dry-run plans and counts live in result).",

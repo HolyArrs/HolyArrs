@@ -181,3 +181,21 @@ func TestSpanWords(t *testing.T) {
 		}
 	}
 }
+
+// route: GET /api/v1/jobs/active
+func TestActiveJobsOverHTTP(t *testing.T) {
+	srv, _, q := setup(t)
+	// A queued Job far in the future stays queued, so the list can be checked.
+	if _, _, err := q.EnqueueAt(context.Background(), "feed_check", nil, nil, "", domain.Actor{Kind: "user", ID: 1}, time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Jobs []ActiveJob `json:"jobs"`
+	}
+	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/jobs/active", "", 200), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Jobs) != 1 || got.Jobs[0].Kind != "feed_check" || got.Jobs[0].Label != "Feed check" || got.Jobs[0].State != "queued" || !got.Jobs[0].ByPerson {
+		t.Fatalf("active jobs: %+v", got.Jobs)
+	}
+}

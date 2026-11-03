@@ -215,6 +215,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/events":                   Core,
 	"GET /api/v1/jobs":                     Core,
 	"GET /api/v1/jobs/{id}":                Core,
+	"GET /api/v1/jobs/active":              Core,
 	"GET /api/v1/settings/trakt-key":       Core,
 	"PUT /api/v1/settings/trakt-key":       Core,
 	"GET /api/v1/settings/trakt-token":     Core,

@@ -714,6 +714,20 @@ export interface HealthSettings {
 	update_check_default?: string;
 }
 
+/** One Job running or waiting right now (GET /jobs/active). */
+export interface ActiveJob {
+	id: number;
+	kind: string;
+	label: string;
+	state: 'running' | 'queued';
+	/** 0 to 1; 0 while the Job has not said how far it is. */
+	progress: number;
+	note?: string;
+	queued_at: string;
+	started_at?: string;
+	by_person: boolean;
+}
+
 export interface UpdateInfo {
 	on: boolean;
 	feed: string;

@@ -131,7 +131,7 @@
 	{:else if !input}
 		<p class="muted">Loading…</p>
 	{:else}
-		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} schedules={input.schedules ?? []} />
+		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} />
 	{/if}
 </div>
 
