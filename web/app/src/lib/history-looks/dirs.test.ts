@@ -21,7 +21,7 @@ describe('history filters', () => {
 	});
 
 	it('maps steps to kinds and leaves routine work out', () => {
-		expect(stepKinds(['asked', 'chosen'])).toEqual(['ask_made', 'release_chosen', 'release_chosen_by_hand']);
+		expect(stepKinds(['asked', 'chosen'])).toEqual(['ask_made', 'ai_ask_made', 'release_chosen', 'release_chosen_by_hand']);
 		expect(stepKinds(['failed'])).toContain('download_failed');
 		const all = stepKinds([]);
 		expect(all).toContain('import_done');
@@ -107,6 +107,22 @@ describe('search look rows', () => {
 		const titled = one(ev('renamed', { TitleID: 4 }));
 		expect(rowExtra(titled, rowStep(titled), undefined, 'Renamed a file')).toBe('');
 		expect(stepVerb(sign, { word: 'Changed', icon: 'settings', tone: 'idle' })).toEqual({ word: 'System', icon: 'info', tone: 'idle' });
+	});
+
+	it('treats AI apps as their own kind of who, with their asks and failures', () => {
+		const ai = ev('ai_ask_made', { Actor: { kind: 'ai', id: 3 }, Data: { client: 'Claude' } });
+		expect(whoMatches(ai, 'ai')).toBe(true);
+		expect(whoMatches(ai, 'holyarrs')).toBe(false);
+		expect(whoMatches(ai, 'people')).toBe(false);
+		expect(rowStep(one(ai)).label).toBe('Asked');
+		expect(rowStep(one(ev('ai_ask_approved'))).label).toBe('Approved');
+		expect(rowStep(one(ev('ai_ask_turned_down'))).label).toBe('Turned down');
+		const bad = one(ev('ai_action_failed', { Data: { error: 'not allowed for this key' } }));
+		expect(rowStep(bad).failed).toBe(true);
+		expect(rowExtra(bad, rowStep(bad))).toBe('not allowed for this key');
+		expect(stepKinds([])).toEqual(expect.arrayContaining(['ai_ask_*', 'ai_action_failed']));
+		expect(stepKinds(['asked'])).toContain('ai_ask_made');
+		expect(textMatches(ai, 'claude')).toBe(true);
 	});
 
 	it('labels the System kinds without calling them routine', () => {

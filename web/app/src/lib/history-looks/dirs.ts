@@ -8,11 +8,11 @@ import type { Verb } from '../history-views.ts';
 import type { EventRecord } from '../types.ts';
 
 /** Who made an Event happen, as the Filter offers it. */
-export type Who = '' | 'me' | 'people' | 'holyarrs';
-export const whoLabels: Record<Who, string> = { '': 'Anyone', me: 'You', people: 'Members', holyarrs: 'HolyArrs on its own' };
+export type Who = '' | 'me' | 'people' | 'ai' | 'holyarrs';
+export const whoLabels: Record<Who, string> = { '': 'Anyone', me: 'You', people: 'Members', ai: 'AI apps', holyarrs: 'HolyArrs on its own' };
 
 export function whoOf(v: string | null): Who {
-	return v === 'me' || v === 'people' || v === 'holyarrs' ? v : '';
+	return v === 'me' || v === 'people' || v === 'ai' || v === 'holyarrs' ? v : '';
 }
 
 /** whoMatches keeps an Event made by the picked kind of actor. */
@@ -20,7 +20,9 @@ export function whoMatches(e: Pick<EventRecord, 'Actor'>, who: Who, me?: number)
 	const user = e.Actor?.kind === 'user';
 	if (who === 'me') return user && e.Actor?.id != null && e.Actor.id === me;
 	if (who === 'people') return user;
-	if (who === 'holyarrs') return !user;
+	// An AI app acts with a member's key: it is neither the member nor HolyArrs on its own.
+	if (who === 'ai') return e.Actor?.kind === 'ai';
+	if (who === 'holyarrs') return !user && e.Actor?.kind !== 'ai';
 	return true;
 }
 
@@ -77,9 +79,9 @@ export function partOf(row: HistoryRow): string {
 export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
 	{ key: 'added', label: 'Added', kinds: ['title_added', 'list_synced', 'version_changed'] },
 	{ key: 'out', label: 'Out now', kinds: ['gate_opened'] },
-	{ key: 'asked', label: 'Asked', kinds: ['ask_made'] },
-	{ key: 'approved', label: 'Approved', kinds: ['ask_approved'] },
-	{ key: 'declined', label: 'Turned down', kinds: ['ask_turned_down', 'release_turned_down'] },
+	{ key: 'asked', label: 'Asked', kinds: ['ask_made', 'ai_ask_made'] },
+	{ key: 'approved', label: 'Approved', kinds: ['ask_approved', 'ai_ask_approved'] },
+	{ key: 'declined', label: 'Turned down', kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down'] },
 	{ key: 'chosen', label: 'Chosen', kinds: ['release_chosen', 'release_chosen_by_hand'] },
 	{ key: 'sent', label: 'Sent', kinds: ['download_sent', 'download_queued'] },
 	{ key: 'downloaded', label: 'Downloaded', kinds: ['download_finished', 'download_seeding'] },
@@ -119,7 +121,7 @@ export function textMatches(e: EventRecord, q: string, people?: Map<number, stri
 	if (!t) return true;
 	const d = e.Data ?? {};
 	const who = e.Actor?.kind === 'user' ? (e.Actor.id != null ? people?.get(e.Actor.id) : '') || e.actor_name : '';
-	return [e.title_name, e.Summary, e.episode, who, str(d.source_name), str(d.indexer), str(d.source), str(d.release)].some((v) => v?.toLowerCase().includes(t));
+	return [e.title_name, e.Summary, e.episode, who, str(d.source_name), str(d.indexer), str(d.source), str(d.release), str(d.client)].some((v) => v?.toLowerCase().includes(t));
 }
 
 /** Everything a search look reads from the address. */
@@ -193,9 +195,9 @@ export function isProblem(kind: string): boolean {
 	return problemKinds.has(kind) || [...problemKinds].some((k) => k.endsWith('*') && kind.startsWith(k.slice(0, -1)));
 }
 const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
-	[/^ask_made$/, { label: 'Asked', icon: 'wish' }],
-	[/^ask_approved$/, { label: 'Approved', icon: 'check' }],
-	[/^(ask|release)_turned_down$/, { label: 'Turned down', icon: 'declined' }],
+	[/^(ai_)?ask_made$/, { label: 'Asked', icon: 'wish' }],
+	[/^(ai_)?ask_approved$/, { label: 'Approved', icon: 'check' }],
+	[/^(ask|release|ai_ask)_turned_down$/, { label: 'Turned down', icon: 'declined' }],
 	[/^(title_added|list_synced|version_changed)$/, { label: 'Added', icon: 'plus' }],
 	[/^gate_opened$/, { label: 'Out now', icon: 'calendarDay' }],
 	[/^release_chosen(_by_hand)?$/, { label: 'Chosen', icon: 'search' }],

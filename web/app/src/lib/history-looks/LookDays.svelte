@@ -72,6 +72,7 @@
 		compact?: boolean;
 	} = $props();
 	const who = (e: EventRecord) => {
+		if (e.Actor?.kind === 'ai') return byWhom(e);
 		const n = byWhom(e);
 		return n !== 'A person' && e.Actor?.kind === 'user' ? n : e.Actor?.kind === 'user' ? (people?.get(e.Actor.id ?? 0) ?? '') : '';
 	};

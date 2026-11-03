@@ -1138,7 +1138,8 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	// Member names for the rows a person did (a missing name stays empty).
 	var people []int64
 	for _, e := range es {
-		if e.Actor.Kind == "user" && e.Actor.ID != 0 && !slices.Contains(people, e.Actor.ID) {
+		// An AI app acts with a member's key; its rows name that member too.
+		if (e.Actor.Kind == "user" || e.Actor.Kind == "ai") && e.Actor.ID != 0 && !slices.Contains(people, e.Actor.ID) {
 			people = append(people, e.Actor.ID)
 		}
 	}
@@ -1155,7 +1156,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	out := make([]EventView, 0, len(es))
 	for _, e := range es {
 		v := EventView{Event: e}
-		if e.Actor.Kind == "user" {
+		if e.Actor.Kind == "user" || e.Actor.Kind == "ai" {
 			v.ActorName = names[e.Actor.ID]
 		}
 		if e.TitleID != nil {
