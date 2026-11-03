@@ -16,16 +16,25 @@
 	let result = $state<LogPage | null>(null);
 	let error = $state('');
 	let busy = $state(false);
+	// The filter the shown lines answer; a quick second change (Level right
+	// after Show) must not let an older answer land on top of a newer one.
+	let shown = $state('');
+	let seq = 0;
 
 	async function load() {
+		const mine = ++seq;
+		const q = logQuery(filter);
 		busy = true;
 		try {
-			result = await api.get<LogPage>('/logs?' + logQuery(filter));
+			const page = await api.get<LogPage>('/logs?' + q);
+			if (mine !== seq) return;
+			result = page;
+			shown = q;
 			error = '';
 		} catch (e) {
-			error = message(e);
+			if (mine === seq) error = message(e);
 		} finally {
-			busy = false;
+			if (mine === seq) busy = false;
 		}
 	}
 
@@ -90,7 +99,7 @@
 	{/if}
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} {busy} />{/if}
-	<div data-testid="log-lines">
+	<div data-testid="log-lines" aria-busy={busy} data-query={shown}>
 		<SettingsCard title="Lines">
 			<p class="small muted" role="status">{pageWords(result, result.lines.length)}</p>
 			{#if result.lines.length}
