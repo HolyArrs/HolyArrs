@@ -90,7 +90,7 @@ If HolyArrs itself crashes, Docker's restart policy starts it again. Use `restar
 
 ## Memory
 
-The Docker image sets `GOMEMLIMIT`, the point where Go starts working harder to stay small, just under a 500 MB container limit. The SQLite database keeps its page cache outside what `GOMEMLIMIT` sees, so the limit leaves room for it. If you give the container a different memory limit, set `GOMEMLIMIT` to about 80 percent of it.
+HolyArrs aims to stay under 384 MiB of Go memory (its memory target, the point where Go starts working harder to stay small), which fits a 500 MB container limit. The SQLite database keeps its page cache outside that target, so the limit leaves room for it. On a small machine low-memory mode (below) aims lower by itself. To choose the target yourself, set `GOMEMLIMIT` to about 80 percent of the memory you give HolyArrs.
 
 ### Low-memory mode
 
@@ -101,7 +101,7 @@ For a small NAS or a Raspberry Pi. It keeps fewer answers in memory and gives SQ
 - Without `GOMEMLIMIT`, the memory target is a quarter of the machine, between 192 and 384 MiB. A `GOMEMLIMIT` or `GOGC` you set always wins.
 - The first line HolyArrs writes to its log says whether the mode is on and why.
 
-What it changes: the SQLite page cache (4 MB per writer and 2 MB per reader instead of 8 MB each), the movie and show details kept in memory (150 instead of 1000; the rest come from the database), and the show, music and Wikipedia answers kept in memory (250 instead of 1000).
+What it changes: the SQLite page cache (4 MB per writer and 2 MB per reader instead of 8 MB each), the movie and show details kept in memory (150 instead of 1000; the rest come from the database), and the show, music and Wikipedia answers kept in memory (250 instead of 1000). Background work runs less at once: the music catalog copy every 3 hours instead of every 30 minutes, with 2 picture downloads at a time instead of 4, and Explore builds one list of picks at a time instead of 3 (after a restart they take longer to catch up).
 
 ## API keys and scopes
 

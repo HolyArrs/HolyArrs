@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/lowmem"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -141,6 +142,22 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 	}
 	if s2.Stats().Albums != 5 || s2.HasAlbum(albumID(99)) {
 		t.Fatalf("albums %d, unlisted album found %v", s2.Stats().Albums, s2.HasAlbum(albumID(99)))
+	}
+}
+
+// Low-memory mode copies every 3 hours instead of every 30 minutes; a set
+// schedule always wins.
+func TestScheduleLowMemory(t *testing.T) {
+	t.Cleanup(func() { lowmem.Set(false) })
+	if got := (&Sync{}).schedule(); got != DefaultEvery {
+		t.Fatalf("off: %v", got)
+	}
+	lowmem.Set(true)
+	if got := (&Sync{}).schedule(); got != LowMemoryEvery {
+		t.Fatalf("low: %v", got)
+	}
+	if got := (&Sync{Every: time.Minute}).schedule(); got != time.Minute {
+		t.Fatalf("set schedule: %v", got)
 	}
 }
 

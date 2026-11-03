@@ -14,6 +14,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/explore"
+	"github.com/CoderLuii/holyarrs/internal/lowmem"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/ratings"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -244,7 +245,8 @@ func (a *API) runDue(ctx context.Context) {
 	e := &a.explore
 	e.mu.Lock()
 	if e.slots == nil {
-		e.slots = make(chan struct{}, exploreWorkers)
+		// Low-memory mode builds one pool at a time (catching up after a restart takes longer).
+		e.slots = make(chan struct{}, lowmem.Pick(exploreWorkers, 1))
 	}
 	slots := e.slots
 	e.mu.Unlock()
