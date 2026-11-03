@@ -370,7 +370,7 @@ func TestSkipLoginOnLocalNetworkIsOffByDefault(t *testing.T) {
 	if !strings.Contains(body, `"skip_login_local_network":false`) {
 		t.Fatalf("settings: %s", body)
 	}
-	resp, _ := call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true}`, map[string]string{CSRFHeader: csrf})
+	resp, _ := call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, map[string]string{CSRFHeader: csrf})
 	if resp.StatusCode != 200 {
 		t.Fatalf("turn on: %d", resp.StatusCode)
 	}
@@ -380,17 +380,6 @@ func TestSkipLoginOnLocalNetworkIsOffByDefault(t *testing.T) {
 	// Changes from a skipped request still need a same-origin request.
 	if resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/titles", "{}", map[string]string{"Origin": "http://evil.example"}); resp.StatusCode != 403 {
 		t.Fatalf("cross-origin change with skip: %d", resp.StatusCode)
-	}
-}
-
-func TestIsLocal(t *testing.T) {
-	for addr, want := range map[string]bool{
-		"127.0.0.1:1": true, "10.1.2.3:1": true, "192.168.1.5:1": true, "172.16.0.1:1": true, "[::1]:1": true,
-		"[fd00::1]:1": true, "100.87.70.86:1": false, "8.8.8.8:1": false, "[2001:db8::1]:1": false,
-	} {
-		if got := isLocal(addr); got != want {
-			t.Errorf("isLocal(%s) = %v", addr, got)
-		}
 	}
 }
 
@@ -494,7 +483,7 @@ func TestForeignHostRefused(t *testing.T) {
 	if got := hostCall(t, c, "POST", f.srv.URL+"/api/v1/titles", "127.0.0.1", "{}", map[string]string{CSRFHeader: csrf, "Sec-Fetch-Site": "cross-site"}); got != 403 {
 		t.Fatalf("cross-site fetch: %d", got)
 	}
-	call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true}`, map[string]string{CSRFHeader: csrf})
+	call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, map[string]string{CSRFHeader: csrf})
 	if got := hostCall(t, client(t), "GET", f.srv.URL+"/api/v1/titles", "rebind.evil.example", "", nil); got != 401 {
 		t.Fatalf("local skip with foreign host: %d", got)
 	}
@@ -512,7 +501,7 @@ func TestLocalSkipIsNotStrong(t *testing.T) {
 	f := setup(t, Options{})
 	c := client(t)
 	csrf := setupOwner(t, f, c)
-	call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true}`, map[string]string{CSRFHeader: csrf})
+	call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, map[string]string{CSRFHeader: csrf})
 	bare := client(t)
 	for _, tc := range []struct{ method, path, body string }{
 		{"POST", "/api/v1/auth/keys", `{"label":"x"}`},
@@ -545,7 +534,7 @@ func TestForwardedHeadersNeedTrustedProxy(t *testing.T) {
 		f := setup(t, Options{TrustedProxies: tc.proxies})
 		c := client(t)
 		csrf := setupOwner(t, f, c)
-		call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true}`, map[string]string{CSRFHeader: csrf})
+		call(t, c, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, map[string]string{CSRFHeader: csrf})
 		if resp, _ := call(t, client(t), "GET", f.srv.URL+"/api/v1/titles", "", tc.hdr); resp.StatusCode != tc.want {
 			t.Fatalf("%v %v: %d, want %d", tc.proxies, tc.hdr, resp.StatusCode, tc.want)
 		}

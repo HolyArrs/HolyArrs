@@ -293,7 +293,7 @@ func TestKidLimitAndLocalSkipExclude(t *testing.T) {
 	own := ownerOf(t, f)
 	join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
 	path := fmt.Sprintf("/api/v1/users/%d", userID(t, f, "ana"))
-	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`); resp.StatusCode != 200 {
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`); resp.StatusCode != 200 {
 		t.Fatalf("skip on: %d %s", resp.StatusCode, out)
 	}
 	const refused = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
@@ -312,7 +312,7 @@ func TestKidLimitAndLocalSkipExclude(t *testing.T) {
 	if resp, out := own.do(t, f, "PUT", path, `{"max_rating":"PG"}`); resp.StatusCode != 200 {
 		t.Fatalf("limit with skip off: %d %s", resp.StatusCode, out)
 	}
-	resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`)
+	resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`)
 	if resp.StatusCode != 400 || !strings.Contains(out, "age limit") {
 		t.Fatalf("skip on with a Kid: %d %s", resp.StatusCode, out)
 	}
@@ -351,7 +351,7 @@ func TestOpenKidInviteBlocksLocalSkip(t *testing.T) {
 	if resp, out := own.do(t, f, "POST", "/api/v1/users/invites", `{"max_rating":"PG","days":1}`); resp.StatusCode != 201 {
 		t.Fatalf("kid invite: %d %s", resp.StatusCode, out)
 	}
-	resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`)
+	resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`)
 	if resp.StatusCode != 400 || !strings.Contains(out, "invite") {
 		t.Fatalf("skip on with an open Kid invite: %d %s", resp.StatusCode, out)
 	}
@@ -368,7 +368,7 @@ func TestOpenKidInviteBlocksLocalSkip(t *testing.T) {
 	}
 	jsonOf(t, out, &fresh)
 	own.csrf = fresh.CSRF
-	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`); resp.StatusCode != 200 {
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`); resp.StatusCode != 200 {
 		t.Fatalf("skip on after the invite ran out: %d %s", resp.StatusCode, out)
 	}
 }

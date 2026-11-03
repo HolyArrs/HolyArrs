@@ -159,7 +159,7 @@ func TestImportSecretsSameKeys(t *testing.T) {
 
 func TestLocalSkipCannotReadSavedAddresses(t *testing.T) {
 	r := newAskRig(t)
-	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`, 200)
+	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	for _, tc := range []struct{ method, path string }{
 		{"GET", "/api/v1/migrate/saved-keys"},
 	} {
