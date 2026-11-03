@@ -58,7 +58,21 @@ type Line struct {
 	Result string `json:"result"`
 	Detail string `json:"detail,omitempty"`
 	Needs  string `json:"needs,omitempty"`
+	// Choose says this person needs (or had) the owner's Same person or
+	// Leave out choice, and why: ChooseSameName, ChooseNumericID or
+	// ChooseMergeGone. It stays after a choice is made, so the screen keeps
+	// the row and the choice can be changed.
+	Choose string `json:"choose,omitempty"`
+	// open says the choice is still missing (the person stays behind).
+	open bool
 }
+
+// Why a person needs the owner's choice (Line.Choose).
+const (
+	ChooseSameName  = "same_name"  // someone here has the same name
+	ChooseNumericID = "numeric_id" // only a numeric id, which cannot prove the same person
+	ChooseMergeGone = "merge_gone" // the person picked for Same person is no longer here
+)
 
 // Report is what a dry run, a move or an undo did.
 type Report struct {
@@ -218,6 +232,8 @@ type run struct {
 	// this run (or fall back to the current owner), never by an older mark.
 	personMarked map[string]bool
 	owner        int64
+	// choose is set by one() for the item it just ran (Line.Choose).
+	choose string
 }
 
 // referenceTime returns the persisted start of this move. Source timestamps
@@ -276,6 +292,7 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 				continue
 			}
 			var res, detail string
+			r.choose = ""
 			switch {
 			case g.Skipped:
 				res, detail = ResSkipped, "you left "+strings.ToLower(GroupLabels[g.Name])+" out"
@@ -289,6 +306,11 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 				needs = it.Needs
 			}
 			r.line(g.Name, it, res, detail, needs)
+			if r.choose != "" {
+				l := &r.rep.Lines[len(r.rep.Lines)-1]
+				l.Choose = r.choose
+				l.open = res == ResSkipped && it.Person != nil && it.Person.Choice != PersonSkip
+			}
 			done++
 			if progress != nil && (done%25 == 0 || done == total) {
 				progress(done, total)
@@ -326,12 +348,12 @@ func next(rep *Report) []string {
 			links = true
 		case l.Group == GroupPeople && made:
 			people = true
-		case l.Group == GroupPeople && l.Result == ResSkipped && strings.Contains(l.Detail, "same name"):
+		case l.Group == GroupPeople && l.Choose != "" && l.open:
 			same = true
 		}
 	}
 	if links {
-		out = append(out, "Moved Sources and Downloaders are always added paused and cannot reach your home network. Check each one under Settings > Sources and Settings > Downloaders, turn on \"reach the local network\" only for one that lives on your network, then resume it.")
+		out = append(out, "Moved Sources and Downloaders are always added paused and cannot reach your home network. Check each one under Settings > Sources and Settings > Downloaders, turn on \"May reach the local network\" only for one that lives on your network, then resume it.")
 	}
 	if outside {
 		out = append(out, "Outside lists come over paused; turn each on under Settings > Outside lists after checking its folder and Pick rules.")
@@ -340,10 +362,10 @@ func next(rep *Report) []string {
 		out = append(out, "Add your Trakt key under Settings > Outside lists before you turn a Trakt list on; the list must be public.")
 	}
 	if people {
-		out = append(out, "People came over as turned-off member placeholders (admin or owner only where you confirmed it): invite them from Settings > Users.")
+		out = append(out, "People came over turned off, as members (admin or owner only where you confirmed it): invite them from Settings > Users and roles.")
 	}
 	if same {
-		out = append(out, "Some people have the same name as someone here and were left out: choose merge or skip for each on the move screen, dry run again and move again.")
+		out = append(out, "Some people need a choice: pick Same person or Leave out for each, then try and move again.")
 	}
 	if rep.Counts[ResFailed] > 0 {
 		out = append(out, "Some items failed; their reason is on their line. Fix it and move again.")
@@ -517,15 +539,21 @@ func (r *run) one(group string, it Item) (string, string) {
 				r.people[it.Key] = id
 				return ResAlready, "moved before in this move"
 			}
-			if r.hasActiveMark(it.Key) && it.Person.Role != "owner" && it.Person.Choice != PersonMerge && it.Person.Choice != PersonSkip {
-				r.people[it.Key] = -2
-				return ResSkipped, "this source supplied only a numeric person id, which cannot prove a later read is the same person; choose merge or skip explicitly"
+			if r.hasActiveMark(it.Key) && it.Person.Role != "owner" {
+				r.choose = ChooseNumericID
+				if it.Person.Choice != PersonMerge && it.Person.Choice != PersonSkip {
+					r.people[it.Key] = -2
+					return ResSkipped, "HolyArrs can't tell if this is the same person. Choose Same person or Leave out."
+				}
 			}
 		}
 		for _, legacy := range it.LegacyKeys {
-			if r.hasActiveMark(legacy) && it.Person.Role != "owner" && it.Person.Choice != PersonMerge && it.Person.Choice != PersonSkip {
-				r.people[it.Key] = -2
-				return ResSkipped, "an older move used only this source's numeric id, which cannot prove this is the same person; choose merge or skip explicitly"
+			if r.hasActiveMark(legacy) && it.Person.Role != "owner" {
+				r.choose = ChooseNumericID
+				if it.Person.Choice != PersonMerge && it.Person.Choice != PersonSkip {
+					r.people[it.Key] = -2
+					return ResSkipped, "HolyArrs can't tell if this is the same person. Choose Same person or Leave out."
+				}
 			}
 		}
 	}
@@ -922,7 +950,7 @@ func (r *run) title(it Item) (string, string) {
 		return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
 	}
 	if r.dry {
-		return ResAdopt, "adopted in place from " + filepath.ToSlash(dir) + "; no file is moved or renamed"
+		return ResAdopt, "uses the folder " + filepath.ToSlash(dir) + " where it is; no file is moved or renamed"
 	}
 	lfID := r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(lib))
 	if lfID == 0 {
@@ -984,9 +1012,9 @@ func (r *run) title(it Item) (string, string) {
 	for _, n := range t.SeasonsOff {
 		_ = r.m.Library.SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
 	}
-	d := "adopted in place from " + filepath.ToSlash(dir)
+	d := "uses the folder " + filepath.ToSlash(dir) + " where it is"
 	if res[0].File != "" {
-		d += " with " + res[0].File
+		d += ", with " + res[0].File
 	}
 	if !t.KeepUpToDate {
 		d += "; Keep up to date off"
@@ -1441,13 +1469,21 @@ func (r *run) person(it Item) (string, string) {
 		return ResMatched, "is you, as you confirmed"
 	}
 	if pp.Choice == PersonSkip {
+		// Keep the choice row when someone here has the same name, so the
+		// owner can change it back.
+		if r.choose == "" && r.id("SELECT id FROM users WHERE name = ? COLLATE NOCASE", it.Name) != 0 {
+			r.choose = ChooseSameName
+		}
 		return ResSkipped, "you left them out; their asks come over as yours"
 	}
 	// A person here with the same name is never merged silently: the owner
 	// chooses merge or skip on the move screen.
 	if id := r.id("SELECT id FROM users WHERE name = ? COLLATE NOCASE", it.Name); id != 0 {
+		if r.choose == "" {
+			r.choose = ChooseSameName
+		}
 		if pp.Choice != PersonMerge {
-			return ResSkipped, "a person with the same name exists here: choose merge or skip on the move screen (until then their asks come over as yours)"
+			return ResSkipped, "Someone here has the same name. Until you choose, they stay behind and their requests become yours."
 		}
 		if pp.Email != "" || pp.MoviesPerWeek != nil || pp.ShowsPerWeek != nil {
 			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupPeople, From: it.From, What: it.Name + ": contact and ask limits",
@@ -1457,7 +1493,13 @@ func (r *run) person(it Item) (string, string) {
 		return ResMatched, "merged with the person of this name here, as you chose; their asks are theirs"
 	}
 	if pp.Choice == PersonMerge {
-		return ResSkipped, "the person chosen for merge is no longer here; preview again and choose merge or skip"
+		// Same person merges by name: a numeric-id person whose name nobody
+		// here has can only be left out.
+		if r.choose == ChooseNumericID {
+			return ResSkipped, "No one here has this name, so Same person can't be used. Choose Leave out."
+		}
+		r.choose = ChooseMergeGone
+		return ResSkipped, "The person you picked is no longer here. Choose again."
 	}
 	email := pp.Email
 	if email != "" && !alerts.CheckAddress(email) {
@@ -1467,7 +1509,7 @@ func (r *run) person(it Item) (string, string) {
 	}
 	if r.dry {
 		r.people[it.Key] = -1
-		return ResCreate, "a turned-off " + pp.Role + " placeholder until you invite them"
+		return ResCreate, "comes over turned off as a " + pp.Role + " until you invite them"
 	}
 	perms, _ := json.Marshal(pp.Perms)
 	u := domain.User{Name: it.Name, Role: pp.Role, PasswordHash: "", State: "disabled", Perms: string(perms)}
@@ -1486,7 +1528,7 @@ func (r *run) person(it Item) (string, string) {
 	if err == nil {
 		r.people[it.Key] = id
 	}
-	return result(err, ResCreated, "a turned-off "+pp.Role+" placeholder until you invite them")
+	return result(err, ResCreated, "came over turned off as a "+pp.Role+" until you invite them")
 }
 
 func (r *run) personID(key string) int64 {
@@ -1552,7 +1594,7 @@ func (r *run) ask(it Item) (string, string) {
 	}
 	by := r.personID(a.By)
 	if by == -2 {
-		return ResSkipped, "the request owner has an unverifiable older identity; choose merge or skip for that person before moving this request"
+		return ResSkipped, "HolyArrs can't tell who asked for this. Choose Same person or Leave out for that person, then move again."
 	}
 	note := a.Note
 	if by == 0 {
@@ -1632,7 +1674,7 @@ func (r *run) ask(it Item) (string, string) {
 	what := map[string]string{"asked": "waiting", "approved": "approved"}[state]
 	if r.dry {
 		if by < 0 {
-			return ResCreate, what + ", by the new placeholder"
+			return ResCreate, what + ", by the new person"
 		}
 		return ResCreate, what
 	}

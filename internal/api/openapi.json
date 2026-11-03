@@ -3279,6 +3279,15 @@
           "lines": {
             "items": {
               "properties": {
+                "choose": {
+                  "description": "A person who needs (or had) your Same person or Leave out choice, and why: same_name (someone here has the same name), numeric_id (only a numeric id, which cannot prove the same person) or merge_gone (the person picked is no longer here). It stays after a choice is made.",
+                  "enum": [
+                    "same_name",
+                    "numeric_id",
+                    "merge_gone"
+                  ],
+                  "type": "string"
+                },
                 "detail": {
                   "type": "string"
                 },

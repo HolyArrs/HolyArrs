@@ -114,8 +114,15 @@ func TestCompatibilityNumericPersonIdentityIsOnlyReusableWithinOneMove(t *testin
 	r2 := &run{m: l.mv, ctx: ctx, move: newMove(), by: domain.Actor{Kind: "user", ID: 1}, owner: 1, people: map[string]int64{}, rep: &Report{Counts: map[string]int{}}}
 	reused := it
 	reused.Name = "Different person after source id reuse"
-	if got, why := r2.one(GroupPeople, reused); got != ResSkipped || r2.people[it.Key] != -2 || !strings.Contains(why, "choose merge or skip") {
+	if got, why := r2.one(GroupPeople, reused); got != ResSkipped || r2.people[it.Key] != -2 || r2.choose != ChooseNumericID {
 		t.Fatalf("later numeric identity was silently reused: %s %q %+v", got, why, r2.people)
+	}
+	// After a choice the line still says why, so the screen keeps its row.
+	left := reused
+	left.Person = &PersonPlan{App: "seerr", SourceID: 77, Role: "member", Perms: []string{}, Choice: PersonSkip}
+	r3 := &run{m: l.mv, ctx: ctx, move: newMove(), by: domain.Actor{Kind: "user", ID: 1}, owner: 1, people: map[string]int64{}, rep: &Report{Counts: map[string]int{}}}
+	if got, why := r3.one(GroupPeople, left); got != ResSkipped || r3.choose != ChooseNumericID {
+		t.Fatalf("a made choice lost its row: %s %q %q", got, why, r3.choose)
 	}
 	if n := l.count(t, "SELECT count(*) FROM users WHERE id<>1"); n != 1 {
 		t.Fatalf("numeric source-id reuse created or rebound %d users", n)
@@ -1038,7 +1045,7 @@ func TestCompatibilityLegacyPersonMarkCannotRecycleIdentity(t *testing.T) {
 	r := &run{m: l.mv, ctx: ctx, move: 1, by: domain.Actor{Kind: "user", ID: 1}, owner: 1, people: map[string]int64{}}
 	it := Item{Key: "person:seerr:plex:stable", LegacyKeys: []string{"person:seerr:2"}, Name: "Imported", Person: &PersonPlan{App: "seerr", SourceID: 2, StableIdentity: true, Role: "member", Perms: []string{}}}
 	res, why := r.one(GroupPeople, it)
-	if res != ResSkipped || r.people[it.Key] != -2 || !strings.Contains(why, "choose merge or skip") {
+	if res != ResSkipped || r.people[it.Key] != -2 || r.choose != ChooseNumericID {
 		t.Fatalf("legacy mark did not require an explicit identity choice: %s %q %v", res, why, r.people)
 	}
 	ask := Item{Key: "ask:seerr:reused-source-id", Name: "Wrong owner guard", Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:700010", IDs: map[string]string{"tmdb": "700010"}, By: it.Key}}
@@ -1067,8 +1074,37 @@ func TestCompatibilityLegacyPersonMarkMissingRowRetries(t *testing.T) {
 	}
 	r := &run{m: l.mv, ctx: ctx, move: 1, by: domain.Actor{Kind: "user", ID: 1}, owner: 1, people: map[string]int64{}}
 	it := Item{Key: "person:seerr:stable-3", LegacyKeys: []string{"person:seerr:3"}, Name: "Imported missing", Person: &PersonPlan{App: "seerr", SourceID: 3, StableIdentity: true, Role: "member", Perms: []string{}}}
-	if got, why := r.one(GroupPeople, it); got != ResSkipped || !strings.Contains(why, "choose merge or skip") {
+	if got, why := r.one(GroupPeople, it); got != ResSkipped || r.choose != ChooseNumericID {
 		t.Fatalf("missing legacy identity was not failed closed: %s %s", got, why)
+	}
+
+	// A test run asks for the choice in its next steps.
+	plan := func(choice string) *Plan {
+		p := *it.Person
+		p.Choice = choice
+		item := it
+		item.Person = &p
+		return &Plan{Apps: []string{"seerr"}, Groups: []Group{{Name: GroupPeople, Label: GroupLabels[GroupPeople], Items: []Item{item}}}}
+	}
+	rep := l.mv.Run(ctx, 0, plan(""), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	if got := lineOf(t, rep, it.Key); got.Result != ResSkipped || got.Choose != ChooseNumericID {
+		t.Fatalf("numeric-id line: %+v", got)
+	}
+	if !hasNext(rep, "Some people need a choice") {
+		t.Fatalf("next steps do not ask for the choice: %v", rep.Next)
+	}
+	// Same person with no one of that name here stays a numeric-id choice.
+	rep = l.mv.Run(ctx, 0, plan(PersonMerge), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	if got := lineOf(t, rep, it.Key); got.Result != ResSkipped || got.Choose != ChooseNumericID || strings.Contains(got.Detail, "no longer here") {
+		t.Fatalf("Same person on a numeric-id person: %+v", got)
+	}
+	if !hasNext(rep, "Some people need a choice") {
+		t.Fatalf("next steps do not ask for the choice after Same person: %v", rep.Next)
+	}
+	// Leave out closes the choice.
+	rep = l.mv.Run(ctx, 0, plan(PersonSkip), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	if hasNext(rep, "Some people need a choice") {
+		t.Fatalf("next steps still ask after Leave out: %v", rep.Next)
 	}
 }
 

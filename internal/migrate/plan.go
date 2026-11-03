@@ -1251,7 +1251,7 @@ func (b *builder) titleList(s *Snapshot) {
 			b.not(GroupTitles, from, name, "not placed: "+tp.Unresolved+"; add a path rule and plan again")
 			continue
 		}
-		detail := "adopted in place from " + path.Join(tp.Library, tp.Folder)
+		detail := "uses the folder " + path.Join(tp.Library, tp.Folder) + " where it is"
 		if !t.Monitored {
 			detail += "; Keep up to date off"
 		}
@@ -1949,14 +1949,14 @@ func (b *builder) people(s *Snapshot) {
 		} else if u.ShowLimit > 0 && pp.ShowsPerWeek == nil {
 			b.not(GroupPeople, from+".show_quota", name, "only an exact seven-day quota can be moved without changing its access window")
 		}
-		detail := "a " + pp.Role + " placeholder, turned off until you invite them; no password comes over"
+		detail := "Comes over turned off as a " + pp.Role + ". Invite them to sign in; their password stays behind."
 		why := ""
 		switch {
 		case owner:
-			detail = "is you: their asks are yours"
+			detail = "This is you. Their requests become yours."
 			why = "you confirmed they are you (the owner in " + string(s.Kind) + ")"
 		case pp.WasOwner:
-			why = "the owner in " + string(s.Kind) + ": confirm on the move screen if this is you"
+			why = "Owner in " + kindName(s.Kind) + ". Turn on This is me if it's you."
 		case pp.WasAdmin && pp.Role == "admin":
 			why = "an admin in " + string(s.Kind) + "; you confirmed the admin role"
 		case pp.WasAdmin:

@@ -40,7 +40,7 @@ Each block with an address can have `allow_local_network: true`. That lets that 
 
 ### Old apps and the Move tool
 
-The `radarr`, `sonarr`, `lidarr`, `prowlarr`, `bazarr` and `seerr` blocks are not turned into anything. Their address and key are saved, encrypted, for **Settings > Move from other apps**. When you pick one of those apps there, the screen offers **Use the saved key for Radarr** (and so on) instead of asking you to type it. The key is never shown, and only the owner can use it. After one successful read the saved key is deleted. To delete all saved keys without using them:
+The `radarr`, `sonarr`, `lidarr`, `prowlarr`, `bazarr` and `seerr` blocks are not turned into anything. Their address and key are saved, encrypted, for **Settings > Move from other apps**. When you pick one of those apps under **Add an app** there, the sheet offers **Use the saved key** instead of asking you to type it; the address is the saved one and cannot be changed. The key is never shown, and only the owner can use it. After one successful read the saved key is deleted. To delete all saved keys without using them:
 
 ```
 holyarrs import-secrets -forget-move-credentials

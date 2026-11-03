@@ -37,6 +37,18 @@ const (
 // Kinds lists every kind a reader exists for.
 var Kinds = []Kind{Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, QBittorrent, SABnzbd}
 
+// kindNames are the apps' own names, for text shown to the owner.
+var kindNames = map[Kind]string{Radarr: "Radarr", Sonarr: "Sonarr", Lidarr: "Lidarr", Prowlarr: "Prowlarr", Bazarr: "Bazarr",
+	Seerr: "Seerr", Overseerr: "Overseerr", QBittorrent: "qBittorrent", SABnzbd: "SABnzbd"}
+
+// kindName names k as the app does, or k itself.
+func kindName(k Kind) string {
+	if n, ok := kindNames[k]; ok {
+		return n
+	}
+	return string(k)
+}
+
 // ValidKind reports whether k has a reader.
 func ValidKind(k Kind) bool {
 	for _, x := range Kinds {
