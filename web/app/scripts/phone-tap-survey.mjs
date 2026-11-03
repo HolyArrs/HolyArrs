@@ -1,7 +1,8 @@
 // Phone tap sizes on the 18729 preview (#79): every page at 390 wide on a touch phone, every visible
-// control must be a 44px-tall target (its own box, a wrapping label, a segmented track or a ::after hit
-// area), pages must not scroll sideways and must have an h1. Run through the e2e lock so the login
-// file is handed over and never printed:
+// control must be a 44px-tall target, measured where taps really land (elementFromPoint above and below
+// its centre, so ::after hit areas count and anything clipping or covering them does not). Pages must
+// not scroll sideways and must have an h1. Run through the e2e lock so the login file is handed over
+// and never printed:
 //   e2e-run.ps1 'node scripts/phone-tap-survey.mjs' -Who <tag> -As owner
 // Optional OUT=<file.json> writes the full result. Exits 1 when a control outside EXCEPTIONS is short.
 import { chromium, devices } from 'playwright';
@@ -31,15 +32,14 @@ await page.getByLabel('Password', { exact: true }).fill(pw);
 await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20000 });
 
-const survey = () => page.evaluate(() => {
+const SURVEY = () => {
 	const cw = document.documentElement.clientWidth, sw = document.documentElement.scrollWidth;
 	const cls = (el) => `${el.tagName.toLowerCase()}${[...el.classList].filter((x) => !x.startsWith('svelte-')).map((x) => '.' + x).join('')}`;
-	const pseudo = (el) => Math.max(...['::after', '::before'].map((p) => { const s = getComputedStyle(el, p); return s.content !== 'none' && s.position === 'absolute' ? parseFloat(s.height) || 0 : 0; }));
 	const sel = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [role=button], [role=tab], [role=radio], [role=checkbox], [role=switch], [role=menuitem], [role=option]';
 	const out = [];
 	for (const el of document.querySelectorAll(sel)) {
-		const r = el.getBoundingClientRect();
-		if (!r.width || !r.height || r.bottom < 0 || r.right < 0 || r.left > cw) continue;
+		let r = el.getBoundingClientRect();
+		if (!r.width || !r.height || r.right < 0 || r.left > cw) continue;
 		const cs = getComputedStyle(el);
 		// Hidden, or not a target at all (pointer-events: none, e.g. a disabled stand-in icon).
 		if (cs.visibility === 'hidden' || cs.pointerEvents === 'none' || el.classList.contains('sr-only') || el.closest('[inert], [aria-hidden=true]')) continue;
@@ -47,13 +47,34 @@ const survey = () => page.evaluate(() => {
 		if (el.tagName === 'A' && cs.display === 'inline' && !el.parentElement?.matches('h1, h2, h3, h4, h5, h6')) continue;
 		if (r.width <= 2 && r.height <= 2) continue; // visually hidden inputs
 		const host = el.closest('label') || el.closest('.ui-seg') || el;
-		const h = Math.max(r.height, host.getBoundingClientRect().height, pseudo(el));
+		if (Math.max(r.height, host.getBoundingClientRect().height) >= 44) continue;
+		// The real tap area: what the browser hits above and below the centre
+		// (catches ::after hit areas, and parents or neighbours that clip or cover them).
+		el.scrollIntoView({ block: 'center', inline: 'nearest' });
+		r = el.getBoundingClientRect();
+		const x = Math.min(Math.max(r.left + r.width / 2, 1), cw - 1), y = r.top + r.height / 2;
+		const mine = (t) => !!t && (t === el || el.contains(t) || host.contains(t));
+		let up = 0, down = 0;
+		while (up < 22 && mine(document.elementFromPoint(x, y - up - 1))) up++;
+		while (down < 22 && mine(document.elementFromPoint(x, y + down + 1))) down++;
+		const h = mine(document.elementFromPoint(x, y)) ? up + down + 1 : 0;
 		if (h >= 44) continue;
+		const over = document.elementFromPoint(x, y - up - 1);
 		const text = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('placeholder') || '').trim().replace(/\s+/g, ' ').slice(0, 24);
-		out.push({ k: cls(el), text, w: Math.round(r.width), h: Math.round(h) });
+		out.push({ k: cls(el), text, w: Math.round(r.width), h, by: over ? cls(over) : '' });
 	}
+	scrollTo(0, 0);
 	return { path: location.pathname + location.search, sideways: sw > cw ? sw : false, h1: !!document.querySelector('h1'), short: out };
-});
+};
+const survey = () => page.evaluate(SURVEY);
+// Signed out too: the sign-in page itself, in a context of its own.
+const outCtx = await browser.newContext({ ...devices['Pixel 7'], viewport: { width: 390, height: 844 } });
+const out = await outCtx.newPage();
+await out.goto(B + '/login');
+await out.locator('h1').first().waitFor({ timeout: 8000 }).catch(() => {});
+await out.waitForTimeout(1000);
+const signedOut = await out.evaluate(SURVEY);
+await outCtx.close();
 async function links(u, re, n) {
 	await page.goto(B + u);
 	await page.waitForTimeout(3000);
@@ -69,8 +90,16 @@ const details = [
 	...(await links('/explore?kind=music', /^\/music\/(artist|album)\//, 1)), ...(await links('/people', /^\/people\/\d+/, 1)),
 	...(await links('/library/collections', /^\/library\/collections\/\d+/, 1))
 ];
+// Controls that only show after a tap: each of these is tapped in turn and what appears is measured too.
+const OPEN = { '/downloads': '.tabs .tab' };
 const results = [];
 let bad = 0;
+{
+	const s = signedOut;
+	results.push(s);
+	if (s.sideways || !s.h1 || s.short.length) bad++;
+	console.log(s.sideways || !s.h1 || s.short.length ? 'FAIL' : 'ok  ', '/login (signed out)', s.short.map((o) => `${o.k} ${o.text} ${o.w}x${o.h}`).join(' ;; '));
+}
 for (const u of [...pages, ...new Set(details)]) {
 	try {
 		await page.goto(B + u);
@@ -78,13 +107,22 @@ for (const u of [...pages, ...new Set(details)]) {
 		await page.locator('h1').first().waitFor({ timeout: 8000 }).catch(() => {});
 		await page.waitForTimeout(1000);
 		const s = await survey();
+		const opener = OPEN[u];
+		if (opener) {
+			const n = await page.locator(opener).count();
+			for (let i = 0; i < n; i++) {
+				await page.locator(opener).nth(i).click().catch(() => {});
+				await page.waitForTimeout(500);
+				for (const o of (await survey()).short) if (!s.short.some((x) => x.k === o.k && x.text === o.text)) s.short.push(o);
+			}
+		}
 		s.allowed = s.short.filter((o) => EXCEPTIONS.some((e) => e.k.test(o.k) && (!e.path || e.path.test(s.path))));
 		s.short = s.short.filter((o) => !s.allowed.includes(o));
 		results.push(s);
 		const fail = s.sideways || !s.h1 || s.short.length;
 		if (fail) bad++;
 		const groups = {};
-		for (const o of s.short) (groups[o.k] ||= []).push(`${o.text} ${o.w}x${o.h}`);
+		for (const o of s.short) (groups[o.k] ||= []).push(`${o.text} ${o.w}x${o.h}${o.by ? ' under ' + o.by : ''}`);
 		console.log(fail ? 'FAIL' : 'ok  ', s.path, s.sideways ? `sideways ${s.sideways}px` : '', s.h1 ? '' : 'no h1', Object.entries(groups).map(([k, v]) => `${k}×${v.length} [${v.slice(0, 3).join(' | ')}]`).join(' ;; '));
 	} catch (e) {
 		bad++;
