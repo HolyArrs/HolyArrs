@@ -97,7 +97,8 @@
 			const by = stDeclinedBy(a);
 			return by ? `By ${by}` : a.decided_at ? whenDate(a.decided_at) : '';
 		}
-		if (l.stage === 'failed') return l.reason ?? '';
+		// The server's reason, as a short tail on the capsule (the window says it in full).
+		if (l.stage === 'failed') return (l.reason ?? '').replace(/\.$/, '');
 		return l.label.split(' · ').slice(1).join(' · ');
 	};
 	/** How full the capsule is, 0..1: the live share when known, else the stage's place (failed stops where it failed). */
@@ -443,7 +444,7 @@
 			{:else}
 				<span class="st-cap st-{stTone(l.tone)}" class:st-half={can} class:st-live={l.stage === 'searching' || l.stage === 'downloading'} style:--st-fill={stFill(l)}>
 					<span class="st-meter" aria-hidden="true"></span>
-					{@render stIc(l, 16)}<span class="st-tx"><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
+					{@render stIc(l, 16)}<span class="st-tx" title={l.stage === 'failed' && d ? d : undefined}><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
 				</span>
 				{#if can}{@render stDecline(a)}{/if}
 			{/if}
@@ -780,6 +781,9 @@
 	.st-tx { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 6px; min-width: 0; line-height: 1.15; text-align: center; }
 	.st-tx > b { flex: none; font-weight: 700; }
 	.st-tx > .st-d::before { content: '·'; margin-right: 6px; opacity: 0.7; }
+	/* A failed reason can be long: one line, cut short, so the capsule keeps its height. */
+	.st-cap.st-bad .st-tx { flex-wrap: nowrap; }
+	.st-cap.st-bad .st-tx > .st-d { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.st-cap > .st-i { position: relative; }
 	.st-meter { position: absolute; inset: 0; overflow: hidden; background: light-dark(color-mix(in srgb, var(--st-c) 15%, transparent), color-mix(in srgb, var(--st-c) 30%, transparent)); transform: scaleX(var(--st-fill, 0)); transform-origin: left; transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.st-soft .st-meter { background: light-dark(color-mix(in srgb, var(--st-c) 14%, transparent), color-mix(in srgb, var(--st-c) 22%, transparent)); }

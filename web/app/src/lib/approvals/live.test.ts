@@ -25,6 +25,11 @@ describe('liveByTitle', () => {
 		expect(liveFacts(m.get(1)).phase).toBe('downloading');
 		expect(liveFacts(m.get(2)).phase).toBe('searching');
 	});
+	it('a failed copy passes on the server reason', () => {
+		const m = liveByTitle([{ ...dl(1, 'failed'), text: 'No progress for 6 hours.' }, { ...dl(2, 'failed'), text: ' ' }], []);
+		expect(liveFacts(m.get(1))).toEqual({ phase: 'failed', reason: 'No progress for 6 hours.' });
+		expect(liveFacts(m.get(2))).toEqual({ phase: 'failed' });
+	});
 	it('nothing known gives no facts', () => {
 		expect(liveFacts(undefined)).toEqual({});
 	});

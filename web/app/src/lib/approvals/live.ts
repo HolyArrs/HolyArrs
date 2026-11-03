@@ -6,7 +6,7 @@ import type { LifeFacts } from './lifecycle.ts';
 
 export interface TitleLive {
 	searching?: boolean;
-	download?: { phase: 'downloading' | 'importing' | 'failed'; progress: number };
+	download?: { phase: 'downloading' | 'importing' | 'failed'; progress: number; reason?: string };
 }
 
 const DOWNLOADING = new Set(['waiting', 'downloading', 'stalled', 'paused']);
@@ -14,7 +14,7 @@ const IMPORTING = new Set(['importing', 'waiting_to_import']);
 const FAILED = new Set(['failed', 'vanished']);
 
 /** liveByTitle maps title id to what is running for it: running searches, and the freshest not-finished download. */
-export function liveByTitle(downloads: Pick<DownloadRow, 'title_id' | 'phase' | 'progress' | 'replaced'>[], running: Pick<SearchView, 'title_id' | 'state' | 'kind'>[]): Map<number, TitleLive> {
+export function liveByTitle(downloads: (Pick<DownloadRow, 'title_id' | 'phase' | 'progress' | 'replaced'> & { text?: string })[], running: Pick<SearchView, 'title_id' | 'state' | 'kind'>[]): Map<number, TitleLive> {
 	const out = new Map<number, TitleLive>();
 	const at = (id: number) => out.get(id) ?? out.set(id, {}).get(id)!;
 	for (const s of running) {
@@ -27,7 +27,10 @@ export function liveByTitle(downloads: Pick<DownloadRow, 'title_id' | 'phase' | 
 		const phase = DOWNLOADING.has(d.phase) ? 'downloading' : IMPORTING.has(d.phase) ? 'importing' : FAILED.has(d.phase) ? 'failed' : null;
 		if (!phase) continue;
 		const t = at(d.title_id);
-		if (!t.download || rank[phase] < rank[t.download.phase]) t.download = { phase, progress: d.progress };
+		if (t.download && rank[phase] >= rank[t.download.phase]) continue;
+		t.download = { phase, progress: d.progress };
+		// A failed copy carries the server's reason ("no progress for 6 hours.").
+		if (phase === 'failed' && d.text?.trim()) t.download.reason = d.text.trim();
 	}
 	return out;
 }
@@ -36,7 +39,7 @@ export function liveByTitle(downloads: Pick<DownloadRow, 'title_id' | 'phase' | 
 export function liveFacts(t: TitleLive | undefined): LifeFacts {
 	if (t?.download && t.download.phase !== 'failed') return { phase: t.download.phase, progress: t.download.progress };
 	if (t?.searching) return { phase: 'searching' };
-	if (t?.download) return { phase: 'failed' };
+	if (t?.download) return t.download.reason ? { phase: 'failed', reason: t.download.reason } : { phase: 'failed' };
 	return {};
 }
 
