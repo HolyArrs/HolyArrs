@@ -1112,7 +1112,7 @@
 	/* Touch phones get the full 44px tap height; desktop keeps the slimmer field. */
 	@media (pointer: coarse) and (max-width: 767px) { .find { min-height: 44px; } }
 	.tool-gap { flex: 1 1 auto; }
-	.filter-btn.on :global(button[aria-haspopup]) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent); }
+	.filter-btn.on :global(button[aria-haspopup]) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-text); }
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 	.search-error { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--fail); font: var(--t-callout); }
 	.content { min-width: 0; }
