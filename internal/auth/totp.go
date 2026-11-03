@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/qr"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -222,6 +223,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	}
 	if !good {
 		log.Printf("auth: wrong two-factor code from %s", r.RemoteAddr)
+		a.failedEvent(r, t.name, "two-factor")
 		fail(w, http.StatusUnauthorized, "wrong code")
 		return
 	}
@@ -274,7 +276,24 @@ func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
 	}
 	uri := "otpauth://totp/" + url.PathEscape("HolyArrs:"+who.Name) + "?" + url.Values{
 		"secret": {secret}, "issuer": {"HolyArrs"}, "algorithm": {"SHA1"}, "digits": {"6"}, "period": {"30"}}.Encode()
-	writeJSON(w, http.StatusOK, map[string]string{"secret": secret, "uri": uri})
+	out := map[string]any{"secret": secret, "uri": uri}
+	// A code to scan, as rows of "1" (dark) and "0"; left out if the link
+	// is ever too long for one, and the key can still be typed.
+	if m, err := qr.Encode(uri); err == nil {
+		rows := make([]string, len(m))
+		for y, row := range m {
+			b := make([]byte, len(row))
+			for x, dark := range row {
+				b[x] = '0'
+				if dark {
+					b[x] = '1'
+				}
+			}
+			rows[y] = string(b)
+		}
+		out["qr"] = rows
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // newBackupCodes replaces a user's backup codes inside tx and returns them.
@@ -346,6 +365,7 @@ func (a *Auth) twoFactorEnable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: two-factor sign-in turned on for user %d", who.UserID)
+	a.accountEvent(r, who.UserID, "two_factor_on", who.Name+" turned on two-factor sign-in", nil)
 	writeJSON(w, http.StatusOK, map[string]any{"backup_codes": codes})
 }
 
@@ -380,6 +400,7 @@ func (a *Auth) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: two-factor sign-in turned off for user %d", who.UserID)
+	a.accountEvent(r, who.UserID, "two_factor_off", who.Name+" turned off two-factor sign-in", nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -405,6 +426,7 @@ func (a *Auth) twoFactorNewCodes(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
 	}
+	a.accountEvent(r, who.UserID, "backup_codes_new", who.Name+" made new two-factor backup codes; the old ones stopped working", nil)
 	writeJSON(w, http.StatusOK, map[string]any{"backup_codes": codes})
 }
 
@@ -432,6 +454,7 @@ func (a *Auth) codeOrFail(w http.ResponseWriter, r *http.Request, who Who, code 
 		log.Printf("auth: two-factor: %v", err)
 	}
 	if !good {
+		a.failedEvent(r, who.Name, "two-factor check")
 		fail(w, http.StatusUnauthorized, "wrong code")
 		return false
 	}

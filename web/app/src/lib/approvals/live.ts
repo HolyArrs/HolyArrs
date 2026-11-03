@@ -7,12 +7,14 @@ import type { LifeFacts } from './lifecycle.ts';
 
 export interface TitleLive {
 	searching?: boolean;
-	download?: { phase: 'downloading' | 'importing' | 'failed'; progress: number; reason?: string };
+	download?: { phase: 'downloading' | 'importing' | 'stuck' | 'failed'; progress: number; reason?: string };
 }
 
 const DOWNLOADING = new Set(['waiting', 'downloading', 'stalled', 'paused']);
 const IMPORTING = new Set(['importing', 'waiting_to_import']);
 const FAILED = new Set(['failed', 'vanished']);
+// Downloaded, but the import is waiting on a person (Downloads > Needs a decision).
+const STUCK = new Set(['needs_a_decision', 'import_refused']);
 
 /** liveByTitle maps title id to what is running for it: running searches, and the freshest not-finished download. */
 export function liveByTitle(downloads: (Pick<DownloadRow, 'title_id' | 'phase' | 'progress' | 'replaced'> & { text?: string })[], running: Pick<SearchView, 'title_id' | 'state' | 'kind'>[]): Map<number, TitleLive> {
@@ -22,10 +24,10 @@ export function liveByTitle(downloads: (Pick<DownloadRow, 'title_id' | 'phase' |
 		if (s.title_id && s.kind !== 'feed_check' && (s.state === 'running' || s.state === 'queued')) at(s.title_id).searching = true;
 	}
 	// Prefer a copy still moving (downloading over importing) to a failed one.
-	const rank = { downloading: 0, importing: 1, failed: 2 } as const;
+	const rank = { downloading: 0, importing: 1, stuck: 2, failed: 3 } as const;
 	for (const d of downloads) {
 		if (!d.title_id || d.replaced) continue;
-		const phase = DOWNLOADING.has(d.phase) ? 'downloading' : IMPORTING.has(d.phase) ? 'importing' : FAILED.has(d.phase) ? 'failed' : null;
+		const phase = DOWNLOADING.has(d.phase) ? 'downloading' : IMPORTING.has(d.phase) ? 'importing' : STUCK.has(d.phase) ? 'stuck' : FAILED.has(d.phase) ? 'failed' : null;
 		if (!phase) continue;
 		const t = at(d.title_id);
 		if (t.download && rank[phase] >= rank[t.download.phase]) continue;

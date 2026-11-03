@@ -185,10 +185,11 @@
 		<form class="row pick" onsubmit={doScan}>
 			<div class="field grow">
 				<label for="mi-path">Folder or file on the server</label>
-				<input id="mi-path" class="input mono" bind:value={path} placeholder="/downloads/complete/Some.Show.S01" autocomplete="off" spellcheck="false" />
+				<input id="mi-path" class="input mono" bind:value={path} placeholder="/downloads/complete/Some.Show.S01" autocomplete="off" spellcheck="false" aria-describedby="mi-where" />
 			</div>
 			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || !path.trim()}>Scan (nothing is moved)</Button>
 		</form>
+		<p class="xs muted where" id="mi-where">Inside a Library folder, a Downloader folder or an <a href={to('/settings/library-folders#import-folders')}>extra import folder</a>.</p>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</section>
 
@@ -309,6 +310,7 @@
 	.notice.calm :global(svg) { flex: none; margin-top: 1px; color: var(--ok); }
 	.pick { align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; padding: var(--s-3); border-radius: var(--r-btn); background: var(--surface-2); }
 	.grow { flex: 1 1 260px; margin-bottom: 0; min-width: 0; }
+	.where { margin: var(--s-2) 0 0; overflow-wrap: anywhere; }
 	.list, .found { list-style: none; padding: 0; margin: var(--s-2) 0 0; }
 	.list { border: 1px solid var(--line); border-radius: var(--r-btn); overflow: hidden; }
 	.list > li { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-3) var(--s-4); }

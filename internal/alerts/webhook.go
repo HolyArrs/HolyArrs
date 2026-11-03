@@ -49,6 +49,8 @@ type Payload struct {
 	Data   map[string]any `json:"data,omitempty"` // reasons and paths
 	// People are the names of the people who asked (no addresses).
 	People []string `json:"people,omitempty"`
+	// Report is set for a moment about a problem report.
+	Report *Report `json:"report,omitempty"`
 }
 
 // Sign returns the signature header value for body sent at ts with the
@@ -132,7 +134,7 @@ func (s *Sender) webhook(ctx context.Context, a domain.Alert, m Message) error {
 		return err
 	}
 	p := Payload{Moment: m.Moment, Subject: m.Subject, Text: m.Text, At: time.Now().UTC(), Test: m.Moment == MomentTest, Movie: m.Movie, Show: m.Show, Episodes: m.Episodes,
-		Artist: m.Artist, Tracks: m.Tracks}
+		Artist: m.Artist, Tracks: m.Tracks, Report: m.Report}
 	if m.Event != nil {
 		p.Kind, p.At = m.Event.Kind, m.Event.At
 		if d, ok := payloadData(m.Event.Data).(map[string]any); ok {

@@ -120,7 +120,8 @@ test('a new set starts for movies and TV shows; ticking Music switches to the mu
 	await expect(page.getByRole('switch', { name: 'Lossless (CD quality)' })).toBeChecked();
 	await expect(page.getByRole('switch', { name: '1080p web' })).toHaveCount(0);
 	// Nothing was made: leaving asks first.
-	await page.locator('header.ui-head a.back').click();
+	// The page header has no back link; leave through the Settings menu.
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Pick rules', exact: true }).click();
 	await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Leave without saving' }).click();
 	await expect(page).toHaveURL(/\/settings\/pick-rules$/);
 });

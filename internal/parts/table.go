@@ -414,6 +414,8 @@ var Routes = map[string]Owner{
 	"POST /api/v1/library/rescan":             Media,
 	"POST /api/v1/manual-import/scan":         Media,
 	"POST /api/v1/manual-import":              Media,
+	"GET /api/v1/settings/import-folders":     Media,
+	"PUT /api/v1/settings/import-folders":     Media,
 
 	// The metadata server's stored title and person pictures.
 	"GET /api/v1/artwork/img/{kind}/{id}/{file}": Media,
@@ -482,6 +484,22 @@ var Routes = map[string]Owner{
 	"GET /api/v1/settings/release-gate":                    movies,
 	"PUT /api/v1/settings/release-gate":                    movies,
 
+	// The old-app API (decision 0008): the Sonarr side is TV shows, the
+	// Radarr side Movies; its settings are core.
+	"GET /sonarr/":    shows,
+	"POST /sonarr/":   shows,
+	"PUT /sonarr/":    shows,
+	"DELETE /sonarr/": shows,
+	"GET /radarr/":    movies,
+	"POST /radarr/":   movies,
+	"PUT /radarr/":    movies,
+	"DELETE /radarr/": movies,
+
+	"GET /api/v1/settings/old-app-api":                Core,
+	"PUT /api/v1/settings/old-app-api":                Core,
+	"POST /api/v1/settings/old-app-api/keys/{side}":   Core,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}": Core,
+
 	// Shows.
 	"POST /api/v1/shows":                       shows,
 	"GET /api/v1/shows/lookup":                 shows,
@@ -537,7 +555,6 @@ var Routes = map[string]Owner{
 	"PUT /api/v1/ask-limits/{id}":                    wishlist,
 	"GET /api/v1/settings/asks":                      wishlist,
 	"GET /api/v1/asked-by":                           wishlist,
-	"GET /api/v1/my/ask-privacy":                     wishlist,
 	"GET /api/v1/my/follows":                         wishlist,
 	"GET /api/v1/titles/{id}/follow":                 wishlist,
 	"PUT /api/v1/titles/{id}/follow":                 wishlist,
@@ -548,10 +565,15 @@ var Routes = map[string]Owner{
 	"GET /api/v1/metadata/movie/{tmdb_id}/follow":    wishlist,
 	"PUT /api/v1/metadata/movie/{tmdb_id}/follow":    wishlist,
 	"DELETE /api/v1/metadata/movie/{tmdb_id}/follow": wishlist,
-	"PUT /api/v1/my/ask-privacy":                     wishlist,
 	"PUT /api/v1/settings/asks":                      wishlist,
 	"GET /api/v1/messages":                           wishlist,
 	"POST /api/v1/messages/read":                     wishlist,
+
+	// Reports: problems people report with titles in the Library.
+	"GET /api/v1/reports":              Core,
+	"POST /api/v1/reports":             Core,
+	"POST /api/v1/reports/{id}/fix":    Core,
+	"POST /api/v1/reports/{id}/reopen": Core,
 }
 
 // Screens gives every page of the web app (its path, with [x] for a
@@ -594,6 +616,7 @@ var Screens = map[string]Owner{
 	"/music/album/[mbid]":            music,
 	"/calendar":                      Media,
 	"/requests":                      wishlist,
+	"/reports":                       Core,
 	"/settings":                      Core,
 	"/settings/account":              Core,
 	"/settings/appearance":           Core,

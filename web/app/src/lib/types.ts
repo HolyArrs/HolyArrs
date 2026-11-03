@@ -432,18 +432,18 @@ export interface AskSettings {
 	show_pick_rules_id: number;
 	music_library_folder_id: number;
 	music_pick_rules_id: number;
-	/** Who sees other people's names on asks. */
-	show_who_asked?: 'approvers' | 'everyone';
 }
 
 export interface AppMessage {
 	id: number;
 	created_at: string;
-	kind: 'approved' | 'turned_down' | 'ready';
+	kind: 'approved' | 'turned_down' | 'ready' | 'fixed';
 	text: string;
 	ask_id?: number;
 	title_id?: number;
 	read_at?: string;
+	/** A reported problem that was fixed (kind fixed). */
+	report_id?: number;
 }
 
 export type Moment =
@@ -453,6 +453,8 @@ export type Moment =
 	| 'ask_ready'
 	| 'new_episodes'
 	| 'new_albums'
+	| 'report_made'
+	| 'report_fixed'
 	| 'grab'
 	| 'import'
 	| 'rename'
@@ -653,6 +655,8 @@ export interface EventRecord {
 	DownloadID?: number | null;
 	Data?: Record<string, unknown>;
 	Actor?: { kind: string; id?: number };
+	/** The member who did it, named by the server. */
+	actor_name?: string;
 	title_name?: string;
 	/** A show Event: the episodes it is about ("S01E02 The Mill"). */
 	episode?: string;
@@ -680,6 +684,8 @@ export interface HealthCheck {
 	message: string;
 	since: string;
 	checked_at: string;
+	/** The state the flap guard has confirmed (what Alerts and Home go by); older servers leave it out. */
+	confirmed?: 'ok' | 'warning' | 'error';
 }
 
 /** One stage or linked app and its state (GET /health/states). */

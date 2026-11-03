@@ -85,6 +85,11 @@ test('a member sees Home, the Library, Search, Requests and My account only', as
 test('a member turns on two-factor sign-in and needs a code to sign in', async () => {
 	await ana.goto('/account');
 	await ana.getByTestId('two-factor-open').click();
+	// A code to scan, drawn square, next to the key to type.
+	const qr = ana.getByRole('img', { name: 'QR code for your authenticator app' });
+	await expect(qr).toBeVisible();
+	const box = (await qr.boundingBox())!;
+	expect(Math.abs(box.width - box.height)).toBeLessThan(2);
 	const secret = (await ana.locator('code.key').textContent())!.replace(/\s/g, '');
 	await ana.getByLabel('Six-digit code').fill(totp(secret));
 	await ana.getByRole('button', { name: 'Turn on' }).click();
@@ -181,6 +186,22 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
 	await expect(mum).toHaveURL(/\/$/);
 	await expect(mum.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
+
+	// A first HolyArrs password, for when Jellyfin is down.
+	const first = `${mediaUser.password}-holyarrs`;
+	await mum.goto('/account');
+	await mum.getByRole('button', { name: 'Set a password' }).click();
+	await expect(mum.getByLabel('Current password')).toHaveCount(0);
+	await mum.getByLabel('New password', { exact: true }).fill(first);
+	await mum.getByLabel('Confirm new password').fill(first);
+	await mum.getByRole('button', { name: 'Set password' }).click();
+	await expect(mum.getByText('Password set.', { exact: false })).toBeVisible();
+	const back = await fresh(browser);
+	await back.goto('/login');
+	await back.getByLabel('Name').fill('Mum');
+	await back.getByLabel('Password', { exact: true }).fill(first);
+	await back.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(back).toHaveURL(/\/$/);
 });
 
 test('sign in with Emby makes a member, next to Jellyfin', async ({ browser }) => {

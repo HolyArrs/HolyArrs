@@ -539,6 +539,8 @@
 	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
 	/* Coarse pointers keep a 44px target without fattening the bar. */
 	@media (pointer: coarse) { .tab::after { content: ''; position: absolute; inset: -6px 0; } .right .approve-all, .right .sf-btn { height: 44px; } }
+	/* Phones: the tab track grows so each tab's hit area (::after, inset -6px 0) reaches 44px. */
+	@media (max-width: 767px) and (pointer: coarse) { .toolbar .tabs { height: 46px; padding-block: 6px; border-radius: 15px; } }
 	.dd { width: 6px; height: 6px; border-radius: 50%; }
 	/* One row that never wraps: tabs left, the status control and the type filter right. */
 	.toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px; }

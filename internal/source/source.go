@@ -80,6 +80,8 @@ type Config struct {
 	Observe func(op string, took time.Duration, err error)
 	// resolve looks names up; nil means the system resolver. Tests set it.
 	resolve func(ctx context.Context, host string) ([]net.IP, error)
+	// PathKeys are the passkeys URL holds in its path; never logged.
+	PathKeys []string
 }
 
 // Client is a Torznab/Newznab client for one Source. It is safe for
@@ -279,6 +281,9 @@ func (c *Client) scrub(msg string) string {
 		}
 	}
 	hide(c.cfg.APIKey)
+	for _, k := range c.cfg.PathKeys {
+		hide(k)
+	}
 	if c.cfg.Proxy != nil {
 		pass, _ := c.cfg.Proxy.User.Password()
 		hide(pass)

@@ -23,6 +23,8 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 		if (r.status() === 404 && r.url().includes('/_app/')) outside.push(`404 ${r.url()}`);
 	});
 
+	// healthz answers while the app is still starting; wait until it is ready.
+	await expect.poll(async () => (await page.request.get(`${root}/readyz`)).status(), { timeout: 120_000 }).toBe(200);
 	await page.goto(root);
 	await expect(page).toHaveURL(/\/holyarrs\/login/);
 	const code = readFileSync(join(here, '.tmp-base', 'config', 'setup-code.txt'), 'utf8').trim();

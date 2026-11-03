@@ -44,6 +44,11 @@ func recentLocalExempt(pattern string, who Who) bool {
 		return true
 	case "POST /api/v1/auth/two-factor/setup", "POST /api/v1/auth/two-factor/enable":
 		return who.MustTwoFactor
+	// Someone who joined through a media server has no password to confirm;
+	// a fresh sign-in there lets them set a first one (changePassword then
+	// refuses anyone who already has a password without a local proof).
+	case "POST /api/v1/auth/password":
+		return who.OutsideRecent
 	default:
 		return false
 	}
@@ -94,6 +99,7 @@ func (a *Auth) reauth(w http.ResponseWriter, r *http.Request) {
 		err = errors.Join(err, errNoLocalSignIn)
 	}
 	if !CheckPassword(hash, body.Password) || err != nil {
+		a.failedEvent(r, who.Name, "password check")
 		fail(w, http.StatusUnauthorized, "the password or code is wrong")
 		return
 	}
@@ -107,6 +113,7 @@ func (a *Auth) reauth(w http.ResponseWriter, r *http.Request) {
 			log.Printf("auth: reauthentication two-factor: %v", err)
 		}
 		if !good {
+			a.failedEvent(r, who.Name, "two-factor check")
 			fail(w, http.StatusUnauthorized, "the password or code is wrong")
 			return
 		}

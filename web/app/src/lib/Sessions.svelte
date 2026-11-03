@@ -99,6 +99,7 @@
 <style>
 	.more { min-height: 40px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
 	.more:hover { text-decoration: underline; }
+	@media (max-width: 767px) and (pointer: coarse) { .more { min-height: 44px; } }
 	.sessions li {
 		display: flex;
 		align-items: center;

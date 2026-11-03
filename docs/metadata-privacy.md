@@ -18,6 +18,9 @@ install sends there.
 - **Small request headers.** `Accept`, `Cache-Control`, `If-None-Match` for
   lists already stored, and `X-Fetch: ahead` when HolyArrs is loading a page
   ahead of time instead of because someone opened it.
+- **Install count by country.** The server counts installs per country, by
+  the country requests come from. Turn off **Count this install** (Settings,
+  This app) and requests carry `X-Country-Count: off`: the install is left out.
 
 Like any web request, the server sees the public IP address the request comes
 from.
@@ -28,7 +31,8 @@ from.
 - Your library: which titles you have, what is downloading, your history.
 - Accounts: user names, passwords, sign-in sessions, who asked for what.
 - Keys and addresses of your downloaders, sources, media servers and lists.
-- Usage counts or crash reports. HolyArrs has no telemetry.
+- Crash reports. Apart from the per-country install count above, HolyArrs has
+  no telemetry.
 
 ## Using your own key instead
 

@@ -60,7 +60,9 @@ const TAG = {
 	changed: { word: 'Changed', icon: 'settings', tone: 'idle' },
 	asked: { word: 'Asked', icon: 'wish', tone: 'info' },
 	approved: { word: 'Approved', icon: 'check', tone: 'ok' },
-	declined: { word: 'Turned down', icon: 'declined', tone: 'idle' }
+	declined: { word: 'Turned down', icon: 'declined', tone: 'idle' },
+	reported: { word: 'Reported', icon: 'alert', tone: 'wait' },
+	reopened: { word: 'Reopened', icon: 'alert', tone: 'wait' }
 } satisfies Record<string, Tag>;
 
 const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
@@ -68,6 +70,9 @@ const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+/** The words for a reported problem's kind (#95). */
+const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
+const problem = (v: unknown) => problemWords[str(v)] ?? str(v);
 
 /** A made-up episode name: "Episode 8827", "TBA", or a bare date. */
 export function fakeEpisodeName(name: string): boolean {
@@ -139,7 +144,7 @@ function who(e: EventRecord, ctx: LineContext): string {
 	const named = str(d.asked_by) || (Array.isArray(d.asked_by) ? str(d.asked_by[0]) : '');
 	if (e.Actor?.kind === 'user') {
 		const id = e.Actor.id;
-		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || named || 'a member';
+		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || e.actor_name || named || 'a member';
 	}
 	return '';
 }
@@ -168,6 +173,11 @@ function keepLine(d: Record<string, unknown>): string {
 
 /** The title an ask is about, read from its summary when the title is not in the Library. */
 function askedName(e: EventRecord): string | undefined {
+	// An AI app's ask: "AI (Claude, key home) asked for Dune for Maya".
+	if (e.Kind.startsWith('ai_ask_')) {
+		const t = /^AI \(.*?\) (?:asked for|approved|turned down) (.+) for [^\s].*$/.exec(e.Summary)?.[1]?.trim();
+		return t && t !== 'a title' ? t.replace(/\s*\(\d{4}\)$/, '') : undefined;
+	}
 	if (!e.Kind.startsWith('ask_')) return undefined;
 	const made = /asked for (.+?)(?:\s*\(\d{4}\))?(?:,\s.*)?$/.exec(e.Summary)?.[1];
 	if (e.Kind === 'ask_made') return made?.trim() || undefined;
@@ -287,6 +297,9 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		}
 		case 'ask_approved': return t(TAG.approved, join(`Approved by ${str(d.approved_by) || who(e, ctx) || 'HolyArrs'}`, d.auto === true ? 'on its own' : '', str(d.note)));
 		case 'ask_turned_down': return t(TAG.declined, join(`Declined by ${str(d.turned_down_by) || who(e, ctx) || 'HolyArrs'}`, str(d.note)));
+		case 'report_made': return t(TAG.reported, join(`Problem reported by ${str(d.made_by) || who(e, ctx) || 'a member'}`, problem(d.kind), str(d.note)));
+		case 'report_fixed': return t(TAG.fixed, join(`Problem fixed by ${str(d.fixed_by) || who(e, ctx) || 'HolyArrs'}`, problem(d.kind), str(d.reply)));
+		case 'report_reopened': return t(TAG.reopened, join(`Problem opened again by ${str(d.reopened_by) || who(e, ctx) || 'HolyArrs'}`, problem(d.kind)));
 		case 'secrets_imported': return t(TAG.changed, join('Settings imported', `${num(d.set)} set`));
 		case 'media_server_told': return t(TAG.checked, 'Told the media server about it');
 		case 'media_server_failed': return t(TAG.failed, join('Could not reach the media server', plainWhy(str(d.reason) || str(d.error))));

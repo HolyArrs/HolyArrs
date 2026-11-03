@@ -61,3 +61,15 @@ describe('line 2', () => {
 		expect(t.line).toBe('Downloaded · 1080p · in the Library');
 	});
 });
+
+describe('reported problems', () => {
+	it('says who reported, fixed or reopened it, with the kind and the words', () => {
+		const made = eventText(ev('report_made', { Data: { kind: 'wont_play', note: 'stops at 20 minutes', made_by: 'kim' } }), ctx);
+		expect(made.tag.word).toBe('Reported');
+		expect(made.line).toBe("Problem reported by kim · Won't play · stops at 20 minutes");
+		const fixed = eventText(ev('report_fixed', { Data: { kind: 'sound', reply: 'swapped the copy', fixed_by: 'luis' } }), ctx);
+		expect(fixed.tag.word).toBe('Fixed');
+		expect(fixed.line).toBe('Problem fixed by luis · Sound · swapped the copy');
+		expect(eventText(ev('report_reopened', { Data: { kind: 'picture', reopened_by: 'luis' } }), ctx).line).toBe('Problem opened again by luis · Picture');
+	});
+});

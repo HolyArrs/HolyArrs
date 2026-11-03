@@ -48,7 +48,19 @@ type Gate struct {
 	cmu       sync.Mutex
 	counts    map[string]int
 	status    map[string]int
+
+	// countryOff: the owner switched "Count this install" off (Settings,
+	// This app); every request then carries X-Country-Count: off.
+	countryOff atomic.Bool
 }
+
+// CountryCountHeader tells the metadata server this install is not counted
+// in its per-country install total. It is sent, as "off", only when the
+// owner switched the count off.
+const CountryCountHeader = "X-Country-Count"
+
+// SetCountryCount sets "Count this install" (on by default).
+func (g *Gate) SetCountryCount(on bool) { g.countryOff.Store(!on) }
 
 const (
 	gateRate          = 5.0  // a second, for every request (300 a minute)
@@ -198,6 +210,10 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		body := fmt.Sprintf(`{"error":{"code":"client_held","retry_after_seconds":%d}}`, secs)
 		return &http.Response{Status: "429 Too Many Requests", StatusCode: http.StatusTooManyRequests, Proto: "HTTP/1.1", ProtoMajor: 1, ProtoMinor: 1,
 			Header: h, Body: io.NopCloser(strings.NewReader(body)), ContentLength: int64(len(body)), Request: req}, nil
+	}
+	if g.countryOff.Load() {
+		req = req.Clone(req.Context())
+		req.Header.Set(CountryCountHeader, "off")
 	}
 	resp, err := g.Next.RoundTrip(req)
 	if err != nil {

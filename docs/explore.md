@@ -169,22 +169,11 @@ through [Alerts](alerts-and-health.md).
 ## Asked by
 
 A title page can say who asked for the title: "You asked", "Asked by Ana",
-"Asked by Ana and Leo" or "Asked by Ana and 2 others". Cards stay factual and
-show no names. The server trims the list before it is sent:
+"Asked by Ana and Leo" or "Asked by Ana and 2 others". Press the line to see
+everyone who asked and when. Cards stay factual and show no names.
 
-| Reader | Sees |
-| --- | --- |
-| Owner, admins and managers | Everyone who asked. |
-| A member | Themselves, plus askers who chose to show their name, when the household allows it. |
-| A Kid account | Only themselves. |
-
-Two settings control it:
-
-- **Show who asked** (household) under **Settings > Request rules**: **Owner,
-  admins and managers only** (the default) or **Everyone in the household**.
-- **Show my name on my asks** (personal) under **My account**, for people who may
-  ask. It only has an effect when the household chose "Everyone in the
-  household". The owner, admins and managers always see your name.
+Everyone in the household sees who asked, Kid accounts included. There is no
+setting for it. A Kid only gets the line on titles within their age limit.
 
 ## Kid accounts
 

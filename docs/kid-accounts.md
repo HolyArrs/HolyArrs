@@ -71,7 +71,8 @@ same answer:
   TMDB title pages and Explore rows together are limited to 30 a minute
   (429 with Retry-After after that).
 - **Trailers** never autoplay for a Kid account (the server answers 403).
-  In **Asked by** on a title page, a Kid sees only their own asks.
+  **Asked by** on a title page names everyone who asked, as for everyone
+  else; a Kid only sees it on titles within their age limit.
 - **A TMDB title page** above the limit answers "This title is rated above
   what this account may see.", and its "more like this" list keeps only
   allowed titles.

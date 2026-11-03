@@ -243,7 +243,8 @@
 	/* Not usable until a download is picked: keep the shape crisp, dim only the ink. */
 	.dlbar .it:disabled .ic, .dlbar .it:disabled .lb { color: color-mix(in srgb, var(--text) 38%, transparent); }
 	.it:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.it.zero:not(.on) { opacity: 0.72; }
+	/* Nothing in it: the icon dims, the label stays readable (contrast). */
+	.it.zero:not(.on) .ic { opacity: 0.55; }
 	.dlbar .it.on, .dlbar .it.on .lb { color: var(--text); font-weight: 500; }
 	.dlbar .it.on .ic { color: var(--text); }
 

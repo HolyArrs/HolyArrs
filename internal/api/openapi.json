@@ -1244,15 +1244,6 @@
         },
         "type": "object"
       },
-      "AskPrivacy": {
-        "properties": {
-          "show_my_name": {
-            "description": "Let the household see my name on my asks, when the household setting allows it (off by default).",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
       "AskSettings": {
         "properties": {
           "library_folder_id": {
@@ -1295,14 +1286,6 @@
             "description": "Pick rules for approved show asks; 0 takes the folder's own.",
             "type": "integer"
           },
-          "show_who_asked": {
-            "description": "Who sees other people's names on asks: approvers (owner, admins and managers; the default) or everyone in the household (only for askers who turned on showing their name). Kids never see others.",
-            "enum": [
-              "approvers",
-              "everyone"
-            ],
-            "type": "string"
-          },
           "shows_per_week": {
             "description": "Default show (one per show ask, whatever its seasons) asks per person per 7 days; a person's own limit wins. 0 is no limit. Default 10.",
             "maximum": 1000,
@@ -1313,12 +1296,8 @@
         "type": "object"
       },
       "AskedBy": {
-        "description": "Each title's askers the reader may see, earliest first. The owner, admins and managers see everyone; members see themselves, plus askers who chose to show their name when the household allows it; Kids see only themselves.",
+        "description": "Each title's askers, earliest first. Everyone in the household sees every asker.",
         "properties": {
-          "sees_all": {
-            "description": "The reader sees every asker (they approve asks).",
-            "type": "boolean"
-          },
           "titles": {
             "additionalProperties": {
               "properties": {
@@ -2377,6 +2356,15 @@
             "format": "date-time",
             "type": "string"
           },
+          "confirmed": {
+            "description": "The state the flap guard has confirmed, which Alerts and Home go by.",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "type": "string"
+          },
           "id": {
             "type": "integer"
           },
@@ -2834,13 +2822,17 @@
             "enum": [
               "approved",
               "turned_down",
-              "ready"
+              "ready",
+              "fixed"
             ],
             "type": "string"
           },
           "read_at": {
             "format": "date-time",
             "type": "string"
+          },
+          "report_id": {
+            "type": "integer"
           },
           "text": {
             "type": "string"
@@ -4398,6 +4390,130 @@
           },
           "version_id": {
             "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Report": {
+        "properties": {
+          "album_id": {
+            "type": "integer"
+          },
+          "album_name": {
+            "type": "string"
+          },
+          "closed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "closed_by": {
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "episode": {
+            "type": "integer"
+          },
+          "file_id": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "item_id": {
+            "type": "integer"
+          },
+          "item_name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "picture",
+              "sound",
+              "subtitles",
+              "wont_play",
+              "other"
+            ],
+            "type": "string"
+          },
+          "kind_label": {
+            "type": "string"
+          },
+          "made_by": {
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "mine": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "season": {
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "fixed"
+            ],
+            "type": "string"
+          },
+          "state_label": {
+            "type": "string"
+          },
+          "title_id": {
+            "type": "integer"
+          },
+          "title_kind": {
+            "enum": [
+              "movie",
+              "show",
+              "artist"
+            ],
+            "type": "string"
+          },
+          "title_name": {
+            "type": "string"
+          },
+          "track": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
+          },
+          "version_id": {
+            "type": "integer"
+          },
+          "where": {
+            "description": "The part in words: S02E03, Season 2, an album, a track; the Version label when the title has more than one.",
+            "type": "string"
+          },
+          "year": {
             "type": "integer"
           }
         },
@@ -7887,7 +8003,7 @@
     },
     "/api/v1/asked-by": {
       "get": {
-        "description": "Pass title_id once per title (or title_ids=1,2). Names are trimmed on the server by the privacy rules.",
+        "description": "Pass title_id once per title (or title_ids=1,2). A Kid gets only titles within their age limit.",
         "operationId": "getAskedBy",
         "parameters": [
           {
@@ -9966,7 +10082,7 @@
     },
     "/api/v1/auth/settings": {
       "get": {
-        "description": "Sign-in ways, local-network sign-in, two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token).",
+        "description": "Sign-in ways, local-network sign-in (skip_login_local_network and the local_networks it covers), two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token).",
         "operationId": "getAuthSettings",
         "responses": {
           "200": {
@@ -9989,7 +10105,7 @@
         "x-holyarrs-scope": "admin"
       },
       "put": {
-        "description": "Owner only. min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise).",
+        "description": "Owner only. local_networks takes up to 32 CIDRs or single addresses (400 names a bad entry); skip_login_local_network cannot be on with an empty list (400). min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise).",
         "operationId": "putAuthSettings",
         "requestBody": {
           "content": {
@@ -10283,7 +10399,7 @@
     },
     "/api/v1/auth/two-factor/setup": {
       "post": {
-        "description": "Answers a new secret and its otpauth link for an authenticator app.",
+        "description": "Answers a new secret, its otpauth link for an authenticator app, and the link as a QR code to scan (qr: rows of 1 for dark and 0 for light, without the quiet zone).",
         "operationId": "twoFactorSetup",
         "responses": {
           "200": {
@@ -16026,7 +16142,7 @@
     },
     "/api/v1/manual-import": {
       "post": {
-        "description": "Imports files chosen by hand into their Slots. Each item names a file and its Slot (slot_id), or the title (title_id) with season and episode for a show and optionally version_id; mode is copy (the default: a hardlink on the same disk) or move. Each file is named by the naming settings and recorded; a file that cannot go is refused with the reason and the others still go. Only movies and episodes for now.",
+        "description": "Imports files chosen by hand into their Slots. Each item names a file and its Slot (slot_id), or the title (title_id) with season and episode for a show and optionally version_id; mode is copy (the default: a hardlink on the same disk) or move. Each file is named by the naming settings and recorded; a file that cannot go is refused with the reason and the others still go. A file outside the places import by hand may read is refused and left where it is. Only movies and episodes for now.",
         "operationId": "importByHand",
         "requestBody": {
           "content": {
@@ -16142,7 +16258,7 @@
     },
     "/api/v1/manual-import/scan": {
       "post": {
-        "description": "Lists the videos and tracks in a folder (or one file) the server can read, up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads.",
+        "description": "Lists the videos and tracks in a folder (or one file), up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads, and only inside a Library folder, a Downloader's folder or an extra import folder (GET /api/v1/settings/import-folders).",
         "operationId": "scanByHand",
         "requestBody": {
           "content": {
@@ -16212,7 +16328,7 @@
             "description": "The files found."
           },
           "400": {
-            "description": "The path is not a full path the server can read, or holds .. parts."
+            "description": "The path is not a full path the server can read, or holds .. parts, or lies outside the places import by hand may read (the answer names them)."
           }
         },
         "summary": "Scan a folder for files to import by hand",
@@ -16518,7 +16634,7 @@
     },
     "/api/v1/messages": {
       "get": {
-        "description": "In-app messages (approved, turned down, ready), newest first, with the unread count; for people who approve also how many asks wait.",
+        "description": "In-app messages (approved, turned down, ready), newest first, with the unread count; for people who approve also how many asks wait; for people with manage_library also how many reports are open (reports_open).",
         "operationId": "listMessages",
         "parameters": [
           {
@@ -16541,6 +16657,9 @@
                         "$ref": "#/components/schemas/Message"
                       },
                       "type": "array"
+                    },
+                    "reports_open": {
+                      "type": "integer"
                     },
                     "unread": {
                       "type": "integer"
@@ -18683,74 +18802,6 @@
         "x-holyarrs-scope": "write"
       }
     },
-    "/api/v1/my/ask-privacy": {
-      "get": {
-        "description": "Off unless I turn it on.",
-        "operationId": "getAskPrivacy",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AskPrivacy"
-                }
-              }
-            },
-            "description": "My choice."
-          }
-        },
-        "summary": "Whether my name shows on my asks",
-        "tags": [
-          "Wishlist"
-        ],
-        "x-holyarrs-part": "wishlist",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "read"
-      },
-      "put": {
-        "description": "Others see it only when the household allows it.",
-        "operationId": "putAskPrivacy",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AskPrivacy"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AskPrivacy"
-                }
-              }
-            },
-            "description": "Saved."
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Bad body."
-          }
-        },
-        "summary": "Choose whether my name shows on my asks",
-        "tags": [
-          "Wishlist"
-        ],
-        "x-holyarrs-part": "wishlist",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "write"
-      }
-    },
     "/api/v1/my/follows": {
       "get": {
         "description": "The shows and artists I follow, by name.",
@@ -20524,6 +20575,359 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/reports": {
+      "get": {
+        "description": "People with manage_library see every report; everyone else sees only the reports they made. Open reports first, then newest. For managers the answer also says how many are open.",
+        "operationId": "listReports",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "schema": {
+              "enum": [
+                "open",
+                "fixed"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mine",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 200,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "open": {
+                      "type": "integer"
+                    },
+                    "reports": {
+                      "items": {
+                        "$ref": "#/components/schemas/Report"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Reports."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown state or title_id."
+          }
+        },
+        "summary": "Problem reports",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Anyone signed in reports a problem with a title in the Library: kind picture, sound, subtitles, wont_play or other, with an optional note (at most 500 characters). season, item_id (an episode or track), album_id and version_id narrow it; for a movie the item is found, and when the item has one copy in the Library (or version_id picks one) its file is kept with the report. The owner and admins get the report_made Alert. A title above a Kid's age-rating limit answers 404 like a title that does not exist.",
+        "operationId": "makeReport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "album_id": {
+                    "type": "integer"
+                  },
+                  "item_id": {
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "enum": [
+                      "picture",
+                      "sound",
+                      "subtitles",
+                      "wont_play",
+                      "other"
+                    ],
+                    "type": "string"
+                  },
+                  "note": {
+                    "maxLength": 500,
+                    "type": "string"
+                  },
+                  "season": {
+                    "type": "integer"
+                  },
+                  "title_id": {
+                    "type": "integer"
+                  },
+                  "version_id": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "title_id",
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "report": {
+                      "$ref": "#/components/schemas/Report"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Reported."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown kind, a note too long, or a part that is not of this title."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Title."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The same person has this problem open already, or the title's part is off."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Nothing of this title is in the Library yet."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The person has 20 reports open already."
+          }
+        },
+        "summary": "Report a problem with a title",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/reports/{id}/fix": {
+      "post": {
+        "description": "The optional reply (at most 500 characters) goes to the person who reported it as a message (kind fixed) and with the report_fixed Alert.",
+        "operationId": "fixReport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "reply": {
+                    "maxLength": 500,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "report": {
+                      "$ref": "#/components/schemas/Report"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Reply too long."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such report."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Already fixed."
+          }
+        },
+        "summary": "Mark a report fixed",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/reports/{id}/reopen": {
+      "post": {
+        "description": "For a problem that came back. The reply is cleared.",
+        "operationId": "reopenReport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "report": {
+                      "$ref": "#/components/schemas/Report"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Open again."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such report."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Still open, or the same person has this problem open in another report."
+          }
+        },
+        "summary": "Open a fixed report again",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/schedules": {
       "get": {
         "description": "Every scheduled Job kind (kind, label, about, every_s with min_s, max_s and step_s, enabled, last_run, next_run, state: waiting, queued, running, off, part_off or safe_mode; how the newest Job of the kind ended; its part and the settings page that also changes it) and every supervised background loop (the stage states of GET /health/states with every_s, last_pass and next_pass for periodic loops, and its part).",
@@ -21248,6 +21652,134 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/import-folders": {
+      "get": {
+        "description": "Import files by hand reads only inside these folders: the Library folders, the Downloaders' folders and the extra import folders.",
+        "operationId": "getImportFolders",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader_folders": {
+                      "description": "The folders the Downloaders save into, as HolyArrs sees them: the save path and each path map's HolyArrs side.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "extra_folders": {
+                      "description": "The extra import folders added in Settings.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "library_folders": {
+                      "description": "The Library folders.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "library_folders",
+                    "downloader_folders",
+                    "extra_folders"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The places import by hand may read."
+          }
+        },
+        "summary": "Places files may be imported by hand from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Full paths (Linux or Windows form), one per item, with no .. parts and no network share paths, 32 at most. Blank items and repeats are dropped; [] clears the list.",
+        "operationId": "putImportFolders",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "extra_folders": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "extra_folders"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader_folders": {
+                      "description": "The folders the Downloaders save into, as HolyArrs sees them: the save path and each path map's HolyArrs side.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "extra_folders": {
+                      "description": "The extra import folders added in Settings.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "library_folders": {
+                      "description": "The Library folders.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "library_folders",
+                    "downloader_folders",
+                    "extra_folders"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The places import by hand may read."
+          },
+          "400": {
+            "description": "A folder is not a full path, holds .. parts, or there are more than 32."
+          }
+        },
+        "summary": "Save the extra import folders",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/settings/import-secrets": {
       "post": {
         "description": "Stores each filled-in item of the parsed secrets file through the same code as the Settings screens, every secret in the vault. Sources and Downloaders are made paused, Alerts and media servers off; old-app keys are saved for the Move tool. `holyarrs import-secrets` sends this while HolyArrs runs. The answer names items and results only.",
@@ -21543,6 +22075,81 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/old-app-api": {
+      "get": {
+        "description": "Whether the old-app API is on, whether a delete from those apps may take files, and per side (sonarr, radarr) the address to paste into Seerr or Overseerr and the key's hint, maker and last use. Key values are never shown here.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Old-app API settings",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Send enabled and/or delete_files (both off by default). While off, /sonarr/ and /radarr/ answer 404.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Turn the old-app API on or off",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/old-app-api/keys/{side}": {
+      "delete": {
+        "description": "The side's key stops working at once. Needs a password sign-in.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "side",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "404": {
+            "description": "No key for this side"
+          }
+        },
+        "summary": "Remove an old-app API key",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Makes the key for one side (sonarr or radarr) and shows it only in this answer; an older key of that side stops working. The key acts as the person who made it, who must be allowed to manage the Library. Needs a password sign-in.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "side",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The new key"
+          }
+        },
+        "summary": "Make an old-app API key",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/settings/release-gate": {
@@ -27256,6 +27863,7 @@
   "x-holyarrs-scopes": {
     "admin": "People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore) and the outside-service key settings: every route only the owner or an admin may use, the key and sign-in routes of My account, and every GET route not marked read. Making or promoting an admin also needs the control scope.",
     "all": "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
+    "compat": "The old-app API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
     "control": "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
     "health_read": "Health states only, for monitoring companions.",
     "mcp": "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",

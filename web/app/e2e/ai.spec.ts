@@ -66,7 +66,10 @@ test('search in plain words shows what it understood', async () => {
 test('History offers AI apps in its Filter', async () => {
 	await page.goto('/downloads/history');
 	await page.getByRole('button', { name: 'Filter' }).click();
-	await expect(page.getByText('AI apps', { exact: true })).toBeVisible();
+	// AI actions are their own "who" next to You, Members and HolyArrs on its own.
+	const who = page.getByRole('combobox', { name: 'Who' });
+	await who.selectOption({ label: 'AI apps' });
+	await expect(who).toHaveValue('ai');
 	await page.keyboard.press('Escape');
 });
 

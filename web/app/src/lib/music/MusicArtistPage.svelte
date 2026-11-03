@@ -678,7 +678,9 @@
 	{:else if lib}
 		<!-- In the Library, nothing to ask: no main button. -->
 	{:else if titleId}
-		{#if manage}<ActionButton icon="library" label="In Library" primary onclick={() => (artistTab = 'library')} />{:else}<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />{/if}
+		<!-- Everyone goes to the one artist page in the Library, like a title page. -->
+		<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />
+
 	{:else if manage || mayAsk}
 		<ActionButton icon={lookup?.ask ? 'check' : 'plus'} label={cta} primary disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask" />
 	{/if}
@@ -855,9 +857,10 @@
 			<ul class="soon">
 				{#each soon as a (a.mbid)}
 					<li>
-						<a href={albumHref(a.mbid, mbid)}><span class="cov small">{#if a.image && !badArt.has(a.mbid)}<img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, a.mbid]))} />{:else}<ArtPlaceholder name={a.name} shape="square" />{/if}</span></a>
+						<!-- The cover repeats the name link beside it, so screen readers and Tab skip it. -->
+						<a href={albumHref(a.mbid, mbid)} tabindex="-1" aria-hidden="true"><span class="cov small">{#if a.image && !badArt.has(a.mbid)}<img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, a.mbid]))} />{:else}<ArtPlaceholder name={a.name} shape="square" />{/if}</span></a>
 						<span class="soon-words"><a class="s-name" href={albumHref(a.mbid, mbid)}>{a.name}</a><span class="s-album">{kindWord(a)} · {releaseWords(a.release_date ?? '')}</span></span>
-						{#if !data?.kid}<IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
+						{#if !data?.kid}<!-- The bell sits at the row's right edge: its tip lines up with it, so a long name never pushes the page sideways. --><IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} tipSide="below-end" aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
 					</li>
 				{/each}
 			</ul>
@@ -1128,6 +1131,8 @@
 	.song:hover a.num .go, .song:focus-within a.num .go { opacity: 1; }
 	a.num:hover { background: var(--surface-3); }
 	a.num:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Touch phones: a centred 44px hit area on the song-number link. */
+	@media (max-width: 767px) and (pointer: coarse) { a.num::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; } }
 	.cov { position: relative; display: block; flex: none; width: 48px; height: 48px; overflow: hidden; border-radius: 6px; background: var(--surface-2); }
 	.cov img { width: 100%; height: 100%; object-fit: cover; }
 	.cov.small { width: 72px; height: 72px; border-radius: 8px; }
@@ -1229,6 +1234,7 @@
 	/* Overview / Library tabs for an artist in the Library: the same underline tabs as a title page. */
 	.ar-tabs { display: flex; gap: 6px; margin-top: calc(var(--gap) * -1 + 16px); border-bottom: 1px solid var(--line); }
 	.ar-tabs button { height: 40px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	@media (max-width: 767px) and (pointer: coarse) { .ar-tabs button { height: 44px; } }
 	.ar-tabs button.on { color: var(--text); border-bottom-color: var(--text); }
 
 	@media (max-width: 1000px) {

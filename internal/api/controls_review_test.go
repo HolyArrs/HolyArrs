@@ -13,7 +13,7 @@ import (
 // in without a password; it must not run any control.
 func TestControlsNeedAPasswordSignIn(t *testing.T) {
 	r := newAskRig(t)
-	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`, 200)
+	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	jar, _ := cookiejar.New(nil)
 	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
 	bare.call("GET", "/api/v1/parts", "", 200) // signed in through the skip

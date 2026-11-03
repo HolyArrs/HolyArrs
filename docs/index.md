@@ -60,6 +60,7 @@ in square brackets.
 ## Guides without their own screen
 
 - [Import keys and passwords from one file](import-secrets.md)
+- [Connect Seerr or Overseerr](old-app-api.md): HolyArrs answers them in place of Sonarr and Radarr
 - [Update check](updates.md)
 - [Running under a path behind a reverse proxy](url-base.md)
 - [Word check for contributors](word-check.md)

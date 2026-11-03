@@ -1106,6 +1106,8 @@
 	.find-box { position: relative; flex: 1 1 220px; max-width: 360px; min-width: 0; }
 	.find-ic { position: absolute; left: 11px; top: 50%; translate: 0 -50%; color: var(--text-muted); display: grid; pointer-events: none; }
 	.find { width: 100%; min-height: 40px; padding-left: 34px; border-radius: var(--r-btn); background: var(--surface-2); border-color: transparent; }
+	/* Touch phones get the full 44px tap height; desktop keeps the slimmer field. */
+	@media (pointer: coarse) and (max-width: 767px) { .find { min-height: 44px; } }
 	.tool-gap { flex: 1 1 auto; }
 	.filter-btn.on :global(button[aria-haspopup]) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent); }
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }

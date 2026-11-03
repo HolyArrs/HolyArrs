@@ -151,13 +151,21 @@ func openDB(path string, physicalBytes int64, kind string) (*sql.DB, error) {
 	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return nil, errors.New("cannot read database schema")
 	}
-	if version != 0 && version != 1 && !(kind == "registered" && version == 2) {
+	if version != 0 && version != 1 && !(kind == "registered" && (version == 2 || version == 3)) {
 		return nil, errors.New("unsupported database schema")
 	}
 	if kind == "registered" && version == 1 {
 		// v2: network (widest address group) and used (0 until first use).
 		// Existing credentials count as used.
 		if _, err := db.Exec(`ALTER TABLE registered ADD COLUMN network TEXT NOT NULL DEFAULT ''; ALTER TABLE registered ADD COLUMN used INTEGER NOT NULL DEFAULT 1 CHECK(used IN (0,1)); PRAGMA user_version=2;`); err != nil {
+			return nil, errors.New("cannot upgrade database schema")
+		}
+		version = 2
+	}
+	if kind == "registered" && version == 2 {
+		// v3: country (ISO 3166 alpha-2, '' when unknown or not counted)
+		// and country_at (when it was stored, 0 for never).
+		if _, err := db.Exec(`ALTER TABLE registered ADD COLUMN country TEXT NOT NULL DEFAULT ''; ALTER TABLE registered ADD COLUMN country_at INTEGER NOT NULL DEFAULT 0; PRAGMA user_version=3;`); err != nil {
 			return nil, errors.New("cannot upgrade database schema")
 		}
 	}
@@ -168,7 +176,7 @@ func openDB(path string, physicalBytes int64, kind string) (*sql.DB, error) {
 		}
 		schema := `CREATE TABLE tokens (hash BLOB PRIMARY KEY CHECK(length(hash)=32), revoked INTEGER NOT NULL CHECK(revoked IN (0,1))) WITHOUT ROWID; PRAGMA user_version=1;`
 		if kind == "registered" {
-			schema = `CREATE TABLE registered (hash BLOB PRIMARY KEY CHECK(length(hash)=32), source TEXT NOT NULL, last_used INTEGER NOT NULL, revoked INTEGER NOT NULL CHECK(revoked IN (0,1)), network TEXT NOT NULL DEFAULT '', used INTEGER NOT NULL DEFAULT 1 CHECK(used IN (0,1))) WITHOUT ROWID; CREATE INDEX registered_used ON registered(revoked,last_used); PRAGMA user_version=2;`
+			schema = `CREATE TABLE registered (hash BLOB PRIMARY KEY CHECK(length(hash)=32), source TEXT NOT NULL, last_used INTEGER NOT NULL, revoked INTEGER NOT NULL CHECK(revoked IN (0,1)), network TEXT NOT NULL DEFAULT '', used INTEGER NOT NULL DEFAULT 1 CHECK(used IN (0,1)), country TEXT NOT NULL DEFAULT '', country_at INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID; CREATE INDEX registered_used ON registered(revoked,last_used); PRAGMA user_version=3;`
 		}
 		if cache {
 			schema = `CREATE TABLE entries (key TEXT PRIMARY KEY, data BLOB NOT NULL, cursor TEXT NOT NULL, fetched_at TEXT NOT NULL, expires_at TEXT NOT NULL, age INTEGER NOT NULL, size INTEGER NOT NULL CHECK(size>0)) WITHOUT ROWID; CREATE INDEX entries_age ON entries(age,key); PRAGMA user_version=1;`
@@ -187,7 +195,7 @@ func openDB(path string, physicalBytes int64, kind string) (*sql.DB, error) {
 	}
 	shape := "SELECT hash,revoked FROM tokens LIMIT 0"
 	if kind == "registered" {
-		shape = "SELECT hash,source,last_used,revoked,network,used FROM registered LIMIT 0"
+		shape = "SELECT hash,source,last_used,revoked,network,used,country,country_at FROM registered LIMIT 0"
 	}
 	if cache {
 		shape = "SELECT key,data,cursor,fetched_at,expires_at,age,size FROM entries LIMIT 0"
@@ -503,14 +511,19 @@ func (s *Store) RegisterToken(ctx context.Context, token, source, network string
 // Registered reports whether token is an active self-registered credential
 // and its source group. Use renews it (at most once a minute; the first
 // use at once, which also marks it used).
-func (s *Store) Registered(ctx context.Context, token string, idle time.Duration) (string, bool, error) {
+//
+// country is the caller's ISO 3166 alpha-2 country ("" when unknown: the
+// stored one stays). It is stored when it differs from the stored one, at
+// most once a day, in the same write as the renewal. counted false (the
+// install switched the country count off) clears the stored country.
+func (s *Store) Registered(ctx context.Context, token string, idle time.Duration, country string, counted bool) (string, bool, error) {
 	if token == "" || len(token) > 4096 {
 		return "", false, nil
 	}
-	var source string
-	var used int64
+	var source, stored string
+	var used, storedAt int64
 	var revoked, wasUsed int
-	err := s.registered.QueryRowContext(ctx, "SELECT source,last_used,revoked,used FROM registered WHERE hash=?", tokenHash(token)).Scan(&source, &used, &revoked, &wasUsed)
+	err := s.registered.QueryRowContext(ctx, "SELECT source,last_used,revoked,used,country,country_at FROM registered WHERE hash=?", tokenHash(token)).Scan(&source, &used, &revoked, &wasUsed, &stored, &storedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", false, nil
 	}
@@ -521,11 +534,46 @@ func (s *Store) Registered(ctx context.Context, token string, idle time.Duration
 	if revoked != 0 || used < now-int64(idle/time.Second) {
 		return "", false, nil
 	}
-	if (wasUsed == 0 || now-used >= 60) && s.lock(ctx) == nil {
-		_, _ = s.registered.ExecContext(ctx, "UPDATE registered SET last_used=?, used=1 WHERE hash=? AND revoked=0", now, tokenHash(token))
+	lastUsed, usedFlag, renew := used, wasUsed, wasUsed == 0 || now-used >= 60
+	if renew {
+		lastUsed, usedFlag = now, 1
+	}
+	place, placeAt, recount := stored, storedAt, false
+	switch {
+	case !counted:
+		place, placeAt, recount = "", 0, stored != "" || storedAt != 0
+	case country != "" && country != stored && now-storedAt >= 24*60*60:
+		place, placeAt, recount = country, now, true
+	}
+	if (renew || recount) && s.lock(ctx) == nil {
+		_, _ = s.registered.ExecContext(ctx, "UPDATE registered SET last_used=?, used=?, country=?, country_at=? WHERE hash=? AND revoked=0", lastUsed, usedFlag, place, placeAt, tokenHash(token))
 		s.unlock()
 	}
 	return source, true, nil
+}
+
+// InstallCountries counts the active self-registered installs used since
+// since, per stored country. Installs with no country are left out; no
+// row, credential or address is returned.
+func (s *Store) InstallCountries(ctx context.Context, since time.Time) (map[string]int, error) {
+	rows, err := s.registered.QueryContext(ctx, "SELECT country,COUNT(*) FROM registered WHERE revoked=0 AND last_used>=? AND country<>'' GROUP BY country", since.Unix())
+	if err != nil {
+		return nil, errors.New("install count unavailable")
+	}
+	defer rows.Close()
+	out := map[string]int{}
+	for rows.Next() {
+		var c string
+		var n int
+		if err := rows.Scan(&c, &n); err != nil {
+			return nil, errors.New("install count unavailable")
+		}
+		out[c] = n
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.New("install count unavailable")
+	}
+	return out, nil
 }
 
 func integrity(ctx context.Context, db *sql.DB) error {

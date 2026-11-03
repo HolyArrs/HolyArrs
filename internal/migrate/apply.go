@@ -1223,7 +1223,7 @@ func (r *run) downloader(it Item) (string, string) {
 		proto = "usenet"
 	}
 	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
-		PathMap: []domain.PathMap{}, AfterImport: "leave", State: "disabled", Username: d.Username, AllowLocal: false}
+		PathMap: []domain.PathMap{}, AfterImport: "leave", State: "disabled", Username: d.Username, AllowLocal: false, ClearFinished: true}
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		id, err := store.Insert(tx, "downloaders", &row, r.by)
 		if err != nil {

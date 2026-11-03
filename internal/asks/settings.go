@@ -44,14 +44,7 @@ type Settings struct {
 	// defaults).
 	MusicLibraryFolderID int64 `json:"music_library_folder_id"`
 	MusicPickRulesID     int64 `json:"music_pick_rules_id"`
-	// ShowWhoAsked is who sees the names of other askers: "approvers" (the
-	// owner, admins and managers; the default) or "everyone" (members too,
-	// for askers who turned on showing their name). Kids never see others.
-	ShowWhoAsked string `json:"show_who_asked"`
 }
-
-// ErrShowWhoAsked is a bad ShowWhoAsked value.
-var ErrShowWhoAsked = errors.New("show_who_asked must be approvers or everyone")
 
 // PerWeekOf is the default weekly limit for one kind.
 func (s Settings) PerWeekOf(kind string) int {
@@ -65,12 +58,12 @@ func (s Settings) PerWeekOf(kind string) int {
 }
 
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
-	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_show_who_asked"}
+	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week"}
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
 func ReadSettings(ctx context.Context, db store.Lister) (Settings, error) {
-	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true, ShowWhoAsked: "approvers"}
+	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true}
 	args := make([]any, len(settingKeys))
 	for i, k := range settingKeys {
 		args[i] = k
@@ -105,10 +98,6 @@ func ReadSettings(ctx context.Context, db store.Lister) (Settings, error) {
 			s.MusicLibraryFolderID = n
 		case "ask_music_pick_rules_id":
 			s.MusicPickRulesID = n
-		case "ask_show_who_asked":
-			if v == "everyone" {
-				s.ShowWhoAsked = v
-			}
 		}
 	}
 	return s, rows.Err()
@@ -120,12 +109,6 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 		if n < 0 || n > 1000 {
 			return ErrPerWeek
 		}
-	}
-	if s.ShowWhoAsked == "" {
-		s.ShowWhoAsked = "approvers"
-	}
-	if s.ShowWhoAsked != "approvers" && s.ShowWhoAsked != "everyone" {
-		return ErrShowWhoAsked
 	}
 	db := st.Read()
 	if s.LibraryFolderID != 0 {
@@ -178,7 +161,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 		now := store.FormatTime(time.Now())
 		vals := []string{strconv.Itoa(s.MoviesPerWeek), strconv.FormatInt(s.LibraryFolderID, 10), strconv.FormatInt(s.PickRulesID, 10), strconv.FormatBool(s.SearchOnApprove),
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
-			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), s.ShowWhoAsked}
+			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek)}
 		for i, k := range settingKeys {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,

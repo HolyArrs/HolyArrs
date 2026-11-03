@@ -33,7 +33,7 @@ func (i *registeringStore) RegisterToken(_ context.Context, token, source, netwo
 	return nil
 }
 
-func (i *registeringStore) Registered(_ context.Context, token string, _ time.Duration) (string, bool, error) {
+func (i *registeringStore) Registered(_ context.Context, token string, _ time.Duration, _ string, _ bool) (string, bool, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	src, ok := i.sources[token]

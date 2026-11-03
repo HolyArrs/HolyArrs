@@ -180,7 +180,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/titles/owned":                             needSignedIn,
 	"GET /api/v1/library/search":                           needSignedIn,
 	"GET /api/v1/search/suggest":                           needSignedIn,
-	"GET /api/v1/search":                                    needSignedIn,
+	"GET /api/v1/search":                                   needSignedIn,
 	"GET /api/v1/library-summary":                          needSignedIn,
 	"GET /api/v1/home":                                     needSignedIn,
 	"GET /api/v1/titles/{id}":                              needSignedIn,
@@ -270,7 +270,6 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/my/alerts":                          needSignedIn,
 	"PUT /api/v1/my/alerts":                          needSignedIn,
 	"GET /api/v1/asked-by":                           needSignedIn,
-	"GET /api/v1/my/ask-privacy":                     needSignedIn,
 	"GET /api/v1/my/profile":                         needSignedIn,
 	"PUT /api/v1/my/profile":                         needSignedIn,
 	"GET /api/v1/my/follows":                         needSignedIn,
@@ -283,7 +282,6 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/metadata/movie/{tmdb_id}/follow":    needSignedIn,
 	"PUT /api/v1/metadata/movie/{tmdb_id}/follow":    needSignedIn,
 	"DELETE /api/v1/metadata/movie/{tmdb_id}/follow": needSignedIn,
-	"PUT /api/v1/my/ask-privacy":                     needSignedIn,
 	"GET /api/v1/ask-limits":                         needUsers,
 	"PUT /api/v1/ask-limits/{id}":                    needUsers,
 	"GET /api/v1/settings/asks":                      PermSettings,
@@ -357,6 +355,8 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/library/rescan":               PermManageLibrary,
 	"POST /api/v1/manual-import/scan":           PermSettings,
 	"POST /api/v1/manual-import":                PermSettings,
+	"GET /api/v1/settings/import-folders":       PermSettings,
+	"PUT /api/v1/settings/import-folders":       needUsers, // widens what import by hand may read
 	"POST /api/v1/titles/{id}/versions":         PermManageLibrary,
 	"PUT /api/v1/titles/{id}/versions/{vid}":    PermManageLibrary,
 	"DELETE /api/v1/titles/{id}/versions/{vid}": PermManageLibrary,
@@ -560,6 +560,22 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/schedules/{kind}/run": PermManageLibrary,
 	"PUT /api/v1/schedules/{kind}":      PermSettings,
 
+	// The old-app API (decision 0008): one row per method on each prefix;
+	// every route behind them reads or changes the Library.
+	"GET /sonarr/":    PermManageLibrary,
+	"POST /sonarr/":   PermManageLibrary,
+	"PUT /sonarr/":    PermManageLibrary,
+	"DELETE /sonarr/": PermManageLibrary,
+	"GET /radarr/":    PermManageLibrary,
+	"POST /radarr/":   PermManageLibrary,
+	"PUT /radarr/":    PermManageLibrary,
+	"DELETE /radarr/": PermManageLibrary,
+	// Its settings: the switch, and one key per side.
+	"GET /api/v1/settings/old-app-api":                PermSettings,
+	"PUT /api/v1/settings/old-app-api":                PermSettings,
+	"POST /api/v1/settings/old-app-api/keys/{side}":   PermSettings,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}": PermSettings,
+
 	// The move tool (6.1): reading an old app's setup reaches other
 	// machines with keys the owner types and keeps what it read, so it is
 	// for the owner and admins with a password sign-in and the admin scope.
@@ -575,6 +591,13 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/migrate/moves/{id}":        needUsers,
 	"GET /api/v1/migrate/moves/{id}/report": needUsers,
 	"POST /api/v1/migrate/moves/{id}/undo":  needUsers,
+
+	// Reports: anyone signed in reports a problem and sees their own;
+	// fixing and opening again needs manage_library.
+	"GET /api/v1/reports":              needSignedIn,
+	"POST /api/v1/reports":             needSignedIn,
+	"POST /api/v1/reports/{id}/fix":    PermManageLibrary,
+	"POST /api/v1/reports/{id}/reopen": PermManageLibrary,
 }
 
 // API key scopes. A key holds one or more; a session holds them all.
@@ -592,10 +615,14 @@ const (
 	// ScopeMCP is an AI key: it reaches only the AI connection route
 	// (/api/v1/mcp), and all does not include it.
 	ScopeMCP = "mcp"
+	// ScopeCompat is held only by old-app API keys (/sonarr/ and
+	// /radarr/, decision 0008); no HolyArrs API key can be made with it,
+	// and all does not include it.
+	ScopeCompat = "compat"
 )
 
 // Scopes lists the scopes a key may be given.
-var Scopes = []string{ScopeHealthRead, ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll, ScopeMCP}
+var Scopes = []string{ScopeHealthRead, ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll, ScopeMCP, ScopeCompat}
 
 // ScopeNotes says in plain words what each scope reaches; the OpenAPI
 // spec publishes it.
@@ -607,6 +634,7 @@ var ScopeNotes = map[string]string{
 	ScopeControl:    "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
 	ScopeAll:        "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
 	ScopeMCP:        "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",
+	ScopeCompat:     "The old-app API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
 }
 
 // RouteScopes names routes whose scope is not the one the method and
@@ -648,6 +676,17 @@ var RouteScopes = map[string]string{
 	"POST /mcp":                                                  ScopeMCP,
 	"GET /mcp":                                                   ScopeMCP,
 	"GET /api/v1/settings/ai":                                    ScopeAdmin,
+	"GET /sonarr/":                                               ScopeCompat,
+	"POST /sonarr/":                                              ScopeCompat,
+	"PUT /sonarr/":                                               ScopeCompat,
+	"DELETE /sonarr/":                                            ScopeCompat,
+	"GET /radarr/":                                               ScopeCompat,
+	"POST /radarr/":                                              ScopeCompat,
+	"PUT /radarr/":                                               ScopeCompat,
+	"DELETE /radarr/":                                            ScopeCompat,
+	"GET /api/v1/settings/old-app-api":                           ScopeAdmin,
+	"POST /api/v1/settings/old-app-api/keys/{side}":              ScopeAdmin,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}":            ScopeAdmin,
 
 	// My account's sign-in and the keys themselves.
 	"GET /api/v1/auth/keys":                     ScopeAdmin,
@@ -696,6 +735,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/migrate/saved-keys":        ScopeAdmin,
 	"DELETE /api/v1/migrate/saved-keys":     ScopeAdmin,
 	"POST /api/v1/settings/import-secrets":  ScopeAdmin,
+	"PUT /api/v1/settings/import-folders":   ScopeAdmin, // widens what import by hand may read
 	"POST /api/v1/migrate/plan":             ScopeAdmin,
 	"POST /api/v1/migrate/dry-run":          ScopeAdmin,
 	"GET /api/v1/migrate/moves":             ScopeAdmin,
@@ -724,6 +764,7 @@ func init() {
 		"GET /api/v1/collections",
 		"GET /api/v1/collections/{id}",
 		"GET /api/v1/library/copies",
+		"GET /api/v1/reports",
 
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",
@@ -734,11 +775,11 @@ func init() {
 		"GET /api/v1/health", "GET /api/v1/health/checks", "GET /api/v1/health/disks", "GET /api/v1/app/about",
 		"GET /api/v1/held", "GET /api/v1/holding", "GET /api/v1/imports", "GET /api/v1/jobs", "GET /api/v1/jobs/{id}", "GET /api/v1/jobs/active",
 		"GET /api/v1/library-folders", "GET /api/v1/library-summary", "GET /api/v1/home", "GET /api/v1/media-servers", "GET /api/v1/messages",
-		"GET /api/v1/metadata/search", "GET /api/v1/metadata/health", "GET /api/v1/metadata/{kind}/{tmdb_id}", "GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", "GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", "GET /api/v1/metadata/{kind}/{tmdb_id}/anime", "GET /api/v1/extras/{kind}/{id}", "GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", "GET /api/v1/trailer/{kind}/{tmdb_id}", "GET /api/v1/trailer/batch", "GET /api/v1/trailer/stream/{id}/manifest.m3u8", "GET /api/v1/trailer/stream/{id}/seg/{n}", "GET /api/v1/settings/ui", "GET /api/v1/discover", "GET /api/v1/watch-services", "GET /api/v1/explore/head", "GET /api/v1/explore/tail", "GET /api/v1/explore/top", "GET /api/v1/explore/service-top", "GET /api/v1/explore/genre", "GET /api/v1/explore/genre-row", "GET /api/v1/explore/new", "GET /api/v1/explore/new/services", "GET /api/v1/explore/new/service", "GET /api/v1/explore/new/music", "GET /api/v1/metadata/album/{mbid}/follow", "GET /api/v1/explore/browse", "GET /api/v1/explore/browse/section", "GET /api/v1/explore/browse/category", "GET /api/v1/explore/strip", "GET /api/v1/music-trending", "GET /api/v1/music-trending/art/{kind}/{mbid}", "GET /api/v1/music/genre/{slug}", "GET /api/v1/music/browse/{kind}/{slug}", "GET /api/v1/music/browse-tiles", "GET /api/v1/music/genre-art/{slug}", "GET /api/v1/music/artists/{mbid}", "GET /api/v1/music/albums/{mbid}", "GET /api/v1/explore/music", "GET /api/v1/explore/music/rising", "GET /api/v1/my/alerts", "GET /api/v1/asked-by", "GET /api/v1/my/ask-privacy", "GET /api/v1/my/profile", "GET /api/v1/my/follows", "GET /api/v1/titles/{id}/follow", "GET /api/v1/metadata/show/{tmdb_id}/follow", "GET /api/v1/metadata/movie/{tmdb_id}/follow", "GET /api/v1/needs-decision",
+		"GET /api/v1/metadata/search", "GET /api/v1/metadata/health", "GET /api/v1/metadata/{kind}/{tmdb_id}", "GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", "GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", "GET /api/v1/metadata/{kind}/{tmdb_id}/anime", "GET /api/v1/extras/{kind}/{id}", "GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", "GET /api/v1/trailer/{kind}/{tmdb_id}", "GET /api/v1/trailer/batch", "GET /api/v1/trailer/stream/{id}/manifest.m3u8", "GET /api/v1/trailer/stream/{id}/seg/{n}", "GET /api/v1/settings/ui", "GET /api/v1/discover", "GET /api/v1/watch-services", "GET /api/v1/explore/head", "GET /api/v1/explore/tail", "GET /api/v1/explore/top", "GET /api/v1/explore/service-top", "GET /api/v1/explore/genre", "GET /api/v1/explore/genre-row", "GET /api/v1/explore/new", "GET /api/v1/explore/new/services", "GET /api/v1/explore/new/service", "GET /api/v1/explore/new/music", "GET /api/v1/metadata/album/{mbid}/follow", "GET /api/v1/explore/browse", "GET /api/v1/explore/browse/section", "GET /api/v1/explore/browse/category", "GET /api/v1/explore/strip", "GET /api/v1/music-trending", "GET /api/v1/music-trending/art/{kind}/{mbid}", "GET /api/v1/music/genre/{slug}", "GET /api/v1/music/browse/{kind}/{slug}", "GET /api/v1/music/browse-tiles", "GET /api/v1/music/genre-art/{slug}", "GET /api/v1/music/artists/{mbid}", "GET /api/v1/music/albums/{mbid}", "GET /api/v1/explore/music", "GET /api/v1/explore/music/rising", "GET /api/v1/my/alerts", "GET /api/v1/asked-by", "GET /api/v1/my/profile", "GET /api/v1/my/follows", "GET /api/v1/titles/{id}/follow", "GET /api/v1/metadata/show/{tmdb_id}/follow", "GET /api/v1/metadata/movie/{tmdb_id}/follow", "GET /api/v1/needs-decision",
 		"GET /api/v1/never-add", "GET /api/v1/openapi.json", "GET /api/v1/outside-lists",
 		"GET /api/v1/parts", "GET /api/v1/pick-rules", "GET /api/v1/pick-rules/{id}", "GET /api/v1/rename", "GET /api/v1/searches",
 		"GET /api/v1/settings/alerts", "GET /api/v1/settings/url-base", "GET /api/v1/settings/asks", "GET /api/v1/settings/downloaders",
-		"GET /api/v1/settings/files", "GET /api/v1/settings/health", "GET /api/v1/settings/music",
+		"GET /api/v1/settings/files", "GET /api/v1/settings/import-folders", "GET /api/v1/settings/health", "GET /api/v1/settings/music",
 		"GET /api/v1/settings/naming", "GET /api/v1/settings/release-gate", "GET /api/v1/settings/search",
 		"GET /api/v1/settings/shows", "GET /api/v1/settings/status", "GET /api/v1/settings/subtitles", "GET /api/v1/settings/title-defaults", "GET /api/v1/shows/lookup",
 		"GET /api/v1/sources", "GET /api/v1/sources/{id}/stats", "GET /api/v1/subtitle-sites",
@@ -770,7 +811,7 @@ func ScopesCover(held []string, scope string) bool {
 	if scope == ScopeHealthRead && slices.Contains(held, ScopeRead) {
 		return true
 	}
-	return scope != ScopeControl && scope != ScopeMCP && slices.Contains(held, ScopeAll)
+	return scope != ScopeControl && scope != ScopeMCP && scope != ScopeCompat && slices.Contains(held, ScopeAll)
 }
 
 // RouteScope is the scope an API key needs for a route pattern: the
@@ -826,7 +867,7 @@ func Gate(m *http.ServeMux) http.Handler {
 			return
 		}
 		if !who.Has(need) {
-			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" {
+			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" && CompatSide(r.URL.Path) == "" {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}

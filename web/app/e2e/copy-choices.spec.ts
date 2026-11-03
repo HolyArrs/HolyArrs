@@ -93,7 +93,9 @@ test('copy controls show inspected facts and require explicit choices', async ({
 		await route.fulfill({ status: 201, json: files.at(-1) });
 	});
 
-	await page.goto(href!);
+	// The copy controls sit on the title's Library tab.
+	await page.goto(`${href!}?tab=library`);
+	await expect(page.getByTestId('lib-pane')).toBeVisible();
 	const controls = page.getByTestId('copy-controls');
 	await expect(controls).toContainText('Required audio: en');
 	await expect(controls).toContainText('Inspected audio: fr, en');
@@ -152,11 +154,13 @@ test('edition decision requires the check and retries with the confirmed edition
 
 	// Home's link for a decision opens that row's panel on Downloads.
 	await page.goto('/downloads?show=problems.decide&slot=900');
+	// Set edition opens the form; it saves only once an edition is typed in.
+	await page.getByTestId('dl-panel').getByRole('button', { name: 'Set edition' }).click();
 	const form = page.getByTestId('dl-panel').getByTestId('edition-decision');
+	const save = form.getByRole('button', { name: 'Save and try again' });
+	await expect(save).toBeDisabled();
 	await form.getByLabel('Edition', { exact: true }).fill('Director cut');
-	await expect(form.getByRole('button', { name: 'Save edition and try import again' })).toBeDisabled();
-	await form.getByLabel(/I checked this download/).check();
-	await form.getByRole('button', { name: 'Save edition and try import again' }).click();
-	expect(body).toEqual({ edition: 'Director cut', confirm: true, retry: true });
+	await save.click();
+	await expect.poll(() => body).toEqual({ edition: 'Director cut', confirm: true, retry: true });
 	await expect(page.getByTestId('decision-panel')).toHaveCount(0);
 });

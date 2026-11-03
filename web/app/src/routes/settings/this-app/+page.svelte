@@ -26,6 +26,8 @@
 	let keepYTDLP = $state(true);
 	// Show Library art on the sign-in page (off: trending only).
 	let signinArt = $state(false);
+	// Count this install in the metadata server's per-country install total.
+	let countInstall = $state(true);
 	// Picture cache size (GB): covers and posters kept on this server.
 	let cacheGB = $state(5);
 	// History keep times in days (0 keeps forever).
@@ -35,13 +37,14 @@
 	const keepWord = (d: number) => (d === 0 ? 'Forever' : d === 365 ? '1 year' : `${d} days`);
 	async function loadAutoplay() {
 		try {
-			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean; artwork_cache_gb?: number; history_routine_days?: number; history_other_days?: number }>('/settings/ui');
+			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean; count_install?: boolean; artwork_cache_gb?: number; history_routine_days?: number; history_other_days?: number }>('/settings/ui');
 			keepRoutine = s.history_routine_days ?? 30;
 			keepOther = s.history_other_days ?? 0;
 			cacheGB = s.artwork_cache_gb ?? 5;
 			autoplay = s.autoplay_trailers;
 			keepYTDLP = s.keep_ytdlp_updated !== false;
 			signinArt = s.signin_library_art === true;
+			countInstall = s.count_install !== false;
 		} catch {
 			autoplay = null;
 		}
@@ -89,6 +92,18 @@
 		try {
 			signinArt = (await api.put<{ signin_library_art: boolean }>('/settings/ui', { signin_library_art: on })).signin_library_art;
 			toasts.push(signinArt ? 'The sign-in page shows Library art' : 'The sign-in page shows trending art', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+			await loadAutoplay();
+		} finally {
+			autoplayBusy = false;
+		}
+	}
+	async function saveCountInstall(on: boolean) {
+		autoplayBusy = true;
+		try {
+			countInstall = (await api.put<{ count_install: boolean }>('/settings/ui', { count_install: on })).count_install;
+			toasts.push(countInstall ? 'This install is counted' : 'This install is no longer counted', 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 			await loadAutoplay();
@@ -342,6 +357,10 @@
 			<label class="checkline" data-testid="signin-art-setting">
 				<input type="checkbox" checked={signinArt} disabled={autoplayBusy} onchange={(e) => saveSigninArt(e.currentTarget.checked)} />
 				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows trending movies and shows. On, it shows wide pictures from your Library first. Anyone who opens the page can see them, and no rating filter applies.</span></span>
+			</label>
+			<label class="checkline" data-testid="count-install-setting">
+				<input type="checkbox" checked={countInstall} disabled={autoplayBusy} onchange={(e) => saveCountInstall(e.currentTarget.checked)} />
+				<span><b>Count this install</b><br /><span class="hint">Count this install in the per-country install total on the HolyArrs metadata server. No names, files or library.</span></span>
 			</label>
 			<label class="checkline" data-testid="artwork-cache-setting">
 				<select aria-label="Picture storage" value={cacheGB} disabled={autoplayBusy} onchange={(e) => saveCacheGB(Number(e.currentTarget.value))}>

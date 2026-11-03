@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { owner, signIn, libraryStatus, libraryView, addFromSearch, openFromSearch } from './helpers.ts';
+import { owner, signIn, libraryStatus, libraryView, addFromSearch, openFromSearch, openLibraryTab, ensureInLibrary } from './helpers.ts';
 
 // Add-movie screen, Library screen and Movie page against the fake TMDB in
 // fakes.mjs. Runs after the other projects, so the owner and the Movies
@@ -15,6 +15,8 @@ async function fresh(browser: Browser) {
 }
 
 test.beforeAll(async ({ browser }) => {
+	// Run on setup alone, nobody added Driftwood Moon yet; the counts below expect it.
+	await ensureInLibrary(browser, 'Driftwood Moon', 'Driftwood Moon');
 	page = await fresh(browser);
 	await signIn(page, owner());
 	// Lookups go through the fake metadata server with no key to set.
@@ -33,8 +35,9 @@ test('add a movie by name with folder, Pick rules and Release gate in under a mi
 	await expect(page).toHaveURL(/\/library\/\d+/);
 	expect(Date.now() - started).toBeLessThan(60_000);
 
-	// The movie page shows the choices and why it waits.
+	// The movie page shows the choices and why it waits (its Library tab).
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('The Lantern Keepers');
+	await openLibraryTab(page);
 	await expect(page.getByTestId('gate-reason')).toContainText('closed until 2031-02-01');
 	await expect(page.getByText('Not out yet').first()).toBeVisible();
 });
@@ -91,22 +94,37 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 	await page.goto('/library');
 	await page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Paper Harbour' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Paper Harbour');
-	await expect(page.getByTestId('gate-reason')).toContainText('open since 2023-07-01');
 	await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
-	await expect(page.getByText('Out on digital or disc', { exact: true })).toBeVisible();
-	await expect(page.getByRole('heading', { name: 'Versions and files' })).toBeVisible();
-	await expect(page.getByText('No file yet.')).toBeVisible();
+	// The Library tab holds the file, the Versions and when HolyArrs looks.
+	const lib = await openLibraryTab(page);
+	await expect(page.getByTestId('gate-reason')).toContainText('open since 2023-07-01');
+	await expect(lib.getByRole('heading', { name: 'When HolyArrs looks' })).toBeVisible();
+	await expect(lib.getByText('Released', { exact: true })).toBeVisible();
+	await expect(lib.getByRole('heading', { name: 'File', exact: true })).toBeVisible();
+	await expect(lib.getByRole('heading', { name: 'Versions', exact: true })).toBeVisible();
+	await expect(lib.getByText('No file yet.').first()).toBeVisible();
 
 	await page.getByRole('button', { name: 'More actions' }).click();
-	await page.getByRole('menuitem', { name: 'Refresh from TMDB' }).click();
+	await page.getByRole('menuitem', { name: 'Refresh details' }).click();
 	await expect(page.getByText('Refreshing names, dates and posters')).toBeVisible();
 
 	await page.getByRole('button', { name: 'More actions' }).click();
 	await page.getByRole('menuitem', { name: 'Edit', exact: true }).click();
-	const dialog = page.getByRole('dialog');
-	await dialog.getByLabel('Release gate').selectOption('announced');
-	await dialog.getByLabel('Keep up to date').uncheck();
+	const dialog = page.getByRole('dialog', { name: 'Edit Paper Harbour' });
+	const keep = dialog.getByRole('switch', { name: /^Keep up to date/ });
+	await expect(keep).toHaveAttribute('aria-checked', 'true');
+	await keep.click();
+	await expect(keep).toHaveAttribute('aria-checked', 'false');
 	await dialog.getByRole('button', { name: 'Save' }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByTestId('gate-reason')).toContainText('Keep up to date is off');
+	// The Edit sheet has no Release gate; the gate is changed through the API and the reason follows it.
+	const id = page.url().match(/\/library\/(\d+)/)![1];
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const put = await page.request.put(`/api/v1/titles/${id}`, { headers: { 'X-CSRF-Token': me.csrf }, data: { release_gate: 'announced' } });
+	expect(put.ok()).toBe(true);
+	await page.reload();
+	await openLibraryTab(page);
 	await expect(page.getByTestId('gate-reason')).toContainText('Keep up to date is off');
 	await expect(page.getByTestId('gate-reason')).toContainText('announced');
 });
@@ -149,6 +167,7 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await dialog.getByLabel('Search when added').uncheck();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(page).toHaveURL(/\/library\/\d+/);
+	await openLibraryTab(page);
 
 	const versions = page.getByTestId('version');
 	await expect(versions).toHaveCount(2);

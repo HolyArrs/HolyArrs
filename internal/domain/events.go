@@ -29,6 +29,13 @@ const (
 	EventAlertFailed   = "alert_failed"    // an Alert could not be sent
 )
 
+// Event kinds for Reports (problems people report with titles).
+const (
+	EventReportMade     = "report_made"     // someone reported a problem
+	EventReportFixed    = "report_fixed"    // an owner or admin marked it fixed
+	EventReportReopened = "report_reopened" // a fixed report was opened again
+)
+
 // Event kinds for Organise (stage 5.1).
 const (
 	EventFreeSpaceLow      = "free_space_low"             // an import was refused: the disk would be left too full

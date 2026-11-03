@@ -295,6 +295,9 @@ type Source struct {
 	ProxySecretRef *int64 `db:"proxy_secret_ref"`
 	// ProxyAllowLocal lets the proxy itself be on the local network.
 	ProxyAllowLocal bool `db:"proxy_allow_local_network"`
+	// PathSecretRef holds the passkeys an rss address keeps in its path;
+	// the stored URL has a marker in their place.
+	PathSecretRef *int64 `db:"path_secret_ref"`
 }
 
 // Release is one search result.
@@ -356,6 +359,9 @@ type Downloader struct {
 	Removed      bool       `db:"removed"` // removed by a person but kept for its Download history
 	// Writable is "HolyArrs can change this Downloader"; off, HolyArrs only reads it.
 	Writable bool `db:"writable"`
+	// ClearFinished removes a Usenet job and its files from the client once
+	// its Import fully succeeded.
+	ClearFinished bool `db:"clear_finished"`
 }
 
 // SeenFile is one file a Download reports.
@@ -604,6 +610,36 @@ type Ask struct {
 	FourK bool `db:"four_k"`
 }
 
+// Report states.
+const (
+	ReportOpen  = "open"
+	ReportFixed = "fixed"
+)
+
+// ReportKinds are the problem kinds a Report can name, in the order screens
+// show them.
+var ReportKinds = []string{"picture", "sound", "subtitles", "wont_play", "other"}
+
+// Report is a person's report of a problem with a title in the Library. It
+// can narrow to an album, a season, an episode or track (ItemID) and a
+// Version; FileID is the file that was there when it was made.
+type Report struct {
+	Meta
+	TitleID   int64      `db:"title_id"`
+	AlbumID   *int64     `db:"album_id"`
+	Season    *int       `db:"season"`
+	ItemID    *int64     `db:"item_id"`
+	VersionID *int64     `db:"version_id"`
+	FileID    *int64     `db:"file_id"`
+	Kind      string     `db:"kind"` // picture, sound, subtitles, wont_play, other
+	Note      string     `db:"note"`
+	State     string     `db:"state"` // open, fixed
+	MadeBy    *int64     `db:"made_by"`
+	ClosedBy  *int64     `db:"closed_by"`
+	ClosedAt  *time.Time `db:"closed_at"`
+	Reply     string     `db:"reply"` // the optional reply sent to the reporter when fixed
+}
+
 // AskEpisodes are the episodes of one season asked for (episode numbers).
 type AskEpisodes struct {
 	Season   int   `json:"season"`
@@ -661,7 +697,7 @@ type HealthCheck struct {
 	Since     time.Time `db:"since" json:"since"`
 	CheckedAt time.Time `db:"checked_at" json:"checked_at"`
 	Streak    int       `db:"streak" json:"-"`
-	Confirmed string    `db:"confirmed" json:"-"` // the state Alerts were told about
+	Confirmed string    `db:"confirmed" json:"confirmed"` // the state Alerts were told about; Home shows this one
 }
 
 // MediaServer is a Plex, Jellyfin or Emby server HolyArrs tells to look at

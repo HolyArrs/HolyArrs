@@ -161,9 +161,9 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	if len(look.Movies) != 1 || look.Movies[0].Ask == nil || look.Movies[0].Ask.Mine || look.Movies[0].Ask.State != "asked" {
 		t.Fatalf("lookup %+v", look)
 	}
-	// A member sees only themself among the askers (Asked by privacy).
+	// A member sees everyone who asked.
 	b := r.bo.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 200)
-	if !strings.Contains(string(b), `"joined":true`) || len(askOf(t, b).People) != 1 {
+	if !strings.Contains(string(b), `"joined":true`) || len(askOf(t, b).People) != 2 {
 		t.Fatalf("join %s", b)
 	}
 
@@ -205,11 +205,11 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", ``, 409)
 	r.owner.call("POST", "/api/v1/asks/999/approve", ``, 404)
 
-	// The Movie page names who asked and who approved; a member sees only
-	// themself among the askers (Asked by privacy).
+	// The Movie page names who asked and who approved; a member sees
+	// everyone who asked.
 	var tv TitleView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/titles/"+itoa(*got.TitleID), "", 200), &tv)
-	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 1 || tv.Asks[0].DecidedBy.Name != "luis" || tv.WhyAdded != "ask" {
+	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 2 || tv.Asks[0].DecidedBy.Name != "luis" || tv.WhyAdded != "ask" {
 		t.Fatalf("title asks %+v", tv.Asks)
 	}
 	msgs.Waiting = nil
@@ -467,7 +467,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 		t.Fatalf("last error leaks detail: %s", b)
 	}
 	// Removing and testing need a password sign-in, not the local skip.
-	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`, 200)
+	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	jar, _ := cookiejar.New(nil)
 	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
 	if b := bare.call("DELETE", "/api/v1/alerts/"+itoa(mail.ID), "", 403); !strings.Contains(string(b), "sign in with your password") {

@@ -159,12 +159,22 @@ for ($i = 0; $i -lt 60; $i++) {
 }
 $stampStart = Preview-Stamp
 "e2e stamp at start: $stampStart"
+# Two traps that make a run test the wrong thing; said up front and in the log.
+$warn = @()
+$dist = Join-Path $here '..\dist\index.html'
+$src = Join-Path $here 'src'
+if ((Test-Path $dist) -and (Test-Path $src)) {
+  $newest = Get-ChildItem $src -Recurse -File | Sort-Object LastWriteTime | Select-Object -Last 1
+  if ($newest.LastWriteTime -gt (Get-Item $dist).LastWriteTime) { $warn += "WARNING: web\dist is older than $($newest.Name) ($($newest.LastWriteTime.ToString('HH:mm'))): the harness serves the built app, so this run tests old pages. Run npm run build first." }
+}
+if ($Command -match '--no-deps') { $warn += 'WARNING: --no-deps skips the setup project, so the fresh e2e server has no owner and no folders yet: tests that sign in fail. Leave it out; a project now depends only on setup plus what it needs.' }
+$warn | ForEach-Object { $_ }
 $logDir = Join-Path $state 'e2e-logs'
 New-Item -ItemType Directory -Force $logDir | Out-Null
 $log = Join-Path $logDir ("{0}-{1}.log" -f ($Who -replace '[^\w.-]', '_'), (Get-Date -Format 'yyyyMMdd-HHmmss'))
 $code = 1
 # Every log starts with what ran and where, whatever the command does after.
-@("e2e run by $Who in $here", "command: $Command", "slot $slot (ports $($ports[0])-$($ports[-1])), login $As", "stamp at start: $stampStart", '') | Set-Content -Path $log -Encoding utf8
+@("e2e run by $Who in $here", "command: $Command", "slot $slot (ports $($ports[0])-$($ports[-1])), login $As", "stamp at start: $stampStart") + $warn + @('') | Set-Content -Path $log -Encoding utf8
 # The command goes into its own script file, run with both of its output
 # streams sent to files: quotes inside it reach PowerShell unchanged, and even
 # a command that fails to parse leaves its error in the log.

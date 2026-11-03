@@ -12,6 +12,7 @@ import (
 type tmdbShow struct {
 	ID               int64  `json:"id"`
 	Name             string `json:"name"`
+	OriginalName     string `json:"original_name"`
 	FirstAirDate     string `json:"first_air_date"`
 	Overview         string `json:"overview"`
 	OriginalLanguage string `json:"original_language"`
@@ -36,6 +37,18 @@ type tmdbShow struct {
 		Number int    `json:"season_number"`
 		Name   string `json:"name"`
 	} `json:"seasons"`
+	AltTitles *struct {
+		Results []struct {
+			Title string `json:"title"`
+		} `json:"results"`
+	} `json:"alternative_titles,omitempty"`
+	Translations *struct {
+		List []struct {
+			Data struct {
+				Name string `json:"name"`
+			} `json:"data"`
+		} `json:"translations"`
+	} `json:"translations,omitempty"`
 }
 
 // tmdbStatus maps TMDB's show status to ours.
@@ -73,6 +86,17 @@ func (m tmdbShow) show(images string) Show {
 	out.Rating = m.usRating()
 	for _, s := range m.Seasons {
 		out.Seasons = append(out.Seasons, Season{Number: s.Number, Name: s.Name})
+	}
+	out.OtherNames = append(out.OtherNames, m.OriginalName)
+	if m.AltTitles != nil {
+		for _, a := range m.AltTitles.Results {
+			out.OtherNames = append(out.OtherNames, a.Title)
+		}
+	}
+	if m.Translations != nil {
+		for _, tr := range m.Translations.List {
+			out.OtherNames = append(out.OtherNames, tr.Data.Name)
+		}
 	}
 	return out
 }
@@ -125,7 +149,7 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 		return Show{}, ErrShowNotFound
 	}
 	base := "/tv/" + strconv.FormatInt(n, 10)
-	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids,images,credits,content_ratings"}, "include_image_language": {"en,null"}})
+	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids,images,credits,content_ratings,translations"}, "include_image_language": {"en,null"}})
 	if err != nil {
 		return Show{}, notFoundShow(err)
 	}

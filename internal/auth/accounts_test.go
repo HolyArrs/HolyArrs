@@ -461,6 +461,8 @@ type fakePlex struct {
 	confirmed atomic.Bool
 	server    string
 	calls     atomic.Int32
+	// restricted makes the person a managed Plex Home user with limits.
+	restricted atomic.Bool
 }
 
 func newFakePlex(t *testing.T) *fakePlex {
@@ -487,7 +489,7 @@ func newFakePlex(t *testing.T) *fakePlex {
 			http.Error(w, "no", 401)
 			return
 		}
-		_, _ = w.Write([]byte(`{"id":4242,"uuid":"u","username":"kidplex","email":"kid@example.test"}`))
+		_, _ = fmt.Fprintf(w, `{"id":4242,"uuid":"u","username":"kidplex","email":"kid@example.test","restricted":%t}`, p.restricted.Load())
 	})
 	m.HandleFunc("GET /api/v2/resources", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = fmt.Fprintf(w, `[{"clientIdentifier":%q,"provides":"server"}]`, p.server)
@@ -566,6 +568,26 @@ func TestPlexSignInJoinsAsMember(t *testing.T) {
 	}
 }
 
+// A managed Plex Home user joins with the same Kid limits an import gives.
+func TestRestrictedPlexJoinsAsKid(t *testing.T) {
+	p := newFakePlex(t)
+	p.restricted.Store(true)
+	f := gated(t, Options{PlexURL: p.srv.URL})
+	own := ownerOf(t, f)
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"server_id":"machine-1","join":"everyone"},"confirm_everyone":true}`)
+	c, code, out := plexSignIn(t, f, p)
+	if code != 200 {
+		t.Fatalf("plex sign-in: %d %s", code, out)
+	}
+	if _, me := call(t, c, "GET", f.srv.URL+"/api/v1/auth/me", "", nil); !strings.Contains(me, `"max_rating":"PG"`) || !strings.Contains(me, `"perms":["ask"]`) {
+		t.Fatalf("me: %s", me)
+	}
+	// The owner may still lift the limit by hand later; that stays theirs.
+	if resp, out := own.do(t, f, "PUT", fmt.Sprintf("/api/v1/users/%d", userID(t, f, "kidplex")), `{"max_rating":""}`); resp.StatusCode != 200 {
+		t.Fatalf("lift the limit: %d %s", resp.StatusCode, out)
+	}
+}
+
 func TestPlexPinBelongsToItsStarter(t *testing.T) {
 	p := newFakePlex(t)
 	f := gated(t, Options{PlexURL: p.srv.URL})
@@ -597,6 +619,15 @@ func fakeMediaServer(t *testing.T, logouts *atomic.Int32) *httptest.Server {
 			_, _ = w.Write([]byte(`{"User":{"Id":"abc123","Name":"Mum","Policy":{"IsDisabled":false}},"AccessToken":"tok"}`))
 		case b.Username == "off" && b.Pw == "right":
 			_, _ = w.Write([]byte(`{"User":{"Id":"off1","Name":"off","Policy":{"IsDisabled":true}},"AccessToken":"tok"}`))
+		case b.Username == "kid" && b.Pw == "right":
+			// Parental controls on the server: this person may only watch some ratings.
+			_, _ = w.Write([]byte(`{"User":{"Id":"kid1","Name":"Kid","Policy":{"IsDisabled":false,"MaxParentalRating":10}},"AccessToken":"tok"}`))
+		case b.Username == "down":
+			// A proxy in front says the server behind it is down.
+			http.Error(w, "Service Unavailable", 503)
+		case b.Username == "boom":
+			// An odd server that turns down wrong passwords with 500.
+			http.Error(w, "database is locked", 500)
 		default:
 			http.Error(w, "Error processing request.", 401)
 		}
@@ -645,8 +676,55 @@ func TestMediaServerSignIn(t *testing.T) {
 				t.Fatalf("sign-in: %d", code)
 			}
 			_, me := call(t, c, "GET", f.srv.URL+"/api/v1/auth/me", "", nil)
-			if !strings.Contains(me, `"name":"Mum"`) || !strings.Contains(me, `"role":"member"`) {
+			if !strings.Contains(me, `"name":"Mum"`) || !strings.Contains(me, `"role":"member"`) || !strings.Contains(me, `"max_rating":""`) {
 				t.Fatalf("me: %s", me)
+			}
+			// Someone the server limits joins as a Kid, but not while sign-in
+			// is skipped at home (they would be the owner there).
+			// A network the test client is not on, so its sign-ins stay ordinary.
+			if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["10.0.0.0/8"]}`); resp.StatusCode != 200 {
+				t.Fatalf("skip on: %d %s", resp.StatusCode, out)
+			}
+			if _, code := login("kid", "right"); code != 403 {
+				t.Fatalf("kid joined with skip on: %d", code)
+			}
+			own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":false}`)
+			kc, code := login("kid", "right")
+			if code != 200 {
+				t.Fatalf("kid sign-in: %d", code)
+			}
+			if _, me := call(t, kc, "GET", f.srv.URL+"/api/v1/auth/me", "", nil); !strings.Contains(me, `"max_rating":"PG"`) || !strings.Contains(me, `"perms":["ask"]`) {
+				t.Fatalf("kid me: %s", me)
+			}
+			// A server that is down is not a wrong password: many tries never lock anyone out.
+			for i := 0; i < 30; i++ {
+				if _, code := login("down", "x"); code != 502 {
+					t.Fatalf("server down try %d: %d", i, code)
+				}
+			}
+			if _, code := login("mum", "right"); code != 200 {
+				t.Fatalf("after the outage: %d", code)
+			}
+			// Any other odd answer still counts, so guessing stays limited.
+			for i := 0; i < freeTries; i++ {
+				if _, code := login("boom", "x"); code != 502 {
+					t.Fatalf("odd answer try %d: %d", i, code)
+				}
+			}
+			if _, code := login("boom", "x"); code != 429 {
+				t.Fatalf("odd answers were not counted: %d", code)
+			}
+			f.clock.add(MaxBackoff + time.Minute)
+			login("mum", "right")
+			// Old typos whose wait ran out: an outage try must not start the wait again.
+			for i := 0; i < freeUserTries+1; i++ {
+				login("typo", "x")
+			}
+			f.clock.add(MaxBackoff + time.Minute)
+			for i := 0; i < 3; i++ {
+				if _, code := login("down", "x"); code != 502 {
+					t.Fatalf("outage try %d after old typos: %d", i, code)
+				}
 			}
 			if logouts.Load() < 1 {
 				t.Fatal("the server's session was not ended")
@@ -660,6 +738,66 @@ func TestMediaServerSignIn(t *testing.T) {
 				t.Fatalf("state ways: %s", st)
 			}
 		})
+	}
+}
+
+// route: POST /api/v1/auth/password
+// Someone who joined through a media server sets a first HolyArrs password,
+// so they can still sign in while that server is down.
+func TestMediaServerFirstPassword(t *testing.T) {
+	var logouts atomic.Int32
+	ms := fakeMediaServer(t, &logouts)
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"jellyfin":{"on":true,"url":"`+ms.URL+`","join":"everyone"},"confirm_everyone":true}`)
+	signIn := func(name string) person {
+		t.Helper()
+		c := client(t)
+		resp, out := call(t, c, "POST", f.srv.URL+"/api/v1/auth/media-server/jellyfin", `{"name":"`+name+`","password":"right"}`, nil)
+		if resp.StatusCode != 200 {
+			t.Fatalf("%s sign-in: %d %s", name, resp.StatusCode, out)
+		}
+		var v struct {
+			CSRF string `json:"csrf"`
+		}
+		jsonOf(t, out, &v)
+		return person{c, v.CSRF}
+	}
+	first := pw + "-first"
+	mum := signIn("mum")
+	if _, me := mum.do(t, f, "GET", "/api/v1/auth/me", ""); !strings.Contains(me, `"has_password":false`) || !strings.Contains(me, `"outside_recent":true`) {
+		t.Fatalf("me before: %s", me)
+	}
+	if resp, out := mum.do(t, f, "POST", "/api/v1/auth/password", `{"new":"`+first+`"}`); resp.StatusCode != 204 {
+		t.Fatalf("first password: %d %s", resp.StatusCode, out)
+	}
+	if _, me := mum.do(t, f, "GET", "/api/v1/auth/me", ""); !strings.Contains(me, `"has_password":true`) {
+		t.Fatalf("me after: %s", me)
+	}
+	creds, _ := json.Marshal(map[string]string{"name": "Mum", "password": first})
+	if resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", string(creds), nil); resp.StatusCode != 200 {
+		t.Fatalf("password sign-in: %d", resp.StatusCode)
+	}
+	// The Jellyfin sign-in they joined with still works.
+	signIn("mum")
+	// Changing a password that exists needs a local proof, not the media server.
+	if resp, out := mum.do(t, f, "POST", "/api/v1/auth/password", `{"current":"`+first+`","new":"`+first+`-2"}`); resp.StatusCode != 403 || !strings.Contains(out, "reauth") {
+		t.Fatalf("change through a media server session: %d %s", resp.StatusCode, out)
+	}
+	// An API key never changes its user's password.
+	_, out := own.do(t, f, "POST", "/api/v1/auth/keys", `{"label":"script","scopes":["admin"]}`)
+	var k struct {
+		Key string `json:"key"`
+	}
+	jsonOf(t, out, &k)
+	if resp, _ := call(t, &http.Client{}, "POST", f.srv.URL+"/api/v1/auth/password", `{"current":"x","new":"`+first+`-3"}`, map[string]string{APIKeyHeader: k.Key}); resp.StatusCode != 403 {
+		t.Fatalf("API key changed a password: %d", resp.StatusCode)
+	}
+	// The media server proof lasts ten minutes.
+	kid := signIn("kid")
+	f.clock.add(11 * time.Minute)
+	if resp, out := kid.do(t, f, "POST", "/api/v1/auth/password", `{"new":"`+first+`"}`); resp.StatusCode != 403 {
+		t.Fatalf("first password from an old sign-in: %d %s", resp.StatusCode, out)
 	}
 }
 

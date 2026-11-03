@@ -155,6 +155,7 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: owner %d linked a Plex account", me.ID)
+	a.accountEvent(r, me.ID, "sign_in_linked", byName(r)+" linked the Plex account "+outsideName(user.Username), map[string]any{"provider": "plex"})
 	writeJSON(w, http.StatusOK, map[string]any{"name": user.Username, "servers": servers})
 }
 
@@ -179,6 +180,7 @@ func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	a.accountEvent(r, me.ID, "sign_in_unlinked", byName(r)+" unlinked their Plex account", map[string]any{"provider": "plex"})
 	writeJSON(w, http.StatusOK, a.plexOwner(ctx))
 }
 
@@ -414,6 +416,8 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 		Policy struct {
 			IsAdministrator bool `json:"IsAdministrator"`
 			IsDisabled      bool `json:"IsDisabled"`
+			// Set when the server limits what this person may watch.
+			MaxParentalRating *int `json:"MaxParentalRating"`
 		} `json:"Policy"`
 	}
 	code, err = a.serverFetch(ctx, http.MethodGet, v.URL+"/Users", th, nil, &users)
@@ -426,7 +430,7 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 		if u.ID == "" || u.Policy.IsDisabled {
 			continue
 		}
-		out = append(out, importPerson{ID: truncate(u.ID, 100), Name: truncate(u.Name, 56), Admin: u.Policy.IsAdministrator})
+		out = append(out, importPerson{ID: truncate(u.ID, 100), Name: truncate(u.Name, 56), Admin: u.Policy.IsAdministrator, Kid: u.Policy.MaxParentalRating != nil})
 	}
 	return out, true
 }
@@ -531,5 +535,9 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: imported %d %s people (skipped %d)", len(made), kind, skipped)
+	if len(made) > 0 {
+		a.accountEvent(r, Actor(r.Context()).ID, "people_imported", byName(r)+" imported "+itoa(int64(len(made)))+" "+kind+" accounts as members",
+			map[string]any{"count": len(made), "provider": kind})
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"made": made, "skipped": skipped})
 }

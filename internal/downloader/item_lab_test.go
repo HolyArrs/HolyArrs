@@ -32,7 +32,7 @@ func TestLabQbitClientItem(t *testing.T) {
 	var did int64
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: base, Category: "holyarrs", Priority: 1,
-			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
+			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true, Writable: true}
 		_, err := store.Insert(tx, "downloaders", d, domain.System)
 		did = d.ID
 		return err

@@ -377,6 +377,7 @@ func stripURL(err error) error {
 type tmdbMovie struct {
 	ID               int64  `json:"id"`
 	Title            string `json:"title"`
+	OriginalTitle    string `json:"original_title"`
 	ReleaseDate      string `json:"release_date"`
 	Overview         string `json:"overview"`
 	OriginalLanguage string `json:"original_language"`
@@ -391,6 +392,18 @@ type tmdbMovie struct {
 	ProductionCompanies []struct {
 		Name string `json:"name"`
 	} `json:"production_companies"`
+	AltTitles *struct {
+		Titles []struct {
+			Title string `json:"title"`
+		} `json:"titles"`
+	} `json:"alternative_titles,omitempty"`
+	Translations *struct {
+		List []struct {
+			Data struct {
+				Title string `json:"title"`
+			} `json:"data"`
+		} `json:"translations"`
+	} `json:"translations,omitempty"`
 	ReleaseDates *struct {
 		Results []struct {
 			Country string `json:"iso_3166_1"`
@@ -612,6 +625,17 @@ func (m tmdbMovie) movieWithCollection(images string, collectionKnown bool) Movi
 		}
 	}
 	out.Rating = m.certification()
+	out.OtherNames = append(out.OtherNames, m.OriginalTitle)
+	if m.AltTitles != nil {
+		for _, a := range m.AltTitles.Titles {
+			out.OtherNames = append(out.OtherNames, a.Title)
+		}
+	}
+	if m.Translations != nil {
+		for _, tr := range m.Translations.List {
+			out.OtherNames = append(out.OtherNames, tr.Data.Title)
+		}
+	}
 	return out
 }
 
@@ -665,7 +689,7 @@ func (t *TMDB) Movie(ctx context.Context, id string) (Movie, error) {
 		if err != nil || n <= 0 {
 			return Movie{}, ErrNotFound
 		}
-		b, err := t.get(ctx, "/movie/"+strconv.FormatInt(n, 10), url.Values{"append_to_response": {"release_dates,images,credits"}, "include_image_language": {"en,null"}})
+		b, err := t.get(ctx, "/movie/"+strconv.FormatInt(n, 10), url.Values{"append_to_response": {"release_dates,images,credits,translations"}, "include_image_language": {"en,null"}})
 		if err != nil {
 			return Movie{}, err
 		}

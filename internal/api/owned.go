@@ -240,13 +240,8 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL")
 	} else {
 		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL AND EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)", who.UserID)
-		s, serr := a.seer(ctx)
 		for i := range views {
 			views[i].Mine = true
-			s.trim(&views[i])
-		}
-		if err == nil {
-			err = serr
 		}
 	}
 	if err != nil {
