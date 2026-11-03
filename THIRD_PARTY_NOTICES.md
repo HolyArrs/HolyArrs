@@ -34,9 +34,10 @@ Direct dependencies, from `go.mod` and `web/app/package.json`:
 | --- | --- |
 | github.com/coreos/go-oidc/v3 | Apache-2.0 |
 | github.com/go-jose/go-jose/v4 | Apache-2.0 |
+| github.com/nwaples/rardecode/v2 (unpacking compressed RAR files) | BSD-2-Clause |
 | golang.org/x/crypto, x/image, x/oauth2, x/sys, x/text | BSD-3-Clause |
 | modernc.org/sqlite | BSD-3-Clause |
 | hls.js | Apache-2.0 |
 | @fontsource/anton (Anton font) | SIL OFL 1.1 |
 
-Full licence texts for the sign-in parts are in [`docs/third-party-notices.md`](docs/third-party-notices.md).
+Full licence texts for the sign-in parts and the RAR decoder are in [`docs/third-party-notices.md`](docs/third-party-notices.md).
