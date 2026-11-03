@@ -1,12 +1,17 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type APIResponse, type Browser, type Page } from '@playwright/test';
 import { discordPort } from './fakes.mjs';
 import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from './helpers.ts';
 
 // Requests at phone width (Pixel 7): a member asks for movies, the owner
 // approves and turns down from a phone, a Discord Alert (the fake one in
 // fakes.mjs) names the member, and the weekly limit says when to try again.
+// Then, each with members of its own and titles only these tests use: two
+// members ask for different seasons of a show and share one ask, an album
+// ask, 4K asks (not in the Library and in it), a failed ask says why, the
+// owner reads their own messages, and Follow on title pages.
 // Runs after the other projects: the owner, the Movies folder and the TMDB
-// key exist.
+// key exist. There is no show or music folder here, so show and music asks
+// are checked up to the approver's card, not approved.
 test.describe.configure({ mode: 'serial' });
 
 let own: Page;
@@ -23,10 +28,11 @@ async function posts(): Promise<string[]> {
 	return ((await r.json()) as { content: string }[]).map((p) => p.content);
 }
 
-// Search opens a movie's title page; Ask lives there.
+// Search opens a movie's title page; Ask lives there. The main Ask only: a
+// separate "Ask for … in 4K" can sit beside it.
 async function askButton(p: Page, words: string, name: string) {
 	await openFromSearch(p, words, name);
-	return p.getByTestId('title-detail').getByRole('button', { name: new RegExp(`^Ask for ${name}`) });
+	return p.getByTestId('title-detail').getByRole('button', { name: new RegExp(`^Ask for ${name}( too)?$`) });
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -88,10 +94,11 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	await confirmAsk.getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
 	await expect(askCopper).toBeDisabled();
 	await noSidewaysScroll(kim);
-	// A movie already in the Library opens its Library page; there is nothing to ask.
+	// A movie already in the Library opens its Library page; there is nothing to ask
+	// (only a 4K copy, covered below).
 	await openFromSearch(kim, 'orchard', 'Quiet Orchard');
 	await expect(kim).toHaveURL(/\/library\/\d+/);
-	await expect(kim.getByRole('button', { name: /^Ask for/ })).toHaveCount(0);
+	await expect(kim.getByRole('button', { name: /^Ask for Quiet Orchard( too)?$/ })).toHaveCount(0);
 
 	await kim.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie asks left this week');
@@ -234,4 +241,292 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await kim.getByRole('dialog', { name: /^Ask for Salt Choir/ }).getByRole('button', { name: 'Ask for Salt Choir' }).click();
 	await expect(kim.getByRole('alert')).toContainText('try again in 7 days');
 	await noSidewaysScroll(kim);
+});
+
+// The roadmap items below (#56 seasons, joining and albums, #59 4K, #134 why
+// an ask failed, #58 the owner's own messages, #19 Follow). Each test makes
+// its own members, so none leans on kim's weekly limit or on another test.
+// They sit after the tests above, which count the waiting asks.
+
+const slow = { timeout: 45_000 };
+// Wicker Owls in the fake MusicBrainz (fakes.mjs): two albums out and an EP in 2099.
+const owls = 'a4444444-0000-4000-8000-000000000004';
+
+/** member makes an invite link as the owner and joins with it on a phone. */
+async function member(browser: Browser, name: string): Promise<Page> {
+	await own.goto('/settings/users');
+	await own.getByLabel('Note for yourself').fill(name);
+	await own.getByRole('button', { name: 'Make an invite link' }).click();
+	const link = (await own.locator('.fresh code').textContent())!.trim();
+	const p = await fresh(browser);
+	const pw = `e2e-${Math.random().toString(36).slice(2)}-${name}`;
+	await p.goto(new URL(link).pathname);
+	await p.getByLabel('Name', { exact: true }).fill(name);
+	await p.getByLabel('Password', { exact: true }).fill(pw);
+	await p.getByLabel('Password again').fill(pw);
+	await p.getByRole('button', { name: 'Join and sign in' }).click();
+	await expect(p).toHaveURL(/\/$/);
+	return p;
+}
+
+type Call = (method: 'GET' | 'POST', path: string, data?: unknown) => Promise<APIResponse>;
+
+/** api signs requests with the page's CSRF token, as the app does. */
+async function api(p: Page): Promise<Call> {
+	const me = (await (await p.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	return (method, path, data) => p.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+}
+
+/** inLibrary adds a fake-TMDB movie (no search, not kept up to date) unless it is there; it returns its id. */
+async function inLibrary(call: Call, tmdb: number, name: string): Promise<number> {
+	const { titles } = (await (await call('GET', '/titles')).json()) as { titles: { id: number; name: string; kind: string; state?: string }[] };
+	const have = titles.find((t) => t.kind === 'movie' && t.name === name && t.state !== 'removed');
+	if (have) return have.id;
+	const added = await call('POST', '/titles', { id: `tmdb:${tmdb}`, search_on_add: false, keep_up_to_date: false, follow: false });
+	expect(added.status(), await added.text()).toBe(201);
+	return ((await added.json()) as { title: { id: number } }).title.id;
+}
+
+/** askOf finds a plain (not 4K) ask by name and state, as the owner reads it. */
+async function askOf(call: Call, name: string, state: 'asked' | 'approved') {
+	const { asks } = (await (await call('GET', `/asks?state=${state}`)).json()) as { asks: { id: number; name: string; title_id?: number; four_k?: boolean }[] };
+	const a = asks.find((x) => x.name === name && !x.four_k);
+	expect(a, `${name} is ${state}`).toBeTruthy();
+	return a!;
+}
+
+test('two members ask for different seasons of a show: one ask, both askers on it', async ({ browser }) => {
+	test.setTimeout(120_000);
+	const rosa = await member(browser, 'rosa');
+	const teo = await member(browser, 'teo');
+	const show = 'Kestrel Shoals';
+	// Opens the show's Ask sheet and ticks one season.
+	const pick = async (p: Page, season: number) => {
+		await openFromSearch(p, 'kestrel', show, 'show');
+		await p.getByTestId('title-detail').getByRole('button', { name: new RegExp(`^Ask for ${show}( too)?$`) }).click();
+		const sheet = p.getByRole('dialog', { name: `Ask for ${show}` });
+		await sheet.getByRole('radio', { name: /Choose seasons/ }).check();
+		await sheet.getByRole('checkbox', { name: `Season ${season}`, exact: true }).check();
+		await noSidewaysScroll(p);
+		return sheet;
+	};
+
+	const first = await pick(rosa, 1);
+	await first.getByRole('button', { name: 'Ask for season 1' }).click();
+	await expect(first).toBeHidden();
+	await expect(rosa.getByRole('status').filter({ hasText: `Asked for ${show} (season 1)` })).toBeVisible();
+
+	// teo is told someone asked already; season 2 joins rosa's ask and widens it.
+	const second = await pick(teo, 2);
+	await expect(second).toContainText('Someone asked for season 1 already');
+	await second.getByRole('button', { name: 'Ask for season 2' }).click();
+	await expect(second).toBeHidden();
+	await expect(teo.getByRole('status').filter({ hasText: 'you are on the ask too' })).toBeVisible();
+
+	for (const p of [rosa, teo]) {
+		await p.goto('/requests');
+		const row = p.getByTestId('ask').filter({ hasText: show });
+		await expect(row).toHaveCount(1);
+		await expect(row.getByTestId('ask-state')).toHaveText('Requested');
+		await expect(row.getByTestId('ask-kind')).toHaveText('Show');
+		await expect(row.getByTestId('ask-seasons')).toHaveText('Asked for seasons 1 and 2');
+		await expect(row.getByTestId('asked-by')).toContainText('Asked by rosa and teo');
+		await noSidewaysScroll(p);
+	}
+
+	// The approver gets one card, under the first asker; the Events name both.
+	await own.goto('/requests');
+	await own.getByRole('button', { name: /^Pending/ }).click();
+	await expect(card(own, show)).toHaveCount(1);
+	await expect(card(own, show).getByRole('button', { name: `Open ${show}, asked by rosa` })).toBeVisible();
+	await noSidewaysScroll(own);
+	const events = ((await (await own.request.get('/api/v1/events?limit=200')).json()) as { events: { Summary: string }[] }).events.map((e) => e.Summary);
+	expect(events.filter((e) => e.startsWith(`rosa asked for ${show}`))).toHaveLength(1);
+	expect(events.filter((e) => e.startsWith(`teo also asked for ${show}`))).toHaveLength(1);
+});
+
+test('a member asks for one album of an artist from its page', async ({ browser }) => {
+	test.setTimeout(120_000);
+	const nell = await member(browser, 'nell');
+	await nell.goto(`/music/artist/${owls}`);
+	await expect(nell.getByRole('heading', { level: 1, name: 'Wicker Owls' })).toBeVisible(slow);
+	const ask = nell.getByTestId('artist-ask');
+	await expect(ask).toBeEnabled(slow);
+	await ask.click();
+	const sheet = nell.getByRole('dialog', { name: 'Ask for Wicker Owls' });
+	await sheet.getByRole('radio', { name: /Only some albums/ }).check(slow);
+	await sheet.getByRole('checkbox', { name: /^Barn Light/ }).check();
+	await noSidewaysScroll(nell);
+	await sheet.getByRole('button', { name: 'Ask for Barn Light' }).click();
+	await expect(sheet).toBeHidden();
+	await expect(nell.getByRole('status').filter({ hasText: 'Asked for Wicker Owls' })).toBeVisible();
+	await expect(ask).toBeDisabled();
+
+	await nell.goto('/requests');
+	const row = nell.getByTestId('ask').filter({ hasText: 'Wicker Owls' });
+	await expect(row.getByTestId('ask-state')).toHaveText('Requested');
+	await expect(row.getByTestId('ask-kind')).toHaveText('Music');
+	await expect(row.getByTestId('ask-albums')).toHaveText('Asked for Barn Light');
+	await noSidewaysScroll(nell);
+
+	await own.goto('/requests');
+	await own.getByRole('button', { name: /^Pending/ }).click();
+	await expect(card(own, 'Wicker Owls').getByRole('button', { name: 'Open Wicker Owls, asked by nell' })).toBeVisible();
+});
+
+test('4K: a member asks for a 4K copy of a movie and of one in the Library; the approver sees 4K', async ({ browser }) => {
+	test.setTimeout(120_000);
+	const gus = await member(browser, 'gus');
+	// Not in the Library: the Ask sheet's 4K box makes it a 4K ask of its own.
+	const ask = await askButton(gus, 'saffron', 'Saffron Tramline');
+	await ask.click();
+	const sheet = gus.getByRole('dialog', { name: /^Ask for Saffron Tramline/ });
+	await sheet.getByTestId('four-k-box').getByRole('checkbox').check();
+	await noSidewaysScroll(gus);
+	await sheet.getByRole('button', { name: 'Ask for Saffron Tramline in 4K' }).click();
+	await expect(sheet).toBeHidden();
+	await expect(gus.getByTestId('hero-ask-4k')).toHaveAccessibleName('Asked for Saffron Tramline in 4K');
+	await expect(gus.getByTestId('hero-ask-4k')).toBeDisabled();
+
+	// In the Library: only a 4K copy can be asked, from its own button.
+	await inLibrary(await api(own), 900032, 'Juniper Telegraph');
+	await openFromSearch(gus, 'juniper', 'Juniper Telegraph');
+	await expect(gus).toHaveURL(/\/library\/\d+/);
+	await expect(gus.getByRole('button', { name: /^Ask for Juniper Telegraph( too)?$/ })).toHaveCount(0);
+	const fourK = gus.getByTestId('hero-ask-4k');
+	await expect(fourK).toHaveAccessibleName('Ask for Juniper Telegraph in 4K');
+	await fourK.click();
+	const only = gus.getByRole('dialog', { name: /^Ask for Juniper Telegraph/ });
+	await expect(only).toContainText('A 4K copy is its own ask');
+	await expect(only.getByTestId('four-k-box')).toHaveCount(0);
+	await only.getByRole('button', { name: 'Ask for Juniper Telegraph in 4K' }).click();
+	await expect(only).toBeHidden();
+	await expect(fourK).toHaveAccessibleName('Asked for Juniper Telegraph in 4K');
+	await expect(fourK).toBeDisabled();
+	// Still asked after a reload: the lookup carries the open 4K ask.
+	await gus.reload();
+	await expect(gus.getByTestId('hero-ask-4k')).toHaveAccessibleName('Asked for Juniper Telegraph in 4K');
+	await noSidewaysScroll(gus);
+
+	await gus.goto('/requests');
+	for (const name of ['Saffron Tramline', 'Juniper Telegraph']) {
+		await expect(gus.getByTestId('ask').filter({ hasText: name }).getByTestId('ask-state')).toHaveText('Requested');
+	}
+
+	// The approver's cards carry the 4K tag, and the window says 4K copy.
+	await own.goto('/requests');
+	await own.getByRole('button', { name: /^Pending/ }).click();
+	for (const name of ['Saffron Tramline', 'Juniper Telegraph']) {
+		await expect(card(own, name).getByTitle('Asked for a 4K copy, approved on its own')).toBeVisible();
+	}
+	await noSidewaysScroll(own);
+	await card(own, 'Juniper Telegraph').getByRole('button', { name: 'Open Juniper Telegraph, asked by gus' }).click();
+	const win = own.getByRole('dialog', { name: 'Juniper Telegraph' });
+	await expect(win.getByTestId('ask-banner')).toContainText('4K copy');
+	await own.keyboard.press('Escape');
+	await expect(win).toBeHidden();
+});
+
+test('a failed ask says why: the member and the approver read the reason', async ({ browser }) => {
+	test.setTimeout(90_000);
+	const pip = await member(browser, 'pip');
+	const ask = await askButton(pip, 'pewter', 'Pewter Kite');
+	await ask.click();
+	await pip.getByRole('dialog', { name: /^Ask for Pewter Kite/ }).getByRole('button', { name: 'Ask for Pewter Kite', exact: true }).click();
+	await expect(ask).toBeDisabled();
+
+	// Approved, then deleted from the Library before it arrived: the ask cannot be met.
+	const call = await api(own);
+	const asked = await askOf(call, 'Pewter Kite', 'asked');
+	const yes = await call('POST', `/asks/${asked.id}/approve`, {});
+	expect(yes.ok(), await yes.text()).toBe(true);
+	const titleId = (await askOf(call, 'Pewter Kite', 'approved')).title_id;
+	expect(titleId).toBeTruthy();
+	const gone = await call('POST', `/titles/${titleId}/delete`, { delete_files: false, never_add: false, apply: true });
+	expect(gone.ok(), await gone.text()).toBe(true);
+
+	const why = 'It was deleted from the Library after it was approved.';
+	await pip.goto('/requests');
+	await pip.getByRole('button', { name: /^Approved/ }).click();
+	await expect(pip.getByTestId('ask').filter({ hasText: 'Pewter Kite' }).getByTestId('ask-failed')).toHaveText(why);
+	await noSidewaysScroll(pip);
+
+	await own.goto('/requests');
+	await own.getByRole('button', { name: /^Processing/ }).click();
+	await card(own, 'Pewter Kite').getByRole('button', { name: 'Open Pewter Kite, asked by pip' }).click();
+	const win = own.getByRole('dialog', { name: 'Pewter Kite' });
+	await expect(win.getByTestId('ask-status')).toContainText(why);
+	await own.keyboard.press('Escape');
+	await expect(win).toBeHidden();
+});
+
+test('the owner reads the messages about their own asks on Requests', async () => {
+	// Owners ask through the API (the title page offers them Add); the owner may
+	// auto-approve, else they approve it themselves. Either way a message is left.
+	const call = await api(own);
+	const made = await call('POST', '/asks', { id: 'tmdb:900034', follow: false });
+	expect(made.ok(), await made.text()).toBe(true);
+	const { ask } = (await made.json()) as { ask: { id: number; state: string } };
+	if (ask.state === 'asked') {
+		const yes = await call('POST', `/asks/${ask.id}/approve`, {});
+		expect(yes.ok(), await yes.text()).toBe(true);
+	}
+	await own.goto('/requests');
+	const mine = own.getByRole('region', { name: /^Your messages/ });
+	await expect(mine).toBeVisible();
+	await mine.getByText(/^Show the latest/).click();
+	await expect(mine.getByTestId('message').filter({ hasText: 'Thistle Almanac' })).toContainText('was approved');
+	await noSidewaysScroll(own);
+});
+
+test('Follow on title pages: a show, a movie that lands later, and an album not out yet', async ({ browser }) => {
+	test.setTimeout(120_000);
+	const dot = await member(browser, 'dot');
+	// A show not in the Library: Follow asks for nothing and stays on after a reload.
+	await openFromSearch(dot, 'kestrel', 'Kestrel Shoals', 'show');
+	const bell = dot.getByTestId('title-detail').getByTestId('follow');
+	await expect(bell).toHaveAttribute('aria-pressed', 'false');
+	await expect(bell).toHaveText('Follow');
+	await expect(bell).toHaveAttribute('title', /Nothing is asked for/);
+	await bell.click();
+	await expect(bell).toHaveAttribute('aria-pressed', 'true');
+	await expect(bell).toHaveText('Following');
+	await expect(bell).toHaveAttribute('title', /Tap to stop/);
+	await dot.reload();
+	await expect(bell).toHaveAttribute('aria-pressed', 'true');
+	await noSidewaysScroll(dot);
+	await dot.goto('/requests');
+	await expect(dot.getByText('Nothing on the Requests page yet')).toBeVisible();
+
+	// A movie not in the Library: Follow waits for it, and dot is told when it lands.
+	await openFromSearch(dot, 'cobalt', 'Cobalt Orrery');
+	const movieBell = dot.getByTestId('title-detail').getByTestId('follow');
+	await expect(movieBell).toHaveAttribute('aria-pressed', 'false');
+	await movieBell.click();
+	await expect(movieBell).toHaveAttribute('aria-pressed', 'true');
+	await expect(movieBell).toHaveAttribute('title', /you hear when it is in the Library/);
+	await inLibrary(await api(own), 900033, 'Cobalt Orrery');
+	await expect
+		.poll(async () => ((await (await dot.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.some((m) => m.text.includes('Cobalt Orrery is in the Library')), { timeout: 20_000 })
+		.toBe(true);
+	await dot.goto('/requests');
+	await dot.getByText(/^Show the latest/).click();
+	await expect(dot.getByTestId('message').filter({ hasText: 'Cobalt Orrery is in the Library' })).toBeVisible();
+	// The follow moved onto the Library title.
+	await openFromSearch(dot, 'cobalt', 'Cobalt Orrery');
+	await expect(dot).toHaveURL(/\/library\/\d+/);
+	await expect(dot.getByTestId('title-detail').getByTestId('follow')).toHaveAttribute('aria-pressed', 'true');
+
+	// An album not out yet, on its artist's page: the bell says you will hear when it is out.
+	// Following the artist itself is a bell on a Library artist only, and this project has no
+	// music folder (adding one would break music.spec's one-folder check), so that is not covered.
+	await dot.goto(`/music/artist/${owls}`);
+	const soon = dot.getByRole('button', { name: 'Tell me when Night Fields is out' });
+	await expect(soon).toBeVisible(slow);
+	await soon.click();
+	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toHaveAttribute('aria-pressed', 'true');
+	await expect(dot.getByRole('status').filter({ hasText: 'You will hear when Night Fields is out.' })).toBeVisible();
+	await dot.reload();
+	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toBeVisible(slow);
+	await noSidewaysScroll(dot);
 });
