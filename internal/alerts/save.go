@@ -13,8 +13,8 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// Input is what a person sets on an Alert. URL, Password, Secret and
-// BotToken are only changed when sent; an empty one keeps what is stored.
+// Input is what a person sets on an Alert. URL, Password, Secret, BotToken
+// and AppToken are only changed when sent; an empty one keeps what is stored.
 type Input struct {
 	Name         string   `json:"name"`
 	Kind         string   `json:"kind"`
@@ -38,6 +38,13 @@ type Input struct {
 	// BotToken and ChatID are a Telegram Alert's bot and chat.
 	BotToken string `json:"bot_token"`
 	ChatID   string `json:"chat_id"`
+	// ServerURL is an ntfy or Gotify server (ntfy: empty means ntfy.sh),
+	// Topic the ntfy topic and UserKey the Pushover user key. AppToken is the
+	// ntfy access token, the Gotify app token or the Pushover app token.
+	ServerURL string `json:"server_url"`
+	Topic     string `json:"topic"`
+	UserKey   string `json:"user_key"`
+	AppToken  string `json:"app_token"`
 }
 
 // fill checks in and copies it onto a. New Alerts speak for every moment
@@ -48,7 +55,7 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 		return ErrName
 	}
 	if isNew {
-		if in.Kind != "discord" && in.Kind != "email" && in.Kind != "webhook" && in.Kind != "telegram" {
+		if !slices.Contains([]string{"discord", "email", "webhook", "telegram", "ntfy", "gotify", "pushover"}, in.Kind) {
 			return ErrKind
 		}
 		a.Kind = in.Kind
@@ -105,6 +112,12 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 		a.ChatID = chat
 		return nil
 	}
+	if a.Kind == "ntfy" || a.Kind == "gotify" || a.Kind == "pushover" {
+		if a.SMTPSecurity == "" {
+			a.SMTPSecurity, a.SMTPPort = "starttls", 587
+		}
+		return fillApp(in, a, isNew)
+	}
 	if a.Kind == "discord" {
 		if a.SMTPSecurity == "" {
 			a.SMTPSecurity, a.SMTPPort = "starttls", 587
@@ -139,6 +152,50 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 	}
 	a.SMTPHost, a.SMTPPort, a.SMTPSecurity, a.SMTPFrom = host, port, sec, strings.TrimSpace(in.SMTPFrom)
 	a.SMTPUser, a.StaffTo = strings.TrimSpace(in.SMTPUser), strings.TrimSpace(in.StaffTo)
+	return nil
+}
+
+// fillApp checks and copies an ntfy, Gotify or Pushover Alert's fields. A
+// token is needed when adding (ntfy: never); an empty one on change keeps
+// the stored one.
+func fillApp(in Input, a *domain.Alert, isNew bool) error {
+	token := strings.TrimSpace(in.AppToken)
+	switch a.Kind {
+	case "ntfy":
+		server := strings.TrimRight(strings.TrimSpace(in.ServerURL), "/")
+		if server == "" {
+			server = ntfyDefault
+		}
+		if CheckServerURL(server, a.AllowLocal) != nil {
+			return ErrServer
+		}
+		topic := strings.TrimSpace(in.Topic)
+		if CheckNtfyTopic(topic) != nil {
+			return ErrNtfyTopic
+		}
+		if token != "" && checkAppToken(token, ErrNtfyToken) != nil {
+			return ErrNtfyToken
+		}
+		a.ServerURL, a.Topic = server, topic
+	case "gotify":
+		server := strings.TrimRight(strings.TrimSpace(in.ServerURL), "/")
+		if CheckServerURL(server, a.AllowLocal) != nil {
+			return ErrServer
+		}
+		if (isNew || token != "") && checkAppToken(token, ErrGotifyToken) != nil {
+			return ErrGotifyToken
+		}
+		a.ServerURL = server
+	case "pushover":
+		if (isNew || token != "") && checkPushKey(token, ErrPushToken) != nil {
+			return ErrPushToken
+		}
+		user := strings.TrimSpace(in.UserKey)
+		if checkPushKey(user, ErrPushUser) != nil {
+			return ErrPushUser
+		}
+		a.UserKey = user
+	}
 	return nil
 }
 
@@ -210,6 +267,11 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			return old, ErrSecretAgain
 		}
 	}
+	// And an ntfy or Gotify token never goes to another server.
+	if (a.Kind == "ntfy" || a.Kind == "gotify") && a.PasswordSecretID != nil && strings.TrimSpace(in.AppToken) == "" &&
+		originOf(a.ServerURL) != originOf(old.ServerURL) {
+		return old, ErrTokenAgain
+	}
 	pass, passKind := secretFor(a.Kind, in)
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, a.Name, a.ID); err != nil {
@@ -240,13 +302,16 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 }
 
 // secretFor is the secret an Alert keeps under PasswordSecretID, and its
-// vault kind: the mail password, the webhook secret or the Telegram bot token.
+// vault kind: the mail password, the webhook secret, the Telegram bot token
+// or the ntfy, Gotify or Pushover token.
 func secretFor(kind string, in Input) (string, string) {
 	switch kind {
 	case "webhook":
 		return in.Secret, "alert_webhook_secret"
 	case "telegram":
 		return strings.TrimSpace(in.BotToken), "alert_telegram_token"
+	case "ntfy", "gotify", "pushover":
+		return strings.TrimSpace(in.AppToken), "alert_" + kind + "_token"
 	}
 	return in.Password, "alert_password"
 }
@@ -288,7 +353,8 @@ func originOf(raw string) string {
 
 // IsInputError says err is a refusal of what was sent.
 func IsInputError(err error) bool {
-	for _, e := range []error{ErrName, ErrKind, ErrURL, ErrMoment, ErrSMTP, ErrSecurity, ErrAddress, ErrPasswordAgain, ErrHook, ErrAuth, ErrSecretAgain, ErrTelegramToken, ErrTelegramChat} {
+	for _, e := range []error{ErrName, ErrKind, ErrURL, ErrMoment, ErrSMTP, ErrSecurity, ErrAddress, ErrPasswordAgain, ErrHook, ErrAuth, ErrSecretAgain, ErrTelegramToken, ErrTelegramChat,
+		ErrServer, ErrNtfyTopic, ErrNtfyToken, ErrGotifyToken, ErrPushToken, ErrPushUser, ErrTokenAgain} {
 		if errors.Is(err, e) {
 			return true
 		}

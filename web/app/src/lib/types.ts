@@ -466,13 +466,21 @@ export type Moment =
 export interface AlertView {
 	id: number;
 	name: string;
-	kind: 'discord' | 'email' | 'webhook' | 'telegram';
+	kind: 'discord' | 'email' | 'webhook' | 'telegram' | 'ntfy' | 'gotify' | 'pushover';
 	enabled: boolean;
 	moments: Moment[];
 	secret?: string;
 	/** A Telegram Alert's bot token: masked when stored, never the real one. */
 	bot_token?: string;
 	chat_id?: string;
+	/** An ntfy or Gotify server address. */
+	server_url?: string;
+	/** An ntfy Alert's topic. */
+	topic?: string;
+	/** A Pushover Alert's user key. */
+	user_key?: string;
+	/** The ntfy, Gotify or Pushover token: masked when stored, never the real one. */
+	app_token?: string;
 	webhook_auth?: 'sign' | 'bearer' | 'none';
 	url?: string;
 	smtp_host?: string;

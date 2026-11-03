@@ -558,6 +558,10 @@
             "description": "Lets the Alert reach this machine or the local network, and a Discord link off discord.com. Off by default: then a Discord link must be https on discord.com or discordapp.com, and a webhook link to a private address is refused.",
             "type": "boolean"
           },
+          "app_token": {
+            "description": "ntfy access token (optional), Gotify app token or Pushover app token; kept encrypted and shown masked. Empty or masked keeps the stored one, but an ntfy or Gotify token must be sent again when server_url points to another server.",
+            "type": "string"
+          },
           "bot_token": {
             "description": "Telegram bot token from @BotFather; kept encrypted and shown masked. Empty or masked keeps the stored one.",
             "type": "string"
@@ -578,7 +582,10 @@
               "discord",
               "email",
               "webhook",
-              "telegram"
+              "telegram",
+              "ntfy",
+              "gotify",
+              "pushover"
             ],
             "type": "string"
           },
@@ -616,6 +623,10 @@
             "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
             "type": "string"
           },
+          "server_url": {
+            "description": "ntfy or Gotify server, http or https (may hold a path, no query). ntfy: empty means https://ntfy.sh. A server on the local network needs allow_local_network.",
+            "type": "string"
+          },
           "smtp_from": {
             "type": "string"
           },
@@ -644,8 +655,16 @@
             "description": "Addresses (comma separated) for the ask_waiting moment.",
             "type": "string"
           },
+          "topic": {
+            "description": "ntfy topic an ntfy Alert posts to: 1 to 64 letters, digits, - or _.",
+            "type": "string"
+          },
           "url": {
             "description": "Discord or webhook link; kept encrypted. Empty or masked keeps the stored one.",
+            "type": "string"
+          },
+          "user_key": {
+            "description": "Pushover user (or group) key a pushover Alert writes to.",
             "type": "string"
           },
           "webhook_auth": {
@@ -666,6 +685,10 @@
             "description": "Lets the Alert reach this machine or the local network, and a Discord link off discord.com. Off by default: then a Discord link must be https on discord.com or discordapp.com, and a webhook link to a private address is refused.",
             "type": "boolean"
           },
+          "app_token": {
+            "description": "ntfy access token (optional), Gotify app token or Pushover app token; kept encrypted and shown masked. Empty or masked keeps the stored one, but an ntfy or Gotify token must be sent again when server_url points to another server.",
+            "type": "string"
+          },
           "bot_token": {
             "description": "Telegram bot token from @BotFather; kept encrypted and shown masked. Empty or masked keeps the stored one.",
             "type": "string"
@@ -683,7 +706,10 @@
               "discord",
               "email",
               "webhook",
-              "telegram"
+              "telegram",
+              "ntfy",
+              "gotify",
+              "pushover"
             ],
             "type": "string"
           },
@@ -714,6 +740,10 @@
             "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
             "type": "string"
           },
+          "server_url": {
+            "description": "ntfy or Gotify server, http or https (may hold a path, no query). ntfy: empty means https://ntfy.sh. A server on the local network needs allow_local_network.",
+            "type": "string"
+          },
           "smtp_from": {
             "type": "string"
           },
@@ -742,8 +772,16 @@
             "description": "Addresses (comma separated) for the ask_waiting moment.",
             "type": "string"
           },
+          "topic": {
+            "description": "ntfy topic an ntfy Alert posts to: 1 to 64 letters, digits, - or _.",
+            "type": "string"
+          },
           "url": {
             "description": "Discord or webhook link; kept encrypted. Empty or masked keeps the stored one.",
+            "type": "string"
+          },
+          "user_key": {
+            "description": "Pushover user (or group) key a pushover Alert writes to.",
             "type": "string"
           },
           "webhook_auth": {

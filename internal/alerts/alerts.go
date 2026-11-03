@@ -1,11 +1,12 @@
 // Package alerts sends outgoing messages (Alerts) through Discord links,
-// email servers, webhooks and Telegram bots. Each Alert picks the moments it speaks for: an
+// email servers, webhooks, Telegram bots, ntfy, Gotify and Pushover. Each
+// Alert picks the moments it speaks for: an
 // ask waiting for approval goes to the staff, and approved, turned down and
 // ready go to the people who asked; the Library moments (grab, import,
 // rename, add, delete, health, needs a decision) go to the staff. Secrets
 // (the Discord link, the mail password, the webhook link and its secret, the
-// Telegram bot token) are
-// read from the encrypted vault only when a message is sent.
+// Telegram bot token, the ntfy, Gotify and Pushover tokens) are read from
+// the encrypted vault only when a message is sent.
 package alerts
 
 import (
@@ -122,7 +123,7 @@ type Movie struct {
 var (
 	ErrName     = errors.New("an Alert needs a name of at most 80 characters")
 	ErrNameUsed = errors.New("another Alert has that name")
-	ErrKind     = errors.New("kind must be discord, email, webhook or telegram")
+	ErrKind     = errors.New("kind must be discord, email, webhook, telegram, ntfy, gotify or pushover")
 	ErrHook     = errors.New("paste the webhook link (http:// or https:// with a host); a server on the local network needs May reach the local network")
 	ErrAuth     = errors.New("webhook_auth must be sign, bearer or none")
 	// ErrSecretAgain keeps a webhook secret from going to another server:
@@ -299,6 +300,12 @@ func (s *Sender) attempt(ctx context.Context, op *outside.Operation, a domain.Al
 		err = s.webhook(ctx, a, m)
 	case "telegram":
 		err = s.telegram(ctx, a, m)
+	case "ntfy":
+		err = s.ntfy(ctx, a, m)
+	case "gotify":
+		err = s.gotify(ctx, a, m)
+	case "pushover":
+		err = s.pushover(ctx, a, m)
 	default:
 		return ErrKind
 	}
@@ -312,7 +319,7 @@ func (s *Sender) attempt(ctx context.Context, op *outside.Operation, a domain.Al
 }
 
 func alertTarget(a domain.Alert) outside.Target {
-	ids := []string{strconv.FormatInt(a.ID, 10), a.Kind, a.SMTPHost, strconv.Itoa(a.SMTPPort), a.SMTPSecurity, a.SMTPUser}
+	ids := []string{strconv.FormatInt(a.ID, 10), a.Kind, a.SMTPHost, strconv.Itoa(a.SMTPPort), a.SMTPSecurity, a.SMTPUser, a.ServerURL}
 	for _, id := range []*int64{a.URLSecretID, a.PasswordSecretID} {
 		if id == nil {
 			ids = append(ids, "")
