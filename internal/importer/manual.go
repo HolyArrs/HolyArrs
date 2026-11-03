@@ -92,8 +92,9 @@ var ErrByHandPath = errors.New("give the full path of a folder or file the serve
 var byHandStat = os.Stat
 
 // CleanByHandPath checks a path typed by hand: absolute, no ".." parts,
-// and there. It returns the cleaned path.
-func CleanByHandPath(p string) (string, error) {
+// inside the places and there. It returns the cleaned path, or
+// ErrByHandPath or a *PlaceError.
+func CleanByHandPath(p string, places ByHandPlaces) (string, error) {
 	p = strings.TrimSpace(p)
 	if p == "" || strings.ContainsRune(p, 0) || !filepath.IsAbs(p) {
 		return "", ErrByHandPath
@@ -110,8 +111,15 @@ func CleanByHandPath(p string) (string, error) {
 		}
 	}
 	p = filepath.Clean(p)
+	// Outside the places the answer is the same whether p is there or not.
+	if places.within(p) == "" {
+		return "", places.Refusal()
+	}
 	if _, err := byHandStat(p); err != nil {
 		return "", ErrByHandPath // the OS reason would tell which server paths exist
+	}
+	if !places.Holds(p) {
+		return "", places.Refusal()
 	}
 	return p, nil
 }
@@ -194,7 +202,7 @@ func episodeRef(it domain.Item) judge.EpisodeRef {
 
 // ScanByHand lists the videos and tracks under root (a folder or one
 // file) with a guess of the movie or episode each one is. It reads only,
-// and only inside the places (a *PlaceError otherwise).
+// and only inside the places; a bad root is ErrByHandPath or a *PlaceError.
 func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, error) {
 	out := ByHandScan{Path: root, Files: []ByHandFile{}}
 	db := im.Store.Read()
@@ -206,9 +214,10 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 	if err != nil {
 		return out, err
 	}
-	if !places.Holds(root) {
-		return out, places.Refusal()
+	if root, err = CleanByHandPath(root, places); err != nil {
+		return out, err
 	}
+	out.Path = root
 	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed'")
 	if err != nil {
 		return out, err
@@ -399,14 +408,11 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 	if mode != "copy" && mode != "move" {
 		return refuse("mode is copy or move")
 	}
-	src, err := CleanByHandPath(it.Path)
+	src, err := CleanByHandPath(it.Path, places)
 	if err != nil {
-		return refuse(err.Error())
+		return refuse(err.Error()) // nothing outside the places is copied, moved or removed
 	}
 	r.Path = src
-	if !places.Holds(src) {
-		return refuse(places.Refusal().Error()) // nothing outside is copied, moved or removed
-	}
 	sfi, err := os.Lstat(src)
 	if err != nil || !sfi.Mode().IsRegular() {
 		return refuse("not a plain file")

@@ -21372,7 +21372,7 @@
           "Settings"
         ],
         "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "settings",
+        "x-holyarrs-permission": "users",
         "x-holyarrs-scope": "admin"
       }
     },

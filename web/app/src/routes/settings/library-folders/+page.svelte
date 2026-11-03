@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
+	import { session } from '#lib/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -34,6 +35,7 @@
 	let extraLoaded = $state(false);
 	let extraError = $state('');
 	let extraSaving = $state(false);
+	const canSaveExtra = $derived(session.can('users'));
 
 	async function load() {
 		try {
@@ -215,11 +217,15 @@
 	<form class="sc-form extra" onsubmit={saveExtra} aria-label="Extra import folders">
 		<SettingsCard id="import-folders" title="Extra import folders" description="Import files by hand reads only from Library folders, Downloader folders and these.">
 			<Field id="if-paths" label="Folders" hint="One full path per line, as HolyArrs sees it, such as /data/imports. Up to 32." error={extraError}>
-				<textarea id="if-paths" class="input mono" rows="3" bind:value={extraText} placeholder="/data/imports" autocomplete="off" spellcheck="false"></textarea>
+				<textarea id="if-paths" class="input mono" rows="3" bind:value={extraText} placeholder="/data/imports" autocomplete="off" spellcheck="false" readonly={!canSaveExtra}></textarea>
 			</Field>
-			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>Save</Button>
-			</div>
+			{#if canSaveExtra}
+				<div class="row" style="margin-top: var(--s-5)">
+					<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>Save</Button>
+				</div>
+			{:else}
+				<p class="hint">Only the owner or an admin can change these.</p>
+			{/if}
 		</SettingsCard>
 	</form>
 {/if}

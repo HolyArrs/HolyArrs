@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,5 +69,33 @@ func TestImportByHandAPI(t *testing.T) {
 	}
 	if _, err := os.Stat(src); err == nil {
 		t.Fatal("the moved file is still in the folder")
+	}
+}
+
+// The extra import folders widen what import by hand may read, so only the
+// owner or an admin signed in with a password may change them: not a member
+// with the settings permission, and not a request let in without signing in.
+func TestImportFoldersNeedOwnerOrAdmin(t *testing.T) {
+	r := newAskRig(t)
+	body := fmt.Sprintf(`{"extra_folders":[%q]}`, filepath.Join(t.TempDir(), "imports"))
+	r.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", r.ana.id), `{"perms":["ask","settings"]}`, 200)
+	r.ana.call("GET", "/api/v1/settings/import-folders", "", 200)
+	r.ana.call("PUT", "/api/v1/settings/import-folders", body, 403)
+	r.owner.call("PUT", "/api/v1/settings/import-folders", body, 200)
+	r.owner.call("PUT", "/api/v1/users/"+itoa(r.bo.id), `{"role":"admin"}`, 200)
+	r.bo.call("PUT", "/api/v1/settings/import-folders", body, 200)
+	r.owner.call("PUT", "/api/v1/settings/import-folders", `{"extra_folders":["/"]}`, 400)
+
+	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`, 200)
+	req, _ := http.NewRequest("PUT", r.srv.URL+"/api/v1/settings/import-folders", strings.NewReader(`{"extra_folders":["/etc"]}`))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != 403 {
+		t.Fatalf("local skip: %d %s", resp.StatusCode, b)
 	}
 }

@@ -358,7 +358,7 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/manual-import/scan":           PermSettings,
 	"POST /api/v1/manual-import":                PermSettings,
 	"GET /api/v1/settings/import-folders":       PermSettings,
-	"PUT /api/v1/settings/import-folders":       PermSettings,
+	"PUT /api/v1/settings/import-folders":       needUsers, // widens what import by hand may read
 	"POST /api/v1/titles/{id}/versions":         PermManageLibrary,
 	"PUT /api/v1/titles/{id}/versions/{vid}":    PermManageLibrary,
 	"DELETE /api/v1/titles/{id}/versions/{vid}": PermManageLibrary,

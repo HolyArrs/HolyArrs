@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/importer"
 )
 
@@ -35,14 +36,9 @@ func (a *API) scanByHand(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &body, want) {
 		return
 	}
-	root, err := importer.CleanByHandPath(body.Path)
-	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	out, err := a.byHandImporter().ScanByHand(r.Context(), root)
+	out, err := a.byHandImporter().ScanByHand(r.Context(), body.Path)
 	var outside *importer.PlaceError
-	if errors.As(err, &outside) {
+	if errors.As(err, &outside) || errors.Is(err, importer.ErrByHandPath) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -90,8 +86,13 @@ func (a *API) getImportFolders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, ps)
 }
 
-// putImportFolders saves the extra import folders.
+// putImportFolders saves the extra import folders: the owner or an admin,
+// signed in with a password or an admin key, since they widen what import
+// by hand may read.
 func (a *API) putImportFolders(w http.ResponseWriter, r *http.Request) {
+	if !auth.RequireStrong(w, r) {
+		return
+	}
 	var body struct {
 		Extra []string `json:"extra_folders"`
 	}

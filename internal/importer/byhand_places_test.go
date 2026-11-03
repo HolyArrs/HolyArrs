@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -17,14 +18,16 @@ import (
 )
 
 func TestCleanImportFolders(t *testing.T) {
-	got, err := CleanImportFolders([]string{" /data/imports/ ", "", `D:\Imports\`, "d:/imports", "/data/imports", "/", `C:\`})
+	got, err := CleanImportFolders([]string{" /data/imports/ ", "", `D:\Imports\`, "d:/imports", "/data/imports"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"/data/imports", `D:\Imports`, "/", `C:\`}; fmt.Sprint(got) != fmt.Sprint(want) {
+	if want := []string{"/data/imports", `D:\Imports`}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("got %q, want %q", got, want)
 	}
-	for _, bad := range []string{"relative", "C:", "/data/../etc", `D:\a\..\b`, `\\host\share`, "//host/share", "/x\x00"} {
+	// The whole disk, also written as "/." or "C:\.", would undo the limit.
+	for _, bad := range []string{"relative", "C:", "/data/../etc", `D:\a\..\b`, `\\host\share`, "//host/share", "/x\x00",
+		"/", "///", "/.", "/data/./x", `C:\`, "c:/", `C:\.`} {
 		if _, err := CleanImportFolders([]string{bad}); !errors.Is(err, ErrImportFolder) {
 			t.Errorf("%q passed", bad)
 		}
@@ -114,6 +117,31 @@ func TestByHandPlacesSymlink(t *testing.T) {
 	ps := ByHandPlaces{Extra: []string{place}}
 	if ps.Holds(filepath.Join(place, "link")) || ps.Holds(filepath.Join(place, "link", "a.mkv")) {
 		t.Fatal("a link out of the place was allowed")
+	}
+}
+
+// A Windows junction inside a place leads out of it too: Go does not follow
+// it, so a path through it is refused, while a plain folder still works.
+func TestByHandPlacesJunction(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("junctions only exist on Windows")
+	}
+	place, outside := t.TempDir(), t.TempDir()
+	j := filepath.Join(place, "j")
+	if out, err := exec.Command("cmd", "/c", "mklink", "/J", j, outside).CombinedOutput(); err != nil {
+		t.Skipf("mklink /J: %v %s", err, out)
+	}
+	write(t, filepath.Join(outside, "a.mkv"), 10)
+	write(t, filepath.Join(outside, "sub", "b.mkv"), 10)
+	write(t, filepath.Join(place, "own", "c.mkv"), 10)
+	ps := ByHandPlaces{Extra: []string{place}}
+	for _, p := range []string{j, filepath.Join(j, "a.mkv"), filepath.Join(j, "sub"), filepath.Join(j, "sub", "b.mkv")} {
+		if ps.Holds(p) {
+			t.Errorf("%s allowed through a junction", p)
+		}
+	}
+	if !ps.Holds(filepath.Join(place, "own", "c.mkv")) || !ps.Holds(place) {
+		t.Error("a plain folder in the place was refused")
 	}
 }
 

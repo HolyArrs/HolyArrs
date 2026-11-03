@@ -3,6 +3,7 @@ package importer
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,11 +15,12 @@ import (
 
 func TestCleanByHandPath(t *testing.T) {
 	dir := t.TempDir()
-	if got, err := CleanByHandPath("  " + dir + "  "); err != nil || got != filepath.Clean(dir) {
+	places := ByHandPlaces{Extra: []string{dir}}
+	if got, err := CleanByHandPath("  "+dir+"  ", places); err != nil || got != filepath.Clean(dir) {
 		t.Fatalf("plain folder: %q %v", got, err)
 	}
 	for _, bad := range []string{"", "relative/path", dir + "/../x", filepath.Join(dir, "missing"), dir + "\x00"} {
-		if _, err := CleanByHandPath(bad); err == nil {
+		if _, err := CleanByHandPath(bad, places); err == nil {
 			t.Errorf("%q passed", bad)
 		}
 	}
@@ -159,9 +161,29 @@ func TestByHandMovie(t *testing.T) {
 // A failed path check answers one fixed message, not the OS reason, so it
 // does not tell "missing" from "permission denied".
 func TestCleanByHandPathHidesOSError(t *testing.T) {
-	_, err := CleanByHandPath(filepath.Join(t.TempDir(), "missing"))
+	dir := t.TempDir()
+	_, err := CleanByHandPath(filepath.Join(dir, "missing"), ByHandPlaces{Extra: []string{dir}})
 	if err == nil || err.Error() != ErrByHandPath.Error() {
 		t.Fatalf("got %v", err)
+	}
+}
+
+// Outside the places a path that is there and one that is not get the same
+// answer, so the refusal does not tell which server paths exist.
+func TestCleanByHandPathSameAnswerOutside(t *testing.T) {
+	base := t.TempDir()
+	place, there := filepath.Join(base, "place"), filepath.Join(base, "there")
+	for _, d := range []string{place, there} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	places := ByHandPlaces{Extra: []string{place}}
+	_, a := CleanByHandPath(there, places)
+	_, b := CleanByHandPath(filepath.Join(base, "missing"), places)
+	var pe *PlaceError
+	if !errors.As(a, &pe) || b == nil || a.Error() != b.Error() {
+		t.Fatalf("there: %v; missing: %v", a, b)
 	}
 }
 
@@ -178,7 +200,7 @@ func TestCleanByHandPathRefusesUNC(t *testing.T) {
 		return os.Stat(t.TempDir())
 	}
 	for _, p := range []string{`\\attacker.example\share\x.mkv`, `\\?\UNC\host\share`, `\\.\pipe\x`, `//host/share/x`} {
-		if _, err := CleanByHandPath(p); err == nil {
+		if _, err := CleanByHandPath(p, ByHandPlaces{Extra: []string{`D:\Imports`}}); err == nil {
 			t.Errorf("%q passed", p)
 		}
 	}

@@ -9,6 +9,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -24,11 +26,12 @@ const MaxImportFolders = 32
 const importFoldersGroup, importFoldersKey = "where_files_go", "import_folders"
 
 // ErrImportFolder says an extra import folder is not a usable path.
-var ErrImportFolder = fmt.Errorf("each extra import folder is a full path, such as /data/imports or D:\\Imports, with no .. parts (%d at most)", MaxImportFolders)
+var ErrImportFolder = fmt.Errorf("each extra import folder is a full path, such as /data/imports or D:\\Imports (not / or a whole drive), with no . or .. parts (%d at most)", MaxImportFolders)
 
 // CleanImportFolders checks a list of extra import folders: trimmed, full
-// paths in Linux or Windows form, no .. parts, no network share paths,
-// at most MaxImportFolders. Blank lines and repeats are dropped.
+// paths in Linux or Windows form, no . or .. parts, not / or a bare drive,
+// no network share paths, at most MaxImportFolders. Blank lines and
+// repeats are dropped.
 func CleanImportFolders(in []string) ([]string, error) {
 	out := []string{}
 	seen := map[string]bool{}
@@ -40,15 +43,17 @@ func CleanImportFolders(in []string) ([]string, error) {
 		if !absAnyOS(p) || strings.ContainsRune(p, 0) || strings.HasPrefix(p, `\\`) || strings.HasPrefix(p, "//") {
 			return nil, ErrImportFolder
 		}
-		for _, part := range strings.FieldsFunc(p, func(r rune) bool { return r == '/' || r == '\\' }) {
-			if part == ".." {
+		parts := strings.FieldsFunc(p, func(r rune) bool { return r == '/' || r == '\\' })
+		for _, part := range parts {
+			if part == ".." || part == "." {
 				return nil, ErrImportFolder
 			}
 		}
-		// Drop trailing slashes, but keep "/" and "C:\".
-		if t := strings.TrimRight(p, `/\`); t != "" && !(len(t) == 2 && t[1] == ':') {
-			p = t
+		// The whole disk would undo the limit: "/" and "C:\" are refused.
+		if len(parts) == 0 || (p[0] != '/' && len(parts) == 1) {
+			return nil, ErrImportFolder
 		}
+		p = strings.TrimRight(p, `/\`)
 		key := p
 		if p[0] != '/' {
 			key = strings.ToLower(strings.ReplaceAll(p, "/", `\`)) // drive paths ignore case
@@ -140,26 +145,53 @@ func (ps ByHandPlaces) all() []string {
 	return out
 }
 
-// Holds says p (a cleaned absolute path) is one of the places or inside
-// one. Both sides are compared after following symlinks where that works,
-// so a link inside a place cannot lead out of it.
-func (ps ByHandPlaces) Holds(p string) bool {
-	if real, err := filepath.EvalSymlinks(p); err == nil {
-		p = real
-	}
+// within returns the place (as written or with its links followed) that p
+// is or is inside, comparing p as written; "" when there is none.
+func (ps ByHandPlaces) within(p string) string {
 	for _, root := range ps.all() {
 		if !filepath.IsAbs(root) || strings.HasPrefix(filepath.VolumeName(root), `\\`) {
 			continue // a path for another OS, or a share: never stat it
 		}
-		root = filepath.Clean(root)
-		if real, err := filepath.EvalSymlinks(root); err == nil {
-			root = real
+		roots := []string{filepath.Clean(root)}
+		if real, err := filepath.EvalSymlinks(roots[0]); err == nil {
+			roots = append(roots, real)
 		}
-		if samePath(root, p) || under(root, p) {
-			return true
+		for _, r := range roots {
+			if samePath(r, p) || under(r, p) {
+				return r
+			}
 		}
 	}
-	return false
+	return ""
+}
+
+// Holds says p (a cleaned absolute path) is one of the places or inside
+// one, as written and, when it is there, once its links are followed, so a
+// link inside a place cannot lead out of it.
+func (ps ByHandPlaces) Holds(p string) bool {
+	root := ps.within(p)
+	if root == "" {
+		return false
+	}
+	if _, err := os.Lstat(p); err != nil {
+		return true // not there: nothing to follow, and nothing to read
+	}
+	// A Windows junction is not followed (EvalSymlinks keeps it or fails
+	// below it), so a step below the place that is one is refused; when the
+	// links cannot be followed at all, any link step is refused too.
+	bad := fs.ModeIrregular
+	if real, err := filepath.EvalSymlinks(p); err != nil {
+		bad |= fs.ModeSymlink
+	} else if ps.within(real) == "" {
+		return false
+	}
+	for q := p; !samePath(q, root); q = filepath.Dir(q) {
+		fi, err := os.Lstat(q)
+		if err != nil || fi.Mode()&bad != 0 || filepath.Dir(q) == q {
+			return false
+		}
+	}
+	return true
 }
 
 // PlaceError is the plain answer for a path outside every place.
@@ -184,8 +216,9 @@ func samePath(a, b string) bool {
 	return a == b
 }
 
-// byHandPlaces reads the places: Library folders, the save path and every
-// path map's own side of each Downloader still set up, and the extras.
+// byHandPlaces reads the places: Library folders, the save path and the
+// HolyArrs side of every path map of each Downloader still set up, and
+// the extras.
 func (im *Importer) byHandPlaces(ctx context.Context, db store.Lister, folders []domain.LibraryFolder) (ByHandPlaces, error) {
 	ps := ByHandPlaces{Library: []string{}, Downloaders: []string{}, Extra: []string{}}
 	for _, lf := range folders {
@@ -202,12 +235,7 @@ func (im *Importer) byHandPlaces(ctx context.Context, db store.Lister, folders [
 			ps.Downloaders = append(ps.Downloaders, p)
 		}
 	}
-	if im.SavePath != "" {
-		add(im.SavePath)
-		for _, d := range dls {
-			add(mapPath(im.SavePath, d.PathMap))
-		}
-	}
+	add(im.SavePath)
 	for _, d := range dls {
 		for _, m := range d.PathMap {
 			add(m.Ours)
