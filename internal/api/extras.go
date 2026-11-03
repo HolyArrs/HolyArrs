@@ -462,9 +462,6 @@ func (a *API) warmOne(ctx context.Context, j warmJob) {
 	if !a.uiSettings(ctx).AutoplayTrailers {
 		return
 	}
-	if _, _, found := ytdlpRun(); !found {
-		return
-	}
 	ckey := j.kind + "|" + j.id + "|" + j.lang
 	now := time.Now()
 	if _, ok := a.trailers.get(ckey, now); ok || a.trailerStored(ctx, ckey, now) || a.trailers.inFlight(ckey) || !a.trailers.allowAhead(now) {

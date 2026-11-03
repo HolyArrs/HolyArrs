@@ -111,8 +111,7 @@ func TestVideosOnDiskAndRecheckedDaily(t *testing.T) {
 
 // A video that will not play is dropped and another one is picked.
 func TestFailedVideoDroppedAndAnotherPicked(t *testing.T) {
-	t.Setenv("FAKE_YTDLP_KEY", "dQw4w9WgXcQ")
-	fakeYTDLP(t, "plain")
+	fakeReader(t, "plain", "dQw4w9WgXcQ")
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "badbadbad11"}, {ID: "badbadbad22"}, {ID: "dQw4w9WgXcQ"}}, nil
 	})

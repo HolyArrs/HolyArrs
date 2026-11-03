@@ -32,6 +32,7 @@ import (
 	"github.com/CoderLuii/holyarrs-metadata/internal/trailers"
 	upnet "github.com/CoderLuii/holyarrs-metadata/internal/upstream"
 	"github.com/CoderLuii/holyarrs-metadata/internal/vmstat"
+	"github.com/CoderLuii/holyarrs-metadata/internal/youtube"
 )
 
 // speedConfig turns on the music speed system (plan 2026-10-23): the
@@ -184,18 +185,16 @@ func openSpeed(c config, o *api.Options, upstream *budget.Budget, userAgent stri
 	if err := sp.openPictures(o, pace, upstream, userAgent); err != nil {
 		return nil, err
 	}
-	ytdlp := c.YTDLP
-	if ytdlp == "" {
-		ytdlp = "/usr/local/bin/yt-dlp"
-	}
-	y := &trailers.YTDLP{Builtin: ytdlp, Dir: filepath.Join(c.DataDir, "bin")}
+	// HolyArrs's own YouTube reader gives each video's most replayed start,
+	// length and storyboard (one reader, so its visitor id is shared).
+	yt := trailers.Replays{Reader: &youtube.Reader{}}
 	// Music videos: YouTube Music, channel feeds, frames and Wikidata, each
 	// host at its own pace; the Data API (with YOUTUBE_API_KEY) spends the
 	// pictures' shared YouTube quota.
 	if sp.vids, err = herovideo.Open(filepath.Join(c.DataDir, "herovideo.sqlite"), herovideo.Options{
 		HTTP: pace.paced(budget.Client(upstream, 30*time.Second)), UserAgent: userAgent,
 		Key: sp.res.Keys.YouTube, Limits: sp.res.Limits, Artist: sp.artistSubject,
-		Heatmap: y.Heatmap, VideoJSON: y.VideoJSON, On: sp.ctl.Provider,
+		Heatmap: yt.Heatmap, Look: yt.Look, On: sp.ctl.Provider,
 		Deep: func(id string) { sp.imgq.Enqueue(context.Background(), "hvsb:"+id, fetchq.P4Deep, false) },
 	}); err != nil {
 		return nil, err

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasSound, onUnmute, playable, sourcesFor, type TrailerSource } from './autoplay.svelte.ts';
+import { embedKey, hasSound, onUnmute, playable, sourcesFor, type TrailerSource } from './autoplay.svelte.ts';
 
 describe('playable', () => {
 	const hls = { type: 'hls' as const, url: 'https://manifest.googlevideo.com/api/manifest/hls_variant/x', mp4_url: 'https://rr1.googlevideo.com/videoplayback?itag=18' };
@@ -55,5 +55,25 @@ describe('pass-through', () => {
 	it('has no relay for an MP4 answer', () => {
 		expect(sourcesFor({ ...s, type: 'mp4', url: s.mp4_url, proxy_url: undefined }, 'vk', false, true).map((o) => o.kind)).toEqual(['direct', 'embed']);
 		expect(sourcesFor(null, 'vk', false, true)).toEqual([{ kind: 'embed', key: 'vk' }]);
+	});
+});
+
+describe('embedKey', () => {
+	const videos = [{ key: 'ownPick0001', type: 'Trailer', official: true, language: 'en' }];
+	it('picks from the title videos when the server gave no reason', () => {
+		expect(embedKey(undefined, videos, 'en')).toBe('ownPick0001');
+	});
+	it('plays the key the server names', () => {
+		expect(embedKey({ reason: 'bot_check', key: 'serverKey01' }, videos, 'en')).toBe('serverKey01');
+		expect(embedKey({ reason: 'age_restricted', key: 'nextKey0001' }, videos, 'en')).toBe('nextKey0001');
+	});
+	it('leaves the embed out when every trailer will not play here', () => {
+		for (const reason of ['age_restricted', 'unavailable', 'sign_in', 'unplayable', 'content_check']) {
+			expect(embedKey({ reason, key: '' }, videos, 'en')).toBeUndefined();
+		}
+		expect(sourcesFor(null, embedKey({ reason: 'age_restricted', key: '' }, videos, 'en'), false, false)).toEqual([]);
+	});
+	it("keeps its own pick when only YouTube's door failed and no key came", () => {
+		expect(embedKey({ reason: 'network', key: '' }, videos, 'en')).toBe('ownPick0001');
 	});
 });

@@ -188,6 +188,8 @@ export function prefetchTrailer(kind: 'movie' | 'show', tmdb: string, warmUp = t
 }
 
 const streams = new Map<string, Promise<Stream | null>>();
+/** Why a title has no direct stream, when the server said (by kind:tmdb). */
+const misses = new Map<string, TrailerMiss>();
 /** The answer for a title with no trailer (kept, unlike a failed ask). */
 const NONE = Symbol('no trailer') as unknown as Stream;
 
@@ -279,8 +281,14 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
 			.get<Stream>(`/trailer/${kind}/${encodeURIComponent(tmdb)}?language=${lang()}`, ctl.signal)
 			.then((s) => (fresh(s) ? s : null))
 			// A 404 means the title has no trailer: remembered for the session so
-			// a second player does not ask again. Other failures may be asked again.
-			.catch((e) => (e instanceof ApiError && e.status === 404 ? NONE : null))
+			// a second player does not ask again, with the server's reason and
+			// key when it gave them. Other failures may be asked again.
+			.catch((e) => {
+				if (!(e instanceof ApiError) || e.status !== 404) return null;
+				const { reason, key } = e.body ?? {};
+				if (typeof reason === 'string' && reason) misses.set(k, { reason, key: typeof key === 'string' ? key : '' });
+				return NONE;
+			})
 			.finally(() => clearTimeout(t));
 		p.then((s) => {
 			if (!s) streams.delete(k);
@@ -297,7 +305,31 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
  */
 export async function trailerSources(kind: 'movie' | 'show', tmdb: string, videos: Video[] | undefined, signal?: AbortSignal): Promise<TrailerSource[]> {
 	const s = await directStream(kind, tmdb, signal);
-	return sourcesFor(s, pickTrailer(videos, lang())?.key, nativeHLS(), soundOn()).filter((x) => x.kind !== 'direct' || !refused.has(x.url));
+	return sourcesFor(s, embedKey(misses.get(`${kind}:${tmdb}`), videos, lang()), nativeHLS(), soundOn()).filter((x) => x.kind !== 'direct' || !refused.has(x.url));
+}
+
+/**
+ * TrailerMiss is the server's 404 for a lookup that found no stream: the
+ * reader's reason and a YouTube video its player may still play ("" when
+ * every trailer tried will not play here).
+ */
+export interface TrailerMiss {
+	reason: string;
+	key: string;
+}
+
+/** Reasons about one video (age, removed, blocked), not YouTube's door. */
+const VIDEO_REASONS = new Set(['age_restricted', 'unavailable', 'sign_in', 'unplayable', 'content_check', 'bad_id']);
+
+/**
+ * embedKey is the video the embed fallback plays: the server's key when it
+ * gave one, none when it says no trailer plays here (the backdrop stays),
+ * else our own pick from the title's videos.
+ */
+export function embedKey(miss: TrailerMiss | undefined, videos: Video[] | undefined, language: string): string | undefined {
+	if (miss?.key) return miss.key;
+	if (miss && VIDEO_REASONS.has(miss.reason)) return undefined;
+	return pickTrailer(videos, language)?.key;
 }
 
 /**

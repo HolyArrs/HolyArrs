@@ -125,6 +125,9 @@ type Video struct {
 	PeakFound bool
 	// Storyboard is YouTube's storyboard spec ("" when none).
 	Storyboard string
+	// Page says the watch page was read, so a missing graph really is
+	// missing (not just unread).
+	Page bool
 }
 
 // Reader looks videos up. The zero value is ready.
@@ -187,8 +190,20 @@ func (r *Reader) keepVisitor(v string) {
 	r.mu.Unlock()
 }
 
-// Look finds the video's addresses. A failure is an *Error with a reason.
+// Look finds the video's addresses, its "most replayed" point and its
+// storyboard. A failure is an *Error with a reason.
 func (r *Reader) Look(ctx context.Context, id string) (Video, error) {
+	return r.look(ctx, id, true)
+}
+
+// Addresses finds the addresses only: while a visitor id is kept, the watch
+// page (about a second) is not read at all, so a trailer is ready after the
+// player call alone. Peak and Storyboard are then empty.
+func (r *Reader) Addresses(ctx context.Context, id string) (Video, error) {
+	return r.look(ctx, id, false)
+}
+
+func (r *Reader) look(ctx context.Context, id string, withPage bool) (Video, error) {
 	if !ValidID(id) {
 		return Video{}, &Error{Reason: BadID}
 	}
@@ -197,23 +212,33 @@ func (r *Reader) Look(ctx context.Context, id string) (Video, error) {
 		pErr    error
 		pg      watchPage
 		pgErr   error
+		read    bool
 		visitor = r.cachedVisitor(time.Now())
 	)
 	readPage := func() {
 		pg, pgErr = r.page(ctx, id)
+		read = true
 		r.keepVisitor(pg.visitor)
 	}
 	if visitor != "" {
-		// The visitor id is known: page and player call at once.
+		// The visitor id is known: page and player call at once (or the
+		// player call alone).
 		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() { defer wg.Done(); readPage() }()
+		if withPage {
+			wg.Add(1)
+			go func() { defer wg.Done(); readPage() }()
+		}
 		pa, pErr = r.player(ctx, id, visitor)
 		wg.Wait()
 		// A visitor id YouTube no longer takes is refused as a bot: once
-		// more with the one the page just gave.
-		if pErr == nil && botRefusal(pa) && pg.visitor != "" && pg.visitor != visitor {
-			pa, pErr = r.player(ctx, id, pg.visitor)
+		// more with the one a fresh page gives.
+		if pErr == nil && botRefusal(pa) {
+			if !read {
+				readPage()
+			}
+			if pg.visitor != "" && pg.visitor != visitor {
+				pa, pErr = r.player(ctx, id, pg.visitor)
+			}
 		}
 	} else {
 		// The player call needs a visitor id, so the page goes first.
@@ -225,7 +250,8 @@ func (r *Reader) Look(ctx context.Context, id string) (Video, error) {
 	}
 	v := Video{ID: id, Title: pa.VideoDetails.Title}
 	v.Duration, _ = strconv.ParseFloat(pa.VideoDetails.Length, 64)
-	if pgErr == nil {
+	if read && pgErr == nil {
+		v.Page = true
 		v.Peak, v.PeakFound = pg.peak, pg.peakFound
 		if v.Duration == 0 {
 			v.Duration = pg.duration
@@ -322,6 +348,9 @@ func playable(pa playerAnswer) error {
 	switch {
 	case botRefusal(pa):
 		reason = BotCheck
+	case strings.Contains(low, "try again later"):
+		// YouTube is holding this door back for a while, not this video.
+		reason = Refused
 	case ageRe.MatchString(low), p.Status == "AGE_CHECK_REQUIRED", p.Status == "AGE_VERIFICATION_REQUIRED":
 		reason = AgeRestricted
 	case p.Status == "CONTENT_CHECK_REQUIRED":
@@ -492,11 +521,14 @@ func Peak(marks []Mark) (float64, bool) {
 	if len(m) == 1 {
 		return m[0].Start, true
 	}
+	// The last 10% are skipped as well: a start there leaves nothing to watch
+	// (trailers and music videos often peak at the closing card).
 	last, prev := m[len(m)-1].Start, m[len(m)-2].Start
-	cut := 0.05 * (last + (last - prev))
+	length := last + (last - prev)
+	cut, end := 0.05*length, 0.9*length
 	peak, best := m[1].Start, -1.0
 	for _, x := range m[1:] {
-		if x.Start >= cut && x.Value > best {
+		if x.Start >= cut && x.Start < end && x.Value > best {
 			peak, best = x.Start, x.Value
 		}
 	}

@@ -829,7 +829,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	for _, l := range a.MusicLoops() {
 		optional(l)
 	}
-	startYTDLP(ctx, c.ConfigDir, a, he)
+	startTrailers(a, he)
 	pc.Start(ctx)
 	swap.set(urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)

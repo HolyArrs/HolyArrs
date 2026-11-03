@@ -34,9 +34,8 @@ func videoSetup(t *testing.T, vids func(context.Context, string) ([]metadata.Art
 
 // route: GET /api/v1/music/artists/{mbid}?part=video
 func TestArtistVideoStartPoints(t *testing.T) {
-	t.Setenv("FAKE_YTDLP_KEY", "dQw4w9WgXcQ")
 	// The server's most replayed point wins.
-	fakeYTDLP(t, "heat")
+	fakeReader(t, "heat", "dQw4w9WgXcQ")
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ", MostReplayed: 42}}, nil
 	})
@@ -45,7 +44,7 @@ func TestArtistVideoStartPoints(t *testing.T) {
 	if v.Key != "dQw4w9WgXcQ" || v.Start != 42 || !strings.Contains(v.ProxyURL, "/api/v1/trailer/stream/") || !strings.HasSuffix(v.ProxyURL, "/manifest.m3u8") {
 		t.Fatalf("video %+v", v)
 	}
-	// Else the heatmap peak through yt-dlp.
+	// Else the "most replayed" peak from the reader (its opening skipped).
 	u = videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}}, nil
 	})
@@ -61,8 +60,7 @@ func TestArtistVideoStartPoints(t *testing.T) {
 // id the artist does not have is 404, and one that will not play stays in
 // the row for the embed to try.
 func TestArtistVideoPicked(t *testing.T) {
-	t.Setenv("FAKE_YTDLP_KEY", "9bZkp7q19f0")
-	fakeYTDLP(t, "plain")
+	fakeReader(t, "plain", "9bZkp7q19f0")
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}, {ID: "9bZkp7q19f0"}, {ID: "kJQP7kiw5Fk"}}, nil
 	})
@@ -82,8 +80,7 @@ func TestArtistVideoPicked(t *testing.T) {
 }
 
 func TestArtistVideoFallbacks(t *testing.T) {
-	t.Setenv("FAKE_YTDLP_KEY", "dQw4w9WgXcQ")
-	fakeYTDLP(t, "plain")
+	fakeReader(t, "plain", "dQw4w9WgXcQ")
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}}, nil
 	})
@@ -129,10 +126,9 @@ func videoReady(t *testing.T, u string) []byte {
 }
 
 // The first ask for an artist whose stream is not looked up answers 404 at
-// once (no yt-dlp in the request) and the lookup runs behind it.
+// once (no lookup in the request) and the lookup runs behind it.
 func TestArtistVideoNeverWaitsOnLookup(t *testing.T) {
-	t.Setenv("FAKE_YTDLP_KEY", "dQw4w9WgXcQ")
-	runs := fakeYTDLP(t, "plain")
+	yt := fakeReader(t, "plain", "dQw4w9WgXcQ")
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}}, nil
 	})
@@ -142,9 +138,9 @@ func TestArtistVideoNeverWaitsOnLookup(t *testing.T) {
 		t.Fatalf("first ask waited %v", d)
 	}
 	videoReady(t, u)
-	before := runs.Load()
+	before := yt.runs.Load()
 	do(t, "GET", u, "", 200)
-	if runs.Load() != before {
-		t.Fatalf("a ready stream ran yt-dlp again: %d -> %d", before, runs.Load())
+	if yt.runs.Load() != before {
+		t.Fatalf("a ready stream was looked up again: %d -> %d", before, yt.runs.Load())
 	}
 }

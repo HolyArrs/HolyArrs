@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,65 +17,161 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
-	"github.com/CoderLuii/holyarrs/internal/ytdlp"
+	"github.com/CoderLuii/holyarrs/internal/youtube"
 )
 
-// TestFakeYTDLP is not a test: run as a child process it plays yt-dlp,
-// answering with what FAKE_YTDLP says (ok, slow, fail, odd).
-func TestFakeYTDLP(t *testing.T) {
-	mode := os.Getenv("FAKE_YTDLP")
-	if mode == "" {
-		return
-	}
-	args := strings.Join(os.Args, " ")
-	want := os.Getenv("FAKE_YTDLP_KEY")
-	if want == "" {
-		want = "trailerKey1"
-	}
-	if !strings.Contains(args, "watch?v="+want) || !strings.Contains(args, "player_client=visionos") || !strings.Contains(args, "--no-check-formats") {
-		os.Exit(3)
-	}
-	exp := time.Now().Add(6 * time.Hour).Unix()
-	mp4 := fmt.Sprintf(`{"format_id":"137","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=137","ext":"mp4","vcodec":"avc1.640028","acodec":"none","width":1920,"height":1080,"protocol":"https"},{"format_id":"136","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=136","ext":"mp4","vcodec":"avc1.4d401f","acodec":"none","width":1280,"height":720,"protocol":"https"},{"format_id":"243","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=243","ext":"webm","vcodec":"vp9","acodec":"none","height":360,"protocol":"https"}`, exp, exp, exp)
-	if mode == "muxed" {
-		mode = "mp4"
-		mp4 += fmt.Sprintf(`,{"format_id":"18","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=18","ext":"mp4","vcodec":"avc1.42001E","acodec":"mp4a.40.2","width":640,"height":360,"protocol":"https"}`, exp)
-	}
-	switch mode {
-	case "ok":
-		fmt.Printf(`{"formats":[{"format_id":"233","manifest_url":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/%d/id/x/file/index.m3u8","protocol":"m3u8_native"},%s]}`, exp+60, mp4)
-	case "heat", "plain":
-		heat := `,"heatmap":[{"start_time":0,"end_time":20,"value":0.3},{"start_time":80,"end_time":100,"value":1},{"start_time":100,"end_time":200,"value":0.5}]`
-		if mode == "plain" {
-			heat = ""
-		}
-		fmt.Printf(`{"duration":200%s,"formats":[{"format_id":"233","manifest_url":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/%d/id/x/file/index.m3u8","protocol":"m3u8_native"},%s]}`, heat, exp+60, mp4)
-	case "mp4":
-		fmt.Printf(`{"formats":[%s]}`, mp4)
-	case "odd":
-		fmt.Print(`{"formats":[{"format_id":"18","url":"https://evil.example.com/v.mp4","ext":"mp4","vcodec":"avc1"},{"format_id":"1","manifest_url":"https://evil.example.com/hls_variant/x"}]}`)
-	case "slow":
-		time.Sleep(20 * time.Second)
-	default:
-		os.Exit(1)
-	}
-	os.Exit(0)
+// ytFake plays YouTube for the trailer reader: the watch page and the
+// player call answer each video by its mode, and any other video as
+// removed. Modes: ok (HLS and picture-only MP4s), heat and plain (200 s
+// long, with or without a "most replayed" graph whose opening is the
+// highest part), mp4 (no HLS), muxed (an MP4 with sound too), odd
+// (addresses off YouTube's video servers), junk (an unreadable answer),
+// fail (an error status), slow (no answer until the lookup gives up),
+// age, unavailable and bot.
+type ytFake struct {
+	runs  atomic.Int32 // player calls
+	pages atomic.Int32 // watch pages read
+	mu    sync.Mutex
+	modes map[string]string
+	asked map[string]int
+	stop  chan struct{}
 }
 
-func fakeYTDLP(t *testing.T, mode string) *atomic.Int32 {
+// fakeReader points the trailer reader at a fake YouTube where keys (else
+// trailerKey1) answer in mode.
+func fakeReader(t *testing.T, mode string, keys ...string) *ytFake {
 	t.Helper()
-	var runs atomic.Int32
-	old := ytdlpRun
-	t.Setenv("FAKE_YTDLP", mode)
-	oldAllow := ytdlp.EnvAllow
-	ytdlp.EnvAllow = append(append([]string{}, oldAllow...), "FAKE_YTDLP", "FAKE_YTDLP_KEY")
-	t.Cleanup(func() { ytdlp.EnvAllow = oldAllow })
-	ytdlpRun = func() (string, []string, bool) {
-		runs.Add(1)
-		return os.Args[0], []string{"-test.run=^TestFakeYTDLP$", "--"}, true
+	if len(keys) == 0 {
+		keys = []string{"trailerKey1"}
 	}
-	t.Cleanup(func() { ytdlpRun = old })
-	return &runs
+	f := &ytFake{modes: map[string]string{}, asked: map[string]int{}, stop: make(chan struct{})}
+	for _, k := range keys {
+		f.modes[k] = mode
+	}
+	srv := httptest.NewServer(http.HandlerFunc(f.serve))
+	t.Cleanup(srv.Close)
+	t.Cleanup(func() { close(f.stop) }) // runs first: a slow answer ends
+	old := trailerReader
+	trailerReader = &youtube.Reader{Base: srv.URL, HTTP: srv.Client()}
+	t.Cleanup(func() { trailerReader = old })
+	return f
+}
+
+func (f *ytFake) set(key, mode string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.modes[key] = mode
+}
+
+// count is how many player calls asked for key.
+func (f *ytFake) count(key string) int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.asked[key]
+}
+
+func (f *ytFake) serve(w http.ResponseWriter, r *http.Request) {
+	var id string
+	switch r.URL.Path {
+	case "/watch":
+		id = r.URL.Query().Get("v")
+		f.pages.Add(1)
+	case "/youtubei/v1/player":
+		var b struct {
+			VideoID string `json:"videoId"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&b)
+		id = b.VideoID
+	default:
+		w.WriteHeader(404)
+		return
+	}
+	f.mu.Lock()
+	mode, ok := f.modes[id]
+	if !ok {
+		mode = "unavailable"
+	}
+	if r.URL.Path != "/watch" {
+		f.asked[id]++
+		f.runs.Add(1)
+	}
+	f.mu.Unlock()
+	if r.URL.Path == "/watch" {
+		_, _ = io.WriteString(w, fakeWatchPage(mode))
+		return
+	}
+	if mode == "slow" {
+		select {
+		case <-r.Context().Done():
+		case <-f.stop:
+		case <-time.After(20 * time.Second):
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+	code, body := fakePlayer(mode)
+	w.WriteHeader(code)
+	_, _ = io.WriteString(w, body)
+}
+
+// fakeWatchPage has a visitor id and, for heat, a "most replayed" graph of
+// 20 s parts whose opening is the highest and whose real peak is at 80 s.
+func fakeWatchPage(mode string) string {
+	page := `<html><script>ytcfg.set({"VISITOR_DATA":"VISITOR-FAKE"});</script>`
+	if mode == "heat" {
+		var marks []string
+		for i := range 10 {
+			v := 0.2
+			switch i {
+			case 0:
+				v = 1
+			case 4:
+				v = 0.9
+			}
+			marks = append(marks, fmt.Sprintf(`{"startMillis":"%d","durationMillis":"20000","intensityScoreNormalized":%v}`, i*20000, v))
+		}
+		page += `<script>var ytInitialData = {"frameworkUpdates":{"entityBatchUpdate":{"mutations":[{"payload":{"macroMarkersListEntity":{"markersList":{"markerType":"MARKER_TYPE_HEATMAP","markers":[` + strings.Join(marks, ",") + `]}}}}]}}};</script>`
+	}
+	return page + "</html>"
+}
+
+func fakePlayer(mode string) (int, string) {
+	exp := time.Now().Add(6 * time.Hour).Unix()
+	refuse := func(status, reason string) (int, string) {
+		return 200, `{"playabilityStatus":{"status":"` + status + `","reason":"` + reason + `"}}`
+	}
+	hls := fmt.Sprintf(`"hlsManifestUrl":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/%d/id/x/file/index.m3u8",`, exp+60)
+	adaptive := fmt.Sprintf(`"adaptiveFormats":[{"itag":137,"url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=137","mimeType":"video/mp4; codecs=\"avc1.640028\"","width":1920,"height":1080},`+
+		`{"itag":136,"url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=136","mimeType":"video/mp4; codecs=\"avc1.4d401f\"","width":1280,"height":720},`+
+		`{"itag":243,"url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=243","mimeType":"video/webm; codecs=\"vp9\"","width":640,"height":360}]`, exp, exp, exp)
+	details := ""
+	streaming := hls + adaptive
+	switch mode {
+	case "ok":
+	case "heat", "plain":
+		details = `"videoDetails":{"title":"Fake","lengthSeconds":"200"},`
+	case "mp4":
+		streaming = adaptive
+	case "muxed":
+		streaming = adaptive + fmt.Sprintf(`,"formats":[{"itag":18,"url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=18","mimeType":"video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"","width":640,"height":360}]`, exp)
+	case "odd":
+		streaming = `"hlsManifestUrl":"https://evil.example.com/hls_variant/x","formats":[{"itag":18,"url":"https://evil.example.com/v.mp4","mimeType":"video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"","height":360}]`
+	case "junk":
+		return 200, "<html>not an answer"
+	case "age":
+		return refuse("LOGIN_REQUIRED", "Sign in to confirm your age")
+	case "bot":
+		return refuse("LOGIN_REQUIRED", "Sign in to confirm you're not a bot")
+	case "unavailable":
+		return refuse("ERROR", "Video unavailable")
+	case "premiere":
+		return refuse("LIVE_STREAM_OFFLINE", "Premieres in 2 hours")
+	case "later":
+		return refuse("ERROR", "This content isn't available, try again later.")
+	default:
+		return 500, "{}"
+	}
+	return 200, `{"playabilityStatus":{"status":"OK"},` + details + `"streamingData":{` + streaming + `}}`
 }
 
 func trailerTMDB(t *testing.T) metadata.Provider {
@@ -88,6 +184,14 @@ func trailerTMDB(t *testing.T) metadata.Provider {
 			_, _ = w.Write([]byte(`{"id":11,"title":"M11","videos":{"results":[{"key":"teaserKey1","site":"YouTube","type":"Teaser","official":true,"iso_639_1":"en"},{"key":"trailerKey1","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en"}]}}`))
 		case "/3/movie/12":
 			_, _ = w.Write([]byte(`{"id":12,"title":"M12"}`))
+		case "/3/movie/13", "/3/movie/14", "/3/movie/15":
+			// Several trailers: 13 and 14 have three, 15 four.
+			id := strings.TrimPrefix(r.URL.Path, "/3/movie/")
+			more := ""
+			if id == "15" {
+				more = `,{"key":"fourthKey01","site":"YouTube","type":"Teaser","official":false,"iso_639_1":"en"}`
+			}
+			_, _ = w.Write([]byte(`{"id":` + id + `,"title":"M` + id + `","videos":{"results":[{"key":"ageGated001","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en"},{"key":"secondKey01","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en"},{"key":"thirdKey001","site":"YouTube","type":"Teaser","official":true,"iso_639_1":"en"}` + more + `]}}`))
 		default:
 			w.WriteHeader(404)
 		}
@@ -98,7 +202,7 @@ func trailerTMDB(t *testing.T) metadata.Provider {
 
 // route: GET /api/v1/trailer/{kind}/{tmdb_id}
 func TestTrailerStream(t *testing.T) {
-	runs := fakeYTDLP(t, "ok")
+	yt := fakeReader(t, "ok")
 	srv, _ := discoverRig(t, trailerTMDB(t))
 	var s TrailerStream
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s); err != nil {
@@ -108,12 +212,11 @@ func TestTrailerStream(t *testing.T) {
 		time.Until(s.ExpiresAt) < 5*time.Hour || time.Until(s.ExpiresAt) > 6*time.Hour+time.Second {
 		t.Fatalf("stream %+v", s)
 	}
-	// The address is kept: a second ask does not look it up again (ytdlpRun
-	// is still asked whether yt-dlp exists, but resolves stay at one).
-	before := runs.Load()
+	// The address is kept: a second ask does not look it up again.
+	before := yt.runs.Load()
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200)
-	if runs.Load() != before {
-		t.Fatalf("yt-dlp ran again (%d -> %d)", before, runs.Load())
+	if yt.runs.Load() != before {
+		t.Fatalf("looked up again (%d -> %d)", before, yt.runs.Load())
 	}
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404) // no trailer
 	do(t, "GET", srv.URL+"/api/v1/trailer/artist/1", "", 400)
@@ -124,27 +227,26 @@ func TestTrailerStream(t *testing.T) {
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)
 }
 
+// A lookup that finds no stream answers 404 with the reader's reason. At
+// YouTube's door (a bot check, an error, an odd or unreadable answer) the
+// key is still given: YouTube's own player may play it.
 func TestTrailerStreamRefusals(t *testing.T) {
-	for _, mode := range []string{"fail", "odd"} {
-		fakeYTDLP(t, mode)
+	for mode, reason := range map[string]youtube.Reason{"fail": youtube.Refused, "odd": youtube.NoAddress, "junk": youtube.Network, "bot": youtube.BotCheck} {
+		fakeReader(t, mode)
 		srv, _ := discoverRig(t, trailerTMDB(t))
-		if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)); !strings.Contains(b, "no direct stream") {
-			t.Fatalf("%s: %s", mode, b)
+		var b struct{ Error, Reason, Key string }
+		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &b)
+		if b.Error != "no direct stream" || b.Reason != string(reason) || b.Key != "trailerKey1" {
+			t.Fatalf("%s: %+v", mode, b)
 		}
 	}
-	// No yt-dlp at all.
-	old := ytdlpRun
-	ytdlpRun = func() (string, []string, bool) { return "", nil, false }
-	t.Cleanup(func() { ytdlpRun = old })
-	srv, _ := discoverRig(t, trailerTMDB(t))
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)
 }
 
 func TestTrailerStreamTimeout(t *testing.T) {
 	if testing.Short() {
 		t.Skip("waits for the 8 second limit")
 	}
-	fakeYTDLP(t, "slow")
+	fakeReader(t, "slow")
 	srv, _ := discoverRig(t, trailerTMDB(t))
 	start := time.Now()
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)
@@ -187,9 +289,9 @@ func TestUISettings(t *testing.T) {
 }
 
 // A restart keeps resolved addresses (lookup_cache): a new API on the same
-// database answers without yt-dlp. MP4-only answers come back as mp4.
+// database answers without a lookup. MP4-only answers come back as mp4.
 func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
-	runs := fakeYTDLP(t, "mp4")
+	yt := fakeReader(t, "mp4")
 	srv, st := discoverRig(t, trailerTMDB(t))
 	var s TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
@@ -198,17 +300,17 @@ func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
 	}
 	srv2 := httptest.NewServer(New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}).Handler())
 	t.Cleanup(srv2.Close)
-	n := runs.Load()
+	n := yt.runs.Load()
 	var again TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv2.URL+"/api/v1/trailer/movie/11", "", 200), &again)
-	if again.URL != s.URL || runs.Load() != n {
-		t.Fatalf("not kept: %+v runs %d->%d", again, n, runs.Load())
+	if again.URL != s.URL || yt.runs.Load() != n {
+		t.Fatalf("not kept: %+v runs %d->%d", again, n, yt.runs.Load())
 	}
 }
 
 // A muxed MP4, when offered, wins over a taller picture-only one.
 func TestTrailerStreamPrefersMuxed(t *testing.T) {
-	fakeYTDLP(t, "muxed")
+	fakeReader(t, "muxed")
 	srv, _ := discoverRig(t, trailerTMDB(t))
 	var s TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
@@ -220,8 +322,7 @@ func TestTrailerStreamPrefersMuxed(t *testing.T) {
 // The metadata server's pick wins over TMDB's videos; its "no trailer"
 // is final.
 func TestTrailerUsesServerPick(t *testing.T) {
-	fakeYTDLP(t, "ok")
-	t.Setenv("FAKE_YTDLP_KEY", "serverPick1")
+	fakeReader(t, "ok", "serverPick1")
 	_, st := discoverRig(t, trailerTMDB(t))
 	srv := httptest.NewServer(New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
 		if id == "12" {
@@ -241,7 +342,7 @@ func TestTrailerUsesServerPick(t *testing.T) {
 // Many asks for one title share one lookup; failures in a row are counted
 // for the health check and a success resets them.
 func TestTrailerSharedLookupAndFailures(t *testing.T) {
-	fakeYTDLP(t, "fail")
+	fakeReader(t, "fail")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
@@ -249,10 +350,10 @@ func TestTrailerSharedLookupAndFailures(t *testing.T) {
 		_, _ = a.resolveTitle(ctx, "movie", "11", "en")
 		a.trailers.cache = nil // forget the miss, as after trailerMiss
 	}
-	if n, on := a.TrailerFailures(); n != 3 || !on {
-		t.Fatalf("failures %d %v", n, on)
+	if st := a.TrailerReader(); st.Failed != 3 || st.LastReason != youtube.Refused || !st.LastGood.IsZero() {
+		t.Fatalf("failures %+v", st)
 	}
-	runs := fakeYTDLP(t, "ok")
+	yt := fakeReader(t, "ok")
 	a.trailers.cache = nil
 	var wg sync.WaitGroup
 	for range 5 {
@@ -265,11 +366,11 @@ func TestTrailerSharedLookupAndFailures(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	if runs.Load() != 1 {
-		t.Fatalf("lookups %d", runs.Load())
+	if yt.runs.Load() != 1 {
+		t.Fatalf("lookups %d", yt.runs.Load())
 	}
-	if n, _ := a.TrailerFailures(); n != 0 {
-		t.Fatalf("not reset %d", n)
+	if st := a.TrailerReader(); st.Failed != 0 || time.Since(st.LastGood) > time.Minute {
+		t.Fatalf("not reset %+v", st)
 	}
 }
 
@@ -328,11 +429,11 @@ func TestTrailerStoredRechecked(t *testing.T) {
 // The tests above wait for the lookup; the page itself never does.
 func init() { trailerWait = 30 * time.Second }
 
-func TestTrailerNeverWaitsOnYTDLP(t *testing.T) {
+func TestTrailerNeverWaitsOnLookup(t *testing.T) {
 	old := trailerWait
 	trailerWait = 50 * time.Millisecond
 	t.Cleanup(func() { trailerWait = old })
-	fakeYTDLP(t, "slow")
+	fakeReader(t, "slow")
 	srv, _ := discoverRig(t, trailerTMDB(t))
 	start := time.Now()
 	if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)); !strings.Contains(b, "no trailer yet") {

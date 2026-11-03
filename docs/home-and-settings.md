@@ -112,7 +112,6 @@ answers 400 `{"error", "field"}` where `field` is a dotted path such as
 | --- | --- | --- |
 | My account, Alerts for you | **New episodes of shows I asked for** | On |
 | Settings > This app | **Autoplay trailers** | On |
-| Settings > This app | **Keep yt-dlp up to date** | On |
 
 See [Explore](explore.md#new-episode-notices) and [Trailers](trailers.md#settings).
 

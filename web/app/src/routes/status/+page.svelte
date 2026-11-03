@@ -22,8 +22,8 @@
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	let input = $state<StatusInput | null>(null);
-	// The trailers check names yt-dlp's version; it is not a part, so it is not a row.
-	const ytdlp = $derived(input?.checks?.find((c) => (c.kind as string) === 'trailers'));
+	// The trailers check is the YouTube reader's state; it is not a part, so it is not a row.
+	const reader = $derived(input?.checks?.find((c) => (c.kind as string) === 'trailers'));
 	let error = $state('');
 	// Which sources failed on the last read, so a gap never looks healthy or empty.
 	let failed = $state<string[]>([]);
@@ -212,7 +212,7 @@
 				<div class="body">
 					{#if error}<LoadError hasData message={error} onretry={retry} />
 					{:else if failedText}<LoadError hasData message={failedText} onretry={retry} />{/if}
-					<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} {failed} {hidden} {checkRuns} />
+					<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {reader} {failed} {hidden} {checkRuns} />
 				</div>
 			{/if}
 		</PageLoader>

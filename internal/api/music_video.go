@@ -13,14 +13,15 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"github.com/CoderLuii/holyarrs/internal/youtube"
 )
 
 // The artist page hero plays one of the artist's official music videos,
 // muted and looping, through the trailer relay (pass-through HLS). The
 // metadata server lists the videos by YouTube id (with the most replayed
-// point when it knows it); yt-dlp resolves the stream like a trailer and
-// reads the heatmap. No videos, an older server or no yt-dlp: 404, and the
-// hero keeps its photo. Kid accounts never get one (the page gate), nor does
+// point when it knows it); the YouTube reader resolves the stream like a
+// trailer and reads the "most replayed" graph. No videos or an older
+// server: 404, and the hero keeps its photo. Kid accounts never get one (the page gate), nor does
 // anyone with "Autoplay trailers" off; the relay's caps apply as for trailers.
 
 // ArtistVideoView answers GET /api/v1/music/artists/{mbid}?part=video.
@@ -249,8 +250,8 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// Only a stream already looked up answers: yt-dlp never runs while the
-	// visitor waits. None ready yet answers 404 at once and one is looked up
+	// Only a stream already looked up answers: the visitor never waits on a
+	// lookup. None ready yet answers 404 at once and one is looked up
 	// behind it (the hero keeps its photo; the next view plays).
 	v, s, ready := a.readyVideo(r.Context(), vids)
 	if !ready {
@@ -350,11 +351,8 @@ func (a *API) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (meta
 
 // resolveVideoBehind looks one video's stream up after the answer: id, else
 // the first of vids not known yet. It counts against the person's video
-// budget; one that will not play is dropped from the artist's list.
+// budget; one YouTube will not play here is dropped from the artist's list.
 func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.ArtistVideo, id string) {
-	if _, _, found := ytdlpRun(); !found {
-		return
-	}
 	ctx := metadata.MemberLookup(context.WithoutCancel(r.Context()))
 	if id == "" {
 		for _, v := range vids {
@@ -370,7 +368,7 @@ func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.A
 	go func() {
 		lctx, cancel := context.WithTimeout(ctx, 40*time.Second)
 		defer cancel()
-		if _, err := a.resolveMusicVideo(lctx, id); err != nil && lctx.Err() == nil && vids != nil {
+		if _, err := a.resolveMusicVideo(lctx, id); videoWontPlay(err) && lctx.Err() == nil && vids != nil {
 			a.dropVideo(ctx, mbid, id)
 		}
 	}()
@@ -382,9 +380,6 @@ func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.A
 // trailers off. Only the stream address is resolved; nothing is downloaded.
 func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
 	if len(mbids) == 0 || a.kidMax(r) != "" || !a.uiSettings(r.Context()).AutoplayTrailers || a.s.ArtistVideos == nil {
-		return
-	}
-	if _, _, ok := ytdlpRun(); !ok {
 		return
 	}
 	ctx := metadata.Ahead(metadata.MemberLookup(context.WithoutCancel(r.Context())))
@@ -415,7 +410,7 @@ func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
 				return
 			}
 			lctx, cancel := context.WithTimeout(ctx, 40*time.Second)
-			if _, err := a.resolveMusicVideo(lctx, next); err != nil && lctx.Err() == nil {
+			if _, err := a.resolveMusicVideo(lctx, next); videoWontPlay(err) && lctx.Err() == nil {
 				a.dropVideo(ctx, mbid, next)
 			}
 			cancel()
@@ -423,8 +418,16 @@ func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
 	}()
 }
 
+// videoWontPlay says whether a music video's lookup failed for that video
+// (removed, age, blocked): it is dropped. A failure at YouTube's door
+// (a bot check, say) is no reason to drop the artist's videos.
+func videoWontPlay(err error) bool {
+	m := (*trailerMissed)(nil)
+	return err != nil && errors.As(err, &m) && m.reason.VideoReason()
+}
+
 // resolveMusicVideo resolves one YouTube video like a trailer: memory,
-// then SQLite, then one shared yt-dlp lookup in the trailer pool.
+// then SQLite, then one shared reader lookup in the trailer pool.
 func (a *API) resolveMusicVideo(ctx context.Context, key string) (TrailerStream, error) {
 	ckey := "musicvideo|" + key
 	now := time.Now()
@@ -434,7 +437,7 @@ func (a *API) resolveMusicVideo(ctx context.Context, key string) (TrailerStream,
 	}
 	if ok {
 		if !e.miss.IsZero() {
-			return TrailerStream{}, errNoStream
+			return TrailerStream{}, e.missErr()
 		}
 		return e.s, nil
 	}
@@ -443,10 +446,6 @@ func (a *API) resolveMusicVideo(ctx context.Context, key string) (TrailerStream,
 	if t.flights == nil {
 		t.flights = map[string]*trailerFlight{}
 	}
-	if t.pool == nil {
-		t.pool = make(chan struct{}, trailerPool)
-	}
-	pool := t.pool
 	f := t.flights[ckey]
 	if f == nil {
 		f = &trailerFlight{done: make(chan struct{})}
@@ -454,7 +453,7 @@ func (a *API) resolveMusicVideo(ctx context.Context, key string) (TrailerStream,
 		go func() {
 			lctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 			defer cancel()
-			f.e, f.err = a.lookupMusicVideo(lctx, pool, key, ckey)
+			f.e, f.err = a.lookupMusicVideo(lctx, key, ckey)
 			t.mu.Lock()
 			delete(t.flights, ckey)
 			t.mu.Unlock()
@@ -467,32 +466,26 @@ func (a *API) resolveMusicVideo(ctx context.Context, key string) (TrailerStream,
 		return TrailerStream{}, ctx.Err()
 	case <-f.done:
 	}
-	if f.err != nil || !f.e.miss.IsZero() {
+	if f.err != nil {
 		return TrailerStream{}, errNoStream
+	}
+	if !f.e.miss.IsZero() {
+		return TrailerStream{}, f.e.missErr()
 	}
 	return f.e.s, nil
 }
 
-func (a *API) lookupMusicVideo(ctx context.Context, pool chan struct{}, key, ckey string) (trailerEntry, error) {
-	bin, pre, found := ytdlpRun()
-	if !found {
-		return trailerEntry{}, errNoStream
-	}
-	select {
-	case pool <- struct{}{}:
-	case <-ctx.Done():
-		return trailerEntry{}, ctx.Err()
-	}
+func (a *API) lookupMusicVideo(ctx context.Context, key, ckey string) (trailerEntry, error) {
 	now := time.Now()
-	s, err := resolveTrailer(ctx, bin, pre, key, now)
-	<-pool
+	s, err := a.readTrailer(ctx, key, now, true)
 	if err != nil {
-		a.trailers.failed.Add(1)
-		e := trailerEntry{miss: now.Add(trailerMiss)}
+		if youtube.ReasonOf(err) == "" {
+			return trailerEntry{}, err
+		}
+		e := trailerEntry{miss: now.Add(trailerMiss), reason: trailerReason(err)}
 		a.trailers.put(ckey, e)
 		return e, nil
 	}
-	a.trailers.failed.Store(0)
 	e := trailerEntry{s: s}
 	a.trailers.put(ckey, e)
 	if a.s.Store != nil {

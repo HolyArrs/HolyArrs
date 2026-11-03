@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs-metadata/internal/imgstore"
+	"github.com/CoderLuii/holyarrs-metadata/internal/youtube"
 )
 
 const artist = "a74b1b7f-71a5-4011-9441-d0b5e4122711"
@@ -893,14 +894,31 @@ func TestHeatmapReadOnceAndPausedOnError(t *testing.T) {
 	if n != 1 || len(e.answer(t).Videos) != 5 {
 		t.Fatalf("heatmap tried %d times after a failure", n)
 	}
+	// A failure about one video (age-restricted) pauses nothing: the next
+	// videos are still read.
+	n = 0
+	e = newEnv(t, drake, func(o *Options) {
+		o.Heatmap = func(context.Context, string) (float64, float64, bool, error) {
+			n++
+			return 0, 0, false, &youtube.Error{Reason: youtube.AgeRestricted}
+		}
+	})
+	if err := e.s.Collect(ctx, artist); err != nil {
+		t.Fatal(err)
+	}
+	if n != 5 || e.s.looksPaused() {
+		t.Fatalf("heatmap read %d times, paused %v", n, e.s.looksPaused())
+	}
 }
 
 // The storyboard check settles an unclear video: a still leaves the list.
 func TestDeepCheckSettlesUnclear(t *testing.T) {
 	var e *env
 	e = newEnv(t, drake, func(o *Options) {
-		o.VideoJSON = func(_ context.Context, id string) ([]byte, error) {
-			return []byte(`{"formats":[{"format_id":"sb0","width":48,"columns":5,"rows":5,"fragments":[{"url":"` + e.f.srv.URL + `/sheet.jpg"}]},{"format_id":"18"}]}`), nil
+		o.Look = func(_ context.Context, id string) (youtube.Video, error) {
+			// The smallest size is read: one sheet of 5x5 tiles. Without the
+			// length no size has a step, so no start is judged.
+			return youtube.Video{ID: id, Storyboard: e.f.srv.URL + "/sheet.jpg?n=$N|48#27#25#5#5#0#default#rs$A|80#45#50#5#5#0#M$M#rs$B"}, nil
 		}
 	})
 	// One sheet of 25 identical tiles: no motion.
@@ -926,13 +944,30 @@ func TestDeepCheckSettlesUnclear(t *testing.T) {
 	if err := e.s.rebuild(ctx, artist); err != nil {
 		t.Fatal(err)
 	}
-	e.s.o.VideoJSON = func(context.Context, string) ([]byte, error) { return nil, errors.New("bot check") }
-	if err := e.s.DeepCheck(ctx, "stillVid001"); err != nil {
-		t.Fatal(err)
+	// A reason about this one video pauses nothing; one about the door
+	// (the bot check) pauses YouTube reads.
+	e.s.o.Look = func(context.Context, string) (youtube.Video, error) {
+		return youtube.Video{}, &youtube.Error{Reason: youtube.Unavailable}
+	}
+	if err := e.s.DeepCheck(ctx, "stillVid001"); err != nil || e.s.looksPaused() {
+		t.Fatalf("paused after a video reason: %v", err)
+	}
+	// A video that lists no storyboard is about that video too.
+	e.s.o.Look = func(context.Context, string) (youtube.Video, error) {
+		return youtube.Video{Duration: 200, Page: true}, nil
+	}
+	if err := e.s.DeepCheck(ctx, "stillVid001"); err != nil || e.s.looksPaused() {
+		t.Fatalf("paused after a missing storyboard: %v", err)
+	}
+	e.s.o.Look = func(context.Context, string) (youtube.Video, error) {
+		return youtube.Video{}, &youtube.Error{Reason: youtube.BotCheck}
+	}
+	if err := e.s.DeepCheck(ctx, "stillVid001"); err != nil || !e.s.looksPaused() {
+		t.Fatalf("not paused after the bot check: %v", err)
 	}
 	e.clk.add(recheckEvery)
-	// While yt-dlp is paused no check is queued.
-	e.s.pauseYTDLP()
+	// While YouTube reads are paused no check is queued.
+	e.s.pauseLooks()
 	if _, deep := e.s.Due(ctx, 10); len(deep) != 0 {
 		t.Fatalf("deep due while paused %v", deep)
 	}

@@ -20,7 +20,8 @@ import (
 
 const (
 	settingAutoplay = "autoplay_trailers"
-	// SettingYTDLPUpdate turns the weekly yt-dlp update on or off.
+	// SettingYTDLPUpdate was the weekly yt-dlp update's switch. Trailers use
+	// HolyArrs's own YouTube reader now, so it is kept but does nothing.
 	SettingYTDLPUpdate = "ytdlp_auto_update"
 	// settingCountryCount is "Count this install" (the metadata server's
 	// per-country install total).
@@ -32,8 +33,9 @@ type UISettings struct {
 	// AutoplayTrailers lets heroes and hover cards play a muted trailer by
 	// themselves (never for Kid accounts or with Reduce motion). Default on.
 	AutoplayTrailers bool `json:"autoplay_trailers"`
-	// KeepYTDLPUpdated: "Keep yt-dlp up to date", the weekly update from
-	// yt-dlp's official releases. Default on.
+	// KeepYTDLPUpdated was "Keep yt-dlp up to date". It is still accepted
+	// and answered so older pages keep working, but it is ignored: trailers
+	// use HolyArrs's own YouTube reader, which updates with HolyArrs.
 	KeepYTDLPUpdated bool `json:"keep_ytdlp_updated"`
 	// SigninLibraryArt: "Show Library art on the sign-in page" (Library
 	// titles first). Off shows trending titles only. Default off.
@@ -95,9 +97,6 @@ func (a *API) ApplyCountryCount(ctx context.Context) {
 		a.s.CountryCount(a.uiSettings(ctx).CountInstall)
 	}
 }
-
-// KeepYTDLPUpdated reads "Keep yt-dlp up to date" (for the weekly job).
-func (a *API) KeepYTDLPUpdated(ctx context.Context) bool { return a.uiSettings(ctx).KeepYTDLPUpdated }
 
 func (a *API) getUISettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, a.uiSettings(r.Context()))

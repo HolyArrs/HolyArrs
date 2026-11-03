@@ -25,7 +25,7 @@
 		busy,
 		oncheck,
 		labelOf,
-		ytdlp,
+		reader,
 		failed = [],
 		hidden = [],
 		checkRuns = 0
@@ -38,8 +38,8 @@
 		busy: (key: string) => boolean;
 		oncheck: (r: StatusRow) => void;
 		labelOf: (r: StatusRow) => string;
-		/** The trailers health check, which names yt-dlp's version (Updates tab). */
-		ytdlp: HealthCheck | undefined;
+		/** The trailers health check: the YouTube reader's state (Updates tab). */
+		reader: HealthCheck | undefined;
 		/** Which reads failed on the page's last load ('parts', 'health checks', 'jobs'...). */
 		failed?: string[];
 		/** Reads this account may not do ('outside lists', 'alerts'); their kinds are left out. */
@@ -273,7 +273,7 @@
 				<p class="none fail-line">Could not check for updates. <Button variant="plain" size="sm" onclick={loadUpdate}>Try again</Button></p>
 			</section>
 		{:else}
-			<Updates {upd} docker={about ? about.docker : null} {ytdlp} checksKnown={!failed.includes('health checks')} {canAct} onupd={(u) => (upd = u)} />
+			<Updates {upd} docker={about ? about.docker : null} {reader} checksKnown={!failed.includes('health checks')} {canAct} onupd={(u) => (upd = u)} />
 		{/if}
 	{:else}
 		<section class="st-plate" aria-labelledby="s-about">

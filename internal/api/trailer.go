@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,45 +17,31 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
-	"github.com/CoderLuii/holyarrs/internal/ytdlp"
+	"github.com/CoderLuii/holyarrs/internal/youtube"
 )
 
-// Trailers in HolyArrs' own player: the title's YouTube trailer, resolved
-// by yt-dlp to addresses on YouTube's video servers (an adaptive HLS
-// manifest and an H.264 MP4). Only the resolved addresses are kept
-// (in memory and in lookup_cache, until shortly before they expire), and
-// each title's YouTube key for 30 days. Video is never stored; it passes
-// through HolyArrs only on the pass-through relay (trailer_proxy.go).
-
-// EnvYTDLP names the yt-dlp program to use (package ytdlp has the order).
-const EnvYTDLP = ytdlp.Env
+// Trailers in HolyArrs' own player: the title's YouTube trailer, looked up
+// by HolyArrs's own reader (internal/youtube) to addresses on YouTube's
+// video servers (an adaptive HLS manifest and an H.264 MP4). Only the
+// addresses are kept (in memory and in lookup_cache, until shortly before
+// they expire), and each title's YouTube key for 30 days. Video is never
+// stored; it passes through HolyArrs only on the pass-through relay
+// (trailer_proxy.go).
 
 const (
 	trailerTimeout   = 8 * time.Second
-	trailerPerMinute = 12               // resolves a person may start in a minute (cached answers are free)
-	trailerKeep      = 4 * time.Hour    // when the address names no expiry
-	trailerEarly     = 10 * time.Minute // dropped this long before it expires
-	trailerMiss      = 10 * time.Minute // a title with no direct stream is not tried again before this
-	trailerPool      = 4                // yt-dlp lookups at once
-	trailerAhead     = 40               // ahead-of-time lookups per 10 minutes for the whole install
+	trailerPerMinute = 12                 // resolves a person may start in a minute (cached answers are free)
+	trailerKeep      = 4 * time.Hour      // when the address names no expiry
+	trailerEarly     = 10 * time.Minute   // dropped this long before it expires
+	trailerMiss      = 10 * time.Minute   // a title with no direct stream is not tried again before this
+	trailerPool      = 4                  // reader lookups at once
+	trailerAhead     = 40                 // ahead-of-time lookups per 10 minutes for the whole install
+	trailerBadKeep   = 7 * 24 * time.Hour // a video YouTube will not play here is not tried again before this
+	trailerMore      = 4                  // other trailers of the title tried in one lookup (5 in all)
 )
 
-// trailerArgs ask yt-dlp for the formats only: one player API call (the
-// visionos client gives the HLS manifest and H.264 MP4s without a PO token
-// or a JavaScript runtime; the muxed format 18 from mweb or android_vr
-// answered 403 without a PO token, measured 2026-10-19), no player config
-// page, no format probing, no cache writes.
-var trailerArgs = []string{"-J", "--no-playlist", "--no-warnings", "--no-cache-dir", "--no-check-formats", "--skip-download", "--ignore-no-formats-error",
-	"--extractor-args", "youtube:player_client=visionos;player_skip=configs"}
-
-// YTDLPTool finds yt-dlp; main gives it the bundled and updated copies.
-var YTDLPTool = &ytdlp.Tool{}
-
-// ytdlpRun is how yt-dlp is started; tests swap it for a fake.
-var ytdlpRun = func() (bin string, pre []string, ok bool) {
-	p := YTDLPTool.Find()
-	return p, nil, p != ""
-}
+// trailerReader looks videos up on YouTube; tests point it at a fake.
+var trailerReader = &youtube.Reader{}
 
 // TrailerStream is the answer of GET /trailer/{kind}/{tmdb_id}.
 type TrailerStream struct {
@@ -81,7 +68,7 @@ type TrailerStream struct {
 	// playback is refused. Given per person; never stored.
 	ProxyURL string `json:"proxy_url,omitempty"`
 	// Duration is the video's length and Peak its most replayed point
-	// (YouTube's heatmap), in seconds; 0 when yt-dlp gave none.
+	// ("most replayed", the opening skipped), in seconds; 0 when unknown.
 	Duration float64 `json:"duration,omitempty"`
 	Peak     float64 `json:"peak,omitempty"`
 }
@@ -89,7 +76,22 @@ type TrailerStream struct {
 type trailerEntry struct {
 	s    TrailerStream
 	miss time.Time // set: no direct stream, until this time
+	// reason is why a miss has no stream (the reader's reason) and key a
+	// video the YouTube player may still play ("" when none).
+	reason youtube.Reason
+	key    string
 }
+
+// trailerMissed is a miss as an error: it is errNoStream, and says why.
+type trailerMissed struct {
+	reason youtube.Reason
+	key    string
+}
+
+func (e *trailerMissed) Error() string        { return "no direct stream" }
+func (e *trailerMissed) Is(target error) bool { return target == errNoStream }
+
+func (e trailerEntry) missErr() error { return &trailerMissed{reason: e.reason, key: e.key} }
 
 type trailerFlight struct {
 	done chan struct{}
@@ -104,8 +106,46 @@ type trailerState struct {
 	flights map[string]*trailerFlight
 	ahead   []time.Time
 	pool    chan struct{}
-	// failed counts yt-dlp lookups that failed in a row (a success resets).
+	// failed counts lookups that failed in a row at YouTube's door (a
+	// success resets; a video YouTube will not play here does not count).
 	failed atomic.Int32
+	// lastGood is the last lookup that found addresses and lastReason the
+	// last door failure's reason, for the health check.
+	lastGood   time.Time
+	lastReason youtube.Reason
+	// bad keeps videos YouTube will not play here (by key) until a time.
+	bad map[string]trailerBadEntry
+}
+
+// lookupPool is the shared pool of reader lookups.
+func (t *trailerState) lookupPool() chan struct{} {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.pool == nil {
+		t.pool = make(chan struct{}, trailerPool)
+	}
+	return t.pool
+}
+
+// note counts a lookup's outcome for the health check: a success resets
+// the failures in a row, a door failure adds one, and a video reason
+// (about that one video) leaves them as they are.
+func (t *trailerState) note(err error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	r := trailerReason(err)
+	switch {
+	case err == nil:
+		t.failed.Store(0)
+		t.lastGood = time.Now()
+	case r.VideoReason():
+	default:
+		if r == "" {
+			r = youtube.Network
+		}
+		t.failed.Add(1)
+		t.lastReason = r
+	}
 }
 
 func (t *trailerState) get(key string, now time.Time) (trailerEntry, bool) {
@@ -173,11 +213,19 @@ func (t *trailerState) allowAhead(now time.Time) bool {
 	return true
 }
 
-// TrailerFailures reports yt-dlp lookups that failed in a row, and whether
-// there is a yt-dlp at all (for the health check).
-func (a *API) TrailerFailures() (int, bool) {
-	_, _, ok := ytdlpRun()
-	return int(a.trailers.failed.Load()), ok
+// TrailerReaderState is the YouTube reader's state for the health check.
+type TrailerReaderState struct {
+	Failed     int            // lookups that failed in a row at YouTube's door
+	LastGood   time.Time      // the last lookup that found addresses (zero: none yet)
+	LastReason youtube.Reason // the last door failure's reason ("" when none)
+}
+
+// TrailerReader reports the reader's state (for the health check).
+func (a *API) TrailerReader() TrailerReaderState {
+	t := &a.trailers
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return TrailerReaderState{Failed: int(t.failed.Load()), LastGood: t.lastGood, LastReason: t.lastReason}
 }
 
 var trailerLangRe = regexp.MustCompile(`^[a-z]{2}(-[A-Z]{2})?$`)
@@ -235,18 +283,14 @@ func (a *API) trailerStream(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	ckey := kind + "|" + id + "|" + lang
 	if _, ok := a.trailers.get(ckey, now); !ok && !a.trailerStored(r.Context(), ckey, now) && !a.trailers.inFlight(ckey) {
-		if _, _, found := ytdlpRun(); !found {
-			fail(w, http.StatusNotFound, "no direct stream")
-			return
-		}
 		if !a.trailers.allow(a.person(r).UserID, now) {
 			w.Header().Set("Retry-After", "60")
 			fail(w, http.StatusTooManyRequests, "too many trailers; try again in a minute")
 			return
 		}
 	}
-	// yt-dlp never runs while the visitor waits: the lookup carries on in
-	// the background (and is kept), and the page gets "none yet" at once.
+	// The visitor never waits on a lookup: it carries on in the background
+	// (and is kept), and the page gets "none yet" at once.
 	wctx, cancel := context.WithTimeout(r.Context(), trailerWait)
 	defer cancel()
 	s, err := a.resolveTitle(wctx, kind, id, lang)
@@ -258,7 +302,13 @@ func (a *API) trailerStream(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, errNoTrailer):
 		fail(w, http.StatusNotFound, "no trailer")
 	case errors.Is(err, errNoStream):
-		fail(w, http.StatusNotFound, "no direct stream")
+		// A miss says why (the reader's reason) and which video the YouTube
+		// player may still play ("" when every one tried will not play).
+		body := map[string]string{"error": "no direct stream"}
+		if m := (*trailerMissed)(nil); errors.As(err, &m) && m.reason != "" {
+			body["reason"], body["key"] = string(m.reason), m.key
+		}
+		writeJSON(w, http.StatusNotFound, body)
 	case err != nil:
 		discoverFail(w, err)
 	default:
@@ -311,7 +361,7 @@ func (a *API) resolveTitle(ctx context.Context, kind, id, lang string) (TrailerS
 	}
 	if ok {
 		if !e.miss.IsZero() {
-			return TrailerStream{}, errNoStream
+			return TrailerStream{}, e.missErr()
 		}
 		return e.s, nil
 	}
@@ -346,7 +396,7 @@ func (a *API) resolveTitle(ctx context.Context, kind, id, lang string) (TrailerS
 		return TrailerStream{}, f.err
 	}
 	if !f.e.miss.IsZero() {
-		return TrailerStream{}, errNoStream
+		return TrailerStream{}, f.e.missErr()
 	}
 	return f.e.s, nil
 }
@@ -477,39 +527,164 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 	if err != nil {
 		return trailerEntry{}, err
 	}
-	bin, pre, found := ytdlpRun()
-	if !found {
-		return trailerEntry{}, errNoStream
+	// The picked key first, unless YouTube would not play it here lately;
+	// when a video will not play (age, removed, blocked), the title's next
+	// trailers are tried, at most trailerMore of them.
+	miss := trailerEntry{miss: now.Add(trailerMiss)}
+	var cands []string
+	if why, bad := a.trailerBad(ctx, key, now); bad {
+		miss.reason = why
+	} else {
+		cands = append(cands, key)
 	}
-	t := &a.trailers
-	t.mu.Lock()
-	if t.pool == nil {
-		t.pool = make(chan struct{}, trailerPool)
+	listed, more := false, 0
+	for i := 0; ; i++ {
+		if i >= len(cands) && !listed {
+			listed = true
+			cands = append(cands, a.moreTrailerKeys(ctx, kind, id, lang, key, now)...)
+		}
+		if i >= len(cands) {
+			break
+		}
+		k := cands[i]
+		if k != key {
+			if more == trailerMore {
+				// Nothing played: this untried one may still play in YouTube's player.
+				miss.key = k
+				break
+			}
+			more++
+		}
+		s, err := a.readTrailer(ctx, k, now, false)
+		if err == nil {
+			// A next trailer that plays is not kept as the title's key: the
+			// picked one is asked again once its bad mark is over.
+			e := trailerEntry{s: s}
+			a.trailers.put(ckey, e)
+			if a.s.Store != nil {
+				if b, err := json.Marshal(s); err == nil {
+					_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
+				}
+			}
+			return e, nil
+		}
+		if ctx.Err() != nil && youtube.ReasonOf(err) == "" {
+			return trailerEntry{}, ctx.Err()
+		}
+		miss.reason = trailerReason(err)
+		if !miss.reason.VideoReason() {
+			// YouTube's door failed: another trailer would fail the same
+			// way, and YouTube's player may still play this one.
+			miss.key = k
+			break
+		}
+		// Unplayable may not last (a premiere not on yet, say): only the
+		// normal miss, so it is asked again after trailerMiss.
+		if miss.reason != youtube.Unplayable {
+			a.markTrailerBad(ctx, k, miss.reason, now)
+		}
 	}
-	pool := t.pool
-	t.mu.Unlock()
+	a.trailers.put(ckey, miss)
+	return miss, nil
+}
+
+// trailerReason is the reader's reason for err, except that YouTube's
+// "try again later" (it refuses this server for a while, often an hour)
+// is its door refusing, not the video.
+func trailerReason(err error) youtube.Reason {
+	r := youtube.ReasonOf(err)
+	var e *youtube.Error
+	if r.VideoReason() && errors.As(err, &e) && strings.Contains(strings.ToLower(e.Detail), "try again later") {
+		return youtube.Refused
+	}
+	return r
+}
+
+// readTrailer looks one video up in the shared pool and counts the outcome
+// for the health check. withPeak also reads the "most replayed" point (the
+// watch page, about a second); a trailer needs only the addresses.
+func (a *API) readTrailer(ctx context.Context, key string, now time.Time, withPeak bool) (TrailerStream, error) {
+	pool := a.trailers.lookupPool()
 	select {
 	case pool <- struct{}{}:
 	case <-ctx.Done():
-		return trailerEntry{}, ctx.Err()
+		return TrailerStream{}, ctx.Err()
 	}
-	s, err := resolveTrailer(ctx, bin, pre, key, now)
+	s, err := resolveTrailer(ctx, key, now, withPeak)
 	<-pool
-	if err != nil {
-		t.failed.Add(1)
-		e := trailerEntry{miss: now.Add(trailerMiss)}
-		a.trailers.put(ckey, e)
-		return e, nil
+	a.trailers.note(err)
+	return s, err
+}
+
+// trailerBadEntry is a video YouTube will not play here, until a time.
+type trailerBadEntry struct {
+	until  time.Time
+	reason youtube.Reason
+}
+
+// trailerBad says whether YouTube would not play the video here lately,
+// and why (memory, then lookup_cache).
+func (a *API) trailerBad(ctx context.Context, key string, now time.Time) (youtube.Reason, bool) {
+	t := &a.trailers
+	t.mu.Lock()
+	e, ok := t.bad[key]
+	t.mu.Unlock()
+	if ok && now.Before(e.until) {
+		return e.reason, true
 	}
-	t.failed.Store(0)
-	e := trailerEntry{s: s}
-	a.trailers.put(ckey, e)
+	if a.s.Store == nil || a.s.Store.Read() == nil {
+		return "", false
+	}
+	b, found, err := store.LookupCache{Store: a.s.Store}.Get(ctx, "trailerbad|"+key, now)
+	if err != nil || !found {
+		return "", false
+	}
+	return youtube.Reason(b), true
+}
+
+// markTrailerBad keeps that YouTube will not play the video here (the
+// reason is the row's body) for trailerBadKeep.
+func (a *API) markTrailerBad(ctx context.Context, key string, reason youtube.Reason, now time.Time) {
+	t := &a.trailers
+	t.mu.Lock()
+	if t.bad == nil || len(t.bad) > 5000 {
+		t.bad = map[string]trailerBadEntry{}
+	}
+	t.bad[key] = trailerBadEntry{until: now.Add(trailerBadKeep), reason: reason}
+	t.mu.Unlock()
 	if a.s.Store != nil {
-		if b, err := json.Marshal(s); err == nil {
-			_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
+		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailerbad|"+key, []byte(reason), now, now.Add(trailerBadKeep))
+	}
+}
+
+// moreTrailerKeys are the title's other trailers from TMDB's videos, in
+// PickTrailer's order, without first or ones marked bad: up to trailerMore
+// to try and one more for YouTube's player.
+func (a *API) moreTrailerKeys(ctx context.Context, kind, id, lang, first string, now time.Time) []string {
+	d, ok := metadata.DiscovererFor(ctx, a.s.Metadata)
+	if !ok {
+		return nil
+	}
+	det, err := a.trailerDetails(ctx, d, kind, id)
+	if err != nil {
+		return nil
+	}
+	var left []metadata.DetailVideo
+	for _, v := range det.Videos {
+		if _, bad := a.trailerBad(ctx, v.Key, now); v.Key != first && !bad {
+			left = append(left, v)
 		}
 	}
-	return e, nil
+	var out []string
+	for len(out) <= trailerMore {
+		v, ok := metadata.PickTrailer(left, lang)
+		if !ok {
+			break
+		}
+		out = append(out, v.Key)
+		left = slices.DeleteFunc(left, func(x metadata.DetailVideo) bool { return x.Key == v.Key })
+	}
+	return out
 }
 
 // prefetchTrailers looks trailers up ahead of time (Explore's hero and the
@@ -518,9 +693,6 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 // already known cost nothing.
 func (a *API) prefetchTrailers(r *http.Request, titles [][2]string) {
 	if len(titles) == 0 || a.kidMax(r) != "" || !a.uiSettings(r.Context()).AutoplayTrailers {
-		return
-	}
-	if _, _, ok := ytdlpRun(); !ok {
 		return
 	}
 	lang := trailerLanguage(r)
@@ -591,72 +763,52 @@ func trailerExpiry(raw string, now time.Time) time.Time {
 	return exp
 }
 
-// resolveTrailer runs yt-dlp (at most trailerTimeout) for one YouTube key
-// and returns the HLS manifest (with an MP4 beside it) or, without one,
-// the MP4.
-func resolveTrailer(ctx context.Context, bin string, pre []string, key string, now time.Time) (TrailerStream, error) {
+// resolveTrailer looks one YouTube key up with the reader (at most
+// trailerTimeout) and returns the HLS manifest (with an MP4 beside it) or,
+// without one, the MP4. A failure is the reader's *youtube.Error.
+func resolveTrailer(ctx context.Context, key string, now time.Time, withPeak bool) (TrailerStream, error) {
 	ctx, cancel := context.WithTimeout(ctx, trailerTimeout)
 	defer cancel()
-	args := append(append(append([]string{}, pre...), trailerArgs...), "--", "https://www.youtube.com/watch?v="+key)
-	out, err := ytdlp.Run(ctx, bin, trailerTimeout, args...)
+	look := trailerReader.Addresses
+	if withPeak {
+		look = trailerReader.Look
+	}
+	v, err := look(ctx, key)
 	if err != nil {
-		return TrailerStream{}, errNoStream
+		return TrailerStream{}, err
 	}
-	var j struct {
-		Duration float64 `json:"duration"`
-		Heatmap  []struct {
-			Start float64 `json:"start_time"`
-			End   float64 `json:"end_time"`
-			Value float64 `json:"value"`
-		} `json:"heatmap"`
-		Formats []struct {
-			FormatID    string `json:"format_id"`
-			URL         string `json:"url"`
-			ManifestURL string `json:"manifest_url"`
-			Ext         string `json:"ext"`
-			VCodec      string `json:"vcodec"`
-			ACodec      string `json:"acodec"`
-			Width       int    `json:"width"`
-			Height      int    `json:"height"`
-			Protocol    string `json:"protocol"`
-		} `json:"formats"`
+	hls := ""
+	if strings.Contains(v.HLS, "/hls_variant/") && googlevideo(v.HLS) {
+		hls = v.HLS
 	}
-	if json.Unmarshal(out, &j) != nil {
-		return TrailerStream{}, errNoStream
-	}
-	var hls, mp4 string
+	var mp4 string
 	var w, h, rank int
 	audio := false
-	for _, f := range j.Formats {
-		if hls == "" && strings.Contains(f.ManifestURL, "/hls_variant/") && googlevideo(f.ManifestURL) {
-			hls = f.ManifestURL
-		}
-		if f.Ext != "mp4" || !strings.HasPrefix(f.VCodec, "avc1") || (f.Protocol != "" && f.Protocol != "https") || f.Height > 1080 || !googlevideo(f.URL) {
+	for _, f := range v.Formats {
+		if !f.AVC || f.Height > 1080 || !googlevideo(f.URL) {
 			continue
 		}
 		// The muxed MP4 (sound) first, else the tallest picture-only one.
 		// Up to 1080p with sound (rare on YouTube; HLS is the usual 1080p
 		// path), picture-only stays at 720p.
-		withSound := f.ACodec != "" && f.ACodec != "none"
-		if !withSound && f.Height > 720 {
+		if !f.Audio && f.Height > 720 {
 			continue
 		}
 		r := f.Height
-		if withSound {
+		if f.Audio {
 			r += 10000
 		}
 		if r > rank {
-			mp4, w, h, rank, audio = f.URL, f.Width, f.Height, r, withSound
+			mp4, w, h, rank, audio = f.URL, f.Width, f.Height, r, f.Audio
 		}
 	}
-	// The most replayed point: the start of the heatmap's highest part.
-	var peak, best float64
-	for _, m := range j.Heatmap {
-		if m.Value > best && m.Start >= 0 && (j.Duration <= 0 || m.Start < j.Duration) {
-			peak, best = m.Start, m.Value
-		}
+	dur := max(v.Duration, 0)
+	// The most replayed point (the reader skips the opening, which every
+	// play starts on).
+	peak := 0.0
+	if v.PeakFound && v.Peak >= 0 && (dur <= 0 || v.Peak < dur) {
+		peak = v.Peak
 	}
-	dur := max(j.Duration, 0)
 	switch {
 	case hls != "":
 		s := TrailerStream{Type: "hls", URL: hls, ExpiresAt: trailerExpiry(hls, now), MP4URL: mp4, MP4Audio: audio, Width: w, Height: h, Key: key, Audio: true, Duration: dur, Peak: peak}
@@ -669,5 +821,5 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 	case mp4 != "":
 		return TrailerStream{Type: "mp4", URL: mp4, ExpiresAt: trailerExpiry(mp4, now), Width: w, Height: h, Key: key, Audio: audio, Duration: dur, Peak: peak}, nil
 	}
-	return TrailerStream{}, errNoStream
+	return TrailerStream{}, &youtube.Error{Reason: youtube.NoAddress, Detail: "no H.264 or HLS address on YouTube's video servers"}
 }

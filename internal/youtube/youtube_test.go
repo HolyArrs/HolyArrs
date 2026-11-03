@@ -259,3 +259,70 @@ func TestPeak(t *testing.T) {
 		t.Fatalf("peak %v", p)
 	}
 }
+
+// Addresses skips the watch page while a visitor id is kept, reads it when
+// none is, and reads it after all for a fresh id when YouTube refuses one.
+func TestAddressesSkipsThePage(t *testing.T) {
+	f := &fakeYouTube{play: func(v string) (int, string) {
+		if v != "VISITOR-NEW" {
+			return status("LOGIN_REQUIRED", "Sign in to confirm you're not a bot")(v)
+		}
+		return okPlayer(v)
+	}}
+	r := f.serve(t)
+	// No visitor yet: the page is needed for one.
+	v, err := r.Addresses(context.Background(), vid)
+	if err != nil || v.HLS == "" || len(f.pages) != 1 || !v.Page {
+		t.Fatalf("first %v pages %d page %v", err, len(f.pages), v.Page)
+	}
+	// Kept: the player call alone, so no peak and no page.
+	v, err = r.Addresses(context.Background(), vid)
+	if err != nil || v.HLS == "" || len(f.pages) != 1 || v.Page || v.PeakFound || len(f.players) != 2 {
+		t.Fatalf("second %v pages %d players %d %+v", err, len(f.pages), len(f.players), v)
+	}
+	// A refused id: the page after all, then the player call once more.
+	r.keepVisitor("VISITOR-OLD")
+	if v, err = r.Addresses(context.Background(), vid); err != nil || v.HLS == "" || len(f.pages) != 2 || len(f.players) != 4 {
+		t.Fatalf("renewal %v pages %d players %d", err, len(f.pages), len(f.players))
+	}
+}
+
+func TestLookSaysWhetherThePageWasRead(t *testing.T) {
+	f := &fakeYouTube{play: okPlayer}
+	if v, err := f.serve(t).Look(context.Background(), vid); err != nil || !v.Page {
+		t.Fatalf("page read: %v %v", v.Page, err)
+	}
+	f = &fakeYouTube{play: okPlayer, page: func() (int, string) { return 503, "" }}
+	if v, err := f.serve(t).Look(context.Background(), vid); err != nil || v.Page {
+		t.Fatalf("failed page: %v %v", v.Page, err)
+	}
+}
+
+// "Try again later" is YouTube holding the door back, not the video.
+func TestTryAgainLaterIsNotTheVideo(t *testing.T) {
+	f := &fakeYouTube{play: status("ERROR", "This content isn't available, try again later.")}
+	_, err := f.serve(t).Look(context.Background(), vid)
+	if ReasonOf(err) != Refused || Refused.VideoReason() {
+		t.Fatal(err)
+	}
+}
+
+// A peak in the last 10% (the closing card) leaves nothing to watch.
+func TestPeakSkipsTheEnd(t *testing.T) {
+	var m []Mark
+	for i := 0; i < 100; i++ {
+		v := 0.1
+		switch i {
+		case 0:
+			v = 1
+		case 30:
+			v = 0.5
+		case 95:
+			v = 0.9
+		}
+		m = append(m, Mark{float64(i), v})
+	}
+	if p, _ := Peak(m); p != 30 {
+		t.Fatalf("peak %v", p)
+	}
+}

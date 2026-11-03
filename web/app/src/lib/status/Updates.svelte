@@ -1,7 +1,7 @@
 <script lang="ts">
 	// The Updates tab: where this HolyArrs stands against the newest release,
 	// what is new since it, how an update is done (HolyArrs never updates
-	// itself), the bundled tools that do update themselves, and every release.
+	// itself), the built-in trailer reader's state, and every release.
 	import { page } from '$app/state';
 	import { api, message } from '../api.ts';
 	import { ago, dateTime } from '../format.ts';
@@ -16,7 +16,7 @@
 	let {
 		upd: real,
 		docker,
-		ytdlp,
+		reader,
 		checksKnown = true,
 		canAct,
 		onupd
@@ -24,9 +24,9 @@
 		upd: Update | null;
 		/** Whether this HolyArrs runs in Docker (null until About answers). */
 		docker: boolean | null;
-		/** The trailers health check, which names yt-dlp's version. */
-		ytdlp: HealthCheck | undefined;
-		/** False when the health checks call failed: a missing yt-dlp check then means unknown, not absent. */
+		/** The trailers health check: the trailer reader's last good lookup and any failures. */
+		reader: HealthCheck | undefined;
+		/** False when the health checks call failed: a missing reader check then means unknown, not absent. */
 		checksKnown?: boolean;
 		canAct: boolean;
 		onupd: (u: Update) => void;
@@ -66,8 +66,12 @@
 	const notes = $derived((upd?.newer && upd.notes ? upd.notes : '').split('\n').filter(Boolean));
 	const link = $derived(releaseLink(upd?.link));
 
-	const ytVersion = $derived(ytdlp?.subject?.replace(/^yt-dlp\s*/, '') ?? '');
-	const ytTone = $derived(!ytdlp ? 'none' : ytdlp.state === 'ok' ? 'ok' : ytdlp.state === 'warning' ? 'wait' : 'fail');
+	// The subject is "Trailer reader" plus ", last good lookup <when>" once one worked.
+	const readerSays = $derived.by(() => {
+		const rest = (reader?.subject ?? '').replace(/^Trailer reader,?\s*/, '');
+		return rest ? rest[0].toUpperCase() + rest.slice(1) : 'No good lookup yet';
+	});
+	const readerTone = $derived(!reader ? 'none' : reader.state === 'ok' ? (reader.message ? 'wait' : 'ok') : reader.state === 'warning' ? 'wait' : 'fail');
 </script>
 
 <section class="st-plate band" data-standing={standing} aria-label="Your version" data-testid="status-updates">
@@ -119,23 +123,23 @@
 	</section>
 
 	<section class="st-plate" aria-labelledby="s-tools">
-		<h2 id="s-tools">Bundled tools</h2>
-		<p class="lead">Small programs that ship inside HolyArrs and keep themselves current.</p>
+		<h2 id="s-tools">Built-in tools</h2>
+		<p class="lead">Parts of HolyArrs that reach outside services. Their fixes come with HolyArrs updates.</p>
 		<ul class="tools">
-			<li>
-				<span class="tn">yt-dlp</span>
+			<li data-testid="status-youtube-reader">
+				<span class="tn">Trailer reader</span>
 				<span class="tv">
-					{#if ytdlp}
-						<i class="st-dot {ytTone}" aria-hidden="true"></i>{ytVersion || 'version unknown'}
-						{#if ytdlp.checked_at}<small>· checked <time datetime={ytdlp.checked_at} title={dateTime(ytdlp.checked_at)}>{ago(ytdlp.checked_at)}</time></small>{/if}
+					{#if reader}
+						<i class="st-dot {readerTone}" aria-hidden="true"></i>{readerSays}
+						{#if reader.checked_at}<small>· checked <time datetime={reader.checked_at} title={dateTime(reader.checked_at)}>{ago(reader.checked_at)}</time></small>{/if}
 					{:else if !checksKnown}
-						<i class="st-dot none" aria-hidden="true"></i>Version not known right now
+						<i class="st-dot none" aria-hidden="true"></i>State not known right now
 					{:else}
-						<i class="st-dot none" aria-hidden="true"></i>Not bundled in this build
+						<i class="st-dot none" aria-hidden="true"></i>Not checked yet
 					{/if}
 				</span>
-				<span class="td">Finds trailers. Once a week HolyArrs fetches its newest official release, checks it and keeps the previous copy if the new one does not work.{#if canAct} <a class="lnk" href={to('/settings/this-app')}>Setting</a>{/if}</span>
-				{#if ytdlp && ytdlp.state !== 'ok' && ytdlp.message}<span class="why">{ytdlp.message}</span>{/if}
+				<span class="td">Finds trailers and music videos on YouTube. Nothing is downloaded and nobody signs in.{#if canAct} <a class="lnk" href={to('/settings/this-app')}>Setting</a>{/if}</span>
+				{#if reader?.message}<span class="why">{reader.message}</span>{/if}
 			</li>
 		</ul>
 	</section>

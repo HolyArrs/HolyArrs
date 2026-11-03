@@ -45,7 +45,7 @@ in square brackets.
 | Parts and controls | `/settings/parts` | [Parts, safe mode, controls and API keys](parts-and-safe-mode.md). |
 | Sign-in | `/settings/sign-in` | [Sign-in and passwords](sign-in.md), [signed-in devices](sessions.md), and safe sign-in behavior in [Parts and safe mode](parts-and-safe-mode.md). |
 | Sources | `/settings/sources`, `/settings/sources/[id]` | [Sources, and Jackett or Prowlarr as a bridge](sources-bridge.md). |
-| This app | `/settings/this-app` | [Autoplay trailers and Keep yt-dlp up to date](trailers.md#settings), [Logs and storage](logs.md), [updates](updates.md), [health](alerts-and-health.md#health-checks), and [URL base](url-base.md). |
+| This app | `/settings/this-app` | [Autoplay trailers](trailers.md#settings), [Logs and storage](logs.md), [updates](updates.md), [health](alerts-and-health.md#health-checks), and [URL base](url-base.md). |
 | Logs | `/settings/logs` | [Logs and storage](logs.md). |
 | Schedules | `/settings/schedules` | [Schedules](schedules.md). |
 | API for other apps | `/settings/api` | [The API for other apps](api.md) and [API keys and scopes](parts-and-safe-mode.md#api-keys-and-scopes). |

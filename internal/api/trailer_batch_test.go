@@ -8,7 +8,7 @@ import (
 
 // route: GET /api/v1/trailer/batch
 func TestTrailerBatch(t *testing.T) {
-	runs := fakeYTDLP(t, "ok")
+	yt := fakeReader(t, "ok")
 	srv, _ := discoverRig(t, trailerTMDB(t))
 	var b trailerBatchView
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/batch?ids=movie:11,movie:11", "", 200), &b); err != nil {
@@ -31,10 +31,10 @@ func TestTrailerBatch(t *testing.T) {
 		t.Fatalf("batch %+v", b)
 	}
 	// The single route now answers from the cache.
-	before := runs.Load()
+	before := yt.runs.Load()
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200)
-	if runs.Load() != before {
-		t.Fatalf("yt-dlp ran again")
+	if yt.runs.Load() != before {
+		t.Fatalf("looked up again")
 	}
 	do(t, "GET", srv.URL+"/api/v1/trailer/batch", "", 400)
 	do(t, "GET", srv.URL+"/api/v1/trailer/batch?ids=artist:1", "", 400)

@@ -3,7 +3,6 @@ package herovideo
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -257,52 +256,26 @@ func (s *Service) sheetURL(raw string) bool {
 	return h == "ytimg.com" || strings.HasSuffix(h, ".ytimg.com")
 }
 
-// storyboard runs the full check on a video: yt-dlp lists its storyboard
-// (the smallest "sb" format); up to maxSheets sheets are read and the
-// share of moving tiles decides.
+// storyboard runs the full check on a video: the reader gives its
+// storyboard spec, the smallest size is used, up to maxSheets sheets are
+// read and the share of moving tiles decides.
 func (s *Service) storyboard(ctx context.Context, id string) (string, error) {
-	raw, err := s.o.VideoJSON(ctx, id)
+	v, err := s.o.Look(ctx, id)
 	if err != nil {
 		return "", err
 	}
-	var d struct {
-		Formats []struct {
-			ID        string `json:"format_id"`
-			Width     int    `json:"width"`
-			Columns   int    `json:"columns"`
-			Rows      int    `json:"rows"`
-			Fragments []struct {
-				URL string `json:"url"`
-			} `json:"fragments"`
-		} `json:"formats"`
-	}
-	if err := json.Unmarshal(raw, &d); err != nil {
-		return "", err
-	}
-	best, bestW := -1, 0
-	for i, f := range d.Formats {
-		if !strings.HasPrefix(f.ID, "sb") || len(f.Fragments) == 0 {
-			continue
-		}
-		w := f.Width
-		if w == 0 {
-			w = 999
-		}
-		if best < 0 || w < bestW {
-			best, bestW = i, w
+	formats := storyboards(v.Storyboard, v.Duration)
+	best := -1
+	for i, f := range formats {
+		if len(f.Fragments) > 0 && (best < 0 || f.Width < formats[best].Width) {
+			best = i
 		}
 	}
 	if best < 0 {
-		return "", errors.New("herovideo: no storyboard")
+		return "", errNoBoard
 	}
-	f := d.Formats[best]
-	cols, rows := f.Columns, f.Rows
-	if cols <= 0 {
-		cols = 5
-	}
-	if rows <= 0 {
-		rows = 5
-	}
+	f := formats[best]
+	cols, rows := f.grid()
 	var sheets []image.Image
 	for i, frag := range f.Fragments {
 		if i >= maxSheets {

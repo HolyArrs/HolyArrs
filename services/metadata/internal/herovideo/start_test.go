@@ -9,6 +9,8 @@ import (
 	"image/png"
 	"math"
 	"testing"
+
+	"github.com/CoderLuii/holyarrs-metadata/internal/youtube"
 )
 
 // Synthetic storyboards: one tile every 2 s, each kind drawn at 32x18.
@@ -210,8 +212,15 @@ func TestPickStartLALISA(t *testing.T) {
 }
 
 // Through the service: the start is judged on the storyboard of the same
-// yt-dlp read, stored with its reason, and a start stored before the
+// reader lookup, stored with its reason, and a start stored before the
 // judgement is judged once by the background pass.
+// board is a 200 s video whose most replayed part starts at 100 s, with
+// one storyboard sheet of 10x10 tiles of 48x27, 2 s apart.
+func board(e *env) youtube.Video {
+	return youtube.Video{ID: "ownVideo001", Duration: 200, Peak: 100, PeakFound: true,
+		Storyboard: e.f.srv.URL + "/sheet.jpg?n=$N|48#27#100#10#10#2000#M$M#rs$B"}
+}
+
 func TestStartJudgedOnStoryboard(t *testing.T) {
 	// 100 tiles 2 s apart: still from 80 s to 120 s, the peak at 100 s.
 	var gs []grey
@@ -230,10 +239,9 @@ func TestStartJudgedOnStoryboard(t *testing.T) {
 			t.Error("heatmap read apart from the storyboard")
 			return 0, 0, false, nil
 		}
-		o.VideoJSON = func(_ context.Context, id string) ([]byte, error) {
+		o.Look = func(_ context.Context, id string) (youtube.Video, error) {
 			reads++
-			return []byte(`{"duration":200,"heatmap":[{"start_time":20,"value":0.4},{"start_time":100,"value":1}],
-"formats":[{"format_id":"sb3","width":48,"height":27,"columns":10,"rows":10,"fps":0.5,"fragments":[{"url":"` + e.f.srv.URL + `/sheet.jpg","duration":200}]},{"format_id":"18"}]}`), nil
+			return board(e), nil
 		}
 	})
 	e.f.sheets = sheetPNG(gs, 10, 10, 48, 27)
@@ -281,10 +289,6 @@ func TestStartJudgedOnStoryboard(t *testing.T) {
 	// A sheet that fails keeps the peak, judged again a day later.
 	_, _ = e.s.db.Exec(`UPDATE verdicts SET motion=NULL, why='' WHERE video=?`, first.YouTubeID)
 	e.f.sheets = nil
-	e.s.o.VideoJSON = func(context.Context, string) ([]byte, error) {
-		return []byte(`{"duration":200,"heatmap":[{"start_time":100,"value":1}],
-"formats":[{"format_id":"sb3","width":48,"height":27,"columns":10,"rows":10,"fps":0.5,"fragments":[{"url":"` + e.f.srv.URL + `/sheet.jpg","duration":200}]}]}`), nil
-	}
 	if err := e.s.DeepCheck(ctx, first.YouTubeID); err != nil {
 		t.Fatal(err)
 	}

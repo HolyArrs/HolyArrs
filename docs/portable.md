@@ -29,13 +29,8 @@ python scripts/fetch-ytdlp.py /srv/holyarrs-candidates/ytdlp
 python scripts/package.py ... --ytdlp-dir /srv/holyarrs-candidates/ytdlp
 ```
 
-HolyArrs looks for yt-dlp in this order: `HOLYARRS_YTDLP`, the updated copy
-in `<config>/bin` (only written by a checked update), the copy next to the
-program, then `PATH`. While "Keep
-yt-dlp up to date" is on (Settings, This app; default on), a weekly job
-fetches the newest official release, checks its SHA-256 against the
-release's `SHA2-256SUMS`, swaps it into `<config>/bin` and keeps the
-previous copy if the new one fails a test lookup.
+HolyArrs itself no longer runs that program: trailers use its own built-in
+trailer reader, and nothing is updated separately.
 
 Use a new output directory outside the checkout. An existing output is
 refused. The command exports the committed source, including `web/dist`,
