@@ -813,6 +813,22 @@ func TestOldAppSeerrFlow(t *testing.T) {
 
 // Under a URL base the status answer's urlBase, which Seerr keeps as its
 // base path, and the Location of an add both carry it once.
+// Seerr's "open in" link for admins lands on the HolyArrs title page.
+func TestOldAppOpenLink(t *testing.T) {
+	f := newOldAppFix(t, "/holyarrs")
+	f.turnOn()
+	noFollow := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	for path, want := range map[string]int{"/sonarr/series/12": 302, "/radarr/movie/7": 302, "/sonarr/series/arcane": 401, "/radarr/api/v3/movie/7": 401} {
+		st, hd, _ := f.call(noFollow, "", "GET", path, "")
+		if st != want {
+			t.Fatalf("%s: %d, want %d", path, st, want)
+		}
+		if want == 302 && !strings.HasPrefix(hd.Get("Location"), "/holyarrs/library/") {
+			t.Fatalf("%s: Location %q", path, hd.Get("Location"))
+		}
+	}
+}
+
 func TestOldAppUnderURLBase(t *testing.T) {
 	f := newOldAppFix(t, "/holyarrs")
 	f.turnOn()

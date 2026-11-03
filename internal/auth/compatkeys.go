@@ -59,6 +59,21 @@ func compatKey(r *http.Request) (string, bool) {
 	return "", false
 }
 
+// compatLink matches the page link Seerr shows admins to open a title in
+// the old app (/sonarr/series/<id>, /radarr/movie/<id>, no API path). A
+// browser follows it with no key, so it goes to the HolyArrs title page.
+func compatLink(r *http.Request) (string, bool) {
+	if r.Method != http.MethodGet {
+		return "", false
+	}
+	for _, p := range []string{"/sonarr/series/", "/radarr/movie/"} {
+		if id, ok := strings.CutPrefix(r.URL.Path, p); ok && id != "" && strings.Trim(id, "0123456789") == "" {
+			return id, true
+		}
+	}
+	return "", false
+}
+
 // checkCompatKey finds the person behind a side's key. The key works only
 // on its own side, and only while its maker's account is active.
 func (a *Auth) checkCompatKey(ctx context.Context, side, k string) (Who, bool) {
