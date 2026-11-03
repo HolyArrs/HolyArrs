@@ -55,7 +55,6 @@ func refusedClearly(t *testing.T, w world, imp *domain.Import, why string, befor
 func importEdge(t *testing.T, files map[string][]byte) (*domain.Import, world, map[string]string) {
 	t.Helper()
 	fakeDisk(t, 10<<30)
-	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
 	w := packedWorld(t, files)
 	before := snapshot(w.dl)
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
@@ -186,7 +185,6 @@ func TestSevenZipReleaseIsImportedWithoutATool(t *testing.T) {
 	}
 	files["Rel/"+relName+".nfo"] = []byte("info")
 	fakeDisk(t, 10<<30)
-	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
 	w := packedWorld(t, files)
 	setFake(t, w.s, "import_size_floors", "false") // the test video is small
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)

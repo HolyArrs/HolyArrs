@@ -8,11 +8,9 @@ import (
 	"log"
 	"math"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
-	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -43,21 +41,9 @@ const (
 )
 
 var (
-	// unpackPoll is how often the folder a tool writes into is measured.
-	unpackPoll = time.Second
 	// maxUnpack is the most a RAR set may unpack to.
 	maxUnpack = int64(200) << 30
 )
-
-// lookTool and runTool are the system tool lookup and run; tests replace them.
-var (
-	lookTool = exec.LookPath
-	runTool  = func(ctx context.Context, name string, args []string) error {
-		return exec.CommandContext(ctx, name, args...).Run()
-	}
-)
-
-var errNoTool = errors.New("no unrar or 7z on this system")
 
 // extractCompressed is the built-in decoder; tests replace it.
 var extractCompressed = unrar.ExtractCompressed
@@ -182,22 +168,11 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		case s.pw:
 			return fail(whyPassword)
 		case s.tool:
-			// Compressed: the built-in decoder first. A system unrar or 7z, when
-			// there is one, tries next if the decoder could not read the set.
-			// What the decoder refused on purpose (a path, a link, too big a
-			// window, too much output) never goes on to the tool.
+			// Compressed: the built-in Go decoder is the only path (Luis: Go
+			// reader only; no system unrar or 7z, the image has no tools).
 			dctx, dcancel := context.WithTimeout(ctx, unpackTimeout)
 			err = extractCompressed(dctx, s.first, dest, limit)
 			dcancel()
-			if err != nil && !errors.Is(err, unrar.ErrUnsafePath) && !errors.Is(err, unrar.ErrTooBig) && !errors.Is(err, unrar.ErrEncrypted) &&
-				!errors.Is(err, unrar.ErrUnrecognised) && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) && !diskFull(err) {
-				log.Printf("importer: built-in RAR decoder on %s: %v", s.first, err)
-				if os.RemoveAll(dest) == nil && os.MkdirAll(dest, 0o755) == nil {
-					if terr := extractWithTool(ctx, s.first, dest, limit); !errors.Is(terr, errNoTool) {
-						err = terr
-					}
-				}
-			}
 		default:
 			_, err = unrar.Extract(s.first, dest)
 		}
@@ -210,7 +185,7 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 				return fail(whyUnsafe)
 			case errors.Is(err, unrar.ErrEncrypted):
 				return fail(whyPassword)
-			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, errTooMuch), errors.Is(err, unrar.ErrTooBig):
+			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, unrar.ErrTooBig):
 				return fail(whySafely)
 			}
 			return fail(whyDamaged)
@@ -226,54 +201,6 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		return fail(whyDamaged)
 	}
 	return extra, cleanup, ""
-}
-
-var errTooMuch = errors.New("the tool wrote more than the set was checked to hold")
-
-// extractWithTool unpacks first into dest with a system unrar or 7z, run
-// without a shell, with a time limit. Links are not asked for (no -ol for
-// unrar, no -snl for 7z) and nothing is overwritten. While it runs the
-// size of dest is measured, and the tool is stopped once it passes limit.
-func extractWithTool(ctx context.Context, first, dest string, limit int64) error {
-	var name string
-	var args []string
-	if p, err := lookTool("unrar"); err == nil {
-		name, args = p, []string{"x", "-y", "-o-", "-p-", "-idq", "--", first, dest + string(filepath.Separator)}
-	}
-	for _, n := range []string{"7z", "7zz", "7za"} {
-		if p, err := lookTool(n); name == "" && err == nil {
-			name, args = p, []string{"x", "-y", "-bd", "-aos", "-o" + dest, "--", first}
-		}
-	}
-	if name == "" {
-		return errNoTool
-	}
-	ctx, cancel := context.WithTimeout(ctx, unpackTimeout)
-	defer cancel()
-	done := make(chan struct{})
-	var over atomic.Bool
-	go func() {
-		tick := time.NewTicker(unpackPoll)
-		defer tick.Stop()
-		for {
-			select {
-			case <-done:
-				return
-			case <-tick.C:
-				if dirSize(dest) > limit {
-					over.Store(true)
-					cancel()
-					return
-				}
-			}
-		}
-	}()
-	err := runTool(ctx, name, args)
-	close(done)
-	if over.Load() || dirSize(dest) > limit {
-		return errTooMuch
-	}
-	return err
 }
 
 // dirSize adds up the sizes of what is under dir, links not followed.
