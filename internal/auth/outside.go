@@ -484,8 +484,16 @@ type pin struct {
 	// checked is the last time Plex was asked about this pin; checks
 	// closer than pinCheckGap answer 429 (the page polls every 2 s).
 	checked time.Time
-	link    bool // the owner linking their account in Settings, not a sign-in
+	// purpose is "" for a sign-in, pinOwner for the owner linking in Settings,
+	// pinMine for anyone linking their own Plex account from My account.
+	purpose string
+	userID  int64 // who started a pinMine pin; only they may finish it
 }
+
+const (
+	pinOwner = "owner"
+	pinMine  = "mine"
+)
 
 // pinCheckGap is the shortest time between two checks of one pin.
 const pinCheckGap = time.Second
@@ -500,11 +508,11 @@ func (a *Auth) plexStart(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "sign-in with Plex is off")
 		return
 	}
-	a.startPin(w, r, false)
+	a.startPin(w, r, "")
 }
 
 // startPin asks Plex for a PIN and answers with the page to confirm it on.
-func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, link bool) {
+func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, purpose string) {
 	ctx := r.Context()
 	ip := a.clientKey(r)
 	now := a.now()
@@ -535,7 +543,11 @@ func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, link bool) {
 	}
 	secret := token(24)
 	a.mu.Lock()
-	a.pins[got.ID] = &pin{ip: ip, secret: secret, expires: now.Add(pinLife), link: link}
+	p := &pin{ip: ip, secret: secret, expires: now.Add(pinLife), purpose: purpose}
+	if purpose == pinMine {
+		p.userID = Actor(ctx).ID
+	}
+	a.pins[got.ID] = p
 	a.mu.Unlock()
 	http.SetCookie(w, &http.Cookie{Name: pinCookie(got.ID), Value: secret, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
 		Secure: a.behindHTTPS(r), MaxAge: int(pinLife / time.Second)})
@@ -550,7 +562,7 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "sign-in with Plex is off")
 		return
 	}
-	tok, ok := a.checkPin(w, r, false)
+	tok, ok := a.checkPin(w, r, "")
 	if !ok {
 		return
 	}
@@ -596,14 +608,17 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin, user.Restricted)
+	if err == nil {
+		a.keepPlexToken(ctx, id, extID, tok) // for their Plex watchlist (#102)
+	}
 	a.outsideDone(w, r, ProviderPlex, id, name, err)
 }
 
 // checkPin asks Plex whether the person confirmed the PIN. It returns the
 // token once they did; otherwise it has answered (waiting, ended, too soon).
-// A PIN started to link the owner's account cannot sign anyone in, and the
-// other way round.
-func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, link bool) (string, bool) {
+// A PIN started to link an account cannot sign anyone in, and the other way
+// round; one started from My account is only finished by the same person.
+func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, purpose string) (string, bool) {
 	ctx := r.Context()
 	var body struct {
 		ID int64 `json:"id"`
@@ -614,7 +629,7 @@ func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, link bool) (stri
 	}
 	a.mu.Lock()
 	p := a.pins[body.ID]
-	ok := p != nil && p.link == link && p.ip == a.clientKey(r) && a.now().Before(p.expires) && pinSecretMatches(r, body.ID, p.secret)
+	ok := p != nil && p.purpose == purpose && (purpose != pinMine || p.userID == Actor(ctx).ID) && p.ip == a.clientKey(r) && a.now().Before(p.expires) && pinSecretMatches(r, body.ID, p.secret)
 	soon := ok && !p.checked.IsZero() && a.now().Sub(p.checked) < pinCheckGap
 	if ok && !soon {
 		p.checked = a.now()

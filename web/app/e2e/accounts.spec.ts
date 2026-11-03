@@ -58,6 +58,33 @@ test('the owner invites a member with a one-time link', async ({ browser }) => {
 	await expect(own.getByText('Used by ana')).toBeVisible();
 });
 
+test('a member links their Plex account from My account for the watchlist, and unlinks it', async () => {
+	await ana.goto('/settings/account');
+	const row = ana.locator('#linked-me');
+	await row.getByTestId('link-sign-in').click();
+	const box = row.getByTestId('confirm-sign-in');
+	if (await box.isVisible().catch(() => false)) {
+		await box.getByLabel('HolyArrs password').fill(memberPw);
+		await box.getByRole('button', { name: 'Confirm' }).click();
+	}
+	// Plex sign-in is off here: linking works anyway, and the Plex page opens in its own window.
+	const popup = ana.waitForEvent('popup');
+	await row.getByRole('button', { name: 'Plex', exact: true }).click();
+	await (await popup).waitForLoadState().catch(() => {});
+	await expect(ana.getByText('Plex account plexkid linked.')).toBeVisible({ timeout: 15_000 });
+	const mine = row.getByTestId('my-plex-link');
+	await expect(mine).toContainText('Plex, as plexkid');
+	await mine.getByRole('button', { name: 'Unlink Plex' }).click();
+	const again = mine.getByTestId('confirm-sign-in');
+	if (await again.isVisible().catch(() => false)) {
+		await again.getByLabel('HolyArrs password').fill(memberPw);
+		await again.getByRole('button', { name: 'Confirm' }).click();
+	}
+	await mine.getByRole('button', { name: 'Unlink', exact: true }).click();
+	await expect(ana.getByText('Plex account unlinked.', { exact: false })).toBeVisible();
+	await expect(mine).toHaveCount(0);
+});
+
 test('a member sees Home, the Library, Search, Requests and My account only', async () => {
 	const nav = ana.getByRole('navigation', { name: 'Main' }).first();
 	for (const label of ['Home', 'Explore', 'Movies', 'Requests']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();

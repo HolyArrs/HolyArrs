@@ -119,6 +119,9 @@ func ResetOwner(ctx context.Context, s *store.Store, name, password string) erro
 // password cannot keep signing in with it after a password change or reset.
 // The person links them again from My account.
 func endOutsideLinks(tx *sql.Tx, id int64) error {
+	if err := dropLinkTokensTx(tx, "user_id = ?", id); err != nil {
+		return err
+	}
 	if _, err := tx.Exec("DELETE FROM user_links WHERE user_id = ?", id); err != nil {
 		return err
 	}

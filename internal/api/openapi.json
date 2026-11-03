@@ -10050,6 +10050,212 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/plex/my-link": {
+      "delete": {
+        "description": "Removes my Plex link and its kept sign-in, and ends the sessions Plex signed in. Needs a recent local password, and refused when it is my only way to sign in.",
+        "operationId": "myPlexUnlink",
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Confirm your local password first."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No Plex account is linked."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "It is my only way to sign in."
+          }
+        },
+        "summary": "Unlink my Plex account",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      },
+      "get": {
+        "description": "Whether my Plex account is linked, as whom, and whether its sign-in is kept so my Plex watchlist can be read. The sign-in itself is never shown.",
+        "operationId": "myPlexLink",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          }
+        },
+        "summary": "My Plex link",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/auth/plex/my-link/finish": {
+      "post": {
+        "description": "Checks the PIN; 202 while it waits. On success links the Plex account to me, replacing my earlier Plex link, and keeps its sign-in only in the encrypted vault, for reading my Plex watchlist. 409 when that Plex account belongs to someone else.",
+        "operationId": "myPlexLinkFinish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Still waiting for Plex."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Confirm your local password first."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "This Plex sign-in has ended."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Linked to another HolyArrs user."
+          }
+        },
+        "summary": "Finish linking my Plex account",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/plex/my-link/start": {
+      "post": {
+        "description": "Starts a Plex PIN for linking my own Plex account from My account (any signed-in person, after a recent local password). Answers the PIN id and the Plex page to confirm it on. Only the person who started it can finish it.",
+        "operationId": "myPlexLinkStart",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Confirm your local password first."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many Plex sign-ins started."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Plex did not answer."
+          }
+        },
+        "summary": "Start linking my Plex account",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/plex/start": {
       "post": {
         "description": "Starts a plex.tv PIN for signing in with Plex (when turned on).",

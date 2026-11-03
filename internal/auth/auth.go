@@ -610,6 +610,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.sessionRoutes(m)
 	a.outsideRoutes(m)
 	a.providerRoutes(m)
+	a.plexMineRoutes(m)
 	a.ssoRoutes(m)
 	a.aiOAuthRoutes(m)
 }
