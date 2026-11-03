@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -229,15 +230,25 @@ func extractWithTool(ctx context.Context, first, dest string, limit int64) error
 
 // dirSize adds up the sizes of what is under dir, links not followed.
 func dirSize(dir string) int64 {
+	// A folder or file that cannot be read counts as over every limit, so the
+	// watch stops the tool rather than missing what it wrote.
 	var n int64
-	_ = filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
-		if err == nil && !d.IsDir() {
-			if fi, err := d.Info(); err == nil {
-				n += fi.Size()
+	err := filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() {
+			fi, err := d.Info()
+			if err != nil {
+				return err
 			}
+			n += fi.Size()
 		}
 		return nil
 	})
+	if err != nil {
+		return math.MaxInt64
+	}
 	return n
 }
 

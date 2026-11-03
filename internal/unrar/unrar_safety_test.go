@@ -2,6 +2,7 @@ package unrar
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"os"
 	"path/filepath"
@@ -103,5 +104,37 @@ func TestRar4PlainAndUnicodeNamesMustAgree(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "..", "movie")); err == nil {
 		t.Fatal("wrote outside")
+	}
+}
+
+// A service block (comment, stream) may carry a little data, which is passed
+// over; one carrying more than maxServiceData could hide what a system tool
+// would write, so the set is not understood.
+func TestBigServiceBlocksAreNotUnderstood(t *testing.T) {
+	dir := t.TempDir()
+	sub4 := func(n int) []byte {
+		body := make([]byte, 4, 4+8)
+		binary.LittleEndian.PutUint32(body, uint32(n))
+		body = append(body, []byte("CMTxxxxx")...)
+		return append(rar4Block(0x7A, 0x8000, body), make([]byte, n)...)
+	}
+	v4 := rar4Volume(false, spec{name: "a.mkv", data: movie})
+	small := append(append(append([]byte{}, v4[:7]...), sub4(64)...), v4[7:]...)
+	if _, err := List(put(t, dir, "a.rar", small)); err != nil {
+		t.Fatalf("rar4 small comment: %v", err)
+	}
+	big := append(append(append([]byte{}, v4[:7]...), sub4(maxServiceData+1)...), v4[7:]...)
+	if _, err := List(put(t, dir, "b.rar", big)); !errors.Is(err, ErrUnrecognised) {
+		t.Fatalf("rar4 big stream: %v", err)
+	}
+	v5 := rar5Volume(false, spec{name: "a.mkv", data: movie})
+	sub5 := func(n int) []byte { return append(rar5Block(3, 0, []byte{0, 0, 0, 3, 'S', 'T', 'M'}, nil, n), make([]byte, n)...) }
+	small5 := append(append(append([]byte{}, v5[:8]...), sub5(64)...), v5[8:]...)
+	if _, err := List(put(t, dir, "c.rar", small5)); err != nil {
+		t.Fatalf("rar5 small service: %v", err)
+	}
+	big5 := append(append(append([]byte{}, v5[:8]...), sub5(maxServiceData+1)...), v5[8:]...)
+	if _, err := List(put(t, dir, "d.rar", big5)); !errors.Is(err, ErrUnrecognised) {
+		t.Fatalf("rar5 big stream: %v", err)
 	}
 }

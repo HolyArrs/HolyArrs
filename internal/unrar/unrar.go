@@ -57,6 +57,10 @@ type Entry struct {
 	Link       bool // a symbolic or hard link: never unpacked
 }
 
+// maxServiceData caps what one service block (a comment, quick-open data or a
+// stored stream) may carry; the reader never writes these, but a system tool might.
+const maxServiceData = 1 << 20
+
 func corrupt(format string, a ...any) error {
 	return fmt.Errorf("%w: %s", ErrCorrupt, fmt.Sprintf(format, a...))
 }
@@ -342,7 +346,11 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 			add = int64(binary.LittleEndian.Uint32(buf[7:11]))
 		}
 		switch typ {
-		case 0x72, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A: // marker, comment, av, old sub, recovery, sign, new sub: passed over
+		case 0x72, 0x75, 0x76, 0x77, 0x78, 0x79: // marker, comment, av, old sub, recovery, sign: passed over
+		case 0x7A: // service block (comment, stream): small ones are passed over; a big one may hide data a tool would write
+			if add > maxServiceData {
+				return false, ErrUnrecognised
+			}
 		case 0x73: // main header
 			if flags&0x0080 != 0 {
 				return false, ErrEncrypted
@@ -669,7 +677,11 @@ func walk5(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 		case 5: // end of archive
 			endFlags := r.vint()
 			return endFlags&0x1 != 0 || lastSplit, nil
-		case 1, 3: // main header, service header: passed over
+		case 1: // main header: passed over
+		case 3: // service header (comment, quick open, stream): small ones are passed over; a big one may hide data a tool would write
+			if dataSize > maxServiceData {
+				return false, ErrUnrecognised
+			}
 		default:
 			return false, ErrUnrecognised
 		}
