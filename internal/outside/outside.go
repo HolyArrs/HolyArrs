@@ -119,6 +119,15 @@ func Begin(ctx context.Context, target Target) (*Operation, error) {
 	return shared.Begin(ctx, target)
 }
 
+// Reset forgets every breaker in the process registry. Tests call it: each
+// test opens a fresh database whose ids start at 1 again, so a breaker left
+// open by an earlier test would refuse a new test's calls to the same id.
+func Reset() {
+	shared.mu.Lock()
+	defer shared.mu.Unlock()
+	shared.entries = map[string]*entry{}
+}
+
 // States returns the process registry's safe health states.
 func States() []State { return shared.States() }
 
