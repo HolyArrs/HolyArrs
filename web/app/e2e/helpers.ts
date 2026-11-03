@@ -218,8 +218,14 @@ export async function noSidewaysScroll(page: Page) {
 
 /** openAdvanced opens every closed Advanced disclosure on a settings page (they start closed and are kept per person). */
 export async function openAdvanced(scope: Page | Locator) {
+	// A card can close again while the page finishes loading (it restores the saved
+	// open state), so open every one and check they stay open.
 	const closed = scope.locator('details.advanced:not([open]) > summary');
-	while ((await closed.count()) > 0) await closed.first().click();
+	await expect(async () => {
+		while ((await closed.count()) > 0) await closed.first().click();
+		await new Promise((r) => setTimeout(r, 300));
+		expect(await closed.count()).toBe(0);
+	}).toPass({ timeout: 10_000 });
 }
 
 /** openFromSearch searches and opens a result's page: movies and shows open
