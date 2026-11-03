@@ -2377,6 +2377,15 @@
             "format": "date-time",
             "type": "string"
           },
+          "confirmed": {
+            "description": "The state the flap guard has confirmed, which Alerts and Home go by.",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "type": "string"
+          },
           "id": {
             "type": "integer"
           },

@@ -88,6 +88,7 @@ export default defineConfig({
 		{ name: 'copychoices', testMatch: 'copy-choices.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
 		// Explore memory: heap, DOM nodes and listeners back to the start after 20 Home, Explore and title rounds.
 		{ name: 'musicplaceholder', testMatch: 'music-placeholder.spec.ts', use: { ...devices['Desktop Chrome'] } },
+		{ name: 'home', testMatch: 'home.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'exploremem', testMatch: 'explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'communitybrowse', testMatch: 'community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'appframe', testMatch: 'appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },

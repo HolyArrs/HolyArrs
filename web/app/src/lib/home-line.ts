@@ -116,7 +116,7 @@ const TIME: Record<TimeBucket, string[]> = {
 	early: ["Good morning{,name}. You're up early.", "Early start{,name}. Here's what's new."],
 	morning: ['Good morning{,name}.', "Morning{,name}. Here's what's new in the Library."],
 	afternoon: ['Good afternoon{,name}.', 'Afternoon{,name}. Hope the day is going well.'],
-	evening: ['Good evening{,name}.', "Evening{,name}. Here's what's new today."],
+	evening: ['Good evening{,name}.', 'Evening{,name}. Hope the day went well.'],
 	late: ["It's late{,name}. Here's what's new.", "Quiet night{,name}. Here's what's new."]
 };
 
@@ -133,8 +133,9 @@ const DAYS: Record<number, string[]> = {
 
 const ASKED_ARRIVED = { any: 'Something you asked for has arrived{,name}.', one: '{title} is in the Library now{,name}.', many: '{n} of your asks are in the Library now{,name}.' };
 const WAITING = ['{n} {asks} waiting for you{,name}.', 'Your Requests page has {n} {asks} to look at{,name}.'];
-const NEW_TODAY = { any: 'Something new landed today{,name}.', one: 'New today{,name}: {title}.', many: 'New today{,name}: {n} things in the Library.' };
-const FINISHING = { mine: 'Something you asked for is almost here{,name}.', all: 'Downloads are almost done{,name}.' };
+// New today also counts air and release dates, so these lines never say it arrived.
+const NEW_TODAY = { any: 'Something new is out today{,name}.', one: 'New today{,name}: {title}.', many: 'New today{,name}: {n} titles.' };
+const FINISHING = { mine: 'Something you asked for is almost here{,name}.', one: 'A download is almost done{,name}.', many: '{n} downloads are almost done{,name}.' };
 
 /** Every line the picker can write, for tests and review. */
 export const homeLineTemplates: string[] = [
@@ -201,7 +202,7 @@ export function homeLine(i: HomeLineInput): string {
 		return fill(line, name, { title: f.newToday.title ?? '', n: f.newToday.count });
 	}
 	if (f.finishing.mine > 0) return fill(FINISHING.mine, name);
-	if (f.finishing.all > 0 && !kid) return fill(FINISHING.all, name);
+	if (f.finishing.all > 0 && !kid) return fill(f.finishing.all === 1 ? FINISHING.one : FINISHING.many, name, { n: f.finishing.all });
 
 	const bucket = timeBucket(i.now.getHours());
 	const pool = [...(kid && bucket === 'late' ? KID_LATE : TIME[bucket]), ...(DAYS[i.now.getDay()] ?? [])];
