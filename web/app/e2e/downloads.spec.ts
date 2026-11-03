@@ -24,7 +24,7 @@ const iron = () => page.locator('[data-testid="dl-table-row"][data-phase="downlo
 const decideChip = () => page.locator('[data-testid="status-subchip"][data-key="decide"]');
 const showProblems = () => page.locator('[data-testid="status-chip"][data-key="problems"] button').click();
 const col = (r: ReturnType<typeof iron>, id: string) => r.locator(`[data-col="${id}"]`);
-// A row opens its details panel in place; Mark failed is in the panel, Remove is the bin on the row.
+// A row opens its details panel in place; Mark failed is in the panel's More actions menu, Remove is the bin on the row.
 const rowMenu = (r: ReturnType<typeof iron>) => r.getByTestId('dl-row-menu').getByRole('button').first();
 const removeFromMenu = async (r: ReturnType<typeof iron>) => { await rowMenu(r).click(); await page.getByRole('menuitem', { name: 'Remove' }).click(); };
 const openRow = (r: ReturnType<typeof iron>) => r.getByTestId('dl-line').click();
@@ -39,9 +39,9 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	await expect(col(r, 'time')).not.toHaveText('–');
 	await expect(rowMenu(r)).toBeEnabled();
 	await openRow(r);
-	await expect(r.getByRole('button', { name: 'Mark failed' })).toBeVisible();
+	await expect(page.getByTestId('dl-pane')).toBeVisible();
 	await openRow(r);
-	await expect(r.getByRole('button', { name: 'Mark failed' })).toBeHidden();
+	await expect(page.getByTestId('dl-pane')).toBeHidden();
 	// The Downloader moves on; the row follows without a reload.
 	await fetch(`${qbit}/set?progress=0.7&eta=120`);
 	await expect(col(r, 'progress')).toContainText('70%', { timeout: 15_000 });

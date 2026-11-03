@@ -16,7 +16,7 @@
 	import Icon from '../Icon.svelte';
 	import Chip from '../ui/Chip.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
-	import { PRIORITIES, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
+	import { PRIORITIES, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import TopMenu from './TopMenu.svelte';
 	import { to } from '../paths.ts';
 	import DlBar from './DlBar.svelte';
@@ -54,6 +54,7 @@
 	import { problem } from './problem.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
+	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry';
 	let {
 		rows: everyRow,
 		notes = [],
@@ -137,19 +138,13 @@
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
-	let menuId = $state(0);
-	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry';
-	const ACTIONS: { label: string; action: ClientAction; torrent?: boolean; retry?: boolean }[] = [
-		{ label: 'Try again', action: 'retry', retry: true }, { label: 'Move to top', action: 'top' }, { label: 'Check again', action: 'recheck', torrent: true }, { label: 'Ask trackers again', action: 'reannounce', torrent: true }
-	];
-	// A failed Usenet job offers Try again; queue moves are for live jobs.
-	const actionsOf = (r: DownloadRow) => ACTIONS.filter((a) => (a.retry ? retryable(r) : controllable(r.downloader_kind) && (!a.torrent || protocolOf(r) === 'torrent') && !(a.action === 'top' && retryable(r))));
 	const isPaused = (r: DownloadRow | undefined) => r?.state === 'paused';
 	const mmss = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 	// The detail tabs follow the download's kind: a torrent has peers and
-	// trackers, a Usenet job servers and its repair and unpack steps.
+	// trackers, a Usenet job its servers; a job's verify, repair and unpack
+	// steps sit at the top of its Log, where they land when they happen.
 	const TORRENT_TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
-	const USENET_TABS = ['Info', 'Servers', 'Repair and unpack', 'Log'] as const;
+	const USENET_TABS = ['Info', 'Servers', 'Log'] as const;
 	type PaneTab = (typeof TORRENT_TABS)[number] | (typeof USENET_TABS)[number];
 	const tabsOf = (r: DownloadRow): readonly PaneTab[] => (protocolOf(r) === 'torrent' ? TORRENT_TABS : USENET_TABS);
 	// Selection and folder state for the Files, Peers and Trackers tables.
@@ -245,6 +240,22 @@
 			{ cap: 'Rules', rows: keep(rules) }
 		].filter((g) => g.rows.length);
 	}
+	// A Usenet job's Info in the same shape as a torrent's: what moved, when, and where it sits.
+	function usenetGroups(r: DownloadRow, d: Detail | undefined, im: ImportRecord | undefined): { cap: string; rows: Fact[] }[] {
+		const f = (k: string, v: string | false | undefined | null, tid?: string, path?: boolean): Fact | null => (v ? { k, v, tid, path } : null);
+		const done = r.progress >= 1;
+		const got = r.size ? (done ? bytes(r.size) : `${bytes((r.size * percent(r.progress)) / 100)} of ${bytes(r.size)}`) : '';
+		const transfer = [f(done ? 'Size' : 'Downloaded', got), f('Down', r.speed ? `${bytes(r.speed)}/s` : ''), f('Time left', !done && r.eta ? duration(r.eta) : '')];
+		const dates = [f('Posted', r.posted_at ? `${shortAge(r.posted_at)} ago` : ''), f('Added', dateTime(r.started_at)), f('Done', dateTime(r.finished_at))];
+		const folder = im?.Plan?.find((p) => p.target_path)?.target_path || r.path;
+		const where = [f('Downloader', d?.downloader || r.downloader), f('Category', r.category), f('Folder', folder, undefined, true), f('Requested by', d?.requested_by || r.requested_by, 'dl-info-asker')];
+		const keep = (xs: (Fact | null)[]) => xs.filter((x): x is Fact => !!x);
+		return [
+			{ cap: 'Transfer', rows: keep(transfer) },
+			{ cap: 'Dates', rows: keep(dates) },
+			{ cap: 'Where', rows: keep(where) }
+		].filter((g) => g.rows.length);
+	}
 	let filesBusy = $state(false);
 	// The client is read live for as long as it may hold the torrent: while
 	// it downloads, and when it is finished or seeding too.
@@ -279,7 +290,7 @@
 				}
 			}
 		}
-		if (protocolOf(r) === 'usenet' && live(r) && (tab === 'Servers' || tab === 'Repair and unpack')) {
+		if (protocolOf(r) === 'usenet' && live(r) && (tab === 'Servers' || tab === 'Log')) {
 			try {
 				next.usenet = await api.get<UsenetView>(`${path}/usenet`);
 				next.usenetErr = undefined;
@@ -393,13 +404,6 @@
 	};
 	let xtabOn = $state<Record<number, PaneTab>>({});
 	const tabOf = (id: number) => xtabOn[id] ?? 'Info';
-	let filesOpen = $state(new Set<number>());
-	function toggleFiles(id: number) {
-		const n = new Set(filesOpen);
-		if (n.has(id)) n.delete(id);
-		else n.add(id);
-		filesOpen = n;
-	}
 	const start = showOf(page.url.searchParams.get('show'));
 	let show = $state(start.show);
 	let sub = $state(start.sub);
@@ -541,9 +545,10 @@
 	}
 	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? 'Moved.');
 	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), `Priority set to ${label}.`);
-	function rowMenu(r: DownloadRow): MenuItem[] {
+	// menuItems turns row keys into menu entries; the row ⋯ and the pane ⋯ share it.
+	function menuItems(r: DownloadRow, keys: RowItem[]): MenuItem[] {
 		const off = busy === r.id || queueBusy === r.id;
-		const items: MenuItem[] = rowItems(r).flatMap((k): MenuItem | MenuItem[] => {
+		return keys.flatMap((k): MenuItem | MenuItem[] => {
 			const label = ROW_WORD[k];
 			if (k === 'priority') return [{ kind: 'heading', label }, ...PRIORITIES.map((p): MenuItem => ({ label: p.label, disabled: off, onselect: () => void usenetPriority(r, p.key, p.label) }))];
 			if ((k === 'up' || k === 'down' || k === 'top' || k === 'bottom') && usenetQueued(r)) return { label, disabled: off, onselect: () => void usenetMove(r, k) };
@@ -553,7 +558,32 @@
 			if (k === 'retry') return { label, icon: 'refresh', disabled: off, onselect: () => (onretry ? onretry([r]) : onact?.(r, 'retry')) };
 			return { label, disabled: off, onselect: () => onbulk?.([r], k) };
 		});
+	}
+	function rowMenu(r: DownloadRow): MenuItem[] {
+		const items = menuItems(r, rowItems(r));
 		if (!r.can_act) items.unshift({ kind: 'heading', label: 'HolyArrs cannot change this one' });
+		return items;
+	}
+	// The pane's ⋯: the row's own list minus what the pane shows as buttons
+	// (pause, try again, open, remove), plus a torrent's checks, force start and
+	// sheets, and Mark failed last as the one destructive choice.
+	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'library', 'remove']);
+	function paneMenu(r: DownloadRow): MenuItem[] {
+		// A read-only row has nothing to offer here; the Remove button's title already says so.
+		if (!r.can_act) return [];
+		const off = busy === r.id || queueBusy === r.id;
+		const items = menuItems(r, rowItems(r).filter((k) => !PANE_BUTTONS.has(k)));
+		const extra = new Set(paneExtras(r, { steer: !!onsteer, fail: !watch && !inHistory(r) && !r.client_item }));
+		if (extra.has('recheck')) items.push({ label: 'Check again', disabled: off, onselect: () => onact?.(r, 'recheck') }, { label: 'Ask trackers again', disabled: off, onselect: () => onact?.(r, 'reannounce') });
+		if (extra.has('force')) items.push({ label: 'Force start', disabled: off, onselect: () => onbulk?.([r], 'force') });
+		if (extra.has('steer')) {
+			items.push({ kind: 'separator' });
+			for (const m of STEER) items.push({ label: m.label, disabled: off, onselect: () => onsteer?.([r], m.mode) });
+		}
+		if (extra.has('fail')) {
+			if (items.length) items.push({ kind: 'separator' });
+			items.push({ label: 'Mark failed', destructive: true, disabled: off, onselect: () => onfail(r) });
+		}
 		return items;
 	}
 	const steerable = (r: DownloadRow) => !!onsteer && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent';
@@ -562,8 +592,6 @@
 		{ mode: 'speed', label: 'Speed limits…', short: 'Speed limits' },
 		{ mode: 'seed', label: 'Seeding rules…', short: 'Seeding rules' }
 	];
-	// Queue moves and force start for one torrent, as in the selection bar.
-	const QUEUE: { action: BulkAction; label: string }[] = [{ action: 'up', label: 'Move up' }, { action: 'down', label: 'Move down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }];
 	// The phone selection bar: the few actions that fit a thumb.
 	const PHONE_BULK: { action: BulkAction; label: string; icon: 'play' | 'pause' | 'refresh' }[] = [{ action: 'start', label: 'Start', icon: 'play' }, { action: 'pause', label: 'Pause', icon: 'pause' }, { action: 'recheck', label: 'Check again', icon: 'refresh' }];
 	// The phone bar's "All downloads" menu, through the same handlers as the toolbar's menus.
@@ -758,37 +786,7 @@
 		next.focus();
 		next.click();
 	}
-	// The ⋯ menu is placed from its button and kept inside the screen: flipped
-	// above when there is no room below, and scrolling inside when taller.
-	function fitMenu(ul: HTMLElement) {
-		const at = ul.parentElement?.querySelector<HTMLElement>('[data-more-for]');
-		if (!at) return;
-		const pad = 8;
-		const a = at.getBoundingClientRect();
-		const vh = document.documentElement.clientHeight;
-		const vw = document.documentElement.clientWidth;
-		ul.style.position = 'fixed';
-		ul.style.maxHeight = `calc(100vh - ${pad * 2}px)`;
-		ul.style.overflow = 'auto';
-		const m = ul.getBoundingClientRect();
-		let top = a.bottom + 4;
-		if (top + m.height > vh - pad) top = a.top - 4 - m.height;
-		top = Math.max(pad, Math.min(vh - m.height - pad, top));
-		const left = Math.max(pad, Math.min(vw - m.width - pad, a.right - m.width));
-		ul.style.top = `${Math.round(top)}px`;
-		ul.style.left = `${Math.round(left)}px`;
-		ul.style.right = 'auto';
-	}
 	function listKey(e: KeyboardEvent) {
-		if (e.key === 'Escape' && menuId) {
-			// Closed here so the panel's own Escape never sees it, as in TopMenu.
-			e.preventDefault();
-			e.stopPropagation();
-			const id = menuId;
-			menuId = 0;
-			document.querySelector<HTMLElement>(`[data-more-for="${id}"]`)?.focus({ preventScroll: true });
-			return;
-		}
 		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && fqEl && openRow && paneOpen && tabNow(openRow) === 'Files') {
 			e.preventDefault();
 			fqEl.focus();
@@ -810,7 +808,7 @@
 		}
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Escape' && e.key !== 'Delete') return;
 		const t = e.target as HTMLElement | null;
-		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], [role="dialog"], .mn')) return;
+		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], [role="dialog"]')) return;
 		if (e.key === 'Escape') {
 			if (listEsc(picked.size, !!openId) === 'close') {
 				// Escape from inside the pane: the focus goes back to the row the pane was about, never to nowhere.
@@ -1471,26 +1469,17 @@
 	</div>
 {/snippet}
 
-{#snippet btns(r: DownloadRow, files: boolean)}
+{#snippet btns(r: DownloadRow)}
+	{@const more = watch ? [] : paneMenu(r)}
 	<div class="xbt" data-testid="dl-actions">
-		{#if !watch}{#if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>{/if}
-		<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>{/if}
+		{#if !watch}
+			{#if retryable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Try again</button>
+			{:else if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>{/if}
+			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
+		{/if}
 		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">Open in Library</a>{/if}
-		{#if files}<button type="button" class="xbn" aria-expanded={filesOpen.has(r.id)} onclick={() => toggleFiles(r.id)} data-testid="dl-show-files">{filesOpen.has(r.id) ? 'Hide files' : 'Show files'}</button>{/if}
-		{#if !watch}<button type="button" class="xbn more" aria-expanded={menuId === r.id} aria-label="More actions" data-more-for={r.id} onclick={() => (menuId = menuId === r.id ? 0 : r.id)} data-testid="dl-more">⋯</button>{/if}
+		{#if more.length}<span class="more" data-testid="dl-more"><Menu label="More actions" items={more} width={220} /></span>{/if}
 	</div>
-	{#if menuId === r.id && !watch}
-		<ul class="mn" use:fitMenu data-testid="dl-more-menu">
-			{#each actionsOf(r) as a (a.label)}
-				<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onact?.(r, a.action); }} data-testid="dl-act-{a.action}">{a.label}</button></li>
-			{/each}
-			{#if steerable(r)}
-				{#each QUEUE as q (q.action)}<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onbulk?.([r], q.action); }} data-testid="dl-queue-{q.action}">{q.label}</button></li>{/each}
-				{#each STEER as m (m.mode)}<li><button type="button" class="mi" disabled={!r.can_act || busy === r.id} onclick={() => { menuId = 0; onsteer?.([r], m.mode); }} data-testid="dl-steer-{m.mode}">{m.label}</button></li>{/each}
-			{/if}
-		</ul>
-	{/if}
-	{#if files && filesOpen.has(r.id)}<p class="nr" data-testid="dl-files">Not reported yet</p>{/if}
 {/snippet}
 
 {#snippet tabStrip(r: DownloadRow)}
@@ -1531,14 +1520,13 @@
 	{/if}
 {/snippet}
 
-{#snippet tabsView(r: DownloadRow, simple: { label: string; value: string }[])}
+{#snippet tabsView(r: DownloadRow)}
 	{@const tor = protocolOf(r) === 'torrent'}
 	{@const tab = tabNow(r)}
 	{@const d = det.id === r.id ? det.detail : undefined}
 	{@const t = d?.torrent}
 	{#if tab === 'Info'}
-		{@const groups = tor ? infoGroups(r, d) : [{ cap: 'Details', rows: simple.filter((x) => x.label !== 'Requested by' && x.value !== 'Not reported yet').map((x) => ({ k: x.label, v: x.value, path: x.label === 'Folder' || x.label === 'Source' } as Fact)).concat(d?.requested_by ? [{ k: 'Requested by', v: d.requested_by, tid: 'dl-info-asker' }] : []) }]}
-		{@const shown = groups.filter((g) => g.rows.length)}
+		{@const shown = tor ? infoGroups(r, d) : usenetGroups(r, d, importOf.get(r.id))}
 		<div class="facts" data-testid="dl-info">
 			{#if stageOf(r) === 'failed' || problem(r)?.tone === 'fail'}<a class="hlink" href={to('/downloads/history?step=failed')} data-testid="dl-see-history">See in History</a>{/if}
 			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{CALM_ERR}</span><button type="button" class="xbn" onclick={() => void readDetail(r, 'Info')} data-testid="dl-panel-retry">Retry</button></p>{/if}
@@ -1546,7 +1534,7 @@
 				<div class="fcols" style="--fn: {shown.length}">
 					{#each shown as g (g.cap)}
 						<div class="fcol">
-							{#if tor}<h3 class="fcap">{g.cap}</h3>{/if}
+							<h3 class="fcap">{g.cap}</h3>
 							<dl class="fgrid" aria-label={g.cap}>
 								{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path || x.v.length > 24 ? x.v : undefined} data-testid={x.tid}>{x.v}</dd></div>{/each}
 							</dl>
@@ -1695,37 +1683,28 @@
 			{@render calm(r, 'Servers', det.id === r.id ? det.usenetErr : undefined)}
 		{:else if srv.length}
 			<div class="tblw" data-testid="dl-servertable"><table class="t2">
-				<thead><tr><th class="c-name">Server</th><th class="c-num">This download</th><th class="c-num">All time</th><th class="c-num">Found</th></tr></thead>
+				<thead><tr><th class="c-name">Server</th><th class="c-num">This download</th><th class="c-num">Found</th></tr></thead>
 				<tbody>
 					{#each srv as s (s.name)}
-						<tr data-testid="dl-serverrow"><td class="c-name"><span class="fn">{s.name}</span></td><td class="c-num">{s.job || '–'}</td><td class="c-num">{s.total ? bytes(s.total) : '–'}</td><td class="c-num">{s.found || '–'}</td></tr>
+						<tr data-testid="dl-serverrow"><td class="c-name"><span class="fn">{s.name}</span></td><td class="c-num">{s.job || '–'}</td><td class="c-num">{s.found || '–'}</td></tr>
 					{/each}
 				</tbody>
 			</table></div>
 		{:else}
 			<GhostEmpty compact testid="dl-servers-none" title="No server details yet" text="Which servers supplied this download shows up here." />
 		{/if}
-	{:else if tab === 'Repair and unpack'}
-		{@const uv = det.id === r.id ? det.usenet : undefined}
-		{@const steps = repairSteps(uv)}
-		{#if !uv && live(r)}
-			{@render calm(r, 'Repair and unpack', det.id === r.id ? det.usenetErr : undefined)}
-		{:else if steps.length}
-			<div class="lgw" data-testid="dl-repair">
+	{:else}
+		{@const log = d?.log ?? []}
+		<!-- A Usenet job's verify, repair and unpack steps are its newest lines, so they lead the Log. -->
+		{@const steps = tor ? [] : repairSteps(det.id === r.id ? det.usenet : undefined)}
+		{#if log.length || steps.length}
+			<div class="lgw" data-testid="dl-log">
 				{#each steps as g (g.title)}
 					<h4 class="lgday">{g.title}</h4>
-					<ol class="lg">
+					<ol class="lg" data-testid="dl-repair">
 						{#each g.lines as l, i (i)}<li class:bad={badKind(l)}><time></time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l}</span></li>{/each}
 					</ol>
 				{/each}
-			</div>
-		{:else}
-			<GhostEmpty compact testid="dl-repair-none" title="Nothing to repair" text="Checking, repairing and unpacking steps show up here." />
-		{/if}
-	{:else}
-		{@const log = d?.log ?? []}
-		{#if log.length}
-			<div class="lgw" data-testid="dl-log">
 				{#each logDays(log) as g (g.day)}
 					<h4 class="lgday">{g.day}</h4>
 					<ol class="lg">
@@ -1744,14 +1723,6 @@
 {#snippet panel(r: DownloadRow)}
 	{@const ds = decisionsOf(r)}
 	{@const sizeWord = r.size ? bytes(r.size) : 'Not reported yet'}
-	{@const im = importOf.get(r.id)}
-	{@const simple = [
-		{ label: 'Source', value: im?.Plan?.[0]?.source_file || 'Not reported yet' },
-		{ label: 'Downloader', value: r.downloader || 'Not reported yet' },
-		{ label: 'Folder', value: im?.Plan?.find((p) => p.target_path)?.target_path || 'Not reported yet' },
-		{ label: 'Added', value: dateTime(r.started_at) || 'Not reported yet' },
-		{ label: 'Requested by', value: '–' }
-	]}
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
 		<div class="phd">
 			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
@@ -1759,11 +1730,8 @@
 			{@render tabStrip(r)}
 			{#if paneOpen}
 			<div class="pact" data-testid="dl-pane-actions">
-				{#if /fail|replac/i.test(`${r.phase} ${r.state}`)}<a class="tdl" href={to('/downloads/history?tab=turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
-				{#if r.can_act && !watch && !inHistory(r) && !r.client_item}
-					<button type="button" class="xbn quiet" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button>
-				{/if}
-				{@render btns(r, false)}
+				{#if r.replaced}<a class="tdl" href={to('/downloads/history?tab=turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
+				{@render btns(r)}
 			</div>
 			{/if}
 			<button type="button" class="pcl" aria-expanded={paneOpen} aria-label={paneOpen ? 'Collapse details' : 'Expand details'} onclick={() => (paneOpen = !paneOpen)} data-testid="dl-pane-toggle"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
@@ -1772,7 +1740,7 @@
 		<div class="pb" data-testid="dl-panel" data-card="d">
 			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
 			<div class="xb">
-				{#key tabNow(r)}<div class="tview">{@render tabsView(r, simple)}</div>{/key}
+				{#key tabNow(r)}<div class="tview">{@render tabsView(r)}</div>{/key}
 				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
 			</div>
 		</div>
@@ -2266,9 +2234,6 @@
 	.st-updating { color: var(--info); }
 	.st-error { color: var(--fail); }
 	.more { min-width: 36px; padding: 0 10px; }
-	.mn { list-style: none; margin: 6px 0 0; padding: 4px; display: grid; gap: 2px; width: max-content; max-width: 100%; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 6px 18px rgb(0 0 0 / 0.14); }
-	.mi { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; }
-	.mi:disabled { opacity: 0.6; cursor: not-allowed; }
 	.strip.sub { margin-top: -4px; font: var(--t-footnote); color: var(--text-muted); }
 	.lim { display: inline-flex; align-items: center; gap: 8px; }
 	.xbt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -2298,7 +2263,7 @@
 	.prg { height: 16px; padding: 0 8px; border-radius: var(--r-pill); font-size: 10px; line-height: 16px; }
 	.pcl, .bin, .pick, .fold { border-radius: var(--r-sm); }
 	.tfld { border-radius: var(--r-btn); }
-	.ghost, .picker, .mn { box-shadow: var(--shadow-lift); }
+	.ghost, .picker { box-shadow: var(--shadow-lift); }
 	.dep { border-radius: var(--r-card); box-shadow: var(--shadow-card); }
 
 	/* Resize handle: a wide hit area; the grip widens under the pointer and firms up while held. */
@@ -2329,17 +2294,12 @@
 	.pact .xbt { margin: 0; gap: 6px; flex-wrap: nowrap; }
 	.pact .xbn { min-height: 30px; padding: 0 10px; border-radius: var(--r-btn); font: var(--t-subhead); font-weight: 500; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
-	.pact .more { min-width: 28px; padding: 0 6px; }
-	.pact .xbn.quiet { padding: 0 8px; }
+	.pact .more { display: inline-flex; }
 	.xbn.quiet { border-color: transparent; background: none; color: var(--text-muted); }
 	.xbn.quiet:hover:not(:disabled) { border-color: color-mix(in srgb, var(--fail) 35%, transparent); background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail); }
 	.tdl { color: var(--text-muted); font: var(--t-caption); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--r-sm); }
 	.tdl:hover { color: var(--text); }
 	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pact .mn { position: absolute; right: 0; top: calc(100% + 4px); margin: 0; z-index: 6; transform-origin: top right; animation: menin var(--dur) var(--ease-out); }
-	@keyframes menin { from { opacity: 0; transform: translateY(4px) scale(0.97); } }
-	.mi { border-radius: var(--r-sm); transition: background-color var(--dur-fast) var(--ease-out); }
-	.mi:hover:not(:disabled) { background: var(--surface-2); }
 
 
 	/* Files, Peers, Trackers: full width, a sticky header that matches the main list, hairline rows. */
@@ -2400,8 +2360,8 @@
 	.lgt { overflow-wrap: anywhere; }
 
 	@media (prefers-reduced-motion: reduce) {
-		.drow, .pb, .tview, .pact .mn, .pb .t2 tbody tr { animation: none; }
-		.ink, .dv i, .drow > .dline, .pact .xbn, .t2 td, .pbar i, .mi { transition: none; }
+		.drow, .pb, .tview, .pb .t2 tbody tr { animation: none; }
+		.ink, .dv i, .drow > .dline, .pact .xbn, .t2 td, .pbar i { transition: none; }
 	}
 
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
@@ -2465,7 +2425,6 @@
 		.x { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 4px 8px 12px calc(24px + var(--gap)); }
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
-		.mi { gap: 8px; }
 		.fs { white-space: normal; }
 		/* Phones: a search icon that opens into the field. */
 		.strip { gap: 4px 14px; }

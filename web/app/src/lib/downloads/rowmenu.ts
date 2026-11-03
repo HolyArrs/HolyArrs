@@ -1,4 +1,5 @@
-import { pausable, retryable } from './usenet.ts';
+import { controllable, pausable, retryable } from './usenet.ts';
+import { protocolOf } from './size.ts';
 
 /** One entry in a row's ⋯ menu; the page maps each key to its handler. */
 export type RowItem = 'pause' | 'resume' | 'retry' | 'up' | 'down' | 'top' | 'bottom' | 'priority' | 'library' | 'remove';
@@ -50,5 +51,21 @@ export function rowItems(r: RowBits): RowItem[] {
 	}
 	if (lib) out.push('library');
 	if (r.can_act) out.push('remove');
+	return out;
+}
+
+/** What the details pane's ⋯ adds beyond the row's list. */
+export type PaneExtra = 'recheck' | 'reannounce' | 'force' | 'steer' | 'fail';
+
+/** paneExtras: a torrent's checks (Check again, Ask trackers again), force
+ *  start and its sheets when the page can steer it, and Mark failed when the
+ *  page allows it. A read-only row gets none. */
+export function paneExtras(r: RowBits, opts: { steer: boolean; fail: boolean }): PaneExtra[] {
+	if (!r.can_act) return [];
+	const out: PaneExtra[] = [];
+	const torrent = protocolOf(r) === 'torrent';
+	if (torrent && controllable(r.downloader_kind)) out.push('recheck', 'reannounce');
+	if (torrent && opts.steer && !!r.downloader_id && !!r.hash) out.push('force', 'steer');
+	if (opts.fail) out.push('fail');
 	return out;
 }

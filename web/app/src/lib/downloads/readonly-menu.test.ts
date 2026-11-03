@@ -1,13 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { paneExtras, rowItems } from './rowmenu.ts';
 
-const src = readFileSync(new URL('./DlSections.svelte', import.meta.url), 'utf8');
+const torrent = { can_act: true, protocol: 'torrent', downloader_kind: 'qbittorrent', downloader_id: 1, hash: 'abc', phase: 'downloading', state: 'downloading' };
+const job = { can_act: true, protocol: 'usenet', downloader_kind: 'sabnzbd', downloader_id: 2, hash: 'SABnzbd_nzo_1', phase: 'downloading', state: 'downloading' };
 
-describe('read-only rows', () => {
-	it('disables queue and steer menu entries when the row cannot be acted on', () => {
-		for (const id of ['dl-queue-', 'dl-steer-']) {
-			const line = src.split('\n').find((l) => l.includes(`data-testid="${id}`)) ?? '';
-			expect(line).toContain('!r.can_act');
-		}
+describe("the pane's ⋯ menu", () => {
+	it('adds checks, force start, the sheets and Mark failed to a torrent', () => {
+		expect(paneExtras(torrent, { steer: true, fail: true })).toEqual(['recheck', 'reannounce', 'force', 'steer', 'fail']);
+		expect(paneExtras(torrent, { steer: false, fail: false })).toEqual(['recheck', 'reannounce']);
+	});
+	it('gives a Usenet job only Mark failed beyond its row list, which has its queue moves and priority', () => {
+		expect(paneExtras(job, { steer: true, fail: true })).toEqual(['fail']);
+		expect(rowItems(job)).toEqual(['pause', 'up', 'down', 'top', 'bottom', 'priority', 'remove']);
+	});
+	it('offers a read-only row nothing that changes the client', () => {
+		expect(paneExtras({ ...torrent, can_act: false }, { steer: true, fail: true })).toEqual([]);
+		expect(paneExtras({ ...job, can_act: false }, { steer: true, fail: true })).toEqual([]);
+		expect(rowItems({ ...torrent, can_act: false })).toEqual([]);
 	});
 });
