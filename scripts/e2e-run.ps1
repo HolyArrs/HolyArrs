@@ -60,6 +60,15 @@ while ($true) {
 }
 
 "e2e lock: held by $Who"
+# The last holder's servers can take a few seconds to let go of their ports
+# after it releases the lock; start only once the harness ports are free.
+$ports = @(18735) + (18739..18748)
+for ($i = 0; $i -lt 60; $i++) {
+  $taken = @($ports | Where-Object { $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $_); try { $probe.Start(); $false } catch { $true } finally { $probe.Stop() } })
+  if (-not $taken) { break }
+  if ($i -eq 0) { "e2e lock: waiting for ports $($taken -join ', ') to be free" }
+  Start-Sleep -Seconds 2
+}
 # The command runs as its own process with its output in a log file, so a
 # caller piping or redirecting this script can never break the run, and its
 # stderr lines are never turned into errors here.
