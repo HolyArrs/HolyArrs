@@ -506,7 +506,8 @@
 	let anchor = 0;
 	const pickedRows = $derived(list.filter((r) => picked.has(r.id)));
 	// The toolbar's Start, Pause and Remove mean the ticked rows, else the open row.
-	const able = (r: DownloadRow) => controllable(r.downloader_kind) && busy !== r.id;
+	// Start and Pause follow pausable, as the pane's own button does (NZBGet takes those two).
+	const able = (r: DownloadRow) => pausable(r) && busy !== r.id;
 	const startT = $derived(toolbarTargets(pickedRows, openRow, 'paused', able));
 	const pauseT = $derived(toolbarTargets(pickedRows, openRow, 'running', able));
 	const removeT = $derived(toolbarTargets(pickedRows, openRow, 'any', (r) => busy !== r.id));
@@ -683,9 +684,9 @@
 	const runOn = (t: { rows: DownloadRow[] }, one: 'resume' | 'pause', many: BulkAction) => (t.rows.length === 1 ? onact?.(t.rows[0], one) : onbulk?.(t.rows, many));
 	const barActs = $derived([
 		...(onadd ? [{ key: 'add', icon: 'plus' as const, label: 'Add', hint: 'Add torrents by link or file', disabled: false, run: () => onadd?.() }] : []),
-		{ key: 'start', icon: 'play' as const, label: countLabel('Start', startT.rows.length), hint: startT.why ? `Start (${startT.why})` : 'Start', disabled: !startT.rows.length, run: () => runOn(startT, 'resume', 'start'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
-		{ key: 'pause', icon: 'pause' as const, label: countLabel('Pause', pauseT.rows.length), hint: pauseT.why ? `Pause (${pauseT.why})` : 'Pause', disabled: !pauseT.rows.length, run: () => runOn(pauseT, 'pause', 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }] },
-		{ key: 'remove', icon: 'trash' as const, label: countLabel('Remove', removeT.rows.length), hint: removeT.why ? `Remove (${removeT.why})` : 'Remove', disabled: !removeT.rows.length, run: () => (removeT.rows.length === 1 ? onremove(removeT.rows[0]) : onremovemany?.(removeT.rows)) },
+		{ key: 'start', icon: 'play' as const, label: countLabel('Start', startT.rows.length), hint: startT.why ? `Start (${startT.why})` : countLabel('Start', startT.rows.length), disabled: !startT.rows.length, run: () => runOn(startT, 'resume', 'start'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
+		{ key: 'pause', icon: 'pause' as const, label: countLabel('Pause', pauseT.rows.length), hint: pauseT.why ? `Pause (${pauseT.why})` : countLabel('Pause', pauseT.rows.length), disabled: !pauseT.rows.length, run: () => runOn(pauseT, 'pause', 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }] },
+		{ key: 'remove', icon: 'trash' as const, label: countLabel('Remove', removeT.rows.length), hint: removeT.why ? `Remove (${removeT.why})` : countLabel('Remove', removeT.rows.length), disabled: !removeT.rows.length, run: () => (removeT.rows.length === 1 ? onremove(removeT.rows[0]) : onremovemany?.(removeT.rows)) },
 		...(onlimit ? [{ key: 'limit', icon: 'gauge' as const, label: Number.isFinite(capNow) ? `${bytes(capNow)}/s` : 'Speed limit', hint: Number.isFinite(capNow) ? `Speed limit: ${bytes(capNow)}/s` : 'Speed limit (none set)', disabled: false, run: () => onlimit?.() }] : [])
 	]);
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
