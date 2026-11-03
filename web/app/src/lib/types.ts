@@ -28,6 +28,8 @@ export interface TitleView {
 	ids: Record<string, string> | null;
 	keep_up_to_date: boolean;
 	why_added: string;
+	/** Tags route the title's grabs and searches (#108). */
+	tags?: string[];
 	release_gate: string;
 	gate_delay_days: number;
 	gate_opens_at?: string;
@@ -897,6 +899,8 @@ export interface SourceView {
 	categories: Record<string, number[]> | null;
 	min_seeders: number | null;
 	limits: SourceLimits;
+	/** With any, the Source serves only titles sharing one (#108). */
+	tags?: string[];
 	state: string;
 	health: SourceHealth;
 	priority: number;
