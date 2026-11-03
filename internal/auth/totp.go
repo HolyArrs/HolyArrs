@@ -408,6 +408,7 @@ func (a *Auth) twoFactorNewCodes(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
 	}
+	a.accountEvent(r, who.UserID, "backup_codes_new", who.Name+" made new two-factor backup codes; the old ones stopped working", nil)
 	writeJSON(w, http.StatusOK, map[string]any{"backup_codes": codes})
 }
 
@@ -435,6 +436,7 @@ func (a *Auth) codeOrFail(w http.ResponseWriter, r *http.Request, who Who, code 
 		log.Printf("auth: two-factor: %v", err)
 	}
 	if !good {
+		a.failedEvent(r, who.Name, "two-factor check")
 		fail(w, http.StatusUnauthorized, "wrong code")
 		return false
 	}

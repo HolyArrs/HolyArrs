@@ -271,6 +271,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusForbidden, "the owner cannot be changed here; use the reset-owner command to change the owner")
 		return
 	}
+	oldRating, oldCountry := maxRating, country
 	if by.Role != RoleOwner && role != RoleMember {
 		fail(w, http.StatusForbidden, "only the owner can change an admin")
 		return
@@ -347,7 +348,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	if newRole != role {
 		what = append(what, "role "+role+" to "+newRole)
 	}
-	if permsJSON(perms) != permsJSON(parsePerms(permsRaw)) {
+	if !samePerms(perms, parsePerms(permsRaw)) {
 		what = append(what, "permissions")
 	}
 	if newState != state {
@@ -357,11 +358,13 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 			what = append(what, "turned off, signed out and API keys removed")
 		}
 	}
-	if len(what) == 0 {
+	if maxRating != oldRating || country != oldCountry {
 		what = append(what, "age-rating limit")
 	}
-	a.accountEvent(r, id, "edited", byName(r)+" changed "+a.userName(r.Context(), id)+": "+strings.Join(what, ", "),
-		map[string]any{"role": newRole, "state": newState})
+	if len(what) > 0 {
+		a.accountEvent(r, id, "edited", byName(r)+" changed "+a.userName(r.Context(), id)+": "+strings.Join(what, ", "),
+			map[string]any{"role": newRole, "state": newState})
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": id, "role": newRole, "state": newState,
 		"perms": Who{Role: newRole, Perms: perms}.Effective(), "max_rating": maxRating, "rating_country": country})
 }
@@ -779,6 +782,7 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 	// People who only sign in through a media server have no password yet
 	// and may set one.
 	if cur != "" && !CheckPassword(cur, body.Current) {
+		a.failedEvent(r, who.Name, "current password")
 		fail(w, http.StatusUnauthorized, "the current password is wrong")
 		return
 	}
@@ -812,4 +816,17 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 	log.Printf("auth: user %d changed their password", who.UserID)
 	a.accountEvent(r, who.UserID, "password_changed", who.Name+" changed their password; other sessions and API keys removed", nil)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// samePerms says two permission lists hold the same permissions, in any order.
+func samePerms(x, y []Perm) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	for _, p := range x {
+		if !slices.Contains(y, p) {
+			return false
+		}
+	}
+	return true
 }

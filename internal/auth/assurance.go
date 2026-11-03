@@ -94,6 +94,7 @@ func (a *Auth) reauth(w http.ResponseWriter, r *http.Request) {
 		err = errors.Join(err, errNoLocalSignIn)
 	}
 	if !CheckPassword(hash, body.Password) || err != nil {
+		a.failedEvent(r, who.Name, "password check")
 		fail(w, http.StatusUnauthorized, "the password or code is wrong")
 		return
 	}
@@ -107,6 +108,7 @@ func (a *Auth) reauth(w http.ResponseWriter, r *http.Request) {
 			log.Printf("auth: reauthentication two-factor: %v", err)
 		}
 		if !good {
+			a.failedEvent(r, who.Name, "two-factor check")
 			fail(w, http.StatusUnauthorized, "the password or code is wrong")
 			return
 		}

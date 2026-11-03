@@ -118,6 +118,7 @@ func (a *Auth) endMyOtherSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: user %d signed out %d other sessions", who.UserID, n)
+	a.accountEvent(r, who.UserID, "sessions_ended", who.Name+" signed out their other sessions", map[string]any{"ended": n})
 	writeJSON(w, http.StatusOK, map[string]any{"ended": n})
 }
 
@@ -136,6 +137,7 @@ func (a *Auth) endMySession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: user %d signed out one session", who.UserID)
+	a.accountEvent(r, who.UserID, "session_ended", who.Name+" signed out one of their sessions", nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -218,6 +220,7 @@ func (a *Auth) endUserSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: user %d signed out one session of user %d", by.UserID, id)
+	a.accountEvent(r, id, "session_ended", byName(r)+" signed "+a.userName(r.Context(), id)+" out of one session", nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 

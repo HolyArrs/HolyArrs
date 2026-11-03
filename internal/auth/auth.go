@@ -774,10 +774,16 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var id int64
-	var name, hash string
-	err := a.s.Read().QueryRowContext(r.Context(), "SELECT id, name, password_hash FROM users WHERE name = ? AND state = 'active'", c.Name).
-		Scan(&id, &name, &hash)
+	var name, hash, state string
+	// One lookup in every case (no extra query on a failure path), so the
+	// time taken does not tell an unknown name from a turned-off member.
+	err := a.s.Read().QueryRowContext(r.Context(), "SELECT id, name, password_hash, state FROM users WHERE name = ?", c.Name).
+		Scan(&id, &name, &hash, &state)
 	known := err == nil // a typed name that is no user may be a password typed in the wrong box
+	turnedOff := known && state != "active"
+	if turnedOff {
+		err = errDisabled
+	}
 	if err != nil || hash == "" {
 		// Same work whether the name is unknown or has no password (people
 		// who sign in only through Plex, Jellyfin or Emby).
@@ -787,13 +793,14 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	good := CheckPassword(hash, c.Password) && err == nil
 	if !good {
 		log.Printf("auth: failed sign-in from %s", r.RemoteAddr)
-		who, how := name, "password"
-		if !known {
-			// A turned-off member keeps their name; a name that is no member
-			// stays "unknown name" (it may be a password typed in the wrong box).
-			if who = a.knownName(r.Context(), c.Name); who != unknownName {
-				how = "turned off"
-			}
+		// A turned-off member keeps their name; a name that is no member stays
+		// "unknown name" (it may be a password typed in the wrong box).
+		who, how := unknownName, "password"
+		if known {
+			who = name
+		}
+		if turnedOff {
+			how = "turned off"
 		}
 		a.failedEvent(r, who, how)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
@@ -1201,6 +1208,17 @@ func (a *Auth) failedEvent(r *http.Request, name, how string) {
 	}
 	_ = a.s.AddEvent(ctx, &domain.Event{At: now, Kind: "sign_in_failed", Summary: failedSummary(name, how),
 		Data: map[string]any{"name": name, "how": how, "ip": ip, "count": 1, "last_at": store.FormatTime(now)}})
+}
+
+// ssoRefusal is how an OIDC or forward-auth sign-in was refused, for its row.
+func ssoRefusal(kind string, err error) string {
+	switch {
+	case errors.Is(err, errDisabled):
+		return "turned off"
+	case errors.Is(err, errNotAllowed):
+		return kind + " not allowed"
+	}
+	return kind + " refused"
 }
 
 // EventAccountChanged is a change to someone's account: role, permissions,

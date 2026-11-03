@@ -30,7 +30,7 @@ var RoutineEventKinds = []string{
 // without end. setting_changed is the older kind that held the values sent;
 // rows of it already saved stay hidden from History readers too.
 // secrets_imported is the owner's import of a secrets file (credentials).
-var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "setting_changed", "secrets_imported", "account_changed", "control_used"}
+var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "setting_changed", "secrets_imported", "account_changed", "backup_used", "control_used"}
 
 // AuditKeepDays is how long audit Events are kept (fixed).
 const AuditKeepDays = 365

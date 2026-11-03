@@ -168,3 +168,52 @@ func TestTwoFactorTurnedOffAndAccountEvents(t *testing.T) {
 		t.Errorf("edit line %q", s)
 	}
 }
+
+// Wrong passwords at the password check, new backup codes and a reset from
+// the command line are on the audit trail; a save that changes nothing is not.
+func TestReauthBackupCodesAndResetEvents(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	secret, _ := turnOnTwoFactor(t, f, own)
+	own.do(t, f, "POST", "/api/v1/auth/reauth", `{"password":"not the password","code":"000000"}`)
+	f.clock.add(totpStep * time.Second)
+	if resp, out := own.do(t, f, "POST", "/api/v1/auth/two-factor/backup-codes", `{"code":"`+codeNow(t, f, secret, 0)+`"}`); resp.StatusCode != 200 {
+		t.Fatalf("new codes %d %s", resp.StatusCode, out)
+	}
+	join(t, f, invite(t, f, own, `{}`), "ana")
+	var id int64
+	_ = f.s.Read().QueryRow("SELECT id FROM users WHERE name = 'ana'").Scan(&id)
+	if resp, out := own.do(t, f, "PUT", "/api/v1/users/"+itoa(id), `{"state":"active"}`); resp.StatusCode != 200 {
+		t.Fatalf("same state %d %s", resp.StatusCode, out)
+	}
+	if err := ResetOwner(context.Background(), f.s, "luis", pw); err != nil {
+		t.Fatal(err)
+	}
+	es, _, err := f.s.Events(context.Background(), store.EventFilter{Limit: 200})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fails := map[string]bool{}
+	actions := map[string]int{}
+	for _, e := range es {
+		raw, _ := json.Marshal(e.Data)
+		if strings.Contains(string(raw), "not the password") || strings.Contains(string(raw), pw) {
+			t.Fatalf("%s holds a secret: %s", e.Kind, raw)
+		}
+		if e.Kind == "sign_in_failed" && e.Data["name"] == "luis" {
+			fails[e.Data["how"].(string)] = true
+		}
+		if e.Kind == EventAccountChanged {
+			actions[e.Data["action"].(string)]++
+		}
+	}
+	if !fails["password check"] {
+		t.Errorf("wrong password at the check not logged %v", fails)
+	}
+	if actions["backup_codes_new"] != 1 || actions["owner_reset"] != 1 {
+		t.Errorf("actions %v", actions)
+	}
+	if actions["edited"] != 0 {
+		t.Errorf("a save with no change was logged %v", actions)
+	}
+}

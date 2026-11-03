@@ -294,7 +294,8 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&id, &name, &state)
 	if err == nil {
 		if state != "active" {
-			return 0, "", errDisabled
+			// The member's name goes with the refusal, for the audit row only.
+			return 0, name, errDisabled
 		}
 		return id, name, nil
 	}
@@ -302,7 +303,8 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		return 0, "", err
 	}
 	if !mayJoin {
-		return 0, "", errNotAllowed
+		// The outside account's name (from the server) goes with the refusal.
+		return 0, strings.TrimSpace(extName), errNotAllowed
 	}
 	base := strings.TrimSpace(extName)
 	if base == "" {
@@ -335,6 +337,22 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		log.Printf("auth: %s account joined as member %q (%d)", provider, name, id)
 	}
 	return id, name, err
+}
+
+// linkedName is the member an outside account belongs to, found through its
+// link (by id, else by its name on that server), else the member with that
+// name, else unknownName. The typed name is only matched, never stored.
+func (a *Auth) linkedName(ctx context.Context, provider, extID, extName string) string {
+	var n string
+	if extID != "" && a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
+		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&n) == nil {
+		return n
+	}
+	if a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
+		WHERE l.provider = ? AND l.external_name = ? ORDER BY l.user_id LIMIT 1`, provider, extName).Scan(&n) == nil {
+		return n
+	}
+	return a.knownName(ctx, extName)
 }
 
 // outsideName is an outside account's name for a failed sign-in row (it
@@ -628,7 +646,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	if code == http.StatusUnauthorized || code == http.StatusForbidden || code/100 == 4 {
 		log.Printf("auth: failed %s sign-in from %s", kind, r.RemoteAddr)
-		a.failedEvent(r, a.knownName(ctx, c.Name), kind)
+		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
@@ -644,7 +662,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		_, _ = a.serverFetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
-		a.failedEvent(r, a.knownName(ctx, c.Name), kind+" turned off")
+		a.failedEvent(r, a.linkedName(ctx, kind, got.User.ID, got.User.Name), kind+" turned off")
 		fail(w, http.StatusForbidden, "this account is turned off on the "+kind+" server")
 		return
 	}

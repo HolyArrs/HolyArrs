@@ -27,7 +27,9 @@ describe('history filters', () => {
 		expect(all).toContain('import_done');
 		expect(all).not.toContain('search_done');
 		expect(all).not.toContain('library_scanned');
-		expect(all.length).toBeLessThanOrEqual(50);
+		// The server takes at most 64 kinds in one list.
+		expect(all.length).toBeLessThanOrEqual(64);
+		for (const k of ['account_changed', 'secrets_imported', 'backup_used']) expect(stepKinds(['system'])).toContain(k);
 	});
 
 	it('reads the search look and builds a chip per filter', () => {

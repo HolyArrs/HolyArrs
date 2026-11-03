@@ -1063,8 +1063,9 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, k := range strings.Split(q.Get("kind"), ",") {
 		if k = strings.TrimSpace(k); k != "" {
-			if len(k) > 60 || len(f.Kinds) >= 50 {
-				fail(w, http.StatusBadRequest, "kind is a comma list of at most 50 Event kinds")
+			// History's default list (every kind but routine) is about 52 long.
+			if len(k) > 60 || len(f.Kinds) >= 64 {
+				fail(w, http.StatusBadRequest, "kind is a comma list of at most 64 Event kinds")
 				return
 			}
 			f.Kinds = append(f.Kinds, k)
