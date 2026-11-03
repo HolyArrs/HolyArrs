@@ -69,7 +69,7 @@ export const APP_DATA: AppData[] = [
     ],
     key: [],
     check: "HolyArrs shows as connected under Customize › Connectors.",
-    note: "Add it on web or desktop; the phone app then lists it.",
+    note: "Add it on web or desktop; the phone app and Cowork can then use it too.",
     source: "live",
   },
   {
@@ -104,7 +104,7 @@ export const APP_DATA: AppData[] = [
     family: "chatgpt-codex",
     cloud: true,
     needs:
-      "Business, Enterprise or Edu plan; Pro reportedly allows look-ups only.",
+      "Check your ChatGPT plan first: not every plan can add a custom MCP server.",
     signin: [
       {
         text: "On chatgpt.com, open Plugins, press + and choose Add custom MCP server.",
@@ -137,7 +137,10 @@ export const APP_DATA: AppData[] = [
         text: "Name it holyarrs, choose Streamable HTTP, paste the address and save.",
         code: "{url}",
       },
-      { text: "Restart the app. HolyArrs opens in your browser. Press Allow." },
+      {
+        text: "Restart the app. In MCP servers, press Authenticate next to holyarrs.",
+      },
+      { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [
       {
@@ -193,8 +196,9 @@ export const APP_DATA: AppData[] = [
         code: "{url}",
       },
       {
-        text: "Restart the extension. HolyArrs opens in your browser. Press Allow.",
+        text: "Press Restart extension. In MCP servers, press Authenticate next to holyarrs.",
       },
+      { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [
       {
@@ -204,7 +208,7 @@ export const APP_DATA: AppData[] = [
         text: "Add this block to ~/.codex/config.toml (Windows: %USERPROFILE%\\.codex\\config.toml).",
         code: '[mcp_servers.holyarrs]\nurl = "{url}"\nhttp_headers = { "Authorization" = "Bearer {key}" }',
       },
-      { text: "Restart the extension." },
+      { text: "Press Restart extension." },
     ],
     check: "Type /mcp in Codex; holyarrs is listed.",
     note: "Codex inside WSL reads its own ~/.codex/config.toml.",
