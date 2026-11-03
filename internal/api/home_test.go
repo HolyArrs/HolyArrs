@@ -183,6 +183,17 @@ func TestHomeLibraryCounts(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		// A dropped season and its episode on disk are not counted.
+		s3, err := part(sh, "season", num(3), true)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec("UPDATE parts SET dropped_at = ? WHERE id = ?", store.FormatTime(time.Now()), *s3); err != nil {
+			return err
+		}
+		if err := item(sh, sv, "episode", s3, "in_library", 500, false); err != nil {
+			return err
+		}
 		for _, e := range []struct {
 			part    *int64
 			state   string

@@ -167,6 +167,8 @@ if ((Test-Path $dist) -and (Test-Path $src)) {
   $newest = Get-ChildItem $src -Recurse -File | Sort-Object LastWriteTime | Select-Object -Last 1
   if ($newest.LastWriteTime -gt (Get-Item $dist).LastWriteTime) { $warn += "WARNING: web\dist is older than $($newest.Name) ($($newest.LastWriteTime.ToString('HH:mm'))): the harness serves the built app, so this run tests old pages. Run npm run build first." }
 }
+$link = Get-Item (Join-Path $here 'node_modules') -Force -ErrorAction SilentlyContinue
+if ($link -and $link.LinkType -eq 'Junction') { $warn += "WARNING: node_modules here is a junction to $($link.Target); removing this worktree can empty that shared folder for everyone. Give it its own copy: scripts\worktree-own-modules.ps1 -Only $(Split-Path -Leaf (Split-Path -Parent (Split-Path -Parent $here)))" }
 if ($Command -match '--no-deps') { $warn += 'WARNING: --no-deps skips the setup project, so the fresh e2e server has no owner and no folders yet: tests that sign in fail. Leave it out; a project now depends only on setup plus what it needs.' }
 $warn | ForEach-Object { $_ }
 $logDir = Join-Path $state 'e2e-logs'

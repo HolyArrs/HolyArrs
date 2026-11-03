@@ -18,11 +18,14 @@ const person = {
 	known_for: [{ name: 'North Star', year: 2022, overview: '', ids: { tmdb: '601' } }]
 };
 
+// People pages show only credits with a picture that loads, so each film has a poster (served by mockCommunity).
 const films = [
-	{ name: 'North Star', year: 2022, overview: '', ids: { tmdb: '601' }, roles: ['Director'], title_id: 77 },
-	{ name: 'Second Light', year: 2024, overview: '', ids: { tmdb: '602' }, roles: ['Director'] },
-	{ name: 'Third Light', year: 2025, overview: '', ids: { tmdb: '603' }, roles: ['Director'] }
+	{ name: 'North Star', year: 2022, overview: '', ids: { tmdb: '601' }, roles: ['Director'], title_id: 77, poster: '/e2e-art/601.png' },
+	{ name: 'Second Light', year: 2024, overview: '', ids: { tmdb: '602' }, roles: ['Director'], poster: '/e2e-art/602.png' },
+	{ name: 'Third Light', year: 2025, overview: '', ids: { tmdb: '603' }, roles: ['Director'], poster: '/e2e-art/603.png' }
 ];
+// A 1x1 PNG for the fixture posters.
+const tinyPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 
 const version = {
 	id: 701,
@@ -95,6 +98,7 @@ async function mockCommunity(page: Page) {
 	const copyQueries: URL[] = [];
 	let staleOnce = true;
 
+	await page.route('**/e2e-art/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: tinyPng }));
 	await page.route('**/api/v1/**', async (route) => {
 		const request = route.request();
 		const url = new URL(request.url());
@@ -131,6 +135,9 @@ async function mockCommunity(page: Page) {
 		}
 
 		if (path === '/titles/77' && method === 'GET') return json(route, title);
+		// The title page reads the film's facts from the lookup and the metadata answer.
+		if (path === '/titles/lookup') return json(route, { movies: [{ ...films[0], title_id: 77 }] });
+		if (path === '/metadata/movie/601') return json(route, { name: 'North Star', year: 2022, overview: '', poster: films[0].poster, genres: [], cast: [{ id: '202', name: 'Alex Kim', role: 'Director' }], similar: [] });
 		if (path === '/titles/77/people') return json(route, { people: [{ person, roles: ['Director'], characters: [] }] });
 		if (path === '/titles/77/copies') return json(route, { files: [], versions: [version] });
 		if (path === '/titles/77/subtitles') return json(route, { files: [], wishes: [] });
@@ -220,8 +227,8 @@ for (const viewport of viewports) {
 			await director.click();
 			await expect(page).toHaveURL(/\/people\/202$/);
 			await expect(page.getByRole('heading', { level: 1, name: 'Alex Kim' })).toBeVisible();
-			// The filmography is a grid of cards: the owned film opens its Library page, the others open their title page.
-			const filmography = page.getByRole('region', { name: 'Filmography' });
+			// The filmography is rows of cards by decade, under the Filmography heading and filters: the owned film opens its Library page, the others open their title page.
+			const filmography = page.getByRole('group', { name: '2020s' });
 			await expect(filmography.locator('a[href$="/library/77"]')).toHaveAttribute('aria-label', /^North Star/);
 			await expect(filmography.locator('a[href$="/title/movie/602"]')).toHaveAttribute('aria-label', /^Second Light/);
 			await expect(filmography.locator('a[href$="/title/movie/603"]')).toHaveAttribute('aria-label', /^Third Light/);
@@ -231,9 +238,10 @@ for (const viewport of viewports) {
 
 			await page.goto('/library/77');
 			await expect(page.getByRole('heading', { level: 1, name: 'North Star' })).toBeVisible();
-			await expect(page.getByText('2022', { exact: false }).first()).toBeVisible();
+			await expect(page.getByText('2022', { exact: false }).locator('visible=true').first()).toBeVisible();
 			// Cast and crew loads by itself on the new title page.
-			await expect(page.getByRole('link', { name: /^Alex Kim/ })).toHaveAttribute('href', '/people/202');
+			// The side facts and the Cast row both link the director.
+			await expect(page.getByRole('link', { name: /^Alex Kim/ }).first()).toHaveAttribute('href', '/people/202');
 			await verifyPage(page, testInfo, `${viewport.name}-people-and-credits`);
 		});
 

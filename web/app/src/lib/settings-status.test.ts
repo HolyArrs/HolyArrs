@@ -132,14 +132,16 @@ describe('searchSettings', () => {
 
 describe('every setting a search finds is on its page', () => {
 	it('each anchor is an id in that page (or My account)', async () => {
-		const { readFileSync } = await import('node:fs');
-		const { join } = await import('node:path');
+		const { readFileSync, readdirSync } = await import('node:fs');
+		const { join, dirname } = await import('node:path');
 		const root = join(process.cwd(), 'src');
 		const missing: string[] = [];
 		for (const e of settingIndex) {
 			if (!e.anchor) continue;
 			const file = e.href === '/settings/account' ? join(root, 'lib', 'Account.svelte') : join(root, 'routes', ...e.href.split('/').filter(Boolean), '+page.svelte');
-			const text = readFileSync(file, 'utf8');
+			// A page's own parts (other .svelte files beside it) count too.
+			const parts = e.href === '/settings/account' ? [] : readdirSync(dirname(file)).filter((f) => f.endsWith('.svelte') && f !== '+page.svelte');
+			const text = [file, ...parts.map((f) => join(dirname(file), f))].map((f) => readFileSync(f, 'utf8')).join('\n');
 			const way = e.anchor.match(/^(plex|jellyfin|emby)-card$/);
 			const found = text.includes(`id="${e.anchor}"`) || text.includes(`id: '${e.anchor}'`) || (way && text.includes('id="{w}-card"'));
 			if (!found) missing.push(`${e.href}#${e.anchor}`);

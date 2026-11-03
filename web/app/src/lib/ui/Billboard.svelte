@@ -146,7 +146,7 @@
 		if (trailer && settled && inView && !finished && !(once && autoPlayed)) {
 			wait.start();
 			// The lookup starts now, not after the dwell.
-			prefetchTrailer(kind!, tmdb!);
+			prefetchTrailer(kind!, tmdb!, false); // the lookup only: a hero never takes a warmed video over
 		} else {
 			wait.cancel();
 			armed = false;

@@ -214,7 +214,8 @@ func TestByHandRefusesOutside(t *testing.T) {
 // A Downloader folder or Library folder set to a whole disk never makes the
 // whole disk a place to import from by hand.
 func TestByHandPlacesIgnoreWholeDisk(t *testing.T) {
-	for p, want := range map[string]bool{"/": true, `C:\`: true, "C:/": true, "c:": true, "/data": false, `C:\Downloads`: false, "": true} {
+	for p, want := range map[string]bool{"/": true, `C:\`: true, "C:/": true, "c:": true, "/data": false, `C:\Downloads`: false, "": true,
+		"/data/..": true, "/.": true, `C:\x\..`: true, "C:/x/../": true, "/data/../media": false} {
 		if got := wholeDisk(p); got != want {
 			t.Errorf("wholeDisk(%q) = %v, want %v", p, got, want)
 		}
@@ -239,5 +240,25 @@ func TestByHandPlacesIgnoreWholeDisk(t *testing.T) {
 	}
 	if ps.Holds(filepath.Join(t.TempDir(), "x.mkv")) {
 		t.Fatal("a path outside every place passes through a disk-root mapping")
+	}
+}
+
+// A link or junction to a whole disk is a whole disk too.
+func TestWholeDiskThroughALink(t *testing.T) {
+	root := filepath.VolumeName(t.TempDir()) + string(filepath.Separator)
+	link := filepath.Join(t.TempDir(), "disk")
+	if err := os.Symlink(root, link); err != nil {
+		if runtime.GOOS != "windows" {
+			t.Skip("cannot make a link:", err)
+		}
+		if out, err := exec.Command("cmd", "/c", "mklink", "/J", link, root).CombinedOutput(); err != nil {
+			t.Skipf("cannot make a junction: %v %s", err, out)
+		}
+	}
+	if !wholeDisk(link) {
+		t.Fatalf("a link to %s is not taken as the whole disk", root)
+	}
+	if wholeDisk(filepath.Dir(link)) {
+		t.Fatal("a plain folder is taken as the whole disk")
 	}
 }

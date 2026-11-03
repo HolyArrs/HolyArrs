@@ -689,7 +689,7 @@ func (t *TMDB) Movie(ctx context.Context, id string) (Movie, error) {
 		if err != nil || n <= 0 {
 			return Movie{}, ErrNotFound
 		}
-		b, err := t.get(ctx, "/movie/"+strconv.FormatInt(n, 10), url.Values{"append_to_response": {"release_dates,images,credits,alternative_titles,translations"}, "include_image_language": {"en,null"}})
+		b, err := t.get(ctx, "/movie/"+strconv.FormatInt(n, 10), url.Values{"append_to_response": {"release_dates,images,credits,translations"}, "include_image_language": {"en,null"}})
 		if err != nil {
 			return Movie{}, err
 		}

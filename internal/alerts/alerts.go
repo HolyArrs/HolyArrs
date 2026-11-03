@@ -49,6 +49,8 @@ const (
 	MomentNewEpisodes = "new_episodes"    // to the people who asked for or follow a show: new episodes are in the Library
 	MomentNewAlbums   = "new_albums"      // to the people who follow an artist: a new album is in the Library
 	MomentTest        = "test"            // the Send a test button
+	MomentReported    = "report_made"     // to the staff: someone reported a problem with a title
+	MomentFixed       = "report_fixed"    // to the person who reported it: the problem was fixed
 )
 
 // Library moments, told to the staff.
@@ -65,7 +67,7 @@ const (
 
 // Moments lists the moments in the order screens show them.
 var Moments = []string{MomentWaiting, MomentApproved, MomentTurnedDown, MomentReady, MomentNewEpisodes, MomentNewAlbums,
-	MomentGrab, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle}
+	MomentReported, MomentFixed, MomentGrab, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle}
 
 // Person is someone a message is about, with where Alerts reach them.
 type Person struct {
@@ -92,6 +94,19 @@ type Message struct {
 	// Artist and Tracks are the artist and tracks it is about.
 	Artist *Artist
 	Tracks []Track
+	// Report is the problem report it is about, when there is one.
+	Report *Report
+}
+
+// Report names the problem report a message is about.
+type Report struct {
+	ID      int64  `json:"id"`
+	TitleID int64  `json:"title_id"`
+	Title   string `json:"title"`
+	Where   string `json:"where,omitempty"` // S02E03, Season 2, an album or track
+	Kind    string `json:"kind"`            // picture, sound, subtitles, wont_play, other
+	Note    string `json:"note,omitempty"`
+	Reply   string `json:"reply,omitempty"`
 }
 
 // Movie names the movie a message is about.
@@ -383,7 +398,8 @@ func (s *Sender) secret(ctx context.Context, id *int64) (string, error) {
 
 // forPeople says whether a moment is told to the people who asked.
 func forPeople(moment string) bool {
-	return moment == MomentApproved || moment == MomentTurnedDown || moment == MomentReady || moment == MomentNewEpisodes || moment == MomentNewAlbums
+	return moment == MomentApproved || moment == MomentTurnedDown || moment == MomentReady || moment == MomentNewEpisodes || moment == MomentNewAlbums ||
+		moment == MomentFixed
 }
 
 func (s *Sender) discord(ctx context.Context, a domain.Alert, m Message) error {

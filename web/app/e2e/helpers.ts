@@ -271,6 +271,8 @@ export async function ensureInLibrary(browser: Browser, words: string, name: str
 
 /** openInLibrary steps from a music page (artist or album, found in Search or the Library) to its Library page. */
 export async function openInLibrary(page: Page) {
+	// A page reached from the Library (an album from the artist's Library page) is there already.
+	if (/\/library\/\d+/.test(new URL(page.url()).pathname)) return;
 	await page.getByRole('link', { name: 'Open in Library' }).or(page.getByRole('button', { name: 'Open in Library' })).first().click();
 	await expect(page).toHaveURL(/\/library\/\d+/);
 }

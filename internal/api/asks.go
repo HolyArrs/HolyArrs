@@ -501,6 +501,9 @@ func (a *API) listMessages(w http.ResponseWriter, r *http.Request) {
 		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM asks WHERE state = 'asked'").Scan(&n)
 		out["waiting"] = n
 	}
+	if mayManageReports(r) {
+		out["reports_open"], _ = asks.OpenReports(r.Context(), a.s.Store.Read())
+	}
 	writeJSON(w, http.StatusOK, out)
 }
 

@@ -17,7 +17,7 @@ func fullSnapshots() []Input {
 	radarr := &Snapshot{Kind: Radarr, Via: ViaAPI, Version: "6.4.4", Schema: 242,
 		Titles: []Title{
 			{SourceID: 1, Kind: "movie", Name: "The Matrix", Year: 1999, IDs: map[string]string{"tmdb": "603", "imdb": "tt0133093"}, Path: "/movies/The Matrix (1999)",
-				Folder: "/movies", Monitored: true, ProfileID: 1, Tags: []string{"kids"}, Extra: map[string]any{"minimumAvailability": "released"}},
+				Folder: "/movies", Monitored: true, ProfileID: 1, Tags: []string{"kids"}, Extra: map[string]any{"minimum_availability": "released", "minimumAvailability": "released"}},
 			{SourceID: 2, Kind: "movie", Name: "No id", Path: "/movies/No id"},
 			{SourceID: 3, Kind: "movie", Name: "Elsewhere", IDs: map[string]string{"tmdb": "604"}, Path: "/other/Elsewhere"},
 		},
@@ -25,6 +25,7 @@ func fullSnapshots() []Input {
 		Folders:         []Folder{{Path: "/movies", Extra: map[string]any{"name": "Films"}}},
 		QualityProfiles: []Profile{{ID: 1, Name: "HD-1080p", UpgradeAllowed: true, Cutoff: "Bluray-1080p", Allowed: []string{"WEBDL-1080p", "Bluray-1080p"}, Scores: map[string]int{"x265": 10}}, {ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"}},
 		CustomFormats:   []Named{{ID: 1, Name: "x265"}},
+		ReleaseProfiles: []Named{{ID: 1, Name: "No HC", Settings: map[string]any{"enabled": true, "ignored": []any{"HC"}}}},
 		DelayProfiles:   []DelayProfile{{ID: 1, EnableTorrent: true, TorrentDelay: 60}},
 		Naming:          map[string]any{"renameMovies": true, "colonReplacementFormat": "dash", "standardMovieFormat": "{Movie Title} ({Release Year}) {Quality Full}", "movieFolderFormat": "{Movie Title} ({Release Year}) {Movie Collection}", "includeQuality": true},
 		Exclusions:      []Exclusion{{IDs: map[string]string{"tmdb": "999"}, Name: "Bad Movie", Year: 2001}},
@@ -37,7 +38,8 @@ func fullSnapshots() []Input {
 		ImportLists:   []Provider{prov("Trakt", "TraktListImport", nil, "accessToken")},
 		Notifications: []Provider{prov("Discord", "Discord", nil, "webHookUrl"), prov("Mail", "Email", map[string]any{"server": "smtp.example", "port": int64(465), "useEncryption": "1", "from": "a@example.org", "to": []any{"b@example.org"}}, "password"), prov("Push", "Pushover", nil)},
 		Metadata:      []Provider{prov("Kodi", "XbmcMetadata", nil)},
-		NeedsReentry:  []string{`indexer "Nyaa": apiKey`},
+		Settings:      map[string]any{"availability_delay": int64(7)},
+		NeedsReentry:  []string{`indexer "Nyaa": apiKey`, `import list "Trakt": accessToken`},
 		Notes:         []string{"a note"},
 	}
 	sonarr := &Snapshot{Kind: Sonarr, Version: "4.0.0",
@@ -54,9 +56,10 @@ func fullSnapshots() []Input {
 		MetadataProfiles: []Named{{ID: 1, Name: "Standard"}},
 	}
 	prowlarr := &Snapshot{Kind: Prowlarr,
-		Indexers:    []Provider{prov("NZBgeek", "Newznab", map[string]any{"baseUrl": "https://api.nzbgeek.example", "apiPath": "/api"}, "apiKey")},
-		AppLinks:    []Provider{prov("Radarr", "Radarr", map[string]any{"baseUrl": "http://radarr:7878"}, "apiKey")},
-		AppProfiles: []map[string]any{{"name": "Standard"}},
+		Indexers:       []Provider{prov("NZBgeek", "Newznab", map[string]any{"baseUrl": "https://api.nzbgeek.example", "apiPath": "/api"}, "apiKey")},
+		AppLinks:       []Provider{prov("Radarr", "Radarr", map[string]any{"baseUrl": "http://radarr:7878"}, "apiKey")},
+		IndexerProxies: []Provider{prov("Flare", "FlareSolverr", map[string]any{"host": "http://flaresolverr:8191/"})},
+		AppProfiles:    []map[string]any{{"name": "Standard"}},
 	}
 	bazarr := &Snapshot{Kind: Bazarr, Subtitles: &SubtitleSetup{Languages: []string{"en", "es", "fr"},
 		Profiles:  []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
@@ -126,6 +129,10 @@ func TestPlanAccountsForEverySnapshotField(t *testing.T) {
 			switch name {
 			case "needs_reentry", "notes":
 				for _, s := range f.Interface().([]string) {
+					// An import list's sign-in is told on that list's own Not moved line.
+					if name == "needs_reentry" && importListLeft(p, x.Snap, s) {
+						continue
+					}
 					if !slices.ContainsFunc(append(p.NeedsInput, p.Notes...), func(x string) bool { return strings.HasSuffix(x, s) }) {
 						t.Errorf("%s %s %q lost", x.Snap.Kind, name, s)
 					}
@@ -203,6 +210,18 @@ func TestPlanAccountsForEverySnapshotField(t *testing.T) {
 			t.Errorf("no fixture fills %q", name)
 		}
 	}
+}
+
+// importListLeft says a secret named for an import list is accounted by
+// that list's Not moved line.
+func importListLeft(p *Plan, s *Snapshot, secret string) bool {
+	for i, l := range s.ImportLists {
+		if strings.HasPrefix(secret, `import list "`+l.Name+`": `) {
+			_, ok := notMoved(p, fmt.Sprintf("%s import_lists[%d]", s.Kind, i))
+			return ok
+		}
+	}
+	return false
 }
 
 func namingMoved(p *Plan, app Kind, key string) bool {
@@ -426,5 +445,167 @@ func TestPlanHostileSnapshot(t *testing.T) {
 	p = BuildPlan([]Input{{1, many}}, Choices{})
 	if len(p.Group(GroupNeverAdd).Items) != MaxPlanOthers || len(p.NotMoved) != 5 {
 		t.Fatalf("cap: %d items, %d not moved", len(p.Group(GroupNeverAdd).Items), len(p.NotMoved))
+	}
+}
+
+// TestPlanImportListLines: each list gets the reason that fits its app and
+// kind, and a list's sign-in is never asked for under Needs your input.
+func TestPlanImportListLines(t *testing.T) {
+	sonarr := &Snapshot{Kind: Sonarr, ImportLists: []Provider{{Name: "Trakt shows", Kind: "TraktListImport", NeedsReentry: []string{"accessToken"}}}}
+	radarr := &Snapshot{Kind: Radarr, ImportLists: []Provider{{Name: "Top films", Kind: "TMDbListImport"}, {Name: "Watch", Kind: "TraktListImport", NeedsReentry: []string{"accessToken"}},
+		{Name: "Other box", Kind: "RadarrImport", NeedsReentry: []string{"apiKey"}}, {Name: "Picks", Kind: "IMDbListImport"}}}
+	lidarr := &Snapshot{Kind: Lidarr, ImportLists: []Provider{{Name: "Saved albums", Kind: "SpotifySavedAlbums", NeedsReentry: []string{"refreshToken"}}}}
+	for _, s := range []*Snapshot{sonarr, radarr, lidarr} {
+		s.finish()
+	}
+	p := BuildPlan([]Input{{1, sonarr}, {2, radarr}, {3, lidarr}}, Choices{})
+	for from, want := range map[string]string{
+		"sonarr import_lists[0]": "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr; its sign-in does not come over",
+		"radarr import_lists[0]": "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists",
+		"radarr import_lists[1]": "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists (a private list needs to be made public first); its sign-in does not come over",
+		"radarr import_lists[2]": "HolyArrs is one app; it does not copy from another instance; its sign-in does not come over",
+		"radarr import_lists[3]": "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr",
+		"lidarr import_lists[0]": "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr; its sign-in does not come over",
+	} {
+		if n, ok := notMoved(p, from); !ok || n.Group != GroupOther || n.Why != want {
+			t.Errorf("%s: %+v", from, n)
+		}
+	}
+	for _, n := range p.NeedsInput {
+		if strings.Contains(n, "import list") {
+			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
+		}
+	}
+}
+
+// TestPlanTagScope: a moved Source, Downloader or Alert that had tags says
+// it now serves every title of its kind and lists the tags; an untagged
+// one says nothing. Delay rules name their scope.
+func TestPlanTagScope(t *testing.T) {
+	s := &Snapshot{Kind: Radarr,
+		Indexers: []Provider{{Name: "Nyaa", Kind: "Torznab", Tags: []string{"kids", "anime"}, Settings: map[string]any{"baseUrl": "http://prowlarr:9696/1/"}},
+			{Name: "Plain", Kind: "Torznab", Settings: map[string]any{"baseUrl": "http://prowlarr:9696/2/"}}},
+		DownloadClients: []Provider{{Name: "qBit", Kind: "QBittorrent", Tags: []string{"kids"}, Settings: map[string]any{"host": "qbit", "port": int64(8080)}},
+			{Name: "qBit2", Kind: "QBittorrent", Settings: map[string]any{"host": "qbit2", "port": int64(8080)}}},
+		Notifications: []Provider{{Name: "Discord", Kind: "Discord", Tags: []string{"kids"}}, {Name: "Hook", Kind: "Webhook"}},
+		DelayProfiles: []DelayProfile{{ID: 2, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "torrent", UsenetDelay: 30, TorrentDelay: 0, Order: 1, Tags: []string{"kids"}},
+			{ID: 1, EnableUsenet: true, PreferredProtocol: "usenet", TorrentDelay: 60, Order: 2147483647}},
+	}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	for _, c := range []struct{ group, key, from string }{
+		{GroupSources, "source:nyaa", "radarr indexers[0]"},
+		{GroupDownloaders, "downloader:http://qbit:8080", "radarr download_clients[0]"},
+		{GroupAlerts, "alert:discord", "radarr notifications[0]"},
+	} {
+		it := item(t, p, c.group, c.key)
+		if !strings.Contains(it.Detail, "only for titles tagged ") || !strings.Contains(it.Detail, " there; here it serves every movie title") {
+			t.Errorf("%s detail %q", c.key, it.Detail)
+		}
+		want := "HolyArrs has no tags; check it before you resume it"
+		if c.group == GroupAlerts {
+			want = "HolyArrs has no tags; check it before you turn it on"
+		}
+		if n, ok := notMoved(p, c.from+".tags"); !ok || n.Group != c.group || n.Why != want {
+			t.Errorf("%s tag line %+v", c.key, n)
+		}
+	}
+	if d := item(t, p, GroupSources, "source:nyaa").Detail; !strings.Contains(d, "tagged kids, anime there") {
+		t.Errorf("both tags named: %q", d)
+	}
+	for _, c := range []struct{ group, key, from string }{
+		{GroupSources, "source:plain", "radarr indexers[1]"},
+		{GroupDownloaders, "downloader:http://qbit2:8080", "radarr download_clients[1]"},
+		{GroupAlerts, "alert:hook", "radarr notifications[1]"},
+	} {
+		if it := item(t, p, c.group, c.key); strings.Contains(it.Detail, "tagged") {
+			t.Errorf("%s untagged detail %q", c.key, it.Detail)
+		}
+		if _, ok := notMoved(p, c.from+".tags"); ok {
+			t.Errorf("%s untagged got a tag line", c.key)
+		}
+	}
+	if n, _ := notMoved(p, "radarr delay_profiles[0]"); n.What != "wait before grabbing (tags: kids)" ||
+		n.Why != "HolyArrs has waits in Pick rules (prefer, Usenet and torrent minutes) but this one was not carried over: prefer torrent, Usenet 30 min, torrent 0 min; set them under Pick rules" {
+		t.Errorf("tagged delay %+v", n)
+	}
+	if n, _ := notMoved(p, "radarr delay_profiles[1]"); n.What != "wait before grabbing (every title)" || !strings.Contains(n.Why, "prefer usenet, Usenet 0 min, torrent 60 min, torrent off; set them under Pick rules") {
+		t.Errorf("torrent-off delay %+v", n)
+	}
+	if n, _ := notMoved(p, "radarr delay_profiles[1]"); !strings.HasSuffix(n.Why, "; Pick rules cannot turn a protocol off, so pause those Sources instead") {
+		t.Errorf("torrent-off delay %+v", n)
+	}
+	// The old app's untouched default asks nothing; a long name keeps its tags.
+	s.DelayProfiles = []DelayProfile{{ID: 1, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "usenet", Order: 2147483647}}
+	s.Indexers[0].Name = strings.Repeat("N", 300)
+	p = BuildPlan([]Input{{1, s}}, Choices{})
+	if n, _ := notMoved(p, "radarr delay_profiles[0]"); n.Why != "the old app's default: no wait, Usenet preferred only to break ties; nothing to set here" {
+		t.Errorf("default delay %+v", n)
+	}
+	if n, _ := notMoved(p, "radarr indexers[0].tags"); !strings.HasSuffix(n.What, " (tags: kids, anime)") {
+		t.Errorf("long name tag line %q", n.What)
+	}
+}
+
+// TestPlanReleaseWordsLine: a rule with no words has no empty part, and a
+// long rule keeps its scope.
+func TestPlanReleaseWordsLine(t *testing.T) {
+	s := &Snapshot{Kind: Sonarr, ReleaseProfiles: []Named{{Name: "Empty", Settings: map[string]any{"enabled": true}},
+		{Name: "Long", Settings: map[string]any{"enabled": true, "required": []any{strings.Repeat("w", 300)}, "tags": []any{"anime"}}}}}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	if n, _ := notMoved(p, "sonarr release_profiles[0]"); n.What != "Empty (every title)" {
+		t.Errorf("empty rule %q", n.What)
+	}
+	if n, _ := notMoved(p, "sonarr release_profiles[1]"); !strings.HasSuffix(n.What, " (tags: anime)") {
+		t.Errorf("long rule %q", n.What)
+	}
+}
+
+// TestPlanReleaseGate: Radarr's release stage becomes each movie's Release
+// gate and its availability delay the gate delay (cut to 365); an unknown
+// stage keeps this server's default and is listed. The delay is never
+// shown as a Request setting.
+func TestPlanReleaseGate(t *testing.T) {
+	movie := func(id int, stage string) Title {
+		n := fmt.Sprint("M", id)
+		return Title{SourceID: int64(id), Kind: "movie", Name: n, IDs: map[string]string{"tmdb": fmt.Sprint(id)}, Path: "/movies/" + n, Monitored: true,
+			Extra: map[string]any{"minimum_availability": stage}}
+	}
+	s := &Snapshot{Kind: Radarr, Folders: []Folder{{Path: "/movies"}},
+		Titles:   []Title{movie(1, "released"), movie(2, "inCinemas"), movie(3, "tba"), movie(4, "someday"), movie(5, "2")},
+		Settings: map[string]any{"availability_delay": int64(400)}}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	for id, want := range map[int]string{1: "released", 2: "in_cinemas", 3: "announced", 4: "", 5: "in_cinemas"} {
+		it := item(t, p, GroupTitles, fmt.Sprint("title:movie:tmdb:", id))
+		if it.Title.ReleaseGate != want || it.Title.GateDelayDays == nil || *it.Title.GateDelayDays != 365 {
+			t.Errorf("movie %d: %+v", id, it.Title)
+		}
+		if !strings.Contains(it.Detail, "(+365 days, cut to 365)") {
+			t.Errorf("movie %d detail %q", id, it.Detail)
+		}
+	}
+	if d := item(t, p, GroupTitles, "title:movie:tmdb:2").Detail; !strings.Contains(d, "release gate: in cinemas (+365 days, cut to 365)") {
+		t.Errorf("detail %q", d)
+	}
+	if n, ok := notMoved(p, "radarr titles[3].minimum_availability"); !ok || n.What != "M4: release stage someday" || n.Why != "unknown release stage someday; the title takes this server's default" {
+		t.Errorf("unknown stage %+v", n)
+	}
+	if _, ok := notMoved(p, "radarr titles.minimum_availability"); ok {
+		t.Error("the release stage is moved, not listed as an extra")
+	}
+	for _, n := range p.NotMoved {
+		if strings.Contains(n.From, "availability_delay") {
+			t.Errorf("the delay is listed as not moved: %+v", n)
+		}
+	}
+	if !slices.Contains(p.Mapped, "radarr settings.availability_delay") || !slices.ContainsFunc(p.Notes, func(n string) bool {
+		return strings.Contains(n, "this server's default for new movies stays as it is")
+	}) {
+		t.Errorf("mapped %v notes %v", p.Mapped, p.Notes)
+	}
+	// Without a delay the gate alone is set, and the server's delay applies.
+	s.Settings = nil
+	p = BuildPlan([]Input{{1, s}}, Choices{})
+	if it := item(t, p, GroupTitles, "title:movie:tmdb:1"); it.Title.GateDelayDays != nil || !strings.HasSuffix(it.Detail, "; release gate: released") {
+		t.Errorf("no delay %+v %q", it.Title, it.Detail)
 	}
 }

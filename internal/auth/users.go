@@ -50,17 +50,18 @@ func putSetting(tx *sql.Tx, grp, key, value string, by domain.Actor, now time.Ti
 
 // UserView is a user as the Users screen shows them.
 type UserView struct {
-	ID        int64      `json:"id"`
-	Name      string     `json:"name"`
-	Role      string     `json:"role"`
-	State     string     `json:"state"`
-	Perms     []Perm     `json:"perms"`
-	TwoFactor bool       `json:"two_factor"`
-	Password  bool       `json:"password"` // signs in with a HolyArrs password
-	Links     []LinkView `json:"links"`
-	CreatedAt string     `json:"created_at"`
-	Avatar    *string    `json:"avatar"` // the picture's address, or null
-	LastSeen  *string    `json:"last_seen_at,omitempty"`
+	ID        int64         `json:"id"`
+	Name      string        `json:"name"`
+	Role      string        `json:"role"`
+	State     string        `json:"state"`
+	Perms     []Perm        `json:"perms"`
+	TwoFactor bool          `json:"two_factor"`
+	Password  bool          `json:"password"` // signs in with a HolyArrs password
+	Links     []LinkView    `json:"links"`
+	SSOLinks  []SSOLinkView `json:"sso_links"` // single sign-on and trusted proxy identities
+	CreatedAt string        `json:"created_at"`
+	Avatar    *string       `json:"avatar"` // the picture's address, or null
+	LastSeen  *string       `json:"last_seen_at,omitempty"`
 	// MaxRating is a Kid's age-rating limit ("" for no limit).
 	MaxRating     string `json:"max_rating"`
 	RatingCountry string `json:"rating_country"`
@@ -114,7 +115,8 @@ func (a *Auth) OutsideJoinOpen(ctx context.Context) bool {
 			return true
 		}
 	}
-	return a.sso != nil && ((a.sso.oidc != nil && a.sso.oidc.opt.AllowJoin) || (a.sso.forward != nil && a.sso.forward.opt.AllowJoin))
+	sso := a.ssoNow()
+	return (sso.oidc != nil && sso.oidc.opt.AllowJoin) || (sso.forward != nil && sso.forward.opt.AllowJoin)
 }
 
 const errSkipLocalKid = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
@@ -166,6 +168,7 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 		u.Perms = Who{Role: u.Role, Perms: parsePerms(perms)}.Effective()
 		u.RatingCountry = countryOr(u.RatingCountry)
 		u.Links = []LinkView{}
+		u.SSOLinks = []SSOLinkView{}
 		u.Avatar = avatarURL(u.ID, tag)
 		if seen.Valid {
 			u.LastSeen = &seen.String
@@ -186,6 +189,23 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 		if links.Scan(&id, &l.Provider, &l.Name) == nil {
 			if i, ok := byID[id]; ok {
 				out[i].Links = append(out[i].Links, l)
+			}
+		}
+	}
+	sso, err := a.s.Read().QueryContext(r.Context(), "SELECT user_id, kind, issuer, display_name, created_at FROM sso_links ORDER BY kind, issuer")
+	if err != nil {
+		serverError(w, "users", err)
+		return
+	}
+	defer sso.Close()
+	for sso.Next() {
+		var id int64
+		var l SSOLinkView
+		var name sql.NullString
+		if sso.Scan(&id, &l.Kind, &l.Issuer, &name, &l.CreatedAt) == nil {
+			l.Name = name.String
+			if i, ok := byID[id]; ok {
+				out[i].SSOLinks = append(out[i].SSOLinks, l)
 			}
 		}
 	}

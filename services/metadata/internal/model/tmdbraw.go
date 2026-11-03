@@ -41,7 +41,7 @@ var tmdbParams = map[string]*regexp.Regexp{
 	"year":                          regexp.MustCompile(`^[12][0-9]{3}$`),
 	"primary_release_year":          regexp.MustCompile(`^[12][0-9]{3}$`),
 	"first_air_date_year":           regexp.MustCompile(`^[12][0-9]{3}$`),
-	"append_to_response":            regexp.MustCompile(`^(credits|aggregate_credits|release_dates|content_ratings|images|recommendations|similar|external_ids|keywords|translations|videos)(,(credits|aggregate_credits|release_dates|content_ratings|images|recommendations|similar|external_ids|keywords|translations|videos)){0,9}$`),
+	"append_to_response":            regexp.MustCompile(`^(credits|aggregate_credits|release_dates|content_ratings|images|recommendations|similar|external_ids|keywords|translations|videos|alternative_titles)(,(credits|aggregate_credits|release_dates|content_ratings|images|recommendations|similar|external_ids|keywords|translations|videos|alternative_titles)){0,10}$`),
 	"include_image_language":        regexp.MustCompile(`^[a-z,]{1,32}$`),
 	"include_video_language":        regexp.MustCompile(`^[a-z]{2}(,[a-z]{2}){0,2}(,null)?$`),
 	"external_source":               regexp.MustCompile(`^(imdb_id|tvdb_id)$`),

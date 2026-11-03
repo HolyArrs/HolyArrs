@@ -437,11 +437,13 @@ export interface AskSettings {
 export interface AppMessage {
 	id: number;
 	created_at: string;
-	kind: 'approved' | 'turned_down' | 'ready';
+	kind: 'approved' | 'turned_down' | 'ready' | 'fixed';
 	text: string;
 	ask_id?: number;
 	title_id?: number;
 	read_at?: string;
+	/** A reported problem that was fixed (kind fixed). */
+	report_id?: number;
 }
 
 export type Moment =
@@ -451,6 +453,8 @@ export type Moment =
 	| 'ask_ready'
 	| 'new_episodes'
 	| 'new_albums'
+	| 'report_made'
+	| 'report_fixed'
 	| 'grab'
 	| 'import'
 	| 'rename'

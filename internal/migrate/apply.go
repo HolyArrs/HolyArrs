@@ -828,7 +828,7 @@ func (r *run) title(it Item) (string, string) {
 	}
 	c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
 	if t.Kind == "movie" {
-		c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:")}
+		c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
 	}
 	res, err := r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
 	if err == nil && len(res) == 1 && res[0].Error != "" {

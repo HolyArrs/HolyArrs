@@ -155,6 +155,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/sign-in', 'plex-card', 'Sign in with Plex', 'plex sign-in login'),
 	e('/settings/sign-in', 'jellyfin-card', 'Sign in with Jellyfin', 'jellyfin sign-in login'),
 	e('/settings/sign-in', 'emby-card', 'Sign in with Emby', 'emby sign-in login'),
+	e('/settings/sign-in', 'sso-card', 'Single sign-on', 'sso oidc openid connect authentik authelia keycloak trusted proxy forward auth unlink'),
 	e('/settings/sign-in', 'proxy-card', 'Trusted proxies', 'reverse proxy forward auth', true),
 	e('/settings/sign-in', 'keys-card', 'API keys', 'api key token make revoke', true),
 
@@ -167,6 +168,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/ai', 'ai-connect', 'Connect Claude', 'claude desktop code connect setup address mcp'),
 	e('/settings/api', 'api-start', 'API base address', 'api address url base openapi'),
 	e('/settings/api', 'api-routes', 'Every API route', 'api routes endpoints openapi'),
+	e('/settings/api', 'seerr-card', 'Requests from Seerr and Overseerr', 'seerr overseerr jellyseerr sonarr radarr requests connect'),
 	e('/settings/move', '', 'Move from other apps', 'import migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
 
 	// System

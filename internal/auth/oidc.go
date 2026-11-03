@@ -239,6 +239,17 @@ func oidcOriginHost(u *url.URL) string {
 	return strings.ToLower(u.Hostname()) + ":" + port
 }
 
+// forget drops finished callbacks not yet turned into a session, so an
+// identity unlinked meanwhile cannot finish one. People mid-sign-in start again.
+func (r *oidcRuntime) forget() {
+	if r == nil {
+		return
+	}
+	r.mu.Lock()
+	r.results = map[string]oidcResult{}
+	r.mu.Unlock()
+}
+
 func (r *oidcRuntime) close() {
 	if r == nil {
 		return
@@ -397,11 +408,7 @@ func (a *Auth) oidcRoutes(m *http.ServeMux) {
 
 func (a *Auth) oidcStart(w http.ResponseWriter, r *http.Request, linking bool) {
 	oidcPrivate(w)
-	if a.sso == nil {
-		fail(w, http.StatusNotFound, "OIDC sign-in is not enabled")
-		return
-	}
-	o := a.sso.oidc
+	o := a.ssoNow().oidc // read once: a settings save may swap it
 	if o == nil {
 		fail(w, http.StatusNotFound, "OIDC sign-in is not enabled")
 		return
@@ -437,10 +444,10 @@ func (a *Auth) oidcStart(w http.ResponseWriter, r *http.Request, linking bool) {
 
 func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 	oidcPrivate(w)
-	if a.sso == nil || !a.ssoAttempt(w, r) {
+	if !a.ssoAttempt(w, r) {
 		return
 	}
-	o := a.sso.oidc
+	o := a.ssoNow().oidc // read once: a settings save may swap it
 	if o == nil {
 		fail(w, http.StatusBadRequest, "OIDC callback was not accepted")
 		return
@@ -491,11 +498,9 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 
 func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) {
 	oidcPrivate(w)
-	if a.sso == nil {
-		fail(w, http.StatusNotFound, "OIDC sign-in is not enabled")
-		return
-	}
-	o := a.sso.oidc
+	a.ssoMu.RLock() // until the session exists: see ssoMu
+	defer a.ssoMu.RUnlock()
+	o := a.ssoNow().oidc // read once: a settings save may swap it
 	if o == nil {
 		fail(w, http.StatusNotFound, "OIDC sign-in is not enabled")
 		return

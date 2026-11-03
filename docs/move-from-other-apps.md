@@ -44,7 +44,8 @@ and move again: nothing is added twice.
 | Library folders (Radarr, Sonarr, Lidarr) | Library folders for movies, shows and music. |
 | Movies, shows and artists | Titles, found by their TMDB, TVDB or MusicBrainz id and **adopted in place**: each title's folder and files stay exactly where they are. Its watch flag becomes **Keep up to date**; seasons that were not watched stay off. Nothing is searched for during the move. |
 | Quality profiles | Each one is matched to the closest **Pick rules** preset (Good everyday, 4K, Lossless first, Lossy 320 or V0, Any music), with the reason shown in the plan. Titles use the preset of their profile. |
-| Exclusions | The **Never-add** list. |
+| Exclusions | The **Never-add** list (read live or from a backup). |
+| Radarr's release stage of each movie, and its availability delay | Each moved movie's **Release gate** and gate delay (up to 365 days). This server's default for new movies stays as it is. |
 | Torznab, Newznab and RSS indexers (Radarr, Sonarr, Lidarr, Prowlarr) | **Sources**, always added paused and unable to reach your home network, with or without a key. An address is cut to its host and API path; an RSS feed address, extra parameters and anything that looks like a key in the path are typed again. |
 | qBittorrent and SABnzbd | **Downloaders**, always added paused and unable to reach your home network, even without a password. They use HolyArrs's own `holyarrs` category, so they never pick up the old apps' downloads. |
 | Naming | HolyArrs naming settings, where a pattern word has a match. Nothing on disk is renamed. |
@@ -61,11 +62,14 @@ and move again: nothing is added twice.
   HolyArrs. The plan and the report list each one under **needs your
   input** so you can type it again.
 - **Settings with no HolyArrs match.** Custom formats, wait-before-grab
-  rules, language and metadata profiles, tags, import lists, metadata
-  writers, Prowlarr's app links and sync profiles, download categories and
-  usenet servers, Bazarr's other profiles and sites HolyArrs does not have
-  yet, and notification kinds other than Discord, webhook and email. Each
-  one is on the **not moved** list with its reason.
+  rules (each one listed with its waits, to set under Pick rules), release
+  word rules, language and metadata profiles, tags, import lists, metadata
+  writers, Prowlarr's app links, sync profiles and indexer proxies, download
+  categories and usenet servers, Bazarr's other profiles and sites HolyArrs
+  does not have yet, and notification kinds other than Discord, webhook and
+  email. Each one is on the **not moved** list with its reason. Not read at
+  all: auto-tag rules (they only add tags) and Seerr's request tags; the
+  person who asked does come over.
 
 ## Needs your input afterwards
 
@@ -76,6 +80,11 @@ After the move, type again:
   resume it;
 - each Alert's link or mail password (**Settings > Alerts**), then turn it on;
 - invites for the people who came over (**Settings > Users**).
+
+A Source, Downloader or Alert that had tags now serves every title of its
+kind; check it before you resume it or turn it on. An import list's sign-in
+is not asked for; its line on the **not moved** list says what to do with
+the list.
 
 Sources and Downloaders come over paused even when they need no key, and
 their **reach the local network** switch is off. Check each one, turn the

@@ -59,8 +59,8 @@ func newForwardRuntime(opt ForwardAuthOptions) (*forwardRuntime, error) {
 	return f, nil
 }
 
-func (a *Auth) forwardIdentity(r *http.Request) (string, string, bool) {
-	if a.sso == nil || a.sso.forward == nil {
+func (a *Auth) forwardIdentity(r *http.Request, fwd *forwardRuntime) (string, string, bool) {
+	if fwd == nil {
 		return "", "", false
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -69,7 +69,7 @@ func (a *Auth) forwardIdentity(r *http.Request) (string, string, bool) {
 	}
 	ip := net.ParseIP(host)
 	trusted := false
-	for _, peer := range a.sso.forward.peers {
+	for _, peer := range fwd.peers {
 		trusted = trusted || peer.Contains(ip)
 	}
 	if !trusted {
@@ -113,19 +113,22 @@ func (a *Auth) ssoPassed(r *http.Request) {
 
 func (a *Auth) forwardLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	if a.sso == nil || a.sso.forward == nil {
+	a.ssoMu.RLock() // until the session exists: see ssoMu
+	defer a.ssoMu.RUnlock()
+	fwd := a.ssoNow().forward // read once: a settings save may swap it
+	if fwd == nil {
 		fail(w, http.StatusNotFound, "this sign-in method is off")
 		return
 	}
 	if !a.ssoAttempt(w, r) {
 		return
 	}
-	subject, display, ok := a.forwardIdentity(r)
+	subject, display, ok := a.forwardIdentity(r, fwd)
 	if !ok {
 		fail(w, http.StatusForbidden, "trusted proxy identity required")
 		return
 	}
-	id, name, err := a.ssoIdentity(r.Context(), "forward_auth", a.sso.forward.opt.Issuer, subject, display, a.sso.forward.opt.AllowJoin, 0)
+	id, name, err := a.ssoIdentity(r.Context(), "forward_auth", fwd.opt.Issuer, subject, display, fwd.opt.AllowJoin, 0)
 	if err != nil {
 		a.failedEvent(r, outsideName(display), ssoRefusal("forward_auth", err))
 		fail(w, http.StatusForbidden, "this identity is not allowed to sign in")
@@ -137,7 +140,10 @@ func (a *Auth) forwardLogin(w http.ResponseWriter, r *http.Request) {
 
 func (a *Auth) forwardLink(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	if a.sso == nil || a.sso.forward == nil {
+	a.ssoMu.RLock()
+	defer a.ssoMu.RUnlock()
+	fwd := a.ssoNow().forward // read once: a settings save may swap it
+	if fwd == nil {
 		fail(w, http.StatusNotFound, "this sign-in method is off")
 		return
 	}
@@ -145,12 +151,12 @@ func (a *Auth) forwardLink(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	subject, display, ok := a.forwardIdentity(r)
+	subject, display, ok := a.forwardIdentity(r, fwd)
 	if !ok {
 		fail(w, http.StatusForbidden, "trusted proxy identity required")
 		return
 	}
-	if _, _, err := a.ssoLinkIdentity(r, "forward_auth", a.sso.forward.opt.Issuer, subject, display, who.UserID, a.currentFamily(r)); err != nil {
+	if _, _, err := a.ssoLinkIdentity(r, "forward_auth", fwd.opt.Issuer, subject, display, who.UserID, a.currentFamily(r)); err != nil {
 		fail(w, http.StatusForbidden, "this identity cannot be linked")
 		return
 	}

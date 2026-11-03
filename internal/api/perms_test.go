@@ -131,6 +131,11 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		if need == "signed_in" || need == "self" || need == auth.NeedPublic || need == auth.PermAsk || path == "/" || path == "/login" {
 			continue
 		}
+		// The old-app API takes no session at all, only its own keys;
+		// TestOldAppMemberKeyRefused checks a member's key gets 403.
+		if auth.CompatSide(path) != "" {
+			continue
+		}
 		st, body := signed(method, fill.Replace(path), "{}", mem, memCSRF)
 		if st != http.StatusForbidden {
 			t.Errorf("member %s: %d %s", pattern, st, body)

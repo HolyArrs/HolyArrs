@@ -24,7 +24,7 @@ func TestForwardAuthDirectPeerAndLeastPrivilege(t *testing.T) {
 	if resp.StatusCode != 200 || !strings.Contains(body, `"role":"member"`) || !strings.Contains(body, `"perms":["ask"]`) {
 		t.Fatalf("proxy role/name elevated user: %d %s", resp.StatusCode, body)
 	}
-	f.a.sso.forward.peers = nil
+	f.a.ssoNow().forward.peers = nil
 	resp, _ = call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/forward/login", "", map[string]string{"Remote-User": "other", "X-Forwarded-For": "127.0.0.1"})
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("forwarded-for established trust: %d", resp.StatusCode)

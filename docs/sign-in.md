@@ -53,6 +53,35 @@ Keep a working local owner password even when everyone normally uses an outside 
 
 Outside-only accounts cannot make a local password or confirm local sign-in in this version. Create and keep the local owner first, then link its provider identity from My account. An existing local account keeps its password and recovery path after linking.
 
+## Setting up single sign-on in Settings
+
+The owner can set up OpenID Connect in **Settings → Sign-in → Single sign-on** instead of the environment:
+
+1. Type the provider's issuer and choose **Test**. HolyArrs checks that an OpenID Connect provider answers there; it never sends a secret for the test.
+2. Type the client id and the client secret, or tick **Public client** when the provider expects none.
+3. Copy the **Callback address** and register that exact address at the provider.
+4. Type your HolyArrs password (and a two-factor code when it is on) and choose **Save**. Every change needs it.
+
+Rules that protect the setup:
+
+- The client secret is kept encrypted and never shown again. Leave the field empty to keep it.
+- A saved secret never goes to a new issuer or client id. Changing either needs the secret typed again.
+- Changing the issuer or client id removes the links made through the old one and signs out everyone who used single sign-on. They link again from My account.
+- Letting new people join needs a confirmation, because everyone the provider signs in could then make an account.
+- Turning single sign-on off signs out the sessions it made.
+- When `HOLYARRS_OIDC_ENABLED` is set at all, even to `false`, the environment owns single sign-on and Settings only shows it.
+- Trusted proxy sign-in is set only in the environment. The addresses it trusts decide who may sign in as anyone, so a browser never changes them.
+- `HOLYARRS_OIDC_ALLOW_LOCAL_NETWORK` and `HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP` also apply to single sign-on set up in Settings.
+
+## Unlinking
+
+A linked single sign-on or trusted proxy sign-in can be removed:
+
+- **My account → Linked sign-ins → Unlink** removes your own. It needs a recent password confirmation, and it is refused when it is your only way to sign in.
+- **Settings → Users** shows each person's linked sign-ins; the owner can unlink them. When it is their only way in, HolyArrs asks once more.
+
+Unlinking signs out the sessions that sign-in made. When new people may join through that provider, the same person could still sign in again as a new member; turn joining off to keep them out.
+
 ## Deployment settings
 
 Set these before starting HolyArrs. Both methods are off unless explicitly enabled. Boolean values are `true` or `false`. Invalid enabled configuration prevents startup; a provider outage leaves local sign-in available.
