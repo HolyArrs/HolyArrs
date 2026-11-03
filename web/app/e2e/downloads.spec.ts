@@ -66,7 +66,8 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await removeFromMenu(r);
 	await dialog.getByLabel('Add its Release to Turned down').check();
 	await expect(dialog.getByLabel('Search again')).toBeChecked();
-	await dialog.getByRole('button', { name: 'Remove', exact: true }).click();
+	// The confirm button names what goes: "Remove and delete files" here.
+	await dialog.getByTestId('dl-remove-confirm').click();
 	await expect(page.getByText('Removed. HolyArrs looks for the next Release.')).toBeVisible();
 	await expect.poll(async () => (await (await fetch(`${qbit}/state`)).json()).deleted.length).toBe(before + 1);
 	// The copy is no longer downloading; it turns into Needs a decision once the search runs out.

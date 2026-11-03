@@ -2280,7 +2280,7 @@
 	.tab .n { color: inherit; opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tab:hover { color: var(--text); }
 	.pw.on .tab { color: var(--hl-fg); }
-	.tab.zero:not([aria-selected='true']) { opacity: 0.72; }
+	/* A tab with nothing in it reads its 0; it is not dimmed, so its label keeps readable contrast. */
 	.tab:focus-visible, .stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.subwrap { display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 200ms var(--ease-out), opacity 200ms var(--ease-out); }
 	.pw.open .subwrap { grid-template-columns: 1fr; opacity: 1; }
