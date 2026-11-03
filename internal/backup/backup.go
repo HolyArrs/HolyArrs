@@ -615,15 +615,24 @@ func (m *Manager) AfterStart(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	kept := 0
+	kept, update := 0, false
 	for _, x := range all {
-		if x.Kind != KindPreUpdate {
-			continue
-		}
-		if kept++; kept > KeepPreUpdate {
-			if err := os.Remove(x.Path); err != nil {
-				log.Printf("backup: dropping old pre-update backup %s: %v", x.Name, err)
+		switch x.Kind {
+		case KindPreUpdate:
+			if kept++; kept > KeepPreUpdate {
+				if err := os.Remove(x.Path); err != nil {
+					log.Printf("backup: dropping old pre-update backup %s: %v", x.Name, err)
+				}
 			}
+		case KindUpdate:
+			// Only the newest update backup is kept, also when no update ran
+			// since (older ones were otherwise only dropped by the next one).
+			if update {
+				if err := os.Remove(x.Path); err != nil {
+					log.Printf("backup: dropping old update backup %s: %v", x.Name, err)
+				}
+			}
+			update = true
 		}
 	}
 	last, err := m.setting(ctx, settingVersion)
