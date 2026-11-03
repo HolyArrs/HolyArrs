@@ -55,7 +55,8 @@ test.beforeAll(async ({ browser }) => {
 	// Only a title with a file can be reported: give it one by hand when it has none.
 	const t = (await (await call('GET', `/titles/${titleId}`)).json()) as { slots: { file?: unknown }[] };
 	if (!t.slots.some((s) => s.file)) {
-		const dir = join(tmp, 'by-hand', 'reports');
+		// Import by hand reads only from known folders; the Library folder is always one.
+		const dir = join(tmp, 'movies', 'zz-reports-drop');
 		rmSync(dir, { recursive: true, force: true });
 		mkdirSync(dir, { recursive: true });
 		const file = join(dir, 'Driftwood.Moon.2024.1080p.WEB-DL.H264-LAB.mkv');
