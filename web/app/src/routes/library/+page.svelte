@@ -346,6 +346,7 @@
 		{ kind: 'heading', label: 'Library tools' },
 		{ label: 'People', href: to('/people') },
 		{ label: 'Held files', href: to('/library/held') },
+		...(partOn('movies') ? ([{ label: 'Movie series', href: to('/library/collections') }] as MenuItem[]) : []),
 		...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', href: to('/library/deleted') }] as MenuItem[]) : []),
 		{ label: 'Turned down releases', href: to('/library/turned-down') },
 		...(partOn('subtitles') ? ([{ label: 'Missing subtitles', href: to('/library/missing-subtitles') }] as MenuItem[]) : []),
@@ -1262,7 +1263,7 @@
 		.tool-gap { display: none; }
 		.with-rail.has-rail { grid-template-columns: minmax(0, 1fr) 20px; gap: 6px; }
 		.rail { top: 64px; padding: 2px 0; }
-		.rail-l { font-size: 10px; min-height: 18px; }
+		.rail-l { font-size: 10px; min-height: 24px; }
 		.rows.table { overflow: clip; }
 		.rows.table > .body { min-width: 0; }
 		.row { grid-template-columns: 1fr auto; grid-template-areas: 'art art' 'name acts'; gap: 10px 8px; min-width: 0; padding: 0 12px 12px; }
