@@ -391,6 +391,12 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await (await popup).waitForLoadState().catch(() => {});
 	await expect(kid).toHaveURL(/\/$/, { timeout: 15_000 });
 	await expect(kid.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
+	// No HolyArrs password: the Plex link shows, and says a password comes first to change it.
+	await kid.goto('/settings/account');
+	await expect(kid.getByTestId('my-plex-link')).toContainText('Plex, as plexkid');
+	await expect(kid.getByTestId('plex-needs-password')).toBeVisible();
+	await expect(kid.getByRole('button', { name: 'Unlink Plex' })).toHaveCount(0);
+	await expect(kid.getByTestId('link-sign-in')).toHaveCount(0);
 
 	await own.goto('/settings/users');
 	await expect(own.getByText('Jellyfin: Mum')).toBeVisible();

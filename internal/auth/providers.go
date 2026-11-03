@@ -126,8 +126,11 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	me := Actor(ctx)
 	extID := strconv.FormatInt(user.ID, 10)
+	var moved bool
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		return a.linkPlexTx(tx, me.ID, extID, user.Username, tok, me)
+		var err error
+		moved, err = a.linkPlexTx(tx, me.ID, extID, user.Username, tok, me)
+		return err
 	})
 	if errors.Is(err, errTaken) {
 		fail(w, http.StatusConflict, "this Plex account is already linked to another HolyArrs user")
@@ -136,6 +139,9 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		serverError(w, "plex link", err)
 		return
+	}
+	if moved {
+		a.dropTickets(func(t *ticket) bool { return t.userID == me.ID && t.method == ProviderPlex })
 	}
 	if err := a.vault.SetSetting(ctx, settingsGroup, signInPrefix+keyPlexOwner, tok, me); err != nil {
 		serverError(w, "plex link", err)

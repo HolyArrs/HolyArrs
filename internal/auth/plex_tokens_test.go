@@ -18,6 +18,7 @@ import (
 const (
 	anaPlex    = "ana-plex-cred-1"
 	anaPlexNew = "ana-plex-cred-2"
+	anaPlexTwo = "ana-plex-cred-other" // a second Plex account of Ana's
 )
 
 // plexPeople answers like plex.tv for several people linking their accounts.
@@ -27,6 +28,8 @@ type plexPeople struct {
 	next string           // the sign-in the next PIN confirms with
 	pins map[int64]string // PIN id -> its sign-in
 	n    atomic.Int64
+	// onUser, when set, runs while Plex is asked who the person is.
+	onUser func()
 }
 
 func newPlexPeople(t *testing.T) *plexPeople {
@@ -34,6 +37,7 @@ func newPlexPeople(t *testing.T) *plexPeople {
 	who := map[string]string{
 		anaPlex:    `{"id":21,"username":"ana-on-plex"}`,
 		anaPlexNew: `{"id":21,"username":"ana-on-plex"}`,
+		anaPlexTwo: `{"id":22,"username":"ana-second"}`,
 	}
 	m := http.NewServeMux()
 	m.HandleFunc("POST /api/v2/pins", func(w http.ResponseWriter, _ *http.Request) {
@@ -52,6 +56,12 @@ func newPlexPeople(t *testing.T) *plexPeople {
 		_ = json.NewEncoder(w).Encode(map[string]any{"authToken": got})
 	})
 	m.HandleFunc("GET /api/v2/user", func(w http.ResponseWriter, r *http.Request) {
+		p.mu.Lock()
+		hook := p.onUser
+		p.mu.Unlock()
+		if hook != nil {
+			hook()
+		}
 		u, ok := who[r.Header.Get("X-Plex-Token")]
 		if !ok {
 			http.Error(w, "no", 401)
@@ -227,5 +237,87 @@ func TestOwnerPlexLinkCountsForTheOwner(t *testing.T) {
 	}
 	if got, n := plexTokenOf(t, f, ownerID), keptPlex(t, f); got != "" || n != 0 {
 		t.Fatalf("after unlink: %q, %d kept", got, n)
+	}
+}
+
+// signInWith signs in with Plex in a fresh browser, Plex confirming with cred.
+func (p *plexPeople) signInWith(t *testing.T, f *fixture, cred string) (*http.Client, int) {
+	t.Helper()
+	p.mu.Lock()
+	p.next = cred
+	p.mu.Unlock()
+	c := client(t)
+	resp, out := call(t, c, "POST", f.srv.URL+"/api/v1/auth/plex/start", "", nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("plex start: %d %s", resp.StatusCode, out)
+	}
+	var v struct {
+		ID int64 `json:"id"`
+	}
+	jsonOf(t, out, &v)
+	resp, _ = call(t, c, "POST", f.srv.URL+"/api/v1/auth/plex/finish", fmt.Sprintf(`{"id":%d}`, v.ID), nil)
+	return c, resp.StatusCode
+}
+
+// A password change that lands while Plex is being asked wins: the link is not made.
+func TestPlexLinkLosesToAPasswordChangeMeanwhile(t *testing.T) {
+	p := newPlexPeople(t)
+	f := gated(t, Options{PlexURL: p.srv.URL, PlexAppURL: "https://app.example.test"})
+	own := ownerOf(t, f)
+	ana := join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
+	anaID := userID(t, f, "ana")
+	pin := p.start(t, f, ana, anaPlex)
+	p.mu.Lock()
+	p.onUser = func() {
+		if resp, out := own.do(t, f, "POST", "/api/v1/users/"+itoa(anaID)+"/password", `{"password":"another long test passphrase"}`); resp.StatusCode != 204 {
+			t.Errorf("set password: %d %s", resp.StatusCode, out)
+		}
+	}
+	p.mu.Unlock()
+	if resp, out := ana.do(t, f, "POST", "/api/v1/auth/plex/my-link/finish", pin); resp.StatusCode != 403 && resp.StatusCode != 401 {
+		t.Fatalf("linked after the password changed: %d %s", resp.StatusCode, out)
+	}
+	var n int
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM user_links WHERE user_id = ?", anaID).Scan(&n)
+	if n != 0 || keptPlex(t, f) != 0 {
+		t.Fatalf("%d links, %d kept", n, keptPlex(t, f))
+	}
+}
+
+// Linking another Plex account signs out the devices the old one signed in.
+func TestPlexLinkToAnotherAccountSignsOutTheOld(t *testing.T) {
+	p := newPlexPeople(t)
+	f := gated(t, Options{PlexURL: p.srv.URL, PlexAppURL: "https://app.example.test"})
+	own := ownerOf(t, f)
+	ana := join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
+	if resp, out := ana.do(t, f, "POST", "/api/v1/auth/plex/my-link/finish", p.start(t, f, ana, anaPlex)); resp.StatusCode != 200 {
+		t.Fatalf("link: %d %s", resp.StatusCode, out)
+	}
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"join":"nobody"}}`)
+	tv, code := p.signInWith(t, f, anaPlex)
+	if code != 200 {
+		t.Fatalf("plex sign-in: %d", code)
+	}
+	if resp, me := call(t, tv, "GET", f.srv.URL+"/api/v1/auth/me", "", nil); resp.StatusCode != 200 || !strings.Contains(me, `"name":"ana"`) {
+		t.Fatalf("me: %d %s", resp.StatusCode, me)
+	}
+	// The same account again keeps that device signed in.
+	if resp, _ := ana.do(t, f, "POST", "/api/v1/auth/plex/my-link/finish", p.start(t, f, ana, anaPlexNew)); resp.StatusCode != 200 {
+		t.Fatalf("relink: %d", resp.StatusCode)
+	}
+	if resp, _ := call(t, tv, "GET", f.srv.URL+"/api/v1/auth/me", "", nil); resp.StatusCode != 200 {
+		t.Fatalf("same account signed the device out: %d", resp.StatusCode)
+	}
+	if resp, out := ana.do(t, f, "POST", "/api/v1/auth/plex/my-link/finish", p.start(t, f, ana, anaPlexTwo)); resp.StatusCode != 200 || !strings.Contains(out, "ana-second") {
+		t.Fatalf("other account: %d %s", resp.StatusCode, out)
+	}
+	if resp, _ := call(t, tv, "GET", f.srv.URL+"/api/v1/auth/me", "", nil); resp.StatusCode != 401 {
+		t.Fatalf("old Plex device still signed in: %d", resp.StatusCode)
+	}
+	if resp, _ := ana.do(t, f, "GET", "/api/v1/auth/me", ""); resp.StatusCode != 200 {
+		t.Fatalf("password device signed out: %d", resp.StatusCode)
+	}
+	if got := plexTokenOf(t, f, userID(t, f, "ana")); got != anaPlexTwo || keptPlex(t, f) != 1 {
+		t.Fatalf("kept %q (%d)", got, keptPlex(t, f))
 	}
 }

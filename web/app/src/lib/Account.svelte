@@ -619,15 +619,17 @@
 			</div>
 		{/if}
 	</div>
-	{#if hasLinkWay || myLinks.length || plexMine}
+	{#if hasLinkWay || myLinks.length || plexMine?.linked || (plexMine && session.s.hasPassword)}
 		<div class="srow" id="linked-me">
 			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="HolyArrs matches the provider's stable account id and never links accounts by email address.">Matched by account id, never by email.</span></div>
-			<div class="ctl">{#if !linkOpen}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			<div class="ctl">{#if !linkOpen && (hasLinkWay || session.s.hasPassword)}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
 			{#if plexMine?.linked}
 				<ul class="below my-links" data-testid="my-plex-link">
 					<li>
 						<span class="small">Plex{#if plexMine.name}, as {plexMine.name}{/if}</span>
-						{#if plexUnlinking}
+						{#if !session.s.hasPassword}
+							<span class="xs muted" data-testid="plex-needs-password">Set a HolyArrs password above to unlink or change it.</span>
+						{:else if plexUnlinking}
 							<Confirm action="link" onCancel={() => (plexUnlinking = false)}>
 								<div class="row acts">
 									<Button variant="secondary" type="button" onclick={unlinkPlexMine} busy={linkBusy}>Unlink</Button>
@@ -664,7 +666,9 @@
 					{#if linkOpen}
 						<Confirm action="link" onCancel={() => (linkOpen = false)}>
 							<div class="row acts">
-								<Button type="button" onclick={linkPlexMine} busy={linkBusy}>{plexMine?.linked ? 'Plex (another account)' : 'Plex'}</Button>
+								{#if session.s.hasPassword}
+									<Button type="button" onclick={linkPlexMine} busy={linkBusy}>{plexMine?.linked ? 'Plex (another account)' : 'Plex'}</Button>
+								{/if}
 								{#if session.s.ways.includes('oidc')}
 									<Button type="button" onclick={startOIDCLink} busy={linkBusy}>Single sign-on</Button>
 								{/if}

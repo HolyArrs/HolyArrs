@@ -51,17 +51,8 @@ func (a *Auth) ssoIdentity(ctx context.Context, kind, issuer, subject, display s
 			if !ok || proof.userID != linkID {
 				return errNotAllowed
 			}
-			var local, method, created, seen, expires string
-			if err := tx.QueryRow(`SELECT s.local_auth_at, s.auth_method, s.created_at, s.last_seen_at, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id
-				WHERE s.hash = ? AND s.family = ? AND s.user_id = ? AND u.state = 'active'`,
-				proof.hash, proof.family, linkID).Scan(&local, &method, &created, &seen, &expires); err != nil {
-				return errNotAllowed
-			}
-			now, authenticated := a.now(), parseTime(local)
-			if (method != AuthMethodLocalPassword && method != AuthMethodLocalSetup) ||
-				authenticated.IsZero() || authenticated.After(now) || now.Sub(authenticated) >= 10*time.Minute ||
-				!now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) >= IdleTimeout || now.Sub(parseTime(created)) >= AbsoluteTimeout {
-				return errNotAllowed
+			if err := a.linkSessionFreshTx(tx, proof); err != nil {
+				return err
 			}
 		}
 		var owner int
@@ -138,4 +129,24 @@ func ssoText(s string, limit int) bool {
 		}
 	}
 	return true
+}
+
+// linkSessionFreshTx re-reads, inside the write that makes a link, the session
+// that asked for it: still there (a password change or reset deletes it), the
+// person active, signed in with the local password under 10 minutes ago, and
+// within the idle and absolute limits. Otherwise errNotAllowed.
+func (a *Auth) linkSessionFreshTx(tx *sql.Tx, proof ssoLinkProof) error {
+	var local, method, created, seen, expires string
+	if err := tx.QueryRow(`SELECT s.local_auth_at, s.auth_method, s.created_at, s.last_seen_at, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id
+		WHERE s.hash = ? AND s.family = ? AND s.user_id = ? AND u.state = 'active'`,
+		proof.hash, proof.family, proof.userID).Scan(&local, &method, &created, &seen, &expires); err != nil {
+		return errNotAllowed
+	}
+	now, authenticated := a.now(), parseTime(local)
+	if (method != AuthMethodLocalPassword && method != AuthMethodLocalSetup) ||
+		authenticated.IsZero() || authenticated.After(now) || now.Sub(authenticated) >= 10*time.Minute ||
+		!now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) >= IdleTimeout || now.Sub(parseTime(created)) >= AbsoluteTimeout {
+		return errNotAllowed
+	}
+	return nil
 }

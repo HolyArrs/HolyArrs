@@ -103,32 +103,43 @@ func dropLinkTokensTx(tx *sql.Tx, where string, args ...any) error {
 
 // linkPlexTx links Plex account extID to userID with its token, replacing the
 // person's earlier Plex link. errTaken: the account belongs to someone else.
-func (a *Auth) linkPlexTx(tx *sql.Tx, userID int64, extID, name, tok string, by domain.Actor) error {
+// moved says an earlier, different Plex account was replaced: the devices it
+// signed in are signed out here, and the caller drops its two-factor steps.
+func (a *Auth) linkPlexTx(tx *sql.Tx, userID int64, extID, name, tok string, by domain.Actor) (moved bool, err error) {
 	var other int64
-	err := tx.QueryRow("SELECT user_id FROM user_links WHERE provider = 'plex' AND external_id = ?", extID).Scan(&other)
+	err = tx.QueryRow("SELECT user_id FROM user_links WHERE provider = 'plex' AND external_id = ?", extID).Scan(&other)
 	if err == nil && other != userID {
-		return errTaken
+		return false, errTaken
 	}
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
+		return false, err
+	}
+	var before string
+	if err := tx.QueryRow("SELECT external_id FROM user_links WHERE provider = 'plex' AND user_id = ?", userID).Scan(&before); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	if moved = before != "" && before != extID; moved {
+		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND auth_method = ?", userID, ProviderPlex); err != nil {
+			return false, err
+		}
 	}
 	if err := dropLinkTokensTx(tx, "provider = 'plex' AND user_id = ?", userID); err != nil {
-		return err
+		return false, err
 	}
 	if _, err := tx.Exec("DELETE FROM user_links WHERE provider = 'plex' AND user_id = ?", userID); err != nil {
-		return err
+		return false, err
 	}
 	var ref any
 	if a.vault != nil && tok != "" {
 		id, err := a.vault.PutTx(tx, plexTokenKind, tok, by)
 		if err != nil {
-			return err
+			return false, err
 		}
 		ref = id
 	}
 	_, err = tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at, token_secret_id) VALUES (?, 'plex', ?, ?, ?, ?)",
 		userID, extID, truncate(name, 200), store.FormatTime(a.now()), ref)
-	return err
+	return moved, err
 }
 
 // myPlexLink says whether my Plex account is linked, as whom, and whether
@@ -192,17 +203,39 @@ func (a *Auth) myPlexLinkFinish(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadGateway, "Plex did not say who you are; try again")
 		return
 	}
+	// The Plex calls above took a while: inside the write, the session must
+	// still be there and fresh, so a password change or reset meanwhile wins.
+	cookie, _ := r.Cookie(CookieName)
+	proof := ssoLinkProof{family: a.currentFamily(r), userID: who.UserID}
+	if cookie != nil && cookie.Value != "" {
+		proof.hash = sum(cookie.Value)
+	}
 	me := Actor(ctx)
+	var moved bool
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		return a.linkPlexTx(tx, who.UserID, strconv.FormatInt(user.ID, 10), user.Username, tok, me)
+		if proof.hash == "" || proof.family == "" {
+			return errNotAllowed
+		}
+		if err := a.linkSessionFreshTx(tx, proof); err != nil {
+			return err
+		}
+		var err error
+		moved, err = a.linkPlexTx(tx, who.UserID, strconv.FormatInt(user.ID, 10), user.Username, tok, me)
+		return err
 	})
-	if errors.Is(err, errTaken) {
+	switch {
+	case errors.Is(err, errTaken):
 		fail(w, http.StatusConflict, "this Plex account is already linked to another HolyArrs user")
 		return
-	}
-	if err != nil {
+	case errors.Is(err, errNotAllowed):
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before linking", "code": "reauth"})
+		return
+	case err != nil:
 		serverError(w, "plex link", err)
 		return
+	}
+	if moved {
+		a.dropTickets(func(t *ticket) bool { return t.userID == who.UserID && t.method == ProviderPlex })
 	}
 	if who.Role == RoleOwner {
 		// The owner's import of people uses the same Plex account.
