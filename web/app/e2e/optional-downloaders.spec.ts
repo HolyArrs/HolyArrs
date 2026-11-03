@@ -8,7 +8,9 @@ type Kind = 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge';
 const configDir = process.env.HOLYARRS_OPTIONAL_UI_CONFIG;
 const libraryDir = process.env.HOLYARRS_OPTIONAL_UI_LIBRARY;
 const screenshotDir = process.env.HOLYARRS_OPTIONAL_UI_SCREENSHOTS;
-if (!configDir || !libraryDir || !screenshotDir) throw new Error('optional UI runtime paths are required');
+// A hand-prepared run (a fresh app plus its folders, given in these variables);
+// without them the spec is skipped, with the reason, instead of failing to load.
+test.skip(!process.env.HOLYARRS_OPTIONAL_UI_URL || !configDir || !libraryDir || !screenshotDir, 'needs a prepared optional-downloaders run: HOLYARRS_OPTIONAL_UI_URL, _CONFIG, _LIBRARY and _SCREENSHOTS');
 
 const owner = { name: 'optional-ui-owner', password: `pw-${crypto.randomUUID()}` };
 const savedSecrets = new Map<Kind, string>();
