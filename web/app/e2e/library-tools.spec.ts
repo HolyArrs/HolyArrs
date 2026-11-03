@@ -22,6 +22,20 @@ test('Library tools open from the Add menu', async ({ page }) => {
 	}
 });
 
+test('Library and title pages load TMDB pictures only through the artwork cache', async ({ page }) => {
+	const outside: string[] = [];
+	page.on('request', (r) => { if (/^https?:\/\/[^/]*tmdb\.org\//.test(r.url())) outside.push(`${new URL(page.url()).pathname}: ${r.url()}`); });
+	await signIn(page, owner());
+	const { titles } = (await (await page.request.get('/api/v1/titles')).json()) as { titles: { id: number; kind: string }[] };
+	const paths = ['/library?kind=movie&layout=table', '/library?kind=movie&layout=grid', '/library?kind=show&layout=overview'];
+	for (const t of titles.filter((x) => x.kind === 'movie' || x.kind === 'show')) paths.push(`/library/${t.id}`, `/library/${t.id}?tab=library`);
+	for (const p of paths) {
+		await page.goto(p);
+		await page.waitForLoadState('networkidle');
+	}
+	expect(outside).toEqual([]);
+});
+
 test('Library tools fit a phone', async ({ browser }) => {
 	const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } });
 	const page = await ctx.newPage();
