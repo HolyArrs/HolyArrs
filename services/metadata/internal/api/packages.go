@@ -86,6 +86,18 @@ func (s *Server) servePackages(w http.ResponseWriter, r *http.Request) {
 		limit = n
 	}
 	ctx := r.Context()
+	if f, ok := s.opts.Packages.(interface {
+		Floor(context.Context, int64) int64
+	}); ok && since > 0 {
+		// Any cursor between two stored versions answers the same page:
+		// send it to the stored one, so random cursors cannot each miss
+		// the edge cache and read a full page.
+		if c := f.Floor(ctx, since); c != since {
+			q.Set("since", strconv.FormatInt(c, 10))
+			http.Redirect(w, r, r.URL.Path+"?"+q.Encode(), http.StatusTemporaryRedirect)
+			return
+		}
+	}
 	latest := s.opts.Packages.Latest(ctx)
 	if index {
 		lines, next, more, err := s.opts.Packages.Index(ctx, since, limit)

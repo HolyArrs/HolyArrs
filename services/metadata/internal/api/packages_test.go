@@ -169,3 +169,17 @@ type twoTokens struct{ *memoryStore }
 func (twoTokens) Authorized(_ context.Context, t string) (bool, error) {
 	return t == "synthetic-test-token" || t == "another-synthetic-token", nil
 }
+
+// Security 38: a cursor between stored versions is sent to the stored one,
+// so random cursors share one edge answer instead of each reading a page.
+func TestPackageSyncCursorCanonical(t *testing.T) {
+	st := pkgStore(t)
+	s, _, _ := setup(Options{Burst: 100, Packages: st})
+	w := req(s, "/v1/music/packages?since=999999&limit=200", "")
+	if w.Code != 307 || w.Header().Get("Location") != "/v1/music/packages?limit=200&since=2" {
+		t.Fatalf("random cursor %d %q", w.Code, w.Header().Get("Location"))
+	}
+	if w := req(s, "/v1/music/packages?since=2&limit=200", ""); w.Code != 200 {
+		t.Fatalf("stored cursor %d", w.Code)
+	}
+}

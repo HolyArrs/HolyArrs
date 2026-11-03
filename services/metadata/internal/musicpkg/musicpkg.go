@@ -419,6 +419,16 @@ func (s *Store) Index(ctx context.Context, since int64, limit int) (out []IndexE
 	return out, next, more, rows.Err()
 }
 
+// Floor is the newest stored version at or below since (0 when none): the
+// same page as since, so equivalent cursors can share one cached answer.
+func (s *Store) Floor(ctx context.Context, since int64) int64 {
+	var n int64
+	if s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(version), 0) FROM packages WHERE version <= ?`, since).Scan(&n) != nil {
+		return since
+	}
+	return n
+}
+
 // Latest is the newest version (the head cursor).
 func (s *Store) Latest(ctx context.Context) int64 {
 	var n int64
