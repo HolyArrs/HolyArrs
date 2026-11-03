@@ -222,7 +222,9 @@ func samePath(a, b string) bool {
 func (im *Importer) byHandPlaces(ctx context.Context, db store.Lister, folders []domain.LibraryFolder) (ByHandPlaces, error) {
 	ps := ByHandPlaces{Library: []string{}, Downloaders: []string{}, Extra: []string{}}
 	for _, lf := range folders {
-		ps.Library = append(ps.Library, lf.Path)
+		if !wholeDisk(lf.Path) {
+			ps.Library = append(ps.Library, lf.Path)
+		}
 	}
 	dls, err := store.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0")
 	if err != nil {
@@ -230,7 +232,7 @@ func (im *Importer) byHandPlaces(ctx context.Context, db store.Lister, folders [
 	}
 	seen := map[string]bool{}
 	add := func(p string) {
-		if p = strings.TrimSpace(p); p != "" && !seen[p] {
+		if p = strings.TrimSpace(p); p != "" && !seen[p] && !wholeDisk(p) {
 			seen[p] = true
 			ps.Downloaders = append(ps.Downloaders, p)
 		}
@@ -253,4 +255,18 @@ func (im *Importer) ByHandPlaces(ctx context.Context) (ByHandPlaces, error) {
 		return ByHandPlaces{}, err
 	}
 	return im.byHandPlaces(ctx, db, folders)
+}
+
+// wholeDisk says p is a disk's root ("/", "C:\"). A Library folder or a
+// Downloader's folder set to one never counts as a place to import from by
+// hand, or it would open the whole disk again.
+func wholeDisk(p string) bool {
+	parts := strings.FieldsFunc(strings.TrimSpace(p), func(r rune) bool { return r == '/' || r == '\\' })
+	switch {
+	case len(parts) == 0:
+		return true
+	case len(parts) == 1 && len(parts[0]) == 2 && parts[0][1] == ':':
+		return true
+	}
+	return false
 }

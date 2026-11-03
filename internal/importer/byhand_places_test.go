@@ -210,3 +210,34 @@ func TestByHandRefusesOutside(t *testing.T) {
 		t.Fatalf("import inside %+v %v", res, err)
 	}
 }
+
+// A Downloader folder or Library folder set to a whole disk never makes the
+// whole disk a place to import from by hand.
+func TestByHandPlacesIgnoreWholeDisk(t *testing.T) {
+	for p, want := range map[string]bool{"/": true, `C:\`: true, "C:/": true, "c:": true, "/data": false, `C:\Downloads`: false, "": true} {
+		if got := wholeDisk(p); got != want {
+			t.Errorf("wholeDisk(%q) = %v, want %v", p, got, want)
+		}
+	}
+	w := setup(t)
+	ctx := context.Background()
+	root := filepath.VolumeName(w.lib) + string(filepath.Separator)
+	maps, _ := json.Marshal([]domain.PathMap{{Theirs: "/remote", Ours: root}})
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloaders SET path_map = ?", string(maps))
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	im := &Importer{Store: w.s, SavePath: root}
+	ps, err := im.ByHandPlaces(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ps.Downloaders) != 0 {
+		t.Fatalf("a disk root counts as a Downloader place: %v", ps.Downloaders)
+	}
+	if ps.Holds(filepath.Join(t.TempDir(), "x.mkv")) {
+		t.Fatal("a path outside every place passes through a disk-root mapping")
+	}
+}
