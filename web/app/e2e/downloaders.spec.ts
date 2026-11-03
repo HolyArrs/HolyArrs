@@ -61,7 +61,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await r.getByRole('button', { name: 'Pause' }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Paused');
 	await expect(r.getByTestId('downloader-text')).toContainText('Paused by you');
-	await r.getByRole('button', { name: 'Resume' }).click();
+	await r.getByRole('button', { name: 'Start' }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
 });
 

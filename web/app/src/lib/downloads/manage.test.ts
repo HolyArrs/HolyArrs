@@ -130,3 +130,27 @@ describe('tracker problems', () => {
 		expect(problemWords(3)).toBe('3 tracker issues');
 	});
 });
+
+import { countLabel, toolbarTargets } from './manage.ts';
+describe('the toolbar targets', () => {
+	const paused = { can_act: true, state: 'paused' };
+	const running = { can_act: true, state: 'downloading' };
+	const locked = { can_act: false, state: 'downloading' };
+	it('mean the ticked rows first, else the open row', () => {
+		expect(toolbarTargets([paused, running], undefined, 'paused').rows).toEqual([paused]);
+		expect(toolbarTargets([], running, 'running').rows).toEqual([running]);
+		expect(toolbarTargets([paused], running, 'any').rows).toEqual([paused]);
+	});
+	it('say why they are off', () => {
+		expect(toolbarTargets([], undefined, 'any').why).toBe('select a download');
+		expect(toolbarTargets([locked], undefined, 'any').why).toBe('this Downloader is read-only');
+		expect(toolbarTargets([], locked, 'running').why).toBe('this Downloader is read-only');
+		expect(toolbarTargets([running], undefined, 'paused').why).toBe('select a paused download');
+		expect(toolbarTargets([paused], undefined, 'running').why).toBe('select a running download');
+		expect(toolbarTargets([running], undefined, 'running', () => false).why).toBe('not for this Downloader');
+	});
+	it('carry the count in the label only past one', () => {
+		expect(countLabel('Pause', 1)).toBe('Pause');
+		expect(countLabel('Pause', 3)).toBe('Pause 3');
+	});
+});

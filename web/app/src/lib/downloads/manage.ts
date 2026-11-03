@@ -186,3 +186,24 @@ export function indexesUnder(files: { name: string; index: number }[], keys: Ite
 export function problemWords(n: number): string {
 	return n > 0 ? `${n} tracker ${n === 1 ? 'issue' : 'issues'}` : '';
 }
+
+/** What the toolbar's Start, Pause and Remove work on: the ticked rows when
+ *  there are any, else the open row. */
+export type ToolTarget = { protocol?: string; downloader_kind?: string; state?: string; can_act: boolean; phase?: string };
+
+/** toolbarTargets picks the rows a toolbar button means and says why it is
+ *  off: nothing picked, every pick read-only, or none in the right state.
+ *  `want` is 'paused' for Start, 'running' for Pause, 'any' for Remove;
+ *  `able` says the row's Downloader takes the action. */
+export function toolbarTargets<T extends ToolTarget>(picked: T[], open: T | undefined, want: 'paused' | 'running' | 'any', able: (r: T) => boolean = () => true): { rows: T[]; why: string } {
+	const pool = picked.length ? picked : open ? [open] : [];
+	if (!pool.length) return { rows: [], why: 'select a download' };
+	const live = pool.filter((r) => r.can_act && able(r));
+	if (!live.length) return { rows: [], why: pool.every((r) => !r.can_act) ? 'this Downloader is read-only' : 'not for this Downloader' };
+	const rows = want === 'any' ? live : live.filter((r) => (r.state === 'paused') === (want === 'paused'));
+	if (!rows.length) return { rows: [], why: want === 'paused' ? 'select a paused download' : 'select a running download' };
+	return { rows, why: '' };
+}
+
+/** countLabel is the toolbar word with the pick count when more than one row is meant. */
+export const countLabel = (word: string, n: number) => (n > 1 ? `${word} ${n}` : word);

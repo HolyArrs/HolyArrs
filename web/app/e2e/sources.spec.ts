@@ -47,7 +47,7 @@ test('a Source is added, tested, shows a wrong key in plain words, pauses and re
 	await row.getByRole('button', { name: 'Pause' }).click();
 	await expect(row.getByTestId('source-state')).toHaveText('Paused');
 	await expect(row.getByTestId('source-text')).toContainText('Paused by you');
-	await row.getByRole('button', { name: 'Resume' }).click();
+	await row.getByRole('button', { name: 'Start' }).click();
 	await expect(row.getByTestId('source-state')).toHaveText('Working');
 });
 

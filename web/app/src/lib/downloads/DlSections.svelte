@@ -49,7 +49,7 @@
 	import { statusDetail } from './imports.ts';
 	import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
 	import { poster, who } from './shared.ts';
-	import { byTracker, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
+	import { byTracker, countLabel, filterFiles, indexesUnder, limitsWords, pickRange, problemWords, splitTrackers, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { longPress, phoneTitle, subLine } from './phone.ts';
 	import { problem } from './problem.ts';
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
@@ -368,7 +368,7 @@
 	const fileIndexes = (files: TFile[], key: string) => files.filter((f) => f.name === key || f.name.startsWith(key + '/')).map((f) => f.index);
 
 	// What each Downloader says about itself (speeds, free space, totals).
-	type ClientStatus = { paused: boolean; speed: number; up_speed: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean; time_left?: number };
+	type ClientStatus = { paused: boolean; speed: number; up_speed: number; speed_limit?: number; up_limit?: number; session_down: number; session_up: number; all_time_down: number; all_time_up: number; day_down: number; month_down: number; free_space: number; connection?: 'connected' | 'firewalled' | 'disconnected'; slow_mode?: boolean; time_left?: number };
 	type Client = { id: number; name: string; protocol?: string; status?: ClientStatus; error?: string };
 	let clients = $state<Client[]>([]);
 	let clientsRead = $state(false);
@@ -477,9 +477,8 @@
 	// Upload comes from the Downloaders themselves once they report: seeding uploads without any downloading row.
 	const upSum = $derived(reporting.length ? sumOf('up_speed') : (upTotal ?? sum.up));
 	const openRow = $derived(everyRow.find((r) => r.id === openId));
-	// The toolbar's Start and Pause act on the open row; its state comes from the client.
-	const canStart = $derived(!!openRow?.can_act && controllable(openRow?.downloader_kind) && isPaused(openRow) && busy !== openRow?.id);
-	const canPause = $derived(!!openRow?.can_act && controllable(openRow?.downloader_kind) && !isPaused(openRow) && busy !== openRow?.id);
+	// The Downloaders' own caps: the tightest one is the Speed limit button's word.
+	const capNow = $derived(Math.min(...reporting.map((c) => c.status?.speed_limit ?? 0).filter((n) => n > 0)));
 	const toReview = $derived(reviewCount(allQueue));
 	// Time left: the longest of the rows' own estimates and a Usenet queue's.
 	const etaAll = $derived(Math.max(sum.eta || 0, ...clients.map((c) => (c.error ? 0 : (c.status?.time_left ?? 0)))));
@@ -506,6 +505,11 @@
 	const choosing = $derived(picked.size > 0 || selecting);
 	let anchor = 0;
 	const pickedRows = $derived(list.filter((r) => picked.has(r.id)));
+	// The toolbar's Start, Pause and Remove mean the ticked rows, else the open row.
+	const able = (r: DownloadRow) => controllable(r.downloader_kind) && busy !== r.id;
+	const startT = $derived(toolbarTargets(pickedRows, openRow, 'paused', able));
+	const pauseT = $derived(toolbarTargets(pickedRows, openRow, 'running', able));
+	const removeT = $derived(toolbarTargets(pickedRows, openRow, 'any', (r) => busy !== r.id));
 	$effect(() => {
 		// Rows that left the list leave the selection.
 		const ids = new Set(list.map((r) => r.id));
@@ -527,7 +531,7 @@
 	};
 	// Torrents a torrent Downloader can steer by hash: seeding rules and more.
 	// The row ⋯ menu: one place for a row's actions, the same items on desktop and phone.
-	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Resume', retry: 'Try again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', priority: 'Priority', library: 'Open in Library', remove: 'Remove' };
+	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Start', retry: 'Try again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', priority: 'Priority', library: 'Open in Library', remove: 'Remove' };
 	// Usenet jobs move and take a priority one job at a time (no bulk call).
 	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
 	const MOVED: Record<string, string> = { up: 'Moved up.', down: 'Moved down.', top: 'Moved to top.', bottom: 'Moved to bottom.' };
@@ -596,8 +600,9 @@
 	const PHONE_BULK: { action: BulkAction; label: string; icon: 'play' | 'pause' | 'refresh' }[] = [{ action: 'start', label: 'Start', icon: 'play' }, { action: 'pause', label: 'Pause', icon: 'pause' }, { action: 'recheck', label: 'Check again', icon: 'refresh' }];
 	// The phone bar's "All downloads" menu, through the same handlers as the toolbar's menus.
 	const allItems = $derived(watch ? [] : [{ label: 'Select', onselect: () => (selecting = true) }, { label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]);
+	// The desktop selection bar: what the toolbar's Start, Pause and Remove do not cover.
 	const BULK: { action: BulkAction; label: string }[] = [
-		{ action: 'start', label: 'Start' }, { action: 'pause', label: 'Pause' }, { action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
+		{ action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
 		{ action: 'up', label: 'Up' }, { action: 'down', label: 'Down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
 	];
 	// The detail pane under the list: its height is kept in this browser.
@@ -674,11 +679,14 @@
 	// Phones have no top bar: the tab strip carries a magnifier that opens the same scoped search.
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
+	// One row goes through its own call (the client answers with its new state); several go through the bulk call.
+	const runOn = (t: { rows: DownloadRow[] }, one: 'resume' | 'pause', many: BulkAction) => (t.rows.length === 1 ? onact?.(t.rows[0], one) : onbulk?.(t.rows, many));
 	const barActs = $derived([
 		...(onadd ? [{ key: 'add', icon: 'plus' as const, label: 'Add', hint: 'Add torrents by link or file', disabled: false, run: () => onadd?.() }] : []),
-		{ key: 'start', icon: 'play' as const, label: 'Start', hint: canStart ? 'Start' : 'Start (select a paused download)', disabled: !canStart, run: () => openRow && onact?.(openRow, 'resume'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
-		{ key: 'pause', icon: 'pause' as const, label: 'Pause', hint: canPause ? 'Pause' : 'Pause (select a download)', disabled: !canPause, run: () => openRow && onact?.(openRow, 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }] },
-		{ key: 'remove', icon: 'trash' as const, label: 'Remove', hint: openRow?.can_act ? 'Remove' : 'Remove (select a download first)', disabled: !openRow?.can_act || busy === openRow?.id, run: () => openRow && onremove(openRow) }
+		{ key: 'start', icon: 'play' as const, label: countLabel('Start', startT.rows.length), hint: startT.why ? `Start (${startT.why})` : 'Start', disabled: !startT.rows.length, run: () => runOn(startT, 'resume', 'start'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
+		{ key: 'pause', icon: 'pause' as const, label: countLabel('Pause', pauseT.rows.length), hint: pauseT.why ? `Pause (${pauseT.why})` : 'Pause', disabled: !pauseT.rows.length, run: () => runOn(pauseT, 'pause', 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }] },
+		{ key: 'remove', icon: 'trash' as const, label: countLabel('Remove', removeT.rows.length), hint: removeT.why ? `Remove (${removeT.why})` : 'Remove', disabled: !removeT.rows.length, run: () => (removeT.rows.length === 1 ? onremove(removeT.rows[0]) : onremovemany?.(removeT.rows)) },
+		...(onlimit ? [{ key: 'limit', icon: 'gauge' as const, label: Number.isFinite(capNow) ? `${bytes(capNow)}/s` : 'Speed limit', hint: Number.isFinite(capNow) ? `Speed limit: ${bytes(capNow)}/s` : 'Speed limit (none set)', disabled: false, run: () => onlimit?.() }] : [])
 	]);
 	const maxPane = () => Math.max(160, (colEl?.clientHeight ?? 600) - 140);
 	function dragDown(e: PointerEvent) {
@@ -1474,7 +1482,7 @@
 	<div class="xbt" data-testid="dl-actions">
 		{#if !watch}
 			{#if retryable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Try again</button>
-			{:else if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Resume' : 'Pause'}</button>{/if}
+			{:else if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
 			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
 		{/if}
 		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">Open in Library</a>{/if}
@@ -1776,7 +1784,6 @@
 		{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}
 		{#if pickedRows.some(steerable)}{#each STEER as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
 		{#if pickedRows.some(retryable)}<button type="button" class="xbn" onclick={() => onretry?.(pickedRows.filter(retryable))} data-testid="dl-bulk-retry">Try again</button>{/if}
-		<button type="button" class="xbn" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-bulk-remove">Remove</button>
 		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
 		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>
 	</div>
