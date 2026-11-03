@@ -841,6 +841,12 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	a.serveRemoteArtwork(w, r, src, serveArtwork)
+}
+
+// serveRemoteArtwork sends the picture at src from the artwork cache with
+// send, fetching it once on a miss (within the person's miss budget).
+func (a *API) serveRemoteArtwork(w http.ResponseWriter, r *http.Request, src string, send func(http.ResponseWriter, *http.Request, string, string)) {
 	c := a.s.Library.Artwork
 	name := library.ArtworkName(src)
 	p, ok := c.Path(name)
@@ -859,7 +865,7 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	serveArtwork(w, r, name, p)
+	send(w, r, name, p)
 }
 
 // serveArtwork sends a cached picture as it is stored (no re-compression).

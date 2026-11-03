@@ -43,6 +43,7 @@ type oldAppFix struct {
 	sonarrKey, radarrKey  string
 	showFolder, movieFold int64
 	base                  string // the URL base, "" for none
+	art                   *library.ArtworkCache
 }
 
 func (f *oldAppFix) call(c *http.Client, csrf, method, path, body string, hdr ...string) (int, http.Header, string) {
@@ -113,10 +114,12 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 		t.Fatal(err)
 	}
 	tmdb := &fakeShowSource{shows: map[string]metadata.Show{"tmdb:100": apiShow("tmdb", "100"), "tvdb:200": apiShow("tmdb", "100")}}
-	lib := &library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvdb": &fakeShowSource{err: metadata.ErrNoTVDBKey}}}
+	// The artwork cache allows no address, so nothing is ever fetched.
+	art := &library.ArtworkCache{Dir: t.TempDir()}
+	lib := &library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvdb": &fakeShowSource{err: metadata.ErrNoTVDBKey}}, Artwork: art}
 	h := New(Server{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
 		Auth: auth.New(s, auth.Options{}), Parts: pc}).Handler()
-	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir()}
+	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art}
 	if len(base) > 0 {
 		h, f.base = urlbase.Handler(base[0], h), base[0]
 	}
@@ -484,7 +487,7 @@ func (f *oldAppFix) putFile(sl domain.Slot, rel string, res int) {
 	f.t.Helper()
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		fl := domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: rel, Size: 1000, AddedAt: time.Now().UTC(),
-			Quality: domain.Quality{Resolution: res, Source: "WEBDL"}, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
+			Quality: domain.Quality{Resolution: res, Source: "web_dl"}, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
 			PlacedBy: "hardlink", Role: "main", State: "present"}
 		id, err := store.Insert(tx, "files", &fl, domain.System)
 		if err != nil {
@@ -769,6 +772,20 @@ func TestOldAppSeerrFlow(t *testing.T) {
 	mf := fields(t, "movie file", m["movieFile"], []string{"id", "path", "size", "quality", "mediaInfo"})
 	if m["hasFile"] != true || mf["mediaInfo"].(map[string]any)["resolution"] != "3840x2160" || num(m["statistics"].(map[string]any)["movieFileCount"]) != 1 {
 		t.Fatalf("movie with file: %v", m)
+	}
+	// Library pictures point at this side's covers; remoteUrl keeps the
+	// original address of the wide picture.
+	const wide = "https://image.tmdb.org/t/p/w1280/lab-wide.jpg"
+	f.exec("UPDATE titles SET backdrop = ? WHERE id = ?", wide, movieID)
+	ims := fields(t, "movie", f.arrOK(rad, "GET", r+"movie/"+itoa(movieID), "", 200), []string{"images"})["images"].([]any)
+	if len(ims) == 0 {
+		t.Fatal("no images")
+	}
+	for _, x := range ims {
+		im := fields(t, "image", x, []string{"coverType", "url", "remoteUrl"})
+		if !strings.HasPrefix(im["url"].(string), "/radarr/MediaCover/"+itoa(movieID)+"/") || (im["coverType"] == "fanart" && im["remoteUrl"] != wide) {
+			t.Errorf("image: %v", im)
+		}
 	}
 	arrList(t, "movie by tmdb", f.arrOK(rad, "GET", r+"movie?tmdbId=693134", "", 200), 1)
 	arrList(t, "movie by other tmdb", f.arrOK(rad, "GET", r+"movie?tmdbId=1", "", 200), 0)

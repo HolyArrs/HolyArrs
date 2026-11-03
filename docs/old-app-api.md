@@ -2,6 +2,8 @@
 
 Seerr and Overseerr send approved requests to Sonarr and Radarr. HolyArrs can answer them in their place: point Seerr's Sonarr server at HolyArrs's `/sonarr` address and its Radarr server at `/radarr`, and requests land in your HolyArrs Library and show up as available once the files are in.
 
+The same addresses also serve Bazarr (subtitles), Unpackerr and the Sonarr widget of the Homepage start page. See [Other apps](#other-apps) below.
+
 This is a small, separate API made only for those apps. HolyArrs's own API stays [the API for other apps](api.md).
 
 ## Turn it on
@@ -58,11 +60,47 @@ Use one HolyArrs side per Seerr server. Do not add the same `/radarr` address as
 - **Tags.** Seerr's per-user tags are made and kept, so Seerr finds them again. They are not attached to titles yet.
 - **Open in.** Seerr's "open in Sonarr/Radarr" link for admins opens the title in HolyArrs: a show opens its Library page, a movie its title page.
 
+## Other apps
+
+Every app below uses the same two keys as Seerr: the Sonarr-side key on `/sonarr` and the Radarr-side key on `/radarr`. They only read, except Bazarr's rescan.
+
+### Bazarr
+
+In Bazarr: Settings > Sonarr (and Settings > Radarr). Fill in HolyArrs's address and port, `/sonarr` (or `/radarr`) as the URL base, and the key for that side. If HolyArrs runs under a URL base such as `/holyarrs`, put it in front: `/holyarrs/sonarr`. Press Test.
+
+What works:
+
+- **Library sync.** Bazarr copies every show with its episodes, and every movie, with the file of the main Version: its path, size, release name, languages, quality and video codec. Like with Sonarr, an episode or movie without a file is skipped.
+- **Pictures.** Posters and wide pictures come from HolyArrs through `/sonarr/MediaCover/...` and `/radarr/MediaCover/...`, with the key. Bazarr's smaller poster copies are made once and kept.
+- **Rescans.** After a subtitle change Bazarr asks for a rescan of the show or movie. HolyArrs looks at that title's folder again.
+- **Folders and tags.** Bazarr reads the Library folders (for its health checks) and the tag list.
+
+What does not work:
+
+- **Live updates.** HolyArrs has no live feed for these apps, so Bazarr's connection to it is refused. Bazarr still finds new files through its scheduled full sync (every 60 minutes by default) and its scheduled subtitle search. Bazarr keeps trying to connect; if that fills its log, start Bazarr with its option that turns the live feed off.
+- **The folder browser** in Bazarr's path mapping editor. HolyArrs does not list its folders to apps; type the paths by hand.
+- **Grab history.** HolyArrs does not keep the indexer page link of a grab, so the AvistaZ and CinemaZ subtitle sites cannot use it.
+- **Webhooks into Bazarr.** HolyArrs does not send Sonarr- or Radarr-style webhooks; use the scheduled sync.
+
+### Unpackerr
+
+Unpackerr is not needed with HolyArrs. HolyArrs unpacks RAR sets itself during the import, and it imports only the files the download listed, so files Unpackerr unpacks next to them are never imported.
+
+If you run it anyway, point its Sonarr and Radarr entries at `/sonarr` and `/radarr` with the keys. It polls the download list: a finished download waiting for its import shows as completed, with the download's own folder (or its single file) as the place to unpack, mapped through the downloader's path map the way HolyArrs sees it. Once HolyArrs has imported it, it leaves the list. Unpackerr changes nothing in HolyArrs.
+
+### Homepage
+
+Homepage's Sonarr widget works: the show count, the download list and its unpaged details, the list of episodes that have aired but have no file (kept up to date ones by default), and the calendar (today to two days on by default, only kept up to date episodes unless it asks for all). Lists are paged the way Sonarr pages them: newest first when no direction is sent, 10 a page.
+
+Homepage's Radarr widget is not supported yet: its missing list and calendar answer 404.
+
 ## What does not work (yet)
 
-- Only Seerr and Overseerr are supported. Prowlarr, Bazarr, Recyclarr, Unpackerr, Maintainerr and other apps that talk to Sonarr or Radarr are not.
+- Supported apps: Seerr, Overseerr, Bazarr, Unpackerr and Homepage's Sonarr widget. Prowlarr, Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not.
 - These apps see one copy per title: the main Version. A 4K Version next to it is invisible to them.
 - Choosing another Library folder for a title in Seerr is ignored; move titles in HolyArrs. Choosing other Pick rules in Seerr switches the main Version's Pick rules, which can start a search for a better copy.
 - Changing a show's type (Seerr's series type) for a show already in the Library is ignored.
 - Settings-type calls (Pick rules edits, scoring rules, naming, indexers, notifications, backups) are not answered. Anything not listed here answers an error, never a pretend success.
+- Tags are not attached to titles, so a calendar or list asked for by tag is not narrowed.
+- Languages carry only their name (their number is always 0), and a title with no known original language says "Unknown".
 - The status answer gives HolyArrs's own name and reports a version of 4.0.99.0 (Sonarr side) or 5.0.99.0 (Radarr side), because these apps decide which calls to make from the version number.

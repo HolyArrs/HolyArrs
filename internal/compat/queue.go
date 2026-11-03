@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
 )
 
 // queueRow is one row of the download list: one per episode on the Sonarr
@@ -21,6 +23,7 @@ type queueRow struct {
 	EpisodeID               int64       `json:"episodeId,omitempty"`
 	SeasonNumber            *int        `json:"seasonNumber,omitempty"`
 	Episode                 *episode    `json:"episode,omitempty"`
+	Series                  *series     `json:"series,omitempty"`
 	MovieID                 int64       `json:"movieId,omitempty"`
 	Size                    int64       `json:"size"`
 	Title                   string      `json:"title"`
@@ -58,6 +61,54 @@ func timeSpan(sec int64) string {
 		s = strconv.FormatInt(d, 10) + "." + s
 	}
 	return s
+}
+
+// outputPath is where a download's own files are, as HolyArrs sees them
+// (the Downloader's path mapped, as the import maps it): the save folder
+// plus the one top folder all its files share, or the single file. The
+// save folder alone is shared by every download of its category, and
+// Unpackerr unpacks whatever it finds under outputPath. With no file list
+// yet, or files that share no top folder, it is the save folder.
+func outputPath(save string, maps []domain.PathMap, seen []domain.SeenFile) string {
+	if save == "" {
+		return ""
+	}
+	root := mapPath(save, maps)
+	top := ""
+	for i, f := range seen {
+		name := strings.Trim(strings.ReplaceAll(f.Name, `\`, "/"), "/")
+		first, _, _ := strings.Cut(name, "/")
+		if first == "" || first == "." || first == ".." || (i > 0 && first != top) {
+			return root
+		}
+		top = first
+	}
+	if top == "" {
+		return root
+	}
+	sep := "/"
+	if strings.Contains(root, `\`) && !strings.Contains(root, "/") {
+		sep = `\`
+	}
+	return strings.TrimRight(root, `/\`) + sep + top
+}
+
+// mapPath turns a Downloader's path into HolyArrs' own through its path
+// map (the first entry whose Downloader side starts the path).
+func mapPath(p string, maps []domain.PathMap) string {
+	for _, m := range maps {
+		theirs, ours := strings.TrimRight(m.Theirs, `/\`), strings.TrimRight(m.Ours, `/\`)
+		if theirs == "" {
+			continue
+		}
+		if p == theirs {
+			return ours
+		}
+		if rest, ok := strings.CutPrefix(p, theirs); ok && (rest[0] == '/' || rest[0] == '\\') {
+			return ours + rest
+		}
+	}
+	return p
 }
 
 // queueSlot is one Slot a download holds, with its episode or movie.
@@ -150,7 +201,7 @@ func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, error) {
 	db := h.Store.Read()
 	rows, err := db.QueryContext(ctx, `SELECT d.id, d.external_id, d.progress, d.eta, d.state, COALESCE(d.state_reason, ''), d.save_path, d.slot_ids, d.created_at,
-		COALESCE(r.name, ''), COALESCE(r.size, 0), COALESCE(src.name, ''), COALESCE(dl.name, ''), COALESCE(dl.protocol, '')
+		COALESCE(r.name, ''), COALESCE(r.size, 0), COALESCE(src.name, ''), COALESCE(dl.name, ''), COALESCE(dl.protocol, ''), d.files_seen, COALESCE(dl.path_map, '[]')
 		FROM downloads d LEFT JOIN releases r ON r.id = d.release_id LEFT JOIN sources src ON src.id = r.source_id
 		LEFT JOIN downloaders dl ON dl.id = d.downloader_id
 		WHERE d.state IN ('sent', 'queued', 'downloading', 'stalled', 'paused')
@@ -169,13 +220,18 @@ func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, 
 	var allSlots []int64
 	for rows.Next() {
 		var d dl
-		var slotsJSON, added string
-		if err := rows.Scan(&d.row.ID, &d.row.DownloadID, &d.row.progress, &d.row.eta, &d.state, &d.why, &d.row.OutputPath, &slotsJSON, &added,
-			&d.row.Title, &d.row.Size, &d.row.Indexer, &d.row.DownloadClient, &d.row.Protocol); err != nil {
+		var slotsJSON, added, save, seenJSON, mapJSON string
+		if err := rows.Scan(&d.row.ID, &d.row.DownloadID, &d.row.progress, &d.row.eta, &d.state, &d.why, &save, &slotsJSON, &added,
+			&d.row.Title, &d.row.Size, &d.row.Indexer, &d.row.DownloadClient, &d.row.Protocol, &seenJSON, &mapJSON); err != nil {
 			rows.Close()
 			return nil, err
 		}
 		_ = json.Unmarshal([]byte(slotsJSON), &d.slots)
+		var seen []domain.SeenFile
+		var maps []domain.PathMap
+		_ = json.Unmarshal([]byte(seenJSON), &seen)
+		_ = json.Unmarshal([]byte(mapJSON), &maps)
+		d.row.OutputPath = outputPath(save, maps, seen)
 		d.row.Added = utcPtr(parseTime(&added))
 		allSlots = append(allSlots, d.slots...)
 		dls = append(dls, d)

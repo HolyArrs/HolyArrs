@@ -1,7 +1,9 @@
 // Package compat is the old-app API (roadmap #85, decision 0008): a thin
 // adapter that answers apps such as Seerr and Overseerr the way Sonarr
 // (under /sonarr/) and Radarr (under /radarr/) would, so they can add
-// shows and movies to HolyArrs and see them become available.
+// shows and movies to HolyArrs and see them become available. Bazarr
+// (subtitles), Unpackerr (unpacking) and Homepage's Sonarr widget read
+// the same answers.
 //
 // It keeps no data of its own beyond a small tag table: every answer is
 // read from the Library and every change goes through the same library,
@@ -57,6 +59,11 @@ type Deps struct {
 	// DeleteFiles says whether a delete from an app may take the files
 	// too (a setting, off by default); nil never does.
 	DeleteFiles func(context.Context) bool
+	// Picture sends one picture for the covers route: a stored poster
+	// ("poster:<cache name>", at most px pixels a side when px > 0) or a
+	// wide picture's address, fetched once into the artwork cache. The
+	// adapter itself never fetches anything; nil answers 404.
+	Picture func(w http.ResponseWriter, r *http.Request, src string, px int)
 	// Now is the clock; nil is time.Now.
 	Now func() time.Time
 }
@@ -90,6 +97,9 @@ func Sonarr(d Deps) http.Handler {
 	mux.HandleFunc("DELETE /series/{id}", h.deleteTitle)
 	mux.HandleFunc("GET /episode", h.listEpisodes)
 	mux.HandleFunc("PUT /episode/monitor", h.monitorEpisodes)
+	mux.HandleFunc("GET /wanted/missing", h.missingEpisodes)
+	mux.HandleFunc("GET /calendar", h.calendarEpisodes)
+	mux.HandleFunc("GET /queue/details", h.queueDetails)
 	return h.serve(mux)
 }
 
@@ -120,18 +130,24 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("GET /queue", h.queue)
 	mux.HandleFunc("POST /command", h.command)
 	mux.HandleFunc("GET /command/{id}", h.getCommand)
+	mux.HandleFunc("GET /mediacover/{id}/{file}", h.cover)
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { notFound(w) })
 }
 
 // serve takes the side and the /api/v3 part off the path and matches the
 // rest in lower case (the old apps match routes in any case; Seerr calls
-// /qualityProfile), then answers from mux. Every answer carries the
-// version header.
+// /qualityProfile), then answers from mux. The covers are also answered
+// straight after the side (/sonarr/MediaCover/...), where the Library
+// answers point and Bazarr fetches them. Every answer carries the version
+// header.
 func (h *handler) serve(mux *http.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Application-Version", h.version)
 		rest := strings.ToLower(strings.TrimPrefix(r.URL.Path, "/"+h.side))
 		inner, ok := strings.CutPrefix(rest, "/api/v3/")
+		if !ok && strings.HasPrefix(rest, "/mediacover/") {
+			inner, ok = rest[1:], true
+		}
 		if !ok {
 			notFound(w)
 			return
@@ -266,3 +282,5 @@ func atoi64(s string) int64 {
 }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+func ptr[T any](v T) *T { return &v }

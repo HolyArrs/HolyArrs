@@ -19,35 +19,37 @@ import (
 // sizeOnDisk are only on Library reads (GET /movie, /movie/{id}); a lookup
 // leaves them out, as Radarr does, and Seerr acts on that difference.
 type movie struct {
-	ID                  int64       `json:"id,omitempty"`
-	Title               string      `json:"title"`
-	SortTitle           string      `json:"sortTitle,omitempty"`
-	SizeOnDisk          *int64      `json:"sizeOnDisk,omitempty"`
-	Status              string      `json:"status"`
-	Overview            string      `json:"overview,omitempty"`
-	InCinemas           *utc        `json:"inCinemas,omitempty"`
-	PhysicalRelease     *utc        `json:"physicalRelease,omitempty"`
-	DigitalRelease      *utc        `json:"digitalRelease,omitempty"`
-	Images              []image     `json:"images"`
-	RemotePoster        string      `json:"remotePoster,omitempty"`
-	Year                int         `json:"year"`
-	HasFile             *bool       `json:"hasFile,omitempty"`
-	Path                string      `json:"path,omitempty"`
-	QualityProfileID    int64       `json:"qualityProfileId"`
-	Monitored           bool        `json:"monitored"`
-	MinimumAvailability string      `json:"minimumAvailability"`
-	IsAvailable         bool        `json:"isAvailable"`
-	Runtime             int         `json:"runtime"`
-	TmdbID              int64       `json:"tmdbId"`
-	ImdbID              string      `json:"imdbId,omitempty"`
-	TitleSlug           string      `json:"titleSlug"`
-	RootFolderPath      string      `json:"rootFolderPath,omitempty"`
-	Genres              []string    `json:"genres"`
-	Tags                []int64     `json:"tags"`
-	Added               utc         `json:"added"`
-	MovieFileID         int64       `json:"movieFileId"`
-	MovieFile           *movieFile  `json:"movieFile,omitempty"`
-	Statistics          *movieStats `json:"statistics,omitempty"`
+	ID                  int64             `json:"id,omitempty"`
+	Title               string            `json:"title"`
+	SortTitle           string            `json:"sortTitle,omitempty"`
+	AlternateTitles     *[]alternateTitle `json:"alternateTitles,omitempty"`
+	OriginalLanguage    *language         `json:"originalLanguage,omitempty"`
+	SizeOnDisk          *int64            `json:"sizeOnDisk,omitempty"`
+	Status              string            `json:"status"`
+	Overview            string            `json:"overview,omitempty"`
+	InCinemas           *utc              `json:"inCinemas,omitempty"`
+	PhysicalRelease     *utc              `json:"physicalRelease,omitempty"`
+	DigitalRelease      *utc              `json:"digitalRelease,omitempty"`
+	Images              []image           `json:"images"`
+	RemotePoster        string            `json:"remotePoster,omitempty"`
+	Year                int               `json:"year"`
+	HasFile             *bool             `json:"hasFile,omitempty"`
+	Path                string            `json:"path,omitempty"`
+	QualityProfileID    int64             `json:"qualityProfileId"`
+	Monitored           bool              `json:"monitored"`
+	MinimumAvailability string            `json:"minimumAvailability"`
+	IsAvailable         bool              `json:"isAvailable"`
+	Runtime             int               `json:"runtime"`
+	TmdbID              int64             `json:"tmdbId"`
+	ImdbID              string            `json:"imdbId,omitempty"`
+	TitleSlug           string            `json:"titleSlug"`
+	RootFolderPath      string            `json:"rootFolderPath,omitempty"`
+	Genres              []string          `json:"genres"`
+	Tags                []int64           `json:"tags"`
+	Added               utc               `json:"added"`
+	MovieFileID         int64             `json:"movieFileId"`
+	MovieFile           *mediaFile        `json:"movieFile,omitempty"`
+	Statistics          *movieStats       `json:"statistics,omitempty"`
 }
 
 type movieStats struct {
@@ -56,15 +58,19 @@ type movieStats struct {
 	ReleaseGroups  []string `json:"releaseGroups"`
 }
 
-type movieFile struct {
+// mediaFile is the main Version's file of a movie or an episode.
+type mediaFile struct {
 	ID           int64          `json:"id"`
-	MovieID      int64          `json:"movieId"`
+	MovieID      int64          `json:"movieId,omitempty"`
+	SeriesID     int64          `json:"seriesId,omitempty"`
+	SeasonNumber *int           `json:"seasonNumber,omitempty"`
 	RelativePath string         `json:"relativePath"`
 	Path         string         `json:"path"`
 	Size         int64          `json:"size"`
 	DateAdded    utc            `json:"dateAdded"`
 	SceneName    string         `json:"sceneName,omitempty"`
 	ReleaseGroup string         `json:"releaseGroup,omitempty"`
+	Languages    []language     `json:"languages"`
 	Quality      map[string]any `json:"quality"`
 	MediaInfo    map[string]any `json:"mediaInfo,omitempty"`
 }
@@ -112,26 +118,53 @@ func movieStatus(cinema, digital, physical *time.Time, now time.Time) string {
 // text callers split on "x" (Seerr reads a width of 2000 or more as 4K).
 var fileWidths = map[int]int{2160: 3840, 1440: 2560, 1080: 1920, 720: 1280, 576: 720, 480: 640}
 
-// movieFileOf is the main Version's file; its stored path is relative to
-// the Library folder root, the answer's relativePath to the movie folder.
-func movieFileOf(f domain.File, titleID int64, root, folder string) *movieFile {
-	mf := &movieFile{ID: f.ID, MovieID: titleID, RelativePath: strings.TrimPrefix(f.RelativePath, folder+"/"),
-		Path: filepath.Join(root, filepath.FromSlash(f.RelativePath)), Size: f.Size, DateAdded: utc(f.AddedAt)}
+// sourceNames turn the parser's source keys into the old apps' quality
+// names. A key not listed is passed on as it is.
+var sourceNames = map[string]string{"web_dl": "WEBDL", "web_rip": "WEBRip", "tv": "HDTV", "bluray": "Bluray", "remux": "Bluray",
+	"dvd": "DVD", "cam": "CAM", "telesync": "TELESYNC", "disc_image": "BR-DISK"}
+
+// mediaFileOf is a main Version's file; its stored path is relative to
+// the Library folder root, the answer's relativePath to the title folder.
+// The quality name is source-resolution (WEBDL-1080p), which Bazarr
+// splits on the dash.
+func mediaFileOf(f domain.File, root, folder string) *mediaFile {
+	mf := &mediaFile{ID: f.ID, RelativePath: strings.TrimPrefix(f.RelativePath, folder+"/"),
+		Path: filepath.Join(root, filepath.FromSlash(f.RelativePath)), Size: f.Size, DateAdded: utc(f.AddedAt), Languages: languagesOf(f.Languages)}
 	if f.ReleaseName != nil {
 		mf.SceneName = *f.ReleaseName
 	}
 	if f.Group != nil {
 		mf.ReleaseGroup = *f.Group
 	}
+	info := map[string]any{}
 	name := f.Quality.Source
+	if n, ok := sourceNames[name]; ok {
+		name = n
+	}
 	if f.Quality.Resolution > 0 {
 		if name != "" {
 			name += "-"
 		}
 		name += strconv.Itoa(f.Quality.Resolution) + "p"
 		if w := fileWidths[f.Quality.Resolution]; w > 0 {
-			mf.MediaInfo = map[string]any{"resolution": strconv.Itoa(w) + "x" + strconv.Itoa(f.Quality.Resolution)}
+			info["resolution"] = strconv.Itoa(w) + "x" + strconv.Itoa(f.Quality.Resolution)
 		}
+	}
+	if f.Quality.Source == "remux" {
+		name += " Remux"
+	}
+	video := f.Quality.Codec
+	if video == "" {
+		video, _ = f.MediaInfo["video_codec"].(string)
+	}
+	if video != "" {
+		info["videoCodec"] = video
+	}
+	if f.Quality.Audio != "" {
+		info["audioCodec"] = f.Quality.Audio
+	}
+	if len(info) > 0 {
+		mf.MediaInfo = info
 	}
 	mf.Quality = map[string]any{"quality": map[string]any{"name": name, "resolution": f.Quality.Resolution}}
 	return mf
@@ -172,18 +205,16 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 	for _, t := range ts {
 		v := mains[t.ID]
 		m := movie{ID: t.ID, Title: t.Name, SortTitle: t.SortName, Status: movieStatus(t.CinemaDate, t.DigitalDate, t.PhysicalDate, now),
-			InCinemas: utcPtr(t.CinemaDate), PhysicalRelease: utcPtr(t.PhysicalDate), DigitalRelease: utcPtr(t.DigitalDate), Images: []image{},
+			InCinemas: utcPtr(t.CinemaDate), PhysicalRelease: utcPtr(t.PhysicalDate), DigitalRelease: utcPtr(t.DigitalDate),
 			QualityProfileID: v.PickRulesID, Monitored: t.KeepUpToDate, MinimumAvailability: availability(t.ReleaseGate),
 			IsAvailable: t.GateOpensAt != nil && !t.GateOpensAt.After(now), Runtime: t.RuntimeMinutes, TmdbID: sourceID(t.SourceIDs, "tmdb"),
-			ImdbID: t.SourceIDs["imdb"], TitleSlug: t.SourceIDs["tmdb"], Genres: nonNil(t.Genres), Tags: []int64{}, Added: utc(t.CreatedAt)}
+			ImdbID: t.SourceIDs["imdb"], TitleSlug: t.SourceIDs["tmdb"], Genres: nonNil(t.Genres), Tags: []int64{}, Added: utc(t.CreatedAt),
+			Images: h.libraryImages(ctx, t), AlternateTitles: ptr(alternateTitles(t.Aliases)), OriginalLanguage: ptr(originalLanguage(t.OriginalLanguage))}
 		if t.Overview != nil {
 			m.Overview = *t.Overview
 		}
 		if t.Year != nil {
 			m.Year = *t.Year
-		}
-		if t.Backdrop != "" {
-			m.Images = append(m.Images, image{CoverType: "fanart", RemoteURL: t.Backdrop, URL: t.Backdrop})
 		}
 		lf, hasFolder := folders[v.LibraryFolderID]
 		if hasFolder {
@@ -192,7 +223,8 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 		}
 		st := movieStats{ReleaseGroups: []string{}}
 		if f, ok := fileOf[v.ID]; ok {
-			m.MovieFileID, m.MovieFile = f.ID, movieFileOf(f, t.ID, lf.Path, v.FolderName)
+			m.MovieFileID, m.MovieFile = f.ID, mediaFileOf(f, lf.Path, v.FolderName)
+			m.MovieFile.MovieID = t.ID
 			st.MovieFileCount, st.SizeOnDisk = 1, f.Size
 			if f.Group != nil {
 				st.ReleaseGroups = []string{*f.Group}

@@ -19,39 +19,42 @@ import (
 // series is a show as the Sonarr side answers it. Empty values are left
 // out, as the old apps do, except the ones callers expect to be there.
 type series struct {
-	ID                int64         `json:"id,omitempty"`
-	Title             string        `json:"title"`
-	SortTitle         string        `json:"sortTitle,omitempty"`
-	Status            string        `json:"status"`
-	Ended             bool          `json:"ended"`
-	Overview          string        `json:"overview,omitempty"`
-	Network           string        `json:"network,omitempty"`
-	AirTime           string        `json:"airTime,omitempty"`
-	Images            []image       `json:"images"`
-	RemotePoster      string        `json:"remotePoster,omitempty"`
-	Seasons           []season      `json:"seasons"`
-	Year              int           `json:"year"`
-	Path              string        `json:"path,omitempty"`
-	QualityProfileID  int64         `json:"qualityProfileId"`
-	LanguageProfileID int64         `json:"languageProfileId"`
-	SeasonFolder      bool          `json:"seasonFolder"`
-	Monitored         bool          `json:"monitored"`
-	MonitorNewItems   string        `json:"monitorNewItems"`
-	UseSceneNumbering bool          `json:"useSceneNumbering"`
-	Runtime           int           `json:"runtime"`
-	TvdbID            int64         `json:"tvdbId"`
-	TvMazeID          int64         `json:"tvMazeId"`
-	TmdbID            int64         `json:"tmdbId"`
-	ImdbID            string        `json:"imdbId,omitempty"`
-	SeriesType        string        `json:"seriesType"`
-	TitleSlug         string        `json:"titleSlug"`
-	RootFolderPath    string        `json:"rootFolderPath,omitempty"`
-	Genres            []string      `json:"genres"`
-	Tags              []int64       `json:"tags"`
-	Added             utc           `json:"added"`
-	NextAiring        *utc          `json:"nextAiring,omitempty"`
-	PreviousAiring    *utc          `json:"previousAiring,omitempty"`
-	Statistics        *seriesCounts `json:"statistics,omitempty"`
+	ID                int64             `json:"id,omitempty"`
+	Title             string            `json:"title"`
+	SortTitle         string            `json:"sortTitle,omitempty"`
+	AlternateTitles   *[]alternateTitle `json:"alternateTitles,omitempty"`
+	OriginalLanguage  *language         `json:"originalLanguage,omitempty"`
+	Status            string            `json:"status"`
+	Ended             bool              `json:"ended"`
+	Overview          string            `json:"overview,omitempty"`
+	Network           string            `json:"network,omitempty"`
+	AirTime           string            `json:"airTime,omitempty"`
+	Images            []image           `json:"images"`
+	RemotePoster      string            `json:"remotePoster,omitempty"`
+	Seasons           []season          `json:"seasons"`
+	Year              int               `json:"year"`
+	Path              string            `json:"path,omitempty"`
+	QualityProfileID  int64             `json:"qualityProfileId"`
+	LanguageProfileID int64             `json:"languageProfileId"`
+	SeasonFolder      bool              `json:"seasonFolder"`
+	Monitored         bool              `json:"monitored"`
+	MonitorNewItems   string            `json:"monitorNewItems"`
+	UseSceneNumbering bool              `json:"useSceneNumbering"`
+	Runtime           int               `json:"runtime"`
+	TvdbID            int64             `json:"tvdbId"`
+	TvMazeID          int64             `json:"tvMazeId"`
+	TmdbID            int64             `json:"tmdbId"`
+	ImdbID            string            `json:"imdbId,omitempty"`
+	SeriesType        string            `json:"seriesType"`
+	TitleSlug         string            `json:"titleSlug"`
+	RootFolderPath    string            `json:"rootFolderPath,omitempty"`
+	Genres            []string          `json:"genres"`
+	Tags              []int64           `json:"tags"`
+	Added             utc               `json:"added"`
+	NextAiring        *utc              `json:"nextAiring,omitempty"`
+	PreviousAiring    *utc              `json:"previousAiring,omitempty"`
+	LastAired         *utc              `json:"lastAired,omitempty"`
+	Statistics        *seriesCounts     `json:"statistics,omitempty"`
 }
 
 type image struct {
@@ -79,6 +82,8 @@ type seasonCounts struct {
 	SizeOnDisk        int64    `json:"sizeOnDisk"`
 	ReleaseGroups     []string `json:"releaseGroups"`
 	PercentOfEpisodes float64  `json:"percentOfEpisodes"`
+	// lastAired is the newest air date gone by, kept up to date or not.
+	lastAired *time.Time
 }
 
 type seriesCounts struct {
@@ -162,12 +167,12 @@ func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]ma
 		sum(s.file_id IS NOT NULL), COALESCE(sum(f.size), 0),
 		min(CASE WHEN i.keep_up_to_date = 1 AND i.air_date > ? THEN i.air_date END),
 		max(CASE WHEN i.keep_up_to_date = 1 AND i.air_date <= ? THEN i.air_date END),
-		COALESCE(group_concat(DISTINCT f.release_group), '')
+		COALESCE(group_concat(DISTINCT f.release_group), ''), max(CASE WHEN i.air_date <= ? THEN i.air_date END)
 		FROM items i
 		LEFT JOIN versions v ON v.title_id = i.title_id AND v.is_main = 1
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = v.id
 		LEFT JOIN files f ON f.id = s.file_id
-		WHERE i.kind = 'episode' AND i.dropped_at IS NULL AND i.title_id IN `+idList(ids)+` GROUP BY i.title_id, sn`, now, now, now)
+		WHERE i.kind = 'episode' AND i.dropped_at IS NULL AND i.title_id IN `+idList(ids)+` GROUP BY i.title_id, sn`, now, now, now, now)
 	if err != nil {
 		return nil, err
 	}
@@ -177,12 +182,12 @@ func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]ma
 		var id int64
 		var n int
 		var c seasonCounts
-		var next, prev *string
+		var next, prev, last *string
 		var groups string
-		if err := rows.Scan(&id, &n, &c.TotalEpisodeCount, &c.EpisodeCount, &c.EpisodeFileCount, &c.SizeOnDisk, &next, &prev, &groups); err != nil {
+		if err := rows.Scan(&id, &n, &c.TotalEpisodeCount, &c.EpisodeCount, &c.EpisodeFileCount, &c.SizeOnDisk, &next, &prev, &groups, &last); err != nil {
 			return nil, err
 		}
-		c.NextAiring, c.PreviousAiring = utcPtr(parseTime(next)), utcPtr(parseTime(prev))
+		c.NextAiring, c.PreviousAiring, c.lastAired = utcPtr(parseTime(next)), utcPtr(parseTime(prev)), parseTime(last)
 		c.ReleaseGroups = []string{}
 		for _, g := range strings.Split(groups, ",") {
 			if g != "" {
@@ -233,7 +238,7 @@ func (h *handler) loadSeries(ctx context.Context, where string, args ...any) ([]
 	}
 	out := make([]series, 0, len(ts))
 	for _, t := range ts {
-		out = append(out, h.librarySeries(t, seasonsOf[t.ID], mains[t.ID], folders, counts[t.ID]))
+		out = append(out, h.librarySeries(ctx, t, seasonsOf[t.ID], mains[t.ID], folders, counts[t.ID]))
 	}
 	return out, nil
 }
@@ -279,9 +284,10 @@ func (h *handler) folderByPath(ctx context.Context, p string) (int64, bool) {
 // sourceID reads one outside id as a number (0 when unknown).
 func sourceID(ids map[string]string, k string) int64 { return atoi64(ids[k]) }
 
-func (h *handler) librarySeries(t domain.Title, parts []domain.Part, v domain.Version, folders map[int64]domain.LibraryFolder, counts map[int]*seasonCounts) series {
+func (h *handler) librarySeries(ctx context.Context, t domain.Title, parts []domain.Part, v domain.Version, folders map[int64]domain.LibraryFolder, counts map[int]*seasonCounts) series {
 	s := series{ID: t.ID, Title: t.Name, SortTitle: t.SortName, Status: showStatus(t.Status), Ended: t.Status == "ended",
-		Images: []image{}, Seasons: []season{}, QualityProfileID: v.PickRulesID, LanguageProfileID: 1, SeasonFolder: true,
+		AlternateTitles: ptr(alternateTitles(t.Aliases)), OriginalLanguage: ptr(originalLanguage(t.OriginalLanguage)),
+		Images: h.libraryImages(ctx, t), Seasons: []season{}, QualityProfileID: v.PickRulesID, LanguageProfileID: 1, SeasonFolder: true,
 		Monitored: t.KeepUpToDate, MonitorNewItems: "all", Runtime: t.RuntimeMinutes, TvdbID: sourceID(t.SourceIDs, "tvdb"),
 		TvMazeID: sourceID(t.SourceIDs, "tvmaze"), TmdbID: sourceID(t.SourceIDs, "tmdb"), ImdbID: t.SourceIDs["imdb"],
 		SeriesType: seriesType(t.EpisodeOrder), TitleSlug: itoa(t.ID), Genres: nonNil(t.Genres), Tags: []int64{}, Added: utc(t.CreatedAt)}
@@ -300,15 +306,12 @@ func (h *handler) librarySeries(t domain.Title, parts []domain.Part, v domain.Ve
 	if t.Year != nil {
 		s.Year = *t.Year
 	}
-	if t.Backdrop != "" {
-		s.Images = append(s.Images, image{CoverType: "fanart", RemoteURL: t.Backdrop, URL: t.Backdrop})
-	}
 	if f, ok := folders[v.LibraryFolderID]; ok {
 		s.RootFolderPath = f.Path
 		s.Path = filepath.Join(f.Path, v.FolderName)
 	}
 	all := seriesCounts{ReleaseGroups: []string{}}
-	var next, prev *time.Time
+	var next, prev, last *time.Time
 	for _, p := range parts {
 		n := 0
 		if p.Number != nil {
@@ -337,6 +340,10 @@ func (h *handler) librarySeries(t domain.Title, parts []domain.Part, v domain.Ve
 				x := time.Time(*c.PreviousAiring)
 				prev = &x
 			}
+			// The show's last air date leaves the specials out.
+			if n > 0 && c.lastAired != nil && (last == nil || c.lastAired.After(*last)) {
+				last = c.lastAired
+			}
 		}
 		s.Seasons = append(s.Seasons, se)
 	}
@@ -344,7 +351,7 @@ func (h *handler) librarySeries(t domain.Title, parts []domain.Part, v domain.Ve
 	all.PercentOfEpisodes = percent(all.EpisodeFileCount, all.EpisodeCount)
 	// A single show always carries its counts: Seerr reads them unguarded.
 	s.Statistics = &all
-	s.NextAiring, s.PreviousAiring = utcPtr(next), utcPtr(prev)
+	s.NextAiring, s.PreviousAiring, s.LastAired = utcPtr(next), utcPtr(prev), utcPtr(last)
 	return s
 }
 
@@ -733,6 +740,9 @@ type episode struct {
 	Monitored             bool   `json:"monitored"`
 	AbsoluteEpisodeNumber *int   `json:"absoluteEpisodeNumber,omitempty"`
 	UnverifiedScene       bool   `json:"unverifiedSceneNumbering"`
+	// Only when asked for (includeEpisodeFile, includeSeries).
+	EpisodeFile *mediaFile `json:"episodeFile,omitempty"`
+	Series      *series    `json:"series,omitempty"`
 }
 
 // episodesWhere reads the episodes of shows in the Library matching where,
@@ -828,6 +838,9 @@ func (h *handler) listEpisodes(w http.ResponseWriter, r *http.Request) {
 			args = append(args, n)
 		}
 		out, err := h.episodesWhere(ctx, where, args...)
+		if err == nil {
+			err = h.include(ctx, r, out)
+		}
 		if err != nil {
 			internalError(w, err)
 			return
@@ -837,6 +850,9 @@ func (h *handler) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	}
 	if ids := idsParam(r, "episodeIds"); len(ids) > 0 {
 		out, err := h.episodesWhere(ctx, "id IN "+idList(ids))
+		if err == nil {
+			err = h.include(ctx, r, out)
+		}
 		if err != nil {
 			internalError(w, err)
 			return

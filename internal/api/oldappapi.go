@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/compat"
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
 )
@@ -45,7 +47,48 @@ func (a *API) oldAppRoutes(m *http.ServeMux) {
 }
 
 func (a *API) compatDeps() compat.Deps {
-	return compat.Deps{Store: a.s.Store, Library: a.s.Library, Metadata: a.s.Metadata, Queue: a.s.Queue, DeleteFiles: a.oldAppDeleteFiles}
+	return compat.Deps{Store: a.s.Store, Library: a.s.Library, Metadata: a.s.Metadata, Queue: a.s.Queue, DeleteFiles: a.oldAppDeleteFiles,
+		Picture: a.oldAppPicture}
+}
+
+// oldAppPicture sends a cover for those apps (Bazarr shows them): a
+// stored poster ("poster:<cache name>"), made smaller once when px asks,
+// or a wide picture's address, through the same cache and miss budget as
+// the TMDB pictures of the web app.
+func (a *API) oldAppPicture(w http.ResponseWriter, r *http.Request, src string, px int) {
+	if a.s.Library == nil || a.s.Library.Artwork == nil {
+		http.NotFound(w, r)
+		return
+	}
+	c := a.s.Library.Artwork
+	name, ok := strings.CutPrefix(src, "poster:")
+	if !ok {
+		a.serveRemoteArtwork(w, r, src, serveCover)
+		return
+	}
+	p, ok := c.Path(name)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	if px > 0 {
+		if n, sp, err := c.Smaller(name, px); err == nil && n != name {
+			serveArtworkCached(w, r, n, sp, "private, max-age=86400")
+			return
+		}
+	}
+	serveCover(w, r, name, p)
+}
+
+// serveCover sends a cover. Its address stays the same when the title's
+// picture changes, so it is kept a day and then revalidated by name,
+// never kept a year as the web app's own picture addresses are.
+func serveCover(w http.ResponseWriter, r *http.Request, name, p string) {
+	if library.StableFile(p) {
+		serveArtwork(w, r, name, p) // already a day, named by the file's time
+		return
+	}
+	serveArtworkCached(w, r, name, p, "private, max-age=86400")
 }
 
 func (a *API) thisAppOn(ctx context.Context, key string) bool {
