@@ -220,4 +220,7 @@
 	code {
 		font-family: var(--font-mono);
 	}
+	@media (max-width: 767px) and (pointer: coarse) {
+		.op { min-height: 44px; }
+	}
 </style>

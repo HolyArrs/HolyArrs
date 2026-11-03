@@ -353,6 +353,7 @@ func applyMovie(t *domain.Title, m metadata.Movie, now time.Time) {
 		t.OriginalLanguage = &l
 	}
 	t.CinemaDate, t.DigitalDate, t.PhysicalDate = m.CinemaDate, m.DigitalDate, m.PhysicalDate
+	t.Aliases = mergeAliases(t.Aliases, m.Name, m.OtherNames)
 	t.Status = titleStatus(Stage(DatesOf(*t), now))
 	applyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime)
 	t.Directors, t.Studio = append([]string{}, m.Directors...), m.Studio

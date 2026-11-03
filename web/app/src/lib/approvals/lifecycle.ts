@@ -25,7 +25,7 @@ export interface LifeFacts {
 	/** The download's 0..1. */
 	progress?: number;
 	/** What the pipeline is doing for it right now (from the live searches and downloads). */
-	phase?: 'searching' | 'downloading' | 'importing' | 'failed';
+	phase?: 'searching' | 'downloading' | 'importing' | 'stuck' | 'failed';
 	/** Not released yet: the short date it comes out ('' when the date is unknown). */
 	upcoming?: string;
 	/**
@@ -52,6 +52,8 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	const part = facts.partial;
 	if (facts.phase === 'failed') return failedLife(facts);
 	if (facts.phase === 'searching') return { stage: 'searching', pct: lo + (hi - lo) * 0.1, tone: 'go', label: 'Searching' };
+	// Downloaded, but the import waits on a person: say so instead of a plain Processing.
+	if (facts.phase === 'stuck') return { stage: 'getting', pct: hi - 3, tone: 'wait', label: 'Needs a decision' };
 	if (facts.phase === 'importing') return { stage: 'importing', pct: hi - 3, tone: 'go', label: 'Importing' };
 	if (facts.phase === 'downloading') {
 		const d = facts.progress === undefined || !Number.isFinite(facts.progress) ? 0 : Math.min(Math.max(facts.progress, 0), 1);

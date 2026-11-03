@@ -52,3 +52,15 @@ describe('real parts in "more available" (#135)', () => {
 		expect(realAlbum({ type: 'Album', secondary_types: [], name: 'Unreleased Bootleg Vol. 2' })).toBe(false);
 	});
 });
+
+describe('a download waiting on a person', () => {
+	it('shows Needs a decision instead of Processing', () => {
+		for (const phase of ['needs_a_decision', 'import_refused']) {
+			const t = liveByTitle([dl(7, phase, 1)], []).get(7);
+			expect(liveFacts(t)).toEqual({ phase: 'stuck', progress: 1 });
+		}
+	});
+	it('a copy still downloading wins over a stuck one', () => {
+		expect(liveByTitle([dl(7, 'needs_a_decision', 1), dl(7, 'downloading', 0.4)], []).get(7)?.download?.phase).toBe('downloading');
+	});
+});

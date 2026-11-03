@@ -31,10 +31,13 @@ minor release does.
   must be an IP address, `localhost` or a name listed in
   `HOLYARRS_ALLOWED_HOSTS`, which stops DNS rebinding.
 - **API keys** are shown once and stored only as hashes.
-- **Skip sign-in on the local network** is off by default. When on, it never
-  applies behind a proxy that is not in `HOLYARRS_TRUSTED_PROXIES`, and such
-  requests cannot make API keys, change sign-in settings, change secrets or
-  restore backups.
+- **Skip sign-in on the local network** is off by default. It applies only to
+  the networks the owner lists (up to 32, like `192.168.1.0/24`), and cannot be
+  turned on with an empty list. Installs that had it on before the list
+  existed got the private, loopback and link-local ranges once, so narrow
+  them. It never applies behind a proxy that is not in
+  `HOLYARRS_TRUSTED_PROXIES`, and such requests cannot make API keys, change
+  sign-in settings, change secrets or restore backups.
 - **Secrets** (Source keys, Downloader passwords, the TMDB token) are encrypted
   at rest with AES-256-GCM. The master key lives in `holyarrs.key` (mode 0600)
   or the file named by `HOLYARRS_MASTER_KEY_FILE`, never in the database or in

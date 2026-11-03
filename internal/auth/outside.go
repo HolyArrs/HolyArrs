@@ -116,8 +116,13 @@ func (a *Auth) ways(ctx context.Context) []string {
 
 func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	nets := []string{}
+	if l := a.localNets.Load(); l != nil {
+		nets = l.list
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		settingSkipLocal:   a.skipLocal.Load(),
+		keyLocalNets:       nets,
 		keyRequireAdmin2FA: a.requireAdmin2FA.Load(),
 		keyMinLength:       MinPasswordLength(ctx, a.s.Read()),
 		ProviderPlex:       a.way(ctx, ProviderPlex),
@@ -133,6 +138,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	var body struct {
 		SkipLocal    *bool    `json:"skip_login_local_network"`
+		LocalNets    []string `json:"local_networks"`
 		RequireAdmin *bool    `json:"require_two_factor_admins"`
 		MinPassword  *int     `json:"min_password_length"`
 		Plex         *WayView `json:"plex"`
@@ -143,8 +149,8 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		ConfirmEveryone bool `json:"confirm_everyone"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil ||
-		(body.SkipLocal == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil) {
-		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
+		(body.SkipLocal == nil && body.LocalNets == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil) {
+		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "local_networks": ["192.168.1.0/24"], "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
 		return
 	}
 	if body.SkipLocal != nil && *body.SkipLocal {
@@ -186,9 +192,30 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// Skipping needs at least one listed network; an empty list skips nowhere.
+	nets := a.localNets.Load()
+	if body.LocalNets != nil {
+		var err error
+		if nets, err = parseLocalNets(body.LocalNets); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	skip := a.skipLocal.Load()
+	if body.SkipLocal != nil {
+		skip = *body.SkipLocal
+	}
+	if (body.SkipLocal != nil || body.LocalNets != nil) && skip && (nets == nil || len(nets.list) == 0) {
+		fail(w, http.StatusBadRequest, "List at least one local network first, like 192.168.1.0/24: sign-in is skipped only there.")
+		return
+	}
 	set := map[string]string{}
 	if body.SkipLocal != nil {
 		set["this_app/"+settingSkipLocal] = strconv.FormatBool(*body.SkipLocal)
+	}
+	if body.LocalNets != nil {
+		v, _ := json.Marshal(nets.list)
+		set[settingsGroup+"/"+signInPrefix+keyLocalNets] = string(v)
 	}
 	if body.RequireAdmin != nil {
 		set[settingsGroup+"/"+signInPrefix+keyRequireAdmin2FA] = strconv.FormatBool(*body.RequireAdmin)
@@ -255,6 +282,10 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		serverError(w, "sign-in settings", err)
 		return
+	}
+	if body.LocalNets != nil {
+		a.localNets.Store(nets)
+		log.Printf("auth: local networks set to %s", strings.Join(nets.list, ", "))
 	}
 	if body.SkipLocal != nil {
 		a.skipLocal.Store(*body.SkipLocal)

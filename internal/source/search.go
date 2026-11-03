@@ -99,21 +99,31 @@ const hidden = "HOLYARRSKEY"
 
 // secretValues lists the key values a result link may carry: a
 // Torznab/Newznab apikey, or the values in an rss Source's key (its
-// address's query, where feeds keep their passkey).
+// address's query, where feeds keep their passkey), then the passkeys
+// its address path holds.
 func secretValues(cfg Config) []string {
-	if cfg.APIKey == "" {
+	if cfg.APIKey == "" && len(cfg.PathKeys) == 0 {
 		return nil
 	}
-	if cfg.Format != "rss" {
-		return []string{cfg.APIKey}
-	}
 	var out []string
-	// Feeds separate values with & or ; (u=1;tp=PASSKEY).
-	for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
-		_, v, _ := strings.Cut(part, "=")
-		if u, err := url.QueryUnescape(v); err == nil {
-			v = u
+	if cfg.Format != "rss" {
+		if cfg.APIKey != "" {
+			out = append(out, cfg.APIKey)
 		}
+	} else {
+		// Feeds separate values with & or ; (u=1;tp=PASSKEY).
+		for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
+			_, v, _ := strings.Cut(part, "=")
+			if u, err := url.QueryUnescape(v); err == nil {
+				v = u
+			}
+			if len(v) >= 4 && !slices.Contains(out, v) {
+				out = append(out, v)
+			}
+		}
+	}
+	// Path passkeys come after, so markers stored before keep their number.
+	for _, v := range cfg.PathKeys {
 		if len(v) >= 4 && !slices.Contains(out, v) {
 			out = append(out, v)
 		}
@@ -145,12 +155,7 @@ func spellings(keys []string) []spelling {
 func cleanLink(link string, keys []string) string {
 	// A marker already in the feed's link was planted by someone else;
 	// break it so GrabLink never fills the Source key into it.
-	link = strings.ReplaceAll(link, hidden, "HOLYARRS-KEY")
-	for _, sp := range spellings(keys) {
-		if sp.value != "" {
-			link = strings.ReplaceAll(link, sp.value, sp.marker)
-		}
-	}
+	link = hideKeys(strings.ReplaceAll(link, hidden, "HOLYARRS-KEY"), keys)
 	u, err := url.Parse(link)
 	if err != nil {
 		return link
@@ -162,6 +167,17 @@ func cleanLink(link string, keys []string) string {
 	q.Del("apikey")
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+// hideKeys swaps the key values in a link for their markers, keeping the
+// markers it already holds.
+func hideKeys(link string, keys []string) string {
+	for _, sp := range spellings(keys) {
+		if sp.value != "" {
+			link = strings.ReplaceAll(link, sp.value, sp.marker)
+		}
+	}
+	return link
 }
 
 // revealLink puts the key values back into a link cleanLink cleaned.

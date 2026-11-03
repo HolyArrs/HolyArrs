@@ -196,6 +196,12 @@
 	.ev.past .et { color: var(--text-muted); }
 	.hit { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 	.hit:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Touch phones: a 44px tap area centred on each 20px chip; the chip lets it out (its name still truncates). */
+	@media (max-width: 767px) and (pointer: coarse) {
+		.ev { overflow: visible; }
+		.fi { border-radius: inherit; }
+		.hit::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+	}
 	.pick { flex: none; min-height: 1.3em; margin: 6px 0 0; font: 500 12px/1.3 var(--font-ui); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.pick:empty { display: none; }
 	/* Planned: outlined in the row's tone. */

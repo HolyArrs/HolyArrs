@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { owner, signIn, libraryStatus, libraryView, addFromSearch, openFromSearch, openLibraryTab } from './helpers.ts';
+import { owner, signIn, libraryStatus, libraryView, addFromSearch, openFromSearch, openLibraryTab, ensureInLibrary } from './helpers.ts';
 
 // Add-movie screen, Library screen and Movie page against the fake TMDB in
 // fakes.mjs. Runs after the other projects, so the owner and the Movies
@@ -15,6 +15,8 @@ async function fresh(browser: Browser) {
 }
 
 test.beforeAll(async ({ browser }) => {
+	// Run on setup alone, nobody added Driftwood Moon yet; the counts below expect it.
+	await ensureInLibrary(browser, 'Driftwood Moon', 'Driftwood Moon');
 	page = await fresh(browser);
 	await signIn(page, owner());
 	// Lookups go through the fake metadata server with no key to set.

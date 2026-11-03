@@ -356,4 +356,7 @@
 			grid-template-columns: 1fr;
 		}
 	}
+	@media (max-width: 767px) and (pointer: coarse) {
+		.h3 a { display: inline-flex; align-items: center; min-height: 44px; }
+	}
 </style>

@@ -112,10 +112,14 @@ func TestNZBGetLab(t *testing.T) {
 		fmt.Printf("LAB_NZBGET_HISTORY_STATE=%s DETAIL=%s\n", j.State, j.Detail)
 	case "remove":
 		id := os.Getenv("HOLYARRS_LAB_NZBGET_ID")
-		if err := n.Remove(ctx, id, false); err == nil {
-			t.Fatal("deleteFiles=false did not fail closed")
+		// Keeping files is a park-delete: the job leaves the queue for the finished
+		// list, then the files-too remove clears it from there as well.
+		if err := n.Remove(ctx, id, false); err != nil {
+			t.Fatalf("remove keeping files: %v", err)
 		}
-		if err := n.Remove(ctx, id, true); err != nil {
+		// A finished job removed keeping its files is hidden from the list at once,
+		// so the files-too remove may find nothing left to do.
+		if err := n.Remove(ctx, id, true); err != nil && !errors.Is(err, ErrNotFound) {
 			t.Fatalf("remove: %v", err)
 		}
 		if _, err := n.Get(ctx, id); !errors.Is(err, ErrNotFound) {

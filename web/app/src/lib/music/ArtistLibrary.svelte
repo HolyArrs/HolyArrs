@@ -246,7 +246,7 @@
 	.al-st-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 22px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.al-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.al-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 20px; }
-	.al-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.al-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: var(--surface-1); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.dot { flex: none; width: 9px; height: 9px; border-radius: 99px; background: var(--text-muted); }
 	.dot.have { background: var(--ok); }
 	.dot.part { background: var(--wait); }
@@ -270,7 +270,7 @@
 	.al-name { display: grid; gap: 3px; min-width: 0; }
 	.al-name b { font: 650 15px/1.2 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.al-name small { color: var(--text-muted); font: 500 12.5px/1.2 var(--font-ui); }
-	.al-count { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text-muted); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.al-count { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.al-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text); }
 	.al-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait-text); }
 	.al-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); }
@@ -289,7 +289,7 @@
 	.al-tr-n { color: var(--text-muted); font-variant-numeric: tabular-nums; text-align: right; }
 	.al-tr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.al-tr-len { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.al-tr-st { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 9px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
+	.al-tr-st { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 9px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
 	.al-tr-st.have { color: var(--ok-text); background: color-mix(in srgb, var(--ok) 12%, transparent); }
 	.al-tr-st.downloading { color: var(--info-text); background: color-mix(in srgb, var(--info) 12%, transparent); }
 	.al-tr-st.failed { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }

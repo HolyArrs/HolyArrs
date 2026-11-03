@@ -268,6 +268,7 @@ func applyShow(t *domain.Title, sh metadata.Show) {
 	}
 	t.Overview, t.OriginalLanguage = str(sh.Overview), str(sh.OriginalLanguage)
 	t.Network, t.AirTime, t.TimeZone = str(sh.Network), str(sh.AirTime), str(sh.TimeZone)
+	t.Aliases = mergeAliases(t.Aliases, sh.Name, sh.OtherNames)
 	switch sh.Status {
 	case "ended", "announced", "running":
 		t.Status = sh.Status

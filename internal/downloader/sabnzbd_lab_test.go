@@ -161,8 +161,16 @@ func TestLabSabnzbd(t *testing.T) {
 				if err := s.Remove(ctx, id, true); err != nil {
 					t.Fatalf("remove: %v", err)
 				}
-				if _, err := s.Get(ctx, id); err != ErrNotFound {
-					t.Fatalf("still there after remove: %v", err)
+				// SABnzbd answers the delete before it has finished it: give it a moment.
+				gone := false
+				for i := 0; i < 20 && !gone; i++ {
+					_, err := s.Get(ctx, id)
+					if gone = err == ErrNotFound; !gone {
+						time.Sleep(500 * time.Millisecond)
+					}
+				}
+				if !gone {
+					t.Fatal("still there 10 s after remove")
 				}
 			}
 			ids = nil
@@ -216,7 +224,7 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	w.addDownloader(t, &domain.Downloader{Name: "Lab SABnzbd", Adapter: "sabnzbd", Protocol: "usenet", URL: base, Category: "movies", Priority: 1, AllowLocal: true, SecretRef: &ref})
+	w.addDownloader(t, &domain.Downloader{Name: "Lab SABnzbd", Adapter: "sabnzbd", Protocol: "usenet", URL: base, Category: "movies", Priority: 1, AllowLocal: true, Writable: true, SecretRef: &ref})
 	rels := map[string]int64{}
 	for _, n := range []string{labDead, labNext} {
 		link := nzbBase + "/dead.nzb"
@@ -280,8 +288,16 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 			if d.State != "failed" || st != "turned_down" {
 				t.Fatalf("dead download %s, release %s", d.State, st)
 			}
-			if _, err := s.Get(ctx, deadID); err != ErrNotFound {
-				t.Fatalf("the failed NZB is still in SABnzbd: %v", err)
+			// SABnzbd finishes a delete a moment after it answers.
+			gone := false
+			for i := 0; i < 20 && !gone; i++ {
+				_, err := s.Get(ctx, deadID)
+				if gone = err == ErrNotFound; !gone {
+					time.Sleep(500 * time.Millisecond)
+				}
+			}
+			if !gone {
+				t.Fatal("the failed NZB is still in SABnzbd 10 s later")
 			}
 			return
 		}

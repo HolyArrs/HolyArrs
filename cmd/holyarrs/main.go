@@ -436,6 +436,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n > 0 {
 		log.Printf("secrets: encrypted %d secrets that were stored in the clear", n)
 	}
+	// Not fatal: a Source left as it was still works.
+	if n, err := source.HidePathKeys(ctx, s, vault); err != nil {
+		log.Printf("secrets: moving rss passkeys into the vault: %v", err)
+	} else if n > 0 {
+		log.Printf("secrets: moved the passkeys of %d rss Sources into the vault", n)
+	}
 	// Every value the vault stores is masked before the save returns; the
 	// minute loop is a safety net that also masks, in the files, values
 	// changed or removed by any code path before the vault forgets them.
@@ -496,6 +502,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		enqueue(ctx, source.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
 	}
+	// A finished Import: clear a Usenet download out of its Downloader.
+	im.OnImported = dm.ClearFinished
 	// A failed Download: search its Slot for the next Release (a failed
 	// season pack: one season search for its episodes).
 	dm.OnFailed = func(ctx context.Context, slotID int64) {

@@ -213,4 +213,19 @@ describe('Your Library cards', () => {
 		const items = attention({ failed: [{ id: 1, title: '', name: 'Some.Release.2024', text: '' }, { id: 2, title: '', text: '' }], decisions: [], health: [] });
 		expect(items.map((i) => i.title)).toEqual(['Some.Release.2024', 'A download']);
 	});
+	it('keeps outside torrents apart: no HolyArrs id, so they key by Downloader and hash', () => {
+		const items = attention({
+			failed: [
+				{ id: 0, title: '', name: 'A.Torrent', text: '', client_item: true, downloader_id: 2, hash: 'aa' },
+				{ id: 0, title: '', name: 'B.Torrent', text: '', client_item: true, downloader_id: 2, hash: 'bb' },
+				{ id: 7, title: 'Dune', text: '' }
+			],
+			decisions: [],
+			health: []
+		});
+		expect(new Set(items.map((i) => i.key)).size).toBe(3);
+		expect(items.map((i) => i.href)).toEqual(['/downloads?show=problems.failed', '/downloads?show=problems.failed', '/downloads?show=problems.failed&open=7']);
+		const group = groupAttention(items)[0];
+		expect(new Set(group.items.map((i) => i.key)).size).toBe(3);
+	});
 });

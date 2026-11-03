@@ -18,11 +18,11 @@ test.beforeAll(async ({ browser }) => {
 
 // The Downloads table: the copy still downloading is the one to act on.
 const iron = () => page.locator('[data-testid="dl-table-row"][data-phase="downloading"]').filter({ hasText: 'Iron Lullaby' });
-// The tabs are Active · Waiting · In progress · Problems · Done, with the
-// search in the same row. Needs a decision lives on the rows: Problems ›
-// Needs a decision, and the row's details panel holds the choices.
-const decideChip = () => page.locator('[data-testid="status-subchip"][data-key="decide"]');
-const showProblems = () => page.locator('[data-testid="status-chip"][data-key="problems"] button').click();
+// The tabs are All · Waiting · In progress · Problems · Done. Needs a decision
+// lives on the rows: Problems › Review, and the row's details panel holds the choices.
+const decideChip = () => page.locator('[data-testid="dl-subseg-item"][data-key="decide"]');
+const showProblems = () => page.locator('[data-testid="rail-item"][data-key="problems"]').click();
+const pane = () => page.getByTestId('dl-pane');
 const col = (r: ReturnType<typeof iron>, id: string) => r.locator(`[data-col="${id}"]`);
 // A row opens its details panel in place; Mark failed is in the panel's More actions menu, Remove is the bin on the row.
 const rowMenu = (r: ReturnType<typeof iron>) => r.getByTestId('dl-row-menu').getByRole('button').first();
@@ -35,17 +35,20 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	const r = iron();
 	await expect(col(r, 'status')).toContainText('Downloading');
 	await expect(col(r, 'progress')).toContainText('40%');
-	await expect(col(r, 'speed')).toContainText('/s');
-	await expect(col(r, 'time')).not.toHaveText('–');
 	await expect(rowMenu(r)).toBeEnabled();
+	// Speed and time left are in the row's details (Info).
 	await openRow(r);
-	await expect(page.getByTestId('dl-pane')).toBeVisible();
-	await openRow(r);
-	await expect(page.getByTestId('dl-pane')).toBeHidden();
-	// The Downloader moves on; the row follows without a reload.
+	await expect(pane()).toBeVisible();
+	await expect(pane()).toContainText('/s');
+	await expect(pane()).toContainText('Time left');
+	// The Downloader moves on; the row and its details follow without a reload.
 	await fetch(`${qbit}/set?progress=0.7&eta=120`);
 	await expect(col(r, 'progress')).toContainText('70%', { timeout: 15_000 });
-	await expect(col(r, 'time')).toHaveText('2m');
+	await expect(pane()).toContainText('2m', { timeout: 15_000 });
+	// A click opens a row's details; Escape from the row closes them.
+	await r.getByTestId('dl-line').focus();
+	await page.keyboard.press('Escape');
+	await expect(pane()).toBeHidden();
 });
 
 test('Remove asks first, starts from the settings and can turn the Release down and search again', async () => {
@@ -53,7 +56,7 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await removeFromMenu(r);
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByRole('heading', { name: 'Remove this download?' })).toBeVisible();
-	await expect(dialog.getByLabel('Delete its files')).toBeChecked();
+	await expect(dialog.getByLabel('Also delete files')).toBeChecked();
 	await expect(dialog.getByLabel('Add its Release to Turned down')).not.toBeChecked();
 	await expect(dialog.getByLabel('Search again')).toBeDisabled();
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
@@ -63,7 +66,8 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await removeFromMenu(r);
 	await dialog.getByLabel('Add its Release to Turned down').check();
 	await expect(dialog.getByLabel('Search again')).toBeChecked();
-	await dialog.getByRole('button', { name: 'Remove', exact: true }).click();
+	// The confirm button names what goes: "Remove and delete files" here.
+	await dialog.getByTestId('dl-remove-confirm').click();
 	await expect(page.getByText('Removed. HolyArrs looks for the next Release.')).toBeVisible();
 	await expect.poll(async () => (await (await fetch(`${qbit}/state`)).json()).deleted.length).toBe(before + 1);
 	// The copy is no longer downloading; it turns into Needs a decision once the search runs out.
@@ -75,10 +79,11 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 });
 
 test('Needs a decision says why and offers every choice in the row\'s details; stopping clears it', async () => {
-	await decideChip().locator('button').click();
-	const r = page.getByTestId('dl-table-row').filter({ hasText: 'Iron Lullaby' }).filter({ hasText: 'Needs a decision' });
+	await decideChip().click();
+	const r = page.getByTestId('dl-table-row').filter({ hasText: 'Iron Lullaby' }).filter({ hasText: 'Review' });
 	await r.getByTestId('dl-line').click();
-	const card = r.getByTestId('decision');
+	// The choices are in the row's details pane.
+	const card = pane().getByTestId('decision');
 	await card.getByTestId('decision-why').click();
 	await expect(card.getByTestId('decision-why-box')).toContainText('HolyArrs ran out of Releases that pass the Pick rules.');
 	await expect(card.getByTestId('decision-reason')).toContainText('no other Release passed the Pick rules');

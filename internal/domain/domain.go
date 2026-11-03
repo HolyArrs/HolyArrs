@@ -295,6 +295,9 @@ type Source struct {
 	ProxySecretRef *int64 `db:"proxy_secret_ref"`
 	// ProxyAllowLocal lets the proxy itself be on the local network.
 	ProxyAllowLocal bool `db:"proxy_allow_local_network"`
+	// PathSecretRef holds the passkeys an rss address keeps in its path;
+	// the stored URL has a marker in their place.
+	PathSecretRef *int64 `db:"path_secret_ref"`
 }
 
 // Release is one search result.
@@ -356,6 +359,9 @@ type Downloader struct {
 	Removed      bool       `db:"removed"` // removed by a person but kept for its Download history
 	// Writable is "HolyArrs can change this Downloader"; off, HolyArrs only reads it.
 	Writable bool `db:"writable"`
+	// ClearFinished removes a Usenet job and its files from the client once
+	// its Import fully succeeded.
+	ClearFinished bool `db:"clear_finished"`
 }
 
 // SeenFile is one file a Download reports.

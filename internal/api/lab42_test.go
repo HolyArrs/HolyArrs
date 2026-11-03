@@ -133,6 +133,21 @@ type labShow struct {
 	titleID int64
 }
 
+// labNoSizeFloors turns the import size floors off in a lab test's own
+// database: its payloads are a few hundred KB on purpose, which the fake
+// guard (#42) would rightly refuse as too small to be the full video or track.
+func labNoSizeFloors(t *testing.T, s *store.Store) {
+	t.Helper()
+	err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', 'import_size_floors', 'false', '2026-01-01T00:00:00Z', '{}', '2026-01-01T00:00:00Z', '{}')
+			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value`)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func newLabShow(t *testing.T, qb string, state domain.SlotState) labShow {
 	t.Helper()
 	s, err := store.Open(t.TempDir(), store.Options{})
@@ -140,6 +155,7 @@ func newLabShow(t *testing.T, qb string, state domain.SlotState) labShow {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
+	labNoSizeFloors(t, s)
 	x := labShow{s: s, shows: t.TempDir()}
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64

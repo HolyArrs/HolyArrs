@@ -102,6 +102,11 @@ test('Schedules: next feed check, run it now, change how often', async () => {
 	await feed.getByLabel('Every (minutes)').fill('30');
 	await feed.getByRole('button', { name: 'Save' }).click();
 	await expect(feed).toContainText('Every 30 minutes');
+	// Back to the default, which later projects (search) expect.
+	await feed.getByRole('button', { name: 'Change how often Feed check runs' }).click();
+	await feed.getByLabel('Every (minutes)').fill('15');
+	await feed.getByRole('button', { name: 'Save' }).click();
+	await expect(feed).toContainText('Every 15 minutes');
 	await expect(page.getByTestId('loop').first()).toBeVisible();
 	await axe(page, '/settings/schedules');
 	await phone(page, '/settings/schedules');

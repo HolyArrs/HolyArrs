@@ -132,7 +132,7 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
  * viewer may open Settings (yes when left out).
  */
 export function attention(input: {
-	failed: (Pick<DownloadRow, 'id' | 'title' | 'title_id' | 'text'> & { name?: string; phase?: string })[];
+	failed: (Pick<DownloadRow, 'id' | 'title' | 'title_id' | 'text'> & { name?: string; phase?: string; client_item?: boolean; downloader_id?: number; hash?: string })[];
 	decisions: { slot_id: number; title: string; reason?: string; episode?: { label: string } | null }[];
 	health: HealthCheck[];
 	metadata?: string;
@@ -146,7 +146,9 @@ export function attention(input: {
 		const d = { ...raw, title: raw.title || raw.name || 'A download' };
 		const refused = d.phase === 'import_refused';
 		const r = plainReason(d.text || (refused ? 'The import was refused.' : 'The download failed.'));
-		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: refused ? 'import refused' : 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.failed&open=${d.id}`, action: 'Downloads' });
+		// An outside torrent has no HolyArrs id (0): it is keyed by its Downloader and hash, and opens the Failed list.
+		const own = !d.client_item && d.id > 0;
+		out.push({ key: own ? `f${d.id}` : `fc${d.downloader_id ?? 0}:${d.hash || d.name || out.length}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: refused ? 'import refused' : 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: own ? `/downloads?show=problems.failed&open=${d.id}` : '/downloads?show=problems.failed', action: 'Downloads' });
 	}
 	// The metadata outage stays while it lasts and goes away on the next check that passes.
 	if (input.metadata) out.push({ key: 'metadata', tone: 'wait', word: 'Warning', text: `HolyArrs metadata can't be reached. ${input.metadata}`, title: 'HolyArrs metadata', reason: "can't be reached", cause: 'metadata', note: input.metadata, href: admin ? '/settings/tmdb' : '/status', action: 'Look' });
