@@ -638,13 +638,11 @@ func (a *API) knownGenres(mbid string) []string {
 }
 
 // calendarRow is a calendar date with who follows its title: following
-// says the viewer does; followers are the people the viewer may see (the
-// "Show who asked" privacy rules), followers_hidden counts the others.
+// says the viewer does; followers are everyone who follows it.
 type calendarRow struct {
 	library.CalendarEntry
-	Following       bool               `json:"following,omitempty"`
-	Followers       []calendarFollower `json:"followers,omitempty"`
-	FollowersHidden int                `json:"followers_hidden,omitempty"`
+	Following bool               `json:"following,omitempty"`
+	Followers []calendarFollower `json:"followers,omitempty"`
 	// Banner is the List view's wide picture (textless when a logo goes
 	// over it); Logo is the title or artist logo. Both may be empty.
 	Banner string `json:"banner,omitempty"`
@@ -730,22 +728,18 @@ type calendarFollower struct {
 // titles the viewer follows in all and how many people use this server.
 func (a *API) calendarFollows(ctx context.Context, es []library.CalendarEntry) ([]calendarRow, int, int, error) {
 	db := a.s.Store.Read()
-	seer, err := a.seer(ctx)
-	if err != nil {
-		return nil, 0, 0, err
-	}
+	me := viewer(ctx)
 	var mine, people int
 	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM follows f JOIN titles t ON t.id = f.title_id
-		WHERE f.user_id = ? AND t.state != 'removed'`, seer.me).Scan(&mine); err != nil {
+		WHERE f.user_id = ? AND t.state != 'removed'`, me).Scan(&mine); err != nil {
 		return nil, 0, 0, err
 	}
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE state = 'active'").Scan(&people); err != nil {
 		return nil, 0, 0, err
 	}
 	type who struct {
-		seen   []calendarFollower
-		hidden int
-		me     bool
+		seen []calendarFollower
+		me   bool
 	}
 	by := map[int64]*who{}
 	var ids []any
@@ -773,14 +767,10 @@ func (a *API) calendarFollows(ctx context.Context, es []library.CalendarEntry) (
 				return nil, 0, 0, err
 			}
 			w := by[tid]
-			if uid == seer.me {
+			if uid == me {
 				w.me = true
 			}
-			if !seer.sees(uid) {
-				w.hidden++
-				continue
-			}
-			f := calendarFollower{ID: uid, Name: strings.TrimSpace(name), Me: uid == seer.me}
+			f := calendarFollower{ID: uid, Name: strings.TrimSpace(name), Me: uid == me}
 			if etag.Valid && etag.String != "" {
 				u := "/api/v1/users/" + strconv.FormatInt(uid, 10) + "/avatar?v=" + etag.String
 				f.Avatar = &u
@@ -794,7 +784,7 @@ func (a *API) calendarFollows(ctx context.Context, es []library.CalendarEntry) (
 	out := make([]calendarRow, len(es))
 	for i, e := range es {
 		w := by[e.TitleID]
-		out[i] = calendarRow{CalendarEntry: e, Following: w.me, Followers: w.seen, FollowersHidden: w.hidden}
+		out[i] = calendarRow{CalendarEntry: e, Following: w.me, Followers: w.seen}
 	}
 	return out, mine, people, nil
 }

@@ -17,9 +17,9 @@ describe('asked by wording', () => {
 	it('dates the title page line and the tooltip', () => {
 		expect(shortDate(at)).toBe('12 Oct');
 		expect(askedByDated([p(2, 'Ana')])).toBe('Asked by Ana · 12 Oct');
-		expect(askedByTip([p(2, 'Ana')], true)).toBe('Ana asked for this on 12 Oct. Only you, the owner, admins and managers can see this.');
-		expect(askedByTip([p(1, 'Luis', true)], false)).toContain('You asked for this on 12 Oct.');
-		expect(askedByTip([p(1, 'Bo', true), p(2, 'Ana')], false)).toContain('Ana chose to show their name');
+		expect(askedByTip([p(2, 'Ana')])).toBe('Ana asked for this on 12 Oct.');
+		expect(askedByTip([p(1, 'Luis', true)])).toBe('You asked for this on 12 Oct.');
+		expect(askedByTip([p(1, 'Bo', true), p(2, 'Ana')])).toBe('Ana asked for this on 12 Oct.');
 	});
 
 	it('uses first names only', () => {
