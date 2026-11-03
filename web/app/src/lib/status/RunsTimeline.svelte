@@ -4,7 +4,7 @@
 	// what runs now with its progress and what comes next, counting down.
 	import { ago, dateTime } from '../format.ts';
 	import { until } from '../schedules.ts';
-	import LiveNow from './LiveNow.svelte';
+	import LiveViews from './LiveViews.svelte';
 	import type { StatusRow } from './status.ts';
 
 	let { upcoming, recent, now }: { upcoming: StatusRow[]; recent: StatusRow[]; now: number } = $props();
@@ -34,7 +34,7 @@
 			{:else}<li class="none">No runs planned.</li>{/each}
 		</ol>
 
-		<div class="day"><LiveNow {upcoming} /></div>
+		<div class="day"><LiveViews {upcoming} {recent} /></div>
 	</div>
 </section>
 

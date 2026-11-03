@@ -13,6 +13,7 @@
 	import type { AlertView, HealthChecks, HealthStates, OutsideList } from '#lib/types.ts';
 	import type { ScheduleRow } from '#lib/schedules.ts';
 	import Sections from '#lib/status/StatusSections.svelte';
+	import LivePills from '#lib/status/LivePills.svelte';
 	import { buildRows, groupOrder, groupRows, headline, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
@@ -134,6 +135,7 @@
 		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} />
 	{/if}
 </div>
+<LivePills />
 
 <style>
 	/* This page ends where its last plate ends: no shared bottom padding, so the Jobs tab fits a screen. */
