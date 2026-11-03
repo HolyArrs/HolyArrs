@@ -135,7 +135,10 @@ export function byWhom(e: Pick<EventRecord, 'Actor' | 'Data' | 'actor_name'>): s
 	switch (e.Actor?.kind) {
 		case 'user': return name(d.approved_by) || name(d.turned_down_by) || name(d.asked_by) || e.actor_name || 'A person';
 		// An AI app with a member's key: the app, then whose key.
-		case 'ai': return (name(d.client) || 'An AI app') + (e.actor_name ? ` for ${e.actor_name}` : '');
+		case 'ai': {
+			const c = name(d.client) || 'An AI app';
+			return c.charAt(0).toUpperCase() + c.slice(1) + (e.actor_name ? ` for ${e.actor_name}` : '');
+		}
 		case 'job': return 'Background job';
 		case 'system': return 'HolyArrs';
 	}

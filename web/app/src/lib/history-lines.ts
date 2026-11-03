@@ -168,6 +168,11 @@ function keepLine(d: Record<string, unknown>): string {
 
 /** The title an ask is about, read from its summary when the title is not in the Library. */
 function askedName(e: EventRecord): string | undefined {
+	// An AI app's ask: "AI (Claude, key home) asked for Dune for Maya".
+	if (e.Kind.startsWith('ai_ask_')) {
+		const t = /^AI \(.*?\) (?:asked for|approved|turned down) (.+) for [^\s].*$/.exec(e.Summary)?.[1]?.trim();
+		return t && t !== 'a title' ? t.replace(/\s*\(\d{4}\)$/, '') : undefined;
+	}
 	if (!e.Kind.startsWith('ask_')) return undefined;
 	const made = /asked for (.+?)(?:\s*\(\d{4}\))?(?:,\s.*)?$/.exec(e.Summary)?.[1];
 	if (e.Kind === 'ask_made') return made?.trim() || undefined;

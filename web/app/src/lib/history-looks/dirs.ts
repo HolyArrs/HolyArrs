@@ -284,6 +284,21 @@ export function isRoutine(kind: string): boolean {
 }
 
 const findKind = /^(release_chosen(_by_hand)?|download_\w+|import_\w+|file_replaced)$/;
+/**
+ * dropAiTwins leaves out the member's ask row an AI app's action also wrote
+ * (ask_made next to ai_ask_made for the same ask), so one AI ask is one row,
+ * credited to the AI app and not to the member.
+ */
+export function dropAiTwins(events: EventRecord[]): EventRecord[] {
+	const twins = new Set<string>();
+	for (const e of events) {
+		const id = e.Data?.ask_id;
+		if (e.Kind.startsWith('ai_ask_') && typeof id === 'number') twins.add(`${e.Kind.slice(3)}:${id}`);
+	}
+	if (!twins.size) return events;
+	return events.filter((e) => !(e.Actor?.kind === 'user' && typeof e.Data?.ask_id === 'number' && twins.has(`${e.Kind}:${e.Data.ask_id}`)));
+}
+
 /** canFind: the row is about an actual release (a release name or a download id), so another one can be looked for. */
 export function canFind(row: HistoryRow): boolean {
 	return row.events.some((e) => {
@@ -318,6 +333,6 @@ export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	// Only rows about a release or a download lead to Downloads (a sign-in does not).
 	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
-	if (row.events.some((e) => /^ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
+	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
 	return out;
 }

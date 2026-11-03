@@ -26,7 +26,7 @@
 	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
 	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
-	import { eventStep, isRoutine, stepVerb } from './dirs.ts';
+	import { dropAiTwins, eventStep, isRoutine, stepVerb } from './dirs.ts';
 	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
@@ -92,7 +92,8 @@
 
 	// A page of routine only (the Routine tab) is not folded: it is what was asked for.
 	const days = $derived.by(() => {
-		const list = byDay(keep ? feed.events.filter(keep) : feed.events);
+		const all = dropAiTwins(feed.events);
+		const list = byDay(keep ? all.filter(keep) : all);
 		const allQuiet = list.every((d) => d.rows.every((r) => rowTier(r) === 'routine'));
 		return list.map((d) => ({ ...d, items: allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows) }));
 	});

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { eventText } from '../history-lines.ts';
+import { dropAiTwins, agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
@@ -123,6 +124,15 @@ describe('search look rows', () => {
 		expect(stepKinds([])).toEqual(expect.arrayContaining(['ai_ask_*', 'ai_action_failed']));
 		expect(stepKinds(['asked'])).toContain('ai_ask_made');
 		expect(textMatches(ai, 'claude')).toBe(true);
+	});
+
+	it('shows one AI ask as one row, named and linked', () => {
+		const ai = ev('ai_ask_made', { Actor: { kind: 'ai', id: 3 }, Summary: 'AI (Claude, key home) asked for Made for Love (2021) for Maya', Data: { ask_id: 9, client: 'Claude' } });
+		const twin = ev('ask_made', { Actor: { kind: 'user', id: 3 }, Data: { ask_id: 9 } });
+		const other = ev('ask_made', { Actor: { kind: 'user', id: 4 }, Data: { ask_id: 10 } });
+		expect(dropAiTwins([ai, twin, other]).map((e) => e.ID)).toEqual([ai.ID, other.ID]);
+		expect(eventText(ai).name).toBe('Made for Love');
+		expect(rowLinks(one(ai)).map((l) => l.href)).toEqual(['/requests?ask=9']);
 	});
 
 	it('labels the System kinds without calling them routine', () => {
