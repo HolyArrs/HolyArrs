@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
@@ -89,6 +89,24 @@ describe('search look rows', () => {
 		expect(rowExtra(upHalf, rowStep(upHalf))).toBe('4K');
 	});
 
+	it('names adds, releases out and turn-downs the way the Filter does', () => {
+		expect(rowStep(one(ev('title_added'))).label).toBe('Added');
+		expect(rowStep(one(ev('gate_opened'))).label).toBe('Out now');
+		expect(rowStep(one(ev('ask_turned_down'))).label).toBe('Turned down');
+		for (const s of ['added', 'out', 'declined']) expect(searchSteps.some((x) => x.key === s)).toBe(true);
+		expect(stepKinds(['out'])).toEqual(['gate_opened']);
+		expect(rowStep(one(ev('library_folder_health', { Data: { health: 'ok' } }))).failed).toBe(false);
+		expect(rowStep(one(ev('library_folder_health', { Data: { health: 'gone' } }))).failed).toBe(true);
+	});
+
+	it('gives a row with no title its own line, and the details the same step', () => {
+		const sign = one(ev('signed_in'));
+		expect(rowExtra(sign, rowStep(sign), undefined, 'Maya signed in')).toBe('Maya signed in');
+		const titled = one(ev('renamed', { TitleID: 4 }));
+		expect(rowExtra(titled, rowStep(titled), undefined, 'Renamed a file')).toBe('');
+		expect(stepVerb(sign, { word: 'Changed', icon: 'settings', tone: 'idle' })).toEqual({ word: 'System', icon: 'info', tone: 'idle' });
+	});
+
 	it('labels the System kinds without calling them routine', () => {
 		for (const k of ['signed_in', 'sign_in_failed', 'signed_out', 'api_key_created', 'api_key_deleted', 'settings_changed']) {
 			expect(rowStep(one(ev(k))).label).toBe('System');
@@ -135,8 +153,9 @@ describe('history detail actions', () => {
 		const links = rowLinks(row(ev('download_sent', { DownloadID: 7, title_name: 'Dune' })), '/title/movie/1');
 		expect(links.map((l) => l.href)).toEqual(['/title/movie/1', '/downloads?open=7']);
 		expect(links[0].label).toBe('Dune');
-		expect(rowLinks(row(ev('ask_made'))).map((l) => l.key)).toEqual(['downloads', 'requests']);
-		expect(rowLinks(row(ev('ask_made', { Data: { ask_id: 12 } })))[1].href).toBe('/requests?ask=12');
+		expect(rowLinks(row(ev('ask_made'))).map((l) => l.key)).toEqual(['requests']);
+		expect(rowLinks(row(ev('signed_in')))).toEqual([]);
+		expect(rowLinks(row(ev('ask_made', { Data: { ask_id: 12 } })))[0].href).toBe('/requests?ask=12');
 		expect(rowLinks(row(ev('import_done', { Data: { download_id: 3 } })))[0].href).toBe('/downloads?open=3');
 	});
 });

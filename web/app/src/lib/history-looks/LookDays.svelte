@@ -20,13 +20,13 @@
 	import { EventFeed } from './feed.svelte.ts';
 	import { api } from '../api.ts';
 	import { to } from '../paths.ts';
-	import { dateTime } from '../format.ts';
+	import { ago, dateTime } from '../format.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
 	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
-	import { isRoutine } from './dirs.ts';
+	import { eventStep, isRoutine, stepVerb } from './dirs.ts';
 	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
@@ -173,7 +173,7 @@
 	{@const t = titleById.get(e.TitleID ?? 0)}
 	{@const on = split && picked?.key === r.key}
 	{#if compact}
-		<CompactRow row={r} {ctx} {titleById} {who} {on} controls={wide ? panelId : undefined} onclick={() => choose(r)} />
+		<CompactRow row={r} {ctx} {titleById} {who} {on} time={clock} controls={wide ? panelId : undefined} onclick={() => choose(r)} />
 	{:else}
 	<button type="button" class="hit {w.tag.tone}" class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
 		<time class="clk" datetime={e.At}>{clock(e.At)}</time>
@@ -222,7 +222,7 @@
 					</ol>
 				</section>
 			{:else}
-				<p class="none miss" data-testid="history-no-match">No Events on this page match. Show more to look further back.</p>
+				<p class="none miss" data-testid="history-no-match">No Events on this page match.{feed.events.length < feed.total ? ' Show more to look further back.' : ''}</p>
 			{/each}
 		</div>
 
@@ -238,7 +238,7 @@
 							<div class="ph">
 								{#if e.title_name}<span class="part" class:square={t?.kind === 'artist'}><Poster src={artOf(e, titleById)} name={e.title_name} /></span>{/if}
 								<div class="pw">
-									<VerbMark verb={w.tag} />
+									<VerbMark verb={compact ? stepVerb(picked, w.tag) : w.tag} />
 									<h2 class="pt">{w.name}</h2>
 									{#if w.bits.length}<p class="psub">{w.bits.map((b) => b.text).join(' · ')}</p>{/if}
 									<p class="psum">{w.line}</p>
@@ -250,10 +250,11 @@
 								</ol>
 							{/if}
 							<dl class="facts">
-								<dt>When</dt><dd><time datetime={e.At}>{dateTime(e.At)}</time></dd>
-								<dt>By</dt><dd>{byWhom(e)}</dd>
+								<dt>When</dt><dd><time datetime={e.At}>{dateTime(e.At)}</time> <span class="ago">({ago(e.At)})</span></dd>
+								<dt>By</dt><dd>{who(e) || byWhom(e)}</dd>
 								{#each picked.steps.length ? [] : details(e) as [k, val], i (i)}<dt>{k}</dt><dd class="mono">{val}</dd>{/each}
 							</dl>
+							{#if !picked.steps.length && details(e).length === 0}<p class="none">No reasons or paths were kept for this Event.</p>{/if}
 							{#if picked.events.length > 1}
 								<h3 class="h">Every step</h3>
 								<ol class="trail" data-testid="history-trail">
@@ -261,7 +262,7 @@
 										{@const why = details(s)}
 										{@const sw = eventText(s, ctx)}
 										<li>
-											<div class="tl"><StateDot verb={sw.tag} /><time datetime={s.At} title={dateTime(s.At)}>{whenShort(s.At)}</time></div>
+											<div class="tl"><VerbMark verb={eventStep(s, sw.tag)} size="sm" /><time datetime={s.At} title={dateTime(s.At)}>{whenShort(s.At)}</time></div>
 											<p class="ts">{sw.line}</p>
 											{#if why.length}<dl class="facts small">{#each why as [k, val], i (i)}<dt>{k}</dt><dd class="mono">{val}</dd>{/each}</dl>{/if}
 										</li>
@@ -273,13 +274,12 @@
 								<ol class="also">
 									{#each others as o (o.ID)}
 										{@const ow = eventText(o, ctx)}
-										<li><StateDot verb={ow.tag} /><span class="as">{ow.line}</span><time datetime={o.At}>{whenShort(o.At)}</time></li>
+										<li><VerbMark verb={eventStep(o, ow.tag)} size="sm" /><span class="as">{ow.line}</span><time datetime={o.At}>{whenShort(o.At)}</time></li>
 									{/each}
 								</ol>
 							{/if}
-							{#if !picked.steps.length && details(e).length === 0}<p class="none">No reasons or paths were kept for this Event.</p>{/if}
 							{#if actions}<div class="pact">{@render actions(picked)}</div>{/if}
-							{#if href && e.title_name}<div class="pact"><Button variant="secondary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button></div>{/if}
+							{#if !actions && href && e.title_name}<div class="pact"><Button variant="secondary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button></div>{/if}
 						</div>
 					{/key}
 				{/if}
@@ -377,6 +377,7 @@
 	.facts dt { color: var(--text-muted); }
 	.facts dd { margin: 0; overflow-wrap: anywhere; }
 	.facts dd.mono { font-family: var(--font-mono); }
+	.facts .ago { color: var(--text-muted); }
 	.facts.small { margin-top: 8px; padding: 10px; background: var(--surface-1); }
 	.h { font: var(--t-headline); }
 	.trail, .also { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }

@@ -137,8 +137,12 @@ export function byDay(events: EventRecord[]): DayGroup[] {
 	return out;
 }
 
+/** fineCheck: a Library folder check that found the folder fine is news, not a problem. */
+export const fineCheck = (e: Pick<EventRecord, 'Kind' | 'Data'>) => e.Kind === 'library_folder_health' && e.Data?.health === 'ok';
+
 /** rowTab is the tab a row counts under: a folded download by how far it got. */
 export function rowTab(row: HistoryRow): string {
+	if (fineCheck(row.head)) return 'changes';
 	if (row.steps.some((s) => s.state === 'failed')) return 'problems';
 	if (row.steps.length && row.steps[2]?.state === 'done') return 'came';
 	if (row.steps.length) return 'changes';

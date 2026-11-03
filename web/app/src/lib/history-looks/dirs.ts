@@ -1,9 +1,10 @@
 // History: the address it reads, the "who did it" filter, a row's step and
 // extra piece, and the actions a row's details offer.
 import { readFilter, type HistoryRow } from '../history.ts';
-import { lookTabs, tabKinds } from '../history-looks.ts';
+import { fineCheck, lookTabs, tabKinds } from '../history-looks.ts';
 import { resolutionOf } from '../history-lines.ts';
 import { bytes } from '../format.ts';
+import type { Verb } from '../history-views.ts';
 import type { EventRecord } from '../types.ts';
 
 /** Who made an Event happen, as the Filter offers it. */
@@ -74,8 +75,11 @@ export function partOf(row: HistoryRow): string {
 
 /** A step of a download's life, as the Filter offers it, and the Event kinds it means. */
 export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
+	{ key: 'added', label: 'Added', kinds: ['title_added', 'list_synced', 'version_changed'] },
+	{ key: 'out', label: 'Out now', kinds: ['gate_opened'] },
 	{ key: 'asked', label: 'Asked', kinds: ['ask_made'] },
 	{ key: 'approved', label: 'Approved', kinds: ['ask_approved'] },
+	{ key: 'declined', label: 'Turned down', kinds: ['ask_turned_down', 'release_turned_down'] },
 	{ key: 'chosen', label: 'Chosen', kinds: ['release_chosen', 'release_chosen_by_hand'] },
 	{ key: 'sent', label: 'Sent', kinds: ['download_sent', 'download_queued'] },
 	{ key: 'downloaded', label: 'Downloaded', kinds: ['download_finished', 'download_seeding'] },
@@ -180,7 +184,7 @@ export const clearChips = { step: undefined, type: undefined, who: undefined, fr
 /** What a row's step is: its word, its icon and whether it went wrong. */
 export interface RowStep {
 	label: string;
-	icon: 'wish' | 'check' | 'search' | 'upload' | 'download' | 'folder' | 'copy' | 'subtitle' | 'tv' | 'sparkle' | 'trash' | 'x' | 'alert' | 'info';
+	icon: 'wish' | 'check' | 'declined' | 'plus' | 'calendarDay' | 'search' | 'upload' | 'download' | 'folder' | 'copy' | 'subtitle' | 'tv' | 'sparkle' | 'trash' | 'x' | 'alert' | 'info';
 	failed: boolean;
 }
 const problemKinds = new Set(tabKinds('problems') ?? []);
@@ -191,6 +195,9 @@ export function isProblem(kind: string): boolean {
 const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^ask_made$/, { label: 'Asked', icon: 'wish' }],
 	[/^ask_approved$/, { label: 'Approved', icon: 'check' }],
+	[/^(ask|release)_turned_down$/, { label: 'Turned down', icon: 'declined' }],
+	[/^(title_added|list_synced|version_changed)$/, { label: 'Added', icon: 'plus' }],
+	[/^gate_opened$/, { label: 'Out now', icon: 'calendarDay' }],
 	[/^release_chosen(_by_hand)?$/, { label: 'Chosen', icon: 'search' }],
 	[/^download_(sent|queued)$/, { label: 'Sent', icon: 'upload' }],
 	[/^download_(downloading|stalled|paused)$/, { label: 'Downloading', icon: 'download' }],
@@ -206,19 +213,30 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 /** rowStep names what a row's newest step is; a folded download reads its furthest step. */
 export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 	const kinds = row.events.map((e) => e.Kind);
-	const bad = kinds.find(isProblem);
+	const bad = row.events.find((e) => isProblem(e.Kind) && !fineCheck(e))?.Kind;
 	if (bad || row.steps.some((s) => s.state === 'failed')) return { label: bad === 'needs_decision' ? 'Needs you' : 'Failed', icon: bad === 'needs_decision' ? 'alert' : 'x', failed: true };
 	const pick = row.steps.length ? (kinds.includes('file_replaced') ? 'file_replaced' : kinds.find((k) => /^import_/.test(k)) ?? kinds.find((k) => /^download_(finished|seeding)$/.test(k)) ?? row.head.Kind) : row.head.Kind;
 	const hit = kindStep.find(([re]) => re.test(pick));
 	return hit ? { ...hit[1], failed: false } : { label: fallback || 'Changed', icon: 'info', failed: false };
 }
 /**
- * rowExtra is the one extra piece a row shows after its step ('' when the
- * Events did not keep it): who for asks, quality when chosen or sent, size
- * when imported, quality when upgraded (old → new when both were kept), language for subtitles, the reason
- * for a failure.
+ * rowExtra is the one extra piece a row shows after its step: who for asks
+ * and adds, quality when chosen or sent, size when imported, quality when
+ * upgraded (old → new when both were kept), language for subtitles, the
+ * reason for a failure. A row with no title (sign-ins, settings,
+ * Downloaders) falls back to its own line, so it never reads as just "System".
  */
-export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => ''): string {
+export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => '', line = ''): string {
+	return extraOf(row, step, who) || (row.head.TitleID ? '' : line);
+}
+/** stepVerb is a row's step as the mark its details show, so a row and its details name the same step. */
+export function stepVerb(row: HistoryRow, tag: Verb): Verb {
+	const s = rowStep(row, tag.word);
+	return { word: s.label, icon: s.icon, tone: s.failed ? 'fail' : tag.tone };
+}
+/** eventStep is one Event's step, for the details' list of every step. */
+export const eventStep = (e: EventRecord, tag: Verb): Verb => stepVerb({ key: String(e.ID), head: e, events: [e], steps: [] }, tag);
+function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string): string {
 	if (step.failed) {
 		for (const e of row.events) {
 			const d = e.Data ?? {};
@@ -229,7 +247,9 @@ export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) =
 	}
 	switch (step.label) {
 		case 'Asked':
-		case 'Approved': return who(row.head);
+		case 'Approved':
+		case 'Turned down':
+		case 'Added': return who(row.head);
 		case 'Chosen':
 		case 'Sent': return qualityOf(row);
 		case 'Upgraded': {
@@ -288,12 +308,13 @@ export interface GoLink {
 	label: string;
 	href: string;
 }
-/** rowLinks: the title page, Downloads (opening the download if known) and Requests for asks. */
+/** rowLinks: the title page, Downloads for releases and downloads (opening the download if known) and Requests for asks. */
 export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	const out: GoLink[] = [];
 	if (titleHref) out.push({ key: 'title', label: row.head.title_name ?? 'Title', href: titleHref });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
-	out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
+	// Only rows about a release or a download lead to Downloads (a sign-in does not).
+	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
 	if (row.events.some((e) => /^ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
 	return out;

@@ -17,6 +17,7 @@
 		who = () => '',
 		on = false,
 		controls,
+		time = agoShort,
 		onclick
 	}: {
 		row: HistoryRow;
@@ -25,6 +26,8 @@
 		who?: (e: EventRecord) => string;
 		on?: boolean;
 		controls?: string;
+		/** The row's time: short and relative by default; History's day groups pass the clock time. */
+		time?: (at: string) => string;
 		onclick: () => void;
 	} = $props();
 
@@ -32,13 +35,13 @@
 	const w = $derived(rowText(row, ctx));
 	const t = $derived(titleById.get(e.TitleID ?? 0));
 	const s = $derived(rowStep(row, w.tag.word));
-	const x = $derived(rowExtra(row, s, who));
+	const x = $derived(rowExtra(row, s, who, w.line));
 	const part = $derived(partOf(row));
 </script>
 
 <button type="button" class="hit c" class:bad={s.failed} class:on data-key={row.key} data-testid="history-row" data-kind={e.Kind} data-steps={row.steps.length ? row.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={controls} {onclick}>
 	<span class="post" class:square={t?.kind === 'artist'}>{#if e.title_name}<Poster src={artOf(e, titleById)} name={e.title_name} />{:else}<span class="sys"><Icon name="settings" size={12} /></span>{/if}</span>
-	<span class="cl1"><span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#if part}<span class="bit">{` · ${part}`}</span>{/if}</span><time class="ago" datetime={e.At} title={dateTime(e.At)}>{agoShort(e.At)}</time></span>
+	<span class="cl1"><span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#if part}<span class="bit">{` · ${part}`}</span>{/if}</span><time class="ago" datetime={e.At} title={dateTime(e.At)}>{time(e.At)}</time></span>
 	<span class="cl2"><span class="stp"><Icon name={s.icon} size={14} />{s.label}</span>{#if x}<span class="ex">{` · ${x}`}</span>{/if}</span>
 </button>
 

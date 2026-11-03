@@ -8,6 +8,8 @@
 	import { ago, dateTime } from '#lib/format.ts';
 	import { details, type HistoryRow } from '#lib/history.ts';
 	import { artOf, byWhom, titleHref } from '#lib/history-views.ts';
+	import { whenShort } from '#lib/history-looks.ts';
+	import { eventStep, stepVerb } from '#lib/history-looks/dirs.ts';
 	import { eventText, rowText, type LineContext } from '#lib/history-lines.ts';
 	import type { TitleView } from '#lib/types.ts';
 
@@ -24,6 +26,12 @@
 	const words = $derived(row ? rowText(row, ctx) : null);
 	const href = $derived(titleHref(e?.TitleID, titleById));
 	const title = $derived(e?.TitleID ? titleById.get(e.TitleID) : undefined);
+	// Who did it, worked out the same way as the details panel: the name the Event kept, else the member's name.
+	const by = $derived.by(() => {
+		if (!e) return '';
+		const n = byWhom(e);
+		return e.Actor?.kind === 'user' && n === 'A person' ? people?.get(e.Actor.id ?? 0) || n : n;
+	});
 </script>
 
 <Sheet bind:open title={words?.name ?? 'Event'} placement="right" size="md" onclose={() => (row = null)}>
@@ -34,17 +42,21 @@
 					<span class="art" class:square={title?.kind === 'artist'}><Poster src={artOf(e, titleById)} name={e.title_name} /></span>
 				{/if}
 				<div class="hw">
-					<VerbMark verb={words.tag} />
+					<VerbMark verb={stepVerb(row, words.tag)} />
 					{#if words.bits.length}<p class="sub">{words.bits.map((b) => b.text).join(' · ')}</p>{/if}
 					<p class="sum">{words.line}</p>
 				</div>
 			</div>
+			{#if row.steps.length}
+				<ol class="steps" aria-label="Steps of this download">
+					{#each row.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : 'not yet'}</span></li>{/each}
+				</ol>
+			{/if}
 			<dl class="facts">
 				<dt>When</dt><dd><time datetime={e.At}>{dateTime(e.At)}</time> <span class="muted">({ago(e.At)})</span></dd>
-				<dt>By</dt><dd>{byWhom(e)}</dd>
+				<dt>By</dt><dd>{by}</dd>
 				{#each row.steps.length ? [] : details(e) as [k, v], i (i)}<dt>{k}</dt><dd class="mono">{v}</dd>{/each}
 			</dl>
-			{#if actions}<div class="acts">{@render actions(row)}</div>{/if}
 			{#if row.events.length > 1}
 				<h3 class="h">Every step</h3>
 				<ol class="trail">
@@ -52,22 +64,32 @@
 						{@const why = details(step)}
 						{@const sw = eventText(step, ctx)}
 						<li>
-							<div class="t-line"><VerbMark verb={sw.tag} size="sm" /><time datetime={step.At} title={dateTime(step.At)}>{ago(step.At)}</time></div>
+							<div class="t-line"><VerbMark verb={eventStep(step, sw.tag)} size="sm" /><time datetime={step.At} title={dateTime(step.At)}>{whenShort(step.At)}</time></div>
 							<p class="t-sum">{sw.line}</p>
 							{#if why.length}<dl class="facts small">{#each why as [k, v], i (i)}<dt>{k}</dt><dd class="mono">{v}</dd>{/each}</dl>{/if}
 						</li>
 					{/each}
 				</ol>
 			{/if}
+			{#if actions}<div class="acts">{@render actions(row)}</div>{/if}
 		</div>
 	{/if}
 	{#snippet footer()}
-		{#if href && e?.title_name}<Button variant="primary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button>{/if}
+		{#if !actions && href && e?.title_name}<Button variant="primary" href={to(href)} iconAfter="chevronRight">Open {e.title_name}</Button>{/if}
 	{/snippet}
 </Sheet>
 
 <style>
-	.acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+	.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+	.steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; margin: 0; padding: 0; list-style: none; font: var(--t-footnote); }
+	.steps li { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); }
+	.steps li + li::before { content: ''; width: 14px; height: 1px; margin: 0 6px; background: var(--line); }
+	.pip { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-muted); }
+	.steps .done { color: var(--text); }
+	.steps .done .pip { background: var(--ok); box-shadow: none; }
+	.steps .failed { color: var(--fail-text); font-weight: 600; }
+	.steps .failed .pip { background: var(--fail); box-shadow: none; }
+	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 	.es { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.head { display: flex; gap: 14px; align-items: flex-start; }
 	.art { flex: none; width: 72px; --poster-ratio: 2 / 3; border-radius: var(--r-sm); overflow: hidden; }

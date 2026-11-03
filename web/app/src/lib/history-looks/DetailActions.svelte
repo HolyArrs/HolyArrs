@@ -39,7 +39,7 @@
 			const slot = t.slotId > 0 ? { slot_id: t.slotId } : undefined;
 			await api.post(`/releases/${t.releaseId}/turn-down`, slot);
 			await api.post(`/titles/${t.titleId}/search`, slot);
-			toasts.push('Blocked. Searching for another release.', 'ok');
+			toasts.push('Release blocked. Searching for another one.', 'ok');
 			await stop();
 		} catch (e) {
 			toasts.push(message(e), 'fail');
@@ -54,6 +54,7 @@
 	}
 </script>
 
+{#if find || links.length}
 <div class="da" data-testid="history-acts">
 	{#if find}
 		<div class="btns" bind:this={opener}>
@@ -64,17 +65,20 @@
 			<div class="ask" role="group" aria-label="Find another release" bind:this={box} onkeydown={(ev) => ev.key === 'Escape' && (ev.stopPropagation(), stop())}>
 				<p>Block this release and search again for {qualityOf(row) || 'the same quality'}?</p>
 				<div class="btns">
-					<Button variant="primary" data-testid="history-find-confirm" disabled={busy} busy={busy} onclick={confirm}>Confirm</Button>
+					<Button variant="primary" data-testid="history-find-confirm" disabled={busy} busy={busy} onclick={confirm}>Block and search</Button>
 					<Button variant="plain" data-testid="history-find-cancel" onclick={() => stop()}>Cancel</Button>
 				</div>
 			</div>
 		{/if}
 	{/if}
+	{#if links.length}
 	<nav class="go" aria-label="Go to">
 		<span class="gl">Go to</span>
 		{#each links as l (l.key)}<Button variant="plain" href={to(l.href)} iconAfter="chevronRight" data-testid="history-go-{l.key}">{l.label}</Button>{/each}
 	</nav>
+	{/if}
 </div>
+{/if}
 
 <style>
 	.da { display: flex; flex-direction: column; gap: 10px; width: 100%; min-width: 0; }

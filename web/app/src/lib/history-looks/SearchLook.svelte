@@ -16,6 +16,7 @@
 	import { live } from '../live.svelte.ts';
 	import { dateRangeProblem, readFilter, type HistoryFilter } from '../history.ts';
 	import { reducedMotion } from '../motion.ts';
+	import { fineCheck } from '../history-looks.ts';
 	import { clearChips, dirQuery, readSearch, searchChips, searchSteps, stepKinds, textMatches, toggleStep, typeLabels, typeMatches, whoLabels, whoMatches, type MediaType, type Who } from './dirs.ts';
 	import type { EventRecord, TitleView } from '../types.ts';
 	import { session } from '../session.svelte.ts';
@@ -47,8 +48,10 @@
 	const filter = $derived<HistoryFilter>({ title: link.title ?? exact, episode: link.episode, from: st.from, to: st.to, source: srcId, hideFeed: true, groups: [], limit: 200, offset: 0 });
 	const keep = $derived.by(() => {
 		const { q, type, who } = st;
-		if (!q.trim() && !type && !who) return undefined;
-		return (e: EventRecord) => (exact && !link.title ? true : textMatches(e, q, people)) && typeMatches(e.TitleID ? titleById.get(e.TitleID)?.kind : undefined, type) && whoMatches(e, who, me);
+		// "Failed" asks for every Library folder check; the ones that found the folder fine stay out.
+		const fails = st.steps.includes('failed');
+		if (!q.trim() && !type && !who && !fails) return undefined;
+		return (e: EventRecord) => !(fails && fineCheck(e)) && (exact && !link.title ? true : textMatches(e, q, people)) && typeMatches(e.TitleID ? titleById.get(e.TitleID)?.kind : undefined, type) && whoMatches(e, who, me);
 	});
 	const problem = $derived(dateRangeProblem(st) ? 'The start date is after the end date.' : '');
 	const filtered = $derived(chips.length > 0 || !!st.q.trim());
@@ -57,7 +60,7 @@
 			? { title: problem, text: 'Change the dates in Filter.' }
 			: filtered
 				? { title: 'Nothing matches these filters.', text: 'Try fewer filters or other words.' }
-				: { title: 'No events yet.', text: 'Every step from the ask to the media server shows here, newest first.' }
+				: { title: 'No Events yet.', text: 'Every step from the ask to the media server shows here, newest first.' }
 	);
 	const clearAll = () => {
 		text = '';
@@ -174,7 +177,7 @@
 	<label class="search">
 		<Icon name="search" size={16} />
 		<span class="sr-only">Search</span>
-		<input type="search" placeholder="Search titles, people, sources…" value={text} oninput={(e) => typed(e.currentTarget.value)} />
+		<input type="search" placeholder="Search titles, people, Sources…" value={text} oninput={(e) => typed(e.currentTarget.value)} />
 		<span class="live" class:off={live.status.state !== 'live'} title={live.status.state === 'live' ? 'Updates as they happen' : 'Reconnecting'}><span class="dot" aria-hidden="true"></span>Live</span>
 	</label>
 	<div class="right">
@@ -197,7 +200,7 @@
 		{#each chips as c (c.key)}
 			<button type="button" class="chip" aria-label="Remove {c.label}" onclick={() => set(c.change)}>{c.label}<Icon name="x" size={12} /></button>
 		{/each}
-		<button type="button" class="all" onclick={clearAll}>Clear all</button>
+		<button type="button" class="all" onclick={clearAll}>Clear filters</button>
 	</div>
 {/if}
 {#if open && phone}

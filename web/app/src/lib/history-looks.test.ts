@@ -48,6 +48,10 @@ describe('rows', () => {
 		expect(rowTab(ok)).toBe('came');
 		expect(rowTab(bad)).toBe('problems');
 		expect(rowTab(going)).toBe('changes');
+		const [fine] = groupDownloads([ev('library_folder_health', '2026-10-27T09:00:00Z', { Data: { health: 'ok' } })]);
+		const [gone] = groupDownloads([ev('library_folder_health', '2026-10-27T09:00:00Z', { Data: { health: 'gone' } })]);
+		expect(rowTab(fine)).toBe('changes');
+		expect(rowTab(gone)).toBe('problems');
 	});
 
 	it('explains a row by its reason before its paths', () => {
