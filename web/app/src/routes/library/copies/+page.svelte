@@ -140,7 +140,7 @@
 				<tbody>
 					{#each page.copies as copy (copyKey(copy))}
 						<tr>
-							<td><input type="checkbox" aria-label={`Select ${copy.title}, ${copy.version}`} checked={selectedKeys.has(copyKey(copy))} disabled={copy.protected} onchange={() => toggle(copy)} /></td>
+							<td class="pick"><label><input type="checkbox" aria-label={`Select ${copy.title}, ${copy.version}`} checked={selectedKeys.has(copyKey(copy))} disabled={copy.protected} onchange={() => toggle(copy)} /></label></td>
 							<td><a href={to(`/library/${copy.title_id}`)}><b>{copy.title}</b>{#if copy.year} <span class="muted">({copy.year})</span>{/if}</a><span class="block small">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</td>
 							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="block xs muted">{copy.container || 'Container unknown'} · {copy.inspection_status || 'not inspected'}</span></td>
 							<td>{copy.audio_languages.length ? copy.audio_languages.join(', ') : 'Unknown'}<span class="block xs muted">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
@@ -178,6 +178,9 @@
 	.copies { width: 100%; border-collapse: collapse; font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.copies th { position: sticky; top: 0; padding: 10px 12px; text-align: left; background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); border-bottom: 1px solid var(--line); }
 	.copies input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); }
+	/* On touch phones the label around the box is the 44px tap target; the drawn box and the row stay the same. */
+	.pick label { display: inline-flex; }
+	@media (max-width: 767px) and (pointer: coarse) { .pick label { align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -12px; } }
 	.copies a { color: var(--text); }
 	.copies td { padding: var(--s-3); vertical-align: top; }
 	.copies tbody tr + tr { border-top: 1px solid var(--line); }

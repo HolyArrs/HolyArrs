@@ -682,6 +682,8 @@ export interface HealthCheck {
 	message: string;
 	since: string;
 	checked_at: string;
+	/** The state the flap guard has confirmed (what Alerts and Home go by); older servers leave it out. */
+	confirmed?: 'ok' | 'warning' | 'error';
 }
 
 /** One stage or linked app and its state (GET /health/states). */

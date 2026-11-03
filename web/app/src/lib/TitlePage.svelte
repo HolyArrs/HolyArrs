@@ -1099,13 +1099,14 @@
 												{@const st = e.slots[0]}
 												{@const tone = epTone(st?.state ?? '')}
 												{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now()}
-												<div class="lib-ep {tone}" class:future={!aired} onclick={() => { epPicked = e; epOpen = true; }} onkeydown={(ev) => { if (ev.key === 'Enter' && ev.target === ev.currentTarget) { epPicked = e; epOpen = true; } }} role="button" tabindex="0" aria-label="Episode {e.episode}: {e.name ?? ''}">
+												<!-- The row is not a button itself (it holds buttons): the title button opens the episode and stretches over the row. -->
+												<div class="lib-ep {tone}" class:future={!aired}>
 													{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? 'Kept up to date. Click to stop' : 'Not kept up to date. Click to keep'} onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}
 													<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
-													<span class="lib-ep-text">
+													<button type="button" class="lib-ep-text" aria-label="Episode {e.episode}: {e.name ?? ''}" onclick={() => { epPicked = e; epOpen = true; }}>
 														<b>{e.name ?? `Episode ${e.episode}`}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">Finale</span>{/if}</b>
 														<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? `${e.runtime_minutes} min` : '', epFile(e)].filter(Boolean).join(' · ')}</small>
-													</span>
+													</button>
 													<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || st?.state_label || 'Missing' : 'Not out yet'}</span>
 													{#if manage && st}
 														<span class="lib-ep-acts">
@@ -1475,8 +1476,8 @@
 	@keyframes own-pulse { 50% { opacity: .35; } }
 	@media (prefers-reduced-motion: reduce) { .own-dot.downloading { animation: none; } }
 	.own-st { font: 600 12.5px/1 var(--font-ui); color: var(--text-muted); }
-	.own-st.failed { color: var(--fail); }
-	.own-st.have { color: var(--ok); }
+	.own-st.failed { color: var(--fail-text); }
+	.own-st.have { color: var(--ok-text); }
 	
 	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--fail); color: #fff; font-size: 11px; }
 	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
@@ -1485,7 +1486,7 @@
 	.own-group { display: grid; gap: 4px; align-content: start; }
 	.own-tool { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: 10px; border: 0; background: none; color: var(--text); font: 500 14.5px/1 var(--font-ui); text-decoration: none; text-align: left; cursor: pointer; }
 	.own-tool:hover { background: var(--surface-2); }
-	.own-tool.danger { color: var(--fail); }
+	.own-tool.danger { color: var(--fail-text); }
 	.own-files { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
 	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1504,7 +1505,7 @@
 	.lib-st-text { flex: 1 1 320px; min-width: 0; }
 	.lib-st-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 22px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.lib-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 20px; }
-	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: var(--surface-1); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
 	.lib-bar span { display: block; width: 100%; height: 100%; border-radius: 99px; background: var(--info); transition: transform var(--dur-slow) var(--ease-out); }
@@ -1519,12 +1520,12 @@
 	.lib-sr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 4px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 	.lib-sr-main b { font: 650 16px/1 var(--font-ui); white-space: nowrap; }
 	.lib-count { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text-muted); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.lib-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
-	.lib-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait); }
-	.lib-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); }
+	.lib-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text); }
+	.lib-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait-text); }
+	.lib-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); }
 	.lib-sr-note { color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; }
-	.lib-sr-note.dl { color: var(--info); }
-	.lib-sr-note.fail { color: var(--fail); }
+	.lib-sr-note.dl { color: var(--info-text); }
+	.lib-sr-note.fail { color: var(--fail-text); }
 	.lib-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-sr.open .lib-chev { transform: rotate(180deg); }
 	.lib-sr-acts, .lib-ep-acts { display: flex; gap: 2px; }
@@ -1536,10 +1537,10 @@
 	.lib-keep.sm { width: 24px; height: 24px; border-radius: 5px; }
 	.lib-sr .lib-eps { padding: 0 6px 8px; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
 	.lib-sr .lib-ep { grid-template-columns: 24px 96px minmax(0, 1fr) auto auto; }
-	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:focus-visible { background: color-mix(in srgb, var(--text) 5%, transparent); }
+	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:has(.lib-ep-text:focus-visible) { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.lib-ep.future .lib-ep-still img { filter: grayscale(.8) brightness(.55); }
 	.lib-ep-st.future { color: var(--text-muted); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
-	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 18%, transparent); color: var(--info); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 18%, transparent); color: var(--info-text); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
 	@media (max-width: 600px) {
 		.lib-sr-note { display: none; }
 		.lib-sr .lib-ep { grid-template-columns: 24px 84px minmax(0, 1fr) auto; }
@@ -1552,8 +1553,12 @@
 	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
 	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background var(--dur-fast) var(--ease-out); }
-	.lib-ep { cursor: pointer; }
-	.lib-ep:hover, .lib-ep:focus-visible { background: var(--surface-2); outline: none; }
+	.lib-ep { position: relative; cursor: pointer; }
+	.lib-ep:hover, .lib-ep:has(.lib-ep-text:focus-visible) { background: var(--surface-2); }
+	/* The title button covers the whole row; the row's own buttons sit above it. */
+	button.lib-ep-text { padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+	button.lib-ep-text::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+	.lib-ep .lib-keep, .lib-ep-acts { position: relative; z-index: 1; }
 	.lib-ep.skel { height: 75px; background: var(--surface-2); animation: pulse 1.2s ease-in-out infinite alternate; }
 	@keyframes pulse { to { opacity: .5; } }
 	.lib-ep-still { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
@@ -1563,10 +1568,10 @@
 	.lib-ep-text { display: grid; gap: 4px; min-width: 0; }
 	.lib-ep-text b { font: 600 15px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-ep-text small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
-	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
-	.lib-ep-st.have { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
-	.lib-ep-st.downloading { color: var(--info); background: color-mix(in srgb, var(--info) 12%, transparent); }
-	.lib-ep-st.failed { color: var(--fail); background: color-mix(in srgb, var(--fail) 12%, transparent); }
+	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
+	.lib-ep-st.have { color: var(--ok-text); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+	.lib-ep-st.downloading { color: var(--info-text); background: color-mix(in srgb, var(--info) 12%, transparent); }
+	.lib-ep-st.failed { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity var(--dur-fast) var(--ease-out); }
 	.lib-ep:hover .lib-ep-go, .lib-ep-go:focus-visible { opacity: 1; }
 	@media (max-width: 600px) {
@@ -1592,7 +1597,7 @@
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
-	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail); }
+	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail-text); }
 	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
 	.lib-row + .lib-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }

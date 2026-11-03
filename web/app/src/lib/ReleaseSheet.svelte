@@ -133,9 +133,12 @@
 			.sort((a, b) => Number(b.outcome === 'chosen') - Number(a.outcome === 'chosen') || Number(b.passed) - Number(a.passed) || (a.rank || 999) - (b.rank || 999) || b.points - a.points)
 	);
 	const hidden = $derived(releases.length - releases.filter((r) => r.passed && r.state !== 'turned_down').length);
+	// The reason that decided it first (refused, waiting, lost), then a warning; two lines at most.
+	const weight: Record<string, number> = { fail: 0, hold: 1, rank: 2, warn: 3 };
+	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>
 
-<Sheet bind:open title="Pick a release" description={scope ? `{name} · ${scope.label}` : name} placement="right" size="md">
+<Sheet bind:open title="Pick a release" description={scope ? `${name} · ${scope.label}` : name} placement="right" size="md">
 	<div class="rs" data-testid="release-sheet">
 		<div class="rs-bar">
 			<div class="rs-seg" role="tablist">
@@ -158,8 +161,8 @@
 		{:else}
 			<ul class="rs-list">
 				{#each sorted as r (r.id)}
-					{@const why = keyReasons(r.reasons)[0]}
-					{@const best = r.outcome === 'chosen' && r.state !== 'chosen'}
+					{@const why = deciding(r)}
+					{@const best = r.outcome === 'chosen' && r.state !== 'chosen' && r.state !== 'turned_down'}
 					<li class="rs-row" class:best class:off={!r.passed || r.state === 'turned_down'} data-testid="release">
 						<div class="rs-main">
 							<p class="rs-tags">
@@ -174,7 +177,7 @@
 								<span>{r.source_name}</span>
 								{#if r.published_at}<span>{age(r.published_at)}</span>{/if}
 							</p>
-							{#if why}<p class="rs-why {why.effect}">{why.text}</p>{/if}
+							{#each why as w, i (i)}<p class="rs-why {w.effect}">{w.text}</p>{/each}
 						</div>
 						<div class="rs-act">
 							{#if r.state === 'chosen'}

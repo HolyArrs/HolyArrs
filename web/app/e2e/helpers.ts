@@ -65,86 +65,123 @@ export async function titleAction(page: Page, _menu: 'Library' | 'More actions',
 	await page.getByRole('menuitem', { name: item, exact: true }).click();
 }
 
+/** openLibraryTab opens an owned title's Library tab: status, seasons or files,
+ *  history and settings, then downloads, Versions, copies, subtitles and When HolyArrs looks. */
+export async function openLibraryTab(page: Page): Promise<Locator> {
+	const tab = page.getByTestId('own-tabs').getByRole('tab', { name: /^Library/ });
+	await tab.click();
+	await expect(tab).toHaveAttribute('aria-selected', 'true');
+	await expect(page.getByTestId('lib-pane')).toBeVisible();
+	return page.getByTestId('own-pane');
+}
+
 /** libraryTool opens a Library tool from the Library page's Add menu. */
 export async function libraryTool(page: Page, name: string) {
 	await page.getByRole('main').getByRole('button', { name: 'Add', exact: true }).click();
 	await page.getByRole('menu', { name: 'Add and Library tools' }).getByRole('menuitem', { name }).click();
 }
 
-/** openSeason shows one season on a show page (the picker holds them all) and returns its card. */
+// A show's seasons and episodes live on its Library tab: one row per season
+// (newest first) that opens to its episodes. Each season row has a keep
+// toggle, Get the missing episodes, Choose a release and Files, rename and
+// history; each episode row a keep toggle, Look for episode N and Choose a
+// release for episode N, and opens the episode sheet.
+
+/** seasonRows opens the Library tab when needed and returns every season row. */
+async function seasonRows(page: Page): Promise<Locator> {
+	const pane = page.getByTestId('lib-pane');
+	if (!(await pane.isVisible())) await openLibraryTab(page);
+	const rows = pane.locator('section.lib-sr');
+	await expect(rows.first()).toBeVisible();
+	return rows;
+}
+
+/** seasonRow returns the row of "Season 1" or "Specials" (not opened). */
+async function seasonRow(page: Page, name: string): Promise<Locator> {
+	const rows = await seasonRows(page);
+	const row = rows.filter({ has: page.locator('.lib-sr-main > b', { hasText: new RegExp(`^${name}$`) }) });
+	await expect(row).toHaveCount(1);
+	return row;
+}
+
+/** openRow opens a season row so its episodes load, and returns it. */
+async function openRow(row: Locator): Promise<Locator> {
+	const head = row.locator('.lib-sr-main');
+	if ((await head.getAttribute('aria-expanded')) !== 'true') await head.click();
+	await expect(head).toHaveAttribute('aria-expanded', 'true');
+	await expect(row.locator('.lib-ep.skel')).toHaveCount(0);
+	return row;
+}
+
+/** openSeason opens one season on a show's Library tab, counted from the lowest (0 is Specials when there are any), and returns its row. */
 export async function openSeason(page: Page, index: number): Promise<Locator> {
-	await expect(page.getByTestId('season')).toBeVisible();
-	const seg = page.getByRole('radiogroup', { name: 'Season' });
-	if (await seg.count()) {
-		await seg.getByRole('radio').nth(index).click();
-		await expect(seg.getByRole('radio').nth(index)).toHaveAttribute('aria-checked', 'true');
-	} else {
-		await page.getByTestId('season-picker').getByRole('button').first().click();
-		await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio').nth(index).click();
-	}
-	return page.getByTestId('season');
+	const rows = await seasonRows(page);
+	const n = await rows.count();
+	return openRow(rows.nth(n - 1 - index));
 }
 
-/** openSeasonNamed shows the season with this name ("Season 1", "Specials") and returns its card. */
+/** openSeasonNamed opens the season with this name ("Season 1", "Specials") and returns its row. */
 export async function openSeasonNamed(page: Page, name: string): Promise<Locator> {
-	await expect(page.getByTestId('season')).toBeVisible();
-	const seg = page.getByRole('radiogroup', { name: 'Season' });
-	if (await seg.count()) {
-		const radio = seg.getByRole('radio', { name, exact: true });
-		await radio.click();
-		await expect(radio).toHaveAttribute('aria-checked', 'true');
-	} else if (!(await page.getByTestId('season-picker').getByRole('button').count())) {
-		// One season: the picker is just its name.
-		await expect(page.getByTestId('season-picker')).toContainText(name);
-	} else {
-		const pick = page.getByTestId('season-picker').getByRole('button').first();
-		// The show opens on its newest season; the airing one carries a New mark.
-		if ((await pick.textContent())?.trim() !== name) {
-			await pick.click();
-			await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio', { name: new RegExp(`^${name}( New)?$`) }).click();
-		}
-	}
-	return page.getByTestId('season');
+	return openRow(await seasonRow(page, name));
 }
 
-/** seasonCount counts the seasons in a show page's season picker. */
+/** seasonCount counts the seasons on a show's Library tab. */
 export async function seasonCount(page: Page): Promise<number> {
-	await expect(page.getByTestId('season')).toBeVisible();
-	const seg = page.getByRole('radiogroup', { name: 'Season' });
-	if (await seg.count()) return seg.getByRole('radio').count();
-	if (!(await page.getByTestId('season-picker').getByRole('button').count())) return 1;
-	await page.getByTestId('season-picker').getByRole('button').first().click();
-	const n = await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio').count();
-	await page.keyboard.press('Escape');
-	return n;
+	return (await seasonRows(page)).count();
 }
 
-/** seasonKept says whether the shown season's Keep item is checked (opens and closes its ⋯ menu). */
+/** seasonKept says whether a season's keep toggle is on. */
 export async function seasonKept(page: Page, season: string): Promise<boolean> {
-	await page.getByTestId('season-menu').getByRole('button').click();
-	const v = await page.getByRole('menuitemradio', { name: `Keep ${season} up to date` }).getAttribute('aria-checked');
-	await page.keyboard.press('Escape');
-	return v === 'true';
+	const keep = (await seasonRow(page, season)).locator('.lib-sr-head').getByRole('button', { name: /up to date\. Click/ });
+	return (await keep.getAttribute('aria-pressed')) === 'true';
 }
 
-/** toggleSeasonKept flips the shown season's Keep item from its ⋯ menu. */
+/** toggleSeasonKept flips a season's keep toggle and waits for the saved state. */
 export async function toggleSeasonKept(page: Page, season: string) {
-	await page.getByTestId('season-menu').getByRole('button').click();
-	await page.getByRole('menuitemradio', { name: `Keep ${season} up to date` }).click();
+	const keep = (await seasonRow(page, season)).locator('.lib-sr-head').getByRole('button', { name: /up to date\. Click/ });
+	const was = await keep.getAttribute('aria-pressed');
+	await keep.click();
+	await expect(keep).toHaveAttribute('aria-pressed', was === 'true' ? 'false' : 'true');
 }
 
-/** episodeAction picks an item from an episode card's menu. */
+/** episodeRow opens the episode's season and returns its row ("S02E01"). */
+export async function episodeRow(page: Page, code: string): Promise<Locator> {
+	const m = /^S(\d+)E(\d+)$/.exec(code);
+	if (!m) throw new Error(`not an episode code: ${code}`);
+	const season = Number(m[1]);
+	const row = await openSeasonNamed(page, season === 0 ? 'Specials' : `Season ${season}`);
+	const ep = row.getByRole('button', { name: new RegExp(`^Episode ${Number(m[2])}:`) });
+	await expect(ep).toHaveCount(1);
+	return ep;
+}
+
+/** episodeAction does one thing from an episode's row: its keep toggle ("Keep S02E01 up to date"),
+ *  "Search now" (Look for episode N), "Choose a release", or "History" (the episode sheet). */
 export async function episodeAction(page: Page, code: string, item: string) {
-	await page.getByRole('button', { name: `Actions for ${code}` }).click();
-	await page.getByRole('menu', { name: `Actions for ${code}` }).locator('[role^="menuitem"]').filter({ has: page.getByText(item, { exact: true }) }).click();
+	const ep = await episodeRow(page, code);
+	const n = Number(/E(\d+)$/.exec(code)![1]);
+	if (item === `Keep ${code} up to date`) {
+		const keep = ep.getByRole('button', { name: /up to date\. Click/ });
+		const was = await keep.getAttribute('aria-pressed');
+		await keep.click();
+		await expect(keep).toHaveAttribute('aria-pressed', was === 'true' ? 'false' : 'true');
+	} else if (item === 'Search now') await ep.getByRole('button', { name: `Look for episode ${n}` }).click();
+	else if (item === 'Choose a release') await ep.getByRole('button', { name: `Choose a release for episode ${n}` }).click();
+	else if (item === 'History') {
+		await ep.click();
+		await expect(page.getByTestId('episode-sheet')).toBeVisible();
+	} else throw new Error(`the Library tab has no "${item}" for ${code}`);
 }
 
-/** episodeKept says whether an episode's Keep item is checked (opens and closes its menu). */
+/** episodeKept says whether an episode's keep toggle is on. */
 export async function episodeKept(page: Page, code: string): Promise<boolean> {
-	await page.getByRole('button', { name: `Actions for ${code}` }).click();
-	const v = await page.getByRole('menu', { name: `Actions for ${code}` }).getByRole('menuitemradio', { name: `Keep ${code} up to date` }).getAttribute('aria-checked');
-	await page.keyboard.press('Escape');
-	return v === 'true';
+	const keep = (await episodeRow(page, code)).getByRole('button', { name: /up to date\. Click/ });
+	return (await keep.getAttribute('aria-pressed')) === 'true';
+}
+
+/** episodeState reads the state an episode row shows ("Missing", "Not out yet", "1080p WEB", a state label). */
+export async function episodeState(page: Page, code: string): Promise<Locator> {
+	return (await episodeRow(page, code)).locator('.lib-ep-st');
 }
 
 /** libraryKind opens one library the way the sidebar does (Movies, Shows, Music; Everything is the plain /library). */
