@@ -184,6 +184,8 @@
 				<div class="al-st-text">
 					<p class="al-st-title"><span class="dot {missing ? 'part' : 'have'}" aria-hidden="true"></span>{have} of {total} tracks</p>
 					<p class="al-st-sub">{fullAlbums} full {fullAlbums === 1 ? 'release' : 'releases'}{missing && t.keep_up_to_date ? ' · the rest are grabbed when found' : ''}</p>
+					<!-- Why nothing is searched yet (gate, kinds, keep off), as on movie and show pages. -->
+					{#if t.gate_reason}<p class="al-why" data-testid="gate-reason">{t.gate_reason}</p>{/if}
 					<p class="al-facts">{#each facts as f (f.k)}<span class="al-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
 				</div>
 				{#if manage}
@@ -341,6 +343,7 @@
 	.al-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 12px; padding: 20px 22px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--text) 10%, transparent); }
 	.al-st-text { flex: 1 1 320px; min-width: 0; }
 	.al-st-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 22px/1.2 var(--font-ui); letter-spacing: -.01em; }
+	.al-why { margin: 10px 0 0 20px; max-width: 70ch; color: var(--text); font: 500 14px/1.4 var(--font-ui); }
 	.al-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.al-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 20px; }
 	.al-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: var(--surface-1); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
