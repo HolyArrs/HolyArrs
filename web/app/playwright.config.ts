@@ -26,7 +26,7 @@ export default defineConfig({
 		// The same app under /holyarrs behind a small reverse proxy (3.5.10).
 		{
 			command: 'node e2e/urlbase-server.mjs',
-			url: 'http://127.0.0.1:18735/holyarrs/healthz',
+			url: `http://127.0.0.1:${process.env.HOLYARRS_E2E_BASE_PROXY_PORT ?? '18735'}/holyarrs/healthz`,
 			reuseExistingServer: false,
 			timeout: 180_000,
 			stdout: 'ignore',
@@ -95,6 +95,8 @@ export default defineConfig({
 		// Pick rules: copy Good everyday, change a step and a trait, save and reload, a mistake named on its field, remove the copy (asked first), a ready-made set cannot be removed, the music steps, a phone and accessibility.
 		{ name: 'pickrules', testMatch: 'pick-rules.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['settings'] },
 		// Kid accounts: invite a Kid (PG), join, the Library shows only titles rated up to PG, an R title and an ask for it are refused in plain words, no Music.
-		{ name: 'kid', testMatch: 'kid.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['pickrules'] }
+		{ name: 'kid', testMatch: 'kid.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['pickrules'] },
+		// Library tools: Movie series, Recently deleted and Import files by hand from the Add menu; a phone.
+		{ name: 'librarytools', testMatch: 'library-tools.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['kid'] }
 	]
 });
