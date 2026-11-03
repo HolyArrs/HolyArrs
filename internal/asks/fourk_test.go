@@ -50,3 +50,40 @@ func TestFourKAskAddsFourKVersion(t *testing.T) {
 		t.Fatalf("4K again: %v", err)
 	}
 }
+
+// Roadmap #59: the member who asked for the regular copy may also ask for
+// 4K, and a movie already in the Library without a 4K Version takes a 4K ask.
+func TestFourKAskAfterOwnAskAndInLibrary(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	plain, err := r.svc.Ask(ctx, r.ana, "693134")
+	if err != nil {
+		t.Fatal(err)
+	}
+	uhd, err := r.svc.Ask4K(ctx, r.ana, "693134")
+	if err != nil || uhd.Joined || uhd.Already || uhd.Ask.ID == plain.Ask.ID || !uhd.Ask.FourK {
+		t.Fatalf("own 4K ask %+v %v", uhd, err)
+	}
+	// Turned down, the 4K ask is gone; the plain one is approved into the Library.
+	if _, err := r.svc.TurnDown(ctx, uhd.Ask.ID, r.luis, ""); err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.svc.Approve(ctx, plain.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil || got.TitleID == nil {
+		t.Fatalf("approve %+v %v", got, err)
+	}
+	if has, err := HasFourK(ctx, r.st.Read(), *got.TitleID); err != nil || has {
+		t.Fatalf("has 4K %v %v", has, err)
+	}
+	// In the Library without 4K, another member's 4K ask is made.
+	again, err := r.svc.Ask4K(ctx, r.bo, "693134")
+	if err != nil || !again.Ask.FourK || again.Ask.State != domain.AskAsked {
+		t.Fatalf("4K on owned %+v %v", again, err)
+	}
+	if _, err := r.svc.Approve(ctx, again.Ask.ID, r.luis, ApproveOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if has, err := HasFourK(ctx, r.st.Read(), *got.TitleID); err != nil || !has {
+		t.Fatalf("has 4K after approve %v %v", has, err)
+	}
+}

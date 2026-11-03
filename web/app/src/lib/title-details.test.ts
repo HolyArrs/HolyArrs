@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api.ts';
-import { detailPath, fromMetadata, loadDetails, metaLine } from './title-details.ts';
+import { detailPath, fourKOffer, fromMetadata, loadDetails, metaLine } from './title-details.ts';
 
 describe('title details', () => {
 	it('builds the detail path', () => {
@@ -78,5 +78,30 @@ describe('title details', () => {
 	it('says year, kind, runtime and genres', () => {
 		expect(metaLine({ kind: 'movie', year: 2021, runtime: 155, genres: ['Drama'] })).toEqual(['2021', 'Movie', '2h 35m', 'Drama']);
 		expect(metaLine({ kind: 'show', genres: [], network: 'FX' })).toEqual(['TV show', 'FX']);
+	});
+
+	it('keeps the lookup 4K ask facts over the metadata answer', async () => {
+		const ask4k = { id: 9, state: 'asked' as const, state_label: 'Asked', mine: true, people: 1 };
+		const get = async <T,>(path: string): Promise<T> =>
+			(path.startsWith('/metadata/') ? { name: 'Dune', genres: [] } : { movies: [{ name: 'Dune', ids: { tmdb: '438631' }, never_add: false, title_id: 7, ask_4k: ask4k, has_4k: false }] }) as T;
+		const d = await loadDetails(get, 'movie', '438631');
+		expect(d?.ask4k).toEqual(ask4k);
+		expect(d?.has4k).toBe(false);
+	});
+
+	it('offers a separate 4K ask after my plain ask or on a movie in the Library without 4K', () => {
+		const mine = { id: 1, state: 'asked' as const, state_label: 'Asked', mine: true, people: 1 };
+		const theirs = { ...mine, mine: false };
+		// Not in the Library, nothing asked, or someone else asked: the Ask sheet's 4K box covers it.
+		expect(fourKOffer({ kind: 'movie' })).toBeNull();
+		expect(fourKOffer({ kind: 'movie', ask: theirs })).toBeNull();
+		expect(fourKOffer({ kind: 'movie', ask: mine })).toBe('ask');
+		expect(fourKOffer({ kind: 'movie', titleId: 7 })).toBe('ask');
+		expect(fourKOffer({ kind: 'movie', titleId: 7, ask4k: theirs })).toBe('ask');
+		expect(fourKOffer({ kind: 'movie', titleId: 7, ask4k: mine })).toBe('asked');
+		expect(fourKOffer({ kind: 'movie', titleId: 7, has4k: true })).toBeNull();
+		expect(fourKOffer({ kind: 'movie', titleId: 7, neverAdd: true })).toBeNull();
+		// Shows have no 4K ask.
+		expect(fourKOffer({ kind: 'show', titleId: 7, ask: mine })).toBeNull();
 	});
 });

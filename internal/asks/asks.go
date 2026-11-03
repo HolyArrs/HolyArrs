@@ -418,6 +418,12 @@ func fourKVersion(ctx context.Context, db store.Querier, titleID int64) (int64, 
 	return id, err
 }
 
+// HasFourK says the title already has a 4K Version (a 4K ask is refused then).
+func HasFourK(ctx context.Context, db store.Querier, titleID int64) (bool, error) {
+	id, err := fourKVersion(ctx, db, titleID)
+	return id != 0, err
+}
+
 // fourKRules is the 4K Pick rules preset's id (0 when it was removed).
 func fourKRules(ctx context.Context, db store.Querier) (int64, error) {
 	var id int64

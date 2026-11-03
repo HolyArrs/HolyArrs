@@ -40,6 +40,9 @@ export interface TitleDetails {
 	titleId?: number;
 	neverAdd?: boolean;
 	ask?: AskBrief;
+	/** A movie's open 4K ask, and whether the Library copy has 4K already. */
+	ask4k?: AskBrief;
+	has4k?: boolean;
 	/** The lookup answer, for the Add and Ask dialogs. */
 	movie?: LookupMovie;
 	show?: LookupShow;
@@ -101,7 +104,7 @@ export function fromMetadata(kind: DetailKind, tmdb: string, raw: Raw): TitleDet
 
 /** fromMovie and fromShow read a lookup answer. */
 export function fromMovie(m: LookupMovie): TitleDetails {
-	return { kind: 'movie', tmdb: m.ids.tmdb ?? '', name: m.name, year: num(m.year), overview: m.overview || undefined, poster: m.poster, genres: [], runtime: num(m.runtime), cast: [], similar: [], titleId: m.title_id, neverAdd: m.never_add, ask: m.ask, movie: m };
+	return { kind: 'movie', tmdb: m.ids.tmdb ?? '', name: m.name, year: num(m.year), overview: m.overview || undefined, poster: m.poster, genres: [], runtime: num(m.runtime), cast: [], similar: [], titleId: m.title_id, neverAdd: m.never_add, ask: m.ask, ask4k: m.ask_4k, has4k: m.has_4k, movie: m };
 }
 export function fromShow(s: LookupShow): TitleDetails {
 	return { kind: 'show', tmdb: s.ids.tmdb ?? '', name: s.name, year: num(s.year), overview: s.overview || undefined, poster: s.poster, genres: [], runtime: num(s.runtime), network: s.network, cast: [], similar: [], titleId: s.title_id, neverAdd: s.never_add, ask: s.ask, show: s };
@@ -144,7 +147,17 @@ export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, sign
 	else if (!meta || signal?.aborted) throw r.e;
 	if (!meta) return found;
 	if (!found) return meta;
-	return { ...found, ...meta, name: meta.name || found.name, overview: meta.overview ?? found.overview, poster: meta.poster ?? found.poster, year: meta.year ?? found.year, titleId: found.titleId ?? meta.titleId, neverAdd: found.neverAdd, ask: found.ask, movie: found.movie, show: found.show };
+	return { ...found, ...meta, name: meta.name || found.name, overview: meta.overview ?? found.overview, poster: meta.poster ?? found.poster, year: meta.year ?? found.year, titleId: found.titleId ?? meta.titleId, neverAdd: found.neverAdd, ask: found.ask, ask4k: found.ask4k, has4k: found.has4k, movie: found.movie, show: found.show };
+}
+
+/** fourKOffer says when a member gets a separate 4K Ask next to the main
+ * button: after their own plain ask, or for a movie already in the Library
+ * without a 4K copy ('asked' once their 4K ask is open). Elsewhere the Ask
+ * sheet's 4K box covers it; shows have no 4K ask. */
+export function fourKOffer(d: Pick<TitleDetails, 'kind' | 'titleId' | 'neverAdd' | 'ask' | 'ask4k' | 'has4k'>): 'ask' | 'asked' | null {
+	if (d.kind !== 'movie' || d.neverAdd || d.has4k) return null;
+	if (d.ask4k?.mine) return 'asked';
+	return d.titleId || d.ask?.mine ? 'ask' : null;
 }
 
 /** metaLine is the year · runtime · genres line under the title. */
