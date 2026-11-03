@@ -120,6 +120,12 @@ If an existing Downloader already sees this tree under another path, add a
 path rule under Settings > Downloaders. Keeping `/data` identical in both
 containers is simpler and makes hardlink problems easier to spot.
 
+**Library > Import files by hand** reads only inside the Library folders, the
+Downloader folders and the extra import folders. Without `HOLYARRS_SAVE_PATH`
+(and without a path rule) the download folder is not one of them; add it under
+Settings > Library folders > Extra import folders if you leave the variable
+unset.
+
 Start HolyArrs:
 
 ```sh

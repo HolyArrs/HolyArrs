@@ -357,6 +357,8 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/library/rescan":               PermManageLibrary,
 	"POST /api/v1/manual-import/scan":           PermSettings,
 	"POST /api/v1/manual-import":                PermSettings,
+	"GET /api/v1/settings/import-folders":       PermSettings,
+	"PUT /api/v1/settings/import-folders":       needUsers, // widens what import by hand may read
 	"POST /api/v1/titles/{id}/versions":         PermManageLibrary,
 	"PUT /api/v1/titles/{id}/versions/{vid}":    PermManageLibrary,
 	"DELETE /api/v1/titles/{id}/versions/{vid}": PermManageLibrary,
@@ -696,6 +698,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/migrate/saved-keys":        ScopeAdmin,
 	"DELETE /api/v1/migrate/saved-keys":     ScopeAdmin,
 	"POST /api/v1/settings/import-secrets":  ScopeAdmin,
+	"PUT /api/v1/settings/import-folders":   ScopeAdmin, // widens what import by hand may read
 	"POST /api/v1/migrate/plan":             ScopeAdmin,
 	"POST /api/v1/migrate/dry-run":          ScopeAdmin,
 	"GET /api/v1/migrate/moves":             ScopeAdmin,
@@ -738,7 +741,7 @@ func init() {
 		"GET /api/v1/never-add", "GET /api/v1/openapi.json", "GET /api/v1/outside-lists",
 		"GET /api/v1/parts", "GET /api/v1/pick-rules", "GET /api/v1/pick-rules/{id}", "GET /api/v1/rename", "GET /api/v1/searches",
 		"GET /api/v1/settings/alerts", "GET /api/v1/settings/url-base", "GET /api/v1/settings/asks", "GET /api/v1/settings/downloaders",
-		"GET /api/v1/settings/files", "GET /api/v1/settings/health", "GET /api/v1/settings/music",
+		"GET /api/v1/settings/files", "GET /api/v1/settings/import-folders", "GET /api/v1/settings/health", "GET /api/v1/settings/music",
 		"GET /api/v1/settings/naming", "GET /api/v1/settings/release-gate", "GET /api/v1/settings/search",
 		"GET /api/v1/settings/shows", "GET /api/v1/settings/status", "GET /api/v1/settings/subtitles", "GET /api/v1/settings/title-defaults", "GET /api/v1/shows/lookup",
 		"GET /api/v1/sources", "GET /api/v1/sources/{id}/stats", "GET /api/v1/subtitle-sites",
