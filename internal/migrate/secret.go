@@ -16,6 +16,8 @@ var secretWords = []string{
 var plainNames = map[string]bool{
 	"keyword": true, "keywords": true, "authtype": true, "authenticationmethod": true,
 	"authentication": true, "pinned": true, "pinyin": true, "monkeys": true,
+	// authuser is the Trakt account name a Radarr Trakt list signed in as.
+	"authuser": true,
 }
 
 // IsSecretName reports whether a setting called name may hold a secret.

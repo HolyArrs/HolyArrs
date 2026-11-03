@@ -18,6 +18,7 @@
 	import { askHref, type ApprovalsCtx } from './approvals.ts';
 	import { artistPhoto, askArtist, storedParts } from './details.svelte.ts';
 	import { to } from '../paths.ts';
+	import { proxied } from '../tmdb-image.ts';
 	import { shortDate, whenDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../requests.ts';
@@ -454,8 +455,8 @@
 				{@const w = ctx.who(a)}
 				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
 				{@const life = lifeOf(a)}
-				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
-				{@const wide = banner(a)}
+				{@const photo = a.kind === 'artist' ? proxied(artistPhoto(a)) || null : null}
+				{@const wide = proxied(banner(a)) || null}
 				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>

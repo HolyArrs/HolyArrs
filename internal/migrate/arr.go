@@ -478,6 +478,7 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 			ID: num(m["id"]), EnableUsenet: boolean(m["enableusenet"]), EnableTorrent: boolean(m["enabletorrent"]),
 			PreferredProtocol: protocolName(m["preferredprotocol"]), UsenetDelay: int(num(m["usenetdelay"])),
 			TorrentDelay: int(num(m["torrentdelay"])), Order: int(num(m["order"])), Tags: labels(m["tags"]),
+			BypassIfHighestQuality: boolean(m["bypassifhighestquality"]), BypassIfAboveScore: boolean(m["bypassifabovecustomformatscore"]),
 		})
 	}
 	if rows := in.sets["naming"]; len(rows) > 0 {

@@ -617,3 +617,52 @@ func TestProwlarrIndexerProxies(t *testing.T) {
 		t.Fatalf("backup source detail %q", d)
 	}
 }
+
+// TestRadarrWaitSkipsAndListsRead: the wait rule's two skip switches are
+// read (a backup without them reads both off), and a Radarr TMDB list and
+// Trakt watchlist come out of the API and a backup with the settings the
+// move needs (the Trakt account name included) and no token.
+func TestRadarrWaitSkipsAndListsRead(t *testing.T) {
+	u, key := radarrAPIWith(t, map[string]any{
+		"/api/v3/delayprofile": []any{map[string]any{"id": 1, "enableUsenet": true, "enableTorrent": true, "preferredProtocol": "torrent",
+			"usenetDelay": 0, "torrentDelay": 120, "bypassIfHighestQuality": true, "bypassIfAboveCustomFormatScore": true, "minimumCustomFormatScore": 50,
+			"order": 2147483647, "tags": []int{}}},
+		"/api/v3/importlist": []any{map[string]any{"id": 1, "name": "Top", "implementation": "TMDbListImport", "configContract": "TMDbListSettings",
+			"enabled": true, "enableAuto": true, "monitor": "movieOnly", "searchOnAdd": true, "qualityProfileId": 1, "rootFolderPath": "/movies",
+			"minimumAvailability": "inCinemas", "listType": "tmdb", "tags": []int{},
+			"fields": []any{map[string]any{"name": "listId", "value": "8136"}}}},
+	})
+	s := read(t, api(Radarr, u, key))
+	if d := s.DelayProfiles[0]; !d.BypassIfHighestQuality || !d.BypassIfAboveScore || d.TorrentDelay != 120 {
+		t.Fatalf("api wait %+v", d)
+	}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	if w := item(t, p, GroupRules, "pick_rules_protocol:Good everyday").Protocol; *w != (ProtocolPlan{Preset: "Good everyday", Prefer: "torrent", WaitTorrent: 120, SkipAtGoodEnough: true, Part: "movies"}) {
+		t.Fatalf("api wait plan %+v", w)
+	}
+	top := item(t, p, GroupLists, "outside_list:tmdb_list:8136")
+	if l := top.OutsideList; l.Library != "/movies" || l.Preset != "Good everyday" || !l.SearchOnAdd || l.ReleaseGate != "in_cinemas" {
+		t.Fatalf("api list %+v", l)
+	}
+	if !strings.Contains(top.Detail, "(was on there)") {
+		t.Errorf("api list detail %q", top.Detail)
+	}
+
+	db := filepath.Join(t.TempDir(), "radarr.db")
+	makeDB(t, db, append(radarrDB(), `INSERT INTO ImportLists VALUES (2, 'Watch', 'TraktUserImport', '{"traktListType":0,"username":"","authUser":"luis","accessToken":"S3CR3T_TRAKT_USER","refreshToken":"S3CR3T_TRAKT_REFRESH","limit":100}', 'TraktUserSettings', 0, 0, 2, 0, 1, '/movies', 3, '[]')`)...)
+	b := read(t, file(Radarr, db))
+	if d := b.DelayProfiles[0]; d.BypassIfHighestQuality || d.BypassIfAboveScore {
+		t.Fatalf("backup without the skips %+v", d)
+	}
+	w := b.ImportLists[1]
+	if w.Settings["authUser"] != "luis" || w.Settings["link.rootfolderpath"] != "/movies" || !hasReentry(b, `import list "Watch": accessToken`) {
+		t.Fatalf("backup list %+v %v", w, b.NeedsReentry)
+	}
+	bw := item(t, BuildPlan([]Input{{1, b}}, Choices{}), GroupLists, "outside_list:trakt_list:luis/watchlist")
+	if !strings.Contains(bw.Detail, "(was off there)") {
+		t.Errorf("backup watchlist detail %q", bw.Detail)
+	}
+	if l := bw.OutsideList; l.KeepUpToDate || l.ReleaseGate != "released" || l.Library != "/movies" {
+		t.Fatalf("backup watchlist %+v", l)
+	}
+}

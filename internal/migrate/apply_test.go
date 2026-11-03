@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/CoderLuii/holyarrs/internal/lists"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/naming"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -417,5 +419,197 @@ func TestMoveStampsReleaseGate(t *testing.T) {
 	defs, err := library.ReadGateDefaults(context.Background(), l.st.Read())
 	if err != nil || defs.Gate != library.GateReleased || defs.DelayDays != 0 {
 		t.Fatalf("this server's default changed: %+v %v", defs, err)
+	}
+}
+
+// readWait reads the protocol block of the ready-made Pick rules name.
+func (l *moveLab) readWait(t *testing.T, name string) (int64, domain.ProtocolRule) {
+	t.Helper()
+	var id int64
+	if err := l.st.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ? AND preset = 1", name).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	var p domain.PickRules
+	if err := store.Get(context.Background(), l.st.Read(), "pick_rules", id, &p); err != nil {
+		t.Fatal(err)
+	}
+	return id, p.Body.Protocol
+}
+
+// setWait changes the protocol block of Pick rules id, as a person would.
+func (l *moveLab) setWait(t *testing.T, id int64, w domain.ProtocolRule) {
+	t.Helper()
+	ctx := context.Background()
+	var p domain.PickRules
+	if err := store.Get(ctx, l.st.Read(), "pick_rules", id, &p); err != nil {
+		t.Fatal(err)
+	}
+	p.Body.Protocol = w
+	if _, err := library.UpdatePickRules(ctx, l.st, id, library.PickRulesInput{Name: p.Name, Kinds: p.Kinds, Body: p.Body}, domain.Actor{Kind: "user", ID: 1}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestMoveDefaultWait: the dry run shows the wait change, the move sets it
+// on the ready-made Pick rules (once), and undo puts the old wait back
+// unless it was changed since; Pick rules whose wait was already set keep it.
+func TestMoveDefaultWait(t *testing.T) {
+	wait := func(radarr, _, _ *Snapshot) {
+		radarr.DelayProfiles = []DelayProfile{{ID: 1, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "usenet", TorrentDelay: 120, Order: 2147483647}}
+	}
+	moved := domain.ProtocolRule{Prefer: "usenet", WaitMinutesTorrent: 120}
+	key := "pick_rules_protocol:4K"
+	l := newMoveLabWith(t, wait)
+	dry := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	if got := lineOf(t, dry, key); got.Result != ResChange || got.Detail != "4K: prefer usenet, Usenet 0 min, torrent 120 min; used by 0 versions here now" {
+		t.Fatalf("dry run %+v", got)
+	}
+	id, w := l.readWait(t, "4K")
+	if w != seededWait {
+		t.Fatalf("the dry run changed the wait: %+v", w)
+	}
+	mv := l.move(t, Choices{})
+	if got := lineOf(t, mv.Report, key); got.Result != ResChanged {
+		t.Fatalf("move %+v", got)
+	}
+	if _, w = l.readWait(t, "4K"); w != moved {
+		t.Fatalf("wait after the move %+v", w)
+	}
+	// The other ready-made rules keep theirs.
+	if _, w = l.readWait(t, "Good everyday"); w != seededWait {
+		t.Fatalf("Good everyday changed %+v", w)
+	}
+	// Moving again changes nothing.
+	again := l.move(t, Choices{})
+	if got := lineOf(t, again.Report, key); got.Result != ResAlready {
+		t.Fatalf("second move %+v", got)
+	}
+	if u := l.undo(t, mv.ID); u.State != "undone" || lineOf(t, u.Report, key).Result != ResRemoved {
+		t.Fatalf("undo %+v", u)
+	}
+	if _, w = l.readWait(t, "4K"); w != seededWait {
+		t.Fatalf("wait after undo %+v", w)
+	}
+
+	// Changed since the move: undo keeps the person's wait.
+	l = newMoveLabWith(t, wait)
+	mv = l.move(t, Choices{})
+	id, _ = l.readWait(t, "4K")
+	mine := domain.ProtocolRule{Prefer: "torrent", WaitMinutesUsenet: 30}
+	l.setWait(t, id, mine)
+	if u := l.undo(t, mv.ID); lineOf(t, u.Report, key).Result != ResKept || lineOf(t, u.Report, key).Detail != keptChanged {
+		t.Fatalf("undo after a change %+v", lineOf(t, u.Report, key))
+	}
+	if _, w = l.readWait(t, "4K"); w != mine {
+		t.Fatalf("undo changed the person's wait %+v", w)
+	}
+
+	// A wait already set here stays, in the dry run and the move.
+	l = newMoveLabWith(t, wait)
+	id, _ = l.readWait(t, "4K")
+	l.setWait(t, id, mine)
+	dry = l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	if got := lineOf(t, dry, key); got.Result != ResKept {
+		t.Fatalf("dry run on a set wait %+v", got)
+	}
+	mv = l.move(t, Choices{})
+	if got := lineOf(t, mv.Report, key); got.Result != ResKept || got.Detail != "this server's Pick rules already set a wait, so it stays" {
+		t.Fatalf("move on a set wait %+v", got)
+	}
+	if _, w = l.readWait(t, "4K"); w != mine {
+		t.Fatalf("the move changed a set wait %+v", w)
+	}
+
+	// With Movies off, a wait only Radarr set is left out.
+	l = newMoveLabWith(t, wait)
+	l.parts["movies"] = true
+	if got := lineOf(t, l.move(t, Choices{}).Report, key); got.Result != ResSkipped {
+		t.Fatalf("movies off %+v", got)
+	}
+	if _, w = l.readWait(t, "4K"); w != seededWait {
+		t.Fatalf("movies off changed the wait %+v", w)
+	}
+}
+
+// TestMoveOutsideLists: Radarr lists come over paused, with their folder
+// and Pick rules, once; a name taken here gets " (radarr)", or " (radarr 2)"
+// when that is taken too; undo removes a
+// list only while it is still paused.
+func TestMoveOutsideLists(t *testing.T) {
+	l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
+		radarr.ImportLists = []Provider{
+			{Name: "Top films", Kind: "TMDbListImport", Enabled: true, Settings: map[string]any{"listId": "8136", "link.rootfolderpath": "/movies",
+				"link.qualityprofileid": int64(2), "link.searchonadd": true, "link.minimumavailability": "released"}},
+			{Name: "Watch", Kind: "TraktUserImport", Enabled: true, Settings: map[string]any{"traktListType": int64(0), "username": "sean", "link.rootfolderpath": "/movies"}},
+		}
+	})
+	ctx := context.Background()
+	by := domain.Actor{Kind: "user", ID: 1}
+	// A list here already has the first one's name.
+	if _, err := library.AddFolder(ctx, l.st, library.FolderInput{Path: l.movies, Kind: "movie"}, nil, by); err != nil {
+		t.Fatal(err)
+	}
+	for i, name := range []string{"Top films", "Top films (radarr)"} {
+		if _, err := lists.Add(ctx, l.st, lists.Input{Name: name, Kind: lists.KindTMDB, Ref: strconv.Itoa(i + 1)}, by); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dry := l.mv.Run(ctx, 0, l.plan(t), true, by, nil)
+	for _, k := range []string{"outside_list:tmdb_list:8136", "outside_list:trakt_list:sean/watchlist"} {
+		if got := lineOf(t, dry, k); got.Result != ResCreate || !strings.Contains(got.Detail, "paused until you check it and turn it on") {
+			t.Fatalf("dry run %s %+v", k, got)
+		}
+	}
+	if n := l.count(t, "SELECT count(*) FROM outside_lists"); n != 2 {
+		t.Fatalf("the dry run added lists: %d", n)
+	}
+	mv := l.move(t, Choices{})
+	if got := lineOf(t, mv.Report, "outside_list:tmdb_list:8136"); got.Result != ResCreated {
+		t.Fatalf("move %+v", got)
+	}
+	var on, search bool
+	var gate, rules string
+	if err := l.st.Read().QueryRow(`SELECT o.enabled, o.search_on_add, o.release_gate, p.name FROM outside_lists o JOIN pick_rules p ON p.id = o.pick_rules_id
+		WHERE o.ref = '8136' AND o.name = 'Top films (radarr 2)'`).Scan(&on, &search, &gate, &rules); err != nil {
+		t.Fatal(err)
+	}
+	if on || !search || gate != "released" || rules != "4K" {
+		t.Fatalf("tmdb list on %v search %v gate %q rules %q", on, search, gate, rules)
+	}
+	if n := l.count(t, "SELECT count(*) FROM outside_lists WHERE kind = 'trakt_list' AND ref = 'sean/watchlist' AND enabled = 0"); n != 1 {
+		t.Fatal("the watchlist did not come over paused")
+	}
+	next := strings.Join(mv.Report.Next, "\n")
+	if !strings.Contains(next, "Outside lists come over paused") || !strings.Contains(next, "Add your Trakt key under Settings > Outside lists") {
+		t.Fatalf("next %v", mv.Report.Next)
+	}
+	again := l.move(t, Choices{})
+	if got := lineOf(t, again.Report, "outside_list:trakt_list:sean/watchlist"); got.Result != ResAlready {
+		t.Fatalf("second move %+v", got)
+	}
+	// Turned on since: it stays; the paused one goes; the one made here stays.
+	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE outside_lists SET enabled = 1 WHERE ref = 'sean/watchlist'")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	u := l.undo(t, mv.ID)
+	if got := lineOf(t, u.Report, "outside_list:tmdb_list:8136"); got.Result != ResRemoved {
+		t.Fatalf("undo paused list %+v", got)
+	}
+	if got := lineOf(t, u.Report, "outside_list:trakt_list:sean/watchlist"); got.Result != ResKept || !strings.Contains(got.Detail, "you turned it on since") {
+		t.Fatalf("undo turned-on list %+v", got)
+	}
+	if n := l.count(t, "SELECT count(*) FROM outside_lists"); n != 3 {
+		t.Fatalf("lists after undo %d", n)
+	}
+	// With Movies off, no list comes over.
+	l2 := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
+		radarr.ImportLists = []Provider{{Name: "Top films", Kind: "TMDbListImport", Settings: map[string]any{"listId": "8136", "link.rootfolderpath": "/movies"}}}
+	})
+	l2.parts["movies"] = true
+	if got := lineOf(t, l2.move(t, Choices{}).Report, "outside_list:tmdb_list:8136"); got.Result != ResSkipped {
+		t.Fatalf("movies off %+v", got)
 	}
 }

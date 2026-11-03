@@ -3089,6 +3089,7 @@
                 "pick_rules",
                 "titles",
                 "never_add",
+                "outside_lists",
                 "sources",
                 "downloaders",
                 "naming",

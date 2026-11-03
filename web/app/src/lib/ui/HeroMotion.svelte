@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { viewTransitionName } from '../motion.ts';
-	import { sharpen } from '../tmdb-image.ts';
+	import { proxied, sharpen } from '../tmdb-image.ts';
 
 	// Layer 1 of every hero: the backdrop at once (from the artwork cache),
 	// a slow Ken Burns zoom-and-pan, and a crossfade through the title's
@@ -106,7 +106,7 @@
 	{#each shown as p, i (p)}
 		<div class="frame" class:on={i === active} style:--kb-delay="{-(i * 7)}s" style:--kb-dir={i % 2 ? 'alternate-reverse' : 'alternate'}>
 			<img
-				src={sharp[p] ?? p}
+				src={proxied(sharp[p] ?? p)}
 				alt=""
 				decoding="async"
 				fetchpriority={i === 0 ? 'high' : 'low'}
