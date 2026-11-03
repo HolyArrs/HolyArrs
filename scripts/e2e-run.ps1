@@ -51,7 +51,14 @@ while ($true) {
   }
   if ($seen -and -not $busy -and ((Get-Date) - $seen).TotalMinutes -gt $StaleMinutes) {
     "e2e lock: taking over a stale lock ($(if ($h) { "$($h.Who), pid $($h.Pid), since $($h.At)" } else { 'no holder file' }))"
-    Remove-Item -Recurse -Force $lock -ErrorAction SilentlyContinue
+    # Renamed away first: only one waiter's rename can win, and a waiter that
+    # renamed a lock someone else just made fresh puts it straight back.
+    $tomb = "$lock.stale-$PID"
+    try { Rename-Item $lock $tomb -ErrorAction Stop } catch { continue }
+    $was = $null
+    try { $was = (Get-Item (Join-Path $tomb 'holder.txt') -ErrorAction Stop).LastWriteTime } catch {}
+    if ($was -ne $seen) { try { Rename-Item $tomb $lock -ErrorAction Stop } catch {}; continue }
+    Remove-Item -Recurse -Force $tomb -ErrorAction SilentlyContinue
     continue
   }
   if ((Get-Date) -gt $deadline) { throw "e2e lock: still held by $($h.Who) after $WaitMinutes minutes" }
