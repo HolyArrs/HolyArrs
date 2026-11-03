@@ -175,10 +175,16 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await expect(dialog).toBeHidden();
 	await expect(max.getByRole('status')).toContainText('Asked for Lantern Street');
 
-	// A show already in the Library opens as a Library title for a member (no Add, no tools).
+	// A show already in the Library opens as a Library title for a member (no Add, no tools):
+	// More holds only Report a problem (#95).
 	await openFromSearch(max, 'harbour', 'Harbour Lights', 'show');
 	await expect(max.getByTestId('hero-library')).toBeVisible();
-	await expect(max.getByRole('button', { name: 'More actions', exact: true })).toHaveCount(0);
+	const more = max.getByRole('button', { name: 'More actions', exact: true });
+	if (await more.count()) {
+		await more.click();
+		await expect(max.getByRole('menuitem')).toHaveText(['Report a problem']);
+		await max.keyboard.press('Escape');
+	}
 
 	await max.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = max.getByTestId('ask').filter({ hasText: 'Lantern Street' });

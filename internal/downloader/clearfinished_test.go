@@ -212,3 +212,26 @@ func TestClearFinishedNeverDeletesAFolderNamedOtherwise(t *testing.T) {
 		t.Fatal("sameJobName")
 	}
 }
+
+// A job folder reached through a linked parent folder that points outside
+// the share is never deleted.
+func TestClearFinishedNeverFollowsALinkedParentOutside(t *testing.T) {
+	share, outside := t.TempDir(), t.TempDir()
+	victim := filepath.Join(outside, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS")
+	if err := os.MkdirAll(victim, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(share, "complete")); err != nil {
+		t.Skipf("symlinks not available here: %v", err)
+	}
+	w, m, id, spy := usenetDownload(t)
+	if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+		t.Fatal(err)
+	}
+	m.Forget(w.download(t, id).DownloaderID)
+	spy.content = "/downloads/complete/Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+	m.ClearFinished(context.Background(), id)
+	if _, err := os.Stat(victim); err != nil {
+		t.Fatalf("a folder outside the share was deleted through a link: %v", err)
+	}
+}
