@@ -183,7 +183,11 @@
 	$effect(() => {
 		if (root) cw = root.clientWidth;
 	});
-	const art = $derived(src ? sized(src, 'backdrop', cw) : null);
+	// A poster standing in for a missing wide picture fills the card's width,
+	// so a poster size covers it (w342 for a 247 px desktop card, not a 780x1170
+	// file); a card wider than the biggest poster step keeps w780.
+	const posterFill = $derived(!!src && src === poster && src !== image && cw > 0 && cw * (globalThis.devicePixelRatio || 1) <= 500);
+	const art = $derived(src ? sized(src, posterFill ? 'poster' : 'backdrop', cw) : null);
 	const coverLogo = $derived(tpl?.variant === 'logo' && tpl.logo ? sized(tpl.logo, 'poster') || null : null);
 	// The logo on the card is 40% of its width.
 	const cardLogo = $derived(tpl?.variant === 'logo' && tpl.logo && cw ? sized(tpl.logo, 'poster', cw * 0.4) || null : null);
