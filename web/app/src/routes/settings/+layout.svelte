@@ -272,7 +272,11 @@
 		.settings-nav { position: static; max-height: none; }
 	}
 	@media (max-width: 767px) {
-		.settings-shell:not(.home) .settings-nav, .settings-shell.home .settings-workspace { display: none; }
+		.settings-shell:not(.home) .settings-nav { display: none; }
+		/* Home on a phone: the page title stays (screen readers, the sticky
+		   mini title) above the menu; the rest of the index is the menu itself. */
+		.settings-shell.home .settings-workspace { order: -1; }
+		.settings-shell.home .settings-content > :global(:not(.ui-head)) { display: none; }
 		.back-home { display: inline-flex; }
 		.phone-top, .phone-top:not(:has(.page-status)) { display: flex; margin-bottom: 4px; }
 	}
