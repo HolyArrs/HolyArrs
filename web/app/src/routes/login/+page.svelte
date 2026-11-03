@@ -630,6 +630,11 @@
 	.person button { background: none; border: 0; color: #f5f5f7; font: var(--t-footnote); cursor: pointer; min-height: 36px; }
 	.person .pick { padding: 0 4px 0 14px; max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.person .drop { padding: 0 12px 0 6px; color: rgb(255 255 255 / 0.5); }
+	/* Touch phones: 44px tap targets; desktop stays as it is. */
+	@media (max-width: 767px) and (pointer: coarse) {
+		.person button { min-height: 44px; }
+		.person .drop { min-width: 44px; padding: 0 14px 0 8px; }
+	}
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
 
@@ -666,6 +671,7 @@
 	.help summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font: 500 14px/1 var(--font-ui); list-style: none; }
 	.help summary::-webkit-details-marker { display: none; }
 	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (max-width: 767px) and (pointer: coarse) { .help summary { min-height: 44px; } }
 	.help p { margin-top: 8px; }
 
 	/* The waiting step: the provider's mark inside a turning ring. */
