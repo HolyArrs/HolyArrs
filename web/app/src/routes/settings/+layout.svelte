@@ -219,7 +219,8 @@
 	.phone-top:not(:has(.page-status)) { display: none; }
 	@media (pointer: coarse) { .nav-row { min-height: 40px; } }
 	@media (max-width: 767px) and (pointer: coarse) {
-		.nav-row, .fold-head { min-height: 44px; }
+		/* The shell prefix outranks the base .fold-head rule further down. */
+		.settings-shell .nav-row, .settings-shell .fold-head { min-height: 44px; }
 		.nav-find input { height: 44px; border-radius: 11px; }
 	}
 	@media (prefers-reduced-motion: reduce) { .nav-row, .fold-head > :global(.icon:last-child) { transition: none; } }
