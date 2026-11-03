@@ -1476,8 +1476,8 @@
 	@keyframes own-pulse { 50% { opacity: .35; } }
 	@media (prefers-reduced-motion: reduce) { .own-dot.downloading { animation: none; } }
 	.own-st { font: 600 12.5px/1 var(--font-ui); color: var(--text-muted); }
-	.own-st.failed { color: var(--fail); }
-	.own-st.have { color: var(--ok); }
+	.own-st.failed { color: var(--fail-text); }
+	.own-st.have { color: var(--ok-text); }
 	
 	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--fail); color: #fff; font-size: 11px; }
 	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
@@ -1486,7 +1486,7 @@
 	.own-group { display: grid; gap: 4px; align-content: start; }
 	.own-tool { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: 10px; border: 0; background: none; color: var(--text); font: 500 14.5px/1 var(--font-ui); text-decoration: none; text-align: left; cursor: pointer; }
 	.own-tool:hover { background: var(--surface-2); }
-	.own-tool.danger { color: var(--fail); }
+	.own-tool.danger { color: var(--fail-text); }
 	.own-files { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
 	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1520,12 +1520,12 @@
 	.lib-sr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 4px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 	.lib-sr-main b { font: 650 16px/1 var(--font-ui); white-space: nowrap; }
 	.lib-count { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text-muted); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.lib-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
-	.lib-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait); }
-	.lib-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); }
+	.lib-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text); }
+	.lib-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait-text); }
+	.lib-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); }
 	.lib-sr-note { color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; }
-	.lib-sr-note.dl { color: var(--info); }
-	.lib-sr-note.fail { color: var(--fail); }
+	.lib-sr-note.dl { color: var(--info-text); }
+	.lib-sr-note.fail { color: var(--fail-text); }
 	.lib-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-sr.open .lib-chev { transform: rotate(180deg); }
 	.lib-sr-acts, .lib-ep-acts { display: flex; gap: 2px; }
@@ -1540,7 +1540,7 @@
 	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:has(.lib-ep-text:focus-visible) { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.lib-ep.future .lib-ep-still img { filter: grayscale(.8) brightness(.55); }
 	.lib-ep-st.future { color: var(--text-muted); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
-	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 18%, transparent); color: var(--info); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 18%, transparent); color: var(--info-text); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
 	@media (max-width: 600px) {
 		.lib-sr-note { display: none; }
 		.lib-sr .lib-ep { grid-template-columns: 24px 84px minmax(0, 1fr) auto; }
@@ -1568,10 +1568,10 @@
 	.lib-ep-text { display: grid; gap: 4px; min-width: 0; }
 	.lib-ep-text b { font: 600 15px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-ep-text small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
-	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
-	.lib-ep-st.have { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
-	.lib-ep-st.downloading { color: var(--info); background: color-mix(in srgb, var(--info) 12%, transparent); }
-	.lib-ep-st.failed { color: var(--fail); background: color-mix(in srgb, var(--fail) 12%, transparent); }
+	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
+	.lib-ep-st.have { color: var(--ok-text); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+	.lib-ep-st.downloading { color: var(--info-text); background: color-mix(in srgb, var(--info) 12%, transparent); }
+	.lib-ep-st.failed { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity var(--dur-fast) var(--ease-out); }
 	.lib-ep:hover .lib-ep-go, .lib-ep-go:focus-visible { opacity: 1; }
 	@media (max-width: 600px) {
@@ -1597,7 +1597,7 @@
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
-	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail); }
+	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail-text); }
 	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
 	.lib-row + .lib-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }

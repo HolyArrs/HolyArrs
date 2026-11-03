@@ -271,9 +271,9 @@
 	.al-name b { font: 650 15px/1.2 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.al-name small { color: var(--text-muted); font: 500 12.5px/1.2 var(--font-ui); }
 	.al-count { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text-muted); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.al-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
-	.al-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait); }
-	.al-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); }
+	.al-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text); }
+	.al-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait-text); }
+	.al-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); }
 	.al-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.al-row.open .al-chev { transform: rotate(180deg); }
 	.al-acts { display: flex; gap: 2px; }
@@ -290,15 +290,15 @@
 	.al-tr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.al-tr-len { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.al-tr-st { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 9px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
-	.al-tr-st.have { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
-	.al-tr-st.downloading { color: var(--info); background: color-mix(in srgb, var(--info) 12%, transparent); }
-	.al-tr-st.failed { color: var(--fail); background: color-mix(in srgb, var(--fail) 12%, transparent); }
+	.al-tr-st.have { color: var(--ok-text); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+	.al-tr-st.downloading { color: var(--info-text); background: color-mix(in srgb, var(--info) 12%, transparent); }
+	.al-tr-st.failed { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.al-tl { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.35 var(--font-ui); }
 	.al-tl li { display: flex; justify-content: space-between; gap: 12px; }
 	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.al-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
-	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail); }
+	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail-text); }
 	.al-rowbtn { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 	.al-rowbtn + .al-rowbtn { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.al-rowbtn span { display: grid; gap: 3px; min-width: 0; }
