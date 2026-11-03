@@ -1,16 +1,14 @@
 <script module lang="ts">
-	import type { MenuItem } from '#lib/ui/Menu.svelte';
-
 	/** The Library's own parts when this artist is in the Library (/library/{id}). */
 	export type ArtistLibrary = {
 		titleId: number;
 		staff: boolean;
-		menu: MenuItem[];
 		progress: string;
 		status: string;
 		note: string;
 		nextRelease?: string;
-		onLibrary: () => void;
+		/** stamp changes when the page hears the artist changed; the Library tab reads again. */
+		stamp?: number;
 		onAsk?: () => void;
 	};
 </script>
@@ -18,7 +16,7 @@
 <script lang="ts">
 	import { dragScroll } from '#lib/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
@@ -35,6 +33,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { pictureFor, pictureOf } from '#lib/pictures.ts';
 	import Icon from '#lib/Icon.svelte';
@@ -52,7 +51,6 @@
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
 	import { aboutSize, musicLoadError, albumHref, appPicture, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, listening, changeWords, fullCount, shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
-	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
 	import ArtistLibraryTab from '#lib/music/ArtistLibrary.svelte';
 	import type { Snippet } from 'svelte';
@@ -162,6 +160,12 @@
 	const titleId = $derived(lib?.titleId || hero?.title_id || lookup?.title_id || 0);
 	// Overview or Library, for an artist in the Library (?tab=library opens it there).
 	let artistTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && new URLSearchParams(location.search).get('tab') === 'library' ? 'library' : 'overview');
+	/** toLibraryTab is the hero's In Library button: the Library tab, scrolled to. */
+	async function toLibraryTab() {
+		artistTab = 'library';
+		await tick();
+		document.querySelector('[data-testid="artist-tabs"]')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+	}
 
 
 	function load() {
@@ -675,7 +679,7 @@
 {#snippet mainAct()}
 	<!-- The main button sits where a player puts play: In Library, Ask or Add. -->
 	{#if lib?.staff}
-		<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={lib.onLibrary} data-testid="hero-library" />
+		<ActionButton icon="library" label="In Library: open the Library tab" caption="In Library" primary onclick={toLibraryTab} data-testid="hero-library" />
 	{:else if lib?.onAsk}
 		<ActionButton icon="plus" label="Ask for albums" primary onclick={lib.onAsk} data-testid="ask-albums" />
 	{:else if lib}
@@ -704,7 +708,6 @@
 	<div class="acts">
 		{@render mainAct()}{@render aboutAct()}
 		{@render followAct()}
-		{#if lib?.staff}<ActionMenu label="More actions" caption="More" icon="more" items={lib.menu} />{/if}
 	</div>
 {/snippet}
 
@@ -998,7 +1001,7 @@
 				</div>
 			{/if}
 			{#if titleId && manage && artistTab === 'library'}
-				<ArtistLibraryTab {titleId} {manage} ondeleted={() => location.reload()} />
+				<ArtistLibraryTab {titleId} {manage} stamp={lib?.stamp} ondeleted={() => (lib ? void goto(to('/library')) : location.reload())} />
 			{:else}
 				{@render sections()}
 			{/if}
@@ -1235,7 +1238,7 @@
 	.sq-rail { --poster-ratio: 1; }
 
 	/* Overview / Library tabs for an artist in the Library: the same underline tabs as a title page. */
-	.ar-tabs { display: flex; gap: 6px; margin-top: calc(var(--gap) * -1 + 16px); border-bottom: 1px solid var(--line); }
+	.ar-tabs { display: flex; gap: 6px; margin-top: calc(var(--gap) * -1 + 16px); border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
 	.ar-tabs button { height: 40px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	@media (max-width: 767px) and (pointer: coarse) { .ar-tabs button { height: 44px; } }
 	.ar-tabs button.on { color: var(--text); border-bottom-color: var(--text); }

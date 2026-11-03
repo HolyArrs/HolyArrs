@@ -10,18 +10,22 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/format.ts';
 	import type { AlbumSummary, TitleView, TrackView } from '#lib/types.ts';
-	import { albumCover } from '#lib/music/music.ts';
+	import Button from '#lib/ui/Button.svelte';
+	import { to } from '#lib/paths.ts';
+	import { albumChoices, albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind, word } from '#lib/music/music.ts';
 
 	// An artist's Library tab: what you have, the albums grouped by kind (closed
-	// until opened, with their tracks), keep up to date, search and pick per album
-	// and track, activity, settings and delete. Same pattern as a show's seasons.
-	let { titleId, manage = false, ondeleted }: { titleId: number; manage?: boolean; ondeleted?: () => void } = $props();
+	// until opened, with their tracks and a link to the album page), keep up to
+	// date, search and pick per album and track, activity, settings (album kinds
+	// too) and delete. Same pattern as a show's seasons. `stamp` changes when the
+	// page hears the artist changed, so the tab reads again.
+	let { titleId, manage = false, stamp = 0, ondeleted }: { titleId: number; manage?: boolean; stamp?: number; ondeleted?: () => void } = $props();
 
 	let title = $state<TitleView | null>(null);
 	let albums = $state<AlbumSummary[]>([]);
 	let events = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
 	let busy = $state('');
-	let showAll = $state(false);
+	let show = $state<'included' | 'left_out' | 'all'>('included');
 	let allEvents = $state(false);
 	const open = new SvelteSet<number>();
 	let tracks = $state<Record<number, TrackView[]>>({});
@@ -42,6 +46,7 @@
 	}
 	$effect(() => {
 		void titleId;
+		void stamp;
 		void load();
 	});
 
@@ -63,7 +68,8 @@
 	const KINDS: [string, string][] = [['album', 'Albums'], ['ep', 'EPs'], ['single', 'Singles'], ['live', 'Live'], ['compilation', 'Compilations'], ['other', 'Other']];
 	const kindOf = (a: AlbumSummary) => (a.secondary_types?.includes('live') ? 'live' : a.secondary_types?.includes('compilation') ? 'compilation' : ['album', 'ep', 'single'].includes(a.type) ? a.type : 'other');
 	const kept = $derived(albums.filter((a) => a.included));
-	const shown = $derived(showAll ? albums : kept);
+	const leftOut = $derived(albums.length - kept.length);
+	const shown = $derived(show === 'all' ? albums : show === 'included' ? kept : albums.filter((a) => !a.included));
 	const groups = $derived(
 		KINDS.map(([k, label]) => ({ k, label, list: shown.filter((a) => kindOf(a) === k).sort((x, y) => (y.release_date ?? '').localeCompare(x.release_date ?? '')) })).filter((g) => g.list.length)
 	);
@@ -105,17 +111,61 @@
 	}
 	const search = (body: Record<string, unknown>, key: string, done: string) => run(key, () => api.post(`/titles/${titleId}/search`, body), done);
 	const keepAlbum = (a: AlbumSummary) =>
-		run(`k${a.id}`, async () => {
-			await api.put(`/albums/${a.id}`, { keep_up_to_date: !a.keep_up_to_date });
-			await load();
-		});
+		run(
+			`k${a.id}`,
+			async () => {
+				await api.put(`/albums/${a.id}`, { keep_up_to_date: !a.keep_up_to_date });
+				await load();
+			},
+			`${a.name}: ${a.keep_up_to_date ? 'HolyArrs stops looking after it.' : 'HolyArrs keeps it up to date.'}`
+		);
 	const keepTitle = () =>
-		run('keep', async () => {
-			if (!title) return;
-			await api.put(`/titles/${titleId}`, { keep_up_to_date: !title.keep_up_to_date });
+		run(
+			'keep',
+			async () => {
+				if (!title) return;
+				await api.put(`/titles/${titleId}`, { keep_up_to_date: !title.keep_up_to_date });
+				await load();
+			},
+			title?.keep_up_to_date ? 'HolyArrs stops looking after this artist.' : 'HolyArrs keeps this artist up to date.'
+		);
+	const refresh = () => run('refresh', () => api.post(`/titles/${titleId}/refresh`), 'Refreshing albums, tracks, names and pictures.');
+	const albumPage = (a: AlbumSummary) => to(`/library/${titleId}/albums/${a.id}`);
+
+	// Album kinds: what counts for this artist, and what happens to albums
+	// MusicBrainz lists later. Saving brings the newly included albums in.
+	let kindsOpen = $state(false);
+	let eNew = $state('all');
+	let eTypes = $state<string[]>([]);
+	let eExtras = $state<string[]>([]);
+	let eStatuses = $state<string[]>([]);
+	let kindsError = $state('');
+	let saving = $state(false);
+	const kindsLine = $derived([word(newAlbumChoices, title?.artist?.new_albums), (title?.artist?.album_types ?? []).map((k) => word(mainKinds, k)).join(', ')].filter(Boolean).join(' · '));
+	function openKinds() {
+		const ar = title?.artist;
+		kindsError = '';
+		eNew = ar?.new_albums ?? 'all';
+		eTypes = [...(ar?.album_types ?? [])];
+		eExtras = [...(ar?.secondary_types ?? [])];
+		eStatuses = [...(ar?.release_statuses ?? [])];
+		kindsOpen = true;
+	}
+	async function saveKinds(e: SubmitEvent) {
+		e.preventDefault();
+		saving = true;
+		kindsError = '';
+		try {
+			await api.put(`/titles/${titleId}/artist`, { new_albums: eNew, album_types: eTypes, secondary_types: eExtras, release_statuses: eStatuses });
+			kindsOpen = false;
+			toasts.push('Saved. A refresh brings in the albums the new kinds include.', 'ok');
 			await load();
-		});
-	const refresh = () => run('refresh', () => api.post(`/titles/${titleId}/refresh`), 'Refreshing names, dates and pictures.');
+		} catch (err) {
+			kindsError = message(err);
+		} finally {
+			saving = false;
+		}
+	}
 
 	let pickOpen = $state(false);
 	let pickScope = $state<{ label: string; query: string; body: Record<string, unknown> } | null>(null);
@@ -144,7 +194,13 @@
 			<div class="al-head">
 				<h3 class="al-h">Releases</h3>
 				<span class="al-head-acts">
-					<button type="button" class="al-btn sm" class:on={showAll} aria-pressed={showAll} onclick={() => (showAll = !showAll)}>{showAll ? 'Kept only' : `Show all ${albums.length}`}</button>
+					{#if leftOut}
+						<span class="al-head-acts" role="group" aria-label="Releases shown">
+							<button type="button" class="al-btn sm" class:on={show === 'included'} aria-pressed={show === 'included'} onclick={() => (show = 'included')}>Included</button>
+							<button type="button" class="al-btn sm" class:on={show === 'left_out'} aria-pressed={show === 'left_out'} onclick={() => (show = 'left_out')}>Not included {leftOut}</button>
+							<button type="button" class="al-btn sm" class:on={show === 'all'} aria-pressed={show === 'all'} onclick={() => (show = 'all')}>All {albums.length}</button>
+						</span>
+					{/if}
 					<button type="button" class="al-btn sm" onclick={() => (open.size ? open.clear() : shown.forEach((a) => !open.has(a.id) && toggle(a.id)))}>{open.size ? 'Collapse all' : 'Expand all'}</button>
 				</span>
 			</div>
@@ -155,13 +211,13 @@
 					{#each g.list as a (a.id)}
 						{@const isOpen = open.has(a.id)}
 						{@const full = a.tracks > 0 && a.in_library >= a.tracks}
-						<section class="al-row" class:open={isOpen} class:off={!a.included}>
+						<section class="al-row" class:open={isOpen} class:off={!a.included} data-testid="album">
 							<div class="al-row-head">
-								{#if manage}<button type="button" class="al-keep" class:on={a.keep_up_to_date} aria-pressed={a.keep_up_to_date} title={a.keep_up_to_date ? 'Kept up to date. Click to stop' : 'Not kept up to date. Click to keep'} disabled={busy === `k${a.id}`} onclick={() => keepAlbum(a)}><Icon name="check" size={13} /></button>{/if}
+								{#if manage}<button type="button" class="al-keep" class:on={a.keep_up_to_date} aria-pressed={a.keep_up_to_date} aria-label="Keep {a.name} up to date" title={!a.included ? 'Not included by the album kinds' : a.keep_up_to_date ? 'Kept up to date. Click to stop' : 'Not kept up to date. Click to keep'} disabled={busy === `k${a.id}` || !a.included} onclick={() => keepAlbum(a)}><Icon name="check" size={13} /></button>{/if}
 								<button type="button" class="al-row-main" aria-expanded={isOpen} onclick={() => toggle(a.id)}>
 									<img class="al-cover" src={albumCover(a.id)} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
-									<span class="al-name"><b>{a.name}</b><small>{[year(a.release_date), a.tracks ? `${a.tracks} tracks` : '', a.not_out_yet ? 'Not out yet' : ''].filter(Boolean).join(' · ')}</small></span>
-									{#if a.included}<span class="al-count" class:full class:part={!full && a.in_library > 0} class:none={!a.in_library && a.missing > 0}>{a.in_library} / {a.tracks}</span>{:else}<span class="al-count">Not kept</span>{/if}
+									<span class="al-name"><b>{a.name}</b><small>{[year(a.release_date), a.tracks ? `${a.tracks} tracks` : '', a.not_out_yet && albumStateOf(a).label !== 'Not out yet' ? 'Not out yet' : '', a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')} · <span data-testid="album-state">{albumStateOf(a).label}</span></small></span>
+									{#if a.included}<span class="al-count" class:full class:part={!full && a.in_library > 0} class:none={!a.in_library && a.missing > 0} data-testid="album-count">{a.in_library} / {a.tracks}</span>{/if}
 									<span class="al-chev" aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
 								</button>
 								{#if manage}
@@ -187,12 +243,13 @@
 										{#each [0, 1, 2] as i (i)}<li class="al-tr skel"></li>{/each}
 									{/each}
 								</ol>
+								<a class="al-open" href={albumPage(a)} aria-label="Open the album page of {a.name}">Open the album page<Icon name="chevronRight" size={15} /></a>
 							{/if}
 						</section>
 					{/each}
 				</div>
 			{:else}
-				<p class="muted">No releases kept yet. Show all to pick some.</p>
+				<p class="muted">{show === 'left_out' ? 'Nothing here.' : 'No releases included yet. Album kinds in Settings picks which count.'}</p>
 			{/each}
 		</div>
 
@@ -202,15 +259,19 @@
 				{#each allEvents ? events : events.slice(0, 6) as e (e.ID)}<li><span>{(e.Summary ?? e.Kind ?? '').replace(/\s+(from|on|via) (MusicBrainz|TMDB|TVmaze|TheTVDB|Wikipedia|Wikidata|fanart\.tv)\b/gi, '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
 				{:else}<li class="muted">Nothing has happened yet.</li>{/each}
 			</ol>
-			{#if events.length > 6}<button type="button" class="al-link" onclick={() => (allEvents = !allEvents)}>{allEvents ? 'Show less' : `Show all ${events.length}`}</button>{/if}
+			<p class="al-links">
+				{#if events.length > 6}<button type="button" class="al-link" onclick={() => (allEvents = !allEvents)}>{allEvents ? 'Show less' : `Show all ${events.length}`}</button>{/if}
+				<a class="al-link" href={to(`/downloads/history?title=${titleId}`)}>All history</a>
+			</p>
 
 			{#if manage}
 				<h3 class="al-h">Settings</h3>
 				<div class="al-rows">
 					<button type="button" class="al-rowbtn" disabled={busy === 'keep'} onclick={keepTitle}><span><b>Keep up to date</b><small>Grab new releases and upgrade when a better copy shows up</small></span><span class="al-switch" class:on={t.keep_up_to_date} aria-hidden="true"></span></button>
 					<button type="button" class="al-rowbtn" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{t.pick_rules_name ?? 'Quality'} · folder</small></span><Icon name="tools" size={16} /></button>
+					<button type="button" class="al-rowbtn" onclick={openKinds}><span><b>Album kinds</b><small>{kindsLine}</small></span><Icon name="music" size={16} /></button>
 					<button type="button" class="al-rowbtn" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
-					<button type="button" class="al-rowbtn" disabled={busy === 'refresh'} onclick={refresh}><span><b>Refresh details</b><small>Names, dates and pictures</small></span><Icon name="refresh" size={16} /></button>
+					<button type="button" class="al-rowbtn" disabled={busy === 'refresh'} onclick={refresh}><span><b>Refresh details</b><small>Albums, tracks, names and pictures{t.refreshed_at ? ` · ${ago(t.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 				</div>
 				<div class="al-rows danger">
 					<button type="button" class="al-rowbtn" onclick={() => (deleteOpen = true)}><span><b>Delete artist</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
@@ -225,6 +286,41 @@
 		<DeleteSheet bind:open={deleteOpen} {titleId} name={t.name} kind="artist" ondone={() => ondeleted?.()} />
 		<Sheet bind:open={renameOpen} title="Rename files" description={t.name} placement="right" size="md">
 			{#if renameOpen}<RenamePreview {titleId} onDone={() => { renameOpen = false; void load(); }} />{/if}
+		</Sheet>
+		<Sheet bind:open={kindsOpen} title="Album kinds" description={t.name} placement="right" size="md">
+			<form class="al-kinds" onsubmit={saveKinds}>
+				<div class="field">
+					<label for="al-new">New albums</label>
+					<select id="al-new" class="input" bind:value={eNew}>
+						{#each newAlbumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
+					</select>
+				</div>
+				<fieldset class="al-kind-set">
+					<legend><b>Album kinds</b></legend>
+					<div class="al-boxes">
+						{#each mainKinds as [v, l] (v)}<label class="al-box"><input type="checkbox" checked={eTypes.includes(v)} onchange={(e) => (eTypes = toggleKind(eTypes, v, e.currentTarget.checked, mainKinds))} /> {l}</label>{/each}
+					</div>
+				</fieldset>
+				<fieldset class="al-kind-set">
+					<legend><b>Extra kinds</b></legend>
+					<div class="al-boxes">
+						{#each extraKinds as [v, l] (v)}<label class="al-box"><input type="checkbox" checked={eExtras.includes(v)} onchange={(e) => (eExtras = toggleKind(eExtras, v, e.currentTarget.checked, extraKinds))} /> {l}</label>{/each}
+					</div>
+				</fieldset>
+				<fieldset class="al-kind-set">
+					<legend><b>Pressings that count</b></legend>
+					<div class="al-boxes">
+						{#each pressingStatuses as [v, l] (v)}<label class="al-box"><input type="checkbox" checked={eStatuses.includes(v)} onchange={(e) => (eStatuses = toggleKind(eStatuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>{/each}
+					</div>
+				</fieldset>
+				{#if t.artist?.album_choice}<p class="hint">Picked when added: {word(albumChoices, t.artist.album_choice)}</p>{/if}
+				<p class="hint">Albums the new kinds leave out stay listed under Not included; their files stay where they are.</p>
+				{#if kindsError}<p class="form-error" role="alert">{kindsError}</p>{/if}
+				<div class="al-kinds-acts">
+					<Button variant="plain" onclick={() => (kindsOpen = false)}>Cancel</Button>
+					<Button variant="primary" type="submit" disabled={saving || !eTypes.length || !eExtras.length || !eStatuses.length} busy={saving}>Save</Button>
+				</div>
+			</form>
 		</Sheet>
 	{/if}
 {:else}
@@ -256,9 +352,18 @@
 	.al-btn.primary { background: var(--text); color: var(--bg); }
 	.al-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; }
 	.al-btn.on { background: var(--text); color: var(--bg); }
-	.al-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.al-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; }
 	.al-head .al-btn.sm { margin-top: 16px; }
-	.al-head-acts { display: flex; gap: 8px; }
+	.al-head-acts { display: flex; flex-wrap: wrap; gap: 0 8px; }
+	.al-open { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-height: var(--tap); padding: 0 16px; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--accent-text); font: 600 14px/1 var(--font-ui); text-decoration: none; }
+	.al-links { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; }
+	.al-links .al-link { text-decoration: none; }
+	.al-kinds { display: grid; gap: var(--s-4); }
+	.al-kind-set { margin: 0; padding: 0; border: 0; }
+	.al-kind-set legend { margin-bottom: var(--s-2); font-size: var(--text-sm); }
+	.al-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s-2); }
+	.al-box { display: flex; align-items: center; gap: var(--s-2); min-height: var(--tap); font-size: var(--text-sm); }
+	.al-kinds-acts { display: flex; justify-content: flex-end; gap: var(--s-2); }
 	.al-group { margin: 14px 0 8px; color: var(--text-muted); font: 700 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.al-group span { margin-left: 4px; opacity: .7; }
 	.al-list { display: grid; gap: 8px; }
@@ -280,7 +385,10 @@
 	.al-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 99px; background: none; color: var(--text-muted); cursor: pointer; }
 	.al-ico:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
 	.al-ico:disabled { opacity: .3; cursor: default; }
-	.al-keep { flex: none; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
+	/* The box is small; its hit area reaches 44px (the tap size). */
+	.al-keep::after { content: ''; position: absolute; inset: -11px; }
+	.al-keep:disabled { opacity: .35; cursor: default; }
+	.al-keep { position: relative; flex: none; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
 	.al-keep.on { border-color: var(--ok); background: var(--ok); color: #fff; }
 	.al-tracks { display: grid; margin: 0; padding: 0 8px 8px; list-style: none; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
 	.al-tr { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto 32px; align-items: center; gap: 12px; min-height: 42px; padding: 0 8px; border-radius: 8px; font: 500 14px/1.2 var(--font-ui); }
@@ -312,6 +420,8 @@
 	@media (max-width: 600px) {
 		.al-status { padding: 18px; }
 		.al-btn:not(.sm) { flex: 1; justify-content: center; }
+		.al-btn.sm { height: var(--tap); }
+		.al-links .al-link { display: inline-flex; align-items: center; min-height: var(--tap); margin-top: 0; }
 		.al-tr { grid-template-columns: 26px minmax(0, 1fr) auto 32px; }
 		.al-tr-len { display: none; }
 		.al-row-main { gap: 10px; }

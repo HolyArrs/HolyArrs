@@ -48,6 +48,14 @@ async function artistLibraryPage(p: Page, name: string) {
 	await p.goto(`/library/${t!.id}`);
 }
 
+/** libraryTab opens an artist's Library tab: its albums (the only album list), their actions and settings. */
+async function libraryTab(p: Page) {
+	const tab = p.getByTestId('artist-tabs').getByRole('tab', { name: 'Library' });
+	await tab.click();
+	await expect(tab).toHaveAttribute('aria-selected', 'true');
+	return p.getByTestId('artist-library');
+}
+
 test.beforeAll(async ({ browser }) => {
 	own = await fresh(browser);
 	await signIn(own, owner());
@@ -100,41 +108,64 @@ test('the owner finds an artist and adds it from Search', async () => {
 	await expect(own.getByRole('status')).toContainText('Tin Lanterns is in your Library.');
 	await own.getByRole('main').getByRole('link', { name: 'Tin Lanterns,' }).first().click();
 
-	// The artist page: albums with kinds, dates and state, and Search now.
+	// The artist page: the hero, then the Library tab with the albums, their kinds, dates and state, and Search.
 	await expect(own.getByRole('heading', { level: 1, name: 'Tin Lanterns' })).toBeVisible();
 	await artistLibraryPage(own, 'Tin Lanterns');
 	await expect(own.getByRole('heading', { level: 1, name: 'Tin Lanterns' })).toBeVisible();
-	await own.getByRole('button', { name: 'More actions', exact: true }).click();
-	await expect(own.getByRole('menuitem', { name: 'Search now', exact: true })).toBeVisible();
-	await own.keyboard.press('Escape');
 	await expect(own.getByTestId('artist-progress')).toContainText('tracks in the Library', slow);
+	// Overview has no album list below it and no More menu: the albums show once, in the Library tab.
+	await expect(own.getByTestId('album')).toHaveCount(0);
+	await expect(own.getByRole('button', { name: 'More actions', exact: true })).toHaveCount(0);
+	// The hero's In Library button opens the Library tab (the last copy is the one under the artist's name).
+	await own.getByTestId('hero-library').last().click();
+	await expect(own.getByTestId('artist-tabs').getByRole('tab', { name: 'Library' })).toHaveAttribute('aria-selected', 'true');
+	const lib = own.getByTestId('artist-library');
+	await expect(lib.getByRole('button', { name: 'Get all missing' })).toBeVisible(slow);
 	const albums = own.getByTestId('album');
-	await expect(albums).toHaveCount(3);
-	await expect(albums.filter({ hasText: 'Paper Boats' })).toContainText('2099 · EP');
+	await expect(albums).toHaveCount(3, slow);
+	await expect(lib.getByTestId('album')).toHaveCount(3);
+	await expect(albums.filter({ hasText: 'Paper Boats' })).toContainText('2099');
 	await expect(albums.filter({ hasText: 'Paper Boats' }).getByTestId('album-state')).toHaveText('Not out yet', slow);
 	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Missing', slow);
-	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-line')).toContainText('0 of 2 tracks in the Library · 2 missing');
-	await expect(own.getByRole('checkbox', { name: 'Keep Night Ferry up to date' })).toBeChecked();
+	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-count')).toHaveText('0 / 2');
+	await expect(lib.getByRole('button', { name: 'Keep Night Ferry up to date' })).toHaveAttribute('aria-pressed', 'true');
 	// The live album is left out by the album kinds.
-	await own.getByRole('button', { name: /^Not included/ }).click();
+	await lib.getByRole('button', { name: /^Not included/ }).click();
 	await expect(albums).toHaveCount(1);
 	await expect(albums.first()).toContainText('Live at the Pier');
-	await expect(albums.first()).toContainText('Album · Live');
+	await expect(lib.getByText(/^Live\s*1$/)).toBeVisible();
 	await expect(albums.first().getByTestId('album-state')).toHaveText('Not included');
-	await expect(own.getByRole('checkbox', { name: 'Keep Live at the Pier up to date' })).toBeDisabled();
-	await own.getByRole('button', { name: 'Included', exact: true }).click();
+	await expect(lib.getByRole('button', { name: 'Keep Live at the Pier up to date' })).toBeDisabled();
+	await lib.getByRole('button', { name: 'Included', exact: true }).click();
+	await expect(albums).toHaveCount(3);
 	await axe(own, 'artist page');
 
 	// An album turns off and on.
-	await own.getByRole('checkbox', { name: 'Keep Night Ferry up to date' }).uncheck({ force: true });
+	await lib.getByRole('button', { name: 'Keep Night Ferry up to date' }).click();
 	await expect(own.getByRole('status')).toContainText('Night Ferry: HolyArrs stops looking after it.');
 	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Not kept up to date');
-	await own.getByRole('checkbox', { name: 'Keep Night Ferry up to date' }).check({ force: true });
+	await expect(lib.getByRole('button', { name: 'Keep Night Ferry up to date' })).toHaveAttribute('aria-pressed', 'false');
+	await lib.getByRole('button', { name: 'Keep Night Ferry up to date' }).click();
 	await expect(albums.filter({ hasText: 'Night Ferry' }).getByTestId('album-state')).toHaveText('Missing');
+
+	// What the old More menu had sits in the tab: album kinds, rename, refresh, delete, all history.
+	await lib.getByRole('button', { name: /^Album kinds/ }).click();
+	const kinds = own.getByRole('dialog', { name: 'Album kinds' });
+	await expect(kinds.getByLabel('New albums')).toHaveValue('all');
+	await expect(kinds.getByRole('checkbox', { name: 'Album', exact: true })).toBeChecked();
+	await expect(kinds.getByRole('checkbox', { name: 'Live', exact: true })).not.toBeChecked();
+	await axe(own, 'artist album kinds');
+	await kinds.getByRole('button', { name: 'Cancel' }).click();
+	await expect(kinds).toBeHidden();
+	for (const b of [/^Keep up to date/, /^Edit/, /^Rename files/, /^Refresh details/, /^Delete artist/]) await expect(lib.getByRole('button', { name: b })).toBeVisible();
+	await expect(lib.getByRole('link', { name: 'All history' })).toHaveAttribute('href', /\/downloads\/history\?title=\d+/);
 });
 
 test('the album page lists tracks and Pressings, and the owner picks another Pressing', async () => {
-	await own.getByTestId('album').filter({ hasText: 'Harbour Songs' }).getByRole('link', { name: 'Harbour Songs' }).click();
+	// An album row opens to its tracks and a link to its album page.
+	const row = own.getByTestId('album').filter({ hasText: 'Harbour Songs' });
+	await row.getByRole('button', { expanded: false }).click();
+	await row.getByRole('link', { name: 'Open the album page of Harbour Songs' }).click();
 	// The Library artist page's album links open the album's Library page straight away.
 	await expect(own).toHaveURL(/\/library\/\d+\/albums\//);
 	await expect(own.getByRole('heading', { level: 1, name: /Harbour Songs/ })).toBeVisible();
@@ -152,7 +183,8 @@ test('the album page lists tracks and Pressings, and the owner picks another Pre
 	await expect(own.getByTestId('track')).toHaveCount(4);
 	await expect(own.getByTestId('chosen-pressing')).toContainText('picked by hand');
 	await own.getByRole('link', { name: 'Tin Lanterns', exact: true }).first().click();
-	await expect(own.getByTestId('album').filter({ hasText: 'Harbour Songs' }).getByTestId('album-line')).toContainText('of 4 tracks');
+	const lib = await libraryTab(own);
+	await expect(lib.getByTestId('album').filter({ hasText: 'Harbour Songs' }).getByTestId('album-count')).toContainText('/ 4');
 });
 
 test('artists sit in the Library with a Music kind', async () => {
@@ -271,8 +303,9 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(phone.getByTestId('title-asks')).toContainText('ivy');
 	await expect(phone.getByTestId('title-asks')).toContainText('Fern Hymns');
 	await expect(phone.getByTestId('title-asks')).toContainText('Approved by luis');
-	await expect(phone.getByRole('checkbox', { name: 'Keep Fern Hymns up to date' })).toBeChecked(slow);
-	await expect(phone.getByRole('checkbox', { name: 'Keep Slow Green up to date' })).not.toBeChecked();
+	const lib = await libraryTab(phone);
+	await expect(lib.getByRole('button', { name: 'Keep Fern Hymns up to date' })).toHaveAttribute('aria-pressed', 'true', slow);
+	await expect(lib.getByRole('button', { name: 'Keep Slow Green up to date' })).toHaveAttribute('aria-pressed', 'false');
 	await noSidewaysScroll(phone);
 	await axe(phone, 'artist page phone');
 
@@ -294,7 +327,8 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(ivy.getByTestId('album')).toHaveCount(0);
 	await expect(ivy.getByRole('checkbox')).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Refresh' })).toHaveCount(0);
-	await expect(ivy.getByRole('button', { name: 'Edit album kinds' })).toHaveCount(0);
+	await expect(ivy.getByTestId('artist-tabs')).toHaveCount(0);
+	await expect(ivy.getByRole('button', { name: /^Album kinds/ })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'More actions' })).toHaveCount(0);
 	await expect(ivy.getByTestId('ask-albums').first()).toBeVisible();
 	await noSidewaysScroll(ivy);

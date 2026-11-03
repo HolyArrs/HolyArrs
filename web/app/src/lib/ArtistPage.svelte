@@ -1,51 +1,22 @@
 <script lang="ts">
-	import Button from '#lib/ui/Button.svelte';
 	import { peopleNames } from './plain.ts';
-	import { to } from './paths.ts';
-	// One artist: its albums with their kinds, dates and state, Keep up to
-	// date per artist and album, the album kinds it includes, and who asked.
-	// Search now looks for every missing album; each album has its own
-	// Search now, and its page a Choose a release list.
+	// One artist in the Library: the artist page (MusicArtistPage) with its
+	// Overview and Library tabs; the Library tab holds the albums, their
+	// actions and the artist's settings. Below them: who asked.
 	import { api, message } from './api.ts';
 	import { live } from './live.svelte.ts';
-	import { ago, date, dateTime } from './format.ts';
-	import Icon from './Icon.svelte';
-	import { shortFolder } from './ui/TitleHero.svelte';
+	import { date } from './format.ts';
 	import MusicArtistPage, { type ArtistLibrary } from './music/MusicArtistPage.svelte';
 	import LoadError from './ui/LoadError.svelte';
-	import type { MenuItem } from './ui/Menu.svelte';
-	import LibrarySection from './ui/LibrarySection.svelte';
 	import TitleSection from './ui/TitleSection.svelte';
-	import { reducedMotion } from './motion.ts';
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { audienceStatus } from './title-status.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { decided } from './requests.ts';
-	import { groupDownloads } from './history.ts';
-	import CompactRow from './history-looks/CompactRow.svelte';
-	import { isRoutine } from './history-looks/dirs.ts';
 	import AskArtistDialog from './AskArtistDialog.svelte';
-	import RenamePreview from './RenamePreview.svelte';
-	import ShowDeleteDialog from './ShowDeleteDialog.svelte';
-	import { goto } from '$app/navigation';
-	import {
-		albumChoices,
-		albumKind,
-		albumLine,
-		albumStateOf,
-		albumWords,
-		albumYear,
-		artistProgress,
-		artistSearchToast,
-		extraKinds,
-		mainKinds,
-		newAlbumChoices,
-		pressingStatuses,
-		toggle,
-		word
-	} from './music/music.ts';
-	import type { AlbumSummary, Ask, EventPage, EventRecord, LookupArtist, TitleView } from './types.ts';
+	import { albumWords, artistProgress } from './music/music.ts';
+	import type { Ask, LookupArtist, TitleView } from './types.ts';
 
 	let {
 		title,
@@ -69,109 +40,35 @@
 
 	const staff = $derived(session.can('manage_library'));
 	const artist = $derived(title.artist);
-	let albums = $state<AlbumSummary[] | null>(null);
-	let show = $state<'included' | 'left_out' | 'all'>('included');
-	let busy = $state('');
-	let refreshing = $state(false);
-	let history = $state<EventRecord[]>([]);
-	let historyTotal = $state(0);
-	// Routine work stays out of the title page; History shows it all.
-	const historyRows = $derived(groupDownloads(history.filter((e) => !isRoutine(e.Kind))).slice(0, 8));
-	const historyTitles = $derived(new Map([[title.id, title]]));
+	// Bumped on every read of the artist, so the Library tab reads again too.
+	let stamp = $state(0);
 	let asker: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	const visibleDisambiguation = $derived(artist?.disambiguation?.trim() ?? '');
 	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
 	// One status vocabulary (title-status.ts); staff also see how many are missing.
 	const heroWords = $derived(audienceStatus(heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'artist' }));
-	// Manager actions live in the hero's ⋯ menu; the Library section holds the rest.
-	const heroItems = $derived<MenuItem[]>([
-		{ label: 'Search now', icon: 'search', onselect: () => search(), disabled: busy === 'search' },
-		{ label: 'Keep up to date', checked: title.keep_up_to_date, disabled: busy === 'artist', onselect: () => setKeep(!title.keep_up_to_date) },
-		{ kind: 'separator' },
-		{ label: 'Edit album kinds', icon: 'tools', onselect: openEdit },
-		{ label: 'Rename files', icon: 'copy', onselect: () => openRename() },
-		{ label: 'Refresh albums', icon: 'refresh', onselect: () => refresh(), disabled: refreshing },
-		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) },
-		{ kind: 'separator' },
-		{ label: 'Delete artist', icon: 'trash', destructive: true, onselect: () => deleter?.open() }
-	]);
 	// The one artist page (MusicArtistPage) shows the hero, the discography,
 	// similar artists and About; these are the Library's own parts of it.
 	const lib = $derived<ArtistLibrary>({
 		titleId: title.id,
 		staff,
-		menu: heroItems,
 		progress: staff ? artistProgress(artist) : '',
 		status: staff && artist?.missing ? `${artist.missing} missing` : heroWords.label,
 		note: visibleDisambiguation,
 		nextRelease: artist?.next_release ? date(artist.next_release) : undefined,
-		onLibrary: toLibrary,
+		stamp,
 		onAsk: session.can('ask') ? askMore : undefined
 	});
-	function toLibrary() {
-		const h = document.getElementById('h-library');
-		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
-	}
-	/** albumLink opens the Library album page (its files and Pressings). */
-	const albumLink = (a: AlbumSummary) => to(`/library/${title.id}/albums/${a.id}`);
-
-	// Rename files and delete (4.15.4): the rename preview for this artist,
-	// and the delete dialog for the artist.
-	let renameDialog: HTMLDialogElement | undefined = $state();
-	let renameOpen = $state(false);
-	let deleter: ReturnType<typeof ShowDeleteDialog> | undefined = $state();
-
-	function openRename() {
-		renameOpen = true;
-		renameDialog?.showModal();
-	}
-
-	async function deleted() {
-		await goto(to('/library'));
-	}
-
-	const shown = $derived(
-		(albums ?? []).filter((a) => (show === 'all' ? true : show === 'included' ? a.included : !a.included))
-	);
-	const leftOut = $derived((albums ?? []).filter((a) => !a.included).length);
-
-	async function loadAlbums() {
-		try {
-			albums = (await api.get<{ albums: AlbumSummary[] }>(`/titles/${title.id}/albums`)).albums;
-			loadErr = '';
-		} catch (e) {
-			albums ??= [];
-			loadErr = message(e);
-		}
-	}
-
-	async function loadHistory() {
-		if (!staff) return;
-		try {
-			const h = await api.get<EventPage>(`/events?title=${title.id}&limit=30`);
-			history = h.events;
-			historyTotal = h.total;
-		} catch {
-			// History is a side card; the page works without it.
-		}
-	}
 
 	async function reload() {
 		try {
 			onchange(await api.get<TitleView>(`/titles/${title.id}`));
+			loadErr = '';
+			stamp++;
 		} catch (e) {
 			loadErr = message(e);
-			return;
 		}
-		await loadAlbums();
-		void loadHistory();
 	}
-
-	$effect(() => {
-		void title.id;
-		void loadAlbums();
-		void loadHistory();
-	});
 
 	// Albums, Pressings and tracks arrive with the refresh after adding:
 	// read again when this artist's Events come in, and every few seconds
@@ -200,105 +97,6 @@
 		}, 3000);
 		return () => clearTimeout(t);
 	});
-
-	async function setAlbum(a: AlbumSummary, keep: boolean) {
-		busy = `a${a.id}`;
-		try {
-			const r = await api.put<AlbumSummary>(`/albums/${a.id}`, { keep_up_to_date: keep });
-			if (albums) {
-				const i = albums.findIndex((x) => x.id === a.id);
-				if (i >= 0) albums[i] = r;
-			}
-			toasts.push(`${a.name}: ${keep ? 'HolyArrs keeps it up to date.' : 'HolyArrs stops looking after it.'}`, 'ok');
-			onchange(await api.get<TitleView>(`/titles/${title.id}`));
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-		} finally {
-			busy = '';
-		}
-	}
-
-	// Search now: every album with a track kept up to date and missing, or one album.
-	async function search(a?: AlbumSummary) {
-		busy = a ? `s${a.id}` : 'search';
-		try {
-			const r = await api.post<{ job_ids: number[]; left_out?: number }>(`/titles/${title.id}/search`, a ? { album_id: a.id } : {});
-			const n = r.job_ids.length;
-			toasts.push(a ? `Searching for ${a.name}. Home shows what it finds.` : artistSearchToast(n, r.left_out), n ? 'ok' : 'info');
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-		} finally {
-			busy = '';
-		}
-	}
-
-	async function setKeep(v: boolean) {
-		busy = 'artist';
-		try {
-			onchange((await api.put<{ title: TitleView }>(`/titles/${title.id}`, { keep_up_to_date: v })).title);
-			toasts.push(v ? 'HolyArrs keeps this artist up to date.' : 'HolyArrs stops looking after this artist.', 'ok');
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-		} finally {
-			busy = '';
-		}
-	}
-
-	async function refresh() {
-		refreshing = true;
-		try {
-			await api.post(`/titles/${title.id}/refresh`);
-			polls = 0;
-			toasts.push('Refreshing albums, Pressings and tracks.', 'ok');
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-		} finally {
-			setTimeout(() => (refreshing = false), 1500);
-		}
-	}
-
-	// The edit dialog: new albums and album kinds.
-	let editDialog: HTMLDialogElement | undefined = $state();
-	let eNew = $state('all');
-	let eTypes = $state<string[]>([]);
-	let eExtras = $state<string[]>([]);
-	let eStatuses = $state<string[]>([]);
-	let editError = $state('');
-	let saving = $state(false);
-
-	function openEdit() {
-		editError = '';
-		eNew = artist?.new_albums ?? 'all';
-		eTypes = [...(artist?.album_types ?? [])];
-		eExtras = [...(artist?.secondary_types ?? [])];
-		eStatuses = [...(artist?.release_statuses ?? [])];
-		editDialog?.showModal();
-	}
-
-	async function saveEdit(e: SubmitEvent) {
-		e.preventDefault();
-		saving = true;
-		editError = '';
-		try {
-			onchange(
-				(
-					await api.put<{ title: TitleView }>(`/titles/${title.id}/artist`, {
-						new_albums: eNew,
-						album_types: eTypes,
-						secondary_types: eExtras,
-						release_statuses: eStatuses
-					})
-				).title
-			);
-			editDialog?.close();
-			polls = 0;
-			toasts.push('Saved. A refresh brings in the albums the new kinds include.', 'ok');
-		} catch (err) {
-			editError = message(err);
-		} finally {
-			saving = false;
-		}
-	}
 
 	function askMore() {
 		if (!artist) return;
@@ -339,90 +137,6 @@
 	</TitleSection>
 {/if}
 
-{#if staff}
-	<LibrarySection note="Album choices, files, kinds and history">
-		<TitleSection id="h-albums" title="Albums" primary>
-			{#snippet head()}
-				{#if leftOut}
-					<div class="pills" role="group" aria-label="Albums shown">
-						<button type="button" class="pill" aria-pressed={show === 'included'} onclick={() => (show = 'included')}>Included</button>
-						<button type="button" class="pill" aria-pressed={show === 'left_out'} onclick={() => (show = 'left_out')}>Not included <span class="n">{leftOut}</span></button>
-						<button type="button" class="pill" aria-pressed={show === 'all'} onclick={() => (show = 'all')}>All</button>
-					</div>
-				{/if}
-			{/snippet}
-			{#if albums === null}
-				<div class="sk" style="height: 120px"></div>
-			{:else if shown.length === 0}
-				<p class="small muted">Nothing here.</p>
-			{:else}
-				<ul class="albums">
-					{#each shown as a (a.id)}
-						{@const st = albumStateOf(a)}
-						<li class="album" data-testid="album">
-							<div class="grow album-copy">
-								<a class="album-name" href={albumLink(a)}><b>{a.name}</b></a>
-								{#if a.disambiguation}<span class="xs muted"> ({a.disambiguation})</span>{/if}
-								<p class="xs muted album-meta">{[albumYear(a.release_date), albumKind(a), a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')}</p>
-								<p class="xs muted album-availability" data-testid="album-line">{albumLine(a)}</p>
-							</div>
-							<span class="chip {st.tone}" data-testid="album-state">{st.label}</span>
-							<div class="album-actions">
-								<Button variant="plain" size="sm" icon="search" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"><span class="album-action-label" aria-hidden="true">Search</span></Button>
-								<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
-									<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
-									<span class="sw" aria-hidden="true"></span>
-									<span class="sr-only">Keep {a.name} up to date</span>
-									<span class="album-action-label" aria-hidden="true">Keep up to date</span>
-								</label>
-							</div>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</TitleSection>
-
-		<TitleSection id="h-artist-facts" title="How HolyArrs keeps it">
-			<dl class="tp-about">
-				<dt>Keep up to date</dt>
-				<dd>{title.keep_up_to_date ? 'On' : 'Off'}</dd>
-				<dt>Albums</dt>
-				<dd>{artist?.included ?? 0} included of {artist?.albums ?? 0}</dd>
-				{#if artist?.album_choice}<dt>Picked when added</dt>
-					<dd>{word(albumChoices, artist.album_choice)}</dd>{/if}
-				<dt>New albums</dt>
-				<dd>{word(newAlbumChoices, artist?.new_albums)}</dd>
-				<dt>Album kinds</dt>
-				<dd>{(artist?.album_types ?? []).map((k) => word(mainKinds, k)).join(', ')}</dd>
-				<dt>Extra kinds</dt>
-				<dd>{(artist?.secondary_types ?? []).map((k) => word(extraKinds, k)).join(', ')}</dd>
-				<dt>Pressings that count</dt>
-				<dd>{(artist?.release_statuses ?? []).map((k) => word(pressingStatuses, k)).join(', ')}</dd>
-				{#if title.pick_rules_name}<dt>Pick rules</dt>
-					<dd>{title.pick_rules_name}</dd>{/if}
-				{#if title.refreshed_at}<dt>Refreshed</dt>
-					<dd>{date(title.refreshed_at)}</dd>{/if}
-			</dl>
-			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
-			{#if title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
-		</TitleSection>
-
-		<TitleSection id="h-artist-history" title="History" testid="title-history">
-			{#snippet head()}
-				{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
-			{/snippet}
-			{#if historyRows.length === 0}
-				<p class="small muted">Nothing yet.</p>
-			{:else}
-				<div class="hist">
-					{#each historyRows as r (r.key)}
-						<CompactRow row={r} ctx={{ titles: historyTitles }} titleById={historyTitles} onclick={() => goto(to(`/downloads/history?title=${title.id}`))} />
-					{/each}
-				</div>
-			{/if}
-		</TitleSection>
-	</LibrarySection>
-{/if}
 </div>
 {/snippet}
 </MusicArtistPage>
@@ -431,229 +145,6 @@
 	<AskArtistDialog bind:this={asker} onasked={asked} />
 {/if}
 
-{#if staff}
-	<ShowDeleteDialog bind:this={deleter} titleId={title.id} name={title.name} kind="artist" ondone={deleted} />
-{/if}
-
-<dialog bind:this={renameDialog} aria-labelledby="rename-artist-title" class="modal wide" onclose={() => (renameOpen = false)}>
-	{#if renameOpen}
-		<h2 id="rename-artist-title" class="h2">Rename the files of {title.name}</h2>
-		<p class="small muted">The names now and the names they get from the artist, album and track patterns. Nothing changes until you press Rename.</p>
-		<RenamePreview titleId={title.id} onDone={() => void reload()} />
-		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
-		</div>
-	{/if}
-</dialog>
-
-<dialog bind:this={editDialog} aria-labelledby="edit-artist-title" class="modal">
-	<form onsubmit={saveEdit}>
-		<h2 id="edit-artist-title" class="h2">Edit {title.name}</h2>
-		<div class="field" style="margin-top: var(--s-5)">
-			<label for="e-new">New albums</label>
-			<select id="e-new" class="input" bind:value={eNew}>
-				{#each newAlbumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
-			</select>
-		</div>
-		<fieldset class="kinds">
-			<legend class="small"><b>Album kinds</b></legend>
-			<div class="boxes">
-				{#each mainKinds as [v, l] (v)}
-					<label class="box"><input type="checkbox" checked={eTypes.includes(v)} onchange={(e) => (eTypes = toggle(eTypes, v, e.currentTarget.checked, mainKinds))} /> {l}</label>
-				{/each}
-			</div>
-		</fieldset>
-		<fieldset class="kinds">
-			<legend class="small"><b>Extra kinds</b></legend>
-			<div class="boxes">
-				{#each extraKinds as [v, l] (v)}
-					<label class="box"><input type="checkbox" checked={eExtras.includes(v)} onchange={(e) => (eExtras = toggle(eExtras, v, e.currentTarget.checked, extraKinds))} /> {l}</label>
-				{/each}
-			</div>
-		</fieldset>
-		<fieldset class="kinds">
-			<legend class="small"><b>Pressings that count</b></legend>
-			<div class="boxes">
-				{#each pressingStatuses as [v, l] (v)}
-					<label class="box"><input type="checkbox" checked={eStatuses.includes(v)} onchange={(e) => (eStatuses = toggle(eStatuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>
-				{/each}
-			</div>
-		</fieldset>
-		<p class="hint" style="margin-top: var(--s-3)">Albums the new kinds leave out stay listed under Not included; their files stay where they are.</p>
-		{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
-		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => editDialog?.close()}>Cancel</Button>
-			<Button variant="primary" type="submit" disabled={saving || !eTypes.length || !eExtras.length || !eStatuses.length} busy={saving}>Save</Button>
-		</div>
-	</form>
-</dialog>
-
 <style>
-	.tp-progress { color: var(--text-muted); }
-	.card-title {
-		margin-bottom: var(--s-4);
-	}
-	.card-head {
-		flex-wrap: wrap;
-		gap: var(--s-3);
-		margin-bottom: var(--s-3);
-	}
-	.path {
-		overflow-wrap: anywhere;
-	}
-	.pills {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--s-2);
-	}
-	.pill {
-		min-height: 36px;
-		padding: 0 var(--s-3);
-		border-radius: var(--r-pill);
-		border: 1px solid var(--line-strong);
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-	}
-	.pill[aria-pressed='true'] {
-		background: var(--surface-1);
-		border-color: var(--line-strong);
-		color: var(--text);
-		box-shadow: var(--shadow-panel);
-	}
-	.n {
-		margin-left: 4px;
-		font-variant-numeric: tabular-nums;
-	}
-	.albums {
-		display: flex;
-		flex-direction: column;
-	}
-	.album {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		padding: var(--s-4) 0;
-	}
-	.album + .album {
-		border-top: 1px solid var(--line);
-	}
-	.album .grow {
-		min-width: 0;
-		flex: 1;
-		overflow-wrap: anywhere;
-	}
-	.album-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--s-2);
-	}
-	/* An album's own buttons are scrolled to (a click, a focus) from far
-	   below the artist's buttons. The margin keeps the artist's hero
-	   buttons clear of the sticky top bar when that scroll centres the row. */
-	.album-actions :global(.ui-btn),
-	.album-actions .switch {
-		scroll-margin-top: 160px;
-	}
-	.album-action-label {
-		display: none;
-	}
-	.album-name {
-		display: inline-flex;
-		align-items: center;
-		min-height: var(--tap);
-		text-decoration: underline;
-		text-decoration-color: var(--line-strong);
-	}
-	.modal {
-		width: min(520px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-	}
-	.kinds {
-		border: 0;
-		padding: 0;
-		margin: var(--s-4) 0 0;
-	}
-	.kinds legend {
-		margin-bottom: var(--s-2);
-	}
-	.boxes {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-		gap: var(--s-2);
-	}
-	.box {
-		display: flex;
-		align-items: center;
-		gap: var(--s-2);
-		min-height: var(--tap);
-		font-size: var(--text-sm);
-	}
-	@media (max-width: 600px) {
-		.album {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) auto;
-			align-items: center;
-			gap: var(--s-2) var(--s-3);
-			padding: var(--s-4) 0;
-		}
-		.album-copy {
-			grid-column: 1 / -1;
-		}
-		.album-name {
-			min-height: 36px;
-		}
-		.album-meta,
-		.album-availability {
-			max-width: 42ch;
-			line-height: 1.45;
-		}
-		.album-availability {
-			margin-top: 2px;
-		}
-		.album > .chip {
-			grid-column: 1;
-			justify-self: start;
-		}
-		.album-actions {
-			grid-column: 1 / -1;
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			justify-self: stretch;
-		}
-		.album-actions :global(.ui-btn),
-		.album-actions .switch {
-			width: 100%;
-			min-width: 44px;
-			min-height: 44px;
-		}
-		.album-actions :global(.ui-btn) {
-			justify-content: center;
-			gap: var(--s-2);
-			padding: 0 var(--s-3);
-		}
-		.album-actions .switch {
-			justify-content: center;
-			gap: var(--s-2);
-		}
-		.album-action-label {
-			display: inline;
-			font-size: var(--text-sm);
-			font-weight: var(--weight-medium);
-		}
-	}
 	.lib-below { display: flex; flex-direction: column; gap: 40px; }
 </style>

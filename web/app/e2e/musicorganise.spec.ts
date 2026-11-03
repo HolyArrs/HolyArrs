@@ -33,6 +33,12 @@ async function axe(p: Page, where: string) {
 	expect(bad.map((v) => v.id), where).toEqual([]);
 }
 
+/** artistSetting opens an artist's Library tab and presses one of its Settings rows. */
+async function artistSetting(p: Page, name: RegExp) {
+	await p.getByTestId('artist-tabs').getByRole('tab', { name: 'Library' }).click();
+	await p.getByTestId('artist-library').getByRole('button', { name }).click();
+}
+
 async function openAlbum(p: Page, artist: string, album: string) {
 	await p.goto('/library');
 	await p.getByRole('link', { name: new RegExp(artist) }).first().click();
@@ -90,11 +96,12 @@ test('Rename files on the album page renames its tracks into the new album folde
 	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
 	const folder = join(musicDir, 'Tin Lanterns', '2019 - Harbour Songs');
 	expect(readdirSync(folder).sort()).toEqual(['01 - Song 1.1.flac', '02 - Song 1.2.flac', '03 - Song 1.3.flac']);
-	// The artist page has the whole artist's rename: nothing left.
+	// The artist's Library tab has the whole artist's rename: nothing left.
 	await page.getByRole('link', { name: 'Tin Lanterns' }).first().click();
-	await titleAction(page, 'Library', 'Rename files');
-	await expect(page.getByRole('dialog', { name: 'Rename the files of Tin Lanterns' }).getByTestId('rename-none')).toBeVisible();
-	await page.getByRole('dialog', { name: 'Rename the files of Tin Lanterns' }).getByRole('button', { name: 'Close', exact: true }).click();
+	await artistSetting(page, /^Rename files/);
+	const sheet = page.getByRole('dialog', { name: 'Rename files' });
+	await expect(sheet.getByTestId('rename-none')).toBeVisible();
+	await sheet.getByRole('button', { name: 'Close', exact: true }).click();
 	// Back to the default album folder pattern for the tests after this one.
 	await page.goto('/settings/naming');
 	await page.getByTestId('music-naming').getByRole('textbox', { name: 'Album folder pattern', exact: true }).fill('{album} ({year})');
@@ -193,14 +200,14 @@ test('the album page, import and delete work at phone width', async ({ browser }
 test('deleting the whole artist with Never-add keeps files it only found and leaves the Library', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Copper Wren/ }).first().click();
-	// The Library card opens the music artist page; Delete artist sits on its Library page.
+	// The Library card opens the music artist page; Delete artist sits in the Library tab of its Library page.
 	await openInLibrary(page);
-	await titleAction(page, 'Library', 'Delete artist');
-	const dialog = page.getByTestId('show-delete');
-	await dialog.getByRole('checkbox', { name: /Never-add/ }).check();
+	await artistSetting(page, /^Delete artist/);
+	const dialog = page.getByTestId('delete-sheet');
+	await dialog.getByRole('switch', { name: /Never add it again/ }).click();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('The artist leaves the Library');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
-	await dialog.getByRole('button', { name: 'Delete artist' }).click();
+	await dialog.getByRole('button', { name: 'Delete artist', exact: true }).click();
 	await expect(page).toHaveURL(/\/library$/);
 	for (const f of [wrenFiles.one, wrenFiles.single, wrenFiles.loose]) expect(existsSync(f), f).toBe(true);
 });

@@ -93,7 +93,11 @@ test('music adoption and rename stay on one fixture and prove the exact disk res
 	for (const file of Object.values(musicFiles)) expect(existsSync(file), `adoption moved ${file}`).toBe(true);
 
 	await page.getByTestId('adopt-results').getByRole('link', { name: 'Open the artist' }).click();
-	await page.getByRole('link', { name: 'Low Orbit' }).first().click();
+	// The album page opens from the artist's Library tab (its album rows).
+	await page.getByTestId('artist-tabs').getByRole('tab', { name: 'Library' }).click();
+	const row = page.getByTestId('artist-library').getByTestId('album').filter({ hasText: 'Low Orbit' });
+	await row.getByRole('button', { expanded: false }).click();
+	await row.getByRole('link', { name: 'Open the album page of Low Orbit' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Low Orbit' })).toBeVisible();
 	// Rename files is in the album's More menu.
 	await page.getByRole('button', { name: 'More actions' }).first().click();
