@@ -678,7 +678,9 @@
 	{:else if lib}
 		<!-- In the Library, nothing to ask: no main button. -->
 	{:else if titleId}
-		{#if manage}<ActionButton icon="library" label="In Library" primary onclick={() => (artistTab = 'library')} />{:else}<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />{/if}
+		<!-- Everyone goes to the one artist page in the Library, like a title page. -->
+		<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />
+
 	{:else if manage || mayAsk}
 		<ActionButton icon={lookup?.ask ? 'check' : 'plus'} label={cta} primary disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask" />
 	{/if}
