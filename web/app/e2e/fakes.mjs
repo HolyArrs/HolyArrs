@@ -82,6 +82,11 @@ export const fakeArtists = [
 			[mbid('b4444444', 3), 'Night Fields', 'EP', [], '2099-06-01', []]
 		]
 	},
+	// Only the Requests follow test uses it: in the Library, a member follows it (nothing is asked for).
+	{
+		id: mbid('a6666666', 6), name: 'Quartz Gulls', type: 'Group', country: 'NO', ended: false, disambiguation: '',
+		albums: [[mbid('b6666666', 1), 'Tide Clock', 'Album', [], '2019-11-11', [[mbid('c6666666', 1), '', 'NO', '2019-11-11', 'Digital Media', 2]]]]
+	},
 	// Only the Library folder tests use it (library-folders.spec.ts): adopted from disk, then moved to a second music folder.
 	{
 		id: mbid('a5555555', 5), name: 'Slate Herons', type: 'Group', country: 'AU', ended: false, disambiguation: '',
@@ -146,6 +151,8 @@ export const tmdbMovies = [
 	{ id: 900033, title: 'Cobalt Orrery', release_date: '2016-05-05', imdb_id: 'tt9000330', overview: 'A model of the planets that keeps better time than the sky.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] },
 	{ id: 900034, title: 'Thistle Almanac', release_date: '2015-07-07', imdb_id: 'tt9000340', overview: 'A farm almanac that predicts the wrong year.', dates: [[3, '2015-07-07'], [4, '2015-09-01']] },
 	{ id: 900035, title: 'Marigold Bellows', release_date: '2014-04-04', imdb_id: 'tt9000350', overview: 'An accordion repaired one fold at a time.', dates: [[3, '2014-04-04'], [4, '2014-06-01']] },
+	// Followed while in the Library without a file (requests.spec): the follower hears once its file is in.
+	{ id: 900037, title: 'Heron Clockwork', release_date: '2015-11-11', imdb_id: 'tt9000370', overview: 'A clock that keeps time by the herons on the river.', dates: [[3, '2015-11-11'], [4, '2016-01-01']] },
 	// The ask whose download fails (requests.spec): its two good Releases are marked failed.
 	{ id: 900036, title: 'Garnet Sextant', release_date: '2013-08-08', imdb_id: 'tt9000360', overview: 'A sextant that steers by stars no one else can see.', dates: [[3, '2013-08-08'], [4, '2013-10-01']] },
 	// The Downloader tests add this one and mark its download failed.

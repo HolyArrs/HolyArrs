@@ -624,9 +624,24 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await expect(dot).toHaveURL(/\/library\/\d+/);
 	await expect(dot.getByTestId('title-detail').getByTestId('follow')).toHaveAttribute('aria-pressed', 'true');
 
+	// A movie already in the Library with no file: following its Library title, dot is told once its file is in.
+	const heron = await inLibrary(ownCall, 900037, 'Heron Clockwork');
+	await openFromSearch(dot, 'heron', 'Heron Clockwork');
+	await expect(dot).toHaveURL(/\/library\/\d+/);
+	const heronBell = dot.getByTestId('title-detail').getByTestId('follow');
+	await expect(heronBell).toHaveAttribute('aria-pressed', 'false');
+	await heronBell.click();
+	await expect(heronBell).toHaveAttribute('aria-pressed', 'true');
+	const heronTold = async () => ((await (await dot.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.filter((m) => m.text.includes('Heron Clockwork is in the Library')).length;
+	expect(await heronTold()).toBe(0);
+	await giveFile(ownCall, heron, 'Heron Clockwork', 2015);
+	await expect.poll(heronTold, slow).toBe(1);
+	await dot.goto('/requests');
+	await dot.getByText(/^Show the latest/).click();
+	await expect(dot.getByTestId('message').filter({ hasText: 'Heron Clockwork is in the Library and ready to watch' })).toBeVisible();
+
 	// An album not out yet, on its artist's page: the bell says you will hear when it is out.
-	// Following the artist itself is a bell on a Library artist only, and this project has no
-	// music folder (adding one would break music.spec's one-folder check), so that is not covered.
+	// Following a Library artist is its own test below (it needs a music folder).
 	await dot.goto(`/music/artist/${owls}`);
 	const soon = dot.getByRole('button', { name: 'Tell me when Night Fields is out' });
 	await expect(soon).toBeVisible(slow);
@@ -636,6 +651,57 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await dot.reload();
 	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toBeVisible(slow);
 	await noSidewaysScroll(dot);
+});
+
+// Quartz Gulls in the fake MusicBrainz (fakes.mjs): only the artist follow test uses it.
+const gulls = 'a6666666-0000-4000-8000-000000000006';
+
+/** musicFolder is a music Library folder's id: music.spec's when it ran first, else one of its own under .tmp. */
+async function musicFolder(call: Call): Promise<number> {
+	const { library_folders } = (await (await call('GET', '/library-folders')).json()) as { library_folders: { id: number; kind: string }[] };
+	const have = library_folders.find((f) => f.kind === 'music');
+	if (have) return have.id;
+	const path = join(dirname(fileURLToPath(import.meta.url)), '.tmp', 'requests-music');
+	mkdirSync(path, { recursive: true });
+	const made = await call('POST', '/library-folders', { path, kind: 'music', label: 'Requests music' });
+	expect(made.status(), await made.text()).toBe(201);
+	return ((await made.json()) as { id: number }).id;
+}
+
+// In the full run this test is its own project after the music ones (playwright.config.ts), so
+// it uses music.spec's folder and never adds a second one before music.spec counts its folders.
+test('a member follows a Library artist: Following stays after a reload and nothing is asked for', async ({ browser }) => {
+	test.setTimeout(120_000);
+	const ownCall = await api(own);
+	const { titles } = (await (await ownCall('GET', '/titles')).json()) as { titles: { id: number; name: string; kind: string; state?: string }[] };
+	if (!titles.some((t) => t.kind === 'artist' && t.name === 'Quartz Gulls' && t.state !== 'removed')) {
+		// No albums kept up to date: adding it searches for nothing.
+		const added = await ownCall('POST', '/artists', { id: `mbid:${gulls}`, library_folder_id: await musicFolder(ownCall), albums: 'none', keep_up_to_date: false, follow: false });
+		expect(added.status(), await added.text()).toBe(201);
+	}
+	const asked = async () => {
+		const out: string[] = [];
+		for (const state of ['asked', 'approved']) out.push(...((await (await ownCall('GET', `/asks?state=${state}`)).json()) as { asks: { name: string }[] }).asks.map((a) => a.name));
+		return out.filter((n) => n === 'Quartz Gulls').length;
+	};
+	const ada = await member(browser, 'ada');
+	await ada.goto(`/music/artist/${gulls}`);
+	await expect(ada.getByRole('heading', { level: 1, name: 'Quartz Gulls' })).toBeVisible(slow);
+	const bell = ada.getByRole('button', { name: /^Follow(ing)?$/ });
+	await expect(bell).toHaveText('Follow', slow);
+	await expect(bell).toHaveAttribute('aria-pressed', 'false');
+	await bell.click();
+	await expect(bell).toHaveText('Following');
+	await expect(bell).toHaveAttribute('aria-pressed', 'true');
+	await ada.reload();
+	await expect(ada.getByRole('heading', { level: 1, name: 'Quartz Gulls' })).toBeVisible(slow);
+	await expect(bell).toHaveText('Following', slow);
+	await expect(bell).toHaveAttribute('aria-pressed', 'true');
+	await noSidewaysScroll(ada);
+	// Following asks for nothing.
+	expect(await asked()).toBe(0);
+	await ada.goto('/requests');
+	await expect(ada.getByText('Nothing on the Requests page yet')).toBeVisible();
 });
 
 test('Approve on a card still lands when the approver leaves the page at once', async ({ browser }) => {
