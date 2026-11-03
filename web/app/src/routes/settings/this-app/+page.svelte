@@ -463,7 +463,7 @@
 
 	{#if session.can('settings') && !urlBaseGone}
 		<SettingsCard id="url-base-card" title="URL base" description="The path HolyArrs lives under behind a reverse proxy, for example /holyarrs. Leave it empty to use the whole address.">
-			<form class="sc-urlbase" onsubmit={saveURLBase} data-testid="url-base">
+			<form class="sc-urlbase" onsubmit={saveURLBase} data-testid="url-base-form">
 				<Field id="url-base" label="URL base" hint={urlBase ? `In use now: ${urlBase.in_use || 'none'}` : undefined}>
 					<input id="url-base" class="input mono" bind:value={urlBaseTyped} placeholder="/holyarrs" autocomplete="off" spellcheck="false" maxlength="200" />
 				</Field>
