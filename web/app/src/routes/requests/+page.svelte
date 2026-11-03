@@ -945,4 +945,5 @@
 	.rp-link { display: inline-flex; margin-bottom: 10px; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.rp-link:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
 	.rp-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (max-width: 767px) and (pointer: coarse) { .rp-link { min-height: 44px; } }
 </style>
