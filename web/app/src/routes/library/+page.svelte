@@ -584,9 +584,11 @@
 		const k = [...kinds][0] === 'artist' ? 'music' : [...kinds][0];
 		return folders.filter((f) => f.kind === k).map((f): MenuItem => ({ label: f.label || f.path, onselect: () => moveTitles(pickedShown.map((t) => t.id), f) }));
 	});
-	const rulesItems = $derived<MenuItem[]>(
-		rules.filter((r) => !r.kinds.length || kind === 'all' || r.kinds.includes(kind)).map((r): MenuItem => ({ label: r.name, onselect: () => setRules(pickedShown.map((t) => t.id), r) }))
-	);
+	// Only rules that fit every ticked title (Music rules say "music", artist titles "artist").
+	const rulesItems = $derived.by<MenuItem[]>(() => {
+		const need = new Set((pickedShown.length ? pickedShown.map((t) => t.kind) : kind === 'all' ? [] : [kind]).map((k) => (k === 'artist' ? 'music' : k)));
+		return rules.filter((r) => !r.kinds.length || [...need].every((k) => r.kinds.includes(k))).map((r): MenuItem => ({ label: r.name, onselect: () => setRules(pickedShown.map((t) => t.id), r) }));
+	});
 	function selectKey(e: KeyboardEvent) {
 		if (selecting && e.key === 'Escape' && !deleteDialog?.open) stopSelecting();
 	}

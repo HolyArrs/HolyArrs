@@ -161,10 +161,13 @@ export const tmdbMovies = [
 	{ id: 900021, title: 'Brumwick Gate', release_date: '2008-09-09', imdb_id: 'tt9000210', overview: 'A town gate that opens onto a different town each night.', dates: [[3, '2008-09-09'], [4, '2008-12-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
 	{ id: 900022, title: 'Brumwick Gate Again', release_date: '2012-10-10', imdb_id: 'tt9000220', overview: 'The gate opens once more, onto the town it left.', dates: [[3, '2012-10-10'], [4, '2013-01-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
 	// Only library-editions.spec.ts uses this one: a Director's Cut named for Plex.
-	{ id: 900081, title: 'Zephyr Projectionist', release_date: '2009-11-11', imdb_id: 'tt9000810', overview: 'A projectionist who only screens films that were never made.', dates: [[3, '2009-11-11'], [4, '2010-01-01']] }
+	{ id: 900081, title: 'Zephyr Projectionist', release_date: '2009-11-11', imdb_id: 'tt9000810', overview: 'A projectionist who only screens films that were never made.', dates: [[3, '2009-11-11'], [4, '2010-01-01']] },
 	// Import files by hand picks another title (library-import.spec.ts): a file named Tamarind Quay that is really Ochre Bandstand.
 	{ id: 900040, title: 'Tamarind Quay', release_date: '2013-06-06', imdb_id: 'tt9000400', overview: 'A quay where the spice ships never quite dock.', dates: [[3, '2013-06-06'], [4, '2013-08-01']] },
-	{ id: 900041, title: 'Ochre Bandstand', release_date: '2012-08-08', imdb_id: 'tt9000410', overview: 'A park bandstand that plays the weather.', dates: [[3, '2012-08-08'], [4, '2012-10-01']] }
+	{ id: 900041, title: 'Ochre Bandstand', release_date: '2012-08-08', imdb_id: 'tt9000410', overview: 'A park bandstand that plays the weather.', dates: [[3, '2012-08-08'], [4, '2012-10-01']] },
+	// Only the Library select bar tests use these (library-bulk.spec.ts).
+	{ id: 900451, title: 'Bramble Foundry', release_date: '2016-02-12', imdb_id: 'tt9004510', overview: 'A foundry that casts bells out of hedgerow thorns.', dates: [[3, '2016-02-12'], [4, '2016-04-01']] },
+	{ id: 900452, title: 'Lichen Postcard', release_date: '2013-11-03', imdb_id: 'tt9004520', overview: 'A postcard that grows a new picture every spring.', dates: [[3, '2013-11-03'], [4, '2014-01-10']] }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
@@ -216,10 +219,18 @@ export const fakeShows = [
 		tmdb: 800008, tvdb: 810008, tvmaze: 820008, imdb: 'tt8000080', name: 'Saltmarsh Signal', first: '2020-03-01', status: 'Ended', network: 'Lab Seven',
 		overview: 'A radio mast in the marsh picks up the weather a day early.',
 		episodes: [[1, 1, 'Static', '2020-03-01'], [1, 2, 'Carrier', '2020-03-08'], [2, 1, 'Relay', '2021-03-07']]
+	},
+	{
 		// Only Import files by hand uses it (library-import.spec.ts): loose episode files brought in by hand.
-		tmdb: 800008, tvdb: 810008, tvmaze: 820008, imdb: 'tt8000080', name: 'Gristmill Hollow', first: '2018-03-04', status: 'Ended', network: 'Lab Seven',
+		tmdb: 800041, tvdb: 810041, tvmaze: 820041, imdb: 'tt8000410', name: 'Gristmill Hollow', first: '2018-03-04', status: 'Ended', network: 'Lab Seven',
 		overview: 'A mill village where the wheel turns only when nobody watches.',
 		episodes: [[1, 1, 'Millrace', '2018-03-04'], [1, 2, 'Grain', '2018-03-11'], [2, 1, 'Flood Gate', '2019-03-03']]
+	},
+	{
+		// Only the Library select bar tests use it (library-bulk.spec.ts): one aired season.
+		tmdb: 800451, tvdb: 810451, tvmaze: 820451, imdb: 'tt8004510', name: 'Sorrel Junction', first: '2018-03-04', status: 'Ended', network: 'Lab Seven',
+		overview: 'A railway junction where the points change with the weather.',
+		episodes: [[1, 1, 'Points', '2018-03-04'], [1, 2, 'Signal Box', '2018-03-11']]
 	}
 ];
 
