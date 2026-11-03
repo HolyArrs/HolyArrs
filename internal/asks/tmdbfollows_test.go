@@ -170,3 +170,82 @@ func TestFollowMovieByTMDBLandsOnce(t *testing.T) {
 		t.Fatal("following a Library movie by TMDB id follows the title")
 	}
 }
+
+func TestFollowLibraryMovieWithoutFileTellsOnImport(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	tid, _, err := r.svc.Library.Add(ctx, movie("Paper Harbour", 2023, "900002"), library.AddOptions{}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE titles SET rating = 'R' WHERE id = ?", tid)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	ready := func(uid int64) int {
+		var n int
+		if err := r.st.Read().QueryRow("SELECT count(*) FROM messages WHERE user_id = ? AND kind = 'ready' AND title_id = ?", uid, tid).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	// ana follows by TMDB id, luis by the title's bell and then stops; a Kid over the limit cannot follow.
+	if err := r.svc.FollowMovieTMDB(ctx, r.ana, "900002"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.svc.FollowTitle(ctx, r.luis, tid); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.svc.Unfollow(ctx, r.luis.UserID, tid); err != nil {
+		t.Fatal(err)
+	}
+	kid := r.bo
+	kid.MaxRating = "PG"
+	if err := r.svc.FollowTitle(ctx, kid, tid); !errors.Is(err, ErrAboveLimit) {
+		t.Fatalf("kid follows an R movie: %v", err)
+	}
+	if n, err := r.svc.TellMovieFollows(ctx); err != nil || n != 0 {
+		t.Fatalf("told %d before the file is in (%v)", n, err)
+	}
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE slots SET state = 'in_library' WHERE item_id IN (SELECT id FROM items WHERE title_id = ?)", tid)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.CheckReady(ctx); err != nil {
+		t.Fatal(err)
+	}
+	r.svc.Wait()
+	if ready(r.ana.UserID) != 1 || ready(r.luis.UserID) != 0 || ready(r.bo.UserID) != 0 {
+		t.Fatalf("ready messages ana %d luis %d bo %d", ready(r.ana.UserID), ready(r.luis.UserID), ready(r.bo.UserID))
+	}
+	if r.fake.count(alerts.MomentReady) != 1 {
+		t.Fatalf("%d Ready alerts", r.fake.count(alerts.MomentReady))
+	}
+	if m := r.fake.last(); m.Moment != alerts.MomentReady || len(m.People) != 1 || m.People[0].Name != "ana" {
+		t.Fatalf("alert %+v", m)
+	}
+	if on, _ := r.svc.IsFollowing(ctx, r.ana.UserID, tid); !on {
+		t.Fatal("ana still follows after being told")
+	}
+	// bo follows once the file is in: a later import or upgrade tells nobody.
+	if err := r.svc.FollowTitle(ctx, r.bo, tid); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE slots SET state = 'better_wanted' WHERE item_id IN (SELECT id FROM items WHERE title_id = ?)", tid)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.CheckReady(ctx); err != nil {
+		t.Fatal(err)
+	}
+	r.svc.Wait()
+	if ready(r.ana.UserID) != 1 || ready(r.bo.UserID) != 0 || r.fake.count(alerts.MomentReady) != 1 {
+		t.Fatalf("told again: ana %d bo %d alerts %d", ready(r.ana.UserID), ready(r.bo.UserID), r.fake.count(alerts.MomentReady))
+	}
+}

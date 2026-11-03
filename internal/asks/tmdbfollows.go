@@ -138,7 +138,7 @@ func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) 
 		return err
 	}
 	if id != 0 {
-		return s.Follow(ctx, p, id)
+		return s.FollowTitle(ctx, p, id)
 	}
 	now := store.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -246,8 +246,8 @@ func (s *Service) landMovieFollows(ctx context.Context, titleID int64, tmdbID st
 	return moved, err
 }
 
-// TellMovieFollows tells the people who followed a movie before it was in
-// the Library that it is ready to watch, once its file is in (an in-app
+// TellMovieFollows tells the people who followed a movie before its file
+// was in (before it was in the Library, or in it without a file) that it is ready to watch, once its file is in (an in-app
 // message and the Ready alert), once each. People who stopped following
 // it in the meantime are not told. It returns how many people it told.
 func (s *Service) TellMovieFollows(ctx context.Context) (int, error) {
