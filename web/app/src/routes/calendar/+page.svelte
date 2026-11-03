@@ -269,7 +269,7 @@
 				if (stepAgain && !error) {
 					const s = stepAgain;
 					stepAgain = null;
-					void tick().then(() => go(s.n, s.from));
+					void tick().then(() => go(s.n, s.from, s.far));
 				}
 				// The rows draw once loaded is set; then the page goes to today, below the bars.
 				if (toTodayOnce && !error) {
@@ -302,7 +302,17 @@
 	// The arrows move a week from the week in view (the one the heading names). They land on the
 	// first row of the next week that has dates (back over empty weeks: the dates before them),
 	// load further when that week is not loaded yet, and only say so at the ends of the calendar.
-	let stepAgain: { n: number; from: string } | null = null;
+	let stepAgain: { n: number; from: string; far?: boolean } | null = null;
+	// The latest day before `day` that a Library movie shows on (one date per movie, as the cards).
+	function shownBefore(day: string): string {
+		if (which !== 'all' && which !== 'movies') return '';
+		let best = '';
+		for (const f of movies.values()) {
+			const d = [f.digital, f.physical].filter((x): x is string => !!x).sort()[0] ?? f.cinema;
+			if (d && d < day && d > best) best = d;
+		}
+		return best;
+	}
 	// While an arrow's scroll runs, follow() keeps the week the arrow picked (else the frames in
 	// between, or a page that can't scroll that far, would put the old week back).
 	let held: string | null = null;
@@ -335,7 +345,7 @@
 		pickMonth = d.getMonth();
 		hold(day);
 	}
-	function go(n: number, from0?: string) {
+	function go(n: number, from0?: string, far = false) {
 		if (!placed) return;
 		// The latest press wins: a step or a small-month pick still waiting for a load is dropped
 		// (the step is set again below if this one waits too).
@@ -344,7 +354,18 @@
 		const from = from0 ?? active ?? ymd(weekStart(askedMonth ?? now));
 		const fromWeek = ymd(weekStart(new Date(from + 'T00:00:00')));
 		const target = addDays(new Date(fromWeek + 'T00:00:00'), 7 * n);
-		const lo = start < earliest ? start : earliest;
+		// How far back a step may load: a year from today, or for a linked month further back than that,
+		// down to the nearest earlier movie date in the Library (its day out to watch, else its cinema day).
+		let lo = start < earliest ? start : earliest;
+		// Only when the week asked for is before the days loaded: steps inside them never load.
+		if (n < 0 && start < earliest && !far && ymd(target) < firstDay) {
+			// Before what is loaded already, so a movie hidden by the filters does not stop the search.
+			const before = shownBefore(fromWeek < firstDay ? fromWeek : firstDay);
+			if (before) {
+				const w = weekStart(new Date(before + 'T00:00:00'));
+				if (w < lo) lo = w;
+			}
+		}
 		const edge = () => toasts.push(n > 0 ? 'No more dates after this.' : 'No dates before this.', 'ok');
 		if (target >= latest || addDays(target, 7) <= lo) return edge();
 		const tw = ymd(target);
@@ -360,7 +381,8 @@
 				return;
 			}
 			if (n < 0 && start > lo) {
-				stepAgain = { n, from };
+				// Once per press: a far-back search that still finds no row names the week or says so.
+				stepAgain = { n, from, far: start < earliest };
 				earlier(lo);
 				return;
 			}
