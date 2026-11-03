@@ -210,7 +210,8 @@ func TestAlertsKeptByTelegramMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = old.Close()
-	s, err := Open(dir, Options{MainMigrations: upTo(t, 82)})
+	// All migrations: domain.Alert reads columns later ones add.
+	s, err := Open(dir, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,6 +230,57 @@ func TestAlertsKeptByTelegramMigration(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("a telegram Alert: %v", err)
+	}
+}
+
+// TestAlertsKeptByMoreAppsMigration: 0084 rebuilds alerts to add the ntfy,
+// gotify and pushover kinds and their columns; every Alert keeps all it had,
+// a Telegram chat included.
+func TestAlertsKeptByMoreAppsMigration(t *testing.T) {
+	dir := t.TempDir()
+	ctx := context.Background()
+	old, err := Open(dir, Options{MainMigrations: upTo(t, 83)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = old.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO alerts(id, created_at, created_by, updated_at, updated_by, name, kind, enabled, moments, url_secret_id, password_secret_id,
+			allow_local_network, last_sent_at, last_error, webhook_auth, chat_id)
+			VALUES (9, '2026-10-01T00:00:00Z', '{}', '2026-10-02T00:00:00Z', '{}', 'Family TG', 'telegram', 0, '["grab"]', 4, 5, 1, '2026-10-03T00:00:00Z', 'boom', 'bearer', '-42'),
+			(10, '2026-10-01T00:00:00Z', '{}', '2026-10-02T00:00:00Z', '{}', 'Mail', 'email', 1, '["ask_ready"]', NULL, NULL, 0, NULL, '', 'sign', '')`)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = old.Close()
+	s, err := Open(dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	var a domain.Alert
+	if err := Get(ctx, s.Read(), "alerts", 9, &a); err != nil {
+		t.Fatal(err)
+	}
+	if a.Name != "Family TG" || a.Kind != "telegram" || a.Enabled || len(a.Moments) != 1 || a.URLSecretID == nil || *a.URLSecretID != 4 ||
+		a.PasswordSecretID == nil || *a.PasswordSecretID != 5 || !a.AllowLocal || a.LastSentAt == nil || a.LastError != "boom" || a.WebhookAuth != "bearer" ||
+		a.ChatID != "-42" || a.ServerURL != "" || a.Topic != "" || a.UserKey != "" {
+		t.Fatalf("alert after the migration %+v", a)
+	}
+	var n int
+	if err := s.Read().QueryRow("SELECT count(*) FROM alerts").Scan(&n); err != nil || n != 2 {
+		t.Fatalf("alerts %d %v", n, err)
+	}
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO alerts(created_at, created_by, updated_at, updated_by, name, kind, server_url, topic, user_key) VALUES
+			('c', '{}', 'u', '{}', 'Phone', 'ntfy', 'https://ntfy.sh', 'holyarrs', ''),
+			('c', '{}', 'u', '{}', 'Home', 'gotify', 'http://gotify.lan', '', ''),
+			('c', '{}', 'u', '{}', 'Push', 'pushover', '', '', 'uQiRzpo4DXghDmr9QzzfQu27cmVRsG')`)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("the new kinds: %v", err)
 	}
 }
 

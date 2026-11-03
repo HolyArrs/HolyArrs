@@ -40,6 +40,18 @@ type MovePlan struct {
 	fromRoot, toRoot string
 }
 
+// folderKindOf is the Library folder kind a Title kind lives in, with the
+// error for a folder of another kind.
+func folderKindOf(kind string) (string, error) {
+	switch kind {
+	case "show":
+		return "show", ErrNotShowFolder
+	case "artist":
+		return "music", ErrNotMusicFolder
+	}
+	return "movie", ErrNotMovieFolder
+}
+
 // PlanMove works out moving a Title's main Version into another Library
 // folder (other Versions keep their own folders). Nothing on disk changes.
 func PlanMove(ctx context.Context, db store.Querier, lister store.Lister, titleID, folderID int64) ([]MovePlan, error) {
@@ -47,8 +59,12 @@ func PlanMove(ctx context.Context, db store.Querier, lister store.Lister, titleI
 	if err := store.Get(ctx, db, "library_folders", folderID, &to); err != nil {
 		return nil, ErrNoFolder
 	}
-	if to.Kind != "movie" {
-		return nil, ErrNotMovieFolder
+	var t domain.Title
+	if err := store.Get(ctx, db, "titles", titleID, &t); err != nil {
+		return nil, err
+	}
+	if want, wrong := folderKindOf(t.Kind); to.Kind != want {
+		return nil, wrong
 	}
 	vs, err := store.Select[domain.Version](ctx, lister, "versions", "title_id = ? AND is_main = 1 ORDER BY id", titleID)
 	if err != nil {
@@ -153,7 +169,11 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 		if err != nil {
 			return err
 		}
-		_ = os.Remove(p.FromDir) // only when empty
+		if p.FromDir != p.fromRoot {
+			// A show's season folders and an artist's album folders are
+			// left empty too; the old folder goes only when nothing is in it.
+			removeEmptyTree(p.FromDir)
+		}
 	}
 	r.SetResult(map[string]any{"dry_run": false, "plans": plans, "files": moved})
 	s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventTitleMoved, TitleID: &titleID, JobID: &r.Job.ID,

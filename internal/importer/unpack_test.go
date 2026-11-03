@@ -304,3 +304,35 @@ func TestPackedNeedsFreeSpace(t *testing.T) {
 	}
 	noLeftovers(t, w.dl)
 }
+
+// A compressed RAR 4 (2.9) archive from the rarfile project goes through
+// the import's unpack step with no unrar or 7z on the system: the built-in
+// decoder writes both files next to the download.
+func TestCompressedRAR4IsUnpackedWithoutATool(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
+	b, err := os.ReadFile(filepath.Join("..", "unrar", "testdata", "rarfile", "rar3-solid.rar"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(t.TempDir(), "Rel")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	first := filepath.Join(root, "rel.rar")
+	if err := os.WriteFile(first, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	extra, cleanup, why := unpackRars(context.Background(), 54, root, []Candidate{{Path: first, Size: int64(len(b))}}, FileRules{}, false)
+	defer cleanup()
+	if why != "" || len(extra) != 2 {
+		t.Fatalf("why %q, extra %+v", why, extra)
+	}
+	for _, c := range extra {
+		if c.Size != 2048 {
+			t.Fatalf("unpacked %s: %d bytes", c.Path, c.Size)
+		}
+	}
+	cleanup()
+	noLeftovers(t, filepath.Dir(root))
+}

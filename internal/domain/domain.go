@@ -665,7 +665,7 @@ type AskAlbum struct {
 type Alert struct {
 	Meta
 	Name             string   `db:"name"`
-	Kind             string   `db:"kind"` // discord, email, webhook, telegram
+	Kind             string   `db:"kind"` // discord, email, webhook, telegram, ntfy, gotify, pushover
 	Enabled          bool     `db:"enabled"`
 	Moments          []string `db:"moments,json"`
 	URLSecretID      *int64   `db:"url_secret_id"`
@@ -687,6 +687,12 @@ type Alert struct {
 	// ChatID is the Telegram chat a telegram Alert writes to: a number
 	// (negative for groups) or @channelname.
 	ChatID string `db:"chat_id"`
+	// ServerURL is an ntfy or Gotify server (http or https, may hold a path).
+	ServerURL string `db:"server_url"`
+	// Topic is the ntfy topic a ntfy Alert posts to.
+	Topic string `db:"topic"`
+	// UserKey is the Pushover user (or group) key a pushover Alert writes to.
+	UserKey string `db:"user_key"`
 }
 
 // HealthCheck is the latest result of one health check about one thing.

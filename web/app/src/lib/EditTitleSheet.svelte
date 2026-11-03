@@ -34,7 +34,7 @@
 			error = '';
 		});
 		void api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (ruleList = r.pick_rules.filter((x) => x.kinds.includes(title.kind))), () => {});
-		void api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders.filter((x) => x.kind === title.kind)), () => {});
+		void api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders.filter((x) => x.kind === (title.kind === 'artist' ? 'music' : title.kind))), () => {});
 	});
 
 	const seasons = $derived((title.show?.seasons ?? []).filter((s) => s.number > 0));
