@@ -632,6 +632,16 @@
 		.link, .members .link { min-height: 36px; }
 		.members li { min-height: 36px; }
 	}
+	/* Touch phones: every Home control is at least a 44px tap. See all keeps its 32px pill and grows only its hit area;
+	   stacked rows grow for real, so their taps never overlap the row next to them. */
+	@media (max-width: 767px) and (pointer: coarse) {
+		.col-link { position: relative; }
+		.col-link::after { content: ''; position: absolute; inset: -6px 0; }
+		a.leg { min-height: 44px; }
+		.lead { min-height: 44px; }
+		.acts .link, .members .link { min-height: 44px; }
+		.members li { min-height: 44px; }
+	}
 
 	.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(16px, 3vw, 24px); border-radius: var(--r-panel); background: var(--surface-2); }
 	.prompt h2 { font: var(--t-title3); }

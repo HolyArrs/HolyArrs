@@ -29,4 +29,9 @@ describe('Home page styles', () => {
 		// As specific as the desktop .members .link rule, so the phone size wins.
 		expect(phone).toMatch(/\.members \.link\s*\{[^}]*min-height:\s*36px/);
 	});
+	it('makes every control a 44px tap on touch phones only', () => {
+		const touch = media('(max-width: 767px) and (pointer: coarse)');
+		expect(touch).toMatch(/\.col-link::after\s*\{[^}]*inset:\s*-6px 0/);
+		for (const sel of ['a\\.leg', '\\.lead', '\\.acts \\.link', '\\.members li']) expect(touch).toMatch(new RegExp(`${sel}[^{]*\\{[^}]*min-height:\\s*44px`));
+	});
 });
