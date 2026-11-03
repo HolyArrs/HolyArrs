@@ -134,6 +134,7 @@
 		const asked = fromUrl ? page.url.searchParams.get('layout') : null;
 		if (asked === 'list' || asked === 'table') return 'table';
 		if (asked === 'grid' || asked === 'posters') return 'posters';
+		if (asked === 'overview') return 'overview';
 		try {
 			const v = localStorage.getItem(`holyarrs.library-layout.${k}`);
 			return v === 'posters' || v === 'overview' ? v : 'table';
