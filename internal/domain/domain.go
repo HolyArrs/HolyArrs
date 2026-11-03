@@ -661,7 +661,7 @@ type HealthCheck struct {
 	Since     time.Time `db:"since" json:"since"`
 	CheckedAt time.Time `db:"checked_at" json:"checked_at"`
 	Streak    int       `db:"streak" json:"-"`
-	Confirmed string    `db:"confirmed" json:"-"` // the state Alerts were told about
+	Confirmed string    `db:"confirmed" json:"confirmed"` // the state Alerts were told about; Home shows this one
 }
 
 // MediaServer is a Plex, Jellyfin or Emby server HolyArrs tells to look at
