@@ -61,7 +61,8 @@
 	const viewed = $derived(ofKind.map(viewOf));
 	const shown = $derived(approver ? approverSort(apTab, viewed.filter((a) => approverTabOf(a) === apTab)) : viewed.filter((a) => askTab(a) === tab));
 	const apCounts = $derived(approverCountsOf(viewed));
-	const tabs = $derived(askTabs.filter((t) => approver || t.tab !== 'failed'));
+	// Members see Failed only when one of their asks failed (else it would hide there unseen).
+	const tabs = $derived(askTabs.filter((t) => approver || t.tab !== 'failed' || counts.failed > 0));
 	// The kind chips show once asks of more than one kind are listed.
 	const bothKinds = $derived(new Set(asks.map((a) => a.kind)).size > 1);
 	const counts = $derived(tabCounts(viewed));
@@ -310,7 +311,9 @@
 	let liveBusy = false;
 	let liveAgain = false;
 	async function loadLive() {
-		if (!session.can('manage_library')) return;
+		// Members read only the downloads of their own asks (the server keeps it to those), so they
+		// see why one failed; the searches list is for people who manage the Library.
+		const staff = session.can('manage_library');
 		// A live event during a read asks for one more read once it ends, so the last change is never lost.
 		if (liveBusy) return void (liveAgain = true);
 		liveBusy = true;
@@ -318,7 +321,7 @@
 			const [d, s] = await Promise.all([
 				// Every download still in play for an approved ask (no row cap), so the failed count is exact.
 				api.get<{ downloads: DownloadRow[] }>('/downloads/view?asked=1'),
-				api.get<{ running: SearchView[] }>('/searches')
+				staff ? api.get<{ running: SearchView[] }>('/searches') : Promise.resolve({ running: [] as SearchView[] })
 			]);
 			titleLive = liveByTitle(d.downloads, s.running ?? []);
 		} catch {
@@ -446,6 +449,15 @@
 		return a.kind === 'show' ? (a.season_words ?? seasonWords(a.seasons)) : '';
 	}
 
+	/** whyFailed says why an approved ask is stuck (the server's reason when it has one); '' when nothing failed. */
+	function whyFailed(a: Ask): string {
+		if (a.state !== 'approved') return '';
+		if (a.problem) return a.problem;
+		if (!a.title_id) return 'HolyArrs couldn’t add it to the Library.';
+		const f = liveFacts(titleLive.get(a.title_id));
+		return f.phase === 'failed' ? `The download failed.${f.reason ? ` ${f.reason}` : ''}` : '';
+	}
+
 	/** approvedLine says what happens after approval. */
 	function approvedLine(a: Ask) {
 		if (a.kind === 'show') return `HolyArrs keeps ${what(a)} up to date and looks for the episodes.`;
@@ -486,7 +498,7 @@
 	const people = $derived(askers(asks));
 	const ctx: ApprovalsCtx = {
 		get shown() { return shown; },
-		live: (a) => liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined),
+		live: (a) => (a.problem ? { phase: 'failed', reason: a.problem } : liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined)),
 		get viewed() { return viewed; },
 		get tab() { return tab; },
 		get counts() { return counts; },
@@ -659,7 +671,11 @@
 								</p>
 							{/if}
 							{#if a.note}<p class="line note">“{a.note}”</p>{/if}
-							{#if a.state === 'approved'}<p class="line muted">{approvedLine(a)}</p>{#if a.title_id && a.title_id > 0}<SearchOutcomeLine titleId={a.title_id} />{/if}{/if}
+							{#if a.state === 'approved'}
+								{@const why = whyFailed(a)}
+								{#if why}<p class="line rq-fail" data-testid="ask-failed">{why}</p>
+								{:else}<p class="line muted">{approvedLine(a)}</p>{#if a.title_id && a.title_id > 0}<SearchOutcomeLine titleId={a.title_id} />{/if}{/if}
+							{/if}
 							<div class="actions">
 								{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
 								<button
@@ -709,7 +725,11 @@
 					{#if decided(selected)}<dt>Decision</dt><dd>{decided(selected)}</dd>{/if}
 				</dl>
 				{#if selected.note}<p class="review-note">“{selected.note}”</p>{/if}
-				{#if selected.state === 'approved'}<p class="line muted">{approvedLine(selected)}</p>{#if selected.title_id && selected.title_id > 0}<SearchOutcomeLine titleId={selected.title_id} />{/if}{/if}
+				{#if selected.state === 'approved'}
+					{@const why = whyFailed(selected)}
+					{#if why}<p class="line rq-fail rq-gap">{why}</p>
+					{:else}<p class="line muted">{approvedLine(selected)}</p>{#if selected.title_id && selected.title_id > 0}<SearchOutcomeLine titleId={selected.title_id} />{/if}{/if}
+				{/if}
 			</aside>
 		{/if}
 
@@ -737,14 +757,16 @@
 				{/if}
 			</PageLoader>
 		{/if}
+		<!-- The approver's own asks get the same messages as a member's. -->
+		{#if inbox.messages.length}<div class="rq-mine">{@render messages('Your messages')}</div>{/if}
 			</div>
 {/if}
 
-{#snippet messages()}
+{#snippet messages(heading = 'Messages')}
 		{#if inbox.messages.length}
 			<section class="messages" aria-labelledby="h-msg">
 				<div class="msg-head">
-					<h2 id="h-msg">Messages{#if inbox.unread}{' '}<span class="badge">{inbox.unread} new</span>{/if}</h2>
+					<h2 id="h-msg">{heading}{#if inbox.unread}{' '}<span class="badge">{inbox.unread} new</span>{/if}</h2>
 					{#if inbox.unread}<Button variant="plain" size="sm" type="button" disabled={markingRead} aria-busy={markingRead} onclick={() => void readAllMessages()}>Mark all read</Button>{/if}
 				</div>
 				<details>
@@ -880,6 +902,9 @@
 	.line { font: var(--t-callout); overflow-wrap: anywhere; }
 	.muted { color: var(--text-muted); }
 	.note { color: var(--text); }
+	.rq-fail { color: var(--fail-text); }
+	.rq-gap { margin-top: 12px; }
+	.rq-mine { max-width: 560px; margin-top: 24px; }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 	.inspect { min-height: 30px; padding: 0 12px; border-radius: 8px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; transition: background var(--dur-fast) var(--ease-out); }
 	.row-menu { margin-left: auto; }

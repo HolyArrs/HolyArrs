@@ -62,6 +62,9 @@ type View struct {
 	Note         string     `json:"note,omitempty"`
 	AutoApproved bool       `json:"auto_approved"`
 	AvailableAt  *time.Time `json:"available_at,omitempty"`
+	// Problem says why an approved ask will not reach the Library, when the
+	// server knows (the people who asked see it on Requests).
+	Problem string `json:"problem,omitempty"`
 	// Mine says the person reading asked for it too (set by the API).
 	Mine bool `json:"mine"`
 }
@@ -124,6 +127,14 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 			}
 			if a.State == domain.AskAvailable {
 				v.StateLabel = "Ready to listen"
+			}
+		}
+		// An approved ask whose title was deleted from the Library since will not arrive.
+		if a.State == domain.AskApproved && a.TitleID != nil {
+			var st string
+			_ = db.QueryRowContext(ctx, "SELECT state FROM titles WHERE id = ?", *a.TitleID).Scan(&st)
+			if st == "removed" {
+				v.Problem = "It was deleted from the Library after it was approved."
 			}
 		}
 		if a.DecidedBy != nil {

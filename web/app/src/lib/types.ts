@@ -390,6 +390,8 @@ export interface Ask {
 	note?: string;
 	auto_approved: boolean;
 	available_at?: string;
+	/** Why an approved ask will not reach the Library, when the server knows. */
+	problem?: string;
 	mine: boolean;
 }
 
