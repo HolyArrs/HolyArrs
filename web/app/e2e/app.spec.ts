@@ -57,7 +57,10 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 
 	// First run stays outside the app frame until one folder saves; metadata
 	// needs no key, so there is no key step.
-	await expect(page).toHaveURL(/\/welcome\?first=1$/);
+	await expect(page).toHaveURL(/\/welcome\?first=1&step=folder$/);
+	await expect(page.getByRole('heading', { name: 'Library folder', level: 1 })).toBeVisible();
+	// A reload stays on the folder step.
+	await page.reload();
 	await expect(page.getByRole('heading', { name: 'Library folder', level: 1 })).toBeVisible();
 	await expect(page.getByText(/TMDB|read access token/)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);

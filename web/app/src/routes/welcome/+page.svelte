@@ -18,7 +18,8 @@
 	// Library folder; metadata needs no setup. A later visit to
 	// /welcome changes only the parts and returns to Home.
 	const firstRun = $derived(page.url.searchParams.get('first') === '1');
-	let step = $state<Step>('parts');
+	// The folder step is kept in the address so a reload stays on it.
+	let step = $state<Step>(page.url.searchParams.get('step') === 'folder' ? 'folder' : 'parts');
 	let want = $state<Record<'movies' | 'shows' | 'music' | 'subtitles', boolean>>({ movies: true, shows: true, music: false, subtitles: true });
 	let family = $state<'yes' | 'no'>('no');
 	let folderPath = $state('');
@@ -50,6 +51,7 @@
 			if (firstRun) {
 				folderKind = firstFolderKind(parts);
 				step = 'folder';
+				await goto(to('/welcome?first=1&step=folder'), { replaceState: true, keepFocus: true, noScroll: true });
 			}
 			else await home();
 		} catch (e) {
