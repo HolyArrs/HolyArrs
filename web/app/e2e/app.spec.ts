@@ -113,10 +113,10 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await expect(page).toHaveURL(/\/search/);
 	await page.getByTestId('search-close').click();
 	await expect(page).not.toHaveURL(/\/search/);
-	// Needs a decision lives on the Downloads rows now (Problems, then Review); its own page is still there.
+	// Needs a decision lives on the Downloads rows now: its old address opens Downloads on Problems, then Review.
 	await page.goto('/downloads/decide');
-	await expect(page).toHaveURL(/\/downloads\/decide$/);
-	await expect(page.getByRole('heading', { level: 1 })).toContainText('Needs a decision');
+	await expect(page).toHaveURL(/\/downloads\?show=problems\.decide$/);
+	await expect(page.getByRole('heading', { level: 1 })).toContainText('Downloads');
 	await nav.getByRole('link', { name: 'Settings', exact: true }).click();
 	// The side menu folds: open the Notifications group first.
 	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Notifications' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
@@ -126,7 +126,7 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await page.goBack();
 	await expect(page).toHaveURL(/\/settings$/);
 	await page.goBack();
-	await expect(page).toHaveURL(/\/downloads\/decide$/);
+	await expect(page).toHaveURL(/\/downloads\?show=problems\.decide$/);
 });
 
 test('empty pages say what to do next', async () => {
