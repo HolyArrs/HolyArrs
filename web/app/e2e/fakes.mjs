@@ -603,6 +603,7 @@ export function startFakes() {
 	const deleted = [];
 	/** @type {string[]} */
 	const added = [];
+	let mainRid = 0;
 	const qbit = createServer(async (req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		const form = new URLSearchParams(req.method === 'POST' ? await body(req) : url.search);
@@ -638,6 +639,12 @@ export function startFakes() {
 				const hashes = form.get('hashes');
 				const cat = form.get('category');
 				return send(res, 200, [...torrents.values()].filter((t) => (!hashes || hashes.includes(String(t.hash))) && (!cat || t.category === cat)).map(({ files, ...t }) => t));
+			}
+			case '/api/v2/sync/maindata': {
+				// HolyArrs follows qBittorrent through sync/maindata: always a full answer here.
+				mainRid++;
+				const list = Object.fromEntries([...torrents.values()].map(({ files, ...t }) => [t.hash, t]));
+				return send(res, 200, { rid: mainRid, full_update: true, torrents: list, categories: {}, server_state: { dl_info_speed: 0, up_info_speed: 0, connection_status: 'connected', free_space_on_disk: 1_000_000_000_000 } });
 			}
 			case '/api/v2/torrents/files': {
 				const t = torrents.get(form.get('hash') ?? '');
