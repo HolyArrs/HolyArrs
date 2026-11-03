@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -252,6 +253,49 @@ func TestShowDefaultsSetting(t *testing.T) {
 		{SeasonChoice: "all", NewSeasons: "all", EpisodeOrder: "aired", Source: "tmdb", WaitMinutes: -1}} {
 		if err := SetShowDefaults(ctx, s, bad, domain.System); err == nil {
 			t.Errorf("%+v accepted", bad)
+		}
+	}
+}
+
+// Season summaries count only the main Version's Slots: a second Version
+// with every episode on disk does not change them.
+func TestSeasonsCountMainVersionOnly(t *testing.T) {
+	ctx := context.Background()
+	svc, s, _, _ := addShowService(t)
+	addShowFolder(t, s)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	before, err := Seasons(ctx, s.Read(), id, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		ts, by := store.FormatTime(now), `{"kind":"system"}`
+		res, err := tx.Exec(`INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, is_main)
+			SELECT ?, ?, ?, ?, title_id, '4K', pick_rules_id, library_folder_id, folder_name, 0 FROM versions WHERE title_id = ?`, ts, by, ts, by, id)
+		if err != nil {
+			return err
+		}
+		v, _ := res.LastInsertId()
+		_, err = tx.Exec(`INSERT INTO slots (created_at, created_by, updated_at, updated_by, item_id, version_id, state)
+			SELECT ?, ?, ?, ?, id, ?, 'in_library' FROM items WHERE title_id = ? AND kind = 'episode'`, ts, by, ts, by, v, id)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	after, err := Seasons(ctx, s.Read(), id, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != len(before) {
+		t.Fatalf("seasons %d, want %d", len(after), len(before))
+	}
+	for i := range before {
+		if after[i].InLibrary != before[i].InLibrary || after[i].Missing != before[i].Missing || after[i].NotOutYet != before[i].NotOutYet {
+			t.Fatalf("season %d: %+v, want %+v", i, after[i], before[i])
 		}
 	}
 }
