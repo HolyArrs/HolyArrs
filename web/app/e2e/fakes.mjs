@@ -268,6 +268,24 @@ export const fakeShows = [
 			[2, 1, 'Second Wind', '2024-04-07'], [2, 2, 'Anchor Leg', '2024-04-14']
 		],
 		anime: true
+	},
+	// Only the show list tests use these (library-showlists.spec.ts): TMDB list
+	// 104 adds Bellwether Ferry, skips Cinder Lane (on the Never-add list); the
+	// Trakt list lab/tv-picks adds Rookery Dial by its TVDB id alone.
+	{
+		tmdb: 800104, tvdb: 810104, tvmaze: 820104, imdb: 'tt8001040', name: 'Bellwether Ferry', first: '2021-05-02', status: 'Returning Series', network: 'Lab Eight',
+		overview: 'A ferry that crosses only when the bell-sheep agree.',
+		episodes: [[1, 1, 'Fleece', '2021-05-02'], [1, 2, 'Crossing', '2021-05-09'], [2, 1, 'Second Flock', '2022-05-01'], [3, 1, 'Far Pasture', '2099-05-01']]
+	},
+	{
+		tmdb: 800105, tvdb: 810105, tvmaze: 820105, imdb: 'tt8001050', name: 'Cinder Lane', first: '2020-10-04', status: 'Ended', network: 'Lab Eight',
+		overview: 'A street where every chimney tells a different story.',
+		episodes: [[1, 1, 'Soot', '2020-10-04'], [1, 2, 'Ember', '2020-10-11']]
+	},
+	{
+		tmdb: 800106, tvdb: 810106, tvmaze: 820106, imdb: 'tt8001060', name: 'Rookery Dial', first: '2019-09-01', status: 'Ended', network: 'Lab Eight',
+		overview: 'Crows keep the time on a sundial nobody else can read.',
+		episodes: [[1, 1, 'Noon', '2019-09-01'], [1, 2, 'Shadow', '2019-09-08'], [2, 1, 'Dusk', '2020-09-06']]
 	}
 ];
 
@@ -491,6 +509,12 @@ export function startFakes() {
 			});
 		}
 		if (tvShow) return send(res, 200, tmdbShow(tvShow));
+		// TMDB list 104 (library-showlists.spec.ts): two shows and a movie; a show list takes only the shows.
+		if (url.pathname === '/list/104') {
+			const shows = fakeShows.filter((s) => s.tmdb === 800104 || s.tmdb === 800105).map((s) => ({ ...tmdbShow(s), media_type: 'tv' }));
+			const movies = tmdbMovies.filter((m) => m.id === 900006).map((m) => ({ ...tmdbMovie(m), media_type: 'movie' }));
+			return send(res, 200, { id: 104, name: 'Lab shows', page: 1, total_pages: 1, items: [...shows, ...movies] });
+		}
 		// TMDB list 501: one movie to add and one that is on the Never-add list in the tests.
 		if (url.pathname === '/list/501') {
 			const items = tmdbMovies.filter((m) => m.id === 900005 || m.id === 900006).map((m) => ({ ...tmdbMovie(m), media_type: 'movie' }));
@@ -590,6 +614,14 @@ export function startFakes() {
 	const trakt = createServer((req, res) => {
 		if (req.headers['trakt-api-key'] !== traktKey || req.headers['trakt-api-version'] !== '2') return send(res, 403, { error: 'key' });
 		const url = new URL(req.url ?? '/', 'http://x');
+		// lab/tv-picks holds Rookery Dial (by TVDB id only) and Bellwether Ferry (library-showlists.spec.ts).
+		if (url.pathname === '/users/lab/lists/tv-picks/items/show') {
+			res.setHeader('X-Pagination-Page-Count', '1');
+			return send(res, 200, [
+				{ type: 'show', show: { title: 'Rookery Dial', year: 2019, ids: { tvdb: 810106 } } },
+				{ type: 'show', show: { title: 'Bellwether Ferry', year: 2021, ids: { tmdb: 800104, tvdb: 810104, imdb: 'tt8001040' } } }
+			]);
+		}
 		if (url.pathname !== '/users/lab/lists/favourites/items/movie') return send(res, 404, { error: 'no list' });
 		res.setHeader('X-Pagination-Page-Count', '1');
 		send(res, 200, [{ type: 'movie', movie: { title: 'Northern Kettle', year: 2018, ids: { imdb: 'tt9000070' } } }]);

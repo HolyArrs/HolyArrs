@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"runtime/debug"
@@ -49,7 +50,7 @@ func useMemoryMode() {
 	target := memoryTarget(low, total)
 	aim := "memory target from GOMEMLIMIT"
 	if applyMemoryTarget(os.Getenv, debug.SetMemoryLimit, target) {
-		aim = "memory target " + lowmem.Size(uint64(target)) + " (set GOMEMLIMIT to change it)"
+		aim = fmt.Sprintf("memory target %d MiB (set GOMEMLIMIT to change it)", target>>20)
 	}
 	if low {
 		log.Printf("holyarrs: low-memory mode on (%s; %s=0 turns it off): smaller in-memory caches, smaller SQLite cache, %s", why, lowmem.Env, aim)

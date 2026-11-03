@@ -86,7 +86,8 @@ describe('downloaders', () => {
 			priority: 2,
 			path_map: [{ theirs: '/data/downloads', ours: '/downloads' }],
 			allow_local_network: true,
-			writable: true
+			writable: true,
+			tags: []
 		});
 	});
 

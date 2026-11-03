@@ -9,6 +9,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/judge"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 // errDryRun rolls back a dry-run edit after its changes were worked out.
@@ -25,6 +26,8 @@ type TitleChange struct {
 	LibraryFolderID *int64  `json:"library_folder_id"`
 	EpisodeOrder    *string `json:"episode_order"`
 	NewSeasons      *string `json:"new_seasons"`
+	// Tags route the title's grabs and searches (tagset); nil keeps them.
+	Tags *[]string `json:"tags"`
 }
 
 // SlotChange is one Slot whose state or Good enough flag an edit changes.
@@ -123,6 +126,11 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		}
 		if c.NewSeasons != nil {
 			t.NewPartsPolicy = *c.NewSeasons
+		}
+		if c.Tags != nil {
+			t.Tags = tagset.Clean(*c.Tags)
+		} else if t.Tags == nil {
+			t.Tags = []string{}
 		}
 		if !show {
 			t.GateDriver, t.GateOpensAt = Gate(t.ReleaseGate, t.GateDelayDays, DatesOf(t))

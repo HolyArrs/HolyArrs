@@ -17,6 +17,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/judge"
 	"github.com/CoderLuii/holyarrs/internal/parse"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 // KindSearchSeason is the Job kind that searches one season of a show for
@@ -739,7 +740,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 
-	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true)
+	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true, ti.Tags)
 	if err != nil {
 		return err
 	}
@@ -864,8 +865,9 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 }
 
 // askAll asks every Source used for this kind of search; tv picks the
-// Sources and categories for shows.
-func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool) ([]found, []string, int, []skippedSource, error) {
+// Sources and categories for shows. A Source with tags is asked only for a
+// title that shares one of them (#108); titleTags are the title's.
+func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags []string) ([]found, []string, int, []skippedSource, error) {
 	now := time.Now().UTC()
 	srcs, err := store.Select[domain.Source](ctx, s.Store.Read(), "sources",
 		"state IN ('enabled', 'paused') ORDER BY priority, id")
@@ -878,6 +880,10 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 	answered := 0
 	for i, src := range srcs {
 		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) {
+			continue
+		}
+		if !tagset.SourceServes(src.Tags, titleTags) {
+			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + strings.Join(src.Tags, ", ") + ") are not on this title"})
 			continue
 		}
 		if src.State == "paused" && (src.PausedUntil == nil || src.PausedUntil.After(now)) {
@@ -949,16 +955,28 @@ func noAnswer(failures []string, answered int, skipped []skippedSource) (reason 
 		return "", nil, false, false
 	}
 	failed = len(failures) > 0
+	tagsOnly := !failed
 	if !failed {
 		for _, k := range skipped {
 			failures = append(failures, k.Name+": "+pauseWords(k.Why))
+			tagsOnly = tagsOnly && strings.HasPrefix(k.Why, tagsWhy)
 		}
+	}
+	if tagsOnly {
+		// Every Source has tags this title lacks (#108): searching again changes nothing.
+		return "no Source takes this title's tags: " + strings.Join(failures, "; "), map[string]any{"sources": skipped}, true, false
 	}
 	return "no Source answered: " + strings.Join(failures, "; "), map[string]any{"sources": skipped}, true, failed
 }
 
+// tagsWhy starts the reason a tagged Source was not asked (#108).
+const tagsWhy = "its tags ("
+
 // pauseWords says why a Source is paused in plain words.
 func pauseWords(why string) string {
+	if strings.HasPrefix(why, tagsWhy) {
+		return why
+	}
 	switch why {
 	case KindRateLimited:
 		return "slowed down"

@@ -12,7 +12,7 @@
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { every, listKinds, listLink } from '#lib/lists.ts';
+	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/lists.ts';
 	import type { LibraryFolder, NeverAddEntry, OutsideList, PickRulesView } from '#lib/types.ts';
 
 	let lists = $state<OutsideList[]>([]);
@@ -29,11 +29,14 @@
 	let editId = $state<number | null>(null);
 	let name = $state('');
 	let kind = $state('tmdb_list');
+	let titleKind = $state<'movie' | 'show'>('movie');
 	let ref = $state('');
 	let folderId = $state(0);
 	let rulesId = $state(0);
 	let keep = $state(true);
 	let searchOnAdd = $state(false);
+	let seasons = $state('all');
+	let newSeasons = $state('all');
 	let enabled = $state(true);
 	let hours = $state(12);
 	let formError = $state('');
@@ -46,13 +49,15 @@
 	let traktSaving = $state(false);
 
 	// Never-add list
+	let naKind = $state<'movie' | 'show'>('movie');
 	let naId = $state('');
 	let naName = $state('');
 	let naReason = $state('');
 	let naError = $state('');
 
-	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
-	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
+	// The folders and Pick rules that fit what the list adds.
+	const kindFolders = $derived(folders.filter((f) => f.kind === titleKind));
+	const kindRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes(titleKind)));
 	const hasTrakt = $derived(lists.some((l) => l.kind === 'trakt_list'));
 
 	async function loadLists() {
@@ -91,14 +96,23 @@
 		editId = l?.id ?? null;
 		name = l?.name ?? '';
 		kind = l?.kind ?? 'tmdb_list';
+		titleKind = l?.title_kind ?? 'movie';
 		ref = l?.ref ?? '';
-		folderId = l?.library_folder_id ?? movieFolders[0]?.id ?? 0;
+		folderId = l?.library_folder_id ?? folders.find((f) => f.kind === titleKind)?.id ?? 0;
 		rulesId = l?.pick_rules_id ?? 0;
 		keep = l?.keep_up_to_date ?? true;
 		searchOnAdd = l?.search_on_add ?? false;
+		seasons = l?.seasons || 'all';
+		newSeasons = l?.new_seasons || 'all';
 		enabled = l?.enabled ?? true;
 		hours = l?.sync_every_hours ?? 12;
 		formOpen = true;
+	}
+
+	/** pickTitleKind switches between a movie and a show list; folder and Pick rules start over. */
+	function pickTitleKind() {
+		folderId = folders.find((f) => f.kind === titleKind)?.id ?? 0;
+		rulesId = 0;
 	}
 
 	async function save(e: SubmitEvent) {
@@ -108,11 +122,13 @@
 		const body = {
 			name: name.trim(),
 			kind,
+			title_kind: titleKind,
 			ref: ref.trim(),
 			library_folder_id: folderId,
 			pick_rules_id: rulesId,
 			keep_up_to_date: keep,
 			search_on_add: searchOnAdd,
+			...(titleKind === 'show' ? { seasons, new_seasons: seasons === 'future' ? 'all' : newSeasons } : {}),
 			enabled,
 			sync_every_hours: Number(hours) || 12
 		};
@@ -142,7 +158,7 @@
 	}
 
 	async function remove(l: OutsideList) {
-		if (!confirm(`Remove the list ${l.name}? Movies it added stay in your Library.`)) return;
+		if (!confirm(`Remove the list ${l.name}? ${l.title_kind === 'show' ? 'Shows' : 'Movies'} it added stay in your Library.`)) return;
 		busyId = l.id;
 		try {
 			await api.del(`/outside-lists/${l.id}`);
@@ -183,7 +199,7 @@
 			return;
 		}
 		try {
-			const n = await api.post<NeverAddEntry>('/never-add', { tmdb_id: id, name: naName.trim(), reason: naReason.trim() });
+			const n = await api.post<NeverAddEntry>('/never-add', { kind: naKind, tmdb_id: id, name: naName.trim(), reason: naReason.trim() });
 			never = [n, ...never.filter((x) => x.id !== n.id)];
 			naId = naName = naReason = '';
 		} catch (err) {
@@ -221,31 +237,52 @@
 					{#each listKinds as [k, label] (k)}<option value={k}>{label}</option>{/each}
 				</select>
 			</Field>
+			<Field id="ol-holds" label="Adds">
+				<select id="ol-holds" class="input" bind:value={titleKind} onchange={pickTitleKind}>
+					{#each titleKinds as [k, label] (k)}<option value={k}>{label}</option>{/each}
+				</select>
+			</Field>
 			<Field id="ol-ref" label="Which list">
 				<input id="ol-ref" class="input mono" bind:value={ref} required autocomplete="off" spellcheck="false" />
 				<span class="hint">{listKinds.find(([k]) => k === kind)?.[2]}</span>
 			</Field>
 			<Field id="ol-folder" label="Library folder">
 				<select id="ol-folder" class="input" bind:value={folderId}>
-					{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
+					{#each kindFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
+				{#if kindFolders.length === 0}<span class="hint">Add a {titleKind} Library folder in Settings first.</span>{/if}
 			</Field>
 			<Field id="ol-rules" label="Pick rules">
 				<select id="ol-rules" class="input" bind:value={rulesId}>
 					<option value={0}>The Library folder's own</option>
-					{#each movieRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
+					{#each kindRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
 			</Field>
+			{#if titleKind === 'show'}
+				<Field id="ol-seasons" label="Seasons to keep up to date">
+					<select id="ol-seasons" class="input" bind:value={seasons}>
+						{#each listSeasons as [v, l] (v)}<option value={v}>{l}</option>{/each}
+					</select>
+					<span class="hint">{listSeasons.find(([v]) => v === seasons)?.[2]}</span>
+				</Field>
+				<Field id="ol-new" label="New seasons">
+					<select id="ol-new" class="input" bind:value={newSeasons} disabled={seasons === 'future'}>
+						<option value="all">Keep them up to date</option>
+						<option value="none">Leave them off</option>
+					</select>
+					<span class="hint">{seasons === 'future' ? 'Future seasons only keeps new seasons up to date.' : 'What happens to a season that comes out later.'}</span>
+				</Field>
+			{/if}
 			<Field id="ol-hours" label="Read every (hours)" hint="Between 6 hours and a week. Saving reads the list once straight away.">
 				<input id="ol-hours" class="input" type="number" min="6" max="168" bind:value={hours} />
 			</Field>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={keep} />
-				<span><b>Keep up to date</b><br /><span class="hint">Added movies are looked for, and a better copy later.</span></span>
+				<span><b>Keep up to date</b><br /><span class="hint">{titleKind === 'show' ? 'HolyArrs looks after the seasons picked above.' : 'Added movies are looked for, and a better copy later.'}</span></span>
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={searchOnAdd} />
-				<span><b>Search when added</b><br /><span class="hint">Look for a Release as soon as a movie comes in from the list.</span></span>
+				<span><b>Search when added</b><br /><span class="hint">{titleKind === 'show' ? 'Look for missing episodes as soon as a show comes in from the list.' : 'Look for a Release as soon as a movie comes in from the list.'}</span></span>
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={enabled} />
@@ -254,7 +291,7 @@
 			{#if kind === 'trakt_list' && !traktMasked}<p class="notice warn">Add your Trakt key below first, or this list cannot be read.</p>{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={saving || movieFolders.length === 0} aria-busy={saving}>Save</Button>
+				<Button variant="primary" type="submit" disabled={saving || kindFolders.length === 0} aria-busy={saving}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (formOpen = false)}>Cancel</Button>
 			</div>
 		</SettingsCard>
@@ -268,7 +305,7 @@
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if lists.length === 0 && !formOpen}
-		<EmptyState icon="inbox" title="No Outside lists yet" text="Add a TMDB or Trakt list and its movies come into your Library by themselves." action={{ label: 'Add a list', onclick: () => openForm(), icon: 'plus' }} />
+		<EmptyState icon="inbox" title="No Outside lists yet" text="Add a TMDB or Trakt list and its movies or shows come into your Library by themselves." action={{ label: 'Add a list', onclick: () => openForm(), icon: 'plus' }} />
 	{:else if lists.length}
 		<ul class="card rows" aria-label="Outside lists">
 			{#each lists as l (l.id)}
@@ -277,6 +314,7 @@
 						<div class="row" style="gap: var(--s-2)">
 							<b>{l.name}</b>
 							<span class="chip">{listKinds.find(([k]) => k === l.kind)?.[1]}</span>
+							<span class="chip">{l.title_kind === 'show' ? 'Shows' : 'Movies'}</span>
 							{#if !l.enabled}<span class="chip">Off</span>{/if}
 							{#if l.last_error}<span class="chip fail">Problem</span>{/if}
 						</div>
@@ -318,8 +356,14 @@
 		</form>
 	</section>
 
-	<SettingsCard id="never-card" title="Never-add list" description="Outside lists skip these movies, and they cannot be added by hand until taken off.">
+	<SettingsCard id="never-card" title="Never-add list" description="Outside lists skip these movies and shows, and they cannot be added by hand until taken off.">
 		<form class="never-form" onsubmit={addNever}>
+			<Field id="na-kind" label="Movie or show">
+				<select id="na-kind" class="input" bind:value={naKind}>
+					<option value="movie">Movie</option>
+					<option value="show">Show</option>
+				</select>
+			</Field>
 			<Field id="na-id" label="TMDB number">
 				<input id="na-id" class="input mono" bind:value={naId} inputmode="numeric" autocomplete="off" />
 			</Field>
@@ -337,7 +381,7 @@
 			<ul class="never" aria-label="Never-add list">
 				{#each never as n (n.id)}
 					<li data-testid="never-add">
-						<span class="grow"><b>{n.name}</b> <span class="xs muted mono">tmdb:{n.ids.tmdb}</span>{#if n.reason}<span class="xs muted"> · {n.reason}</span>{/if}</span>
+						<span class="grow"><b>{n.name}</b> <span class="xs muted mono">{n.kind === 'show' ? 'show · ' : ''}tmdb:{n.ids.tmdb}</span>{#if n.reason}<span class="xs muted"> · {n.reason}</span>{/if}</span>
 						<Button variant="plain" type="button" onclick={() => removeNever(n)}>Take off {n.name}</Button>
 					</li>
 				{/each}

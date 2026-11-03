@@ -3,11 +3,13 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
+	import TagInput from '#lib/ui/TagInput.svelte';
+	import { forgetTags } from '#lib/tags.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/types.ts';
 
 	// Edit a movie or show from its Library tab: keep up to date, which seasons
 	// to keep (a quick choice that sets every season at once), new seasons,
-	// quality, episode order and folder. Nothing changes until Save.
+	// quality, episode order, tags and folder. Nothing changes until Save.
 	let { open = $bindable(false), title, onsaved }: { open?: boolean; title: TitleView; onsaved?: () => void } = $props();
 
 	type Preset = 'asis' | 'all' | 'latest' | 'missing' | 'future' | 'none';
@@ -17,6 +19,7 @@
 	let rules = $state(0);
 	let order = $state('aired');
 	let folder = $state(0);
+	let tags = $state<string[]>([]);
 	let ruleList = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
 	let busy = $state(false);
@@ -31,6 +34,7 @@
 			rules = title.pick_rules_id ?? 0;
 			order = title.show?.episode_order || 'aired';
 			folder = title.library_folder_id ?? 0;
+			tags = [...(title.tags ?? [])];
 			error = '';
 		});
 		void api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (ruleList = r.pick_rules.filter((x) => x.kinds.includes(title.kind))), () => {});
@@ -62,11 +66,13 @@
 			const body: Record<string, unknown> = {};
 			if (keep !== title.keep_up_to_date) body.keep_up_to_date = keep;
 			if (rules && rules !== title.pick_rules_id) body.pick_rules_id = rules;
+			if (tags.join(',') !== (title.tags ?? []).join(',')) body.tags = tags;
 			if (title.show) {
 				if (newSeasons !== title.show.new_seasons) body.new_seasons = newSeasons;
 				if (order !== title.show.episode_order) body.episode_order = order;
 			}
 			if (Object.keys(body).length) await api.put(`/titles/${title.id}`, body);
+			if (body.tags) forgetTags();
 			for (const s of seasons) {
 				const w = wants(preset, s.number, s.missing, s.not_out_yet);
 				if (w !== null && w !== s.keep_up_to_date) await api.put(`/titles/${title.id}/seasons/${s.number}`, { keep_up_to_date: w });
@@ -135,6 +141,11 @@
 			</label>
 		{/if}
 
+		<div class="et-field">
+			<label for="et-tags"><span><b>Tags</b><small>Sends this title's downloads and searches to the Downloaders and Sources with the same tag</small></span></label>
+			<TagInput id="et-tags" bind:value={tags} testid="et-tags" />
+		</div>
+
 		<label class="et-field">
 			<span><b>Folder</b><small class="et-path">{title.folder_path ?? ''}</small></span>
 			<select bind:value={folder}>
@@ -155,7 +166,7 @@
 	.et { display: grid; gap: 14px; }
 	.et-rows { display: grid; border-radius: 14px; background: var(--surface-2); overflow: hidden; }
 	.et-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
-	.et-row span:first-child, .et-field > span { display: grid; gap: 3px; }
+	.et-row span:first-child, .et-field > span, .et-field > label > span { display: grid; gap: 3px; }
 	.et-row b, .et-field b { font: 600 15px/1.2 var(--font-ui); }
 	.et-row small, .et-field small { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
 	.et-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }

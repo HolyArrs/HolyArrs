@@ -34,6 +34,8 @@ type TitleRef struct {
 	OriginalLanguage string
 	Runtime          int    // minutes
 	Kind             string // "show" for a show, "artist" for an artist; "" or "movie" for a movie
+	// Tags are the title's (#108); a feed matches a tagged Source's releases only to titles sharing one.
+	Tags []string
 }
 
 // Match is the result of matching a parse to the library.

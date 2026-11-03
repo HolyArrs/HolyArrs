@@ -15,6 +15,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 // Reasons a Source is not saved; each is said to the person as it is.
@@ -66,6 +67,8 @@ type Input struct {
 	Proxy           *string              `json:"proxy"`
 	ProxyPassword   string               `json:"proxy_password"`
 	ProxyAllowLocal *bool                `json:"proxy_allow_local_network"`
+	// Tags: with any, the Source serves only titles sharing one; nil keeps the stored ones.
+	Tags []string `json:"tags"`
 }
 
 // splitRSS moves an rss address's query (where feeds keep their passkey)
@@ -205,6 +208,9 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 			return "", "", ErrLimits
 		}
 		src.Limits = l
+	}
+	if in.Tags != nil || isNew || src.Tags == nil {
+		src.Tags = tagset.Clean(in.Tags)
 	}
 	if in.Priority != nil {
 		if *in.Priority < 1 || *in.Priority > 50 {

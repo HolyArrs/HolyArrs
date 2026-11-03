@@ -13,6 +13,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/judge"
 	"github.com/CoderLuii/holyarrs/internal/parse"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 const feedProbeTimeout = 45 * time.Second
@@ -146,7 +147,7 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 			if m.Title == nil && hasArtist {
 				m = judge.MatchTitle(parse.Parse(item.Title, parse.Hints{Size: item.Size, Music: true}), refs)
 			}
-			if m.Title != nil {
+			if m.Title != nil && tagset.SourceServes(answer.src.Tags, m.Title.Tags) {
 				return true, prepared, nil
 			}
 		}

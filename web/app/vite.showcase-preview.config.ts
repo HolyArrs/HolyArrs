@@ -96,7 +96,7 @@ function builtSite(): Plugin {
 			server.middlewares.use((req, res, next) => {
 				if (req.method !== 'GET' && req.method !== 'HEAD') return next();
 				const url = new URL(req.url ?? '/', 'http://x');
-				if (/^\/(api|live|healthz)(\/|$)/.test(url.pathname)) return next();
+				if (/^\/(api|live|healthz|oauth|\.well-known)(\/|$)|^\/mcp$/.test(url.pathname)) return next();
 				if (!url.pathname.startsWith('/_app/immutable/')) {
 					res.setHeader('Cache-Control', 'no-cache');
 					if (req.method === 'GET' && /^\/login\/?$/.test(url.pathname) && existsSync(join(site, 'index.html'))) {
@@ -135,6 +135,7 @@ export default defineConfig({
 		port: 18729,
 		strictPort: true,
 		allowedHosts: ['holyarrs-app.luiverse.com'],
-		proxy: { '/api': isolatedProxy(), '/live': isolatedProxy(), '/healthz': isolatedProxy() }
+		// AI app sign-in and the short AI address go to the server too (it serves them in the built app).
+		proxy: { '/api': isolatedProxy(), '/live': isolatedProxy(), '/healthz': isolatedProxy(), '/oauth': isolatedProxy(), '/.well-known': isolatedProxy(), '^/mcp$': isolatedProxy() }
 	}
 });

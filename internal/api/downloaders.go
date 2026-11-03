@@ -39,32 +39,36 @@ func (a *API) downloaderRoutes(m *http.ServeMux) {
 // DownloaderView is a Downloader as the API shows it: the key or password
 // is masked, never sent.
 type DownloaderView struct {
-	ID         int64                 `json:"id"`
-	Name       string                `json:"name"`
-	Kind       string                `json:"kind"`
-	Protocol   string                `json:"protocol"`
-	URL        string                `json:"url"`
-	Username   string                `json:"username"`
-	Secret     string                `json:"secret"`
-	Category   string                `json:"category"`
-	Priority   int                   `json:"priority"`
-	PathMap    []domain.PathMap      `json:"path_map"`
-	AllowLocal bool                  `json:"allow_local_network"`
+	ID         int64            `json:"id"`
+	Name       string           `json:"name"`
+	Kind       string           `json:"kind"`
+	Protocol   string           `json:"protocol"`
+	URL        string           `json:"url"`
+	Username   string           `json:"username"`
+	Secret     string           `json:"secret"`
+	Category   string           `json:"category"`
+	Priority   int              `json:"priority"`
+	PathMap    []domain.PathMap `json:"path_map"`
+	AllowLocal bool             `json:"allow_local_network"`
 	// Writable is "HolyArrs can change this Downloader"; WritableLocked
 	// says HOLYARRS_READONLY_DOWNLOADERS keeps it read only whatever the switch.
 	Writable       bool `json:"writable"`
 	WritableLocked bool `json:"writable_locked"`
 	// ClearFinished: a Usenet job and its files leave the client once imported.
-	ClearFinished bool `json:"clear_finished"`
-	Health     downloader.HealthView `json:"health"`
-	CheckedAt  *time.Time            `json:"checked_at,omitempty"`
-	Active     int                   `json:"active_downloads"`
+	ClearFinished bool                  `json:"clear_finished"`
+	Tags          []string              `json:"tags"`
+	Health        downloader.HealthView `json:"health"`
+	CheckedAt     *time.Time            `json:"checked_at,omitempty"`
+	Active        int                   `json:"active_downloads"`
 }
 
 func downloaderView(d domain.Downloader, active int) DownloaderView {
 	v := DownloaderView{ID: d.ID, Name: d.Name, Kind: d.Adapter, Protocol: d.Protocol, URL: d.URL, Username: d.Username, Category: d.Category,
 		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: downloader.HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
-		Writable: d.Writable, WritableLocked: downloader.ReadOnlyByEnv(d), ClearFinished: d.ClearFinished}
+		Writable: d.Writable, WritableLocked: downloader.ReadOnlyByEnv(d), ClearFinished: d.ClearFinished, Tags: d.Tags}
+	if v.Tags == nil {
+		v.Tags = []string{}
+	}
 	if v.PathMap == nil {
 		v.PathMap = []domain.PathMap{}
 	}

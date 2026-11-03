@@ -12,6 +12,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 // Reasons a Downloader is not saved; each is said to the person as it is.
@@ -51,6 +52,8 @@ type Input struct {
 	Writable *bool `json:"writable"`
 	// ClearFinished removes finished Usenet jobs after their Import (on when new).
 	ClearFinished *bool `json:"clear_finished"`
+	// Tags route titles to this Downloader (tagset); nil keeps the stored ones.
+	Tags []string `json:"tags"`
 }
 
 func hostOf(raw string) string {
@@ -142,6 +145,9 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		d.ClearFinished = *in.ClearFinished
 	} else if isNew {
 		d.ClearFinished = true
+	}
+	if in.Tags != nil || isNew || d.Tags == nil {
+		d.Tags = tagset.Clean(in.Tags)
 	}
 	if isNew {
 		d.AfterImport, d.State = "leave", "ok"

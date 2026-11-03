@@ -28,6 +28,8 @@ export interface DownloaderView {
 	writable: boolean;
 	/** HOLYARRS_READONLY_DOWNLOADERS keeps it read only whatever the switch says. */
 	writable_locked: boolean;
+	/** Titles with one of these go only to Downloaders that have it (#108). */
+	tags?: string[];
 	health: DownloaderHealth;
 	checked_at?: string;
 	active_downloads: number;
@@ -133,6 +135,7 @@ export interface DownloaderForm {
 	path_map: PathMap[];
 	allow_local_network: boolean;
 	writable: boolean;
+	tags: string[];
 }
 
 /** emptyForm starts a new Downloader. Downloaders usually run at home, so
@@ -148,7 +151,8 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 		priority: 1,
 		path_map: [],
 		allow_local_network: true,
-		writable: true
+		writable: true,
+		tags: []
 	};
 }
 
@@ -164,7 +168,8 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 		priority: d.priority,
 		path_map: d.path_map.map((p) => ({ ...p })),
 		allow_local_network: d.allow_local_network,
-		writable: d.writable
+		writable: d.writable,
+		tags: [...(d.tags ?? [])]
 	};
 }
 
@@ -180,7 +185,8 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		priority: Number(f.priority) || 1,
 		path_map: f.path_map.map((p) => ({ theirs: p.theirs.trim(), ours: p.ours.trim() })).filter((p) => p.theirs || p.ours),
 		allow_local_network: f.allow_local_network,
-		writable: f.writable
+		writable: f.writable,
+		tags: f.tags
 	};
 }
 
@@ -367,7 +373,7 @@ export interface Decision {
 	year?: number;
 	version: string;
 	versions: number;
-	why: 'ran_out' | 'conflict' | 'not_replaced';
+	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent';
 	reason: string;
 	release_id?: number;
 	release_name?: string;
@@ -429,6 +435,8 @@ export function whyWords(d: Pick<Decision, 'why' | 'has_copy'>): string {
 			return 'The import could not finish on its own.';
 		case 'not_replaced':
 			return 'Its download was removed outside HolyArrs and is not replaced by itself (setting).';
+		case 'not_sent':
+			return 'No Downloader could take it: check the tags on the title and your Downloaders.';
 	}
 	return 'HolyArrs ran out of Releases that pass the Pick rules.';
 }

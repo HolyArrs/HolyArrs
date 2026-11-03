@@ -293,17 +293,24 @@ func NeverAddList(ctx context.Context, db store.Lister) ([]domain.NeverAdd, erro
 	return out, err
 }
 
-// AddNeverAdd puts a movie on the Never-add list.
+// AddNeverAdd puts a movie, or a show when n.Kind is show, on the
+// Never-add list by its TMDB id.
 func AddNeverAdd(ctx context.Context, s *store.Store, n domain.NeverAdd, by domain.Actor) (domain.NeverAdd, error) {
 	if n.SourceIDs["tmdb"] == "" {
 		return n, ErrNoMetadataIDs
 	}
-	n.Kind = "movie"
+	if n.Kind != "show" {
+		n.Kind = "movie"
+	}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if on, err := OnNeverAdd(ctx, tx, n.SourceIDs["tmdb"]); err != nil || on {
+		on, err := OnNeverAdd(ctx, tx, n.SourceIDs["tmdb"])
+		if n.Kind == "show" {
+			on, err = showOnNeverAdd(ctx, tx, n.SourceIDs)
+		}
+		if err != nil || on {
 			return err
 		}
-		_, err := store.Insert(tx, "never_add", &n, by)
+		_, err = store.Insert(tx, "never_add", &n, by)
 		return err
 	})
 	return n, err
