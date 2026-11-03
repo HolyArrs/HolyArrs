@@ -151,7 +151,7 @@ test('Import files by hand: Change matches a wrongly named file to another Libra
 test('Import files by hand: two loose episodes of a Library show, one season and episode picked by hand, land in the show folder', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
-	const show = await freshShow(call, 800008, 'Gristmill Hollow');
+	const show = await freshShow(call, 800041, 'Gristmill Hollow');
 	// One named with its episode; one named by a day no episode aired (it is S02E01).
 	const [named, dated] = looseFiles('gristmill-hollow', ['Gristmill.Hollow.S01E01.1080p.WEB-DL.H264-LAB.mkv', 'Gristmill.Hollow.2019.04.07.1080p.WEB-DL.H264-LAB.mkv']);
 
