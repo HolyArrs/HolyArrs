@@ -198,6 +198,8 @@ var Routes = map[string]Owner{
 	"PUT /api/v1/settings/health":          Core,
 	"GET /api/v1/settings/alerts":          Core,
 	"PUT /api/v1/settings/alerts":          Core,
+	"GET /api/v1/settings/url-base":        Core,
+	"PUT /api/v1/settings/url-base":        Core,
 	"GET /api/v1/alerts":                   Core,
 	"POST /api/v1/alerts":                  Core,
 	"PUT /api/v1/alerts/{id}":              Core,

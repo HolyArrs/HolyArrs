@@ -42,6 +42,8 @@ func (a *API) askRoutes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/my/alerts", a.putMyAlerts)
 	m.HandleFunc("GET /api/v1/settings/alerts", a.getAlertSettings)
 	m.HandleFunc("PUT /api/v1/settings/alerts", a.putAlertSettings)
+	m.HandleFunc("GET /api/v1/settings/url-base", a.getURLBase)
+	m.HandleFunc("PUT /api/v1/settings/url-base", a.putURLBase)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/alerts", a.listAlerts)
 		m.HandleFunc("POST /api/v1/alerts", a.addAlert)

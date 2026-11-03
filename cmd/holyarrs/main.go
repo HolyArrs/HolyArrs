@@ -65,6 +65,8 @@ type config struct {
 	SafeMode bool
 	// URLBase runs the app under a path such as /holyarrs (reverse proxy).
 	URLBase string
+	// urlBaseFlag is true when -url-base was given on the command line.
+	urlBaseFlag bool
 }
 
 func env(key, def string) string {
@@ -100,6 +102,7 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 	if err := fs.Parse(args); err != nil {
 		return c, err
 	}
+	fs.Visit(func(f *flag.Flag) { c.urlBaseFlag = c.urlBaseFlag || f.Name == "url-base" })
 	base, err := urlbase.Clean(c.URLBase)
 	if err != nil {
 		fmt.Fprintln(errOut, "-url-base:", err)
@@ -332,6 +335,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	pc.Store = s
 	if err := pc.Load(ctx); err != nil {
 		return fmt.Errorf("part switches: %w", err)
+	}
+	// A base saved in Settings is used when the start setting is left
+	// unset; HOLYARRS_URL_BASE=/ forces none.
+	if _, set := os.LookupEnv(urlbase.Env); !set && !c.urlBaseFlag && c.URLBase == "" {
+		if saved := api.SavedURLBase(ctx, s.Read()); saved != "" {
+			c.URLBase = saved
+			log.Printf("holyarrs: URL base %s (saved in Settings)", saved)
+		}
 	}
 	if off := pc.Off(); len(off) > 0 && !c.SafeMode {
 		log.Printf("holyarrs: parts turned off: %v", off)

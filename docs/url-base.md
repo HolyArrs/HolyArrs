@@ -11,6 +11,8 @@ Set the base when HolyArrs starts, either way:
 
 The base is a plain path (letters, digits, `-`, `_`, `.` and `/`; no `..` or `//`). `holyarrs`, `/holyarrs` and `/holyarrs/` all mean `/holyarrs`. Settings > This app shows the base in use.
 
+You can also save the base from the app (`PUT /api/v1/settings/url-base` with `{"url_base": "/holyarrs"}`; the Settings field uses it). A saved base takes effect on the next start, and only when the environment and the flag are not set. To ignore a saved base, start with `HOLYARRS_URL_BASE=/`. A saved base that is not a plain path is ignored, so a bad save never locks you out.
+
 With a base set, everything is under it: the pages, scripts and styles, the API (`/holyarrs/api/v1/...`), the live stream (`/holyarrs/live`), the health check (`/holyarrs/healthz`, which the image's own health check follows), downloads, the sign-in cookie (its path is the base) and sign-in redirects. `/holyarrs` alone goes to `/holyarrs/`. Any address outside the base answers 404. Redirects only ever point inside the app, never to another site. The OpenAPI file names the base as its server, and links the app builds (invite links, the calendar feed, the API page's base address) carry it.
 
 The proxy must pass the path on unchanged (do not strip `/holyarrs`), keep the `Host` header, and not buffer the live stream. If the proxy adds `X-Forwarded-For`, add its address to `HOLYARRS_TRUSTED_PROXIES`; if people reach HolyArrs by a host name, add it to `HOLYARRS_ALLOWED_HOSTS`.
