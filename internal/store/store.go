@@ -126,6 +126,7 @@ func Open(dir string, opt Options) (*Store, error) {
 	if s.readEv, err = openPool(evPath, cache, true, 2); err != nil {
 		return nil, err
 	}
+	ownerOnly(mainPath, evPath)
 	backups := filepath.Join(dir, "backups")
 	// Both files are checked for newer data before either is changed.
 	mainMs, mainCur, err := plan(s.main, mainMig, "main")
@@ -251,7 +252,20 @@ func (s *Store) Snapshot(dir string) (mainCopy, eventsCopy string, err error) {
 			return "", "", fmt.Errorf("snapshot: %w", err)
 		}
 	}
+	ownerOnly(mainCopy, eventsCopy)
 	return mainCopy, eventsCopy, nil
+}
+
+// ownerOnly makes database files and their -wal/-shm files readable by
+// the owner only (they hold password and key hashes); SQLite creates them
+// with the process umask. A file that is not there or cannot be changed is
+// left as it is.
+func ownerOnly(paths ...string) {
+	for _, p := range paths {
+		for _, f := range []string{p, p + "-wal", p + "-shm"} {
+			_ = os.Chmod(f, 0o600)
+		}
+	}
 }
 
 // SchemaVersions returns the newest migration known to this build for the
