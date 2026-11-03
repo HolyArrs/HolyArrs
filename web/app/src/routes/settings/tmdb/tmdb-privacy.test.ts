@@ -1,0 +1,21 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+// The Metadata page and docs/metadata-privacy.md say the same thing about
+// what the metadata server gets; the headers named here are the ones
+// internal/metadata/privacy_test.go allows.
+const page = readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8');
+const doc = readFileSync(new URL('../../../../../../docs/metadata-privacy.md', import.meta.url), 'utf8');
+
+describe('what the metadata server gets', () => {
+	for (const word of ['install token', 'Cache-Control', 'If-None-Match', 'X-Fetch: ahead', 'X-Country-Count: off', 'Count this install', 'public IP address']) {
+		it(`page and doc both name ${word}`, () => {
+			expect(page).toContain(word);
+			expect(doc).toContain(word);
+		});
+	}
+	it('never says IP addresses are not stored', () => {
+		expect(page).not.toMatch(/IP[^.]*not (stored|kept)/i);
+		expect(doc).not.toMatch(/IP[^.]*not (stored|kept)/i);
+	});
+});
