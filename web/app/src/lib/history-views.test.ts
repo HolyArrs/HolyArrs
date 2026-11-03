@@ -52,6 +52,10 @@ describe('words', () => {
 	});
 	it('says who did it', () => {
 		expect(byWhom({ Actor: { kind: 'user', id: 3 }, Data: { asked_by: 'Maya' } })).toBe('Maya');
+		expect(byWhom({ Actor: { kind: 'ai', id: 3 }, Data: { client: 'Claude' }, actor_name: 'Maya' })).toBe('Claude for Maya');
+		expect(byWhom({ Actor: { kind: 'ai', id: 3 }, Data: {} })).toBe('An AI app');
+		expect(byWhom({ Actor: { kind: 'ai', id: 3 }, Data: { client: 'an AI app' }, actor_name: 'Maya' })).toBe('An AI app for Maya');
+		expect(byWhom({ Actor: { kind: 'user', id: 3 }, Data: {}, actor_name: 'Maya' })).toBe('Maya');
 		expect(byWhom({ Actor: { kind: 'user', id: 1 }, Data: { approved_by: 'owner', asked_by: ['Maya'] } })).toBe('owner');
 		expect(byWhom({ Actor: { kind: 'job', id: 9 } })).toBe('Background job');
 		expect(byWhom({ Actor: { kind: 'system' } })).toBe('HolyArrs');

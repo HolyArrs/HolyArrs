@@ -653,6 +653,8 @@ export interface EventRecord {
 	DownloadID?: number | null;
 	Data?: Record<string, unknown>;
 	Actor?: { kind: string; id?: number };
+	/** The member who did it, named by the server. */
+	actor_name?: string;
 	title_name?: string;
 	/** A show Event: the episodes it is about ("S01E02 The Mill"). */
 	episode?: string;

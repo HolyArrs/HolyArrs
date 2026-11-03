@@ -587,9 +587,7 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	e := &domain.Event{Actor: by, Kind: "setting_changed", Summary: "Changed the Downloader settings", Data: map[string]any{"downloaders": in}}
-	if a.s.Store.AddEvent(r.Context(), e) == nil && a.s.Live != nil {
-		a.s.Live.Publish("event", e)
-	}
+	// The change is logged once by logSettingsChanges as an audit Event (area
+	// and who, never the values), so it is not written or sent live here.
 	a.getDownloaderSettings(w, r)
 }
