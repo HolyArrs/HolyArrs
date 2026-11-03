@@ -32,6 +32,9 @@ type Movie struct {
 	Directors []string `json:"directors,omitempty"`
 	// Studio is the first production company (a streaming film's is often the service).
 	Studio string `json:"studio,omitempty"`
+	// OtherNames are the original, alternative and translated names the
+	// source knows (detail answers only); the library keeps the usable ones.
+	OtherNames []string `json:"other_names,omitempty"`
 	// Release dates (UTC midnight), nil when the source does not know them.
 	CinemaDate   *time.Time `json:"cinema_date,omitempty"`
 	DigitalDate  *time.Time `json:"digital_date,omitempty"`
