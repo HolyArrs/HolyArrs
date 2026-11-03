@@ -830,3 +830,31 @@ func TestSyncHours(t *testing.T) {
 		t.Errorf("free name %q", got)
 	}
 }
+
+// Transmission, Deluge and NZBGet set up in the old apps come over as
+// Downloaders, like qBittorrent and SABnzbd; other clients stay behind.
+func TestPlanEveryDownloaderKind(t *testing.T) {
+	s := &Snapshot{Kind: Sonarr, DownloadClients: []Provider{
+		{Name: "Trans", Kind: "Transmission", Settings: map[string]any{"host": "transmission", "port": int64(9091), "urlBase": "/transmission/", "username": "me"}, NeedsReentry: []string{"password"}},
+		{Name: "Del", Kind: "Deluge", Settings: map[string]any{"host": "deluge", "port": int64(8112)}, NeedsReentry: []string{"password"}},
+		{Name: "NZB", Kind: "Nzbget", Settings: map[string]any{"host": "nzbget", "port": int64(6789), "username": "nzb"}},
+		{Name: "Old", Kind: "Vuze", Settings: map[string]any{"host": "vuze", "port": int64(9091)}},
+	}}
+	s.finish()
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	got := map[string]*DownloaderPlan{}
+	for _, it := range p.Group(GroupDownloaders).Items {
+		got[it.Name] = it.Downloader
+	}
+	for name, want := range map[string]string{"Trans": "transmission", "Del": "deluge", "NZB": "nzbget"} {
+		if d := got[name]; d == nil || d.Adapter != want {
+			t.Fatalf("%s: %+v", name, d)
+		}
+	}
+	if got["Trans"].URL != "http://transmission:9091/transmission" || got["Trans"].Username != "me" || !got["Trans"].NeedsInput || got["NZB"].NeedsInput {
+		t.Fatalf("details: %+v %+v", got["Trans"], got["NZB"])
+	}
+	if n, ok := notMoved(p, "sonarr download_clients[3]"); !ok || n.Why != "HolyArrs talks to qBittorrent, Transmission, Deluge, SABnzbd and NZBGet only" {
+		t.Fatalf("vuze: %+v", n)
+	}
+}

@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 // Push updates (setting downloads.sync = on) against a fake qBittorrent:
 // the Downloads page reads its snapshot once, then follows the client
-// through /live patches with no 2 s view reads; with the setting back on
-// legacy the page polls as before. Runs with live-push.config.ts only.
+// through /live patches with no 2 s view reads; a stored legacy value
+// reads as on. Runs with live-push.config.ts only.
 test.describe.configure({ mode: 'serial' });
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -67,18 +67,19 @@ test('push: progress reaches the page in under 2.5 s with no view reads in betwe
 	expect(views.length, 'no 2 s polling while push is healthy').toBe(before);
 });
 
-test('legacy: the page polls the view every 2 s as before and sends no interest', async () => {
+test('legacy: a stored legacy value reads as on: the page follows by push with no 2 s view reads', async () => {
+	// The legacy reading path is gone (588da539): the setting still takes the old value, and it reads as on.
 	await setSync('legacy');
 	await page.waitForTimeout(6000); // the setting is read again within 5 s
 	await page.goto('/downloads');
 	await expect(row()).toBeVisible({ timeout: 20_000 });
+	await expect.poll(() => interests.length, { timeout: 10_000 }).toBeGreaterThan(0);
+	await page.waitForTimeout(1500);
 	const v0 = views.length;
-	const i0 = interests.length;
-	await page.waitForTimeout(6500);
-	expect(views.length - v0, 'view reads in 6.5 s').toBeGreaterThanOrEqual(2);
-	expect(interests.length).toBe(i0);
 	await fetch(`${qbit}/set?progress=0.9`);
-	await expect(progress()).toContainText('90%', { timeout: 10_000 });
+	await expect(progress()).toContainText('90%', { timeout: 2500 });
+	await page.waitForTimeout(4000);
+	expect(views.length - v0, 'view reads while push is healthy').toBe(0);
 });
 
 // AC9: the Downloads list looks the same on push as on legacy. The baseline

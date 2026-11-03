@@ -105,6 +105,6 @@ export default defineConfig({
 		// Kid accounts: invite a Kid (PG), join, the Library shows only titles rated up to PG, an R title and an ask for it are refused in plain words, no Music.
 		{ name: 'kid', testMatch: 'kid.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		// Library tools: Movie series, Recently deleted and Import files by hand from the Add menu; a phone.
-		{ name: 'librarytools', testMatch: 'library-tools.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['search', 'kid'] }
+		{ name: 'librarytools', testMatch: /library-[a-z0-9-]+\.spec\.ts$/, use: { ...devices['Desktop Chrome'] }, dependencies: ['search', 'kid'] }
 	]
 });

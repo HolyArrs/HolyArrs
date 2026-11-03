@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { proxied } from '../tmdb-image.ts';
 	import type { Snippet } from 'svelte';
 	import ArtPill from './ArtPill.svelte';
 	import Icon from '../Icon.svelte';
@@ -31,7 +32,7 @@
 		/** The posters, rendered by the page so they match every other row. */
 		picks: Snippet;
 	} = $props();
-	const bg = $derived(art[0] ?? '');
+	const bg = $derived(proxied(art[0]));
 </script>
 
 <section class="gb l{layout}" class:square aria-label={eyebrow} data-testid="genre-banner" data-layout={layout}>

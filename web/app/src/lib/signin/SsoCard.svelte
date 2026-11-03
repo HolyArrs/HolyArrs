@@ -253,6 +253,16 @@
 	.check input {
 		margin-top: 3px;
 	}
+	/* Touch phones: 44px tap targets; desktop stays as it is. */
+	@media (max-width: 767px) and (pointer: coarse) {
+		.check {
+			min-height: 44px;
+			align-items: center;
+		}
+		.check input {
+			margin-top: 0;
+		}
+	}
 	.facts {
 		display: grid;
 		grid-template-columns: max-content minmax(0, 1fr);

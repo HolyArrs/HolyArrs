@@ -842,7 +842,7 @@ func (r *run) outsideList(it Item) (string, string) {
 		return ResAlready, "an Outside list for this list is here"
 	}
 	lib := filepath.Clean(filepath.FromSlash(o.Library))
-	what := o.Ref + " into " + o.Library + ", paused until you check it and turn it on"
+	what := map[string]string{lists.KindTMDB: "TMDB list ", lists.KindTrakt: "Trakt list "}[o.Kind] + o.Ref + " into " + o.Library + ", paused until you check it and turn it on"
 	if r.dry {
 		if r.id("SELECT id FROM library_folders WHERE path = ?", lib) == 0 && !isDir(lib) {
 			return ResNotFound, "no folder at " + o.Library + " on this server; add a path rule"
@@ -1321,7 +1321,7 @@ func (r *run) downloader(it Item) (string, string) {
 		return ResCreate, what
 	}
 	proto := "torrent"
-	if d.Adapter == "sabnzbd" {
+	if d.Adapter == "sabnzbd" || d.Adapter == "nzbget" {
 		proto = "usenet"
 	}
 	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
@@ -2058,12 +2058,23 @@ func (m *Mover) undo(ctx context.Context, id int64, by domain.Actor, progress fu
 	}
 	rows.Close()
 	rep := &Report{Move: id, Undo: true, At: m.now(), Lines: []Line{}, Counts: map[string]int{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Next: []string{}}
+	// Each undo line keeps the name and group the move's report gave it.
+	moved := map[string]Line{}
+	if mv.Report != nil {
+		for _, l := range mv.Report.Lines {
+			moved[l.Key] = l
+		}
+	}
 	for i, x := range made {
 		if ctx.Err() != nil {
 			return rep, ctx.Err()
 		}
 		res, detail := m.undoOne(ctx, x, by)
-		rep.Lines = append(rep.Lines, Line{Group: x.what, Key: x.key, Name: x.key, Result: res, Detail: detail})
+		line := Line{Group: x.what, Key: x.key, Name: x.key, Result: res, Detail: detail}
+		if l, ok := moved[x.key]; ok {
+			line.Group, line.Name = l.Group, l.Name
+		}
+		rep.Lines = append(rep.Lines, line)
 		rep.Counts[res]++
 		if progress != nil && ((i+1)%25 == 0 || i+1 == len(made)) {
 			progress(i+1, len(made))

@@ -49,7 +49,9 @@ func plainSettings(in map[string]any) (map[string]any, []string) {
 	out := map[string]any{}
 	var gone []string
 	for k, v := range in {
-		if IsSecretName(k) {
+		// An on/off setting holds no secret, whatever its name says
+		// ("rejectBlocklistedTorrentHashes..." only names a switch).
+		if _, isBool := v.(bool); IsSecretName(k) && !isBool {
 			if !empty(v) {
 				gone = append(gone, k)
 			}

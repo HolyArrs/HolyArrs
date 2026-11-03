@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { proxied } from '../tmdb-image.ts';
 	// One ask in the cards' window (ApprovalsDesktop): the trailer as a big
 	// banner (Explore's Billboard; for music, the artist's video over the
 	// photo), type · year · what was asked, who asked and their note, then
@@ -80,10 +81,20 @@
 		const load =
 			a.kind === 'show'
 				? api.get<TitleView>(`/titles/${id}`, ctl.signal).then((t) =>
-						partialFacts('seasons', (t.show?.seasons ?? []).filter((s) => s.number > 0 && !s.dropped).map((s) => ({ key: s.number, complete: s.aired > 0 && s.in_library >= s.aired, real: s.aired > 0 })), a.seasons ?? [])
+						partialFacts(
+							'seasons',
+							(t.show?.seasons ?? []).filter((s) => s.number > 0 && !s.dropped).map((s) => ({ key: s.number, complete: s.aired > 0 && s.in_library >= s.aired, real: s.aired > 0, size: s.aired, have: s.in_library })),
+							a.seasons ?? [],
+							(a.episodes ?? []).filter((e) => e.episodes?.length).map((e) => ({ key: e.season, count: new Set(e.episodes).size }))
+						)
 					)
 				: api.get<{ albums: AlbumSummary[] }>(`/titles/${id}/albums`, ctl.signal).then((r) =>
-						partialFacts('albums', r.albums.filter((x) => !x.dropped).map((x) => ({ key: x.mbid, complete: x.tracks > 0 && x.in_library >= x.tracks, real: realAlbum(x) })), (a.albums ?? []).map((x) => x.mbid))
+						partialFacts(
+							'albums',
+							r.albums.filter((x) => !x.dropped).map((x) => ({ key: x.mbid, complete: x.tracks > 0 && x.in_library >= x.tracks, real: realAlbum(x), size: x.tracks, have: x.in_library })),
+							(a.albums ?? []).filter((x) => !x.songs?.length).map((x) => x.mbid),
+							(a.albums ?? []).filter((x) => x.songs?.length).map((x) => ({ key: x.mbid, count: new Set(x.songs).size }))
+						)
 					);
 		load.then((facts) => !ctl.signal.aborted && (partial = { id, facts })).catch(() => {});
 		return () => ctl.abort();
@@ -244,7 +255,7 @@
 {/snippet}
 
 {#snippet artistArt()}
-	{#if artistBg}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/if}
+	{#if artistBg}<div class="artist-bg" style:background-image={`url("${proxied(artistBg)}")`}></div>{/if}
 	{#if mvideo}<div class="mv">{#key mvideo.key}<TrailerPlayer sources={pickedSources(mvideo.key, mvideo)} title={picked.name} sharp pausable top repeat start={heroVideoStart(mvideo)} />{/key}</div>{/if}
 {/snippet}
 

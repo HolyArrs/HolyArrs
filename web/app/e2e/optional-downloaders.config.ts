@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.HOLYARRS_OPTIONAL_UI_URL;
-if (!baseURL) throw new Error('HOLYARRS_OPTIONAL_UI_URL is required');
+// Without the prepared run's address the spec skips itself with the reason.
+const baseURL = process.env.HOLYARRS_OPTIONAL_UI_URL ?? 'http://127.0.0.1:9';
 
 export default defineConfig({
 	testDir: '.',

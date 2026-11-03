@@ -18,6 +18,7 @@
 	import { askHref, type ApprovalsCtx } from './approvals.ts';
 	import { artistPhoto, askArtist, storedParts } from './details.svelte.ts';
 	import { to } from '../paths.ts';
+	import { proxied } from '../tmdb-image.ts';
 	import { shortDate, whenDate } from './inbox.ts';
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from '../requests.ts';
@@ -219,9 +220,14 @@
 
 	// Approving shows its answer on the card for a beat, then the card leaves (Undo stays in the toast).
 	let approving = $state(new Set<number>());
-	const beats = new Set<ReturnType<typeof setTimeout>>();
+	const beats = new Map<ReturnType<typeof setTimeout>, Ask>();
+	// Leaving mid-beat still approves: hand the ask on now, and the page's own
+	// leave step sends it (a child is torn down before its page).
 	onDestroy(() => {
-		for (const t of beats) clearTimeout(t);
+		for (const [t, a] of beats) {
+			clearTimeout(t);
+			if (waiting(a)) ctx.approve([a]);
+		}
 	});
 	function approveOne(a: Ask) {
 		if (approving.has(a.id)) return;
@@ -246,7 +252,7 @@
 			approving = next;
 			if (had) void tick().then(() => (after?.isConnected ? after : (document.querySelector<HTMLElement>('.bc .open') ?? sfBtn))?.focus({ preventScroll: true }));
 		}, ms(560));
-		beats.add(t);
+		beats.set(t, a);
 	}
 
 	// The window: one ask on the Stage.
@@ -454,14 +460,14 @@
 				{@const w = ctx.who(a)}
 				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
 				{@const life = lifeOf(a)}
-				{@const photo = a.kind === 'artist' ? artistPhoto(a) : null}
-				{@const wide = banner(a)}
+				{@const photo = a.kind === 'artist' ? proxied(artistPhoto(a)) || null : null}
+				{@const wide = proxied(banner(a)) || null}
 				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page for {a.name}" title="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page"><Icon name="arrowUpRight" size={16} /></a>{/if}
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
-						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${a.poster}")`}></span>{/if}
+						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></span>{/if}
 					</div>
 					<div class="top">
 						<div class="ban-cap"><h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title="Asked for a 4K copy, approved on its own">4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>

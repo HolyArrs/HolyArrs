@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/CoderLuii/holyarrs/internal/domain"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -125,7 +126,116 @@ func TestNZBGetLab(t *testing.T) {
 		if _, err := n.Get(ctx, id); !errors.Is(err, ErrNotFound) {
 			t.Fatalf("get after remove: %v", err)
 		}
+	case "clear":
+		labNZBGetClearFinished(t, n)
 	default:
 		t.Fatalf("unknown mode %q", mode)
 	}
 }
+
+// labNZBGetClearFinished is roadmap #53 on the lab NZBGet: one real job
+// finishes from our own news server into the shared lab folder, then
+// ClearFinished takes it out of NZBGet and its job folder off the disk.
+// NZBGet is pointed at the news server and the folder for this run only;
+// its own settings are put back afterwards. Runs in NZBGet's network
+// namespace with the lab downloads folder at /data/downloads.
+func labNZBGetClearFinished(t *testing.T, n *NZBGet) {
+	ctx := context.Background()
+	var conf []struct{ Name, Value string }
+	// loadconfig is the settings file itself (config adds runtime values that must not be saved).
+	if err := n.rpc(ctx, "loadconfig", nil, &conf); err != nil || len(conf) == 0 {
+		t.Fatalf("read NZBGet settings: %v", err)
+	}
+	dest := "/data/downloads/usenet/nzbget-lab"
+	set := map[string]string{"Server1.Active": "yes", "Server1.Host": "127.0.0.1", "Server1.Port": "1119", "Server1.Encryption": "no",
+		"Server1.Username": "", "Server1.Password": "", "Server1.Connections": "2", "DestDir": dest, "InterDir": dest + "-inter", "AppendCategoryDir": "no", "ParCheck": "manual", "Unpack": "no"}
+	changed := make([]map[string]string, 0, len(conf))
+	seen := map[string]bool{}
+	for _, o := range conf {
+		v := o.Value
+		if nv, ok := set[o.Name]; ok {
+			v, seen[o.Name] = nv, true
+		}
+		changed = append(changed, map[string]string{"Name": o.Name, "Value": v})
+	}
+	for k, v := range set {
+		if !seen[k] {
+			changed = append(changed, map[string]string{"Name": k, "Value": v})
+		}
+	}
+	apply := func(opts any) {
+		var ok bool
+		if err := n.rpc(ctx, "saveconfig", []any{opts}, &ok); err != nil || !ok {
+			t.Fatalf("save NZBGet settings: %v %v", ok, err)
+		}
+		_ = n.rpc(ctx, "reload", nil, &ok)
+		// NZBGet restarts itself: wait until it answers again.
+		for i := 0; i < 60; i++ {
+			time.Sleep(time.Second)
+			if _, err := n.Health(ctx); err == nil {
+				return
+			}
+		}
+		t.Fatal("NZBGet did not come back after a reload")
+	}
+	orig := make([]map[string]string, 0, len(conf))
+	for _, o := range conf {
+		orig = append(orig, map[string]string{"Name": o.Name, "Value": o.Value})
+	}
+	nntp := startFakeNNTP(t, ":1119")
+	apply(changed)
+	defer apply(orig)
+
+	data := make([]byte, 600_000)
+	for i := range data {
+		data[i] = byte(i * 7)
+	}
+	nzb := nntp.makeNZB(labNZBGetRel+".mkv", data, 200_000)
+	src := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(nzb)) }))
+	defer src.Close()
+	marker := fmt.Sprintf("nzbget-%032x", time.Now().UnixNano())
+	id, err := n.Add(ctx, AddRequest{URL: src.URL + "/lab.nzb", Name: labNZBGetRel, Category: "holyarrs", AttemptMarker: marker, AllowLocal: true})
+	if err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	var j Job
+	for i := 0; i < 120; i++ {
+		if j, err = n.Get(ctx, id); err == nil && (j.State == StateFinished || j.State == StateFailed) {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if j.State != StateFinished {
+		_ = n.Remove(ctx, id, true)
+		t.Fatalf("job %s (%s): %v", j.State, j.Detail, err)
+	}
+	folder := j.ContentPath
+	if fi, err := os.Stat(folder); err != nil || !fi.IsDir() {
+		t.Fatalf("NZBGet's folder %q is not on the shared disk: %v", folder, err)
+	}
+	t.Logf("NZBGet finished %s into %s", labNZBGetRel, folder)
+
+	w, m, dlID, _ := usenetDownload(t)
+	m.Engine = func(domain.Downloader) (Engine, error) { return n, nil }
+	if err := execSQL(w, `UPDATE downloaders SET adapter = 'nzbget', path_map = '[{"theirs":"/data/downloads","ours":"/data/downloads"}]'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := execSQL(w, `UPDATE downloads SET external_id = '`+id+`'`); err != nil {
+		t.Fatal(err)
+	}
+	m.Forget(w.download(t, dlID).DownloaderID)
+	m.ClearFinished(ctx, dlID)
+	if _, err := os.Stat(folder); !os.IsNotExist(err) {
+		t.Fatalf("the job folder %s is still on disk: %v", folder, err)
+	}
+	if _, err := n.Get(ctx, id); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("the cleared job is still in NZBGet: %v", err)
+	}
+	if countEvents(t, w, "download_removed", dlID) != 1 {
+		t.Fatal("no History entry")
+	}
+	fmt.Printf("LAB_CLEAR_FINISHED=gone %s\n", folder)
+}
+
+// labNZBGetRel is the Release name the test world's download carries.
+const labNZBGetRel = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"

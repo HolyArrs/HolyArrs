@@ -3,7 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { subsPort } from './fakes.mjs';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab } from './helpers.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle
@@ -169,6 +169,7 @@ test('Missing subtitles: every movie missing Spanish, by show too, and Search al
 test('Movie page: its own languages, every result with score and reasons, Choose a subtitle, Sync fix, Turn down, History', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Quill Atlas/ }).first().click();
+	await openLibraryTab(page); // the subtitle card is on the Library tab
 	const card = page.getByTestId('subtitles');
 	await expect(card.getByTestId('subtitle-wish')).toContainText('English · Spanish (the default languages)');
 	await expect(card.getByTestId('subtitle-row').filter({ hasText: 'Spanish' })).toContainText('From Lab subtitle site');
@@ -191,7 +192,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await expect(choices.getByRole('heading', { name: 'French' })).toBeVisible({ timeout: 30_000 });
 	await expect(choices.getByTestId('subtitle-choice').first()).toContainText('matches');
 	await expect(choices.getByTestId('subtitle-choice-score').first()).toHaveText(/\d+\/100/);
-	await axe(page, 'choose a subtitle');
+	await axe(page, 'choose a subtitle', '[data-testid="subtitles"]'); // the card; the Library tab's other tools have their own checks
 	await choices.locator('ul[data-lang="fr"]').getByRole('button', { name: /^Choose / }).first().click();
 	await expect(page.getByText(/Saved .*\.fr\.srt\./)).toBeVisible({ timeout: 30_000 });
 	const fr = card.getByTestId('subtitle-row').filter({ hasText: 'French' });
@@ -202,7 +203,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await fr.getByRole('button', { name: '500 ms later' }).click();
 	await fr.getByRole('button', { name: '500 ms later' }).click();
 	await expect(fr).toContainText('1 second later');
-	await axe(page, 'sync fix');
+	await axe(page, 'sync fix', '[data-testid="subtitles"]'); // the card; the Library tab's other tools have their own checks
 	await fr.getByRole('button', { name: 'Fix the timing' }).click();
 	await expect(page.getByText('Timing fixed. The old file is in the holding folder.')).toBeVisible();
 
@@ -215,32 +216,48 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 
 	// History lists the subtitle Events.
 	await page.reload();
-	const hist = page.getByTestId('title-history');
+	await openLibraryTab(page);
+	// The title's history sits beside its files on the Library tab.
+	const hist = page.getByTestId('lib-pane').locator('aside', { has: page.getByRole('heading', { name: 'History' }) });
 	await expect(hist).toContainText('Subtitles');
-	await expect(hist).toContainText(/turned down|Turned down/);
+	// Its rows are short; the full History page says what happened.
+	await hist.getByText('Subtitles', { exact: false }).first().click();
+	await expect(page).toHaveURL(/\/downloads\/history\?title=\d+/);
+	const down = page.locator('[data-testid="history-row"][data-kind="subtitle_turned_down"]');
+	await expect(down).toHaveCount(1, { timeout: 15_000 });
+	await down.click();
+	await expect(page.getByRole('main')).toContainText(/Turned down .*\.fr\.srt from Lab subtitle site/);
 });
 
-test('Show page: the show follows the default languages; one episode gets its own from its row', async () => {
+test('Show page: the show follows the default languages', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
+	await openLibraryTab(page);
 	const showCard = page.getByTestId('subtitles');
 	await expect(showCard.getByTestId('subtitle-wish')).toContainText('English · Spanish (the default languages)');
 	await expect(showCard.getByTestId('subtitle-missing-link')).toContainText('2 subtitles missing');
+});
+
+test('Show page: one episode gets its own subtitle languages in its sheet', async () => {
+	await page.goto('/library');
+	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
+	await openLibraryTab(page);
 	await openSeasonNamed(page, 'Season 1');
-	await episodeAction(page, 'S01E01', 'Subtitles');
-	const dialog = page.getByTestId('episode-subtitles-dialog');
-	await expect(dialog.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
-	await expect(dialog.getByTestId('subtitle-missing')).toHaveCount(2);
-	await dialog.getByTestId('subtitle-wish-change').click();
-	await dialog.getByRole('radio', { name: /Its own languages/ }).check();
-	await dialog.getByRole('button', { name: 'Take Spanish off' }).click();
-	await dialog.getByRole('button', { name: 'Save languages' }).click();
-	await expect(dialog.getByTestId('subtitle-wish')).toContainText('English (set for this episode)');
-	await expect(dialog.getByTestId('subtitle-missing')).toHaveCount(1);
-	await axe(page, 'episode subtitles', 'dialog[open]');
-	await dialog.getByTestId('subtitle-search').click();
+	// The episode's sheet holds its own Subtitles card.
+	await episodeAction(page, 'S01E01', 'History');
+	const sheet = page.getByTestId('episode-subtitles');
+	await expect(sheet.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
+	await expect(sheet.getByTestId('subtitle-missing')).toHaveCount(2);
+	await sheet.getByTestId('subtitle-wish-change').click();
+	await sheet.getByRole('radio', { name: /Its own languages/ }).check();
+	await sheet.getByRole('button', { name: 'Take Spanish off' }).click();
+	await sheet.getByRole('button', { name: 'Save languages' }).click();
+	await expect(sheet.getByTestId('subtitle-wish')).toContainText('English (set for this episode)');
+	await expect(sheet.getByTestId('subtitle-missing')).toHaveCount(1);
+	await axe(page, 'episode subtitles', '[data-testid="episode-subtitles"]');
+	await sheet.getByTestId('subtitle-search').click();
 	await expect(page.getByText('Looking for subtitles now.')).toBeVisible();
-	await dialog.getByRole('button', { name: 'Close' }).click();
+	await page.keyboard.press('Escape');
 });
 
 test('the subtitle screens fit a phone and pass the accessibility scan', async ({ browser }) => {
@@ -255,6 +272,7 @@ test('the subtitle screens fit a phone and pass the accessibility scan', async (
 	}
 	await ph.goto('/library');
 	await ph.getByRole('link', { name: /Quill Atlas/ }).first().click();
+	await openLibraryTab(ph);
 	const card = ph.getByTestId('subtitles');
 	await card.getByTestId('subtitle-choose').click();
 	await expect(card.getByTestId('subtitle-choice').first()).toBeVisible({ timeout: 30_000 });

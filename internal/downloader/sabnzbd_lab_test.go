@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -224,7 +225,12 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	w.addDownloader(t, &domain.Downloader{Name: "Lab SABnzbd", Adapter: "sabnzbd", Protocol: "usenet", URL: base, Category: "movies", Priority: 1, AllowLocal: true, Writable: true, SecretRef: &ref})
+	// With the lab downloads folder at /data/downloads here too (HOLYARRS_LAB_DISK=1),
+	// the finished job is cleared out afterwards and its folder checked on disk.
+	disk := os.Getenv("HOLYARRS_LAB_DISK") == "1"
+	dr := &domain.Downloader{Name: "Lab SABnzbd", Adapter: "sabnzbd", Protocol: "usenet", URL: base, Category: "movies", Priority: 1, AllowLocal: true, Writable: true, SecretRef: &ref,
+		ClearFinished: true, PathMap: []domain.PathMap{{Theirs: "/data/downloads", Ours: "/data/downloads"}}}
+	w.addDownloader(t, dr)
 	// Our news server and NZBs are on the lab network: the Source may reach it.
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE sources SET allow_local_network = 1 WHERE id = 1")
@@ -306,9 +312,54 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 			if !gone {
 				t.Fatal("the failed NZB is still in SABnzbd 10 s later")
 			}
+			if disk {
+				labClearFinishedDisk(t, m, s, w.download(t, next))
+			}
 			return
 		}
 		time.Sleep(time.Second)
 	}
 	t.Fatalf("not replaced in time: dead %s, next %d", w.download(t, dead).State, next)
+}
+
+// labClearFinishedDisk is roadmap #53 on the lab: a finished SABnzbd job is
+// cleared out of SABnzbd and its job folder is gone from the shared disk,
+// whether SABnzbd names the job by its folder or by its one file.
+func labClearFinishedDisk(t *testing.T, m *Manager, s *Sabnzbd, d domain.Download) {
+	ctx := context.Background()
+	j, err := s.Get(ctx, d.ExternalID)
+	if err != nil {
+		t.Fatalf("finished job: %v", err)
+	}
+	folder := j.ContentPath
+	if fi, err := os.Stat(folder); err == nil && fi.Mode().IsRegular() {
+		folder = filepath.Dir(folder)
+	}
+	if fi, err := os.Stat(folder); err != nil || !fi.IsDir() {
+		t.Fatalf("SABnzbd's storage %q: no job folder on the shared disk (%v)", j.ContentPath, err)
+	}
+	t.Logf("SABnzbd storage %s; job folder %s", j.ContentPath, folder)
+	m.ClearFinished(ctx, d.ID)
+	if _, err := os.Stat(folder); !os.IsNotExist(err) {
+		t.Fatalf("the job folder %s is still on disk: %v", folder, err)
+	}
+	if _, err := os.Stat(filepath.Dir(folder)); err != nil {
+		t.Fatalf("the category folder went too: %v", err)
+	}
+	gone := false
+	for i := 0; i < 20 && !gone; i++ {
+		_, err := s.Get(ctx, d.ExternalID)
+		if gone = err == ErrNotFound; !gone {
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+	if !gone {
+		t.Fatal("the cleared job is still in SABnzbd 10 s later")
+	}
+	var n int
+	_ = m.Store.ReadEvents().QueryRow("SELECT count(*) FROM events WHERE kind = 'download_removed' AND download_id = ? AND summary LIKE '%and its files%'", d.ID).Scan(&n)
+	if n != 1 {
+		t.Fatalf("History: %d entries saying the files went", n)
+	}
+	fmt.Printf("LAB_CLEAR_FINISHED=gone %s\n", folder)
 }

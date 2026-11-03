@@ -163,7 +163,7 @@ export const resultWords: Record<string, string> = {
 	skipped: 'Left out',
 	not_found: 'Not found here',
 	failed: 'Failed',
-	removed: 'Removed',
+	removed: 'Undone',
 	kept: 'Kept'
 };
 
