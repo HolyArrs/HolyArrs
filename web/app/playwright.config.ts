@@ -46,7 +46,7 @@ export default defineConfig({
 		{ name: 'movies', testMatch: 'movies.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'lists', testMatch: 'lists.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// The Requests page at phone width: a member asks, the owner approves from a phone.
-		{ name: 'requests', testMatch: 'requests.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['setup'] },
+		{ name: 'requests', testMatch: 'requests.spec.ts', grepInvert: /follows a Library artist/, use: { ...devices['Pixel 7'] }, dependencies: ['setup'] },
 		// Sources: add, test, a wrong key, pause, the health page, an rss feed.
 		{ name: 'sources', testMatch: 'sources.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Search: Choose a release, Held and Turned down, Home, Settings > Search.
@@ -78,6 +78,8 @@ export default defineConfig({
 		{ name: 'musicdownloads', testMatch: 'musicdownloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicsearch', 'search'] },
 		// Organise for music: music naming with a live example, rename an album's tracks from its page, import an artist folder (nothing moves, a single left out), delete a track to the holding folder, an album's History, album days on the Calendar, a phone, delete an artist with Never-add.
 		{ name: 'musicorganise', testMatch: 'musicorganise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicdownloads'] },
+		// Requests: a member follows a Library artist. After the music projects, so it uses their music folder.
+		{ name: 'requestsmusic', testMatch: 'requests.spec.ts', grep: /follows a Library artist/, use: { ...devices['Pixel 7'] }, dependencies: ['musicorganise'] },
 		// Subtitles: English and Spanish as the default languages, the Pass marks, Subtitle sites (the lab's fake site, one that needs your account), every movie missing Spanish with Search all, a movie's and an episode's subtitles (languages, Choose a subtitle, Sync fix, Turn down), History, a phone, accessibility, members see none of it.
 		{ name: 'subtitles', testMatch: 'subtitles.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['shows'] },
 		// Several Versions per show: add a show with a 4K Version, both Versions searched with their own pack, History names the Version, change, add and remove Versions, a busy Version stays, a phone.

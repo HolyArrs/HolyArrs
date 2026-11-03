@@ -552,6 +552,23 @@
 			toasts.push(plainReason(message(e)).text, 'fail');
 		}
 	}
+	// Missing list: one search for every missing title of this kind, after a confirm.
+	let missingDialog = $state<HTMLDialogElement | null>(null);
+	let searchingAll = $state(false);
+	const missingCount = $derived(titles.filter((t) => ofKind(t, kind) && passes(t, { ...noFilter, status: 'missing' }, ctx)).length);
+	const missingWhat = $derived(kind === 'movie' ? ' movies' : kind === 'show' ? ' shows' : kind === 'artist' ? ' music' : '');
+	async function searchAllMissing() {
+		searchingAll = true;
+		try {
+			await api.post('/search/missing', kind === 'all' ? undefined : { kind });
+			toasts.push(`Searching for every missing ${kind === 'movie' ? 'movie' : kind === 'show' ? 'episode' : kind === 'artist' ? 'album' : 'movie, episode and album'}.`, 'ok');
+			missingDialog?.close();
+		} catch (e) {
+			toasts.push(plainReason(message(e)).text, 'fail');
+		} finally {
+			searchingAll = false;
+		}
+	}
 	function askDelete(ids: number[]) {
 		if (!ids.length) return;
 		deleteIds = ids;
@@ -848,6 +865,7 @@
 		</div>
 		<span class="tool-gap"></span>
 		{#if view === 'table' && kind !== 'all' && !phone}<ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} />{/if}
+		{#if canManage && filter.status === 'missing' && missingCount}<Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button>{/if}
 		{#if canManage && shown.length}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}
 	</div>
 
@@ -1075,6 +1093,15 @@
 	<div class="modal-actions">
 		<Button onclick={() => deleteDialog?.close()} disabled={busy}>Cancel</Button>
 		<Button variant="destructive" icon="trash" disabled={busy} onclick={confirmDelete} data-testid="bulk-delete-confirm">Remove {deleteIds.length} {deleteIds.length === 1 ? 'title' : 'titles'}</Button>
+	</div>
+</dialog>
+
+<dialog bind:this={missingDialog} aria-labelledby="search-missing-title" class="modal" data-testid="search-missing">
+	<h2 id="search-missing-title" class="h2">Search for {missingCount} missing {missingCount === 1 ? 'title' : 'titles'}?</h2>
+	<p class="small muted">Each one kept up to date is looked for at your Sources, a few at a time. Home shows the searches as they run.</p>
+	<div class="modal-actions">
+		<Button onclick={() => missingDialog?.close()} disabled={searchingAll}>Cancel</Button>
+		<Button variant="primary" icon="search" busy={searchingAll} onclick={searchAllMissing} data-testid="search-missing-confirm">Search</Button>
 	</div>
 </dialog>
 

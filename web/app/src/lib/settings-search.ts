@@ -116,7 +116,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/search', 'min-track', 'Smallest track file to place', 'size minimum KB music', true),
 	e('/settings/search', 'episode-minutes', 'Episode length when not known', 'runtime minutes', true),
 	e('/settings/search', 'hold-unknown', 'Hold Releases of unknown size or date', 'hold unknown', true),
-	e('/settings/search', 'search-now', 'Search now', 'search missing better copy feeds run'),
+	e('/settings/search', 'search-now', 'Search now', 'search better copy feeds run'),
 	e('/settings/downloaders', 'downloaders-card', 'Downloaders', 'download client qbittorrent sabnzbd transmission deluge nzbget torrent client add'),
 	e('/settings/downloaders', 'st-stall', 'Stalled after', 'stalled stuck hours download', true),
 	e('/settings/downloaders', 'st-act', 'Give up and try the next Release after', 'give up hours retry', true),

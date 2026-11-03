@@ -21417,8 +21417,28 @@
     },
     "/api/v1/search/better": {
       "post": {
-        "description": "Queues one Job that searches every Slot whose copy is below Good enough, oldest searched first, up to bulk_search_cap (default 500) a run, spaced a little apart.",
+        "description": "Queues one Job that searches every Slot whose copy is below Good enough, oldest searched first, up to bulk_search_cap (default 500) a run, spaced a little apart. Send {\"kind\": \"movie\", \"show\" or \"artist\"} to search only that kind.",
         "operationId": "searchBetter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "movie",
+                      "show",
+                      "artist"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
         "responses": {
           "202": {
             "content": {
@@ -21467,8 +21487,28 @@
     },
     "/api/v1/search/missing": {
       "post": {
-        "description": "Queues one Job that searches every Slot still missing, oldest searched first, up to bulk_search_cap (default 500) a run, spaced a little apart. Slots not out yet and busy Slots are skipped while bulk searches respect the Release gate.",
+        "description": "Queues one Job that searches every Slot still missing, oldest searched first, up to bulk_search_cap (default 500) a run, spaced a little apart. Slots not out yet and busy Slots are skipped while bulk searches respect the Release gate. Send {\"kind\": \"movie\", \"show\" or \"artist\"} to search only that kind; it is its own Job.",
         "operationId": "searchMissing",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "movie",
+                      "show",
+                      "artist"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
         "responses": {
           "202": {
             "content": {

@@ -172,6 +172,9 @@
 	// The type leads the metadata line ("Show · 2024"); never twice.
 	const typedWord = $derived(typed ? typeWord(kind) : '');
 	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
+	// The link is named by the title alone; kind, year and Library state follow as its description.
+	const uid = $props.id();
+	const more = $derived([typedWord, sub, owned?.label, status ? statusLabel : ''].filter(Boolean).join(', '));
 	const strip = $derived(progress === undefined ? shownFresh(fresh, { music, row }) : null);
 	let failed = $state(false);
 	// The name tile shows until the picture has loaded; in a row the picture
@@ -201,7 +204,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-poster" class:gone class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
-	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
+	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} aria-labelledby={href ? `${uid}-t` : undefined} aria-describedby={href && more ? `${uid}-d` : undefined} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl} style:background-color={tint}>
 			{#if !image || failed || !loaded}
 				<!-- The shimmer only while a picture is really on its way; else the still initials. -->
@@ -221,7 +224,8 @@
 			<CardBadges fresh={strip} {owned} size={shape === 'poster' ? 'md' : 'sm'} />
 			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label="{title} progress" size="sm" on="art" /></span>{/if}
 		</span>
-		<span class="t" title={title}>{title}</span>
+		<span class="t" id="{uid}-t" title={title}>{title}</span>
+		{#if href && more}<span class="sr-only" id="{uid}-d">{more}</span>{/if}
 		{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 	</svelte:element>
 	{#if action && showAction}<span class="act-layer" class:hover-only={actionOnHover} class:over-strip={!!strip}><span class="act">{@render action()}</span></span>{/if}

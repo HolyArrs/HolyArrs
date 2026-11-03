@@ -520,6 +520,31 @@ func TestMissingSearchGroupsSeasons(t *testing.T) {
 	}
 }
 
+func TestMissingSearchOneKind(t *testing.T) {
+	ts := &tvServer{answer: func(url.Values) []string { return nil }}
+	f := seedShow(t, ts.start(t), nil)
+	sr := &Searcher{Store: f.s}
+	// Movies only: the movie is searched, the show's episodes are not.
+	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "movie"})
+	if n, _ := j.Result["slots"].(float64); j.State != "done" || n != 1 {
+		t.Fatalf("movies: %s %+v", j.State, j.Result)
+	}
+	var movie, show int
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", KindSearchSlot, f.slotID).Scan(&movie)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind IN (?, ?)", KindSearchSeason, KindSearchSlot).Scan(&show)
+	if movie != 1 || show != 1 {
+		t.Fatalf("movie searches %d, all searches %d", movie, show)
+	}
+	// Shows only: season 1 and S02E01, never the movie.
+	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "show"})
+	if n, _ := j.Result["slots"].(float64); n != 4 {
+		t.Fatalf("shows: %+v", j.Result)
+	}
+	if s, _ := j.Result["seasons"].(float64); s != 1 {
+		t.Fatalf("shows: %+v", j.Result)
+	}
+}
+
 func TestDailyEpisodeQuery(t *testing.T) {
 	day := time.Now().UTC().AddDate(0, 0, -3)
 	ts := &tvServer{answer: func(url.Values) []string {

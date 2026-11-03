@@ -427,10 +427,26 @@ func (a *API) removeFrom(state string, one bool) http.HandlerFunc {
 }
 
 // bulkSearch queues one search_missing Job for the whole Missing list or
-// the whole Better copy list.
+// the whole Better copy list; {"kind": "movie", "show" or "artist"} keeps it
+// to that kind.
 func (a *API) bulkSearch(which string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _, err := a.s.Queue.Enqueue(r.Context(), source.KindSearchMissing, nil, map[string]any{"which": which}, "search_missing:"+which, actor(r))
+		var in struct {
+			Kind string `json:"kind"`
+		}
+		if r.ContentLength != 0 && !decode(w, r, &in, `send nothing for everything, or {"kind": "movie", "show" or "artist"}`) {
+			return
+		}
+		params, key := map[string]any{"which": which}, "search_missing:"+which
+		switch in.Kind {
+		case "":
+		case "movie", "show", "artist":
+			params["kind"], key = in.Kind, key+":"+in.Kind
+		default:
+			fail(w, http.StatusBadRequest, `kind must be "movie", "show" or "artist"`)
+			return
+		}
+		id, _, err := a.s.Queue.Enqueue(r.Context(), source.KindSearchMissing, nil, params, key, actor(r))
 		if err != nil {
 			internal(w, err)
 			return

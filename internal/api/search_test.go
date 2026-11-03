@@ -231,6 +231,16 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 			t.Fatalf("%s params %v", path, j.Params)
 		}
 	}
+	// One kind gets its own Job, next to the whole-list one.
+	var one struct {
+		JobIDs []int64 `json:"job_ids"`
+	}
+	_ = json.Unmarshal(do(t, "POST", u+"/api/v1/search/missing", `{"kind":"movie"}`, 202), &one)
+	var j domain.Job
+	if len(one.JobIDs) != 1 || store.Get(context.Background(), s.Read(), "jobs", one.JobIDs[0], &j) != nil || j.Params["kind"] != "movie" || j.DedupeKey == nil || *j.DedupeKey != "search_missing:missing:movie" {
+		t.Fatalf("kind: %+v %v", one, j.Params)
+	}
+	do(t, "POST", u+"/api/v1/search/missing", `{"kind":"book"}`, 400)
 }
 
 // route: GET /api/v1/settings/search

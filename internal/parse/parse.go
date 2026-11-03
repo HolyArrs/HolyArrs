@@ -106,7 +106,7 @@ var (
 	reSeparators = regexp.MustCompile(`[\s._()\[\]]+`)
 	reLastBrack  = regexp.MustCompile(`\[([^\[\]]+)\]\s*$`)
 	reCRC        = regexp.MustCompile(`\s*\[[0-9A-Fa-f]{8}\]\s*$`)
-	reLeadBrack  = regexp.MustCompile(`^\[([^\[\]\s]+)\]\s*`)
+	reLeadBrack  = regexp.MustCompile(`^\[([^\[\]]+)\]\s*`) // a group name may hold spaces: [Lab Fansub]
 	reResWord    = regexp.MustCompile(`^(480|576|720|1080|2160)[pi]$`)
 	reYear       = regexp.MustCompile(`^(19|20)\d\d$`)
 	reChannels   = regexp.MustCompile(`(?:^|[^0-9])([1-9]) ([01])(?:$|[^0-9])`)
@@ -256,7 +256,7 @@ func Parse(name string, h Hints) Result {
 
 	// A leading [group] (anime) and the episode numbers make a show Release.
 	body, lead := s, ""
-	if m := reLeadBrack.FindStringSubmatchIndex(s); m != nil && !isTag(s[m[2]:m[3]]) {
+	if m := reLeadBrack.FindStringSubmatchIndex(s); m != nil && !slices.ContainsFunc(strings.Fields(s[m[2]:m[3]]), isTag) {
 		body, lead = s[m[1]:], s[m[2]:m[3]]
 	}
 	// Underscores are word characters to the patterns; read them as spaces

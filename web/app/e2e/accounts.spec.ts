@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Dialog, type Locator, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
 import { owner, signIn, signOut } from './helpers.ts';
 import { embyUser, jellyfinPort, mediaUser } from './fakes.mjs';
@@ -258,6 +258,8 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 	await form.getByRole('button', { name: 'Save' }).click();
 	await expect(own.getByText('Single sign-on saved.')).toBeVisible();
 	await expect(form.getByLabel('Client secret')).toHaveValue('');
+	// The secret typed before the wrong password was saved with the right one.
+	await expect(form.getByText('A secret is saved; it is never shown.')).toBeVisible();
 
 	const visitor = await fresh(browser);
 	await visitor.goto('/login');
@@ -265,6 +267,80 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 
 	// Turn it off again so later tests see the sign-in page as before.
 	await form.getByText('Show the single sign-on button on the sign-in page').click();
+	await form.getByLabel('Your HolyArrs password').fill(owner().password);
+	await form.getByRole('button', { name: 'Save' }).click();
+	await expect(own.getByText('Single sign-on saved.').first()).toBeVisible();
+});
+
+// The owner's fresh-password box, where a page asks for it first.
+async function confirmIfAsked(where: Locator) {
+	const box = where.getByTestId('confirm-sign-in');
+	if (await box.isVisible().catch(() => false)) {
+		await box.getByLabel('HolyArrs password').fill(owner().password);
+		await box.getByRole('button', { name: 'Confirm' }).click();
+	}
+}
+
+test('single sign-on links are undone: the owner unlinks a person, and the owner unlinks their own', async ({ browser }) => {
+	await own.goto('/settings/sign-in');
+	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Single sign-on' }) });
+	await confirmIfAsked(card);
+	const form = card.getByTestId('sso-form');
+	await form.getByLabel('Show the single sign-on button on the sign-in page').check();
+	await form.getByLabel(/New people the provider signs in may join/).check();
+	await form.getByTestId('sso-confirm-everyone').check();
+	await form.getByLabel('Your HolyArrs password').fill(owner().password);
+	await form.getByRole('button', { name: 'Save' }).click();
+	await expect(own.getByText('Single sign-on saved.').first()).toBeVisible();
+
+	// Pat joins through the provider and has no HolyArrs password.
+	const pat = await fresh(browser);
+	await pat.goto('/login');
+	await pat.getByRole('button', { name: /single sign-on/i }).click();
+	await pat.getByLabel('Username').fill('pat');
+	await pat.getByRole('button', { name: 'Sign in' }).click();
+	await expect(pat).toHaveURL(/\/$/, { timeout: 15_000 });
+	await expect(pat.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
+
+	// The owner unlinks Pat from Users; the browser asks twice, since it is Pat's only way in.
+	await own.goto('/settings/users');
+	const asked: string[] = [];
+	const yes = (d: Dialog) => (asked.push(d.message()), d.accept());
+	own.removeAllListeners('dialog'); // a once() above may still wait for a dialog that never came
+	own.on('dialog', yes);
+	await own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' }).click();
+	await expect(own.getByText('Unlinked the single sign-on sign-in of pat.')).toBeVisible();
+	own.off('dialog', yes);
+	expect(asked).toHaveLength(2);
+	expect(asked[1]).toContain('no HolyArrs password');
+	await expect(own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' })).toHaveCount(0);
+	// The device that single sign-on signed in is signed out.
+	await pat.reload();
+	await expect(pat).toHaveURL(/\/login/);
+
+	// The owner links their own provider account from My account, then unlinks it there.
+	await own.goto('/settings/account');
+	await own.getByTestId('link-sign-in').click();
+	await confirmIfAsked(own.locator('#linked-me'));
+	await own.locator('#linked-me').getByRole('button', { name: 'Single sign-on' }).click();
+	await own.getByLabel('Username').fill('boss');
+	await own.getByRole('button', { name: 'Sign in' }).click();
+	await expect(own.getByText('Single sign-on linked.')).toBeVisible({ timeout: 15_000 });
+	const mine = own.getByTestId('my-sso-links');
+	await expect(mine).toContainText('as boss');
+	await mine.getByRole('button', { name: /^Unlink Single sign-on at / }).click();
+	await confirmIfAsked(mine);
+	await mine.getByRole('button', { name: 'Unlink', exact: true }).click();
+	await expect(own.getByText('Single sign-on unlinked.', { exact: false })).toBeVisible();
+	await expect(mine).toHaveCount(0);
+	// The owner's password session is not one single sign-on made, so it stays.
+	await own.reload();
+	await expect(own).toHaveURL(/\/settings\/account/);
+
+	await own.goto('/settings/sign-in');
+	await confirmIfAsked(card);
+	await form.getByLabel('Show the single sign-on button on the sign-in page').uncheck();
+	await form.getByLabel(/New people the provider signs in may join/).uncheck();
 	await form.getByLabel('Your HolyArrs password').fill(owner().password);
 	await form.getByRole('button', { name: 'Save' }).click();
 	await expect(own.getByText('Single sign-on saved.').first()).toBeVisible();
