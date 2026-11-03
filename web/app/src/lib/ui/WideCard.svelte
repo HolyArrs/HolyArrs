@@ -207,11 +207,13 @@
 	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
 	const strip = $derived(pct === undefined ? shownFresh(fresh, { row }) : null);
 	const marked = $derived(!!(strip || owned));
+	// The card's name reads the strip once: left out when it only repeats the line under the card (Home's rows).
+	const stripWords = $derived(strip && !(sub && freshLabel(strip).endsWith(sub)) ? freshLabel(strip) : '');
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-wide" class:gone={needsArt && (!src || failed)} class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
-	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, strip && freshLabel(strip)].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
+	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, stripWords].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !src || failed || !loaded}<ArtPlaceholder name={title} shape="wide" loading={!!src && !failed && near() && !loaded} />{/if}
 			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} class:tall alt="" loading="lazy" decoding="async" use:whenLoaded={(e) => { tall = !!e && e.naturalHeight > e.naturalWidth; loaded = true; }} onerror={artError} />{/key}{/if}

@@ -94,9 +94,9 @@ describe('what is happening', () => {
 	it('puts something you asked for first, then asks waiting, then news, then downloads', () => {
 		expect(every(line(all), /asked for|Gladiator|asks are in the Library/)).toBe(true);
 		expect(every(line({ ...all, askedArrived: [] }), /\d+ asks waiting for you|Your Requests page has 4 asks/)).toBe(true);
-		expect(every(line({ ...all, askedArrived: [], waiting: 0 }), /New today|Something new landed today/)).toBe(true);
+		expect(every(line({ ...all, askedArrived: [], waiting: 0 }), /New today|Something new is out today/)).toBe(true);
 		expect(every(line({ ...all, askedArrived: [], waiting: 0, newToday: { count: 0 } }), /Something you asked for is almost here/)).toBe(true);
-		expect(every(line({ ...all, askedArrived: [], waiting: 0, newToday: { count: 0 }, finishing: { mine: 0, all: 3 } }), /Downloads are almost done/)).toBe(true);
+		expect(every(line({ ...all, askedArrived: [], waiting: 0, newToday: { count: 0 }, finishing: { mine: 0, all: 3 } }), /^3 downloads are almost done/)).toBe(true);
 		expect(every(line({ ...all, askedArrived: [], waiting: 0, newToday: { count: 0 }, finishing: { mine: 0, all: 0 } }), /^(Good morning|Morning)/)).toBe(true);
 	});
 	it('names the title when there is one, and counts when there are several', () => {
@@ -107,9 +107,16 @@ describe('what is happening', () => {
 		const news = new Set(line(facts({ newToday: { count: 1, title: 'Severance' } })));
 		expect([...news].some((l) => l.startsWith('New today, ') && l.endsWith(': Severance.'))).toBe(true);
 		const lots = new Set(line(facts({ newToday: { count: 5, title: 'Severance' } })));
-		expect([...lots].some((l) => l.includes('5 things in the Library'))).toBe(true);
+		expect([...lots].some((l) => l.endsWith(': 5 titles.'))).toBe(true);
 		expect(line(facts({ waiting: 1 })).some((l) => l.includes('1 ask waiting'))).toBe(true);
 		expect(line(facts({ waiting: 1 })).some((l) => l.includes('1 asks'))).toBe(false);
+		expect(every(line(facts({ finishing: { mine: 0, all: 1 } })), /^A download is almost done/)).toBe(true);
+	});
+	it('never says a date-only title arrived or is in the Library', () => {
+		for (const count of [1, 2, 5]) for (const l of line(facts({ newToday: { count, title: 'Severance' } }))) expect(l, l).not.toMatch(/landed|arrived|in the Library/);
+	});
+	it('keeps quiet lines from claiming anything is new today', () => {
+		for (const hour of [6, 10, 14, 19, 23]) for (const l of line(noFacts).concat(users.map((u) => homeLine({ name: u, now: TUE(hour) })))) expect(l, l).not.toMatch(/new today/i);
 	});
 	it('keeps a Kid away from requests to approve and the owner downloads', () => {
 		expect(every(line(facts({ waiting: 9 }), { kid: true }), /^(Good morning|Morning)/)).toBe(true);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, libraryCards, n, arrivedTitle, askProgressLine, attention, downloadMoved, fallbackRows, groupAttention, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine } from './home.ts';
 import type { HealthCheck } from './types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -57,6 +57,68 @@ describe('home', () => {
 		expect(rows.reduce((n, r) => n + r.items.length, 0)).toBe(items.length);
 		// A lone item keeps its own key, so its row does not jump when another joins it.
 		expect(rows[1].key).toBe(items[2].key);
+	});
+
+	it('counts failures with the Downloads rule: replaced ones are done, refused imports count', () => {
+		const row = (id: number, phase: string, state: string, replaced?: boolean) => ({ id, phase, state, progress: 0, replaced });
+		const failed = homeFailures([row(1, 'failed', 'failed', true), row(2, 'failed', 'failed'), row(3, 'import_refused', 'completed'), row(4, 'vanished', 'vanished'), row(5, 'vanished', 'vanished', true), row(6, 'downloading', 'downloading')]);
+		expect(failed.map((d) => d.id)).toEqual([2, 3, 4]);
+		const [, refused] = attention({ failed: [{ id: 2, title: 'Alien', title_id: 1, text: '', phase: 'failed' }, { id: 3, title: 'Barbie', title_id: 2, text: '', phase: 'import_refused' }], decisions: [], health: [] });
+		expect(`${refused.title} · ${refused.reason}`).toBe('Barbie · import refused');
+		expect(refused.text).toBe('Barbie: The import was refused.');
+	});
+
+	it('keeps the metadata outage while it lasts, and sends people without Settings to Status', () => {
+		const items = attention({ failed: [], decisions: [], health: [check('e', 'error', 'downloader'), check('w', 'warning', 'trailers' as HealthCheck['kind'])], metadata: 'Search pauses.', admin: false });
+		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Downloader · not answering', "HolyArrs metadata · can't be reached", 'Trailers · lookups failing']);
+		expect(items.map((i) => [i.href, i.action])).toEqual([['/status', 'Look'], ['/status', 'Look'], ['/status', 'Look']]);
+		expect(items[1].note).toBe('Search pauses.');
+		const own = attention({ failed: [], decisions: [], health: [check('e', 'error', 'downloader')], metadata: 'x' });
+		expect(own.map((i) => i.href)).toEqual(['/settings/downloaders', '/settings/tmdb']);
+		expect(attention({ failed: [], decisions: [], health: [] })).toEqual([]);
+	});
+
+	it('follows the flap guard when the server sends the confirmed state', () => {
+		const flaky = { ...check('d', 'error', 'downloader'), confirmed: 'ok' as const };
+		const held = { ...check('s', 'ok', 'source'), confirmed: 'warning' as const };
+		expect(shownState(flaky)).toBe('ok');
+		expect(shownState(held)).toBe('warning');
+		expect(shownState(check('x', 'error'))).toBe('error');
+		expect(shownState({ state: 'error', confirmed: '' })).toBe('error');
+		const items = attention({ failed: [], decisions: [], health: [flaky, held] });
+		expect(items.map((i) => `${i.word} ${i.title} · ${i.reason}`)).toEqual(['Warning Source · answered with a problem']);
+	});
+
+	it('links the rows that do not fit to the page that holds them, counting rows', () => {
+		const g = (cause: string, n = 1) => ({ items: Array.from({ length: n }, () => ({ cause }) as never) });
+		expect(moreLink([])).toBeNull();
+		expect(moreLink([g('health:source:warning', 2), g('health:backups:warning')])).toEqual({ href: '/settings/health', text: '2 more on Health' });
+		expect(moreLink([g('health:source:warning'), g('metadata')], false)).toEqual({ href: '/status', text: '2 more on Status' });
+		expect(moreLink([g('download_failed', 3), g('decision')])).toEqual({ href: '/downloads', text: '2 more in Downloads' });
+		expect(moreLink([g('decision'), g('health:update:warning')])).toEqual({ href: '/downloads', text: '2 more in Downloads' });
+	});
+
+	it('says plainly what Home could not check', () => {
+		expect(uncheckedLine(true, false)).toBe('Home could not check downloads right now.');
+		expect(uncheckedLine(false, true)).toBe('Home could not check health right now.');
+		expect(uncheckedLine(true, true)).toBe('Home could not check downloads or health right now.');
+	});
+
+	it('lists what is downloading now, furthest along first, without client-only or finished rows', () => {
+		const row = (id: number, phase: string, state: string, progress: number, extra: object = {}) => ({ id, phase, state, progress, active: state !== 'completed' && state !== 'failed', ...extra });
+		const rows = [
+			row(1, 'downloading', 'downloading', 0.2),
+			row(2, 'waiting', 'queued', 0),
+			row(3, 'downloading', 'downloading', 0.8),
+			row(4, 'done', 'seeding', 1, { active: true }),
+			row(5, 'downloading', 'downloading', 0.5, { client_item: true }),
+			row(6, 'failed', 'failed', 0.3),
+			row(7, 'done', 'completed', 1),
+			row(8, 'stalled', 'stalled', 0.2)
+		];
+		expect(downloadingNow(rows).map((d) => d.id)).toEqual([3, 8, 1, 2]);
+		expect(downloadingNow(rows, 2).map((d) => d.id)).toEqual([3, 8]);
+		expect(downloadingNow([])).toEqual([]);
 	});
 });
 
@@ -119,6 +181,9 @@ describe('Your Library cards', () => {
 		expect(cards[0].segments[2].href).toBe('/library?kind=movie&show=missing');
 		expect(cards[1].detail).toBe('1 season · 1 episode');
 		expect(cards[2]).toMatchObject({ unit: 'artist', detail: '3 albums · 40 tracks' });
+		// Downloading links to Downloads only for people who may open it.
+		expect(cards[0].segments[1].href).toBeUndefined();
+		expect(libraryCards({ movie: { titles: 1, parts: 0, items: 1, on_disk: 0, missing: 0, downloading: 1, size: 0 } }, '/downloads')[0].segments[1].href).toBe('/downloads');
 	});
 	it('leaves out kinds that are off and copes with an empty kind', () => {
 		expect(libraryCards(undefined)).toEqual([]);
@@ -133,5 +198,19 @@ describe('Your Library cards', () => {
 		expect(downloadMoved(seen, { ID: 7, State: 'failed' })).toBe(true);
 		expect(downloadMoved(seen, { id: 8, state: 'queued' })).toBe(true);
 		expect(downloadMoved(seen, null)).toBe(true);
+	});
+	it('words stalled and paused asks, and only claims two weeks when the newest arrival is that new', () => {
+		expect(askProgressLine({ state: 'stalled', progress: 0.42 })).toBe('Stalled at 42%');
+		expect(askProgressLine({ state: 'paused', progress: 0.5 })).toBe('Paused at 50%');
+		expect(homeStrip({ kind: 'show', name: 'S', line: 'Show' })).toBeNull();
+		expect(homeStrip({ kind: 'artist', name: 'A', line: 'Music' })).toBeNull();
+		const now = Date.parse('2026-11-03T12:00:00Z');
+		expect(arrivedHead([{ at: '2026-11-01T12:00:00Z' }, { at: '2026-01-01T00:00:00Z' }], now)).toEqual({ title: 'New this week', subtitle: 'New in the last two weeks' });
+		expect(arrivedHead([{ at: '2026-08-01T00:00:00Z' }], now)).toEqual({ title: 'Recently added', subtitle: undefined });
+		expect(arrivedHead([{}], now)).toEqual({ title: 'Just arrived' });
+	});
+	it('names a failed download with no matched title by its own name', () => {
+		const items = attention({ failed: [{ id: 1, title: '', name: 'Some.Release.2024', text: '' }, { id: 2, title: '', text: '' }], decisions: [], health: [] });
+		expect(items.map((i) => i.title)).toEqual(['Some.Release.2024', 'A download']);
 	});
 });
