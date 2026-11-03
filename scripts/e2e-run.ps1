@@ -1,6 +1,7 @@
 param(
   [Parameter(Mandatory = $true, Position = 0)][string]$Command,
   [string]$Who = (Split-Path -Leaf (Get-Location)),
+  [ValidateSet('agent', 'owner')][string]$As = 'agent',
   [int]$StaleMinutes = 45,
   [int]$WaitMinutes = 120
 )
@@ -10,7 +11,12 @@ param(
 # get it. A lock whose holder is gone, or that is older than StaleMinutes, is
 # taken over. Example:
 #   & C:\HolyForge\coderluii\cl\holyarrs\repo\scripts\e2e-run.ps1 'npx playwright test e2e/library.spec.ts' -Who library
+# -As picks which 18729 showcase login a check reads (never printed): agent,
+# the admin agent-check (default), or owner, for owner-only pages. The
+# command gets that file's path in HOLYARRS_SHOWCASE_LOGIN.
 $ErrorActionPreference = 'Stop'
+$logins = @{ agent = 'C:\HolyForge\coderluii\cl\holyarrs\secrets\showcase-18729-agent.txt'; owner = 'C:\HolyForge\coderluii\cl\holyarrs\secrets\showcase-18729-home.txt' }
+$env:HOLYARRS_SHOWCASE_LOGIN = $logins[$As]
 $state = 'C:\HolyForge\coderluii\cl\holyarrs\.omc\state'
 $lock = Join-Path $state 'e2e.lock'
 $info = Join-Path $lock 'holder.txt'
