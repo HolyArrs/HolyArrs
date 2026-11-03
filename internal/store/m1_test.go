@@ -298,9 +298,9 @@ func TestM1MigrationsAreAddOnly(t *testing.T) {
 		// TestMusicAsksMigrationKeepsAsks proves no row is lost.
 		// 0042 rebuilds downloaders to widen its adapter check;
 		// TestOptionalDownloadersMigrationKeepsData proves no row is lost.
-		// 0080 rebuilds alerts to add the telegram kind;
+		// 0082 rebuilds alerts to add the telegram kind;
 		// TestAlertsKeptByTelegramMigration proves no Alert is lost.
-		if m.version < 7 || m.version == 8 || m.version == 19 || m.version == 21 || m.version == 23 || m.version == 25 || m.version == 42 || m.version == 80 {
+		if m.version < 7 || m.version == 8 || m.version == 19 || m.version == 21 || m.version == 23 || m.version == 25 || m.version == 42 || m.version == 82 {
 			continue
 		}
 		up := strings.ToUpper(m.sql)

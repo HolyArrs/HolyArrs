@@ -226,7 +226,7 @@
 				<Field id="al-tg-token" label="Bot token" hint={isNew ? 'In Telegram, talk to @BotFather and send /newbot; it gives you the token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one.'}>
 					<input id="al-tg-token" class="input mono" type="password" bind:value={form.bot_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '123456789:AAH…' : 'Stored'} />
 				</Field>
-				<Field id="al-tg-chat" label="Chat ID" hint="Who gets the messages: a number for a person or group (a group's starts with -), or @name for a public channel. Send the bot a message first, or add it to the group or channel.">
+				<Field id="al-tg-chat" label="Chat ID" hint="Who gets the messages: a number for a person, group or channel (groups and channels start with -), or @name for a public channel. Send the bot a message first, or add it to the group or channel.">
 					<input id="al-tg-chat" class="input mono" bind:value={form.chat_id} autocomplete="off" spellcheck="false" placeholder="-1001234567890 or @mychannel" />
 				</Field>
 			{:else if form.kind === 'discord'}
@@ -278,7 +278,7 @@
 			{/each}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>May reach the local network</b><br /><span class="hint">Off: only discord.com links, and mail and webhook servers on the internet. On: also a server on this machine or your home network.</span></span>
+				<span><b>May reach the local network</b><br /><span class="hint">Off: only discord.com and api.telegram.org, and mail and webhook servers on the internet. On: also a server on this machine or your home network.</span></span>
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />

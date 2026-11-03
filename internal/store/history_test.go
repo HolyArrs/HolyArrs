@@ -191,12 +191,12 @@ func TestAlertsKeptByWebhookMigration(t *testing.T) {
 	}
 }
 
-// TestAlertsKeptByTelegramMigration: 0080 rebuilds alerts to add the
+// TestAlertsKeptByTelegramMigration: 0082 rebuilds alerts to add the
 // telegram kind and chat_id; every Alert keeps all it had.
 func TestAlertsKeptByTelegramMigration(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 79)})
+	old, err := Open(dir, Options{MainMigrations: upTo(t, 81)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +210,7 @@ func TestAlertsKeptByTelegramMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = old.Close()
-	s, err := Open(dir, Options{MainMigrations: upTo(t, 80)})
+	s, err := Open(dir, Options{MainMigrations: upTo(t, 82)})
 	if err != nil {
 		t.Fatal(err)
 	}
