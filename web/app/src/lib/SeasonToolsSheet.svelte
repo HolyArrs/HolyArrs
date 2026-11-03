@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import Icon from '#lib/Icon.svelte';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import { api } from '#lib/api.ts';
 	import { ago, bytes } from '#lib/format.ts';
@@ -13,8 +14,9 @@
 		titleId,
 		season,
 		episodes,
-		onchange
-	}: { open?: boolean; mode?: 'files' | 'rename' | 'history'; titleId: number; season: number; episodes: SheetEpisode[]; onchange?: () => void } = $props();
+		onchange,
+		ondelete
+	}: { open?: boolean; mode?: 'files' | 'rename' | 'history'; titleId: number; season: number; episodes: SheetEpisode[]; onchange?: () => void; ondelete?: () => void } = $props();
 
 	let events = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
 	let loadingEvents = $state(false);
@@ -78,14 +80,17 @@
 				{:else}<li class="muted">{loadingEvents ? 'Loading…' : 'Nothing has happened in this season yet.'}</li>{/each}
 			</ol>
 		{/if}
+		{#if ondelete}<button type="button" class="st-del" onclick={ondelete}><Icon name="trash" size={16} />Delete {season === 0 ? 'Specials' : `Season ${season}`}</button>{/if}
 	</div>
 </Sheet>
 
 <style>
 	.st { display: grid; gap: 14px; }
 	.st-seg { display: inline-flex; justify-self: start; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
-	.st-seg button { height: 30px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); cursor: pointer; }
+	.st-seg button { height: 30px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
 	.st-seg button.on { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 18%); }
+	.st-del { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--fail-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	.st-del:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.st-sum { margin: 0; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.st-files, .st-tl { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 	.st-files li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }

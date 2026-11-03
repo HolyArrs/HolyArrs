@@ -91,48 +91,29 @@ test('Rename files on the show page renames the adopted episodes to the episode 
 	expect(existsSync(files.extra)).toBe(true);
 });
 
-interface Plan {
-	scope?: string;
-	season?: number;
-	episodes?: string[];
-	applied: boolean;
-	held: { path: string }[];
-	kept: { path: string; why?: string }[];
-}
-
 test('deleting one episode of a multi-episode file keeps the file; deleting the season holds its files', async () => {
-	// The title page deletes only the whole show (its Delete sheet); one episode
-	// or one season has no delete there, so both go through the same delete
-	// call the older show page used: the plan first, then the plan applied.
-	const id = Number(/\/library\/(\d+)/.exec(new URL(page.url()).pathname)?.[1]);
-	expect(id).toBeGreaterThan(0);
-	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	const del = async (body: Record<string, unknown>) => {
-		const r = await page.request.post(`/api/v1/titles/${id}/delete`, { data: body, headers: { 'X-CSRF-Token': me.csrf } });
-		expect(r.ok(), await r.text()).toBe(true);
-		return (await r.json()) as Plan;
-	};
+	// One episode: from its sheet on the Library tab.
 	const s1 = await openSeasonNamed(page, 'Season 1');
-	await expect(s1.getByRole('button', { name: /^Episode 2:/ })).toBeVisible();
-	const eps = ((await (await page.request.get(`/api/v1/titles/${id}/episodes?season=1`)).json()) as { episodes: { id: number; episode: number }[] }).episodes;
-	const e2 = eps.find((e) => e.episode === 2)?.id;
-	expect(e2).toBeTruthy();
+	await s1.getByRole('button', { name: /^Episode 2:/ }).click();
+	const sheet = page.getByRole('dialog', { name: 'Season 1 · Episode 2' });
+	await sheet.getByRole('button', { name: /Delete this episode/ }).click();
+	const dialog = page.getByTestId('show-delete');
+	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells S01E02?');
+	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);
+	await dialog.getByRole('checkbox', { name: /Also delete their files/ }).check();
+	await expect(dialog.getByTestId('delete-plan')).toContainText('it also holds S01E03, which stays');
+	await axe(page, 'delete an episode');
+	await dialog.getByRole('button', { name: 'Cancel' }).click();
 
-	const one = await del({ episode_ids: [e2], delete_files: true, apply: false });
-	expect(one.scope).toBe('episodes');
-	expect(one.episodes).toEqual(['S01E02']);
-	expect(one.held).toHaveLength(0);
-	expect(one.kept.map((f) => f.why).join(' ')).toContain('it also holds S01E03, which stays');
-
-	const keep = await del({ season: 1, delete_files: false, apply: false });
-	expect(keep.scope).toBe('season');
-	expect(keep.episodes).toHaveLength(3);
-	expect(keep.held).toHaveLength(0);
-	const plan = await del({ season: 1, delete_files: true, apply: false });
-	expect(plan.held).toHaveLength(2);
-	const done = await del({ season: 1, delete_files: true, apply: true });
-	expect(done.applied).toBe(true);
-	expect(done.held).toHaveLength(2);
+	// The whole season: from its Files, rename and history sheet.
+	await page.getByRole('button', { name: 'Files, rename and history of season 1' }).click();
+	await page.getByTestId('season-tools').getByRole('button', { name: 'Delete Season 1' }).click();
+	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells Season 1?');
+	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1 (3 episodes): HolyArrs stops keeping them up to date.');
+	await dialog.getByRole('checkbox', { name: /Also delete their files/ }).check();
+	await expect(dialog.getByTestId('delete-plan')).toContainText('2 files move to the holding folder');
+	await dialog.getByRole('button', { name: 'Delete Season 1' }).click();
+	await expect(page.getByText(/Quarry Bells Season 1 is deleted\. Their files are in the holding folder/)).toBeVisible();
 	expect(existsSync(join(folder, 'Season 1', 'Quarry Bells - S01E01 - Echo 1080p WEB.mkv'))).toBe(false);
 	// The season folder it emptied goes; the person's Extras folder stays.
 	expect(existsSync(join(folder, 'Season 1'))).toBe(false);

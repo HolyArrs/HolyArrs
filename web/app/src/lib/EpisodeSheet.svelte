@@ -26,8 +26,9 @@
 		titleId,
 		tmdb,
 		manage = false,
-		onchange
-	}: { open?: boolean; ep: SheetEpisode | null; titleId: number; tmdb?: string; manage?: boolean; onchange?: () => void } = $props();
+		onchange,
+		ondelete
+	}: { open?: boolean; ep: SheetEpisode | null; titleId: number; tmdb?: string; manage?: boolean; onchange?: () => void; ondelete?: () => void } = $props();
 
 	let story = $state('');
 	let events = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
@@ -140,6 +141,7 @@
 						<span><b>Keep up to date</b><small>Grab it when it shows up and upgrade it later</small></span>
 						<span class="es-switch" class:on={keep} aria-hidden="true"></span>
 					</button>
+					{#if ondelete}<button type="button" class="es-row danger" onclick={ondelete}><span><b>Delete this episode</b><small>Choose whether its file goes too</small></span></button>{/if}
 				</div>
 			{/if}
 
@@ -185,6 +187,8 @@
 	.es-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 	.es-row span:first-child { display: grid; gap: 3px; }
 	.es-row b { font: 600 15px/1.2 var(--font-ui); }
+	.es-row.danger b { color: var(--fail-text); }
+	.es-rows > .es-row + .es-row { border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
 	.es-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.es-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
 	.es-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
