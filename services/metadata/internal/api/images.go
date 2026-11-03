@@ -141,6 +141,12 @@ func (s *Server) serveImage(w http.ResponseWriter, r *http.Request) {
 		queue = func(kind, mbid string) { im.WantNow(ictx, kind, mbid) }
 	}
 	path, rec, final, found := im.Store.Served(r.Context(), kind, mbid, want)
+	if !found && s.anonSlimAbsent(r, slimKindOf(kind), mbid) {
+		// Random ids from a caller without a credential never start
+		// MusicBrainz or picture work (as on the MusicBrainz route).
+		problem(w, 404, "not_found", 0)
+		return
+	}
 	if !found && !ahead && im.Now != nil {
 		if im.Now(fetchq.WithInstall(r.Context(), who.who), kind, mbid) {
 			path, rec, final, found = im.Store.Served(r.Context(), kind, mbid, want)
@@ -249,4 +255,22 @@ func jpegOf(ctx context.Context, path string) ([]byte, error) {
 		return nil, err
 	}
 	return imgstore.EncodeJPEG(img)
+}
+
+// slimKindOf is the slim copy kind behind a picture kind ("" when the
+// picture is not keyed by a MusicBrainz id).
+func slimKindOf(kind string) string {
+	switch kind {
+	case "album":
+		return "release-group"
+	case "artist", "wide", "logo":
+		return "artist"
+	}
+	return ""
+}
+
+// anonSlimAbsent reports a request without a credential for an id the
+// loaded slim copy does not hold.
+func (s *Server) anonSlimAbsent(r *http.Request, kind, mbid string) bool {
+	return kind != "" && Anonymous(r.Context()) && s.SlimAbsent(r.Context(), kind, mbid)
 }

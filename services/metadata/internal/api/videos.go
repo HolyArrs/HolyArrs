@@ -33,6 +33,10 @@ func (s *Server) serveVideos(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(b)
 		return
 	}
+	if s.anonSlimAbsent(r, "artist", mbid) {
+		problem(w, 404, "not_found", 0)
+		return
+	}
 	if s.opts.WantVideos != nil {
 		s.opts.WantVideos(mbid)
 	}

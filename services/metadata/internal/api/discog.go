@@ -172,6 +172,10 @@ func (s *Server) serveMusicAlbum(w http.ResponseWriter, r *http.Request) {
 		s.writeAlbum(w, r, a)
 		return
 	}
+	if s.anonSlimAbsent(r, "release-group", mbid) {
+		problem(w, 404, "not_found", 0)
+		return
+	}
 	if r.Header.Get("X-Fetch") == "ahead" {
 		s.wantDiscog(context.Background(), discog.AlbumKey(mbid), fetchq.P4Deep, false)
 	} else if done := s.wantDiscog(s.installCtx(r), discog.AlbumKey(mbid), fetchq.P0Waiting, true); done != nil {
