@@ -21,7 +21,7 @@ const movieDetailsBody = `{"id":5,"title":"Five","release_date":"2024-03-01","ru
 func TestTMDBMovieDetailsExtras(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		if q.Get("append_to_response") != "release_dates,images,credits" || q.Get("include_image_language") != "en,null" {
+		if q.Get("append_to_response") != "release_dates,images,credits,alternative_titles,translations" || q.Get("include_image_language") != "en,null" {
 			t.Errorf("query %v", q)
 		}
 		_, _ = w.Write([]byte(movieDetailsBody))
@@ -76,7 +76,7 @@ func TestTMDBShowDetailsExtras(t *testing.T) {
 			return
 		}
 		q := r.URL.Query()
-		if q.Get("append_to_response") != "external_ids,images,credits,content_ratings" || q.Get("include_image_language") != "en,null" {
+		if q.Get("append_to_response") != "external_ids,images,credits,content_ratings,alternative_titles,translations" || q.Get("include_image_language") != "en,null" {
 			t.Errorf("query %v", q)
 		}
 		_, _ = w.Write([]byte(`{"id":9,"name":"Nine","backdrop_path":"/sb.jpg","genres":[{"name":"Comedy"}],

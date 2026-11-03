@@ -533,6 +533,7 @@ func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) 
 	}
 	id, name, err := a.ssoIdentity(r.Context(), "oidc", o.opt.Issuer, result.subject, result.display, o.opt.AllowJoin, 0)
 	if err != nil {
+		a.failedEvent(r, outsideName(result.display), ssoRefusal("oidc", err))
 		fail(w, http.StatusUnauthorized, "OIDC identity is not allowed to sign in")
 		return
 	}

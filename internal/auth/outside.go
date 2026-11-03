@@ -328,7 +328,8 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&id, &name, &state)
 	if err == nil {
 		if state != "active" {
-			return 0, "", errDisabled
+			// The member's name goes with the refusal, for the audit row only.
+			return 0, name, errDisabled
 		}
 		return id, name, nil
 	}
@@ -336,7 +337,8 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		return 0, "", err
 	}
 	if !mayJoin {
-		return 0, "", errNotAllowed
+		// The outside account's name (from the server) goes with the refusal.
+		return 0, strings.TrimSpace(extName), errNotAllowed
 	}
 	u := domain.User{Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}
 	if kid {
@@ -379,13 +381,40 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 	return id, name, err
 }
 
+// linkedName is the member an outside account belongs to, found through its
+// link (by id, else by its name on that server), else the member with that
+// name, else unknownName. The typed name is only matched, never stored.
+func (a *Auth) linkedName(ctx context.Context, provider, extID, extName string) string {
+	var n string
+	if extID != "" && a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
+		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&n) == nil {
+		return n
+	}
+	if a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
+		WHERE l.provider = ? AND l.external_name = ? ORDER BY l.user_id LIMIT 1`, provider, extName).Scan(&n) == nil {
+		return n
+	}
+	return a.knownName(ctx, extName)
+}
+
+// outsideName is an outside account's name for a failed sign-in row (it
+// comes from the Plex, Jellyfin or Emby server, never typed by hand).
+func outsideName(name string) string {
+	if name == "" {
+		return unknownName
+	}
+	return name
+}
+
 // outsideDone answers after an outside account checked out.
 func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider string, id int64, name string, err error) {
 	switch {
 	case errors.Is(err, errNotAllowed):
 		log.Printf("auth: %s account not allowed to join, from %s", provider, r.RemoteAddr)
+		a.failedEvent(r, outsideName(name), provider+" not allowed")
 		fail(w, http.StatusForbidden, "this account is not allowed in yet; ask the owner")
 	case errors.Is(err, errDisabled):
+		a.failedEvent(r, outsideName(name), "turned off")
 		fail(w, http.StatusForbidden, "this account is turned off; ask the owner")
 	case errors.Is(err, errKidSkipLocal):
 		log.Printf("auth: %s account has limits on the server and sign-in is skipped at home; not joined", provider)
@@ -697,6 +726,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	if code == http.StatusUnauthorized || code == http.StatusForbidden || code/100 == 4 {
 		log.Printf("auth: failed %s sign-in from %s", kind, r.RemoteAddr)
+		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
@@ -713,6 +743,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		_, _ = a.serverFetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
+		a.failedEvent(r, a.linkedName(ctx, kind, got.User.ID, got.User.Name), kind+" turned off")
 		fail(w, http.StatusForbidden, "this account is turned off on the "+kind+" server")
 		return
 	}

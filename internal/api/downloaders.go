@@ -54,6 +54,8 @@ type DownloaderView struct {
 	// says HOLYARRS_READONLY_DOWNLOADERS keeps it read only whatever the switch.
 	Writable       bool `json:"writable"`
 	WritableLocked bool `json:"writable_locked"`
+	// ClearFinished: a Usenet job and its files leave the client once imported.
+	ClearFinished bool `json:"clear_finished"`
 	Health     downloader.HealthView `json:"health"`
 	CheckedAt  *time.Time            `json:"checked_at,omitempty"`
 	Active     int                   `json:"active_downloads"`
@@ -62,7 +64,7 @@ type DownloaderView struct {
 func downloaderView(d domain.Downloader, active int) DownloaderView {
 	v := DownloaderView{ID: d.ID, Name: d.Name, Kind: d.Adapter, Protocol: d.Protocol, URL: d.URL, Username: d.Username, Category: d.Category,
 		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: downloader.HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
-		Writable: d.Writable, WritableLocked: downloader.ReadOnlyByEnv(d)}
+		Writable: d.Writable, WritableLocked: downloader.ReadOnlyByEnv(d), ClearFinished: d.ClearFinished}
 	if v.PathMap == nil {
 		v.PathMap = []domain.PathMap{}
 	}
@@ -115,7 +117,7 @@ func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }
 
-const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network, writable`
+const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network, writable, clear_finished`
 
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {
@@ -585,9 +587,7 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	e := &domain.Event{Actor: by, Kind: "setting_changed", Summary: "Changed the Downloader settings", Data: map[string]any{"downloaders": in}}
-	if a.s.Store.AddEvent(r.Context(), e) == nil && a.s.Live != nil {
-		a.s.Live.Publish("event", e)
-	}
+	// The change is logged once by logSettingsChanges as an audit Event (area
+	// and who, never the values), so it is not written or sent live here.
 	a.getDownloaderSettings(w, r)
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
+import { eventText } from '../history-lines.ts';
+import { dropAiTwins, agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './dirs.ts';
 import type { EventRecord } from '../types.ts';
 import { downloadSteps, type HistoryRow } from '../history.ts';
 
@@ -21,13 +22,15 @@ describe('history filters', () => {
 	});
 
 	it('maps steps to kinds and leaves routine work out', () => {
-		expect(stepKinds(['asked', 'chosen'])).toEqual(['ask_made', 'release_chosen', 'release_chosen_by_hand']);
+		expect(stepKinds(['asked', 'chosen'])).toEqual(['ask_made', 'ai_ask_made', 'release_chosen', 'release_chosen_by_hand']);
 		expect(stepKinds(['failed'])).toContain('download_failed');
 		const all = stepKinds([]);
 		expect(all).toContain('import_done');
 		expect(all).not.toContain('search_done');
 		expect(all).not.toContain('library_scanned');
-		expect(all.length).toBeLessThanOrEqual(50);
+		// The server takes at most 64 kinds in one list.
+		expect(all.length).toBeLessThanOrEqual(64);
+		for (const k of ['account_changed', 'secrets_imported', 'backup_used']) expect(stepKinds(['system'])).toContain(k);
 	});
 
 	it('reads the search look and builds a chip per filter', () => {
@@ -105,6 +108,31 @@ describe('search look rows', () => {
 		const titled = one(ev('renamed', { TitleID: 4 }));
 		expect(rowExtra(titled, rowStep(titled), undefined, 'Renamed a file')).toBe('');
 		expect(stepVerb(sign, { word: 'Changed', icon: 'settings', tone: 'idle' })).toEqual({ word: 'System', icon: 'info', tone: 'idle' });
+	});
+
+	it('treats AI apps as their own kind of who, with their asks and failures', () => {
+		const ai = ev('ai_ask_made', { Actor: { kind: 'ai', id: 3 }, Data: { client: 'Claude' } });
+		expect(whoMatches(ai, 'ai')).toBe(true);
+		expect(whoMatches(ai, 'holyarrs')).toBe(false);
+		expect(whoMatches(ai, 'people')).toBe(false);
+		expect(rowStep(one(ai)).label).toBe('Asked');
+		expect(rowStep(one(ev('ai_ask_approved'))).label).toBe('Approved');
+		expect(rowStep(one(ev('ai_ask_turned_down'))).label).toBe('Turned down');
+		const bad = one(ev('ai_action_failed', { Data: { error: 'not allowed for this key' } }));
+		expect(rowStep(bad).failed).toBe(true);
+		expect(rowExtra(bad, rowStep(bad))).toBe('not allowed for this key');
+		expect(stepKinds([])).toEqual(expect.arrayContaining(['ai_ask_*', 'ai_action_failed']));
+		expect(stepKinds(['asked'])).toContain('ai_ask_made');
+		expect(textMatches(ai, 'claude')).toBe(true);
+	});
+
+	it('shows one AI ask as one row, named and linked', () => {
+		const ai = ev('ai_ask_made', { Actor: { kind: 'ai', id: 3 }, Summary: 'AI (Claude, key home) asked for Made for Love (2021) for Maya', Data: { ask_id: 9, client: 'Claude' } });
+		const twin = ev('ask_made', { Actor: { kind: 'user', id: 3 }, Data: { ask_id: 9 } });
+		const other = ev('ask_made', { Actor: { kind: 'user', id: 4 }, Data: { ask_id: 10 } });
+		expect(dropAiTwins([ai, twin, other]).map((e) => e.ID)).toEqual([ai.ID, other.ID]);
+		expect(eventText(ai).name).toBe('Made for Love');
+		expect(rowLinks(one(ai)).map((l) => l.href)).toEqual(['/requests?ask=9']);
 	});
 
 	it('labels the System kinds without calling them routine', () => {

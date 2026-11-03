@@ -16,7 +16,7 @@
 	import Icon from '../Icon.svelte';
 	import Chip from '../ui/Chip.svelte';
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
-	import { PRIORITIES, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
+	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import TopMenu from './TopMenu.svelte';
 	import { to } from '../paths.ts';
 	import DlBar from './DlBar.svelte';
@@ -76,6 +76,8 @@
 		onretry,
 		onbulk,
 		onsteer,
+		changeOutside = true,
+		batchBusy = false,
 		watch = false,
 		upTotal
 	}: {
@@ -111,6 +113,10 @@
 		onbulk?: (rows: DownloadRow[], action: BulkAction) => void;
 		/** Opens the steering sheet (seeding rules and more) for these torrents. */
 		onsteer?: (rows: DownloadRow[], mode: SteerMode) => void;
+		/** The settings permission: changes to torrents HolyArrs did not send need it (the server refuses them otherwise). */
+		changeOutside?: boolean;
+		/** A selection action is on its way: the selection bars wait for it. */
+		batchBusy?: boolean;
 		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
 		watch?: boolean;
 		/** Upload speed the server added up over every sending row (seeding too, and rows past the page); else the rows on hand. */
@@ -513,7 +519,7 @@
 	const pickedRows = $derived(list.filter((r) => picked.has(r.id)));
 	// The toolbar's Start, Pause and Remove mean the ticked rows, else the open row.
 	// Start and Pause follow pausable, as the pane's own button does (NZBGet takes those two).
-	const able = (r: DownloadRow) => pausable(r) && busy !== r.id;
+	const able = (r: DownloadRow) => pausable(r) && !r.client_locked && busy !== r.id;
 	const startT = $derived(toolbarTargets(pickedRows, openRow, 'paused', able));
 	const pauseT = $derived(toolbarTargets(pickedRows, openRow, 'running', able));
 	const removeT = $derived(toolbarTargets(pickedRows, openRow, 'any', (r) => busy !== r.id));
@@ -571,7 +577,7 @@
 		});
 	}
 	function rowMenu(r: DownloadRow): MenuItem[] {
-		const items = menuItems(r, rowItems(r));
+		const items = menuItems(r, rowItems(r).filter((k) => k !== 'retry' || mayEdit(r)));
 		if (!r.can_act) items.unshift({ kind: 'heading', label: 'HolyArrs cannot change this one' });
 		return items;
 	}
@@ -584,7 +590,7 @@
 		if (!r.can_act) return [];
 		const off = busy === r.id || queueBusy === r.id;
 		const items = menuItems(r, rowItems(r).filter((k) => !PANE_BUTTONS.has(k)));
-		const extra = new Set(paneExtras(r, { steer: !!onsteer, fail: !watch && !inHistory(r) && !r.client_item }));
+		const extra = new Set(paneExtras(r, { steer: !!onsteer && mayEdit(r), fail: !watch && !inHistory(r) && !r.client_item }));
 		if (extra.has('recheck')) items.push({ label: 'Check again', disabled: off, onselect: () => onact?.(r, 'recheck') }, { label: 'Ask trackers again', disabled: off, onselect: () => onact?.(r, 'reannounce') });
 		if (extra.has('force')) items.push({ label: 'Force start', disabled: off, onselect: () => onbulk?.([r], 'force') });
 		if (extra.has('steer')) {
@@ -598,9 +604,12 @@
 		return items;
 	}
 	// Only qBittorrent takes location, speed and seeding changes; read-only rows never do.
-	const steerable = (r: DownloadRow) => !!onsteer && r.can_act && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
+	const steerable = (r: DownloadRow) => !!onsteer && mayEdit(r) && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
+	// Location, speed and seeding sheets, file priority, tracker edits and Download again on a torrent
+	// HolyArrs did not send need the settings permission, as on the server.
+	const mayEdit = (r: DownloadRow) => clientOk(r) && (!r.outside || changeOutside);
 	// The selection bars send only rows HolyArrs may change, so one read-only row cannot fail the rest.
-	const actable = (rows: DownloadRow[]) => rows.filter((r) => r.can_act);
+	const actable = (rows: DownloadRow[]) => rows.filter(clientOk);
 	// The selection bar's checks and queue moves are torrent calls: only shown when a ticked torrent takes them.
 	const bulkRows = $derived(actable(pickedRows).filter((r) => protocolOf(r) === 'torrent' && controllable(r.downloader_kind) && !!r.downloader_id && !!r.hash));
 	const STEER: { mode: SteerMode; label: string; short: string }[] = [
@@ -1041,6 +1050,11 @@
 		e.preventDefault();
 		tabs[j].click();
 		tick().then(() => tabs[j].focus());
+	}
+	// A heading's accessible name: its column and how the list is sorted by it.
+	function headName(id: ColId, so: { desc: boolean } | undefined): string {
+		const label = id === 'proto' ? 'Downloader' : id === 'poster' ? 'Poster' : id === 'kind' ? 'Type' : id === 'swarm' ? 'Seeds, peers and ratio' : COL[id].label;
+		return so ? `${label}, sorted ${so.desc ? 'high to low' : 'low to high'}` : label;
 	}
 	// Column headings take one Tab stop: Left and Right move between them, Enter or Space sorts.
 	// A screen reader's click (no pointer, detail 0) sorts too.
@@ -1520,7 +1534,7 @@
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = layout.sort?.id === id ? layout.sort : undefined}
-			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role="columnheader" aria-sort={so ? (so.desc ? 'descending' : 'ascending') : 'none'} tabindex={id === vis[0] ? 0 : -1} onpointerdown={(e) => headDown(e, id)} onclick={(e) => { if (e.detail === 0) sortBy(id); }} onkeydown={(e) => headKey(e, id)} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl" aria-label="Downloader"><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl" aria-label="Poster"><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl" aria-label="Type"><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role={id === 'swarm' ? 'group' : 'button'} aria-label={headName(id, so)} tabindex={id === vis[0] ? 0 : -1} onpointerdown={(e) => headDown(e, id)} onclick={(e) => { if (e.detail === 0) sortBy(id); }} onkeydown={(e) => headKey(e, id)} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !srcName}<span class="lbl"><span class="sr">Downloader</span><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl"><span class="sr">Poster</span><Icon name="image" size={15} /></span>{:else if id === 'kind' && !kindWide}<span class="lbl"><span class="sr">Type</span><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} aria-valuemin={heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
@@ -1532,8 +1546,8 @@
 	{@const more = watch ? [] : paneMenu(r)}
 	<div class="xbt" data-testid="dl-actions">
 		{#if !watch}
-			{#if retryable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
-			{:else if pausable(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
+			{#if retryable(r) && mayEdit(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
+			{:else if pausable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
 			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
 		{/if}
 		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">Open in Library</a>{/if}
@@ -1560,9 +1574,9 @@
 			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
 			{#if so.length}
 				<div class="subwrap" inert={!open}>
-					<div class="subin" role="group" aria-label="{c.label}: show" data-testid={open ? 'dl-subseg' : undefined}>
+					<div class="subin" data-testid={open ? 'dl-subseg' : undefined}>
 						{#each so as x (x.key)}
-							<button type="button" class="stab" class:on={open && subOn === x.key} aria-pressed={open && subOn === x.key} tabindex="-1" data-nav onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }} data-testid={open ? 'dl-subseg-item' : undefined} data-key={x.key} data-count={x.count}>{x.label}<b>{x.count}</b></button>
+							<button type="button" role="tab" class="stab" class:on={open && subOn === x.key} aria-selected={open && subOn === x.key} tabindex="-1" data-nav onclick={() => { if (on !== c.key) choose(c.key); chooseSub(x.key); }} data-testid={open ? 'dl-subseg-item' : undefined} data-key={x.key} data-count={x.count}>{x.label}<b>{x.count}</b></button>
 						{/each}
 					</div>
 				</div>
@@ -1625,7 +1639,7 @@
 			{/if}
 			<div class="fbar" hidden={files.length === 1}>
 				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
-				{#if fsel.size && !watch && r.can_act}
+				{#if fsel.size && !watch && mayEdit(r)}
 					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} selected</span>
 					{#each PRIOS as o (o.v)}<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(r, indexesUnder(files, fsel), o.v)} data-testid="dl-files-prio-{o.v}">{o.label}</button>{/each}
 					<button type="button" class="xbn" onclick={() => (fsel = new Set())} data-testid="dl-files-clear">Clear</button>
@@ -1640,7 +1654,7 @@
 						<td class="c-name"><span class="fn" title={f.name}>{f.name.split('/').pop()}</span></td>
 						<td class="c-num c-size">{bytes(f.size)}</td>
 						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !r.can_act} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
+						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !mayEdit(r)} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
 					</tr></tbody>
 				</table></div>
 			{:else if !shownF.length}
@@ -1656,11 +1670,11 @@
 						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<tr class:sel={sel[`${r.id}:f`] === x.key || fsel.has(x.key)} class:off={skipped} tabindex={ri === 0 ? 0 : -1} aria-selected={fsel.has(x.key)} onclick={(e) => fileClick(e, r, keys, x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileClick(e, r, keys, x.key); } }} data-testid="dl-filerow">
-							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !r.can_act} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
+							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !mayEdit(r)} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
 							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${x.key}`]} aria-label="{closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${x.key}`] = !closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
 							<td class="c-num c-size">{bytes(x.size)}</td>
 							<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !r.can_act} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
+							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !mayEdit(r)} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
 							<td class="c-num c-rem">{bytes(Math.max(0, x.size - x.done))}</td>
 						</tr>
 					{/each}
@@ -1716,7 +1730,7 @@
 					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
 				</tbody>
 			</table></div>
-			{#if !watch && r.can_act && r.downloader_id && r.hash}
+			{#if !watch && mayEdit(r) && r.downloader_id && r.hash}
 				{@const chosen = trs.find((x) => x.ref && sel[`${r.id}:t`] === x.ref)}
 				<div class="tred" data-testid="dl-tracker-edit">
 					{#if chosen}
@@ -1831,16 +1845,16 @@
 {#if (pickedRows.length || selecting) && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
-		{#if bulkRows.length}{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(bulkRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}{/if}
+		{#if bulkRows.length}{#each BULK as b (b.action)}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onbulk?.(bulkRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}{/if}
 		{#if pickedRows.some(steerable)}{#each STEER as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
-		{#if pickedRows.some(retryable)}<button type="button" class="xbn" onclick={() => onretry?.(pickedRows.filter(retryable))} data-testid="dl-bulk-retry">Download again</button>{/if}
+		{#if pickedRows.some((r) => retryable(r) && mayEdit(r))}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onretry?.(pickedRows.filter((r) => retryable(r) && mayEdit(r)))} data-testid="dl-bulk-retry">Download again</button>{/if}
 		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
 		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>
 	</div>
 		<div class="psel" role="toolbar" aria-label="Selected downloads" data-testid="dl-psel">
 			<div class="pst"><span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span><button type="button" class="plk" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-psel-all">Select all</button><button type="button" class="plk" onclick={clearPicked} data-testid="dl-psel-cancel">Cancel</button></div>
 			<div class="psa">
-				{#each PHONE_BULK.filter((b) => b.action !== 'recheck' || bulkRows.length) as b (b.action)}<button type="button" class="pa" disabled={b.action === 'start' ? !startT.rows.length : b.action === 'pause' ? !pauseT.rows.length : false} onclick={() => (b.action === 'start' ? runOn(startT, 'resume', 'start') : b.action === 'pause' ? runOn(pauseT, 'pause', 'pause') : onbulk?.(bulkRows, b.action))} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
+				{#each PHONE_BULK.filter((b) => b.action !== 'recheck' || bulkRows.length) as b (b.action)}<button type="button" class="pa" disabled={batchBusy || (b.action === 'start' ? !startT.rows.length : b.action === 'pause' ? !pauseT.rows.length : false)} onclick={() => (b.action === 'start' ? runOn(startT, 'resume', 'start') : b.action === 'pause' ? runOn(pauseT, 'pause', 'pause') : onbulk?.(bulkRows, b.action))} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
 				<button type="button" class="pa bad" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-psel-remove"><Icon name="trash" size={20} /><span>Remove</span></button>
 			</div>
 		</div>
@@ -1978,7 +1992,8 @@
 	/* One column grid for every row of both sections. */
 	.dlgrid { --gap: 6px; min-width: 0; }
 	.tw { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
-	.tin { min-width: var(--c-in); }
+	/* Muted text in the list is mixed from the text colour, so it stays readable (4.5:1+) on the card's tinted rows. */
+	.tin { min-width: var(--c-in); --text-muted: color-mix(in srgb, var(--text) 66%, var(--surface-2)); }
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 	.drow { display: block; border-bottom: 1px solid var(--line); }
 	.tg { position: relative; align-self: stretch; }
@@ -2056,7 +2071,7 @@
 	.num { text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 	/* The header row is exactly 28px (the ⋯ button may be taller), so every divider line stays inside it, clear of the border below. */
-	.chead { grid-template-rows: minmax(0, 1fr); position: relative; height: 28px; border-bottom: 1px solid var(--line); color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
+	.chead { grid-template-rows: minmax(0, 1fr); position: relative; height: 28px; border-bottom: 1px solid var(--line); color: color-mix(in srgb, var(--text) 78%, transparent); font: var(--t-caption); font-weight: 600; }
 	.chead + .dlrows { border-top: 0; }
 	.chead:hover { background: none; }
 	.ch { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
@@ -2263,23 +2278,23 @@
 	.pw { display: flex; align-items: center; flex: none; border-radius: 999px; background: transparent; transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.pw.on { background: var(--hl-bg); box-shadow: var(--hl-shadow, none); }
 	.tab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out); }
-	.tab .n { color: inherit; opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.tab .n { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tab:hover { color: var(--text); }
 	.pw.on .tab { color: var(--hl-fg); }
-	.tab.zero:not([aria-selected='true']) { opacity: 0.72; }
+	/* A tab with nothing in it reads its 0; it is not dimmed, so its label keeps readable contrast. */
 	.tab:focus-visible, .stab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.subwrap { display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 200ms var(--ease-out), opacity 200ms var(--ease-out); }
 	.pw.open .subwrap { grid-template-columns: 1fr; opacity: 1; }
 	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; }
 	.pw.open .subin { padding: 0 2px 0 6px; margin-right: 2px; border-left: 1px solid var(--hl-line); }
 	.stab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--hl-sub); font: var(--t-footnote); white-space: nowrap; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.stab b { color: inherit; opacity: 0.8; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.stab b { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.stab:hover { color: var(--hl-fg); }
 	.stab.on { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); }
 	/* No sub-option picked: the parent itself carries the red inner highlight. */
 	.pw.leaf .tab { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); box-shadow: inset 0 0 0 2px var(--hl-bg); }
 	/* The picked pill is raised on the track like a segmented control; its picked sub-option is tinted red. */
-	.tabs { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); --hl-line: var(--line-strong); --hl-sub: color-mix(in srgb, var(--text) 72%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
+	.tabs { --hl-bg: var(--seg-thumb); --hl-fg: var(--text); --hl-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); --hl-line: var(--line-strong); --hl-sub: color-mix(in srgb, var(--text) 86%, var(--hl-bg)); --hl-sub-on-bg: var(--accent-soft); --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 85%, var(--text)); }
 	/* Dark: the red words are lightened so they read on the grey pill (4.5:1 or more). */
 	:global(:root[data-theme='dark']) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); }
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .tabs { --hl-sub-on-fg: color-mix(in srgb, var(--accent-text) 25%, var(--text-on-red)); } }
@@ -2726,4 +2741,20 @@
 		.pb .t2 td.c-chk input[type='checkbox'] { width: 24px; height: 24px; }
 		.pb .t2 .c-chk { width: 40px; }
 	}
+	/* Touch phones (#79): every control a finger hits gets a 44px target; the
+	   hit area grows with an invisible ::after, so nothing moves and desktop is unchanged. */
+	@media (max-width: 767px) and (pointer: coarse) {
+		.tab, .stab, .trchip { position: relative; }
+		.tab::after, .stab::after, .trchip::after { content: ''; position: absolute; inset: -10px 0; }
+		.subin { overflow: clip visible; }
+	}
+	@media (max-width: 640px) and (pointer: coarse) {
+		.tabrow { height: 45px; }
+		.psb, .psx { position: relative; }
+		.psb::after { content: ''; position: absolute; inset: -6px 0 -6px -6px; }
+		.psearch:not(.open) .psb::after { right: -6px; }
+		.psx::after { content: ''; position: absolute; inset: -6px -6px -6px 0; }
+	}
+	/* A disabled bin is only a stand-in: a tap on it goes to the row underneath. */
+	@media (pointer: coarse) { .bin:disabled { pointer-events: none; } }
 </style>

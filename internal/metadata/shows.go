@@ -47,6 +47,7 @@ type Show struct {
 	Genres           []string          `json:"genres,omitempty"`
 	Rating           string            `json:"rating,omitempty"` // US content rating
 	People           []string          `json:"people,omitempty"`
+	OtherNames       []string          `json:"other_names,omitempty"` // original, alternative and translated names
 	Seasons          []Season          `json:"seasons,omitempty"`
 	Episodes         []Episode         `json:"episodes,omitempty"`
 }

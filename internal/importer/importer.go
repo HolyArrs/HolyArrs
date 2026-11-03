@@ -557,6 +557,9 @@ type Importer struct {
 	// OnRejected is told when an Import is rejected and its Release turned
 	// down, so the Slot can be searched again.
 	OnRejected func(ctx context.Context, slotID int64)
+	// OnImported is told when an Import is done (every file placed), so the
+	// finished job can be cleared out of its Downloader.
+	OnImported func(ctx context.Context, downloadID int64)
 	// OnLowSpace is told when an import is refused because the disk would
 	// be left too full: the hook for the health checks.
 	OnLowSpace func(ctx context.Context, dir string, free, need int64)
@@ -779,8 +782,15 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if err != nil {
 		return nil, err
 	}
+	// A download that holds only RAR files is unpacked next to it first.
+	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
+	defer cleanup()
+	cands = append(cands, unpacked...)
 	t := Target{LibraryPath: lf.Path, FolderName: folder, TitleID: ti.ID, TitleName: ti.Name, Year: year, SlotIDs: d.SlotIDs, IDs: ti.SourceIDs, Naming: &ns, Edition: ver.Edition}
 	plan := append(Plan(cands, t), bad...)
+	if unpackWhy != "" {
+		plan = append(plan, unpackStep(root, unpackWhy))
+	}
 	lowSpace, release := im.guard(plan, lf.Path, cands, rules)
 	defer release()
 	minutes := 0
@@ -993,6 +1003,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 	}
 	slotTo, reason := domain.SlotNeedsADecision, "nothing could be placed; look at the import plan"
+	if unpackWhy != "" {
+		reason = unpackWhy
+	}
 	if up.copyWhy != "" {
 		reason = up.copyWhy
 	}
@@ -1118,6 +1131,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 	}
 	im.publish("import", imp)
+	if imp.State == "done" && !dryRun && im.OnImported != nil {
+		im.OnImported(ctx, d.ID)
+	}
 	return imp, nil
 }
 

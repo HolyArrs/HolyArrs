@@ -45,7 +45,9 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	await fetch(`${qbit}/set?progress=0.7&eta=120`);
 	await expect(col(r, 'progress')).toContainText('70%', { timeout: 15_000 });
 	await expect(pane()).toContainText('2m', { timeout: 15_000 });
-	await openRow(r);
+	// A click opens a row's details; Escape from the row closes them.
+	await r.getByTestId('dl-line').focus();
+	await page.keyboard.press('Escape');
 	await expect(pane()).toBeHidden();
 });
 
@@ -64,7 +66,8 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await removeFromMenu(r);
 	await dialog.getByLabel('Add its Release to Turned down').check();
 	await expect(dialog.getByLabel('Search again')).toBeChecked();
-	await dialog.getByRole('button', { name: 'Remove', exact: true }).click();
+	// The confirm button names what goes: "Remove and delete files" here.
+	await dialog.getByTestId('dl-remove-confirm').click();
 	await expect(page.getByText('Removed. HolyArrs looks for the next Release.')).toBeVisible();
 	await expect.poll(async () => (await (await fetch(`${qbit}/state`)).json()).deleted.length).toBe(before + 1);
 	// The copy is no longer downloading; it turns into Needs a decision once the search runs out.

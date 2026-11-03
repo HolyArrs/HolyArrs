@@ -26,7 +26,7 @@
 	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
 	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
-	import { eventStep, isRoutine, stepVerb } from './dirs.ts';
+	import { dropAiTwins, eventStep, isRoutine, stepVerb } from './dirs.ts';
 	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
@@ -72,6 +72,7 @@
 		compact?: boolean;
 	} = $props();
 	const who = (e: EventRecord) => {
+		if (e.Actor?.kind === 'ai') return byWhom(e);
 		const n = byWhom(e);
 		return n !== 'A person' && e.Actor?.kind === 'user' ? n : e.Actor?.kind === 'user' ? (people?.get(e.Actor.id ?? 0) ?? '') : '';
 	};
@@ -91,7 +92,8 @@
 
 	// A page of routine only (the Routine tab) is not folded: it is what was asked for.
 	const days = $derived.by(() => {
-		const list = byDay(keep ? feed.events.filter(keep) : feed.events);
+		const all = dropAiTwins(feed.events);
+		const list = byDay(keep ? all.filter(keep) : all);
 		const allQuiet = list.every((d) => d.rows.every((r) => rowTier(r) === 'routine'));
 		return list.map((d) => ({ ...d, items: allQuiet ? d.rows.map((row) => ({ type: 'row' as const, key: row.key, row, tier: 'routine' as const })) : dayItems(d.rows) }));
 	});
@@ -391,6 +393,7 @@
 	.as { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
 	.also time { color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.pact { display: flex; flex-wrap: wrap; gap: 8px; }
+	/* Muted, not faint: faint text fails contrast on the panel in both themes. */
 	.none { color: var(--text-muted); font: var(--t-footnote); }
 	.miss { margin: 0; padding: 24px 0; color: var(--text-muted); text-align: center; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

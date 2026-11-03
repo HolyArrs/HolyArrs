@@ -15,7 +15,7 @@ import (
 func TestAuditEventsHiddenFromHistoryReaders(t *testing.T) {
 	a, _ := signinRig(t, nil)
 	ctx := context.Background()
-	for _, k := range []string{"signed_in", "sign_in_failed", "settings_changed", "import_done"} {
+	for _, k := range []string{"signed_in", "sign_in_failed", "settings_changed", "secrets_imported", "import_done"} {
 		if err := a.s.Store.AddEvent(ctx, &domain.Event{Kind: k, Summary: k}); err != nil {
 			t.Fatal(err)
 		}
@@ -44,8 +44,8 @@ func TestAuditEventsHiddenFromHistoryReaders(t *testing.T) {
 		"member":          {member, "", 1, 1},
 		"member filtered": {member, "?kind=sign*,settings_changed", 0, 0},
 		"read key":        {readKey, "", 1, 1},
-		"settings person": {settings, "", 4, 4},
-		"owner":           {owner, "", 4, 4},
+		"settings person": {settings, "", 5, 5},
+		"owner":           {owner, "", 5, 5},
 		"owner filtered":  {owner, "?kind=sign*", 2, 2},
 	} {
 		if n, total := list(c.who, c.query); n != c.rows || total != c.total {

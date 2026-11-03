@@ -155,6 +155,7 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: owner %d linked a Plex account", me.ID)
+	a.accountEvent(r, me.ID, "sign_in_linked", byName(r)+" linked the Plex account "+outsideName(user.Username), map[string]any{"provider": "plex"})
 	writeJSON(w, http.StatusOK, map[string]any{"name": user.Username, "servers": servers})
 }
 
@@ -179,6 +180,7 @@ func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	a.accountEvent(r, me.ID, "sign_in_unlinked", byName(r)+" unlinked their Plex account", map[string]any{"provider": "plex"})
 	writeJSON(w, http.StatusOK, a.plexOwner(ctx))
 }
 
@@ -533,5 +535,9 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: imported %d %s people (skipped %d)", len(made), kind, skipped)
+	if len(made) > 0 {
+		a.accountEvent(r, Actor(r.Context()).ID, "people_imported", byName(r)+" imported "+itoa(int64(len(made)))+" "+kind+" accounts as members",
+			map[string]any{"count": len(made), "provider": kind})
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"made": made, "skipped": skipped})
 }

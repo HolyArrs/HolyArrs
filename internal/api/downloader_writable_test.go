@@ -36,6 +36,10 @@ func TestWritableSwitchLive(t *testing.T) {
 	exec41(t, x.s, "UPDATE downloaders SET writable = 0")
 	x.api.manager().Forget(did)
 	do(t, "POST", pause, "", http.StatusConflict)
+	// The Downloads screen learns the row's Downloader is locked, so it offers no client controls.
+	if body := string(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=100", "", http.StatusOK)); !strings.Contains(body, `"client_locked":true`) {
+		t.Fatalf("the view does not mark the locked Downloader's rows: %.300s", body)
+	}
 	if strings.Contains(f.saw(), "torrents/stop") || strings.Contains(f.saw(), "torrents/pause") {
 		t.Fatalf("a read-only pause reached the client: %s", f.saw())
 	}

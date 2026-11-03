@@ -29,7 +29,13 @@ func (a *Auth) ssoLinkIdentity(r *http.Request, kind, issuer, subject, display s
 	}
 	proof := ssoLinkProof{hash: sum(cookie.Value), family: family, userID: userID}
 	ctx := context.WithValue(r.Context(), ssoProofKey{}, proof)
-	return a.ssoIdentity(ctx, kind, issuer, subject, display, false, userID)
+	id, name, err := a.ssoIdentity(ctx, kind, issuer, subject, display, false, userID)
+	if err == nil {
+		// A linked identity signs in without the password, so the link is on the audit trail.
+		a.accountEvent(r, userID, "sign_in_linked", byName(r)+" linked a "+kind+" sign-in ("+outsideName(display)+") to "+a.userName(ctx, userID),
+			map[string]any{"provider": kind})
+	}
+	return id, name, err
 }
 
 // ssoIdentity makes the identity check and link/create one writer transaction.

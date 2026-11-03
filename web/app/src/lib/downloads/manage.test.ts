@@ -154,3 +154,12 @@ describe('the toolbar targets', () => {
 		expect(countLabel('Pause', 3)).toBe('Pause 3');
 	});
 });
+
+import { toolbarTargets as tt } from './manage.ts';
+describe('a locked Downloader', () => {
+	it('says read-only for Start and Pause but still lets Remove act', () => {
+		const r = { protocol: 'torrent', state: 'paused', can_act: true, client_locked: true };
+		expect(tt([r], undefined, 'paused', (x) => !x.client_locked)).toEqual({ rows: [], why: 'this Downloader is read-only' });
+		expect(tt([r], undefined, 'any').rows).toHaveLength(1);
+	});
+});
