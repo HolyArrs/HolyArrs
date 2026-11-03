@@ -29,6 +29,8 @@ test('Library and title pages load TMDB pictures only through the artwork cache'
 	const { titles } = (await (await page.request.get('/api/v1/titles')).json()) as { titles: { id: number; kind: string }[] };
 	const paths = ['/library?kind=movie&layout=table', '/library?kind=movie&layout=grid', '/library?kind=show&layout=overview'];
 	for (const t of titles.filter((x) => x.kind === 'movie' || x.kind === 'show')) paths.push(`/library/${t.id}`, `/library/${t.id}?tab=library`);
+	// Every Library title adds two pages, so the time grows with the e2e Library.
+	test.setTimeout(30_000 + paths.length * 3_000);
 	for (const p of paths) {
 		await page.goto(p);
 		await page.waitForLoadState('networkidle');

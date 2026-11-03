@@ -57,7 +57,8 @@ test('Import a library scans the show folder, lists each file with its episodes,
 	await axe(page, 'import a show library');
 	// Shows already in the Library are left as they are.
 	await expect(plan.getByTestId('group-in_library')).toContainText('Harbour Lights');
-	for (const box of await plan.getByRole('checkbox', { checked: true }).all()) {
+	// Last to first: unchecking a box shifts the later "checked" matches, not the earlier ones.
+	for (const box of (await plan.getByRole('checkbox', { checked: true }).all()).reverse()) {
 		if (!(await box.getAttribute('aria-label'))?.includes('Quarry Bells')) await box.uncheck();
 	}
 	await page.getByRole('button', { name: 'Adopt 1 show' }).click();
