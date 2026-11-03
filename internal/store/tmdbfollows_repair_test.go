@@ -18,6 +18,13 @@ func TestTMDBMovieFollowsRepaired(t *testing.T) {
 		if _, err := tx.Exec(`DROP TABLE tmdb_movie_follows`); err != nil {
 			return err
 		}
+		// Back to how a database at 0082 looks: the later migrations run
+		// again, so what 0085 added goes too.
+		for _, col := range []string{"title_kind", "seasons", "new_seasons"} {
+			if _, err := tx.Exec(`ALTER TABLE outside_lists DROP COLUMN ` + col); err != nil {
+				return err
+			}
+		}
 		_, err := tx.Exec(`DELETE FROM schema_migrations WHERE version >= 83`)
 		return err
 	}); err != nil {

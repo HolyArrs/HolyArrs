@@ -1026,12 +1026,17 @@ export interface OutsideList {
 	id: number;
 	name: string;
 	kind: 'tmdb_list' | 'trakt_list';
+	/** What the list adds: movie or show. */
+	title_kind: 'movie' | 'show';
 	ref: string;
 	library_folder_id: number;
 	pick_rules_id: number | null;
 	keep_up_to_date: boolean;
 	search_on_add: boolean;
 	release_gate: string;
+	/** Show lists: which seasons a new show keeps up to date, and new seasons (all, none). */
+	seasons: string;
+	new_seasons: string;
 	enabled: boolean;
 	sync_every_hours: number;
 	last_synced_at?: string;

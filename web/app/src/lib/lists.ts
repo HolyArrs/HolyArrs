@@ -1,4 +1,19 @@
 // Outside list helpers, kept apart from the page so they can be tested.
+import { seasonChoices } from './shows.ts';
+
+/** titleKinds are what a list adds. */
+export const titleKinds: [string, string][] = [
+	['movie', 'Movies'],
+	['show', 'Shows']
+];
+
+/** listSeasons are the season choices for a show list: the ones a show is
+ *  added with by hand, plus the first season only. */
+export const listSeasons: [string, string, string][] = [
+	...seasonChoices.filter(([v]) => v !== 'none'),
+	['first', 'The first season', 'Only season 1, to try a show out.'],
+	...seasonChoices.filter(([v]) => v === 'none')
+];
 
 export const listKinds: [string, string, string][] = [
 	['tmdb_list', 'TMDB list', 'The list number or its link, for example themoviedb.org/list/12345.'],

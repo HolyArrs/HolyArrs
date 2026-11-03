@@ -8,6 +8,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/lists"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 )
@@ -17,12 +18,15 @@ type ListView struct {
 	ID              int64      `json:"id"`
 	Name            string     `json:"name"`
 	Kind            string     `json:"kind"`
+	TitleKind       string     `json:"title_kind"`
 	Ref             string     `json:"ref"`
 	LibraryFolderID int64      `json:"library_folder_id"`
 	PickRulesID     *int64     `json:"pick_rules_id"`
 	KeepUpToDate    bool       `json:"keep_up_to_date"`
 	SearchOnAdd     bool       `json:"search_on_add"`
 	ReleaseGate     string     `json:"release_gate"`
+	Seasons         string     `json:"seasons"`
+	NewSeasons      string     `json:"new_seasons"`
 	Enabled         bool       `json:"enabled"`
 	SyncEveryHours  int        `json:"sync_every_hours"`
 	LastSyncedAt    *time.Time `json:"last_synced_at,omitempty"`
@@ -32,17 +36,18 @@ type ListView struct {
 }
 
 func listView(l domain.OutsideList) ListView {
-	return ListView{ID: l.ID, Name: l.Name, Kind: l.Kind, Ref: l.Ref, LibraryFolderID: l.LibraryFolderID, PickRulesID: l.PickRulesID,
-		KeepUpToDate: l.KeepUpToDate, SearchOnAdd: l.SearchOnAdd, ReleaseGate: l.ReleaseGate, Enabled: l.Enabled,
+	return ListView{ID: l.ID, Name: l.Name, Kind: l.Kind, TitleKind: l.TitleKind, Ref: l.Ref, LibraryFolderID: l.LibraryFolderID, PickRulesID: l.PickRulesID,
+		KeepUpToDate: l.KeepUpToDate, SearchOnAdd: l.SearchOnAdd, ReleaseGate: l.ReleaseGate, Seasons: l.Seasons, NewSeasons: l.NewSeasons, Enabled: l.Enabled,
 		SyncEveryHours: l.SyncEveryHours, LastSyncedAt: l.LastSyncedAt, LastResult: l.LastResult, LastError: l.LastError}
 }
 
 // listError answers list refusals; the rest go to libraryError.
 func listError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, lists.ErrNameTaken):
+	case errors.Is(err, lists.ErrNameTaken), errors.Is(err, library.ErrNoShowFolder):
 		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, lists.ErrName), errors.Is(err, lists.ErrKind), errors.Is(err, lists.ErrRef), errors.Is(err, lists.ErrEvery):
+	case errors.Is(err, lists.ErrName), errors.Is(err, lists.ErrKind), errors.Is(err, lists.ErrRef), errors.Is(err, lists.ErrEvery),
+		errors.Is(err, lists.ErrTitleKind), errors.Is(err, lists.ErrSeasons):
 		fail(w, http.StatusBadRequest, err.Error())
 	default:
 		libraryError(w, err)
@@ -68,7 +73,7 @@ func (a *API) listOutsideLists(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"outside_lists": out})
 }
 
-const listHelp = `send {"name": "...", "kind": "tmdb_list" or "trakt_list", "ref": "<TMDB list number, Trakt user/list or a link>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate, enabled, sync_every_hours`
+const listHelp = `send {"name": "...", "kind": "tmdb_list" or "trakt_list", "ref": "<TMDB list number, Trakt user/list or a link>"} with optional title_kind ("movie" or "show"), library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate (movies), seasons and new_seasons (shows), enabled, sync_every_hours`
 
 func (a *API) addOutsideList(w http.ResponseWriter, r *http.Request) {
 	var in lists.Input

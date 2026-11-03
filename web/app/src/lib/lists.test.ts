@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { every, listLink } from './lists.ts';
+import { every, listLink, listSeasons, titleKinds } from './lists.ts';
 
 describe('outside lists', () => {
 	it('links each list to its own site', () => {
@@ -7,6 +7,10 @@ describe('outside lists', () => {
 		expect(listLink('trakt_list', 'ana/favourites')).toBe('https://trakt.tv/users/ana/lists/favourites');
 		expect(listLink('trakt_list', 'ana/watchlist')).toBe('https://trakt.tv/users/ana/watchlist');
 		expect(listLink('trakt_list', 'broken')).toBe('');
+	});
+	it('offers the show season choices plus the first season', () => {
+		expect(listSeasons.map(([v]) => v)).toEqual(['all', 'future', 'latest', 'first', 'none']);
+		expect(titleKinds.map(([v]) => v)).toEqual(['movie', 'show']);
 	});
 	it('says how often a list is read', () => {
 		expect(every(12)).toBe('every 12 hours');

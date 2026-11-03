@@ -545,17 +545,20 @@ type Setting struct {
 	Value string `db:"value"`
 }
 
-// OutsideList is a TMDB or Trakt list whose movies are added on a schedule.
+// OutsideList is a TMDB or Trakt list whose movies or shows are added on a schedule.
 type OutsideList struct {
 	Meta
 	Name            string     `db:"name"`
-	Kind            string     `db:"kind"` // tmdb_list, trakt_list
-	Ref             string     `db:"ref"`  // TMDB list number, or Trakt "user/slug"
+	Kind            string     `db:"kind"`       // tmdb_list, trakt_list
+	TitleKind       string     `db:"title_kind"` // movie, show
+	Ref             string     `db:"ref"`        // TMDB list number, or Trakt "user/slug"
 	LibraryFolderID int64      `db:"library_folder_id"`
 	PickRulesID     *int64     `db:"pick_rules_id"`
 	KeepUpToDate    bool       `db:"keep_up_to_date"`
 	SearchOnAdd     bool       `db:"search_on_add"`
 	ReleaseGate     string     `db:"release_gate"` // empty: the default
+	Seasons         string     `db:"seasons"`      // shows: all, future, latest, first, none
+	NewSeasons      string     `db:"new_seasons"`  // shows: all, none
 	Enabled         bool       `db:"enabled"`
 	SyncEveryHours  int        `db:"sync_every_hours"`
 	LastSyncedAt    *time.Time `db:"last_synced_at"`
