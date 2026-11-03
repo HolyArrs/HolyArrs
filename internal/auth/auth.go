@@ -236,6 +236,10 @@ type Who struct {
 	// the users row on every request, so a changed limit holds at once.
 	MaxRating     string
 	RatingCountry string
+	// KeyID and KeyLabel name the API key a request came with (0 and ""
+	// for a session); AI connections write them into History.
+	KeyID    int64
+	KeyLabel string
 }
 
 // userCols are the users columns fill reads, prefixed with u.
@@ -494,7 +498,14 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if k := r.Header.Get(APIKeyHeader); k != "" {
+		k := r.Header.Get(APIKeyHeader)
+		if k == "" && mcpPath(r.URL.Path) {
+			// AI clients send their key as a bearer token.
+			if v, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer "); ok {
+				k = strings.TrimSpace(v)
+			}
+		}
+		if k != "" {
 			who, ok := a.checkKey(r.Context(), k)
 			if !ok {
 				fail(w, http.StatusUnauthorized, "API key not accepted")
@@ -530,6 +541,9 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		fail(w, http.StatusUnauthorized, "sign in first")
 	})
 }
+
+// mcpPath is the AI connection route, the only one a bearer key reaches.
+func mcpPath(p string) bool { return p == "/api/v1/mcp" || p == "/mcp" }
 
 func (a *Auth) owner(ctx context.Context) (int64, string, bool) {
 	var id int64
@@ -954,8 +968,8 @@ func (a *Auth) checkKey(ctx context.Context, k string) (Who, bool) {
 	var keyID int64
 	var used sql.NullString
 	var perms, scope string
-	err := a.s.Read().QueryRowContext(ctx, `SELECT k.id, k.last_used_at, k.scope, `+userCols+` FROM api_keys k JOIN users u ON u.id = k.owner_user_id
-		WHERE k.hash = ? AND u.state = 'active'`, sum(k)).Scan(&keyID, &used, &scope, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry)
+	err := a.s.Read().QueryRowContext(ctx, `SELECT k.id, k.label, k.last_used_at, k.scope, `+userCols+` FROM api_keys k JOIN users u ON u.id = k.owner_user_id
+		WHERE k.hash = ? AND u.state = 'active'`, sum(k)).Scan(&keyID, &who.KeyLabel, &used, &scope, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry)
 	if err != nil {
 		return Who{}, false
 	}
@@ -969,6 +983,7 @@ func (a *Auth) checkKey(ctx context.Context, k string) (Who, bool) {
 		})
 	}
 	who.Via = "api_key"
+	who.KeyID = keyID
 	return who, true
 }
 
@@ -1006,6 +1021,10 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusForbidden, "only the owner and admins may make a key with the control scope")
 			return
 		}
+	}
+	if slices.Contains(body.Scopes, ScopeMCP) && len(slices.Compact(slices.Sorted(slices.Values(body.Scopes)))) > 1 {
+		fail(w, http.StatusBadRequest, "an AI key (mcp) holds no other scope")
+		return
 	}
 	body.Scopes = slices.Compact(slices.Sorted(slices.Values(body.Scopes)))
 	scopeJSON, _ := json.Marshal(body.Scopes)

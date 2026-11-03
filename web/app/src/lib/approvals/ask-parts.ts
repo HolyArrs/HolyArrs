@@ -69,9 +69,13 @@ const yearOf = (d: string | undefined) => (d && /^\d{4}/.test(d) ? Number(d.slic
 // Live recordings MusicBrainz lists without the live mark: "Live at Lowlands", "Night (Live)".
 const liveName = /^live\s+(at|in|from|on)\b|[([]live[^)\]]*[)\]]/i;
 
+// Title words that mark a release as not a real album (MusicBrainz sometimes leaves these untyped).
+export const notAlbumName = /\b(demos?|bootlegs?|outtakes?|unreleased|rehearsals?|b-sides|leaked|snippets?|remix(es)?|remixed)\b/i;
+
 /** kindOf sorts an album into a counted kind, as the artist page's shelves do (a live name counts as live). */
 export function kindOf(al: Pick<ArtistAlbum, 'type' | 'secondary_types' | 'shelf'> & { name?: string }): AlbumKind {
 	if (al.name && liveName.test(al.name) && (al.shelf === 'albums' || al.shelf === 'singles' || !al.shelf)) return 'live';
+	if (al.name && notAlbumName.test(al.name) && (al.shelf === 'albums' || !al.shelf)) return 'other';
 	if (al.shelf === 'albums' || al.shelf === 'singles' || al.shelf === 'live' || al.shelf === 'compilations') return al.shelf;
 	if (al.shelf) return 'other';
 	const sec = (al.secondary_types ?? []).map((x) => x.toLowerCase());

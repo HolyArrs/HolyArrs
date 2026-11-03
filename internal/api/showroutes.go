@@ -362,6 +362,7 @@ func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
 		}
 		byItem[s.ItemID] = append(byItem[s.ItemID], es)
 	}
+	trimEpisodeSlots(r.Context(), byItem)
 	out := make([]EpisodeView, 0, len(its))
 	for _, it := range its {
 		v := episodeView(it)

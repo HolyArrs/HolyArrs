@@ -10500,8 +10500,8 @@
           "Backups"
         ],
         "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "settings",
-        "x-holyarrs-scope": "write"
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       },
       "get": {
         "description": "The zip file.",
@@ -10545,7 +10545,7 @@
           "Backups"
         ],
         "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "settings",
+        "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
       }
     },
@@ -16136,7 +16136,7 @@
           "Organise"
         ],
         "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
       }
     },
@@ -16220,8 +16220,34 @@
           "Organise"
         ],
         "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/mcp": {
+      "get": {
+        "description": "No server stream is offered; answers 405 so clients use POST.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "AI connection stream",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "mcp"
+      },
+      "post": {
+        "description": "One MCP message as JSON-RPC 2.0: initialize, ping, server/discover, tools/list or tools/call. Needs an AI key (scope mcp), sent in X-Api-Key or as a bearer token. Answers 404 while AI connections are off. Tools act as the key's person; actions take a confirm_token on a second call and are written to History.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "AI connection message",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "mcp"
       }
     },
     "/api/v1/media-servers": {
@@ -20665,6 +20691,20 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/search": {
+      "get": {
+        "description": "Reads a description such as \"space movie with a robot from 2014\" into kind, years, genres, people and words, then returns matching Library titles and titles you could ask for, with the query as understood.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Search in plain words",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/search/better": {
       "post": {
         "description": "Queues one Job that searches every Slot whose copy is below Good enough, oldest searched first, up to bulk_search_cap (default 500) a run, spaced a little apart.",
@@ -20830,6 +20870,32 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/settings/ai": {
+      "get": {
+        "description": "Whether AI connections (the MCP route) are on.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "AI connections setting",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Owner only. Off by default; while off the MCP route answers 404.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Turn AI connections on or off",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/settings/alerts": {
@@ -22175,6 +22241,22 @@
         "tags": [
           "Settings"
         ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/url-base": {
+      "get": {
+        "responses": {},
+        "summary": "",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "responses": {},
+        "summary": "",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
@@ -27085,6 +27167,7 @@
     "all": "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
     "control": "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
     "health_read": "Health states only, for monitoring companions.",
+    "mcp": "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",
     "read": "Look: the GET routes that hand out no secrets (backups, keys, tokens, sign-in settings and the people list need admin).",
     "write": "Change: every route that is not a GET, except the admin ones and the controls."
   }

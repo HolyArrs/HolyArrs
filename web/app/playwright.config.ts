@@ -46,6 +46,7 @@ export default defineConfig({
 		{ name: 'sources', testMatch: 'sources.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['requests'] },
 		// Search: Choose a release, Held and Turned down, Home, Settings > Search.
 		{ name: 'search', testMatch: 'search.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['sources'] },
+		{ name: 'ai', testMatch: 'ai.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['search'] },
 		// Downloaders: SABnzbd and qBittorrent fakes, the settings, Mark failed on a movie, phone width and accessibility.
 		{ name: 'downloaders', testMatch: 'downloaders.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['search'] },
 		// Downloads screen and Needs a decision: live progress, Remove with its choices, the badge, phone width and accessibility.

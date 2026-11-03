@@ -107,7 +107,9 @@ func (a *API) buildMusicNew(ctx context.Context, now time.Time) *musicNewData {
 	if src == nil {
 		return d
 	}
-	// Notable artists: the Library's, then the charts'.
+	// Notable artists: the charts' only. The Library's artists are never
+	// sent to the server; their releases come from the Library's own
+	// albums (see exploreNewMusic).
 	var ids []string
 	seen := map[string]bool{}
 	addID := func(id string) {
@@ -116,16 +118,6 @@ func (a *API) buildMusicNew(ctx context.Context, now time.Time) *musicNewData {
 			seen[id] = true
 			ids = append(ids, id)
 		}
-	}
-	if rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT json_extract(source_ids, '$.musicbrainz') FROM titles
-		WHERE kind = 'artist' AND state != 'removed' AND json_extract(source_ids, '$.musicbrainz') IS NOT NULL ORDER BY id DESC LIMIT 80`); err == nil {
-		for rows.Next() {
-			var id string
-			if rows.Scan(&id) == nil {
-				addID(id)
-			}
-		}
-		rows.Close()
 	}
 	for _, l := range []metadata.MusicTrend{d.artists, d.fresh, d.albums} {
 		for _, it := range l.Items {
@@ -174,7 +166,7 @@ type musicNewInput struct {
 	data    *musicNewData
 	owned   map[string]int64 // artist MBID → title id
 	images  map[string]string
-	library []MusicCard // Library releases out in the last 90 days
+	library []MusicCard // Library releases of the last 90 days and the next 60
 	follows map[string]bool
 }
 
@@ -325,7 +317,7 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 				k = c.Key
 			}
 			kind := strings.ToLower(c.Badge)
-			c.Badge = releaseBadge(kind, false)
+			c.Badge = releaseBadge(kind, musicNewWindow(c.Date, now) == "coming")
 			c.Following = in.follows[c.MBID]
 			cards[k] = c
 			kinds[k] = kind
@@ -654,7 +646,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date <= ?
 		AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') = 'day'
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
-		now.AddDate(0, 0, -musicNewLibrary).Format("2006-01-02"), now.Format("2006-01-02T15:04:05Z"))
+		now.AddDate(0, 0, -musicNewLibrary).Format("2006-01-02"), now.AddDate(0, 0, musicNewAhead).Format("2006-01-02T15:04:05Z"))
 	if err != nil {
 		internal(w, err)
 		return

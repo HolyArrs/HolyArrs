@@ -91,6 +91,10 @@ type Meta struct {
 	// Detail says what the backup is, such as "before updating from 0.3.0
 	// to 0.4.0" (pre-update backups only).
 	Detail string `json:"detail,omitempty"`
+	// FromVersion and ToVersion name the update a pre-update backup was
+	// taken for, when the version that ran before is known.
+	FromVersion string `json:"from_version,omitempty"`
+	ToVersion   string `json:"to_version,omitempty"`
 }
 
 // Manager makes, lists, prunes and restores backups.
@@ -149,7 +153,11 @@ type Info struct {
 	CreatedAt time.Time `json:"created_at"`
 	Size      int64     `json:"size"`
 	Detail    string    `json:"detail,omitempty"`
-	Path      string    `json:"-"`
+	// FromVersion and ToVersion: the update a pre-update backup was taken
+	// for (when known). Going back to FromVersion takes this backup.
+	FromVersion string `json:"from_version,omitempty"`
+	ToVersion   string `json:"to_version,omitempty"`
+	Path        string `json:"-"`
 }
 
 func parseName(n string) (string, time.Time, bool) {
@@ -182,7 +190,9 @@ func (m *Manager) List() ([]Info, error) {
 		}
 		info := Info{Name: e.Name(), Kind: kind, CreatedAt: at, Size: fi.Size(), Path: filepath.Join(m.backupDir(), e.Name())}
 		if kind == KindPreUpdate {
-			info.Detail = readDetail(info.Path)
+			if meta, ok := readMeta(info.Path); ok {
+				info.Detail, info.FromVersion, info.ToVersion = meta.Detail, meta.FromVersion, meta.ToVersion
+			}
 		}
 		out = append(out, info)
 	}
@@ -190,11 +200,11 @@ func (m *Manager) List() ([]Info, error) {
 	return out, nil
 }
 
-// readDetail reads the detail from a backup's backup.json ("" on any error).
-func readDetail(path string) string {
+// readMeta reads a backup's backup.json (false on any error).
+func readMeta(path string) (Meta, bool) {
 	zr, err := zip.OpenReader(path)
 	if err != nil {
-		return ""
+		return Meta{}, false
 	}
 	defer zr.Close()
 	for _, zf := range zr.File {
@@ -203,16 +213,16 @@ func readDetail(path string) string {
 		}
 		rc, err := zf.Open()
 		if err != nil {
-			return ""
+			return Meta{}, false
 		}
 		defer rc.Close()
 		var meta Meta
 		if json.NewDecoder(io.LimitReader(rc, 1<<16)).Decode(&meta) != nil {
-			return ""
+			return Meta{}, false
 		}
-		return meta.Detail
+		return meta, true
 	}
-	return ""
+	return Meta{}, false
 }
 
 // Create makes a backup of the running databases.
@@ -562,7 +572,7 @@ func (m *Manager) AdoptMigrationCopies() (int, error) {
 				}
 			}
 			if prev != "" && prev != m.Version {
-				meta.Version = prev
+				meta.Version, meta.FromVersion, meta.ToVersion = prev, prev, m.Version
 				meta.Detail = fmt.Sprintf("before updating from %s to %s", prev, m.Version)
 			} else {
 				meta.Detail = "before updating the data (" + strings.Join(parts, ", ") + ")"
@@ -642,16 +652,31 @@ func (m *Manager) AfterStart(ctx context.Context) error {
 	return m.setSetting(ctx, settingVersion, m.Version, domain.System)
 }
 
-// NewestPreUpdate returns the newest pre-update backup.
+// NewestPreUpdate returns the newest pre-update backup this build can
+// restore. After going back more than one update (1.2 to 1.0) the newest
+// one holds data from 1.1, which this build cannot read, so it is passed
+// over for the one taken before the update from this build. When none
+// fits, the newest is returned (and Stage says why it cannot be used).
 func (m *Manager) NewestPreUpdate() (Info, error) {
 	all, err := m.List()
 	if err != nil {
 		return Info{}, err
 	}
-	for _, x := range all {
-		if x.Kind == KindPreUpdate {
+	sm, se := store.SchemaVersions()
+	var newest *Info
+	for i, x := range all {
+		if x.Kind != KindPreUpdate {
+			continue
+		}
+		if newest == nil {
+			newest = &all[i]
+		}
+		if meta, ok := readMeta(x.Path); ok && meta.SchemaMain <= sm && meta.SchemaEvents <= se {
 			return x, nil
 		}
+	}
+	if newest != nil {
+		return *newest, nil
 	}
 	return Info{}, errors.New("there is no pre-update backup")
 }

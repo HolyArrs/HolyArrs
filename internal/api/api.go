@@ -166,6 +166,8 @@ type API struct {
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.
 	confirm confirms
+	// ai holds the AI connections' limits and confirm tokens (mcp.go).
+	ai aiState
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
 	// rated keeps TMDB ratings looked up for Kid limits.
@@ -195,6 +197,8 @@ type API struct {
 	signin signinArtState
 	// signinSeed keeps the first sign-in slide's tiny thumbnails.
 	signinSeed signinSeedState
+	// artMisses is each person's budget of artwork cache misses.
+	artMisses artworkBudget
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore   exploreState
 	genreRows genreRowCache
@@ -294,6 +298,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
+	m.HandleFunc("GET /api/v1/search", a.plainSearch)
 	m.HandleFunc("GET /api/v1/library-summary", a.librarySummary)
 	m.HandleFunc("GET /api/v1/home", a.home)
 	m.HandleFunc("POST /api/v1/titles", a.addTitle)
@@ -446,14 +451,17 @@ func (a *API) Handler() http.Handler {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
+	a.mcpRoutes(m)
 	m.Handle("GET /", web.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
 	}
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
+		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
 		return secure(a.s.Auth.Middleware(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))
 	}
+	a.ai.inner = a.partGate(m, m)
 	return secure(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m)))))
 }
 
@@ -466,6 +474,9 @@ func secure(h http.Handler) http.Handler {
 		hd.Set("X-Content-Type-Options", "nosniff")
 		hd.Set("Referrer-Policy", "no-referrer")
 		hd.Set("X-Frame-Options", "DENY")
+		// Pages an outside site opens lose their handle on HolyArrs; popups
+		// HolyArrs opens itself (Plex sign-in) keep theirs.
+		hd.Set("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
 		hd.Set("Content-Security-Policy", web.CSP(nil))
 		h.ServeHTTP(w, r)
 	})
@@ -723,14 +734,14 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 			return v, err
 		}
 		v.Asks, err = titleAsks()
-		return v, err
+		return trimForViewer(ctx, v), err
 	}
 	if t.Kind == "artist" {
 		if v.Artist, err = a.artistInfo(ctx, t); err != nil {
 			return v, err
 		}
 		v.Asks, err = titleAsks()
-		return v, err
+		return trimForViewer(ctx, v), err
 	}
 	var slots []domain.Slot
 	if batch != nil {
@@ -780,7 +791,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	if v.Asks, err = titleAsks(); err != nil {
 		return v, err
 	}
-	return v, nil
+	return trimForViewer(ctx, v), nil
 }
 
 // gateReason says in one sentence why a movie is or is not searched yet.

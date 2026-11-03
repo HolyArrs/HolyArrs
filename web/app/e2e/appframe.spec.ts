@@ -125,13 +125,13 @@ test('a newer release shows a notice; off asks nothing', async () => {
 	await expect(page.getByRole('link', { name: 'What is new in v9.9.9' })).toHaveAttribute('href', 'https://github.com/CoderLuii/holyarrs/releases/tag/v9.9.9');
 	await page.goto('/settings/health');
 	await expect(page.getByTestId('update-privacy')).toContainText('api.github.com');
-	await page.getByLabel('Check once a day for a newer HolyArrs').uncheck();
+	await page.getByLabel('Check for a newer HolyArrs').uncheck();
 	await saved();
 	await page.goto('/settings/this-app');
 	await expect(page.getByTestId('update-words')).toContainText('The update check is off');
 	await expect(page.getByRole('button', { name: 'Check for updates now' })).toHaveCount(0);
 	await page.goto('/settings/health');
-	await page.getByLabel('Check once a day for a newer HolyArrs').check();
+	await page.getByLabel('Check for a newer HolyArrs').check();
 	await saved();
 	await axe(page, '/settings/health');
 	await page.goto('/settings/this-app');

@@ -1811,7 +1811,6 @@
 
 <div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px; --pi: {posterW - 6}px; --lg: {srcBig ? 24 : 18}px">
 <div class="app" data-testid="dl-app" bind:this={appEl} style="--app-h: {appH}px">
-<h1 class="sr">Downloads</h1>
 <div class="strip hdr" data-testid="dl-strip">
 	<div class="psearch" class:open={psOpen || !!dlScope.term} data-testid="dl-psearch">
 		<button type="button" class="psb" aria-label="Search downloads" aria-expanded={psOpen || !!dlScope.term} onclick={() => { psOpen = true; tick().then(() => psEl?.focus()); }} data-testid="dl-psearch-btn"><Icon name="search" size={16} /></button>
@@ -2724,5 +2723,7 @@
 		.pcl, .fold { width: 32px; height: 32px; }
 		.trchip, .qrv, .lk, .xbn, .calm.slim .xbn, .mch .retry { min-height: 32px; }
 		.phd .xtab { min-height: 32px; }
+		.pb .t2 td.c-chk input[type='checkbox'] { width: 24px; height: 24px; }
+		.pb .t2 .c-chk { width: 40px; }
 	}
 </style>
