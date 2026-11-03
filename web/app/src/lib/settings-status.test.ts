@@ -110,6 +110,7 @@ describe('searchSettings', () => {
 		expect(searchSettings('indexer', all)[0].href).toBe('/settings/sources');
 		expect(searchSettings('2fa', all).map((r) => r.anchor)).toContain('twofactor-me');
 		expect(searchSettings('telegram', all)[0].href).toBe('/settings/alerts');
+		for (const app of ['ntfy', 'gotify', 'pushover']) expect(searchSettings(app, all)[0].href).toBe('/settings/alerts');
 	});
 
 	it('every word must match, and pages a person may not open are left out', () => {

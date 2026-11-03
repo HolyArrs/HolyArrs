@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -456,7 +457,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 	r.owner.call("PUT", "/api/v1/alerts/"+itoa(mail.ID), `{"name":"Mail","smtp_host":"127.0.0.1","smtp_port":1,"smtp_security":"none","smtp_from":"h@example.test","staff_to":"luis@example.test"}`, 200)
 	// A mail server on this machine without the local network choice is
 	// refused; the answer is the same plain words every time.
-	if b := r.owner.call("POST", "/api/v1/alerts/"+itoa(mail.ID)+"/test", "", 502); !strings.Contains(string(b), "the Discord, Telegram, mail or webhook server refused the test") || strings.Contains(string(b), "127.0.0.1") {
+	if b := r.owner.call("POST", "/api/v1/alerts/"+itoa(mail.ID)+"/test", "", 502); !strings.Contains(string(b), "the Discord, Telegram, ntfy, Gotify, Pushover, mail or webhook server refused the test") || strings.Contains(string(b), "127.0.0.1") {
 		t.Fatalf("test answer %s", b)
 	}
 	r.owner.call("PUT", "/api/v1/alerts/"+itoa(mail.ID), `{"name":"Mail","allow_local_network":true,"smtp_host":"127.0.0.1","smtp_port":1,"smtp_security":"none","smtp_from":"h@example.test","staff_to":"luis@example.test"}`, 200)
@@ -553,4 +554,89 @@ func TestTelegramAlertOverHTTP(t *testing.T) {
 	if len(paths) != 1 || paths[0] != "/bot"+token+"/sendMessage" || !strings.HasPrefix(texts[0], "-1001234|HolyArrs test\n") {
 		t.Fatalf("sent %v %v", paths, texts)
 	}
+}
+
+// TestAppAlertsOverHTTP: ntfy, Gotify and Pushover Alerts are added, their
+// tokens come back masked (never the real one), the masked value sent back
+// keeps the stored token, and a test reaches each app.
+func TestAppAlertsOverHTTP(t *testing.T) {
+	r := newAskRig(t)
+	ntfyTok := strings.Join([]string{"tk", "standinntfyapitoken0123"}, "_")
+	gotifyTok := strings.Join([]string{"AStandIn", "GotifyApiKey"}, ".")
+	pushTok := strings.Join([]string{"aStandInPushover", "ApiToken0123a"}, "")
+	pushUser := strings.Join([]string{"uStandInPushover", "ApiUser01234a"}, "")
+	var mu sync.Mutex
+	var got []string
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		b, _ := io.ReadAll(req.Body)
+		mu.Lock()
+		got = append(got, req.URL.Path+"|"+req.Header.Get("Authorization")+req.Header.Get("X-Gotify-Key")+"|"+string(b))
+		mu.Unlock()
+		_, _ = w.Write([]byte(`{"status":1}`))
+	}))
+	defer app.Close()
+	t.Setenv("HOLYARRS_PUSHOVER_URL", app.URL)
+	body := func(m map[string]any) string { b, _ := json.Marshal(m); return string(b) }
+	r.owner.call("POST", "/api/v1/alerts", `{"name":"N","kind":"ntfy","topic":"a/b"}`, 400)
+	r.owner.call("POST", "/api/v1/alerts", body(map[string]any{"name": "G", "kind": "gotify", "server_url": app.URL, "app_token": gotifyTok}), 400) // local, switch off
+	adds := []map[string]any{
+		{"name": "N", "kind": "ntfy", "allow_local_network": true, "server_url": app.URL, "topic": "holyarrs", "app_token": ntfyTok},
+		{"name": "G", "kind": "gotify", "allow_local_network": true, "server_url": app.URL, "app_token": gotifyTok},
+		{"name": "P", "kind": "pushover", "allow_local_network": true, "user_key": pushUser, "app_token": pushTok},
+	}
+	var answers string
+	var ntfyID int64
+	for _, in := range adds {
+		b := r.owner.call("POST", "/api/v1/alerts", body(in), 201)
+		answers += string(b)
+		var al AlertView
+		_ = json.Unmarshal(b, &al)
+		if al.AppToken != secrets.Masked || al.URL != "" || al.BotToken != "" {
+			t.Fatalf("view %+v", al)
+		}
+		switch al.Kind {
+		case "ntfy":
+			if al.ServerURL != app.URL || al.Topic != "holyarrs" {
+				t.Fatalf("view %+v", al)
+			}
+			ntfyID = al.ID
+		case "pushover":
+			if al.UserKey != pushUser {
+				t.Fatalf("view %+v", al)
+			}
+		}
+		edit := map[string]any{}
+		for k, v := range in {
+			edit[k] = v
+		}
+		edit["app_token"] = secrets.Masked
+		r.owner.call("PUT", "/api/v1/alerts/"+itoa(al.ID), body(edit), 200)
+		r.owner.call("POST", "/api/v1/alerts/"+itoa(al.ID)+"/test", "", 200)
+	}
+	answers += string(r.owner.call("GET", "/api/v1/alerts", "", 200))
+	for _, tok := range []string{ntfyTok, gotifyTok, pushTok} {
+		if strings.Contains(answers, tok) {
+			t.Fatalf("a token leaked: %s", answers)
+		}
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(got) != 3 || got[0] != "/holyarrs|Bearer "+ntfyTok+"|This is a test from HolyArrs. If you can read it, the Alert N works." ||
+		!strings.HasPrefix(got[1], "/message|"+gotifyTok+"|{") || !strings.HasPrefix(got[2], "/1/messages.json||") || pushForm(got[2]).Get("token") != pushTok {
+		t.Fatalf("sent %q", got)
+	}
+	// The optional ntfy token can be dropped; the masked value sent with it
+	// does not keep it.
+	b := r.owner.call("PUT", "/api/v1/alerts/"+itoa(ntfyID), body(map[string]any{"name": "N", "allow_local_network": true, "server_url": app.URL, "topic": "holyarrs", "app_token": secrets.Masked, "clear_app_token": true}), 200)
+	var al AlertView
+	_ = json.Unmarshal(b, &al)
+	if al.AppToken != "" {
+		t.Fatalf("token kept after removal: %+v", al)
+	}
+}
+
+// pushForm reads the form a fake Pushover call was sent.
+func pushForm(call string) url.Values {
+	f, _ := url.ParseQuery(strings.TrimPrefix(call, "/1/messages.json||"))
+	return f
 }
