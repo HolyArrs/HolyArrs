@@ -41,9 +41,3 @@ Direct dependencies, from `go.mod` and `web/app/package.json`:
 | @fontsource/anton (Anton font) | SIL OFL 1.1 |
 
 Full licence texts for the sign-in parts and the RAR decoder are in [`docs/third-party-notices.md`](docs/third-party-notices.md).
-
-## Programs in the Docker image
-
-| Program | What HolyArrs uses it for | Licence |
-| --- | --- | --- |
-| [7-Zip](https://www.7-zip.org/) 26.04 (`7zz`, the official Linux build) | Unpacking RAR files the built-in decoder cannot read | GNU LGPL, parts under the unRAR licence restriction and BSD licences; the full text is in the image at `/usr/share/doc/7zip/License.txt` |
