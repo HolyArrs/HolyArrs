@@ -5,7 +5,9 @@
 	import { afterHandoff } from '#lib/loader.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { askProgressLine, attention, downloadMoved, fallbackRows, groupAttention, homeStrip, libraryCards, n, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { arrivedHead, askProgressLine, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, uncheckedLine, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { decisions } from '#lib/decisions.svelte.ts';
+	import { METADATA_DOWN, metadataOutage } from '#lib/metadata-health.svelte.ts';
 	import { bytes } from '#lib/format.ts';
 	import { homeFacts, homeLine } from '#lib/home-line.ts';
 	import { personName } from '#lib/plain.ts';
@@ -36,6 +38,9 @@
 	let asks = $state<Ask[]>([]);
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
+	// The downloads or health read failed on the last load: Home could not check, so it does not say All good.
+	let uncheckedDl = $state(false);
+	let uncheckedHealth = $state(false);
 
 	const admin = $derived(session.can('settings'));
 	const manager = $derived(session.can('manage_library'));
@@ -52,26 +57,50 @@
 	const nextStep = $derived(steps.find((s) => !s.done) ?? steps[3]);
 
 	const rows = $derived<HomeRow[]>(home?.rows ?? (loaded ? fallbackRows(owner) : []));
-	// Needs attention is only for failures: failed downloads or imports and health problems.
-	const fixes = $derived(owner ? attention({ failed: downloads.filter((d) => d.state === 'failed'), decisions: [], health: admin ? (checks?.checks ?? []) : [] }) : []);
-	// Items that share a cause are one row ("2 downloads failed"); six rows show, the rest wait in Downloads.
+	// Needs attention is what needs you: failed downloads or imports (the same rule as Downloads), decisions,
+	// health problems and a metadata outage while it lasts. Decisions come from the list the layout keeps fresh.
+	const fixes = $derived(
+		owner
+			? attention({
+					failed: homeFailures(downloads),
+					decisions: manager ? decisions.items : [],
+					health: checks?.checks ?? [],
+					metadata: metadataOutage.s.down ? METADATA_DOWN : undefined,
+					admin
+				})
+			: []
+	);
+	const unchecked = $derived(owner && (uncheckedDl || uncheckedHealth));
+	// Items that share a cause are one row ("2 downloads failed"); six rows show, the rest link to the page that holds most of them.
 	const fixRows = $derived(groupAttention(fixes));
 	const fixShown = $derived(fixRows.slice(0, 6));
-	const fixHidden = $derived(fixRows.slice(6).reduce((n, g) => n + g.items.length, 0));
+	const fixHidden = $derived(moreLink(fixRows.slice(6), admin));
 	let fixOpen = $state<Record<string, boolean>>({});
 	/** The plain note and, for admins, the raw text: what the Details link shows. */
 	function fixMore(i: Attention): string[] {
 		return [i.note, admin ? i.detail : undefined].filter((t): t is string => !!t && t !== i.title);
 	}
 	// Your Library: one card per kind that is on, and for owners what it all takes on disk.
-	const libCards = $derived(libraryCards(home?.library));
+	const libCards = $derived(libraryCards(home?.library, manager ? '/downloads' : undefined));
 	const diskTotal = $derived(libCards.reduce((t, c) => t + c.size, 0));
 	const showDisk = $derived(owner && libCards.length > 0);
 	const showOverview = $derived(!rows.includes('welcome') && (libCards.length > 0 || owner));
 	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
-	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available').slice(0, 20));
+	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available'));
+	const mineShown = $derived(mine.slice(0, 20));
 	const progress = $derived(home?.ask_progress ?? {});
-	const busy = $derived(Object.keys(progress).length > 0);
+	// Only a card on Your asks needs the live poll; downloads of asks with no card there do not.
+	const busy = $derived(mineShown.some((a) => !!a.title_id && !!progress[a.title_id]));
+	// Downloading (managers): what HolyArrs fetches now, from the downloads this page already read.
+	const fetchingAll = $derived(manager ? downloadingNow(downloads, Infinity) : []);
+	const fetchingShown = $derived(fetchingAll.slice(0, 20));
+	// The download rows carry no poster; the titles Home already shows lend theirs.
+	const posters = $derived.by(() => {
+		const m = new Map<number, string>();
+		for (const c of [...(home?.arrived ?? []), ...(home?.new_seasons ?? []), ...(home?.following ?? []), ...(home?.soon ?? [])]) if (c.poster) m.set(c.title_id, c.poster);
+		for (const a of asks) if (a.title_id && a.poster) m.set(a.title_id, a.poster);
+		return m;
+	});
 	// The line under Home: your name, the time and day, and what is going on, from what this page already loaded.
 	const line = $derived(
 		homeLine({
@@ -120,7 +149,8 @@
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100') : Promise.resolve(null),
 			manager ? api.get<Health>('/health') : Promise.resolve(null),
-			admin && manager ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
+			// The checks need manage_library only; people without Settings get Status links instead of Fix.
+			manager ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
 			session.can('ask') || approver ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null)
 		]);
 		if (fo.status === 'fulfilled' && fo.value) folders = fo.value.library_folders;
@@ -128,6 +158,8 @@
 		if (he.status === 'fulfilled' && he.value) health = he.value;
 		if (ch.status === 'fulfilled' && ch.value) checks = ch.value;
 		if (as.status === 'fulfilled' && as.value) asks = as.value.asks ?? [];
+		uncheckedDl = dl.status === 'rejected';
+		uncheckedHealth = ch.status === 'rejected';
 		now = new Date();
 		loaded = true;
 		settled = true;
@@ -142,15 +174,36 @@
 		}
 	}
 
-	// Live progress on Your asks: poll every 15 s, only while something is downloading.
+	// Live progress on Your asks: poll every 15 s, only while a card is downloading and the tab is in view.
 	$effect(() => {
 		if (!busy) return;
-		const t = setInterval(loadHome, 15000);
+		const t = setInterval(() => {
+			if (!document.hidden) void loadHome();
+		}, 15000);
+		return () => clearInterval(t);
+	});
+
+	// Members get no live title or import news. When their download ends, Home reads everything once;
+	// while an ask of theirs is approved and waiting for a copy, it reads again once a minute (in view only).
+	let wasBusy = false;
+	$effect(() => {
+		const b = busy;
+		if (wasBusy && !b && !manager) void loadAll();
+		wasBusy = b;
+	});
+	const waitingCopy = $derived(!manager && !busy && mine.some((a) => a.state === 'approved'));
+	$effect(() => {
+		if (!waitingCopy) return;
+		const t = setInterval(() => {
+			if (!document.hidden) void loadAll();
+		}, 60000);
 		return () => clearInterval(t);
 	});
 
 	onMount(() => {
 		void loadAll();
+		// The greeting's time of day and "today" move on without a fetch.
+		const clock = setInterval(() => (now = new Date()), 300000);
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		const soonLoad = () => {
 			clearTimeout(timer);
@@ -164,9 +217,10 @@
 			lastTick = Date.now();
 			soonLoad();
 		};
-		const offs = [live.on('title', soonLoad), live.on('import', soonLoad), live.on('resync', soonLoad), live.on('health', soonLoad), live.on('download', onDownload)];
+		const offs = [live.on('title', soonLoad), live.on('import', soonLoad), live.on('resync', soonLoad), live.on('health', soonLoad), live.on('ask', soonLoad), live.on('ask_removed', soonLoad), live.on('download', onDownload)];
 		return () => {
 			clearTimeout(timer);
+			clearInterval(clock);
 			offs.forEach((off) => off());
 		};
 	});
@@ -208,7 +262,7 @@
 					<section class="library" aria-labelledby="h-lib" data-testid="home-library">
 						<header class="col-head">
 							<h2 id="h-lib">Your Library</h2>
-							<a class="col-link" href={to('/library')}>See all<Icon name="chevronRight" size={14} /></a>
+							<a class="col-link" href={to('/library')}>See all<span class="sr-only"> Your Library</span><Icon name="chevronRight" size={14} /></a>
 						</header>
 						<ul class="lib-grid">
 							{#each libCards as c, i (c.kind)}
@@ -229,7 +283,7 @@
 											{#if s.count || s.key === 'on_disk'}
 												<li>
 													{#if s.href}
-														<a class="leg {s.key}" href={to(s.href)}><i aria-hidden="true"></i><strong>{n(s.count)}</strong> {s.label}</a>
+														<a class="leg {s.key}" href={to(s.href)}><i aria-hidden="true"></i><strong>{n(s.count)}</strong> {s.label}<span class="sr-only"> ({c.label})</span></a>
 													{:else}
 														<span class="leg {s.key}"><i aria-hidden="true"></i><strong>{n(s.count)}</strong> {s.label}</span>
 													{/if}
@@ -266,15 +320,22 @@
 						<header class="col-head">
 							<h2 id="h-fix">Needs attention</h2>
 						</header>
-						<div class="att-card" class:calm={settled && !fixes.length}>
+						<div class="att-card" class:calm={settled && !fixes.length && !unchecked}>
 							{#if !settled}
 								<div class="att-wait" aria-hidden="true"><i></i><i></i><i></i></div>
 								<span class="sr-only">Checking</span>
+							{:else if !fixes.length && unchecked}
+								<div class="all-good" role="status">
+									<span class="att-icon" aria-hidden="true"><Icon name="alert" size={20} /></span>
+									<p class="good-title">Could not check</p>
+									<p class="good-line">{uncheckedLine(uncheckedDl, uncheckedHealth)}</p>
+									<Button size="sm" variant="secondary" busy={retrying} onclick={retry}>Try again</Button>
+								</div>
 							{:else if !fixes.length}
 								<div class="all-good">
 									<span class="good-mark" aria-hidden="true"><Icon name="check" size={22} /></span>
 									<p class="good-title">All good</p>
-									<p class="good-line">{admin ? 'Downloads, imports and checks are running fine.' : 'Downloads and imports are running fine.'}</p>
+									<p class="good-line">Downloads, imports and checks are running fine.</p>
 								</div>
 							{:else}
 								<div class="att-sum">
@@ -297,7 +358,7 @@
 													<span class="lead"><span class="ltxt"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">{g.reason}</span></span></span>
 												{/if}
 												<span class="acts">
-													{#if more.length}<button class="link" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>Details</button>{/if}
+													{#if more.length}<button class="link" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>Details<span class="sr-only"> for {g.title}</span></button>{/if}
 													<a class="go link" href={to(g.href)} aria-label="{g.action} ({g.title})">{g.action}<Icon name="chevronRight" size={13} /></a>
 												</span>
 												{#if many && fixOpen[g.key]}
@@ -306,7 +367,7 @@
 															{@const sub = fixMore(it)}
 															<li>
 																<span class="mt">{it.title}</span>
-																{#if sub.length}<button class="link" type="button" aria-expanded={!!fixOpen[it.key]} aria-controls="fix-{it.key}" onclick={() => (fixOpen[it.key] = !fixOpen[it.key])}>Details</button>{/if}
+																{#if sub.length}<button class="link" type="button" aria-expanded={!!fixOpen[it.key]} aria-controls="fix-{it.key}" onclick={() => (fixOpen[it.key] = !fixOpen[it.key])}>Details<span class="sr-only"> for {it.title}</span></button>{/if}
 																{#if sub.length && fixOpen[it.key]}<p class="raw" id="fix-{it.key}">{sub.join(' ')}</p>{/if}
 															</li>
 														{/each}
@@ -318,12 +379,25 @@
 										</li>
 									{/each}
 								</ul>
-								{#if fixHidden}<a class="more" href={to('/downloads')}>{fixHidden} more in Downloads<Icon name="chevronRight" size={13} /></a>{/if}
+								{#if fixHidden}<a class="more" href={to(fixHidden.href)}>{fixHidden.text}<Icon name="chevronRight" size={13} /></a>{/if}
 							{/if}
 						</div>
 					</section>
 				{/if}
 			</div>
+		{/if}
+		{#if fetchingShown.length}
+			<Shelf title="Downloading" subtitle="{fetchingAll.length} in progress" href={to('/downloads')} item="var(--poster-item)">
+				{#each fetchingShown as d (d.id)}
+					<PosterCard
+						title={d.title || d.name}
+						href={to(`/downloads?open=${d.id}`)}
+						image={d.artwork ?? (d.title_id ? posters.get(d.title_id) : undefined)}
+						subtitle={d.covers ? `${d.covers} · ${downloadLine(d)}` : downloadLine(d)}
+						progress={d.state === 'downloading' ? Math.round(Math.max(0, Math.min(1, d.progress)) * 100) : undefined}
+					/>
+				{/each}
+			</Shelf>
 		{/if}
 		{#each rows as row (row)}
 			{#if row === 'welcome'}
@@ -363,22 +437,22 @@
 					</section>
 				{/if}
 			{:else if row === 'arrived'}
-				{@render wideRow(home?.arrived ?? [], 'home_arrived', { title: 'Just arrived', subtitle: 'New in the last two weeks', href: to('/library') })}
+				{@render wideRow(home?.arrived ?? [], 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to('/library') })}
 			{:else if row === 'approval' && waiting.length}
 				<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Requests page" href={to('/requests')} item="var(--poster-item)">
 					{#each waiting.slice(0, 20) as a (a.id)}
-						<PosterCard title={a.name} href={to('/requests')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
+						<PosterCard title={a.name} href={to(`/requests?ask=${a.id}`)} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
 					{/each}
 				</Shelf>
 			{:else if row === 'asks' && mine.length}
-				<Shelf title="Your asks" subtitle="{mine.length} on your requests" href={to('/requests')} item="var(--poster-item)">
-					{#each mine as a (a.id)}
+				<Shelf title="Your asks" subtitle="{mine.length} {mine.length === 1 ? 'request' : 'requests'} still open" href={to('/requests')} item="var(--poster-item)">
+					{#each mineShown as a (a.id)}
 						{@const p = a.title_id ? progress[a.title_id] : undefined}
 						<PosterCard
 							title={a.name}
-							href={a.title_id ? to(`/library/${a.title_id}`) : to('/requests')}
+							href={a.title_id ? to(`/library/${a.title_id}`) : to(`/requests?ask=${a.id}`)}
 							image={a.poster}
-							subtitle={p ? askProgressLine(p) : a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
+							subtitle={p ? askProgressLine(p).replace(/^Downloading /, '') : a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
 							progress={p && p.state === 'downloading' ? Math.round(p.progress * 100) : undefined}
 							owned={askMark(a)}
 						/>
@@ -400,6 +474,10 @@
 	/* The same sizes as Explore: 279px wide cards at a 1536px window (Netflix), 5px gaps on wide rows, one 32px rhythm between blocks. */
 	.home { container: home / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); --poster-item: 168px; --home-gap: 32px; display: flex; flex-direction: column; gap: var(--home-gap); padding-bottom: 48px; }
 	.home > :global(.ui-head) { margin-bottom: -8px; }
+	/* Phones: Search and Explore sit on their own row from the first frame, so the header does not jump when the greeting arrives. */
+	@media (max-width: 767px) { .home > :global(.ui-head .actions) { flex-basis: 100%; } }
+	/* High Contrast (forced colors) drops the box-shadow focus rings: draw a system outline instead. */
+	@media (forced-colors: active) { .home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; } }
 	.banner { margin-bottom: -16px; }
 	.wide-row { display: contents; }
 	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; } }
@@ -543,13 +621,15 @@
 		.lib-detail { font: var(--t-footnote); margin-top: 4px; }
 		.bar { margin-top: 12px; height: 5px; }
 		.legend { flex-direction: column; gap: 0; margin-top: 6px; }
+		/* Plain rows stay compact; the legend links are full phone taps above the card's own link. */
 		.leg { min-height: 24px; }
+		a.leg { min-height: 36px; }
 		.att-card { border-radius: 18px; }
 		.att-sum { flex-direction: row; align-items: center; gap: 12px; padding: 10px 10px 12px; }
 		.att-icon { width: 30px; height: 30px; border-radius: 9px; }
 		.att-sum .lib-big { flex-direction: row; align-items: baseline; }
 		.acts { margin-left: -8px; }
-		.link { min-height: 36px; }
+		.link, .members .link { min-height: 36px; }
 		.members li { min-height: 36px; }
 	}
 

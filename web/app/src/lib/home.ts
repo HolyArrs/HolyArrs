@@ -2,6 +2,7 @@
 import { duration } from './format.ts';
 import { healthSentence, plainReason } from './plain.ts';
 import type { DownloadRow } from './downloaders.ts';
+import { stageOf } from './downloads/status-tabs.ts';
 import type { CalendarEntry, HealthCheck, TitleView } from './types.ts';
 import type { Fresh } from './fresh.ts';
 
@@ -23,6 +24,27 @@ export function downloadSubtitle(d: Pick<DownloadRow, 'covers' | 'album' | 'year
 /** isActive says whether a download is still in progress. */
 export function isActive(d: Pick<DownloadRow, 'active' | 'state'>): boolean {
 	return d.active || d.state === 'downloading' || d.state === 'queued' || d.state === 'stalled';
+}
+
+type StageBits = Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'replaced' | 'client_hint'>;
+
+/** homeFailures are the rows Downloads lists under Problems > Failed: a replaced failure is done, a refused import counts. */
+export function homeFailures<T extends StageBits>(rows: T[]): T[] {
+	return rows.filter((d) => stageOf(d) === 'failed');
+}
+
+const fetching = new Set(['checking', 'queued', 'downloading', 'stalled', 'importing']);
+
+/**
+ * downloadingNow is Home's Downloading row: what HolyArrs is fetching now,
+ * furthest along first, at most `cap`. Torrents only the Downloader knows,
+ * seeding, finished and failed rows stay on Downloads.
+ */
+export function downloadingNow<T extends StageBits & Pick<DownloadRow, 'id' | 'active' | 'client_item'>>(rows: T[], cap = 20): T[] {
+	return rows
+		.filter((d) => !d.client_item && isActive(d) && fetching.has(stageOf(d)))
+		.sort((a, b) => (b.progress || 0) - (a.progress || 0) || b.id - a.id)
+		.slice(0, cap);
 }
 
 export interface Attention {
@@ -59,23 +81,36 @@ export function healthFix(kind: HealthCheck['kind']): string {
 		case 'backups':
 			return '/settings/backups';
 		default:
+			// Updates, trailers and anything new live on This app.
 			return '/settings/this-app';
 	}
 }
 
 // A health problem in a few words: what it is about (one, many) and why (one, many), by state.
-const healthWords: Record<HealthCheck['kind'], { one: string; many: string; error: [string, string]; warning: [string, string] }> = {
+// Trailers comes from the server but is not in the HealthCheck type yet, so it is named here too.
+const healthWords: Record<HealthCheck['kind'] | 'trailers', { one: string; many: string; error: [string, string]; warning: [string, string] }> = {
 	library_folder: { one: 'Library folder', many: 'Library folders', error: ["can't be reached", "can't be reached"], warning: ['needs a look', 'need a look'] },
 	disk_space: { one: 'Library folder', many: 'Library folders', error: ['out of space', 'out of space'], warning: ['running low on space', 'running low on space'] },
 	source: { one: 'Source', many: 'Sources', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
 	downloader: { one: 'Downloader', many: 'Downloaders', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
 	backups: { one: 'Backups', many: 'Backups', error: ['not being made', 'not being made'], warning: ['getting old', 'getting old'] },
-	update: { one: 'HolyArrs update', many: 'HolyArrs updates', error: ['check failed', 'check failed'], warning: ['waiting', 'waiting'] }
+	update: { one: 'HolyArrs update', many: 'HolyArrs updates', error: ['check failed', 'check failed'], warning: ['waiting', 'waiting'] },
+	trailers: { one: 'Trailers', many: 'Trailers', error: ['not loading', 'not loading'], warning: ['lookups failing', 'lookups failing'] }
 };
 
-function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action: string): Attention {
+/**
+ * shownState is the state Home shows for a check: the one the flap guard
+ * confirmed (what Alerts were told) when the server sends it, else the raw one,
+ * so a single missed run does not flash a problem.
+ */
+export function shownState(c: Pick<HealthCheck, 'state'> & { confirmed?: string }): HealthCheck['state'] {
+	const s = c.confirmed || c.state;
+	return s === 'error' || s === 'warning' ? s : 'ok';
+}
+
+function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action: string, admin: boolean): Attention {
 	const w = healthWords[c.kind];
-	const level = c.state === 'error' ? 'error' : 'warning';
+	const level = tone === 'fail' ? 'error' : 'warning';
 	return {
 		key: `h${c.key}`,
 		tone,
@@ -85,30 +120,47 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		reason: w ? w[level][0] : level === 'error' ? 'not working' : 'needs a look',
 		cause: `health:${c.kind}:${level}`,
 		detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined,
-		href: healthFix(c.kind),
-		action
+		// Settings is only for people who may change it; everyone else sees the check on Status.
+		href: admin ? healthFix(c.kind) : '/status',
+		action: admin ? action : 'Look'
 	};
 }
 
-/** attention puts failed downloads, decisions and health problems in one list, worst first. */
+/**
+ * attention puts failed downloads, decisions and health problems in one list, worst first.
+ * `metadata` is the note while the metadata server is down; `admin` says the
+ * viewer may open Settings (yes when left out).
+ */
 export function attention(input: {
-	failed: Pick<DownloadRow, 'id' | 'title' | 'title_id' | 'text'>[];
+	failed: (Pick<DownloadRow, 'id' | 'title' | 'title_id' | 'text'> & { phase?: string })[];
 	decisions: { slot_id: number; title: string; reason?: string; episode?: { label: string } | null }[];
 	health: HealthCheck[];
+	metadata?: string;
+	admin?: boolean;
 }): Attention[] {
 	const out: Attention[] = [];
-	for (const c of input.health.filter((h) => h.state === 'error')) out.push(healthItem(c, 'fail', 'Problem', 'Fix'));
+	const admin = input.admin ?? true;
+	for (const c of input.health.filter((h) => shownState(h) === 'error')) out.push(healthItem(c, 'fail', 'Problem', 'Fix', admin));
 	for (const d of input.failed) {
-		const r = plainReason(d.text || 'The download failed.');
-		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.failed&open=${d.id}`, action: 'Downloads' });
+		const refused = d.phase === 'import_refused';
+		const r = plainReason(d.text || (refused ? 'The import was refused.' : 'The download failed.'));
+		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: refused ? 'import refused' : 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.failed&open=${d.id}`, action: 'Downloads' });
 	}
+	// The metadata outage stays while it lasts and goes away on the next check that passes.
+	if (input.metadata) out.push({ key: 'metadata', tone: 'wait', word: 'Warning', text: `HolyArrs metadata can't be reached. ${input.metadata}`, title: 'HolyArrs metadata', reason: "can't be reached", cause: 'metadata', note: input.metadata, href: admin ? '/settings/tmdb' : '/status', action: 'Look' });
 	for (const d of input.decisions) {
 		const r = plainReason(d.reason || 'HolyArrs needs you to choose.');
 		const title = `${d.title}${d.episode ? ` ${d.episode.label}` : ''}`;
 		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: 'Your call', text: `${title}: ${r.text}`, title, reason: 'needs a decision', cause: 'decision', note: d.reason ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.decide&slot=${d.slot_id}`, action: 'Decide' });
 	}
-	for (const c of input.health.filter((h) => h.state === 'warning')) out.push(healthItem(c, 'wait', 'Warning', 'Look'));
+	for (const c of input.health.filter((h) => shownState(h) === 'warning')) out.push(healthItem(c, 'wait', 'Warning', 'Look', admin));
 	return out;
+}
+
+/** uncheckedLine says what Home could not check when a read failed. */
+export function uncheckedLine(downloads: boolean, health: boolean): string {
+	const what = downloads && health ? 'downloads or health' : downloads ? 'downloads' : 'health';
+	return `Home could not check ${what} right now.`;
 }
 
 /** One row of Needs attention: a single item, or several that share a cause. */
@@ -152,6 +204,17 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
 		else out.push({ ...base, key: `g${cause}`, title: `${n} downloads failed`, reason: list.map((i) => i.title).join(', ') });
 	}
 	return out;
+}
+
+/**
+ * moreLink is the link under Needs attention for the rows that do not fit:
+ * how many rows, and the page that holds most of them (Health or Downloads).
+ */
+export function moreLink(hidden: Pick<AttentionGroup, 'items'>[], admin = true): { href: string; text: string } | null {
+	if (!hidden.length) return null;
+	const health = hidden.filter((g) => /^(health:|metadata$)/.test(g.items[0]?.cause ?? '')).length;
+	if (health * 2 > hidden.length) return admin ? { href: '/settings/health', text: `${hidden.length} more on Health` } : { href: '/status', text: `${hidden.length} more on Status` };
+	return { href: '/downloads', text: `${hidden.length} more in Downloads` };
 }
 
 // ---- Home rows: the same wide card system as Explore, from Library data ----
@@ -215,6 +278,13 @@ export function arrivedTitle(newest: number | undefined, now = Date.now()): stri
 	return 'Recently added';
 }
 
+/** arrivedHead is Just arrived's title and subtitle from its newest card; the two-week line only while it holds. */
+export function arrivedHead(cards: Pick<HomeCard, 'at'>[], now = Date.now()): { title: string; subtitle?: string } {
+	const newest = Math.max(...cards.map((c) => (c.at ? Date.parse(c.at) : NaN)).filter((t) => !Number.isNaN(t)));
+	if (!Number.isFinite(newest)) return { title: 'Just arrived' };
+	return { title: arrivedTitle(newest, now), subtitle: now - newest < 14 * DAY ? 'New in the last two weeks' : undefined };
+}
+
 /** soonTitle is Coming soon's subtitle: what is next and when. */
 export function soonLine(first: { name: string; subtitle?: string } | undefined): string {
 	if (!first) return 'The next 30 days';
@@ -245,7 +315,7 @@ export interface HomeCard {
 
 export interface AskProgress {
 	progress: number;
-	state: 'queued' | 'downloading';
+	state: 'queued' | 'downloading' | 'stalled' | 'paused';
 	eta?: number;
 }
 
@@ -315,8 +385,9 @@ function plural(v: number, one: string, many: string): string {
  * in sidebar order (Movies, TV shows, Music), for the kinds that are on.
  * Each bar is on disk, downloading and missing as shares of all items;
  * the rest (not out yet, not kept up to date) stays the bar's track.
+ * Downloading links to `downloadsHref` for people who may open Downloads.
  */
-export function libraryCards(lib: HomeAnswer['library']): LibraryCardView[] {
+export function libraryCards(lib: HomeAnswer['library'], downloadsHref?: string): LibraryCardView[] {
 	if (!lib) return [];
 	const meta: [LibraryKind, string, LibraryCardView['icon'], string, string][] = [
 		['movie', 'Movies', 'film', 'movie', 'movies'],
@@ -339,7 +410,7 @@ export function libraryCards(lib: HomeAnswer['library']): LibraryCardView[] {
 			big: c.titles,
 			unit: c.titles === 1 ? one : many,
 			detail,
-			segments: [seg('on_disk', 'on disk', c.on_disk, `${base}&show=have`), seg('downloading', 'downloading', c.downloading), seg('missing', 'missing', c.missing, `${base}&show=missing`)],
+			segments: [seg('on_disk', 'on disk', c.on_disk, `${base}&show=have`), seg('downloading', 'downloading', c.downloading, downloadsHref), seg('missing', 'missing', c.missing, `${base}&show=missing`)],
 			size: c.size
 		});
 	}
@@ -353,7 +424,8 @@ export function fallbackRows(owner: boolean): HomeRow[] {
 
 /** homeStrip is the card's one strip saying what is new: the show's line, or the artist and their new albums. */
 export function homeStrip(c: Pick<HomeCard, 'kind' | 'name' | 'line'>): Fresh | null {
-	if (!c.line) return null;
+	// The server's plain "Show" and "Music" lines say nothing is new: no strip.
+	if (!c.line || c.line === 'Show' || c.line === 'Music') return null;
 	if (c.kind === 'show') return { kind: c.line.startsWith('Season') && !c.line.includes('·') ? 'new_season' : 'new_episode', text: c.line };
 	if (c.kind === 'artist') return { kind: 'recently_added', text: `${c.name} · ${c.line}` };
 	return null;
@@ -364,6 +436,8 @@ export function askProgressLine(p: AskProgress | undefined): string {
 	if (!p) return '';
 	if (p.state === 'queued') return 'Waiting to start';
 	const pct = Math.round(Math.max(0, Math.min(1, p.progress)) * 100);
+	if (p.state === 'stalled') return `Stalled at ${pct}%`;
+	if (p.state === 'paused') return `Paused at ${pct}%`;
 	return p.eta ? `Downloading ${pct}% · ${duration(p.eta)} left` : `Downloading ${pct}%`;
 }
 
