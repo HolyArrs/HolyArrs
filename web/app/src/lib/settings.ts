@@ -67,6 +67,7 @@ export const sections: Section[] = [
 
 	{ href: '/settings/media-servers', group: 'services', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Tell Plex, Jellyfin or Emby about imports, renames and deletes.' },
 	{ href: '/settings/alerts', group: 'notifications', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, email and webhook messages for asks, imports and health.' },
+	{ href: '/settings/ai', group: 'services', tint: 'indigo', label: 'AI connections', icon: 'sparkle', about: 'Let AI assistants like Claude check your library and ask for titles, with keys you can revoke.' },
 	{ href: '/settings/api', group: 'services', tint: 'gray', label: 'API for other apps', icon: 'key', about: 'The base address, scopes, example calls and every route.' },
 	{ href: '/settings/move', group: 'services', tint: 'teal', label: 'Move from other apps', icon: 'upload', about: 'Bring a setup over from Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr and the Downloaders.', need: 'users' },
 

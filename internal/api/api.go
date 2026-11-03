@@ -166,6 +166,8 @@ type API struct {
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.
 	confirm confirms
+	// ai holds the AI connections' limits and confirm tokens (mcp.go).
+	ai aiState
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
 	// rated keeps TMDB ratings looked up for Kid limits.
@@ -296,6 +298,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
+	m.HandleFunc("GET /api/v1/search", a.plainSearch)
 	m.HandleFunc("GET /api/v1/library-summary", a.librarySummary)
 	m.HandleFunc("GET /api/v1/home", a.home)
 	m.HandleFunc("POST /api/v1/titles", a.addTitle)
@@ -448,14 +451,17 @@ func (a *API) Handler() http.Handler {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
+	a.mcpRoutes(m)
 	m.Handle("GET /", web.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
 	}
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
+		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
 		return secure(a.s.Auth.Middleware(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))
 	}
+	a.ai.inner = a.partGate(m, m)
 	return secure(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m)))))
 }
 

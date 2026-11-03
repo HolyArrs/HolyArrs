@@ -54,6 +54,7 @@
 	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 	import { posterStatus } from '#lib/library.ts';
+	import { describes, found, plainPath, understood, type PlainAnswer } from '#lib/plain-search.ts';
 
 	// Search is a page; its one field is the top bar's (lib/search-field.svelte.ts;
 	// on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope
@@ -186,6 +187,10 @@
 	// ── In your Library: local matches first, left out of the wider results ──
 	type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number; image?: string }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
 	let lib = $state<LibraryAnswer | null>(null);
+	// Search in plain words: asked only when the words describe a title.
+	let plainAns = $state<PlainAnswer | null>(null);
+	const plainShown = $derived(found(plainAns) && plainAns?.query.text === searchField.term.trim());
+	const plainCards = $derived((plainAns?.more ?? []).map((item) => ({ item, c: discoverCard(item, 'plain') })));
 	const ONLY_KEY = 'holyarrs.search.only-library';
 	let onlyLib = $state(false);
 	function setOnlyLib(v: boolean) {
@@ -300,6 +305,13 @@
 			.catch(() => {
 				if (isLatest()) lib = { titles: [], albums: [], people: [] };
 			});
+		plainAns = null;
+		if (describes(q))
+			api.get<PlainAnswer>(plainPath(q))
+				.then((r) => {
+					if (isLatest()) plainAns = r;
+				})
+				.catch(() => {});
 		const jobs: Record<Card['type'], () => Promise<Card[]>> = {
 			movie: () => api.get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${enc}`).then((r) => r.movies.map(movieCard).filter((c): c is Card => !!c)),
 			show: () => api.get<{ shows: LookupShow[] }>(`/shows/lookup?term=${enc}`).then((r) => r.shows.map(showCard)),
@@ -882,6 +894,24 @@
 
 	<div class="results" class:holding aria-live="polite" aria-busy={busy}>
 		{#if waiting}<p class="sr-only">Searching for “{searchField.term.trim()}”…</p>{/if}
+		{#if plainShown && plainAns}
+			<section class="plain" aria-labelledby="plain-h" data-testid="search-plain">
+				<h2 id="plain-h" class="h2">Matches for your description</h2>
+				<p class="muted understood">Understood as {understood(plainAns.query)}</p>
+				{#if plainAns.titles.length}
+					<Shelf title="In your Library" item="var(--title-item)" placeholder="wide" lines={1}>
+						{#each plainAns.titles as t (t.id)}
+							<WideCard cover title={t.name} href={to(`/library/${t.id}`)} image={t.backdrop ?? t.artwork[0]} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} subtitle={t.year ? String(t.year) : undefined} owned={inLibrary} />
+						{/each}
+					</Shelf>
+				{/if}
+				{#if plainCards.length}
+					<Shelf title="More like that" item="var(--title-item)" placeholder="wide" lines={1}>
+						{#each plainCards as { item, c } (c.key)}{@render discover(item, c)}{/each}
+					</Shelf>
+				{/if}
+			</section>
+		{/if}
 		{#if !searchField.term.trim() && mgenre}
 			<section class="mood" aria-labelledby="mgenre-h" data-testid="search-music-genre">
 				<div class="mood-head">
@@ -1061,13 +1091,14 @@
 			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if total === 0 && (pending || busy)}
 			{@render resultsSkeleton()}
-		{:else if total === 0 && searched}
+		{:else if total === 0 && searched && !plainShown}
 			<div class="empty" data-testid="search-empty">
 				<h2 class="h2">Nothing found for “{searched}”</h2>
 				<ul class="tips">
 					<li>Check the spelling, or use fewer words.</li>
 					<li>Add the year, such as “Dune 2021”.</li>
 					<li>Paste an id, such as tmdb:693134 or tvmaze:82.</li>
+					<li>Or describe it, such as “space movie with a robot from 2014”.</li>
 				</ul>
 				{#if scope !== 'all'}<Button variant="secondary" onclick={() => setScope('all')}>Look everywhere</Button>{/if}
 				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>Search indexers for “{searched}”</Button>{/if}
@@ -1166,4 +1197,6 @@
 	.tips li::marker { color: var(--text-faint, var(--text-muted)); }
 	.notice { margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
+	.plain { display: grid; gap: 8px; margin-bottom: 24px; min-width: 0; }
+	.plain .understood { margin: 0; font: var(--t-callout); overflow-wrap: anywhere; }
 </style>

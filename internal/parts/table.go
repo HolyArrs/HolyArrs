@@ -94,6 +94,14 @@ var (
 // internal/api fails for a registered route missing here, and for a row
 // whose route is gone.
 var Routes = map[string]Owner{
+	// AI connections: core; each tool checks the parts it needs.
+	"POST /api/v1/mcp":        Core,
+	"GET /api/v1/mcp":         Core,
+	"POST /mcp":               Core,
+	"GET /mcp":                Core,
+	"GET /api/v1/settings/ai": Core,
+	"PUT /api/v1/settings/ai": Core,
+
 	"GET /api/v1/data-packs":                            Core,
 	"GET /api/v1/data-packs/{id}":                       Core,
 	"GET /api/v1/data-packs/{id}/preview":               Core,
@@ -351,6 +359,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/titles/owned":                Media,
 	"GET /api/v1/library/search":              Media,
 	"GET /api/v1/search/suggest":              Media,
+	"GET /api/v1/search":                      Media,
 	"GET /api/v1/library-summary":             Media,
 	"GET /api/v1/home":                        Media,
 	"POST /api/v1/titles/refresh":             Media,
@@ -604,6 +613,7 @@ var Screens = map[string]Owner{
 	"/settings/logs":                 Core,
 	"/settings/schedules":            Core,
 	"/settings/api":                  Core,
+	"/settings/ai":                   Core,
 	"/settings/tmdb":                 Core,
 	"/settings/users":                Core,
 	"/settings/naming":               Media,
