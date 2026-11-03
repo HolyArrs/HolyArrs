@@ -1540,7 +1540,7 @@
 	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:has(.lib-ep-text:focus-visible) { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.lib-ep.future .lib-ep-still img { filter: grayscale(.8) brightness(.55); }
 	.lib-ep-st.future { color: var(--text-muted); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
-	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 10%, transparent); color: var(--info-text); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 10%, transparent); color: var(--text); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
 	@media (max-width: 600px) {
 		.lib-sr-note { display: none; }
 		.lib-sr .lib-ep { grid-template-columns: 24px 84px minmax(0, 1fr) auto; }

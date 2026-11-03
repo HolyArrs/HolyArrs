@@ -222,7 +222,7 @@
 	.rs-verdict { color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.rs-verdict.fail { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.rs-verdict.wait { color: var(--wait-text); background: color-mix(in srgb, var(--wait) 14%, transparent); }
-	.rs-verdict.red { color: #fff; background: var(--accent); }
+	.rs-verdict.red { color: #fff; background: var(--accent-fill); }
 	.rs-name { font: 600 14px/1.35 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.rs-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-muted); font: 500 12.5px/1.2 var(--font-ui); }
 	.rs-facts .low { color: var(--wait-text); }
