@@ -126,6 +126,61 @@ test('a new set starts for movies and TV shows; ticking Music switches to the mu
 	await expect(page).toHaveURL(/\/settings\/pick-rules$/);
 });
 
+// Your own traits (#97): made on the list page (mistakes named first), used
+// in a copy's Never, and taken out of it again when removed. Whatever the
+// test made is removed at the end, pass or fail.
+test('your own trait is made, used in Never and taken out of the rules when removed', async () => {
+	test.setTimeout(90_000);
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const call = (method: string, path: string, data?: unknown) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+	try {
+		await page.goto('/settings/pick-rules');
+		const card = page.locator('#own-traits');
+		await expect(card).toContainText('No traits of your own yet');
+		await card.getByRole('button', { name: 'Make a trait' }).click();
+		const sheet = page.getByRole('dialog', { name: 'Make a trait' });
+		await sheet.getByLabel('Name').fill('Dutch subs');
+		await sheet.getByRole('button', { name: 'Make trait' }).click();
+		await expect(sheet.getByText('List at least one word or pattern.')).toBeVisible();
+		await sheet.getByLabel('Words').fill('NLSubs\n/(open/');
+		await sheet.getByRole('button', { name: 'Make trait' }).click();
+		await expect(sheet.getByText('/(open/ is not a pattern HolyArrs can read.')).toBeVisible();
+		await sheet.evaluate((el) => Promise.all(el.getAnimations().map((x) => x.finished)));
+		expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+		await sheet.getByLabel('Words').fill('NLSubs\n/\\bdutch\\b/');
+		await sheet.getByRole('button', { name: 'Make trait' }).click();
+		await expect(page.getByText('Dutch subs made. Pick rules can use it now.')).toBeVisible();
+		await expect(page.getByTestId('own-trait')).toContainText('Name has: NLSubs, /\\bdutch\\b/');
+
+		// A copy of Good everyday never takes it.
+		await more('Good everyday', 'Make a copy');
+		const never = page.getByLabel('Add to Never');
+		await expect(never.locator('optgroup[label="Your traits"] option', { hasText: 'Dutch subs' })).toHaveCount(1);
+		await never.selectOption({ label: 'Dutch subs' });
+		await expect(page.getByTestId('never').getByText('Dutch subs')).toBeVisible();
+		await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+		await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
+		const copy = page.url();
+		await page.reload();
+		await expect(page.getByTestId('never').getByText('Dutch subs')).toBeVisible();
+
+		// Removing the trait takes it out of the copy.
+		await page.goto('/settings/pick-rules');
+		await page.getByTestId('own-trait').getByRole('button', { name: 'More for Dutch subs' }).click();
+		await page.getByRole('menu', { name: 'More for Dutch subs' }).getByRole('menuitem', { name: 'Remove…' }).click();
+		await page.getByRole('dialog', { name: 'Remove this trait?' }).getByRole('button', { name: 'Remove', exact: true }).click();
+		await expect(page.getByText('Dutch subs removed, and taken out of 1 set of Pick rules.')).toBeVisible();
+		await expect(page.getByTestId('own-trait')).toHaveCount(0);
+		await page.goto(copy);
+		await expect(page.getByTestId('never')).not.toContainText('Dutch subs');
+	} finally {
+		const ts = ((await (await call('GET', '/own-traits')).json()) as { own_traits: { id: number }[] }).own_traits;
+		for (const t of ts) await call('DELETE', `/own-traits/${t.id}`);
+		const rs = ((await (await call('GET', '/pick-rules')).json()) as { pick_rules: { id: number; name: string }[] }).pick_rules;
+		for (const r of rs.filter((x) => x.name === 'Good everyday copy')) await call('DELETE', `/pick-rules/${r.id}`);
+	}
+});
+
 test('a phone: the list and the editor fit without sideways scroll', async () => {
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.goto('/settings/pick-rules');

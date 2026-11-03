@@ -160,6 +160,9 @@ func CreatePickRules(ctx context.Context, st *store.Store, in PickRulesInput, by
 		if err := nameTaken(tx, in.Name, 0); err != nil {
 			return err
 		}
+		if err := checkOwnKeys(tx, in.Body); err != nil {
+			return err
+		}
 		_, err := store.Insert(tx, "pick_rules", &p, by)
 		return err
 	})
@@ -184,6 +187,9 @@ func UpdatePickRules(ctx context.Context, st *store.Store, id int64, in PickRule
 			return ErrPresetLocked
 		}
 		if err := nameTaken(tx, in.Name, id); err != nil {
+			return err
+		}
+		if err := checkOwnKeys(tx, in.Body); err != nil {
 			return err
 		}
 		u, used, err := pickRulesUse(ctx, tx, id)

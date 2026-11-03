@@ -492,3 +492,22 @@ func tableCounts(t *testing.T, st *store.Store, tables ...string) []int {
 	}
 	return out
 }
+
+// Your own traits (#97) belong to one install: a data pack naming one is refused.
+func TestPickRuleWithOwnTraitIsRefused(t *testing.T) {
+	p, err := Decode(fixture(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, edit := range []func(*domain.PickRulesBody){
+		func(b *domain.PickRulesBody) { b.Traits = append(slices.Clone(b.Traits), domain.TraitPoints{Trait: "own:3", Points: 10}) },
+		func(b *domain.PickRulesBody) { b.MustHave = []string{"own:3"} },
+		func(b *domain.PickRulesBody) { b.Never = append(slices.Clone(b.Never), "own:3") },
+	} {
+		bad := p.PickRules[0]
+		edit(&bad.Rules)
+		if err := bad.validate(); err == nil || !strings.Contains(err.Error(), "own:3") {
+			t.Fatalf("own trait in a data pack: %v", err)
+		}
+	}
+}

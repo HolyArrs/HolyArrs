@@ -94,8 +94,11 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 		return fieldErr("body.traits", "List at most 64 traits.")
 	}
 	seen := map[string]bool{}
+	// An own trait (#97) is checked by its key's form; one deleted later
+	// simply never matches.
+	known := func(t string) bool { _, own := OwnTraitID(t); return traits[t] || own }
 	for _, tp := range b.Traits {
-		if !traits[tp.Trait] || seen[tp.Trait] {
+		if !known(tp.Trait) || seen[tp.Trait] {
 			return fieldErr("body.traits", "Unknown or repeated trait %q.", tp.Trait)
 		}
 		if !inPickPoints(tp.Points) {
@@ -113,7 +116,7 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 		}
 		seen := map[string]bool{}
 		for _, trait := range l.values {
-			ok := traits[trait] || (l.safety && safetyTraits[trait])
+			ok := known(trait) || (l.safety && safetyTraits[trait])
 			if !ok || seen[trait] {
 				return fieldErr(l.field, "Unknown or repeated trait %q.", trait)
 			}

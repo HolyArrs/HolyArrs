@@ -4,6 +4,7 @@ import {
 	blankBody,
 	bytesPerMinute,
 	checkBody,
+	checkOwnTrait,
 	copyName,
 	fieldKey,
 	gbPerHour,
@@ -11,6 +12,7 @@ import {
 	ladderFor,
 	musicLadder,
 	neverChoices,
+	ownTerms,
 	sizeFields,
 	stepLabel,
 	tidyBody,
@@ -20,7 +22,7 @@ import {
 	usedWords,
 	videoLadder
 } from './pick-rules.ts';
-import type { PickRulesBody } from './types.ts';
+import type { OwnTrait, PickRulesBody } from './types.ts';
 
 const gb = 2 ** 30;
 
@@ -276,5 +278,35 @@ describe('server fields', () => {
 	it('names a copy', () => {
 		expect(copyName('Good everyday')).toBe('Good everyday copy');
 		expect(copyName('x'.repeat(199))).toHaveLength(200);
+	});
+});
+
+describe('your own traits', () => {
+	const mine: OwnTrait[] = [{ id: 4, key: 'own:4', name: 'Dutch subs', match: 'name', terms: ['NLSubs'] }];
+
+	it('are offered after the built-in ones and named by their name', () => {
+		expect(traitsFor(['movie'], mine).at(-1)).toBe('own:4');
+		expect(neverChoices(['music'], mine)).toContain('own:4');
+		expect(traitLabel('own:4', mine)).toBe('Dutch subs');
+		expect(traitLabel('own:9', mine)).toBe('A trait of yours that was removed');
+	});
+
+	it('pass the checks only while they exist', () => {
+		const b = blankBody('movie');
+		b.traits = [{ trait: 'own:4', points: 50 }];
+		b.must_have = ['own:4'];
+		expect(checkBody('x', ['movie'], b, mine)).toEqual({});
+		const gone = checkBody('x', ['movie'], b, []);
+		expect(gone.traits).toMatch(/removed/);
+		expect(gone.must_have).toMatch(/removed/);
+	});
+
+	it('read one term per line and check them like the server', () => {
+		expect(ownTerms(' NLSubs \r\n\n/\\bdutch\\b/\n')).toEqual(['NLSubs', '/\\bdutch\\b/']);
+		expect(checkOwnTrait('Dutch', ['x'])).toEqual({});
+		expect(checkOwnTrait(' ', ['x']).name).toBeTruthy();
+		expect(checkOwnTrait('x'.repeat(61), ['x']).name).toBeTruthy();
+		expect(checkOwnTrait('A', []).terms).toBeTruthy();
+		expect(checkOwnTrait('A', ['/(?i)x265/']).terms).toBeUndefined();
 	});
 });

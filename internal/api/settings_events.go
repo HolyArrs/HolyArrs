@@ -22,6 +22,7 @@ var settingsAreas = map[string]string{
 	"downloaders":     "Downloaders",
 	"sources":         "Sources",
 	"outside-lists":   "Outside lists",
+	"own-traits":      "Your traits",
 }
 
 // settingsItems is each area's table, the name column (never a secret)
@@ -32,6 +33,7 @@ var settingsItems = map[string]struct{ table, name, one string }{
 	"downloaders":     {"downloaders", "name", "Downloader"},
 	"sources":         {"sources", "name", "Source"},
 	"outside-lists":   {"outside_lists", "name", "Outside list"},
+	"own-traits":      {"own_traits", "name", "trait"},
 }
 
 // settingsName is an item's name, or the newest item's when id is 0 (just

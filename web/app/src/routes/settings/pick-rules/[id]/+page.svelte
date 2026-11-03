@@ -17,6 +17,7 @@
 		copyName,
 		fieldKey,
 		isMusic,
+		isOwnTrait,
 		kindChoices,
 		languages,
 		neverChoices,
@@ -43,7 +44,7 @@
 	import Chip from '#lib/ui/Chip.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/types.ts';
+	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/types.ts';
 
 	interface Form {
 		name: string;
@@ -59,6 +60,8 @@
 	let preset = $state(false);
 	let savedName = $state('');
 	let inUse = $state<PickRulesUse | null>(null);
+	// Your own traits (#97), offered after the built-in ones.
+	let mine = $state<OwnTrait[]>([]);
 	let sizeStart = $state<SizeFields>({ min: '', max: '' });
 	let saved = $state('');
 	let loaded = $state(false);
@@ -81,8 +84,9 @@
 
 	const music = $derived(isMusic(form.kinds));
 	const ladderOn = $derived(form.body.steps.filter((s) => s.allowed));
-	const own = $derived(traitsFor(form.kinds));
-	const checked = $derived(checkBody(form.name, form.kinds, tidyBody(form.body)));
+	const own = $derived(traitsFor(form.kinds, mine));
+	const checked = $derived(checkBody(form.name, form.kinds, tidyBody(form.body), mine));
+	const label = (t: string) => traitLabel(t, mine);
 	const errors = $derived<Record<string, string>>({ ...(tried ? checked : {}), ...serverErrors });
 	const otherSizes = $derived(Object.keys(form.body.size_limits).filter((k) => k !== '*').length);
 	const dirty = $derived(loaded && !gone && !loadError && (id === null || JSON.stringify(form) !== saved));
@@ -105,6 +109,7 @@
 		loadError = '';
 		gone = false;
 		try {
+			mine = (await api.get<{ own_traits: OwnTrait[] }>('/own-traits')).own_traits;
 			if (param === 'new') {
 				id = null;
 				preset = false;
@@ -217,7 +222,7 @@
 		serverErrors = {};
 		formError = '';
 		const body = applySize(tidyBody(form.body), form.size, sizeStart);
-		const problems = checkBody(form.name, form.kinds, body);
+		const problems = checkBody(form.name, form.kinds, body, mine);
 		if (Object.keys(problems).length) {
 			focusFirst(Object.keys(problems));
 			return;
@@ -236,6 +241,8 @@
 				toasts.push('Pick rules saved.', 'ok');
 			}
 		} catch (err) {
+			// A trait of yours removed meanwhile: show its chip as removed too.
+			if (err instanceof ApiError && err.status === 400) mine = await api.get<{ own_traits: OwnTrait[] }>('/own-traits').then((r) => r.own_traits, () => mine);
 			const field = err instanceof ApiError && typeof err.body.field === 'string' ? fieldKey(err.body.field) : '';
 			if (field && field in fieldIds) {
 				serverErrors = { [field]: message(err) };
@@ -319,6 +326,10 @@
 			</Field>
 		</SettingsCard>
 
+		{#snippet options(list: string[])}
+			{#each list.filter((t) => !isOwnTrait(t)) as t (t)}<option value={t}>{label(t)}</option>{/each}
+			{#if list.some(isOwnTrait)}<optgroup label="Your traits">{#each list.filter(isOwnTrait) as t (t)}<option value={t}>{label(t)}</option>{/each}</optgroup>{/if}
+		{/snippet}
 		<SettingsCard id="rules-traits" title="Traits and points" description="Traits a Release name shows earn or lose points. More points win between Releases on the same step.">
 			{#if form.body.traits.length === 0}
 				<p class="hint">No traits yet: every Release on a step counts the same.</p>
@@ -328,17 +339,18 @@
 						<li>
 							<label class="sr-only" for="trait-{i}">Trait {i + 1}</label>
 							<select id="trait-{i}" class="input" bind:value={t.trait} onchange={() => traitChanged(i)}>
-								{#each own.filter((x) => x === t.trait || !form.body.traits.some((y) => y.trait === x)) as x (x)}<option value={x}>{traitLabel(x)}</option>{/each}
+								{@render options(own.filter((x) => x === t.trait || !form.body.traits.some((y) => y.trait === x)))}
 							</select>
-							<label class="sr-only" for="points-{i}">Points for {traitLabel(t.trait)}</label>
+							<label class="sr-only" for="points-{i}">Points for {label(t.trait)}</label>
 							<input id="points-{i}" class="input points" type="number" min="-10000" max="10000" step="1" bind:value={t.points} />
-							<IconButton icon="trash" label="Remove {traitLabel(t.trait)}" tooltip={false} onclick={() => removeTrait(i)} />
+							<IconButton icon="trash" label="Remove {label(t.trait)}" tooltip={false} onclick={() => removeTrait(i)} />
 						</li>
 					{/each}
 				</ul>
 			{/if}
 			{#if errors.traits}<span class="field-error" id="pr-traits-error" role="alert">{errors.traits}</span>{/if}
 			<div><Button id="pr-add-trait" icon="plus" onclick={addTrait} disabled={form.body.traits.length >= own.length}>Add a trait</Button></div>
+			<p class="hint">Need a word or release group the list lacks? <a href={to('/settings/pick-rules#own-traits')}>Make your own trait</a>.</p>
 			{#snippet advanced()}
 				<Field id="pr-order" label="Which wins" hint={orderChoices.find(([v]) => v === form.body.order)?.[2]} error={errors.order}>
 					<select id="pr-order" class="input" bind:value={form.body.order}>
@@ -368,24 +380,24 @@
 			<div class="field">
 				<span class="label" id="must-label">Must have</span>
 				<div class="chips" role="group" aria-labelledby="must-label" data-testid="must-have">
-					{#each form.body.must_have as t (t)}<Chip label={traitLabel(t)} onremove={() => (form.body.must_have = form.body.must_have.filter((x) => x !== t))} />{:else}<span class="hint">Nothing yet.</span>{/each}
+					{#each form.body.must_have as t (t)}<Chip label={label(t)} onremove={() => (form.body.must_have = form.body.must_have.filter((x) => x !== t))} />{:else}<span class="hint">Nothing yet.</span>{/each}
 				</div>
 				<label class="sr-only" for="pr-must-add">Add to Must have</label>
 				<select id="pr-must-add" class="input" value="" onchange={(e) => (addTo('must_have', e.currentTarget.value), (e.currentTarget.value = ''))} {...bad('must_have')}>
 					<option value="">Add to Must have…</option>
-					{#each own.filter((t) => !form.body.must_have.includes(t)) as t (t)}<option value={t}>{traitLabel(t)}</option>{/each}
+					{@render options(own.filter((t) => !form.body.must_have.includes(t)))}
 				</select>
 				{#if errors.must_have}<span class="field-error" id="pr-must-add-error" role="alert">{errors.must_have}</span>{/if}
 			</div>
 			<div class="field">
 				<span class="label" id="never-label">Never</span>
 				<div class="chips" role="group" aria-labelledby="never-label" data-testid="never">
-					{#each form.body.never as t (t)}<Chip label={traitLabel(t)} onremove={() => (form.body.never = form.body.never.filter((x) => x !== t))} />{:else}<span class="hint">Nothing yet.</span>{/each}
+					{#each form.body.never as t (t)}<Chip label={label(t)} onremove={() => (form.body.never = form.body.never.filter((x) => x !== t))} />{:else}<span class="hint">Nothing yet.</span>{/each}
 				</div>
 				<label class="sr-only" for="pr-never-add">Add to Never</label>
 				<select id="pr-never-add" class="input" value="" onchange={(e) => (addTo('never', e.currentTarget.value), (e.currentTarget.value = ''))} {...bad('never')}>
 					<option value="">Add to Never…</option>
-					{#each neverChoices(form.kinds).filter((t) => !form.body.never.includes(t)) as t (t)}<option value={t}>{traitLabel(t)}</option>{/each}
+					{@render options(neverChoices(form.kinds, mine).filter((t) => !form.body.never.includes(t)))}
 				</select>
 				{#if errors.never}<span class="field-error" id="pr-never-add-error" role="alert">{errors.never}</span>{/if}
 			</div>
@@ -449,6 +461,7 @@
 	.all { display: contents; border: 0; padding: 0; margin: 0; }
 	.loading { display: flex; flex-direction: column; gap: 16px; }
 	.ro { font: var(--t-body); }
+	.hint a { color: var(--accent-text); font-weight: 600; }
 	.group { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
 	.group:focus { outline: none; }
 	.cards { min-width: 0; gap: 12px; }

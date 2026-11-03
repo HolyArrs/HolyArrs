@@ -1,7 +1,7 @@
 // Words and checks for the Pick rules editor, kept apart from the pages so
 // they can be tested. The checks mirror the server's (domain.CheckPickRules)
 // so a mistake shows at once; the server still has the last word.
-import type { PickRulesBody, PickRulesSize, PickRulesUse } from './types.ts';
+import type { OwnTrait, PickRulesBody, PickRulesSize, PickRulesUse } from './types.ts';
 
 export type RulesKind = 'movie' | 'show' | 'music';
 
@@ -132,19 +132,43 @@ export function stepLabel(q: string): string {
 	return steps[q] ?? plain(q);
 }
 
-/** traitLabel names a trait in plain words. */
-export function traitLabel(t: string): string {
+/** isOwnTrait says a trait key names one of your own traits (own:<id>). */
+export function isOwnTrait(t: string): boolean {
+	return t.startsWith('own:');
+}
+
+/** traitLabel names a trait in plain words; mine names your own traits. */
+export function traitLabel(t: string, mine: OwnTrait[] = []): string {
+	if (isOwnTrait(t)) return mine.find((o) => o.key === t)?.name ?? 'A trait of yours that was removed';
 	return traits[t] ?? plain(t);
 }
 
-/** traitsFor are the traits that can earn points or be a must-have for the kinds. */
-export function traitsFor(kinds: string[]): string[] {
-	return isMusic(kinds) ? musicTraits : videoTraits;
+/** traitsFor are the traits that can earn points or be a must-have for the kinds, your own last. */
+export function traitsFor(kinds: string[], mine: OwnTrait[] = []): string[] {
+	return [...(isMusic(kinds) ? musicTraits : videoTraits), ...mine.map((o) => o.key)];
 }
 
-/** neverChoices are the traits Never may hold: the kind's own and the safety ones. */
-export function neverChoices(kinds: string[]): string[] {
-	return [...traitsFor(kinds), ...safetyTraits];
+/** neverChoices are the traits Never may hold: the kind's own, yours and the safety ones. */
+export function neverChoices(kinds: string[], mine: OwnTrait[] = []): string[] {
+	return [...traitsFor(kinds, mine), ...safetyTraits];
+}
+
+/** ownTerms reads the terms box of a trait: one term per line, blank lines dropped. */
+export function ownTerms(text: string): string[] {
+	return text.split(/\r?\n/).map((t) => t.trim()).filter(Boolean);
+}
+
+/** checkOwnTrait finds what the server would refuse in a trait (domain.CheckOwnTrait), as field → words; patterns only the server checks. */
+export function checkOwnTrait(name: string, terms: string[]): Record<string, string> {
+	const err: Record<string, string> = {};
+	const n = name.trim();
+	if (!n) err.name = 'Give the trait a name.';
+	else if ([...n].length > 60) err.name = 'A name can be at most 60 characters.';
+	if (terms.length === 0) err.terms = 'List at least one word or pattern.';
+	else if (terms.length > 50) err.terms = 'List at most 50 terms.';
+	else if (terms.some((t) => [...t].length > 200)) err.terms = 'Each term holds at most 200 characters.';
+	// Patterns are left to the server: its patterns differ from the browser's.
+	return err;
 }
 
 /** toggleKind turns one kind on or off; music cannot share with movies or TV shows. */
@@ -207,11 +231,12 @@ function listProblem(values: string[], allowed: string[], what: string): string 
 	if (new Set(values).size !== values.length) return 'Each trait can be listed once.';
 	const bad = values.find((v) => !allowed.includes(v));
 	if (bad === undefined) return undefined;
-	return safetyTraits.includes(bad) ? `${traitLabel(bad)} cannot be ${what}.` : `${bad} is not a trait for these kinds.`;
+	if (safetyTraits.includes(bad)) return `${traitLabel(bad)} cannot be ${what}.`;
+	return isOwnTrait(bad) ? 'A trait of yours that was removed is still listed; take it out.' : `${bad} is not a trait for these kinds.`;
 }
 
 /** checkBody finds what the server would refuse, as field → words. Empty means it looks fine. */
-export function checkBody(name: string, kinds: string[], body: PickRulesBody): Record<string, string> {
+export function checkBody(name: string, kinds: string[], body: PickRulesBody, mine: OwnTrait[] = []): Record<string, string> {
 	const err: Record<string, string> = {};
 	const n = name.trim();
 	if (!n) err.name = 'Give these Pick rules a name.';
@@ -229,15 +254,18 @@ export function checkBody(name: string, kinds: string[], body: PickRulesBody): R
 	else if (!body.steps.some((s) => s.allowed)) err.steps = 'Turn on at least one step.';
 	if (!err.steps && !body.steps.some((s) => s.allowed && s.quality === body.good_enough_at)) err.good_enough_at = 'Good enough must be a step that is on.';
 
-	const own = traitsFor(kinds);
+	const own = traitsFor(kinds, mine);
 	const names = body.traits.map((t) => t.trait);
 	if (new Set(names).size !== names.length) err.traits = 'Each trait can be listed once.';
-	else if (names.some((t) => !own.includes(t))) err.traits = `${names.find((t) => !own.includes(t))} is not a trait for these kinds.`;
+	else if (names.some((t) => !own.includes(t))) {
+		const bad = names.find((t) => !own.includes(t)) ?? '';
+		err.traits = isOwnTrait(bad) ? 'A trait of yours that was removed is still listed; take it out.' : `${bad} is not a trait for these kinds.`;
+	}
 	else if (body.traits.some((t) => !inPoints(t.points))) err.traits = pointsText;
 
 	const must = listProblem(body.must_have, own, 'a must-have');
 	if (must) err.must_have = must;
-	const never = listProblem(body.never, neverChoices(kinds), 'in Never');
+	const never = listProblem(body.never, neverChoices(kinds, mine), 'in Never');
 	if (never) err.never = never;
 
 	if (!inPoints(body.min_points)) err.min_points = pointsText;

@@ -199,6 +199,9 @@ var safetyTraits = map[string]bool{"sample": true, "executable": true, "password
 // traitMatches says whether a named Trait matches. Points Traits need a sure
 // field (a "likely" web_dl from a bare "WEB" earns nothing).
 func traitMatches(trait string, p parse.Result) (bool, string) {
+	if id, ok := domain.OwnTraitID(trait); ok {
+		return ownMatches(id, p)
+	}
 	if p.Music != nil {
 		return musicTrait(trait, p)
 	}

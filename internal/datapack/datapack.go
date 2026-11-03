@@ -233,6 +233,16 @@ func (r PickRule) validate() error {
 		}
 		return err
 	}
+	// Your own traits live on one install only; a data pack cannot carry them.
+	keys := append(append([]string{}, r.Rules.MustHave...), r.Rules.Never...)
+	for _, tp := range r.Rules.Traits {
+		keys = append(keys, tp.Trait)
+	}
+	for _, k := range keys {
+		if strings.HasPrefix(k, domain.OwnTraitPrefix) {
+			return fmt.Errorf("pick rule %q uses %s, a trait of one install's own; a data pack cannot carry it", r.Name, k)
+		}
+	}
 	return nil
 }
 

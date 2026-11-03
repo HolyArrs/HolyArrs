@@ -480,6 +480,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			log.Printf("queue %s: %v", kind, err)
 		}
 	}
+	// Your own traits (#97) go to the judge before anything is judged.
+	if err := library.LoadOwnTraits(ctx, s); err != nil {
+		return fmt.Errorf("own traits: %w", err)
+	}
 	dm := &downloader.Manager{Store: s, Live: hub, SavePath: c.SavePath,
 		Link: func(ctx context.Context, rel domain.Release) (string, error) {
 			return source.GrabLink(ctx, s, vault, rel)

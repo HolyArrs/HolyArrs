@@ -3780,6 +3780,71 @@
         },
         "type": "object"
       },
+      "OwnTrait": {
+        "description": "One of your own traits: a named test on the Release name or its release group. Pick rules use it under key, like a built-in trait.",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "key": {
+            "description": "own:<id>, the name Pick rules use (traits, must_have, never).",
+            "type": "string"
+          },
+          "match": {
+            "description": "name: any term anywhere in the Release name; group: the release group is one of the terms.",
+            "enum": [
+              "name",
+              "group"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "terms": {
+            "description": "Plain words (any case) or /pattern/ (a regular expression, any case).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "match",
+          "terms"
+        ],
+        "type": "object"
+      },
+      "OwnTraitInput": {
+        "properties": {
+          "match": {
+            "enum": [
+              "name",
+              "group"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "match",
+          "terms"
+        ],
+        "type": "object"
+      },
       "PartOff": {
         "description": "What a route of a part that is off answers (409).",
         "properties": {
@@ -20279,6 +20344,232 @@
         "summary": "Read a list now",
         "tags": [
           "Outside lists"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/own-traits": {
+      "get": {
+        "description": "Every trait you made, by name, for Pick rules to use.",
+        "operationId": "listOwnTraits",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "own_traits": {
+                      "items": {
+                        "$ref": "#/components/schemas/OwnTrait"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The traits."
+          }
+        },
+        "summary": "Your own traits",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Makes one of your own traits. Checks: name 1 to 60 characters and not taken by another of your traits (any case); match name or group; 1 to 50 terms (blank ones dropped), each at most 200 characters, a /pattern/ must be a readable regular expression.",
+        "operationId": "addOwnTrait",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnTraitInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnTrait"
+                }
+              }
+            },
+            "description": "The new trait."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "A field is wrong; field names it."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "The name is taken (field is name)."
+          }
+        },
+        "summary": "Make a trait",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/own-traits/{id}": {
+      "delete": {
+        "description": "Removes one of your own traits and takes it out of the traits, must_have and never lists of every Pick rule (each changed rule gets a new revision).",
+        "operationId": "deleteOwnTrait",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "pick_rules_changed": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "pick_rules_changed"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Removed; pick_rules_changed counts the Pick rules it was taken out of."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The id is not a number."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such trait."
+          }
+        },
+        "summary": "Remove a trait",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      },
+      "put": {
+        "description": "Changes one of your own traits; every Pick rule using it judges by the new terms at once. Checks: name 1 to 60 characters and not taken by another of your traits (any case); match name or group; 1 to 50 terms (blank ones dropped), each at most 200 characters, a /pattern/ must be a readable regular expression.",
+        "operationId": "editOwnTrait",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnTraitInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnTrait"
+                }
+              }
+            },
+            "description": "The changed trait."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "The id is not a number, or a field is wrong (field names it)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such trait."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "The name is taken (field is name)."
+          }
+        },
+        "summary": "Change a trait",
+        "tags": [
+          "Library"
         ],
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "settings",

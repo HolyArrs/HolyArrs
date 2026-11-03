@@ -13,6 +13,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import OwnTraits from './OwnTraits.svelte';
 	import type { PickRulesUse, PickRulesView } from '#lib/types.ts';
 
 	// People without the settings permission see the rules but cannot change them.
@@ -114,6 +115,8 @@
 			</ul>
 		{/if}
 	</SettingsCard>
+
+	<OwnTraits {mayEdit} />
 
 	<SettingsCard id="pick-rules-where" title="Where Pick rules are chosen">
 		<ul class="where">
