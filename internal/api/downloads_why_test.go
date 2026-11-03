@@ -20,6 +20,9 @@ func TestWhyCountsUnpackReasonsAsAStuckImport(t *testing.T) {
 			t.Errorf("%q: %s, want conflict", r, got)
 		}
 	}
+	if got := why("not sent: no torrent Downloader has this title's tags (kids); add one of them to a Downloader, or take them off the title"); got != "not_sent" {
+		t.Errorf("tags: %s", got)
+	}
 	if got := why("no other Release passed the Pick rules"); got != "ran_out" {
 		t.Errorf("ran out: %s", got)
 	}

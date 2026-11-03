@@ -17,6 +17,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 // KindGrab is the Job kind that sends a chosen Release to a Downloader.
@@ -210,6 +211,15 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 	}
 	relID, _ := r.Job.Params["release_id"].(float64)
 	id, err := m.Grab(ctx, r.Job.Subject.ID, int64(relID), domain.Actor{Kind: "job", ID: r.Job.ID})
+	var te *TagsError
+	if errors.As(err, &te) {
+		// No Downloader takes the title's tags: trying again changes nothing
+		// until a person changes tags, so the Slot waits on a decision.
+		// A Slot that moved on meanwhile refuses the change: nothing is left to do then.
+		_ = m.Store.MoveSlot(ctx, r.Job.Subject.ID, domain.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
+		r.SetResult(map[string]any{"not_sent": te.Error()})
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -255,6 +265,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if err != nil {
 		return 0, err
 	}
+
 	hash := ""
 	if rel.InfoHash != nil && source.ValidInfoHash(strings.ToLower(*rel.InfoHash)) {
 		hash = strings.ToLower(*rel.InfoHash)
@@ -289,7 +300,18 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			original.Category = attempt.category
 			dls = []domain.Downloader{original}
 		} else {
-			dls, skipped = m.order(all, now)
+			// Tags (#108), on a fresh pick only (a send already on record keeps
+			// its Downloader): the Downloaders sharing a tag with the title,
+			// else the untagged ones.
+			titleTags, err := slotTitleTags(ctx, db, sl.ItemID)
+			if err != nil {
+				return 0, err
+			}
+			fit := tagset.Downloaders(all, titleTags, func(d domain.Downloader) []string { return d.Tags })
+			if len(fit) == 0 && len(all) > 0 {
+				return 0, &TagsError{Protocol: rel.Protocol, Title: titleTags}
+			}
+			dls, skipped = m.order(fit, now)
 		}
 		if len(dls) == 0 {
 			if len(skipped) > 0 {
@@ -1015,4 +1037,32 @@ func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
 		return "", errors.New("the Release link points at a local or blocked address")
 	}
 	return link, nil
+}
+
+// TagsError says no Downloader of the protocol takes the title's tags.
+type TagsError struct {
+	Protocol string
+	Title    []string
+}
+
+func (e *TagsError) Error() string {
+	if len(e.Title) == 0 {
+		return fmt.Sprintf("not sent: every %s Downloader has tags and this title has none of them; tag the title, or leave one Downloader without tags", e.Protocol)
+	}
+	return fmt.Sprintf("not sent: no %s Downloader has this title's tags (%s); add one of them to a Downloader, or take them off the title", e.Protocol, strings.Join(e.Title, ", "))
+}
+
+// slotTitleTags reads the tags of the title a Slot's Item belongs to.
+func slotTitleTags(ctx context.Context, db store.Querier, itemID int64) ([]string, error) {
+	var raw string
+	err := db.QueryRowContext(ctx, "SELECT t.tags FROM items i JOIN titles t ON t.id = i.title_id WHERE i.id = ?", itemID).Scan(&raw)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var tags []string
+	_ = json.Unmarshal([]byte(raw), &tags)
+	return tags, nil
 }

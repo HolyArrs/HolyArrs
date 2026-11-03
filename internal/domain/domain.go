@@ -100,6 +100,8 @@ type Title struct {
 	Directors []string `db:"directors,json"`
 	// Studio is a movie's first production company.
 	Studio string `db:"studio"`
+	// Tags route this title's grabs and searches (tagset.Allows).
+	Tags []string `db:"tags,json"`
 }
 
 // NeverAdd is one entry of the Never-add list.
@@ -298,6 +300,8 @@ type Source struct {
 	// PathSecretRef holds the passkeys an rss address keeps in its path;
 	// the stored URL has a marker in their place.
 	PathSecretRef *int64 `db:"path_secret_ref"`
+	// Tags: with any, this Source serves only titles that share one of them.
+	Tags []string `db:"tags,json"`
 }
 
 // Release is one search result.
@@ -362,6 +366,8 @@ type Downloader struct {
 	// ClearFinished removes a Usenet job and its files from the client once
 	// its Import fully succeeded.
 	ClearFinished bool `db:"clear_finished"`
+	// Tags: titles with one of these go only to Downloaders that have it.
+	Tags []string `db:"tags,json"`
 }
 
 // SeenFile is one file a Download reports.

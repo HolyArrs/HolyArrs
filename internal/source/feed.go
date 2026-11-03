@@ -15,6 +15,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/judge"
 	"github.com/CoderLuii/holyarrs/internal/parse"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 // Job kinds for stage 3.1; each also has a schedules row of the same kind.
@@ -181,7 +182,10 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			// Read again as an album name ("Artist - Album (Year) [FLAC]").
 			m = judge.MatchTitle(parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Music: true}), refs)
 		}
-		if m.Title != nil {
+		// A tagged Source's release goes only to a title sharing a tag (#108).
+		// It is matched against every wanted title first, so it never lands
+		// on a look-alike title because the right one was left out.
+		if m.Title != nil && tagset.SourceServes(f.src.Tags, m.Title.Tags) {
 			byTitle[m.Title.ID] = append(byTitle[m.Title.ID], f)
 		}
 	}
@@ -308,7 +312,7 @@ func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]judge.TitleRef, error
 	}
 	refs := make([]judge.TitleRef, 0, len(titles))
 	for _, title := range titles {
-		ref := judge.TitleRef{ID: title.ID, Name: title.Name, Aliases: title.Aliases}
+		ref := judge.TitleRef{ID: title.ID, Name: title.Name, Aliases: title.Aliases, Tags: title.Tags}
 		if title.Year != nil {
 			ref.Year = *title.Year
 		}

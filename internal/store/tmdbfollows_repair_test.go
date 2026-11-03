@@ -3,14 +3,46 @@ package store
 import (
 	"context"
 	"database/sql"
+	"io/fs"
+	"strconv"
+	"strings"
 	"testing"
+	"testing/fstest"
 )
+
+// migrationsUpTo is the embedded main migrations up to and including n: a
+// database made with it is one an older release left behind.
+func migrationsUpTo(t *testing.T, n int) fs.FS {
+	t.Helper()
+	sub, err := fs.Sub(embedded, "migrations/main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := fstest.MapFS{}
+	entries, err := fs.ReadDir(sub, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		v, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
+		if err != nil || v > n {
+			continue
+		}
+		b, err := fs.ReadFile(sub, e.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		out[e.Name()] = &fstest.MapFile{Data: b}
+	}
+	return out
+}
 
 // A database that has 0056 marked done but lost tmdb_movie_follows gets the
 // table back on the next start.
 func TestTMDBMovieFollowsRepaired(t *testing.T) {
 	dir := t.TempDir()
-	s, err := Open(dir, Options{})
+	// An install still at 0082: 0083 (the repair) and later run on the next start.
+	s, err := Open(dir, Options{MainMigrations: migrationsUpTo(t, 82)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,15 +50,7 @@ func TestTMDBMovieFollowsRepaired(t *testing.T) {
 		if _, err := tx.Exec(`DROP TABLE tmdb_movie_follows`); err != nil {
 			return err
 		}
-		// Back to how a database at 0082 looks: the later migrations run
-		// again, so what 0085 added goes too.
-		for _, col := range []string{"title_kind", "seasons", "new_seasons"} {
-			if _, err := tx.Exec(`ALTER TABLE outside_lists DROP COLUMN ` + col); err != nil {
-				return err
-			}
-		}
-		_, err := tx.Exec(`DELETE FROM schema_migrations WHERE version >= 83`)
-		return err
+		return nil
 	}); err != nil {
 		t.Fatal(err)
 	}

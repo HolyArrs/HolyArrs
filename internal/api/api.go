@@ -300,6 +300,7 @@ func actor(r *http.Request) domain.Actor {
 func (a *API) Handler() http.Handler {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /api/v1/titles", a.listTitles)
+	m.HandleFunc("GET /api/v1/tags", a.listTags)
 	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
@@ -566,6 +567,8 @@ type TitleView struct {
 	RuntimeMinutes int      `json:"runtime_minutes,omitempty"`
 	Rating         string   `json:"rating,omitempty"`
 	People         []string `json:"people"`
+	// Tags route the title's grabs and searches to the Downloaders and Sources that share one.
+	Tags []string `json:"tags"`
 	// AddedAt is when the title joined the Library; SizeBytes is the sum of
 	// every file kept for it, across all Versions (Library table columns).
 	AddedAt   time.Time `json:"added_at"`
@@ -681,7 +684,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		GateDriver: t.GateDriver, GateOpensAt: t.GateOpensAt, CinemaDate: t.CinemaDate, DigitalDate: t.DigitalDate,
 		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: artworkLinks(t.Artwork),
 		Backdrop: t.Backdrop, Logo: t.Logo, Genres: nonNil(t.Genres), RuntimeMinutes: t.RuntimeMinutes, Rating: t.Rating, People: nonNil(t.People),
-		AddedAt: t.CreatedAt}
+		AddedAt: t.CreatedAt, Tags: nonNil(t.Tags)}
 	now := time.Now()
 	var err error
 	facts := factsOf(ctx)

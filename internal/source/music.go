@@ -463,7 +463,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
-	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false)
+	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false, ti.Tags)
 	if err != nil {
 		return err
 	}
