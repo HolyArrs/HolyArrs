@@ -45,7 +45,7 @@ async function showFolder(call: Call): Promise<string> {
 async function fakeQbit(call: Call) {
 	const { downloaders } = (await (await call('GET', '/downloaders')).json()) as { downloaders: { kind: string; url: string }[] };
 	if (downloaders.some((d) => d.kind === 'qbittorrent' && d.url.startsWith(qbit))) return;
-	const made = await call('POST', '/downloaders', { name: 'Lab qBittorrent', kind: 'qbittorrent', url: qbit, secret: fakeClientKey });
+	const made = await call('POST', '/downloaders', { name: 'Lab qBittorrent', kind: 'qbittorrent', url: qbit, secret: fakeClientKey, allow_local_network: true });
 	expect(made.status(), await made.text()).toBe(201);
 }
 
