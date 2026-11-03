@@ -204,9 +204,9 @@ func qbitHarness(t *testing.T) conformance {
 		release: AddRequest{URL: "magnet:?xt=urn:btih:" + hash, Name: "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS", Category: "holyarrs", SavePath: "/downloads", InfoHash: hash},
 		unknown: "0000000000000000000000000000000000000000",
 		appear: func() {
-			f.set(hash, map[string]any{"name": "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS", "category": "holyarrs", "state": "downloading", "progress": 0.5, "dlspeed": 1 << 20, "eta": 600, "size": 2 << 30})
+			f.set(hash, map[string]any{"name": "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS", "category": "holyarrs", "state": "downloading", "progress": 0.5, "dlspeed": 1 << 20, "eta": 600, "size": int64(2 << 30)})
 			f.mu.Lock()
-			f.files[hash] = []map[string]any{{"name": "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS.mkv", "size": 2 << 30, "progress": 0.5}}
+			f.files[hash] = []map[string]any{{"name": "Lab.Torrent.Movie.2024.1080p.WEB.H264-HOLYARRS.mkv", "size": int64(2 << 30), "progress": 0.5}}
 			f.mu.Unlock()
 		},
 		adds:   func() int { f.mu.Lock(); defer f.mu.Unlock(); return len(f.added) },
