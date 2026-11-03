@@ -78,7 +78,7 @@ func (a *Auth) plexLinkStart(w http.ResponseWriter, r *http.Request) {
 	if !RequireStrong(w, r) {
 		return
 	}
-	a.startPin(w, r, true)
+	a.startPin(w, r, pinOwner)
 }
 
 func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +90,7 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tok, ok := a.checkPin(w, r, true)
+	tok, ok := a.checkPin(w, r, pinOwner)
 	if !ok {
 		return
 	}
@@ -126,20 +126,10 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	me := Actor(ctx)
 	extID := strconv.FormatInt(user.ID, 10)
+	var moved bool
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		var other int64
-		err := tx.QueryRow("SELECT user_id FROM user_links WHERE provider = 'plex' AND external_id = ?", extID).Scan(&other)
-		if err == nil && other != me.ID {
-			return errTaken
-		}
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		if _, err := tx.Exec("DELETE FROM user_links WHERE provider = 'plex' AND user_id = ?", me.ID); err != nil {
-			return err
-		}
-		_, err = tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, 'plex', ?, ?, ?)",
-			me.ID, extID, truncate(user.Username, 200), store.FormatTime(a.now()))
+		var err error
+		moved, err = a.linkPlexTx(tx, me.ID, extID, user.Username, tok, me)
 		return err
 	})
 	if errors.Is(err, errTaken) {
@@ -149,6 +139,9 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		serverError(w, "plex link", err)
 		return
+	}
+	if moved {
+		a.dropTickets(func(t *ticket) bool { return t.userID == me.ID && t.method == ProviderPlex })
 	}
 	if err := a.vault.SetSetting(ctx, settingsGroup, signInPrefix+keyPlexOwner, tok, me); err != nil {
 		serverError(w, "plex link", err)
@@ -168,6 +161,9 @@ func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	me := Actor(ctx)
 	if err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+		if err := dropLinkTokensTx(tx, "provider = 'plex' AND user_id = ?", me.ID); err != nil {
+			return err
+		}
 		_, err := tx.Exec("DELETE FROM user_links WHERE provider = 'plex' AND user_id = ?", me.ID)
 		return err
 	}); err != nil {
@@ -263,7 +259,7 @@ func (a *Auth) mediaServerTest(w http.ResponseWriter, r *http.Request) {
 	}
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, testMax))
 	if resp.StatusCode/100 != 2 || json.Unmarshal(data, &info) != nil || info.ID == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "message": "Something answered, but it does not look like a "+kind+" server."})
+		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "message": "Something answered, but it does not look like a " + kind + " server."})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "name": truncate(info.ServerName, 120), "version": truncate(info.Version, 40), "product": truncate(info.ProductName, 60)})
