@@ -59,7 +59,7 @@
 	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb;
 
 	// Who asked, as the server lets this reader see it.
-	let askedBy = $state<AskedByAnswer>({ titles: {}, sees_all: false });
+	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = title?.id;
 		if (!id) return;
@@ -554,7 +554,7 @@
 			description={title.overview || rich?.overview}
 			vtName={artName(title.id)}
 		>
-			{#snippet byline()}<AskedByLine {askers} seesAll={askedBy.sees_all} />{/snippet}
+			{#snippet byline()}<AskedByLine {askers} />{/snippet}
 			{#snippet actions()}
 				{#if manage}
 					<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />

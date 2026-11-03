@@ -16,7 +16,6 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { to } from './paths.ts';
-	import { WORDS as ASKED } from './askedby.ts';
 	import { setFollow } from './follow.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { autoplayPref, setAutoplayPref, type AutoplayPref } from './trailer.ts';
@@ -52,16 +51,6 @@
 
 	// Where Alerts reach this person (email, Discord).
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
-	// Asked by: whether my name shows on my asks (off by default).
-	let showMyName = $state(false);
-	async function setShowMyName(on: boolean) {
-		try {
-			showMyName = (await api.put<{ show_my_name: boolean }>('/my/ask-privacy', { show_my_name: on })).show_my_name;
-		} catch (err) {
-			showMyName = !on;
-			toasts.push(message(err), 'fail');
-		}
-	}
 	// Follow: the shows and artists I follow.
 	type Followed = { title_id: number; kind: string; name: string; year?: number };
 	let follows = $state<Followed[]>([]);
@@ -105,10 +94,6 @@
 		api
 			.get<{ follows: Followed[] }>('/my/follows')
 			.then((r) => (follows = r.follows))
-			.catch(() => {});
-		api
-			.get<{ show_my_name: boolean }>('/my/ask-privacy')
-			.then((r) => (showMyName = r.show_my_name))
 			.catch(() => {});
 	});
 	async function saveTargets(e: SubmitEvent) {
@@ -443,17 +428,6 @@
 		<div class="txt"><span class="label">Trailers</span><span class="hint" title="Auto follows your system (reduced motion, data saver). Always plays them anyway; Never turns them off.">Auto follows reduced motion and data saver.</span></div>
 		<div class="ctl"><SegmentedControl size="sm" label="Play trailers" options={[{ value: 'auto', label: 'Auto' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
 	</div>
-	{#if session.can('ask')}
-		<div class="srow" id="asked-by-me">
-			<div class="txt"><span class="label">Name on my asks</span><span class="hint" title={ASKED.personalHelp}>{ASKED.personalLabel}.</span></div>
-			<div class="ctl">
-				<label class="switch">
-					<input type="checkbox" checked={showMyName} onchange={(e) => setShowMyName(e.currentTarget.checked)} data-testid="show-my-name" />
-					<span class="sw" aria-hidden="true"></span><span class="sr-only">{ASKED.personalLabel}</span>
-				</label>
-			</div>
-		</div>
-	{/if}
 	<div class="srow" id="recommendations-me">
 		<div class="txt"><span class="label">Recommendations</span><span class="hint" title="Explore's category strip learns from the categories you open. This stays on this server.">Explore learns from what you open.</span></div>
 		<div class="ctl"><Button variant="secondary" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset</Button></div>

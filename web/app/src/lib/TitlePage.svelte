@@ -305,7 +305,7 @@
 		await (owned?.kind === 'show' ? showVersions : movieVersions)?.openAdd();
 	}
 	// Who asked, as the server lets this reader see it (the hero's byline).
-	let askedBy = $state<AskedByAnswer>({ titles: {}, sees_all: false });
+	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = owned?.id;
 		if (!id) return;
@@ -916,7 +916,7 @@
 			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
-			{#snippet byline()}{#if owned}<AskedByLine {askers} seesAll={askedBy.sees_all} />{#if ownState.kind !== 'have' && ownState.kind !== 'downloading'}<SearchOutcomeLine titleId={owned.id} />{/if}{/if}{/snippet}
+			{#snippet byline()}{#if owned}<AskedByLine {askers} />{#if ownState.kind !== 'have' && ownState.kind !== 'downloading'}<SearchOutcomeLine titleId={owned.id} />{/if}{/if}{/snippet}
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : setTab('library'))} data-testid="hero-library" />

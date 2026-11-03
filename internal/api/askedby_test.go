@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/asks"
+	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -43,9 +45,7 @@ func jarOf() http.CookieJar {
 }
 
 // route: GET /api/v1/asked-by
-// route: GET /api/v1/my/ask-privacy
-// route: PUT /api/v1/my/ask-privacy
-func TestAskedByPrivacyMatrix(t *testing.T) {
+func TestAskedByEveryoneSees(t *testing.T) {
 	r := newAskRig(t)
 	join := func(name, invite string) *signedIn {
 		var inv struct {
@@ -99,76 +99,58 @@ func TestAskedByPrivacyMatrix(t *testing.T) {
 	}
 
 	all := []string{"ana", "bo", "kai"}
-	check := func(label string, s *signedIn, want []string) {
+	check := func(label string, s *signedIn) {
 		t.Helper()
-		if got := askedByNames(t, s, titleID); strings.Join(got, ",") != strings.Join(want, ",") {
-			t.Fatalf("%s: %s sees %v, want %v", label, label, got, want)
+		if got := askedByNames(t, s, titleID); strings.Join(got, ",") != strings.Join(all, ",") {
+			t.Fatalf("%s sees %v, want %v", label, got, all)
 		}
 	}
-	setHousehold := func(v string) {
-		r.owner.call("PUT", "/api/v1/settings/asks", `{"show_who_asked":"`+v+`"}`, 200)
-	}
-	optIn := func(s *signedIn, on bool) {
-		body := `{"show_my_name":false}`
-		if on {
-			body = `{"show_my_name":true}`
-		}
-		r := s.call("PUT", "/api/v1/my/ask-privacy", body, 200)
-		if strings.Contains(string(r), `"show_my_name":true`) != on {
-			t.Fatalf("ask-privacy answer %s", r)
-		}
-	}
+	// Everyone in the household sees every asker's name.
+	check("owner", r.owner)
+	check("manager", mia)
+	check("member ana", r.ana)
+	check("member bo", r.bo)
+	check("kid", kai)
 
-	// Default: admins only, nobody opted in.
-	if !strings.Contains(string(r.ana.call("GET", "/api/v1/my/ask-privacy", "", 200)), `"show_my_name":false`) {
-		t.Fatal("show_my_name should start off")
-	}
-	check("owner", r.owner, all)
-	check("manager", mia, all)
-	check("member ana", r.ana, []string{"ana"})
-	check("member bo", r.bo, []string{"bo"})
-	check("kid", kai, []string{"kai"})
-
-	// Opt-in alone does nothing while the household says admins only.
-	optIn(r.ana, true)
-	check("member bo, ana opted in, admins only", r.bo, []string{"bo"})
-
-	// Everyone in the household: members see askers who opted in.
-	setHousehold("everyone")
-	check("member bo, everyone", r.bo, []string{"ana", "bo"})
-	check("kid, everyone", kai, []string{"kai"})
-	check("owner, everyone", r.owner, all)
-	optIn(r.bo, true)
-	check("member ana, both opted in", r.ana, []string{"ana", "bo"})
-	optIn(kai, true)
-	check("member ana, kid opted in", r.ana, []string{"ana", "bo", "kai"})
-	check("kid never sees others", kai, []string{"kai"})
-
-	// Opting out hides the name again.
-	optIn(r.bo, false)
-	check("member ana, bo opted out", r.ana, []string{"ana", "kai"})
-
-	// Requests and title answers are trimmed the same way.
+	// The Requests list names every asker too, for a member and a Kid.
 	var list struct {
 		Asks []asks.View `json:"asks"`
 	}
-	_ = json.Unmarshal(r.bo.call("GET", "/api/v1/asks", "", 200), &list)
-	if len(list.Asks) != 1 || len(list.Asks[0].People) != 3 {
-		t.Fatalf("bo's wishlist people %+v", list.Asks)
+	for _, s := range []*signedIn{r.bo, kai} {
+		_ = json.Unmarshal(s.call("GET", "/api/v1/asks", "", 200), &list)
+		if len(list.Asks) != 1 || len(list.Asks[0].People) != 3 || list.Asks[0].AskedBy.Name != "ana" {
+			t.Fatalf("wishlist people %+v", list.Asks)
+		}
 	}
-	setHousehold("approvers")
-	_ = json.Unmarshal(r.bo.call("GET", "/api/v1/asks", "", 200), &list)
-	if len(list.Asks) != 1 || len(list.Asks[0].People) != 1 || list.Asks[0].People[0].Name != "bo" || list.Asks[0].AskedBy.Name != "bo" {
-		t.Fatalf("bo's wishlist people, admins only %+v", list.Asks)
-	}
-	_ = json.Unmarshal(kai.call("GET", "/api/v1/asks", "", 200), &list)
-	if len(list.Asks) != 1 || len(list.Asks[0].People) != 1 || list.Asks[0].People[0].Name != "kai" {
-		t.Fatalf("kai's wishlist people %+v", list.Asks)
-	}
-	check("member ana, admins only again", r.ana, []string{"ana"})
 
-	// Bad input.
-	r.owner.call("PUT", "/api/v1/settings/asks", `{"show_who_asked":"nobody"}`, 400)
+	// The per-person choice is gone.
+	r.ana.call("GET", "/api/v1/my/ask-privacy", "", 404)
+	r.ana.call("PUT", "/api/v1/my/ask-privacy", `{"show_my_name":true}`, 405)
+	for _, k := range []string{"GET /api/v1/my/ask-privacy", "PUT /api/v1/my/ask-privacy"} {
+		if _, ok := auth.RoutePerms[k]; ok {
+			t.Fatalf("%s is still in the route table", k)
+		}
+		if _, ok := parts.Routes[k]; ok {
+			t.Fatalf("%s is still in the parts table", k)
+		}
+	}
+
+	// A saved old household choice and an old client field change nothing.
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by)
+			VALUES ('this_app', 'ask_show_who_asked', 'approvers', '', '{}', '', '{}')`)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got := string(r.owner.call("GET", "/api/v1/settings/asks", "", 200)); strings.Contains(got, "show_who_asked") {
+		t.Fatalf("settings still carry show_who_asked: %s", got)
+	}
+	r.owner.call("PUT", "/api/v1/settings/asks", `{"show_who_asked":"nobody","movies_per_week":4}`, 200)
+	if got := string(r.owner.call("GET", "/api/v1/settings/asks", "", 200)); !strings.Contains(got, `"movies_per_week":4`) {
+		t.Fatalf("settings after save %s", got)
+	}
+	check("member ana, old choice saved", r.ana)
+
 	r.ana.call("GET", "/api/v1/asked-by?title_id=x", "", 400)
-	r.ana.call("PUT", "/api/v1/settings/asks", `{"show_who_asked":"everyone"}`, 403)
 }

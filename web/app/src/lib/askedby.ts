@@ -1,14 +1,11 @@
 // Asked by: who in the household asked for a title (title page only;
-// cards stay factual). The server already
-// trims the askers to the ones this reader may see (owner, admins and
-// managers see everyone; members see themselves plus askers who chose to
-// show their name when the household allows it; Kids see only themselves).
+// cards stay factual). Everyone in the household sees every asker.
 //
 // Every word this feature shows lives in WORDS, so a wording change is one
 // edit here.
 
 export type Asker = { id: number; name: string; asked_at: string; me: boolean };
-export type AskedByAnswer = { titles: Record<string, { askers: Asker[] }>; sees_all: boolean };
+export type AskedByAnswer = { titles: Record<string, { askers: Asker[] }> };
 
 export const WORDS = {
 	you: 'You asked',
@@ -16,21 +13,11 @@ export const WORDS = {
 	two: (a: string, b: string) => `Asked by ${a} and ${b}`,
 	many: (a: string, others: number) => `Asked by ${a} and ${others} ${others === 1 ? 'other' : 'others'}`,
 	youAnd: (others: number) => `You and ${others} ${others === 1 ? 'other' : 'others'} asked`,
-	/** Tooltip: "Ana asked for this on 12 Oct. Only you and the admins can see this." */
-	tip: (who: string, date: string) => `${who} asked for this on ${date}. Only you, the owner, admins and managers can see this.`,
-	sharedTip: (who: string, date: string) => `${who} asked for this on ${date}. ${who} chose to show their name to the household.`,
-	youTip: (date: string) => `You asked for this on ${date}. Only you, the owner, admins and managers can see this.`,
+	/** Tooltip: "Ana asked for this on 12 Oct." */
+	tip: (who: string, date: string) => `${who} asked for this on ${date}.`,
+	youTip: (date: string) => `You asked for this on ${date}.`,
 	dateSep: ' · ',
-	listTitle: 'Who asked',
-	// Settings
-	householdLabel: 'Show who asked',
-	householdHelp: 'Who can see the names of the people who asked for a title. Kids only ever see their own asks.',
-	householdChoices: [
-		{ value: 'approvers', label: 'Owner, admins and managers only' },
-		{ value: 'everyone', label: 'Everyone in the household' }
-	],
-	personalLabel: 'Show my name on my asks',
-	personalHelp: 'When the household allows it, other members see that you asked. The owner, admins and managers always can.'
+	listTitle: 'Who asked'
 } as const;
 
 /** First name only: "Ana Lopez" -> "Ana". */
@@ -59,7 +46,7 @@ export function askedByLine(askers: Asker[]): string {
 }
 
 /** The tooltip for the first asker shown. */
-export function askedByTip(askers: Asker[], seesAll: boolean): string {
+export function askedByTip(askers: Asker[]): string {
 	if (!askers.length) return '';
 	const first = askers[0];
 	const date = shortDate(first.asked_at);
@@ -67,7 +54,7 @@ export function askedByTip(askers: Asker[], seesAll: boolean): string {
 	const other = askers.find((a) => !a.me) ?? first;
 	const who = firstName(other.name);
 	const when = shortDate(other.asked_at);
-	return seesAll ? WORDS.tip(who, when) : WORDS.sharedTip(who, when);
+	return WORDS.tip(who, when);
 }
 
 /** Title page line: "Asked by Ana · 12 Oct". */
@@ -86,6 +73,6 @@ export function initial(name: string): string {
 /** Asks GET /asked-by for many titles at once; {} on no ids. */
 export async function loadAskedBy(get: <T>(path: string) => Promise<T>, ids: number[]): Promise<AskedByAnswer> {
 	const uniq = [...new Set(ids.filter((n) => n > 0))].slice(0, 200);
-	if (!uniq.length) return { titles: {}, sees_all: false };
+	if (!uniq.length) return { titles: {} };
 	return get<AskedByAnswer>(`/asked-by?title_ids=${uniq.join(',')}`);
 }

@@ -2,12 +2,12 @@
 	import { askedByDated, askedByTip, firstName, initial, shortDate, WORDS, type Asker } from '../askedby.ts';
 
 	// Asked by on the title page: "Asked by Ana · 12 Oct" under the title.
-	// People who see every asker (they approve asks) can open the full list.
-	let { askers, seesAll = false }: { askers: Asker[]; seesAll?: boolean } = $props();
+	// It opens to the full list when more than one person asked.
+	let { askers }: { askers: Asker[] } = $props();
 	let open = $state(false);
 	const id = $props.id();
 	const line = $derived(askedByDated(askers));
-	const tip = $derived(askedByTip(askers, seesAll));
+	const tip = $derived(askedByTip(askers));
 </script>
 
 {#if askers.length}
@@ -18,7 +18,7 @@
 		{#if open}
 			<div class="pop" id="{id}-pop">
 				<p>{tip}</p>
-				{#if seesAll && askers.length > 1}
+				{#if askers.length > 1}
 					<ul aria-label={WORDS.listTitle}>
 						{#each askers as a (a.id)}<li><span class="face">{initial(a.name)}</span>{a.me ? WORDS.you : firstName(a.name)}<span class="d">{shortDate(a.asked_at)}</span></li>{/each}
 					</ul>

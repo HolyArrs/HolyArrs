@@ -1244,15 +1244,6 @@
         },
         "type": "object"
       },
-      "AskPrivacy": {
-        "properties": {
-          "show_my_name": {
-            "description": "Let the household see my name on my asks, when the household setting allows it (off by default).",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
       "AskSettings": {
         "properties": {
           "library_folder_id": {
@@ -1295,14 +1286,6 @@
             "description": "Pick rules for approved show asks; 0 takes the folder's own.",
             "type": "integer"
           },
-          "show_who_asked": {
-            "description": "Who sees other people's names on asks: approvers (owner, admins and managers; the default) or everyone in the household (only for askers who turned on showing their name). Kids never see others.",
-            "enum": [
-              "approvers",
-              "everyone"
-            ],
-            "type": "string"
-          },
           "shows_per_week": {
             "description": "Default show (one per show ask, whatever its seasons) asks per person per 7 days; a person's own limit wins. 0 is no limit. Default 10.",
             "maximum": 1000,
@@ -1313,12 +1296,8 @@
         "type": "object"
       },
       "AskedBy": {
-        "description": "Each title's askers the reader may see, earliest first. The owner, admins and managers see everyone; members see themselves, plus askers who chose to show their name when the household allows it; Kids see only themselves.",
+        "description": "Each title's askers, earliest first. Everyone in the household sees every asker.",
         "properties": {
-          "sees_all": {
-            "description": "The reader sees every asker (they approve asks).",
-            "type": "boolean"
-          },
           "titles": {
             "additionalProperties": {
               "properties": {
@@ -7887,7 +7866,7 @@
     },
     "/api/v1/asked-by": {
       "get": {
-        "description": "Pass title_id once per title (or title_ids=1,2). Names are trimmed on the server by the privacy rules.",
+        "description": "Pass title_id once per title (or title_ids=1,2). A Kid gets only titles within their age limit.",
         "operationId": "getAskedBy",
         "parameters": [
           {
@@ -18679,74 +18658,6 @@
           "Alerts"
         ],
         "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "write"
-      }
-    },
-    "/api/v1/my/ask-privacy": {
-      "get": {
-        "description": "Off unless I turn it on.",
-        "operationId": "getAskPrivacy",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AskPrivacy"
-                }
-              }
-            },
-            "description": "My choice."
-          }
-        },
-        "summary": "Whether my name shows on my asks",
-        "tags": [
-          "Wishlist"
-        ],
-        "x-holyarrs-part": "wishlist",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "read"
-      },
-      "put": {
-        "description": "Others see it only when the household allows it.",
-        "operationId": "putAskPrivacy",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AskPrivacy"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AskPrivacy"
-                }
-              }
-            },
-            "description": "Saved."
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Bad body."
-          }
-        },
-        "summary": "Choose whether my name shows on my asks",
-        "tags": [
-          "Wishlist"
-        ],
-        "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "write"
       }
