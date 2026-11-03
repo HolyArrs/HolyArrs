@@ -54,7 +54,7 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await page.goto(`${root}/library`);
 	await page.reload();
 	await expect(page).toHaveURL(`${root}/library`);
-	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Settings', exact: true }).click();
+	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: /^Settings(, needs attention)?$/ }).click();
 	await expect(page).toHaveURL(`${root}/settings`);
 	await page.goBack();
 	await expect(page).toHaveURL(`${root}/library`);
