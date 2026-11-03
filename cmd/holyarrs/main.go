@@ -645,6 +645,23 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	})
 	q.ProbeSchedule(health.KindCheck, he.Probe)
+	// Plex watchlists (Requests): registered here with the other kinds; the
+	// reader is set once Requests and sign-in are up, and a pass before
+	// that finds nothing to do.
+	var watchlists atomic.Pointer[asks.Watchlists]
+	q.Handle(asks.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
+		if w := watchlists.Load(); w != nil {
+			return w.Run(ctx, r)
+		}
+		r.SetResult(map[string]any{"skipped": "still starting"})
+		return nil
+	})
+	q.ProbeSchedule(asks.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
+		if w := watchlists.Load(); w != nil {
+			return w.Probe(ctx, now)
+		}
+		return false, nil, nil
+	})
 	// Subtitles: searches after imports and better copies, two schedules.
 	subs := &subtitles.Service{Store: s, Live: hub, Vault: vault}
 	subs.Register(q)
@@ -762,6 +779,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	wish.PrefetchParts = true
+	// Plex watchlists are read with each person's own kept Plex sign-in.
+	plexWatch := &asks.Watchlists{Asks: wish, Base: env("HOLYARRS_PLEX_DISCOVER_URL", asks.DefaultPlexDiscover),
+		Token: au.PlexToken, ClientID: au.PlexClientID}
+	watchlists.Store(plexWatch)
 	go wish.BackfillParts(context.Background())
 	wish.WatchEpisodes()
 	wish.WatchTMDBFollows()
@@ -788,7 +809,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, DLSync: dls, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	// "Count this install" rides on every request to the metadata server.

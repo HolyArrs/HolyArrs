@@ -27,6 +27,8 @@ type Who struct {
 type Asker struct {
 	Who
 	AskedAt time.Time `json:"asked_at"`
+	// FromWatchlist: they asked (or joined) from their Plex watchlist.
+	FromWatchlist bool `json:"from_watchlist,omitempty"`
 }
 
 // View is an ask as pages show it.
@@ -145,7 +147,7 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 			return nil, err
 		}
 		for _, p := range ps {
-			v.People = append(v.People, Asker{Who{ID: p.ID, Name: p.Name}, p.AskedAt})
+			v.People = append(v.People, Asker{Who{ID: p.ID, Name: p.Name}, p.AskedAt, p.FromWatchlist})
 		}
 		out = append(out, v)
 	}

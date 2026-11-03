@@ -575,6 +575,9 @@ var Routes = map[string]Owner{
 	"GET /api/v1/settings/asks":                      wishlist,
 	"GET /api/v1/asked-by":                           wishlist,
 	"GET /api/v1/my/follows":                         wishlist,
+	"GET /api/v1/my/plex-watchlist":                  wishlist,
+	"PUT /api/v1/my/plex-watchlist":                  wishlist,
+	"POST /api/v1/my/plex-watchlist/check":           wishlist,
 	"GET /api/v1/titles/{id}/follow":                 wishlist,
 	"PUT /api/v1/titles/{id}/follow":                 wishlist,
 	"DELETE /api/v1/titles/{id}/follow":              wishlist,
@@ -730,6 +733,8 @@ var JobKinds = map[string]Owner{
 	"subtitle_missing": subtitles,
 	"subtitle_better":  subtitles,
 	"subtitle_look":    subtitles,
+	// Requests.
+	"sync_plex_watchlists": wishlist,
 }
 
 // ScreenOwner finds the owner of a web path such as /library/12: the

@@ -34,6 +34,7 @@
 	import { askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
 	import { askedByOne, askers } from '#lib/approvals/inbox.ts';
 	import { kidLabel } from '#lib/kid.ts';
+	import { watchlistLine } from '#lib/account/watchlist.ts';
 	import ApprovalsDesktop from '#lib/approvals/ApprovalsDesktop.svelte';
 
 	const approver = $derived(session.can('approve'));
@@ -667,6 +668,7 @@
 							<p class="line muted" data-testid="asked-by">
 								{askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
 							</p>
+							{#if watchlistLine(a.people, session.s.id)}<p class="line muted" data-testid="ask-from-watchlist">{watchlistLine(a.people, session.s.id)}</p>{/if}
 							{#if decided(a)}
 								<p class="line muted" data-testid="decided-by">
 									{decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
@@ -723,6 +725,7 @@
 				<dl class="review-facts">
 					<dt>Asked by</dt><dd>{askedBy(selected).replace(/^Asked by /, '')}</dd>
 					<dt>Asked</dt><dd>{ago(selected.asked_at)}</dd>
+					{#if watchlistLine(selected.people, session.s.id)}<dt>From</dt><dd>{watchlistLine(selected.people, session.s.id).replace(/^From /, '')}</dd>{/if}
 					{#if what(selected)}<dt>For</dt><dd>{what(selected)}</dd>{/if}
 					{#if decided(selected)}<dt>Decision</dt><dd>{decided(selected)}</dd>{/if}
 				</dl>

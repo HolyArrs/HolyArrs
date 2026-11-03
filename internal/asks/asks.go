@@ -1048,6 +1048,8 @@ type person struct {
 	Email     string
 	DiscordID string
 	AskedAt   time.Time
+	// FromWatchlist: they asked (or joined) from their Plex watchlist.
+	FromWatchlist bool
 }
 
 func names(ps []person) []string {
@@ -1059,7 +1061,8 @@ func names(ps []person) []string {
 }
 
 func (s *Service) people(ctx context.Context, askID int64) ([]person, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), p.asked_at
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), p.asked_at,
+			EXISTS (SELECT 1 FROM plex_watchlist_items w WHERE w.user_id = p.user_id AND w.ask_id = p.ask_id AND w.state IN ('asked', 'joined'))
 		FROM ask_people p JOIN users u ON u.id = p.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
 		WHERE p.ask_id = ? ORDER BY p.asked_at, u.id`, askID)
 	if err != nil {
@@ -1070,7 +1073,7 @@ func (s *Service) people(ctx context.Context, askID int64) ([]person, error) {
 	for rows.Next() {
 		var p person
 		var at string
-		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &at); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &at, &p.FromWatchlist); err != nil {
 			return nil, err
 		}
 		p.AskedAt, _ = time.Parse(store.TimeLayout, at)

@@ -186,7 +186,11 @@ export const tmdbMovies = [
 	{ id: 900452, title: 'Lichen Postcard', release_date: '2013-11-03', imdb_id: 'tt9004520', overview: 'A postcard that grows a new picture every spring.', dates: [[3, '2013-11-03'], [4, '2014-01-10']] },
 	// Only library-missing.spec.ts adds these: Search all missing finds them.
 	{ id: 900271, title: 'Hollow Compass', release_date: '2015-02-02', imdb_id: 'tt9002710', overview: 'A compass that points at whatever was lost last.', dates: [[3, '2015-02-02'], [4, '2015-04-01']] },
-	{ id: 900272, title: 'Brass Meadow', release_date: '2014-06-06', imdb_id: 'tt9002720', overview: 'A meadow of brass flowers that ring in the wind.', dates: [[3, '2014-06-06'], [4, '2014-08-01']] }
+	{ id: 900272, title: 'Brass Meadow', release_date: '2014-06-06', imdb_id: 'tt9002720', overview: 'A meadow of brass flowers that ring in the wind.', dates: [[3, '2014-06-06'], [4, '2014-08-01']] },
+	// Only plex-watchlist.spec.ts uses these: asked from the watchlist, already in the Library, added after Movies is off.
+	{ id: 900102, title: 'Rowan Semaphore', release_date: '2012-04-04', imdb_id: 'tt9001020', overview: 'Flags on a hilltop that answer before anyone asks.', dates: [[3, '2012-04-04'], [4, '2012-06-01']] },
+	{ id: 900103, title: 'Flint Gazebo', release_date: '2011-07-07', imdb_id: 'tt9001030', overview: 'A garden shelter that sparks in every storm.', dates: [[3, '2011-07-07'], [4, '2011-09-01']] },
+	{ id: 900104, title: 'Nettle Observatory', release_date: '2010-10-10', imdb_id: 'tt9001040', overview: 'A telescope that only sees the weeds below it.', dates: [[3, '2010-10-10'], [4, '2010-12-01']] }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
@@ -268,6 +272,12 @@ export const fakeShows = [
 			[2, 1, 'Second Wind', '2024-04-07'], [2, 2, 'Anchor Leg', '2024-04-14']
 		],
 		anime: true
+	},
+	{
+		// Only plex-watchlist.spec.ts uses it: asked whole from the Plex watchlist.
+		tmdb: 800102, tvdb: 810102, tvmaze: 820102, imdb: 'tt8001020', name: 'Larch Ferrymen', first: '2019-05-05', status: 'Ended', network: 'Lab Seven',
+		overview: 'Two ferrymen row a larch-wood boat across a lake that keeps getting wider.',
+		episodes: [[1, 1, 'Oars', '2019-05-05'], [1, 2, 'Far Shore', '2019-05-12']]
 	},
 	// Only the show list tests use these (library-showlists.spec.ts): TMDB list
 	// 104 adds Bellwether Ferry, skips Cinder Lane (on the Never-add list); the
@@ -629,15 +639,56 @@ export function startFakes() {
 	trakt.listen(traktPort, '127.0.0.1');
 	let nextPin = 100;
 	const confirmed = new Set();
+	// PUT /lab/plex-user names who the next pin signs in as (default plexkid),
+	// so two Plex accounts can be told apart.
+	/** @type {Map<string, { id: number, username: string, email?: string }>} */
+	const plexUsers = new Map();
+	/** @type {{ id: number, username: string, email?: string } | null} */
+	let nextPlexUser = null;
+	// Plex's discover service (/discover/...): each token's watchlist, set by
+	// PUT /lab/watchlist {token, items}; token "*" is every known token's.
+	/** @type {Map<string, unknown[]>} */
+	const plexWatchlists = new Map();
 	let plexMovieRoot = '';
 	/** @type {{ section: string, path: string }[]} */
 	const plexScans = [];
 	const plex = createServer(async (req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
-		if (req.method === 'POST' && url.pathname === '/api/v2/pins') return send(res, 201, { id: ++nextPin, code: `CODE${nextPin}` });
+		if (req.method === 'POST' && url.pathname === '/api/v2/pins') {
+			++nextPin;
+			if (nextPlexUser) plexUsers.set(`ptok${nextPin}`, nextPlexUser);
+			nextPlexUser = null;
+			return send(res, 201, { id: nextPin, code: `CODE${nextPin}` });
+		}
+		if (req.method === 'PUT' && url.pathname === '/lab/plex-user') {
+			nextPlexUser = JSON.parse((await body(req)) || 'null');
+			return send(res, 204, '');
+		}
+		if (req.method === 'PUT' && url.pathname === '/lab/watchlist') {
+			const b = JSON.parse((await body(req)) || '{}');
+			plexWatchlists.set(String(b.token ?? '*'), Array.isArray(b.items) ? b.items : []);
+			return send(res, 204, '');
+		}
+		if (url.pathname.startsWith('/discover/')) {
+			const tok = String(req.headers['x-plex-token'] ?? '');
+			if (!/^ptok\d+$/.test(tok) || req.headers.accept !== 'application/json') return send(res, 401, '', 'text/plain');
+			const items = /** @type {{ ratingKey?: unknown }[]} */ (plexWatchlists.get(tok) ?? plexWatchlists.get('*') ?? []);
+			if (req.method === 'GET' && url.pathname === '/discover/library/sections/watchlist/all') {
+				const list = items.slice(Number(url.searchParams.get('X-Plex-Container-Start') ?? 0), Number(url.searchParams.get('X-Plex-Container-Size') ?? 20));
+				return send(res, 200, { MediaContainer: { size: list.length, totalSize: items.length, Metadata: list } });
+			}
+			const one = url.pathname.match(/^\/discover\/library\/metadata\/([^/]+)$/);
+			if (req.method === 'GET' && one) {
+				const list = items.filter((m) => String(m.ratingKey) === decodeURIComponent(one[1]));
+				return send(res, 200, { MediaContainer: { size: list.length, Metadata: list } });
+			}
+		}
 		const pin = url.pathname.match(/^\/api\/v2\/pins\/(\d+)$/);
 		if (req.method === 'GET' && pin) return send(res, 200, { id: Number(pin[1]), authToken: confirmed.has(pin[1]) ? `ptok${pin[1]}` : null });
-		if (req.method === 'GET' && url.pathname === '/api/v2/user') return send(res, 200, { id: 9001, uuid: 'u', username: 'plexkid', email: 'kid@example.test' });
+		if (req.method === 'GET' && url.pathname === '/api/v2/user') {
+			const u = plexUsers.get(String(req.headers['x-plex-token'] ?? '')) ?? { id: 9001, username: 'plexkid', email: 'kid@example.test' };
+			return send(res, 200, { uuid: 'u', email: '', ...u });
+		}
 		if (req.method === 'GET' && url.pathname === '/api/v2/resources') return send(res, 200, [{ clientIdentifier: 'fake-server', provides: 'server' }]);
 		// The page the person sees on "Plex": opening it confirms the pin.
 		if (req.method === 'GET' && url.pathname === '/app/auth') {

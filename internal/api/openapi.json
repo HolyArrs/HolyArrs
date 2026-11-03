@@ -1160,6 +1160,10 @@
                     "asked_at": {
                       "format": "date-time",
                       "type": "string"
+                    },
+                    "from_watchlist": {
+                      "description": "This person asked, or joined, from their Plex watchlist.",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1333,6 +1337,10 @@
           "pick_rules_id": {
             "description": "Pick rules for approved asks; 0 takes the folder's own.",
             "type": "integer"
+          },
+          "plex_watchlists": {
+            "description": "People may have their Plex watchlist asked for as them (each turns it on in My account). Default off.",
+            "type": "boolean"
           },
           "search_on_approve": {
             "description": "Start searching as soon as an ask is approved. Default true.",
@@ -3992,6 +4000,82 @@
           }
         },
         "type": "object"
+      },
+      "PlexWatchlist": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WatchlistSwitches"
+          },
+          {
+            "properties": {
+              "can_read": {
+                "description": "HolyArrs keeps a Plex sign-in for me to read my watchlist with.",
+                "type": "boolean"
+              },
+              "checked_at": {
+                "description": "When my watchlist was last read.",
+                "format": "date-time",
+                "type": "string"
+              },
+              "error": {
+                "description": "Why the last read did not work, in plain words.",
+                "type": "string"
+              },
+              "items": {
+                "description": "The newest entries seen (at most 20) and what came of each.",
+                "items": {
+                  "properties": {
+                    "ask_id": {
+                      "type": "integer"
+                    },
+                    "kind": {
+                      "enum": [
+                        "movie",
+                        "show"
+                      ],
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "seen_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "state": {
+                      "description": "asked, joined, already (I asked before), in_library, skipped (Never add or above my age-rating limit), limit (weekly limit; tried again), failed (tried again a few times) or no_match.",
+                      "type": "string"
+                    },
+                    "year": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "linked": {
+                "description": "A Plex account is linked to me.",
+                "type": "boolean"
+              },
+              "may_ask": {
+                "description": "I may ask for titles at all.",
+                "type": "boolean"
+              },
+              "on": {
+                "description": "The owner allows Plex watchlists (Request rules).",
+                "type": "boolean"
+              },
+              "plex_name": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        ]
       },
       "PressingTrack": {
         "properties": {
@@ -6657,6 +6741,19 @@
           },
           "pick_rules_name": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WatchlistSwitches": {
+        "properties": {
+          "movies": {
+            "description": "Ask for movies on my Plex watchlist.",
+            "type": "boolean"
+          },
+          "shows": {
+            "description": "Ask for shows on my Plex watchlist (the whole show).",
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -19428,6 +19525,124 @@
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/my/plex-watchlist": {
+      "get": {
+        "description": "My Plex watchlist switches, when it was last read and the newest entries with what came of each. Reads nothing from Plex.",
+        "operationId": "getMyPlexWatchlist",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlexWatchlist"
+                }
+              }
+            },
+            "description": "My Plex watchlist."
+          }
+        },
+        "summary": "My Plex watchlist",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Turns asking from my Plex watchlist on or off, per kind. Turning it on reads the watchlist soon; asks go through the normal path (weekly limits, auto-approve, age-rating limits).",
+        "operationId": "putMyPlexWatchlist",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistSwitches"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlexWatchlist"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "My account may not ask for titles."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Off in Request rules, or no Plex account linked."
+          }
+        },
+        "summary": "Turn my Plex watchlist on or off",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/my/plex-watchlist/check": {
+      "post": {
+        "description": "Reads my Plex watchlist now instead of at the next scheduled pass.",
+        "operationId": "checkMyPlexWatchlist",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "job_id": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The read is queued."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "My Plex watchlist is not turned on."
+          }
+        },
+        "summary": "Read my Plex watchlist now",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/my/profile": {
