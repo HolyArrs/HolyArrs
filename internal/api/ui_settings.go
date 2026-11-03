@@ -22,6 +22,9 @@ const (
 	settingAutoplay = "autoplay_trailers"
 	// SettingYTDLPUpdate turns the weekly yt-dlp update on or off.
 	SettingYTDLPUpdate = "ytdlp_auto_update"
+	// settingCountryCount is "Count this install" (the metadata server's
+	// per-country install total).
+	settingCountryCount = "install_country_count"
 )
 
 // UISettings is the answer of GET /settings/ui.
@@ -42,6 +45,9 @@ type UISettings struct {
 	// refreshes, scans) and everything else. Defaults 30 and 0.
 	HistoryRoutineDays int `json:"history_routine_days"`
 	HistoryOtherDays   int `json:"history_other_days"`
+	// CountInstall: "Count this install" in the metadata server's
+	// per-country install total. Default on.
+	CountInstall bool `json:"count_install"`
 }
 
 // settingArtworkCache is the picture cache size in GB; artworkCacheSizes the choices.
@@ -62,15 +68,24 @@ func (a *API) uiSettings(ctx context.Context) UISettings {
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", SettingYTDLPUpdate).Scan(&u)
 	var l string
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingSigninLibraryArt).Scan(&l)
-	var g string
+	var g, c string
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingArtworkCache).Scan(&g)
+	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingCountryCount).Scan(&c)
 	gb, err := strconv.Atoi(g)
 	if err != nil || !artworkCacheSizes[gb] {
 		gb = int(library.DefaultArtworkCap >> 30)
 	}
 	k := store.ReadHistoryKeep(ctx, a.s.Store.Read())
 	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb,
-		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays}
+		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays, CountInstall: c != "off"}
+}
+
+// ApplyCountryCount passes the stored "Count this install" on to the
+// requests to the metadata server (at start and after each change).
+func (a *API) ApplyCountryCount(ctx context.Context) {
+	if a.s.CountryCount != nil {
+		a.s.CountryCount(a.uiSettings(ctx).CountInstall)
+	}
 }
 
 // KeepYTDLPUpdated reads "Keep yt-dlp up to date" (for the weekly job).
@@ -88,8 +103,9 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		ArtworkCacheGB   *int  `json:"artwork_cache_gb"`
 		RoutineDays      *int  `json:"history_routine_days"`
 		OtherDays        *int  `json:"history_other_days"`
+		CountInstall     *bool `json:"count_install"`
 	}
-	if !decode(w, r, &in, `send {"autoplay_trailers": true, "keep_ytdlp_updated": true, "signin_library_art": true, "artwork_cache_gb": 5}`) {
+	if !decode(w, r, &in, `send {"autoplay_trailers": true, "keep_ytdlp_updated": true, "signin_library_art": true, "artwork_cache_gb": 5, "count_install": true}`) {
 		return
 	}
 	if in.RoutineDays != nil || in.OtherDays != nil {
@@ -132,7 +148,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		}
 		a.applyArtworkCap(r.Context())
 	}
-	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, SettingYTDLPUpdate: in.KeepYTDLPUpdated, settingSigninLibraryArt: in.SigninLibraryArt} {
+	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, SettingYTDLPUpdate: in.KeepYTDLPUpdated, settingSigninLibraryArt: in.SigninLibraryArt, settingCountryCount: in.CountInstall} {
 		if on == nil {
 			continue
 		}
@@ -149,6 +165,9 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
+	}
+	if in.CountInstall != nil {
+		a.ApplyCountryCount(r.Context())
 	}
 	writeJSON(w, http.StatusOK, a.uiSettings(r.Context()))
 }

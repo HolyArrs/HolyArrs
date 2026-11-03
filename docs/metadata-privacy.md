@@ -18,6 +18,9 @@ install sends there.
 - **Small request headers.** `Accept`, `Cache-Control`, `If-None-Match` for
   lists already stored, and `X-Fetch: ahead` when HolyArrs is loading a page
   ahead of time instead of because someone opened it.
+- **Install count by country.** The server counts installs per country, by
+  the country requests come from. Turn off **Count this install** (Settings,
+  This app) and requests carry `X-Country-Count: off`: the install is left out.
 
 Like any web request, the server sees the public IP address the request comes
 from.

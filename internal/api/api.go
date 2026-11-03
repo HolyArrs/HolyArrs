@@ -102,6 +102,10 @@ type Server struct {
 	// artist hero a photo.
 	MusicControl func(ctx context.Context) (metadata.Control, error)
 	ArtistVideos func(ctx context.Context, mbid string) ([]metadata.ArtistVideo, error)
+	// CountryCount passes "Count this install" (Settings, This app) on to
+	// the requests to the metadata server (metadata.Gate.SetCountryCount).
+	// nil: nothing to tell.
+	CountryCount func(on bool)
 	// Packages is the local copy of the metadata server's artist packages
 	// (internal/musicsync): music pages answer from it first. nil: none.
 	Packages *musicsync.Sync
