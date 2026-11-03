@@ -42,6 +42,13 @@ func (s *Server) serveArt(w http.ResponseWriter, r *http.Request) {
 		problem(w, 400, "invalid_query", 0)
 		return
 	}
+	if kind != "music" && Anonymous(r.Context()) {
+		// Movie and tv art misses ask fanart.tv live with the server's key
+		// (and TMDB for tv): a caller without a credential only gets what
+		// the edge cache already holds, so it cannot spend that budget.
+		problem(w, 401, "unauthorized", 0)
+		return
+	}
 	var src ArtSource
 	if s.opts.Fanart != nil {
 		src = s.opts.Fanart

@@ -25,8 +25,16 @@ func (fakeArt) Status() extras.Status { return extras.Status{State: extras.State
 
 func TestExtrasRoutes(t *testing.T) {
 	s, _ := registering(Options{Registration: true, Burst: 100, Fanart: fakeArt{}, TrustedProxies: testProxy()})
-	if w := req(s, "/v1/art/movie/603", ""); w.Code == 401 || w.Code == 403 {
-		t.Fatalf("shared route refused without a credential %d", w.Code)
+	// Security 32: movie and tv misses ask fanart.tv live, so they need a
+	// credential; music art is answered from the picture store.
+	if w := req(s, "/v1/art/movie/603", ""); w.Code != 401 {
+		t.Fatalf("anonymous movie art reached fanart.tv %d", w.Code)
+	}
+	if w := req(s, "/v1/art/tv/603", ""); w.Code != 401 {
+		t.Fatalf("anonymous tv art reached fanart.tv %d", w.Code)
+	}
+	if w := req(s, "/v1/art/music/5b11f4ce-a62d-471e-81fc-a69a8278c7da", ""); w.Code == 401 || w.Code == 403 {
+		t.Fatalf("shared music art refused without a credential %d", w.Code)
 	}
 	if w := req(s, "/v1/art/movie/603", "synthetic-test-token"); w.Code != 200 || !strings.Contains(w.Body.String(), "l.png") {
 		t.Fatalf("art %d %s", w.Code, w.Body)
