@@ -25,7 +25,7 @@ async function addDownloader(kind: 'qBittorrent' | 'SABnzbd', name: string, url:
 	await page.getByLabel('Name', { exact: true }).fill(name);
 	await page.getByLabel('Address', { exact: true }).fill(url);
 	// SABnzbd and qBittorrent (its default way in) both take an API key.
-	if (secret) await page.getByLabel('API key', { exact: true }).fill(secret);
+	if (secret) await page.getByRole('textbox', { name: 'API key', exact: true }).fill(secret);
 	if (category) await page.getByLabel('Category', { exact: true }).fill(category);
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 }
