@@ -155,12 +155,7 @@ func spellings(keys []string) []spelling {
 func cleanLink(link string, keys []string) string {
 	// A marker already in the feed's link was planted by someone else;
 	// break it so GrabLink never fills the Source key into it.
-	link = strings.ReplaceAll(link, hidden, "HOLYARRS-KEY")
-	for _, sp := range spellings(keys) {
-		if sp.value != "" {
-			link = strings.ReplaceAll(link, sp.value, sp.marker)
-		}
-	}
+	link = hideKeys(strings.ReplaceAll(link, hidden, "HOLYARRS-KEY"), keys)
 	u, err := url.Parse(link)
 	if err != nil {
 		return link
@@ -172,6 +167,17 @@ func cleanLink(link string, keys []string) string {
 	q.Del("apikey")
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+// hideKeys swaps the key values in a link for their markers, keeping the
+// markers it already holds.
+func hideKeys(link string, keys []string) string {
+	for _, sp := range spellings(keys) {
+		if sp.value != "" {
+			link = strings.ReplaceAll(link, sp.value, sp.marker)
+		}
+	}
+	return link
 }
 
 // revealLink puts the key values back into a link cleanLink cleaned.

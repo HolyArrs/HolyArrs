@@ -22,8 +22,13 @@ import (
 // after it says which value of the path secret.
 const pathMark = "HOLYARRSPATHKEY"
 
-// ErrPathKey is said when a masked passkey in the address cannot be kept.
-var ErrPathKey = errors.New("type the full address again: its hidden passkey cannot be kept when the host changes")
+// ErrPathKey and the errors after it are said when a masked passkey in the
+// address cannot be kept, each with its reason.
+var (
+	ErrPathKey     = errors.New("type the full address again: its hidden passkey cannot be kept when the host changes")
+	ErrPathKeyNone = errors.New("type the full address again: no passkey is stored for its hidden part")
+	ErrPathKeyRSS  = errors.New("type the full address again: a hidden passkey is only kept for an rss Source")
+)
 
 var errPathKeyGone = errors.New("the Source address needs a passkey that has gone; type the address again")
 
@@ -89,7 +94,7 @@ func hidePath(raw string, old []string) (stored string, keys []string, reused bo
 		switch {
 		case isMasked(p):
 			if next >= len(old) {
-				return "", nil, false, ErrPathKey
+				return "", nil, false, ErrPathKeyNone
 			}
 			p, reused = old[next], true
 			next++
@@ -148,7 +153,8 @@ func splitKeys(plain string) []string {
 }
 
 // HidePathKeys moves passkeys an older save left in rss Source addresses
-// into the vault, and says how many Sources it changed.
+// into the vault, and says how many Sources it changed. It then takes the
+// passkeys out of Release links stored before.
 func HidePathKeys(ctx context.Context, s *store.Store, v *secrets.Vault) (int, error) {
 	if v == nil {
 		return 0, nil
@@ -178,5 +184,61 @@ func HidePathKeys(ctx context.Context, s *store.Store, v *secrets.Vault) (int, e
 		}
 		return nil
 	})
-	return moved, err
+	if err != nil {
+		return moved, err
+	}
+	return moved, hideReleaseKeys(ctx, s, v)
+}
+
+// hideReleaseKeys takes the path passkeys out of a Source's stored Release
+// links. A Source whose keys cannot be read keeps its links: they still work.
+func hideReleaseKeys(ctx context.Context, s *store.Store, v *secrets.Vault) error {
+	srcs, err := store.Select[domain.Source](ctx, s.Read(), "sources", "format = 'rss' AND path_secret_ref IS NOT NULL")
+	if err != nil {
+		return err
+	}
+	for _, src := range srcs {
+		cfg, err := ConfigFor(ctx, src, v)
+		if err != nil || len(cfg.PathKeys) == 0 {
+			continue
+		}
+		keys := secretValues(cfg)
+		err = s.Write(ctx, func(tx *sql.Tx) error {
+			links := map[int64]string{}
+			for _, k := range cfg.PathKeys {
+				if k == "" {
+					continue
+				}
+				rows, err := tx.QueryContext(ctx, "SELECT id, link_ref FROM releases WHERE source_id = ? AND instr(link_ref, ?) > 0", src.ID, k)
+				if err != nil {
+					return err
+				}
+				for rows.Next() {
+					var id int64
+					var link string
+					if err := rows.Scan(&id, &link); err != nil {
+						rows.Close()
+						return err
+					}
+					links[id] = link
+				}
+				rows.Close()
+				if err := rows.Err(); err != nil {
+					return err
+				}
+			}
+			for id, link := range links {
+				if clean := hideKeys(link, keys); clean != link {
+					if _, err := tx.ExecContext(ctx, "UPDATE releases SET link_ref = ? WHERE id = ?", clean, id); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

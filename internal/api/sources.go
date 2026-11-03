@@ -110,7 +110,7 @@ func readSource(w http.ResponseWriter, r *http.Request) (source.Input, bool) {
 func sourceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, source.ErrNameUsed), errors.Is(err, source.ErrKeyAgain), errors.Is(err, source.ErrKeyAgainProxy), errors.Is(err, source.ErrProxyAgain),
-		errors.Is(err, source.ErrPathKey):
+		errors.Is(err, source.ErrPathKey), errors.Is(err, source.ErrPathKeyNone), errors.Is(err, source.ErrPathKeyRSS):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, source.ErrNoVault):
 		fail(w, http.StatusServiceUnavailable, err.Error())

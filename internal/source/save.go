@@ -335,8 +335,14 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 	urlSent := strings.TrimSpace(in.URL) != ""
 	var path, oldPath []string
 	pathKept := src.PathSecretRef != nil && !urlSent
+	if urlSent && src.Format != "rss" && hasMasked(src.URL) {
+		return old, ErrPathKeyRSS
+	}
 	if urlSent && src.Format == "rss" {
-		if old.PathSecretRef != nil && hostOf(src.URL) == hostOf(old.URL) && hasMasked(src.URL) {
+		if old.PathSecretRef != nil && hasMasked(src.URL) {
+			if hostOf(src.URL) != hostOf(old.URL) {
+				return old, ErrPathKey
+			}
 			if v == nil {
 				return old, ErrNoVault
 			}

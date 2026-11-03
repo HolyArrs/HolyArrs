@@ -195,3 +195,87 @@ func TestHidePathKeysMovesOldRows(t *testing.T) {
 		t.Fatalf("config %q %v", cfg.URL, err)
 	}
 }
+
+// Release links stored before the passkey moved keep it in the clear; the
+// startup step takes it out and keeps the markers they already hold.
+func TestHidePathKeysCleansOldReleaseLinks(t *testing.T) {
+	ctx := context.Background()
+	s, v := openVault(t)
+	qkey := "q" + "key12345"
+	src := &domain.Source{Name: "Old", Protocol: "torrent", Format: "rss", URL: "https://rss.torrentleech.org/" + tlPasskey, UseFor: domain.SourceUse{Feed: true},
+		Kinds: []string{"tv"}, Categories: map[string][]int{}, Priority: 25, State: "enabled", Extra: map[string]string{}}
+	withKey := "https://www.torrentleech.org/rss/download/1/" + tlPasskey + "/A.torrent?tp=" + qkey
+	plainLink := "https://www.torrentleech.org/rss/download/2/x/B.torrent"
+	var rels []*domain.Release
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		if err := putSecret(tx, v, &src.SecretRef, "source_api_key", "tp="+qkey, domain.System); err != nil {
+			return err
+		}
+		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+			return err
+		}
+		// As an older cleanLink stored them: the query key hidden, the path one not.
+		for _, l := range []string{cleanLink(withKey, []string{qkey}), plainLink} {
+			r := &domain.Release{SourceID: src.ID, Name: "R", LinkRef: l, Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
+				MatchedSlotIDs: []int64{}, FoundBy: "feed", State: "seen"}
+			if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+				return err
+			}
+			rels = append(rels, r)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, err := HidePathKeys(ctx, s, v); n != 1 || err != nil {
+		t.Fatalf("moved %d %v", n, err)
+	}
+	var stored string
+	if err := s.Read().QueryRow("SELECT link_ref FROM releases WHERE id = ?", rels[0].ID).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(stored, tlPasskey) || strings.Contains(stored, qkey) {
+		t.Fatalf("release link kept a key: %q", stored)
+	}
+	back, err := GrabLink(ctx, s, v, domain.Release{SourceID: src.ID, LinkRef: stored})
+	if err != nil || back != withKey {
+		t.Fatalf("grab link %q %v", back, err)
+	}
+	if err := s.Read().QueryRow("SELECT link_ref FROM releases WHERE id = ?", rels[1].ID).Scan(&stored); err != nil || stored != plainLink {
+		t.Fatalf("plain link changed: %q %v", stored, err)
+	}
+}
+
+// A masked address that cannot keep its passkey says why, and leaves the
+// stored passkey as it was.
+func TestMaskedPathKeyErrorsSayWhy(t *testing.T) {
+	ctx := context.Background()
+	s, v := openVault(t)
+	src, err := Add(ctx, s, v, Input{Name: "TL", Format: "rss", URL: "https://rss24h.torrentleech.org/" + tlPasskey}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	masked := MaskURL(src.URL)
+	if _, err := Change(ctx, s, v, src.ID, Input{Name: "TL", Format: "torznab", URL: masked}, domain.System); !errors.Is(err, ErrPathKeyRSS) {
+		t.Fatalf("other format: %v", err)
+	}
+	if _, err := Change(ctx, s, v, src.ID, Input{Name: "TL", URL: masked + "/" + secrets.Masked}, domain.System); !errors.Is(err, ErrPathKeyNone) {
+		t.Fatalf("two masked parts, one passkey: %v", err)
+	}
+	plain, err := Add(ctx, s, v, Input{Name: "Plain", Format: "rss", URL: "https://feed.example/rss"}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Change(ctx, s, v, plain.ID, Input{Name: "Plain", URL: "https://feed.example/" + secrets.Masked}, domain.System); !errors.Is(err, ErrPathKeyNone) {
+		t.Fatalf("no passkey stored: %v", err)
+	}
+	var now domain.Source
+	if err := store.Get(ctx, s.Read(), "sources", src.ID, &now); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := ConfigFor(ctx, now, v)
+	if err != nil || cfg.URL != "https://rss24h.torrentleech.org/"+tlPasskey || now.Format != "rss" {
+		t.Fatalf("after refused changes %q %q %v", now.Format, cfg.URL, err)
+	}
+}
