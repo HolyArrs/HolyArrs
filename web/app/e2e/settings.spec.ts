@@ -239,3 +239,36 @@ test('URL base: a saved path is cleaned, asks for a restart, and can be cleared'
 	await expect(card.getByLabel('URL base')).toHaveValue('');
 	await expect(card.getByRole('status')).toHaveCount(0);
 });
+
+test('Requests from Seerr and Overseerr: switch on, make a key shown once, remove it (#85)', async () => {
+	await page.goto('/settings/api');
+	const card = page.locator('#seerr-card');
+	await expect(card).toBeVisible();
+	const on = card.getByTestId('seerr-on');
+	await expect(on).not.toBeChecked();
+	await on.check();
+	await expect(on).toBeChecked();
+	const shows = card.getByTestId('seerr-side-sonarr');
+	await expect(shows).toContainText('/sonarr');
+	await expect(card.getByTestId('seerr-side-radarr')).toContainText('/radarr');
+	await expect(card.getByTestId('seerr-delete')).not.toBeChecked();
+
+	await shows.getByRole('button', { name: 'Make key' }).click();
+	const fresh = card.getByTestId('seerr-fresh');
+	await expect(fresh).toContainText('shown only once');
+	const key = (await fresh.locator('code').textContent())!.trim();
+	expect(key).toMatch(/^[0-9a-f]{32}$/);
+	await expect(card.getByTestId('seerr-key-sonarr')).toContainText(`Key ending in ${key.slice(-4)},`);
+	await fresh.getByRole('button', { name: 'Done' }).click();
+	await expect(fresh).toHaveCount(0);
+	// Shown once: after a reload only the last four characters are left.
+	await page.reload();
+	await expect(card.getByTestId('seerr-key-sonarr')).toContainText(key.slice(-4));
+	await expect(card).not.toContainText(key);
+
+	page.once('dialog', (d) => void d.accept());
+	await card.getByTestId('seerr-side-sonarr').getByRole('button', { name: 'Remove key' }).click();
+	await expect(card.getByTestId('seerr-side-sonarr')).toContainText('No key yet.');
+	await card.getByTestId('seerr-on').uncheck();
+	await expect(card.getByTestId('seerr-side-sonarr')).toHaveCount(0);
+});

@@ -167,6 +167,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/ai', 'ai-connect', 'Connect Claude', 'claude desktop code connect setup address mcp'),
 	e('/settings/api', 'api-start', 'API base address', 'api address url base openapi'),
 	e('/settings/api', 'api-routes', 'Every API route', 'api routes endpoints openapi'),
+	e('/settings/api', 'seerr-card', 'Requests from Seerr and Overseerr', 'seerr overseerr jellyseerr sonarr radarr requests connect'),
 	e('/settings/move', '', 'Move from other apps', 'import migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
 
 	// System
