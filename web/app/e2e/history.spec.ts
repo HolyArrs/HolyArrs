@@ -30,6 +30,7 @@ interface TitleRow {
 	name: string;
 	cinema_date?: string;
 	digital_date?: string;
+	physical_date?: string;
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -104,28 +105,48 @@ test('health: checks run on Health checks, show on Home, and their settings are 
 });
 
 test('calendar: cards and list views, a movie on the day it is out to watch', async () => {
-	// The Calendar shows a movie once: the day it is out to watch, else its cinema date.
 	const titles = (await (await page.request.get('/api/v1/titles')).json()).titles as TitleRow[];
-	const dated = titles.find((t) => t.digital_date) ?? titles.find((t) => t.cinema_date)!;
-	const day = (dated.digital_date ?? dated.cinema_date)!.slice(0, 10);
+	const dated = titles.find((t) => t.cinema_date)!;
+	// A movie shows one date: the day it is out to watch (the earlier of digital and disc), else its cinema date.
+	const home = [dated.digital_date, dated.physical_date].filter((d): d is string => !!d).map((d) => d.slice(0, 10)).sort()[0];
+	const day = home ?? dated.cinema_date!.slice(0, 10);
 	await page.goto(`/calendar?month=${day.slice(0, 7)}`);
-	// Cards: the movie's card sits on its day.
+	// Cards: a day per row, from the linked month.
 	const cards = page.getByTestId('cal-cards');
 	await expect(cards).toBeVisible();
-	await expect(cards.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
-	await page.getByRole('radio', { name: 'List', exact: true }).click();
+	const card = cards.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) }).first();
+	await card.scrollIntoViewIfNeeded();
+	await expect(card).toBeVisible();
+	// The arrows step from the week in view, even on a linked month far back (loading further as
+	// needed): Week after names a later week, Week before an earlier one. The heading carries the
+	// week's first day; read it once it has stopped moving.
+	const controls = page.getByRole('region', { name: 'Calendar controls' });
+	const weekHead = controls.getByTestId('cal-month');
+	const settled = async () => {
+		let last = '';
+		await expect.poll(async () => { const now = (await weekHead.getAttribute('data-week')) ?? ''; const same = now === last; last = now; return same; }, { intervals: [300, 300, 300, 500, 1000] }).toBe(true);
+		return last;
+	};
+	const before = await settled();
+	await controls.getByRole('button', { name: 'Week after' }).click();
+	await expect(weekHead).not.toHaveAttribute('data-week', before);
+	const after = await settled();
+	expect(after > before, `Week after: ${after} after ${before}`).toBe(true);
+	await controls.getByRole('button', { name: 'Week before' }).click();
+	await expect(weekHead).not.toHaveAttribute('data-week', after);
+	const back = await settled();
+	expect(back < after, `Week before: ${back} before ${after}`).toBe(true);
+	await page.getByTestId('cal-view').getByRole('radio', { name: 'List', exact: true }).click();
 	const list = page.getByTestId('cal-list');
-	await expect(list.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
-	// Paging works within a year of today: Week after moves to the next week with dates,
-	// or says there are none; Week before comes back.
-	await page.goto('/calendar');
-	const heading = await page.getByTestId('cal-month').textContent();
-	await page.getByRole('button', { name: 'Week after' }).click();
-	await expect(page.getByTestId('cal-month').filter({ hasNotText: heading! }).or(page.getByText('No more dates after this.'))).toBeVisible();
-	if ((await page.getByTestId('cal-month').textContent()) !== heading) {
-		await page.getByRole('button', { name: 'Week before' }).click();
-		await expect(page.getByTestId('cal-month')).toHaveText(heading!);
-	}
+	const row = list.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) });
+	await row.scrollIntoViewIfNeeded();
+	await expect(row).toBeVisible();
+	// The kind filter: Movies keeps it, TV shows hides it.
+	await controls.getByRole('radio', { name: 'Movies', exact: true }).click();
+	await expect(list.getByRole('link', { name: new RegExp(dated.name) })).toHaveCount(1);
+	await controls.getByRole('radio', { name: 'TV shows', exact: true }).click();
+	await expect(list.getByRole('link', { name: new RegExp(dated.name) })).toHaveCount(0);
+	await controls.getByRole('radio', { name: 'All', exact: true }).click();
 });
 
 test('alerts: add a webhook with Library moments, send a test, the receiver gets a signed message', async () => {
