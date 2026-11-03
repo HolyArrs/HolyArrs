@@ -2740,4 +2740,20 @@
 		.pb .t2 td.c-chk input[type='checkbox'] { width: 24px; height: 24px; }
 		.pb .t2 .c-chk { width: 40px; }
 	}
+	/* Touch phones (#79): every control a finger hits gets a 44px target; the
+	   hit area grows with an invisible ::after, so nothing moves and desktop is unchanged. */
+	@media (max-width: 767px) and (pointer: coarse) {
+		.tab, .stab, .trchip { position: relative; }
+		.tab::after, .stab::after, .trchip::after { content: ''; position: absolute; inset: -10px 0; }
+		.subin { overflow: clip visible; }
+	}
+	@media (max-width: 640px) and (pointer: coarse) {
+		.tabrow { height: 45px; }
+		.psb, .psx { position: relative; }
+		.psb::after { content: ''; position: absolute; inset: -6px 0 -6px -6px; }
+		.psearch:not(.open) .psb::after { right: -6px; }
+		.psx::after { content: ''; position: absolute; inset: -6px -6px -6px 0; }
+	}
+	/* A disabled bin is only a stand-in: a tap on it goes to the row underneath. */
+	@media (pointer: coarse) { .bin:disabled { pointer-events: none; } }
 </style>
