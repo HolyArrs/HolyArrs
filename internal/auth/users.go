@@ -469,7 +469,7 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: password for user %d set by user %d", id, by.UserID)
-	a.accountEvent(r, id, "password_set", byName(r)+" set a new password for "+a.userName(r.Context(), id)+"; signed out and API keys removed", nil)
+	a.accountEvent(r, id, "password_set", byName(r)+" set a new password for "+a.userName(r.Context(), id)+"; signed out, API keys and outside sign-in links removed", nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -821,7 +821,7 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: user %d changed their password", who.UserID)
-	a.accountEvent(r, who.UserID, "password_changed", who.Name+" changed their password; other sessions and API keys removed", nil)
+	a.accountEvent(r, who.UserID, "password_changed", who.Name+" changed their password; other sessions, API keys and outside sign-in links removed", nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 

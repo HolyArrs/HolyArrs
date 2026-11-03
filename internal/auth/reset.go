@@ -108,7 +108,7 @@ func ResetOwner(ctx context.Context, s *store.Store, name, password string) erro
 	if err == nil && id != 0 {
 		// The reset is on the audit trail: someone with the server's shell took the owner account back.
 		_ = s.AddEvent(ctx, &domain.Event{Actor: domain.System, Kind: EventAccountChanged,
-			Summary: "Owner account reset from the server's command line: name and password set, two-factor off, signed out and API keys removed",
+			Summary: "Owner account reset from the server's command line: name and password set, two-factor off, signed out, API keys and outside sign-in links removed",
 			Data:    map[string]any{"user_id": id, "action": "owner_reset", "name": name}})
 	}
 	return err
