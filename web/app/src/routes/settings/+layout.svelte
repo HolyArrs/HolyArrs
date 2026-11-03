@@ -218,6 +218,10 @@
 	.back-home { display: none; align-items: center; gap: 2px; min-height: 44px; margin-left: -6px; padding-right: 8px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.phone-top:not(:has(.page-status)) { display: none; }
 	@media (pointer: coarse) { .nav-row { min-height: 40px; } }
+	@media (max-width: 767px) and (pointer: coarse) {
+		.nav-row, .fold-head { min-height: 44px; }
+		.nav-find input { height: 44px; border-radius: 11px; }
+	}
 	@media (prefers-reduced-motion: reduce) { .nav-row, .fold-head > :global(.icon:last-child) { transition: none; } }
 
 	/* content: the card grid from settings-looks.css, plus the "flash" for search hits */
