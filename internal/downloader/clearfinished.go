@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -44,7 +46,12 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	// SABnzbd and NZBGet drop a finished job from their list but may leave
 	// its output folder: HolyArrs removes it itself, only inside a folder
 	// the Downloader shares with it (its path map, or the save root).
-	if left := m.finishedFolder(folder, dr); left != "" {
+	var relName string
+	var rel domain.Release
+	if store.Get(ctx, m.Store.Read(), "releases", *d.ReleaseID, &rel) == nil {
+		relName = rel.Name
+	}
+	if left := m.finishedFolder(folder, relName, dr); left != "" {
 		if rerr := os.RemoveAll(left); rerr != nil {
 			m.event(ctx, &d, "download_not_removed", fmt.Sprintf("Cleared the imported download from %s, but its files could not be deleted: %v", dr.Name, firstLine(rerr.Error())))
 			return
@@ -54,13 +61,18 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 }
 
 // finishedFolder is the job's folder as HolyArrs sees it, when it may be
-// deleted: below (never equal to) one of the Downloader's shared folders,
-// still there, and not a link. "" means leave the disk alone.
-func (m *Manager) finishedFolder(content string, dr domain.Downloader) string {
-	if content == "" {
+// deleted: named after this download's Release (a client's ".1" suffix
+// allowed), below (never equal to) one of the Downloader's shared folders,
+// still there, and not a link. Anything else, such as a category folder
+// the client named instead, is left alone. "" means leave the disk alone.
+func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) string {
+	if content == "" || relName == "" {
 		return ""
 	}
 	local := filepath.Clean(mapLocal(content, dr.PathMap))
+	if !sameJobName(filepath.Base(local), relName) {
+		return ""
+	}
 	var roots []string
 	if m.SavePath != "" {
 		roots = append(roots, m.SavePath)
@@ -82,4 +94,12 @@ func (m *Manager) finishedFolder(content string, dr domain.Downloader) string {
 		return ""
 	}
 	return local
+}
+
+var jobSuffix = regexp.MustCompile(`\.\d{1,3}$`)
+
+// sameJobName says whether a folder is named after the Release: equal
+// ignoring case, or with the ".1"-style suffix a client adds on a clash.
+func sameJobName(folder, relName string) bool {
+	return strings.EqualFold(folder, relName) || strings.EqualFold(jobSuffix.ReplaceAllString(folder, ""), relName)
 }

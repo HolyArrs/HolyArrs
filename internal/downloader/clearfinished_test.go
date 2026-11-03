@@ -143,11 +143,12 @@ func TestClearFinishedClientErrorIsLoggedNotFatal(t *testing.T) {
 // anything outside it stay.
 func TestClearFinishedDeletesTheJobFolderOnDisk(t *testing.T) {
 	share := t.TempDir()
-	job := filepath.Join(share, "complete", "Some.Movie.2024")
+	// SABnzbd names the folder after the job, with ".1" on a clash.
+	job := filepath.Join(share, "complete", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.1")
 	if err := os.MkdirAll(job, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(job, "Some.Movie.2024.mkv"), []byte("x"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(job, "Dune.Part.Two.2024.mkv"), []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	w, m, id, spy := usenetDownload(t)
@@ -155,7 +156,7 @@ func TestClearFinishedDeletesTheJobFolderOnDisk(t *testing.T) {
 		t.Fatal(err)
 	}
 	m.Forget(w.download(t, id).DownloaderID)
-	spy.content = "/downloads/complete/Some.Movie.2024"
+	spy.content = "/downloads/complete/Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.1"
 	m.ClearFinished(context.Background(), id)
 	if _, err := os.Stat(job); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("the job folder is still on disk: %v", err)
@@ -187,3 +188,27 @@ func TestClearFinishedNeverDeletesOutsideOrTheShareItself(t *testing.T) {
 }
 
 func jsonStr(s string) string { b, _ := json.Marshal(s); return string(b) }
+
+// A client that names a category folder (or anything not named after this
+// Release) gets nothing deleted: other jobs may live there.
+func TestClearFinishedNeverDeletesAFolderNamedOtherwise(t *testing.T) {
+	share := t.TempDir()
+	cat := filepath.Join(share, "complete", "movies")
+	other := filepath.Join(cat, "Another.Movie.2023")
+	if err := os.MkdirAll(other, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	w, m, id, spy := usenetDownload(t)
+	if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+		t.Fatal(err)
+	}
+	m.Forget(w.download(t, id).DownloaderID)
+	spy.content = "/downloads/complete/movies"
+	m.ClearFinished(context.Background(), id)
+	if _, err := os.Stat(other); err != nil {
+		t.Fatalf("another job's folder was deleted: %v", err)
+	}
+	if !sameJobName("Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.2", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS") || sameJobName("movies", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS") {
+		t.Fatal("sameJobName")
+	}
+}
