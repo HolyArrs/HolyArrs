@@ -32,9 +32,10 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
+      # The build must succeed. Its output is not compared with the committed
+      # web/dist: images build their own pages (Dockerfile web stage), and a
+      # build on another system names its chunk files differently.
       - run: npm run build
-      - name: Built app in web/dist matches the source
-        run: git diff --exit-code -- ../dist
       # The reviewed runner image supplies Chromium's OS dependencies without job-time root access.
       - run: npx playwright install chromium
       - name: Headless browser suite
