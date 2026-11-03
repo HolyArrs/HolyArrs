@@ -27,6 +27,8 @@
 	let error = $state('');
 	// Which sources failed on the last read, so a gap never looks healthy or empty.
 	let failed = $state<string[]>([]);
+	// Which reads this account may not do (403); their kinds leave the page.
+	let hidden = $state<string[]>([]);
 	// Every running action, so one finishing never re-enables another.
 	const running = new SvelteSet<string>();
 	const busy = (key: string) => running.has(key);
@@ -79,6 +81,7 @@
 		// A 403 means this account may not read that list: leave it out, not a failure.
 		const denied = (r: PromiseSettledResult<unknown>) => r.status === 'rejected' && (r.reason as { status?: number })?.status === 403;
 		failed = named.filter(([r]) => r.status === 'rejected' && !denied(r)).map(([, w]) => w);
+		hidden = named.filter(([r]) => denied(r)).map(([, w]) => w);
 		input = {
 			states: val(states)?.states,
 			checks: val(checks)?.checks,
@@ -209,7 +212,7 @@
 				<div class="body">
 					{#if error}<LoadError hasData message={error} onretry={retry} />
 					{:else if failedText}<LoadError hasData message={failedText} onretry={retry} />{/if}
-					<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} {failed} {checkRuns} />
+					<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} {failed} {hidden} {checkRuns} />
 				</div>
 			{/if}
 		</PageLoader>
