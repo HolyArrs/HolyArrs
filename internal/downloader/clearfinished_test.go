@@ -3,7 +3,10 @@ package downloader
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,12 +17,18 @@ import (
 type removeSpy struct {
 	removed []string
 	err     error
+	content string // the finished job's folder as the client reports it
 }
 
 func (s *removeSpy) Health(context.Context) (Health, error)          { return Health{}, nil }
 func (s *removeSpy) Add(context.Context, AddRequest) (string, error) { return "id", nil }
 func (s *removeSpy) List(context.Context, string) ([]Job, error)     { return nil, nil }
-func (s *removeSpy) Get(context.Context, string) (Job, error)        { return Job{}, ErrNotFound }
+func (s *removeSpy) Get(_ context.Context, id string) (Job, error) {
+	if s.content == "" {
+		return Job{}, ErrNotFound
+	}
+	return Job{ID: id, ContentPath: s.content}, nil
+}
 func (s *removeSpy) Remove(_ context.Context, id string, files bool) error {
 	if s.err != nil {
 		return s.err
@@ -128,3 +137,53 @@ func TestClearFinishedClientErrorIsLoggedNotFatal(t *testing.T) {
 		t.Fatal("the failed removal is not in History")
 	}
 }
+
+// A finished job's folder that the client left behind is deleted from disk,
+// only inside a folder shared through the path map; the share itself and
+// anything outside it stay.
+func TestClearFinishedDeletesTheJobFolderOnDisk(t *testing.T) {
+	share := t.TempDir()
+	job := filepath.Join(share, "complete", "Some.Movie.2024")
+	if err := os.MkdirAll(job, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(job, "Some.Movie.2024.mkv"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	w, m, id, spy := usenetDownload(t)
+	if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+		t.Fatal(err)
+	}
+	m.Forget(w.download(t, id).DownloaderID)
+	spy.content = "/downloads/complete/Some.Movie.2024"
+	m.ClearFinished(context.Background(), id)
+	if _, err := os.Stat(job); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("the job folder is still on disk: %v", err)
+	}
+	if _, err := os.Stat(share); err != nil {
+		t.Fatalf("the shared folder itself went: %v", err)
+	}
+	if countEvents(t, w, "download_removed", id) != 1 {
+		t.Fatal("no History entry")
+	}
+}
+
+func TestClearFinishedNeverDeletesOutsideOrTheShareItself(t *testing.T) {
+	share, outside := t.TempDir(), t.TempDir()
+	w, m, id, spy := usenetDownload(t)
+	if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+		t.Fatal(err)
+	}
+	m.Forget(w.download(t, id).DownloaderID)
+	for _, c := range []string{"/downloads", outside} {
+		spy.content = c
+		m.ClearFinished(context.Background(), id)
+	}
+	for _, p := range []string{share, outside} {
+		if _, err := os.Stat(p); err != nil {
+			t.Fatalf("%s was deleted: %v", p, err)
+		}
+	}
+}
+
+func jsonStr(s string) string { b, _ := json.Marshal(s); return string(b) }
