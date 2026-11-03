@@ -1,0 +1,208 @@
+<script lang="ts">
+	// View "Day": a calendar day column covering 12 hours, from about three
+	// hours ago to nine hours ahead. Each hour has a hairline and a label on
+	// the ruler, and an accent line marks the minute now. Finished runs sit as
+	// quiet chips above that line, planned runs as outlined chips below it,
+	// and a running job as an accent chip on the line that fills as it goes.
+	// Chips that overlap in time share the width, up to three side by side.
+	import type { LiveJobs } from '../livejobs.svelte.ts';
+	import { t } from '../livejobs.svelte.ts';
+	import type { StatusRow } from '../status.ts';
+
+	let { lj, upcoming, recent }: { lj: LiveJobs; upcoming: StatusRow[]; recent: StatusRow[] } = $props();
+
+	type Ev = { key: string; at: number; top: number; name: string; time: string; kind: 'past' | 'next' | 'run'; c: string; fill: number; label: string; lane: number; lanes: number };
+
+	const HOUR = 3600_000;
+	const PX = 24; // pixels per hour
+	const CH = 20; // chip height
+	const PAD = 7; // room above the first and below the last hour line
+	const LANES = 3;
+	const tone: Record<string, string> = { ok: 'var(--ok)', wait: 'var(--wait)', fail: 'var(--fail)', info: 'var(--info)', idle: 'var(--text-faint)' };
+	const hm = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+	const hh = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', hour12: false });
+
+	const now = $derived(lj.tick);
+	// The window starts on a whole hour, three to four hours back, so the ruler only shifts once an hour.
+	const start = $derived.by(() => {
+		const d = new Date(now - 3 * HOUR);
+		d.setMinutes(0, 0, 0);
+		return d.getTime();
+	});
+	const end = $derived(start + 12 * HOUR);
+	const y = (ms: number) => ((ms - start) / HOUR) * PX;
+	const yNow = $derived(y(now));
+
+	const hours = $derived(Array.from({ length: 13 }, (_, i) => ({ i, ms: start + i * HOUR, y: i * PX })));
+
+	const placed = $derived.by(() => {
+		const evs: Ev[] = [];
+		for (const j of lj.running) {
+			const s = t(j.started_at ?? j.queued_at);
+			const p = Math.min(1, Math.max(0, j.progress));
+			const top = Math.min(yNow - 4, Math.max(yNow - CH + 4, Number.isFinite(s) ? y(s) : yNow));
+			evs.push({ key: `r${j.id}`, at: s, top, name: j.label, time: Number.isFinite(s) ? hm(s) : 'now', kind: 'run', c: 'var(--accent)', fill: p, label: `${j.label}, running${p > 0 ? `, ${Math.round(p * 100)}% done` : ''}`, lane: 0, lanes: 1 });
+		}
+		for (const j of lj.finished) {
+			const s = Number.isFinite(t(j.StartedAt)) ? t(j.StartedAt) : t(j.EndedAt);
+			if (!Number.isFinite(s) || s < start || s > now) continue;
+			const word = j.State === 'done' ? 'finished' : j.State === 'failed' ? 'failed' : j.State === 'cancelled' ? 'was cancelled' : j.State;
+			const c = j.State === 'done' ? tone.ok : j.State === 'failed' ? tone.fail : tone.idle;
+			evs.push({ key: `h${j.ID}`, at: s, top: y(s), name: lj.nameOf(j.Kind), time: hm(s), kind: 'past', c, fill: 0, label: `${lj.nameOf(j.Kind)} ran at ${hm(s)} and ${word}`, lane: 0, lanes: 1 });
+		}
+		for (const r of lj.coming(upcoming, 40)) {
+			const ms = t(r.nextRun);
+			if (!Number.isFinite(ms) || ms > end) continue;
+			const late = ms <= now;
+			evs.push({ key: `n${r.key}`, at: ms, top: y(Math.max(ms, now)), name: r.name, time: late ? 'due' : hm(ms), kind: 'next', c: tone[r.tone] ?? tone.info, fill: 0, label: late ? `${r.name} is due now` : `${r.name} runs at ${hm(ms)}`, lane: 0, lanes: 1 });
+		}
+
+		// Simple lanes: walk the chips top to bottom; chips that touch form a
+		// group, each takes the first free lane, and a group shares the width.
+		evs.sort((a, b) => a.top - b.top || (a.kind === 'run' ? -1 : b.kind === 'run' ? 1 : 0));
+		const shown: Ev[] = [];
+		let hidden = 0;
+		let group: Ev[] = [];
+		let ends: number[] = [];
+		let groupEnd = -Infinity;
+		const close = () => {
+			for (const e of group) e.lanes = ends.length;
+			group = [];
+			ends = [];
+		};
+		for (const e of evs) {
+			if (e.top >= groupEnd) close();
+			let lane = ends.findIndex((b) => b <= e.top);
+			if (lane < 0 && ends.length < LANES) lane = ends.push(0) - 1;
+			if (lane < 0) {
+				hidden++;
+				continue;
+			}
+			ends[lane] = e.top + CH + 1;
+			groupEnd = Math.max(groupEnd, e.top + CH + 1);
+			e.lane = lane;
+			group.push(e);
+			shown.push(e);
+		}
+		close();
+		return { shown, hidden };
+	});
+
+	const dayWord = $derived.by(() => {
+		const today = new Date(now).toDateString();
+		if (new Date(start).toDateString() !== today) return 'Since yesterday';
+		if (new Date(end - 1).toDateString() !== today) return 'Today into tomorrow';
+		return 'Today';
+	});
+	const busy = $derived(lj.running.length > 0);
+	const ahead = $derived(placed.shown.filter((e) => e.kind === 'next').length);
+</script>
+
+<div class="day">
+	<h3>
+		{dayWord}
+		<span class="rg">{hm(start)}–{hm(end)}</span>
+		{#if placed.hidden}<span class="rg">+{placed.hidden} not shown</span>{/if}
+		<span class="st" class:on={busy}>{busy ? `${lj.running.length} running` : ahead ? `${ahead} ahead` : 'Idle'}</span>
+	</h3>
+
+	<div class="sc">
+		<div class="col" style:height="{12 * PX + PAD * 2}px" style:--pad="{PAD}px" style:--ch="{CH}px">
+			<div class="gone" style:height="{Math.max(0, yNow)}px" aria-hidden="true"></div>
+
+			{#each hours as h (h.i)}
+				<i class="hr" style:top="{h.y}px" aria-hidden="true"></i>
+				{#if h.i < 12}<i class="hf" style:top="{h.y + PX / 2}px" aria-hidden="true"></i>{/if}
+				{#if Math.abs(h.y - yNow) > 9}<span class="hl" style:top="{h.y}px" aria-hidden="true">{hh(h.ms)}</span>{/if}
+			{/each}
+
+			<div class="nw" style:top="{yNow}px" aria-hidden="true"><span class="nt">{hm(now)}</span><i class="nd"></i></div>
+
+			<div class="evs" role="list" aria-label="Runs from {hm(start)} to {hm(end)}">
+				{#each placed.shown as e (e.key)}
+					<div
+						class="ev {e.kind}"
+						role="listitem"
+						aria-label={e.label}
+						title={e.label}
+						style:--c={e.c}
+						style:top="{e.top}px"
+						style:left="calc({e.lane} * 100% / {e.lanes})"
+						style:width="calc(100% / {e.lanes} - 3px)"
+					>
+						{#if e.kind === 'run'}<i class="fi" style:transform="scaleX({e.fill > 0 ? e.fill : 1})" class:indet={e.fill <= 0}></i>{/if}
+						<span class="en">{e.name}</span><span class="et">{e.time}</span>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.day { display: flex; flex-direction: column; min-width: 0; height: 100%; container-type: inline-size; }
+	h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 600 13px/1.2 var(--font-ui); color: var(--text-muted); white-space: nowrap; overflow: hidden; min-width: 0; }
+	.rg { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; font-weight: 500; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+	.st { flex: none; }
+	.st { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+	.st.on { background: color-mix(in srgb, var(--accent, var(--text)) 16%, transparent); color: var(--text); }
+
+	.sc { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+	.col { --rule: 40px; position: relative; box-sizing: border-box; padding: var(--pad) 0; }
+
+	/* The hours already gone get a faint wash so the past reads as past. */
+	.gone { position: absolute; top: var(--pad); left: var(--rule); right: 0; border-radius: 6px 6px 0 0; background: color-mix(in srgb, var(--text) 3.5%, transparent); }
+	.hr, .hf { position: absolute; left: var(--rule); right: 0; height: 0; margin-top: var(--pad); border-top: 1px solid var(--line); }
+	.hf { border-top: 1px dashed color-mix(in srgb, var(--text) 5%, transparent); }
+	.hl { position: absolute; left: 0; width: calc(var(--rule) - 10px); margin-top: var(--pad); transform: translateY(-50%); text-align: right; font: 500 10.5px/1 var(--font-ui); color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+	.nw { position: absolute; left: 0; right: 0; height: 0; margin-top: var(--pad); z-index: 3; pointer-events: none; }
+	.nw::after { content: ''; position: absolute; left: calc(var(--rule) - 3px); right: 0; top: -1px; height: 2px; border-radius: 1px; background: var(--accent); }
+	.nt { position: absolute; left: 0; width: calc(var(--rule) - 10px); transform: translateY(-50%); text-align: right; font: 700 10.5px/1 var(--font-ui); color: var(--accent); font-variant-numeric: tabular-nums; }
+	.nd { position: absolute; left: calc(var(--rule) - 6px); top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+
+	.evs { position: absolute; top: var(--pad); bottom: var(--pad); left: calc(var(--rule) + 6px); right: 2px; z-index: 2; }
+	.ev {
+		position: absolute;
+		height: var(--ch);
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		box-sizing: border-box;
+		padding: 0 7px 0 9px;
+		border-radius: 6px;
+		overflow: hidden;
+		font: 500 11.5px/1 var(--font-ui);
+		min-width: 0;
+	}
+	.en { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.et { position: relative; flex: none; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+
+	/* Finished: quiet grey with a tone stripe at the left edge. */
+	.ev.past { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); }
+	.ev.past::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); }
+	.ev.past .et { color: var(--text-faint); }
+	/* Planned: outlined in the row's tone. */
+	.ev.next { background: color-mix(in srgb, var(--c) 9%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent); color: var(--text); }
+	.ev.next .et { color: var(--text-muted); }
+	/* Running: accent, filled by progress. */
+	.ev.run { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 0 0 0 1px var(--accent); color: var(--text); font-weight: 600; z-index: 1; }
+	.ev.run .et { color: var(--accent); }
+	.fi { position: absolute; inset: 0; background: color-mix(in srgb, var(--accent) 26%, transparent); transform-origin: left center; transition: transform 0.8s linear; }
+	.fi.indet { opacity: 0.5; }
+
+	@container (max-width: 340px) {
+		.col { --rule: 34px; }
+		.nt { font-size: 9.5px; }
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.nd { animation: beat 2.4s ease-in-out infinite; }
+		.fi.indet { animation: breathe 2s ease-in-out infinite; }
+		@keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.75); } }
+		@keyframes breathe { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.7; } }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.fi { transition: none; }
+	}
+</style>

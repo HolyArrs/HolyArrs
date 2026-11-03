@@ -6,16 +6,16 @@
 	import { LiveJobs } from './livejobs.svelte.ts';
 	import { liveViewOf } from './liveviews.ts';
 	import type { StatusRow } from './status.ts';
-	import LiveBoard from './live/LiveBoard.svelte';
-	import LiveDial from './live/LiveDial.svelte';
-	import LiveCountdown from './live/LiveCountdown.svelte';
-	import LiveLog from './live/LiveLog.svelte';
-	import LiveClock from './live/LiveClock.svelte';
-	import LiveRings from './live/LiveRings.svelte';
-	import LivePipeline from './live/LivePipeline.svelte';
-	import LiveHours from './live/LiveHours.svelte';
-	import LiveCounters from './live/LiveCounters.svelte';
-	import LiveStreaks from './live/LiveStreaks.svelte';
+	import LiveRadar from './live/LiveRadar.svelte';
+	import LiveArc from './live/LiveArc.svelte';
+	import LiveTape from './live/LiveTape.svelte';
+	import LivePulse from './live/LivePulse.svelte';
+	import LiveDeck from './live/LiveDeck.svelte';
+	import LiveGauges from './live/LiveGauges.svelte';
+	import LiveDay from './live/LiveDay.svelte';
+	import LiveForecast from './live/LiveForecast.svelte';
+	import LiveNarrator from './live/LiveNarrator.svelte';
+	import LiveMatrix from './live/LiveMatrix.svelte';
 
 	let { upcoming, recent }: { upcoming: StatusRow[]; recent: StatusRow[] } = $props();
 
@@ -26,7 +26,7 @@
 		return () => lj.stop();
 	});
 	const view = $derived(liveViewOf(page.url.searchParams.get('live')));
-	const views = { board: LiveBoard, dial: LiveDial, countdown: LiveCountdown, log: LiveLog, clock: LiveClock, rings: LiveRings, pipeline: LivePipeline, hours: LiveHours, counters: LiveCounters, streaks: LiveStreaks };
+	const views = { radar: LiveRadar, arc: LiveArc, tape: LiveTape, pulse: LivePulse, deck: LiveDeck, gauges: LiveGauges, day: LiveDay, forecast: LiveForecast, narrator: LiveNarrator, matrix: LiveMatrix };
 	const View = $derived(views[view]);
 </script>
 
