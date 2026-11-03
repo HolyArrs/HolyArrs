@@ -9,13 +9,15 @@ import { fileURLToPath } from 'node:url';
 test.describe.configure({ mode: 'serial' });
 
 const here = dirname(fileURLToPath(import.meta.url));
-const root = 'http://127.0.0.1:18735/holyarrs';
+// The proxy's port: a slot from e2e-run.ps1 hands its own in the environment.
+const proxy = `127.0.0.1:${process.env.HOLYARRS_E2E_BASE_PROXY_PORT ?? '18735'}`;
+const root = `http://${proxy}/holyarrs`;
 
 test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	const outside: string[] = [];
 	page.on('request', (r) => {
 		const u = new URL(r.url());
-		if (u.host === '127.0.0.1:18735' && !u.pathname.startsWith('/holyarrs')) outside.push(u.pathname);
+		if (u.host === proxy && !u.pathname.startsWith('/holyarrs')) outside.push(u.pathname);
 	});
 	page.on('response', (r) => {
 		if (r.status() === 404 && r.url().includes('/_app/')) outside.push(`404 ${r.url()}`);
@@ -60,6 +62,6 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await expect(page).toHaveURL(`${root}/library`);
 
 	// Outside the base there is nothing.
-	expect((await page.request.get('http://127.0.0.1:18735/api/v1/auth/state')).status()).toBe(404);
+	expect((await page.request.get(`http://${proxy}/api/v1/auth/state`)).status()).toBe(404);
 	expect(outside, 'requests outside /holyarrs').toEqual([]);
 });
