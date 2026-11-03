@@ -7,7 +7,9 @@ require (
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-jose/go-jose/v4 v4.1.5
 	github.com/nwaples/rardecode/v2 v2.4.5
+	github.com/stangelandcl/ppmd v0.1.1
 	github.com/therootcompany/xz v1.0.1
+	github.com/ulikunitz/xz v0.5.15
 	golang.org/x/crypto v0.58.0
 	golang.org/x/image v0.43.0
 	golang.org/x/oauth2 v0.37.0
@@ -29,8 +31,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.27 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/spf13/afero v1.15.0 // indirect
-	github.com/stangelandcl/ppmd v0.1.1 // indirect
-	github.com/ulikunitz/xz v0.5.15 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
 	modernc.org/libc v1.77.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
