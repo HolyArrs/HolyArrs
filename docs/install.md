@@ -54,6 +54,16 @@ against its published SHA-256 at build time; the armv7 image has none and
 plays trailers through the YouTube embed. A newer yt-dlp, when **Keep yt-dlp up
 to date** is on, is saved under `/config/bin`, so keep `/config` on a volume.
 
+### Raspberry Pi and other ARM boards
+
+The same image runs on 64-bit ARM (`linux/arm64`, a Raspberry Pi 4 or 5 with a
+64-bit OS) and on 32-bit ARM (`linux/arm/v7`); Docker picks the right one. The
+program is pure Go, so nothing extra is installed on the board. On a board or a
+container with about 2.5 GiB of memory or less, HolyArrs turns on its
+[low-memory mode](parts-and-safe-mode.md#low-memory-mode) by itself; its first
+log line says so. Keep `/config` on the board's own disk or SSD, not on a
+network share, and prefer an SSD over an SD card for it.
+
 ## Set permissions
 
 The image runs as numeric user and group `1000:1000` by default. There are no
