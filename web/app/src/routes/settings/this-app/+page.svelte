@@ -11,12 +11,12 @@
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
-	import { ago, bytes, duration, words } from '#lib/format.ts';
+	import { ago, bytes, dateTime, duration, words } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { linkLabel, problems, runTone, runWord, splitStates, stateWord } from '#lib/health.ts';
 	import type { Health, HealthChecks, HealthStates, UpdateInfo } from '#lib/types.ts';
-	import { releaseLink, updateWords } from '#lib/update.ts';
+	import { IMAGE, goBackBackup, imageTag, releaseLink, updateWords, type BackupRow } from '#lib/update.ts';
 	import { setAutoplaySetting } from '#lib/autoplay.svelte.ts';
 
 	// Autoplay trailers: one app-wide switch, owner and settings people only.
@@ -147,6 +147,26 @@
 			checking = false;
 		}
 	}
+	// Going back: the pre-update backup taken for the update to this
+	// version (people who may change settings; the list is theirs).
+	let goBack = $state<BackupRow | null>(null);
+	async function loadGoBack() {
+		if (!session.can('settings') || !health) return;
+		try {
+			const r = await api.get<{ backups: BackupRow[] }>('/backups');
+			goBack = goBackBackup(r.backups, health.version);
+		} catch {
+			goBack = null;
+		}
+	}
+	async function copy(text: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+			toasts.push('Copied.', 'ok');
+		} catch {
+			toasts.push('Copying is not allowed here; select the text instead.', 'fail');
+		}
+	}
 	let storage = $state<{ app: PathInfo[]; library_folders: PathInfo[]; save_path: string } | null>(null);
 	let storageNeedsProof = $state(false);
 	let storageError = $state('');
@@ -184,6 +204,7 @@
 			]);
 			await loadStorage();
 			update = await api.get<UpdateInfo>('/app/update');
+			await loadGoBack();
 			error = '';
 		} catch (e) {
 			error = message(e);
@@ -362,6 +383,23 @@
 				<p class="small" data-testid="update-version">Version {update.latest}</p>
 			{/if}
 			<p class="xs muted">HolyArrs only tells you; it never updates by itself. Pull the new image when it suits you.</p>
+			{#if goBack?.from_version}
+				{@const tag = imageTag(goBack.from_version)}
+				<div class="go-back" data-testid="go-back">
+					<h3 class="h3">Go back to {goBack.from_version}</h3>
+					<p class="small">HolyArrs kept a copy of its data from just before the update to {goBack.to_version} ({dateTime(goBack.created_at)}). To go back:</p>
+					<ol class="small">
+						<li>
+							Change the image back to
+							<span class="cmd"><code data-testid="go-back-image">{IMAGE}:{tag}</code><Button variant="plain" size="sm" type="button" onclick={() => copy(`${IMAGE}:${tag}`)} aria-label="Copy the image name">Copy</Button></span>
+							If you pull from another registry, keep its name and change only the tag to <code>{tag}</code>.
+						</li>
+						<li>Start the container again with that image (with Compose: <code>docker compose up -d</code>).</li>
+						<li>{goBack.from_version} sees that its data is newer and shows a page instead. There, type the one-time code from <code>docker logs &lt;container&gt;</code> and press <b>Put back the data from before the update</b>. HolyArrs then starts on that data.</li>
+					</ol>
+					<p class="xs muted">Changes made since the update are not in that copy. The newer data is not deleted: it moves to the backups folder (before-restore-&lt;time&gt;). Without the page: <code>docker exec &lt;container&gt; /holyarrs restore --pre-update</code>, then <code>docker restart &lt;container&gt;</code>.</p>
+				</div>
+			{/if}
 			{#if update.on && session.can('settings')}
 				<div class="row" style="margin-top: var(--s-3)">
 					<Button type="button" onclick={checkUpdate} disabled={checking} aria-busy={checking}>Check for updates now</Button>
@@ -463,7 +501,7 @@
 
 	{#if session.can('settings') && !urlBaseGone}
 		<SettingsCard id="url-base-card" title="URL base" description="The path HolyArrs lives under behind a reverse proxy, for example /holyarrs. Leave it empty to use the whole address.">
-			<form class="sc-urlbase" onsubmit={saveURLBase} data-testid="url-base">
+			<form class="sc-urlbase" onsubmit={saveURLBase} data-testid="url-base-form">
 				<Field id="url-base" label="URL base" hint={urlBase ? `In use now: ${urlBase.in_use || 'none'}` : undefined}>
 					<input id="url-base" class="input mono" bind:value={urlBaseTyped} placeholder="/holyarrs" autocomplete="off" spellcheck="false" maxlength="200" />
 				</Field>
@@ -545,6 +583,24 @@
 		.checks li > :global(.chip) {
 			align-self: flex-start;
 		}
+	}
+	.go-back {
+		margin-top: var(--s-4);
+		padding-top: var(--s-3);
+		border-top: 1px solid var(--line);
+	}
+	.go-back ol {
+		margin: var(--s-2) 0;
+		padding-left: 1.4em;
+		display: grid;
+		gap: var(--s-2);
+	}
+	.go-back .cmd {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+		max-width: 100%;
 	}
 	code {
 		font-family: var(--font-mono);

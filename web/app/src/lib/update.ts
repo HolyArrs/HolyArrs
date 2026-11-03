@@ -31,3 +31,24 @@ export function releaseLink(link: string | undefined): string {
 export function updatePrivacy(version: string): string {
 	return `On each check HolyArrs asks api.github.com for the newest release, sending only the header User-Agent: HolyArrs/${version}. No account, no list of your media, no other data.`;
 }
+
+// The published image; a release tag is the version without a leading v.
+export const IMAGE = 'ghcr.io/coderluii/holyarrs';
+
+// A backup as GET /backups lists it (pre-update ones say which update).
+export type BackupRow = { name: string; kind: string; created_at: string; detail?: string; from_version?: string; to_version?: string };
+
+const bare = (v: string) => v.trim().replace(/^v/i, '');
+
+// goBackBackup is the pre-update backup taken for the update to this
+// version (newest first in the list), or null: then there is nothing to
+// go back to from here.
+export function goBackBackup(list: BackupRow[], version: string): BackupRow | null {
+	const now = bare(version);
+	return list.find((b) => b.kind === 'pre-update' && b.from_version && b.to_version && bare(b.to_version) === now && bare(b.from_version) !== now) ?? null;
+}
+
+// imageTag is the tag to change the image back to.
+export function imageTag(version: string): string {
+	return bare(version);
+}

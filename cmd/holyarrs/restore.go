@@ -46,33 +46,16 @@ func restoreCmd(args []string, out, errOut io.Writer) int {
 		fmt.Fprintf(errOut, "restore: %v\n", err)
 		return 1
 	}
-	if _, err := os.Stat(*dir); err != nil {
-		return fail(fmt.Errorf("config folder: %w", err))
-	}
-	unlock, err := store.LockDir(*dir)
+	bm, unlock, err := openBackups(*dir)
 	if err != nil {
-		if errors.Is(err, store.ErrDirLocked) {
-			return fail(errors.New("HolyArrs is running on this config folder; stop it first (docker stop <container>), then run this again"))
-		}
 		return fail(err)
 	}
 	defer unlock()
-	bm := &backup.Manager{Dir: *dir, Version: version}
-	if named := os.Getenv(secrets.EnvKeyFile); named != "" || exists(filepath.Join(*dir, secrets.KeyFile)) {
-		key, err := secrets.LoadKey(*dir, named)
+	if *list {
+		all, err := bm.List()
 		if err != nil {
 			return fail(err)
 		}
-		bm.CheckKey = func(p string) error { return secrets.CheckFile(p, key) }
-	}
-	if _, err := bm.AdoptMigrationCopies(); err != nil {
-		return fail(err)
-	}
-	all, err := bm.List()
-	if err != nil {
-		return fail(err)
-	}
-	if *list {
 		if len(all) == 0 {
 			fmt.Fprintln(out, "no backups")
 			return 0
@@ -83,26 +66,67 @@ func restoreCmd(args []string, out, errOut io.Writer) int {
 		}
 		return 0
 	}
-	if *pre {
+	name, kept, err := putBack(bm, name)
+	if err != nil {
+		return fail(err)
+	}
+	fmt.Fprintf(out, "restored %s\nthe data it replaced is kept in %s\nstart HolyArrs again (docker restart <container>)\n", name, kept)
+	return 0
+}
+
+// openBackups takes the config folder's lock (refused while HolyArrs runs
+// on it) and turns raw copies left by an update into pre-update backups.
+// The caller calls unlock when done.
+func openBackups(dir string) (*backup.Manager, func(), error) {
+	if _, err := os.Stat(dir); err != nil {
+		return nil, nil, fmt.Errorf("config folder: %w", err)
+	}
+	unlock, err := store.LockDir(dir)
+	if err != nil {
+		if errors.Is(err, store.ErrDirLocked) {
+			return nil, nil, errors.New("HolyArrs is running on this config folder; stop it first (docker stop <container>), then run this again")
+		}
+		return nil, nil, err
+	}
+	bm := &backup.Manager{Dir: dir, Version: version}
+	if named := os.Getenv(secrets.EnvKeyFile); named != "" || exists(filepath.Join(dir, secrets.KeyFile)) {
+		key, err := secrets.LoadKey(dir, named)
+		if err != nil {
+			unlock()
+			return nil, nil, err
+		}
+		bm.CheckKey = func(p string) error { return secrets.CheckFile(p, key) }
+	}
+	if _, err := bm.AdoptMigrationCopies(); err != nil {
+		unlock()
+		return nil, nil, err
+	}
+	return bm, unlock, nil
+}
+
+// putBack checks the backup name (the newest pre-update backup this build
+// can read when name is "") and puts it in place. The data it replaces is
+// kept in backups/before-restore-<time>, returned as kept.
+func putBack(bm *backup.Manager, name string) (string, string, error) {
+	if name == "" {
 		b, err := bm.NewestPreUpdate()
 		if err != nil {
-			return fail(err)
+			return "", "", err
 		}
 		name = b.Name
 	}
 	if err := bm.StageNamed(context.Background(), name); err != nil {
-		return fail(fmt.Errorf("%s: %w", name, err))
+		return name, "", fmt.Errorf("%s: %w", name, err)
 	}
-	if _, err := backup.ApplyStaged(*dir); err != nil {
-		return fail(fmt.Errorf("putting %s in place: %w (it stays staged and is tried again on the next start)", name, err))
+	if _, err := backup.ApplyStaged(bm.Dir); err != nil {
+		return name, "", fmt.Errorf("putting %s in place: %w (it stays staged and is tried again on the next start)", name, err)
 	}
 	kept := ""
-	if ds, _ := filepath.Glob(filepath.Join(*dir, "backups", "before-restore-*")); len(ds) > 0 {
+	if ds, _ := filepath.Glob(filepath.Join(bm.Dir, "backups", "before-restore-*")); len(ds) > 0 {
 		sort.Strings(ds)
 		kept = ds[len(ds)-1]
 	}
-	fmt.Fprintf(out, "restored %s\nthe data it replaced is kept in %s\nstart HolyArrs again (docker restart <container>)\n", name, kept)
-	return 0
+	return name, kept, nil
 }
 
 func exists(p string) bool {

@@ -714,3 +714,28 @@ func TestApproveLeavesAnExistingTitlesAudioAlone(t *testing.T) {
 		t.Fatalf("audio %v", v.AudioLanguages)
 	}
 }
+
+// The decider's display name rides along with the account name, so every
+// viewer sees who declined by the name they chose.
+func TestDecidedByDisplayName(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	res, _ := r.svc.Ask(ctx, r.ana, "693134")
+	if _, err := r.svc.TurnDown(ctx, res.Ask.ID, r.luis, ""); err != nil {
+		t.Fatal(err)
+	}
+	vs, _ := r.svc.Views(ctx, "a.id = ?", res.Ask.ID)
+	if len(vs) != 1 || vs[0].DecidedBy == nil || vs[0].DecidedBy.Name != "luis" || vs[0].DecidedBy.DisplayName != "" {
+		t.Fatalf("no profile %+v", vs)
+	}
+	if err := r.svc.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO user_profiles (user_id, display_name) VALUES (?, ?)", r.luis.UserID, " Luis R ")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	vs, _ = r.svc.Views(ctx, "a.id = ?", res.Ask.ID)
+	if vs[0].DecidedBy.DisplayName != "Luis R" {
+		t.Fatalf("display name %+v", vs[0].DecidedBy)
+	}
+}

@@ -22,8 +22,9 @@ export function askedBy(a: Pick<Ask, 'people' | 'asked_by'>): string {
 /** decided says who decided and how, or '' while it waits. */
 export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, me?: { id: number; displayName: string }): string {
 	if (!a.decided_by || a.state === 'asked') return '';
-	// The server only shares my own display name, so that one wins over the account name.
-	const who = me && me.id === a.decided_by.id && me.displayName.trim() ? me.displayName.trim() : a.decided_by.name;
+	// A display name wins over the account name: my own (freshest), else the one the server sends.
+	const mine = me && me.id === a.decided_by.id ? me.displayName.trim() : '';
+	const who = mine || a.decided_by.display_name?.trim() || a.decided_by.name;
 	if (a.state === 'turned_down') return `Declined by ${who}`;
 	if (a.auto_approved) return 'Auto-approved';
 	return `Approved by ${who}`;

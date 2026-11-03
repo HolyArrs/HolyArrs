@@ -62,13 +62,15 @@ test('a member sees Home, the Library, Search, Requests and My account only', as
 	const nav = ana.getByRole('navigation', { name: 'Main' }).first();
 	for (const label of ['Home', 'Explore', 'Movies', 'Requests']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
 	await expect(ana.getByTestId('search-box')).toBeVisible();
-	for (const label of ['Downloads', 'Calendar', 'History', 'Library tools']) await expect(nav.getByRole('link', { name: label })).toHaveCount(0);
+	// A member follows the downloads and dates of what they asked for, but not the manager pages.
+	for (const label of ['Downloads', 'Calendar']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
+	for (const label of ['History', 'Library tools', 'Status']) await expect(nav.getByRole('link', { name: label })).toHaveCount(0);
 	await expect(ana.getByRole('link', { name: 'Settings' })).toHaveCount(0);
 	await ana.getByRole('button', { name: 'Account and appearance' }).click();
-	await expect(ana.getByRole('menuitem', { name: 'Account' })).toBeVisible();
+	await expect(ana.getByRole('menuitem', { name: 'Account', exact: true })).toBeVisible();
 	await ana.keyboard.press('Escape');
 	// Manager pages send a member to their own Home.
-	for (const p of ['/settings', '/settings/backups', '/downloads', '/calendar', '/']) {
+	for (const p of ['/settings', '/settings/backups', '/downloads/history', '/']) {
 		await ana.goto(p);
 		await expect(ana).toHaveURL(/\/$/);
 	}
@@ -82,7 +84,7 @@ test('a member sees Home, the Library, Search, Requests and My account only', as
 
 test('a member turns on two-factor sign-in and needs a code to sign in', async () => {
 	await ana.goto('/account');
-	await ana.getByRole('button', { name: 'Set up two-factor sign-in' }).click();
+	await ana.getByTestId('two-factor-open').click();
 	const secret = (await ana.locator('code.key').textContent())!.replace(/\s/g, '');
 	await ana.getByLabel('Six-digit code').fill(totp(secret));
 	await ana.getByRole('button', { name: 'Turn on' }).click();

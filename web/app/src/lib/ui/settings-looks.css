@@ -94,6 +94,13 @@
 	.settings-content .srow > .ctl > .input { width: min(260px, 46vw); }
 	.settings-content .ui-btn.md { min-height: 40px; }
 	.settings-content .ui-ibtn.ui-ibtn.md { width: 40px; height: 40px; }
+	.settings-content .srow > .ctl .ui-btn { min-height: 40px; }
+}
+/* Touch screens: 44px targets, as everywhere else in the app. */
+@media (max-width: 600px) and (pointer: coarse) {
+	.settings-content .ui-btn.md,
+	.settings-content .srow > .ctl .ui-btn { min-height: 44px; }
+	.settings-content .ui-ibtn.ui-ibtn.md { width: 44px; height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
 	.settings-content .ui-settings { transition: none; }

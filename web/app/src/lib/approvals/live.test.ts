@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { liveByTitle, liveFacts } from './live.ts';
+import { liveByTitle, liveFacts, partialFacts, realAlbum } from './live.ts';
 
 const dl = (title_id: number, phase: string, progress = 0) => ({ title_id, phase, progress });
 const se = (title_id: number, state = 'running', kind = 'search_slot') => ({ title_id, state, kind }) as Parameters<typeof liveByTitle>[1][number];
@@ -32,5 +32,23 @@ describe('liveByTitle', () => {
 	});
 	it('nothing known gives no facts', () => {
 		expect(liveFacts(undefined)).toEqual({});
+	});
+});
+
+describe('real parts in "more available" (#135)', () => {
+	it('counts only real albums the ask did not cover', () => {
+		const parts = [
+			{ key: 'a', complete: true, real: true },
+			{ key: 'b', complete: false, real: true },
+			{ key: 'single', complete: false, real: false },
+			{ key: 'remix', complete: false, real: false }
+		];
+		expect(partialFacts('albums', parts, ['a']).more).toBe(1);
+	});
+	it('realAlbum drops singles, secondary types and bootleg titles', () => {
+		expect(realAlbum({ type: 'Album', secondary_types: [], name: 'Views' })).toBe(true);
+		expect(realAlbum({ type: 'Single', secondary_types: [], name: 'Hotline Bling' })).toBe(false);
+		expect(realAlbum({ type: 'Album', secondary_types: ['Remix'], name: 'X' })).toBe(false);
+		expect(realAlbum({ type: 'Album', secondary_types: [], name: 'Unreleased Bootleg Vol. 2' })).toBe(false);
 	});
 });

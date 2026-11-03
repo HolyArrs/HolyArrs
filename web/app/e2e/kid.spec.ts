@@ -39,6 +39,7 @@ test('the owner invites a Kid with an age rating', async ({ browser }) => {
 
 	kai = await fresh(browser);
 	await kai.goto(new URL(link).pathname);
+	await expect(kai.getByText('You were invited as a Kid (titles rated up to PG).')).toBeVisible();
 	await kai.getByLabel('Name').fill('kai');
 	await kai.getByLabel('Password', { exact: true }).fill(kidPw);
 	await kai.getByLabel('Password again').fill(kidPw);
