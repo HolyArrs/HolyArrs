@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/CoderLuii/holyarrs/internal/lowmem"
 	"github.com/CoderLuii/holyarrs/internal/music"
 	"github.com/CoderLuii/holyarrs/internal/musicsync"
 	"io"
@@ -288,7 +289,7 @@ type runOpts struct {
 }
 
 func run(c config) error {
-	useMemoryTarget()
+	useMemoryMode()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	return serve(ctx, c, runOpts{})
@@ -371,7 +372,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	s, err := store.Open(c.ConfigDir, store.Options{OnUpdating: func() { updating.Store(true) }})
+	s, err := store.Open(c.ConfigDir, store.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: lowmem.Pick(0, 4000), ReaderCacheKiB: lowmem.Pick(0, 2000)})
 	if err != nil {
 		if !needsPerson(err) {
 			return err

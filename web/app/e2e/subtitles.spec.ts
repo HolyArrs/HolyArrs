@@ -46,7 +46,8 @@ async function adopt(folderLabel: string, name: string, button: string, doneText
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
 	await expect(plan.getByRole('checkbox', { name: `Adopt ${name}` })).toBeChecked();
-	for (const box of await plan.getByRole('checkbox', { checked: true }).all()) {
+	// Last to first: unchecking a box shifts the later "checked" matches, not the earlier ones.
+	for (const box of (await plan.getByRole('checkbox', { checked: true }).all()).reverse()) {
 		if (!(await box.getAttribute('aria-label'))?.includes(name)) await box.uncheck();
 	}
 	await page.getByRole('button', { name: button }).click();

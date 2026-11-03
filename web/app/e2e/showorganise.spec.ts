@@ -57,7 +57,8 @@ test('Import a library scans the show folder, lists each file with its episodes,
 	await axe(page, 'import a show library');
 	// Shows already in the Library are left as they are.
 	await expect(plan.getByTestId('group-in_library')).toContainText('Harbour Lights');
-	for (const box of await plan.getByRole('checkbox', { checked: true }).all()) {
+	// Last to first: unchecking a box shifts the later "checked" matches, not the earlier ones.
+	for (const box of (await plan.getByRole('checkbox', { checked: true }).all()).reverse()) {
 		if (!(await box.getAttribute('aria-label'))?.includes('Quarry Bells')) await box.uncheck();
 	}
 	await page.getByRole('button', { name: 'Adopt 1 show' }).click();
@@ -71,24 +72,31 @@ test('Import a library scans the show folder, lists each file with its episodes,
 
 test('Rename files on the show page renames the adopted episodes to the episode pattern', async () => {
 	await titleAction(page, 'Library', 'Rename files');
-	const dialog = page.getByRole('dialog', { name: /Rename the files of Quarry Bells/ });
-	await expect(dialog.getByTestId('rename-step')).toHaveCount(2);
-	await expect(dialog).toContainText('Quarry Bells - S01E01 - Echo 1080p WEB.mkv');
-	await expect(dialog).toContainText('Quarry Bells - S01E02-E03 - Dust + Granite 1080p WEB.mkv');
+	const sheet = page.getByRole('dialog', { name: 'Rename files' });
+	await expect(sheet).toHaveAccessibleDescription(/Quarry Bells/);
+	await expect(sheet.getByTestId('rename-step')).toHaveCount(2);
+	await expect(sheet).toContainText('Quarry Bells - S01E01 - Echo 1080p WEB.mkv');
+	await expect(sheet).toContainText('Quarry Bells - S01E02-E03 - Dust + Granite 1080p WEB.mkv');
 	await axe(page, 'show rename preview');
-	await dialog.getByRole('button', { name: 'Rename 2 files' }).click();
+	await sheet.getByRole('button', { name: 'Rename 2 files' }).click();
 	await expect(page.getByText('2 files renamed.')).toBeVisible({ timeout: 30_000 });
-	await expect(dialog.getByTestId('rename-none')).toBeVisible();
-	await dialog.getByRole('button', { name: 'Close' }).click();
+	// The sheet closes itself when the rename is done; opened again, nothing is left to rename.
+	await expect(sheet).toBeHidden();
+	await titleAction(page, 'Library', 'Rename files');
+	await expect(sheet.getByTestId('rename-none')).toBeVisible();
+	await sheet.getByRole('button', { name: 'Close', exact: true }).click();
+	await expect(sheet).toBeHidden();
 	const season1 = readdirSync(join(folder, 'Season 1')).sort();
 	expect(season1).toEqual(['Quarry Bells - S01E01 - Echo 1080p WEB.mkv', 'Quarry Bells - S01E02-E03 - Dust + Granite 1080p WEB.mkv']);
 	expect(existsSync(files.extra)).toBe(true);
 });
 
 test('deleting one episode of a multi-episode file keeps the file; deleting the season holds its files', async () => {
+	// One episode: from its sheet on the Library tab.
 	const s1 = await openSeasonNamed(page, 'Season 1');
-	await expect(s1.getByTestId('episode').filter({ has: s1.page().getByRole('button', { name: 'Episode actions for S01E02' }) })).toBeVisible();
-	await episodeAction(page, 'S01E02', 'Delete S01E02');
+	await s1.getByRole('button', { name: /^Episode 2:/ }).click();
+	const sheet = page.getByRole('dialog', { name: 'Season 1 · Episode 2' });
+	await sheet.getByRole('button', { name: /Delete this episode/ }).click();
 	const dialog = page.getByTestId('show-delete');
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells S01E02?');
 	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);
@@ -97,8 +105,9 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await axe(page, 'delete an episode');
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
 
-	await s1.page().getByTestId('season-menu').getByRole('button').click();
-	await page.getByRole('menuitem', { name: 'Delete Season 1' }).click();
+	// The whole season: from its Files, rename and history sheet.
+	await page.getByRole('button', { name: 'Files, rename and history of season 1' }).click();
+	await page.getByTestId('season-tools').getByRole('button', { name: 'Delete Season 1' }).click();
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells Season 1?');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1 (3 episodes): HolyArrs stops keeping them up to date.');
 	await dialog.getByRole('checkbox', { name: /Also delete their files/ }).check();
@@ -111,38 +120,56 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	const held = join(showsDir, '.holyarrs-replaced');
 	expect(existsSync(held)).toBe(true);
 	expect(existsSync(files.extra)).toBe(true);
-	// The show stays, with Season 1 no longer kept up to date.
+
+	// The show stays, with Season 1 no longer kept up to date and no files left.
+	await page.reload();
 	await expect(page.getByRole('heading', { name: /Quarry Bells/ })).toBeVisible();
 	expect(await seasonKept(page, 'Season 1')).toBe(false);
+	await page.getByRole('button', { name: 'Files, rename and history of season 1' }).click();
+	const tools = page.getByTestId('season-tools');
+	await expect(tools).toContainText('0 of 3 episodes on disk');
+	await tools.getByRole('tab', { name: 'History' }).click();
+	await expect(tools).toContainText('Deleted Quarry Bells season 1 from the Library');
+	await page.getByRole('dialog', { name: 'Season 1' }).getByRole('button', { name: 'Close', exact: true }).click();
+	await expect(tools).toBeHidden();
 });
 
-test('an episode History link lists only that episode, named on each row', async () => {
-	const s1 = await openSeasonNamed(page, 'Season 1');
-	await expect(s1.getByTestId('episode').filter({ has: s1.page().getByRole('button', { name: 'Episode actions for S01E02' }) })).toBeVisible();
+test("an episode's History lists only that episode", async () => {
 	await episodeAction(page, 'S01E02', 'History');
-	await expect(page).toHaveURL(/episode=\d+/);
-	await expect(page.getByTestId('episode-filter')).toContainText('Only S01E02 Dust of Quarry Bells');
-	const rows = page.getByTestId('history-row');
-	await expect(rows.first()).toBeVisible();
-	await expect(page.getByTestId('history-row').filter({ hasText: 'Deleted Quarry Bells season 1 from the Library' })).toBeVisible();
-	await expect(rows.first().getByTestId('history-episode')).toBeVisible();
+	const sheet = page.getByRole('dialog', { name: 'Season 1 · Episode 2' });
+	await expect(sheet.getByRole('heading', { name: 'Dust' })).toBeVisible();
+	const events = sheet.getByTestId('episode-sheet').locator('ol.es-tl');
+	await expect(events).toContainText('Deleted Quarry Bells season 1 from the Library');
+	// Adopting was the whole show, so it is not in the episode's History.
+	await expect(events).not.toContainText('Adopted Quarry Bells');
 	await axe(page, 'history of an episode');
-	await page.getByRole('button', { name: 'All of the show' }).click();
-	await expect(page.getByTestId('episode-filter')).toHaveCount(0);
-	await expect(page.getByTestId('history-row').filter({ hasText: 'Adopted Quarry Bells' })).toBeVisible();
+	await sheet.getByRole('button', { name: 'Close', exact: true }).click();
+	await expect(sheet).toBeHidden();
+	// All history (the whole show) lists the adopt too.
+	await titleAction(page, 'More actions', 'All history');
+	await expect(page).toHaveURL(/\/downloads\/history\?title=\d+/);
+	// History rows name the title, the episodes and a kind word; the kind is on data-kind.
+	await expect(page.locator('[data-testid="history-row"][data-kind="adopted"]').filter({ hasText: 'Quarry Bells' })).toBeVisible();
+	await expect(page.locator('[data-testid="history-row"][data-kind="episodes_removed"]').filter({ hasText: 'S01E01-E03, 3 episodes' })).toBeVisible();
 });
 
 test("the Calendar shows this week's episode, and the movies and shows filter", async () => {
 	await page.goto('/calendar');
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
-	const item = page.getByTestId('cal-item').filter({ hasText: 'Quarry Bells S02E01 New Bell' });
+	const item = page.getByTestId('cal-item').filter({ hasText: 'Quarry Bells' }).filter({ hasText: 'Season 2, Episode 1 · New Bell' });
+	// The owner follows nothing here (the show was adopted, not asked for), so
+	// the Calendar opens on My follows with a way to the Whole Library.
+	const whole = page.getByRole('button', { name: 'Show the Whole Library' });
+	await expect(whole.or(item).first()).toBeVisible();
+	if (await whole.isVisible()) await whole.click();
 	// The episode airs tomorrow (UTC); the Calendar opens on the weeks from today.
 	await expect(item).toBeVisible();
-	await expect(item).toContainText('Episode');
-	await expect(item).toContainText('on Lab Three');
+	// A list row names the episode as Season N, Episode N; a channel the browser's
+	// country does not know (Lab Three) is not named on it.
+	await expect(item.getByRole('link', { name: /^Quarry Bells, .*Season 2, Episode 1 · New Bell$/ })).toBeVisible();
 	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Movies' }).click();
 	await expect(item).toHaveCount(0);
-	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Shows' }).click();
+	await page.getByTestId('cal-titles').getByRole('radio', { name: 'TV shows', exact: true }).click();
 	await expect(item).toBeVisible();
 	await expect(page.getByRole('checkbox', { name: 'In cinemas' })).toHaveCount(0);
 	await page.getByRole('radio', { name: 'Cards', exact: true }).click();
@@ -172,10 +199,12 @@ test('the show page, import, history and calendar work at phone width', async ({
 	await expect(phone.getByRole('button', { name: 'More actions', exact: true })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await titleAction(phone, 'Library', 'Delete show');
-	await expect(phone.getByTestId('show-delete').getByRole('checkbox', { name: /Never-add/ })).toBeVisible();
+	const del = phone.getByTestId('delete-sheet');
+	await expect(del.getByRole('switch', { name: /Never add it again/ })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await axe(phone, 'delete a show on a phone');
-	await phone.getByTestId('show-delete').getByRole('button', { name: 'Cancel' }).click();
+	await del.getByRole('button', { name: 'Cancel' }).click();
+	await expect(del).toBeHidden();
 	for (const path of ['/library/import', '/downloads/history', '/calendar']) {
 		await phone.goto(path);
 		await expect(phone.getByRole('heading', { level: 1 })).toBeVisible();
@@ -188,12 +217,18 @@ test('deleting the whole show with Never-add keeps its files and leaves the Libr
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Quarry Bells/ }).first().click();
 	await titleAction(page, 'Library', 'Delete show');
-	const dialog = page.getByTestId('show-delete');
-	await dialog.getByRole('checkbox', { name: /Never-add/ }).check();
-	await expect(dialog.getByTestId('delete-plan')).toContainText('The show leaves the Library');
-	await expect(dialog.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
-	await dialog.getByRole('button', { name: 'Delete show' }).click();
-	await expect(page).toHaveURL(/\/library$/);
-	await expect(page.getByText('Quarry Bells is deleted. Files stay on disk.')).toBeVisible();
+	const del = page.getByTestId('delete-sheet');
+	const never = del.getByRole('switch', { name: /Never add it again/ });
+	await never.click();
+	await expect(never).toHaveAttribute('aria-checked', 'true');
+	await expect(del.getByTestId('delete-plan')).toContainText('The show leaves the Library');
+	await expect(del.getByTestId('delete-plan')).toContainText('It goes on the Never-add list');
+	await del.getByRole('button', { name: 'Delete show', exact: true }).click();
+	await expect(page.getByText('Quarry Bells is deleted. Its files stay on disk.')).toBeVisible();
+	// The title page stays open, now without its Library tab; the Library no longer lists the show.
+	await expect(page.getByTestId('own-tabs')).toHaveCount(0);
 	expect(existsSync(files.extra)).toBe(true);
+	await page.goto('/library');
+	await expect(page.getByRole('link', { name: /Harbour Lights/ }).first()).toBeVisible();
+	await expect(page.getByRole('link', { name: /Quarry Bells/ })).toHaveCount(0);
 });

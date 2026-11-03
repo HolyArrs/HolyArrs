@@ -4,15 +4,17 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, date } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { getBase } from '#lib/paths.ts';
 	import type { ApiKey } from '#lib/types.ts';
-	import { AI_SCOPE, aiURL, claudeCodeCommand, claudeDesktopConfig, isAIKey } from '#lib/ai-connect.ts';
+	import { AI_SCOPE, FAMILIES, GUIDES_URL, TRY_FIRST, agentPrompt, aiURL, canSignIn, familyOf, isAIKey, onlyLocal, type Ctx } from '#lib/ai-connect.ts';
 
 	let loaded = $state(false);
 	let error = $state('');
@@ -22,17 +24,30 @@
 	let keysNote = $state('');
 	let label = $state('');
 	let making = $state(false);
-	let fresh = $state<{ key: string; label: string } | null>(null);
-	let tab = $state<'code' | 'desktop'>('code');
-	const appOptions: { value: 'code' | 'desktop'; label: string }[] = [
-		{ value: 'code', label: 'Claude Code' },
-		{ value: 'desktop', label: 'Claude Desktop' }
-	];
+	// A key made from the guide fills in only for the app it was made for.
+	let fresh = $state<{ key: string; label: string; app?: string } | null>(null);
+	// The chosen app sits in the address (?app=cursor), so a link opens on it.
+	let app = $state(page.url.searchParams.get('app') ?? FAMILIES[0].apps[0].id);
+	let showPrompt = $state(false);
 
 	const isOwner = $derived(session.s.role === 'owner');
 	const url = $derived(typeof window === 'undefined' ? '/api/v1/mcp' : aiURL(window.location.origin, getBase()));
 	const aiKeys = $derived(keys.filter(isAIKey));
-	const setup = $derived(tab === 'code' ? claudeCodeCommand(url, fresh?.key) : claudeDesktopConfig(url, fresh?.key));
+	const signIn = $derived(canSignIn(url));
+	const ctx = $derived<Ctx>({ url, key: fresh?.app === app ? fresh.key : undefined, signIn });
+	const family = $derived(familyOf(app));
+	const chosen = $derived(family.apps.find((x) => x.id === app) ?? family.apps[0]);
+	const unreachable = $derived(!!chosen?.cloud && onlyLocal(url));
+	const needsKey = $derived(!chosen.cloud && (!signIn || chosen.signIn === false));
+	const host = $derived(url.replace(/^https?:\/\//, '').split('/')[0]);
+
+	function pick(id: string) {
+		app = id;
+		showPrompt = false;
+		const u = new URL(page.url.href);
+		u.searchParams.set('app', id);
+		replaceState(u, page.state);
+	}
 
 	function keyNote(e: unknown): string {
 		return e instanceof ApiError && e.status === 403 ? 'Sign in with your password to manage AI keys.' : message(e);
@@ -74,12 +89,15 @@
 
 	async function makeKey(e: SubmitEvent) {
 		e.preventDefault();
-		if (!label.trim()) return;
+		if (label.trim()) await newKey(label.trim());
+		label = '';
+	}
+
+	async function newKey(name: string, forApp?: string) {
 		making = true;
 		try {
-			const r = await api.post<{ key: string; label: string }>('/auth/keys', { label: label.trim(), scopes: [AI_SCOPE] });
-			fresh = { key: r.key, label: r.label };
-			label = '';
+			const r = await api.post<{ key: string; label: string }>('/auth/keys', { label: name, scopes: [AI_SCOPE] });
+			fresh = { key: r.key, label: r.label, app: forApp };
 			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
 		} catch (err) {
 			toasts.push(keyNote(err), 'fail');
@@ -120,8 +138,8 @@
 {:else}
 	<SettingsCard id="ai-switch" title="AI connections">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-3)">
-			AI assistants like Claude can check your library, calendar and downloads, and ask for titles for you. They can only do what you allow, and
-			everything they do shows in History.
+			AI assistants like Claude, ChatGPT or Cursor can check your library, calendar and downloads, and ask for titles for you. They can only do what you
+			allow, and every request they make shows in History.
 		</p>
 		<label class="switch">
 			<input type="checkbox" checked={enabled} disabled={!isOwner || saving} aria-busy={saving} onchange={(e) => setEnabled(e.currentTarget.checked)} />
@@ -130,14 +148,107 @@
 		</label>
 		{#if !isOwner}<p class="hint">Only the owner can turn this on or off.</p>{/if}
 		<ul class="facts small muted">
-			<li>An AI key acts as you: your permissions and request limits apply.</li>
+			<li>An AI app acts as you: your permissions and request limits apply.</li>
 			<li>Before it asks for a title, the AI app has to check with you. Approving requests stays with people, on the Requests page.</li>
-			<li>At most 60 look-ups a minute and 5 actions an hour per key.</li>
+			<li>At most 60 calls a minute and 5 requests an hour per app.</li>
 		</ul>
 	</SettingsCard>
 
-	<SettingsCard id="ai-keys" title="AI keys">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">An AI key works only for AI connections, not for the rest of HolyArrs.</p>
+	<SettingsCard id="ai-connect" title="Connect an AI app">
+		<div class="addr-row">
+			<code class="addr grow" data-testid="ai-address">{url}</code>
+			<Button icon="copy" size="sm" type="button" onclick={() => copy(url)}>Copy</Button>
+		</div>
+		<p class="small muted mode" data-testid="ai-mode">
+			{#if signIn}
+				Apps sign in through your browser with your HolyArrs password. Nothing to paste.
+			{:else}
+				On this address apps use an AI key. Press <b>Make a key</b> in the steps and it is filled in for you.
+			{/if}
+		</p>
+		{#if !enabled}<p class="notice warn">Turn on AI connections above first, or the app gets "not found".</p>{/if}
+
+		<div class="apps" role="group" aria-label="Kind of AI app">
+			{#each FAMILIES as f (f.id)}
+				<Chip label={f.name} selected={family.id === f.id} onclick={() => pick(f.apps[0].id)} />
+			{/each}
+		</div>
+		{#if family.apps.length > 1}
+			<div class="apps sub" role="group" aria-label="{family.name} app">
+				{#each family.apps as a (a.id)}
+					<Chip label={a.name} selected={chosen.id === a.id} onclick={() => pick(a.id)} />
+				{/each}
+			</div>
+		{/if}
+
+		<div class="guide" data-testid="ai-guide">
+			{#if unreachable}
+				<p class="notice" data-testid="ai-unreachable">
+					{chosen.name} connects from the internet, so it cannot reach {host}. It works once HolyArrs has a public https address (your reverse proxy,
+					Cloudflare Tunnel or Tailscale Funnel); open this page on that address for the steps.
+					{#if family.id === 'claude'}On this network, pick "Claude Desktop (home)" instead.{/if}
+				</p>
+				<a class="xs guide-link" href={GUIDES_URL + 'reach-holyarrs/'} target="_blank" rel="noopener noreferrer">How to reach HolyArrs from outside your home</a>
+			{:else}
+				{#if chosen.needs}<p class="small muted needs">{chosen.needs}</p>{/if}
+				{#if needsKey && fresh?.app !== chosen.id}
+					<div class="keyrow">
+						<Button icon="key" variant="primary" type="button" onclick={() => newKey(chosen.name, chosen.id)} disabled={making || !!keysNote} aria-busy={making}>
+							Make a key for {chosen.name}
+						</Button>
+						<span class="xs muted">It is filled into the steps below and shown only now.</span>
+					</div>
+				{/if}
+				<ol class="steps">
+					{#each chosen.steps(ctx) as s, i (i)}
+						<li>
+							<span class="num" aria-hidden="true">{i + 1}</span>
+							<div class="grow">
+								<p class="st">
+									{#each s.text.split('`') as part, j (j)}{#if j % 2}<code>{part}</code>{:else}{part}{/if}{/each}
+								</p>
+								{#if s.code}
+									<div class="codebox">
+										<pre>{s.code}</pre>
+										<Button icon="copy" size="sm" type="button" onclick={() => copy(s.code ?? '')}>Copy</Button>
+									</div>
+								{/if}
+							</div>
+						</li>
+					{/each}
+				</ol>
+				{#if chosen.agent && signIn}
+					<button type="button" class="linkish small" aria-expanded={showPrompt} onclick={() => (showPrompt = !showPrompt)}>
+						Or let {chosen.name} set itself up
+					</button>
+					{#if showPrompt}
+						<div class="codebox">
+							<pre>{agentPrompt(chosen.name, url)}</pre>
+							<Button icon="copy" size="sm" type="button" onclick={() => copy(agentPrompt(chosen.name, url))}>Copy</Button>
+						</div>
+					{/if}
+				{/if}
+				{#if chosen.check}<p class="xs muted"><b>Check:</b> {chosen.check}</p>{/if}
+				{#if chosen.note}<p class="xs muted">{chosen.note}</p>{/if}
+				{#if chosen.untried}<p class="xs muted">Not tested with HolyArrs yet: these steps follow {chosen.name}'s docs.</p>{/if}
+			{/if}
+			<p class="xs links">
+				<a class="guide-link" href={GUIDES_URL + chosen.guide} target="_blank" rel="noopener noreferrer" data-testid="ai-full-guide">Guide: {chosen.name}</a>
+				{#if family.local}· <a class="guide-link" href={GUIDES_URL + 'local-models/'} target="_blank" rel="noopener noreferrer">Pick a local model</a>{/if}
+				· <a class="guide-link" href={GUIDES_URL} target="_blank" rel="noopener noreferrer">All AI guides</a>
+			</p>
+		</div>
+
+		<div class="try">
+			<div class="xs muted">Try this first</div>
+			<p class="small">"{TRY_FIRST}"</p>
+		</div>
+	</SettingsCard>
+
+	<SettingsCard id="ai-keys" title="Connected apps and AI keys">
+		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
+			Each app that signs in gets its own key here. A key works only for AI connections; revoke it to disconnect the app.
+		</p>
 		{#if keysNote}
 			<p class="notice warn">{keysNote}</p>
 		{:else}
@@ -151,15 +262,10 @@
 					</div>
 				</div>
 			{/if}
-			<form class="row" onsubmit={makeKey}>
-				<label class="sr-only" for="ai-key-label">Key name</label>
-				<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="Which AI app? (Claude Desktop)" maxlength="64" />
-				<Button icon="key" variant="primary" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make an AI key</Button>
-			</form>
 			{#if aiKeys.length === 0}
-				<p class="small muted" style="margin-top: var(--s-4)">No AI keys yet.</p>
+				<p class="small muted">No AI apps yet.</p>
 			{:else}
-				<ul class="rows" style="margin-top: var(--s-3)">
+				<ul class="rows">
 					{#each aiKeys as k (k.id)}
 						<li>
 							<div class="grow">
@@ -171,25 +277,15 @@
 					{/each}
 				</ul>
 			{/if}
+			<details class="more" style="margin-top: var(--s-4)">
+				<summary>Make a key by hand</summary>
+				<form class="row" onsubmit={makeKey}>
+					<label class="sr-only" for="ai-key-label">Key name</label>
+					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="Which AI app? (Claude Desktop)" maxlength="64" />
+					<Button icon="key" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make an AI key</Button>
+				</form>
+			</details>
 		{/if}
-	</SettingsCard>
-
-	<SettingsCard id="ai-connect" title="Connect Claude">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-3)">
-			Address: <code class="addr">{url}</code>. Send the key as <code>Authorization: Bearer</code>, never in the address.
-		</p>
-		<div class="tabs"><SegmentedControl label="AI app" size="sm" options={appOptions} bind:value={tab} /></div>
-		<p class="small muted">
-			{#if tab === 'code'}
-				Run this in a terminal:
-			{:else}
-				Add this to <code>claude_desktop_config.json</code> (Settings, Developer, Edit config), then restart Claude Desktop. It needs Node.js.
-			{/if}
-		</p>
-		<pre class="setup">{setup}</pre>
-		<Button icon="copy" type="button" onclick={() => copy(setup)}>Copy</Button>
-		{#if !fresh}<p class="hint">Make an AI key first; it is filled in here while it is shown.</p>{/if}
-		{#if !enabled}<p class="hint">Turn on AI connections above, or the AI app gets "not found".</p>{/if}
 	</SettingsCard>
 {/if}
 
@@ -199,6 +295,124 @@
 		padding-left: 1.2em;
 		display: grid;
 		gap: 4px;
+	}
+	.addr-row,
+	.keyrow {
+		display: flex;
+		align-items: center;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+		margin-top: var(--s-2);
+	}
+	.addr,
+	.key {
+		padding: 8px var(--s-3);
+		background: var(--surface-2);
+		border-radius: var(--r-sm);
+		font-size: var(--text-sm);
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+	.mode {
+		margin: var(--s-2) 0 var(--s-3);
+	}
+	.apps {
+		display: flex;
+		gap: var(--s-2);
+		overflow-x: auto;
+		padding-bottom: 4px;
+		margin-bottom: var(--s-3);
+		scrollbar-width: thin;
+	}
+	.apps :global(*) {
+		flex-shrink: 0;
+	}
+	.apps.sub {
+		margin-top: calc(-1 * var(--s-2));
+	}
+	.links {
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+	.guide {
+		display: grid;
+		gap: var(--s-3);
+	}
+	.steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: var(--s-4);
+	}
+	.steps li {
+		display: flex;
+		gap: var(--s-3);
+		min-width: 0;
+	}
+	.num {
+		flex: none;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		font-size: var(--text-xs, 12px);
+		background: var(--surface-2);
+	}
+	.st {
+		margin: 2px 0 var(--s-2);
+	}
+	.needs {
+		margin: 0;
+	}
+	.steps p {
+		margin: 0 0 var(--s-2);
+	}
+	.codebox {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--s-2);
+		margin-bottom: var(--s-2);
+		min-width: 0;
+	}
+	.codebox pre {
+		flex: 1;
+		min-width: 0;
+		margin: 0;
+		padding: var(--s-3);
+		background: var(--surface-2);
+		border-radius: var(--r-sm);
+		font-size: var(--text-xs, 12px);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	.linkish {
+		justify-self: start;
+		background: none;
+		border: 0;
+		padding: 0;
+		color: var(--ha-red);
+		cursor: pointer;
+	}
+	.guide-link {
+		justify-self: start;
+		color: var(--ha-red);
+	}
+	.more summary {
+		cursor: pointer;
+		padding: 6px 0;
+	}
+	.try {
+		margin-top: var(--s-4);
+		padding: var(--s-3);
+		border-radius: var(--r-sm);
+		background: var(--surface-2);
+	}
+	.try p {
+		margin: 2px 0 0;
 	}
 	.fresh {
 		padding: var(--s-4);
@@ -213,28 +427,9 @@
 	.row {
 		flex-wrap: wrap;
 	}
-	.key,
-	.addr {
-		overflow-wrap: anywhere;
-	}
-	.key {
-		padding: 10px var(--s-3);
-		background: var(--surface-2);
-		border-radius: var(--r-sm);
-		font-size: var(--text-sm);
-		min-width: 0;
-	}
-	.tabs {
-		margin-bottom: var(--s-3);
-	}
-	.setup {
-		margin: var(--s-2) 0 var(--s-3);
-		padding: var(--s-3);
-		background: var(--surface-2);
-		border-radius: var(--r-sm);
-		font-size: var(--text-xs, 12px);
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		max-width: 100%;
+	@media (max-width: 767px) {
+		.codebox {
+			flex-direction: column;
+		}
 	}
 </style>

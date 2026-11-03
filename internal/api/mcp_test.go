@@ -171,7 +171,8 @@ func TestMCPOffAndScopes(t *testing.T) {
 	if st, _ := f.rpc(f.allKey, "ping", ""); st != 403 {
 		t.Fatalf("all key on the AI route: %d", st)
 	}
-	if st, _ := f.call(f.own, f.csrf, "", "POST", "/api/v1/mcp", `{"jsonrpc":"2.0","id":1,"method":"ping"}`); st != 403 {
+	if st, _ := f.call(f.own, f.csrf, "", "POST", "/api/v1/mcp", `{"jsonrpc":"2.0","id":1,"method":"ping"}`); st != 401 {
+		// A browser session is no AI sign-in: the app is told to sign in.
 		t.Fatalf("session on the AI route: %d", st)
 	}
 	if st, body := f.call(f.own, f.csrf, "", "POST", "/api/v1/auth/keys", `{"label":"mix","scopes":["mcp","read"]}`); st != 400 {

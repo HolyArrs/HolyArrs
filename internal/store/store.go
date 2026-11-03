@@ -41,6 +41,8 @@ type Options struct {
 	EventsMigrations fs.FS
 	// CacheKiB caps the page cache per connection (default 8000 KiB).
 	CacheKiB int
+	// ReaderCacheKiB caps it per read connection (default: CacheKiB).
+	ReaderCacheKiB int
 	// WriteCap is the time cap for one write transaction (default
 	// DefaultWriteCap; below zero: none). Migrations have no cap.
 	WriteCap time.Duration
@@ -91,6 +93,10 @@ func Open(dir string, opt Options) (*Store, error) {
 	if cache <= 0 {
 		cache = 8000
 	}
+	readCache := opt.ReaderCacheKiB
+	if readCache <= 0 {
+		readCache = cache
+	}
 	mainMig, evMig := opt.MainMigrations, opt.EventsMigrations
 	if mainMig == nil {
 		mainMig, _ = fs.Sub(embedded, "migrations/main")
@@ -120,10 +126,10 @@ func Open(dir string, opt Options) (*Store, error) {
 		return nil, err
 	}
 	s.main.owner, s.events.owner = s, s
-	if s.read, err = openPool(mainPath, cache, true, 4); err != nil {
+	if s.read, err = openPool(mainPath, readCache, true, 4); err != nil {
 		return nil, err
 	}
-	if s.readEv, err = openPool(evPath, cache, true, 2); err != nil {
+	if s.readEv, err = openPool(evPath, readCache, true, 2); err != nil {
 		return nil, err
 	}
 	ownerOnly(mainPath, evPath)

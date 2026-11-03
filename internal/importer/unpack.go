@@ -12,11 +12,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
-	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/archive"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/parse"
 	"github.com/CoderLuii/holyarrs/internal/unrar"
@@ -24,15 +24,14 @@ import (
 
 // Plain reasons shown on the Slot and in the import plan.
 const (
-	whyPassword = "Packed in password-protected RAR files; they cannot be unpacked"
-	whyDamaged  = "The RAR files look damaged or incomplete, so they could not be unpacked"
-	whyUnsafe   = "A RAR file holds a path that is not safe, so it was not unpacked"
-	whyNoSpace  = "Not enough free space to unpack the RAR files next to the download"
-	whySafely   = "The RAR files could not be unpacked safely"
-	whyTooBig   = "The RAR files would unpack to more than is allowed"
+	whyPassword = "Packed in password-protected archive files; they cannot be unpacked"
+	whyDamaged  = "The archive files look damaged or incomplete, so they could not be unpacked"
+	whyUnsafe   = "An archive file holds a path that is not safe, so it was not unpacked"
+	whyNoSpace  = "Not enough free space to unpack the archive files next to the download"
+	whySafely   = "The archive files could not be unpacked safely"
+	whyTooBig   = "The archive files would unpack to more than is allowed"
 	whyOldRar   = "Packed in a RAR format from before RAR 1.5, which HolyArrs cannot unpack"
-	whyNotRar   = "Packed in .7z or .zip files; HolyArrs unpacks only RAR files"
-	whyDiskFull = "The disk filled up while the RAR files were being unpacked; nothing was imported"
+	whyDiskFull = "The disk filled up while the archive files were being unpacked; nothing was imported"
 )
 
 const (
@@ -84,7 +83,7 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 	if dryRun {
 		return nil, noop, ""
 	}
-	var firsts []string
+	var firsts, others []string
 	for _, c := range cands {
 		// A video already there means nothing to unpack, but a scene set's
 		// Sample clip beside the RARs does not count.
@@ -99,17 +98,16 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		}
 		if unrar.IsVolume(c.Path) && unrar.IsFirstVolume(c.Path) {
 			firsts = append(firsts, c.Path)
+		} else if k, first := archive.Of(c.Path); k != "" && first {
+			others = append(others, c.Path)
 		}
 	}
 	if len(firsts) == 0 {
-		// No video and no RAR set, but a .7z or .zip: say so plainly
-		// rather than only "not a video file".
-		for _, c := range cands {
-			if e := strings.ToLower(filepath.Ext(c.Path)); e == ".7z" || e == ".zip" {
-				return nil, noop, whyNotRar
-			}
+		if len(others) == 0 {
+			return nil, noop, ""
 		}
-		return nil, noop, ""
+		// 7-Zip, zip or tar instead of RAR (the kinds Unpackerr reads).
+		return unpackOthers(ctx, downloadID, root, others, rules)
 	}
 	sort.Strings(firsts)
 
@@ -324,7 +322,84 @@ func checkTree(root string) error {
 	})
 }
 
-// unpackStep is the plan line that tells why the RAR files were not unpacked.
+// unpackStep is the plan line that tells why the archives were not unpacked.
 func unpackStep(root, why string) domain.PlanStep {
 	return domain.PlanStep{SourceFile: root, TargetSlotIDs: []int64{}, Method: "refuse", Why: []string{why}}
 }
+
+// unpackOthers unpacks 7-Zip, zip and tar archives (internal/archive) next
+// to the download, as unpackRars does a RAR set. Their unpacked size is not
+// known before they are read, so the free-space check counts the archives
+// themselves and the output may grow to maxUnpack, never past the disk's
+// floor; the reasons are the RAR ones.
+func unpackOthers(ctx context.Context, downloadID int64, root string, firsts []string, rules FileRules) ([]Candidate, func(), string) {
+	noop := func() {}
+	sort.Strings(firsts)
+	var total int64
+	for _, f := range firsts {
+		if fi, err := os.Stat(f); err == nil {
+			total += fi.Size()
+		}
+	}
+	parent := filepath.Dir(firsts[0])
+	if filepath.Clean(parent) != filepath.Clean(root) {
+		parent = filepath.Dir(parent)
+	}
+	if !rules.SkipFreeSpaceCheck {
+		if err := CheckSpaceMin(parent, total, rules.MinFreeMB); err != nil {
+			return nil, noop, whyNoSpace
+		}
+	}
+	limit := maxUnpack
+	if free := freeSpaceOf(existingDir(parent)); free >= 0 && !rules.SkipFreeSpaceCheck {
+		limit = min(limit, max(free-int64(rules.MinFreeMB)*mib, 0))
+	}
+	tmp := filepath.Join(parent, fmt.Sprintf(".holyarrs-unpack-%d", downloadID))
+	cleanup := func() { _ = os.RemoveAll(tmp) }
+	fail := func(why string) ([]Candidate, func(), string) {
+		cleanup()
+		return nil, noop, why
+	}
+	_ = os.RemoveAll(tmp)
+	for i, first := range firsts {
+		dest := filepath.Join(tmp, fmt.Sprintf("set%d", i))
+		if err := os.MkdirAll(dest, 0o755); err != nil {
+			return fail(whyDamaged)
+		}
+		// One limit for the whole download: what earlier archives wrote counts.
+		left := limit - dirSize(tmp)
+		if left <= 0 {
+			return fail(whyTooBig)
+		}
+		k, _ := archive.Of(first)
+		actx, cancel := context.WithTimeout(ctx, unpackTimeout)
+		err := extractOther(actx, first, k, dest, left)
+		cancel()
+		if err != nil {
+			log.Printf("importer: unpacking %s: %v", first, err)
+			switch {
+			case diskFull(err):
+				return fail(whyDiskFull)
+			case errors.Is(err, unrar.ErrEncrypted):
+				return fail(whyPassword)
+			case errors.Is(err, unrar.ErrUnsafePath):
+				return fail(whyUnsafe)
+			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, unrar.ErrTooBig):
+				return fail(whySafely)
+			}
+			return fail(whyDamaged)
+		}
+		if err := checkTree(dest); err != nil {
+			log.Printf("importer: unpacked %s: %v", first, err)
+			return fail(whySafely)
+		}
+	}
+	extra, err := Scan(tmp)
+	if err != nil {
+		return fail(whyDamaged)
+	}
+	return extra, cleanup, ""
+}
+
+// extractOther is archive.Extract; tests replace it.
+var extractOther = archive.Extract

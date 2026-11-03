@@ -54,6 +54,7 @@
 	import CopyControls from '#lib/CopyControls.svelte';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
+	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
 	import SeasonToolsSheet from '#lib/SeasonToolsSheet.svelte';
 	import EditTitleSheet from '#lib/EditTitleSheet.svelte';
 	import EpisodeSheet, { type SheetEpisode } from '#lib/EpisodeSheet.svelte';
@@ -204,6 +205,7 @@
 	// One season's files, rename and history; and the title's Edit panel.
 	let toolsOpen = $state(false);
 	let toolsSeason = $state(0);
+	let showDeleter: ReturnType<typeof ShowDeleteDialog> | undefined = $state();
 	let toolsMode = $state<'files' | 'rename' | 'history'>('files');
 	function openTools(id: number, n: number) {
 		toolsSeason = n;
@@ -1175,7 +1177,7 @@
 							</button>
 							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Pick rules</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></button>
-								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, quality, episode order, folder' : 'Quality and folder'}</small></span><Icon name="tools" size={16} /></button>
+								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, quality, episode order, tags, folder' : 'Quality, tags and folder'}</small></span><Icon name="tools" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures</small></span><Icon name="refresh" size={16} /></button>
 						</div>
@@ -1241,8 +1243,10 @@
 				{#if mayReport}<ReportSheet bind:open={reportOpen} title={o} />{/if}
 				{#if manage}
 				<EditTitleSheet bind:open={editOpen} title={o} onsaved={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />
-				{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} />{/if}
-				{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} />{/if}
+				{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} ondelete={() => { toolsOpen = false; showDeleter?.open({ season: toolsSeason, label: toolsSeason === 0 ? 'Specials' : `Season ${toolsSeason}` }); }} />{/if}
+				{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} ondelete={() => { const e = epPicked; if (!e) return; epOpen = false; showDeleter?.open({ episodeIds: [e.id], label: `S${String(e.season ?? 0).padStart(2, '0')}E${String(e.episode).padStart(2, '0')}` }); }} />{/if}
+				<!-- One season or one episode (and its files) goes through the show's delete dialog. -->
+				{#if o.show}<ShowDeleteDialog bind:this={showDeleter} titleId={o.id} name={o.name} ondone={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />{/if}
 				<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} scope={pickScope} onchosen={() => loadOwned(o.id)} />
 				<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="right" size="md">
 					{#if renameOpen}<RenamePreview titleId={o.id} onDone={() => { renameOpen = false; void loadOwned(o.id); }} />{/if}

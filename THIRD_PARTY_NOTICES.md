@@ -35,9 +35,20 @@ Direct dependencies, from `go.mod` and `web/app/package.json`:
 | github.com/coreos/go-oidc/v3 | Apache-2.0 |
 | github.com/go-jose/go-jose/v4 | Apache-2.0 |
 | github.com/nwaples/rardecode/v2 (unpacking compressed RAR files) | BSD-2-Clause |
+| github.com/bodgit/sevenzip (7-Zip archives) | BSD-3-Clause |
+| github.com/bodgit/plumbing (used by the 7-Zip reader) | BSD-3-Clause |
+| github.com/bodgit/windows (used by the 7-Zip reader) | BSD-3-Clause |
+| github.com/therootcompany/xz (xz archives) | CC0-1.0 |
+| github.com/ulikunitz/xz (LZMA in 7-Zip archives) | BSD-3-Clause |
+| github.com/klauspost/compress (compression in 7-Zip archives) | BSD-3-Clause (some parts MIT and Apache-2.0) |
+| github.com/pierrec/lz4/v4 (LZ4 in 7-Zip archives) | BSD-3-Clause |
+| github.com/andybalholm/brotli (Brotli in 7-Zip archives) | MIT |
+| github.com/stangelandcl/ppmd (PPMd in 7-Zip archives) | MIT |
+| github.com/spf13/afero (file access for the 7-Zip reader) | Apache-2.0 |
+| go4.org (multi-part 7-Zip reading) | Apache-2.0 |
 | golang.org/x/crypto, x/image, x/oauth2, x/sys, x/text | BSD-3-Clause |
 | modernc.org/sqlite | BSD-3-Clause |
 | hls.js | Apache-2.0 |
 | @fontsource/anton (Anton font) | SIL OFL 1.1 |
 
-Full licence texts for the sign-in parts and the RAR decoder are in [`docs/third-party-notices.md`](docs/third-party-notices.md).
+Full licence texts for the sign-in parts and the archive readers are in [`docs/third-party-notices.md`](docs/third-party-notices.md).

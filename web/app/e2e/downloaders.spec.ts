@@ -18,6 +18,8 @@ test.beforeAll(async ({ browser }) => {
 });
 
 const row = (name: string) => page.getByTestId('downloader').filter({ hasText: name });
+// Iron Lullaby's page, once it is in the Library (the tags test opens its Edit sheet).
+let ironPage = '';
 
 async function addDownloader(kind: 'qBittorrent' | 'SABnzbd', name: string, url: string, secret = '', category = '') {
 	await page.getByRole('button', { name: 'Add a Downloader' }).first().click();
@@ -98,6 +100,7 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(page).toHaveURL(/\/library\/\d+/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Iron Lullaby');
+	ironPage = page.url();
 
 	// The download is on the Downloads screen, in the Active tab.
 	await page.goto('/downloads');
@@ -172,4 +175,53 @@ test('the Downloaders page and the Downloads screen pass the accessibility scan 
 	await expect(p.getByTestId('dl-line').first()).toBeVisible();
 	await noSidewaysScroll(p);
 	await phone.close();
+});
+
+// Tags (#108): a Downloader and a title get tags from their forms; the
+// Downloader row says them, the title keeps them. Both are cleared at the
+// end, pass or fail, so the next projects route as before.
+test('tags are set on a Downloader and on a title, and shown where they are kept', async () => {
+	test.setTimeout(90_000); // two forms, a reload and the clean-up
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const call = (method: string, path: string, data?: unknown) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+	try {
+		await page.goto('/settings/downloaders');
+		const sab = row('Lab SABnzbd');
+		await sab.getByRole('button', { name: 'Change' }).click();
+		const tags = page.getByTestId('dl-tags-input');
+		await tags.fill('Kids');
+		await tags.press('Enter');
+		// A comma adds one too, typed or pasted.
+		await tags.fill('4K Only,');
+		await expect(page.getByTestId('dl-tags').getByRole('button', { name: 'Remove 4k-only' })).toBeVisible();
+		await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(sab.getByTestId('downloader-tags')).toHaveText('tags 4k-only, kids');
+
+		expect(ironPage).not.toBe('');
+		await page.goto(ironPage);
+		await page.getByTestId('own-tabs').getByRole('tab', { name: 'Library' }).click();
+		await page.getByRole('button', { name: /^Edit.*tags/ }).click();
+		const sheet = page.getByTestId('edit-sheet');
+		const titleTags = sheet.getByTestId('et-tags-input');
+		await titleTags.fill('kids');
+		await titleTags.press('Enter');
+		await sheet.getByRole('button', { name: 'Save' }).click();
+		await expect(sheet).toBeHidden();
+		await page.reload();
+		await page.getByTestId('own-tabs').getByRole('tab', { name: 'Library' }).click();
+		await page.getByRole('button', { name: /^Edit.*tags/ }).click();
+		await expect(sheet.getByTestId('et-tags').getByRole('button', { name: 'Remove kids' })).toBeVisible();
+		// Taken off again in the sheet.
+		await sheet.getByTestId('et-tags').getByRole('button', { name: 'Remove kids' }).click();
+		await sheet.getByRole('button', { name: 'Save' }).click();
+		await expect(sheet).toBeHidden();
+	} finally {
+		const ds = ((await (await call('GET', '/downloaders')).json()) as { downloaders: { id: number; name: string; kind: string; url: string; category: string; priority: number; allow_local_network: boolean }[] }).downloaders;
+		for (const d of ds.filter((x) => x.name === 'Lab SABnzbd'))
+			await call('PUT', `/downloaders/${d.id}`, { name: d.name, kind: d.kind, url: d.url, category: d.category, priority: d.priority, allow_local_network: d.allow_local_network, tags: [] });
+		const id = ironPage.match(/\/library\/(\d+)/)?.[1];
+		if (id) await call('PUT', `/titles/${id}`, { tags: [] });
+	}
+	await page.goto('/settings/downloaders');
+	await expect(row('Lab SABnzbd').getByTestId('downloader-tags')).toHaveCount(0);
 });

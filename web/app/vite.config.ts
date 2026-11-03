@@ -23,7 +23,11 @@ export default defineConfig({
 		proxy: {
 			'/api': backend,
 			'/live': { target: backend, changeOrigin: false },
-			'/healthz': backend
+			'/healthz': backend,
+			// AI app sign-in and the short AI address (the built app serves these itself).
+			'/oauth': backend,
+			'/.well-known': backend,
+			'^/mcp$': backend
 		}
 	},
 	test: {

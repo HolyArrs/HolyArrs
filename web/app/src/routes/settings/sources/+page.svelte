@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
+	import TagInput from '#lib/ui/TagInput.svelte';
+	import { forgetTags } from '#lib/tags.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -67,6 +69,7 @@
 			const body = formBody(form);
 			const saved = isNew ? await api.post<SourceView>('/sources', body) : await api.put<SourceView>(`/sources/${editing!.id}`, body);
 			toasts.push(`Source ${saved.name} saved.`, 'ok');
+			forgetTags();
 			editing = null;
 			await load();
 			if (isNew) await test(saved);
@@ -184,6 +187,9 @@
 					</Field>
 				{/if}
 			</div>
+			<Field id="so-tags" label="Tags" hint="With tags, this Source is searched and its newest list matched only for titles that have one of them. Without tags it serves every title.">
+				<TagInput id="so-tags" bind:value={form.tags} describedby="so-tags-hint" testid="so-tags" />
+			</Field>
 			<details class="more">
 				<summary>Limits</summary>
 				<div class="two">
@@ -257,6 +263,7 @@
 					{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
 					{#if s.proxy} · through {s.proxy}{/if}
 					{#if s.allow_local_network} · may reach the local network{/if}
+					{#if s.tags?.length} · <span data-testid="source-tags">tags {s.tags.join(', ')}</span>{/if}
 				</p>
 				<p class="xs muted">
 					Last answer {s.summary.last_success ? ago(s.summary.last_success) : 'never'} · {ms(s.summary.avg_ms_24h)} on average today ·

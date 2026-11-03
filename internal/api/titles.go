@@ -458,18 +458,19 @@ func (a *API) listNeverAdd(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) addNeverAdd(w http.ResponseWriter, r *http.Request) {
 	var body struct {
+		Kind   string `json:"kind"`
 		TMDB   string `json:"tmdb_id"`
 		Name   string `json:"name"`
 		Reason string `json:"reason"`
 	}
-	if !decode(w, r, &body, `send {"tmdb_id": "<number>", "name": "...", "reason": "..."}`) {
+	if !decode(w, r, &body, `send {"tmdb_id": "<number>", "name": "...", "reason": "...", "kind": "movie" or "show"}`) {
 		return
 	}
-	if body.TMDB == "" || body.Name == "" {
-		fail(w, http.StatusBadRequest, "tmdb_id and name are needed")
+	if body.TMDB == "" || body.Name == "" || (body.Kind != "" && body.Kind != "movie" && body.Kind != "show") {
+		fail(w, http.StatusBadRequest, "tmdb_id and name are needed; kind is movie (the default) or show")
 		return
 	}
-	n, err := library.AddNeverAdd(r.Context(), a.s.Store, domain.NeverAdd{SourceIDs: map[string]string{"tmdb": body.TMDB}, Name: body.Name, Reason: body.Reason}, actor(r))
+	n, err := library.AddNeverAdd(r.Context(), a.s.Store, domain.NeverAdd{Kind: body.Kind, SourceIDs: map[string]string{"tmdb": body.TMDB}, Name: body.Name, Reason: body.Reason}, actor(r))
 	if err != nil {
 		libraryError(w, err)
 		return
@@ -841,6 +842,12 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	a.serveRemoteArtwork(w, r, src, serveArtwork)
+}
+
+// serveRemoteArtwork sends the picture at src from the artwork cache with
+// send, fetching it once on a miss (within the person's miss budget).
+func (a *API) serveRemoteArtwork(w http.ResponseWriter, r *http.Request, src string, send func(http.ResponseWriter, *http.Request, string, string)) {
 	c := a.s.Library.Artwork
 	name := library.ArtworkName(src)
 	p, ok := c.Path(name)
@@ -859,7 +866,7 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	serveArtwork(w, r, name, p)
+	send(w, r, name, p)
 }
 
 // serveArtwork sends a cached picture as it is stored (no re-compression).

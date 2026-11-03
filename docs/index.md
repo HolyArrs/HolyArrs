@@ -35,6 +35,7 @@ in square brackets.
 | Calendar | `/calendar` | [History and the calendar](history-and-calendar.md#calendar). |
 | Requests | `/requests` | Adding and asking guides for [movies](request-movies.md), [shows](request-shows.md), and [music](request-music.md). |
 | Settings | `/settings` | [Home and Settings](home-and-settings.md#settings), plus this screen-to-guide map. |
+| AI connections | `/settings/ai`, `/ai-connect` | [Connect AI apps](ai-connections.md), with guides for [Claude](ai-claude.md), [ChatGPT and Codex](ai-chatgpt-codex.md), [Gemini](ai-gemini.md), [coding tools](ai-coding-tools.md) and [local AI](ai-local.md). |
 | Alerts | `/settings/alerts` | [Alerts, health checks and media servers](alerts-and-health.md). |
 | Backups | `/settings/backups` | [Backups](backups.md), including schedules, the master key and restore. |
 | Move from other apps | `/settings/move` | [Move from other apps](move-from-other-apps.md), [reading their setup](move-reading.md), and [import secrets](import-secrets.md). |
@@ -60,7 +61,7 @@ in square brackets.
 ## Guides without their own screen
 
 - [Import keys and passwords from one file](import-secrets.md)
-- [Connect Seerr or Overseerr](old-app-api.md): HolyArrs answers them in place of Sonarr and Radarr
+- [Connect Seerr or Overseerr](old-app-api.md): HolyArrs answers them, and Bazarr, Unpackerr and Homepage, in place of Sonarr and Radarr
 - [Update check](updates.md)
 - [Running under a path behind a reverse proxy](url-base.md)
 - [Word check for contributors](word-check.md)

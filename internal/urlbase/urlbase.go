@@ -73,6 +73,11 @@ func Handler(base string, h http.Handler) http.Handler {
 			return
 		}
 		rest, ok := strings.CutPrefix(p, base+"/")
+		// AI apps look for the sign-in server of base at the host's root
+		// (RFC 8414: /.well-known/oauth-authorization-server<base>).
+		if p == "/.well-known/oauth-authorization-server"+base {
+			rest, ok = ".well-known/oauth-authorization-server", true
+		}
 		if !ok {
 			http.NotFound(w, r)
 			return

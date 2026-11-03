@@ -22,6 +22,12 @@ func TestFakeFiles(t *testing.T) {
 		// A scene RAR set (#54): the importer unpacks it, so it is not bait; a tiny Sample beside it changes nothing.
 		{[]File{{Name: "Dune/Dune.part1.rar", Size: gb}, {Name: "Dune/Dune.part2.rar", Size: gb}, {Name: "Dune/Dune.nfo", Size: 900}, {Name: "Dune/Sample/dune-sample.mkv", Size: 2 << 20}}, "torrent", false},
 		{[]File{{Name: "Dune/Dune.rar", Size: gb}, {Name: "Dune/Dune.r00", Size: gb}}, "torrent", false},
+		// A big RAR set with a web shortcut and no real video is still bait.
+		{[]File{{Name: "Dune/Dune.rar", Size: gb}, {Name: "Dune/Dune.r00", Size: gb}, {Name: "Dune/Get it.url"}}, "torrent", true},
+		// 7-Zip parts and a big zip are unpacked too; a small zip with no video stays bait.
+		{[]File{{Name: "Dune/Dune.7z.001", Size: gb}, {Name: "Dune/Dune.7z.002", Size: gb}}, "torrent", false},
+		{[]File{{Name: "Dune/Dune.zip", Size: gb}}, "torrent", false},
+		{[]File{{Name: "Dune/Dune.zip", Size: 5 << 20}}, "torrent", true},
 		// A RAR set still fails beside a program or a password note.
 		{[]File{{Name: "Dune/Dune.part1.rar", Size: gb}, {Name: "Dune/Dune.part2.rar", Size: gb}, {Name: "Dune/password.txt", Size: 20}}, "torrent", true},
 		// A web shortcut beside the media is ordinary on public torrents.

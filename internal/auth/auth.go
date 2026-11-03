@@ -135,6 +135,10 @@ type Auth struct {
 	mu        sync.Mutex
 	fails     map[string]*failure
 	setupCode string
+	// codes are AI app sign-ins waiting for their key (aioauth.go).
+	codes aiCodes
+	// cimd reads AI apps' client ID metadata documents (aicimd.go).
+	cimd aiCIMD
 }
 
 type failure struct {
@@ -511,6 +515,11 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, who)))
 			return
 		}
+		if aiPublic(r) {
+			// AI app sign-in: no cookies are read or set, so no origin check.
+			next.ServeHTTP(w, r)
+			return
+		}
 		if public(r) {
 			if unsafeMethod(r.Method) && !a.guarded(r) {
 				fail(w, http.StatusForbidden, "request from another site or host name refused")
@@ -526,9 +535,19 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 				k = strings.TrimSpace(v)
 			}
 		}
+		if k == "" && mcpPath(r.URL.Path) {
+			// An AI app without a key is told where to sign in, even on the
+			// local network or beside a browser session.
+			w.Header().Set("WWW-Authenticate", `Bearer resource_metadata="`+a.aiResourceMetadataURL(r)+`", scope="mcp"`)
+			fail(w, http.StatusUnauthorized, "sign in: add HolyArrs in your AI app and allow it in the browser")
+			return
+		}
 		if k != "" {
 			who, ok := a.checkKey(r.Context(), k)
 			if !ok {
+				if mcpPath(r.URL.Path) {
+					w.Header().Set("WWW-Authenticate", `Bearer error="invalid_token", resource_metadata="`+a.aiResourceMetadataURL(r)+`"`)
+				}
 				fail(w, http.StatusUnauthorized, "API key not accepted")
 				return
 			}
@@ -594,6 +613,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.outsideRoutes(m)
 	a.providerRoutes(m)
 	a.ssoRoutes(m)
+	a.aiOAuthRoutes(m)
 }
 
 func (a *Auth) state(w http.ResponseWriter, r *http.Request) {

@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/lowmem"
 	"github.com/CoderLuii/holyarrs/internal/outside"
 )
 
@@ -168,7 +169,8 @@ func (t *TMDB) kept(ctx context.Context, u string, disk bool) (cached, bool) {
 
 func (t *TMDB) remember(u string, c cached) {
 	t.mu.Lock()
-	if t.cache == nil || len(t.cache) >= maxCache {
+	// Low-memory mode keeps fewer answers here: the Disk copy answers the rest.
+	if t.cache == nil || len(t.cache) >= lowmem.Pick(maxCache, 150) {
 		t.cache = map[string]cached{}
 	}
 	t.cache[u] = c

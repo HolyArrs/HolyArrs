@@ -81,17 +81,18 @@ func TestEdgeOldRARFormatIsRefusedPlainly(t *testing.T) {
 	refusedClearly(t, w, imp, whyOldRar, before)
 }
 
-// 2. A release packed as .7z or .zip: HolyArrs unpacks RAR files only.
-func TestEdgeSevenZipReleaseIsRefusedPlainly(t *testing.T) {
+// 2. A .7z or .zip release is unpacked like a RAR set now (#54, as
+// Unpackerr); one that is not really an archive fails as damaged.
+func TestEdgeDamagedSevenZipReleaseIsRefusedPlainly(t *testing.T) {
 	sz := append([]byte("7z\xbc\xaf\x27\x1c\x00\x04"), make([]byte, 4000)...)
 	imp, w, before := importEdge(t, map[string][]byte{"Rel/" + relName + ".7z": sz})
-	refusedClearly(t, w, imp, whyNotRar, before)
+	refusedClearly(t, w, imp, whyDamaged, before)
 }
 
-func TestEdgeZipReleaseIsRefusedPlainly(t *testing.T) {
+func TestEdgeDamagedZipReleaseIsRefusedPlainly(t *testing.T) {
 	zip := append([]byte("PK\x03\x04"), make([]byte, 4000)...)
 	imp, w, before := importEdge(t, map[string][]byte{"Rel/" + relName + ".zip": zip})
-	refusedClearly(t, w, imp, whyNotRar, before)
+	refusedClearly(t, w, imp, whyDamaged, before)
 }
 
 // 3. Password-protected RAR 5 (WinRAR -p and -hp, testdata/rar-edge), no password known.
@@ -153,9 +154,9 @@ func diskFullErrno() error {
 	return syscall.ENOSPC
 }
 
-// The same for a show: a season pack packed as .7z fails each episode with
-// the plain reason, and History says it.
-func TestEdgeSevenZipSeasonPackIsRefusedPlainly(t *testing.T) {
+// The same for a show: a season pack in a damaged .7z fails each episode
+// with the plain reason, and History says it.
+func TestEdgeDamagedSevenZipSeasonPackIsRefusedPlainly(t *testing.T) {
 	w := showSetup(t, []int{1, 2}, "Copper.Valley.S01.1080p.WEB.H264-HOLYARRS.7z")
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
 	if err != nil || imp.State != "failed" {
@@ -163,15 +164,39 @@ func TestEdgeSevenZipSeasonPackIsRefusedPlainly(t *testing.T) {
 	}
 	for _, n := range []int{1, 2} {
 		var reason string
-		if err := w.s.Read().QueryRow(`SELECT last_reason FROM slots WHERE id = ?`, w.slots[n]).Scan(&reason); err != nil || reason != whyNotRar {
+		if err := w.s.Read().QueryRow(`SELECT last_reason FROM slots WHERE id = ?`, w.slots[n]).Scan(&reason); err != nil || reason != whyDamaged {
 			t.Fatalf("episode %d: reason %q %v", n, reason, err)
 		}
 	}
 	var summary string
-	if err := w.s.ReadEvents().QueryRow(`SELECT summary FROM events WHERE kind = 'import_failed' AND download_id = ? ORDER BY id DESC LIMIT 1`, w.dlID).Scan(&summary); err != nil || !strings.Contains(summary, whyNotRar) {
+	if err := w.s.ReadEvents().QueryRow(`SELECT summary FROM events WHERE kind = 'import_failed' AND download_id = ? ORDER BY id DESC LIMIT 1`, w.dlID).Scan(&summary); err != nil || !strings.Contains(summary, whyDamaged) {
 		t.Fatalf("History %q %v", summary, err)
 	}
 	if placed := snapshot(w.lib); len(placed) != 0 {
 		t.Fatalf("something reached the Library: %v", placed)
 	}
+}
+
+// A real 7-Zip release (two parts, 7-Zip 26.04, see internal/archive/testdata)
+// is unpacked with no tool on the system and imported.
+func TestSevenZipReleaseIsImportedWithoutATool(t *testing.T) {
+	files := map[string][]byte{}
+	for _, n := range []string{"parts.7z.001", "parts.7z.002"} {
+		files["Rel/"+relName+n[len("parts"):]] = edgeFile(t, "..", "archive", "testdata", n)
+	}
+	files["Rel/"+relName+".nfo"] = []byte("info")
+	fakeDisk(t, 10<<30)
+	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
+	w := packedWorld(t, files)
+	setFake(t, w.s, "import_size_floors", "false") // the test video is small
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || imp.State != "done" {
+		t.Fatalf("%v state %s plan %+v", err, imp.State, imp.Plan)
+	}
+	got := snapshot(w.lib)
+	if len(got) != 1 {
+		t.Fatalf("library %v", got)
+	}
+	noLeftovers(t, w.dl)
+	noLeftovers(t, filepath.Dir(w.dl))
 }

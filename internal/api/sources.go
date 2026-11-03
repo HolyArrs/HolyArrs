@@ -54,12 +54,16 @@ type SourceView struct {
 	ProxyPassword   string         `json:"proxy_password"`
 	ProxyAllowLocal bool           `json:"proxy_allow_local_network"`
 	Summary         source.Summary `json:"summary"`
+	Tags            []string       `json:"tags"`
 }
 
 func sourceView(x domain.Source, sum source.Summary) SourceView {
 	v := SourceView{ID: x.ID, Name: x.Name, Protocol: x.Protocol, Format: x.Format, URL: source.MaskURL(x.URL), UseFor: x.UseFor, Kinds: x.Kinds,
 		Categories: x.Categories, MinSeeders: x.MinSeeders, Limits: x.Limits, Priority: x.Priority, State: x.State, Health: source.HealthOf(x),
-		AllowLocal: x.AllowLocal, Proxy: x.ProxyURL, ProxyAllowLocal: x.ProxyAllowLocal, Summary: sum}
+		AllowLocal: x.AllowLocal, Proxy: x.ProxyURL, ProxyAllowLocal: x.ProxyAllowLocal, Summary: sum, Tags: x.Tags}
+	if v.Tags == nil {
+		v.Tags = []string{}
+	}
 	if v.Kinds == nil {
 		v.Kinds = []string{}
 	}

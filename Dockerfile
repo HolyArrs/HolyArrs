@@ -39,13 +39,13 @@ COPY --from=build /out/holyarrs /holyarrs
 COPY --from=build /out/ytdlp/ /
 COPY --from=build --chown=1000:1000 /out/config /config
 COPY LICENSE /LICENSE
-# Under a 500 MB (476.8 MiB) container limit: SQLite's page caches (up to
-# 8 connections x 8000 KiB) and the driver's own heap sit outside what
-# GOMEMLIMIT sees (measured up to about 69 MiB with a 12,800-Item Library).
-# That is not a hard ceiling: SQLite's sorter and temporary memory are not
-# capped, so about 20 percent is left as headroom
-# (releases/3.7-fault-and-memory.md).
-ENV GOMEMLIMIT=384MiB
+# No GOMEMLIMIT here: the program aims at 384 MiB by itself, and on a small
+# board or a container limited to about 2.5 GiB or less it turns on its
+# low-memory mode and aims lower (a quarter of the memory, 192-384 MiB; see
+# docs/parts-and-safe-mode.md). SQLite's page caches and the driver's own heap
+# sit outside that target (measured up to about 69 MiB with a 12,800-Item
+# Library), so about 20 percent of a 500 MB limit stays headroom
+# (releases/3.7-fault-and-memory.md). Set GOMEMLIMIT to choose the target.
 USER 1000:1000
 EXPOSE 18730
 VOLUME ["/config"]

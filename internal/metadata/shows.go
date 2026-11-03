@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/lowmem"
 	"github.com/CoderLuii/holyarrs/internal/outside"
 )
 
@@ -180,6 +181,25 @@ type getter struct {
 	mu    sync.Mutex
 	last  time.Time
 	cache map[string]cached
+	swept time.Time // when expired answers were last dropped
+}
+
+// put keeps an answer (g.mu held). Expired answers are dropped at most once a
+// minute, so they never sit until the cache is full; low-memory mode keeps
+// fewer (a re-view past them asks again).
+func (g *getter) put(key string, body []byte, ttl time.Duration, now time.Time) {
+	if now.Sub(g.swept) >= time.Minute {
+		for k, c := range g.cache {
+			if now.Sub(c.at) >= ttl {
+				delete(g.cache, k)
+			}
+		}
+		g.swept = now
+	}
+	if g.cache == nil || len(g.cache) >= lowmem.Pick(maxCache, 250) {
+		g.cache = map[string]cached{}
+	}
+	g.cache[key] = cached{body: body, at: now}
 }
 
 func (g *getter) wait(ctx context.Context) error {
@@ -277,10 +297,7 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 			outcome = outside.Success
 			if cacheable {
 				g.mu.Lock()
-				if g.cache == nil || len(g.cache) >= maxCache {
-					g.cache = map[string]cached{}
-				}
-				g.cache[key] = cached{body: body, at: time.Now()}
+				g.put(key, body, ttl, time.Now())
 				g.mu.Unlock()
 			}
 			return body, nil

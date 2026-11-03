@@ -736,10 +736,13 @@ func why(reason string) string {
 	switch {
 	case strings.Contains(reason, "not replaced (setting)"):
 		return "not_replaced"
+	case strings.HasPrefix(reason, "not sent:"):
+		// No Downloader takes the title's tags (#108).
+		return "not_sent"
 	case strings.HasPrefix(reason, "nothing could be placed"), strings.Contains(reason, "import"),
 		strings.Contains(reason, "could not be placed"), strings.HasPrefix(reason, "nothing in the download could be matched"),
 		// The unpack reasons (importer/unpack.go): the import could not finish, Releases did not run out.
-		strings.Contains(reason, "RAR file"), strings.HasPrefix(reason, "Packed in "), strings.HasPrefix(reason, "Not enough free space to unpack"):
+		strings.Contains(reason, "RAR file"), strings.Contains(reason, "archive file"), strings.HasPrefix(reason, "Packed in "), strings.HasPrefix(reason, "Not enough free space to unpack"):
 		return "conflict"
 	}
 	return "ran_out"

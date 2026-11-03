@@ -37,6 +37,16 @@ func TestHandler(t *testing.T) {
 	if w := get("/holyarrs/login"); w.Code != 200 || w.Body.String() != "/holyarrs /login" {
 		t.Fatalf("served %d %q", w.Code, w.Body.String())
 	}
+	// AI app sign-in looks for the server's details at the root (RFC 8414).
+	inner.HandleFunc("GET /.well-known/oauth-authorization-server", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(From(r.Context())))
+	})
+	if w := get("/.well-known/oauth-authorization-server/holyarrs"); w.Code != 200 || w.Body.String() != "/holyarrs" {
+		t.Fatalf("sign-in details at the root: %d %q", w.Code, w.Body.String())
+	}
+	if w := get("/.well-known/oauth-authorization-server"); w.Code != 404 {
+		t.Fatalf("root without the base: %d", w.Code)
+	}
 	if w := get("/holyarrs"); w.Code != 301 || w.Header().Get("Location") != "/holyarrs/" {
 		t.Fatalf("bare base %d %q", w.Code, w.Header().Get("Location"))
 	}

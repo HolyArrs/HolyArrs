@@ -377,6 +377,8 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   await expect(forget).toContainText("Moves already made from it stay.");
   await forget.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByTestId("read-row")).toHaveCount(before);
+  // Let the sheet finish closing before it opens again.
+  await expect(forget).toBeHidden();
   await page.getByRole("button", { name: /^Forget the .+ read from/ }).last().click();
   await forget.getByRole("button", { name: "Forget", exact: true }).click();
   await expect(page.getByTestId("read-row")).toHaveCount(before - 1);
@@ -669,7 +671,7 @@ test("desktop 1280: the rail capsules are equal, open sheets fit, and accessibil
     expect(pill).toBe(xs[0][0]);
     expect(open).toBe(xs[0][1]);
   }
-  await p.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
   const a11y = await new AxeBuilder({ page: p }).include("main").analyze();
   expect(a11y.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
   await ctx.close();
@@ -680,7 +682,7 @@ test("phone accessibility on the read step", async ({ browser }) => {
   await fixture(p);
   await p.goto("/settings/move");
   await expect(p.getByTestId("read-row").first()).toBeVisible();
-  await p.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
   const a11y = await new AxeBuilder({ page: p }).include("main").analyze();
   expect(a11y.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
   await ctx.close();

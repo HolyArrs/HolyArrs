@@ -785,7 +785,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if err != nil {
 		return nil, err
 	}
-	// A download that holds only RAR files is unpacked next to it first.
+	// A download that holds only archives (RAR, 7-Zip, zip, tar) is unpacked next to it first.
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
 	cands = append(cands, unpacked...)

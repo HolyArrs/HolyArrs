@@ -137,4 +137,40 @@ func TestOutsideListsAPI(t *testing.T) {
 	do(t, "POST", srv.URL+"/api/v1/outside-lists/999/sync", "", 404)
 	do(t, "DELETE", srv.URL+"/api/v1/outside-lists/"+itoa(l.ID), "", 204)
 	do(t, "DELETE", srv.URL+"/api/v1/outside-lists/"+itoa(l.ID), "", 404)
+
+	// Show lists (#104): they need a show folder, and keep their season choice.
+	off := `,"enabled":false`
+	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"show"`+off+`}`, 409)
+	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"album"`+off+`}`, 400)
+	shows := filepath.Join(t.TempDir(), "shows")
+	_ = os.MkdirAll(shows, 0o755)
+	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"show"}`, shows), 201)
+	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"show","seasons":"pilot"`+off+`}`, 400)
+	var sl ListView
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"show","seasons":"first","new_seasons":"none"`+off+`}`, 201), &sl)
+	if sl.TitleKind != "show" || sl.Seasons != "first" || sl.NewSeasons != "none" {
+		t.Fatalf("show list %+v", sl)
+	}
+	// Pick rules made only for movies do not fit a show list.
+	var pr struct {
+		ID int64 `json:"id"`
+	}
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", `{"name":"Movies only","kinds":["movie"],"body":`+goodEverydayBody(t)+`}`, 201), &pr)
+	do(t, "POST", srv.URL+"/api/v1/outside-lists", fmt.Sprintf(`{"name":"Shows 2","kind":"tmdb_list","ref":"7","title_kind":"show","pick_rules_id":%d%s}`, pr.ID, off), 400)
+	// A show goes on the Never-add list by its TMDB number.
+	b = string(do(t, "POST", srv.URL+"/api/v1/never-add", `{"kind":"show","tmdb_id":"700003","name":"Not Here"}`, 201))
+	if !strings.Contains(b, `"kind":"show"`) {
+		t.Fatalf("never-add show %s", b)
+	}
+	do(t, "POST", srv.URL+"/api/v1/never-add", `{"kind":"artist","tmdb_id":"1","name":"x"}`, 400)
+}
+
+// goodEverydayBody is the Good everyday rules body as JSON, for new rules.
+func goodEverydayBody(t *testing.T) string {
+	t.Helper()
+	b, err := json.Marshal(domain.GoodEveryday())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
 }

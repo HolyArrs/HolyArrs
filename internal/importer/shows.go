@@ -359,7 +359,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	}
 	root := mapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
-	// A download that holds only RAR files is unpacked next to it first.
+	// A download that holds only archives (RAR, 7-Zip, zip, tar) is unpacked next to it first.
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
 	cands = append(cands, unpacked...)

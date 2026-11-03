@@ -48,6 +48,25 @@ func TestPragmas(t *testing.T) {
 	}
 }
 
+// Low-memory mode gives the writers and the readers their own, smaller
+// page cache; unset, both keep the 8000 KiB default.
+func TestReaderCacheSize(t *testing.T) {
+	cacheOf := func(s *Store) (writer, main, events string) {
+		_ = s.Write(context.Background(), func(tx *sql.Tx) error { return tx.QueryRow("PRAGMA cache_size").Scan(&writer) })
+		_ = s.Read().QueryRow("PRAGMA cache_size").Scan(&main)
+		_ = s.ReadEvents().QueryRow("PRAGMA cache_size").Scan(&events)
+		return
+	}
+	s, _ := openTest(t, Options{CacheKiB: 4000, ReaderCacheKiB: 2000})
+	if w, m, e := cacheOf(s); w != "-4000" || m != "-2000" || e != "-2000" {
+		t.Fatalf("low: writer %s, readers %s %s", w, m, e)
+	}
+	d, _ := openTest(t, Options{})
+	if w, m, e := cacheOf(d); w != "-8000" || m != "-8000" || e != "-8000" {
+		t.Fatalf("default: writer %s, readers %s %s", w, m, e)
+	}
+}
+
 func TestReadPoolIsReadOnly(t *testing.T) {
 	s, _ := openTest(t, Options{})
 	if _, err := s.Read().Exec("CREATE TABLE nope(x)"); err == nil {

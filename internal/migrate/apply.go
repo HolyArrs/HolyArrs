@@ -866,7 +866,7 @@ func (r *run) protocol(it Item) (string, string) {
 // outsideList adds a Radarr list as a paused Outside list.
 func (r *run) outsideList(it Item) (string, string) {
 	o := it.OutsideList
-	if r.id("SELECT id FROM outside_lists WHERE kind = ? AND ref = ? COLLATE NOCASE", o.Kind, o.Ref) != 0 {
+	if r.id("SELECT id FROM outside_lists WHERE kind = ? AND ref = ? COLLATE NOCASE AND title_kind = 'movie'", o.Kind, o.Ref) != 0 {
 		return ResAlready, "an Outside list for this list is here"
 	}
 	lib := filepath.Clean(filepath.FromSlash(o.Library))

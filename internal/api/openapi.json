@@ -1687,7 +1687,8 @@
             "enum": [
               "ran_out",
               "conflict",
-              "not_replaced"
+              "not_replaced",
+              "not_sent"
             ],
             "type": "string"
           },
@@ -1885,6 +1886,12 @@
             "description": "masked when set, else empty",
             "type": "string"
           },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "url": {
             "type": "string"
           },
@@ -2007,6 +2014,13 @@
           "secret": {
             "description": "the SABnzbd API key or the qBittorrent, Transmission, Deluge or NZBGet password; the masked value or empty keeps the stored one. Needed again when the address moves to another host.",
             "type": "string"
+          },
+          "tags": {
+            "description": "A title with one of these tags is sent only to Downloaders that have it; with none shared, to the Downloaders without tags. Lowercase labels (#108); spaces become '-', at most 20 of 40 characters. Not sent: kept; an empty list clears them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "url": {
             "description": "http or https address with no name or password in it",
@@ -5390,6 +5404,12 @@
             },
             "type": "object"
           },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "url": {
             "type": "string"
           },
@@ -5569,6 +5589,13 @@
           },
           "proxy_password": {
             "type": "string"
+          },
+          "tags": {
+            "description": "With any, the Source is searched and its feed matched only for titles that share one. Lowercase labels (#108); spaces become '-', at most 20 of 40 characters. Not sent: kept; an empty list clears them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "url": {
             "type": "string"
@@ -6293,6 +6320,23 @@
         },
         "type": "object"
       },
+      "TagUse": {
+        "properties": {
+          "downloaders": {
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          },
+          "sources": {
+            "type": "integer"
+          },
+          "titles": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "TitleChange": {
         "properties": {
           "details_source": {
@@ -6337,6 +6381,13 @@
           },
           "release_gate": {
             "type": "string"
+          },
+          "tags": {
+            "description": "Routes the title's grabs and searches to the Downloaders and Sources that share one. Lowercase labels (#108); spaces become '-', at most 20 of 40 characters. Not sent: kept; an empty list clears them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -6476,6 +6527,12 @@
           },
           "stage": {
             "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "versions": {
             "items": {
@@ -8900,6 +8957,32 @@
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "approve",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/auth/ai-connect": {
+      "get": {
+        "description": "Takes the AI app's sign-in request (the /oauth/authorize query) and says which app is asking, where it returns to, and the address to send it back to on Cancel. Browser session only.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "What an AI app signing in is asking for",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Send {\"query\": \"<the sign-in request>\"}. Answers {\"redirect\": ...}: the app's return address with a one-time code it swaps at /oauth/token for its own AI key. Browser session and CSRF token only.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Allow an AI app that is signing in",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/auth/forward/link": {
@@ -25117,6 +25200,39 @@
         "x-holyarrs-part": "subtitles",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/tags": {
+      "get": {
+        "description": "Every tag in use on titles, Downloaders and Sources, with how many of each have it. A title's tags send its grabs to the Downloaders that share one (else to the untagged ones) and its searches to the untagged Sources and those that share one.",
+        "operationId": "listTags",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "tags": {
+                      "items": {
+                        "$ref": "#/components/schemas/TagUse"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tags in use."
+          }
+        },
+        "summary": "List tags in use",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/titles": {

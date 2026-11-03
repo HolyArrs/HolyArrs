@@ -42,7 +42,7 @@ holyarrs:
   owner_api_key: your-owner-key-6
 `
 
-var cliValues = []string{"your-tvdb-key-1", "your-trakt-id-2", "your-feed-key-3", "your-qbit-key-4", "your-radarr-key-5", "your-owner-key-6", "18799", "18708", "18702", "18730"}
+var cliValues = []string{"your-tvdb-key-1", "your-trakt-id-2", "your-feed-key-3", "your-qbit-key-4", "your-radarr-key-5", "your-owner-key-6", ":18799", ":18708", ":18702", ":18730"}
 
 // configDir makes a config folder with a database and a master key, as a
 // first start leaves it.
@@ -70,7 +70,8 @@ func secretsFile(t *testing.T, text string) string {
 }
 
 // runImport runs the command and checks that no value of the file shows
-// in its output or in the log.
+// in its output or in the log. Ports are checked with their colon: a bare
+// number can turn up in a random temp folder name.
 func runImport(t *testing.T, args ...string) (int, string) {
 	t.Helper()
 	var out, errb, logs bytes.Buffer

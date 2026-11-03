@@ -312,7 +312,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
 	}
-	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow)
+	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags)
 	if err != nil {
 		return err
 	}

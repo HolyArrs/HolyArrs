@@ -256,6 +256,16 @@ var RoutePerms = map[string]Perm{
 	"GET /mcp":                needSignedIn,
 	"GET /api/v1/settings/ai": needSignedIn,
 	"PUT /api/v1/settings/ai": needOwner,
+	// AI app sign-in (aioauth.go): the app's own calls are public; allowing it
+	// needs the person's browser session.
+	"GET /.well-known/oauth-protected-resource":           NeedPublic,
+	"GET /.well-known/oauth-protected-resource/{path...}": NeedPublic,
+	"GET /.well-known/oauth-authorization-server":         NeedPublic,
+	"POST /oauth/register":                                NeedPublic,
+	"GET /oauth/authorize":                                NeedPublic,
+	"POST /oauth/token":                                   NeedPublic,
+	"GET /api/v1/auth/ai-connect":                         needSignedIn,
+	"POST /api/v1/auth/ai-connect":                        PermSettings, // as for making a key: the app gets one
 
 	// Requests: everyone sees their own asks and messages; asking needs
 	// ask, deciding needs approve.
@@ -414,6 +424,7 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/sources/{id}/try":                              PermSettings,
 	"POST /api/v1/sources/check":                                 PermSettings,
 	"GET /api/v1/downloaders":                                    PermManageLibrary,
+	"GET /api/v1/tags":                                           PermManageLibrary,
 	"POST /api/v1/downloaders":                                   PermSettings,
 	"PUT /api/v1/downloaders/{id}":                               PermSettings,
 	"DELETE /api/v1/downloaders/{id}":                            PermSettings,
@@ -686,6 +697,13 @@ var RouteScopes = map[string]string{
 	"POST /mcp":                                                  ScopeMCP,
 	"GET /mcp":                                                   ScopeMCP,
 	"GET /api/v1/settings/ai":                                    ScopeAdmin,
+	"GET /.well-known/oauth-protected-resource":                  ScopeAdmin, // public; a key never needs it
+	"GET /.well-known/oauth-protected-resource/{path...}":        ScopeAdmin, // public; a key never needs it
+	"GET /.well-known/oauth-authorization-server":                ScopeAdmin, // public; a key never needs it
+	"POST /oauth/register":                                       ScopeAdmin, // public; a key never needs it
+	"GET /oauth/authorize":                                       ScopeAdmin, // public; a key never needs it
+	"POST /oauth/token":                                          ScopeAdmin, // public; a key never needs it
+	"POST /api/v1/auth/ai-connect":                               ScopeAdmin, // browser session only
 	"GET /sonarr/":                                               ScopeCompat,
 	"POST /sonarr/":                                              ScopeCompat,
 	"PUT /sonarr/":                                               ScopeCompat,
@@ -780,12 +798,14 @@ func init() {
 		"GET /api/v1/collections/{id}",
 		"GET /api/v1/library/copies",
 		"GET /api/v1/reports",
+		// The Allow page reads what is asking; allowing it needs a fresh password.
+		"GET /api/v1/auth/ai-connect",
 
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",
 		"GET /api/v1/artists/lookup", "GET /api/v1/artwork/{name}", "GET /api/v1/artwork/tmdb/{size}/{file}", "GET /api/v1/artwork/img/{kind}/{id}/{file}", "GET /api/v1/asks",
 		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/asks/{id}/parts", "GET /api/v1/auth/me", "GET /api/v1/auth/sso/links",
-		"GET /api/v1/calendar", "GET /api/v1/downloaders",
+		"GET /api/v1/calendar", "GET /api/v1/downloaders", "GET /api/v1/tags",
 		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/downloads/speeds", "GET /api/v1/downloads/matches", "GET /api/v1/downloads/clients", "GET /api/v1/events",
 		"GET /api/v1/health", "GET /api/v1/health/checks", "GET /api/v1/health/disks", "GET /api/v1/app/about",
 		"GET /api/v1/held", "GET /api/v1/holding", "GET /api/v1/imports", "GET /api/v1/jobs", "GET /api/v1/jobs/{id}", "GET /api/v1/jobs/active",

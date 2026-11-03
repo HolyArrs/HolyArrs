@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/lowmem"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -60,7 +61,6 @@ type artistEntry struct {
 	pics metadata.ArtistPictures
 }
 
-
 // Stats describe the local copy.
 type Stats struct {
 	Packages  int           `json:"packages"`
@@ -84,7 +84,7 @@ type Sync struct {
 	// OnSynced runs after each copy that changed packages (Explore prewarm).
 	OnSynced func(ctx context.Context)
 
-	mu      sync.RWMutex
+	mu sync.RWMutex
 	// artists is the covered artists, kept in memory (about 20k, read on
 	// every artist check). Albums are not: their half a million rows stay in
 	// music_package_albums and are read by key (album), which keeps about
@@ -154,14 +154,26 @@ func (s *Sync) Stats() Stats {
 	return s.stats
 }
 
+// LowMemoryEvery is the copy's schedule in low-memory mode (#131): fewer
+// copies, each catching up on more packages.
+const LowMemoryEvery = 3 * time.Hour
+
+// schedule is Every, else DefaultEvery (LowMemoryEvery in low-memory mode).
+func (s *Sync) schedule() time.Duration {
+	switch {
+	case s.Every > 0:
+		return s.Every
+	case lowmem.On():
+		return LowMemoryEvery
+	}
+	return DefaultEvery
+}
+
 // Run loads the index, copies at once and then on the schedule, until ctx ends.
 func (s *Sync) Run(ctx context.Context) {
 	_ = s.Load(ctx)
 	s.startWants(ctx)
-	every := s.Every
-	if every <= 0 {
-		every = DefaultEvery
-	}
+	every := s.schedule()
 	for {
 		if changed, err := s.SyncOnce(ctx); err == nil && changed > 0 && s.OnSynced != nil {
 			s.OnSynced(ctx)
@@ -190,20 +202,24 @@ func (s *Sync) SyncOnce(ctx context.Context) (int, error) {
 	}
 	var cursor int64
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT cursor FROM music_package_sync WHERE id = 1").Scan(&cursor)
-	var changed []*metadata.MusicPackage
+	// Only the picture jobs of changed packages are kept until the copy ends,
+	// not the packages (a first copy held every decoded package at once).
+	var jobs []picJob
+	changed := 0
 	for {
 		page, err := s.Source.MusicPackages(ctx, cursor, pageLimit)
 		if err != nil {
-			s.finish(start, cursor, len(changed), false)
-			s.storePictures(ctx, changed)
-			return len(changed), err
+			s.finish(start, cursor, changed, false)
+			s.storePictures(ctx, jobs)
+			return changed, err
 		}
-		got, err := s.storePage(ctx, page)
+		n, got, err := s.storePage(ctx, page)
 		if err != nil {
-			s.finish(start, cursor, len(changed), false)
-			return len(changed), err
+			s.finish(start, cursor, changed, false)
+			return changed, err
 		}
-		changed = append(changed, got...)
+		changed += n
+		jobs = append(jobs, got...)
 		cursor = page.Next
 		if !page.More || len(page.Packages) == 0 {
 			break
@@ -212,13 +228,13 @@ func (s *Sync) SyncOnce(ctx context.Context) (int, error) {
 		select {
 		case <-ctx.Done():
 			t.Stop()
-			return len(changed), ctx.Err()
+			return changed, ctx.Err()
 		case <-t.C:
 		}
 	}
-	s.finish(start, cursor, len(changed), true)
-	s.storePictures(ctx, changed)
-	return len(changed), nil
+	s.finish(start, cursor, changed, true)
+	s.storePictures(ctx, jobs)
+	return changed, nil
 }
 
 func (s *Sync) finish(start time.Time, cursor int64, changed int, whole bool) {
@@ -233,23 +249,25 @@ func (s *Sync) finish(start time.Time, cursor int64, changed int, whole bool) {
 	s.stats.LastSync, s.stats.Took, s.stats.Changed = time.Now().UTC(), time.Since(start), changed
 }
 
-// storePage writes one page's valid packages and the cursor in one write.
-func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) ([]*metadata.MusicPackage, error) {
+// storePage writes one page's valid packages and the cursor in one write,
+// and answers how many it stored and their picture jobs.
+func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) (int, []picJob, error) {
 	type row struct {
 		p    *metadata.MusicPackage
 		body []byte
 		pics []byte
 	}
 	var rows []row
+	z, _ := gzip.NewWriterLevel(nil, gzip.BestSpeed) // one writer for the page
 	for _, raw := range page.Packages {
 		p := &metadata.MusicPackage{}
 		if json.Unmarshal(raw, p) != nil || !p.Valid() {
 			continue
 		}
 		p.MBID = strings.ToLower(p.MBID)
-		body, err := pack(raw)
+		body, err := pack(z, raw)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 		pics, _ := json.Marshal(artistPictures(p))
 		rows = append(rows, row{p, body, pics})
@@ -283,16 +301,16 @@ func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) ([]*met
 		return err
 	})
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
-	out := make([]*metadata.MusicPackage, 0, len(rows))
+	var jobs []picJob
 	s.mu.Lock()
 	if s.artists == nil {
 		s.artists = map[string]artistEntry{}
 	}
 	for _, r := range rows {
 		s.artists[r.p.MBID] = artistEntry{rank: r.p.Rank, pics: artistPictures(r.p)}
-		out = append(out, r.p)
+		jobs = append(jobs, picJobs(r.p)...)
 	}
 	s.mu.Unlock()
 	s.cacheMu.Lock()
@@ -300,16 +318,17 @@ func (s *Sync) storePage(ctx context.Context, page metadata.PackagePage) ([]*met
 		delete(s.cache, r.p.MBID)
 	}
 	s.cacheMu.Unlock()
-	return out, nil
+	return len(rows), jobs, nil
 }
 
 func artistPictures(p *metadata.MusicPackage) metadata.ArtistPictures {
 	return metadata.ArtistPictures{Photo: p.Pictures["photo"], Wide: p.Pictures["wide"], Logo: p.Pictures["logo"]}
 }
 
-func pack(raw []byte) ([]byte, error) {
+// pack gzips raw with z (reset for each package).
+func pack(z *gzip.Writer, raw []byte) ([]byte, error) {
 	var b bytes.Buffer
-	z, _ := gzip.NewWriterLevel(&b, gzip.BestSpeed)
+	z.Reset(&b)
 	if _, err := z.Write(raw); err != nil {
 		return nil, err
 	}
@@ -330,31 +349,35 @@ func unpack(body []byte) ([]byte, error) {
 
 type picJob struct{ kind, mbid, size, v string }
 
-// storePictures stores the changed packages' artist photos (500, and 1200
-// for the top ranked) and album covers (500) through Pictures, a few at a time.
-func (s *Sync) storePictures(ctx context.Context, pkgs []*metadata.MusicPackage) {
-	if s.Pictures == nil || len(pkgs) == 0 {
-		return
-	}
+// picJobs are a package's artist photos (500, and 1200 for the top ranked)
+// and album covers (500) to store.
+func picJobs(p *metadata.MusicPackage) []picJob {
 	var jobs []picJob
-	for _, p := range pkgs {
-		if ph := p.Pictures["photo"]; ph != nil && metadata.ValidPictureVersion(ph.V) {
-			jobs = append(jobs, picJob{"artist", p.MBID, "500", ph.V})
-			if p.Rank > 0 && p.Rank <= bigRank {
-				jobs = append(jobs, picJob{"artist", p.MBID, "1200", ph.V})
-			}
+	if ph := p.Pictures["photo"]; ph != nil && metadata.ValidPictureVersion(ph.V) {
+		jobs = append(jobs, picJob{"artist", p.MBID, "500", ph.V})
+		if p.Rank > 0 && p.Rank <= bigRank {
+			jobs = append(jobs, picJob{"artist", p.MBID, "1200", ph.V})
 		}
-		for _, g := range p.ReleaseGroups {
-			if g.Cover != nil && metadata.ValidPictureVersion(g.Cover.V) {
-				jobs = append(jobs, picJob{"album", strings.ToLower(g.ID), "500", g.Cover.V})
-			}
+	}
+	for _, g := range p.ReleaseGroups {
+		if g.Cover != nil && metadata.ValidPictureVersion(g.Cover.V) {
+			jobs = append(jobs, picJob{"album", strings.ToLower(g.ID), "500", g.Cover.V})
 		}
+	}
+	return jobs
+}
+
+// storePictures stores the changed packages' pictures through Pictures, a
+// few at a time.
+func (s *Sync) storePictures(ctx context.Context, jobs []picJob) {
+	if s.Pictures == nil || len(jobs) == 0 {
+		return
 	}
 	ch := make(chan picJob)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	ok, missed := 0, 0
-	for range min(picWorkers, len(jobs)) {
+	for range min(lowmem.Pick(picWorkers, 2), len(jobs)) { // low-memory mode: fewer at once
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

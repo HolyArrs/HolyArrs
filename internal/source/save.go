@@ -15,6 +15,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/tagset"
 )
 
 // Reasons a Source is not saved; each is said to the person as it is.
@@ -66,6 +67,8 @@ type Input struct {
 	Proxy           *string              `json:"proxy"`
 	ProxyPassword   string               `json:"proxy_password"`
 	ProxyAllowLocal *bool                `json:"proxy_allow_local_network"`
+	// Tags: with any, the Source serves only titles sharing one; nil keeps the stored ones.
+	Tags []string `json:"tags"`
 }
 
 // splitRSS moves an rss address's query (where feeds keep their passkey)
@@ -206,6 +209,9 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		}
 		src.Limits = l
 	}
+	if in.Tags != nil || isNew || src.Tags == nil {
+		src.Tags = tagset.Clean(in.Tags)
+	}
 	if in.Priority != nil {
 		if *in.Priority < 1 || *in.Priority > 50 {
 			return "", "", ErrPriority
@@ -319,8 +325,9 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 
 // Change saves a Source. A stored key is never sent to a new host on its
 // own: when the address's host changes, the key must be typed again (the
-// same for the proxy password).
-func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Source, error) {
+// same for the proxy password). then, when given, may change the Source
+// further in the same transaction, just before it is written.
+func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor, then ...func(tx *sql.Tx, src *domain.Source) error) (domain.Source, error) {
 	var src domain.Source
 	if err := store.Get(ctx, s.Read(), "sources", id, &src); err != nil {
 		return src, err
@@ -396,6 +403,11 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			}
 		} else if err := putSecret(tx, v, &src.ProxySecretRef, "source_proxy_password", pass, by); err != nil {
 			return err
+		}
+		for _, f := range then {
+			if err := f(tx, &src); err != nil {
+				return err
+			}
 		}
 		return store.Update(tx, "sources", &src, by)
 	})

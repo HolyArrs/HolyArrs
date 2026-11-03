@@ -100,6 +100,8 @@ type Title struct {
 	Directors []string `db:"directors,json"`
 	// Studio is a movie's first production company.
 	Studio string `db:"studio"`
+	// Tags route this title's grabs and searches (tagset.Allows).
+	Tags []string `db:"tags,json"`
 }
 
 // NeverAdd is one entry of the Never-add list.
@@ -298,6 +300,8 @@ type Source struct {
 	// PathSecretRef holds the passkeys an rss address keeps in its path;
 	// the stored URL has a marker in their place.
 	PathSecretRef *int64 `db:"path_secret_ref"`
+	// Tags: with any, this Source serves only titles that share one of them.
+	Tags []string `db:"tags,json"`
 }
 
 // Release is one search result.
@@ -362,6 +366,8 @@ type Downloader struct {
 	// ClearFinished removes a Usenet job and its files from the client once
 	// its Import fully succeeded.
 	ClearFinished bool `db:"clear_finished"`
+	// Tags: titles with one of these go only to Downloaders that have it.
+	Tags []string `db:"tags,json"`
 }
 
 // SeenFile is one file a Download reports.
@@ -545,17 +551,20 @@ type Setting struct {
 	Value string `db:"value"`
 }
 
-// OutsideList is a TMDB or Trakt list whose movies are added on a schedule.
+// OutsideList is a TMDB or Trakt list whose movies or shows are added on a schedule.
 type OutsideList struct {
 	Meta
 	Name            string     `db:"name"`
-	Kind            string     `db:"kind"` // tmdb_list, trakt_list
-	Ref             string     `db:"ref"`  // TMDB list number, or Trakt "user/slug"
+	Kind            string     `db:"kind"`       // tmdb_list, trakt_list
+	TitleKind       string     `db:"title_kind"` // movie, show
+	Ref             string     `db:"ref"`        // TMDB list number, or Trakt "user/slug"
 	LibraryFolderID int64      `db:"library_folder_id"`
 	PickRulesID     *int64     `db:"pick_rules_id"`
 	KeepUpToDate    bool       `db:"keep_up_to_date"`
 	SearchOnAdd     bool       `db:"search_on_add"`
 	ReleaseGate     string     `db:"release_gate"` // empty: the default
+	Seasons         string     `db:"seasons"`      // shows: all, future, latest, first, none
+	NewSeasons      string     `db:"new_seasons"`  // shows: all, none
 	Enabled         bool       `db:"enabled"`
 	SyncEveryHours  int        `db:"sync_every_hours"`
 	LastSyncedAt    *time.Time `db:"last_synced_at"`

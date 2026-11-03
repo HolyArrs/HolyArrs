@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
+	import TagInput from '#lib/ui/TagInput.svelte';
+	import { forgetTags } from '#lib/tags.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -173,6 +175,7 @@
 			const body = formBody(form);
 			const saved = isNew ? await api.post<DownloaderView>('/downloaders', body) : await api.put<DownloaderView>(`/downloaders/${editing!.id}`, body);
 			toasts.push(`Downloader ${saved.name} saved.`, 'ok');
+			forgetTags();
 			editing = null;
 			await load();
 			await test(saved);
@@ -283,6 +286,9 @@
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
+<Field id="dl-tags" label="Tags" hint="A title with one of these tags is sent only to Downloaders that have it. A title with none of your Downloaders' tags goes to the Downloaders without tags.">
+	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
+</Field>
 <details class="more" open={form.path_map.length > 0}>
 	<summary>Different folder names</summary>
 	<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
@@ -399,6 +405,7 @@
 					{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'torrents'} · priority {d.priority} · category {d.category}
 					{#if d.secret} · {d.kind === 'sabnzbd' || (d.kind === 'qbittorrent' && !d.username) ? 'key' : 'password'} {d.secret}{/if}
 					{#if d.allow_local_network} · may reach the local network{/if}
+					{#if d.tags?.length} · <span data-testid="downloader-tags">tags {d.tags.join(', ')}</span>{/if}
 					· {d.writable && !d.writable_locked ? 'HolyArrs can change it' : d.writable_locked ? 'read only' : 'hands off'}
 					· {d.active_downloads} active {d.active_downloads === 1 ? 'download' : 'downloads'}
 					{#if d.checked_at} · checked {ago(d.checked_at)}{/if}

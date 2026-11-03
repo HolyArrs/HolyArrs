@@ -28,6 +28,8 @@ export interface TitleView {
 	ids: Record<string, string> | null;
 	keep_up_to_date: boolean;
 	why_added: string;
+	/** Tags route the title's grabs and searches (#108). */
+	tags?: string[];
 	release_gate: string;
 	gate_delay_days: number;
 	gate_opens_at?: string;
@@ -899,6 +901,8 @@ export interface SourceView {
 	categories: Record<string, number[]> | null;
 	min_seeders: number | null;
 	limits: SourceLimits;
+	/** With any, the Source serves only titles sharing one (#108). */
+	tags?: string[];
 	state: string;
 	health: SourceHealth;
 	priority: number;
@@ -1028,12 +1032,17 @@ export interface OutsideList {
 	id: number;
 	name: string;
 	kind: 'tmdb_list' | 'trakt_list';
+	/** What the list adds: movie or show. */
+	title_kind: 'movie' | 'show';
 	ref: string;
 	library_folder_id: number;
 	pick_rules_id: number | null;
 	keep_up_to_date: boolean;
 	search_on_add: boolean;
 	release_gate: string;
+	/** Show lists: which seasons a new show keeps up to date, and new seasons (all, none). */
+	seasons: string;
+	new_seasons: string;
 	enabled: boolean;
 	sync_every_hours: number;
 	last_synced_at?: string;

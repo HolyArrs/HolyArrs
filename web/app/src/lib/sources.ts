@@ -54,6 +54,7 @@ export interface SourceForm {
 	proxy: string;
 	proxy_password: string;
 	proxy_allow_local_network: boolean;
+	tags: string[];
 }
 
 export function emptyForm(): SourceForm {
@@ -76,7 +77,8 @@ export function emptyForm(): SourceForm {
 		allow_local_network: false,
 		proxy: '',
 		proxy_password: '',
-		proxy_allow_local_network: false
+		proxy_allow_local_network: false,
+		tags: []
 	};
 }
 
@@ -103,7 +105,8 @@ export function formFrom(s: SourceView): SourceForm {
 		allow_local_network: s.allow_local_network,
 		proxy: s.proxy,
 		proxy_password: s.proxy_password,
-		proxy_allow_local_network: s.proxy_allow_local_network
+		proxy_allow_local_network: s.proxy_allow_local_network,
+		tags: [...(s.tags ?? [])]
 	};
 }
 
@@ -129,7 +132,8 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 		allow_local_network: f.allow_local_network,
 		proxy: f.proxy.trim(),
 		proxy_password: f.proxy_password,
-		proxy_allow_local_network: f.proxy_allow_local_network
+		proxy_allow_local_network: f.proxy_allow_local_network,
+		tags: f.tags
 	};
 }
 
