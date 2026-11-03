@@ -129,6 +129,7 @@ func (a *Auth) userRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/users", a.listUsers)
 	m.HandleFunc("PUT /api/v1/users/{id}", a.editUser)
 	m.HandleFunc("POST /api/v1/users/{id}/two-factor/reset", a.resetUserTwoFactor)
+	m.HandleFunc("POST /api/v1/users/{id}/password", a.setUserPassword)
 	m.HandleFunc("GET /api/v1/users/invites", a.listInvites)
 	m.HandleFunc("POST /api/v1/users/invites", a.makeInvite)
 	m.HandleFunc("DELETE /api/v1/users/invites/{id}", a.deleteInvite)
@@ -377,6 +378,66 @@ func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: two-factor sign-in for user %d reset by user %d", id, by.UserID)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// setUserPassword lets the owner or an admin give someone below them a new
+// password when they forgot it. The person is signed out everywhere and their
+// API keys stop, the same as a turned-off account.
+func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
+	if !RequireStrong(w, r) {
+		return
+	}
+	by, _ := From(r.Context())
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, "no such user")
+		return
+	}
+	var body struct {
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
+		fail(w, http.StatusBadRequest, `send {"password": "..."}`)
+		return
+	}
+	var role string
+	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT role FROM users WHERE id = ?", id).Scan(&role); err != nil {
+		fail(w, http.StatusNotFound, "no such user")
+		return
+	}
+	if id == by.UserID {
+		fail(w, http.StatusForbidden, "change your own password from your account")
+		return
+	}
+	if role == RoleOwner || (by.Role != RoleOwner && role != RoleMember) {
+		fail(w, http.StatusForbidden, "you may set a password only for people below you; the owner uses the reset-owner command")
+		return
+	}
+	if msg := passwordProblem(body.Password, MinPasswordLength(r.Context(), a.s.Read())); msg != "" {
+		fail(w, http.StatusBadRequest, msg)
+		return
+	}
+	h, err := HashPassword(body.Password)
+	if err != nil {
+		serverError(w, "set password", err)
+		return
+	}
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, store.FormatTime(a.now()), id); err != nil {
+			return err
+		}
+		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
+			return err
+		}
+		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", id)
+		return err
+	})
+	if err != nil {
+		serverError(w, "set password", err)
+		return
+	}
+	log.Printf("auth: password for user %d set by user %d", id, by.UserID)
 	w.WriteHeader(http.StatusNoContent)
 }
 

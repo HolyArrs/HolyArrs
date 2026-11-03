@@ -26727,6 +26727,74 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/users/{id}/password": {
+      "post": {
+        "description": "Give someone below you a new password when they forgot it. They are signed out everywhere and their API keys stop.",
+        "operationId": "setUserPassword",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Done, no body."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The password is too short or the body is wrong."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not found."
+          }
+        },
+        "summary": "Set a person's password",
+        "tags": [
+          "People"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/users/{id}/sessions": {
       "get": {
         "description": "Every live session of one person. The owner sees everyone's; an admin sees members' and their own.",

@@ -497,6 +497,7 @@ var RoutePerms = map[string]Perm{
 	"PUT /api/v1/users/{id}":                   needUsers,
 	"POST /api/v1/users/{id}/two-factor/reset": needUsers,
 	"GET /api/v1/users/{id}/sessions":          needUsers,
+	"POST /api/v1/users/{id}/password":         needUsers,
 	"POST /api/v1/users/{id}/sessions/end-all": needUsers,
 	"DELETE /api/v1/users/{id}/sessions/{sid}": needUsers,
 	"GET /api/v1/users/invites":                needUsers,

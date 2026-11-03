@@ -485,7 +485,8 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 	if tx.userID != 0 {
 		to = "/account?sso=finish"
 	}
-	http.Redirect(w, r, to, http.StatusSeeOther)
+	// Under a URL base the pages live below it too.
+	http.Redirect(w, r, urlbase.From(r.Context())+to, http.StatusSeeOther)
 }
 
 func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) {

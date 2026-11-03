@@ -12,11 +12,22 @@
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import SigninPortals from '#lib/SigninPortals.svelte';
 	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
+	import { forgetPerson, recentPeople, rememberPerson } from '#lib/recentPeople.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 
 	let name = $state('');
+	// People who signed in on this device: tap one to switch to them.
+	let recent = $state<string[]>([]);
+	function pickPerson(n: string) {
+		name = n;
+		void tick().then(() => panelEl?.querySelector<HTMLInputElement>('#password')?.focus());
+	}
+	function dropPerson(n: string) {
+		forgetPerson(n);
+		recent = recentPeople();
+	}
 	let pw = $state('');
 	let pwAgain = $state('');
 	let code = $state('');
@@ -100,6 +111,7 @@
 	});
 	onMount(() => {
 		calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		recent = recentPeople();
 		const go = () => (glWait = false);
 		if (calm || document.documentElement.dataset.signinGl) go();
 		window.addEventListener(SIGNIN_GL_EVENT, go, { once: true });
@@ -147,6 +159,7 @@
 		if (session.s.state !== 'signed_in') return;
 		if (left) return;
 		left = true;
+		if (via === 'password' && !tileWay && name.trim()) rememberPerson(session.s.name);
 		// Success, one continuous move: the Orbit grows out of the Sign in
 		// button and glides to the centre while the panel and the art dissolve
 		// under a veil in the app colour; the app opens under the same Orbit,
@@ -378,7 +391,7 @@
 							<form onsubmit={submitCode} novalidate>
 								<div class="field">
 									<label for="otp">Code</label>
-									<input id="otp" class="input mono otp" inputmode="numeric" bind:value={otp} autocomplete="one-time-code" maxlength="11" required />
+									<input id="otp" class="input mono otp" inputmode="text" bind:value={otp} autocomplete="one-time-code" maxlength="11" required />
 								</div>
 								{#if error}
 									<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
@@ -416,6 +429,16 @@
 											<label for="code">Setup code</label>
 											<input id="code" class="input mono" bind:value={code} autocomplete="one-time-code" spellcheck="false" required />
 											<span class="hint">Printed in the HolyArrs log at start, and saved in <code>setup-code.txt</code> in the config folder.</span>
+										</div>
+									{/if}
+									{#if mode === 'login' && via === 'password' && recent.length}
+										<div class="people" role="group" aria-label="Who is signing in?" data-testid="recent-people">
+											{#each recent as n (n)}
+												<span class="person" class:on={name === n}>
+													<button type="button" class="pick" onclick={() => pickPerson(n)}>{n}</button>
+													<button type="button" class="drop" aria-label="Forget {n} on this device" onclick={() => dropPerson(n)}>×</button>
+												</span>
+											{/each}
 										</div>
 									{/if}
 									<div class="field">
@@ -601,6 +624,12 @@
 	.prov:active:not(:disabled) { transform: scale(0.97); }
 	.prov:disabled { opacity: 0.5; cursor: default; }
 	.prov:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.people { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+	.person { display: inline-flex; align-items: center; border-radius: 999px; background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.12); }
+	.person.on { background: rgb(255 255 255 / 0.18); border-color: rgb(255 255 255 / 0.32); }
+	.person button { background: none; border: 0; color: #f5f5f7; font: var(--t-footnote); cursor: pointer; min-height: 36px; }
+	.person .pick { padding: 0 4px 0 14px; max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.person .drop { padding: 0 12px 0 6px; color: rgb(255 255 255 / 0.5); }
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
 

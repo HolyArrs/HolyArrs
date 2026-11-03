@@ -213,6 +213,27 @@
 		if (u.role === 'owner' || u.name === session.s.name) return false;
 		return isOwner || u.role === 'member';
 	}
+	let pwFor = $state<User | null>(null);
+	let pwNew = $state('');
+	let pwDialog: HTMLDialogElement | undefined = $state();
+	function openPassword(u: User) {
+		pwFor = u;
+		pwNew = '';
+		pwDialog?.showModal();
+	}
+	async function savePassword(e: SubmitEvent) {
+		e.preventDefault();
+		const u = pwFor;
+		if (!u) return;
+		try {
+			await api.post(`/users/${u.id}/password`, { password: pwNew });
+			toasts.push(`New password set for ${u.name}. They are signed out everywhere.`, 'ok');
+			pwDialog?.close();
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		}
+	}
+
 
 	function openEdit(u: User) {
 		editing = u;
@@ -378,6 +399,7 @@
 									>Reset two-factor</Button>
 							{/if}
 							{#if u.state === 'active'}
+							<Button variant="plain" type="button" onclick={() => openPassword(u)} aria-label="Set a new password for {u.name}">Set password</Button>
 								<Button variant="destructive" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label="Turn off {u.name}"
 									>Turn off</Button>
 							{:else}
@@ -475,6 +497,22 @@
 		<form onsubmit={saveEdit}>
 			<h2 id="h-edit" class="h2">Change {editing.name}</h2>
 			{#if isOwner}
+<dialog bind:this={pwDialog} class="dlg" aria-labelledby="h-password" onclose={() => { pwFor = null; pwNew = ''; }}>
+	{#if pwFor}
+		<form onsubmit={savePassword}>
+			<h2 id="h-password" class="h2">New password for {pwFor.name}</h2>
+			<p class="small muted" style="margin-bottom: var(--s-3)">Use this when {pwFor.name} forgot theirs. They are signed out everywhere and sign in again with the new one. Tell them it in person.</p>
+			<Field id="pw-new" label="New password">
+				<input id="pw-new" class="input" type="password" autocomplete="new-password" bind:value={pwNew} required />
+			</Field>
+			<div class="row end" style="margin-top: var(--s-4)">
+				<Button variant="plain" type="button" onclick={() => pwDialog?.close()}>Cancel</Button>
+				<Button type="submit" disabled={!pwNew}>Set password</Button>
+			</div>
+		</form>
+	{/if}
+</dialog>
+
 				<fieldset class="field">
 					<legend class="label">Role</legend>
 					<div class="row">

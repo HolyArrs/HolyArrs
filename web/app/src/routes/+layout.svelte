@@ -301,6 +301,7 @@
 		{ label: 'Dark', checked: theme.choice === 'dark', onselect: () => setTheme('dark') },
 		{ label: 'System', checked: theme.choice === 'system', onselect: () => setTheme('system') },
 		{ kind: 'separator' },
+		{ label: 'Switch account', icon: 'user', onselect: () => void switchAccount() },
 		{ label: 'Sign out', icon: 'signout', onselect: () => void signOut() }
 	]);
 	const themeOptions: { value: ThemeChoice; label: string }[] = [
@@ -425,6 +426,17 @@
 		};
 	});
 
+	// A shared screen: sign out and open sign-in, where people who signed in
+	// here before are one tap away. Each switch is a full sign-in.
+	async function switchAccount() {
+		try {
+			await session.logout();
+		} catch {
+			toasts.push('Could not confirm sign-out with the server.', 'fail');
+		}
+		void goto(to('/login'));
+	}
+
 	async function signOut() {
 		try {
 			await session.logout();
@@ -521,6 +533,7 @@
 				<h3>You</h3>
 				<ul><li><SidebarItem href={to('/account')} label="Account · {session.s.name}" icon="user" current={path === '/account'} onclick={() => (moreOpen = false)} /></li></ul>
 				<div class="more-theme"><SegmentedControl label="Appearance" options={themeOptions} bind:value={themeChoice} onchange={(v) => setTheme(v)} /></div>
+				<Button icon="user" full onclick={() => { moreOpen = false; void switchAccount(); }}>Switch account</Button>
 				<Button variant="destructive" icon="signout" full onclick={() => { moreOpen = false; void signOut(); }}>Sign out</Button>
 			</div>
 		</nav>
