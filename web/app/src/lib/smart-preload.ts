@@ -1,3 +1,5 @@
+import { proxied } from './tmdb-image.ts';
+
 // Smart preloading, one place for the rules every fetch-ahead follows
 // (speed plan 2026-10-28, item 10):
 // - hover or focus a card for 150 ms: its page's data and main picture;
@@ -83,7 +85,7 @@ function imageLoad(src: string): Promise<void> {
 		img.decoding = 'async';
 		img.onload = () => resolve();
 		img.onerror = () => reject(new Error('picture'));
-		img.src = src;
+		img.src = proxied(src);
 	});
 }
 

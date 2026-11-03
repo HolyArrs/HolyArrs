@@ -11,6 +11,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import Icon from '#lib/Icon.svelte';
+	import SeerrCard from './SeerrCard.svelte';
 	import { curl, filterOps, groups, operations, type ApiOp, type Spec } from '#lib/apidocs.ts';
 
 	let spec = $state<Spec | null>(null);
@@ -75,6 +76,8 @@
 		</li>
 	</ol>
 </SettingsCard>
+
+<SeerrCard />
 
 {#if spec?.['x-holyarrs-scopes']}
 		<SettingsCard title="Scopes">

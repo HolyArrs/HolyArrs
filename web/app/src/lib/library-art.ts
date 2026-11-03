@@ -1,3 +1,5 @@
+import { proxied } from './tmdb-image.ts';
+
 // Library art sizes: how wide the banner column is for each density, how
 // big posters are, and which picture size keeps each sharp at the screen's
 // pixel ratio. Densities and poster sizes are remembered per member.
@@ -76,8 +78,8 @@ export function tmdbFor(css: number, ratio = 1): 'w780' | 'w1280' | 'original' {
 export function bannerSrc(url: string, css: number, ratio = globalThis.devicePixelRatio || 1): string {
 	if (!url) return url;
 	const m = anyTmdb.exec(url);
-	if (!m || !(css > 0)) return url;
-	return `${m[1]}/${tmdbFor(css, ratio)}/${m[2]}`;
+	if (!m || !(css > 0)) return proxied(url);
+	return proxied(`${m[1]}/${tmdbFor(css, ratio)}/${m[2]}`);
 }
 
 /**
@@ -138,9 +140,9 @@ export type TmdbKind = keyof typeof TMDB_SIZES;
  */
 export function tmdbSized(url: string | null | undefined, kind: TmdbKind, css: number, ratio = globalThis.devicePixelRatio || 1): string {
 	const m = url ? anyTmdb.exec(url) : null;
-	if (!m || !(css > 0)) return url ?? '';
+	if (!m || !(css > 0)) return proxied(url);
 	const sizes = TMDB_SIZES[kind];
 	const need = css * ratio;
 	const w = sizes.find((s) => s >= need) ?? sizes[sizes.length - 1];
-	return `${m[1]}/${kind === 'profile' && w === 632 ? 'h632' : `w${w}`}/${m[2]}`;
+	return proxied(`${m[1]}/${kind === 'profile' && w === 632 ? 'h632' : `w${w}`}/${m[2]}`);
 }

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -261,11 +262,25 @@ func (im *Importer) ByHandPlaces(ctx context.Context) (ByHandPlaces, error) {
 // Downloader's folder set to one never counts as a place to import from by
 // hand, or it would open the whole disk again.
 func wholeDisk(p string) bool {
-	parts := strings.FieldsFunc(strings.TrimSpace(p), func(r rune) bool { return r == '/' || r == '\\' })
-	switch {
-	case len(parts) == 0:
+	p = strings.TrimSpace(p)
+	if p == "" {
 		return true
-	case len(parts) == 1 && len(parts[0]) == 2 && parts[0][1] == ':':
+	}
+	// "/data/.." and "C:\x\.." are a root too, on any system.
+	c := path.Clean(strings.ReplaceAll(p, `\`, "/"))
+	if c == "/" || c == "." || (len(c) == 2 && c[1] == ':') || (len(c) == 3 && c[1] == ':' && c[2] == '/') {
+		return true
+	}
+	// So is a link that leads to one (Go cannot always follow a Windows
+	// junction, so its target is read as well).
+	isRoot := func(r string) bool {
+		r = filepath.Clean(r)
+		return strings.Trim(r[len(filepath.VolumeName(r)):], `/\`) == ""
+	}
+	if r, err := filepath.EvalSymlinks(p); err == nil && isRoot(r) {
+		return true
+	}
+	if r, err := os.Readlink(p); err == nil && isRoot(strings.TrimPrefix(r, `\??\`)) {
 		return true
 	}
 	return false

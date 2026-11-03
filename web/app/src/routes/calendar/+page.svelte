@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { rebaseBar } from '#lib/scroll-bar.svelte.ts';
-	import { libraryTitles } from '#lib/owned.ts';
+	import { libraryBrief } from '#lib/owned.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
@@ -134,7 +134,7 @@
 		const s = weekStart(active ? new Date(active + 'T00:00:00') : (askedMonth ?? now));
 		const e = addDays(s, 6);
 		const f = (d: Date, y: boolean) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
-		return { long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
+		return { from: ymd(s), long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
 	});
 
 	// The small month: starts on the first week's month, pages on its own, and follows the day in view.
@@ -233,7 +233,7 @@
 			// The server takes up to a year a query; a longer stretch is asked in pieces.
 			const [parts, t] = await Promise.all([
 				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`))),
-				libraryTitles()
+				libraryBrief()
 			]);
 			if (n !== asks) return;
 			movies = new Map(t.filter((x) => x.kind === 'movie').map((x) => [x.id, movieFacts(x)]));
@@ -257,12 +257,20 @@
 				void pickDay(day);
 			}
 		} catch (e) {
+			if (n !== asks) return;
 			error = message(e);
 			goTo = null;
+			stepAgain = null;
 		} finally {
 			loaded = true;
 			if (n === asks) {
 				fetching = false;
+				// A step that waited for this load runs once the rows are drawn.
+				if (stepAgain && !error) {
+					const s = stepAgain;
+					stepAgain = null;
+					void tick().then(() => go(s.n, s.from, s.far));
+				}
 				// The rows draw once loaded is set; then the page goes to today, below the bars.
 				if (toTodayOnce && !error) {
 					// One go: with nothing on or after today the page simply stays where it is.
@@ -283,25 +291,115 @@
 	}
 
 	function jump(d: Date) {
+		stepAgain = null;
+		unhold();
 		start = addDays(d, 0);
 		end = addDays(start, 7 * REACH);
 		anchor = null;
 		pickYear = start.getFullYear();
 		pickMonth = start.getMonth();
 	}
-	// The arrows move a week from the day in view (the whole stretch is loaded, so it glides).
-	const go = (n: number) => {
-		// From the week the heading names: the day in view, else the month asked for (?month=), else today.
-		const from = active ?? (askedMonth ? ymd(weekStart(askedMonth)) : todayKey);
-		const t = addDays(new Date(from + 'T00:00:00'), 7 * n);
-		const day = ymd(t < earliest ? earliest : t >= latest ? addDays(latest, -1) : t);
-		const row = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= day);
-		if (!row && day >= firstDay && day < lastDay) return toasts.push('No more dates after this.', 'ok');
-		if (row && day >= firstDay && day < lastDay) {
-			active = row.dataset.day ?? day;
-			goRow(row);
-		} else void pickDay(day);
-	};
+	// The arrows move a week from the week in view (the one the heading names). They land on the
+	// first row of the next week that has dates (back over empty weeks: the dates before them),
+	// load further when that week is not loaded yet, and only say so at the ends of the calendar.
+	let stepAgain: { n: number; from: string; far?: boolean } | null = null;
+	// The latest day before `day` that a Library movie shows on (one date per movie, as the cards).
+	function shownBefore(day: string): string {
+		if (which !== 'all' && which !== 'movies') return '';
+		let best = '';
+		for (const f of movies.values()) {
+			const d = [f.digital, f.physical].filter((x): x is string => !!x).sort()[0] ?? f.cinema;
+			if (d && d < day && d > best) best = d;
+		}
+		return best;
+	}
+	// While an arrow's scroll runs, follow() keeps the week the arrow picked (else the frames in
+	// between, or a page that can't scroll that far, would put the old week back).
+	let held: string | null = null;
+	let unhold = () => {};
+	const userInput = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
+	function hold(day: string) {
+		unhold();
+		held = day;
+		// An instant scroll ends in the same frame it starts: only a later scrollend frees the hold.
+		let armed = false;
+		requestAnimationFrame(() => requestAnimationFrame(() => (armed = true)));
+		// Released after this frame's callbacks, so a follow() queued by the last scroll frame still sees the hold.
+		const onEnd = () => armed && setTimeout(() => unhold(), 0);
+		const timer = setTimeout(() => unhold(), 1500);
+		unhold = () => {
+			held = null;
+			clearTimeout(timer);
+			removeEventListener('scrollend', onEnd);
+			for (const t of userInput) removeEventListener(t, unhold);
+			unhold = () => {};
+		};
+		addEventListener('scrollend', onEnd);
+		// The person scrolling or pressing anything takes over at once.
+		for (const t of userInput) addEventListener(t, unhold, { passive: true, once: true });
+	}
+	function land(day: string) {
+		active = day;
+		const d = new Date(day + 'T00:00:00');
+		pickYear = d.getFullYear();
+		pickMonth = d.getMonth();
+		hold(day);
+	}
+	function go(n: number, from0?: string, far = false) {
+		if (!placed) return;
+		// The latest press wins: a step or a small-month pick still waiting for a load is dropped
+		// (the step is set again below if this one waits too).
+		stepAgain = null;
+		goTo = null;
+		const from = from0 ?? active ?? ymd(weekStart(askedMonth ?? now));
+		const fromWeek = ymd(weekStart(new Date(from + 'T00:00:00')));
+		const target = addDays(new Date(fromWeek + 'T00:00:00'), 7 * n);
+		// How far back a step may load: a year from today, or for a linked month further back than that,
+		// down to the nearest earlier movie date in the Library (its day out to watch, else its cinema day).
+		let lo = start < earliest ? start : earliest;
+		// Only when the week asked for is before the days loaded: steps inside them never load.
+		if (n < 0 && start < earliest && !far && ymd(target) < firstDay) {
+			// Before what is loaded already, so a movie hidden by the filters does not stop the search.
+			const before = shownBefore(fromWeek < firstDay ? fromWeek : firstDay);
+			if (before) {
+				const w = weekStart(new Date(before + 'T00:00:00'));
+				if (w < lo) lo = w;
+			}
+		}
+		const edge = () => toasts.push(n > 0 ? 'No more dates after this.' : 'No dates before this.', 'ok');
+		if (target >= latest || addDays(target, 7) <= lo) return edge();
+		const tw = ymd(target);
+		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
+		const dayOfRow = (r: HTMLElement) => r.dataset.day ?? '';
+		let row = n > 0 ? rows.find((r) => dayOfRow(r) >= tw) : (rows.find((r) => dayOfRow(r) >= tw && dayOfRow(r) < fromWeek) ?? rows.filter((r) => dayOfRow(r) < fromWeek).at(-1));
+		if (!row) {
+			// Not loaded yet: load the rest of that side once (or wait for the load running), then step again.
+			if (fetching) return void (stepAgain = { n, from });
+			if (n > 0 && end < latest) {
+				stepAgain = { n, from };
+				end = latest;
+				return;
+			}
+			if (n < 0 && start > lo) {
+				// Once per press: a far-back search that still finds no row names the week or says so.
+				stepAgain = { n, from, far: start < earliest };
+				earlier(lo);
+				return;
+			}
+			// Nothing earlier, but the days loaded start before this week: name the week before at the top.
+			if (n < 0 && tw >= firstDay) {
+				land(tw);
+				window.scrollTo({ top: 0, behavior: 'instant' });
+				return;
+			}
+			return edge();
+		}
+		// The first row of that row's week, so the heading names it from its start.
+		const rowWeek = ymd(weekStart(new Date(dayOfRow(row) + 'T00:00:00')));
+		row = rows.find((r) => dayOfRow(r) >= rowWeek) ?? row;
+		land(dayOfRow(row));
+		goRow(row);
+	}
 	// Today's row just below the top bar and the date bar, at once.
 	function atToday(): boolean {
 		if (!todayRow()) return false;
@@ -311,6 +409,8 @@
 	// Calendar picked again (side menu) while it already shows: start over at today and the top.
 	afterNavigate((nav) => {
 		if (nav.type !== 'link' || nav.from?.route.id !== nav.to?.route.id) return;
+		stepAgain = null;
+		unhold();
 		const m = /^(\d{4})-(\d{2})$/.exec(nav.to?.url.searchParams.get('month') ?? '');
 		if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) {
 			toTodayOnce = false;
@@ -336,6 +436,8 @@
 	});
 	// Today glides to today's row when it is loaded, else loads the usual stretch and opens there.
 	function toToday() {
+		stepAgain = null;
+		unhold();
 		const row = firstDay <= todayKey ? todayRow() : undefined;
 		if (row) goRow(row);
 		else {
@@ -418,6 +520,7 @@
 	}
 	// A day picked in the small month: glide to its row (instant under reduced motion).
 	async function pickDay(day: string) {
+		stepAgain = null;
 		const fromSheet = sheetOpen;
 		sheetOpen = false;
 		if (fromSheet) await tick();
@@ -444,7 +547,7 @@
 	// The day at the top of the page, for the small month (which pages along when the month changes).
 	function follow() {
 		// Not on today yet: the small month and the heading stay on today, never the first day loaded.
-		if (!placed) return;
+		if (!placed || held) return;
 		const rows = document.querySelectorAll<HTMLElement>('.cal-main [data-day]');
 		const line = 140;
 		let top: string | null = null;
@@ -652,7 +755,7 @@
 	<div class="range-nav">
 		<IconButton icon="chevronLeft" label="Week before" variant="tinted" onclick={() => go(-1)} />
 		{#if primary}
-			<h2 class="range" aria-live="polite" data-testid="cal-month">{viewWeek.long}</h2>
+			<h2 class="range" aria-live="polite" data-testid="cal-month" data-week={viewWeek.from}>{viewWeek.long}</h2>
 		{:else if short && narrow}
 			<!-- In the slim bar the dates also open the small month (on phones, where it is not beside the days). -->
 			<button type="button" class="range range-btn" aria-label="Pick a day, {viewWeek.long}" aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>{viewWeek.short}</button>

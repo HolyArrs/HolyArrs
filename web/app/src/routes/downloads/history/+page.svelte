@@ -3,7 +3,7 @@
 	// with a search bar and one Filter. Routine work is left out.
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
-	import { libraryTitles } from '#lib/owned.ts';
+	import { libraryBrief } from '#lib/owned.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import SearchLook from '#lib/history-looks/SearchLook.svelte';
 	import type { TitleView } from '#lib/types.ts';
@@ -15,7 +15,7 @@
 	let me = $state<number | undefined>();
 	onMount(() => {
 		me = session.s.id;
-		void libraryTitles()
+		void libraryBrief()
 			.then((r) => (titles = r))
 			.catch(() => {});
 		void api

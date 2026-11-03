@@ -28,6 +28,16 @@ export async function libraryTitles(client: Client = api): Promise<TitleView[]> 
 }
 
 /**
+ * libraryBrief is the Library list with only what Downloads, History and the
+ * Calendar read: id, kind, name, artwork, a movie's three dates and its slot
+ * states (about 28 KB instead of 386 KB on the showcase Library). An older
+ * server ignores ?brief and sends the full list, which has the same fields.
+ */
+export async function libraryBrief(client: Client = api): Promise<TitleView[]> {
+	return (await client.warm<{ titles?: TitleView[] }>('/titles?brief=1', LIBRARY_KEEP)).titles ?? [];
+}
+
+/**
  * stubTitle turns a light entry into the few TitleView fields the owned
  * marks read (ids, slots, asks), so ownedIndex / ownedMark / matchOwned
  * answer exactly as they would for the full title.

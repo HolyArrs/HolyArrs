@@ -18,6 +18,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/CoderLuii/holyarrs/internal/lists"
 	"github.com/CoderLuii/holyarrs/internal/naming"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -186,6 +187,10 @@ func partOf(it Item) string {
 		kind = it.Title.Kind
 	case it.NeverAdd != nil:
 		kind = it.NeverAdd.Kind
+	case it.OutsideList != nil:
+		kind = "movie" // Outside lists add movies
+	case it.Protocol != nil:
+		return it.Protocol.Part
 	case it.Subtitles != nil:
 		return "subtitles"
 	case it.Ask != nil:
@@ -310,10 +315,13 @@ func next(rep *Report) []string {
 	if len(rep.NeedsInput) > 0 {
 		out = append(out, "Type the keys and passwords listed under \"needs your input\": Sources, Downloaders, Alerts and subtitle sites stay paused until then.")
 	}
-	links, people, same := false, false, false
+	links, people, same, outside, trakt := false, false, false, false, false
 	for _, l := range rep.Lines {
 		made := l.Result == ResCreated || l.Result == ResCreate
 		switch {
+		case l.Group == GroupLists && made:
+			outside = true
+			trakt = trakt || strings.HasPrefix(l.Key, "outside_list:"+lists.KindTrakt+":")
 		case (l.Group == GroupSources || l.Group == GroupDownloaders) && made:
 			links = true
 		case l.Group == GroupPeople && made:
@@ -324,6 +332,12 @@ func next(rep *Report) []string {
 	}
 	if links {
 		out = append(out, "Moved Sources and Downloaders are always added paused and cannot reach your home network. Check each one under Settings > Sources and Settings > Downloaders, turn on \"reach the local network\" only for one that lives on your network, then resume it.")
+	}
+	if outside {
+		out = append(out, "Outside lists come over paused; turn each on under Settings > Outside lists after checking its folder and Pick rules.")
+	}
+	if trakt {
+		out = append(out, "Add your Trakt key under Settings > Outside lists before you turn a Trakt list on; the list must be public.")
 	}
 	if people {
 		out = append(out, "People came over as turned-off member placeholders (admin or owner only where you confirmed it): invite them from Settings > Users.")
@@ -424,7 +438,7 @@ func (r *run) hasActiveMark(key string) bool {
 var natural = map[string][2]string{
 	"ask": {"asks", "name"}, "user": {"users", "name"}, "alert": {"alerts", "name"}, "subtitle_site": {"subtitle_sites", "name"},
 	"source": {"sources", "name"}, "downloader": {"downloaders", "name"}, "never_add": {"never_add", "name"},
-	"title": {"titles", "kind"}, "folder": {"library_folders", "path"},
+	"title": {"titles", "kind"}, "folder": {"library_folders", "path"}, "outside_list": {"outside_lists", "name"},
 }
 
 type rowQuerier interface {
@@ -527,10 +541,14 @@ func (r *run) one(group string, it Item) (string, string) {
 		return r.folder(it)
 	case it.Rules != nil:
 		return r.rules(it)
+	case it.Protocol != nil:
+		return r.protocol(it)
 	case it.Title != nil:
 		return r.title(it)
 	case it.NeverAdd != nil:
 		return r.neverAdd(it)
+	case it.OutsideList != nil:
+		return r.outsideList(it)
 	case it.Source != nil:
 		return r.source(it)
 	case it.Downloader != nil:
@@ -761,6 +779,90 @@ func (r *run) rules(it Item) (string, string) {
 	return ResMatched, "titles from it use " + it.Rules.Preset
 }
 
+// seededWait is the protocol block the ready-made Pick rules come with.
+var seededWait = domain.ProtocolRule{Prefer: "either"}
+
+// untouchedWait says a protocol block is still as it came.
+func untouchedWait(p domain.ProtocolRule) bool {
+	if p.Prefer == "" {
+		p.Prefer = "either"
+	}
+	return p == seededWait
+}
+
+// protocol sets an old app's default wait on ready-made Pick rules, only
+// while their wait is still as it came; the old block is kept for undo.
+func (r *run) protocol(it Item) (string, string) {
+	pp := it.Protocol
+	id := r.id("SELECT id FROM pick_rules WHERE name = ? AND preset = 1", pp.Preset)
+	if id == 0 {
+		return ResNotFound, "the ready-made Pick rules " + pp.Preset + " are not here any more"
+	}
+	var cur domain.PickRules
+	if err := store.Get(r.ctx, r.m.Store.Read(), "pick_rules", id, &cur); err != nil {
+		return ResFailed, err.Error()
+	}
+	want := domain.ProtocolRule{Prefer: pp.Prefer, WaitMinutesUsenet: pp.WaitUsenet, WaitMinutesTorrent: pp.WaitTorrent, SkipWaitAtGoodEnough: pp.SkipAtGoodEnough}
+	switch {
+	case cur.Body.Protocol == want:
+		return ResAlready, pp.Preset + " already waits this way"
+	case !untouchedWait(cur.Body.Protocol):
+		return ResKept, "this server's Pick rules already set a wait, so it stays"
+	}
+	what := pp.Preset + ": " + waitWords(*pp)
+	if r.dry {
+		u, err := library.PickRulesUse(r.ctx, r.m.Store, id)
+		if err != nil {
+			return ResFailed, err.Error()
+		}
+		return ResChange, fmt.Sprintf("%s; used by %d versions here now", what, u.Versions)
+	}
+	before, _ := json.Marshal(cur.Body.Protocol)
+	after, _ := json.Marshal(want)
+	body := cur.Body
+	body.Protocol = want
+	_, err := library.UpdatePickRules(r.ctx, r.m.Store, id, library.PickRulesInput{Name: cur.Name, Kinds: cur.Kinds, Body: body}, r.by, func(tx *sql.Tx) error {
+		// Changed by someone else since it was read: leave it to the next move.
+		var rev int
+		if err := tx.QueryRow("SELECT revision FROM pick_rules WHERE id = ?", id).Scan(&rev); err != nil {
+			return err
+		}
+		if rev != cur.Revision+1 {
+			return errors.New("these Pick rules changed during the move; move again")
+		}
+		return r.markTx(tx, it.Key, "pick_rules_protocol", id, string(before), string(after))
+	})
+	return result(err, ResChanged, what)
+}
+
+// outsideList adds a Radarr list as a paused Outside list.
+func (r *run) outsideList(it Item) (string, string) {
+	o := it.OutsideList
+	if r.id("SELECT id FROM outside_lists WHERE kind = ? AND ref = ? COLLATE NOCASE", o.Kind, o.Ref) != 0 {
+		return ResAlready, "an Outside list for this list is here"
+	}
+	lib := filepath.Clean(filepath.FromSlash(o.Library))
+	what := map[string]string{lists.KindTMDB: "TMDB list ", lists.KindTrakt: "Trakt list "}[o.Kind] + o.Ref + " into " + o.Library + ", paused until you check it and turn it on"
+	if r.dry {
+		if r.id("SELECT id FROM library_folders WHERE path = ?", lib) == 0 && !isDir(lib) {
+			return ResNotFound, "no folder at " + o.Library + " on this server; add a path rule"
+		}
+		return ResCreate, what
+	}
+	lfID := r.id("SELECT id FROM library_folders WHERE path = ? AND kind = 'movie'", lib)
+	if lfID == 0 {
+		return ResNotFound, "its Library folder " + o.Library + " is not here (not moved, or left out)"
+	}
+	name := freeListName(it.Name, func(n string) bool {
+		return r.id("SELECT id FROM outside_lists WHERE name = ? COLLATE NOCASE", n) != 0
+	})
+	off, keep := false, o.KeepUpToDate
+	in := lists.Input{Name: name, Kind: o.Kind, Ref: o.Ref, LibraryFolderID: lfID, PickRulesID: r.presetID(o.Preset, "movie"), KeepUpToDate: &keep,
+		SearchOnAdd: o.SearchOnAdd, ReleaseGate: o.ReleaseGate, Enabled: &off, SyncEveryHours: o.SyncEveryHours}
+	_, err := lists.Add(r.ctx, r.m.Store, in, r.by, r.markWith(it.Key, "outside_list"))
+	return result(err, ResCreated, what)
+}
+
 func (r *run) titleHere(t *TitlePlan) int64 {
 	db := r.m.Store.Read()
 	var id int64
@@ -828,7 +930,7 @@ func (r *run) title(it Item) (string, string) {
 	}
 	c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
 	if t.Kind == "movie" {
-		c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:")}
+		c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
 	}
 	res, err := r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
 	if err == nil && len(res) == 1 && res[0].Error != "" {
@@ -1219,7 +1321,7 @@ func (r *run) downloader(it Item) (string, string) {
 		return ResCreate, what
 	}
 	proto := "torrent"
-	if d.Adapter == "sabnzbd" {
+	if d.Adapter == "sabnzbd" || d.Adapter == "nzbget" {
 		proto = "usenet"
 	}
 	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
@@ -1956,12 +2058,23 @@ func (m *Mover) undo(ctx context.Context, id int64, by domain.Actor, progress fu
 	}
 	rows.Close()
 	rep := &Report{Move: id, Undo: true, At: m.now(), Lines: []Line{}, Counts: map[string]int{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Next: []string{}}
+	// Each undo line keeps the name and group the move's report gave it.
+	moved := map[string]Line{}
+	if mv.Report != nil {
+		for _, l := range mv.Report.Lines {
+			moved[l.Key] = l
+		}
+	}
 	for i, x := range made {
 		if ctx.Err() != nil {
 			return rep, ctx.Err()
 		}
 		res, detail := m.undoOne(ctx, x, by)
-		rep.Lines = append(rep.Lines, Line{Group: x.what, Key: x.key, Name: x.key, Result: res, Detail: detail})
+		line := Line{Group: x.what, Key: x.key, Name: x.key, Result: res, Detail: detail}
+		if l, ok := moved[x.key]; ok {
+			line.Group, line.Name = l.Group, l.Name
+		}
+		rep.Lines = append(rep.Lines, line)
 		rep.Counts[res]++
 		if progress != nil && ((i+1)%25 == 0 || i+1 == len(made)) {
 			progress(i+1, len(made))
@@ -2072,6 +2185,8 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 				"it is set up or has downloads now, so it stays; remove it under Settings > Downloaders")
 		case "never_add":
 			return del("", "already gone")
+		case "outside_list":
+			return del(" AND enabled = 0", "you turned it on since, so it stays; remove it under Settings > Outside lists")
 		case "title":
 			if _, e := m.Library.Remove(ctx, x.row, library.RemoveChoice{}, true, by); e != nil && !errors.Is(e, store.ErrNotFound) && !errors.Is(e, library.ErrAlreadyRemoved) {
 				return ResFailed, e.Error()
@@ -2207,6 +2322,39 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 			return ResFailed, err.Error()
 		}
 		return ResRemoved, "the default languages are back as they were"
+	case "pick_rules_protocol":
+		var old, moved domain.ProtocolRule
+		if x.after == "" || json.Unmarshal([]byte(x.before), &old) != nil || json.Unmarshal([]byte(x.after), &moved) != nil {
+			return ResKept, keptUnknown
+		}
+		var cur domain.PickRules
+		if err := store.Get(ctx, m.Store.Read(), "pick_rules", x.row, &cur); errors.Is(err, store.ErrNotFound) {
+			return ResKept, "already gone"
+		} else if err != nil {
+			return ResFailed, err.Error()
+		}
+		if cur.Body.Protocol != moved {
+			return ResKept, keptChanged
+		}
+		body := cur.Body
+		body.Protocol = old
+		_, err := library.UpdatePickRules(ctx, m.Store, x.row, library.PickRulesInput{Name: cur.Name, Kinds: cur.Kinds, Body: body}, by, func(tx *sql.Tx) error {
+			var rev int
+			if err := tx.QueryRow("SELECT revision FROM pick_rules WHERE id = ?", x.row).Scan(&rev); err != nil {
+				return err
+			}
+			if rev != cur.Revision+1 {
+				return errUndoChanged
+			}
+			return nil
+		})
+		if errors.Is(err, errUndoChanged) {
+			return ResKept, keptChanged
+		}
+		if err != nil {
+			return ResFailed, err.Error()
+		}
+		return ResRemoved, "the wait on " + cur.Name + " is back as it was"
 	}
 	return ResKept, "nothing to undo for it"
 }

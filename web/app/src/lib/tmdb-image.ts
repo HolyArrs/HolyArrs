@@ -15,6 +15,18 @@ import { to } from './paths.ts';
 // (measured: 20 Explore visits kept 120,000 DOM nodes and 1,700 listeners).
 const tmdb = /^https:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)\/([A-Za-z0-9_-]+\.(?:jpg|png|webp))$/;
 
+// Any TMDB picture address, at any size.
+const tmdbAny = /^https?:\/\/image\.tmdb\.org\/t\/p\/(w\d+|h\d+|original)\/([A-Za-z0-9_-]+\.(?:jpg|png|webp))$/;
+// The sizes the artwork cache fetches (internal/library/artwork.go tmdbSizes); others come at w500.
+const cacheSizes = new Set(['w92', 'w154', 'w185', 'w300', 'w342', 'w500', 'w780', 'w1280', 'h632', 'original']);
+
+/** proxied sends a TMDB picture through HolyArrs' artwork cache, so the browser never calls TMDB itself. Other pictures are left as they are. */
+export function proxied(url: string | null | undefined): string {
+	const m = url ? tmdbAny.exec(url) : null;
+	if (!m) return url ?? '';
+	return to(`/api/v1/artwork/tmdb/${cacheSizes.has(m[1]) ? m[1] : 'w500'}/${m[2]}`);
+}
+
 const width = { poster: 342, backdrop: 780, large: 1280 } as const;
 
 // The slot sizes: a card that knows its rendered width takes the smallest
@@ -53,11 +65,11 @@ const anyTmdb = /^(.*?\/(?:t\/p|api\/v1\/artwork\/tmdb))\/(?:w\d+|h\d+|original)
  * original; backdrops w780, w1280 or original. Other pictures are left as they are. */
 export function fitTile(url: string, css: number, person: boolean, ratio = globalThis.devicePixelRatio || 1): string {
 	const m = anyTmdb.exec(url);
-	if (!m || !(css > 0)) return url;
+	if (!m || !(css > 0)) return proxied(url);
 	const need = css * ratio;
 	// A tall 3:4 tile: a profile is cut by height, a backdrop fills by height (16:9, so about 2.4x the tile width).
 	const size = person ? (need <= 185 ? 'w185' : need <= 500 ? 'w500' : 'original') : need * 2.4 <= 780 ? 'w780' : need * 2.4 <= 1280 ? 'w1280' : 'original';
-	return `${m[1]}/${size}/${m[2]}`;
+	return proxied(`${m[1]}/${size}/${m[2]}`);
 }
 
 const warmed = new Set<string>();

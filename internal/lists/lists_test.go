@@ -2,6 +2,7 @@ package lists
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -178,6 +179,23 @@ func TestListInputChecks(t *testing.T) {
 	}
 	if err := Remove(ctx, e.s, l.ID); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("remove twice: %v", err)
+	}
+	// A step given to Add runs with the new id in the same write; when it
+	// fails, no list is kept.
+	var got int64
+	l, err = Add(ctx, e.s, Input{Name: "Hooked", Kind: KindTMDB, Ref: "44"}, domain.System, func(tx *sql.Tx, id int64) error {
+		got = id
+		return nil
+	})
+	if err != nil || got == 0 {
+		t.Fatalf("then step: id %d, %v", got, err)
+	}
+	failed := errors.New("mark failed")
+	if _, err := Add(ctx, e.s, Input{Name: "Dropped", Kind: KindTMDB, Ref: "45"}, domain.System, func(*sql.Tx, int64) error { return failed }); !errors.Is(err, failed) {
+		t.Fatalf("failing step: %v", err)
+	}
+	if all, _ := All(ctx, e.s.Read()); len(all) != 1 || all[0].Name != "Hooked" {
+		t.Fatalf("lists %+v", all)
 	}
 }
 

@@ -456,7 +456,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 	r.owner.call("PUT", "/api/v1/alerts/"+itoa(mail.ID), `{"name":"Mail","smtp_host":"127.0.0.1","smtp_port":1,"smtp_security":"none","smtp_from":"h@example.test","staff_to":"luis@example.test"}`, 200)
 	// A mail server on this machine without the local network choice is
 	// refused; the answer is the same plain words every time.
-	if b := r.owner.call("POST", "/api/v1/alerts/"+itoa(mail.ID)+"/test", "", 502); !strings.Contains(string(b), "the Discord, mail or webhook server refused the test") || strings.Contains(string(b), "127.0.0.1") {
+	if b := r.owner.call("POST", "/api/v1/alerts/"+itoa(mail.ID)+"/test", "", 502); !strings.Contains(string(b), "the Discord, Telegram, mail or webhook server refused the test") || strings.Contains(string(b), "127.0.0.1") {
 		t.Fatalf("test answer %s", b)
 	}
 	r.owner.call("PUT", "/api/v1/alerts/"+itoa(mail.ID), `{"name":"Mail","allow_local_network":true,"smtp_host":"127.0.0.1","smtp_port":1,"smtp_security":"none","smtp_from":"h@example.test","staff_to":"luis@example.test"}`, 200)
@@ -510,5 +510,47 @@ func TestWebhookAlertOverHTTP(t *testing.T) {
 	defer mu.Unlock()
 	if len(got) != 1 || got[0].Get("X-HolyArrs-Event") != "test" || !strings.HasPrefix(got[0].Get("X-HolyArrs-Signature"), "sha256=") {
 		t.Fatalf("test post %v", got)
+	}
+}
+
+func TestTelegramAlertOverHTTP(t *testing.T) {
+	r := newAskRig(t)
+	token := strings.Join([]string{"123456789", "AAHstandInTokenForApiTests_01234"}, ":")
+	var mu sync.Mutex
+	var paths []string
+	var texts []string
+	tg := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		var body struct {
+			ChatID string `json:"chat_id"`
+			Text   string `json:"text"`
+		}
+		_ = json.NewDecoder(req.Body).Decode(&body)
+		mu.Lock()
+		paths, texts = append(paths, req.URL.Path), append(texts, body.ChatID+"|"+body.Text)
+		mu.Unlock()
+		_, _ = w.Write([]byte(`{"ok":true,"result":{}}`))
+	}))
+	defer tg.Close()
+	t.Setenv("HOLYARRS_TELEGRAM_URL", tg.URL)
+	r.owner.call("POST", "/api/v1/alerts", `{"name":"TG","kind":"telegram","chat_id":"42"}`, 400)
+	body := func(m map[string]any) string { b, _ := json.Marshal(m); return string(b) }
+	r.owner.call("POST", "/api/v1/alerts", body(map[string]any{"name": "TG", "kind": "telegram", "bot_token": token, "chat_id": "not a chat"}), 400)
+	b := r.owner.call("POST", "/api/v1/alerts", body(map[string]any{"name": "TG", "kind": "telegram", "allow_local_network": true, "bot_token": token, "chat_id": "-1001234"}), 201)
+	var al AlertView
+	_ = json.Unmarshal(b, &al)
+	if al.BotToken != secrets.Masked || al.ChatID != "-1001234" || al.URL != "" {
+		t.Fatalf("view %+v", al)
+	}
+	// The masked placeholder sent back keeps the stored token.
+	r.owner.call("PUT", "/api/v1/alerts/"+itoa(al.ID), body(map[string]any{"name": "TG", "allow_local_network": true, "bot_token": secrets.Masked, "chat_id": "-1001234"}), 200)
+	r.owner.call("POST", "/api/v1/alerts/"+itoa(al.ID)+"/test", "", 200)
+	list := r.owner.call("GET", "/api/v1/alerts", "", 200)
+	if strings.Contains(string(list)+string(b), "AAHstandIn") {
+		t.Fatalf("the bot token leaked: %s", list)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(paths) != 1 || paths[0] != "/bot"+token+"/sendMessage" || !strings.HasPrefix(texts[0], "-1001234|HolyArrs test\n") {
+		t.Fatalf("sent %v %v", paths, texts)
 	}
 }

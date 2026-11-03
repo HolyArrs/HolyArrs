@@ -230,6 +230,46 @@ test('sign in with Emby makes a member, next to Jellyfin', async ({ browser }) =
 	await expect(gran.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
 });
 
+test('the owner sets up single sign-on in Settings, and the sign-in page offers it', async ({ browser }) => {
+	await own.goto('/settings/sign-in');
+	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Single sign-on' }) });
+	// A stale local sign-in asks for the password first.
+	const confirmBox = card.getByTestId('confirm-sign-in');
+	if (await confirmBox.isVisible().catch(() => false)) {
+		await confirmBox.getByLabel('HolyArrs password').fill(owner().password);
+		await confirmBox.getByRole('button', { name: 'Confirm' }).click();
+	}
+	const form = card.getByTestId('sso-form');
+	await expect(form).toBeVisible();
+	await expect(card.getByTestId('sso-forward')).toContainText('set only in the environment');
+	const issuer = `http://127.0.0.1:${jellyfinPort}/oidc`;
+	await form.getByLabel('Issuer').fill(issuer);
+	await form.getByRole('button', { name: 'Test' }).click();
+	await expect(form.getByText('An OpenID Connect provider answered at this issuer.')).toBeVisible();
+	await form.getByText('Show the single sign-on button on the sign-in page').click();
+	await form.getByLabel('Client id').fill('holyarrs');
+	await form.getByLabel('Client secret').fill(`${owner().password}-client`);
+	await expect(form.getByLabel('Callback address')).toHaveValue(/\/api\/v1\/auth\/oidc\/callback$/);
+	// Saving needs the password with it.
+	await form.getByLabel('Your HolyArrs password').fill('not it');
+	await form.getByRole('button', { name: 'Save' }).click();
+	await expect(form.getByRole('alert')).toContainText('password or code is wrong');
+	await form.getByLabel('Your HolyArrs password').fill(owner().password);
+	await form.getByRole('button', { name: 'Save' }).click();
+	await expect(own.getByText('Single sign-on saved.')).toBeVisible();
+	await expect(form.getByLabel('Client secret')).toHaveValue('');
+
+	const visitor = await fresh(browser);
+	await visitor.goto('/login');
+	await expect(visitor.getByRole('button', { name: /single sign-on/i })).toBeVisible();
+
+	// Turn it off again so later tests see the sign-in page as before.
+	await form.getByText('Show the single sign-on button on the sign-in page').click();
+	await form.getByLabel('Your HolyArrs password').fill(owner().password);
+	await form.getByRole('button', { name: 'Save' }).click();
+	await expect(own.getByText('Single sign-on saved.').first()).toBeVisible();
+});
+
 test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await own.goto('/settings/sign-in');
 	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Sign in with Plex' }) });

@@ -156,11 +156,12 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 type Message struct {
 	ID        int64      `json:"id"`
 	CreatedAt time.Time  `json:"created_at"`
-	Kind      string     `json:"kind"` // approved, turned_down, ready
+	Kind      string     `json:"kind"` // approved, turned_down, ready, fixed (a report)
 	Text      string     `json:"text"`
 	AskID     *int64     `json:"ask_id,omitempty"`
 	TitleID   *int64     `json:"title_id,omitempty"`
 	ReadAt    *time.Time `json:"read_at,omitempty"`
+	ReportID  *int64     `json:"report_id,omitempty"`
 }
 
 // Messages reads a person's newest messages and how many are unread.
@@ -170,7 +171,7 @@ func Messages(ctx context.Context, db *sql.DB, userID int64, limit int) ([]Messa
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM messages WHERE user_id = ? AND read_at IS NULL", userID).Scan(&unread); err != nil {
 		return out, 0, err
 	}
-	rows, err := db.QueryContext(ctx, "SELECT id, created_at, kind, text, ask_id, title_id, read_at FROM messages WHERE user_id = ? ORDER BY id DESC LIMIT ?", userID, limit)
+	rows, err := db.QueryContext(ctx, "SELECT id, created_at, kind, text, ask_id, title_id, read_at, report_id FROM messages WHERE user_id = ? ORDER BY id DESC LIMIT ?", userID, limit)
 	if err != nil {
 		return out, 0, err
 	}
@@ -179,7 +180,7 @@ func Messages(ctx context.Context, db *sql.DB, userID int64, limit int) ([]Messa
 		var m Message
 		var at string
 		var read sql.NullString
-		if err := rows.Scan(&m.ID, &at, &m.Kind, &m.Text, &m.AskID, &m.TitleID, &read); err != nil {
+		if err := rows.Scan(&m.ID, &at, &m.Kind, &m.Text, &m.AskID, &m.TitleID, &read, &m.ReportID); err != nil {
 			return out, 0, err
 		}
 		m.CreatedAt, _ = time.Parse(store.TimeLayout, at)

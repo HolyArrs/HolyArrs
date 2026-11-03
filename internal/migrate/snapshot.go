@@ -25,8 +25,11 @@ type Snapshot struct {
 	Folders []Folder `json:"folders,omitempty"`
 
 	// Rules.
-	QualityProfiles  []Profile        `json:"quality_profiles,omitempty"`
-	CustomFormats    []Named          `json:"custom_formats,omitempty"`
+	QualityProfiles []Profile `json:"quality_profiles,omitempty"`
+	CustomFormats   []Named   `json:"custom_formats,omitempty"`
+	// ReleaseProfiles are release word rules: words a release must or must
+	// not hold, with their tag and indexer scope.
+	ReleaseProfiles  []Named          `json:"release_profiles,omitempty"`
 	DelayProfiles    []DelayProfile   `json:"delay_profiles,omitempty"`
 	Naming           map[string]any   `json:"naming,omitempty"`
 	MetadataProfiles []Named          `json:"metadata_profiles,omitempty"`
@@ -43,6 +46,9 @@ type Snapshot struct {
 	Metadata        []Provider `json:"metadata,omitempty"`
 	// AppLinks are Prowlarr's links to the apps it fills.
 	AppLinks []Provider `json:"app_links,omitempty"`
+	// IndexerProxies are Prowlarr's proxies, each used by the indexers
+	// sharing one of its tags.
+	IndexerProxies []Provider `json:"indexer_proxies,omitempty"`
 	// Downloader is qBittorrent's or SABnzbd's own connection details.
 	Downloader *Downloader `json:"downloader,omitempty"`
 
@@ -50,7 +56,8 @@ type Snapshot struct {
 	Users    []User    `json:"users,omitempty"`
 	Requests []Request `json:"requests,omitempty"`
 
-	// Settings are app-wide plain settings (Seerr's default limits).
+	// Settings are app-wide plain settings (Seerr's default limits,
+	// Radarr's availability delay).
 	Settings map[string]any `json:"settings,omitempty"`
 
 	// NeedsReentry names every secret left behind ("indexer \"Nyaa\": apiKey").
@@ -141,6 +148,11 @@ type DelayProfile struct {
 	TorrentDelay      int      `json:"torrent_delay"`
 	Order             int      `json:"order"`
 	Tags              []string `json:"tags,omitempty"`
+	// BypassIfHighestQuality skips the wait at the top allowed quality;
+	// BypassIfAboveScore skips it at a format score (a snapshot kept before
+	// they were read has both false).
+	BypassIfHighestQuality bool `json:"bypass_if_highest_quality,omitempty"`
+	BypassIfAboveScore     bool `json:"bypass_if_above_score,omitempty"`
 }
 
 // Exclusion is a title the app was told never to add.
@@ -294,6 +306,7 @@ func (s *Snapshot) finish() {
 	add("notification", s.Notifications)
 	add("metadata", s.Metadata)
 	add("app link", s.AppLinks)
+	add("indexer proxy", s.IndexerProxies)
 	if s.Subtitles != nil {
 		add("subtitle site", s.Subtitles.Providers)
 	}

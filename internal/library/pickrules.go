@@ -156,8 +156,9 @@ func CreatePickRules(ctx context.Context, st *store.Store, in PickRulesInput, by
 
 // UpdatePickRules changes Pick rules and bumps their revision. A ready-made
 // rule keeps its name and kinds; a rule in use keeps every kind something
-// uses and its ladder.
-func UpdatePickRules(ctx context.Context, st *store.Store, id int64, in PickRulesInput, by domain.Actor) (domain.PickRules, error) {
+// uses and its ladder. then, when given, runs in the same transaction after
+// the change.
+func UpdatePickRules(ctx context.Context, st *store.Store, id int64, in PickRulesInput, by domain.Actor, then ...func(tx *sql.Tx) error) (domain.PickRules, error) {
 	in.Name = strings.TrimSpace(in.Name)
 	var p domain.PickRules
 	if err := domain.CheckPickRules(in.Name, in.Kinds, in.Body); err != nil {
@@ -189,7 +190,15 @@ func UpdatePickRules(ctx context.Context, st *store.Store, id int64, in PickRule
 		}
 		p.Name, p.Kinds, p.Body = in.Name, in.Kinds, in.Body
 		p.Revision++
-		return store.Update(tx, "pick_rules", &p, by)
+		if err := store.Update(tx, "pick_rules", &p, by); err != nil {
+			return err
+		}
+		for _, f := range then {
+			if err := f(tx); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	return p, err
 }

@@ -134,6 +134,14 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 	if p, ok := s2.ArtistPictures(artistID(1)); !ok || p.Photo == nil || p.Photo.V != "p1" {
 		t.Fatalf("pictures read back %+v", p)
 	}
+	// Albums are read from disk by key, not kept in memory: a fresh process
+	// answers them, counts them, and knows an unlisted one is not there.
+	if c, ok := s2.AlbumCover(albumID(2)); !ok || c == nil || c.V != "c6" {
+		t.Fatalf("cover read back %+v", c)
+	}
+	if s2.Stats().Albums != 5 || s2.HasAlbum(albumID(99)) {
+		t.Fatalf("albums %d, unlisted album found %v", s2.Stats().Albums, s2.HasAlbum(albumID(99)))
+	}
 }
 
 func TestSyncWantsOnlyUncoveredAfterWholeCopy(t *testing.T) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { proxied } from '#lib/tmdb-image.ts';
 	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { glide } from '#lib/ui/transitions.ts';
@@ -432,7 +433,7 @@
 
 	// One status vocabulary (title-status.ts): approvers get the staff words.
 	const askPill = (a: Ask) => titleStatus({ ask: a.state, titleKind: a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie' }, approver ? 'staff' : 'member');
-	const msgKind = (k: string): StatusKind => (k === 'ready' ? 'in_library' : k === 'turned_down' ? 'turned_down' : 'approved');
+	const msgKind = (k: string): StatusKind => (k === 'ready' || k === 'fixed' ? 'in_library' : k === 'turned_down' ? 'turned_down' : 'approved');
 
 	// Id-like account names read as a person, never a raw id.
 	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? 'someone in your household' : w));
@@ -563,6 +564,7 @@
 
 <div class="ap-top" class:compact={approver}>
 <h1 class="sr-only">Requests</h1>
+{#if session.can('manage_library')}<a class="rp-link" href={to('/reports')} data-testid="reports-link">Problems{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> reported by people</span></a>{/if}
 {#if session.can('ask') && !approver}
 	<div class="ask-actions">
 			<Button icon="film" variant="primary" href={to(`/search`)}><span class="ask-d">Ask for a movie</span><span class="ask-m"><span class="sr-only">Ask for a </span>Movie</span></Button>
@@ -646,7 +648,7 @@
 			<ul class="asks" aria-label="Requests">
 				{#each shown as a, i (a.id)}
 					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask" data-ask-id={a.id}>
-						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${a.poster}")`}></div>{/if}
+						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></div>{/if}
 						{#if choosable}
 							<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={chosen.has(a.id)} onchange={() => toggleChosen(a.id)} />
 						{/if}
@@ -774,7 +776,7 @@
 					<ul class="msg-list">
 						{#each inbox.messages.slice(0, 5) as m (m.id)}
 							<li class:unread={!m.read_at} data-testid="message">
-								<StatusPill kind={msgKind(m.kind)} label={m.kind === 'ready' ? 'Ready' : m.kind === 'turned_down' ? 'Declined' : 'Approved'} />
+								<StatusPill kind={msgKind(m.kind)} label={m.kind === 'fixed' ? 'Fixed' : m.kind === 'ready' ? 'Ready' : m.kind === 'turned_down' ? 'Declined' : 'Approved'} />
 								<span class="msg-text">{plain(m.text)}</span>
 								<time class="muted" datetime={m.created_at} title={dateTime(m.created_at)}>{ago(m.created_at)}</time>
 							</li>
@@ -965,4 +967,9 @@
 		.art { width: 44px; }
 		.actions > :global(*):not(.row-menu) { flex: 1 1 auto; }
 	}
+	/* Reported problems (#95): a small link for the owner and admins. */
+	.rp-link { display: inline-flex; margin-bottom: 10px; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.rp-link:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
+	.rp-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (max-width: 767px) and (pointer: coarse) { .rp-link { min-height: 44px; } }
 </style>

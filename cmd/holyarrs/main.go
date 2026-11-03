@@ -288,6 +288,7 @@ type runOpts struct {
 }
 
 func run(c config) error {
+	useMemoryTarget()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	return serve(ctx, c, runOpts{})

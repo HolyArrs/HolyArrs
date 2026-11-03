@@ -13,6 +13,19 @@ import (
 type SSOOptions struct {
 	OIDC    *OIDCOptions
 	Forward *ForwardAuthOptions
+	// OIDCFromEnv is set when HOLYARRS_OIDC_ENABLED is present at all, even
+	// as false: the environment then owns single sign-on and Settings only
+	// shows it. Otherwise the owner sets it up in Settings (sso_settings.go).
+	OIDCFromEnv bool
+	// SavedLimits are the address rules for single sign-on set up in
+	// Settings. They come only from the environment, never from a browser.
+	SavedLimits OIDCLimits
+}
+
+// OIDCLimits say which provider addresses single sign-on may reach.
+type OIDCLimits struct {
+	AllowLocal        bool // providers on the local network (cloud metadata stays blocked)
+	AllowLoopbackHTTP bool // plain HTTP on this machine, for testing only
 }
 
 type ssoState struct {
@@ -34,6 +47,15 @@ func SSOFromEnv(urlBase string) (SSOOptions, error) {
 		return false, errors.New("SSO boolean settings must be true or false")
 	}
 	const prefix = "HOLYARRS_"
+	_, out.OIDCFromEnv = os.LookupEnv(prefix + "OIDC_ENABLED")
+	// The address rules also apply to single sign-on set up in Settings.
+	var err error
+	if out.SavedLimits.AllowLocal, err = flag(prefix + "OIDC_ALLOW_LOCAL_NETWORK"); err != nil {
+		return out, err
+	}
+	if out.SavedLimits.AllowLoopbackHTTP, err = flag(prefix + "OIDC_ALLOW_LOOPBACK_HTTP"); err != nil {
+		return out, err
+	}
 	on, err := flag(prefix + "OIDC_ENABLED")
 	if err != nil {
 		return out, err
@@ -84,25 +106,52 @@ func SSOFromEnv(urlBase string) (SSOOptions, error) {
 	return out, nil
 }
 
+// initSSO builds each way on its own: a broken single sign-on setup turns
+// off only single sign-on, never trusted proxy sign-in, and the other way round.
 func (a *Auth) initSSO(opt SSOOptions) {
 	state := &ssoState{}
-	a.sso = state
-	var err error
 	if opt.OIDC != nil {
-		state.oidc, err = newOIDCRuntime(*opt.OIDC)
+		o, err := newOIDCRuntime(*opt.OIDC)
 		if err != nil {
-			log.Print("auth: invalid SSO configuration; SSO disabled")
-			return
+			log.Print("auth: invalid single sign-on configuration; single sign-on is off")
+		} else {
+			state.oidc = o
 		}
 	}
 	if opt.Forward != nil {
-		state.forward, err = newForwardRuntime(*opt.Forward)
+		f, err := newForwardRuntime(*opt.Forward)
 		if err != nil {
-			if state.oidc != nil {
-				state.oidc.close()
+			log.Print("auth: invalid trusted proxy configuration; trusted proxy sign-in is off")
+		} else {
+			state.forward = f
+		}
+	}
+	a.sso.Store(state)
+}
+
+// ssoNow is the current single sign-on state, never nil. A handler reads it
+// once and keeps what it got, as a settings save swaps the whole state.
+func (a *Auth) ssoNow() *ssoState {
+	if s := a.sso.Load(); s != nil {
+		return s
+	}
+	return &ssoState{}
+}
+
+// swapOIDC puts o (nil turns single sign-on off) in place of the current
+// runtime and closes the old one; flows in flight on it fail safely and the
+// person starts again.
+func (a *Auth) swapOIDC(o *oidcRuntime) {
+	for {
+		cur := a.sso.Load()
+		next := &ssoState{oidc: o}
+		if cur != nil {
+			next.forward = cur.forward
+		}
+		if a.sso.CompareAndSwap(cur, next) {
+			if cur != nil && cur.oidc != nil && cur.oidc != o {
+				cur.oidc.close()
 			}
-			a.sso = &ssoState{}
-			log.Print("auth: invalid SSO configuration; SSO disabled")
 			return
 		}
 	}
@@ -110,13 +159,14 @@ func (a *Auth) initSSO(opt SSOOptions) {
 
 // Close stops auth-owned provider work and is safe to call more than once.
 func (a *Auth) Close() {
-	if a.sso != nil && a.sso.oidc != nil {
-		a.sso.oidc.close()
+	if s := a.sso.Load(); s != nil && s.oidc != nil {
+		s.oidc.close()
 	}
 }
 
 func (a *Auth) ssoRoutes(m *http.ServeMux) {
 	a.oidcRoutes(m)
+	a.ssoSettingsRoutes(m)
 	m.HandleFunc("POST /api/v1/auth/forward/login", a.forwardLogin)
 	m.HandleFunc("POST /api/v1/auth/forward/link", a.forwardLink)
 }

@@ -250,6 +250,11 @@ func TestSecretNames(t *testing.T) {
 	if strings.Contains(set["url"].(string), secretMark) || set["url"] != "http://h:1/p?cat=2" || set["nested"] != nil || len(gone) != 1 || gone[0] != "link" {
 		t.Fatalf("%+v %v", set, gone)
 	}
+	// An on/off switch is never a secret, even when its name holds a word like hash.
+	set, gone = plainSettings(map[string]any{"rejectBlocklistedTorrentHashesWhileGrabbing": true, "seriesMetadataEpisodeGuide": false, "pinCode": "1234"})
+	if set["rejectBlocklistedTorrentHashesWhileGrabbing"] != true || set["seriesMetadataEpisodeGuide"] != false || len(gone) != 1 || gone[0] != "pinCode" {
+		t.Fatalf("switches: %+v %v", set, gone)
+	}
 }
 
 func TestINIAndYAML(t *testing.T) {

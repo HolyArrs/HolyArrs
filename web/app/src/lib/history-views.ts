@@ -69,6 +69,9 @@ export function verbOf(kind: string): Verb {
 		case 'ask_made': return { word: 'Asked', icon: 'wish', tone: 'info' };
 		case 'ask_approved': return { word: 'Approved', icon: 'check', tone: 'ok' };
 		case 'ask_turned_down': return { word: 'Turned down', icon: 'declined', tone: 'idle' };
+		case 'report_made': return { word: 'Reported', icon: 'alert', tone: 'wait' };
+		case 'report_fixed': return { word: 'Fixed', icon: 'check', tone: 'ok' };
+		case 'report_reopened': return { word: 'Reopened', icon: 'alert', tone: 'wait' };
 		case 'download_finished': return { word: 'Downloaded', icon: 'download', tone: 'ok' };
 		case 'download_stalled': return { word: 'Stalled', icon: 'waiting', tone: 'wait' };
 		case 'download_paused': return { word: 'Paused', icon: 'pause', tone: 'idle' };

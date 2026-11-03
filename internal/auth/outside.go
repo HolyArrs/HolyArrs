@@ -105,10 +105,11 @@ func (a *Auth) ways(ctx context.Context) []string {
 			out = append(out, p)
 		}
 	}
-	if a.sso != nil && a.sso.oidc != nil {
+	sso := a.ssoNow()
+	if sso.oidc != nil {
 		out = append(out, "oidc")
 	}
-	if a.sso != nil && a.sso.forward != nil {
+	if sso.forward != nil {
 		out = append(out, "forward_auth")
 	}
 	return out

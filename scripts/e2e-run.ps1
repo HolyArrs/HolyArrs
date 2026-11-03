@@ -5,6 +5,7 @@ param(
   [int]$StaleMinutes = 3,
   [int]$WaitMinutes = 120,
   [int]$Slots = 4,
+  [switch]$Exclusive,
   [string]$StateDir = 'C:\HolyForge\coderluii\cl\holyarrs\.omc\state'
 )
 # Runs one e2e command while holding one of the shared e2e lock slots, so
@@ -31,6 +32,8 @@ param(
 # - The command runs as its own process with its output in a log file, so piping
 #   or redirecting this script never breaks a run; its exit code passes through.
 # - A run waiting for a slot restarts itself when this script is updated.
+# - -Exclusive holds every slot (slot 0's ports) so nothing else runs beside
+#   it: for timing-sensitive checks (frame times, load numbers).
 $ErrorActionPreference = 'Stop'
 $logins = @{ agent = 'C:\HolyForge\coderluii\cl\holyarrs\secrets\showcase-18729-agent.txt'; owner = 'C:\HolyForge\coderluii\cl\holyarrs\secrets\showcase-18729-home.txt' }
 $env:HOLYARRS_SHOWCASE_LOGIN = $logins[$As]
@@ -79,7 +82,7 @@ function Preview-Stamp {
 
 # A run with its own config uses fixed ports, so only slot 0 fits it.
 $ownConfig = $Command -match '(^|\s)(-c|--config)(\s|=)'
-$choices = if ($ownConfig) { @(0) } else { @(0..($Slots - 1)) }
+$choices = if ($ownConfig -or $Exclusive) { @(0) } else { @(0..($Slots - 1)) }
 $deadline = (Get-Date).AddMinutes($WaitMinutes)
 $said = ''
 $slot = -1
@@ -137,6 +140,30 @@ while ($slot -lt 0) {
 $lock = Slot-Lock $slot
 $info = Join-Path $lock 'holder.txt'
 $ports = Slot-Ports $slot
+# Every slot this run holds; -Exclusive takes the others too, one by one as
+# their runs end, touching what it already holds so none looks stale.
+$held = @($lock)
+if ($Exclusive) {
+  "e2e lock: -Exclusive: waiting for every other slot to be free"
+  foreach ($k in 1..($Slots - 1)) {
+    $l = Slot-Lock $k
+    while ($true) {
+      try {
+        New-Item -ItemType Directory $l -ErrorAction Stop | Out-Null
+        Set-Content -Path (Join-Path $l 'holder.txt') -Encoding ascii -Value @($PID, "$Who (exclusive)", (Get-Date).ToString('o'), $Command, $here)
+        $held += $l
+        break
+      } catch {}
+      if ((Get-Date) -gt $deadline) {
+        foreach ($x in $held) { Remove-Item -Recurse -Force $x -ErrorAction SilentlyContinue }
+        throw "e2e lock: could not hold every slot within $WaitMinutes minutes"
+      }
+      foreach ($x in $held) { try { (Get-Item (Join-Path $x 'holder.txt')).LastWriteTime = Get-Date } catch {} }
+      Start-Sleep -Seconds 5
+    }
+  }
+  "e2e lock: holding all $Slots slots"
+}
 if ($slot -gt 0) {
   for ($i = 0; $i -lt 16; $i++) { if ($portNames[$i]) { Set-Item "env:HOLYARRS_E2E_$($portNames[$i])_PORT" $ports[$i] } }
   $env:HOLYARRS_E2E_PORT = $ports[7]
@@ -167,6 +194,8 @@ if ((Test-Path $dist) -and (Test-Path $src)) {
   $newest = Get-ChildItem $src -Recurse -File | Sort-Object LastWriteTime | Select-Object -Last 1
   if ($newest.LastWriteTime -gt (Get-Item $dist).LastWriteTime) { $warn += "WARNING: web\dist is older than $($newest.Name) ($($newest.LastWriteTime.ToString('HH:mm'))): the harness serves the built app, so this run tests old pages. Run npm run build first." }
 }
+$link = Get-Item (Join-Path $here 'node_modules') -Force -ErrorAction SilentlyContinue
+if ($link -and $link.LinkType -eq 'Junction') { $warn += "WARNING: node_modules here is a junction to $($link.Target); removing this worktree can empty that shared folder for everyone. Give it its own copy: scripts\worktree-own-modules.ps1 -Only $(Split-Path -Leaf (Split-Path -Parent (Split-Path -Parent $here)))" }
 if ($Command -match '--no-deps') { $warn += 'WARNING: --no-deps skips the setup project, so the fresh e2e server has no owner and no folders yet: tests that sign in fail. Leave it out; a project now depends only on setup plus what it needs.' }
 $warn | ForEach-Object { $_ }
 $logDir = Join-Path $state 'e2e-logs'
@@ -185,12 +214,14 @@ Set-Content -Path $run -Encoding utf8 -Value @('$Error.Clear()', $Command, 'if (
 try {
   $p = Start-Process -FilePath powershell -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $run -WorkingDirectory $here -NoNewWindow -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
   $null = $p.Handle # keeps the exit code readable after the process ends
-  while (-not $p.WaitForExit(30000)) { try { (Get-Item $info).LastWriteTime = Get-Date } catch {} }
+  while (-not $p.WaitForExit(30000)) { foreach ($x in $held) { try { (Get-Item (Join-Path $x 'holder.txt')).LastWriteTime = Get-Date } catch {} } }
   $code = $p.ExitCode
   if ($null -eq $code) { $code = 1 }
 } finally {
-  $h = Read-Holder $lock
-  if ($h -and $h.Pid -eq $PID) { Remove-Item -Recurse -Force $lock -ErrorAction SilentlyContinue }
+  foreach ($x in $held) {
+    $h = Read-Holder $x
+    if ($h -and $h.Pid -eq $PID) { Remove-Item -Recurse -Force $x -ErrorAction SilentlyContinue }
+  }
 }
 $stampEnd = Preview-Stamp
 foreach ($f in $out, $err) { if (Test-Path $f) { Get-Content $f | Add-Content -Path $log -Encoding utf8; Remove-Item $f -ErrorAction SilentlyContinue } }

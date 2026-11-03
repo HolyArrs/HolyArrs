@@ -610,6 +610,36 @@ type Ask struct {
 	FourK bool `db:"four_k"`
 }
 
+// Report states.
+const (
+	ReportOpen  = "open"
+	ReportFixed = "fixed"
+)
+
+// ReportKinds are the problem kinds a Report can name, in the order screens
+// show them.
+var ReportKinds = []string{"picture", "sound", "subtitles", "wont_play", "other"}
+
+// Report is a person's report of a problem with a title in the Library. It
+// can narrow to an album, a season, an episode or track (ItemID) and a
+// Version; FileID is the file that was there when it was made.
+type Report struct {
+	Meta
+	TitleID   int64      `db:"title_id"`
+	AlbumID   *int64     `db:"album_id"`
+	Season    *int       `db:"season"`
+	ItemID    *int64     `db:"item_id"`
+	VersionID *int64     `db:"version_id"`
+	FileID    *int64     `db:"file_id"`
+	Kind      string     `db:"kind"` // picture, sound, subtitles, wont_play, other
+	Note      string     `db:"note"`
+	State     string     `db:"state"` // open, fixed
+	MadeBy    *int64     `db:"made_by"`
+	ClosedBy  *int64     `db:"closed_by"`
+	ClosedAt  *time.Time `db:"closed_at"`
+	Reply     string     `db:"reply"` // the optional reply sent to the reporter when fixed
+}
+
 // AskEpisodes are the episodes of one season asked for (episode numbers).
 type AskEpisodes struct {
 	Season   int   `json:"season"`
@@ -635,7 +665,7 @@ type AskAlbum struct {
 type Alert struct {
 	Meta
 	Name             string   `db:"name"`
-	Kind             string   `db:"kind"` // discord, email
+	Kind             string   `db:"kind"` // discord, email, webhook, telegram
 	Enabled          bool     `db:"enabled"`
 	Moments          []string `db:"moments,json"`
 	URLSecretID      *int64   `db:"url_secret_id"`
@@ -654,6 +684,9 @@ type Alert struct {
 	// WebhookAuth says what a webhook does with its secret: sign (an HMAC
 	// of each body), bearer (an Authorization header) or none.
 	WebhookAuth string `db:"webhook_auth"`
+	// ChatID is the Telegram chat a telegram Alert writes to: a number
+	// (negative for groups) or @channelname.
+	ChatID string `db:"chat_id"`
 }
 
 // HealthCheck is the latest result of one health check about one thing.

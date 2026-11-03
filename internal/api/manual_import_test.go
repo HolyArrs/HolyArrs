@@ -86,7 +86,7 @@ func TestImportFoldersNeedOwnerOrAdmin(t *testing.T) {
 	r.bo.call("PUT", "/api/v1/settings/import-folders", body, 200)
 	r.owner.call("PUT", "/api/v1/settings/import-folders", `{"extra_folders":["/"]}`, 400)
 
-	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`, 200)
+	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8"]}`, 200)
 	req, _ := http.NewRequest("PUT", r.srv.URL+"/api/v1/settings/import-folders", strings.NewReader(`{"extra_folders":["/etc"]}`))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)

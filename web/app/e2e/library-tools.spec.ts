@@ -22,6 +22,20 @@ test('Library tools open from the Add menu', async ({ page }) => {
 	}
 });
 
+test('Library and title pages load TMDB pictures only through the artwork cache', async ({ page }) => {
+	const outside: string[] = [];
+	page.on('request', (r) => { if (/^https?:\/\/[^/]*tmdb\.org\//.test(r.url())) outside.push(`${new URL(page.url()).pathname}: ${r.url()}`); });
+	await signIn(page, owner());
+	const { titles } = (await (await page.request.get('/api/v1/titles')).json()) as { titles: { id: number; kind: string }[] };
+	const paths = ['/library?kind=movie&layout=table', '/library?kind=movie&layout=grid', '/library?kind=show&layout=overview'];
+	for (const t of titles.filter((x) => x.kind === 'movie' || x.kind === 'show')) paths.push(`/library/${t.id}`, `/library/${t.id}?tab=library`);
+	for (const p of paths) {
+		await page.goto(p);
+		await page.waitForLoadState('networkidle');
+	}
+	expect(outside).toEqual([]);
+});
+
 test('Library tools fit a phone', async ({ browser }) => {
 	const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } });
 	const page = await ctx.newPage();
@@ -39,12 +53,22 @@ test('Library tools fit a phone', async ({ browser }) => {
 // same one, so a movie is first taken out of the Library (its imported files
 // to the holding folder) and added again with no file.
 
-type Call = (method: 'GET' | 'POST', path: string, data?: unknown) => Promise<APIResponse>;
+type Call = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) => Promise<APIResponse>;
 
 /** api signs requests with the session's CSRF token, as the app does. */
 async function api(page: Page): Promise<Call> {
 	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
-	return (method, path, data) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+	const call: Call = (method, path, data) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+	// Import by hand reads only from known folders: the loose files' folder is an extra import folder.
+	const byHand = join(tmp, 'by-hand');
+	mkdirSync(byHand, { recursive: true });
+	const now = (await (await call('GET', '/settings/import-folders')).json()) as { extra_folders?: string[] };
+	const extra = now.extra_folders ?? [];
+	if (!extra.includes(byHand)) {
+		const put = await call('PUT', '/settings/import-folders', { extra_folders: [...extra, byHand] });
+		expect(put.ok(), await put.text()).toBe(true);
+	}
+	return call;
 }
 
 /** freshMovie puts a fake-TMDB movie in the Library with no file and returns its id. */

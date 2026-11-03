@@ -333,7 +333,9 @@ export const fakeInstallToken = ['hai', 'stand', 'in', 'install'].join('_');
 export const metadataEnv = {
 	HOLYARRS_METADATA_URL: `http://127.0.0.1:${tmdbPort}`,
 	HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL: 'true',
-	HOLYARRS_TMDB_URL: `http://127.0.0.1:${tmdbPort}`
+	HOLYARRS_TMDB_URL: `http://127.0.0.1:${tmdbPort}`,
+	// Telegram Alerts post to the fake Discord server, which also answers sendMessage.
+	HOLYARRS_TELEGRAM_URL: `http://127.0.0.1:${discordPort}`
 };
 
 /** Counts of what the fake metadata server answered, for the tests. */
@@ -508,6 +510,11 @@ export function startFakes() {
 	/** @type {unknown[]} */
 	const updates = [];
 	const jelly = createServer(async (req, res) => {
+		// A single sign-on provider's discovery document, for the Settings Test button.
+		if (req.method === 'GET' && req.url === '/oidc/.well-known/openid-configuration') {
+			const base = `http://127.0.0.1:${jellyfinPort}/oidc`;
+			return send(res, 200, { issuer: base, authorization_endpoint: `${base}/auth`, token_endpoint: `${base}/token`, jwks_uri: `${base}/keys`, id_token_signing_alg_values_supported: ['RS256'] });
+		}
 		// Emby, as it often sits at http://host/emby. It wants the X-Emby-Authorization header.
 		if (req.url?.startsWith('/emby/')) {
 			if (req.method === 'POST' && req.url === '/emby/Users/AuthenticateByName') {
@@ -548,7 +555,15 @@ export function startFakes() {
 	const posts = [];
 	/** @type {unknown[]} */
 	const hooks = [];
+	/** @type {unknown[]} */
+	const telegram = [];
 	const discord = createServer(async (req, res) => {
+		// A fake Telegram Bot API: POST /bot<token>/sendMessage; GET /telegram reads the bodies back.
+		if (req.method === 'POST' && /^\/bot[^/]+\/sendMessage$/.test(req.url ?? '')) {
+			telegram.push(JSON.parse((await body(req)) || '{}'));
+			return send(res, 200, { ok: true, result: {} });
+		}
+		if (req.method === 'GET' && req.url === '/telegram') return send(res, 200, telegram);
 		if (req.method === 'POST' && req.url?.startsWith('/api/webhooks/')) {
 			posts.push(JSON.parse((await body(req)) || '{}'));
 			return send(res, 204, '');

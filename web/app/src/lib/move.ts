@@ -139,6 +139,7 @@ export const groupLabels: Record<string, string> = {
 	pick_rules: 'Pick rules',
 	titles: 'Titles',
 	never_add: 'Never-add list',
+	outside_lists: 'Outside lists',
 	sources: 'Sources',
 	downloaders: 'Downloaders',
 	naming: 'Naming',
@@ -162,7 +163,7 @@ export const resultWords: Record<string, string> = {
 	skipped: 'Left out',
 	not_found: 'Not found here',
 	failed: 'Failed',
-	removed: 'Removed',
+	removed: 'Undone',
 	kept: 'Kept'
 };
 

@@ -187,3 +187,17 @@ describe('history detail actions', () => {
 		expect(rowLinks(row(ev('import_done', { Data: { download_id: 3 } })))[0].href).toBe('/downloads?open=3');
 	});
 });
+
+describe('reported problems in History', () => {
+	const one = (e: EventRecord): HistoryRow => ({ key: `e${e.ID}`, head: e, events: [e], steps: [] });
+	const row = one;
+	it('has a step, a filter and a link to the reports', () => {
+		expect(rowStep(one(ev('report_made'))).label).toBe('Reported');
+		expect(rowStep(one(ev('report_reopened'))).label).toBe('Reported');
+		expect(rowStep(one(ev('report_fixed'))).label).toBe('Fixed');
+		expect(stepKinds(['reported'])).toEqual(['report_*']);
+		expect(stepKinds([])).toContain('report_*');
+		expect(rowLinks(row(ev('report_fixed', { Data: { report_id: 4 } }))).map((l) => l.href)).toEqual(['/reports?show=all']);
+		expect(searchSteps.find((s) => s.key === 'reported')?.label).toBe('Reported problems');
+	});
+});

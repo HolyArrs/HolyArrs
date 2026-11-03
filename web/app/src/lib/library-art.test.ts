@@ -47,7 +47,7 @@ describe('banner picture size', () => {
 		expect(tmdbFor(700, 2)).toBe('original');
 		expect(tmdbFor(640, 1.5)).toBe('w1280');
 		const u = 'https://image.tmdb.org/t/p/w780/abc.jpg';
-		expect(bannerSrc(u, 700, 2)).toBe('https://image.tmdb.org/t/p/original/abc.jpg');
+		expect(bannerSrc(u, 700, 2)).toBe('/api/v1/artwork/tmdb/original/abc.jpg');
 		expect(bannerSrc('/api/v1/artwork/tmdb/w300/abc.jpg', 600, 2)).toBe('/api/v1/artwork/tmdb/w1280/abc.jpg');
 	});
 	it('leaves a stored banner as it is', () => {

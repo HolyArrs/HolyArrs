@@ -16,6 +16,8 @@ var secretWords = []string{
 var plainNames = map[string]bool{
 	"keyword": true, "keywords": true, "authtype": true, "authenticationmethod": true,
 	"authentication": true, "pinned": true, "pinyin": true, "monkeys": true,
+	// authuser is the Trakt account name a Radarr Trakt list signed in as.
+	"authuser": true,
 }
 
 // IsSecretName reports whether a setting called name may hold a secret.
@@ -47,7 +49,9 @@ func plainSettings(in map[string]any) (map[string]any, []string) {
 	out := map[string]any{}
 	var gone []string
 	for k, v := range in {
-		if IsSecretName(k) {
+		// An on/off setting holds no secret, whatever its name says
+		// ("rejectBlocklistedTorrentHashes..." only names a switch).
+		if _, isBool := v.(bool); IsSecretName(k) && !isBool {
 			if !empty(v) {
 				gone = append(gone, k)
 			}

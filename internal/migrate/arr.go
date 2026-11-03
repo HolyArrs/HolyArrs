@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -96,15 +97,25 @@ func (r arrReader) sets() []arrSet {
 			{name: "appprofiles", api: []string{"/appprofile"}, table: "AppSyncProfiles"},
 			{name: "clients", api: []string{"/downloadclient"}, table: "DownloadClients"},
 			{name: "notifications", api: []string{"/notification"}, table: "Notifications"},
+			{name: "proxies", api: []string{"/indexerproxy"}, table: "IndexerProxies"},
 		}
+	}
+	// Exclusions: Radarr names its route and table its own way.
+	excl := arrSet{name: "exclusions", api: []string{"/importlistexclusion"}, table: "ImportListExclusions"}
+	if r.kind == Radarr {
+		excl = arrSet{name: "exclusions", api: []string{"/exclusions"}, table: "ImportExclusions"}
 	}
 	return []arrSet{
 		r.titleSet(),
 		{name: "tags", api: []string{"/tag"}, table: "Tags"},
 		{name: "folders", api: []string{"/rootfolder"}, table: "RootFolders"},
 		{name: "profiles", api: []string{"/qualityprofile"}, table: "QualityProfiles"},
-		{name: "formats", api: []string{"/customformat"}, table: "CustomFormats", only: []Kind{Radarr, Sonarr}},
+		{name: "formats", api: []string{"/customformat"}, table: "CustomFormats"},
+		{name: "releasewords", api: []string{"/releaseprofile"}, table: "ReleaseProfiles"},
 		{name: "delays", api: []string{"/delayprofile"}, table: "DelayProfiles"},
+		// The availability delay; a backup keeps it in the Config table (fromBackup).
+		{name: "indexerconfig", api: []string{"/config/indexer"}, only: []Kind{Radarr}},
+		excl,
 		{name: "naming", api: []string{"/config/naming", "/settings/naming"}, table: "NamingConfig"},
 		{name: "indexers", api: []string{"/indexer"}, table: "Indexers"},
 		{name: "clients", api: []string{"/downloadclient"}, table: "DownloadClients"},
@@ -208,7 +219,9 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 		}
 		var got any
 		var lastErr error
+		var used string
 		for _, p := range s.api {
+			used = p
 			lastErr = c.getJSON(ctx, r.apiBase()+p, nil, &got)
 			if lastErr == nil || !errors.Is(lastErr, ErrBadAnswer) {
 				break
@@ -233,14 +246,50 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 				}
 			}
 		case map[string]any:
+			if _, paged := lower(x)["records"]; paged {
+				if rows, err = r.pages(ctx, c, used); err != nil {
+					// A later page that fails is skipped like a missing route.
+					if s.needed || !errors.Is(err, ErrBadAnswer) {
+						return nil, err
+					}
+					out.notes = append(out.notes, "the app has no "+s.name+" list; skipped")
+					continue
+				}
+				break
+			}
 			rows = append(rows, lower(x))
 		}
 		out.sets[s.name] = rows
 	}
-	if r.kind != Prowlarr {
-		out.notes = append(out.notes, "exclusion lists are read from a backup only")
-	}
 	return out, nil
+}
+
+// pages reads a list the app answers with its paging envelope (records
+// and totalRecords; Sonarr v5's exclusions): from the first page, 1000 at
+// a time, until every record is read or a page comes back empty.
+func (r arrReader) pages(ctx context.Context, c *apiClient, path string) ([]map[string]any, error) {
+	var rows []map[string]any
+	for page := 1; page <= c.lim.MaxRows; page++ {
+		var env map[string]any
+		q := url.Values{"page": {strconv.Itoa(page)}, "pageSize": {"1000"}}
+		if err := c.getJSON(ctx, r.apiBase()+path, q, &env); err != nil {
+			return nil, err
+		}
+		env = lower(env)
+		recs := list(env["records"])
+		for _, e := range recs {
+			if m, ok := e.(map[string]any); ok {
+				rows = append(rows, lower(m))
+			}
+		}
+		if len(rows) > c.lim.MaxRows {
+			return nil, ErrTooBig
+		}
+		if len(recs) == 0 || int64(len(rows)) >= num(env["totalrecords"]) {
+			break
+		}
+	}
+	return rows, nil
 }
 
 func (r arrReader) fromBackup(ctx context.Context, src Source) (*arrRows, error) {
@@ -257,7 +306,7 @@ func (r arrReader) fromBackup(ctx context.Context, src Source) (*arrRows, error)
 		return nil, ErrWrongApp
 	}
 	for _, s := range r.sets() {
-		if !s.for_(r.kind) {
+		if !s.for_(r.kind) || s.table == "" {
 			continue
 		}
 		rows, err := t.all(ctx, s.table)
@@ -275,12 +324,18 @@ func (r arrReader) fromBackup(ctx context.Context, src Source) (*arrRows, error)
 	if err := r.joinTitles(ctx, t, out); err != nil {
 		return nil, err
 	}
-	if r.kind == Prowlarr {
-		return out, nil
-	}
-	excl := map[Kind]string{Radarr: "ImportExclusions", Sonarr: "ImportListExclusions", Lidarr: "ImportListExclusions"}[r.kind]
-	if out.sets["exclusions"], err = t.all(ctx, excl); err != nil {
-		return nil, err
+	// Radarr's availability delay is one key of the Config table (keys
+	// lower-cased); a backup without it leaves this server's default.
+	if r.kind == Radarr && t.exists(ctx, "Config") {
+		rows, err := t.all(ctx, "Config")
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range rows {
+			if strings.EqualFold(str(m["key"]), "availabilitydelay") {
+				out.sets["indexerconfig"] = []map[string]any{{"availabilitydelay": m["value"]}}
+			}
+		}
 	}
 	return out, nil
 }
@@ -423,6 +478,7 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 			ID: num(m["id"]), EnableUsenet: boolean(m["enableusenet"]), EnableTorrent: boolean(m["enabletorrent"]),
 			PreferredProtocol: protocolName(m["preferredprotocol"]), UsenetDelay: int(num(m["usenetdelay"])),
 			TorrentDelay: int(num(m["torrentdelay"])), Order: int(num(m["order"])), Tags: labels(m["tags"]),
+			BypassIfHighestQuality: boolean(m["bypassifhighestquality"]), BypassIfAboveScore: boolean(m["bypassifabovecustomformatscore"]),
 		})
 	}
 	if rows := in.sets["naming"]; len(rows) > 0 {
@@ -476,6 +532,13 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 	s.Notifications = linkSafe(prov(in.sets["notifications"]), true)
 	s.Metadata = prov(in.sets["metadata"])
 	s.AppLinks = prov(in.sets["applinks"])
+	s.IndexerProxies = prov(in.sets["proxies"])
+	for _, m := range in.sets["releasewords"] {
+		s.ReleaseProfiles = append(s.ReleaseProfiles, releaseWords(m, labels))
+	}
+	if rows := in.sets["indexerconfig"]; len(rows) > 0 && rows[0]["availabilitydelay"] != nil {
+		s.Settings = map[string]any{"availability_delay": num(rows[0]["availabilitydelay"])}
+	}
 	for _, m := range in.sets["appprofiles"] {
 		set, _ := plainSettings(m)
 		s.AppProfiles = append(s.AppProfiles, set)
@@ -693,6 +756,61 @@ func specItem(sp any) map[string]any {
 		for k, v := range plain {
 			out["value."+k] = v
 		}
+	}
+	return out
+}
+
+// releaseWords keeps one release word rule: its must-contain and
+// must-not-contain words (a JSON list, or an older comma text), its tag
+// scope and the indexers it was tied to (none or 0: every indexer).
+func releaseWords(m map[string]any, labels func(any) []string) Named {
+	set := map[string]any{"enabled": m["enabled"] == nil || boolean(m["enabled"]),
+		"required": words(m["required"]), "ignored": words(m["ignored"])}
+	if t := labels(m["tags"]); len(t) > 0 {
+		set["tags"] = strs(t)
+	}
+	if t := labels(m["excludedtags"]); len(t) > 0 {
+		set["excluded_tags"] = strs(t)
+	}
+	var ix []any
+	for _, id := range ids(m["indexerids"]) {
+		if id != 0 {
+			ix = append(ix, id)
+		}
+	}
+	if id := num(m["indexerid"]); id != 0 && len(ix) == 0 {
+		ix = append(ix, id)
+	}
+	if len(ix) > 0 {
+		set["indexer_ids"] = ix
+	}
+	set, _ = plainSettings(set)
+	return Named{ID: num(m["id"]), Name: str(m["name"]), Settings: set}
+}
+
+// words reads a word list: a JSON list, or comma-separated text.
+func words(v any) []any {
+	var raw []string
+	if l := list(v); l != nil {
+		for _, e := range l {
+			raw = append(raw, str(e))
+		}
+	} else {
+		raw = strings.Split(str(v), ",")
+	}
+	out := []any{}
+	for _, w := range raw {
+		if w = clip(w, 100); w != "" && len(out) < 100 {
+			out = append(out, w)
+		}
+	}
+	return out
+}
+
+func strs(in []string) []any {
+	out := make([]any, 0, len(in))
+	for _, s := range in {
+		out = append(out, s)
 	}
 	return out
 }

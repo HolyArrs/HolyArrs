@@ -51,7 +51,7 @@ func TestInvalidDirectSSOOptionsDisableEveryProvider(t *testing.T) {
 		f := setup(t, Options{SSO: options})
 		c := client(t)
 		csrf := setupOwner(t, f, c)
-		if f.a.sso == nil || f.a.sso.oidc != nil || f.a.sso.forward != nil {
+		if f.a.sso.Load() == nil || f.a.ssoNow().oidc != nil || f.a.ssoNow().forward != nil {
 			t.Fatal("invalid direct options did not disable SSO")
 		}
 		for _, path := range []string{"oidc/start", "oidc/finish", "oidc/link", "oidc/link-finish", "forward/login", "forward/link"} {

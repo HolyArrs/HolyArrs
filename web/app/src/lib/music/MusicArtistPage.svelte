@@ -681,7 +681,9 @@
 	{:else if lib}
 		<!-- In the Library, nothing to ask: no main button. -->
 	{:else if titleId}
-		{#if manage}<ActionButton icon="library" label="In Library" primary onclick={() => (artistTab = 'library')} />{:else}<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />{/if}
+		<!-- Everyone goes to the one artist page in the Library, like a title page. -->
+		<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />
+
 	{:else if manage || mayAsk}
 		<ActionButton icon={lookup?.ask ? 'check' : 'plus'} label={cta} primary disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask" />
 	{/if}
@@ -858,9 +860,10 @@
 			<ul class="soon">
 				{#each soon as a (a.mbid)}
 					<li>
-						<a href={albumHref(a.mbid, mbid)} aria-hidden="true" tabindex="-1"><span class="cov small">{#if a.image && !badArt.has(a.mbid)}<img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, a.mbid]))} />{:else}<ArtPlaceholder name={a.name} shape="square" />{/if}</span></a>
+						<!-- The cover repeats the name link beside it, so screen readers and Tab skip it. -->
+						<a href={albumHref(a.mbid, mbid)} tabindex="-1" aria-hidden="true"><span class="cov small">{#if a.image && !badArt.has(a.mbid)}<img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, a.mbid]))} />{:else}<ArtPlaceholder name={a.name} shape="square" />{/if}</span></a>
 						<span class="soon-words"><a class="s-name" href={albumHref(a.mbid, mbid)}>{a.name}</a><span class="s-album">{kindWord(a)} · {releaseWords(a.release_date ?? '')}</span></span>
-						{#if !data?.kid}<IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
+						{#if !data?.kid}<!-- The bell sits at the row's right edge: its tip lines up with it, so a long name never pushes the page sideways. --><IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} tipSide="below-end" aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
 					</li>
 				{/each}
 			</ul>

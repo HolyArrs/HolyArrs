@@ -44,9 +44,12 @@ and move again: nothing is added twice.
 | Library folders (Radarr, Sonarr, Lidarr) | Library folders for movies, shows and music. |
 | Movies, shows and artists | Titles, found by their TMDB, TVDB or MusicBrainz id and **adopted in place**: each title's folder and files stay exactly where they are. Its watch flag becomes **Keep up to date**; seasons that were not watched stay off. Nothing is searched for during the move. |
 | Quality profiles | Each one is matched to the closest **Pick rules** preset (Good everyday, 4K, Lossless first, Lossy 320 or V0, Any music), with the reason shown in the plan. Titles use the preset of their profile. |
-| Exclusions | The **Never-add** list. |
+| Exclusions | The **Never-add** list (read live or from a backup). |
+| Radarr's release stage of each movie, and its availability delay | Each moved movie's **Release gate** and gate delay (up to 365 days). This server's default for new movies stays as it is. |
+| The untagged default wait rule (Radarr, Sonarr, Lidarr) | The preferred protocol and the Usenet and torrent waits of the ready-made **Pick rules** its quality profiles matched (up to 7 days; "skip the wait at the top quality" turns on **Skip the wait once good enough**). Only when the rule differs from the old app's own default, and only while those Pick rules still have their wait as they came. If two apps set different waits for the same Pick rules, neither is used; an app left at its own default counts as no wait. The dry run shows the change and how many versions use those Pick rules. |
+| Radarr TMDB lists, Trakt lists and Trakt watchlists | **Outside lists**, always added paused, with their movie Library folder, Pick rules, Keep up to date, search on add, Release gate and how often they are read (6 to 168 hours). A Trakt list needs your Trakt key and must be public. |
 | Torznab, Newznab and RSS indexers (Radarr, Sonarr, Lidarr, Prowlarr) | **Sources**, always added paused and unable to reach your home network, with or without a key. An address is cut to its host and API path; an RSS feed address, extra parameters and anything that looks like a key in the path are typed again. |
-| qBittorrent and SABnzbd | **Downloaders**, always added paused and unable to reach your home network, even without a password. They use HolyArrs's own `holyarrs` category, so they never pick up the old apps' downloads. |
+| qBittorrent and SABnzbd, and the Transmission, Deluge and NZBGet clients set up in Radarr, Sonarr or Lidarr | **Downloaders**, always added paused and unable to reach your home network, even without a password. They use HolyArrs's own `holyarrs` category, so they never pick up the old apps' downloads. |
 | Naming | HolyArrs naming settings, where a pattern word has a match. Nothing on disk is renamed. |
 | Bazarr's default language profile, Podnapisi and Gestdown | Default subtitle languages and Subtitle sites. |
 | Seerr and Overseerr people | Turned-off **placeholder** people, as **members**, with the permissions that match and their weekly ask limit. No password comes over. An admin there stays an admin only if you tick **Keep (name) an admin here** in the plan; the Seerr owner is you only if you tick **This is me**. An email that is not one plain address is left out. |
@@ -60,12 +63,18 @@ and move again: nothing is added twice.
 - **Keys, passwords, tokens and cookies.** They are never read into
   HolyArrs. The plan and the report list each one under **needs your
   input** so you can type it again.
-- **Settings with no HolyArrs match.** Custom formats, wait-before-grab
-  rules, language and metadata profiles, tags, import lists, metadata
-  writers, Prowlarr's app links and sync profiles, download categories and
-  usenet servers, Bazarr's other profiles and sites HolyArrs does not have
-  yet, and notification kinds other than Discord, webhook and email. Each
-  one is on the **not moved** list with its reason.
+- **Settings with no HolyArrs match.** Custom formats, tag-scoped wait
+  rules (each one listed with its waits, to set under Pick rules), protocol
+  on/off switches and score-based wait skips, release word rules, language
+  and metadata profiles, tags, import lists for shows and music and list
+  kinds HolyArrs does not read (IMDb, Plex, another Radarr, Trakt watched or
+  collection lists and the like), metadata writers, Prowlarr's app links,
+  sync profiles and indexer proxies, download categories and usenet servers,
+  Bazarr's other profiles and sites HolyArrs does not have yet, and
+  notification kinds other than Discord, webhook and email. Each one is on
+  the **not moved** list with its reason. Not read at all: auto-tag rules
+  (they only add tags) and Seerr's request tags; the person who asked does
+  come over.
 
 ## Needs your input afterwards
 
@@ -75,7 +84,15 @@ After the move, type again:
 - each Downloader's password or key (**Settings > Downloaders**), then
   resume it;
 - each Alert's link or mail password (**Settings > Alerts**), then turn it on;
+- each Outside list that came over: check its folder and Pick rules, then
+  turn it on (**Settings > Outside lists**); for a Trakt list add your Trakt
+  key there first;
 - invites for the people who came over (**Settings > Users**).
+
+A Source, Downloader or Alert that had tags now serves every title of its
+kind; check it before you resume it or turn it on. An import list's sign-in
+is not asked for: an Outside list reads public lists with this server's own
+keys, and a list that did not come over says why on the **not moved** list.
 
 Sources and Downloaders come over paused even when they need no key, and
 their **reach the local network** switch is off. Check each one, turn the
@@ -108,12 +125,14 @@ removes only what that move added, newest first:
 - titles leave the Library, and **their files stay where they are**;
 - Sources, Downloaders, Alerts, subtitle sites, people, asks and Never-add
   entries it added are removed;
-- naming and the default subtitle languages go back to what they were,
-  unless you changed them after the move.
+- Outside lists it added are removed while they are still paused;
+- naming, the default subtitle languages and the waits on ready-made Pick
+  rules go back to what they were, unless you changed them after the move.
 
 Things you set up or changed after the move stay, and the undo report
 says so: a Source, Downloader or Alert whose secret you typed, a person you
-turned on, naming or languages you changed. A row is removed only while it
+turned on, an Outside list you turned on, naming, languages or a wait you
+changed. A row is removed only while it
 is still the one the move made (its creation time and name): if you
 removed a moved thing and made your own, which got the same number, yours
 stays. Remove what stays by hand if you want. Library folders that held
@@ -122,7 +141,8 @@ titles stay too, because the removed titles keep their History.
 ## Parts and safe mode
 
 A part that is off is left out of the move: with Movies off, no movie
-folder or movie comes over; with Subtitles off, no subtitle setting; with
+folder, movie or Outside list comes over, and no wait that only Radarr set;
+with Subtitles off, no subtitle setting; with
 Requests off, no asks. HolyArrs started in safe mode refuses to move or
 undo (reading, the plan and the dry run still work).
 
@@ -148,5 +168,5 @@ The body of plan, dry-run and moves is
 plus `"plan_hash"` for moves. A person choice is `owner` (only for the
 person the old app marks as its owner), `admin`, `merge` or `skip`.
 The groups you can skip are `folders`, `pick_rules`, `titles`,
-`never_add`, `sources`, `downloaders`, `naming`, `subtitles`, `people`,
-`wishlist` and `alerts`.
+`never_add`, `outside_lists`, `sources`, `downloaders`, `naming`,
+`subtitles`, `people`, `wishlist` and `alerts`.

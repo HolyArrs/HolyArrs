@@ -13,8 +13,8 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// Input is what a person sets on an Alert. URL and Password are only
-// changed when sent; an empty one keeps what is stored.
+// Input is what a person sets on an Alert. URL, Password, Secret and
+// BotToken are only changed when sent; an empty one keeps what is stored.
 type Input struct {
 	Name         string   `json:"name"`
 	Kind         string   `json:"kind"`
@@ -35,6 +35,9 @@ type Input struct {
 	// AllowLocal lets the Alert reach the local network; nil keeps what is
 	// stored (off for a new Alert).
 	AllowLocal *bool `json:"allow_local_network"`
+	// BotToken and ChatID are a Telegram Alert's bot and chat.
+	BotToken string `json:"bot_token"`
+	ChatID   string `json:"chat_id"`
 }
 
 // fill checks in and copies it onto a. New Alerts speak for every moment
@@ -45,7 +48,7 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 		return ErrName
 	}
 	if isNew {
-		if in.Kind != "discord" && in.Kind != "email" && in.Kind != "webhook" {
+		if in.Kind != "discord" && in.Kind != "email" && in.Kind != "webhook" && in.Kind != "telegram" {
 			return ErrKind
 		}
 		a.Kind = in.Kind
@@ -86,6 +89,20 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 		if isNew && in.URL == "" {
 			return ErrHook
 		}
+		return nil
+	}
+	if a.Kind == "telegram" {
+		if a.SMTPSecurity == "" {
+			a.SMTPSecurity, a.SMTPPort = "starttls", 587
+		}
+		if (isNew || in.BotToken != "") && CheckTelegramToken(in.BotToken) != nil {
+			return ErrTelegramToken
+		}
+		chat := strings.TrimSpace(in.ChatID)
+		if CheckTelegramChat(chat) != nil {
+			return ErrTelegramChat
+		}
+		a.ChatID = chat
 		return nil
 	}
 	if a.Kind == "discord" {
@@ -153,10 +170,7 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 			}
 			a.URLSecretID = &id
 		}
-		pass, kind := in.Password, "alert_password"
-		if a.Kind == "webhook" {
-			pass, kind = in.Secret, "alert_webhook_secret"
-		}
+		pass, kind := secretFor(a.Kind, in)
 		if pass != "" {
 			id, err := v.PutTx(tx, kind, pass, by)
 			if err != nil {
@@ -196,10 +210,7 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			return old, ErrSecretAgain
 		}
 	}
-	pass, passKind := in.Password, "alert_password"
-	if a.Kind == "webhook" {
-		pass, passKind = in.Secret, "alert_webhook_secret"
-	}
+	pass, passKind := secretFor(a.Kind, in)
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, a.Name, a.ID); err != nil {
 			return err
@@ -226,6 +237,18 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		return store.Update(tx, "alerts", &a, by)
 	})
 	return a, err
+}
+
+// secretFor is the secret an Alert keeps under PasswordSecretID, and its
+// vault kind: the mail password, the webhook secret or the Telegram bot token.
+func secretFor(kind string, in Input) (string, string) {
+	switch kind {
+	case "webhook":
+		return in.Secret, "alert_webhook_secret"
+	case "telegram":
+		return strings.TrimSpace(in.BotToken), "alert_telegram_token"
+	}
+	return in.Password, "alert_password"
 }
 
 // Remove deletes an Alert and its secrets.
@@ -265,7 +288,7 @@ func originOf(raw string) string {
 
 // IsInputError says err is a refusal of what was sent.
 func IsInputError(err error) bool {
-	for _, e := range []error{ErrName, ErrKind, ErrURL, ErrMoment, ErrSMTP, ErrSecurity, ErrAddress, ErrPasswordAgain, ErrHook, ErrAuth, ErrSecretAgain} {
+	for _, e := range []error{ErrName, ErrKind, ErrURL, ErrMoment, ErrSMTP, ErrSecurity, ErrAddress, ErrPasswordAgain, ErrHook, ErrAuth, ErrSecretAgain, ErrTelegramToken, ErrTelegramChat} {
 		if errors.Is(err, e) {
 			return true
 		}

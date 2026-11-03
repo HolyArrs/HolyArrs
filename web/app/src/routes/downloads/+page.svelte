@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { libraryTitles, ownedLibrary } from '#lib/owned.ts';
+	import { libraryBrief } from '#lib/owned.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
@@ -250,7 +250,7 @@
 
 	onMount(() => {
 		void load();
-		void libraryTitles()
+		void libraryBrief()
 			.then((r) => {
 				titles = r;
 				clearNote('titles');

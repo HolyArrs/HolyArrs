@@ -295,7 +295,7 @@
 	.al-tr-st.failed { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.al-tl { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.35 var(--font-ui); }
 	.al-tl li { display: flex; justify-content: space-between; gap: 12px; }
-	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.al-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
 	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail-text); }

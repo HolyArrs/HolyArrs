@@ -205,7 +205,13 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 
 	// An artist in the Library offers to ask for the albums it does not keep (on its page).
 	await openFromSearch(ivy, 'lantern', 'Tin Lanterns');
-	await expect(ivy.getByRole('button').and(ivy.getByTestId('ask-albums'))).toBeVisible();
+	// The hero and the slim bar that follows it on scroll both offer it.
+	await expect(ivy.getByTestId('ask-albums').first()).toBeVisible();
+	// At 390 the artist page, with its Coming soon row (Paper Boats, 2099), never scrolls sideways.
+	await ivy.setViewportSize({ width: 390, height: 844 });
+	await expect(ivy.getByRole('heading', { name: 'Coming soon' })).toBeVisible();
+	await noSidewaysScroll(ivy);
+	await ivy.setViewportSize({ width: 412, height: 915 });
 
 	await ivy.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });
@@ -284,7 +290,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(ivy.getByRole('button', { name: 'Refresh' })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Edit album kinds' })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'More actions' })).toHaveCount(0);
-	await expect(ivy.getByRole('button').and(ivy.getByTestId('ask-albums'))).toBeVisible();
+	await expect(ivy.getByTestId('ask-albums').first()).toBeVisible();
 	await noSidewaysScroll(ivy);
 	// The single's card names its state first ("Missing: … Fern Hymns 2021 · Single").
 	await ivy.getByRole('group', { name: 'Singles & EPs' }).getByRole('link', { name: /Fern Hymns/ }).first().click();
