@@ -159,6 +159,31 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 	await page.getByRole('button', { name: 'Cancel' }).click();
 });
 
+test('alerts: add a Telegram bot, send a test, the chat gets the text', async () => {
+	await page.goto('/settings/alerts');
+	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByLabel('Name', { exact: true }).fill('Family Telegram');
+	await page.getByLabel('Kind').selectOption('telegram');
+	await page.getByLabel('Bot token').fill(['123456789', 'AAHstandInTokenForE2eTests_0123'].join(':'));
+	await page.getByLabel('Chat ID').fill('-1001234567890');
+	await page.getByRole('checkbox', { name: /May reach the local network/ }).check();
+	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
+	const card = page.getByTestId('alert').filter({ hasText: 'Family Telegram' });
+	await expect(card).toContainText('Telegram');
+	await card.getByRole('button', { name: 'Send a test' }).click();
+	await expect(page.getByText('Test sent through Family Telegram.')).toBeVisible();
+	const sent = (await (await page.request.get(`http://127.0.0.1:${discordPort}/telegram`)).json()) as { chat_id: string; text: string; disable_web_page_preview: boolean }[];
+	const last = sent.at(-1)!;
+	expect(last.chat_id).toBe('-1001234567890');
+	expect(last.text).toContain('HolyArrs test');
+	expect(last.disable_web_page_preview).toBe(true);
+	// The token comes back masked; the chat ID is shown as saved.
+	await card.getByRole('button', { name: 'Change' }).click();
+	await expect(page.getByLabel('Bot token')).toHaveValue('');
+	await expect(page.getByLabel('Chat ID')).toHaveValue('-1001234567890');
+	await page.getByRole('button', { name: 'Cancel' }).click();
+});
+
 test('media servers: add Jellyfin, test it, a wrong key is said plainly', async () => {
 	await page.goto('/settings');
 	await page.getByRole('link', { name: 'Media servers' }).first().click();

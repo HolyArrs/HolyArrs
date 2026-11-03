@@ -558,6 +558,14 @@
             "description": "Lets the Alert reach this machine or the local network, and a Discord link off discord.com. Off by default: then a Discord link must be https on discord.com or discordapp.com, and a webhook link to a private address is refused.",
             "type": "boolean"
           },
+          "bot_token": {
+            "description": "Telegram bot token from @BotFather; kept encrypted and shown masked. Empty or masked keeps the stored one.",
+            "type": "string"
+          },
+          "chat_id": {
+            "description": "Telegram chat a telegram Alert writes to: a number (negative for a group or channel) or @channelname.",
+            "type": "string"
+          },
           "enabled": {
             "type": "boolean"
           },
@@ -569,7 +577,8 @@
             "enum": [
               "discord",
               "email",
-              "webhook"
+              "webhook",
+              "telegram"
             ],
             "type": "string"
           },
@@ -657,6 +666,14 @@
             "description": "Lets the Alert reach this machine or the local network, and a Discord link off discord.com. Off by default: then a Discord link must be https on discord.com or discordapp.com, and a webhook link to a private address is refused.",
             "type": "boolean"
           },
+          "bot_token": {
+            "description": "Telegram bot token from @BotFather; kept encrypted and shown masked. Empty or masked keeps the stored one.",
+            "type": "string"
+          },
+          "chat_id": {
+            "description": "Telegram chat a telegram Alert writes to: a number (negative for a group or channel) or @channelname.",
+            "type": "string"
+          },
           "enabled": {
             "type": "boolean"
           },
@@ -665,7 +682,8 @@
             "enum": [
               "discord",
               "email",
-              "webhook"
+              "webhook",
+              "telegram"
             ],
             "type": "string"
           },

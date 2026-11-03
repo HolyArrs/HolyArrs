@@ -462,10 +462,13 @@ export type Moment =
 export interface AlertView {
 	id: number;
 	name: string;
-	kind: 'discord' | 'email' | 'webhook';
+	kind: 'discord' | 'email' | 'webhook' | 'telegram';
 	enabled: boolean;
 	moments: Moment[];
 	secret?: string;
+	/** A Telegram Alert's bot token: masked when stored, never the real one. */
+	bot_token?: string;
+	chat_id?: string;
 	webhook_auth?: 'sign' | 'bearer' | 'none';
 	url?: string;
 	smtp_host?: string;

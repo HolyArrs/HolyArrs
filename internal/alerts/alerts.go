@@ -1,9 +1,10 @@
 // Package alerts sends outgoing messages (Alerts) through Discord links,
-// email servers and webhooks. Each Alert picks the moments it speaks for: an
+// email servers, webhooks and Telegram bots. Each Alert picks the moments it speaks for: an
 // ask waiting for approval goes to the staff, and approved, turned down and
 // ready go to the people who asked; the Library moments (grab, import,
 // rename, add, delete, health, needs a decision) go to the staff. Secrets
-// (the Discord link, the mail password, the webhook link and its secret) are
+// (the Discord link, the mail password, the webhook link and its secret, the
+// Telegram bot token) are
 // read from the encrypted vault only when a message is sent.
 package alerts
 
@@ -106,7 +107,7 @@ type Movie struct {
 var (
 	ErrName     = errors.New("an Alert needs a name of at most 80 characters")
 	ErrNameUsed = errors.New("another Alert has that name")
-	ErrKind     = errors.New("kind must be discord, email or webhook")
+	ErrKind     = errors.New("kind must be discord, email, webhook or telegram")
 	ErrHook     = errors.New("paste the webhook link (http:// or https:// with a host); a server on the local network needs May reach the local network")
 	ErrAuth     = errors.New("webhook_auth must be sign, bearer or none")
 	// ErrSecretAgain keeps a webhook secret from going to another server:
@@ -130,6 +131,8 @@ type failure struct {
 	public string
 	detail error
 	retry  bool
+	// wait is how long the service asked us to wait before trying again.
+	wait time.Duration
 }
 
 func (f *failure) Error() string { return f.public }
@@ -146,6 +149,16 @@ func again(public string, detail error) error {
 func retryable(err error) bool {
 	var f *failure
 	return errors.As(err, &f) && f.retry
+}
+
+// askedWait is how long a failed service asked us to wait (at most five
+// minutes), or 0.
+func askedWait(err error) time.Duration {
+	var f *failure
+	if errors.As(err, &f) && f.wait > 0 {
+		return min(f.wait, 5*time.Minute)
+	}
+	return 0
 }
 
 // statusFailure turns an HTTP answer into a failure: 408, 429 and 5xx are
@@ -228,7 +241,7 @@ func (s *Sender) SendOne(ctx context.Context, a domain.Alert, m Message) error {
 	}
 	err = s.attempt(ctx, op, a, m)
 	for i := 0; err != nil && retryable(err) && i < len(waits); i++ {
-		t := time.NewTimer(waits[i])
+		t := time.NewTimer(max(waits[i], askedWait(err)))
 		select {
 		case <-ctx.Done():
 			t.Stop()
@@ -269,6 +282,8 @@ func (s *Sender) attempt(ctx context.Context, op *outside.Operation, a domain.Al
 		err = s.email(ctx, a, m)
 	case "webhook":
 		err = s.webhook(ctx, a, m)
+	case "telegram":
+		err = s.telegram(ctx, a, m)
 	default:
 		return ErrKind
 	}

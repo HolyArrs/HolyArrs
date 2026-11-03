@@ -191,6 +191,47 @@ func TestAlertsKeptByWebhookMigration(t *testing.T) {
 	}
 }
 
+// TestAlertsKeptByTelegramMigration: 0080 rebuilds alerts to add the
+// telegram kind and chat_id; every Alert keeps all it had.
+func TestAlertsKeptByTelegramMigration(t *testing.T) {
+	dir := t.TempDir()
+	ctx := context.Background()
+	old, err := Open(dir, Options{MainMigrations: upTo(t, 79)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = old.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO alerts(id, created_at, created_by, updated_at, updated_by, name, kind, enabled, moments, url_secret_id, password_secret_id,
+			allow_local_network, last_sent_at, last_error, webhook_auth)
+			VALUES (9, '2026-10-01T00:00:00Z', '{}', '2026-10-02T00:00:00Z', '{}', 'Home hook', 'webhook', 0, '["grab"]', 4, 5, 1, '2026-10-03T00:00:00Z', 'boom', 'bearer')`)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = old.Close()
+	s, err := Open(dir, Options{MainMigrations: upTo(t, 80)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	var a domain.Alert
+	if err := Get(ctx, s.Read(), "alerts", 9, &a); err != nil {
+		t.Fatal(err)
+	}
+	if a.Name != "Home hook" || a.Kind != "webhook" || a.Enabled || len(a.Moments) != 1 || a.URLSecretID == nil || *a.URLSecretID != 4 ||
+		a.PasswordSecretID == nil || *a.PasswordSecretID != 5 || !a.AllowLocal || a.LastSentAt == nil || a.LastError != "boom" || a.WebhookAuth != "bearer" || a.ChatID != "" {
+		t.Fatalf("alert after the migration %+v", a)
+	}
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO alerts(created_at, created_by, updated_at, updated_by, name, kind, chat_id) VALUES ('c', '{}', 'u', '{}', 'TG', 'telegram', '-42')`)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("a telegram Alert: %v", err)
+	}
+}
+
 // TestSettingsKeptByAlertsGroupMigration: 0023 rebuilds settings to add the
 // alerts group; every row stays and pack_alerts moves from links to alerts.
 func TestSettingsKeptByAlertsGroupMigration(t *testing.T) {
