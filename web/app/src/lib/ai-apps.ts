@@ -65,7 +65,7 @@ export const APP_DATA: AppData[] = [
         text: "In Claude on web or desktop, open Customize › Connectors, press + Add › Add custom connector.",
       },
       {
-        text: "Name it HolyArrs and press Continue. Paste the address and press Continue.",
+        text: "Name it HolyArrs, paste the address and press Continue.",
         code: "{url}",
       },
       { text: "Check the details Claude found and press Continue." },
@@ -101,7 +101,8 @@ export const APP_DATA: AppData[] = [
         text: "Quit Claude Desktop from the tray or menu bar, then reopen it.",
       },
     ],
-    check: "holyarrs appears in a new chat's tools menu.",
+    check:
+      "In a chat, press + › Connectors › Manage connectors; holyarrs is listed.",
     note: "Keep Authorization:${AUTH_HEADER} without a space; Windows splits arguments at spaces.",
     source: "docs",
   },
