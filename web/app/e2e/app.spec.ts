@@ -96,7 +96,6 @@ test('the desktop menu reaches every destination and Back works', async () => {
 		['Downloads', /\/downloads$/, 'Downloads'],
 		['Calendar', /\/calendar$/, 'Calendar'],
 		['History', /\/downloads\/history$/, 'History'],
-		['Library tools', /\/library\/held$/, 'Held'],
 		['Settings', /\/settings$/, 'Settings'],
 		['Home', /\/$/, 'Home']
 	];

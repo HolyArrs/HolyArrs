@@ -41,7 +41,7 @@ Untested.
 
 1. Make two datasets: `apps/holyarrs-config` and `media`. Put `downloads`
    and `library` inside `media`, so both are on one dataset.
-2. Apps, Discover Apps, Custom App (or Install via YAML) with the Compose file.
+2. In Apps, add a custom app (or install it from YAML) with the Compose file.
 3. Use `/mnt/<pool>/apps/holyarrs-config:/config` and
    `/mnt/<pool>/media:/data`.
 4. Give user and group 1000 write access in the dataset ACL.
