@@ -210,7 +210,7 @@
 	.rs-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.rs-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; background: var(--surface-2); }
 	.rs-row.best { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ok) 70%, transparent); }
-	.rs-row.off { opacity: .62; }
+	.rs-row.off { color: var(--text-muted); }
 	.rs-row.skel { height: 92px; animation: pulse 1.2s ease-in-out infinite alternate; }
 	@keyframes pulse { to { opacity: .5; } }
 	.rs-main { flex: 1; min-width: 0; display: grid; gap: 6px; }
@@ -219,7 +219,7 @@
 	.rs-tag, .rs-rec, .rs-verdict { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font: 700 11px/1 var(--font-ui); letter-spacing: .03em; }
 	.rs-tag { border: 1px solid color-mix(in srgb, var(--text) 28%, transparent); color: var(--text-muted); }
 	.rs-rec { background: var(--ok-fill); color: #fff; }
-	.rs-verdict { color: var(--text-muted); background: color-mix(in srgb, var(--text) 7%, transparent); }
+	.rs-verdict { color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.rs-verdict.fail { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.rs-verdict.wait { color: var(--wait-text); background: color-mix(in srgb, var(--wait) 14%, transparent); }
 	.rs-verdict.red { color: #fff; background: var(--accent); }
