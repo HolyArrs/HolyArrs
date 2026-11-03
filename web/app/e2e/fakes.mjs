@@ -130,7 +130,10 @@ export const tmdbMovies = [
 	{ id: 900015, title: 'Quill Atlas', release_date: '2011-05-05', imdb_id: 'tt9000150', overview: 'An atlas that redraws itself with a quill.', dates: [[3, '2011-05-05'], [4, '2011-07-01']] },
 	// The old Radarr's one movie the move test adopts in place (move.spec.ts).
 	{ id: 900016, title: 'Lodestone Ferry', release_date: '2010-06-06', imdb_id: 'tt9000160', overview: 'A ferry that only sails toward north.', dates: [[3, '2010-06-06'], [4, '2010-08-01']] },
-	{ id: 900004, title: 'Glass Meridian', release_date: '2021-03-03', imdb_id: 'tt9000040', overview: 'A line of glass towers marks noon across a desert.', dates: [[3, '2021-03-03'], [4, '2021-05-01']] }
+	{ id: 900004, title: 'Glass Meridian', release_date: '2021-03-03', imdb_id: 'tt9000040', overview: 'A line of glass towers marks noon across a desert.', dates: [[3, '2021-03-03'], [4, '2021-05-01']] },
+	// One movie series (library-tools.spec.ts removes it): the only movies with belongs_to_collection.
+	{ id: 900021, title: 'Brumwick Gate', release_date: '2008-09-09', imdb_id: 'tt9000210', overview: 'A town gate that opens onto a different town each night.', dates: [[3, '2008-09-09'], [4, '2008-12-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
+	{ id: 900022, title: 'Brumwick Gate Again', release_date: '2012-10-10', imdb_id: 'tt9000220', overview: 'The gate opens once more, onto the town it left.', dates: [[3, '2012-10-10'], [4, '2013-01-01']], collection: { id: 950001, name: 'The Brumwick Films' } }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
@@ -207,6 +210,7 @@ function tmdbMovie(m) {
 	return {
 		id: m.id, title: m.title, release_date: m.release_date, overview: m.overview, original_language: 'en', runtime: 101,
 		poster_path: `/p${m.id}.jpg`, imdb_id: m.imdb_id,
+		...('collection' in m && m.collection ? { belongs_to_collection: { id: m.collection.id, name: m.collection.name } } : {}),
 		release_dates: { results: [{ iso_3166_1: 'US', release_dates: m.dates.map(([type, d]) => ({ type, release_date: `${d}T00:00:00.000Z`, certification: m.cert ?? '' })) }] }
 	};
 }

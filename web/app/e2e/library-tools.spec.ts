@@ -2,7 +2,7 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { libraryTool, noSidewaysScroll, owner, signIn, titleAction } from './helpers.ts';
+import { libraryTool, libraryView, noSidewaysScroll, owner, signIn, titleAction } from './helpers.ts';
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 
@@ -224,5 +224,54 @@ test('Move: two ticked movies go to a second movie folder together', async ({ pa
 	for (const t of targets) expect(existsSync(t)).toBe(false);
 });
 
-// #34 Remove a movie series is not tested here: the fake TMDB in fakes.mjs
-// has no movie series (no belongs_to_collection, no /collection route).
+// #34 Remove a movie series: the fake TMDB's one series, The Brumwick Films.
+test('Remove a movie series: grouped by series, Open series, review both movies, remove them and hold the file', async ({ page }) => {
+	await signIn(page, owner());
+	const call = await api(page);
+	const first = await freshMovie(call, 900021, 'Brumwick Gate');
+	const second = await freshMovie(call, 900022, 'Brumwick Gate Again');
+	const target = await giveFile(call, first, looseFile('Brumwick Gate', 2008, 'brumwick-gate'));
+
+	// Movies grouped by series (Banners view) show the series with both movies.
+	await page.goto('/library?kind=movie');
+	await page.getByRole('main').getByRole('button', { name: /[↑↓]$/ }).click();
+	await page.getByRole('menu', { name: 'Sort titles' }).getByRole('menuitemradio', { name: 'Group by series' }).click();
+	await expect(page).toHaveURL(/group=series/);
+	await libraryView(page, 'Banners');
+	const head = page.locator('.series-head').filter({ has: page.getByRole('heading', { name: 'The Brumwick Films', exact: true }) });
+	await expect(head).toContainText('2 in the Library');
+	await head.getByRole('link', { name: 'Open series' }).click();
+	await expect(page).toHaveURL(/\/library\/collections\/\d+$/);
+	await expect(page.getByRole('heading', { level: 1, name: 'The Brumwick Films' })).toBeVisible();
+	const titles = page.locator('ul.titles');
+	await expect(titles.getByRole('checkbox', { name: /^Brumwick Gate ?2008 / })).toBeChecked();
+	await expect(titles.getByRole('checkbox', { name: /^Brumwick Gate Again ?2012 / })).toBeChecked();
+
+	// The review names both movies and their files; nothing has changed yet.
+	await page.getByLabel('Move HolyArrs-managed files to the holding folder').check();
+	await page.getByRole('button', { name: 'Review 2 selected' }).click();
+	const confirm = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Confirm this exact selection' }) });
+	await expect(confirm.locator('.confirm-row').filter({ has: page.getByText('Brumwick Gate', { exact: true }) })).toContainText('1 File');
+	await expect(confirm.locator('.confirm-row').filter({ has: page.getByText('Brumwick Gate Again', { exact: true }) })).toContainText('0 Files');
+	expect(existsSync(target)).toBe(true);
+
+	await confirm.getByRole('button', { name: 'Remove reviewed movies' }).click();
+	const done = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Movie series removal finished' }) });
+	await expect(done).toContainText('Brumwick Gate was removed from the Library.');
+	await expect(done).toContainText('Brumwick Gate Again was removed from the Library.');
+
+	// Both are gone from the Library; the file went to the holding folder.
+	const { titles: left } = (await (await call('GET', '/titles')).json()) as { titles: { id: number }[] };
+	expect(left.filter((t) => t.id === first || t.id === second)).toEqual([]);
+	expect(existsSync(target)).toBe(false);
+	// Holding paths are given inside their Library folder, with forward slashes.
+	const { files } = (await (await call('GET', '/holding')).json()) as { files: { path: string; held_path: string; title_id: number }[] };
+	const held = files.find((f) => f.title_id === first);
+	expect(held, 'the movie file is in the holding folder').toBeTruthy();
+	const was = target.replaceAll('\\', '/');
+	expect(was.endsWith(`/${held?.path}`), `${was} ends with ${held?.path}`).toBe(true);
+	const heldOnDisk = join(was.slice(0, was.length - (held?.path.length ?? 0)), held?.held_path ?? '');
+	expect(existsSync(heldOnDisk), heldOnDisk).toBe(true);
+	await page.goto('/library?kind=movie');
+	await expect(page.getByRole('main').getByRole('link', { name: /Brumwick Gate/ })).toHaveCount(0);
+});
