@@ -2,14 +2,16 @@ param(
   [Parameter(Mandatory = $true, Position = 0)][string]$Command,
   [string]$Who = (Split-Path -Leaf (Get-Location)),
   [ValidateSet('agent', 'owner')][string]$As = 'agent',
-  [int]$StaleMinutes = 45,
+  [int]$StaleMinutes = 3,
   [int]$WaitMinutes = 120
 )
 # Runs one e2e command while holding the shared e2e lock, so sessions in any
 # worktree take turns on the e2e harness. The lock is one folder at a fixed
 # path; making a folder either works or fails at once, so two runs never both
-# get it. A lock whose holder is gone, or that is older than StaleMinutes, is
-# taken over. Example:
+# get it. The holder touches its holder file every 30 s while the command runs;
+# a lock with no touch for StaleMinutes (its holder died) is taken over. Process
+# ids are not checked: a session cannot always see another session's processes.
+# Example:
 #   & C:\HolyForge\coderluii\cl\holyarrs\repo\scripts\e2e-run.ps1 'npx playwright test e2e/library.spec.ts' -Who library
 # -As picks which 18729 showcase login a check reads (never printed): agent,
 # the admin agent-check (default), or owner, for owner-only pages. The
@@ -35,10 +37,12 @@ while ($true) {
     break
   } catch {}
   $h = Read-Holder
-  $gone = $h -and -not (Get-Process -Id $h.Pid -ErrorAction SilentlyContinue)
-  $old = $h -and ((Get-Date) - $h.At).TotalMinutes -gt $StaleMinutes
-  $noInfo = (-not $h) -and (Test-Path $lock) -and ((Get-Date) - (Get-Item $lock).CreationTime).TotalMinutes -gt 1
-  if ($gone -or $old -or $noInfo) {
+  # Last sign of life: the holder file's last touch, or (while it is being
+  # written) the lock folder's last change. Creation times are not used: Windows
+  # can hand a new folder the creation time of an old one with the same name.
+  $seen = $null
+  try { $seen = (Get-Item $info -ErrorAction Stop).LastWriteTime } catch { try { $seen = (Get-Item $lock -ErrorAction Stop).LastWriteTime } catch {} }
+  if ($seen -and ((Get-Date) - $seen).TotalMinutes -gt $StaleMinutes) {
     "e2e lock: taking over a stale lock ($(if ($h) { "$($h.Who), pid $($h.Pid), since $($h.At)" } else { 'no holder file' }))"
     Remove-Item -Recurse -Force $lock -ErrorAction SilentlyContinue
     continue
@@ -59,7 +63,9 @@ $code = 1
 try {
   # Encoded, so quotes inside the command reach the child shell unchanged.
   $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes("& { $Command } *>&1 | Out-File -FilePath '$log' -Encoding utf8; exit `$LASTEXITCODE"))
-  $p = Start-Process -FilePath powershell -ArgumentList '-NoProfile', '-EncodedCommand', $enc -WorkingDirectory (Get-Location).Path -NoNewWindow -PassThru -Wait
+  $p = Start-Process -FilePath powershell -ArgumentList '-NoProfile', '-EncodedCommand', $enc -WorkingDirectory (Get-Location).Path -NoNewWindow -PassThru
+  $null = $p.Handle # keeps the exit code readable after the process ends
+  while (-not $p.WaitForExit(30000)) { try { (Get-Item $info).LastWriteTime = Get-Date } catch {} }
   $code = $p.ExitCode
 } finally {
   $h = Read-Holder
