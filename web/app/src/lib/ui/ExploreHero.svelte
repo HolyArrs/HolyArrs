@@ -4,7 +4,7 @@
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import Billboard from './Billboard.svelte';
 	import { heroPictures } from '../trailer.ts';
-	import { sized } from '../tmdb-image.ts';
+	import { proxied, sized } from '../tmdb-image.ts';
 	import { shortSynopsis } from '../synopsis.ts';
 
 	// The Explore hero: one featured title in the shared billboard
@@ -53,7 +53,7 @@
 <Billboard label="Featured: {title}" testid="explore-hero" {kind} {tmdb} {title} videos={rich?.videos} {pictures} {vtName} {settled}>
 	{#snippet heading()}
 		{#if rich?.logo}
-			<h2 class="bb-logo"><img src={rich.logo} alt={title} /></h2>
+			<h2 class="bb-logo"><img src={proxied(rich.logo)} alt={title} /></h2>
 		{:else}
 			<h2 class="bb-name">{title}</h2>
 		{/if}
