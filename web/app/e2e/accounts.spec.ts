@@ -85,6 +85,11 @@ test('a member sees Home, the Library, Search, Requests and My account only', as
 test('a member turns on two-factor sign-in and needs a code to sign in', async () => {
 	await ana.goto('/account');
 	await ana.getByTestId('two-factor-open').click();
+	// A code to scan, drawn square, next to the key to type.
+	const qr = ana.getByRole('img', { name: 'QR code for your authenticator app' });
+	await expect(qr).toBeVisible();
+	const box = (await qr.boundingBox())!;
+	expect(Math.abs(box.width - box.height)).toBeLessThan(2);
 	const secret = (await ana.locator('code.key').textContent())!.replace(/\s/g, '');
 	await ana.getByLabel('Six-digit code').fill(totp(secret));
 	await ana.getByRole('button', { name: 'Turn on' }).click();

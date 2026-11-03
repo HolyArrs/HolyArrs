@@ -10,6 +10,7 @@
 	import Icon from './Icon.svelte';
 	import Sessions from './Sessions.svelte';
 	import Confirm from './account/Confirm.svelte';
+	import QrCode from './account/QrCode.svelte';
 	import { needsConfirm } from './account/sections.ts';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import { onMount } from 'svelte';
@@ -150,7 +151,7 @@
 	let pwBusy = $state(false);
 
 	// Two-factor
-	let setup = $state<{ secret: string; uri: string } | null>(null);
+	let setup = $state<{ secret: string; uri: string; qr?: string[] } | null>(null);
 	let code = $state('');
 	let offCode = $state('');
 	let tfError = $state('');
@@ -196,7 +197,7 @@
 		tfError = '';
 		tfBusy = true;
 		try {
-			setup = await api.post<{ secret: string; uri: string }>('/auth/two-factor/setup');
+			setup = await api.post<{ secret: string; uri: string; qr?: string[] }>('/auth/two-factor/setup');
 		} catch (err) {
 			tfError = strong(err);
 		} finally {
@@ -514,7 +515,13 @@
 						{:else if setup}
 							<ol class="steps small">
 								<li>
-									Add an account in your authenticator app (<a class="ul" href={setup.uri}>open in the app</a>) or type:
+									{#if setup.qr?.length}
+										Scan this with your authenticator app:
+										<QrCode rows={setup.qr} label="QR code for your authenticator app" />
+										Or <a class="ul" href={setup.uri}>open it in the app</a>, or type:
+									{:else}
+										Add an account in your authenticator app (<a class="ul" href={setup.uri}>open in the app</a>) or type:
+									{/if}
 									<code class="key">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</code>
 								</li>
 								<li>Type the six-digit code it shows.</li>

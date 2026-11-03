@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/qr"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -275,7 +276,24 @@ func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
 	}
 	uri := "otpauth://totp/" + url.PathEscape("HolyArrs:"+who.Name) + "?" + url.Values{
 		"secret": {secret}, "issuer": {"HolyArrs"}, "algorithm": {"SHA1"}, "digits": {"6"}, "period": {"30"}}.Encode()
-	writeJSON(w, http.StatusOK, map[string]string{"secret": secret, "uri": uri})
+	out := map[string]any{"secret": secret, "uri": uri}
+	// A code to scan, as rows of "1" (dark) and "0"; left out if the link
+	// is ever too long for one, and the key can still be typed.
+	if m, err := qr.Encode(uri); err == nil {
+		rows := make([]string, len(m))
+		for y, row := range m {
+			b := make([]byte, len(row))
+			for x, dark := range row {
+				b[x] = '0'
+				if dark {
+					b[x] = '1'
+				}
+			}
+			rows[y] = string(b)
+		}
+		out["qr"] = rows
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // newBackupCodes replaces a user's backup codes inside tx and returns them.
