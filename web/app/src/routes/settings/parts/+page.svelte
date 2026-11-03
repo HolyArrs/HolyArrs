@@ -298,8 +298,5 @@
 		.list .acts {
 			width: 100%;
 		}
-		.list .acts > :global(.ui-btn) {
-			min-height: 40px;
-		}
 	}
 </style>
