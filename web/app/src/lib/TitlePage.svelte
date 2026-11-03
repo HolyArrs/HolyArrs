@@ -42,7 +42,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { live } from '#lib/live.svelte.ts';
 	import { downloadTone } from '#lib/downloaders.ts';
 	import { date } from '#lib/format.ts';
@@ -462,9 +462,17 @@
 		}
 	}
 
+	// Load only when the title itself changes: a live update hands the same kind
+	// and TMDB id again, and reloading then would drop open sheets and scroll.
+	let loadedKey = '';
 	$effect(() => {
-		void load(kind, tmdb);
-		allCast = false;
+		const k = kind, id = tmdb;
+		if (`${k}/${id}` === loadedKey) return;
+		loadedKey = `${k}/${id}`;
+		untrack(() => {
+			void load(k, id);
+			allCast = false;
+		});
 	});
 
 	$effect(() => {
