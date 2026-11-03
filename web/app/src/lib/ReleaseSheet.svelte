@@ -195,7 +195,7 @@
 
 <style>
 	.rs { display: grid; gap: 14px; }
-	.rs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+	.rs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; row-gap: 8px; }
 	.rs-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.rs-seg button { height: 30px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
 	.rs-seg button.on { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 18%); }
@@ -226,11 +226,11 @@
 	.rs-why { color: var(--text-muted); font: 500 12.5px/1.35 var(--font-ui); }
 	.rs-why.fail { color: var(--danger, #e5484d); }
 	.rs-why.hold, .rs-why.warn { color: #d4a72c; }
-	.rs-act { display: flex; align-items: center; gap: 6px; flex: none; }
+	.rs-act { display: flex; align-items: center; gap: 8px; flex: none; }
 	.rs-choose { height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--text); color: var(--bg); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
 	.rs-choose.quiet { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); }
 	.rs-choose.warn { background: #d4a72c; color: #111; }
-	.rs-x { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
+	.rs-x { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
 	.rs-x:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
 	.rs-sent { display: inline-flex; align-items: center; gap: 5px; color: #30a46c; font: 600 13px/1 var(--font-ui); }
 	.rs-empty { display: grid; justify-items: center; gap: 6px; padding: 48px 16px; text-align: center; color: var(--text); }
@@ -238,6 +238,6 @@
 	.rs-empty .rs-primary { margin-top: 12px; }
 	.rs-none { padding: 24px 4px; font: 500 14px/1.4 var(--font-ui); }
 	.rs-link { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
-	@media (max-width: 600px) { .rs-row { padding: 12px 12px 12px 14px; gap: 10px; } .rs-choose { padding: 0 14px; } .rs-x { width: 26px; } }
+	@media (max-width: 600px) { .rs-row { padding: 12px 12px 12px 14px; gap: 10px; } .rs-choose { padding: 0 14px; } }
 	@media (prefers-reduced-motion: reduce) { .rs-spin, .rs-row.skel { animation: none; } }
 </style>

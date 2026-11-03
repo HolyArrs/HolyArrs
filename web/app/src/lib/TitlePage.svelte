@@ -1523,18 +1523,18 @@
 	.lib-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 99px; background: none; color: var(--text-muted); cursor: pointer; }
 	.lib-ico:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
 	.lib-ico:disabled { opacity: .3; cursor: default; }
-	.lib-keep { flex: none; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
+	.lib-keep { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
 	.lib-keep.on { border-color: var(--ok); background: var(--ok); color: #fff; }
-	.lib-keep.sm { width: 18px; height: 18px; border-radius: 5px; }
+	.lib-keep.sm { width: 24px; height: 24px; border-radius: 5px; }
 	.lib-sr .lib-eps { padding: 0 6px 8px; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
-	.lib-sr .lib-ep { grid-template-columns: 18px 96px minmax(0, 1fr) auto auto; }
+	.lib-sr .lib-ep { grid-template-columns: 24px 96px minmax(0, 1fr) auto auto; }
 	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:focus-visible { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.lib-ep.future .lib-ep-still img { filter: grayscale(.8) brightness(.55); }
 	.lib-ep-st.future { color: var(--text-muted); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
 	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 18%, transparent); color: var(--info); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
 	@media (max-width: 600px) {
 		.lib-sr-note { display: none; }
-		.lib-sr .lib-ep { grid-template-columns: 18px 84px minmax(0, 1fr) auto; }
+		.lib-sr .lib-ep { grid-template-columns: 24px 84px minmax(0, 1fr) auto; }
 		.lib-sr .lib-ep-st { grid-column: 3; grid-row: 2; }
 		.lib-sr .lib-ep-still { grid-row: span 2; grid-column: 2; }
 		.lib-sr .lib-ep-acts { grid-column: 4; grid-row: 1 / span 2; flex-direction: column; }
