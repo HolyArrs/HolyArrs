@@ -414,6 +414,8 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 		Policy struct {
 			IsAdministrator bool `json:"IsAdministrator"`
 			IsDisabled      bool `json:"IsDisabled"`
+			// Set when the server limits what this person may watch.
+			MaxParentalRating *int `json:"MaxParentalRating"`
 		} `json:"Policy"`
 	}
 	code, err = a.serverFetch(ctx, http.MethodGet, v.URL+"/Users", th, nil, &users)
@@ -426,7 +428,7 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 		if u.ID == "" || u.Policy.IsDisabled {
 			continue
 		}
-		out = append(out, importPerson{ID: truncate(u.ID, 100), Name: truncate(u.Name, 56), Admin: u.Policy.IsAdministrator})
+		out = append(out, importPerson{ID: truncate(u.ID, 100), Name: truncate(u.Name, 56), Admin: u.Policy.IsAdministrator, Kid: u.Policy.MaxParentalRating != nil})
 	}
 	return out, true
 }

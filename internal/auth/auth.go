@@ -228,6 +228,9 @@ type Who struct {
 	// is true only for a non-future local proof less than ten minutes old.
 	AuthMethod  string `json:"auth_method"`
 	LocalRecent bool   `json:"local_recent"`
+	// OutsideRecent is true for a Plex, Jellyfin or Emby sign-in less than
+	// ten minutes old: the proof a person with no password yet can give.
+	OutsideRecent bool `json:"outside_recent"`
 	// Scopes are an API key's scopes (see Scopes); empty for
 	// a session, which holds every scope.
 	Scopes []string
@@ -744,6 +747,47 @@ func (a *Auth) noteFail(keys ...string) {
 	}
 }
 
+// failMark is how one key stood before noteFail, so undoFail can put back
+// its time as well as its count.
+type failMark struct {
+	key  string
+	had  bool
+	last time.Time
+}
+
+// markFails reads the keys before noteFail; the caller holds a.mu.
+func (a *Auth) markFails(keys ...string) []failMark {
+	out := make([]failMark, 0, len(keys))
+	for _, k := range keys {
+		m := failMark{key: k}
+		if f := a.fails[k]; f != nil {
+			m.had, m.last = true, f.last
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+// undoFail takes back the failure noted up front when the check could not
+// run at all (the media server did not answer), so an outage never locks
+// people out or restarts their wait. Each key loses one count, as parallel
+// attempts noted their own.
+func (a *Auth) undoFail(marks []failMark) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for _, m := range marks {
+		f := a.fails[m.key]
+		if f == nil {
+			continue
+		}
+		if f.n--; f.n <= 0 {
+			delete(a.fails, m.key)
+		} else if m.had {
+			f.last = m.last
+		}
+	}
+}
+
 func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	c, ok := readCreds(w, r)
 	if !ok {
@@ -878,6 +922,11 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 	localAt := parseTime(localAuthAt)
 	localMethod := who.AuthMethod == AuthMethodLocalPassword || who.AuthMethod == AuthMethodLocalSetup
 	who.LocalRecent = localMethod && !localAt.IsZero() && !localAt.After(now) && now.Sub(localAt) < localRecentFor
+	switch who.AuthMethod {
+	case ProviderPlex, ProviderJellyfin, ProviderEmby:
+		at := parseTime(created)
+		who.OutsideRecent = !at.IsZero() && !at.After(now) && now.Sub(at) < localRecentFor
+	}
 	if !now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) > IdleTimeout {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 			_, err := tx.Exec("DELETE FROM sessions WHERE hash = ?", h)
@@ -934,9 +983,13 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 
 func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	who, _ := From(r.Context())
+	// People who joined through a media server have no password until they set one.
+	hasPassword := true
+	_ = a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash != '' FROM users WHERE id = ?", who.UserID).Scan(&hasPassword)
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
+		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "has_password": hasPassword,
+		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 
 // Cleanup drops ended sessions.
