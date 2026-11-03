@@ -83,6 +83,7 @@
 	onMount(() => {
 		void loadProfile();
 		void loadLinks();
+		void loadPlexMine();
 		void session.loadWays().then(() => {
 			if (page.url.searchParams.get('sso') === 'finish') void finishOIDCLink();
 		});
@@ -326,6 +327,70 @@
 			linkBusy = false;
 		}
 	}
+
+	// My Plex account: linking keeps its sign-in on the server (never shown),
+	// so my Plex watchlist can be read. Anyone may link one.
+	type PlexMine = { linked: boolean; name: string; kept: boolean };
+	let plexMine = $state<PlexMine | null>(null);
+	let plexUnlinking = $state(false);
+	async function loadPlexMine() {
+		plexMine = await api.get<PlexMine>('/auth/plex/my-link').catch(() => null);
+	}
+	async function linkPlexMine() {
+		linkError = '';
+		linkBusy = true;
+		const win = window.open('about:blank', 'plex-link', 'width=600,height=720');
+		// The Plex page must not reach back into this tab.
+		if (win) win.opener = null;
+		try {
+			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/my-link/start', {});
+			if (!win) {
+				linkError = 'Your browser blocked the Plex window. Allow pop-ups for HolyArrs and try again.';
+				return;
+			}
+			win.location.href = r.auth_url;
+			const until = Date.now() + 10 * 60 * 1000;
+			while (Date.now() < until) {
+				await new Promise((ok) => setTimeout(ok, 2000));
+				let done: PlexMine | { waiting: true };
+				try {
+					done = await api.post<PlexMine | { waiting: true }>('/auth/plex/my-link/finish', { id: r.id });
+				} catch (err) {
+					if (err instanceof ApiError && err.status === 429) continue;
+					throw err;
+				}
+				if ('waiting' in done) continue;
+				plexMine = done;
+				linkOpen = false;
+				toasts.push(`Plex account ${done.name} linked.`, 'ok');
+				return;
+			}
+			linkError = 'The Plex sign-in timed out. Start again.';
+		} catch (err) {
+			linkError = message(err);
+		} finally {
+			linkBusy = false;
+			try {
+				win?.close();
+			} catch {
+				// the window may already be gone
+			}
+		}
+	}
+	async function unlinkPlexMine() {
+		linkError = '';
+		linkBusy = true;
+		try {
+			await api.del('/auth/plex/my-link');
+			plexMine = { linked: false, name: '', kept: false };
+			plexUnlinking = false;
+			toasts.push('Plex account unlinked. Devices it signed in are signed out.', 'ok');
+		} catch (err) {
+			linkError = message(err);
+		} finally {
+			linkBusy = false;
+		}
+	}
 	let pref = $state<AutoplayPref>(autoplayPref());
 
 	// Profile picture: choose, see it in the circle, then save or cancel.
@@ -554,10 +619,29 @@
 			</div>
 		{/if}
 	</div>
-	{#if hasLinkWay || myLinks.length}
+	{#if hasLinkWay || myLinks.length || plexMine?.linked || (plexMine && session.s.hasPassword)}
 		<div class="srow" id="linked-me">
 			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="HolyArrs matches the provider's stable account id and never links accounts by email address.">Matched by account id, never by email.</span></div>
-			<div class="ctl">{#if hasLinkWay && !linkOpen}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			<div class="ctl">{#if !linkOpen && (hasLinkWay || session.s.hasPassword)}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			{#if plexMine?.linked}
+				<ul class="below my-links" data-testid="my-plex-link">
+					<li>
+						<span class="small">Plex{#if plexMine.name}, as {plexMine.name}{/if}</span>
+						{#if !session.s.hasPassword}
+							<span class="xs muted" data-testid="plex-needs-password">Set a HolyArrs password above to unlink or change it.</span>
+						{:else if plexUnlinking}
+							<Confirm action="link" onCancel={() => (plexUnlinking = false)}>
+								<div class="row acts">
+									<Button variant="secondary" type="button" onclick={unlinkPlexMine} busy={linkBusy}>Unlink</Button>
+									<Button variant="plain" type="button" onclick={() => (plexUnlinking = false)}>Cancel</Button>
+								</div>
+							</Confirm>
+						{:else}
+							<Button variant="plain" type="button" onclick={() => (plexUnlinking = true)} aria-label="Unlink Plex">Unlink</Button>
+						{/if}
+					</li>
+				</ul>
+			{/if}
 			{#if myLinks.length}
 				<ul class="below my-links" data-testid="my-sso-links">
 					{#each myLinks as l (linkKey(l))}
@@ -582,6 +666,9 @@
 					{#if linkOpen}
 						<Confirm action="link" onCancel={() => (linkOpen = false)}>
 							<div class="row acts">
+								{#if session.s.hasPassword}
+									<Button type="button" onclick={linkPlexMine} busy={linkBusy}>{plexMine?.linked ? 'Plex (another account)' : 'Plex'}</Button>
+								{/if}
 								{#if session.s.ways.includes('oidc')}
 									<Button type="button" onclick={startOIDCLink} busy={linkBusy}>Single sign-on</Button>
 								{/if}
