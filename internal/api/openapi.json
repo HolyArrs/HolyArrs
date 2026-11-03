@@ -22257,15 +22257,106 @@
     },
     "/api/v1/settings/url-base": {
       "get": {
-        "responses": {},
-        "summary": "",
+        "description": "The path HolyArrs lives under behind a reverse proxy.",
+        "operationId": "getURLBase",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "in_use": {
+                      "description": "The base this run uses; empty for none.",
+                      "type": "string"
+                    },
+                    "restart_needed": {
+                      "description": "True when the saved base differs from the one in use.",
+                      "type": "boolean"
+                    },
+                    "saved": {
+                      "description": "The base saved in Settings; empty for none.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "saved",
+                    "in_use",
+                    "restart_needed"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The saved base and the one in use."
+          }
+        },
+        "summary": "The URL base, saved and in use",
+        "tags": [
+          "Settings"
+        ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "read"
       },
       "put": {
-        "responses": {},
-        "summary": "",
+        "description": "A plain path such as /holyarrs, or empty for none. It is cleaned (holyarrs/ becomes /holyarrs) and applies on the next start, unless HOLYARRS_URL_BASE or -url-base is set.",
+        "operationId": "putURLBase",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "url_base": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url_base"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "in_use": {
+                      "description": "The base this run uses; empty for none.",
+                      "type": "string"
+                    },
+                    "restart_needed": {
+                      "description": "True when the saved base differs from the one in use.",
+                      "type": "boolean"
+                    },
+                    "saved": {
+                      "description": "The base saved in Settings; empty for none.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "saved",
+                    "in_use",
+                    "restart_needed"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The saved base and the one in use."
+          },
+          "400": {
+            "description": "Not a plain path."
+          }
+        },
+        "summary": "Save the URL base",
+        "tags": [
+          "Settings"
+        ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"

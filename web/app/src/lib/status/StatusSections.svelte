@@ -27,6 +27,7 @@
 		labelOf,
 		ytdlp,
 		failed = [],
+		hidden = [],
 		checkRuns = 0
 	}: {
 		groups: StatusGroup[];
@@ -41,6 +42,8 @@
 		ytdlp: HealthCheck | undefined;
 		/** Which reads failed on the page's last load ('parts', 'health checks', 'jobs'...). */
 		failed?: string[];
+		/** Reads this account may not do ('outside lists', 'alerts'); their kinds are left out. */
+		hidden?: string[];
 		/** Goes up after every Check again or row check, so Storage reloads its disks. */
 		checkRuns?: number;
 	} = $props();
@@ -64,6 +67,8 @@
 	let about = $state<About | null>(null);
 	let aboutAt = $state(0);
 	let aboutFailed = $state(false);
+	// The About details need Settings; an account without it sees the version only.
+	let aboutDenied = $state(false);
 	// One clock for every relative time here, so "in 5 min" keeps counting down.
 	let now = $state(Date.now());
 
@@ -78,7 +83,8 @@
 
 	const parts = $derived(groups.filter((g) => g.id !== 'jobs'));
 	// Library rows are folder and disk checks: they live in Storage, beside each disk.
-	const kinds = $derived(everyKind(parts));
+	const hiddenKind: Record<string, string> = { 'outside lists': 'lists', alerts: 'alerts' };
+	const kinds = $derived(everyKind(parts).filter((k) => !hidden.some((h) => hiddenKind[h] === k.id)));
 	const libRows = $derived(parts.find((g) => g.id === 'library')?.rows ?? []);
 	const folderRows = (d: Disk) => libRows.filter((r) => r.name === `Folder ${d.path}` || r.name === `Free space ${d.path}`);
 	const backups = $derived(libRows.find((r) => r.key.startsWith('backups')));
@@ -121,7 +127,10 @@
 				about = a;
 				aboutAt = Date.now();
 			},
-			() => (aboutFailed = !about)
+			(e: unknown) => {
+				if ((e as { status?: number })?.status === 403) aboutDenied = true;
+				else aboutFailed = !about;
+			}
 		);
 	}
 
@@ -275,7 +284,7 @@
 			<dl class="kv">
 				<dt>Version</dt>
 				<dd>
-					<code>{about?.version ?? upd?.version ?? (aboutFailed ? '-' : '…')}</code>
+					<code>{about?.version ?? upd?.version ?? (aboutFailed || aboutDenied ? '-' : '…')}</code>
 					{#if upd?.newer}<span class="chip wait">Update available</span><Button variant="plain" size="sm" onclick={() => ontab('updates')}>See update</Button>{:else if upd?.on && upd.latest}<span class="chip ok">Up to date</span>{/if}
 				</dd>
 				{#if about}

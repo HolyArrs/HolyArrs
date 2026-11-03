@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
 	import { api, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
@@ -51,7 +51,7 @@
 			if (firstRun) {
 				folderKind = firstFolderKind(parts);
 				step = 'folder';
-				await goto(to('/welcome?first=1&step=folder'), { replaceState: true, keepFocus: true, noScroll: true });
+				replaceState(to('/welcome?first=1&step=folder'), page.state);
 			}
 			else await home();
 		} catch (e) {

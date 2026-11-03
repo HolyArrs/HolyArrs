@@ -10,6 +10,8 @@ let context: BrowserContext;
 async function scanFirstRun() {
 	await expect(page.locator('main')).toHaveCount(1);
 	await expect(page.locator('#main')).toHaveCount(1);
+	// The first page fades in as the loader leaves; scan it once it is solid.
+	await page.waitForFunction(() => !document.documentElement.classList.contains('hl-arrive') && document.getAnimations().every((a) => a.playState !== 'running'));
 	const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	expect(result.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 }
@@ -94,7 +96,7 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	const places: [string, RegExp, string][] = [
 		['Movies', /\/library\?kind=movie$/, 'Movies'],
 		['Downloads', /\/downloads$/, 'Downloads'],
-		['Calendar', /\/calendar(\?view=\w+)?$/, 'Calendar'],
+		['Calendar', /\/calendar(\?view=[a-z]+)?$/, 'Calendar'],
 		['History', /\/downloads\/history$/, 'History'],
 		['Settings', /\/settings$/, 'Settings'],
 		['Home', /\/$/, 'Home']
@@ -111,10 +113,10 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await expect(page).toHaveURL(/\/search/);
 	await page.getByTestId('search-close').click();
 	await expect(page).not.toHaveURL(/\/search/);
-	await nav.getByRole('link', { name: 'Downloads', exact: true }).click();
-	await page.locator('main').getByRole('link', { name: 'Needs a decision' }).first().click();
-	await expect(page).toHaveURL(/\/downloads\/decide$/);
-	await expect(page.getByRole('heading', { level: 1 })).toContainText('Needs a decision');
+	// Needs a decision lives on the Downloads rows now: its old address opens Downloads on Problems, then Review.
+	await page.goto('/downloads/decide');
+	await expect(page).toHaveURL(/\/downloads\?show=problems\.decide$/);
+	await expect(page.getByRole('heading', { level: 1 })).toContainText('Downloads');
 	await nav.getByRole('link', { name: 'Settings', exact: true }).click();
 	// The side menu folds: open the Notifications group first.
 	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Notifications' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
@@ -124,7 +126,7 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await page.goBack();
 	await expect(page).toHaveURL(/\/settings$/);
 	await page.goBack();
-	await expect(page).toHaveURL(/\/downloads\/decide$/);
+	await expect(page).toHaveURL(/\/downloads\?show=problems\.decide$/);
 });
 
 test('empty pages say what to do next', async () => {
