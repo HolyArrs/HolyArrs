@@ -35,7 +35,7 @@
 	let on = $state(false);
 	let issuer = $state('');
 	let clientId = $state('');
-	let typedCred = $state(''); // the client secret as typed; cleared after each save
+	let typedCred = $state(''); // the client secret as typed; cleared after a save that worked
 	let publicClient = $state(false);
 	let allowJoin = $state(false);
 	let proof = $state(''); // the owner's HolyArrs password, sent with every save
@@ -111,7 +111,7 @@
 				allow_join: allowJoin,
 				confirm_everyone: confirmEveryone
 			});
-			fill(out.sso);
+			fill(out.sso); // clears the typed secret too
 			proof = code = '';
 			confirmEveryone = false;
 			const gone = [out.links_removed && `${out.links_removed} linked sign-in${out.links_removed === 1 ? '' : 's'} removed`, out.sessions_ended && `${out.sessions_ended} signed out`].filter(Boolean).join(', ');
@@ -120,7 +120,7 @@
 		} catch (err) {
 			saveError = err instanceof ApiError && err.body.code === 'wrong_proof' ? 'The password or code is wrong.' : message(err);
 		} finally {
-			typedCred = '';
+			// A failed save keeps the typed secret, so fixing the password does not save without it.
 			busy = false;
 		}
 	}

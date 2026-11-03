@@ -56,11 +56,11 @@ Use one HolyArrs side per Seerr server. Do not add the same `/radarr` address as
 - **Available.** Seerr's daily scan reads the Library. A season counts as available once every episode in it has a file, so a season with episodes still to air stays "partly available", the same as with Sonarr. A movie is available once it has a file.
 - **Removing.** Seerr's "remove from Sonarr/Radarr" takes the title out of the HolyArrs Library. With the delete-files switch off (the default) the files stay on disk; with it on they go to the holding folder first, like every delete in HolyArrs. If Seerr asks for an exclusion, the title goes on the Never-add list.
 - **Tags.** Seerr's per-user tags are made and kept, so Seerr finds them again. They are not attached to titles yet.
+- **Open in.** Seerr's "open in Sonarr/Radarr" link for admins opens the title in HolyArrs: a show opens its Library page, a movie its title page.
 
 ## What does not work (yet)
 
 - Only Seerr and Overseerr are supported. Prowlarr, Bazarr, Recyclarr, Unpackerr, Maintainerr and other apps that talk to Sonarr or Radarr are not.
-- Seerr's "open in Sonarr/Radarr" link for admins does not lead to a HolyArrs page.
 - These apps see one copy per title: the main Version. A 4K Version next to it is invisible to them.
 - Choosing another Library folder for a title in Seerr is ignored; move titles in HolyArrs. Choosing other Pick rules in Seerr switches the main Version's Pick rules, which can start a search for a better copy.
 - Changing a show's type (Seerr's series type) for a show already in the Library is ignored.

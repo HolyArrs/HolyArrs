@@ -208,6 +208,12 @@ func refusedHandler(dir string, err error, done chan<- struct{}) http.Handler {
 			page(w, http.StatusOK, `<h1>Done</h1><p>The data was already put back. HolyArrs is starting again; reload this page in a moment.</p>`)
 			return
 		}
+		// A post with no code (a HolyArrs tab still open, Seerr, a script)
+		// is not a try, so other apps cannot use up the tries.
+		if given == "" {
+			form(w, http.StatusBadRequest, "Type the code from the log.")
+			return
+		}
 		if tries >= maxCodeTries {
 			form(w, http.StatusTooManyRequests, "Too many wrong codes. Restart HolyArrs (docker restart <container>) for a new code.")
 			return

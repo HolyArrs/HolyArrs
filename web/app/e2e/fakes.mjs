@@ -2,6 +2,7 @@
 // is pointed at the fake Plex with HOLYARRS_PLEX_URL, so the tests never
 // reach plex.tv. Test-only names and passwords.
 import { createServer } from 'node:http';
+import { createHash, generateKeyPairSync, randomBytes, sign } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -125,6 +126,12 @@ function body(req) {
 	});
 }
 
+// The fake single sign-on provider's signing key and its open codes.
+const oidcKey = generateKeyPairSync('rsa', { modulusLength: 2048 });
+/** @type {Map<string, { user: string, nonce: string | null, challenge: string | null }>} */
+const oidcCodes = new Map();
+const esc = (/** @type {string} */ s) => s.replace(/[&<>"]/g, (ch) => `&#${ch.charCodeAt(0)};`);
+
 /** @param {import('node:http').ServerResponse} res @param {number} code @param {unknown} obj */
 function send(res, code, obj, type = 'application/json') {
 	res.writeHead(code, { 'Content-Type': type });
@@ -176,7 +183,10 @@ export const tmdbMovies = [
 	{ id: 900041, title: 'Ochre Bandstand', release_date: '2012-08-08', imdb_id: 'tt9000410', overview: 'A park bandstand that plays the weather.', dates: [[3, '2012-08-08'], [4, '2012-10-01']] },
 	// Only the Library select bar tests use these (library-bulk.spec.ts).
 	{ id: 900451, title: 'Bramble Foundry', release_date: '2016-02-12', imdb_id: 'tt9004510', overview: 'A foundry that casts bells out of hedgerow thorns.', dates: [[3, '2016-02-12'], [4, '2016-04-01']] },
-	{ id: 900452, title: 'Lichen Postcard', release_date: '2013-11-03', imdb_id: 'tt9004520', overview: 'A postcard that grows a new picture every spring.', dates: [[3, '2013-11-03'], [4, '2014-01-10']] }
+	{ id: 900452, title: 'Lichen Postcard', release_date: '2013-11-03', imdb_id: 'tt9004520', overview: 'A postcard that grows a new picture every spring.', dates: [[3, '2013-11-03'], [4, '2014-01-10']] },
+	// Only library-missing.spec.ts adds these: Search every missing one finds them.
+	{ id: 900271, title: 'Hollow Compass', release_date: '2015-02-02', imdb_id: 'tt9002710', overview: 'A compass that points at whatever was lost last.', dates: [[3, '2015-02-02'], [4, '2015-04-01']] },
+	{ id: 900272, title: 'Brass Meadow', release_date: '2014-06-06', imdb_id: 'tt9002720', overview: 'A meadow of brass flowers that ring in the wind.', dates: [[3, '2014-06-06'], [4, '2014-08-01']] }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
@@ -240,6 +250,24 @@ export const fakeShows = [
 		tmdb: 800451, tvdb: 810451, tvmaze: 820451, imdb: 'tt8004510', name: 'Sorrel Junction', first: '2018-03-04', status: 'Ended', network: 'Lab Seven',
 		overview: 'A railway junction where the points change with the weather.',
 		episodes: [[1, 1, 'Points', '2018-03-04'], [1, 2, 'Signal Box', '2018-03-11']]
+	},
+	{
+		// Only library-missing.spec.ts adds it: Search every missing one searches
+		// season 1 as a season and S02E01 alone; S02E02 is not out yet.
+		tmdb: 800271, tvdb: 810271, tvmaze: 820271, imdb: 'tt8002710', name: 'Gilded Bracken', first: '2022-02-06', status: 'Returning Series', network: 'Lab Seven',
+		overview: 'Ferns in a hillside wood turn to gold one leaf at a time.',
+		episodes: [[1, 1, 'Fern Gate', '2022-02-06'], [1, 2, 'Root Hall', '2022-02-13'], [2, 1, 'Gold Leaf', '2023-03-05'], [2, 2, 'Late Frost', '2099-03-01']]
+	},
+	{
+		// Anime (library-anime.spec.ts): the Source names its Releases by running
+		// number ("[Lab Fansub] Hoshikage Relay - 13 [1080p]"), so 13 is S02E01.
+		tmdb: 800032, tvdb: 810032, tvmaze: 820032, imdb: 'tt8000320', name: 'Hoshikage Relay', first: '2023-01-08', status: 'Returning Series', network: 'Lab Seven',
+		overview: 'Twelve runners carry a lantern across the night in a relay that never ends.',
+		episodes: [
+			...Array.from({ length: 12 }, (_, i) => [1, i + 1, `Leg ${i + 1}`, new Date(Date.UTC(2023, 0, 8 + 7 * i)).toISOString().slice(0, 10)]),
+			[2, 1, 'Second Wind', '2024-04-07'], [2, 2, 'Anchor Leg', '2024-04-14']
+		],
+		anime: true
 	}
 ];
 
@@ -347,6 +375,36 @@ function showReleasesFor(s, season, ep) {
 	return one(`${dotted}.S${two(season)}.1080p.WEB-DL.H264-HOLYARRS`, aired.length * 1_200_000_000, 60) +
 		('uhd' in s ? one(`${dotted}.S${two(season)}.2160p.WEB-DL.DV.H265-HOLYARRS`, aired.length * 6_000_000_000, 45) : '') +
 		aired.map((e) => one(`${dotted}.S${two(season)}E${two(Number(e[1]))}.1080p.WEB-DL.H264-HOLYARRS`, 1_200_000_000, 40)).join('');
+}
+
+/** The fake indexer's info hash for an anime Release name. @param {string} name */
+export const animeReleaseHash = (name) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 13).toString(16).padStart(8, '0').repeat(5);
+
+/**
+ * animeReleasesFor answers an anime show's episode search the way fansub
+ * groups name things: by running number, never by season. season 0 means
+ * ep is already a running number (a show set to absolute order); otherwise
+ * the running number is counted over the regular episodes in aired order.
+ * It gives a 1080p and a 720p copy of the episode asked for and a 1080p
+ * copy of the next one, as a text search on a real site also brings back.
+ * @param {typeof fakeShows[number]} s
+ * @param {number} season
+ * @param {number | null} ep
+ */
+function animeReleasesFor(s, season, ep) {
+	if (ep === null) return '';
+	const regular = s.episodes.filter((e) => Number(e[0]) > 0);
+	const abs = season === 0 ? ep : regular.findIndex((e) => Number(e[0]) === season && Number(e[1]) === ep) + 1;
+	if (abs < 1) return '';
+	const one = (/** @type {string} */ name, /** @type {number} */ size, /** @type {number} */ seeders) => {
+		const hash = animeReleaseHash(name);
+		return `<item><title>${name}</title><guid>${name}</guid><pubDate>Mon, 01 Jan 2024 00:00:00 +0000</pubDate>` +
+			`<enclosure url="http://127.0.0.1:${indexerPort}/dl/${hash}.torrent" length="${size}" type="application/x-bittorrent"/>` +
+			`<torznab:attr name="seeders" value="${seeders}"/><torznab:attr name="peers" value="${seeders + 5}"/><torznab:attr name="infohash" value="${hash}"/></item>`;
+	};
+	const two = (/** @type {number} */ n) => String(n).padStart(2, '0');
+	return one(`[Lab Fansub] ${s.name} - ${two(abs)} [1080p]`, 1_300_000_000, 60) + one(`[Lab Fansub] ${s.name} - ${two(abs)} [720p]`, 650_000_000, 45) +
+		(abs < regular.length ? one(`[Lab Fansub] ${s.name} - ${two(abs + 1)} [1080p]`, 1_300_000_000, 70) : '');
 }
 
 /**
@@ -580,10 +638,45 @@ export function startFakes() {
 	/** @type {unknown[]} */
 	const updates = [];
 	const jelly = createServer(async (req, res) => {
-		// A single sign-on provider's discovery document, for the Settings Test button.
-		if (req.method === 'GET' && req.url === '/oidc/.well-known/openid-configuration') {
+		// A single sign-on provider: discovery for the Settings Test button, and a
+		// sign-in page where the test types a name, then code, token and keys.
+		if (req.url?.startsWith('/oidc/')) {
 			const base = `http://127.0.0.1:${jellyfinPort}/oidc`;
-			return send(res, 200, { issuer: base, authorization_endpoint: `${base}/auth`, token_endpoint: `${base}/token`, jwks_uri: `${base}/keys`, id_token_signing_alg_values_supported: ['RS256'] });
+			const url = new URL(req.url, base);
+			if (req.method === 'GET' && url.pathname === '/oidc/.well-known/openid-configuration')
+				return send(res, 200, { issuer: base, authorization_endpoint: `${base}/auth`, token_endpoint: `${base}/token`, jwks_uri: `${base}/keys`, id_token_signing_alg_values_supported: ['RS256'] });
+			if (req.method === 'GET' && url.pathname === '/oidc/keys') return send(res, 200, { keys: [{ ...oidcKey.publicKey.export({ format: 'jwk' }), kid: 'e2e', alg: 'RS256', use: 'sig' }] });
+			if (req.method === 'GET' && url.pathname === '/oidc/auth') {
+				const keep = [...url.searchParams].map(([k, v]) => `<input type="hidden" name="${esc(k)}" value="${esc(v)}">`).join('');
+				return send(res, 200, `<!doctype html><title>Fake provider</title><form action="${base}/auth/ok">${keep}<label>Username <input name="user"></label><button>Sign in</button></form>`, 'text/html');
+			}
+			if (req.method === 'GET' && url.pathname === '/oidc/auth/ok') {
+				const q = url.searchParams;
+				const user = q.get('user')?.trim();
+				const to = q.get('redirect_uri');
+				if (!user || !to || q.get('client_id') !== 'holyarrs' || q.get('code_challenge_method') !== 'S256') return send(res, 400, 'bad sign-in request', 'text/plain');
+				const code = randomBytes(16).toString('hex');
+				oidcCodes.set(code, { user, nonce: q.get('nonce'), challenge: q.get('code_challenge') });
+				const back = new URL(to);
+				back.searchParams.set('code', code);
+				back.searchParams.set('state', q.get('state') ?? '');
+				res.writeHead(303, { Location: back.toString() });
+				return res.end();
+			}
+			if (req.method === 'POST' && url.pathname === '/oidc/token') {
+				const f = new URLSearchParams(await body(req));
+				const c = oidcCodes.get(f.get('code') ?? '');
+				oidcCodes.delete(f.get('code') ?? '');
+				const pkce = createHash('sha256').update(f.get('code_verifier') ?? '').digest('base64url');
+				const why = !c ? 'unknown code' : pkce !== c.challenge ? 'code_verifier does not match' : !String(req.headers.authorization ?? '').startsWith('Basic ') ? 'no client credentials' : '';
+				if (why || !c) return send(res, 400, { error: 'invalid_grant', error_description: why });
+				const now = Math.floor(Date.now() / 1000);
+				const part = (/** @type {object} */ o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+				const head = `${part({ alg: 'RS256', kid: 'e2e', typ: 'JWT' })}.${part({ iss: base, aud: 'holyarrs', sub: `sub-${c.user}`, name: c.user, nonce: c.nonce, iat: now, exp: now + 300 })}`;
+				const jwt = `${head}.${sign('sha256', Buffer.from(head), oidcKey.privateKey).toString('base64url')}`;
+				return send(res, 200, { access_token: randomBytes(16).toString('hex'), token_type: 'Bearer', expires_in: 300, id_token: jwt });
+			}
+			return send(res, 404, { error: 'no route' });
 		}
 		// Emby, as it often sits at http://host/emby. It wants the X-Emby-Authorization header.
 		if (req.url?.startsWith('/emby/')) {
@@ -693,7 +786,7 @@ export function startFakes() {
 			const s = fakeShows.find((x) => x.tvdb === tvdb) ?? fakeShows.find((x) => q && q.startsWith(squash(x.name)));
 			const season = Number(url.searchParams.get('season') ?? '0');
 			const ep = url.searchParams.get('ep');
-			const items = s ? showReleasesFor(s, season, ep ? Number(ep) : null) : '';
+			const items = !s ? '' : 'anime' in s ? animeReleasesFor(s, season, ep ? Number(ep) : null) : showReleasesFor(s, season, ep ? Number(ep) : null);
 			setTimeout(() => res.end(`<?xml version="1.0"?><rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed"><channel><title>lab</title>${items}</channel></rss>`), s ? 1500 : 0);
 			return;
 		}

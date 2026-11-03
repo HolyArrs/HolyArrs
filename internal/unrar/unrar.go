@@ -38,6 +38,9 @@ var (
 	// ErrUnrecognised says the set holds a link, a special file or a block
 	// this package does not understand; nothing from it is unpacked.
 	ErrUnrecognised = errors.New("the RAR files hold something that is not understood")
+	// ErrOldFormat says the file is a RAR from before RAR 1.5 (signature
+	// "RE~^"), which neither this package nor the decoder reads.
+	ErrOldFormat = errors.New("the RAR files use the RAR format from before RAR 1.5")
 )
 
 const (
@@ -317,6 +320,9 @@ func walkVolume(f *os.File, visit func(part, *os.File) error) (more bool, err er
 		return walk5(f, size, 8, visit)
 	case len(sig) >= 7 && string(sig[:7]) == string(sigRar4):
 		return walk4(f, size, 7, visit)
+	}
+	if len(sig) >= 4 && string(sig[:4]) == "RE~^" {
+		return false, fmt.Errorf("%w: %s", ErrOldFormat, filepath.Base(f.Name()))
 	}
 	return false, corrupt("%s is not a RAR file", filepath.Base(f.Name()))
 }

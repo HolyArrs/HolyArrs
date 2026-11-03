@@ -108,3 +108,18 @@ describe('createMusicPrefetch', () => {
 		expect(q.hover(`/music/artist/${A}`)).toBe(1);
 	});
 });
+
+describe('pagePicture', () => {
+	it('fetches ahead the address the album and artist pages show, versioned and sized', async () => {
+		const { registerPictures } = await import('./pictures.ts');
+		const al = '3ff81a80-fe2f-4d9a-b542-000000000001';
+		const ar = 'b8a7c51f-362c-4dcb-a259-000000000001';
+		registerPictures({ [`album:${al}`]: { v: 'c1', w: 500, h: 500, color: '' }, [`artist:${ar}`]: { v: 'p1', w: 1200, h: 1200, color: '' } });
+		const { pagePicture } = await import('./music-prefetch.ts');
+		const album = pagePicture(`/music/albums/${al}?artist=${ar}&similar=0`, { image: `/api/v1/music-trending/art/album/${al}` });
+		expect(album).toMatch(new RegExp(`/api/v1/music-trending/art/album/${al}\\?pv=c1&size=(500|1200)$`));
+		expect(pagePicture(`/music/artists/${ar}?similar=0`, { image: `/api/v1/music-trending/art/artist/${ar}` })).toMatch(new RegExp(`/api/v1/music-trending/art/artist/${ar}\\?pv=p1$`));
+		expect(pagePicture('/titles/7', { artwork: ['/api/v1/artwork/abc.jpg'] })).toBe('/api/v1/artwork/abc.jpg');
+		expect(pagePicture('/music/albums/x', { image: 'https://elsewhere.example/a.jpg' })).toBe(null);
+	});
+});

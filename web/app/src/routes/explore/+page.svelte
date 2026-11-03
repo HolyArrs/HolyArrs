@@ -75,7 +75,8 @@
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
 	import GenreBanner from '#lib/ui/GenreBanner.svelte';
 	import { GENRES } from '#lib/explore.ts';
-	import { fetchMusicGenre, musicCardHref, type MusicCardData } from '#lib/music/music-trending.ts';
+	import { fetchMusicGenre, musicCardHref, musicImage, type MusicCardData } from '#lib/music/music-trending.ts';
+	import { coverFor } from '#lib/music/music-pages.ts';
 	import MusicGenreTiles from '#lib/ui/MusicGenreTiles.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
@@ -509,7 +510,9 @@
 				const seen = new Set<string>();
 				musicPicks = [...(a.hero ? [a.hero] : []), ...a.rows.flatMap((r) => r.items ?? [])]
 					.filter((c) => (c.kind === 'album' || c.kind === 'artist') && c.image && !c.title_id && !seen.has(c.key) && (seen.add(c.key), true))
-					.slice(0, 7);
+					.slice(0, 7)
+					// The rows' own address (versioned, card size), so each cover downloads once.
+					.map((c) => ({ ...c, image: coverFor(musicImage(c), 150).src ?? c.image }));
 			},
 			() => {}
 		).finally(() => musicPicksFor === slug && (musicPicksPending = false));
