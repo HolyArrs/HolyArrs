@@ -1992,7 +1992,8 @@
 	/* One column grid for every row of both sections. */
 	.dlgrid { --gap: 6px; min-width: 0; }
 	.tw { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
-	.tin { min-width: var(--c-in); }
+	/* Muted text in the list is mixed from the text colour, so it stays readable (4.5:1+) on the card's tinted rows. */
+	.tin { min-width: var(--c-in); --text-muted: color-mix(in srgb, var(--text) 66%, var(--surface-2)); }
 	.dlrows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 	.drow { display: block; border-bottom: 1px solid var(--line); }
 	.tg { position: relative; align-self: stretch; }
