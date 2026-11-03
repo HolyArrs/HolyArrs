@@ -407,7 +407,8 @@
 	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: inherit; font: 600 14px/1 var(--font-ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 	.al-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.al-rows.danger { margin-top: 16px; }
-	.al-rows.danger b, .al-rows.danger :global(svg) { color: var(--fail-on-art); }
+	.al-rows.danger b { color: var(--on-art); }
+	.al-rows.danger :global(svg) { color: var(--fail-on-art); }
 	.al-rowbtn { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 	.al-rowbtn + .al-rowbtn { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.al-rowbtn span { display: grid; gap: 3px; min-width: 0; }
