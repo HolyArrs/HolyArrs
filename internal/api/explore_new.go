@@ -81,6 +81,7 @@ type newPageEntry struct {
 type newPageCache struct {
 	mu    sync.Mutex
 	pages map[string]newPageEntry
+	swept time.Time // when expired pages were last dropped
 }
 
 var newPages newPageCache
@@ -194,10 +195,21 @@ func (c *newPageCache) get(key string) (newPage, bool) {
 func (c *newPageCache) put(key string, p newPage) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	now := time.Now()
+	// A page's key carries its day, so past days' pages are dropped (at most
+	// once a minute) instead of piling up until the cache is full.
+	if now.Sub(c.swept) >= time.Minute {
+		for k, e := range c.pages {
+			if now.Sub(e.at) > newPageTTL {
+				delete(c.pages, k)
+			}
+		}
+		c.swept = now
+	}
 	if c.pages == nil || len(c.pages) > 500 {
 		c.pages = map[string]newPageEntry{}
 	}
-	c.pages[key] = newPageEntry{at: time.Now(), page: p}
+	c.pages[key] = newPageEntry{at: now, page: p}
 }
 
 // newEpisode is a Library show's episode near now (aired in the last 14

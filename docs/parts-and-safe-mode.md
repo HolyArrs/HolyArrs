@@ -92,6 +92,17 @@ If HolyArrs itself crashes, Docker's restart policy starts it again. Use `restar
 
 The Docker image sets `GOMEMLIMIT`, the point where Go starts working harder to stay small, just under a 500 MB container limit. The SQLite database keeps its page cache outside what `GOMEMLIMIT` sees, so the limit leaves room for it. If you give the container a different memory limit, set `GOMEMLIMIT` to about 80 percent of it.
 
+### Low-memory mode
+
+For a small NAS or a Raspberry Pi. It keeps fewer answers in memory and gives SQLite a smaller page cache, so HolyArrs stays smaller over a long run. Pages that need an answer it no longer holds read it from the database again, which takes a moment longer; a show or artist you open again after a while may be looked up again.
+
+- **On by itself** when the machine, or the container's memory limit, has about 2.5 GiB or less (Linux; read from `/proc/meminfo` and the cgroup limit).
+- `HOLYARRS_LOW_MEMORY=1` turns it on anywhere, `HOLYARRS_LOW_MEMORY=0` turns it off.
+- Without `GOMEMLIMIT`, the memory target is a quarter of the machine, between 192 and 384 MiB. A `GOMEMLIMIT` or `GOGC` you set always wins.
+- The first line HolyArrs writes to its log says whether the mode is on and why.
+
+What it changes: the SQLite page cache (4 MB per writer and 2 MB per reader instead of 8 MB each), the movie and show details kept in memory (150 instead of 1000; the rest come from the database), and the show, music and Wikipedia answers kept in memory (250 instead of 1000).
+
 ## API keys and scopes
 
 Make a key in **My account** (or `POST /api/v1/auth/keys`), send it in the `X-Api-Key` header. Each key holds one or more scopes:

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/lowmem"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -69,6 +70,10 @@ type memResult struct {
 	FixtureMillis int64 `json:"fixture_ms"`
 }
 
+// memModes are measured in turn: all parts, Movies and Shows only, and all
+// parts in low-memory mode (#131).
+var memModes = []string{"all", "movies-shows", "all-low"}
+
 // TestMemoryPartsRuns runs the child three times per mode, alternating,
 // and reports each run and the medians.
 func TestMemoryPartsRuns(t *testing.T) {
@@ -78,7 +83,7 @@ func TestMemoryPartsRuns(t *testing.T) {
 	var lines []string
 	all := map[string][]memResult{}
 	for round := range 3 {
-		for _, mode := range []string{"all", "movies-shows"} {
+		for _, mode := range memModes {
 			cmd := testCommand(os.Args[0], "-test.run=^TestMemoryChild$", "-test.v", "-test.count=1", "-test.timeout=10m")
 			cmd.Env = append(os.Environ(), envMemoryChild+"="+mode)
 			out, err := cmd.CombinedOutput()
@@ -101,7 +106,7 @@ func TestMemoryPartsRuns(t *testing.T) {
 			lines = append(lines, row(fmt.Sprintf("%s, run %d", mode, round+1), r))
 		}
 	}
-	for _, mode := range []string{"all", "movies-shows"} {
+	for _, mode := range memModes {
 		m := median(all[mode])
 		lines = append(lines, row(mode+", median", m))
 		// The pass lines of decision 0002: idle under 250 MB, peak under
@@ -162,6 +167,10 @@ func TestMemoryChild(t *testing.T) {
 	mode := os.Getenv(envMemoryChild)
 	if mode == "" {
 		t.Skip("started by TestMemoryPartsRuns")
+	}
+	if strings.HasSuffix(mode, "-low") {
+		lowmem.Set(true)
+		t.Cleanup(func() { lowmem.Set(false) })
 	}
 	base := measure(mode)
 	a := startFaultApp(t, runOpts{})

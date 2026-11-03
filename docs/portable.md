@@ -102,6 +102,10 @@ of the memory you give HolyArrs). This is a Go memory target, not a hard
 process limit. Use your service manager for resource
 limits and restart handling; packaging does not create a service.
 
+On a machine with about 2.5 GiB of memory or less, HolyArrs turns on its
+low-memory mode by itself (Linux). `HOLYARRS_LOW_MEMORY=1` or `=0` decides it
+yourself. See [Low-memory mode](parts-and-safe-mode.md#low-memory-mode).
+
 Open port 18730 at your host's network address, read `setup-code.txt` only
 from the private config directory, and create the owner account. See
 [Install](install.md#finish-the-first-run) for the remaining setup and data
