@@ -568,6 +568,12 @@ var Routes = map[string]Owner{
 	"PUT /api/v1/settings/asks":                      wishlist,
 	"GET /api/v1/messages":                           wishlist,
 	"POST /api/v1/messages/read":                     wishlist,
+
+	// Reports: problems people report with titles in the Library.
+	"GET /api/v1/reports":              Core,
+	"POST /api/v1/reports":             Core,
+	"POST /api/v1/reports/{id}/fix":    Core,
+	"POST /api/v1/reports/{id}/reopen": Core,
 }
 
 // Screens gives every page of the web app (its path, with [x] for a
@@ -610,6 +616,7 @@ var Screens = map[string]Owner{
 	"/music/album/[mbid]":            music,
 	"/calendar":                      Media,
 	"/requests":                      wishlist,
+	"/reports":                       Core,
 	"/settings":                      Core,
 	"/settings/account":              Core,
 	"/settings/appearance":           Core,

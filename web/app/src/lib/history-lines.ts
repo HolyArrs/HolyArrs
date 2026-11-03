@@ -60,7 +60,9 @@ const TAG = {
 	changed: { word: 'Changed', icon: 'settings', tone: 'idle' },
 	asked: { word: 'Asked', icon: 'wish', tone: 'info' },
 	approved: { word: 'Approved', icon: 'check', tone: 'ok' },
-	declined: { word: 'Turned down', icon: 'declined', tone: 'idle' }
+	declined: { word: 'Turned down', icon: 'declined', tone: 'idle' },
+	reported: { word: 'Reported', icon: 'alert', tone: 'wait' },
+	reopened: { word: 'Reopened', icon: 'alert', tone: 'wait' }
 } satisfies Record<string, Tag>;
 
 const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
@@ -68,6 +70,9 @@ const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+/** The words for a reported problem's kind (#95). */
+const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
+const problem = (v: unknown) => problemWords[str(v)] ?? str(v);
 
 /** A made-up episode name: "Episode 8827", "TBA", or a bare date. */
 export function fakeEpisodeName(name: string): boolean {
@@ -292,6 +297,9 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		}
 		case 'ask_approved': return t(TAG.approved, join(`Approved by ${str(d.approved_by) || who(e, ctx) || 'HolyArrs'}`, d.auto === true ? 'on its own' : '', str(d.note)));
 		case 'ask_turned_down': return t(TAG.declined, join(`Declined by ${str(d.turned_down_by) || who(e, ctx) || 'HolyArrs'}`, str(d.note)));
+		case 'report_made': return t(TAG.reported, join(`Problem reported by ${str(d.made_by) || who(e, ctx) || 'a member'}`, problem(d.kind), str(d.note)));
+		case 'report_fixed': return t(TAG.fixed, join(`Problem fixed by ${str(d.fixed_by) || who(e, ctx) || 'HolyArrs'}`, problem(d.kind), str(d.reply)));
+		case 'report_reopened': return t(TAG.reopened, join(`Problem opened again by ${str(d.reopened_by) || who(e, ctx) || 'HolyArrs'}`, problem(d.kind)));
 		case 'secrets_imported': return t(TAG.changed, join('Settings imported', `${num(d.set)} set`));
 		case 'media_server_told': return t(TAG.checked, 'Told the media server about it');
 		case 'media_server_failed': return t(TAG.failed, join('Could not reach the media server', plainWhy(str(d.reason) || str(d.error))));

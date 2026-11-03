@@ -2822,13 +2822,17 @@
             "enum": [
               "approved",
               "turned_down",
-              "ready"
+              "ready",
+              "fixed"
             ],
             "type": "string"
           },
           "read_at": {
             "format": "date-time",
             "type": "string"
+          },
+          "report_id": {
+            "type": "integer"
           },
           "text": {
             "type": "string"
@@ -4386,6 +4390,130 @@
           },
           "version_id": {
             "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Report": {
+        "properties": {
+          "album_id": {
+            "type": "integer"
+          },
+          "album_name": {
+            "type": "string"
+          },
+          "closed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "closed_by": {
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "episode": {
+            "type": "integer"
+          },
+          "file_id": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "item_id": {
+            "type": "integer"
+          },
+          "item_name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "picture",
+              "sound",
+              "subtitles",
+              "wont_play",
+              "other"
+            ],
+            "type": "string"
+          },
+          "kind_label": {
+            "type": "string"
+          },
+          "made_by": {
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "mine": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          },
+          "poster": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "season": {
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "fixed"
+            ],
+            "type": "string"
+          },
+          "state_label": {
+            "type": "string"
+          },
+          "title_id": {
+            "type": "integer"
+          },
+          "title_kind": {
+            "enum": [
+              "movie",
+              "show",
+              "artist"
+            ],
+            "type": "string"
+          },
+          "title_name": {
+            "type": "string"
+          },
+          "track": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
+          },
+          "version_id": {
+            "type": "integer"
+          },
+          "where": {
+            "description": "The part in words: S02E03, Season 2, an album, a track; the Version label when the title has more than one.",
+            "type": "string"
+          },
+          "year": {
             "type": "integer"
           }
         },
@@ -16506,7 +16634,7 @@
     },
     "/api/v1/messages": {
       "get": {
-        "description": "In-app messages (approved, turned down, ready), newest first, with the unread count; for people who approve also how many asks wait.",
+        "description": "In-app messages (approved, turned down, ready), newest first, with the unread count; for people who approve also how many asks wait; for people with manage_library also how many reports are open (reports_open).",
         "operationId": "listMessages",
         "parameters": [
           {
@@ -16529,6 +16657,9 @@
                         "$ref": "#/components/schemas/Message"
                       },
                       "type": "array"
+                    },
+                    "reports_open": {
+                      "type": "integer"
                     },
                     "unread": {
                       "type": "integer"
@@ -20440,6 +20571,359 @@
           "Organise"
         ],
         "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/reports": {
+      "get": {
+        "description": "People with manage_library see every report; everyone else sees only the reports they made. Open reports first, then newest. For managers the answer also says how many are open.",
+        "operationId": "listReports",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "schema": {
+              "enum": [
+                "open",
+                "fixed"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mine",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 200,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "open": {
+                      "type": "integer"
+                    },
+                    "reports": {
+                      "items": {
+                        "$ref": "#/components/schemas/Report"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Reports."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown state or title_id."
+          }
+        },
+        "summary": "Problem reports",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Anyone signed in reports a problem with a title in the Library: kind picture, sound, subtitles, wont_play or other, with an optional note (at most 500 characters). season, item_id (an episode or track), album_id and version_id narrow it; for a movie the item is found, and when the item has one copy in the Library (or version_id picks one) its file is kept with the report. The owner and admins get the report_made Alert. A title above a Kid's age-rating limit answers 404 like a title that does not exist.",
+        "operationId": "makeReport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "album_id": {
+                    "type": "integer"
+                  },
+                  "item_id": {
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "enum": [
+                      "picture",
+                      "sound",
+                      "subtitles",
+                      "wont_play",
+                      "other"
+                    ],
+                    "type": "string"
+                  },
+                  "note": {
+                    "maxLength": 500,
+                    "type": "string"
+                  },
+                  "season": {
+                    "type": "integer"
+                  },
+                  "title_id": {
+                    "type": "integer"
+                  },
+                  "version_id": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "title_id",
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "report": {
+                      "$ref": "#/components/schemas/Report"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Reported."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown kind, a note too long, or a part that is not of this title."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Title."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The same person has this problem open already, or the title's part is off."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Nothing of this title is in the Library yet."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The person has 20 reports open already."
+          }
+        },
+        "summary": "Report a problem with a title",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/reports/{id}/fix": {
+      "post": {
+        "description": "The optional reply (at most 500 characters) goes to the person who reported it as a message (kind fixed) and with the report_fixed Alert.",
+        "operationId": "fixReport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "reply": {
+                    "maxLength": 500,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "report": {
+                      "$ref": "#/components/schemas/Report"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Reply too long."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such report."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Already fixed."
+          }
+        },
+        "summary": "Mark a report fixed",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/reports/{id}/reopen": {
+      "post": {
+        "description": "For a problem that came back. The reply is cleared.",
+        "operationId": "reopenReport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "report": {
+                      "$ref": "#/components/schemas/Report"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Open again."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such report."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Still open, or the same person has this problem open in another report."
+          }
+        },
+        "summary": "Open a fixed report again",
+        "tags": [
+          "Reports"
+        ],
+        "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
       }

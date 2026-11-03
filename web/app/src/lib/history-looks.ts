@@ -67,6 +67,7 @@ export const lookTabs: LookTab[] = [
 			{ key: 'deleted', label: 'Deleted', hint: 'Titles, episodes and files deleted or held.', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
 			{ key: 'subtitles', label: 'Subtitles', hint: 'Subtitles saved, upgraded, synced or not found.', kinds: ['subtitle_*'] },
 			{ key: 'asks', label: 'Asks', hint: 'Asks made, approved or turned down, by people or AI apps.', kinds: ['ask_*', 'ai_ask_*'] },
+			{ key: 'reports', label: 'Reports', hint: 'Problems people reported with titles, fixed or opened again.', kinds: ['report_*'] },
 			{ key: 'system', label: 'System', hint: 'Sign-ins, API keys, account and settings changes.', kinds: ['sign*', 'api_key_*', 'settings_changed', 'secrets_imported', 'account_changed', 'backup_used'] }
 		]
 	},

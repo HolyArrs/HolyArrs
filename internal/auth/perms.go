@@ -591,6 +591,13 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/migrate/moves/{id}":        needUsers,
 	"GET /api/v1/migrate/moves/{id}/report": needUsers,
 	"POST /api/v1/migrate/moves/{id}/undo":  needUsers,
+
+	// Reports: anyone signed in reports a problem and sees their own;
+	// fixing and opening again needs manage_library.
+	"GET /api/v1/reports":              needSignedIn,
+	"POST /api/v1/reports":             needSignedIn,
+	"POST /api/v1/reports/{id}/fix":    PermManageLibrary,
+	"POST /api/v1/reports/{id}/reopen": PermManageLibrary,
 }
 
 // API key scopes. A key holds one or more; a session holds them all.
@@ -757,6 +764,7 @@ func init() {
 		"GET /api/v1/collections",
 		"GET /api/v1/collections/{id}",
 		"GET /api/v1/library/copies",
+		"GET /api/v1/reports",
 
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",

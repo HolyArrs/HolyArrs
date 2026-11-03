@@ -443,6 +443,7 @@ func (a *API) Handler() http.Handler {
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
+	a.reportRoutes(m)
 	a.askedByRoutes(m)
 	a.profileRoutes(m)
 	a.followRoutes(m)

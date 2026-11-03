@@ -63,6 +63,7 @@
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
+	import ReportSheet from '#lib/reports/ReportSheet.svelte';
 	import '#lib/title-page.css';
 	import { audienceOf, titleStatus } from '#lib/title-status.ts';
 
@@ -357,6 +358,10 @@
 	}
 	const activeDownloads = $derived((owned?.slots ?? []).filter((x) => x.download?.active));
 	const ownMenu = $derived<MenuItem[]>(ownTools.flatMap((g, i) => [...(i ? [{ kind: 'separator' as const }] : []), ...g.items.map((t) => ({ label: t.label, icon: t.icon, href: t.href, onselect: t.run, destructive: t.danger, disabled: t.busy }))]));
+	// Report a problem (#95): anyone, on a title with files in the Library; members get it as their only More item.
+	let reportOpen = $state(false);
+	const mayReport = $derived(!!owned && (ownFiles.length > 0 || (owned.show?.in_library ?? 0) > 0));
+	const moreMenu = $derived<MenuItem[]>([...(manage ? ownMenu : []), ...(mayReport ? [...(manage ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	// Library tab: one status card, the files as cards, recent activity, then settings with delete last.
 	const libHead = $derived.by(() => {
 		const o = owned;
@@ -928,7 +933,7 @@
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : setTab('library'))} data-testid="hero-library" />
-					{#if manage}<ActionMenu label="More actions" caption="More" icon="more" items={ownMenu} />{/if}
+					{#if manage || mayReport}<ActionMenu label="More actions" caption="More" icon="more" items={moreMenu} />{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
 						<ActionButton icon="plus" label="Add {d.name} to the library" caption={view.newWords ? 'Add to library' : 'Add'} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
@@ -1223,6 +1228,7 @@
 			{@render ownTabBar()}
 			{#if ownTab !== 'overview'}<section class="own-pane" data-testid="own-pane">{@render ownPane()}</section>{/if}
 			{@const o = owned}
+				{#if mayReport}<ReportSheet bind:open={reportOpen} title={o} />{/if}
 				{#if manage}
 				<EditTitleSheet bind:open={editOpen} title={o} onsaved={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />
 				{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} />{/if}

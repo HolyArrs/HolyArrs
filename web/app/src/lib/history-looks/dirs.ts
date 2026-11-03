@@ -91,6 +91,7 @@ export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
 	{ key: 'media', label: 'In media server', kinds: ['media_server_told'] },
 	{ key: 'upgraded', label: 'Upgraded', kinds: ['file_replaced'] },
 	{ key: 'deleted', label: 'Deleted', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+	{ key: 'reported', label: 'Reported problems', kinds: ['report_*'] },
 	{ key: 'failed', label: 'Failed', kinds: tabKinds('problems') ?? [] },
 	{ key: 'system', label: 'System', kinds: tabKinds('changes', 'system') ?? [] }
 ];
@@ -198,6 +199,8 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^(ai_)?ask_made$/, { label: 'Asked', icon: 'wish' }],
 	[/^(ai_)?ask_approved$/, { label: 'Approved', icon: 'check' }],
 	[/^(ask|release|ai_ask)_turned_down$/, { label: 'Turned down', icon: 'declined' }],
+	[/^report_(made|reopened)$/, { label: 'Reported', icon: 'alert' }],
+	[/^report_fixed$/, { label: 'Fixed', icon: 'check' }],
 	[/^(title_added|list_synced|version_changed)$/, { label: 'Added', icon: 'plus' }],
 	[/^gate_opened$/, { label: 'Out now', icon: 'calendarDay' }],
 	[/^release_chosen(_by_hand)?$/, { label: 'Chosen', icon: 'search' }],
@@ -321,7 +324,7 @@ export function findTarget(row: HistoryRow): { releaseId: number; slotId: number
 
 /** A "Go to" link a row's details offer. */
 export interface GoLink {
-	key: 'title' | 'downloads' | 'requests';
+	key: 'title' | 'downloads' | 'requests' | 'reports';
 	label: string;
 	href: string;
 }
@@ -334,5 +337,6 @@ export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
 	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
+	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', label: 'Reported problems', href: '/reports?show=all' });
 	return out;
 }
