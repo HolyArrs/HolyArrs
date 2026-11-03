@@ -219,7 +219,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   });
   await expect(page.getByTestId("try-tally")).toContainText(/moves? over/);
   // Same name as the owner here: a choice, nothing picked yet.
-  const choice = page.getByTestId("choice-row").first();
+  const choice = page.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").first();
   await expect(choice).toContainText("Someone here has the same name");
   await expect(choice.getByRole("radio", { name: "Same person" })).toHaveAttribute("aria-checked", "false");
   await expect(choice.getByRole("radio", { name: "Leave out" })).toHaveAttribute("aria-checked", "false");
@@ -228,14 +228,14 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await expect(choice.getByRole("radio", { name: "Leave out" })).toHaveAttribute("aria-checked", "true");
   // The row stays after the choice, and the choice can go back.
   await choice.getByRole("radio", { name: "Same person" }).click();
-  await expect(page.getByTestId("choice-row").first().getByRole("radio", { name: "Same person" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").first().getByRole("radio", { name: "Same person" })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByTestId("try-result")).toContainText("Ready");
   await page.getByRole("button", { name: "Show Titles" }).click();
   const list = page.getByRole("dialog", { name: "Titles" });
   await expect(list).toContainText("Lodestone Ferry");
   await expect(list).toContainText("Will use the one here");
   await noSidewaysScroll(page);
-  await list.getByRole("button", { name: "Close" }).click();
+  await list.getByRole("button", { name: "Close", exact: true }).click();
 
   // Step 4: confirm in a Sheet, then follow the progress.
   await primary(page).click();
@@ -262,7 +262,7 @@ test("full flow: read, choose, try it, move, done and undo", async () => {
   await expect(page.getByText("Keep the old apps until HolyArrs runs the way you want.")).toBeVisible();
   await page.getByRole("button", { name: "Show Titles" }).click();
   await expect(page.getByRole("dialog", { name: "Titles" })).toContainText("Using the one here");
-  await page.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close" }).click();
+  await page.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close", exact: true }).click();
   const report = page.getByRole("link", { name: "Download the report" });
   await expect(report).toHaveAttribute("href", /\/api\/v1\/migrate\/moves\/\d+\/report/);
   const dl = await page.request.get((await report.getAttribute("href")) ?? "");
@@ -303,9 +303,10 @@ test("after Done, Move waits for a new test; a stale test blocks Continue; a cha
   const held = new Promise<void>((r) => (release = r));
   await page.route("**/api/v1/migrate/dry-run", async (route: Route) => {
     await held;
-    await route.continue();
+    // The page may cancel a held run when it starts a newer one.
+    await route.continue().catch(() => {});
   });
-  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByTestId("step-foot").getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("checkbox", { name: "Move Alerts" }).uncheck();
   await expect(primary(page)).toBeEnabled();
   const asked = page.waitForRequest("**/api/v1/migrate/dry-run");
@@ -333,6 +334,7 @@ test("after Done, Move waits for a new test; a stale test blocks Continue; a cha
 
 test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", async () => {
   await page.goto("/settings/move");
+  await expect(page.getByRole("button", { name: "Add an app" }).first()).toBeVisible();
   const before = await page.getByTestId("read-row").count();
 
   // qBittorrent asks for a user name and a password (or its API key).
@@ -427,6 +429,7 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
   expect(said).not.toContain(ownerKey);
 
   await page.goto("/settings/move");
+  await expect(page.getByRole("button", { name: "Add an app" }).first()).toBeVisible();
   const before = await page.getByTestId("read-row").count();
   await page.getByRole("button", { name: "Add an app" }).first().click();
   const sheet = readSheet(page);
@@ -519,7 +522,7 @@ test("a person the server cannot match by number gets Same person or Leave out",
   await fixture(p);
   await p.goto("/settings/move?step=try&read=901,902");
   await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 5, Try it/);
-  const row = p.getByTestId("choice-row").filter({ hasText: "Pia" });
+  const row = p.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").filter({ hasText: "Pia" });
   await expect(row).toContainText("HolyArrs can't tell if this is the same person.");
   await expect(row.getByRole("radio", { name: "Same person" })).toBeVisible();
   await expect(row.getByRole("radio", { name: "Leave out" })).toBeVisible();
@@ -623,10 +626,15 @@ for (const width of [360, 390]) {
       );
       expect(small, url).toEqual([]);
       // The sticky footer sits above the tab bar, and never covers the last row.
+      // (Done's footer scrolls with the page instead, so it is checked at the bottom only.)
+      const sticky = await p.getByTestId("step-foot").evaluate((el) => getComputedStyle(el).position === "sticky");
       const foot = await p.getByTestId("step-foot").boundingBox();
       const bar = await p.locator(".ui-tabbar").boundingBox();
-      if (foot && bar) expect(foot.y + foot.height).toBeLessThanOrEqual(bar.y + 1);
+      if (sticky && foot && bar) expect(foot.y + foot.height).toBeLessThanOrEqual(bar.y + 1);
       await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const footEnd = await p.getByTestId("step-foot").boundingBox();
+      const barEnd = await p.locator(".ui-tabbar").boundingBox();
+      if (footEnd && barEnd) expect(footEnd.y + footEnd.height, `${url}: footer behind the tab bar`).toBeLessThanOrEqual(barEnd.y + 1);
       const last = p.locator("main .ui-settings .srow").last();
       const lb = await last.boundingBox();
       const fb = await p.getByTestId("step-foot").boundingBox();
@@ -650,7 +658,7 @@ test("desktop 1280: the rail capsules are equal, open sheets fit, and accessibil
   await measuredSymmetry(p);
   await p.getByRole("button", { name: "Show Titles" }).click();
   await noSidewaysScroll(p);
-  await p.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close" }).click();
+  await p.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close", exact: true }).click();
   await p.goto("/settings/move");
   await measuredSymmetry(p);
   // Earlier moves: the pills and the Open buttons line up.
