@@ -91,6 +91,7 @@ func showEnv(t *testing.T) (*env, domain.LibraryFolder) {
 		newShow("Not Here", "700003", "710003", "tt7000030"),
 		newShow("Reed Signal", "700004", "710004", "tt7000040"),
 		lateStart(),
+		onlySpecials(),
 	} {
 		for k, v := range sh.IDs {
 			src[k+":"+v] = sh
@@ -114,6 +115,26 @@ func lateStart() metadata.Show {
 		{Season: 2, Number: 1, Name: "Late Start", AirDate: day2("2024-01-07"), AirDay: "2024-01-07"},
 		{Season: 3, Number: 1, Name: "Late Start", AirDate: day2("2025-01-05"), AirDay: "2025-01-05"}}
 	return sh
+}
+
+// onlySpecials is a show with nothing but Specials (season 0).
+func onlySpecials() metadata.Show {
+	sh := newShow("Only Extras", "700006", "710006", "tt7000060")
+	sh.Seasons = []metadata.Season{{Number: 0}}
+	sh.Episodes = []metadata.Episode{{Season: 0, Number: 1, Name: "Only Extras", AirDate: day2("2024-02-04"), AirDay: "2024-02-04"}}
+	return sh
+}
+
+// Specials count as the first season only when they are all a show has.
+func TestFirstSeasonOnlySpecials(t *testing.T) {
+	e, lf := showEnv(t)
+	id, _, err := e.svc.Library.AddShow(context.Background(), "tmdb:700006", library.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := keptSeasons(t, e.s, id); !got[0] {
+		t.Fatalf("kept %+v, want Specials", got)
+	}
 }
 
 // The first season of a show with no season 1 is its earliest numbered one (Luis, 2026-11-03).
