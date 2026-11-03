@@ -681,7 +681,8 @@ func TestMediaServerSignIn(t *testing.T) {
 			}
 			// Someone the server limits joins as a Kid, but not while sign-in
 			// is skipped at home (they would be the owner there).
-			if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`); resp.StatusCode != 200 {
+			// A network the test client is not on, so its sign-ins stay ordinary.
+			if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["10.0.0.0/8"]}`); resp.StatusCode != 200 {
 				t.Fatalf("skip on: %d %s", resp.StatusCode, out)
 			}
 			if _, code := login("kid", "right"); code != 403 {
