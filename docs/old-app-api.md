@@ -8,7 +8,9 @@ This is a small, separate API made only for those apps. HolyArrs's own API stays
 
 It is off until you switch it on. While it is off, `/sonarr/` and `/radarr/` answer 404.
 
-There is no screen for it yet. Use these calls, signed in with your password (the key calls need a recent password sign-in, like API keys):
+Open Settings > API for other apps > Requests from Seerr and Overseerr. Switch on "Answer Seerr and Overseerr", then make a key for each side: "Shows" for the Sonarr server and "Movies" for the Radarr server. Each key is shown once; copy it then. Making a key asks for your password again.
+
+The same can be done with these calls, signed in with your password (the key calls need a recent password sign-in, like API keys):
 
 | What | Call |
 | --- | --- |
