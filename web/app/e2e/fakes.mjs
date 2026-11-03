@@ -190,7 +190,10 @@ export const tmdbMovies = [
 	// Only plex-watchlist.spec.ts uses these: asked from the watchlist, already in the Library, added after Movies is off.
 	{ id: 900102, title: 'Rowan Semaphore', release_date: '2012-04-04', imdb_id: 'tt9001020', overview: 'Flags on a hilltop that answer before anyone asks.', dates: [[3, '2012-04-04'], [4, '2012-06-01']] },
 	{ id: 900103, title: 'Flint Gazebo', release_date: '2011-07-07', imdb_id: 'tt9001030', overview: 'A garden shelter that sparks in every storm.', dates: [[3, '2011-07-07'], [4, '2011-09-01']] },
-	{ id: 900104, title: 'Nettle Observatory', release_date: '2010-10-10', imdb_id: 'tt9001040', overview: 'A telescope that only sees the weeds below it.', dates: [[3, '2010-10-10'], [4, '2010-12-01']] }
+	{ id: 900104, title: 'Nettle Observatory', release_date: '2010-10-10', imdb_id: 'tt9001040', overview: 'A telescope that only sees the weeds below it.', dates: [[3, '2010-10-10'], [4, '2010-12-01']] },
+	// On a member's Plex watchlist only: the first is asked, the second held back by their weekly limit of one.
+	{ id: 900105, title: 'Juniper Lantern', release_date: '2013-05-05', imdb_id: 'tt9001050', overview: 'A lantern that lights only the paths nobody took.', dates: [[3, '2013-05-05'], [4, '2013-07-01']] },
+	{ id: 900106, title: 'Quill Aqueduct', release_date: '2014-08-08', imdb_id: 'tt9001060', overview: 'Water that writes letters as it runs downhill.', dates: [[3, '2014-08-08'], [4, '2014-10-01']] }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
