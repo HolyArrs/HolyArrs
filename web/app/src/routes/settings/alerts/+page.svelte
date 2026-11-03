@@ -14,13 +14,13 @@
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests.ts';
 	import type { AlertView, Moment } from '#lib/types.ts';
 
-	type Kind = 'discord' | 'email' | 'webhook';
+	type Kind = 'discord' | 'email' | 'webhook' | 'telegram';
 	const allMoments: Moment[] = [...askMoments, ...libraryMoments];
 	const momentGroups: { label: string; hint: string; moments: readonly Moment[] }[] = [
 		{ label: 'Requests', hint: 'Asks and their answers.', moments: askMoments },
 		{ label: 'Library', hint: 'What HolyArrs does with your movies and shows. Email goes to the staff addresses.', moments: libraryMoments }
 	];
-	const kindWord: Record<Kind, string> = { discord: 'Discord', email: 'Email', webhook: 'Webhook' };
+	const kindWord: Record<Kind, string> = { discord: 'Discord', email: 'Email', webhook: 'Webhook', telegram: 'Telegram' };
 	let alerts = $state<AlertView[]>([]);
 	let loaded = $state(false);
 	let hasData = $state(false);
@@ -44,6 +44,8 @@
 		staff_to: '',
 		secret: '',
 		webhook_auth: 'sign' as 'sign' | 'bearer' | 'none',
+		bot_token: '',
+		chat_id: '',
 		allow_local_network: false
 	});
 	let busy = $state(false);
@@ -99,7 +101,7 @@
 	function startAdd() {
 		isNew = true;
 		editing = { id: 0, name: '', kind: 'discord', enabled: true, moments: [...allMoments] };
-		form = { name: '', kind: 'discord', enabled: true, moments: [...allMoments], url: '', smtp_host: '', smtp_port: 587, smtp_security: 'starttls', smtp_from: '', smtp_user: '', smtp_pass: '', staff_to: '', secret: '', webhook_auth: 'sign', allow_local_network: false };
+		form = { name: '', kind: 'discord', enabled: true, moments: [...allMoments], url: '', smtp_host: '', smtp_port: 587, smtp_security: 'starttls', smtp_from: '', smtp_user: '', smtp_pass: '', staff_to: '', secret: '', webhook_auth: 'sign', bot_token: '', chat_id: '', allow_local_network: false };
 		formError = '';
 	}
 
@@ -121,6 +123,8 @@
 			staff_to: a.staff_to ?? '',
 			secret: '', // empty keeps the stored one
 			webhook_auth: a.webhook_auth ?? 'sign',
+			bot_token: '', // empty keeps the stored one
+			chat_id: a.chat_id ?? '',
 			allow_local_network: a.allow_local_network ?? false
 		};
 		formError = '';
@@ -198,6 +202,7 @@
 				<Field id="al-kind" label="Kind">
 					<select id="al-kind" class="input" bind:value={form.kind}>
 						<option value="discord">Discord</option>
+						<option value="telegram">Telegram</option>
 						<option value="email">Email</option>
 						<option value="webhook">Webhook (JSON to your own server)</option>
 					</select>
@@ -216,6 +221,13 @@
 						<option value="bearer">Is sent as a bearer token (Authorization header)</option>
 						<option value="none">Nothing (no secret is sent)</option>
 					</select>
+				</Field>
+			{:else if form.kind === 'telegram'}
+				<Field id="al-tg-token" label="Bot token" hint={isNew ? 'In Telegram, talk to @BotFather and send /newbot; it gives you the token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one.'}>
+					<input id="al-tg-token" class="input mono" type="password" bind:value={form.bot_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '123456789:AAH…' : 'Stored'} />
+				</Field>
+				<Field id="al-tg-chat" label="Chat ID" hint="Who gets the messages: a number for a person, group or channel (groups and channels start with -), or @name for a public channel. Send the bot a message first, or add it to the group or channel.">
+					<input id="al-tg-chat" class="input mono" bind:value={form.chat_id} autocomplete="off" spellcheck="false" placeholder="-1001234567890 or @mychannel" />
 				</Field>
 			{:else if form.kind === 'discord'}
 				<Field id="al-url" label="Discord link" hint="In Discord: channel settings, Integrations, Webhooks, Copy link. Kept encrypted; shown masked.">
@@ -266,7 +278,7 @@
 			{/each}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>May reach the local network</b><br /><span class="hint">Off: only discord.com links, and mail and webhook servers on the internet. On: also a server on this machine or your home network.</span></span>
+				<span><b>May reach the local network</b><br /><span class="hint">Off: only discord.com and api.telegram.org, and mail and webhook servers on the internet. On: also a server on this machine or your home network.</span></span>
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />
@@ -287,7 +299,7 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if alerts.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<EmptyState icon="bell" title="No Alerts yet" text="Add a Discord link, an email server or a webhook to tell people (or your own tools) outside HolyArrs." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="bell" title="No Alerts yet" text="Add Discord, Telegram, an email server or a webhook to tell people (or your own tools) outside HolyArrs." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">

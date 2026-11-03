@@ -559,6 +559,8 @@ type AlertView struct {
 	StaffTo      string     `json:"staff_to,omitempty"`
 	Secret       string     `json:"secret,omitempty"`
 	WebhookAuth  string     `json:"webhook_auth,omitempty"`
+	BotToken     string     `json:"bot_token,omitempty"`
+	ChatID       string     `json:"chat_id,omitempty"`
 	AllowLocal   bool       `json:"allow_local_network"`
 	LastSentAt   *time.Time `json:"last_sent_at,omitempty"`
 	LastError    string     `json:"last_error,omitempty"`
@@ -568,6 +570,13 @@ func alertView(x domain.Alert) AlertView {
 	v := AlertView{ID: x.ID, Name: x.Name, Kind: x.Kind, Enabled: x.Enabled, Moments: x.Moments, AllowLocal: x.AllowLocal, LastSentAt: x.LastSentAt, LastError: x.LastError}
 	if v.Moments == nil {
 		v.Moments = []string{}
+	}
+	if x.Kind == "telegram" {
+		v.ChatID = x.ChatID
+		if x.PasswordSecretID != nil {
+			v.BotToken = secrets.Masked
+		}
+		return v
 	}
 	if x.Kind == "discord" || x.Kind == "webhook" {
 		if x.URLSecretID != nil {
@@ -614,7 +623,7 @@ func (a *API) listAlerts(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"alerts": out, "moments": alerts.Moments})
 }
 
-const alertHelp = `send name, kind (discord, email or webhook), moments, and for Discord url; for email smtp_host, smtp_port, smtp_security, smtp_from, smtp_user, smtp_pass, staff_to; for a webhook url, secret and webhook_auth (sign, bearer or none); allow_local_network lets it reach the local network`
+const alertHelp = `send name, kind (discord, email, webhook or telegram), moments, and for Discord url; for email smtp_host, smtp_port, smtp_security, smtp_from, smtp_user, smtp_pass, staff_to; for a webhook url, secret and webhook_auth (sign, bearer or none); for Telegram bot_token and chat_id; allow_local_network lets it reach the local network`
 
 // readAlert reads an Alert body; the masked placeholder keeps the stored secret.
 func readAlert(w http.ResponseWriter, r *http.Request) (alerts.Input, bool) {
@@ -630,6 +639,9 @@ func readAlert(w http.ResponseWriter, r *http.Request) (alerts.Input, bool) {
 	}
 	if in.Secret == secrets.Masked {
 		in.Secret = ""
+	}
+	if in.BotToken == secrets.Masked {
+		in.BotToken = ""
 	}
 	return in, true
 }
@@ -727,7 +739,7 @@ func (a *API) testAlert(w http.ResponseWriter, r *http.Request) {
 	if err := a.s.Alerts.TestOne(ctx, x, m); err != nil {
 		// The reason (without links or secrets) is logged and kept on the
 		// Alert as its last result; the answer stays the same every time.
-		fail(w, http.StatusBadGateway, "the Discord, mail or webhook server refused the test")
+		fail(w, http.StatusBadGateway, "the Discord, Telegram, mail or webhook server refused the test")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"sent": true})

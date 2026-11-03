@@ -311,7 +311,9 @@ export const fakeInstallToken = ['hai', 'stand', 'in', 'install'].join('_');
 export const metadataEnv = {
 	HOLYARRS_METADATA_URL: `http://127.0.0.1:${tmdbPort}`,
 	HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL: 'true',
-	HOLYARRS_TMDB_URL: `http://127.0.0.1:${tmdbPort}`
+	HOLYARRS_TMDB_URL: `http://127.0.0.1:${tmdbPort}`,
+	// Telegram Alerts post to the fake Discord server, which also answers sendMessage.
+	HOLYARRS_TELEGRAM_URL: `http://127.0.0.1:${discordPort}`
 };
 
 /** Counts of what the fake metadata server answered, for the tests. */
@@ -531,7 +533,15 @@ export function startFakes() {
 	const posts = [];
 	/** @type {unknown[]} */
 	const hooks = [];
+	/** @type {unknown[]} */
+	const telegram = [];
 	const discord = createServer(async (req, res) => {
+		// A fake Telegram Bot API: POST /bot<token>/sendMessage; GET /telegram reads the bodies back.
+		if (req.method === 'POST' && /^\/bot[^/]+\/sendMessage$/.test(req.url ?? '')) {
+			telegram.push(JSON.parse((await body(req)) || '{}'));
+			return send(res, 200, { ok: true, result: {} });
+		}
+		if (req.method === 'GET' && req.url === '/telegram') return send(res, 200, telegram);
 		if (req.method === 'POST' && req.url?.startsWith('/api/webhooks/')) {
 			posts.push(JSON.parse((await body(req)) || '{}'));
 			return send(res, 204, '');

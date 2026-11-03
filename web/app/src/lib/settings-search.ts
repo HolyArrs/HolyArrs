@@ -161,7 +161,7 @@ export const settingIndex: SettingEntry[] = [
 
 	// Linked apps
 	e('/settings/media-servers', '', 'Media servers', 'plex jellyfin emby library update notify'),
-	e('/settings/alerts', '', 'Alerts', 'notifications discord email webhook notify'),
+	e('/settings/alerts', '', 'Alerts', 'notifications discord telegram email webhook notify'),
 	e('/settings/alerts', 'pack-alerts', 'Season pack Alerts', 'season pack one alert per episode'),
 	e('/settings/ai', 'ai-switch', 'AI connections', 'ai assistant claude chatgpt mcp llm agent bot connect turn on off'),
 	e('/settings/ai', 'ai-keys', 'AI keys', 'ai key token claude mcp make revoke assistant'),

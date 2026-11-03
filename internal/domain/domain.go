@@ -665,7 +665,7 @@ type AskAlbum struct {
 type Alert struct {
 	Meta
 	Name             string   `db:"name"`
-	Kind             string   `db:"kind"` // discord, email
+	Kind             string   `db:"kind"` // discord, email, webhook, telegram
 	Enabled          bool     `db:"enabled"`
 	Moments          []string `db:"moments,json"`
 	URLSecretID      *int64   `db:"url_secret_id"`
@@ -684,6 +684,9 @@ type Alert struct {
 	// WebhookAuth says what a webhook does with its secret: sign (an HMAC
 	// of each body), bearer (an Authorization header) or none.
 	WebhookAuth string `db:"webhook_auth"`
+	// ChatID is the Telegram chat a telegram Alert writes to: a number
+	// (negative for groups) or @channelname.
+	ChatID string `db:"chat_id"`
 }
 
 // HealthCheck is the latest result of one health check about one thing.
