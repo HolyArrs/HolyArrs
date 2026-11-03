@@ -17,10 +17,9 @@
 	import { buildRows, groupOrder, groupRows, headline, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
+	let input = $state<StatusInput | null>(null);
 	// The trailers check names yt-dlp's version; it is not a part, so it is not a row.
 	const ytdlp = $derived(input?.checks?.find((c) => (c.kind as string) === 'trailers'));
-
-	let input = $state<StatusInput | null>(null);
 	let error = $state('');
 	let busy = $state<string | null>(null);
 	const canAct = $derived(session.can('settings'));

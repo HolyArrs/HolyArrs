@@ -12,7 +12,7 @@
 	function pick(id: string) {
 		const u = new URL(page.url.href);
 		u.searchParams.set('live', id);
-		void goto(u.pathname + u.search, { noScroll: true, keepFocus: true });
+		void goto(u.pathname + u.search, { reset: false });
 	}
 </script>
 

@@ -13,7 +13,7 @@
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
 	import Updates from './Updates.svelte';
-	import type { HealthCheck } from '../types.ts';
+	import type { HealthCheck, UpdateInfo } from '../types.ts';
 	import { everyKind, needsAttention, type StatusGroup, type StatusRow } from './status.ts';
 
 	let {
@@ -38,7 +38,7 @@
 	} = $props();
 
 	type Disk = { path: string; kind: string; label: string; free_bytes: number; total_bytes: number };
-	type Update = { on: boolean; version: string; latest?: string; newer: boolean; link?: string; notes?: string; checked_at?: string; problem?: string; no_release?: boolean };
+	type Update = UpdateInfo & { notes?: string };
 
 	let disks = $state<Disk[] | null>(null);
 	let upd = $state<Update | null>(null);
