@@ -557,16 +557,18 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			return "", err
 		}
 	}
-	allowLocal := false
+	var src domain.Source
+	if err := store.Get(ctx, m.Store.Read(), "sources", rel.SourceID, &src); err != nil {
+		return "", errors.New("the Release's Source could not be read")
+	}
+	allowLocal := src.AllowLocal
 	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "nzbget" {
-		var src domain.Source
-		if err := store.Get(ctx, m.Store.Read(), "sources", rel.SourceID, &src); err != nil {
-			return "", errors.New("the Release's Source could not be read")
-		}
-		allowLocal = src.AllowLocal
 		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
 			return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
 		}
+	}
+	if link, err = grabLinkAllowed(d.Adapter, link, allowLocal); err != nil {
+		return "", err
 	}
 	done, err := m.space(ctx, d.URL)
 	if err != nil {
@@ -998,4 +1000,19 @@ func eqTime(a, b *time.Time) bool {
 func jsonIDs(ids []int64) string {
 	b, _ := json.Marshal(ids)
 	return string(b)
+}
+
+// grabLinkAllowed applies the Source's network rule to a feed link before a
+// Downloader gets it: magnets are rebuilt by safeMagnet, and an address that
+// qBittorrent or SABnzbd would fetch itself may not name a literal local,
+// link-local or metadata host unless the Source may reach the local network.
+func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
+	if len(link) >= 7 && strings.EqualFold(link[:7], "magnet:") {
+		clean, _, err := safeMagnet(link, allowLocal)
+		return clean, err
+	}
+	if (adapter == "qbittorrent" || adapter == "sabnzbd") && !trackerAllowed(link, allowLocal) {
+		return "", errors.New("the Release link points at a local or blocked address")
+	}
+	return link, nil
 }
