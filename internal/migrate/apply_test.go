@@ -304,8 +304,18 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 
 	// Undo removes what the first move made, never the file.
 	ctx := context.Background()
-	if u := l.undo(t, mv.ID); u.State != "undone" {
+	u := l.undo(t, mv.ID)
+	if u.State != "undone" {
 		t.Fatalf("undo %+v", u)
+	}
+	// Undo lines carry the names and groups the move gave them, not raw keys.
+	if u.Report == nil || len(u.Report.Lines) == 0 {
+		t.Fatal("undo report has no lines")
+	}
+	for _, ln := range u.Report.Lines {
+		if ln.Name == ln.Key || strings.Contains(ln.Name, ":") && strings.HasPrefix(ln.Name, ln.Group) {
+			t.Errorf("undo line shows its key: %+v", ln)
+		}
 	}
 	if _, err := os.Stat(l.file); err != nil {
 		t.Fatalf("undo touched the media file: %v", err)
