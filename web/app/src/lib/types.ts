@@ -350,6 +350,8 @@ export interface AskBrief {
 export interface Who {
 	id: number;
 	name: string;
+	/** The person's chosen name, when set (the server sends it for the decider). */
+	display_name?: string;
 }
 
 /** Ask is one movie or show someone asked for on the Requests page. */

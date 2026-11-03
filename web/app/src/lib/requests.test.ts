@@ -17,6 +17,7 @@ describe('requests words', () => {
 		expect(decided({ state: 'approved', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Approved by luis');
 		expect(decided({ state: 'available', decided_by: { id: 2, name: 'ana' }, auto_approved: true })).toBe('Auto-approved');
 		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false })).toBe('Declined by luis');
+		expect(decided({ state: 'turned_down', decided_by: { id: 3, name: 'ana', display_name: 'Ana M' }, auto_approved: false }, { id: 1, displayName: 'Luis R' })).toBe('Declined by Ana M');
 		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false }, { id: 1, displayName: 'Luis R' })).toBe('Declined by Luis R');
 		expect(decided({ state: 'turned_down', decided_by: { id: 1, name: 'luis' }, auto_approved: false }, { id: 2, displayName: 'Ana' })).toBe('Declined by luis');
 	});
