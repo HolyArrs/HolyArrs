@@ -275,6 +275,9 @@ func run(first, dest string) (entries []Entry, err error) {
 
 // cleanName turns a stored name into a safe relative path with "/" between
 // folders, or refuses it.
+// CleanName is cleanName for the other archive readers (internal/archive).
+func CleanName(raw string) (string, error) { return cleanName(raw) }
+
 func cleanName(raw string) (string, error) {
 	if raw == "" || strings.ContainsRune(raw, 0) || len(raw) > maxNameLen {
 		return "", fmt.Errorf("%w: %q", ErrUnsafePath, raw)

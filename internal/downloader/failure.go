@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CoderLuii/holyarrs/internal/archive"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/judge"
@@ -92,11 +93,15 @@ func shortcuts(files []File) []string {
 // fail_dangerous): programs (dangerous), password notes, web shortcuts
 // with no media beside them, and, for a torrent, archives with no video or
 // audio beside them (a locked or program-filled archive in place of the
-// media). A RAR set big enough to hold a video is not one: the importer
-// unpacks it (#54) and refuses a locked or program-filled one itself.
+// media). An archive set the importer unpacks (#54: RAR, 7-Zip, zip, tar)
+// big enough to hold a video is not one: the importer refuses a locked or
+// program-filled one itself.
 func fakeFiles(files []File, protocol string) []string {
 	bad := dangerous(files)
-	media := hasMedia(files) || rarSetSize(files) >= judge.MinVideo
+	media := hasMedia(files)
+	// Archives big enough to hold the video are unpacked, not bait; a web
+	// shortcut still needs a real video beside it.
+	unpackable := archiveSetSize(files) >= judge.MinVideo
 	var archives []string
 	for _, f := range files {
 		name := path.Base(strings.ReplaceAll(f.Name, `\`, "/"))
@@ -112,18 +117,20 @@ func fakeFiles(files []File, protocol string) []string {
 			archives = append(archives, name)
 		}
 	}
-	if protocol == "torrent" && !media && len(archives) > 0 {
+	if protocol == "torrent" && !media && !unpackable && len(archives) > 0 {
 		bad = append(bad, archives...)
 	}
 	return bad
 }
 
-// rarSetSize adds up the RAR volumes in a file list (.rar, .partN.rar, .r00 ...).
-func rarSetSize(files []File) int64 {
+// archiveSetSize adds up the archives in a file list the importer unpacks:
+// RAR volumes (.rar, .partN.rar, .r00 ...) and 7-Zip, zip and tar files.
+func archiveSetSize(files []File) int64 {
 	var n int64
 	for _, f := range files {
 		name := path.Base(strings.ReplaceAll(f.Name, `\`, "/"))
-		if ext := strings.ToLower(path.Ext(strings.TrimRight(name, ". "))); ext == ".rar" || isRarPart(ext) {
+		ext := strings.ToLower(path.Ext(strings.TrimRight(name, ". ")))
+		if k, _ := archive.Of(name); ext == ".rar" || isRarPart(ext) || k != "" {
 			n += f.Size
 		}
 	}
