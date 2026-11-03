@@ -137,7 +137,7 @@ async function mockCommunity(page: Page) {
 		if (path === '/titles/77' && method === 'GET') return json(route, title);
 		// The title page reads the film's facts from the lookup and the metadata answer.
 		if (path === '/titles/lookup') return json(route, { movies: [{ ...films[0], title_id: 77 }] });
-		if (path === '/metadata/movie/601') return json(route, { name: 'North Star', year: 2022, overview: '', poster: films[0].poster, genres: [], cast: [], similar: [] });
+		if (path === '/metadata/movie/601') return json(route, { name: 'North Star', year: 2022, overview: '', poster: films[0].poster, genres: [], cast: [{ id: '202', name: 'Alex Kim', role: 'Director' }], similar: [] });
 		if (path === '/titles/77/people') return json(route, { people: [{ person, roles: ['Director'], characters: [] }] });
 		if (path === '/titles/77/copies') return json(route, { files: [], versions: [version] });
 		if (path === '/titles/77/subtitles') return json(route, { files: [], wishes: [] });
@@ -238,7 +238,7 @@ for (const viewport of viewports) {
 
 			await page.goto('/library/77');
 			await expect(page.getByRole('heading', { level: 1, name: 'North Star' })).toBeVisible();
-			await expect(page.getByText('2022', { exact: false }).first()).toBeVisible();
+			await expect(page.getByText('2022', { exact: false }).locator('visible=true').first()).toBeVisible();
 			// Cast and crew loads by itself on the new title page.
 			await expect(page.getByRole('link', { name: /^Alex Kim/ })).toHaveAttribute('href', '/people/202');
 			await verifyPage(page, testInfo, `${viewport.name}-people-and-credits`);
