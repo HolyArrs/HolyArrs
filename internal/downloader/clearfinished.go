@@ -51,8 +51,18 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	if store.Get(ctx, m.Store.Read(), "releases", *d.ReleaseID, &rel) == nil {
 		relName = rel.Name
 	}
-	if left := m.finishedFolder(folder, relName, dr); left != "" {
-		if rerr := os.RemoveAll(left); rerr != nil {
+	if root, rel := m.finishedFolder(folder, relName, dr); rel != "" {
+		// Deleted through a handle on the shared folder: os.Root never follows a
+		// link or junction out of it, whatever the path's parts point at.
+		rerr := func() error {
+			rt, err := os.OpenRoot(root)
+			if err != nil {
+				return err
+			}
+			defer rt.Close()
+			return rt.RemoveAll(rel)
+		}()
+		if rerr != nil {
 			m.event(ctx, &d, "download_not_removed", fmt.Sprintf("Cleared the imported download from %s, but its files could not be deleted: %v", dr.Name, firstLine(rerr.Error())))
 			return
 		}
@@ -60,18 +70,24 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	m.event(ctx, &d, "download_removed", "Cleared the imported download and its files from "+dr.Name)
 }
 
-// finishedFolder is the job's folder as HolyArrs sees it, when it may be
-// deleted: named after this download's Release (a client's ".1" suffix
-// allowed), below (never equal to) one of the Downloader's shared folders,
-// still there, and not a link. Anything else, such as a category folder
-// the client named instead, is left alone. "" means leave the disk alone.
-func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) string {
+// finishedFolder says which shared folder holds the job's folder and the
+// folder's path inside it, when it may be deleted: named after this
+// download's Release (a client's ".1" suffix allowed), below (never equal
+// to) one of the Downloader's shared folders (path map or save root), there,
+// and a plain folder (not a link, junction or other special file). Anything
+// else, such as a category folder the client named instead, is left alone:
+// rel "" means leave the disk alone.
+func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) (root, rel string) {
 	if content == "" || relName == "" {
-		return ""
+		return "", ""
 	}
 	local := filepath.Clean(mapLocal(content, dr.PathMap))
 	if !sameJobName(filepath.Base(local), relName) {
-		return ""
+		return "", ""
+	}
+	fi, err := os.Lstat(local)
+	if err != nil || !fi.IsDir() || fi.Mode()&(os.ModeSymlink|os.ModeIrregular) != 0 {
+		return "", ""
 	}
 	var roots []string
 	if m.SavePath != "" {
@@ -80,28 +96,15 @@ func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) 
 	for _, pm := range dr.PathMap {
 		roots = append(roots, pm.Ours)
 	}
-	fi, err := os.Lstat(local)
-	if err != nil || fi.Mode()&os.ModeSymlink != 0 || !fi.IsDir() {
-		return ""
-	}
-	// Compare real paths: a linked parent folder must not lead outside a share.
-	real, err := filepath.EvalSymlinks(local)
-	if err != nil {
-		return ""
-	}
 	for _, r := range roots {
-		if r = filepath.Clean(r); r == "" || r == "." {
+		if r = filepath.Clean(r); r == "" || r == "." || r == local || !underAny(local, []string{r}) {
 			continue
 		}
-		rr, err := filepath.EvalSymlinks(r)
-		if err != nil {
-			continue
-		}
-		if real != rr && underAny(real, []string{rr}) {
-			return real
+		if p, err := filepath.Rel(r, local); err == nil && p != "." && !filepath.IsAbs(p) {
+			return r, p
 		}
 	}
-	return ""
+	return "", ""
 }
 
 var jobSuffix = regexp.MustCompile(`\.\d{1,3}$`)
