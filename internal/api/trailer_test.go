@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/explore"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/youtube"
@@ -200,10 +202,37 @@ func trailerTMDB(t *testing.T) metadata.Provider {
 	return &metadata.TMDB{BaseURL: srv.URL + "/3", Access: func(context.Context) (string, error) { return "fake-read-value", nil }, Gap: time.Millisecond}
 }
 
+// trailerRig is an API on the discover rig's database, with its server.
+func trailerRig(t *testing.T) (*httptest.Server, *API) {
+	t.Helper()
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	srv := httptest.NewServer(a.Handler())
+	t.Cleanup(srv.Close)
+	return srv, a
+}
+
+// lookUp looks a title up as the trailer pass does; the routes then read
+// what it kept.
+func lookUp(t *testing.T, a *API, kind, id string) error {
+	t.Helper()
+	_, err := a.resolveTitle(context.Background(), kind, id, "en")
+	return err
+}
+
 // route: GET /api/v1/trailer/{kind}/{tmdb_id}
 func TestTrailerStream(t *testing.T) {
 	yt := fakeReader(t, "ok")
-	srv, _ := discoverRig(t, trailerTMDB(t))
+	srv, a := trailerRig(t)
+	// Not looked up yet: "no direct stream" at once, without a lookup.
+	var cold struct{ Error, Reason, Key string }
+	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &cold)
+	if cold.Error != "no direct stream" || cold.Reason != "" || yt.runs.Load() != 0 {
+		t.Fatalf("cold %+v, lookups %d", cold, yt.runs.Load())
+	}
+	if err := lookUp(t, a, "movie", "11"); err != nil {
+		t.Fatal(err)
+	}
 	var s TrailerStream
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s); err != nil {
 		t.Fatal(err)
@@ -218,7 +247,17 @@ func TestTrailerStream(t *testing.T) {
 	if yt.runs.Load() != before {
 		t.Fatalf("looked up again (%d -> %d)", before, yt.runs.Load())
 	}
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404) // no trailer
+	// Another language was not looked up.
+	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11?language=de", "", 404)
+	if err := lookUp(t, a, "movie", "12"); err != errNoTrailer {
+		t.Fatalf("no trailer: %v", err)
+	}
+	if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404)); !strings.Contains(b, `"no trailer"`) {
+		t.Fatal(b)
+	}
+	if yt.runs.Load() != before {
+		t.Fatalf("a route looked up (%d -> %d)", before, yt.runs.Load())
+	}
 	do(t, "GET", srv.URL+"/api/v1/trailer/artist/1", "", 400)
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/x", "", 400)
 
@@ -233,7 +272,8 @@ func TestTrailerStream(t *testing.T) {
 func TestTrailerStreamRefusals(t *testing.T) {
 	for mode, reason := range map[string]youtube.Reason{"fail": youtube.Refused, "odd": youtube.NoAddress, "junk": youtube.Network, "bot": youtube.BotCheck} {
 		fakeReader(t, mode)
-		srv, _ := discoverRig(t, trailerTMDB(t))
+		srv, a := trailerRig(t)
+		_ = lookUp(t, a, "movie", "11")
 		var b struct{ Error, Reason, Key string }
 		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &b)
 		if b.Error != "no direct stream" || b.Reason != string(reason) || b.Key != "trailerKey1" {
@@ -247,9 +287,12 @@ func TestTrailerStreamTimeout(t *testing.T) {
 		t.Skip("waits for the 8 second limit")
 	}
 	fakeReader(t, "slow")
-	srv, _ := discoverRig(t, trailerTMDB(t))
+	_, a := trailerRig(t)
 	start := time.Now()
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)
+	m := (*trailerMissed)(nil)
+	if err := lookUp(t, a, "movie", "11"); !errors.As(err, &m) {
+		t.Fatal(err)
+	}
 	if d := time.Since(start); d > 15*time.Second {
 		t.Fatalf("took %v", d)
 	}
@@ -292,7 +335,11 @@ func TestUISettings(t *testing.T) {
 // database answers without a lookup. MP4-only answers come back as mp4.
 func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
 	yt := fakeReader(t, "mp4")
-	srv, st := discoverRig(t, trailerTMDB(t))
+	srv, a := trailerRig(t)
+	st := a.s.Store
+	if err := lookUp(t, a, "movie", "11"); err != nil {
+		t.Fatal(err)
+	}
 	var s TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=136") || s.MP4URL != "" || s.Audio {
@@ -311,7 +358,10 @@ func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
 // A muxed MP4, when offered, wins over a taller picture-only one.
 func TestTrailerStreamPrefersMuxed(t *testing.T) {
 	fakeReader(t, "muxed")
-	srv, _ := discoverRig(t, trailerTMDB(t))
+	srv, a := trailerRig(t)
+	if err := lookUp(t, a, "movie", "11"); err != nil {
+		t.Fatal(err)
+	}
 	var s TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=18") || !s.Audio {
@@ -324,13 +374,20 @@ func TestTrailerStreamPrefersMuxed(t *testing.T) {
 func TestTrailerUsesServerPick(t *testing.T) {
 	fakeReader(t, "ok", "serverPick1")
 	_, st := discoverRig(t, trailerTMDB(t))
-	srv := httptest.NewServer(New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
 		if id == "12" {
 			return "", metadata.ErrNotFound
 		}
 		return "serverPick1", nil
-	}}).Handler())
+	}})
+	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
+	if err := lookUp(t, a, "movie", "11"); err != nil {
+		t.Fatal(err)
+	}
+	if err := lookUp(t, a, "movie", "12"); err != errNoTrailer {
+		t.Fatal(err)
+	}
 	var s TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Key != "serverPick1" {
@@ -375,11 +432,10 @@ func TestTrailerSharedLookupAndFailures(t *testing.T) {
 }
 
 func TestExploreTrailerTitles(t *testing.T) {
-	it := func(kind, id string) discoverItemView {
-		return discoverItemView{DiscoverItem: metadata.DiscoverItem{Kind: kind, TMDBID: id}}
-	}
-	hero := []discoverItemView{it("movie", "1"), it("show", "2")}
-	head := []exploreRowView{{Items: []discoverItemView{}}, {Items: []discoverItemView{it("movie", "1"), it("movie", "3"), it("movie", "4"), it("movie", "5"), it("movie", "6")}}, {Items: []discoverItemView{it("artist", "x"), it("show", "7")}}, {Items: []discoverItemView{it("movie", "8")}}, {Items: []discoverItemView{it("movie", "9")}}}
+	it := func(kind, id string) explore.Item { return explore.Item{Kind: kind, TMDBID: id} }
+	row := func(items ...explore.Item) explore.Row { return explore.Row{Items: items} }
+	hero := []explore.Item{it("movie", "1"), it("show", "2")}
+	head := []explore.Row{row(), row(it("movie", "1"), it("movie", "3"), it("movie", "4"), it("movie", "5"), it("movie", "6")), row(it("artist", "x"), it("show", "7")), row(it("movie", "8")), row(it("movie", "9"))}
 	got := fmt.Sprint(exploreTrailerTitles(hero, head))
 	if got != "[[movie 1] [show 2] [movie 3] [movie 4] [movie 5] [show 7] [movie 8]]" {
 		t.Fatal(got)
@@ -426,20 +482,59 @@ func TestTrailerStoredRechecked(t *testing.T) {
 	}
 }
 
-// The tests above wait for the lookup; the page itself never does.
-func init() { trailerWait = 30 * time.Second }
-
-func TestTrailerNeverWaitsOnLookup(t *testing.T) {
-	old := trailerWait
-	trailerWait = 50 * time.Millisecond
-	t.Cleanup(func() { trailerWait = old })
-	fakeReader(t, "slow")
-	srv, _ := discoverRig(t, trailerTMDB(t))
-	start := time.Now()
-	if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)); !strings.Contains(b, "no trailer yet") {
-		t.Fatal(b)
+// A page open, a batch and Explore's routes never look a trailer up on
+// YouTube: a title not looked up yet answers "no direct stream" with its
+// kept key, the batch leaves it out with nothing pending, and Explore's
+// title warmer learns the key only.
+func TestTrailerPageOpensNeverLookUp(t *testing.T) {
+	yt := fakeReader(t, "ok")
+	srv, a := trailerRig(t)
+	a.keepTrailerKey(context.Background(), "movie", "11", "en", "trailerKey1")
+	var b struct{ Error, Reason, Key string }
+	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &b)
+	if b.Error != "no direct stream" || b.Reason != "" || b.Key != "trailerKey1" {
+		t.Fatalf("cold %+v", b)
 	}
-	if d := time.Since(start); d > 2*time.Second {
-		t.Fatalf("waited %v", d)
+	var batch trailerBatchView
+	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/batch?ids=movie:11,show:22", "", 200), &batch); err != nil {
+		t.Fatal(err)
+	}
+	if len(batch.Streams) != 0 || len(batch.Pending) != 0 {
+		t.Fatalf("batch %+v", batch)
+	}
+
+	ea, _, _ := exploreRig(t)
+	ea.s.TrailerPick = func(context.Context, string, string, string) (string, error) { return "trailerKey1", nil }
+	ctx := context.Background()
+	for _, sw := range exploreSwitches {
+		if err := ea.buildPool(ctx, 1, sw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	esrv := httptest.NewServer(ea.Handler())
+	t.Cleanup(esrv.Close)
+	head := getJSON(t, esrv.URL+"/api/v1/explore/head?type=all", 200)
+	getJSON(t, esrv.URL+"/api/v1/explore/tail?type=all&page=0", 200)
+	getJSON(t, esrv.URL+"/api/v1/explore/new?type=all", 200)
+	// The warmer runs beside the page: once it learned a listed title's key
+	// (its last step), nothing it does looks the trailer up.
+	var first [2]string
+	for _, row := range head["head"].([]any) {
+		for _, v := range row.(map[string]any)["items"].([]any) {
+			if m := v.(map[string]any); first[0] == "" && (m["kind"] == "movie" || m["kind"] == "show") {
+				first = [2]string{m["kind"].(string), m["tmdb_id"].(string)}
+			}
+		}
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for first[0] != "" && ea.knownTrailerKey(ctx, first[0], first[1], "en") == "" && time.Now().Before(deadline) {
+		time.Sleep(20 * time.Millisecond)
+	}
+	if first[0] == "" || ea.knownTrailerKey(ctx, first[0], first[1], "en") != "trailerKey1" {
+		t.Fatalf("the warmer did not learn %v's key", first)
+	}
+	time.Sleep(200 * time.Millisecond)
+	if n, p := yt.runs.Load(), yt.pages.Load(); n != 0 || p != 0 {
+		t.Fatalf("page opens looked up: %d player calls, %d watch pages", n, p)
 	}
 }

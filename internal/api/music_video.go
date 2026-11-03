@@ -374,10 +374,9 @@ func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.A
 	}()
 }
 
-// prefetchArtistVideos looks artists' music video streams up ahead of time,
-// exactly as prefetchTrailers does for trailers: one after another, within
-// the install's ahead-of-time budget, never for Kid accounts or with
-// trailers off. Only the stream address is resolved; nothing is downloaded.
+// prefetchArtistVideos looks artists' music video streams up ahead of time:
+// one after another, within the install's ahead-of-time budget, never for
+// Kid accounts or with trailers off. Only the stream address is resolved; nothing is downloaded.
 func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
 	if len(mbids) == 0 || a.kidMax(r) != "" || !a.uiSettings(r.Context()).AutoplayTrailers || a.s.ArtistVideos == nil {
 		return

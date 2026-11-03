@@ -26,6 +26,16 @@ describe('trailer lookups', () => {
 		expect(await trailerSources('movie', '304', videos)).toEqual([]);
 		expect(get.mock.calls.filter((c) => String(c[0]).startsWith('/trailer/movie/304'))).toHaveLength(1);
 	});
+	it('embeds the key that comes alone with a title not looked up yet, and its own pick when the key is empty', async () => {
+		get.mockImplementation((p: string) => {
+			const body = String(p).startsWith('/trailer/movie/404') ? { error: 'no direct stream', key: 'keptKey0001' } : { error: 'no direct stream', key: '' };
+			return String(p).startsWith('/trailer/') ? Promise.reject(new ApiError('no direct stream', 404, body)) : Promise.resolve({});
+		});
+		const { trailerSources } = await import('./autoplay.svelte.ts');
+		expect(await trailerSources('movie', '404', undefined)).toEqual([{ kind: 'embed', key: 'keptKey0001' }]);
+		const videos = [{ key: 'ownPick0001', type: 'Trailer', official: true }];
+		expect(await trailerSources('movie', '405', videos)).toEqual([{ kind: 'embed', key: 'ownPick0001' }]);
+	});
 	it('asks again after a failure that is not a 404', async () => {
 		get.mockImplementation((p: string) => (String(p).startsWith('/trailer/') ? Promise.reject(new ApiError('down', 0)) : Promise.resolve({})));
 		const { trailerSources } = await import('./autoplay.svelte.ts');

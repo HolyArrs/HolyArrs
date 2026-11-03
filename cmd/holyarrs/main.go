@@ -829,6 +829,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	for _, l := range a.MusicLoops() {
 		optional(l)
 	}
+	for _, l := range a.TrailerLoops() {
+		optional(l)
+	}
 	startTrailers(a, he)
 	pc.Start(ctx)
 	swap.set(urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))

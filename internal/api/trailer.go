@@ -26,16 +26,18 @@ import (
 // addresses are kept (in memory and in lookup_cache, until shortly before
 // they expire), and each title's YouTube key for 30 days. Video is never
 // stored; it passes through HolyArrs only on the pass-through relay
-// (trailer_proxy.go).
+// (trailer_proxy.go). Trailers are looked up only by the trailer pass, on
+// a fixed schedule (trailer_pass.go); a page open reads what it kept.
 
 const (
 	trailerTimeout   = 8 * time.Second
-	trailerPerMinute = 12                 // resolves a person may start in a minute (cached answers are free)
+	trailerPerMinute = 12                 // music video resolves a person may start in a minute (cached answers are free)
 	trailerKeep      = 4 * time.Hour      // when the address names no expiry
 	trailerEarly     = 10 * time.Minute   // dropped this long before it expires
 	trailerMiss      = 10 * time.Minute   // a title with no direct stream is not tried again before this
+	trailerLongMiss  = 2 * time.Hour      // ...when it has no trailer, or none plays here for a lasting reason
 	trailerPool      = 4                  // reader lookups at once
-	trailerAhead     = 40                 // ahead-of-time lookups per 10 minutes for the whole install
+	trailerAhead     = 40                 // ahead-of-time music video lookups per 10 minutes for the whole install
 	trailerBadKeep   = 7 * 24 * time.Hour // a video YouTube will not play here is not tried again before this
 	trailerMore      = 4                  // other trailers of the title tried in one lookup (5 in all)
 )
@@ -80,6 +82,8 @@ type trailerEntry struct {
 	// video the YouTube player may still play ("" when none).
 	reason youtube.Reason
 	key    string
+	// none: the title has no trailer at all.
+	none bool
 }
 
 // trailerMissed is a miss as an error: it is errNoStream, and says why.
@@ -91,7 +95,12 @@ type trailerMissed struct {
 func (e *trailerMissed) Error() string        { return "no direct stream" }
 func (e *trailerMissed) Is(target error) bool { return target == errNoStream }
 
-func (e trailerEntry) missErr() error { return &trailerMissed{reason: e.reason, key: e.key} }
+func (e trailerEntry) missErr() error {
+	if e.none {
+		return errNoTrailer
+	}
+	return &trailerMissed{reason: e.reason, key: e.key}
+}
 
 type trailerFlight struct {
 	done chan struct{}
@@ -247,10 +256,6 @@ func trailerLanguage(r *http.Request) string {
 	return "en"
 }
 
-// trailerWait is how long a trailer request waits for a lookup already
-// under way before it answers "no trailer yet"; the lookup keeps going.
-var trailerWait = 150 * time.Millisecond
-
 var (
 	errNoTrailer = errors.New("no trailer")
 	errNoStream  = errors.New("no direct stream")
@@ -279,47 +284,47 @@ func (a *API) trailerStream(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "trailers are turned off")
 		return
 	}
+	// Only what the trailer pass kept (memory, then SQLite): a page open
+	// never starts a lookup.
 	lang := trailerLanguage(r)
-	now := time.Now()
-	ckey := kind + "|" + id + "|" + lang
-	if _, ok := a.trailers.get(ckey, now); !ok && !a.trailerStored(r.Context(), ckey, now) && !a.trailers.inFlight(ckey) {
-		if !a.trailers.allow(a.person(r).UserID, now) {
-			w.Header().Set("Retry-After", "60")
-			fail(w, http.StatusTooManyRequests, "too many trailers; try again in a minute")
-			return
-		}
-	}
-	// The visitor never waits on a lookup: it carries on in the background
-	// (and is kept), and the page gets "none yet" at once.
-	wctx, cancel := context.WithTimeout(r.Context(), trailerWait)
-	defer cancel()
-	s, err := a.resolveTitle(wctx, kind, id, lang)
+	e, ok := a.keptTrailer(r.Context(), kind+"|"+id+"|"+lang, time.Now())
+	w.Header().Set("Cache-Control", "private, no-store")
 	switch {
-	case errors.Is(err, context.DeadlineExceeded) && r.Context().Err() == nil:
-		w.Header().Set("Retry-After", "30")
-		w.Header().Set("Cache-Control", "private, no-store")
-		fail(w, http.StatusNotFound, "no trailer yet")
-	case errors.Is(err, errNoTrailer):
+	case !ok:
+		// Not looked up yet: noted for the next trailer pass, and the key
+		// learned in the background (no YouTube call); the kept key is for
+		// YouTube's player meanwhile.
+		a.noteTrailerTitles(lang, [][2]string{{kind, id}})
+		a.warmTitles(lang, [][2]string{{kind, id}})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no direct stream", "key": a.knownTrailerKey(r.Context(), kind, id, lang)})
+	case e.none:
 		fail(w, http.StatusNotFound, "no trailer")
-	case errors.Is(err, errNoStream):
+	case !e.miss.IsZero():
 		// A miss says why (the reader's reason) and which video the YouTube
 		// player may still play ("" when every one tried will not play).
 		body := map[string]string{"error": "no direct stream"}
-		if m := (*trailerMissed)(nil); errors.As(err, &m) && m.reason != "" {
-			body["reason"], body["key"] = string(m.reason), m.key
+		if e.reason != "" {
+			body["reason"], body["key"] = string(e.reason), e.key
 		}
 		writeJSON(w, http.StatusNotFound, body)
-	case err != nil:
-		discoverFail(w, err)
 	default:
+		s := e.s
 		if s.Type == "hls" {
 			if id := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt); id != "" {
 				s.ProxyURL = urlbase.From(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8"
 			}
 		}
-		w.Header().Set("Cache-Control", "private, no-store")
 		writeJSON(w, http.StatusOK, s)
 	}
+}
+
+// keptTrailer answers a title's kept entry (memory, then SQLite); no lookup.
+func (a *API) keptTrailer(ctx context.Context, ckey string, now time.Time) (trailerEntry, bool) {
+	e, ok := a.trailers.get(ckey, now)
+	if !ok && a.trailerStored(ctx, ckey, now) {
+		e, ok = a.trailers.get(ckey, now)
+	}
+	return e, ok
 }
 
 func (t *trailerState) inFlight(ckey string) bool {
@@ -351,20 +356,22 @@ func (a *API) trailerStored(ctx context.Context, ckey string, now time.Time) boo
 }
 
 // resolveTitle answers one title's stream: memory, then SQLite, then one
-// shared lookup (callers asking for the same title wait for the same one).
+// shared lookup (lookupShared).
 func (a *API) resolveTitle(ctx context.Context, kind, id, lang string) (TrailerStream, error) {
-	ckey := kind + "|" + id + "|" + lang
-	now := time.Now()
-	e, ok := a.trailers.get(ckey, now)
-	if !ok && a.trailerStored(ctx, ckey, now) {
-		e, ok = a.trailers.get(ckey, now)
-	}
-	if ok {
+	if e, ok := a.keptTrailer(ctx, kind+"|"+id+"|"+lang, time.Now()); ok {
 		if !e.miss.IsZero() {
 			return TrailerStream{}, e.missErr()
 		}
 		return e.s, nil
 	}
+	return a.lookupShared(ctx, kind, id, lang)
+}
+
+// lookupShared looks the title up even when an address is kept (the
+// trailer pass renews addresses before they expire); callers asking for
+// the same title wait for the same lookup.
+func (a *API) lookupShared(ctx context.Context, kind, id, lang string) (TrailerStream, error) {
+	ckey := kind + "|" + id + "|" + lang
 	t := &a.trailers
 	t.mu.Lock()
 	if t.flights == nil {
@@ -472,7 +479,7 @@ func (a *API) keepTrailerKey(ctx context.Context, kind, id, lang, key string) {
 // fillTrailerKeys sets trailer_key on Explore cards whose key is kept.
 func (a *API) fillTrailerKeys(r *http.Request, items []discoverItemView) {
 	lang := trailerLanguage(r)
-	// Every listed title is warmed ahead (details, extras, trailer), so
+	// Every listed title is warmed ahead (details, extras, trailer key), so
 	// opening or hovering it never makes the first outside call.
 	warm := make([][2]string, 0, len(items))
 	for _, v := range items {
@@ -506,6 +513,11 @@ func (a *API) pickTrailerKey(ctx context.Context, kind, id, lang string) (string
 		return "", errNoStream
 	}
 	det, err := a.trailerDetails(ctx, d, kind, id)
+	if errors.Is(err, metadata.ErrNotFound) {
+		// TMDB has no such title: kept as "no trailer", so a background
+		// pass does not stop on it every time.
+		return "", errNoTrailer
+	}
 	if err != nil {
 		return "", err
 	}
@@ -521,7 +533,9 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 	now := time.Now()
 	key, err := a.trailerKey(ctx, kind, id, lang)
 	if errors.Is(err, errNoTrailer) {
-		a.trailers.put(ckey, trailerEntry{miss: now.Add(trailerMiss)})
+		if e := a.missOrKept(ctx, ckey, trailerEntry{miss: now.Add(trailerLongMiss), none: true}, now); e.miss.IsZero() {
+			return e, nil
+		}
 		return trailerEntry{}, errNoTrailer
 	}
 	if err != nil {
@@ -537,7 +551,7 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 	} else {
 		cands = append(cands, key)
 	}
-	listed, more := false, 0
+	listed, more, sawUnplayable := false, 0, false
 	for i := 0; ; i++ {
 		if i >= len(cands) && !listed {
 			listed = true
@@ -582,10 +596,27 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 		// normal miss, so it is asked again after trailerMiss.
 		if miss.reason != youtube.Unplayable {
 			a.markTrailerBad(ctx, k, miss.reason, now)
+		} else {
+			sawUnplayable = true
 		}
 	}
+	// No trailer plays here for a lasting reason: the pass asks again after
+	// trailerLongMiss. YouTube's door failing, or a premiere not on yet, is
+	// asked again on the next pass.
+	if miss.reason.VideoReason() && miss.reason != youtube.Unplayable && !sawUnplayable {
+		miss.miss = now.Add(trailerLongMiss)
+	}
+	return a.missOrKept(ctx, ckey, miss, now), nil
+}
+
+// missOrKept keeps a lookup's miss, unless an address from an earlier
+// lookup is still good: a renewal that fails keeps it until it expires.
+func (a *API) missOrKept(ctx context.Context, ckey string, miss trailerEntry, now time.Time) trailerEntry {
+	if e, ok := a.keptTrailer(ctx, ckey, now); ok && e.miss.IsZero() {
+		return e
+	}
 	a.trailers.put(ckey, miss)
-	return miss, nil
+	return miss
 }
 
 // trailerReason is the reader's reason for err, except that YouTube's
@@ -685,33 +716,6 @@ func (a *API) moreTrailerKeys(ctx context.Context, kind, id, lang, first string,
 		left = slices.DeleteFunc(left, func(x metadata.DetailVideo) bool { return x.Key == v.Key })
 	}
 	return out
-}
-
-// prefetchTrailers looks trailers up ahead of time (Explore's hero and the
-// first cards of its first rows), one after another so the pool stays
-// free for people, within the install's ahead-of-time budget. Titles
-// already known cost nothing.
-func (a *API) prefetchTrailers(r *http.Request, titles [][2]string) {
-	if len(titles) == 0 || a.kidMax(r) != "" || !a.uiSettings(r.Context()).AutoplayTrailers {
-		return
-	}
-	lang := trailerLanguage(r)
-	ctx := context.WithoutCancel(r.Context())
-	go func() {
-		for _, t := range titles {
-			ckey := t[0] + "|" + t[1] + "|" + lang
-			now := time.Now()
-			if _, ok := a.trailers.get(ckey, now); ok || a.trailerStored(ctx, ckey, now) || a.trailers.inFlight(ckey) {
-				continue
-			}
-			if !a.trailers.allowAhead(now) {
-				return
-			}
-			lctx, cancel := context.WithTimeout(ctx, 40*time.Second)
-			_, _ = a.resolveTitle(lctx, t[0], t[1], lang)
-			cancel()
-		}
-	}()
 }
 
 // trailerDetails reads the title's details through the details cache.

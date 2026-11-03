@@ -142,7 +142,11 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 			titles = append(titles, [2]string{v.Kind, v.TMDBID})
 		}
 	}
-	a.prefetchTrailers(r, titles)
+	// The trailer pass reads only Explore's pools: the titles this hero
+	// picks from are noted for its next round (no lookup here).
+	if a.kidMax(r) == "" {
+		a.noteTrailerTitles(trailerLanguage(r), titles)
+	}
 	a.fillTrailerKeys(r, vs)
 	a.fillCardArt(r, vs)
 	now := a.exploreNow().UTC()

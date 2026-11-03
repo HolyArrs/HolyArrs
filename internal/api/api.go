@@ -215,6 +215,8 @@ type API struct {
 	trailerRelay trailerProxy
 	// trailerKeys keeps each title's YouTube key (also in lookup_cache).
 	trailerKeys trailerKeyCache
+	// trailerAsked notes titles asked for that the next trailer pass covers.
+	trailerAsked trailerAsked
 	// warm fills listed titles' details, extras and trailers ahead.
 	warm titleWarmer
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.

@@ -282,11 +282,12 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
 			.then((s) => (fresh(s) ? s : null))
 			// A 404 means the title has no trailer: remembered for the session so
 			// a second player does not ask again, with the server's reason and
-			// key when it gave them. Other failures may be asked again.
+			// key when it gave them (a title not looked up yet comes with its
+			// key alone, for the embed). Other failures may be asked again.
 			.catch((e) => {
 				if (!(e instanceof ApiError) || e.status !== 404) return null;
 				const { reason, key } = e.body ?? {};
-				if (typeof reason === 'string' && reason) misses.set(k, { reason, key: typeof key === 'string' ? key : '' });
+				if ((typeof reason === 'string' && reason) || (typeof key === 'string' && key)) misses.set(k, { reason: typeof reason === 'string' ? reason : '', key: typeof key === 'string' ? key : '' });
 				return NONE;
 			})
 			.finally(() => clearTimeout(t));

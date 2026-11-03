@@ -327,8 +327,8 @@ func digitsOnly(s string) bool {
 
 // titleWarmer fills title details, extras and trailer links ahead, on the
 // server's own schedule, for every title Explore and New & Popular list,
-// so no visitor action makes the first outside call. Two workers at most;
-// trailers stay within the install's ahead-of-time budget.
+// so no visitor action makes the first outside call. Two workers at most.
+// Trailer addresses are not looked up here (the trailer pass does that).
 type titleWarmer struct {
 	once  sync.Once
 	mu    sync.Mutex
@@ -423,7 +423,7 @@ func (a *API) warmWorker() {
 }
 
 // warmOne stores one title's details and extras (when missing or old) and
-// looks its trailer up within the ahead budget.
+// learns its trailer's key.
 func (a *API) warmOne(ctx context.Context, j warmJob) {
 	if d, ok := metadata.DiscovererFor(ctx, a.s.Metadata); ok {
 		key := "details|" + j.kind + "|" + j.id
@@ -462,10 +462,7 @@ func (a *API) warmOne(ctx context.Context, j warmJob) {
 	if !a.uiSettings(ctx).AutoplayTrailers {
 		return
 	}
-	ckey := j.kind + "|" + j.id + "|" + j.lang
-	now := time.Now()
-	if _, ok := a.trailers.get(ckey, now); ok || a.trailerStored(ctx, ckey, now) || a.trailers.inFlight(ckey) || !a.trailers.allowAhead(now) {
-		return
-	}
-	_, _ = a.resolveTitle(ctx, j.kind, j.id, j.lang)
+	// The key only (the metadata server's pick, else TMDB's videos; no
+	// YouTube call), for the cards and the hero's gate.
+	_, _ = a.trailerKey(metadata.Ahead(ctx), j.kind, j.id, j.lang)
 }

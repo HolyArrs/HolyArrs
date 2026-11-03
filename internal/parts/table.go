@@ -697,6 +697,7 @@ var Loops = map[string]Owner{
 	"gates":            movies,
 	"wishlist":         wishlist,
 	"music_warm":       music,
+	"trailer_pass":     Media,
 }
 
 // JobKinds gives every Job kind its owner. A Job of a part that is off

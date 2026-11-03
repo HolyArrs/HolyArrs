@@ -111,7 +111,8 @@ func TestTrailerShortRefusalsNotMarkedBad(t *testing.T) {
 func TestTrailerAllUnplayableSaysWhy(t *testing.T) {
 	yt := fakeReader(t, "age", "ageGated001", "thirdKey001", "fourthKey01")
 	yt.set("secondKey01", "unavailable")
-	srv, _ := discoverRig(t, trailerTMDB(t))
+	srv, a := trailerRig(t)
+	_ = lookUp(t, a, "movie", "14")
 	var b struct{ Error, Reason, Key string }
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/14", "", 404), &b)
 	if b.Error != "no direct stream" || b.Reason != string(youtube.AgeRestricted) || b.Key != "" {
@@ -120,7 +121,14 @@ func TestTrailerAllUnplayableSaysWhy(t *testing.T) {
 	if n := yt.runs.Load(); n != 3 {
 		t.Fatalf("lookups %d", n)
 	}
-	// The answer is the same while the miss is kept.
+	// The answer is the same while the miss is kept (2 hours: the pass does
+	// not ask again before).
+	if e, ok := a.trailers.get("movie|14|en", time.Now()); !ok || time.Until(e.miss) < trailerLongMiss-time.Minute {
+		t.Fatalf("miss kept until %v", e.miss)
+	}
+	if err := lookUp(t, a, "movie", "14"); err == nil {
+		t.Fatal("no miss")
+	}
 	b.Reason, b.Key = "", ""
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/14", "", 404), &b)
 	if b.Reason != string(youtube.AgeRestricted) || b.Key != "" || yt.runs.Load() != 3 {
@@ -128,7 +136,8 @@ func TestTrailerAllUnplayableSaysWhy(t *testing.T) {
 	}
 	// A fresh install (no key marked bad yet): all four listed trailers are
 	// tried (up to five are), so none is left for the YouTube player.
-	srv, _ = discoverRig(t, trailerTMDB(t))
+	srv, a = trailerRig(t)
+	_ = lookUp(t, a, "movie", "15")
 	b.Reason, b.Key = "", ""
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/15", "", 404), &b)
 	if b.Reason != string(youtube.AgeRestricted) || b.Key != "" || yt.count("fourthKey01") != 1 {
@@ -162,7 +171,10 @@ func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 // (the opening is the highest part: every play starts there).
 func TestTrailerPeakSkipsOpening(t *testing.T) {
 	fakeReader(t, "heat")
-	srv, _ := discoverRig(t, trailerTMDB(t))
+	srv, a := trailerRig(t)
+	if err := lookUp(t, a, "movie", "11"); err != nil {
+		t.Fatal(err)
+	}
 	var s TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Peak != 80 || s.Duration != 200 {
@@ -201,5 +213,31 @@ func TestTrailerSkipsTheWatchPage(t *testing.T) {
 	}
 	if _, err := resolveTrailer(ctx, "trailerKey1", time.Now(), true); err != nil || yt.pages.Load() != 2 {
 		t.Fatalf("music video skipped the page %v pages %d", err, yt.pages.Load())
+	}
+}
+
+// A premiere among the trailers keeps the short miss, even when a later
+// trailer is age-restricted: it is asked again on the next pass.
+func TestTrailerPremiereKeepsTheShortMiss(t *testing.T) {
+	yt := fakeReader(t, "premiere", "ageGated001")
+	yt.set("secondKey01", "age")
+	yt.set("thirdKey001", "age")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	_, _ = a.resolveTitle(context.Background(), "movie", "13", "en")
+	e, ok := a.trailers.get("movie|13|en", time.Now())
+	if !ok || e.miss.IsZero() || time.Until(e.miss) > trailerMiss+time.Minute {
+		t.Fatalf("miss until %v (ok %v)", e.miss, ok)
+	}
+}
+
+// A title TMDB does not know is kept as "no trailer", so the pass does not
+// stop on it every time.
+func TestTrailerUnknownTitleIsNoTrailer(t *testing.T) {
+	fakeReader(t, "ok")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	if _, err := a.resolveTitle(context.Background(), "movie", "987654", "en"); !errors.Is(err, errNoTrailer) {
+		t.Fatalf("unknown title: %v", err)
 	}
 }

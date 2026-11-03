@@ -14,9 +14,10 @@ import (
 // trailerBatchMax is how many titles one batch may name.
 const trailerBatchMax = 40
 
-// trailerBatchView is the answer of GET /trailer/batch: the streams already
-// known (memory or SQLite), by "kind:tmdb_id", and the titles still being
-// looked up ahead of time (ask again, or ask the single route on hover).
+// trailerBatchView is the answer of GET /trailer/batch: the streams the
+// trailer pass kept (memory or SQLite), by "kind:tmdb_id", and the artists
+// whose videos are still being looked up ahead of time (ask again). A title
+// is never pending: its trailer is looked up on the pass's schedule only.
 type trailerBatchView struct {
 	Streams map[string]TrailerStream `json:"streams"`
 	// Videos are artists' music videos ("artist:mbid") already looked up,
@@ -25,10 +26,10 @@ type trailerBatchView struct {
 	Pending []string                   `json:"pending"`
 }
 
-// trailerBatch answers the cards on screen at once: known streams come back
-// straight away; the rest are looked up ahead of time, one after another
-// within the install's ahead-of-time budget (prefetchTrailers), so they are
-// ready by the time someone hovers. It never spends a person's own resolves.
+// trailerBatch answers the cards on screen at once with the streams the
+// trailer pass kept; a title without one is left out (the card plays the
+// embed) and no lookup starts. Artists' videos not yet known are looked up
+// ahead of time (prefetchArtistVideos).
 func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 	if a.kidMax(r) != "" {
 		fail(w, http.StatusForbidden, "trailers do not play for Kid accounts")
@@ -51,7 +52,6 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 	lang := trailerLanguage(r)
 	now := time.Now()
 	out := trailerBatchView{Streams: map[string]TrailerStream{}, Videos: map[string]ArtistVideoView{}, Pending: []string{}}
-	var ahead [][2]string
 	var artists []string
 	seen := map[string]bool{}
 	for _, id := range ids {
@@ -90,13 +90,7 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		seen[id] = true
-		ckey := kind + "|" + tmdb + "|" + lang
-		e, known := a.trailers.get(ckey, now)
-		if !known && a.trailerStored(r.Context(), ckey, now) {
-			e, known = a.trailers.get(ckey, now)
-		}
-		switch {
-		case known && e.miss.IsZero():
+		if e, known := a.keptTrailer(r.Context(), kind+"|"+tmdb+"|"+lang, now); known && e.miss.IsZero() {
 			s := e.s
 			if s.Type == "hls" {
 				if rid := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt); rid != "" {
@@ -104,14 +98,8 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			out.Streams[id] = s
-		case known:
-			// No direct stream for this title (for now): nothing to wait for.
-		default:
-			out.Pending = append(out.Pending, id)
-			ahead = append(ahead, [2]string{kind, tmdb})
 		}
 	}
-	a.prefetchTrailers(r, ahead)
 	a.prefetchArtistVideos(r, artists)
 	w.Header().Set("Cache-Control", "private, no-store")
 	writeJSON(w, http.StatusOK, out)

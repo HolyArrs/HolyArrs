@@ -38,9 +38,10 @@ content warning. HolyArrs never gets around those. Instead:
 
 - A video that asks for a sign-in, was removed or made private, or sits
   behind a content warning is skipped for 7 days, for every title that
-  lists it. A video that is blocked here or not on yet is tried again after
-  10 minutes, so a premiere plays soon after it starts.
-- The title's next trailer is tried, in the same order as above, up to two
+  lists it. A video that is blocked here or not on yet is tried again on the
+  next lookup round (within 15 minutes), so a premiere plays soon after it
+  starts.
+- The title's next trailer is tried, in the same order as above, up to four
   more in one lookup. The one that plays is shown meanwhile; once the first
   is no longer skipped, it is tried first again.
 - When none of them plays, the page shows the moving backdrop pictures and
@@ -48,12 +49,15 @@ content warning. HolyArrs never gets around those. Instead:
 
 When YouTube refuses HolyArrs as a whole (its "confirm you're not a bot"
 check, its "try again later", or YouTube could not be reached), the title
-is not marked and no other trailer is tried: the same trailer is tried again
-after 10 minutes, and the embed may still play it meanwhile.
+is not marked and no other trailer is tried: that round of lookups stops,
+the same trailer is tried again on the next round, and the embed may still
+play it meanwhile.
 
 `GET /api/v1/trailer/{kind}/{tmdb_id}` then answers 404 with `reason` (for
 example `age_restricted` or `bot_check`) and `key`, the video the embed may
-still play, or `""` when none is left.
+still play, or `""` when none is left. For a title not looked up yet it
+answers 404 with only `key`, the title's YouTube trailer when known, so the
+embed plays it.
 
 ## When a trailer starts
 
@@ -62,10 +66,18 @@ still play, or `""` when none is left.
   desktop pointer only. A wide card grows after 0.5 seconds first. Keyboard
   focus also opens a card, and Esc closes it.
 - Only one video plays at a time; a new one stops the one before it.
-- The server looks up the first trailers ahead of time (the hero first, then
-  the first four cards of the first three rows) so they start quickly. A
-  person may start 12 new lookups a minute, up to 4 run at once, and a title
-  with no direct stream is not tried again for 10 minutes.
+
+Trailers are looked up on a fixed schedule, never when a page opens. Every
+15 minutes (the first round a few minutes after HolyArrs starts) the server
+looks up to 30 trailers, one after another. It covers what Explore shows
+first for each household member who is not a Kid account: the featured
+titles first, then the first four cards of the first three rows, in up to
+three languages pages asked for lately. After those come the titles asked
+for elsewhere that had nothing yet (a person's page, the Requests banner,
+New & Popular's featured titles), each in the language it was asked in.
+An address is looked up again shortly before it expires. A title with no
+trailer, or none that plays here, is tried again after 2 hours. A title
+not looked up yet plays the YouTube embed until a round reaches it.
 
 ## Where a music video starts
 

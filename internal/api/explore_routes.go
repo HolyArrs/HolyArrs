@@ -43,9 +43,7 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 	now := a.exploreNow()
 	day := explore.Day(now)
 	moment, tz := exploreMoment(r, now)
-	// Trending on streaming, as kept (never fetched here; warmed at
-	// start): the rows under it skip its titles.
-	svcTop := a.keptServiceTop(strings.ToUpper(r.URL.Query().Get("region")), sw)
+	region := r.URL.Query().Get("region")
 	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + tz
 	e := &a.explore
 	pool, stale, err := a.readPool(ctx, member, sw, day, false)
@@ -94,7 +92,7 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		}
 		pool = &cold
 	}
-	pg := explore.AssembleTabAt(*pool, svcTop, member, moment)
+	pg := a.poolPage(*pool, member, sw, region, moment)
 	e.mu.Lock()
 	if e.pages == nil || len(e.pages) >= 1000 {
 		e.pages = map[string]explorePage{}
@@ -105,6 +103,13 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 	e.mu.Unlock()
 	pg, err = a.titleExplore(ctx, member, pg, moment)
 	return pg, building, err
+}
+
+// poolPage assembles the member's page from a pool for a moment, with no
+// request: Trending on streaming as kept (never fetched here; warmed at
+// start), so the rows under it skip its titles.
+func (a *API) poolPage(p explore.Pool, member int64, sw, region string, m explore.Moment) explore.Page {
+	return explore.AssembleTabAt(p, a.keptServiceTop(strings.ToUpper(region), sw), member, m)
 }
 
 // exploreViews joins rows with the Library; a Kid's rows are filtered
@@ -259,7 +264,6 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
 	a.exploreTitleCount(r.Context(), me, "shown", rowLayers(head))
 	st.mark("counts")
-	a.prefetchTrailers(r, exploreTrailerTitles(hero, head))
 	for i := range head {
 		a.fillTrailerKeys(r, head[i].Items)
 	}
@@ -339,13 +343,23 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// heroCandidates are the titles the hero picks from (before its quality
+// gate), best first; All takes 2 x HeroShuffleTop more (the tabs' share).
+func heroCandidates(pg explore.Page, all bool) []explore.Item {
+	n := explore.HeroPool
+	if all {
+		n += 2 * explore.HeroShuffleTop
+	}
+	return explore.HeroRank(explore.HeroCandidates(pg.Head, pg.Leans, n), pg.Taste)
+}
 
-// exploreTrailerTitles are the titles whose trailers are looked up ahead of
-// time: the hero first, then the first 4 cards of the first 3 rows.
-func exploreTrailerTitles(hero []discoverItemView, head []exploreRowView) [][2]string {
+// exploreTrailerTitles are the titles whose trailers the trailer pass looks
+// up: the hero's candidates first, then the first 4 cards of the first 3
+// rows that have cards.
+func exploreTrailerTitles(hero []explore.Item, head []explore.Row) [][2]string {
 	var out [][2]string
 	seen := map[string]bool{}
-	add := func(v discoverItemView) {
+	add := func(v explore.Item) {
 		if (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" && !seen[v.Kind+v.TMDBID] {
 			seen[v.Kind+v.TMDBID] = true
 			out = append(out, [2]string{v.Kind, v.TMDBID})
@@ -374,24 +388,17 @@ func exploreTrailerTitles(hero []discoverItemView, head []exploreRowView) [][2]s
 // that pass the quality gate: a known trailer, a logo and a backdrop. When
 // trailers are off or too few are known yet, art-only titles top it up.
 func (a *API) exploreHero(r *http.Request, pg explore.Page, all bool, me int64) ([]discoverItemView, error) {
-	n := explore.HeroPool
-	if all {
-		n += 2 * explore.HeroShuffleTop
-	}
-	cands := explore.HeroRank(explore.HeroCandidates(pg.Head, pg.Leans, n), pg.Taste)
+	cands := heroCandidates(pg, all)
 	views, err := a.exploreViews(r.Context(), r, []explore.Row{{Items: cands}})
 	if err != nil || len(views) != 1 {
 		return []discoverItemView{}, err
 	}
 	byKey := map[string]discoverItemView{}
-	var titles [][2]string
 	for _, v := range views[0].Items {
 		if !v.InLibrary {
 			byKey[v.Kind+":"+v.TMDBID] = v
-			titles = append(titles, [2]string{v.Kind, v.TMDBID})
 		}
 	}
-	a.prefetchTrailers(r, titles)
 	vs := make([]discoverItemView, 0, len(byKey))
 	for _, it := range cands {
 		if v, ok := byKey[it.Key()]; ok {

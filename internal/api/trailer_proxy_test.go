@@ -88,6 +88,9 @@ func proxyRig(t *testing.T) (*httptest.Server, *API) {
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
+	if err := lookUp(t, a, "movie", "11"); err != nil {
+		t.Fatal(err)
+	}
 	return srv, a
 }
 

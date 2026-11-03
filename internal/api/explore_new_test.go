@@ -197,6 +197,41 @@ func TestExploreNewAcceptance(t *testing.T) {
 	}
 }
 
+// The New hero's titles are outside Explore's pools: the ones it picks from
+// are noted for the trailer pass (in the page's language), none for a Kid.
+func TestExploreNewHeroNotesTrailers(t *testing.T) {
+	a, _, _ := newRig(t)
+	r := httptest.NewRequest("GET", "/api/v1/explore/new?language=de", nil)
+	r = r.WithContext(auth.ContextWith(r.Context(), auth.Who{UserID: 1, Role: auth.RoleAdmin}))
+	var pg newPage
+	for i := 0; i < 40; i++ {
+		var building bool
+		if pg, building = a.newRows(r.Context(), r, 1, "all"); !building {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	kid := r.WithContext(auth.ContextWith(r.Context(), auth.Who{UserID: 1, Role: auth.RoleMember, MaxRating: "PG-13"}))
+	if _, err := a.newHero(kid, pg, 1); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.trailerAsks(time.Now()); len(got) != 0 {
+		t.Fatalf("a Kid's hero noted %v", got)
+	}
+	if _, err := a.newHero(r, pg, 1); err != nil {
+		t.Fatal(err)
+	}
+	got := a.trailerAsks(time.Now())
+	if len(got) == 0 || len(got) > 24 {
+		t.Fatalf("noted %d", len(got))
+	}
+	for _, j := range got {
+		if j[2] != "de" || pg.scores[j[0]+":"+j[1]] <= 0 {
+			t.Fatalf("noted %v", j)
+		}
+	}
+}
+
 // route: GET /api/v1/explore/new/services
 // The best of the services row, for Explore: at most 12, at most 3 per
 // service, all new, split by tab.

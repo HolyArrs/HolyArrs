@@ -54,7 +54,7 @@ func startApp(t *testing.T, c config, o runOpts) (*supervisor.Registry, string) 
 }
 
 // supervisedLoops are every background loop main starts under the supervisor.
-var supervisedLoops = []string{"backups", "downloads", "schedules", "stranded_imports", "gates", "sessions", "wishlist", "log_secrets", "music_warm"}
+var supervisedLoops = []string{"backups", "downloads", "schedules", "stranded_imports", "gates", "sessions", "wishlist", "log_secrets", "music_warm", "trailer_pass"}
 
 // A crash injected into each loop leaves the program running and the stage
 // failed, then retrying, then running again.
