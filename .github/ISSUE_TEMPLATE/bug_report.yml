@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in HolyArrs does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search the open issues first, your bug may already be there.
+        Security problems go by email instead, see SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Settings > This app, or the image tag.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you run HolyArrs
+      options: [Docker, Synology, QNAP, TrueNAS, Unraid, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What you did
+      description: The steps that lead to the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Settings > Logs > Download. Keys are masked, but read it through before you paste.
+      render: text

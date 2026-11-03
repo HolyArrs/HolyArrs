@@ -1,0 +1,17 @@
+name: Idea
+description: Something HolyArrs could do.
+labels: [idea]
+body:
+  - type: markdown
+    attributes:
+      value: Check the roadmap issues first, your idea may already be planned.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it would help you
