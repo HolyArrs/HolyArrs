@@ -640,13 +640,15 @@ export function startFakes() {
 	const deleted = [];
 	/** @type {string[]} */
 	const added = [];
+	/** @type {Record<string, string>[]} */
+	const shareLimits = [];
 	let mainRid = 0;
 	const qbit = createServer(async (req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		const form = new URLSearchParams(req.method === 'POST' ? await body(req) : url.search);
 		switch (url.pathname) {
 			case '/state':
-				return send(res, 200, { added, deleted });
+				return send(res, 200, { added, deleted, shareLimits });
 			case '/set': {
 				// Test control: move every torrent on (progress, speed, eta),
 				// or only the one named by hash; state, save_path and files
@@ -661,6 +663,11 @@ export function startFakes() {
 			}
 			case '/api/v2/app/version':
 				return send(res, 200, 'v5.2.4', 'text/plain');
+			case '/api/v2/app/webapiVersion':
+				return send(res, 200, '2.11.4', 'text/plain');
+			case '/api/v2/torrents/setShareLimits':
+				shareLimits.push(Object.fromEntries(form));
+				return send(res, 200, '', 'text/plain');
 			case '/api/v2/torrents/createCategory':
 				return send(res, 200, '', 'text/plain');
 			case '/api/v2/torrents/add': {
@@ -682,6 +689,12 @@ export function startFakes() {
 				mainRid++;
 				const list = Object.fromEntries([...torrents.values()].map(({ files, ...t }) => [t.hash, t]));
 				return send(res, 200, { rid: mainRid, full_update: true, torrents: list, categories: {}, server_state: { dl_info_speed: 0, up_info_speed: 0, connection_status: 'connected', free_space_on_disk: 1_000_000_000_000 } });
+			}
+			case '/api/v2/torrents/properties': {
+				const t = torrents.get(form.get('hash') ?? '');
+				if (!t) return send(res, 404, 'Not Found', 'text/plain');
+				const size = Number(t.size);
+				return send(res, 200, { total_size: size, total_downloaded: Math.round(size * Number(t.progress)), total_uploaded: 0, dl_speed: t.dlspeed, up_speed: 0, eta: t.eta, share_ratio: 0, seeds: 3, seeds_total: 10, peers: 1, peers_total: 4, addition_date: 1, completion_date: -1, save_path: t.save_path, is_private: false });
 			}
 			case '/api/v2/torrents/files': {
 				const t = torrents.get(form.get('hash') ?? '');

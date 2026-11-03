@@ -34,7 +34,7 @@ test.beforeAll(async ({ browser }) => {
 
 // A table row by its Release name (the second line shows the episodes; the
 // Release name is its tooltip), and the row's details panel (it opens in
-// place under the row; one panel is open at a time).
+// place under the row; one panel is open at a time; Escape closes it).
 const row = (name: string) => page.getByTestId('dl-table-row').filter({ has: page.locator(`.rel[title*="${name}"]`) }).first();
 const details = () => page.getByTestId('dl-panel');
 const state = (r: ReturnType<typeof row>) => r.locator('[data-col="status"]');
@@ -43,7 +43,8 @@ async function open(r: ReturnType<typeof row>) {
 	await expect(details()).toBeVisible();
 }
 async function close() {
-	await page.locator('[data-testid="dl-toggle"][aria-expanded="true"]').click();
+	// Escape from the row closes its details (the redesign has no row toggle).
+	await page.keyboard.press('Escape');
 	await expect(details()).toBeHidden();
 }
 
@@ -77,13 +78,16 @@ test('a pack whose files cannot be placed waits on Needs a decision as one card'
 	const name = 'Moss.Parade.S01.1080p.WEB-DL.H264-HOLYARRS';
 	const files = ['S01E01', 'S01E02'].map((e) => `${name}/Moss.Parade.${e}.1080p.WEB-DL.H264-HOLYARRS.mkv`).join('|');
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(files)}`);
+	// The last test left the Done tab open: a pack that needs a decision is under Problems › Review.
+	await page.goto('/downloads?show=problems.decide');
 	const pack = row('Moss.Parade.S01.1080p');
-	// The state may carry the failed import's reason after it ("Needs a decision · import failed: …").
-	await expect(state(pack)).toContainText('Needs a decision', { timeout: 30_000 });
+	// The row says Review with what stopped it ("Review · import blocked · import failed: …").
+	await expect(state(pack)).toContainText('Review', { timeout: 30_000 });
 	await open(pack);
 	// The choices are in the same panel; the panel stays open for the next test.
 	const card = details().getByTestId('decision-pack');
-	await expect(card).toContainText('Season pack · 2 of the 2 episodes in this download need a decision');
+	await expect(card).toContainText('2 of the 2 episodes in this download need a decision');
+	await expect(card).toContainText('Season pack');
 	// The pack's own Why? names the Release.
 	await card.getByTestId('decision-why').first().click();
 	await expect(card.getByTestId('decision-why-box').first()).toContainText('Release: Moss.Parade.S01.1080p.WEB-DL.H264-HOLYARRS');

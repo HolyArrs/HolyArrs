@@ -232,6 +232,8 @@
 			f('Done', dateTime(t?.done_at ?? r.finished_at)),
 			f('Time active', t?.time_active ? duration(t.time_active) : ''),
 			seeding ? null : seedTime,
+			// The release name: the row shows a show's episodes instead, and a tooltip is out of reach on touch.
+			f('Release', r.name, 'dl-info-release', true),
 			f('Save path', t?.save_path, undefined, true),
 			f('Downloader', d?.downloader || r.downloader),
 			f('Requested by', d?.requested_by, 'dl-info-asker')
@@ -254,7 +256,7 @@
 		const transfer = [f(done ? 'Size' : 'Downloaded', got), f('Down', r.speed ? `${bytes(r.speed)}/s` : ''), f('Time left', !done && r.eta ? duration(r.eta) : '')];
 		const dates = [f('Posted', r.posted_at ? `${shortAge(r.posted_at)} ago` : ''), f('Added', dateTime(r.started_at)), f('Done', dateTime(r.finished_at))];
 		const folder = im?.Plan?.find((p) => p.target_path)?.target_path || r.path;
-		const where = [f('Downloader', d?.downloader || r.downloader), f('Category', r.category), f('Folder', folder, undefined, true), f('Requested by', d?.requested_by || r.requested_by, 'dl-info-asker')];
+		const where = [f('Release', r.name, 'dl-info-release', true), f('Downloader', d?.downloader || r.downloader), f('Category', r.category), f('Folder', folder, undefined, true), f('Requested by', d?.requested_by || r.requested_by, 'dl-info-asker')];
 		const keep = (xs: (Fact | null)[]) => xs.filter((x): x is Fact => !!x);
 		return [
 			{ cap: 'Transfer', rows: keep(transfer) },
