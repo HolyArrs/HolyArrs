@@ -378,7 +378,7 @@
 	.al-count { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.al-count.full { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text); }
 	.al-count.part { background: color-mix(in srgb, var(--wait) 16%, transparent); color: var(--wait-text); }
-	.al-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); }
+	.al-count.none { background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--text); }
 	.al-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.al-row.open .al-chev { transform: rotate(180deg); }
 	.al-acts { display: flex; gap: 2px; }
