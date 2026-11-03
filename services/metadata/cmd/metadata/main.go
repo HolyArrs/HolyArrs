@@ -598,7 +598,7 @@ func serve(c config) error {
 	}
 	// Genre tile art: fanart.tv when its key is set, else Deezer (no key).
 	if music != nil {
-		options.GenreTiles = &api.GenreTiles{DeezerURL: musictrend.DeezerURL, UserAgent: userAgent, HTTP: budget.Client(upstream, 15*time.Second)}
+		options.GenreTiles = &api.GenreTiles{DeezerURL: musictrend.DeezerURL, UserAgent: userAgent, HTTP: publicClient(upstream, 15*time.Second)}
 		if options.Fanart != nil {
 			options.GenreTiles.Fanart = options.Fanart
 		}

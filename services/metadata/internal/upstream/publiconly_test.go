@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"testing"
 )
 
@@ -33,5 +34,20 @@ func TestPublicOnlyDial(t *testing.T) {
 		t.Fatalf("off: %v", err)
 	} else {
 		resp.Body.Close()
+	}
+}
+
+// Security 17: shared CGNAT (Tailscale peers) and reserved IPv4 ranges are
+// not public.
+func TestPublicAddrBlocksCGNAT(t *testing.T) {
+	for _, a := range []string{"100.87.70.86", "100.64.0.1", "0.1.2.3", "198.18.0.1", "240.0.0.1", "::ffff:100.100.1.1"} {
+		if PublicAddr(netip.MustParseAddr(a)) {
+			t.Errorf("%s public", a)
+		}
+	}
+	for _, a := range []string{"100.63.255.255", "100.128.0.1", "8.8.8.8"} {
+		if !PublicAddr(netip.MustParseAddr(a)) {
+			t.Errorf("%s blocked", a)
+		}
 	}
 }

@@ -424,6 +424,9 @@ func (g *GenreTiles) save(slug string, s genreSet) {
 
 // headOK reports whether link still answers a HEAD request with success.
 func (g *GenreTiles) headOK(ctx context.Context, link string) bool {
+	if u, err := url.Parse(link); err != nil || u.Scheme != "https" {
+		return false
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodHead, link, nil)
 	if err != nil {
 		return false
