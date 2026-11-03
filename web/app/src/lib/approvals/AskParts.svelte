@@ -445,8 +445,8 @@
 	.sp-list .tick { width: 16px; height: 16px; }
 	@media (pointer: coarse) {
 		.sp-item { min-height: 44px; }
-		.ep { min-height: 44px; }
-		.more { min-height: 36px; padding: 0 12px; }
+		.ep.ep { min-height: 44px; }
+		.more.more { min-height: 36px; padding: 0 12px; }
 		.sp-tk { width: 44px; min-height: 44px; padding-left: 0; }
 	}
 	@media (max-width: 767px) {
