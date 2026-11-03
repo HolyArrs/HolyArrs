@@ -40,6 +40,8 @@ export const jellyKey = ['stand', 'in', 'jf'].join('-');
 export const oldRadarrPort = Number(process.env.HOLYARRS_E2E_OLD_RADARR_PORT ?? 18736);
 export const oldSeerrPort = Number(process.env.HOLYARRS_E2E_OLD_SEERR_PORT ?? 18737);
 export const oldKey = ['stand', 'in', 'old', 'app'].join('-');
+/** The only token the fake Plex takes as a media server (test-only). */
+export const plexServerToken = ['stand', 'in', 'plex', 'server'].join('-');
 
 // Made-up artists for the fake MusicBrainz. Albums: [id, name, main kind,
 // extra kinds, first date, Pressings]; a Pressing is [id, name note,
@@ -157,7 +159,9 @@ export const tmdbMovies = [
 	{ id: 900004, title: 'Glass Meridian', release_date: '2021-03-03', imdb_id: 'tt9000040', overview: 'A line of glass towers marks noon across a desert.', dates: [[3, '2021-03-03'], [4, '2021-05-01']] },
 	// One movie series (library-tools.spec.ts removes it): the only movies with belongs_to_collection.
 	{ id: 900021, title: 'Brumwick Gate', release_date: '2008-09-09', imdb_id: 'tt9000210', overview: 'A town gate that opens onto a different town each night.', dates: [[3, '2008-09-09'], [4, '2008-12-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
-	{ id: 900022, title: 'Brumwick Gate Again', release_date: '2012-10-10', imdb_id: 'tt9000220', overview: 'The gate opens once more, onto the town it left.', dates: [[3, '2012-10-10'], [4, '2013-01-01']], collection: { id: 950001, name: 'The Brumwick Films' } }
+	{ id: 900022, title: 'Brumwick Gate Again', release_date: '2012-10-10', imdb_id: 'tt9000220', overview: 'The gate opens once more, onto the town it left.', dates: [[3, '2012-10-10'], [4, '2013-01-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
+	// Only library-editions.spec.ts uses this one: a Director's Cut named for Plex.
+	{ id: 900081, title: 'Zephyr Projectionist', release_date: '2009-11-11', imdb_id: 'tt9000810', overview: 'A projectionist who only screens films that were never made.', dates: [[3, '2009-11-11'], [4, '2010-01-01']] }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
@@ -508,6 +512,9 @@ export function startFakes() {
 	trakt.listen(traktPort, '127.0.0.1');
 	let nextPin = 100;
 	const confirmed = new Set();
+	let plexMovieRoot = '';
+	/** @type {{ section: string, path: string }[]} */
+	const plexScans = [];
 	const plex = createServer(async (req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		if (req.method === 'POST' && url.pathname === '/api/v2/pins') return send(res, 201, { id: ++nextPin, code: `CODE${nextPin}` });
@@ -520,6 +527,26 @@ export function startFakes() {
 			const code = new URLSearchParams(url.hash || url.search).get('code') ?? '';
 			for (let i = 100; i <= nextPin; i++) confirmed.add(String(i));
 			return send(res, 200, `<!doctype html><title>Fake Plex</title><p>Signed in ${code}</p>`, 'text/html');
+		}
+		// Plex as a media server. The test names the movie library's folder
+		// (PUT /lab/movie-library), HolyArrs lists the libraries and asks for
+		// scans, and GET /lab/scans reads back each scan asked for.
+		if (req.method === 'PUT' && url.pathname === '/lab/movie-library') {
+			plexMovieRoot = String(JSON.parse((await body(req)) || '{}').path ?? '');
+			return send(res, 204, '');
+		}
+		if (req.method === 'GET' && url.pathname === '/lab/scans') return send(res, 200, plexScans);
+		if (url.pathname.startsWith('/library/sections')) {
+			if (req.headers['x-plex-token'] !== plexServerToken) return send(res, 401, '', 'text/plain');
+			if (req.method === 'GET' && url.pathname === '/library/sections') {
+				const path = plexMovieRoot.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+				return send(res, 200, `<MediaContainer size="1"><Directory key="7" type="movie" title="Lab Movies"><Location id="7" path="${path}"/></Directory></MediaContainer>`, 'application/xml');
+			}
+			const scan = url.pathname.match(/^\/library\/sections\/([^/]+)\/refresh$/);
+			if (req.method === 'GET' && scan) {
+				plexScans.push({ section: scan[1], path: url.searchParams.get('path') ?? '' });
+				return send(res, 200, '', 'application/xml');
+			}
 		}
 		send(res, 404, { error: 'no route' });
 	});
