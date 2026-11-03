@@ -580,7 +580,8 @@
 	const moveItems = $derived.by<MenuItem[]>(() => {
 		const kinds = new Set(pickedShown.map((t) => t.kind));
 		if (kinds.size !== 1) return [];
-		const k = [...kinds][0];
+		// An artist lives in a music folder.
+		const k = [...kinds][0] === 'artist' ? 'music' : [...kinds][0];
 		return folders.filter((f) => f.kind === k).map((f): MenuItem => ({ label: f.label || f.path, onselect: () => moveTitles(pickedShown.map((t) => t.id), f) }));
 	});
 	const rulesItems = $derived<MenuItem[]>(

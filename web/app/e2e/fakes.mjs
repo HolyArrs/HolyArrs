@@ -79,6 +79,14 @@ export const fakeArtists = [
 			[mbid('b4444444', 2), 'Barn Light', 'Album', [], '2020-10-10', [[mbid('c4444444', 2), '', 'CA', '2020-10-10', 'CD', 2]]],
 			[mbid('b4444444', 3), 'Night Fields', 'EP', [], '2099-06-01', []]
 		]
+	},
+	// Only the Library folder tests use it (library-folders.spec.ts): adopted from disk, then moved to a second music folder.
+	{
+		id: mbid('a5555555', 5), name: 'Slate Herons', type: 'Group', country: 'AU', ended: false, disambiguation: '',
+		albums: [
+			[mbid('b5555555', 1), 'Glass Estuary', 'Album', [], '2017-05-05', [[mbid('c5555555', 1), '', 'AU', '2017-05-05', 'Digital Media', 2]]],
+			[mbid('b5555555', 2), 'Kelp Radio', 'Album', [], '2020-09-09', [[mbid('c5555555', 2), '', 'AU', '2020-09-09', 'Digital Media', 1]]]
+		]
 	}
 ];
 
@@ -195,6 +203,12 @@ export const fakeShows = [
 		tmdb: 800007, tvdb: 810007, tvmaze: 820007, imdb: 'tt8000070', name: 'Kestrel Shoals', first: '2021-04-04', status: 'Returning Series', network: 'Lab Six',
 		overview: 'Seabirds keep the charts of a sandbank that moves.',
 		episodes: [[1, 1, 'Low Water', '2021-04-04'], [1, 2, 'Spit', '2021-04-11'], [2, 1, 'Bar', '2022-04-03'], [2, 2, 'Gull Light', '2022-04-10'], [3, 1, 'Spring Tide', '2023-04-02']]
+	},
+	{
+		// Only the Library folder tests use it (library-folders.spec.ts): adopted from disk, then moved to a second show folder.
+		tmdb: 800008, tvdb: 810008, tvmaze: 820008, imdb: 'tt8000080', name: 'Saltmarsh Signal', first: '2020-03-01', status: 'Ended', network: 'Lab Seven',
+		overview: 'A radio mast in the marsh picks up the weather a day early.',
+		episodes: [[1, 1, 'Static', '2020-03-01'], [1, 2, 'Carrier', '2020-03-08'], [2, 1, 'Relay', '2021-03-07']]
 	}
 ];
 

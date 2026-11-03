@@ -83,11 +83,8 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		if err := store.Get(ctx, s.Store.Read(), "library_folders", *c.LibraryFolderID, &lf); err != nil {
 			return res, ErrNoFolder
 		}
-		if show && lf.Kind != "show" {
-			return res, ErrNotShowFolder
-		}
-		if !show && lf.Kind != "movie" {
-			return res, ErrNotMovieFolder
+		if want, wrong := folderKindOf(cur.Kind); lf.Kind != want {
+			return res, wrong
 		}
 		if h := CheckFolder(lf.Path, s.downloadPaths(ctx)); !h.Usable() {
 			return res, &FolderError{Health: h}
