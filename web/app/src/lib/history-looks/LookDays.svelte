@@ -391,9 +391,10 @@
 	.also li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; font: var(--t-footnote); }
 	.also li + li { border-top: 1px solid var(--line); }
 	.as { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
-	.also time { color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.also time { color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.pact { display: flex; flex-wrap: wrap; gap: 8px; }
-	.none { color: var(--text-faint); font: var(--t-footnote); }
+	/* Muted, not faint: faint text fails contrast on the panel in both themes. */
+	.none { color: var(--text-muted); font: var(--t-footnote); }
 	.miss { margin: 0; padding: 24px 0; color: var(--text-muted); text-align: center; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
