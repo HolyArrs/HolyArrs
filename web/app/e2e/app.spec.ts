@@ -217,7 +217,8 @@ test('search, add a movie, and the Library updates live', async ({ browser }) =>
 	await expect(watcher.locator('[data-testid="library-card"], [data-testid="library-row"]').first()).toBeVisible();
 	await watcher.close();
 
-	await expect(page.getByTestId('search-now')).toBeVisible();
+	// The movie opens on its overview: the hero's Library button offers Search now.
+	await expect(page.getByTestId('hero-library')).toContainText('Search now');
 	await page.getByRole('button', { name: 'More actions', exact: true }).click();
 	await expect(page.getByRole('menuitemradio', { name: 'Keep up to date' })).toBeVisible();
 	await page.keyboard.press('Escape');
