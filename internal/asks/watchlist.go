@@ -33,8 +33,13 @@ const KindPlexWatchlists = "sync_plex_watchlists"
 // DefaultPlexDiscover is Plex's discover service, where watchlists live.
 const DefaultPlexDiscover = "https://discover.provider.plex.tv"
 
-// WatchlistSize is how many of the newest watchlist entries one pass reads.
+// WatchlistSize is how many of the newest watchlist entries My account shows.
 const WatchlistSize = 20
+
+// watchlistRead is how many entries one pass reads, newest added first.
+// It is more than WatchlistSize so new entries are still covered if Plex
+// ever ignores the sort.
+const watchlistRead = 50
 
 // watchlistTries is how often an entry that failed is tried.
 const watchlistTries = 3
@@ -227,13 +232,24 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 			}
 			continue
 		}
-		if len(e.ids) == 0 && !seen {
-			// An entry without ids: one look at its own page.
-			if more, err := w.fetchOne(ctx, tok, e.key); err == nil && len(more.ids) > 0 {
+		var st, ref, note string
+		var askID *int64
+		lookupFailed := false
+		if len(e.ids) == 0 {
+			// An entry without ids: one look at its own page. When that
+			// look fails (Plex down, timeout, 5xx) the entry is tried again
+			// like any failed one; only a real answer without ids is no_match.
+			more, err := w.fetchOne(ctx, tok, e.key)
+			if err != nil {
+				lookupFailed = true
+				st, note = WatchFailed, "Plex did not answer when HolyArrs looked up its ids; it tries again at the next check."
+			} else if len(more.ids) > 0 {
 				e.ids = more.ids
 			}
 		}
-		st, ref, askID, note := w.act(ctx, *p, e)
+		if !lookupFailed {
+			st, ref, askID, note = w.act(ctx, *p, e)
+		}
 		if st == WatchAsked || st == WatchJoined {
 			res.Asked++
 		}
@@ -357,7 +373,8 @@ func (w *Watchlists) checked(ctx context.Context, userID int64, problem string) 
 
 // fetch reads the newest watchlist entries with the person's token.
 func (w *Watchlists) fetch(ctx context.Context, tok string) ([]watchEntry, error) {
-	q := url.Values{"includeGuids": {"1"}, "X-Plex-Container-Start": {"0"}, "X-Plex-Container-Size": {strconv.Itoa(WatchlistSize)}}
+	q := url.Values{"includeGuids": {"1"}, "sort": {"watchlistedAt:desc"},
+		"X-Plex-Container-Start": {"0"}, "X-Plex-Container-Size": {strconv.Itoa(watchlistRead)}}
 	var got plexContainer
 	if err := w.get(ctx, tok, "/library/sections/watchlist/all?"+q.Encode(), &got); err != nil {
 		return nil, err
@@ -365,7 +382,8 @@ func (w *Watchlists) fetch(ctx context.Context, tok string) ([]watchEntry, error
 	return got.entries(), nil
 }
 
-// fetchOne reads one entry's own page (for its ids).
+// fetchOne reads one entry's own page (for its ids). An error means the
+// look itself failed; an answer without the entry gives an empty one.
 func (w *Watchlists) fetchOne(ctx context.Context, tok, key string) (watchEntry, error) {
 	var got plexContainer
 	if err := w.get(ctx, tok, "/library/metadata/"+url.PathEscape(key)+"?includeGuids=1", &got); err != nil {
@@ -374,7 +392,7 @@ func (w *Watchlists) fetchOne(ctx context.Context, tok, key string) (watchEntry,
 	if es := got.entries(); len(es) > 0 {
 		return es[0], nil
 	}
-	return watchEntry{}, errors.New("no entry")
+	return watchEntry{}, nil
 }
 
 // Errors from reading a watchlist, said to the person.
