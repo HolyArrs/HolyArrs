@@ -70,6 +70,15 @@ export const fakeArtists = [
 			[mbid('b3333333', 1), 'Low Orbit', 'Album', [], '2018-08-08', [[mbid('c3333333', 1), '', 'NZ', '2018-08-08', 'Digital Media', 2]]],
 			[mbid('b3333333', 2), 'Wire', 'Single', [], '2019-02-02', [[mbid('c3333333', 2), '', 'NZ', '2019-02-02', 'Digital Media', 1]]]
 		]
+	},
+	// Only the Requests tests use it: a member asks for one album and follows the one not out yet.
+	{
+		id: mbid('a4444444', 4), name: 'Wicker Owls', type: 'Group', country: 'CA', ended: false, disambiguation: '',
+		albums: [
+			[mbid('b4444444', 1), 'Low Hedge', 'Album', [], '2017-03-03', [[mbid('c4444444', 1), '', 'CA', '2017-03-03', 'Digital Media', 2]]],
+			[mbid('b4444444', 2), 'Barn Light', 'Album', [], '2020-10-10', [[mbid('c4444444', 2), '', 'CA', '2020-10-10', 'CD', 2]]],
+			[mbid('b4444444', 3), 'Night Fields', 'EP', [], '2099-06-01', []]
+		]
 	}
 ];
 
@@ -120,6 +129,13 @@ export const tmdbMovies = [
 	// Movies Requests tests ask for.
 	{ id: 900008, title: 'Copper Lighthouse', release_date: '2017-04-04', imdb_id: 'tt9000080', overview: 'A lighthouse that guides ships into the past.', dates: [[3, '2017-04-04'], [4, '2017-06-01']] },
 	{ id: 900009, title: 'Velvet Tide', release_date: '2016-08-08', imdb_id: 'tt9000090', overview: 'The sea comes in soft one night a year.', dates: [[3, '2016-08-08'], [4, '2016-10-01']] },
+	// Only the Requests tests use these: 4K asks, a failed ask, a follow that lands, the owner's own ask.
+	{ id: 900030, title: 'Saffron Tramline', release_date: '2019-09-19', imdb_id: 'tt9000300', overview: 'A tram that runs only in harvest week.', dates: [[3, '2019-09-19'], [4, '2019-11-01']] },
+	{ id: 900031, title: 'Pewter Kite', release_date: '2018-03-03', imdb_id: 'tt9000310', overview: 'A kite too heavy to fly, until it does.', dates: [[3, '2018-03-03'], [4, '2018-05-01']] },
+	{ id: 900032, title: 'Juniper Telegraph', release_date: '2017-10-10', imdb_id: 'tt9000320', overview: 'Messages tapped out through the roots of a hedge.', dates: [[3, '2017-10-10'], [4, '2017-12-01']] },
+	{ id: 900033, title: 'Cobalt Orrery', release_date: '2016-05-05', imdb_id: 'tt9000330', overview: 'A model of the planets that keeps better time than the sky.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] },
+	{ id: 900034, title: 'Thistle Almanac', release_date: '2015-07-07', imdb_id: 'tt9000340', overview: 'A farm almanac that predicts the wrong year.', dates: [[3, '2015-07-07'], [4, '2015-09-01']] },
+	{ id: 900035, title: 'Marigold Bellows', release_date: '2014-04-04', imdb_id: 'tt9000350', overview: 'An accordion repaired one fold at a time.', dates: [[3, '2014-04-04'], [4, '2014-06-01']] },
 	// The Downloader tests add this one and mark its download failed.
 	{ id: 900011, title: 'Iron Lullaby', release_date: '2015-03-03', imdb_id: 'tt9000110', overview: 'A lullaby forged for a sleeping city.', dates: [[3, '2015-03-03'], [4, '2015-05-01']] },
 	// The movies in the old library the import tests adopt (makeOldLibrary).
@@ -173,6 +189,12 @@ export const fakeShows = [
 		overview: 'A map of the sea that redraws itself with every tide.',
 		episodes: [[1, 1, 'Ebb', '2019-06-02'], [1, 2, 'Flow', '2019-06-09']],
 		uhd: true
+	},
+	{
+		// Only the Requests tests use it: two members ask for different seasons and share one ask.
+		tmdb: 800007, tvdb: 810007, tvmaze: 820007, imdb: 'tt8000070', name: 'Kestrel Shoals', first: '2021-04-04', status: 'Returning Series', network: 'Lab Six',
+		overview: 'Seabirds keep the charts of a sandbank that moves.',
+		episodes: [[1, 1, 'Low Water', '2021-04-04'], [1, 2, 'Spit', '2021-04-11'], [2, 1, 'Bar', '2022-04-03'], [2, 2, 'Gull Light', '2022-04-10'], [3, 1, 'Spring Tide', '2023-04-02']]
 	}
 ];
 
