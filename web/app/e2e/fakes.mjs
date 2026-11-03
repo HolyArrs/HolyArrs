@@ -243,6 +243,17 @@ export const fakeShows = [
 		tmdb: 800271, tvdb: 810271, tvmaze: 820271, imdb: 'tt8002710', name: 'Gilded Bracken', first: '2022-02-06', status: 'Returning Series', network: 'Lab Seven',
 		overview: 'Ferns in a hillside wood turn to gold one leaf at a time.',
 		episodes: [[1, 1, 'Fern Gate', '2022-02-06'], [1, 2, 'Root Hall', '2022-02-13'], [2, 1, 'Gold Leaf', '2023-03-05'], [2, 2, 'Late Frost', '2099-03-01']]
+	},
+	{
+		// Anime (library-anime.spec.ts): the Source names its Releases by running
+		// number ("[Lab Fansub] Hoshikage Relay - 13 [1080p]"), so 13 is S02E01.
+		tmdb: 800032, tvdb: 810032, tvmaze: 820032, imdb: 'tt8000320', name: 'Hoshikage Relay', first: '2023-01-08', status: 'Returning Series', network: 'Lab Seven',
+		overview: 'Twelve runners carry a lantern across the night in a relay that never ends.',
+		episodes: [
+			...Array.from({ length: 12 }, (_, i) => [1, i + 1, `Leg ${i + 1}`, new Date(Date.UTC(2023, 0, 8 + 7 * i)).toISOString().slice(0, 10)]),
+			[2, 1, 'Second Wind', '2024-04-07'], [2, 2, 'Anchor Leg', '2024-04-14']
+		],
+		anime: true
 	}
 ];
 
@@ -350,6 +361,36 @@ function showReleasesFor(s, season, ep) {
 	return one(`${dotted}.S${two(season)}.1080p.WEB-DL.H264-HOLYARRS`, aired.length * 1_200_000_000, 60) +
 		('uhd' in s ? one(`${dotted}.S${two(season)}.2160p.WEB-DL.DV.H265-HOLYARRS`, aired.length * 6_000_000_000, 45) : '') +
 		aired.map((e) => one(`${dotted}.S${two(season)}E${two(Number(e[1]))}.1080p.WEB-DL.H264-HOLYARRS`, 1_200_000_000, 40)).join('');
+}
+
+/** The fake indexer's info hash for an anime Release name. @param {string} name */
+export const animeReleaseHash = (name) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 13).toString(16).padStart(8, '0').repeat(5);
+
+/**
+ * animeReleasesFor answers an anime show's episode search the way fansub
+ * groups name things: by running number, never by season. season 0 means
+ * ep is already a running number (a show set to absolute order); otherwise
+ * the running number is counted over the regular episodes in aired order.
+ * It gives a 1080p and a 720p copy of the episode asked for and a 1080p
+ * copy of the next one, as a text search on a real site also brings back.
+ * @param {typeof fakeShows[number]} s
+ * @param {number} season
+ * @param {number | null} ep
+ */
+function animeReleasesFor(s, season, ep) {
+	if (ep === null) return '';
+	const regular = s.episodes.filter((e) => Number(e[0]) > 0);
+	const abs = season === 0 ? ep : regular.findIndex((e) => Number(e[0]) === season && Number(e[1]) === ep) + 1;
+	if (abs < 1) return '';
+	const one = (/** @type {string} */ name, /** @type {number} */ size, /** @type {number} */ seeders) => {
+		const hash = animeReleaseHash(name);
+		return `<item><title>${name}</title><guid>${name}</guid><pubDate>Mon, 01 Jan 2024 00:00:00 +0000</pubDate>` +
+			`<enclosure url="http://127.0.0.1:${indexerPort}/dl/${hash}.torrent" length="${size}" type="application/x-bittorrent"/>` +
+			`<torznab:attr name="seeders" value="${seeders}"/><torznab:attr name="peers" value="${seeders + 5}"/><torznab:attr name="infohash" value="${hash}"/></item>`;
+	};
+	const two = (/** @type {number} */ n) => String(n).padStart(2, '0');
+	return one(`[Lab Fansub] ${s.name} - ${two(abs)} [1080p]`, 1_300_000_000, 60) + one(`[Lab Fansub] ${s.name} - ${two(abs)} [720p]`, 650_000_000, 45) +
+		(abs < regular.length ? one(`[Lab Fansub] ${s.name} - ${two(abs + 1)} [1080p]`, 1_300_000_000, 70) : '');
 }
 
 /**
@@ -696,7 +737,7 @@ export function startFakes() {
 			const s = fakeShows.find((x) => x.tvdb === tvdb) ?? fakeShows.find((x) => q && q.startsWith(squash(x.name)));
 			const season = Number(url.searchParams.get('season') ?? '0');
 			const ep = url.searchParams.get('ep');
-			const items = s ? showReleasesFor(s, season, ep ? Number(ep) : null) : '';
+			const items = !s ? '' : 'anime' in s ? animeReleasesFor(s, season, ep ? Number(ep) : null) : showReleasesFor(s, season, ep ? Number(ep) : null);
 			setTimeout(() => res.end(`<?xml version="1.0"?><rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed"><channel><title>lab</title>${items}</channel></rss>`), s ? 1500 : 0);
 			return;
 		}
