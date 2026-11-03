@@ -15,7 +15,7 @@ export default defineConfig({
 	},
 	webServer: {
 		command: 'node server.mjs',
-		url: `http://127.0.0.1:${port}/healthz`,
+		url: `http://127.0.0.1:${port}/readyz`,
 		reuseExistingServer: false,
 		timeout: 180_000,
 		stdout: 'ignore',
