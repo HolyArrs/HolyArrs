@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -23,10 +25,24 @@ const (
 	whyUnsafe    = "A RAR file holds a path that is not safe, so it was not unpacked"
 	whyNoSpace   = "Not enough free space to unpack the RAR files next to the download"
 	whyToolFails = "The RAR files could not be unpacked by the system tool"
+	whySafely    = "The RAR files could not be unpacked safely"
+	whyTooBig    = "The RAR files would unpack to more than is allowed"
 )
 
-// unpackTimeout bounds a system tool run.
-const unpackTimeout = 2 * time.Hour
+const (
+	// unpackTimeout bounds a system tool run.
+	unpackTimeout = 2 * time.Hour
+	// unpackMargin is how far past the checked total a tool may write
+	// before it is stopped.
+	unpackMargin = int64(16) << 20
+)
+
+var (
+	// unpackPoll is how often the folder a tool writes into is measured.
+	unpackPoll = time.Second
+	// maxUnpack is the most a RAR set may unpack to.
+	maxUnpack = int64(200) << 30
+)
 
 // lookTool and runTool are the system tool lookup and run; tests replace them.
 var (
@@ -76,6 +92,8 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 			switch {
 			case errors.Is(err, unrar.ErrUnsafePath):
 				return nil, noop, whyUnsafe
+			case errors.Is(err, unrar.ErrUnrecognised):
+				return nil, noop, whySafely
 			case errors.Is(err, unrar.ErrEncrypted):
 				return nil, noop, whyPassword
 			}
@@ -83,6 +101,13 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		}
 		s := set{first: first}
 		for _, e := range entries {
+			if e.Link {
+				return nil, noop, whySafely
+			}
+			// The sizes come from the file's own headers: add them without overflow.
+			if e.Size < 0 || e.Size > maxUnpack-total {
+				return nil, noop, whyTooBig
+			}
 			total += e.Size
 			s.tool = s.tool || e.Compressed || e.Encrypted
 			s.pw = s.pw || e.Encrypted
@@ -99,6 +124,12 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		if err := CheckSpaceMin(parent, total, rules.MinFreeMB); err != nil {
 			return nil, noop, whyNoSpace
 		}
+	}
+	// What a tool may write: the checked total, a small margin, and never
+	// more than the disk holds beyond its floor.
+	limit := total + unpackMargin
+	if free := freeSpaceOf(existingDir(parent)); free >= 0 && !rules.SkipFreeSpaceCheck {
+		limit = min(limit, max(free-int64(rules.MinFreeMB)*mib, 0))
 	}
 	tmp := filepath.Join(parent, fmt.Sprintf(".holyarrs-unpack-%d", downloadID))
 	cleanup = func() { _ = os.RemoveAll(tmp) }
@@ -117,7 +148,7 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		case s.pw:
 			return fail(whyPassword)
 		case s.tool:
-			if err = extractWithTool(ctx, s.first, dest); errors.Is(err, errNoTool) {
+			if err = extractWithTool(ctx, s.first, dest, limit); errors.Is(err, errNoTool) {
 				return fail(whyNeedTool)
 			}
 		default:
@@ -128,10 +159,17 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 			switch {
 			case errors.Is(err, unrar.ErrUnsafePath):
 				return fail(whyUnsafe)
+			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, errTooMuch):
+				return fail(whySafely)
 			case s.tool:
 				return fail(whyToolFails)
 			}
 			return fail(whyDamaged)
+		}
+		// Whatever wrote here, only plain files and folders may be in it.
+		if err := checkTree(dest); err != nil {
+			log.Printf("importer: unpacked RAR set %s: %v", s.first, err)
+			return fail(whySafely)
 		}
 	}
 	extra, err := Scan(tmp)
@@ -141,20 +179,88 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 	return extra, cleanup, ""
 }
 
+var errTooMuch = errors.New("the tool wrote more than the set was checked to hold")
+
 // extractWithTool unpacks first into dest with a system unrar or 7z, run
-// without a shell, with a time limit.
-func extractWithTool(ctx context.Context, first, dest string) error {
-	ctx, cancel := context.WithTimeout(ctx, unpackTimeout)
-	defer cancel()
+// without a shell, with a time limit. Links are not asked for (no -ol for
+// unrar, no -snl for 7z) and nothing is overwritten. While it runs the
+// size of dest is measured, and the tool is stopped once it passes limit.
+func extractWithTool(ctx context.Context, first, dest string, limit int64) error {
+	var name string
+	var args []string
 	if p, err := lookTool("unrar"); err == nil {
-		return runTool(ctx, p, []string{"x", "-y", "-o+", "-p-", "-idq", "--", first, dest + string(filepath.Separator)})
+		name, args = p, []string{"x", "-y", "-o-", "-p-", "-idq", "--", first, dest + string(filepath.Separator)}
 	}
 	for _, n := range []string{"7z", "7zz", "7za"} {
-		if p, err := lookTool(n); err == nil {
-			return runTool(ctx, p, []string{"x", "-y", "-bd", "-aoa", "-o" + dest, "--", first})
+		if p, err := lookTool(n); name == "" && err == nil {
+			name, args = p, []string{"x", "-y", "-bd", "-aos", "-o" + dest, "--", first}
 		}
 	}
-	return errNoTool
+	if name == "" {
+		return errNoTool
+	}
+	ctx, cancel := context.WithTimeout(ctx, unpackTimeout)
+	defer cancel()
+	done := make(chan struct{})
+	var over atomic.Bool
+	go func() {
+		tick := time.NewTicker(unpackPoll)
+		defer tick.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-tick.C:
+				if dirSize(dest) > limit {
+					over.Store(true)
+					cancel()
+					return
+				}
+			}
+		}
+	}()
+	err := runTool(ctx, name, args)
+	close(done)
+	if over.Load() || dirSize(dest) > limit {
+		return errTooMuch
+	}
+	return err
+}
+
+// dirSize adds up the sizes of what is under dir, links not followed.
+func dirSize(dir string) int64 {
+	var n int64
+	_ = filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			if fi, err := d.Info(); err == nil {
+				n += fi.Size()
+			}
+		}
+		return nil
+	})
+	return n
+}
+
+// checkTree refuses a folder that holds anything but plain files and
+// folders (a symlink, a junction, a device, a pipe) or a path that
+// resolves outside it.
+func checkTree(root string) error {
+	realRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return err
+	}
+	return filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if t := d.Type(); !t.IsDir() && !t.IsRegular() {
+			return fmt.Errorf("%s is not a plain file or folder", p)
+		}
+		if real, err := filepath.EvalSymlinks(p); err != nil || (real != realRoot && !under(realRoot, real)) {
+			return fmt.Errorf("%s resolves outside the unpack folder", p)
+		}
+		return nil
+	})
 }
 
 // unpackStep is the plan line that tells why the RAR files were not unpacked.

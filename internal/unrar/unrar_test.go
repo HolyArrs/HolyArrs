@@ -19,6 +19,17 @@ type spec struct {
 	splitBefore, splitAfter bool
 	compressed, encrypted   bool
 	total                   int // unpacked size in the header (0 = len(data))
+	crc                     uint32
+	unix                    uint32 // Unix mode in the attributes (0 = Windows host)
+	rawName                 []byte // RAR 4 only: the full name field, for the Unicode form
+	extraType               uint64 // RAR 5 only: an extra record of this type
+}
+
+func (f spec) sum() uint32 {
+	if f.crc != 0 {
+		return f.crc
+	}
+	return crc32.ChecksumIEEE(f.data)
 }
 
 func rar4Block(typ byte, flags uint16, body []byte) []byte {
@@ -50,17 +61,27 @@ func rar4Volume(more bool, files ...spec) []byte {
 		if total == 0 {
 			total = len(f.data)
 		}
-		body := make([]byte, 25+len(f.name))
+		nameField := []byte(f.name)
+		if f.rawName != nil {
+			nameField = f.rawName
+			fl |= 0x200
+		}
+		body := make([]byte, 25+len(nameField))
 		binary.LittleEndian.PutUint32(body[0:], uint32(len(f.data)))
 		binary.LittleEndian.PutUint32(body[4:], uint32(total))
 		body[8] = 2 // Windows
+		if f.unix != 0 {
+			body[8] = 3
+			binary.LittleEndian.PutUint32(body[21:], f.unix)
+		}
+		binary.LittleEndian.PutUint32(body[9:], f.sum())
 		body[17] = 29
 		body[18] = 0x30
 		if f.compressed {
 			body[18] = 0x33
 		}
-		binary.LittleEndian.PutUint16(body[19:], uint16(len(f.name)))
-		copy(body[25:], f.name)
+		binary.LittleEndian.PutUint16(body[19:], uint16(len(nameField)))
+		copy(body[25:], nameField)
 		out = append(out, rar4Block(0x74, fl, body)...)
 		out = append(out, f.data...)
 	}
@@ -121,20 +142,28 @@ func rar5Volume(more bool, files ...spec) []byte {
 			total = len(f.data)
 		}
 		var fields []byte
-		fields = append(fields, vint(0)...) // file flags
+		fields = append(fields, vint(4)...) // file flags: CRC32 present
 		fields = append(fields, vint(uint64(total))...)
-		fields = append(fields, vint(0x20)...) // attributes
+		attr, host := uint64(0x20), uint64(0)
+		if f.unix != 0 {
+			attr, host = uint64(f.unix), 1
+		}
+		fields = append(fields, vint(attr)...)
+		fields = binary.LittleEndian.AppendUint32(fields, f.sum())
 		comp := uint64(0)
 		if f.compressed {
 			comp = 3 << 7
 		}
 		fields = append(fields, vint(comp)...)
-		fields = append(fields, vint(0)...) // host OS: Windows
+		fields = append(fields, vint(host)...)
 		fields = append(fields, vint(uint64(len(f.name)))...)
 		fields = append(fields, f.name...)
 		var extra []byte
 		if f.encrypted {
 			extra = append(vint(1), vint(1)...) // record: size 1, type 1 (encryption)
+		}
+		if f.extraType != 0 {
+			extra = append(vint(1), vint(f.extraType)...)
 		}
 		out = append(out, rar5Block(2, fl, fields, extra, len(f.data))...)
 		out = append(out, f.data...)
@@ -195,7 +224,7 @@ func TestMultiVolume(t *testing.T) {
 				dir, dest := t.TempDir(), t.TempDir()
 				put(t, dir, c1.names[0], vol(true, spec{name: "movie.mkv", data: a, splitAfter: true, total: len(movie)}))
 				put(t, dir, c1.names[1], vol(true, spec{name: "movie.mkv", data: b, splitBefore: true, splitAfter: true, total: len(movie)}))
-				put(t, dir, c1.names[2], vol(false, spec{name: "movie.mkv", data: c, splitBefore: true, total: len(movie)}, spec{name: "after.txt", data: []byte("x")}))
+				put(t, dir, c1.names[2], vol(false, spec{name: "movie.mkv", data: c, splitBefore: true, total: len(movie), crc: crc32.ChecksumIEEE(movie)}, spec{name: "after.txt", data: []byte("x")}))
 				es, err := Extract(filepath.Join(dir, c1.names[0]), dest)
 				if err != nil || len(es) != 2 || es[0].Size != int64(len(movie)) {
 					t.Fatalf("%+v %v", es, err)

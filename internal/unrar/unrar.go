@@ -14,6 +14,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash"
 	"hash/crc32"
 	"io"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 )
 
 var (
@@ -33,6 +35,9 @@ var (
 	ErrUnsafePath = errors.New("a RAR entry has an unsafe path")
 	// ErrCorrupt says the set is damaged, cut short or has a volume missing.
 	ErrCorrupt = errors.New("the RAR files are damaged or incomplete")
+	// ErrUnrecognised says the set holds a link, a special file or a block
+	// this package does not understand; nothing from it is unpacked.
+	ErrUnrecognised = errors.New("the RAR files hold something that is not understood")
 )
 
 const (
@@ -49,6 +54,7 @@ type Entry struct {
 	Size       int64  // bytes once unpacked
 	Compressed bool
 	Encrypted  bool
+	Link       bool // a symbolic or hard link: never unpacked
 }
 
 func corrupt(format string, a ...any) error {
@@ -121,6 +127,9 @@ func Extract(first, dest string) ([]Entry, error) {
 		return nil, err
 	}
 	for _, e := range entries {
+		if e.Link {
+			return nil, ErrUnrecognised
+		}
 		if e.Encrypted {
 			return nil, ErrEncrypted
 		}
@@ -139,6 +148,8 @@ type part struct {
 	dataOff                 int64
 	splitBefore, splitAfter bool
 	compressed, encrypted   bool
+	crc                     uint32
+	hasCRC                  bool
 }
 
 type current struct {
@@ -147,6 +158,7 @@ type current struct {
 	skip     bool // a folder or link: its data is passed over
 	split    bool // continues in the next volume
 	out      *os.File
+	whole    hash.Hash32 // CRC of the data written so far
 }
 
 func run(first, dest string) (entries []Entry, err error) {
@@ -172,7 +184,7 @@ func run(first, dest string) (entries []Entry, err error) {
 			if len(entries) >= maxEntries {
 				return corrupt("too many files")
 			}
-			cur = &current{e: Entry{Name: name}, declared: p.unpacked, skip: p.dir || p.link}
+			cur = &current{e: Entry{Name: name, Link: p.link}, declared: p.unpacked, skip: p.dir || p.link, whole: crc32.NewIEEE()}
 			if dest != "" && !cur.skip && !p.compressed && !p.encrypted {
 				target := filepath.Join(dest, filepath.FromSlash(name))
 				if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
@@ -193,8 +205,14 @@ func run(first, dest string) (entries []Entry, err error) {
 				cur.e.Size += p.packed
 			}
 			if cur.out != nil {
-				if _, err := io.Copy(cur.out, io.NewSectionReader(vol, p.dataOff, p.packed)); err != nil {
+				partSum := crc32.NewIEEE()
+				if _, err := io.Copy(io.MultiWriter(cur.out, cur.whole, partSum), io.NewSectionReader(vol, p.dataOff, p.packed)); err != nil {
 					return corrupt("a volume is cut short")
+				}
+				// The last part's header holds the file's CRC32 (some writers
+				// hold the CRC of that part's own data): either must match.
+				if !p.splitAfter && p.hasCRC && p.crc != cur.whole.Sum32() && p.crc != partSum.Sum32() {
+					return corrupt("%s fails its checksum", name)
 				}
 			}
 		}
@@ -205,7 +223,9 @@ func run(first, dest string) (entries []Entry, err error) {
 				}
 				cur.out = nil
 			}
-			if !cur.skip {
+			if cur.e.Link {
+				entries = append(entries, cur.e)
+			} else if !cur.skip {
 				if !cur.e.Compressed && !cur.e.Encrypted && cur.e.Size < cur.declared {
 					return corrupt("%s is shorter than its header says", name)
 				}
@@ -322,6 +342,7 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 			add = int64(binary.LittleEndian.Uint32(buf[7:11]))
 		}
 		switch typ {
+		case 0x72, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A: // marker, comment, av, old sub, recovery, sign, new sub: passed over
 		case 0x73: // main header
 			if flags&0x0080 != 0 {
 				return false, ErrEncrypted
@@ -346,15 +367,24 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 				return false, corrupt("a file header does not add up")
 			}
 			name := buf[off : off+nameLen]
+			p.name = string(name)
 			if flags&0x200 != 0 {
 				if i := indexByte(name, 0); i >= 0 {
-					name = name[:i]
+					plain, err := plainAndUnicode(name[:i], name[i+1:])
+					if err != nil {
+						return false, err
+					}
+					p.name = plain
 				}
 			}
-			p.name = string(name)
 			attr := binary.LittleEndian.Uint32(buf[28:32])
 			p.dir = flags&0xE0 == 0xE0
-			p.link = buf[15] == 3 && attr&0xF000 == 0xA000 // made on Unix, a symlink
+			link, err := unixKind(buf[15] == 3, attr, &p.dir) // host 3 is Unix
+			if err != nil {
+				return false, err
+			}
+			p.link = link
+			p.crc, p.hasCRC = binary.LittleEndian.Uint32(buf[16:20]), true
 			p.splitBefore, p.splitAfter = flags&0x01 != 0, flags&0x02 != 0
 			p.encrypted = flags&0x04 != 0
 			p.compressed = buf[25] != 0x30
@@ -368,6 +398,8 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 			}
 		case 0x7B: // end of archive
 			return flags&0x0001 != 0 || lastSplit, nil
+		default:
+			return false, ErrUnrecognised
 		}
 		pos += hsize + add
 		if pos > size {
@@ -375,6 +407,116 @@ func walk4(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 		}
 	}
 	return lastSplit, nil
+}
+
+// unixKind reads the file type from a Unix mode: a link is flagged, a folder
+// sets *dir, and anything but a plain file, folder or link is refused.
+func unixKind(unix bool, attr uint32, dir *bool) (link bool, err error) {
+	if !unix {
+		return false, nil
+	}
+	switch attr & 0xF000 {
+	case 0, 0x8000:
+		return false, nil
+	case 0x4000:
+		*dir = true
+		return false, nil
+	case 0xA000:
+		return true, nil
+	}
+	return false, ErrUnrecognised
+}
+
+// plainAndUnicode takes a RAR 4 name stored as plain bytes plus an encoded
+// Unicode form. A tool reads the Unicode one and this package the plain
+// one, so when they disagree the set is refused. A plain name with
+// non-ASCII bytes is in some code page and cannot be compared, so then the
+// Unicode form is used, provided it is a safe path.
+func plainAndUnicode(plain, enc []byte) (string, error) {
+	uni, ok := decodeUnicodeName(plain, enc)
+	if !ok {
+		return "", ErrUnrecognised
+	}
+	ascii := true
+	for _, c := range plain {
+		ascii = ascii && c < 0x80
+	}
+	if ascii {
+		if uni != string(plain) {
+			return "", fmt.Errorf("%w: the two forms of a name differ", ErrUnrecognised)
+		}
+		return uni, nil
+	}
+	if _, err := cleanName(uni); err != nil {
+		return "", err
+	}
+	return uni, nil
+}
+
+// decodeUnicodeName expands the RAR 4 name encoding: a high byte, then
+// groups of four 2-bit commands (a plain byte, a byte with the high byte,
+// a 16-bit unit, or a run copied from the plain name, maybe shifted).
+func decodeUnicodeName(plain, enc []byte) (string, bool) {
+	if len(enc) == 0 {
+		return "", false
+	}
+	high := uint16(enc[0])
+	pos := 1
+	var out []uint16
+	var flags byte
+	bits := 0
+	for pos < len(enc) {
+		if bits == 0 {
+			flags = enc[pos]
+			pos++
+			bits = 8
+			if pos >= len(enc) {
+				break
+			}
+		}
+		switch flags >> 6 {
+		case 0:
+			out = append(out, uint16(enc[pos]))
+			pos++
+		case 1:
+			out = append(out, uint16(enc[pos])|high<<8)
+			pos++
+		case 2:
+			if pos+1 >= len(enc) {
+				return "", false
+			}
+			out = append(out, uint16(enc[pos])|uint16(enc[pos+1])<<8)
+			pos += 2
+		case 3:
+			n := int(enc[pos])
+			pos++
+			corr, shifted := byte(0), n&0x80 != 0
+			if shifted {
+				if pos >= len(enc) {
+					return "", false
+				}
+				corr = enc[pos]
+				pos++
+				n &= 0x7F
+			}
+			for i := 0; i < n+2; i++ {
+				if len(out) >= len(plain) {
+					return "", false
+				}
+				u := uint16(plain[len(out)] + corr)
+				if shifted {
+					u |= high << 8
+				}
+				out = append(out, u)
+			}
+		}
+		flags <<= 2
+		bits -= 2
+		if len(out) > maxNameLen {
+			return "", false
+		}
+	}
+	return string(utf16.Decode(out)), true
 }
 
 func indexByte(b []byte, c byte) int {
@@ -472,15 +614,18 @@ func walk5(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 		case 2: // file
 			fileFlags := r.vint()
 			unpacked := r.vint()
-			r.vint() // attributes
+			attr := r.vint()
 			if fileFlags&0x2 != 0 {
 				r.skip(4)
 			}
+			var crc uint32
 			if fileFlags&0x4 != 0 {
-				r.skip(4)
+				if c := r.take(4); len(c) == 4 {
+					crc = binary.LittleEndian.Uint32(c)
+				}
 			}
 			comp := r.vint()
-			r.vint() // host OS
+			host := r.vint()
 			nameLen := r.vint()
 			if nameLen > maxNameLen {
 				return false, corrupt("a file name is too long")
@@ -490,7 +635,13 @@ func walk5(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 				return false, corrupt("a file header does not add up")
 			}
 			p := part{name: string(name), dir: fileFlags&0x1 != 0, packed: int64(dataSize), unpacked: int64(unpacked),
-				dataOff: end, splitBefore: flags&0x8 != 0, splitAfter: flags&0x10 != 0, compressed: (comp>>7)&7 != 0}
+				dataOff: end, splitBefore: flags&0x8 != 0, splitAfter: flags&0x10 != 0, compressed: (comp>>7)&7 != 0,
+				crc: crc, hasCRC: fileFlags&0x4 != 0}
+			link, err := unixKind(host == 1, uint32(attr), &p.dir) // host 1 is Unix
+			if err != nil {
+				return false, err
+			}
+			p.link = link
 			x := reader5{b: extra}
 			for len(x.b) > 0 && !x.bad {
 				recSize := x.vint()
@@ -500,6 +651,9 @@ func walk5(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 					p.encrypted = true
 				case 0x05:
 					p.link = true // a link, not a file
+				case 0x02, 0x03, 0x04, 0x06, 0x07: // hash, time, version, owner, service data
+				default:
+					return false, ErrUnrecognised
 				}
 			}
 			if x.bad {
@@ -515,6 +669,9 @@ func walk5(f *os.File, size, pos int64, visit func(part, *os.File) error) (bool,
 		case 5: // end of archive
 			endFlags := r.vint()
 			return endFlags&0x1 != 0 || lastSplit, nil
+		case 1, 3: // main header, service header: passed over
+		default:
+			return false, ErrUnrecognised
 		}
 		pos = end + int64(dataSize)
 		if pos > size {

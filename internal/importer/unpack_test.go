@@ -39,6 +39,7 @@ func rar4(name string, data []byte, total int, splitBefore, splitAfter, compress
 	binary.LittleEndian.PutUint32(body[0:], uint32(len(data)))
 	binary.LittleEndian.PutUint32(body[4:], uint32(total))
 	body[8], body[17], body[18] = 2, 29, 0x30
+	binary.LittleEndian.PutUint32(body[9:], crc32.ChecksumIEEE(data))
 	if compressed {
 		body[18] = 0x33
 	}
