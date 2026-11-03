@@ -186,7 +186,11 @@ export const tmdbMovies = [
 	{ id: 900452, title: 'Lichen Postcard', release_date: '2013-11-03', imdb_id: 'tt9004520', overview: 'A postcard that grows a new picture every spring.', dates: [[3, '2013-11-03'], [4, '2014-01-10']] },
 	// Only library-missing.spec.ts adds these: Search all missing finds them.
 	{ id: 900271, title: 'Hollow Compass', release_date: '2015-02-02', imdb_id: 'tt9002710', overview: 'A compass that points at whatever was lost last.', dates: [[3, '2015-02-02'], [4, '2015-04-01']] },
-	{ id: 900272, title: 'Brass Meadow', release_date: '2014-06-06', imdb_id: 'tt9002720', overview: 'A meadow of brass flowers that ring in the wind.', dates: [[3, '2014-06-06'], [4, '2014-08-01']] }
+	{ id: 900272, title: 'Brass Meadow', release_date: '2014-06-06', imdb_id: 'tt9002720', overview: 'A meadow of brass flowers that ring in the wind.', dates: [[3, '2014-06-06'], [4, '2014-08-01']] },
+	// Only plex-watchlist.spec.ts uses these: asked from the watchlist, already in the Library, added after Movies is off.
+	{ id: 900102, title: 'Rowan Semaphore', release_date: '2012-04-04', imdb_id: 'tt9001020', overview: 'Flags on a hilltop that answer before anyone asks.', dates: [[3, '2012-04-04'], [4, '2012-06-01']] },
+	{ id: 900103, title: 'Flint Gazebo', release_date: '2011-07-07', imdb_id: 'tt9001030', overview: 'A garden shelter that sparks in every storm.', dates: [[3, '2011-07-07'], [4, '2011-09-01']] },
+	{ id: 900104, title: 'Nettle Observatory', release_date: '2010-10-10', imdb_id: 'tt9001040', overview: 'A telescope that only sees the weeds below it.', dates: [[3, '2010-10-10'], [4, '2010-12-01']] }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
@@ -268,6 +272,12 @@ export const fakeShows = [
 			[2, 1, 'Second Wind', '2024-04-07'], [2, 2, 'Anchor Leg', '2024-04-14']
 		],
 		anime: true
+	},
+	{
+		// Only plex-watchlist.spec.ts uses it: asked whole from the Plex watchlist.
+		tmdb: 800102, tvdb: 810102, tvmaze: 820102, imdb: 'tt8001020', name: 'Larch Ferrymen', first: '2019-05-05', status: 'Ended', network: 'Lab Seven',
+		overview: 'Two ferrymen row a larch-wood boat across a lake that keeps getting wider.',
+		episodes: [[1, 1, 'Oars', '2019-05-05'], [1, 2, 'Far Shore', '2019-05-12']]
 	}
 ];
 
