@@ -79,6 +79,24 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 	var need []ask
 	var waits []chan struct{}
 	seen := map[string]bool{}
+	// Kept packages' records are read before the lock: an album's comes from
+	// the database (not kept in memory), and a page asks hundreds at once.
+	lists := []struct {
+		kind string
+		ids  []string
+	}{{"artist", artists}, {"album", albums}}
+	kept := map[string]picEntry{}
+	for _, l := range lists {
+		for _, id := range l.ids {
+			id = strings.ToLower(id)
+			if _, done := kept[l.kind+"|"+id]; done || !metadata.ValidMBID(id) {
+				continue
+			}
+			if pe, ok := a.packagePictures(l.kind, id); ok {
+				kept[l.kind+"|"+id] = pe
+			}
+		}
+	}
 	c.mu.Lock()
 	if c.m == nil || len(c.m) > picMax {
 		c.m = map[string]picEntry{}
@@ -86,10 +104,7 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 	if c.busy == nil || c.aheadBusy == nil {
 		c.busy, c.aheadBusy = map[string]chan struct{}{}, map[string]bool{}
 	}
-	for _, l := range []struct {
-		kind string
-		ids  []string
-	}{{"artist", artists}, {"album", albums}} {
+	for _, l := range lists {
 		for _, id := range l.ids {
 			id = strings.ToLower(id)
 			k := l.kind + "|" + id
@@ -97,7 +112,7 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 				continue
 			}
 			seen[k] = true
-			if pe, ok := a.packagePictures(l.kind, id); ok {
+			if pe, ok := kept[k]; ok {
 				// A kept package's records answer without asking the server.
 				c.m[k] = pe
 				continue
