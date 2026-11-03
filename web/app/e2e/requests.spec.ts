@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { discordPort } from './fakes.mjs';
-import { noSidewaysScroll, openFromSearch, owner, signIn } from './helpers.ts';
+import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from './helpers.ts';
 
 // Requests at phone width (Pixel 7): a member asks for movies, the owner
 // approves and turns down from a phone, a Discord Alert (the fake one in
@@ -30,6 +30,8 @@ async function askButton(p: Page, words: string, name: string) {
 }
 
 test.beforeAll(async ({ browser }) => {
+	// Run on setup alone, Quiet Orchard (added by movies) is not there yet.
+	await ensureInLibrary(browser, 'imdb:tt9000030', 'Quiet Orchard');
 	own = await fresh(browser);
 	await signIn(own, owner());
 });

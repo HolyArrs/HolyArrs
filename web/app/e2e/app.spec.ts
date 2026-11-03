@@ -16,9 +16,12 @@ async function scanFirstRun() {
 	expect(result.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 }
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ browser }, info) => {
 	context = await browser.newContext();
 	page = await context.newPage();
+	// The desktop project runs after setup, which ran the first test (the owner
+	// is made there); its later tests start from a signed-in page.
+	if (info.project.name === 'desktop') await signIn(page, owner());
 });
 test.afterAll(async () => {
 	await context.close();

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Browser, type Locator, type Page } from '@playwright/test';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -243,6 +243,30 @@ export async function addFromSearch(page: Page, words: string, name: string, kin
 	await openFromSearch(page, words, name, kind);
 	await page.getByRole('button', { name: `Add ${name}` }).click();
 	return page.getByRole('dialog');
+}
+
+/**
+ * ensureInLibrary adds a movie (not searched for) when an earlier project has
+ * not added it already, so a project can also run on the setup project alone.
+ * It uses its own desktop-sized browser context, so nothing it remembers (the
+ * Add dialog's choices) reaches the caller's page.
+ */
+export async function ensureInLibrary(browser: Browser, words: string, name: string) {
+	const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+	const page = await ctx.newPage();
+	try {
+		await signIn(page, owner());
+		await page.goto('/library');
+		const cards = page.locator('[data-testid="library-card"], [data-testid="library-row"]');
+		await cards.or(page.getByRole('heading', { name: 'Your Library is empty' })).first().waitFor();
+		if (await cards.filter({ hasText: name }).count()) return;
+		const dialog = await addFromSearch(page, words, name);
+		await dialog.getByLabel('Search when added').uncheck();
+		await dialog.getByRole('button', { name: 'Add to Library' }).click();
+		await expect(page).toHaveURL(/\/library\/\d+/);
+	} finally {
+		await ctx.close();
+	}
 }
 
 /** openInLibrary steps from a music page (artist or album, found in Search or the Library) to its Library page. */
