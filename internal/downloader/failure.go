@@ -92,10 +92,11 @@ func shortcuts(files []File) []string {
 // fail_dangerous): programs (dangerous), password notes, web shortcuts
 // with no media beside them, and, for a torrent, archives with no video or
 // audio beside them (a locked or program-filled archive in place of the
-// media).
+// media). A RAR set big enough to hold a video is not one: the importer
+// unpacks it (#54) and refuses a locked or program-filled one itself.
 func fakeFiles(files []File, protocol string) []string {
 	bad := dangerous(files)
-	media := hasMedia(files)
+	media := hasMedia(files) || rarSetSize(files) >= judge.MinVideo
 	var archives []string
 	for _, f := range files {
 		name := path.Base(strings.ReplaceAll(f.Name, `\`, "/"))
@@ -115,6 +116,18 @@ func fakeFiles(files []File, protocol string) []string {
 		bad = append(bad, archives...)
 	}
 	return bad
+}
+
+// rarSetSize adds up the RAR volumes in a file list (.rar, .partN.rar, .r00 ...).
+func rarSetSize(files []File) int64 {
+	var n int64
+	for _, f := range files {
+		name := path.Base(strings.ReplaceAll(f.Name, `\`, "/"))
+		if ext := strings.ToLower(path.Ext(strings.TrimRight(name, ". "))); ext == ".rar" || isRarPart(ext) {
+			n += f.Size
+		}
+	}
+	return n
 }
 
 // isRarPart is a split archive part: .r00, .r01, ...

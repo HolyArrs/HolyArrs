@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/CoderLuii/holyarrs/internal/alerts"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -113,20 +114,46 @@ func TestFollowMovieByTMDBLandsOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	if n, err := r.svc.LandTMDBFollows(ctx, tid); err != nil || n != 1 {
-		t.Fatalf("told %d %v", n, err)
+		t.Fatalf("moved %d %v", n, err)
 	}
-	r.svc.Wait()
 	if on, _ := r.svc.IsFollowingMovieTMDB(ctx, r.ana.UserID, "900002"); !on {
 		t.Fatal("the follow should go on as the Library title once the movie lands")
 	}
 	if on, _ := r.svc.IsFollowing(ctx, r.ana.UserID, tid); !on {
 		t.Fatal("the landed movie is followed as its Library title")
 	}
-	var msgs int
-	if err := r.st.Read().QueryRow("SELECT count(*) FROM messages WHERE user_id = ? AND kind = 'ready' AND title_id = ?", r.ana.UserID, tid).Scan(&msgs); err != nil || msgs != 1 {
-		t.Fatalf("messages %d %v", msgs, err)
+	ready := func() int {
+		var msgs int
+		if err := r.st.Read().QueryRow("SELECT count(*) FROM messages WHERE user_id = ? AND kind = 'ready' AND title_id = ?", r.ana.UserID, tid).Scan(&msgs); err != nil {
+			t.Fatal(err)
+		}
+		return msgs
+	}
+	// Added is not ready: no word until the movie's file is in.
+	if n, err := r.svc.TellMovieFollows(ctx); err != nil || n != 0 || ready() != 0 || r.fake.count(alerts.MomentReady) != 0 {
+		t.Fatalf("told %d before the file is in (%v), %d messages", n, err, ready())
 	}
 	if n, _ := r.svc.LandTMDBFollows(ctx, tid); n != 0 {
+		t.Fatal("moved twice")
+	}
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE slots SET state = 'in_library' WHERE item_id IN (SELECT id FROM items WHERE title_id = ?)", tid)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// The ready check after the import tells ana once.
+	if _, err := r.svc.CheckReady(ctx); err != nil {
+		t.Fatal(err)
+	}
+	r.svc.Wait()
+	if ready() != 1 {
+		t.Fatalf("%d ready messages", ready())
+	}
+	if m := r.fake.last(); m.Moment != alerts.MomentReady || len(m.People) != 1 || m.People[0].Name != "ana" || m.Subject != "Paper Harbour is in the Library" {
+		t.Fatalf("alert %+v", m)
+	}
+	if n, _ := r.svc.TellMovieFollows(ctx); n != 0 || ready() != 1 {
 		t.Fatal("told twice")
 	}
 	if err := r.svc.UnfollowMovieTMDB(ctx, r.ana.UserID, "900002"); err != nil {

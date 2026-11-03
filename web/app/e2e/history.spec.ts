@@ -205,6 +205,33 @@ test('alerts: add a Telegram bot, send a test, the chat gets the text', async ()
 	await page.getByRole('button', { name: 'Cancel' }).click();
 });
 
+test('alerts: add an ntfy topic, send a test, the topic gets the text', async () => {
+	await page.goto('/settings/alerts');
+	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByLabel('Name', { exact: true }).fill('Phone ntfy');
+	await page.getByLabel('Kind').selectOption('ntfy');
+	await page.getByLabel('Server address').fill(`http://127.0.0.1:${discordPort}`);
+	await page.getByLabel('Topic').fill('holyarrs-e2e');
+	await page.getByRole('checkbox', { name: /May reach the local network/ }).check();
+	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
+	const card = page.getByTestId('alert').filter({ hasText: 'Phone ntfy' });
+	await expect(card).toContainText('ntfy');
+	await card.getByRole('button', { name: 'Send a test' }).click();
+	await expect(page.getByText('Test sent through Phone ntfy.')).toBeVisible();
+	const sent = (await (await page.request.get(`http://127.0.0.1:${discordPort}/apps`)).json()) as { app: string; path: string; title: string; auth: boolean; body: string }[];
+	const last = sent.filter((x) => x.app === 'ntfy').at(-1)!;
+	expect(last.path).toBe('/holyarrs-e2e');
+	expect(last.title).toBe('HolyArrs test');
+	expect(last.body).toContain('Phone ntfy works');
+	expect(last.auth).toBe(false);
+	// The server and topic are shown as saved; no token was stored.
+	await card.getByRole('button', { name: 'Change' }).click();
+	await expect(page.getByLabel('Server address')).toHaveValue(`http://127.0.0.1:${discordPort}`);
+	await expect(page.getByLabel('Topic')).toHaveValue('holyarrs-e2e');
+	await expect(page.getByLabel('Access token')).toHaveValue('');
+	await page.getByRole('button', { name: 'Cancel' }).click();
+});
+
 test('media servers: add Jellyfin, test it, a wrong key is said plainly', async () => {
 	await page.goto('/settings');
 	await page.getByRole('link', { name: 'Media servers' }).first().click();

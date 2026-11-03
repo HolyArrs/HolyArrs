@@ -734,7 +734,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	}
 	a.exploreCaching(w, r, "private, no-cache")
 	if offset > 0 {
-		writeJSONTagged(w, r, map[string]any{"v2": true, "v7": true, "rows": out, "next": next, "total": p.Total()})
+		a.writeMusicJSON(w, r, map[string]any{"v2": true, "v7": true, "rows": out, "next": next, "total": p.Total()})
 		return
 	}
 	var hero *MusicCard
@@ -753,7 +753,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	if hero != nil {
 		a.rememberMusicCards(nil, append([]MusicCard{*hero}, alts...)...)
 	}
-	writeJSONTagged(w, r, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "partial": p.Partial, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
+	a.writeMusicJSON(w, r, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "partial": p.Partial, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
 }
 
 // prewarmMusicV7 runs a second after Music starts and after each Music

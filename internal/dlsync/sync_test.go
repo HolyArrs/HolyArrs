@@ -167,6 +167,10 @@ func outsider(id string, progress float64) downloader.Job {
 func TestReaderOwnsListReads(t *testing.T) {
 	fastTimers(t)
 	r := newRig(t, own(0.2))
+	// A 200 ms cadence (freshness bound 600 ms): at 50 ms a slow machine (-race,
+	// a loaded CI) misses the 150 ms bound now and then and the Manager rightly
+	// falls back, which is not what this test is about.
+	r.m.Active = 200 * time.Millisecond
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	start := time.Now()
@@ -181,8 +185,8 @@ func TestReaderOwnsListReads(t *testing.T) {
 	if r.s.Store.Current(r.dlID).Fallback {
 		t.Fatal("the Manager fell back to its own list reads; the reader owns list reads")
 	}
-	// Active cadence 50 ms: at most one read per tick, plus a little slack.
-	if lists, most := r.client.listCount(), int(elapsed/(50*time.Millisecond))+3; lists > most || lists == 0 {
+	// At most one read per tick, plus a little slack.
+	if lists, most := r.client.listCount(), int(elapsed/r.m.Active)+3; lists > most || lists == 0 {
 		t.Fatalf("%d list reads in %v, want 1..%d", lists, elapsed, most)
 	}
 }

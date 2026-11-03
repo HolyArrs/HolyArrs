@@ -1,8 +1,8 @@
 // Package unrar reads RAR files that use "store" (no compression), in both
 // the RAR 4 and RAR 5 layouts, including sets split over many volumes. That
-// is the common way releases are packed. Compressed or encrypted sets are
-// reported (List says so, Extract refuses) so a caller can hand them to a
-// system tool instead.
+// is the common way releases are packed. Compressed sets are listed here
+// and unpacked by ExtractCompressed (the rardecode decoder); encrypted sets
+// are reported and never unpacked.
 //
 // It reads untrusted files: sizes are bounded, every header is checked
 // against the volume's length, entry paths that are absolute or climb out

@@ -23,7 +23,9 @@
 	} = $props();
 	let said = $state('');
 
-	const index = $derived(Math.max(0, options.findIndex((o) => o.value === value)));
+	// A value that matches no option (a choice not made yet) shows no thumb.
+	const found = $derived(options.findIndex((o) => o.value === value));
+	const index = $derived(Math.max(0, found));
 	let buttons: HTMLButtonElement[] = $state([]);
 
 	function pick(v: T) {
@@ -42,10 +44,10 @@
 	}
 </script>
 
-<div class="ui-seg {size}" role="radiogroup" aria-label={label} data-testid={testid} style="--n: {options.length}; --i: {index}">
+<div class="ui-seg {size}" class:none={found < 0} role="radiogroup" aria-label={label} data-testid={testid} style="--n: {options.length}; --i: {index}">
 	<span class="thumb" aria-hidden="true"></span>
 	{#each options as o, i (o.value)}
-		<button bind:this={buttons[i]} type="button" role="radio" aria-checked={o.value === value} tabindex={o.value === value ? 0 : -1} onclick={() => pick(o.value)} onkeydown={(e) => key(e, i)}>
+		<button bind:this={buttons[i]} type="button" role="radio" aria-checked={o.value === value} tabindex={o.value === value || (found < 0 && i === 0) ? 0 : -1} onclick={() => pick(o.value)} onkeydown={(e) => key(e, i)}>
 			{#if o.icon}<Icon name={o.icon} size={16} />{/if}<span>{o.label}</span>
 		</button>
 	{/each}
@@ -57,6 +59,7 @@
 	.thumb { position: absolute; z-index: -1; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 4px) / var(--n)); border-radius: 8px; background: var(--seg-thumb); box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); transform: translateX(calc(100% * var(--i))); transition: transform var(--dur) var(--ease-spring); }
 	button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 14px; border-radius: 8px; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
 	button { min-width: 0; }
+	.none .thumb { opacity: 0; }
 	button span { overflow: hidden; text-overflow: ellipsis; }
 	@media (max-width: 420px) { button { padding: 0 8px; font-size: 13px; } }
 	button[aria-checked='true'] { color: var(--text); font-weight: 600; }

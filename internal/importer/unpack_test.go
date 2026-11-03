@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/binary"
+	"fmt"
 	"hash/crc32"
 	"os"
 	"path/filepath"
@@ -156,6 +157,64 @@ func TestPackedMultiVolumeIsUnpackedAndImported(t *testing.T) {
 	noLeftovers(t, w.dl)
 }
 
+// A scene set: RAR volumes, an .nfo and a Sample folder with a short clip.
+// The clip is not the movie, so the set is still unpacked and imported.
+func TestPackedSetWithSampleIsUnpacked(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	w := packedWorld(t, map[string][]byte{
+		"Rel/" + relName + ".rar":                                rar4(relName+".mkv", video[:1500], len(video), false, true, false, true),
+		"Rel/" + relName + ".r00":                                rar4(relName+".mkv", video[1500:], len(video), true, false, false, false),
+		"Rel/" + relName + ".nfo":                                []byte("info"),
+		"Rel/Sample/" + strings.ToLower(relName) + "-sample.mkv": bytes.Repeat([]byte("s"), 200),
+	})
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "done" {
+		t.Fatalf("state %s: %+v", imp.State, imp.Result)
+	}
+	got, err := os.ReadFile(filepath.Join(w.lib, "Dune - Part Two (2024)", "Dune - Part Two (2024) 1080p WEB.mkv"))
+	if err != nil || !bytes.Equal(got, video) {
+		t.Fatalf("library file: %v", err)
+	}
+	noLeftovers(t, w.dl)
+}
+
+// A real compressed scene set (RAR 5 in four volumes, from WinRAR, see
+// internal/unrar/testdata) with an .nfo and a Sample clip is unpacked by the
+// built-in decoder, with no unrar or 7z on the system, and imported.
+func TestCompressedRAR5SceneSetIsImportedWithoutATool(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
+	files := map[string][]byte{
+		"Rel/" + relName + ".nfo":                                []byte("info"),
+		"Rel/Sample/" + strings.ToLower(relName) + "-sample.mkv": bytes.Repeat([]byte("s"), 200),
+	}
+	for i := 1; i <= 4; i++ {
+		b, err := os.ReadFile(filepath.Join("..", "unrar", "testdata", "rar5-compressed", fmt.Sprintf("Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.part%02d.rar", i)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		files[fmt.Sprintf("Rel/%s.part%02d.rar", relName, i)] = b
+	}
+	w := packedWorld(t, files)
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "done" {
+		t.Fatalf("state %s: %+v", imp.State, imp.Plan)
+	}
+	got, err := os.ReadFile(filepath.Join(w.lib, "Dune - Part Two (2024)", "Dune - Part Two (2024) 1080p WEB.mkv"))
+	if err != nil || len(got) != 720000 {
+		t.Fatalf("library file: %d bytes, %v", len(got), err)
+	}
+	noLeftovers(t, w.dl)
+}
+
 func TestPackedDryRunWritesNothing(t *testing.T) {
 	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", video, len(video), false, false, false, false)})
 	im := &Importer{Store: w.s}
@@ -165,7 +224,9 @@ func TestPackedDryRunWritesNothing(t *testing.T) {
 	noLeftovers(t, w.dl)
 }
 
-func TestCompressedPackWithoutToolGivesPlainReason(t *testing.T) {
+// A compressed set the built-in decoder cannot read, with no system tool
+// either, fails with a plain reason and leaves the download alone.
+func TestCompressedPackNobodyCanReadGivesPlainReason(t *testing.T) {
 	fakeDisk(t, 10<<30)
 	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
 	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", []byte("packed"), 5000, false, false, true, false)})
@@ -175,7 +236,7 @@ func TestCompressedPackWithoutToolGivesPlainReason(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if imp.State != "failed" || lastWhy(imp) != whyNeedTool {
+	if imp.State != "failed" || lastWhy(imp) != whyDamaged {
 		t.Fatalf("state %s, plan %+v", imp.State, imp.Plan)
 	}
 	var state string
@@ -242,4 +303,36 @@ func TestPackedNeedsFreeSpace(t *testing.T) {
 		t.Fatalf("%s %+v", imp.State, imp.Plan)
 	}
 	noLeftovers(t, w.dl)
+}
+
+// A compressed RAR 4 (2.9) archive from the rarfile project goes through
+// the import's unpack step with no unrar or 7z on the system: the built-in
+// decoder writes both files next to the download.
+func TestCompressedRAR4IsUnpackedWithoutATool(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
+	b, err := os.ReadFile(filepath.Join("..", "unrar", "testdata", "rarfile", "rar3-solid.rar"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(t.TempDir(), "Rel")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	first := filepath.Join(root, "rel.rar")
+	if err := os.WriteFile(first, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	extra, cleanup, why := unpackRars(context.Background(), 54, root, []Candidate{{Path: first, Size: int64(len(b))}}, FileRules{}, false)
+	defer cleanup()
+	if why != "" || len(extra) != 2 {
+		t.Fatalf("why %q, extra %+v", why, extra)
+	}
+	for _, c := range extra {
+		if c.Size != 2048 {
+			t.Fatalf("unpacked %s: %d bytes", c.Path, c.Size)
+		}
+	}
+	cleanup()
+	noLeftovers(t, filepath.Dir(root))
 }

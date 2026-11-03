@@ -51,6 +51,29 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	await expect(pane()).toBeHidden();
 });
 
+test('Seeding rules: the sheet opens from the details, sets a ratio and saves it to qBittorrent', async () => {
+	const r = iron();
+	await openRow(r);
+	await pane().getByTestId('dl-more').getByRole('button').first().click();
+	await page.getByRole('menuitem', { name: 'Seeding rules…' }).click();
+	const sheet = page.getByRole('dialog');
+	await expect(sheet.getByRole('heading', { name: 'Seeding rules' })).toBeVisible();
+	await sheet.getByTestId('steer-ratio-set').click();
+	await sheet.getByTestId('steer-ratio-value').fill('1.5');
+	await sheet.getByTestId('steer-seed-none').click();
+	const before = (await (await fetch(`${qbit}/state`)).json()).shareLimits.length;
+	await sheet.getByTestId('steer-submit').click();
+	await expect(page.getByText('Seeding rules set for this torrent.')).toBeVisible();
+	await expect(sheet).toBeHidden();
+	const got = (await (await fetch(`${qbit}/state`)).json()).shareLimits;
+	expect(got.length).toBe(before + 1);
+	// Ratio 1.5, no seeding time limit (-1), the idle limit left to qBittorrent's own rule (-2).
+	expect(got.at(-1)).toMatchObject({ ratioLimit: '1.5', seedingTimeLimit: '-1', inactiveSeedingTimeLimit: '-2' });
+	await r.getByTestId('dl-line').focus();
+	await page.keyboard.press('Escape');
+	await expect(pane()).toBeHidden();
+});
+
 test('Remove asks first, starts from the settings and can turn the Release down and search again', async () => {
 	const r = iron();
 	await removeFromMenu(r);
@@ -102,8 +125,11 @@ test('Needs a decision says why and offers every choice in the row\'s details; s
 	await expect(decideChip()).toHaveAttribute('data-count', '1', { timeout: 30_000 });
 
 	page.once('dialog', (d) => d.accept());
-	await card.getByRole('button', { name: /^More/ }).click();
-	await page.getByRole('menuitem', { name: 'Stop looking' }).click();
+	// The card may draw once more as the search's last news lands: open the menu again if it went.
+	await expect(async () => {
+		if (!(await page.getByRole('menuitem', { name: 'Stop looking' }).isVisible())) await card.getByRole('button', { name: /^More/ }).click();
+		await page.getByRole('menuitem', { name: 'Stop looking' }).click({ timeout: 2000 });
+	}).toPass({ timeout: 20_000 });
 	await expect(page.getByText('Stopped looking for Iron Lullaby.')).toBeVisible();
 	await expect(card).toHaveCount(0, { timeout: 30_000 });
 	await expect(decideChip()).toHaveAttribute('data-count', '0', { timeout: 30_000 });

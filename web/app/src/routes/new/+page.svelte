@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { to } from '#lib/paths.ts';
+	import { proxied } from '#lib/tmdb-image.ts';
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -174,7 +175,7 @@
 	const ghosts = (n: number): ExploreCard[] => Array.from({ length: n }, (_, i) => ({ key: `ghost-${i}`, kind: 'movie', name: '', badges: [] }) as ExploreCard);
 	const region = serviceRegion(defaultRegion());
 	let services = $state<WatchService[]>([]);
-	const logo = (id: number | undefined) => services.find((s) => s.id === id)?.logo;
+	const logo = (id: number | undefined) => proxied(services.find((s) => s.id === id)?.logo) || undefined; // through the artwork cache
 
 	let titles = $state<TitleView[]>([]);
 	const owned = $derived(ownedIndex(titles));

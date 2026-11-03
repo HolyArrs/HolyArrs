@@ -580,12 +580,15 @@
 	const moveItems = $derived.by<MenuItem[]>(() => {
 		const kinds = new Set(pickedShown.map((t) => t.kind));
 		if (kinds.size !== 1) return [];
-		const k = [...kinds][0];
+		// An artist lives in a music folder.
+		const k = [...kinds][0] === 'artist' ? 'music' : [...kinds][0];
 		return folders.filter((f) => f.kind === k).map((f): MenuItem => ({ label: f.label || f.path, onselect: () => moveTitles(pickedShown.map((t) => t.id), f) }));
 	});
-	const rulesItems = $derived<MenuItem[]>(
-		rules.filter((r) => !r.kinds.length || kind === 'all' || r.kinds.includes(kind)).map((r): MenuItem => ({ label: r.name, onselect: () => setRules(pickedShown.map((t) => t.id), r) }))
-	);
+	// Only rules that fit every ticked title (Music rules say "music", artist titles "artist").
+	const rulesItems = $derived.by<MenuItem[]>(() => {
+		const need = new Set((pickedShown.length ? pickedShown.map((t) => t.kind) : kind === 'all' ? [] : [kind]).map((k) => (k === 'artist' ? 'music' : k)));
+		return rules.filter((r) => !r.kinds.length || [...need].every((k) => r.kinds.includes(k))).map((r): MenuItem => ({ label: r.name, onselect: () => setRules(pickedShown.map((t) => t.id), r) }));
+	});
 	function selectKey(e: KeyboardEvent) {
 		if (selecting && e.key === 'Escape' && !deleteDialog?.open) stopSelecting();
 	}
@@ -1234,6 +1237,8 @@
 
 	/* Bulk bar */
 	.select-bar { position: sticky; bottom: 16px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; padding: 10px 12px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card), 0 8px 28px rgb(0 0 0 / 25%); }
+	/* Phones: the bar stays above the bottom tab bar and the safe area. */
+	@media (max-width: 767px) { .select-bar { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom, 0px) + 8px); } }
 	.select-bar .count { padding: 0 8px; font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.bar-gap { flex: 1 1 auto; }
 	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }

@@ -15,19 +15,18 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/parse"
 	"github.com/CoderLuii/holyarrs/internal/unrar"
 )
 
 // Plain reasons shown on the Slot and in the import plan.
 const (
-	whyNeedTool  = "Packed in compressed RAR files; install unrar to unpack them"
-	whyPassword  = "Packed in password-protected RAR files; they cannot be unpacked"
-	whyDamaged   = "The RAR files look damaged or incomplete, so they could not be unpacked"
-	whyUnsafe    = "A RAR file holds a path that is not safe, so it was not unpacked"
-	whyNoSpace   = "Not enough free space to unpack the RAR files next to the download"
-	whyToolFails = "The RAR files could not be unpacked by the system tool"
-	whySafely    = "The RAR files could not be unpacked safely"
-	whyTooBig    = "The RAR files would unpack to more than is allowed"
+	whyPassword = "Packed in password-protected RAR files; they cannot be unpacked"
+	whyDamaged  = "The RAR files look damaged or incomplete, so they could not be unpacked"
+	whyUnsafe   = "A RAR file holds a path that is not safe, so it was not unpacked"
+	whyNoSpace  = "Not enough free space to unpack the RAR files next to the download"
+	whySafely   = "The RAR files could not be unpacked safely"
+	whyTooBig   = "The RAR files would unpack to more than is allowed"
 )
 
 const (
@@ -68,8 +67,16 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 	}
 	var firsts []string
 	for _, c := range cands {
+		// A video already there means nothing to unpack, but a scene set's
+		// Sample clip beside the RARs does not count.
 		if IsMedia(filepath.Ext(c.Path)) {
-			return nil, noop, ""
+			rel, err := filepath.Rel(root, c.Path)
+			if err != nil {
+				rel = filepath.Base(c.Path)
+			}
+			if !isSample(rel, parse.Parse(filepath.Base(c.Path), parse.Hints{Size: c.Size})) {
+				return nil, noop, ""
+			}
 		}
 		if unrar.IsVolume(c.Path) && unrar.IsFirstVolume(c.Path) {
 			firsts = append(firsts, c.Path)
@@ -149,8 +156,21 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 		case s.pw:
 			return fail(whyPassword)
 		case s.tool:
-			if err = extractWithTool(ctx, s.first, dest, limit); errors.Is(err, errNoTool) {
-				return fail(whyNeedTool)
+			// Compressed: the built-in decoder first. A system unrar or 7z, when
+			// there is one, tries next if the decoder could not read the set.
+			// What the decoder refused on purpose (a path, a link, too big a
+			// window, too much output) never goes on to the tool.
+			dctx, dcancel := context.WithTimeout(ctx, unpackTimeout)
+			err = unrar.ExtractCompressed(dctx, s.first, dest, limit)
+			dcancel()
+			if err != nil && !errors.Is(err, unrar.ErrUnsafePath) && !errors.Is(err, unrar.ErrTooBig) && !errors.Is(err, unrar.ErrEncrypted) &&
+				!errors.Is(err, unrar.ErrUnrecognised) && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
+				log.Printf("importer: built-in RAR decoder on %s: %v", s.first, err)
+				if os.RemoveAll(dest) == nil && os.MkdirAll(dest, 0o755) == nil {
+					if terr := extractWithTool(ctx, s.first, dest, limit); !errors.Is(terr, errNoTool) {
+						err = terr
+					}
+				}
 			}
 		default:
 			_, err = unrar.Extract(s.first, dest)
@@ -160,10 +180,10 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 			switch {
 			case errors.Is(err, unrar.ErrUnsafePath):
 				return fail(whyUnsafe)
-			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, errTooMuch):
+			case errors.Is(err, unrar.ErrEncrypted):
+				return fail(whyPassword)
+			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, errTooMuch), errors.Is(err, unrar.ErrTooBig):
 				return fail(whySafely)
-			case s.tool:
-				return fail(whyToolFails)
 			}
 			return fail(whyDamaged)
 		}

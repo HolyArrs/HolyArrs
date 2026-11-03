@@ -37,7 +37,7 @@ export const groups: Group[] = [
 	{ id: 'downloads', label: 'Downloads', icon: 'download', about: 'Which Release to take, where to look, who downloads, and lists that add titles.' },
 	{ id: 'users', label: 'Users', icon: 'people', about: 'Who may do what, what they may ask for, and how they sign in.' },
 	{ id: 'services', label: 'Services', icon: 'tv', about: 'Media servers, other apps that call HolyArrs, and moving over.' },
-	{ id: 'notifications', label: 'Notifications', icon: 'bell', about: 'Discord, Telegram, email and webhook messages.' },
+	{ id: 'notifications', label: 'Notifications', icon: 'bell', about: 'Discord, Telegram, ntfy, Gotify, Pushover, email and webhook messages.' },
 	{ id: 'logs', label: 'Logs', icon: 'copy', about: 'The app log and health checks.' },
 	{ id: 'system', label: 'System', icon: 'tools', about: 'Schedules, backups and the danger zone.' },
 	{ id: 'account', label: 'My account', icon: 'user', about: 'Your password, two-factor sign-in and your devices.' }
@@ -66,7 +66,7 @@ export const sections: Section[] = [
 	{ href: '/settings/sign-in', group: 'users', tint: 'graphite', label: 'Sign-in and security', icon: 'shield', about: 'Plex, Jellyfin and Emby sign-in, two-factor rules, the local network and API keys.' },
 
 	{ href: '/settings/media-servers', group: 'services', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Tell Plex, Jellyfin or Emby about imports, renames and deletes.' },
-	{ href: '/settings/alerts', group: 'notifications', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, email and webhook messages for asks, imports and health.' },
+	{ href: '/settings/alerts', group: 'notifications', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, ntfy, Gotify, Pushover, email and webhook messages for asks, imports and health.' },
 	{ href: '/settings/ai', group: 'services', tint: 'indigo', label: 'AI connections', icon: 'sparkle', about: 'Let AI assistants like Claude check your library and ask for titles, with keys you can revoke.' },
 	{ href: '/settings/api', group: 'services', tint: 'gray', label: 'API for other apps', icon: 'key', about: 'The base address, scopes, example calls and every route.' },
 	{ href: '/settings/move', group: 'services', tint: 'teal', label: 'Move from other apps', icon: 'upload', about: 'Bring a setup over from Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr and the Downloaders.', need: 'users' },

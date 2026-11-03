@@ -1,693 +1,806 @@
 <script lang="ts">
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
-	import Field from '#lib/ui/Field.svelte';
-	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import Button from '#lib/ui/Button.svelte';
-	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { to } from '#lib/paths.ts';
-	import { onMount, onDestroy } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
+	import MoveSteps from '#lib/move/MoveSteps.svelte';
+	import StepFoot from '#lib/move/StepFoot.svelte';
+	import ReadSheet, { type ReadAnswer, type SavedKey } from '#lib/move/ReadSheet.svelte';
+	import ItemsSheet, { type SheetRow, type ShowList } from '#lib/move/ItemsSheet.svelte';
+	import ReadStep from '#lib/move/ReadStep.svelte';
+	import ChooseStep from '#lib/move/ChooseStep.svelte';
+	import TryStep from '#lib/move/TryStep.svelte';
+	import MoveStep from '#lib/move/MoveStep.svelte';
+	import DoneStep from '#lib/move/DoneStep.svelte';
+	import { createFollower } from '#lib/move/poll.ts';
+	import { api, ApiError, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { dateTime, bytes } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
+	import { to } from '#lib/paths.ts';
 	import {
-		apps,
 		appName,
-		addSuggestions,
-		cleanRules,
-		groupLabels,
-		linesByGroup,
-		notMovedByGroup,
-		resultWords,
-		ruleProblem,
+		asStep,
+		buckets,
+		countWords,
+		extraProblems,
+		folderProblem,
+		moveTotal,
+		OTHER,
+		plural,
+		rulesFrom,
 		running,
-		sameName,
 		setChoice,
-		summary,
-		tone,
+		stepGate,
 		type AppKind,
+		type Line,
 		type Move,
 		type PathRule,
 		type PersonChoice,
 		type Plan,
 		type Report,
-		type Snapshot
+		type Snapshot,
+		type Step
 	} from '#lib/move.ts';
 
-	// Step 1: read the old apps.
-	let kind = $state<AppKind>('radarr');
-	let way = $state<'api' | 'backup'>('api');
-	let address = $state('');
-	let key = $state('');
-	let username = $state('');
-	let signWord = $state('');
-	let backupPath = $state('');
-	let local = $state(true);
-	// Old-app keys saved from the secrets file (owner only); never the key.
-	let savedKeys = $state<{ kind: string; address: string; allow_local_network: boolean }[]>([]);
-	let useSaved = $state(true);
-	let reading = $state(false);
-	let readError = $state('');
-	let snapshots = $state<Snapshot[]>([]);
-	let picked = $state<number[]>([]);
+	// Settings > Move from other apps: five steps, one at a time. The step and
+	// the reads in use live in the address (?step=try&read=3,5, or ?move=7 for
+	// one move), so Back and a reload land on the same step.
+	type MoveAnswer = { move: Move; progress: number; progress_note: string };
+
+	// What the page knows.
 	let loaded = $state(false);
 	let loadError = $state('');
+	let movesError = $state('');
+	let snapshots = $state<Snapshot[]>([]);
+	let moves = $state.raw<Move[]>([]);
+	let savedKeys = $state<SavedKey[]>([]);
+	let folders = $state.raw<{ path: string; kind: string; label: string }[]>([]);
+	let picked = $state<number[]>([]);
+	let step = $state<Step>('read');
+	let destroyed = false;
 
-	// Step 2: the plan and the owner's choices.
-	let rules = $state<PathRule[]>([]);
-	let suggested = $state<PathRule[]>([]);
-	let skip = $state<string[]>([]);
-	// The owner's word per person: owner, admin, merge or skip.
-	let people = $state<Record<string, PersonChoice>>({});
-	let plan = $state<Plan | null>(null);
+	// Step 1: the read sheet and Forget.
+	let readOpen = $state(false);
+	let readStart = $state<AppKind>('radarr');
+	let readAgain = $state(false);
+	let reading = $state('');
+	let forgetting = $state<Snapshot | null>(null);
+	let forgetOpen = $state(false);
+	let forgetBusy = $state(false);
+	let forgetError = $state('');
+
+	// Step 2: the plan and the owner's choices. changes counts every change
+	// in steps 1 and 2 (and person choices), so a test run knows it is old.
+	let plan = $state.raw<Plan | null>(null);
 	let planning = $state(false);
 	let planError = $state('');
+	let picks = $state<Record<string, string>>({});
+	let others = $state<Record<string, string>>({});
+	let extra = $state<PathRule[]>([]);
+	let suggested = $state<Record<string, string>>({});
+	let skip = $state<string[]>([]);
+	let people = $state<Record<string, PersonChoice>>({});
+	let changes = $state(0);
+	let planTimer: ReturnType<typeof setTimeout> | undefined;
+	let planSeq = 0;
+	let planCtrl: AbortController | null = null;
 
-	// Step 3: the dry run. Step 4: the move.
-	let dry = $state<Report | null>(null);
-	// The move starts only from the plan this dry run showed.
-	let planHash = $state('');
+	// Step 3: the test run, kept in place while it runs again.
+	let dry = $state.raw<Report | null>(null);
+	let dryAt = $state(-1);
+	let planHash = '';
 	let trying = $state(false);
-	let moving = $state(false);
-	let current = $state<Move | null>(null);
+	let tryFailed = $state(false);
+	let tryNotice = $state('');
+	let seen = $state.raw(new Map<string, Line>());
+	let trySeq = 0;
+	let tryCtrl: AbortController | null = null;
+
+	// Steps 4 and 5: the move.
+	let current = $state.raw<Move | null>(null);
 	let progress = $state(0);
 	let progressNote = $state('');
-	let moves = $state<Move[]>([]);
-	let timer: ReturnType<typeof setTimeout> | null = null;
+	let lost = $state(false);
+	let starting = $state(false);
+	let actionError = $state('');
+	let safeMode = $state(false);
+	let gone = $state(false);
+	let confirmMove = $state(false);
+	let confirmUndo = $state(false);
+	let undoing = $state(false);
 
-	const qbit = $derived(kind === 'qbittorrent');
-	const saved = $derived(savedKeys.find((x) => x.kind === kind));
-	const withSaved = $derived(way === 'api' && !!saved && useSaved);
-	const ruleErrors = $derived(cleanRules(rules).map(ruleProblem));
-	const rulesOk = $derived(ruleErrors.every((e) => e === ''));
+	// The one list sheet every "Show" opens.
+	let listOpen = $state(false);
+	let listTitle = $state('');
+	let listItems = $state.raw<readonly unknown[]>([]);
+	let listRow = $state.raw<(t: unknown, i: number) => SheetRow>(() => ({ key: '', name: '' }));
+	const show: ShowList = (title, items, row) => {
+		listTitle = title;
+		listItems = items;
+		listRow = row as (t: unknown, i: number) => SheetRow;
+		listOpen = true;
+	};
 
-	async function load() {
-		try {
-			const [s, m] = await Promise.all([api.get<{ snapshots: Snapshot[] }>('/migrate/snapshots'), api.get<{ moves: Move[] }>('/migrate/moves')]);
-			snapshots = s.snapshots;
-			moves = m.moves;
-			loadError = '';
-			const busy = m.moves.find(running);
-			if (busy) watch(busy.id);
-			savedKeys = await api
-				.get<{ saved: { kind: string; address: string; allow_local_network: boolean }[] }>('/migrate/saved-keys')
-				.then((r) => r.saved)
-				.catch(() => []); // only the owner sees them
-		} catch (e) {
-			loadError = message(e);
-		} finally {
-			loaded = true;
-		}
-	}
-	onMount(load);
+	const follower = createFollower<MoveAnswer>({
+		get: (id, signal) => api.get<MoveAnswer>(`/migrate/moves/${id}`, signal),
+		done: (a) => !running(a.move),
+		onTick: (a) => {
+			lost = false;
+			moves = moves.map((m) => (m.id === a.move.id ? { ...a.move, report: m.report } : m));
+			if (current?.id === a.move.id) {
+				current = a.move;
+				progress = a.progress;
+				progressNote = a.progress_note;
+			}
+		},
+		onEnd: (a) => finished(a.move),
+		onLost: () => (lost = true),
+		onBack: () => (lost = false)
+	});
 	onDestroy(() => {
-		if (timer) clearTimeout(timer);
+		destroyed = true;
+		follower.destroy();
+		clearTimeout(planTimer);
+		planCtrl?.abort();
+		tryCtrl?.abort();
 	});
 
-	function stale() {
-		plan = null;
-		dry = null;
-		planHash = '';
+	// Derived state.
+	const usedBy = $derived.by(() => {
+		const m = new Map<number, number>();
+		// Newest first: the newest done move that used a read names it.
+		for (const mv of moves) if (mv.state === 'done') for (const id of mv.snapshots ?? []) if (!m.has(id)) m.set(id, mv.id);
+		return m;
+	});
+	// Only rows on screen count: a folder from a read switched off is not marked anywhere.
+	const folderErrors = $derived(Object.keys(picks).filter((p) => (plan?.old_paths ?? []).includes(p) && folderProblem(p, picks[p], others[p]) !== '').length);
+	const extraErrors = $derived(extraProblems(extra));
+	const ruleErrors = $derived(folderErrors + extraErrors.filter((e) => e !== '').length);
+	const tried = $derived(buckets(dry));
+	const stale = $derived(!!dry && dryAt !== changes);
+	const chooseLines = $derived.by(() => {
+		const out = [...tried.choose];
+		// A choice row stays after the choice, so it can be changed back.
+		for (const [k, l] of seen) if (!out.some((x) => x.key === k) && (people[k] === 'merge' || people[k] === 'skip') && dry?.lines.some((x) => x.key === k)) out.push(l);
+		return out;
+	});
+	const openChoices = $derived(chooseLines.filter((l) => l.result === 'skipped' && people[l.key] !== 'skip').length);
+	const doneGroups = $derived(buckets(current?.report).groups);
+	const doneOpen = $derived((current?.report?.lines ?? []).filter((l) => l.choose && l.result === 'skipped' && current?.choices?.people?.[l.key] !== 'skip').length);
+	const withItems = $derived((plan?.groups ?? []).filter((g) => g.items.length > 0 && g.name !== 'other'));
+	const moveRunning = $derived(!!current && running(current) && !current.undo_state);
+	const total = $derived(moveTotal(dry?.counts ?? {}));
+	const gate = $derived(
+		stepGate({
+			step,
+			picked: picked.length,
+			planning,
+			planned: !!plan,
+			folderErrors,
+			ruleErrors: extraErrors.filter((e) => e !== '').length,
+			groupsOn: withItems.filter((g) => !skip.includes(g.name)).length,
+			groupsWithItems: withItems.length,
+			trying,
+			tried: !!dry,
+			failed: tryFailed,
+			stale,
+			openChoices,
+			moving: moveRunning || starting,
+			safeMode
+		})
+	);
+	const fromApps = $derived(
+		[...new Set((dry?.apps ?? []).map(appName))].reduce((s, a, i, all) => (i === 0 ? a : i === all.length - 1 ? `${s} and ${a}` : `${s}, ${a}`), '')
+	);
+
+	function quiet(err: unknown): boolean {
+		return (err instanceof ApiError && err.body.code === 'reauth') || (err instanceof DOMException && err.name === 'AbortError');
 	}
 
-	async function read(e: SubmitEvent) {
-		e.preventDefault();
-		reading = true;
-		readError = '';
-		const body: Record<string, unknown> = { kind, allow_local_network: local };
-		if (way === 'backup') body.path = backupPath.trim();
-		else if (withSaved) {
-			body.use_saved_key = true;
-			if (address.trim()) body.url = address.trim();
-		} else {
-			body.url = address.trim();
-			if (qbit) {
-				body.username = username;
-				body.password = signWord;
-			}
-			if (key) body.key = key;
-		}
+	// Loading: the reads first (the page needs them); the moves, saved keys
+	// and Library folders each fail on their own.
+	async function load() {
+		loadError = '';
+		loaded = false;
 		try {
-			const r = await api.post<{ snapshot: Snapshot; needs_reentry?: string[] }>('/migrate/read', body);
-			snapshots = [r.snapshot, ...snapshots];
-			picked = [...picked, r.snapshot.id];
-			if (body.use_saved_key) savedKeys = savedKeys.filter((x) => x.kind !== kind);
-			key = '';
-			signWord = '';
-			toasts.push(`${appName(kind)} read. Keys never come over; ${r.needs_reentry?.length ?? 0} to type again after the move.`, 'ok');
-			stale();
-		} catch (err) {
-			readError = message(err);
-		} finally {
-			reading = false;
-			key = '';
-			signWord = '';
+			snapshots = (await api.get<{ snapshots: Snapshot[] }>('/migrate/snapshots')).snapshots;
+		} catch (e) {
+			if (destroyed) return;
+			loadError = message(e);
+			loaded = true;
+			return;
+		}
+		if (destroyed) return;
+		await Promise.all([loadMoves(), loadSaved(), loadFolders()]);
+		// Left the page while it loaded: start nothing.
+		if (destroyed) return;
+		picked = defaultPicks();
+		loaded = true;
+		applied = page.url.search;
+		const busy = moves.find(running);
+		if (busy) follower.follow(busy.id);
+		await arrive(page.url.searchParams);
+	}
+	async function loadMoves() {
+		try {
+			moves = (await api.get<{ moves: Move[] }>('/migrate/moves')).moves;
+			movesError = '';
+		} catch (e) {
+			movesError = message(e);
 		}
 	}
+	async function loadSaved() {
+		// Only the owner sees them; anyone else simply has none.
+		savedKeys = await api
+			.get<{ saved: SavedKey[] }>('/migrate/saved-keys')
+			.then((r) => r.saved ?? [])
+			.catch(() => []);
+	}
+	async function loadFolders() {
+		folders = await api
+			.get<{ library_folders: { path: string; kind: string; label: string }[] }>('/library-folders')
+			.then((r) => r.library_folders ?? [])
+			.catch(() => []);
+	}
+	onMount(() => void load());
 
-	async function forget(s: Snapshot) {
-		if (!confirm(`Forget what was read from ${appName(s.kind)}? Nothing in HolyArrs or ${appName(s.kind)} changes.`)) return;
+	/** defaultPicks switches on the newest read of each app, unless a move already used it. */
+	function defaultPicks(): number[] {
+		const out: number[] = [];
+		const kinds = new Set<string>();
+		for (const s of snapshots) {
+			if (kinds.has(s.kind)) continue;
+			kinds.add(s.kind);
+			if (!usedBy.has(s.id)) out.push(s.id);
+		}
+		return out;
+	}
+
+	// The address: one entry per step, so the browser's Back works.
+	let applied = '';
+	function urlFor(s: Step, moveId?: number): string {
+		// Plain commas between read ids, so the address stays readable.
+		if (moveId) return `?move=${moveId}`;
+		if (s === 'read') return '';
+		return `?step=${s}` + (picked.length ? `&read=${picked.join(',')}` : '');
+	}
+	function setUrl(s: Step, moveId?: number, replace = false) {
+		const search = urlFor(s, moveId);
+		if (search === page.url.search) return;
+		applied = search;
+		void goto(to('/settings/move') + search, { replace, reset: false });
+	}
+	$effect(() => {
+		const search = page.url.search;
+		if (!loaded) return;
+		untrack(() => {
+			if (search === applied) return;
+			applied = search;
+			void arrive(page.url.searchParams);
+		});
+	});
+
+	/** arrive shows what the address names (a reload, a link, Back). */
+	async function arrive(q: { get(name: string): string | null }) {
+		const mv = Number(q.get('move'));
+		if (mv > 0) return openMove(mv, false);
+		const s = asStep(q.get('step')) ?? 'read';
+		const ids = (q.get('read') ?? '')
+			.split(',')
+			.map(Number)
+			.filter((id) => snapshots.some((x) => x.id === id));
+		if (s !== 'read' && ids.length > 0 && ids.join(',') !== picked.join(',')) {
+			picked = ids;
+			changes++;
+		}
+		enter(s, false);
+	}
+
+	function focusStep() {
+		void tick().then(() => document.getElementById('move-step')?.focus({ preventScroll: false }));
+	}
+
+	/** enter opens a step; a step that needs an earlier one falls back to it. */
+	function enter(want: Step, push = true) {
+		let s = want;
+		if (s === 'done' && !current) s = 'read';
+		if ((s === 'choose' || s === 'try' || s === 'move') && picked.length === 0) s = 'read';
+		if (s === 'move' && (!dry || stale)) s = 'try';
+		const moved = s !== step;
+		step = s;
+		actionError = '';
+		if (s !== 'try') tryNotice = '';
+		if (s === 'read') gone = false;
+		if (s !== 'choose') {
+			// A re-plan still waiting from step 2 is not wanted any more.
+			clearTimeout(planTimer);
+			planCtrl?.abort();
+			planning = false;
+		}
+		if (s === 'choose') void makePlan();
+		if (s === 'try' && (!dry || stale) && !trying) void runTry();
+		// A step that fell back puts its own name in the address, so Back stays one step.
+		if (push) setUrl(s);
+		else if (s !== want) setUrl(s, undefined, true);
+		if (moved) focusStep();
+	}
+
+	function choices() {
+		// Only rules that check out are sent; a row with a problem is marked on screen and holds the step.
+		const ok = Object.fromEntries(Object.entries(picks).filter(([p, v]) => folderProblem(p, v, others[p]) === ''));
+		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people };
+	}
+
+	function changed() {
+		changes++;
+		gone = false;
+	}
+
+	// Step 1.
+	function onread(r: ReadAnswer, kind: AppKind, usedSaved: boolean) {
+		snapshots = [r.snapshot, ...snapshots.filter((x) => x.id !== r.snapshot.id)];
+		picked = [...picked.filter((id) => id !== r.snapshot.id), r.snapshot.id];
+		if (usedSaved) savedKeys = savedKeys.filter((x) => x.kind !== kind);
+		changed();
+		const what = countWords(kind, r.snapshot.counts, 1);
+		const keys = r.needs_reentry?.length ?? 0;
+		toasts.push(`${appName(kind)} read${what ? ': ' + what : ''}.${keys > 0 ? ` ${plural(keys, 'key', 'keys')} to type again after the move.` : ''}`, 'ok');
+	}
+	function addApp() {
+		readStart = 'radarr';
+		readAgain = false;
+		readOpen = true;
+	}
+	function readAgainFor(kind: AppKind) {
+		readStart = kind;
+		readAgain = true;
+		readOpen = true;
+	}
+	function askForget(s: Snapshot) {
+		forgetting = s;
+		forgetError = '';
+		forgetOpen = true;
+	}
+	async function forget(e: SubmitEvent) {
+		e.preventDefault();
+		const s = forgetting;
+		if (!s) return;
+		forgetBusy = true;
+		forgetError = '';
 		try {
 			await api.del(`/migrate/snapshots/${s.id}`);
 			snapshots = snapshots.filter((x) => x.id !== s.id);
 			picked = picked.filter((x) => x !== s.id);
-			stale();
+			changed();
+			forgetOpen = false;
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			if (!quiet(err)) forgetError = message(err);
+		} finally {
+			forgetBusy = false;
 		}
 	}
-
-	function togglePick(id: number, on: boolean) {
-		picked = on ? [...picked, id] : picked.filter((x) => x !== id);
-		stale();
+	function pick(id: number, on: boolean) {
+		picked = on ? [...picked.filter((x) => x !== id), id] : picked.filter((x) => x !== id);
+		changed();
 	}
 
-	function choices() {
-		return { snapshots: picked, path_rules: cleanRules(rules), skip, people };
+	// Step 2: every change plans again; switches wait 400ms, typed paths
+	// wait for blur or Enter. Older answers are dropped.
+	function replan(wait: boolean) {
+		clearTimeout(planTimer);
+		if (wait) planTimer = setTimeout(() => void makePlan(), 400);
+		else void makePlan();
 	}
-
-	function choose(key: string, c: PersonChoice | null) {
-		people = setChoice(people, key, c);
-		makePlan();
-	}
-
 	async function makePlan() {
+		clearTimeout(planTimer);
+		if (picked.length === 0 || ruleErrors > 0) return;
+		const seq = ++planSeq;
+		planCtrl?.abort();
+		planCtrl = new AbortController();
 		planning = true;
 		planError = '';
-		dry = null;
-		planHash = '';
 		try {
-			const r = await api.post<{ plan: Plan; suggested_path_rules: PathRule[] }>('/migrate/plan', choices());
+			const r = await api.request<{ plan: Plan; suggested_path_rules?: PathRule[] }>('/migrate/plan', { method: 'POST', body: choices(), signal: planCtrl.signal });
+			if (seq !== planSeq || destroyed) return;
 			plan = r.plan;
-			suggested = r.suggested_path_rules ?? [];
+			const sug: Record<string, string> = {};
+			for (const s of r.suggested_path_rules ?? []) sug[s.from] = s.to;
+			suggested = sug;
+			// A suggestion fills a folder nobody set yet; the plan then runs with it.
+			const next = { ...picks };
+			let added = false;
+			for (const [from, dest] of Object.entries(sug)) {
+				if (!(from in next) && !extra.some((r) => r.from.trim() === from)) {
+					next[from] = dest;
+					added = true;
+				}
+			}
+			if (added) {
+				picks = next;
+				changed();
+				void makePlan();
+			}
 		} catch (err) {
-			planError = message(err);
-			plan = null;
+			if (seq !== planSeq || quiet(err)) return;
+			if (err instanceof ApiError && err.status === 404) gone = true;
+			else planError = message(err);
 		} finally {
-			planning = false;
+			if (seq === planSeq) planning = false;
 		}
 	}
-
-	function useSuggestions() {
-		rules = addSuggestions(rules, suggested);
-		makePlan();
+	function onfolder(from: string, value: string) {
+		picks = { ...picks, [from]: value };
+		changed();
+		if (value !== OTHER) replan(true);
 	}
-
-	function toggleGroup(name: string, on: boolean) {
+	function onother(from: string, value: string) {
+		others = { ...others, [from]: value };
+		changed();
+	}
+	function onextra(rules: PathRule[]) {
+		extra = rules;
+		changed();
+	}
+	function ongroup(name: string, on: boolean) {
 		skip = on ? skip.filter((x) => x !== name) : [...skip, name];
-		makePlan();
+		changed();
+		replan(true);
+	}
+	function onperson(key: string, c: PersonChoice | null) {
+		people = setChoice(people, key, c);
+		changed();
+		replan(true);
 	}
 
-	async function tryIt() {
+	// Step 3: the test run. A choice runs it again in place.
+	async function runTry() {
+		if (picked.length === 0 || ruleErrors > 0) return;
+		const seq = ++trySeq;
+		tryCtrl?.abort();
+		tryCtrl = new AbortController();
+		const at = changes;
 		trying = true;
+		tryFailed = false;
+		actionError = '';
 		try {
-			const r = await api.post<{ report: Report; plan_hash: string }>('/migrate/dry-run', choices());
+			const r = await api.request<{ report: Report; plan_hash: string }>('/migrate/dry-run', { method: 'POST', body: choices(), signal: tryCtrl.signal });
+			if (seq !== trySeq || destroyed) return;
 			dry = r.report;
 			planHash = r.plan_hash;
+			dryAt = at;
+			const m = new Map(seen);
+			for (const l of r.report.lines) if (l.choose) m.set(l.key, l);
+			seen = m;
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			if (seq !== trySeq || quiet(err)) return;
+			if (err instanceof ApiError && err.status === 404) gone = true;
+			else {
+				tryFailed = true;
+				actionError = message(err);
+			}
 		} finally {
-			trying = false;
+			if (seq === trySeq) trying = false;
 		}
 	}
+	function onchoose(key: string, c: PersonChoice) {
+		people = setChoice(people, key, c);
+		changed();
+		void runTry();
+	}
 
-	async function approve() {
-		if (!confirm('Move now? HolyArrs adds what the dry run listed. No media file is moved or renamed, and the old apps are not touched.')) return;
-		moving = true;
+	// Step 4: the move, after a confirm.
+	async function startMove(e: SubmitEvent) {
+		e.preventDefault();
+		confirmMove = false;
+		starting = true;
+		actionError = '';
 		try {
 			const r = await api.post<{ move: Move }>('/migrate/moves', { ...choices(), plan_hash: planHash });
 			current = r.move;
-			watch(r.move.id);
+			progress = 0;
+			progressNote = '';
+			lost = false;
+			moves = [r.move, ...moves.filter((m) => m.id !== r.move.id)];
+			follower.follow(r.move.id);
+			setUrl('move', r.move.id, true);
+			// The Move button is gone now: keep focus on the step.
+			focusStep();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
-			moving = false;
+			if (quiet(err)) return;
+			const text = message(err);
+			if (err instanceof ApiError && err.status === 409 && /safe mode/i.test(text)) safeMode = true;
+			else if (err instanceof ApiError && err.status === 409 && /changed/i.test(text)) {
+				// The plan moved on since the test: run it again and look.
+				dryAt = -1;
+				enter('try');
+				tryNotice = 'Something changed since the test run, so it ran again. Check it and move.';
+			} else if (err instanceof ApiError && err.status === 404) gone = true;
+			else actionError = text;
+		} finally {
+			starting = false;
 		}
 	}
 
-	function watch(id: number) {
-		moving = true;
-		const tick = async () => {
-			try {
-				const r = await api.get<{ move: Move; progress: number; progress_note: string }>(`/migrate/moves/${id}`);
-				current = r.move;
-				progress = r.progress;
-				progressNote = r.progress_note;
-				if (!running(r.move)) {
-					moving = false;
-					moves = [r.move, ...moves.filter((x) => x.id !== id)];
-					if (r.move.state === 'undone') toasts.push(`Undone: ${summary(r.move.report?.counts ?? {}) || 'nothing to remove'}.`, 'ok');
-					else if (r.move.undo_state === 'failed') toasts.push('The undo stopped before it finished. Try it again.', 'fail');
-					else if (r.move.state === 'done') toasts.push('The move is done. Its report is below.', 'ok');
-					else toasts.push('The move stopped. Its report says how far it got.', 'fail');
-					return;
-				}
-			} catch (err) {
-				toasts.push(message(err), 'fail');
+	/** finished hears a move or an undo end. */
+	function finished(m: Move) {
+		moves = [m, ...moves.filter((x) => x.id !== m.id)];
+		if (m.state === 'undone') toasts.push(`Move ${m.id} undone.`, 'ok');
+		else if (m.undo_state === 'failed') toasts.push(`The undo of move ${m.id} stopped. Try it again.`, 'fail');
+		else toasts.push(`Move ${m.id} finished.`, m.state === 'done' ? 'ok' : 'fail');
+		if (m.state !== 'undone' && !m.undo_state) {
+			// A finished move needs a new test before another one: the reads
+			// it used are switched off.
+			dry = null;
+			dryAt = -1;
+			planHash = '';
+			suggested = {};
+			picked = picked.filter((id) => !m.snapshots.includes(id));
+			changed();
+			// Still on an earlier step of another round: it runs again with the reads left (or falls back to step 1).
+			if (step === 'choose' || step === 'try' || (step === 'move' && current?.id !== m.id)) enter(step === 'choose' ? 'choose' : 'try', false);
+		}
+		if (current?.id === m.id) {
+			current = m;
+			progress = 1;
+			if (step === 'move' || step === 'done') {
+				step = 'done';
+				setUrl('done', m.id, true);
+				focusStep();
 			}
-			timer = setTimeout(tick, 1000);
-		};
-		tick();
+		}
 	}
 
-	async function undo(m: Move) {
-		if (!confirm('Undo this move? Only what it added is removed. Titles leave the Library and their files stay where they are.')) return;
+	// Step 5.
+	async function undo(e: SubmitEvent) {
+		e.preventDefault();
+		confirmUndo = false;
+		const m = current;
+		if (!m || undoing) return;
+		undoing = true;
+		actionError = '';
 		try {
-			// The undo runs in the background like the move; follow it.
 			const r = await api.post<{ move: Move }>(`/migrate/moves/${m.id}/undo`);
 			current = r.move;
-			watch(m.id);
+			progress = 0;
+			progressNote = '';
+			lost = false;
+			follower.follow(m.id);
+			// The Undo button is gone now: keep focus on the step.
+			focusStep();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			if (quiet(err)) return;
+			if (err instanceof ApiError && err.status === 409 && /safe mode/i.test(message(err))) safeMode = true;
+			actionError = message(err);
+		} finally {
+			undoing = false;
 		}
 	}
-
-	async function openMove(m: Move) {
+	async function openMove(id: number, push = true) {
+		actionError = '';
 		try {
-			const r = await api.get<{ move: Move }>(`/migrate/moves/${m.id}`);
+			const r = await api.get<MoveAnswer>(`/migrate/moves/${id}`);
 			current = r.move;
+			progress = r.progress;
+			progressNote = r.progress_note;
+			lost = false;
+			step = running(r.move) && !r.move.undo_state ? 'move' : 'done';
+			if (running(r.move)) follower.follow(id);
+			if (push) setUrl(step, id);
+			focusStep();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			if (quiet(err)) return;
+			enter('read', false);
+			actionError = message(err);
+		}
+	}
+	function done() {
+		current = null;
+		dry = null;
+		dryAt = -1;
+		planHash = '';
+		plan = null;
+		suggested = {};
+		tryNotice = '';
+		enter('read');
+	}
+	function chooseAgain() {
+		const m = current;
+		if (!m) return;
+		picked = m.snapshots.filter((id) => snapshots.some((s) => s.id === id));
+		people = { ...people, ...((m.choices?.people ?? {}) as Record<string, PersonChoice>) };
+		// The move's other choices too: the groups it left out and its folders.
+		skip = [...(m.choices?.skip ?? skip)];
+		const rules = m.choices?.path_rules ?? [];
+		if (rules.length > 0) {
+			const p = { ...picks };
+			const free: PathRule[] = [];
+			for (const r of rules) {
+				if (r.from in p) continue;
+				if (folders.some((f) => f.path === r.to)) p[r.from] = r.to;
+				else free.push(r);
+			}
+			picks = p;
+			extra = [...extra.filter((x) => !free.some((r) => r.from === x.from.trim())), ...free];
+		}
+		current = null;
+		dry = null;
+		changed();
+		enter('try');
+	}
+	function back(s: Step) {
+		enter(s);
+	}
+	function goBackToReads() {
+		gone = false;
+		void reloadReads();
+		enter('read');
+	}
+	async function reloadReads() {
+		try {
+			snapshots = (await api.get<{ snapshots: Snapshot[] }>('/migrate/snapshots')).snapshots;
+			const n = picked.length;
+			picked = picked.filter((id) => snapshots.some((s) => s.id === id));
+			// A read gone means the last test run is old.
+			if (picked.length !== n) changed();
+		} catch {
+			// The list stays as it was.
 		}
 	}
 
-	function countWords(c: Record<string, number>): string {
-		return Object.entries(c)
-			.map(([k, n]) => `${n} ${k.replaceAll('_', ' ')}`)
-			.join(' · ');
-	}
+	const railBusy = $derived(step === 'choose' && planning ? 'Updating…' : step === 'try' && trying ? 'Updating…' : '');
+	const railFill = $derived(step === 'move' && moveRunning ? progress : 0.5);
 </script>
 
 <svelte:head><title>Move from other apps · HolyArrs</title></svelte:head>
 
-<PageHeader title="Move from other apps" />
+<PageHeader title="Move from other apps" subtitle="Bring your movies, shows, music, Sources, Downloaders and people over from the apps you use now. Nothing changes in those apps." />
 
 {#if !loaded}
-	<SkSettings rows={2} />
+	<div class="sk-rail" aria-hidden="true">{#each [1, 2, 3, 4, 5] as n (n)}<span class="sk"></span>{/each}</div>
+	<SkSettings cards={2} rows={4} />
 {:else if loadError}
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
-	<ol class="steps">
-		<li>
-			<section class="card" aria-labelledby="h-read">
-				<h2 id="h-read" class="h2"><span class="num" aria-hidden="true">1</span> Read your apps</h2>
-				<form onsubmit={read} class="read">
-					<div class="two">
-						<Field id="mv-app" label="App">
-							<select id="mv-app" class="input" bind:value={kind}>
-								{#each apps as a (a.kind)}<option value={a.kind}>{a.name} ({a.what})</option>{/each}
-							</select>
-						</Field>
-						<fieldset class="field way">
-							<legend class="label">How</legend>
-							<label class="checkline"><input type="radio" name="way" value="api" bind:group={way} /> Through the app (address and key)</label>
-							<label class="checkline"><input type="radio" name="way" value="backup" bind:group={way} /> From a backup file on this server</label>
-						</fieldset>
-					</div>
-					{#if way === 'api'}
-						{#if saved}
-							<label class="checkline" data-testid="use-saved-key">
-								<input type="checkbox" bind:checked={useSaved} />
-								<span
-									><b>Use the saved key for {appName(kind)}</b><br /><span class="hint"
-										>Saved from your secrets file for {saved.address}. Used for one read, then forgotten. It is never shown.</span
-									></span
-								>
-							</label>
-						{/if}
-						<Field id="mv-url" label="Address">
-							<input id="mv-url" class="input mono" type="url" bind:value={address} placeholder={withSaved ? saved?.address : 'http://10.0.0.5:7878'} required={!withSaved} />
-						</Field>
-						{#if withSaved}
-							<!-- the saved key is used on the server; nothing to type -->
-						{:else if qbit}
-							<div class="two">
-								<Field id="mv-user" label="User name">
-									<input id="mv-user" class="input" bind:value={username} autocomplete="off" />
-								</Field>
-								<Field id="mv-pass" label="Password">
-									<input id="mv-pass" class="input" type="password" bind:value={signWord} autocomplete="new-password" />
-								</Field>
-							</div>
-						{/if}
-						{#if !withSaved}
-							<Field id="mv-key" label={qbit ? 'API key (qBittorrent 5.2 and later, instead of a password)' : 'API key'} hint="Used for this one read, then forgotten: never saved, logged or shown.">
-								<input id="mv-key" class="input mono" type="password" bind:value={key} autocomplete="new-password" spellcheck="false" required={!qbit} />
-							</Field>
-						{/if}
-						<label class="checkline">
-							<input type="checkbox" bind:checked={local} />
-							<span><b>The app is on my home network</b><br /><span class="hint">Lets this read reach local addresses.</span></span>
-						</label>
-					{:else}
-						<Field id="mv-path" label="Backup path on this server" hint="A backup zip, the app's config folder, or one database or settings file.">
-							<input id="mv-path" class="input mono" bind:value={backupPath} placeholder="/backups/radarr_backup.zip" required />
-						</Field>
-					{/if}
-					{#if readError}<p class="form-error" role="alert">{readError}</p>{/if}
-					<div class="row" style="margin-top: var(--s-4)">
-						<Button icon="download" variant="primary" type="submit" disabled={reading} aria-busy={reading}>Read {appName(kind)}</Button>
-					</div>
-				</form>
+	<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />
 
-				{#if snapshots.length > 0}
-					<h3 class="h3 sub">Read so far</h3>
-					<ul class="snaps" aria-label="Read apps">
-						{#each snapshots as s (s.id)}
-							<li>
-								<label class="checkline grow">
-									<input type="checkbox" checked={picked.includes(s.id)} onchange={(e) => togglePick(s.id, e.currentTarget.checked)} />
-									<span>
-										<b>{appName(s.kind)}</b>
-										{s.app_version}
-										<span class="xs muted">· {s.via === 'api' ? 'through the app' : 'from a backup'} · {dateTime(s.created_at)} · {bytes(s.size)}</span>
-										<br /><span class="xs muted">{countWords(s.counts)}</span>
-									</span>
-								</label>
-								<Button variant="plain" type="button" onclick={() => forget(s)} aria-label="Forget {appName(s.kind)} read {s.id}">Forget</Button>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</section>
-		</li>
+	{#if step === 'read'}
+		<ReadStep
+			{snapshots}
+			{picked}
+			{usedBy}
+			{reading}
+			{moves}
+			{movesError}
+			onpick={pick}
+			onadd={addApp}
+			onagain={readAgainFor}
+			onforget={askForget}
+			onopen={(m) => openMove(m.id)}
+			onretrymoves={loadMoves}
+		/>
+	{:else if step === 'choose'}
+		<ChooseStep
+			{plan}
+			{planning}
+			{folders}
+			{picks}
+			{others}
+			{extra}
+			{extraErrors}
+			{suggested}
+			{skip}
+			{people}
+			{onfolder}
+			{onother}
+			{onextra}
+			{ongroup}
+			{onperson}
+			oncommit={() => replan(false)}
+			onshow={show}
+		/>
+		{#if planError}<p class="form-error" role="alert">{planError}</p>{/if}
+	{:else if step === 'try'}
+		<TryStep {dry} groups={tried.groups} choose={chooseLines} {trying} {stale} failed={tryFailed} {people} {openChoices} notice={tryNotice} {onchoose} onretry={runTry} onshow={show} />
+	{:else if step === 'move'}
+		<MoveStep {dry} running={moveRunning} {progress} note={progressNote} {lost} {safeMode} onshow={show} />
+	{:else if step === 'done' && current}
+		<DoneStep move={current} groups={doneGroups} openChoices={doneOpen} {progress} note={progressNote} {lost} onchoose={chooseAgain} onshow={show} />
+	{/if}
 
-		<li>
-			<section class="card" aria-labelledby="h-plan">
-				<div class="card-head">
-					<h2 id="h-plan" class="h2"><span class="num" aria-hidden="true">2</span> See the plan</h2>
-					<Button icon="refresh" type="button" onclick={makePlan} disabled={picked.length === 0 || planning || !rulesOk} aria-busy={planning}>{plan ? 'Plan again' : 'Make the plan'}
-					</Button>
-				</div>
-				{#if picked.length === 0}<p class="hint">Pick at least one read app above.</p>{/if}
+	{#if gone}
+		<div class="notice warn gone" role="alert">
+			<span>One of the reads you picked is gone. Go back and pick again.</span>
+			<Button onclick={goBackToReads}>Back to Read your apps</Button>
+		</div>
+	{/if}
+	{#if actionError}<p class="form-error" role="alert">{actionError}</p>{/if}
 
-				<fieldset class="rules">
-					<legend class="label">Path rules</legend>
-					<p class="hint">When the old app saw a folder under another path (another container), say both paths.</p>
-					{#each rules as r, i (i)}
-						<div class="rule">
-							<Field id="rule-from-{i}" label="Old app's path">
-								<input id="rule-from-{i}" class="input mono" bind:value={r.from} placeholder="/movies" aria-invalid={ruleErrors[i] ? 'true' : undefined} oninput={stale} />
-							</Field>
-							<Field id="rule-to-{i}" label="Path here">
-								<input id="rule-to-{i}" class="input mono" bind:value={r.to} placeholder="/data/movies" aria-invalid={ruleErrors[i] ? 'true' : undefined} oninput={stale} />
-							</Field>
-							<IconButton icon="x" label="Remove path rule {i + 1}" type="button" onclick={() => ((rules = rules.filter((_, j) => j !== i)), stale())} />
-							{#if ruleErrors[i]}<p class="form-error rule-err" role="alert">{ruleErrors[i]}</p>{/if}
-						</div>
-					{/each}
-					<div class="row">
-						<Button icon="plus" variant="plain" type="button" onclick={() => (rules = [...rules, { from: '', to: '' }])}>Add a path rule</Button>
-						{#if suggested.length > 0}
-							<Button variant="plain" type="button" onclick={useSuggestions}>Use {suggested.length} suggested {suggested.length === 1 ? 'rule' : 'rules'}</Button>
-						{/if}
-					</div>
-					{#if suggested.length > 0}
-						<ul class="xs muted sugg">
-							{#each suggested as s (s.from)}<li><span class="mono">{s.from}</span> → <span class="mono">{s.to}</span></li>{/each}
-						</ul>
-					{/if}
-				</fieldset>
-
-				{#if planError}<p class="notice bad" role="alert">{planError}</p>{/if}
-				{#if plan}
-					<div class="groups" data-testid="plan">
-						{#each plan.groups as g (g.name)}
-							{#if g.items.length > 0 || skip.includes(g.name)}
-								<details class="group">
-									<summary>
-										<span class="grow"><b>{g.label}</b> <span class="chip" data-testid="group-count">{g.items.length}</span></span>
-									</summary>
-									<label class="checkline keep">
-										<input type="checkbox" checked={!skip.includes(g.name)} onchange={(e) => toggleGroup(g.name, e.currentTarget.checked)} />
-										Move {g.label.toLowerCase()}
-									</label>
-									<ul class="items">
-										{#each g.items as it (it.key)}
-											<li>
-												<b>{it.name}</b>
-												{#if it.detail}<span class="small muted"> · {it.detail}</span>{/if}
-												{#if it.why}<br /><span class="xs muted">Why: {it.why}</span>{/if}
-												{#if it.needs}<br /><span class="chip wait">Needs {it.needs}</span>{/if}
-												{#if it.person?.was_owner}
-													<label class="checkline confirm">
-														<input type="checkbox" checked={people[it.key] === 'owner'} onchange={(e) => choose(it.key, e.currentTarget.checked ? 'owner' : null)} />
-														This is me (their asks become mine)
-													</label>
-												{:else if it.person?.was_admin}
-													<label class="checkline confirm">
-														<input type="checkbox" checked={people[it.key] === 'admin'} onchange={(e) => choose(it.key, e.currentTarget.checked ? 'admin' : null)} />
-														Keep {it.name} an admin here
-													</label>
-												{/if}
-											</li>
-										{/each}
-									</ul>
-								</details>
-							{/if}
-						{/each}
-					</div>
-					{#if plan.not_moved.length > 0}
-						<details class="group notmoved">
-							<summary><span class="grow"><b>Not moved</b> <span class="chip" data-testid="not-moved-count">{plan.not_moved.length}</span></span></summary>
-							<p class="hint">No HolyArrs match. They stay in the old apps.</p>
-							{#each notMovedByGroup(plan.not_moved, groupLabels) as g (g.label)}
-								<h3 class="h3 sub">{g.label}</h3>
-								<ul class="items">
-									{#each g.items as n, i (n.from + i)}<li><b>{n.what}</b> <span class="small muted">· {n.why}</span></li>{/each}
-								</ul>
-							{/each}
-						</details>
-					{/if}
-					{#if plan.needs_input.length > 0}
-						<details class="group">
-							<summary><span class="grow"><b>Needs your input afterwards</b> <span class="chip wait">{plan.needs_input.length}</span></span></summary>
-							<p class="hint">Keys and passwords never come over. Type them again after the move.</p>
-							<ul class="items">{#each plan.needs_input as n (n)}<li class="small">{n}</li>{/each}</ul>
-						</details>
-					{/if}
-				{/if}
-			</section>
-		</li>
-
-		<li>
-			<section class="card" aria-labelledby="h-try">
-				<div class="card-head">
-					<h2 id="h-try" class="h2"><span class="num" aria-hidden="true">3</span> Try it (dry run)</h2>
-					<Button type="button" onclick={tryIt} disabled={!plan || trying} aria-busy={trying}>Try it</Button>
-				</div>
-				<p class="hint">Shows exactly what would be added, changed or left out on this server. Nothing changes.</p>
-				{#if dry}
-					<p class="small" role="status" data-testid="dry-summary"><b>{summary(dry.counts)}</b></p>
-					{#each linesByGroup(dry) as g (g.group)}
-						<details class="group">
-							<summary><span class="grow"><b>{groupLabels[g.group] ?? g.group}</b> <span class="xs muted">{summary(g.counts)}</span></span></summary>
-							<ul class="items">
-								{#each g.lines as l (l.key)}
-									<li>
-										<span class="chip {tone(l.result) === 'ok' ? 'ok' : tone(l.result) === 'warn' ? 'wait' : tone(l.result) === 'bad' ? 'fail' : ''}">{resultWords[l.result] ?? l.result}</span> <b>{l.name}</b>{#if l.detail}<span class="small muted"> · {l.detail}</span>{/if}
-										{#if sameName(l)}
-											<div class="row pick">
-												<Button variant="plain" type="button" onclick={() => choose(l.key, 'merge')} aria-label="Merge {l.name} with the person of this name here">Same person: merge</Button>
-												<Button variant="plain" type="button" onclick={() => choose(l.key, 'skip')} aria-label="Leave {l.name} out">Leave out</Button>
-											</div>
-										{/if}
-									</li>
-								{/each}
-							</ul>
-						</details>
-					{/each}
-					{#if dry.next.length > 0}
-						<ul class="next small">{#each dry.next as n (n)}<li>{n}</li>{/each}</ul>
-					{/if}
-				{/if}
-			</section>
-		</li>
-
-		<li>
-			<section class="card" aria-labelledby="h-move">
-				<div class="card-head">
-					<h2 id="h-move" class="h2"><span class="num" aria-hidden="true">4</span> Move</h2>
-					<Button variant="primary" type="button" onclick={approve} disabled={!dry || !planHash || moving} aria-busy={moving}>Approve and move</Button>
-				</div>
-				<p class="hint">Runs in the background, from exactly the plan the dry run showed (change anything and try it again). Moving again later adds nothing twice, and a move can be undone.</p>
-				<p class="hint">Sources and Downloaders always come over paused and cannot reach your home network. After the move, check each one, turn on "reach the local network" only for one that lives on your network, and resume it.</p>
-				{#if moving}
-					<div role="status" aria-live="polite">
-						<div class="bar" style="margin-top: var(--s-3)"><i style="transform: scaleX({Math.max(progress, 0.02)})"></i></div>
-						<p class="xs muted">{progressNote || 'Starting the move…'}</p>
-					</div>
-				{/if}
-				{#if current?.report && !moving}
-					<div class="report" data-testid="move-report" role="status">
-						<p><b>Move {current.id}: {current.state === 'undone' ? 'undone' : current.state}{current.undo_state === 'failed' ? ' (its undo stopped; try it again)' : ''}.</b> {summary(current.report.counts)}</p>
-						<h3 class="h3 sub">What to do next</h3>
-						<ul class="next small">{#each current.report.next as n (n)}<li>{n}</li>{/each}</ul>
-						{#if current.report.needs_input.length > 0}
-							<h3 class="h3 sub">Needs your input</h3>
-							<ul class="items">{#each current.report.needs_input as n (n)}<li class="small">{n}</li>{/each}</ul>
-						{/if}
-						{#each linesByGroup(current.report) as g (g.group)}
-							<details class="group">
-								<summary><span class="grow"><b>{groupLabels[g.group] ?? g.group}</b> <span class="xs muted">{summary(g.counts)}</span></span></summary>
-								<ul class="items">
-									{#each g.lines as l (l.key)}<li><span class="chip {tone(l.result) === 'ok' ? 'ok' : tone(l.result) === 'warn' ? 'wait' : tone(l.result) === 'bad' ? 'fail' : ''}">{resultWords[l.result] ?? l.result}</span> <b>{l.name}</b>{#if l.detail}<span class="small muted"> · {l.detail}</span>{/if}</li>{/each}
-								</ul>
-							</details>
-						{/each}
-						<div class="row" style="margin-top: var(--s-4)">
-							<AdminLinkButton icon="download" href={to(`/api/v1/migrate/moves/${current.id}/report`)} download>Download the report</AdminLinkButton>
-							{#if current.state === 'done' || current.state === 'failed'}
-								<Button variant="plain" type="button" onclick={() => current && undo(current)}>Undo this move</Button>
-							{/if}
-						</div>
-					</div>
-				{/if}
-			</section>
-		</li>
-	</ol>
-
-	{#if moves.length > 0}
-		<SettingsCard title="Earlier moves">
-			<ul class="snaps">
-				{#each moves as m (m.id)}
-					<li>
-						<span class="grow small"><b>Move {m.id}</b> · {dateTime(m.created_at)} · {m.state}{#if m.report} · {summary(m.report.counts)}{/if}</span>
-						<Button variant="plain" type="button" onclick={() => openMove(m)}>Open</Button>
-						{#if m.state === 'done' || m.state === 'failed'}
-							<Button variant="plain" type="button" onclick={() => undo(m)} aria-label="Undo move {m.id}">Undo</Button>
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		</SettingsCard>
+	{#if step === 'read'}
+		{#if snapshots.length > 0 || reading}
+			<StepFoot label="Continue" onclick={() => enter('choose')} disabled={!gate.ok} reason={gate.reason} />
+		{/if}
+	{:else if step === 'choose'}
+		<StepFoot back={() => back('read')} label="Try it" onclick={() => enter('try')} disabled={!gate.ok} reason={gate.reason} />
+	{:else if step === 'try'}
+		<StepFoot back={() => back('choose')} label="Continue" onclick={() => enter('move')} disabled={!gate.ok} reason={gate.reason} />
+	{:else if step === 'move'}
+		<StepFoot
+			back={() => back('try')}
+			backDisabled={moveRunning || starting}
+			label={moveRunning ? undefined : `Move ${plural(total, 'item')}`}
+			onclick={() => (confirmMove = true)}
+			disabled={!gate.ok}
+			busy={starting}
+			reason={moveRunning ? '' : gate.reason}
+		/>
+	{:else if step === 'done' && current}
+		{@const m = current}
+		{@const busyNow = running(m)}
+		{@const canUndo = !busyNow && (m.state === 'done' || m.state === 'failed') && m.undo_state !== 'failed'}
+		{@const retry = !busyNow && m.undo_state === 'failed' && m.state !== 'undone'}
+		<StepFoot
+			label={busyNow ? undefined : retry ? 'Try the undo again' : 'Done'}
+			variant={retry ? 'destructive' : 'primary'}
+			onclick={retry ? () => (confirmUndo = true) : done}
+			disabled={(safeMode || undoing) && retry}
+			busy={undoing && retry}
+		>
+			{#snippet more()}
+				{#if canUndo}<Button variant="destructive" onclick={() => (confirmUndo = true)} disabled={safeMode} busy={undoing}>Undo this move</Button>{/if}
+				{#if m.report && !busyNow}<AdminLinkButton icon="download" href={to(`/api/v1/migrate/moves/${m.id}/report`)} download>Download the report</AdminLinkButton>{/if}
+			{/snippet}
+		</StepFoot>
 	{/if}
 {/if}
 
+<ReadSheet bind:open={readOpen} bind:reading start={readStart} again={readAgain} saved={savedKeys} {onread} />
+
+<ItemsSheet bind:open={listOpen} title={listTitle} items={listItems} row={listRow} />
+
+<Sheet bind:open={forgetOpen} title="Forget this {appName(forgetting?.kind ?? '')} read?" size="sm">
+	<form id="move-forget-form" onsubmit={forget}>
+		<p class="small muted">Moves already made from it stay. You can read it again any time.</p>
+		{#if forgetError}<p class="form-error" role="alert">{forgetError}</p>{/if}
+	</form>
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (forgetOpen = false)}>Cancel</Button>
+		<Button variant="destructive" type="submit" form="move-forget-form" busy={forgetBusy}>Forget</Button>
+	{/snippet}
+</Sheet>
+
+<Sheet bind:open={confirmMove} title="Move {plural(total, 'item')}?" size="sm">
+	<form id="move-confirm-form" onsubmit={startMove}>
+		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Anything marked paused stays paused. You can undo this move later from Earlier moves on this page.</p>
+	</form>
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (confirmMove = false)}>Cancel</Button>
+		<Button variant="primary" type="submit" form="move-confirm-form">Move</Button>
+	{/snippet}
+</Sheet>
+
+<Sheet bind:open={confirmUndo} title="Undo move {current?.id ?? ''}?" size="sm">
+	<form id="move-undo-form" onsubmit={undo}>
+		<p class="small muted">Removes what this move added. Anything you changed since stays. Your old apps were never touched. The undo replaces this move's report, so download it first if you want to keep it.</p>
+	</form>
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (confirmUndo = false)}>Cancel</Button>
+		<Button variant="destructive" type="submit" form="move-undo-form" disabled={undoing}>Undo move</Button>
+	{/snippet}
+</Sheet>
+
 <style>
-	.steps {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: grid;
-		gap: var(--s-4);
+	.sk-rail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+	.sk-rail .sk { display: block; height: 40px; border-radius: 12px; }
+	@media (pointer: coarse) {
+		.sk-rail .sk { height: 44px; }
 	}
-	.num {
-		display: inline-grid;
-		place-items: center;
-		width: 26px;
-		height: 26px;
-		margin-right: var(--s-2);
-		border-radius: 50%;
-		background: var(--surface-3);
-		font-size: var(--text-sm);
-	}
-	.two {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: var(--s-4);
-		margin-bottom: var(--s-4);
-	}
-	.way {
-		border: 0;
-		padding: 0;
-		margin: 0;
-	}
-	.read :global(.field + .field),
-	.read .checkline {
-		margin-top: var(--s-4);
-	}
-	.sub {
-		margin-top: var(--s-5);
-		margin-bottom: var(--s-2);
-	}
-	.snaps {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: grid;
-		gap: var(--s-2);
-	}
-	.snaps li {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		flex-wrap: wrap;
-		padding: var(--s-2) 0;
-		border-top: 1px solid var(--line);
-	}
-	.rules {
-		border: 0;
-		padding: 0;
-		margin: var(--s-4) 0;
-	}
-	.rule {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-		gap: var(--s-3);
-		align-items: end;
-		margin-bottom: var(--s-3);
-	}
-	.rule-err {
-		grid-column: 1 / -1;
-	}
-	.sugg {
-		margin: var(--s-2) 0 0;
-		padding-left: var(--s-5);
-	}
-	.groups {
-		display: grid;
-		gap: var(--s-2);
-		margin-top: var(--s-4);
-	}
-	.group {
-		border: 1px solid var(--line);
-		border-radius: var(--r-btn);
-		padding: var(--s-2) var(--s-3);
-		margin-top: var(--s-2);
-	}
-	.group summary {
-		display: flex;
-		align-items: center;
-		cursor: pointer;
-		min-height: 36px;
-	}
-	.keep {
-		margin: var(--s-2) 0;
-	}
-	.confirm {
-		margin-top: var(--s-1);
-	}
-	.pick {
-		margin-top: var(--s-1);
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
-	.items {
-		list-style: none;
-		padding: 0;
-		margin: var(--s-2) 0 0;
-		display: grid;
-		gap: var(--s-2);
-		max-height: 420px;
-		overflow: auto;
-		overflow-wrap: anywhere;
-	}
-	.next {
-		margin: var(--s-2) 0 0;
-		padding-left: var(--s-5);
-	}
-	.report {
-		margin-top: var(--s-4);
-	}
-	@media (max-width: 640px) {
-		.rule {
-			grid-template-columns: minmax(0, 1fr) auto;
-		}
-		.rule :global(.field:first-child) {
-			grid-column: 1 / -1;
-		}
+	.gone { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+	@media (max-width: 600px) {
+		.sk-rail { grid-template-columns: minmax(0, 1fr) 44px 44px 44px 44px; }
+		.sk-rail .sk { height: 44px; }
 	}
 </style>

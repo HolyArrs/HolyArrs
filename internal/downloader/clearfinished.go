@@ -51,6 +51,7 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	if store.Get(ctx, m.Store.Read(), "releases", *d.ReleaseID, &rel) == nil {
 		relName = rel.Name
 	}
+	said := "Cleared the imported download from " + dr.Name
 	if root, rel := m.finishedFolder(folder, relName, dr); rel != "" {
 		// Deleted through a handle on the shared folder: os.Root never follows a
 		// link or junction out of it, whatever the path's parts point at.
@@ -66,14 +67,16 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 			m.event(ctx, &d, "download_not_removed", fmt.Sprintf("Cleared the imported download from %s, but its files could not be deleted: %v", dr.Name, firstLine(rerr.Error())))
 			return
 		}
+		said = "Cleared the imported download and its files from " + dr.Name
 	}
-	m.event(ctx, &d, "download_removed", "Cleared the imported download and its files from "+dr.Name)
+	m.event(ctx, &d, "download_removed", said)
 }
 
 // finishedFolder says which shared folder holds the job's folder and the
 // folder's path inside it, when it may be deleted: named after this
 // download's Release (a client's ".1" suffix allowed), below (never equal
-// to) one of the Downloader's shared folders (path map or save root), there,
+// to) one of the Downloader's shared folders (a file's own folder when the
+// client names the job by its file) (path map or save root), there,
 // and a plain folder (not a link, junction or other special file). Anything
 // else, such as a category folder the client named instead, is left alone:
 // rel "" means leave the disk alone.
@@ -82,6 +85,10 @@ func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) 
 		return "", ""
 	}
 	local := filepath.Clean(mapLocal(content, dr.PathMap))
+	// SABnzbd names a one-file job by its file: the job folder is its parent.
+	if fi, err := os.Lstat(local); err == nil && fi.Mode().IsRegular() {
+		local = filepath.Dir(local)
+	}
 	if !sameJobName(filepath.Base(local), relName) {
 		return "", ""
 	}

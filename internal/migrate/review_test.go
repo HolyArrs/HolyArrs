@@ -210,8 +210,11 @@ func TestPeopleNeedTheOwnersWord(t *testing.T) {
 		t.Fatalf("owner without confirmation: %+v", it.Person)
 	}
 	rep := l.mv.Run(ctx, 0, p, true, domain.Actor{Kind: "user", ID: 1}, nil)
-	if got := lineOf(t, rep, "person:seerr:2"); got.Result != ResSkipped || !strings.Contains(got.Detail, "same name") {
+	if got := lineOf(t, rep, "person:seerr:2"); got.Result != ResSkipped || got.Choose != ChooseSameName {
 		t.Fatalf("same name: %+v", got)
+	}
+	if !hasNext(rep, "Some people need a choice") {
+		t.Fatalf("no choice line in next: %q", rep.Next)
 	}
 	// A flag on a person who was not the owner there does nothing.
 	l.people = map[string]string{"person:seerr:3": "owner"}
@@ -219,8 +222,11 @@ func TestPeopleNeedTheOwnersWord(t *testing.T) {
 		t.Fatalf("owner from a non-owner: %+v", it.Person)
 	}
 	mv := l.move(t, Choices{People: map[string]string{"person:seerr:1": "owner", "person:seerr:2": "merge", "person:seerr:3": "admin"}})
-	if got := lineOf(t, mv.Report, "person:seerr:2"); got.Result != ResMatched {
+	if got := lineOf(t, mv.Report, "person:seerr:2"); got.Result != ResMatched || got.Choose != ChooseSameName {
 		t.Fatalf("merge: %+v", got)
+	}
+	if hasNext(mv.Report, "Some people need a choice") {
+		t.Fatalf("a made choice still asks for one: %q", mv.Report.Next)
 	}
 	if n := l.count(t, "SELECT count(*) FROM users WHERE name = 'Ana' COLLATE NOCASE"); n != 1 {
 		t.Fatal("a second Ana was made")

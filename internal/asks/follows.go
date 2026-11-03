@@ -103,9 +103,14 @@ func (s *Service) FollowAdded(ctx context.Context, p Person, titleIDs ...int64) 
 }
 
 // Unfollow stops a person's follow of a title (no follow: nothing to do).
+// For a movie followed before it was in the Library, the wait for its file
+// ends too, so the person is not told about it later.
 func (s *Service) Unfollow(ctx context.Context, userID, titleID int64) error {
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM follows WHERE user_id = ? AND title_id = ?", userID, titleID)
+		if _, err := tx.Exec("DELETE FROM follows WHERE user_id = ? AND title_id = ?", userID, titleID); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = (SELECT json_extract(source_ids, '$.tmdb') FROM titles WHERE id = ? AND kind = 'movie')`, userID, titleID)
 		return err
 	})
 }

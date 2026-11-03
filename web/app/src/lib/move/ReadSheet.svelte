@@ -1,0 +1,262 @@
+<script lang="ts" module>
+	/** An old app's key saved from the secrets file (owner only); never the key itself. */
+	export interface SavedKey {
+		kind: string;
+		address: string;
+		allow_local_network: boolean;
+	}
+	/** What a read answers. */
+	export interface ReadAnswer {
+		snapshot: import('../move.ts').Snapshot;
+		needs_reentry?: string[];
+		notes?: string[];
+	}
+</script>
+
+<script lang="ts">
+	import Sheet from '../ui/Sheet.svelte';
+	import Button from '../ui/Button.svelte';
+	import SegmentedControl from '../ui/SegmentedControl.svelte';
+	import StepCapsule from '../ui/StepCapsule.svelte';
+	import { api, ApiError, message } from '../api.ts';
+	import { toasts } from '../toasts.svelte.ts';
+	import { apps, appLabel, appName, placeholderFor, type AppKind } from '../move.ts';
+
+	// Add an app, or read one again: check the connection, then read it.
+	// Closing the sheet does not stop a read; Stop reading does (the server
+	// stops too, as the request ends).
+	let {
+		open = $bindable(false),
+		start = 'radarr',
+		again = false,
+		saved = [],
+		reading = $bindable(''),
+		onread
+	}: {
+		open?: boolean;
+		/** The app the sheet opens on. */
+		start?: AppKind;
+		/** Reading an app again (the title says so). */
+		again?: boolean;
+		saved?: SavedKey[];
+		/** The app being read now, or ''. */
+		reading?: string;
+		onread: (r: ReadAnswer, kind: AppKind, usedSaved: boolean) => void;
+	} = $props();
+
+	let kind = $state<AppKind>('radarr');
+	let way = $state<'api' | 'backup'>('api');
+	let address = $state('');
+	let key = $state('');
+	let username = $state('');
+	let signWord = $state('');
+	let backupPath = $state('');
+	let local = $state(true);
+	let useSaved = $state(true);
+	let error = $state('');
+	let answered = $state('');
+	let checking = $state(false);
+	let ctrl: AbortController | null = null;
+	let form = $state<HTMLFormElement>();
+
+	const qbit = $derived(kind === 'qbittorrent');
+	const savedKey = $derived(saved.find((x) => x.kind === kind));
+	const withSaved = $derived(way === 'api' && !!savedKey && useSaved);
+	const busy = $derived(reading !== '');
+	const title = $derived(again ? `Read ${appName(kind)} again` : 'Add an app');
+
+	// Each open starts clean, on the app it was opened for.
+	let wasOpen = false;
+	$effect(() => {
+		if (open && !wasOpen) {
+			if (!busy) {
+				kind = start;
+				way = 'api';
+				useSaved = true;
+				address = again ? (saved.find((x) => x.kind === start)?.address ?? '') : '';
+				backupPath = '';
+				local = true;
+				error = '';
+				answered = '';
+			}
+		}
+		wasOpen = open;
+	});
+
+	function changed() {
+		error = '';
+		answered = '';
+	}
+
+	function body(): Record<string, unknown> {
+		const b: Record<string, unknown> = { kind };
+		if (way === 'backup') {
+			b.path = backupPath.trim();
+			return b;
+		}
+		if (withSaved) {
+			b.use_saved_key = true;
+			return b;
+		}
+		b.url = address.trim();
+		b.allow_local_network = local;
+		if (qbit && (username || signWord)) {
+			b.username = username;
+			b.password = signWord;
+		}
+		if (key) b.key = key;
+		return b;
+	}
+
+	function quiet(err: unknown): boolean {
+		return (err instanceof ApiError && err.body.code === 'reauth') || (err instanceof DOMException && err.name === 'AbortError');
+	}
+
+	async function check() {
+		if (form && !form.reportValidity()) return;
+		checking = true;
+		changed();
+		try {
+			const r = await api.post<{ app: { kind: string; version?: string } }>('/migrate/probe', body());
+			answered = `${appName(kind)}${r.app?.version ? ' ' + r.app.version : ''} answered. Ready to read.`;
+		} catch (err) {
+			if (!quiet(err)) error = message(err);
+		} finally {
+			checking = false;
+		}
+	}
+
+	async function read(e: SubmitEvent) {
+		e.preventDefault();
+		if (busy) return;
+		const k = kind;
+		const b = body();
+		const usedSaved = !!b.use_saved_key;
+		ctrl = new AbortController();
+		reading = k;
+		changed();
+		try {
+			const r = await api.request<ReadAnswer>('/migrate/read', { method: 'POST', body: b, signal: ctrl.signal });
+			key = '';
+			signWord = '';
+			open = false;
+			onread(r, k, usedSaved);
+		} catch (err) {
+			if (quiet(err)) return;
+			if (open) error = message(err);
+			else toasts.push(`${appName(k)} was not read: ${message(err)}`, 'fail');
+		} finally {
+			reading = '';
+			ctrl = null;
+			key = '';
+			signWord = '';
+		}
+	}
+
+	/** stop ends the read: the request is aborted, so the server stops reading. */
+	export function stop() {
+		ctrl?.abort();
+	}
+</script>
+
+<Sheet bind:open {title} size="md" placement="auto">
+	<form id="move-read-form" bind:this={form} onsubmit={read}>
+		<div class="srow">
+			<div class="txt"><label for="move-app">App</label></div>
+			<div class="ctl">
+				<select id="move-app" class="input" bind:value={kind} onchange={changed} disabled={busy}>
+					{#each apps as a (a.kind)}<option value={a.kind}>{appLabel(a.kind)}</option>{/each}
+				</select>
+			</div>
+		</div>
+		<div class="srow">
+			<div class="txt"><span class="label" id="move-how-l">How</span></div>
+			<div class="ctl">
+				<SegmentedControl
+					label="How to read it"
+					options={[
+						{ value: 'api', label: qbit ? 'Address and sign-in' : 'Address and key' },
+						{ value: 'backup', label: 'Backup file' }
+					]}
+					bind:value={way}
+					onchange={changed}
+				/>
+			</div>
+		</div>
+		{#if way === 'api'}
+			{#if savedKey}
+				<div class="srow" data-testid="use-saved-key">
+					<div class="txt"><label for="move-saved">Use the saved key</label><span class="hint">Sent only to {savedKey.address}.</span></div>
+					<div class="ctl">
+						<label class="switch"><input id="move-saved" type="checkbox" bind:checked={useSaved} onchange={changed} /><span class="sw" aria-hidden="true"></span></label>
+					</div>
+				</div>
+			{/if}
+			<div class="srow">
+				<div class="txt">
+					{#if withSaved}<span class="label">Address</span>{:else}<label for="move-address">Address</label>{/if}
+				</div>
+				<div class="ctl">
+					{#if withSaved}
+						<span class="value mono addr" data-testid="saved-address">{savedKey?.address}</span>
+					{:else}
+						<input id="move-address" class="input mono" type="url" bind:value={address} oninput={changed} placeholder={placeholderFor(kind)} required autocomplete="off" spellcheck="false" />
+					{/if}
+				</div>
+			</div>
+			{#if !withSaved}
+				{#if qbit}
+					<div class="srow">
+						<div class="txt"><label for="move-user">User name</label><span class="hint">Found in the app's own settings.</span></div>
+						<div class="ctl"><input id="move-user" class="input" bind:value={username} oninput={changed} autocomplete="off" required={!key} /></div>
+					</div>
+					<div class="srow">
+						<div class="txt"><label for="move-pass">Password</label></div>
+						<div class="ctl"><input id="move-pass" class="input" type="password" bind:value={signWord} oninput={changed} autocomplete="new-password" required={!key} /></div>
+					</div>
+					<div class="srow">
+						<div class="txt"><label for="move-key">API key</label><span class="hint">qBittorrent 5.2 and later, instead of a sign-in.</span></div>
+						<div class="ctl"><input id="move-key" class="input mono" type="password" bind:value={key} oninput={changed} autocomplete="new-password" spellcheck="false" /></div>
+					</div>
+				{:else}
+					<div class="srow">
+						<div class="txt"><label for="move-key">API key</label><span class="hint">Found in the app's own settings.</span></div>
+						<div class="ctl"><input id="move-key" class="input mono" type="password" bind:value={key} oninput={changed} autocomplete="new-password" spellcheck="false" required /></div>
+					</div>
+				{/if}
+				<div class="srow">
+					<div class="txt"><label for="move-local">May reach the local network</label><span class="hint">On when the app runs on this machine or your home network.</span></div>
+					<div class="ctl">
+						<label class="switch"><input id="move-local" type="checkbox" bind:checked={local} onchange={changed} /><span class="sw" aria-hidden="true"></span></label>
+					</div>
+				</div>
+			{/if}
+		{:else}
+			<div class="srow">
+				<div class="txt"><label for="move-path">Backup file</label><span class="hint">A full path on this server, like /backups/radarr.zip.</span></div>
+				<div class="ctl"><input id="move-path" class="input mono" bind:value={backupPath} oninput={changed} placeholder="/backups/{kind}.zip" required autocomplete="off" spellcheck="false" /></div>
+			</div>
+		{/if}
+	</form>
+	{#if busy}
+		<div class="cap" role="status"><StepCapsule tone="go" live fill={0.4} status="processing" word="Reading {appName(reading)}" detail="this can take a few minutes" testid="read-capsule" /></div>
+	{/if}
+	{#if answered}<p class="notice" role="status" data-testid="probe-ok">{answered}</p>{/if}
+	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>
+		<Button onclick={check} busy={checking} disabled={busy}>Check connection</Button>
+		<!-- One button that changes, so focus stays on it while reading. -->
+		<Button variant="primary" type={busy ? 'button' : 'submit'} form={busy ? undefined : 'move-read-form'} onclick={busy ? stop : undefined}>{busy ? 'Stop reading' : `Read ${appName(kind)}`}</Button>
+	{/snippet}
+</Sheet>
+
+<style>
+	.addr { display: block; max-width: min(260px, 46vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.cap { margin-top: 12px; }
+	.notice, .form-error { margin-top: 12px; }
+	select.input { width: 260px; }
+	@media (max-width: 600px) {
+		select.input { width: min(260px, 46vw); }
+	}
+</style>

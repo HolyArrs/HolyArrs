@@ -1,11 +1,12 @@
 <script module lang="ts">
 	// Back to Search reuses what was on screen: the answers kept when Search was
 	// left, for that history entry and address only (a fresh visit loads anew).
+	import { historyIndex } from '#lib/came-from.svelte.ts';
 	let kept: { key: string; data: unknown } | null = null;
 	function entryKey(): string {
 		if (typeof history === 'undefined') return '';
-		const i = (history.state as Record<string, unknown> | null)?.['sveltekit:history'];
-		return typeof i === 'number' ? `${i}|${location.pathname}${location.search}` : '';
+		const i = historyIndex();
+		return i !== null ? `${i}|${location.pathname}${location.search}` : '';
 	}
 </script>
 

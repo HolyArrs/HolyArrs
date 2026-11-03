@@ -189,6 +189,16 @@ func lineOf(t *testing.T, r *Report, key string) Line {
 	return Line{}
 }
 
+// hasNext says whether one of the report's next steps starts with prefix.
+func hasNext(r *Report, prefix string) bool {
+	for _, n := range r.Next {
+		if strings.HasPrefix(n, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 func TestDryRunChangesNothing(t *testing.T) {
 	l := newMoveLab(t)
 	rep := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)

@@ -68,6 +68,10 @@
 	let atEnd = $state(false);
 	// Windowing: a deferred row mounts near the screen; then a dozen cards, more as it scrolls.
 	let mounted = $state(untrack(() => !defer)); // once mounted a row stays
+	// A row that stops deferring (Back to a spot further down) mounts at once.
+	$effect(() => {
+		if (!defer) mounted = true;
+	});
 	let limit = $state(ROW_FIRST);
 	const shown = $derived(items ? (items.length > limit ? items.slice(0, limit) : items) : []);
 	const more = $derived(!!items && items.length > limit);
