@@ -39,7 +39,8 @@ const survey = () => page.evaluate(() => {
 		const r = el.getBoundingClientRect();
 		if (!r.width || !r.height || r.bottom < 0 || r.right < 0 || r.left > cw) continue;
 		const cs = getComputedStyle(el);
-		if (cs.visibility === 'hidden' || el.classList.contains('sr-only') || el.closest('[inert], [aria-hidden=true]')) continue;
+		// Hidden, or not a target at all (pointer-events: none, e.g. a disabled stand-in icon).
+		if (cs.visibility === 'hidden' || cs.pointerEvents === 'none' || el.classList.contains('sr-only') || el.closest('[inert], [aria-hidden=true]')) continue;
 		// Links in running text are exempt (WCAG 2.5.8); a linked heading is a control.
 		if (el.tagName === 'A' && cs.display === 'inline' && !el.parentElement?.matches('h1, h2, h3, h4, h5, h6')) continue;
 		if (r.width <= 2 && r.height <= 2) continue; // visually hidden inputs
