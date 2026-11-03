@@ -538,3 +538,21 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toBeVisible(slow);
 	await noSidewaysScroll(dot);
 });
+
+test('Approve on a card still lands when the approver leaves the page at once', async ({ browser }) => {
+	const lou = await member(browser, 'lou');
+	const ask = await askButton(lou, 'marigold', 'Marigold Bellows');
+	await ask.click();
+	await lou.getByRole('dialog', { name: /^Ask for Marigold Bellows/ }).getByRole('button', { name: 'Ask for Marigold Bellows', exact: true }).click();
+	await expect(ask).toBeDisabled();
+
+	await own.goto('/requests');
+	await card(own, 'Marigold Bellows').getByRole('button', { name: 'Approve Marigold Bellows' }).click();
+	// Away (in the app) before the card's beat and the Undo time are over: the answer is still sent.
+	await own.locator('nav.tabbar').getByRole('link', { name: 'Home', exact: true }).click();
+	await expect(own).toHaveURL(/\/$/);
+	await expect.poll(async () => {
+		const { asks } = (await (await own.request.get('/api/v1/asks?state=approved')).json()) as { asks: { name: string }[] };
+		return asks.some((a) => a.name === 'Marigold Bellows');
+	}, { timeout: 15_000 }).toBe(true);
+});

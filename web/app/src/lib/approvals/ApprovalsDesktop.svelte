@@ -219,9 +219,14 @@
 
 	// Approving shows its answer on the card for a beat, then the card leaves (Undo stays in the toast).
 	let approving = $state(new Set<number>());
-	const beats = new Set<ReturnType<typeof setTimeout>>();
+	const beats = new Map<ReturnType<typeof setTimeout>, Ask>();
+	// Leaving mid-beat still approves: hand the ask on now, and the page's own
+	// leave step sends it (a child is torn down before its page).
 	onDestroy(() => {
-		for (const t of beats) clearTimeout(t);
+		for (const [t, a] of beats) {
+			clearTimeout(t);
+			if (waiting(a)) ctx.approve([a]);
+		}
 	});
 	function approveOne(a: Ask) {
 		if (approving.has(a.id)) return;
@@ -246,7 +251,7 @@
 			approving = next;
 			if (had) void tick().then(() => (after?.isConnected ? after : (document.querySelector<HTMLElement>('.bc .open') ?? sfBtn))?.focus({ preventScroll: true }));
 		}, ms(560));
-		beats.add(t);
+		beats.set(t, a);
 	}
 
 	// The window: one ask on the Stage.
