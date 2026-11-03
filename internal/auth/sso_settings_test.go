@@ -252,3 +252,68 @@ func TestBrokenOIDCKeepsTrustedProxy(t *testing.T) {
 		t.Fatal("a broken single sign-on setup turned off trusted proxy sign-in")
 	}
 }
+
+// A secret saved before any issuer never goes to the first issuer typed later.
+func TestSSOSecretWithoutIssuerNeverFollows(t *testing.T) {
+	f, own, idp := ssoFixture(t)
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/sso", ssoBody(t, map[string]any{"on": false, "client_secret": "early-" + pw})); resp.StatusCode != 200 {
+		t.Fatalf("secret first: %d %s", resp.StatusCode, out)
+	}
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/sso", ssoBody(t, map[string]any{"on": true, "issuer": idp.srv.URL, "client_id": "holyarrs"})); resp.StatusCode != 400 || !strings.Contains(out, "secret") {
+		t.Fatalf("early secret followed the first issuer: %d %s", resp.StatusCode, out)
+	}
+	if f.a.ssoNow().oidc != nil {
+		t.Fatal("refused save started single sign-on")
+	}
+}
+
+// When the saved secret cannot be read after a save, single sign-on stops
+// rather than keep the old setup running.
+func TestSSOUnreadableSecretStopsSingleSignOn(t *testing.T) {
+	f, own, idp := ssoFixture(t)
+	save := map[string]any{"on": true, "issuer": idp.srv.URL, "client_id": "holyarrs", "client_secret": "kept-" + pw}
+	if resp, _ := own.do(t, f, "PUT", "/api/v1/auth/sso", ssoBody(t, save)); resp.StatusCode != 200 || f.a.ssoNow().oidc == nil {
+		t.Fatal("first save")
+	}
+	sqlDo(t, f, "DELETE FROM secrets WHERE kind = 'oidc_client_secret'")
+	delete(save, "client_secret")
+	if resp, _ := own.do(t, f, "PUT", "/api/v1/auth/sso", ssoBody(t, save)); resp.StatusCode != 500 {
+		t.Fatalf("unreadable secret: %d", resp.StatusCode)
+	}
+	if f.a.ssoNow().oidc != nil {
+		t.Fatal("the old setup kept running")
+	}
+}
+
+// A sign-in already finishing when the owner turns single sign-on off
+// cannot leave a session behind: the change waits for it, then ends it.
+func TestSSOChangeWaitsForFinishingSignIns(t *testing.T) {
+	f, own, idp := ssoFixture(t)
+	save := map[string]any{"on": true, "issuer": idp.srv.URL, "client_id": "holyarrs", "client_secret": "fence-" + pw}
+	own.do(t, f, "PUT", "/api/v1/auth/sso", ssoBody(t, save))
+	join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
+	f.a.ssoMu.RLock() // a finish in flight
+	done := make(chan int, 1)
+	go func() {
+		save["on"] = false
+		resp, _ := own.do(t, f, "PUT", "/api/v1/auth/sso", ssoBody(t, save))
+		done <- resp.StatusCode
+	}()
+	select {
+	case code := <-done:
+		f.a.ssoMu.RUnlock()
+		t.Fatalf("the change did not wait for the finish: %d", code)
+	case <-time.After(300 * time.Millisecond):
+	}
+	// The finish makes its session, then lets go.
+	sqlDo(t, f, "INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at) SELECT 'late-oidc', user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, 'late-family', 'oidc', '' FROM sessions WHERE user_id = ? LIMIT 1", userID(t, f, "ana"))
+	f.a.ssoMu.RUnlock()
+	if code := <-done; code != 200 {
+		t.Fatalf("turn off: %d", code)
+	}
+	var n int
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM sessions WHERE hash = 'late-oidc'").Scan(&n)
+	if n != 0 {
+		t.Fatal("a session made while turning off survived")
+	}
+}

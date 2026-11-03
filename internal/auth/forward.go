@@ -113,6 +113,8 @@ func (a *Auth) ssoPassed(r *http.Request) {
 
 func (a *Auth) forwardLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
+	a.ssoMu.RLock() // until the session exists: see ssoMu
+	defer a.ssoMu.RUnlock()
 	fwd := a.ssoNow().forward // read once: a settings save may swap it
 	if fwd == nil {
 		fail(w, http.StatusNotFound, "this sign-in method is off")
@@ -138,6 +140,8 @@ func (a *Auth) forwardLogin(w http.ResponseWriter, r *http.Request) {
 
 func (a *Auth) forwardLink(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
+	a.ssoMu.RLock()
+	defer a.ssoMu.RUnlock()
 	fwd := a.ssoNow().forward // read once: a settings save may swap it
 	if fwd == nil {
 		fail(w, http.StatusNotFound, "this sign-in method is off")

@@ -127,6 +127,10 @@ type Auth struct {
 	safeMode        bool
 	sso             atomic.Pointer[ssoState] // swapped whole when single sign-on settings change; read with ssoNow
 	ssoOpt          SSOOptions               // as started: who owns single sign-on, and the address rules
+	// ssoMu fences sign-ins against changes: a single sign-on or trusted proxy
+	// finish holds it to read until its session or two-factor step exists; a
+	// settings change or an unlink holds it to write, so it ends what those made.
+	ssoMu sync.RWMutex
 
 	mu        sync.Mutex
 	fails     map[string]*failure

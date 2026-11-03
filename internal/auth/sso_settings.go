@@ -281,7 +281,8 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 	if cur.Issuer != "" && sameIssuer(next.Issuer, cur.Issuer) {
 		next.Issuer = cur.Issuer // keep links working when only a slash differs
 	}
-	changed := cur.Issuer != "" && (next.Issuer != cur.Issuer || next.ClientID != cur.ClientID)
+	// A saved secret with no issuer yet counts too: it never goes to whatever issuer comes next.
+	changed := (cur.Issuer != "" || cur.SecretID != 0) && (next.Issuer != cur.Issuer || next.ClientID != cur.ClientID)
 	newSecret := body.ClientSecret
 	if len(newSecret) > 4096 {
 		fail(w, http.StatusBadRequest, "the client secret is too long")
@@ -316,6 +317,13 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 	}
 	// Turning it off or moving to another provider ends what single sign-on started.
 	endAll := changed || (cur.On && !next.On)
+	// No single sign-on finish runs while this changes (see ssoMu), and when
+	// it ends, the running setup stops before the purge, not after.
+	a.ssoMu.Lock()
+	defer a.ssoMu.Unlock()
+	if endAll {
+		a.swapOIDC(nil)
+	}
 	var linksGone, sessionsGone int64
 	by := Actor(ctx)
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
@@ -371,9 +379,11 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 	if !next.On {
 		a.swapOIDC(nil)
 	} else {
-		secret := ""
-		if next.SecretID != 0 {
-			if secret, err = a.vault.Get(ctx, next.SecretID); err != nil {
+		secret := newSecret // just written: no need to read it back
+		if secret == "" && next.SecretID != 0 {
+			if secret, err = a.vault.Get(context.WithoutCancel(ctx), next.SecretID); err != nil {
+				// Never leave the old setup running against what was saved.
+				a.swapOIDC(nil)
 				serverError(w, "single sign-on secret", err)
 				return
 			}
@@ -490,6 +500,8 @@ func (a *Auth) unlinkSSO(w http.ResponseWriter, r *http.Request, userID int64, s
 		return
 	}
 	var ended int64
+	a.ssoMu.Lock() // no finish runs meanwhile: see ssoMu
+	defer a.ssoMu.Unlock()
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		var hash string
 		if err := tx.QueryRow("SELECT password_hash FROM users WHERE id = ?", userID).Scan(&hash); err != nil {

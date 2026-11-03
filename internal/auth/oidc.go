@@ -498,6 +498,8 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 
 func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) {
 	oidcPrivate(w)
+	a.ssoMu.RLock() // until the session exists: see ssoMu
+	defer a.ssoMu.RUnlock()
 	o := a.ssoNow().oidc // read once: a settings save may swap it
 	if o == nil {
 		fail(w, http.StatusNotFound, "OIDC sign-in is not enabled")
