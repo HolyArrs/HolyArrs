@@ -452,6 +452,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
 	a.mcpRoutes(m)
+	a.oldAppRoutes(m)
 	m.Handle("GET /", web.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
@@ -459,10 +460,10 @@ func (a *API) Handler() http.Handler {
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
 		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
-		return secure(a.s.Auth.Middleware(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))
+		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m)))))))))
 	}
 	a.ai.inner = a.partGate(m, m)
-	return secure(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m)))))
+	return secure(a.oldAppGate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.

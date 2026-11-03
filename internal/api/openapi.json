@@ -21545,6 +21545,81 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/old-app-api": {
+      "get": {
+        "description": "Whether the old-app API is on, whether a delete from those apps may take files, and per side (sonarr, radarr) the address to paste into Seerr or Overseerr and the key's hint, maker and last use. Key values are never shown here.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Old-app API settings",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Send enabled and/or delete_files (both off by default). While off, /sonarr/ and /radarr/ answer 404.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Turn the old-app API on or off",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/old-app-api/keys/{side}": {
+      "delete": {
+        "description": "The side's key stops working at once. Needs a password sign-in.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "side",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "404": {
+            "description": "No key for this side"
+          }
+        },
+        "summary": "Remove an old-app API key",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Makes the key for one side (sonarr or radarr) and shows it only in this answer; an older key of that side stops working. The key acts as the person who made it, who must be allowed to manage the Library. Needs a password sign-in.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "side",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The new key"
+          }
+        },
+        "summary": "Make an old-app API key",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/settings/release-gate": {
       "get": {
         "description": "The gate new movies get.",
@@ -27256,6 +27331,7 @@
   "x-holyarrs-scopes": {
     "admin": "People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore) and the outside-service key settings: every route only the owner or an admin may use, the key and sign-in routes of My account, and every GET route not marked read. Making or promoting an admin also needs the control scope.",
     "all": "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
+    "compat": "The old-app API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
     "control": "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
     "health_read": "Health states only, for monitoring companions.",
     "mcp": "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",

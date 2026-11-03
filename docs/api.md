@@ -17,3 +17,5 @@ curl -X POST -H "X-Api-Key: $HOLYARRS_KEY" "http://10.10.25.25:18730/api/v1/sche
 ```
 
 Answers are JSON; errors are `{"error": "plain words"}` with an HTTP status. Secrets are never answered; they come back masked.
+
+Seerr and Overseerr do not use this API: they talk to HolyArrs as if it were Sonarr and Radarr, with keys of their own. See [Connect Seerr or Overseerr](old-app-api.md).

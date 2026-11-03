@@ -482,6 +482,22 @@ var Routes = map[string]Owner{
 	"GET /api/v1/settings/release-gate":                    movies,
 	"PUT /api/v1/settings/release-gate":                    movies,
 
+	// The old-app API (decision 0008): the Sonarr side is TV shows, the
+	// Radarr side Movies; its settings are core.
+	"GET /sonarr/":    shows,
+	"POST /sonarr/":   shows,
+	"PUT /sonarr/":    shows,
+	"DELETE /sonarr/": shows,
+	"GET /radarr/":    movies,
+	"POST /radarr/":   movies,
+	"PUT /radarr/":    movies,
+	"DELETE /radarr/": movies,
+
+	"GET /api/v1/settings/old-app-api":                Core,
+	"PUT /api/v1/settings/old-app-api":                Core,
+	"POST /api/v1/settings/old-app-api/keys/{side}":   Core,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}": Core,
+
 	// Shows.
 	"POST /api/v1/shows":                       shows,
 	"GET /api/v1/shows/lookup":                 shows,
