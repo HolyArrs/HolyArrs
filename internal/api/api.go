@@ -365,6 +365,7 @@ func (a *API) Handler() http.Handler {
 	a.sourceRoutes(m)
 	a.downloaderRoutes(m)
 	a.organiseRoutes(m)
+	a.holdingRoutes(m)
 	a.healthRoutes(m)
 	a.mediaServerRoutes(m)
 	a.showRoutes(m)

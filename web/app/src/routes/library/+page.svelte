@@ -346,6 +346,7 @@
 		{ kind: 'heading', label: 'Library tools' },
 		{ label: 'People', href: to('/people') },
 		{ label: 'Held files', href: to('/library/held') },
+		...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', href: to('/library/deleted') }] as MenuItem[]) : []),
 		{ label: 'Turned down releases', href: to('/library/turned-down') },
 		...(partOn('subtitles') ? ([{ label: 'Missing subtitles', href: to('/library/missing-subtitles') }] as MenuItem[]) : []),
 		{ label: 'Video codecs', href: to('/library/copies') },

@@ -45,7 +45,9 @@
 		error = '';
 		try {
 			const p = await api.post<RemovePlan>(`/titles/${titleId}/delete`, { delete_files: files, never_add: never, apply: true });
-			toasts.push(p.held.length ? `${name} is deleted. Its files are in the holding folder${p.holding_days ? ` for ${p.holding_days} days` : ''}.` : `${name} is deleted. Its files stay on disk.`, 'ok');
+			const held = p.held.map((h) => h.file_id);
+			toasts.push(p.held.length ? `${name} is deleted. Its files are in the holding folder${p.holding_days ? ` for ${p.holding_days} days` : ''}.` : `${name} is deleted. Its files stay on disk.`, 'ok',
+				held.length ? { ms: 10000, action: { label: 'Undo', run: () => void api.post<{ results: { result: string }[] }>('/holding/restore', { ids: held }).then((r) => { const bad = r.results.find((x) => x.result !== 'restored'); toasts.push(bad ? bad.result : `${name} is back.`, bad ? 'fail' : 'ok'); }, (e) => toasts.push(message(e), 'fail')) } } : {});
 			open = false;
 			ondone?.(p);
 		} catch (e) {

@@ -14759,6 +14759,78 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/holding": {
+      "get": {
+        "description": "Lists the deleted files still waiting in the holding folders, newest first. path is where each file was in its Library folder; title_deleted says the movie, show or artist was deleted with it; expires_at is when the daily clean-up empties it (left out when holding_days is 0).",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "files": {
+                      "items": {
+                        "properties": {
+                          "deleted_at": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "expires_at": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "folder": {
+                            "type": "string"
+                          },
+                          "held_path": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "size": {
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "title_deleted": {
+                            "type": "boolean"
+                          },
+                          "title_id": {
+                            "format": "int64",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The held files."
+          }
+        },
+        "summary": "List deleted files that can be restored",
+        "tags": [
+          "Organise"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/holding/clean": {
       "post": {
         "description": "Queues the clean-up that runs daily: days older than holding_days leave the holding folders.",
@@ -14782,6 +14854,83 @@
           }
         },
         "summary": "Empty old holding days now",
+        "tags": [
+          "Organise"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/holding/restore": {
+      "post": {
+        "description": "Moves held files back to where they were. A taken place is never overwritten. A deleted title comes back to the Library with its file, and a rescan is queued.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "ids": {
+                    "items": {
+                      "format": "int64",
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "rescan_job_id": {
+                      "format": "int64",
+                      "type": "integer"
+                    },
+                    "results": {
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "titles_back": {
+                      "items": {
+                        "format": "int64",
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "What happened to each file; result is restored or why not."
+          },
+          "400": {
+            "description": "No ids, or more than 5000."
+          }
+        },
+        "summary": "Restore deleted files",
         "tags": [
           "Organise"
         ],
