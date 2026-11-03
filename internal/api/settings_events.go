@@ -62,6 +62,10 @@ func settingsChange(method, path string) (area, label, action string, id int64, 
 	if seg[0] == "settings" && len(seg) == 2 && method == http.MethodPut {
 		return seg[1], "Settings: " + strings.ReplaceAll(seg[1], "-", " "), "changed", 0, true
 	}
+	// Sign-in settings: local-network skip, two-factor rules, password length, outside sign-in.
+	if seg[0] == "auth" && len(seg) == 2 && seg[1] == "settings" && method == http.MethodPut {
+		return "sign-in", "Sign-in settings", "changed", 0, true
+	}
 	label, known := settingsAreas[seg[0]]
 	if !known {
 		return "", "", "", 0, false
@@ -93,8 +97,11 @@ func (a *API) logSettingsChanges(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
+		// Only a list item has a name; a whole settings page (PUT
+		// /settings/downloaders) is not "the newest Downloader".
+		item := !strings.HasPrefix(label, "Settings: ") && area != "sign-in"
 		name := ""
-		if action == "deleted" {
+		if item && action == "deleted" {
 			name = a.settingsName(r.Context(), area, id)
 		}
 		sw := &statusWriter{ResponseWriter: w}
@@ -103,7 +110,7 @@ func (a *API) logSettingsChanges(h http.Handler) http.Handler {
 			return
 		}
 		ctx := context.WithoutCancel(r.Context())
-		if action != "deleted" {
+		if item && action != "deleted" {
 			name = a.settingsName(ctx, area, id)
 		}
 		data := map[string]any{"area": area, "action": action}

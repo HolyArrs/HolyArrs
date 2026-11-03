@@ -222,6 +222,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	}
 	if !good {
 		log.Printf("auth: wrong two-factor code from %s", r.RemoteAddr)
+		a.failedEvent(r, t.name, "two-factor")
 		fail(w, http.StatusUnauthorized, "wrong code")
 		return
 	}
@@ -346,6 +347,7 @@ func (a *Auth) twoFactorEnable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: two-factor sign-in turned on for user %d", who.UserID)
+	a.accountEvent(r, who.UserID, "two_factor_on", who.Name+" turned on two-factor sign-in", nil)
 	writeJSON(w, http.StatusOK, map[string]any{"backup_codes": codes})
 }
 
@@ -380,6 +382,7 @@ func (a *Auth) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: two-factor sign-in turned off for user %d", who.UserID)
+	a.accountEvent(r, who.UserID, "two_factor_off", who.Name+" turned off two-factor sign-in", nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 

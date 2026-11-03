@@ -195,6 +195,7 @@ func (a *Auth) endUserSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: user %d signed out %d sessions of user %d", by.UserID, n, id)
+	a.accountEvent(r, id, "sessions_ended", byName(r)+" signed "+a.userName(r.Context(), id)+" out everywhere", map[string]any{"ended": n})
 	writeJSON(w, http.StatusOK, map[string]any{"ended": n})
 }
 

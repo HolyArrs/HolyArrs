@@ -27,8 +27,10 @@ var RoutineEventKinds = []string{
 // AuditEventKinds are the audit trail: sign-ins, sign-outs, API keys,
 // settings changes and owner controls. The keep times never apply to them;
 // they are kept AuditKeepDays, so failed sign-ins from outside cannot grow
-// without end.
-var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "control_used"}
+// without end. setting_changed is the older kind that held the values sent;
+// rows of it already saved stay hidden from History readers too.
+// secrets_imported is the owner's import of a secrets file (credentials).
+var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "setting_changed", "secrets_imported", "account_changed", "control_used"}
 
 // AuditKeepDays is how long audit Events are kept (fixed).
 const AuditKeepDays = 365

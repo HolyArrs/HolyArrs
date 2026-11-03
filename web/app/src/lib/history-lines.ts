@@ -139,7 +139,7 @@ function who(e: EventRecord, ctx: LineContext): string {
 	const named = str(d.asked_by) || (Array.isArray(d.asked_by) ? str(d.asked_by[0]) : '');
 	if (e.Actor?.kind === 'user') {
 		const id = e.Actor.id;
-		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || named || 'a member';
+		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || e.actor_name || named || 'a member';
 	}
 	return '';
 }

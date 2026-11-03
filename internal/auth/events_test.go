@@ -109,3 +109,62 @@ func TestFailedSignInCollapseWindow(t *testing.T) {
 		t.Fatalf("new window row %+v", es[0].Data)
 	}
 }
+
+// A wrong two-factor code, a turned-off member's sign-in and changes to a
+// member's account all land on the audit trail with how and by whom, never
+// with a password or a code.
+func TestTwoFactorTurnedOffAndAccountEvents(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	turnOnTwoFactor(t, f, own)
+	c := client(t)
+	tk := ticketFor(t, f, c, "luis")
+	call(t, c, "POST", f.srv.URL+"/api/v1/auth/login/two-factor", `{"ticket":"`+tk+`","code":"123456"}`, nil)
+
+	join(t, f, invite(t, f, own, `{}`), "ana")
+	var id int64
+	_ = f.s.Read().QueryRow("SELECT id FROM users WHERE name = 'ana'").Scan(&id)
+	if resp, out := own.do(t, f, "POST", "/api/v1/users/"+itoa(id)+"/password", `{"password":"another long test passphrase"}`); resp.StatusCode != 204 {
+		t.Fatalf("set password %d %s", resp.StatusCode, out)
+	}
+	if resp, out := own.do(t, f, "PUT", "/api/v1/users/"+itoa(id), `{"state":"disabled"}`); resp.StatusCode != 200 {
+		t.Fatalf("turn off %d %s", resp.StatusCode, out)
+	}
+	call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"ana","password":"another long test passphrase"}`, nil)
+
+	es, _, err := f.s.Events(context.Background(), store.EventFilter{Limit: 200})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fails := map[string]string{}
+	actions := map[string]string{}
+	for _, e := range es {
+		raw, _ := json.Marshal(e.Data)
+		if strings.Contains(string(raw), "123456") || strings.Contains(string(raw), "another long test passphrase") || strings.Contains(string(raw), pw) {
+			t.Fatalf("%s holds a secret: %s", e.Kind, raw)
+		}
+		switch e.Kind {
+		case "sign_in_failed":
+			fails[e.Data["how"].(string)] = e.Data["name"].(string)
+		case EventAccountChanged:
+			if e.Actor.Kind != "user" {
+				t.Fatalf("account change without a person %+v", e)
+			}
+			actions[e.Data["action"].(string)] = e.Summary
+		}
+	}
+	if fails["two-factor"] != "luis" {
+		t.Errorf("wrong code row %v", fails)
+	}
+	if fails["turned off"] != "ana" {
+		t.Errorf("turned-off member not named %v", fails)
+	}
+	for _, a := range []string{"two_factor_on", "invite_made", "password_set", "edited"} {
+		if actions[a] == "" {
+			t.Errorf("no %s account event (have %v)", a, actions)
+		}
+	}
+	if s := actions["edited"]; !strings.Contains(s, "ana") || !strings.Contains(s, "turned off") {
+		t.Errorf("edit line %q", s)
+	}
+}

@@ -118,7 +118,7 @@ export function textMatches(e: EventRecord, q: string, people?: Map<number, stri
 	const t = q.trim().toLowerCase();
 	if (!t) return true;
 	const d = e.Data ?? {};
-	const who = e.Actor?.kind === 'user' && e.Actor.id != null ? people?.get(e.Actor.id) : '';
+	const who = e.Actor?.kind === 'user' ? (e.Actor.id != null ? people?.get(e.Actor.id) : '') || e.actor_name : '';
 	return [e.title_name, e.Summary, e.episode, who, str(d.source_name), str(d.indexer), str(d.source), str(d.release)].some((v) => v?.toLowerCase().includes(t));
 }
 
@@ -208,7 +208,7 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^media_server_told$/, { label: 'In media server', icon: 'tv' }],
 	[/^file_replaced$/, { label: 'Upgraded', icon: 'sparkle' }],
 	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { label: 'Deleted', icon: 'trash' }],
-	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed)$/, { label: 'System', icon: 'info' }]
+	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed|secrets_imported|account_changed)$/, { label: 'System', icon: 'info' }]
 ];
 /** rowStep names what a row's newest step is; a folded download reads its furthest step. */
 export function rowStep(row: HistoryRow, fallback = ''): RowStep {
