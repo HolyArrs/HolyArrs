@@ -17,26 +17,8 @@
 	import '#lib/ui/settings-looks.css';
 
 	// Settings is one layout: folding groups on the left (look 6, Luis
-	// 2026-11-02), the page on the right. Ten finishes still sit on top of it
-	// until one is picked: ?finish=<id> or the Finish box, kept in this browser.
-	const finishes: { id: string; name: string }[] = [
-		{ id: 'plain', name: '1 Plain' },
-		{ id: 'ink', name: '2 Ink' },
-		{ id: 'grain', name: '3 Paper grain' },
-		{ id: 'glass', name: '4 Glass' },
-		{ id: 'outline', name: '5 Outline' },
-		{ id: 'soft', name: '6 Soft' },
-		{ id: 'carbon', name: '7 Carbon' },
-		{ id: 'spot', name: '8 Spotlight' },
-		{ id: 'brushed', name: '9 Brushed' },
-		{ id: 'ember', name: '10 Ember' }
-	];
-	const FIN_KEY = 'holyarrs.settings-finish';
-	let finishId = $state('plain');
-	function pickFinish(id: string) {
-		finishId = id;
-		try { localStorage.setItem(FIN_KEY, id); } catch {}
-	}
+	// 2026-11-02), the page on the right. Plain cards and buttons on one
+	// surface that holds the menu and the page together (Luis, 2026-11-03).
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
@@ -87,11 +69,6 @@
 
 	onMount(() => {
 		void refreshSettingsStatus();
-		const fq = page.url.searchParams.get('finish');
-		let fsaved: string | null = null;
-		try { fsaved = localStorage.getItem(FIN_KEY); } catch {}
-		const fid = fq ?? fsaved;
-		if (fid && finishes.some((f) => f.id === fid)) pickFinish(fid);
 		const onReauth = (e: Event) => {
 			const method = (e as CustomEvent<{ method?: string }>).detail?.method ?? 'GET';
 			session.s.localRecent = false;
@@ -145,7 +122,7 @@
 	{#if status && stateWords(status)}<span class="page-status" data-testid="page-status"><StatusPill kind={status.state === 'ok' ? 'in_library' : status.state === 'attention' ? 'failed' : 'missing'} label={stateWords(status)} /></span>{/if}
 {/snippet}
 
-<div class="settings-shell look-fold fin-{finishId}" class:home data-finish={finishId}>
+<div class="settings-shell look-fold" class:home>
 	<nav class="settings-nav" aria-label="Settings sections" data-testid="settings-nav">
 		<div class="nav-find">
 			<Icon name="search" size={15} />
@@ -203,13 +180,6 @@
 	</div>
 </div>
 
-<!-- Picks one of the ten finishes until Luis chooses. -->
-<div class="look-picker" data-testid="look-picker">
-	<label for="settings-finish">Finish</label>
-	<select id="settings-finish" value={finishId} onchange={(e) => pickFinish((e.currentTarget as HTMLSelectElement).value)}>
-		{#each finishes as f (f.id)}<option value={f.id}>{f.name}</option>{/each}
-	</select>
-</div>
 
 <style>
 	/* ---------- shared ---------- */
@@ -273,115 +243,28 @@
 	.fold-head:hover { background: var(--surface-2); }
 	.look-fold .nav-section { padding: 2px 0 6px 8px; margin-left: 16px; border-left: 1px solid var(--line); }
 
-	/* ======================================================================
-	   Finishes for look 6 (Luis, 2026-11-02). Each sets a backdrop behind the
-	   Settings area, the card surface, the buttons and the feel. Variables
-	   first, then the few rules a finish needs beyond them.
-	   ====================================================================== */
+	/* One surface for all of Settings (Luis, 2026-11-03): a quiet panel holds
+	   the side menu and the page, so the menu is not left on the bare page.
+	   Cards and buttons stay plain. The panel is a light tint of the text
+	   colour: soft grey under white cards in light, a slight lift in dark. */
 	.look-fold { position: relative; isolation: isolate;
-		--fin-r: 12px; --fin-card: var(--surface-1); --fin-edge: var(--line); --fin-shadow: 0 1px 2px rgb(0 0 0 / 25%), 0 8px 24px -12px rgb(0 0 0 / 45%);
-		--fin-btn-r: var(--r-btn); --fin-lift: 0; }
-	.look-fold::before { content: ''; position: absolute; inset: -24px -16px -48px; z-index: -1; pointer-events: none; border-radius: 28px; }
-	.look-fold .settings-content :global(.ui-settings) { border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); transition: box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
-	.look-fold :global(.ui-btn) { border-radius: var(--fin-btn-r); transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+		--fin-r: 12px; --fin-card: var(--surface-1); --fin-edge: var(--line);
+		--fin-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 8px 24px -14px rgb(0 0 0 / 35%); --fin-btn-r: var(--r-btn); }
+	.look-fold::before { content: ''; position: absolute; inset: -20px -20px -40px; z-index: -1; pointer-events: none; border-radius: 24px;
+		background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
+	.look-fold .settings-nav { padding-right: 16px; border-right: 1px solid var(--line); }
+	.look-fold .settings-content :global(.ui-settings) { border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); }
+	.look-fold :global(.ui-btn) { border-radius: var(--fin-btn-r); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.look-fold :global(.ui-btn:active:not(:disabled)) { transform: scale(0.98); }
 	.look-fold :global(.input) { border-radius: var(--fin-btn-r); }
 	.look-fold .nav-row, .look-fold .fold-head { border-radius: calc(var(--fin-btn-r) - 2px); }
-
-	/* 2 Ink: near-black, crisp edges, tighter corners, buttons inverted to white; nothing animates. */
-	.fin-ink { --fin-r: 8px; --fin-card: #161618; --fin-edge: rgb(255 255 255 / 9%); --fin-shadow: none; --fin-btn-r: 6px; }
-	.fin-ink::before { background: #0b0b0c; }
-	.fin-ink .settings-content :global(.ui-settings), .fin-ink :global(.ui-btn), .fin-ink .nav-row, .fin-ink .fold-head { transition: none; }
-	.fin-ink :global(.ui-btn.primary) { background: #f4f4f5; color: #0b0b0c; }
-	.fin-ink :global(.ui-btn.primary:hover:not(:disabled)) { background: #ffffff; }
-	.fin-ink :global(.ui-btn.secondary) { background: transparent; border-color: rgb(255 255 255 / 18%); }
-	.fin-ink :global(.ui-btn:active:not(:disabled)) { transform: none; }
-	.fin-ink :global(.input) { background: #0b0b0c; border-color: rgb(255 255 255 / 12%); }
-	.fin-ink .nav-row[aria-current='page'] { background: #f4f4f5; color: #0b0b0c; }
-	.fin-ink .nav-row[aria-current='page'] .glyph { color: #0b0b0c; }
-
-	/* 3 Paper grain: a warm grey sheet with fine noise, cards one tone lighter, a 1px bevel on buttons. */
-	.fin-grain { --fin-r: 10px; --fin-card: rgb(255 250 240 / 5%); --fin-edge: rgb(255 250 240 / 10%); --fin-shadow: inset 0 1px 0 rgb(255 250 240 / 6%); --fin-btn-r: 8px; }
-	.fin-grain::before { background: linear-gradient(180deg, rgb(255 250 240 / 3%), transparent 40%), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.07'/></svg>"); }
-	.fin-grain :global(.ui-btn) { box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%), inset 0 -1px 0 rgb(0 0 0 / 30%); }
-	.fin-grain :global(.ui-btn.secondary) { background: rgb(255 250 240 / 9%); }
-	.fin-grain :global(.input) { background: rgb(0 0 0 / 22%); box-shadow: inset 0 1px 2px rgb(0 0 0 / 35%); border-color: rgb(255 250 240 / 10%); }
-
-	/* 4 Glass: frosted cards over a soft red wash; buttons translucent with a light edge. */
-	.fin-glass { --fin-r: 16px; --fin-card: rgb(255 255 255 / 5%); --fin-edge: rgb(255 255 255 / 10%); --fin-shadow: inset 0 1px 0 rgb(255 255 255 / 12%), 0 20px 50px -30px rgb(0 0 0 / 70%); --fin-btn-r: 12px; }
-	.fin-glass::before { background: radial-gradient(60% 50% at 10% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%), radial-gradient(50% 40% at 100% 100%, rgb(255 255 255 / 5%), transparent 70%); }
-	.fin-glass .settings-content :global(:is(.ui-settings, .card)), .fin-glass .settings-nav { backdrop-filter: blur(16px) saturate(140%); }
-	.fin-glass .settings-nav { padding: 10px; border-radius: 18px; background: rgb(255 255 255 / 5%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%), 0 0 0 1px rgb(255 255 255 / 9%); }
-	.fin-glass :global(.ui-btn.secondary) { background: rgb(255 255 255 / 9%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), 0 0 0 1px rgb(255 255 255 / 8%); }
-	.fin-glass :global(.ui-btn.primary) { box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%); }
-	.fin-glass :global(.input) { background: rgb(255 255 255 / 6%); border-color: rgb(255 255 255 / 10%); }
-	@media (prefers-reduced-transparency: reduce) { .fin-glass .settings-content :global(:is(.ui-settings, .card)), .fin-glass .settings-nav { backdrop-filter: none; background: var(--surface-1); } }
-
-	/* 5 Outline: no fills anywhere, 1px lines do the work; the primary button is the only solid thing. */
-	.fin-outline { --fin-r: 10px; --fin-card: transparent; --fin-edge: rgb(255 255 255 / 16%); --fin-shadow: none; --fin-btn-r: 8px; }
-	.fin-outline :global(.ui-btn.secondary), .fin-outline :global(.ui-btn.plain) { background: transparent; border-color: rgb(255 255 255 / 20%); color: var(--text); }
-	.fin-outline :global(.ui-btn.secondary:hover:not(:disabled)) { background: rgb(255 255 255 / 6%); }
-	.fin-outline :global(.input) { background: transparent; border-color: rgb(255 255 255 / 20%); }
-	.fin-outline .nav-row[aria-current='page'] { background: transparent; box-shadow: inset 0 0 0 1px var(--accent); }
-	.fin-outline .settings-content :global(.ui-settings > header) { border-bottom: 1px solid var(--fin-edge); padding-bottom: 10px; }
-	.fin-outline .nav-find input { background: transparent; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%); }
-
-	/* 6 Soft: big corners, lighter cards, pill buttons, things lift on hover. */
-	.fin-soft { --fin-r: 20px; --fin-card: rgb(255 255 255 / 7%); --fin-edge: transparent; --fin-shadow: 0 10px 30px -18px rgb(0 0 0 / 60%); --fin-btn-r: 999px; }
-	.fin-soft .settings-content :global(.ui-settings) { padding: 4px; }
-	.fin-soft .settings-content :global(.ui-settings:hover) { box-shadow: 0 14px 36px -18px rgb(0 0 0 / 70%), 0 0 0 1px rgb(255 255 255 / 6%); }
-	.fin-soft :global(.ui-btn:hover:not(:disabled)) { transform: translateY(-1px); box-shadow: 0 6px 16px -8px rgb(0 0 0 / 60%); }
-	.fin-soft :global(.ui-btn:active:not(:disabled)) { transform: translateY(0) scale(0.98); box-shadow: none; }
-	.fin-soft :global(.input) { border-radius: 14px; background: rgb(255 255 255 / 6%); border-color: transparent; }
-	.fin-soft .nav-find input { border-radius: 999px; }
-	.fin-soft .nav-row, .fin-soft .fold-head { border-radius: 999px; padding-inline: 12px; }
-
-	/* 7 Carbon: a fine diagonal hatch behind, flat cards with a light top edge, squared buttons, mono values. */
-	.fin-carbon { --fin-r: 6px; --fin-card: #151617; --fin-edge: rgb(255 255 255 / 7%); --fin-shadow: inset 0 1px 0 rgb(255 255 255 / 7%); --fin-btn-r: 4px; }
-	.fin-carbon::before { background: repeating-linear-gradient(135deg, rgb(255 255 255 / 2.5%) 0 1px, transparent 1px 7px); }
-	.fin-carbon .settings-content :global(.value), .fin-carbon .settings-content :global(.input) { font-family: var(--font-mono); font-size: 13px; }
-	.fin-carbon :global(.ui-btn) { text-transform: uppercase; letter-spacing: 0.06em; font-size: 12.5px; font-weight: 600; }
-	.fin-carbon :global(.ui-btn.secondary) { background: #1d1e20; border-color: rgb(255 255 255 / 10%); }
-	.fin-carbon :global(.input) { background: #0f1011; border-color: rgb(255 255 255 / 10%); }
-	.fin-carbon .fold-head .label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; }
-	.fin-carbon .nav-row[aria-current='page'] { background: transparent; box-shadow: inset 2px 0 0 var(--accent); border-radius: 0; color: var(--text); }
-
-	/* 8 Spotlight: a pool of light behind the content, cards fade from lighter top to darker base, buttons glow a little on hover. */
-	.fin-spot { --fin-r: 14px; --fin-card: linear-gradient(180deg, rgb(255 255 255 / 8%), rgb(255 255 255 / 4%)); --fin-edge: rgb(255 255 255 / 9%); --fin-shadow: 0 1px 0 rgb(255 255 255 / 6%) inset, 0 24px 60px -36px rgb(0 0 0 / 80%); --fin-btn-r: 10px; }
-	.fin-spot::before { background: radial-gradient(55% 45% at 60% 10%, rgb(255 255 255 / 7%), transparent 70%); }
-	.fin-spot :global(.ui-btn.primary:hover:not(:disabled)) { box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--accent) 70%, transparent); }
-	.fin-spot :global(.ui-btn.secondary) { background: linear-gradient(180deg, rgb(255 255 255 / 12%), rgb(255 255 255 / 7%)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%); }
-	.fin-spot :global(.input) { background: rgb(0 0 0 / 25%); border-color: rgb(255 255 255 / 8%); }
-	.fin-spot .nav-row[aria-current='page'] { background: linear-gradient(90deg, var(--accent-soft), transparent); }
-
-	/* 9 Brushed: a faint vertical brush texture on cards, metallic two-tone buttons, a firm press. */
-	.fin-brushed { --fin-r: 10px; --fin-card: #19191b; --fin-edge: rgb(255 255 255 / 8%); --fin-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 2px 4px rgb(0 0 0 / 40%); --fin-btn-r: 8px; }
-	.fin-brushed .settings-content :global(:is(.ui-settings, .card)) { background-image: repeating-linear-gradient(90deg, rgb(255 255 255 / 1.6%) 0 1px, transparent 1px 3px); }
-	.fin-brushed :global(.ui-btn.secondary) { background: linear-gradient(180deg, #2c2d30, #1f2022); border-color: rgb(255 255 255 / 10%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%), 0 1px 2px rgb(0 0 0 / 50%); }
-	.fin-brushed :global(.ui-btn.primary) { background: linear-gradient(180deg, color-mix(in srgb, var(--accent-fill) 85%, #fff), var(--accent-fill)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%), 0 1px 2px rgb(0 0 0 / 50%); }
-	.fin-brushed :global(.ui-btn:active:not(:disabled)) { transform: translateY(1px); box-shadow: inset 0 2px 4px rgb(0 0 0 / 40%); }
-	.fin-brushed :global(.input) { background: #101012; box-shadow: inset 0 1px 3px rgb(0 0 0 / 50%); border-color: rgb(255 255 255 / 9%); }
-	.fin-brushed .settings-nav { padding: 8px; border-radius: 12px; background: #141416; box-shadow: inset 0 1px 0 rgb(255 255 255 / 7%), 0 0 0 1px rgb(255 255 255 / 7%); }
-
-	/* 10 Ember: a warm red glow low in the corner, deep cards, red-gradient primary, embers on hover. */
-	.fin-ember { --fin-r: 14px; --fin-card: rgb(20 14 14 / 85%); --fin-edge: color-mix(in srgb, var(--accent) 18%, transparent); --fin-shadow: 0 20px 50px -30px rgb(0 0 0 / 80%); --fin-btn-r: 10px; }
-	.fin-ember::before { background: radial-gradient(45% 40% at 0% 100%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 70%), radial-gradient(40% 35% at 100% 0%, color-mix(in srgb, #ffb074 10%, transparent), transparent 70%); }
-	.fin-ember :global(.ui-btn.primary) { background: linear-gradient(135deg, color-mix(in srgb, var(--accent-fill) 80%, #ffb074), var(--accent-fill)); }
-	.fin-ember :global(.ui-btn.primary:hover:not(:disabled)) { box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--accent) 80%, transparent); }
-	.fin-ember :global(.ui-btn.secondary) { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: color-mix(in srgb, var(--accent) 22%, transparent); }
-	.fin-ember :global(.input) { background: rgb(0 0 0 / 30%); border-color: color-mix(in srgb, var(--accent) 16%, transparent); }
-	.fin-ember .nav-row[aria-current='page'] { background: color-mix(in srgb, var(--accent) 22%, transparent); color: #fff; }
-	.fin-ember .nav-row[aria-current='page'] .glyph { color: #fff; }
 
 	@media (prefers-reduced-motion: reduce) {
 		.look-fold .settings-content :global(.ui-settings), .look-fold :global(.ui-btn) { transition: none; }
 		.look-fold :global(.ui-btn:hover:not(:disabled)), .look-fold :global(.ui-btn:active:not(:disabled)) { transform: none; }
 	}
-	@media (max-width: 767px) { .look-fold::before { inset: -16px -16px -48px; border-radius: 0; } }
-
-	/* ---------- the finish picker ---------- */
-	.look-picker { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: var(--r-pill); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line), 0 10px 30px -12px rgb(0 0 0 / 60%); backdrop-filter: blur(10px); font: var(--t-footnote); color: var(--text-muted); }
-	.look-picker select { min-height: 30px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; }
+	@media (max-width: 1023px) { .look-fold .settings-nav { padding-right: 4px; border-right: 0; } }
+	@media (max-width: 767px) { .look-fold::before { inset: -16px -16px -48px; border-radius: 0; box-shadow: none; } }
 
 	/* ---------- phones: Settings home is the index; a page opens alone with a back link ---------- */
 	@media (max-width: 1023px) {
@@ -389,9 +272,12 @@
 		.settings-nav { position: static; max-height: none; }
 	}
 	@media (max-width: 767px) {
-		.settings-shell:not(.home) .settings-nav, .settings-shell.home .settings-workspace { display: none; }
+		.settings-shell:not(.home) .settings-nav { display: none; }
+		/* Home on a phone: the page title stays (screen readers, the sticky
+		   mini title) above the menu; the rest of the index is the menu itself. */
+		.settings-shell.home .settings-workspace { order: -1; }
+		.settings-shell.home .settings-content > :global(:not(.ui-head)) { display: none; }
 		.back-home { display: inline-flex; }
 		.phone-top, .phone-top:not(:has(.page-status)) { display: flex; margin-bottom: 4px; }
-		.look-picker { right: 12px; bottom: calc(12px + var(--tabbar, 56px) + env(safe-area-inset-bottom)); }
 	}
 </style>

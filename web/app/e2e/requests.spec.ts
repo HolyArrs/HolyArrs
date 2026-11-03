@@ -67,7 +67,7 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	await expect(kim).toHaveURL(/\/$/);
 
 	await kim.goto('/account');
-	await kim.getByLabel('Discord user id').fill(kimDiscord);
+	await kim.getByLabel('Discord user ID').fill(kimDiscord);
 	await kim.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(kim.getByText('Saved where Alerts reach you.')).toBeVisible();
 

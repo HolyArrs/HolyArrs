@@ -78,7 +78,7 @@
 						>
 					</span>
 					{#if !s.current}
-						<Button size="sm" variant="secondary" type="button" disabled={busy} onclick={() => endOne(s)} aria-label="Sign out {s.device}, last used {ago(s.last_used_at)}"
+						<Button variant="secondary" type="button" disabled={busy} onclick={() => endOne(s)} aria-label="Sign out {s.device}, last used {ago(s.last_used_at)}"
 							>Sign out</Button>
 					{/if}
 				</li>
@@ -89,7 +89,7 @@
 		{/if}
 		{#if mine ? others(rows) > 0 : rows.length > 0}
 			<div class="all-row">
-				<Button size="sm" variant="secondary" type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
+				<Button variant="secondary" type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
 					>{mine ? 'Sign out all other devices' : `Sign ${name || 'them'} out everywhere`}</Button>
 			</div>
 		{/if}

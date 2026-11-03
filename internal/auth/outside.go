@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -401,7 +402,10 @@ func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr m
 
 // pin is a Plex sign-in in progress.
 type pin struct {
-	ip      string
+	ip string
+	// secret is also in a cookie on the browser that started the pin, so
+	// another visitor behind the same address cannot finish it.
+	secret  string
 	expires time.Time
 	// checked is the last time Plex was asked about this pin; checks
 	// closer than pinCheckGap answer 429 (the page polls every 2 s).
@@ -455,9 +459,12 @@ func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, link bool) {
 		fail(w, http.StatusBadGateway, "Plex did not answer; try again in a moment")
 		return
 	}
+	secret := token(24)
 	a.mu.Lock()
-	a.pins[got.ID] = &pin{ip: ip, expires: now.Add(pinLife), link: link}
+	a.pins[got.ID] = &pin{ip: ip, secret: secret, expires: now.Add(pinLife), link: link}
 	a.mu.Unlock()
+	http.SetCookie(w, &http.Cookie{Name: pinCookie(got.ID), Value: secret, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
+		Secure: a.behindHTTPS(r), MaxAge: int(pinLife / time.Second)})
 	q := url.Values{"clientID": {a.clientID(ctx)}, "code": {got.Code}, "context[device][product]": {product}}
 	writeJSON(w, http.StatusOK, map[string]any{"id": got.ID, "auth_url": a.plexApp + "/auth#?" + q.Encode()})
 }
@@ -531,7 +538,7 @@ func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, link bool) (stri
 	}
 	a.mu.Lock()
 	p := a.pins[body.ID]
-	ok := p != nil && p.link == link && p.ip == a.clientKey(r) && a.now().Before(p.expires)
+	ok := p != nil && p.link == link && p.ip == a.clientKey(r) && a.now().Before(p.expires) && pinSecretMatches(r, body.ID, p.secret)
 	soon := ok && !p.checked.IsZero() && a.now().Sub(p.checked) < pinCheckGap
 	if ok && !soon {
 		p.checked = a.now()
@@ -562,7 +569,18 @@ func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, link bool) (stri
 	a.mu.Lock()
 	delete(a.pins, body.ID) // one pin, one use
 	a.mu.Unlock()
+	http.SetCookie(w, &http.Cookie{Name: pinCookie(body.ID), Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
+		Secure: a.behindHTTPS(r), MaxAge: -1})
 	return pinState.AuthToken, true
+}
+
+// pinCookie names the cookie that holds one pin's secret.
+func pinCookie(id int64) string { return "holyarrs_plex_" + strconv.FormatInt(id, 10) }
+
+// pinSecretMatches reports whether the request carries the pin's cookie.
+func pinSecretMatches(r *http.Request, id int64, secret string) bool {
+	c, err := r.Cookie(pinCookie(id))
+	return err == nil && secret != "" && subtle.ConstantTimeCompare([]byte(c.Value), []byte(secret)) == 1
 }
 
 func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {

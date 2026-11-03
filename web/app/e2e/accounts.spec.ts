@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
 import { owner, signIn, signOut } from './helpers.ts';
-import { jellyfinPort, mediaUser } from './fakes.mjs';
+import { embyUser, jellyfinPort, mediaUser } from './fakes.mjs';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -130,6 +130,35 @@ test('the owner changes what a member may do, and can turn them off', async () =
 	await expect(own.getByText('ana turned on.')).toBeVisible();
 });
 
+test('the owner sets a forgotten password, and ana switches account on a shared screen', async () => {
+	const newPw = `${memberPw}-new`;
+	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Set a new password for ana' }).click();
+	const dlg = own.getByRole('dialog', { name: 'New password for ana' });
+	await dlg.getByLabel('New password').fill(newPw);
+	await dlg.getByRole('button', { name: 'Set password' }).click();
+	await expect(own.getByText('New password set for ana.')).toBeVisible();
+	await ana.goto('/library');
+	await expect(ana).toHaveURL(/\/login/);
+	await ana.getByLabel('Name').fill('ana');
+	await ana.getByLabel('Password', { exact: true }).fill(newPw);
+	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await ana.getByLabel('Code').fill(backup[1]);
+	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(ana.getByRole('heading', { name: 'Two-factor sign-in' })).toHaveCount(0);
+	await expect(ana).not.toHaveURL(/\/login/);
+
+	// Switch account: signs out, and ana is one tap away on this device.
+	await ana.getByRole('button', { name: 'Account and appearance' }).click();
+	await ana.getByRole('menuitem', { name: 'Switch account' }).click();
+	await expect(ana).toHaveURL(/\/login/);
+	const people = ana.getByTestId('recent-people');
+	await people.getByRole('button', { name: 'ana', exact: true }).click();
+	await expect(ana.getByLabel('Name')).toHaveValue('ana');
+	await people.getByRole('button', { name: 'Forget ana on this device' }).click();
+	await expect(people).toHaveCount(0);
+});
+
 test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await own.goto('/settings/sign-in');
 	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Sign in with Jellyfin' }) });
@@ -154,6 +183,32 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await expect(mum.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
 });
 
+test('sign in with Emby makes a member, next to Jellyfin', async ({ browser }) => {
+	await own.goto('/settings/sign-in');
+	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Sign in with Emby' }) });
+	await card.getByText('Show the Emby button on the sign-in page').click();
+	await card.getByLabel('Emby server address').fill(`http://127.0.0.1:${jellyfinPort}/emby`);
+	await card.getByLabel('Who may join the first time').selectOption('everyone');
+	await card.getByRole('button', { name: 'Save' }).click();
+	await own.getByRole('button', { name: 'Let everyone join' }).click();
+	await expect(own.getByText('Emby sign-in saved.')).toBeVisible();
+
+	const gran = await fresh(browser);
+	await gran.goto('/login');
+	// With two server ways on, each is a tile of its own.
+	await expect(gran.getByRole('button', { name: 'Jellyfin', exact: true })).toBeVisible();
+	await gran.getByRole('button', { name: 'Emby', exact: true }).click();
+	await gran.getByLabel('Name').fill(embyUser.name);
+	// Mum's Jellyfin password is not an Emby password.
+	await gran.getByLabel('Password', { exact: true }).fill(mediaUser.password);
+	await gran.getByRole('button', { name: 'Sign in with Emby' }).click();
+	await expect(gran.getByRole('alert')).toContainText('wrong name or password');
+	await gran.getByLabel('Password', { exact: true }).fill(embyUser.password);
+	await gran.getByRole('button', { name: 'Sign in with Emby' }).click();
+	await expect(gran).toHaveURL(/\/$/);
+	await expect(gran.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
+});
+
 test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await own.goto('/settings/sign-in');
 	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Sign in with Plex' }) });
@@ -175,5 +230,6 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 
 	await own.goto('/settings/users');
 	await expect(own.getByText('Jellyfin: Mum')).toBeVisible();
+	await expect(own.getByText('Emby: Gran')).toBeVisible();
 	await expect(own.getByText('Plex: plexkid')).toBeVisible();
 });

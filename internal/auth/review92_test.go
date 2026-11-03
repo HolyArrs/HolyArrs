@@ -185,3 +185,24 @@ func TestImportKidRefusedWhileSkipping(t *testing.T) {
 		t.Fatal("kid account made")
 	}
 }
+
+// A Plex pin can only be finished by the browser that started it, even when
+// another visitor shares its address (both come from 127.0.0.1 here, as
+// everyone does behind a proxy HolyArrs was not told about).
+func TestPlexPinNeedsItsStartersCookie(t *testing.T) {
+	p := newFakePlex(t)
+	f := gated(t, Options{PlexURL: p.srv.URL})
+	own := ownerOf(t, f)
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"server_id":"machine-1","join":"everyone"},"confirm_everyone":true}`)
+	victim := client(t)
+	if resp, out := call(t, victim, "POST", f.srv.URL+"/api/v1/auth/plex/start", "", nil); resp.StatusCode != 200 {
+		t.Fatalf("start: %d %s", resp.StatusCode, out)
+	}
+	p.confirmed.Store(true)
+	if resp, out := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/plex/finish", `{"id":77}`, nil); resp.StatusCode != 404 {
+		t.Fatalf("another browser finished the pin: %d %s", resp.StatusCode, out)
+	}
+	if resp, out := call(t, victim, "POST", f.srv.URL+"/api/v1/auth/plex/finish", `{"id":77}`, nil); resp.StatusCode != 200 {
+		t.Fatalf("starter could not finish: %d %s", resp.StatusCode, out)
+	}
+}
