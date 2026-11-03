@@ -131,7 +131,7 @@
 		{#if !isOwner}<p class="hint">Only the owner can turn this on or off.</p>{/if}
 		<ul class="facts small muted">
 			<li>An AI key acts as you: your permissions and request limits apply.</li>
-			<li>Before it asks for, approves or turns down a title, the AI app has to check with you.</li>
+			<li>Before it asks for a title, the AI app has to check with you. Approving requests stays with people, on the Requests page.</li>
 			<li>At most 60 look-ups a minute and 5 actions an hour per key.</li>
 		</ul>
 	</SettingsCard>

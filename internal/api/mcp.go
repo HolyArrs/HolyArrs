@@ -397,22 +397,14 @@ func (a *API) aiTools() []aiTool {
 			schema: aiObj(map[string]any{"days": aiIntProp("How many days ahead, 1 to 60 (default 14).")}), off: aiMediaOff, run: toolCalendar},
 		{name: "downloads", title: "Downloads", about: "What is downloading now and how far along it is. Read only.",
 			schema: aiObj(map[string]any{}), off: aiAlways, run: toolDownloads},
-		{name: "my_asks", title: "My requests", about: "The person's requests and their state. With waiting set, the requests waiting for a decision (for people who approve).",
-			schema: aiObj(map[string]any{"waiting": map[string]any{"type": "boolean"}}), off: aiAsksOff, run: toolMyAsks},
+		{name: "my_asks", title: "My requests", about: "The person's own requests and their state, and how many more they may ask for.",
+			schema: aiObj(map[string]any{}), off: aiAsksOff, run: toolMyAsks},
 		{name: "health", title: "Health", about: "Whether HolyArrs and the apps it uses are working.",
 			schema: aiObj(map[string]any{}), off: aiNeedPerm(auth.PermManageLibrary, aiAlways), run: toolHealth},
 		{name: "ask_for_title", title: "Ask for a title", action: true,
 			about:  "Ask for a movie or show by its TMDB id. The first call returns a summary and a confirm_token; call again with the token after the person agrees.",
 			schema: aiObj(map[string]any{"tmdb_id": aiStrProp("The TMDB id, like 693134."), "kind": map[string]any{"type": "string", "enum": []string{"movie", "show"}}, "confirm_token": aiTokProp}, "tmdb_id"),
 			off:    aiNeedPerm(auth.PermAsk, aiAsksOff), run: toolAsk},
-		{name: "approve_ask", title: "Approve a request", action: true,
-			about:  "Approve a waiting request by its id. Two calls, like ask_for_title.",
-			schema: aiObj(map[string]any{"ask_id": aiIntProp("The request id from my_asks."), "confirm_token": aiTokProp}, "ask_id"),
-			off:    aiNeedPerm(auth.PermApprove, aiAsksOff), run: toolApprove},
-		{name: "turn_down_ask", title: "Turn down a request", action: true,
-			about:  "Turn down a waiting request by its id, with a short reason. Two calls, like ask_for_title.",
-			schema: aiObj(map[string]any{"ask_id": aiIntProp("The request id from my_asks."), "note": aiStrProp("Why, in a few words."), "confirm_token": aiTokProp}, "ask_id"),
-			off:    aiNeedPerm(auth.PermApprove, aiAsksOff), run: toolTurnDown},
 	}
 }
 
@@ -543,15 +535,10 @@ func toolDownloads(a *API, r *http.Request, who auth.Who, _ map[string]any) (any
 	return a.aiRead(r, who, "/api/v1/downloads/view")
 }
 
-func toolMyAsks(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error) {
-	path := "/api/v1/asks?mine=1"
-	if w, _ := args["waiting"].(bool); w {
-		if !who.Has(auth.PermApprove) {
-			return nil, aiFail{"only people who approve requests see the waiting ones"}
-		}
-		path = "/api/v1/asks?state=asked"
-	}
-	v, err := a.aiRead(r, who, path)
+// toolMyAsks is the person's own requests only: other people's requests
+// stay off AI connections.
+func toolMyAsks(a *API, r *http.Request, who auth.Who, _ map[string]any) (any, error) {
+	v, err := a.aiRead(r, who, "/api/v1/asks?mine=1")
 	if err != nil {
 		return nil, err
 	}
@@ -660,50 +647,6 @@ func toolAsk(a *API, r *http.Request, who auth.Who, args map[string]any) (any, e
 	}
 	code, v := a.aiCall(r, who, auth.ScopeWrite, http.MethodPost, "/api/v1/asks", map[string]any{"id": "tmdb:" + id, "kind": kind})
 	return a.aiActed(r, who, "ask_for_title", args, "ai_ask_made", "asked for", code, v)
-}
-
-func toolApprove(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error) {
-	return a.decideAsk(r, who, "approve_ask", args, "approve", "ai_ask_approved", "approved")
-}
-
-func toolTurnDown(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error) {
-	return a.decideAsk(r, who, "turn_down_ask", args, "turn-down", "ai_ask_turned_down", "turned down")
-}
-
-func (a *API) decideAsk(r *http.Request, who auth.Who, tool string, args map[string]any, verb, kind, did string) (any, error) {
-	id := aiNum(args, "ask_id")
-	if id <= 0 {
-		return nil, aiFail{"send ask_id, the request id from my_asks"}
-	}
-	path := "/api/v1/asks/" + strconv.FormatInt(id, 10)
-	summary := map[string]any{"ask_id": id}
-	if aiStr(args, "confirm_token") == "" {
-		v, err := a.aiRead(r, who, path)
-		if err != nil {
-			return nil, err
-		}
-		if m, ok := v.(map[string]any); ok {
-			if ask, ok := m["ask"].(map[string]any); ok {
-				m = ask
-			}
-			for _, k := range []string{"name", "year", "kind", "state", "asked_by"} {
-				if m[k] != nil {
-					summary[k] = m[k]
-				}
-			}
-		}
-		summary["will_do"] = strings.ToUpper(did[:1]) + did[1:] + " this request as " + who.Name + "."
-	}
-	out, goAhead, err := a.confirmStep(who, tool, args, summary)
-	if err != nil || !goAhead {
-		return out, err
-	}
-	var body any
-	if n := aiStr(args, "note"); n != "" && verb == "turn-down" {
-		body = map[string]any{"note": aiClean(n, aiTextMax)}
-	}
-	code, v := a.aiCall(r, who, auth.ScopeWrite, http.MethodPost, path+"/"+verb, body)
-	return a.aiActed(r, who, tool, args, kind, did, code, v)
 }
 
 // aiActed writes the action to History and answers it.
