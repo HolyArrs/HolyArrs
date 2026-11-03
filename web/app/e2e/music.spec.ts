@@ -245,6 +245,12 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await noSidewaysScroll(phone);
 	await sheet.getByRole('button', { name: 'Approve', exact: true }).click();
 	await expect(win).toBeHidden(slow);
+	// The window goes on to the next waiting ask if there is one; close it so the tabs are free.
+	const still = phone.locator('dialog.win[open]');
+	if (await still.count()) {
+		await phone.keyboard.press('Escape');
+		await expect(still).toHaveCount(0);
+	}
 	await expect(phone.getByRole('status').filter({ hasText: 'Approved Moss Choir.' }).getByRole('button', { name: 'Undo' })).toBeVisible();
 	// Sent once the Undo time is over.
 	await expect

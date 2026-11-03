@@ -458,6 +458,13 @@ test('4K: a member asks for a 4K copy of a movie and of one in the Library; the 
 	await expect(win.getByTestId('ask-banner')).toContainText('4K copy');
 	await own.keyboard.press('Escape');
 	await expect(win).toBeHidden();
+	// Leave no 4K ask waiting: later projects (music) count and step through the Pending ones.
+	const call = await api(own);
+	const { asks } = (await (await call('GET', '/asks?state=asked')).json()) as { asks: { id: number; name: string; four_k?: boolean }[] };
+	for (const a of asks.filter((x) => x.four_k && ['Saffron Tramline', 'Juniper Telegraph'].includes(x.name))) {
+		const r = await call('POST', `/asks/${a.id}/turn-down`, { note: '' });
+		expect(r.ok(), await r.text()).toBe(true);
+	}
 });
 
 test('a failed ask says why: the member and the approver read the reason', async ({ browser }) => {
