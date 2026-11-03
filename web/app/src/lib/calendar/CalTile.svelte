@@ -118,4 +118,6 @@
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.art:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 	}
+	/* Phones: the caption button's tap area grows to 44px; padding and margin cancel, so the card keeps its size. */
+	@media (max-width: 767px) and (pointer: coarse) { .tap { position: relative; padding-block: 3px; margin-block: -3px; } }
 </style>
