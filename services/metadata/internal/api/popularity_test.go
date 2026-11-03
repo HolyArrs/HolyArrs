@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -49,5 +50,16 @@ func TestArtistAnswerCarriesPopularity(t *testing.T) {
 	}
 	if w := req(s, "/v1/music/charts/rising?x=1", ""); w.Code != 400 {
 		t.Fatalf("query accepted %d", w.Code)
+	}
+}
+
+// Security 37: an anonymous ask for an artist the slim copy lacks is not
+// noted as opened.
+func TestAnonymousSlimMissNotNotedOpened(t *testing.T) {
+	f := &fakePopularity{known: map[string]*kworb.Popularity{}}
+	s, _, _ := setup(Options{Burst: 100, Popularity: f, SlimMissing: func(context.Context, string, string) bool { return true }})
+	req(s, "/v1/music/musicbrainz/artist/"+queuedArtist, "")
+	if len(f.wanted) != 0 {
+		t.Fatalf("random anonymous id noted: %v", f.wanted)
 	}
 }

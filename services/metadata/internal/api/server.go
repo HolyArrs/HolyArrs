@@ -648,9 +648,12 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) {
 		problem(w, 503, "provider_unavailable", time.Second)
 		return
 	}
-	if s.opts.Popularity != nil && q.Provider == "musicbrainz" && q.Kind == "artist" && q.Operation != "search" && r.Header.Get("X-Fetch") != "ahead" {
+	if s.opts.Popularity != nil && q.Provider == "musicbrainz" && q.Kind == "artist" && q.Operation != "search" && r.Header.Get("X-Fetch") != "ahead" &&
+		!(Anonymous(r.Context()) && s.SlimAbsent(r.Context(), q.Kind, q.ID)) {
 		// An artist page opened (not a fetch ahead): noted only, so the
 		// artist goes to the front of the next crawl; nothing is read.
+		// Anonymous asks for ids the slim copy lacks are not noted (random
+		// ids would push real artists out of the crawl).
 		s.opts.Popularity.Opened(q.ID)
 	}
 	if e, ok := s.slim(r.Context(), q); ok {
