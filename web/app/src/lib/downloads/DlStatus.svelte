@@ -4,6 +4,7 @@
 	// Down and Up; Storage holds free space over a meter, today's total and the
 	// time left. Both are siblings of the status tab track.
 	import type { Snippet } from 'svelte';
+	import Icon from '../Icon.svelte';
 	import { reviewWord, timeWords } from './status-views.ts';
 
 	interface Props {
@@ -20,8 +21,12 @@
 		review: number;
 		onreview: () => void;
 		more: Snippet;
+		/** The speed limit as words ("42 MB/s"); empty when none is set. */
+		limit?: string;
+		/** Set: the Speed pills are the button that opens the speed limit. */
+		onlimit?: () => void;
 	}
-	let { down, up, eta, free, today, session = '', review, onreview, more }: Props = $props();
+	let { down, up, eta, free, today, session = '', review, onreview, more, limit = '', onlimit }: Props = $props();
 
 	const time = $derived(timeWords(eta));
 	const timeTip = $derived(eta ? `${eta} left until everything finishes` : 'Nothing is downloading');
@@ -30,11 +35,18 @@
 {#snippet num(text: string)}{#key text}<b class="tk">{text}</b>{/key}{/snippet}
 
 <div class="st" data-testid="dl-stat">
-	<!-- Speed: Down and Up. -->
-	<span class="t" role="group" aria-label="Speed">
+	<!-- Speed: Down and Up, and the limit when one is set. With onlimit the
+	     whole track is the button that opens the speed limit. -->
+	{#snippet speeds()}
 		<span class="sg sp dn" data-testid="sb-down"><span class="sl">Down</span><span class="n" data-testid="dl-speed">{@render num(`↓ ${down}`)}</span></span>
 		{#if up}<span class="sg sp x" data-testid="sb-up"><span class="sl">Up</span><span class="n" data-testid="dl-up">{@render num(`↑ ${up}`)}</span></span>{/if}
-	</span>
+		{#if limit}<span class="sg x cap" data-testid="sb-limit"><Icon name="gauge" size={13} /><span class="sr-only">Speed limit </span><span class="n">{limit}</span></span>{/if}
+	{/snippet}
+	{#if onlimit}
+		<button type="button" class="t tb" onclick={onlimit} title={limit ? `Speed limit: ${limit}. Change it` : 'Set a speed limit'} data-testid="dl-speed-limit"><span class="sr-only">Speed: </span>{@render speeds()}{#if !limit}<span class="sr-only">. Set a speed limit</span>{/if}</button>
+	{:else}
+		<span class="t" role="group" aria-label="Speed">{@render speeds()}</span>
+	{/if}
 	<!-- Storage: free words over a thin free-space meter, today, time left. -->
 	<span class="t" role="group" aria-label="Storage">
 		{#if free}<span class="sg mp" data-testid="sb-free"><span class="ml"><span class="n">{@render num(free)}</span> <span class="sl">free</span></span></span>{/if}
@@ -55,6 +67,12 @@
 	.sg { position: relative; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; box-sizing: border-box; padding: 0 12px; border-radius: 999px; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); white-space: nowrap; cursor: default; transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out), box-shadow 300ms var(--ease-out); }
 	.sg:hover { color: var(--text); background: color-mix(in srgb, var(--surface-3) 55%, transparent); }
 	.sl { color: inherit; }
+	/* The Speed track as a button: same look, the pills light together on hover. */
+	.tb { border: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; }
+	.tb .sg { cursor: pointer; }
+	.tb:hover .sg { color: var(--text); background: color-mix(in srgb, var(--surface-3) 55%, transparent); }
+	.tb:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.cap :global(svg) { flex: none; }
 	.sg .n { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.sg .n :global(b) { font-weight: inherit; }
 	.dn .n { color: color-mix(in srgb, var(--ok) 45%, var(--text)); }

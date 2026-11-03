@@ -114,7 +114,8 @@ test('Needs a decision works from a phone', async ({ browser }) => {
 	await noSidewaysScroll(phone);
 	await axe(phone, 'needs a decision on a phone');
 	await phone.goto('/downloads');
-	await expect(phone.getByTestId('dl-list').locator('.rel').first()).toBeVisible();
+	// A phone row shows its short title (the release line is for wider screens).
+	await expect(phone.getByTestId('dl-list').getByTestId('dl-line').first()).toBeVisible();
 	await noSidewaysScroll(phone);
 	await ctx.close();
 });
@@ -139,7 +140,9 @@ test('Settings > Naming and files shows the episode patterns with live examples'
 	await page.getByRole('textbox', { name: 'Episode file name pattern' }).fill('{title} {episode}');
 	await expect(ex).toContainText('Copper Valley (2025)/Season 1/Copper Valley S01E02.mkv');
 	await page.getByRole('textbox', { name: 'Episode file name pattern' }).fill('{title} {quality}');
-	await expect(ex.getByRole('alert')).toContainText('must hold {episode}');
+	// The page shows one problem in one place (under Movie names); the examples point there.
+	await expect(page.getByRole('alert').filter({ hasText: 'must hold {episode}' })).toBeVisible();
+	await expect(ex).toContainText('No example yet');
 	await page.getByRole('textbox', { name: 'Episode file name pattern' }).fill('{title} - {episode} - {episode_title} {quality}');
 	await expect(ex).toContainText('Copper Valley - S01E02 - The Mill 1080p WEB.mkv');
 	await axe(page, 'naming with shows');
