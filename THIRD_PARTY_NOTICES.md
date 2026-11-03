@@ -46,6 +46,7 @@ Direct dependencies, from `go.mod` and `web/app/package.json`:
 | github.com/stangelandcl/ppmd (PPMd in 7-Zip archives) | MIT |
 | github.com/spf13/afero (file access for the 7-Zip reader) | Apache-2.0 |
 | go4.org (multi-part 7-Zip reading) | Apache-2.0 |
+| github.com/hashicorp/golang-lru/v2 (a small cache in the 7-Zip reader; source: https://github.com/hashicorp/golang-lru) | MPL-2.0 |
 | golang.org/x/crypto, x/image, x/oauth2, x/sys, x/text | BSD-3-Clause |
 | modernc.org/sqlite | BSD-3-Clause |
 | hls.js | Apache-2.0 |
