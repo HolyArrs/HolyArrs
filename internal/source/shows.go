@@ -891,6 +891,9 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 			if src.PauseReason != nil && *src.PauseReason != "" {
 				why = *src.PauseReason
 			}
+			if b := BlockOf(src); b != "" {
+				why = b
+			}
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: why})
 			continue
 		}
@@ -940,6 +943,9 @@ type skippedSource struct {
 // failWhy names the kind of a Source failure, in the pause reason words.
 func failWhy(err error) string {
 	var se *Error
+	if errors.As(err, &se) && se.Detail != "" {
+		return se.Detail // a site's bot check or ban (#106)
+	}
 	if errors.As(err, &se) && se.Kind != "" {
 		return se.Kind
 	}
@@ -988,6 +994,10 @@ func pauseWords(why string) string {
 		return "setup broken"
 	case KindBlocked:
 		return "blocked"
+	case BlockBotCheck:
+		return "blocked by the site's bot check"
+	case BlockSiteBan:
+		return "the site refuses HolyArrs's address"
 	}
 	return "paused"
 }

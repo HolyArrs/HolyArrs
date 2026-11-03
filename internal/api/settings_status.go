@@ -148,6 +148,10 @@ func settingsStatus(in statusInput) statusAnswer {
 				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " asked HolyArrs to slow down, so it waits a while", "warning"}, "source:"+s.Name)
 			case source.KindBlocked:
 				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is blocked from the local network", "warning"}, "source:"+s.Name)
+			case source.BlockBotCheck:
+				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is behind a bot check HolyArrs cannot pass", "warning"}, "source:"+s.Name)
+			case source.BlockSiteBan:
+				add(statusItem{"copies", "/settings/sources", "The site behind the Source " + s.Name + " refuses HolyArrs's address", "warning"}, "source:"+s.Name)
 			}
 		}
 		for _, text := range in.SourcesNear {
@@ -319,6 +323,9 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 		// not a Source that stopped answering.
 		if s.State == "paused" && s.PauseReason != nil && (*s.PauseReason == source.KindRateLimited || *s.PauseReason == source.KindBlocked) {
 			state = *s.PauseReason
+		}
+		if b := source.BlockOf(s); b != "" {
+			state = b // a site's bot check or ban (#106), not the local network
 		}
 		in.Sources = append(in.Sources, namedState{s.Name, state})
 		if s.State != "disabled" {

@@ -5,7 +5,7 @@ import { reasonWords } from './source-health.ts';
 export interface SkippedSource {
 	id: number;
 	name: string;
-	why: string; // pause reason: rate_limited, down, blocked, login_refused, broken_definition, paused
+	why: string; // pause reason: rate_limited, down, blocked, login_refused, broken_definition, paused; or bot_check, site_ban
 }
 
 export interface SearchOutcome {
@@ -26,6 +26,9 @@ export function whyWords(why: string): string {
 	if (r === 'slowed') return 'was paused (slowed down)';
 	if (r) return 'was ' + ((reasonWords as Record<string, string>)?.[r] ?? fallback[r]).toLowerCase();
 	if (why === 'broken_definition') return 'is broken';
+	// A site's bot check or ban (#106): HolyArrs cannot pass either.
+	if (why === 'bot_check') return "was blocked by the site's bot check";
+	if (why === 'site_ban') return "refuses HolyArrs's address";
 	return 'was paused';
 }
 

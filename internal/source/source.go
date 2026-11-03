@@ -37,7 +37,9 @@ const (
 // Error is a failed request to a Source. It never holds the URL, so the
 // Source's key cannot leak into logs.
 type Error struct {
-	Kind       string
+	Kind string
+	// Detail is the kind of block (BlockBotCheck, BlockSiteBan) when Kind is blocked by the site.
+	Detail     string
 	RetryAfter time.Duration
 	Msg        string
 	cause      error
@@ -502,6 +504,9 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 		return nil, &Error{Kind: KindDown, Msg: "reading the answer failed"}
 	}
 	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+	if b := botCheck(resp, body); b != "" {
+		return nil, &Error{Kind: KindBlocked, Detail: b, Msg: resp.Status + ": " + blockText[b]}
+	}
 	switch {
 	case resp.StatusCode == http.StatusTooManyRequests:
 		e := &Error{Kind: KindRateLimited, Msg: "the Source asked us to slow down", RetryAfter: Backoff(1)}

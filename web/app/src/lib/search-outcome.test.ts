@@ -6,6 +6,8 @@ describe('search outcome', () => {
 		expect(whyWords('rate_limited')).toBe('was paused (slowed down)');
 		expect(whyWords('down')).toBe('was down');
 		expect(whyWords('blocked')).toBe('was blocked');
+		expect(whyWords('bot_check')).toBe("was blocked by the site's bot check");
+		expect(whyWords('site_ban')).toBe("refuses HolyArrs's address");
 		expect(whyWords('login_refused')).toBe('was key refused');
 		expect(whyWords('broken_definition')).toBe('is broken');
 		expect(whyWords('something')).toBe('was paused');

@@ -514,6 +514,9 @@ func Explain(err error) string {
 		}
 		return "HolyArrs could not reach the Source."
 	}
+	if t := blockText[se.Detail]; t != "" {
+		return t // a site's bot check or ban (#106), not the key or the local network
+	}
 	switch se.Kind {
 	case KindLoginRefused:
 		return "The Source turned down the key (" + se.Msg + "). Check the key."

@@ -63,6 +63,9 @@ func HealthOf(src domain.Source) Health {
 		if src.PauseReason != nil && reasonText[*src.PauseReason] != "" {
 			text = reasonText[*src.PauseReason]
 		}
+		if b := BlockOf(src); b != "" {
+			text = blockText[b]
+		}
 		reason := "down"
 		if src.PauseReason != nil && reasonWord[*src.PauseReason] != "" {
 			reason = reasonWord[*src.PauseReason]

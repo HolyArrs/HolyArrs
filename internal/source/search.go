@@ -466,11 +466,11 @@ func (s *Searcher) turnedDown(ctx context.Context, slotID int64) ([]string, erro
 // Only the health columns change, read fresh in the same write, so a key or
 // proxy changed meanwhile stays, and a Source the person turned off stays off.
 func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
-	kind := KindDown
+	kind, detail := KindDown, ""
 	var wait time.Duration
 	var se *Error
 	if errors.As(cause, &se) {
-		kind, wait = se.Kind, se.RetryAfter
+		kind, wait, detail = se.Kind, se.RetryAfter, se.Detail
 	}
 	var n int
 	var until time.Time
@@ -485,9 +485,11 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 		n++
 		until = time.Now().UTC().Add(max(wait, Backoff(n)))
 		now := time.Now().UTC()
+		// The kind of block (#106) is kept beside the failure count, and cleared by any other failure.
 		res, err := tx.ExecContext(ctx, `UPDATE sources SET state = 'paused', pause_reason = ?, paused_until = ?,
-			extra = json_set(extra, '$.failures', ?), updated_at = ?, updated_by = ? WHERE id = ? AND state != 'disabled'`,
-			kind, store.FormatTime(until), strconv.Itoa(n), store.FormatTime(now), systemActor(), src.ID)
+			extra = CASE WHEN ? = '' THEN json_remove(json_set(extra, '$.failures', ?), '$.block') ELSE json_set(extra, '$.failures', ?, '$.block', ?) END,
+			updated_at = ?, updated_by = ? WHERE id = ? AND state != 'disabled'`,
+			kind, store.FormatTime(until), detail, strconv.Itoa(n), strconv.Itoa(n), detail, store.FormatTime(now), systemActor(), src.ID)
 		if err != nil {
 			return err
 		}
@@ -498,8 +500,15 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 	if !paused {
 		return
 	}
-	e := &domain.Event{Kind: "source_paused", Summary: fmt.Sprintf("Paused Source %s until %s (%s)", src.Name, until.Format(time.RFC3339), kind),
+	why := kind
+	if detail != "" {
+		why = detail
+	}
+	e := &domain.Event{Kind: "source_paused", Summary: fmt.Sprintf("Paused Source %s until %s (%s)", src.Name, until.Format(time.RFC3339), why),
 		Data: map[string]any{"source_id": src.ID, "reason": kind, "failures": n}}
+	if detail != "" {
+		e.Data["block"] = detail
+	}
 	if s.Store.AddEvent(ctx, e) == nil {
 		s.publish("event", e)
 	}
@@ -509,7 +518,7 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 // clears its failure count. A Source the person turned off stays off.
 func (s *Searcher) recovered(ctx context.Context, src domain.Source) {
 	var need bool
-	if err := s.Store.Read().QueryRowContext(ctx, `SELECT state = 'paused' OR json_extract(extra, '$.failures') IS NOT NULL FROM sources WHERE id = ?`,
+	if err := s.Store.Read().QueryRowContext(ctx, `SELECT state = 'paused' OR json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL FROM sources WHERE id = ?`,
 		src.ID).Scan(&need); err != nil || !need {
 		return // read fresh: the copy may be older than a pause from another search
 	}
@@ -519,8 +528,8 @@ func (s *Searcher) recovered(ctx context.Context, src domain.Source) {
 			updated_at = ?, updated_by = ? WHERE id = ? AND state = 'paused'`, now, systemActor(), src.ID); err != nil {
 			return err
 		}
-		_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.failures'), updated_at = ?, updated_by = ?
-			WHERE id = ? AND json_extract(extra, '$.failures') IS NOT NULL`, now, systemActor(), src.ID)
+		_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.failures', '$.block'), updated_at = ?, updated_by = ?
+			WHERE id = ? AND (json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL)`, now, systemActor(), src.ID)
 		return err
 	})
 }
