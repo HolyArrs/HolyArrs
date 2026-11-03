@@ -68,7 +68,9 @@ test('Settings > Naming has music patterns with a live example', async () => {
 	await expect(ex).toContainText('2025 - Long Night/Disc 2/04 - Second Wind.flac');
 	await card.getByRole('checkbox', { name: /A folder for each disc/ }).uncheck();
 	await card.getByRole('textbox', { name: 'Track file name pattern', exact: true }).fill('{track_title}');
-	await expect(page.getByTestId('music-examples').getByRole('alert')).toContainText('must hold {track}');
+	// The page shows one problem in one place (under Movie names); the music examples point there.
+	await expect(page.getByRole('alert').filter({ hasText: 'must hold {track}' })).toBeVisible();
+	await expect(ex).toContainText('No example yet');
 	await card.getByRole('textbox', { name: 'Track file name pattern', exact: true }).fill('{track} - {track_title}');
 	await axe(page, 'naming with music');
 	await page.getByRole('button', { name: /^Save/ }).click();
@@ -85,14 +87,14 @@ test('Rename files on the album page renames its tracks into the new album folde
 	await dialog.getByRole('button', { name: 'Rename 3 files' }).click();
 	await expect(page.getByText('3 files renamed.')).toBeVisible({ timeout: 30_000 });
 	await expect(dialog.getByTestId('rename-none')).toBeVisible();
-	await dialog.getByRole('button', { name: 'Close' }).click();
+	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
 	const folder = join(musicDir, 'Tin Lanterns', '2019 - Harbour Songs');
 	expect(readdirSync(folder).sort()).toEqual(['01 - Song 1.1.flac', '02 - Song 1.2.flac', '03 - Song 1.3.flac']);
 	// The artist page has the whole artist's rename: nothing left.
 	await page.getByRole('link', { name: 'Tin Lanterns' }).first().click();
 	await titleAction(page, 'Library', 'Rename files');
 	await expect(page.getByRole('dialog', { name: 'Rename the files of Tin Lanterns' }).getByTestId('rename-none')).toBeVisible();
-	await page.getByRole('dialog', { name: 'Rename the files of Tin Lanterns' }).getByRole('button', { name: 'Close' }).click();
+	await page.getByRole('dialog', { name: 'Rename the files of Tin Lanterns' }).getByRole('button', { name: 'Close', exact: true }).click();
 	// Back to the default album folder pattern for the tests after this one.
 	await page.goto('/settings/naming');
 	await page.getByTestId('music-naming').getByRole('textbox', { name: 'Album folder pattern', exact: true }).fill('{album} ({year})');
@@ -155,7 +157,10 @@ test('the Calendar lists album release days under Music', async () => {
 	await expect(entry).toBeVisible();
 	await expect(entry).toHaveAttribute('href', /\/library\/\d+\/albums\/\d+$/);
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
-	await expect(page.getByTestId('cal-item').filter({ hasText: 'Harbour Songs' })).toContainText('Album release');
+	// The list row marks it as an album release: the kind word Album and the album look.
+	const item = page.getByTestId('cal-item').filter({ hasText: 'Harbour Songs' });
+	await expect(item).toContainText('Album');
+	await expect(item).toHaveClass(/\bk-album\b/);
 	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Movies' }).click();
 	await expect(page.getByTestId('cal-item').filter({ hasText: 'Harbour Songs' })).toHaveCount(0);
 	await axe(page, 'calendar with music');
@@ -176,7 +181,7 @@ test('the album page, import and delete work at phone width', async ({ browser }
 	await titleAction(phone, 'More actions', 'Rename files');
 	await expect(phone.getByRole('dialog', { name: 'Rename the files of Low Orbit' })).toBeVisible();
 	await noSidewaysScroll(phone);
-	await phone.getByRole('dialog', { name: 'Rename the files of Low Orbit' }).getByRole('button', { name: 'Close' }).click();
+	await phone.getByRole('dialog', { name: 'Rename the files of Low Orbit' }).getByRole('button', { name: 'Close', exact: true }).click();
 	for (const path of ['/library/import', '/settings/naming', '/calendar?titles=music']) {
 		await phone.goto(path);
 		await expect(phone.getByRole('heading', { level: 1 })).toBeVisible();
@@ -188,6 +193,8 @@ test('the album page, import and delete work at phone width', async ({ browser }
 test('deleting the whole artist with Never-add keeps files it only found and leaves the Library', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Copper Wren/ }).first().click();
+	// The Library card opens the music artist page; Delete artist sits on its Library page.
+	await openInLibrary(page);
 	await titleAction(page, 'Library', 'Delete artist');
 	const dialog = page.getByTestId('show-delete');
 	await dialog.getByRole('checkbox', { name: /Never-add/ }).check();

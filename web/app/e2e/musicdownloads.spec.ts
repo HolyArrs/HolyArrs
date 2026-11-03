@@ -58,11 +58,13 @@ test('a finished album is placed track by track; a track whose file cannot be pl
 	const files = [1, 2, 3, 4].map((i) => `${name}/0${i} - Song 1.${i}.flac`).concat(`${name}/cover.jpg`).join('|');
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(files)}`);
 	const r = row();
-	await expect(r.locator('[data-col="status"]')).toContainText('Needs a decision', { timeout: 30_000 });
+	// The row says Review (what used to read Needs a decision).
+	await expect(r.locator('[data-col="status"]')).toContainText('Review', { timeout: 30_000 });
 	await open();
 	// The choices are in the same panel; the panel stays open for the last test.
 	const card = details().getByTestId('decision').filter({ hasText: 'Harbour Songs' });
-	await expect(card).toContainText('Tin Lanterns – Harbour Songs Track 04 Song 1.4');
+	// The row above names the album, so the card in its details names only the track.
+	await expect(card.getByTestId('decision-reason')).toContainText('The file for track 04 could not be placed');
 	await card.getByTestId('decision-why').click();
 	await expect(card.getByTestId('decision-why-box')).toContainText('The import could not finish on its own.');
 	// The main choice is a link to the album's Releases; Search again and the rest are under More.
