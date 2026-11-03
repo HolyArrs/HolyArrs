@@ -357,7 +357,8 @@ func (a *Auth) checkAIRequest(ctx context.Context, q url.Values) (req aiRequest,
 		return req, false, "unsupported_response_type", "only response_type=code"
 	case q.Get("code_challenge_method") != "S256" || len(req.challenge) < 43 || len(req.challenge) > 128:
 		return req, false, "invalid_request", "PKCE with S256 is required"
-	case len(req.state) > 1024 || len(req.resource) > 1024:
+	// Some apps (Gemini) send a long encrypted state; 4 KB still bounds it.
+	case len(req.state) > 4<<10 || len(req.resource) > 1024:
 		return req, false, "invalid_request", "state or resource too long"
 	}
 	if s := q.Get("scope"); s != "" && !slices.Contains(strings.Fields(s), ScopeMCP) {

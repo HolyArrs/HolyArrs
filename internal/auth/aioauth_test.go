@@ -96,6 +96,15 @@ func TestAIAppSignsInWithoutAPastedKey(t *testing.T) {
 	if resp, _ := call(t, c, "GET", f.srv.URL+"/oauth/authorize?"+bad.Encode(), "", nil); resp.StatusCode != 400 || resp.Header.Get("Location") != "" {
 		t.Fatalf("unregistered return address: %d", resp.StatusCode)
 	}
+	// A long encrypted state (Gemini sends one over 1 KB) is fine.
+	long := url.Values{}
+	for k, v := range q {
+		long[k] = v
+	}
+	long.Set("state", strings.Repeat("s", 2000))
+	if resp, _ := call(t, c, "GET", f.srv.URL+"/oauth/authorize?"+long.Encode(), "", nil); resp.StatusCode != 302 {
+		t.Fatalf("long state: %d", resp.StatusCode)
+	}
 	// No PKCE is shown here too: the return address is not followed before
 	// the person allows (no open redirect).
 	nopkce := url.Values{"response_type": {"code"}, "client_id": {reg.ClientID}, "redirect_uri": {"http://localhost:4567/callback"}, "state": {"s"}}
