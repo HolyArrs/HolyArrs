@@ -40,7 +40,8 @@ const survey = () => page.evaluate(() => {
 		if (!r.width || !r.height || r.bottom < 0 || r.right < 0 || r.left > cw) continue;
 		const cs = getComputedStyle(el);
 		if (cs.visibility === 'hidden' || el.classList.contains('sr-only') || el.closest('[inert], [aria-hidden=true]')) continue;
-		if (el.tagName === 'A' && cs.display === 'inline') continue; // links in running text
+		// Links in running text are exempt (WCAG 2.5.8); a linked heading is a control.
+		if (el.tagName === 'A' && cs.display === 'inline' && !el.parentElement?.matches('h1, h2, h3, h4, h5, h6')) continue;
 		if (r.width <= 2 && r.height <= 2) continue; // visually hidden inputs
 		const host = el.closest('label') || el.closest('.ui-seg') || el;
 		const h = Math.max(r.height, host.getBoundingClientRect().height, pseudo(el));
