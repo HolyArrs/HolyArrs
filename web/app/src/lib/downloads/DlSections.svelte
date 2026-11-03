@@ -76,6 +76,8 @@
 		onretry,
 		onbulk,
 		onsteer,
+		changeOutside = true,
+		batchBusy = false,
 		watch = false,
 		upTotal
 	}: {
@@ -111,6 +113,10 @@
 		onbulk?: (rows: DownloadRow[], action: BulkAction) => void;
 		/** Opens the steering sheet (seeding rules and more) for these torrents. */
 		onsteer?: (rows: DownloadRow[], mode: SteerMode) => void;
+		/** The settings permission: changes to torrents HolyArrs did not send need it (the server refuses them otherwise). */
+		changeOutside?: boolean;
+		/** A selection action is on its way: the selection bars wait for it. */
+		batchBusy?: boolean;
 		/** Watch only: someone who may not manage the Library sees their own downloads with no actions. */
 		watch?: boolean;
 		/** Upload speed the server added up over every sending row (seeding too, and rows past the page); else the rows on hand. */
@@ -571,7 +577,7 @@
 		});
 	}
 	function rowMenu(r: DownloadRow): MenuItem[] {
-		const items = menuItems(r, rowItems(r));
+		const items = menuItems(r, rowItems(r).filter((k) => k !== 'retry' || mayEdit(r)));
 		if (!r.can_act) items.unshift({ kind: 'heading', label: 'HolyArrs cannot change this one' });
 		return items;
 	}
@@ -584,7 +590,7 @@
 		if (!r.can_act) return [];
 		const off = busy === r.id || queueBusy === r.id;
 		const items = menuItems(r, rowItems(r).filter((k) => !PANE_BUTTONS.has(k)));
-		const extra = new Set(paneExtras(r, { steer: !!onsteer, fail: !watch && !inHistory(r) && !r.client_item }));
+		const extra = new Set(paneExtras(r, { steer: !!onsteer && mayEdit(r), fail: !watch && !inHistory(r) && !r.client_item }));
 		if (extra.has('recheck')) items.push({ label: 'Check again', disabled: off, onselect: () => onact?.(r, 'recheck') }, { label: 'Ask trackers again', disabled: off, onselect: () => onact?.(r, 'reannounce') });
 		if (extra.has('force')) items.push({ label: 'Force start', disabled: off, onselect: () => onbulk?.([r], 'force') });
 		if (extra.has('steer')) {
@@ -598,7 +604,10 @@
 		return items;
 	}
 	// Only qBittorrent takes location, speed and seeding changes; read-only rows never do.
-	const steerable = (r: DownloadRow) => !!onsteer && clientOk(r) && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
+	const steerable = (r: DownloadRow) => !!onsteer && mayEdit(r) && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
+	// Location, speed and seeding sheets, file priority, tracker edits and Download again on a torrent
+	// HolyArrs did not send need the settings permission, as on the server.
+	const mayEdit = (r: DownloadRow) => clientOk(r) && (!r.outside || changeOutside);
 	// The selection bars send only rows HolyArrs may change, so one read-only row cannot fail the rest.
 	const actable = (rows: DownloadRow[]) => rows.filter(clientOk);
 	// The selection bar's checks and queue moves are torrent calls: only shown when a ticked torrent takes them.
@@ -1532,7 +1541,7 @@
 	{@const more = watch ? [] : paneMenu(r)}
 	<div class="xbt" data-testid="dl-actions">
 		{#if !watch}
-			{#if retryable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
+			{#if retryable(r) && mayEdit(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
 			{:else if pausable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
 			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
 		{/if}
@@ -1625,7 +1634,7 @@
 			{/if}
 			<div class="fbar" hidden={files.length === 1}>
 				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
-				{#if fsel.size && !watch && clientOk(r)}
+				{#if fsel.size && !watch && mayEdit(r)}
 					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} selected</span>
 					{#each PRIOS as o (o.v)}<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(r, indexesUnder(files, fsel), o.v)} data-testid="dl-files-prio-{o.v}">{o.label}</button>{/each}
 					<button type="button" class="xbn" onclick={() => (fsel = new Set())} data-testid="dl-files-clear">Clear</button>
@@ -1640,7 +1649,7 @@
 						<td class="c-name"><span class="fn" title={f.name}>{f.name.split('/').pop()}</span></td>
 						<td class="c-num c-size">{bytes(f.size)}</td>
 						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !clientOk(r)} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
+						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !mayEdit(r)} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
 					</tr></tbody>
 				</table></div>
 			{:else if !shownF.length}
@@ -1656,11 +1665,11 @@
 						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<tr class:sel={sel[`${r.id}:f`] === x.key || fsel.has(x.key)} class:off={skipped} tabindex={ri === 0 ? 0 : -1} aria-selected={fsel.has(x.key)} onclick={(e) => fileClick(e, r, keys, x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileClick(e, r, keys, x.key); } }} data-testid="dl-filerow">
-							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !clientOk(r)} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
+							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !mayEdit(r)} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
 							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${x.key}`]} aria-label="{closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${x.key}`] = !closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
 							<td class="c-num c-size">{bytes(x.size)}</td>
 							<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !clientOk(r)} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
+							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !mayEdit(r)} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
 							<td class="c-num c-rem">{bytes(Math.max(0, x.size - x.done))}</td>
 						</tr>
 					{/each}
@@ -1716,7 +1725,7 @@
 					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
 				</tbody>
 			</table></div>
-			{#if !watch && clientOk(r) && r.downloader_id && r.hash}
+			{#if !watch && mayEdit(r) && r.downloader_id && r.hash}
 				{@const chosen = trs.find((x) => x.ref && sel[`${r.id}:t`] === x.ref)}
 				<div class="tred" data-testid="dl-tracker-edit">
 					{#if chosen}
@@ -1831,16 +1840,16 @@
 {#if (pickedRows.length || selecting) && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
-		{#if bulkRows.length}{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(bulkRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}{/if}
+		{#if bulkRows.length}{#each BULK as b (b.action)}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onbulk?.(bulkRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}{/if}
 		{#if pickedRows.some(steerable)}{#each STEER as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
-		{#if pickedRows.some(retryable)}<button type="button" class="xbn" onclick={() => onretry?.(pickedRows.filter(retryable))} data-testid="dl-bulk-retry">Download again</button>{/if}
+		{#if pickedRows.some((r) => retryable(r) && mayEdit(r))}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onretry?.(pickedRows.filter((r) => retryable(r) && mayEdit(r)))} data-testid="dl-bulk-retry">Download again</button>{/if}
 		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
 		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>
 	</div>
 		<div class="psel" role="toolbar" aria-label="Selected downloads" data-testid="dl-psel">
 			<div class="pst"><span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span><button type="button" class="plk" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-psel-all">Select all</button><button type="button" class="plk" onclick={clearPicked} data-testid="dl-psel-cancel">Cancel</button></div>
 			<div class="psa">
-				{#each PHONE_BULK.filter((b) => b.action !== 'recheck' || bulkRows.length) as b (b.action)}<button type="button" class="pa" disabled={b.action === 'start' ? !startT.rows.length : b.action === 'pause' ? !pauseT.rows.length : false} onclick={() => (b.action === 'start' ? runOn(startT, 'resume', 'start') : b.action === 'pause' ? runOn(pauseT, 'pause', 'pause') : onbulk?.(bulkRows, b.action))} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
+				{#each PHONE_BULK.filter((b) => b.action !== 'recheck' || bulkRows.length) as b (b.action)}<button type="button" class="pa" disabled={batchBusy || (b.action === 'start' ? !startT.rows.length : b.action === 'pause' ? !pauseT.rows.length : false)} onclick={() => (b.action === 'start' ? runOn(startT, 'resume', 'start') : b.action === 'pause' ? runOn(pauseT, 'pause', 'pause') : onbulk?.(bulkRows, b.action))} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
 				<button type="button" class="pa bad" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-psel-remove"><Icon name="trash" size={20} /><span>Remove</span></button>
 			</div>
 		</div>
