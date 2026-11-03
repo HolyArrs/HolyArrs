@@ -19,18 +19,20 @@ import (
 
 // Reasons a Source is not saved; each is said to the person as it is.
 var (
-	ErrName       = errors.New("give the Source a name of 1 to 80 characters")
-	ErrNameUsed   = errors.New("another Source has that name")
-	ErrFormat     = errors.New("format must be torznab, newznab or rss")
-	ErrProtocol   = errors.New("protocol must be torrent or usenet")
-	ErrURL        = errors.New("the address must start with http:// or https:// and name a host")
-	ErrPriority   = errors.New("priority must be 1 to 50 (1 is asked first)")
-	ErrLimits     = errors.New("limits must be 0 or more: searches_per_window up to 10000, window_seconds up to 7 days, gap_ms up to 10 minutes, timeout_ms up to 5 minutes")
-	ErrKinds      = errors.New("kinds may be movie, tv and music")
-	ErrUse        = errors.New("an rss Source can only be used for the feed; it cannot search")
-	ErrProxy      = errors.New("the proxy must look like http://host:port, https://host:port or socks5://host:port")
-	ErrKeyAgain   = errors.New("the address changed to another host; type the key again so it is never sent to a new host by itself")
-	ErrProxyAgain = errors.New("the proxy changed to another host or name; type its password again")
+	ErrName     = errors.New("give the Source a name of 1 to 80 characters")
+	ErrNameUsed = errors.New("another Source has that name")
+	ErrFormat   = errors.New("format must be torznab, newznab or rss")
+	ErrProtocol = errors.New("protocol must be torrent or usenet")
+	ErrURL      = errors.New("the address must start with http:// or https:// and name a host")
+	// ErrQuery counts as ErrURL, so callers that check ErrURL treat it the same.
+	ErrQuery      error = queryErr{}
+	ErrPriority         = errors.New("priority must be 1 to 50 (1 is asked first)")
+	ErrLimits           = errors.New("limits must be 0 or more: searches_per_window up to 10000, window_seconds up to 7 days, gap_ms up to 10 minutes, timeout_ms up to 5 minutes")
+	ErrKinds            = errors.New("kinds may be movie, tv and music")
+	ErrUse              = errors.New("an rss Source can only be used for the feed; it cannot search")
+	ErrProxy            = errors.New("the proxy must look like http://host:port, https://host:port or socks5://host:port")
+	ErrKeyAgain         = errors.New("the address changed to another host; type the key again so it is never sent to a new host by itself")
+	ErrProxyAgain       = errors.New("the proxy changed to another host or name; type its password again")
 	// ErrKeyAgainProxy is ErrKeyAgain for a plain http Source whose proxy
 	// changed: the new proxy would see the key.
 	ErrKeyAgainProxy = errors.New("the proxy changed and the Source address is plain http, so the new proxy would see the key; type the key again")
@@ -147,8 +149,14 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 				key = q
 			}
 		}
-		if _, err := checkURL(raw); err != nil {
+		u, err := checkURL(raw)
+		if err != nil {
 			return "", "", err
+		}
+		// Torznab/Newznab requests add their own query; a key typed into
+		// the address would be stored in the clear, so it goes in the key field.
+		if src.Format != "rss" && (u.RawQuery != "" || u.ForceQuery) {
+			return "", "", ErrQuery
 		}
 		src.URL = raw
 	}
@@ -448,3 +456,10 @@ func Explain(err error) string {
 	}
 	return "HolyArrs could not reach the Source (" + se.Msg + ")."
 }
+
+type queryErr struct{}
+
+func (queryErr) Error() string {
+	return "leave the query (?apikey=...) out of the address; put the key in the key field"
+}
+func (queryErr) Is(t error) bool { return t == ErrURL }

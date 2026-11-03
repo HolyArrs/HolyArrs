@@ -161,7 +161,7 @@
 					<input id="ms-to" class="input mono" bind:value={form.path_to} placeholder="/movies" autocomplete="off" />
 				</Field>
 			</div>
-			<p class="hint">Only when the server sees your movies under another path (for example in another container). Leave both empty otherwise.</p>
+			<p class="hint">Only when the server sees your movies, shows and music under another path (for example in another container). Leave both empty otherwise.</p>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
 				<span><b>May reach the local network</b><br /><span class="hint">On by default: media servers are usually at home.</span></span>
@@ -185,7 +185,7 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if servers.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<EmptyState icon="tv" title="No media servers yet" text="Add your Plex, Jellyfin or Emby server and new movies show up there by themselves." action={{ label: 'Add a media server', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="tv" title="No media servers yet" text="Add your Plex, Jellyfin or Emby server and new movies, shows and music show up there by themselves." action={{ label: 'Add a media server', onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">

@@ -1,5 +1,5 @@
-// Package mediaserver tells Plex, Jellyfin and Emby to look at a movie
-// folder again after HolyArrs imported, renamed or deleted files there, so
+// Package mediaserver tells Plex, Jellyfin and Emby to look at a movie,
+// show or album folder again after HolyArrs imported, renamed or deleted files there, so
 // the change shows up without waiting for the server's own scan. It only
 // pushes: nothing is read back. Tokens live in the encrypted vault.
 package mediaserver
@@ -215,7 +215,7 @@ func originOf(raw string) string {
 	return strings.ToLower(u.Scheme + "://" + u.Host)
 }
 
-// Linker tells media servers about changed movie folders.
+// Linker tells media servers about changed movie, show and music folders.
 type Linker struct {
 	Store *store.Store
 	Vault *secrets.Vault
@@ -225,6 +225,7 @@ type Linker struct {
 
 	mu      sync.Mutex
 	pending map[string]string // folder -> change
+	kinds   map[string]string // folder -> title kind (movie, show, artist)
 	timer   *time.Timer
 	wg      sync.WaitGroup
 }
@@ -270,8 +271,10 @@ func (l *Linker) Watch(ctx context.Context) {
 		if ch == "" || e.TitleID == nil {
 			return
 		}
+		var kind string
+		_ = l.Store.Read().QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", *e.TitleID).Scan(&kind)
 		for _, f := range l.FoldersOf(ctx, e) {
-			l.Queue(ctx, f, ch)
+			l.queue(ctx, f, ch, kind)
 		}
 	})
 }
@@ -359,10 +362,19 @@ func idList(v any) []int64 {
 
 // Queue gathers one folder change; they are sent together after Delay.
 func (l *Linker) Queue(ctx context.Context, folder, change string) {
+	l.queue(ctx, folder, change, "")
+}
+
+// queue gathers a folder change with the kind of title it belongs to, so a
+// Plex scan with no library holding the folder stays with that kind.
+func (l *Linker) queue(ctx context.Context, folder, change, kind string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.pending == nil {
-		l.pending = map[string]string{}
+		l.pending, l.kinds = map[string]string{}, map[string]string{}
+	}
+	if kind != "" {
+		l.kinds[folder] = kind
 	}
 	if was, ok := l.pending[folder]; ok && was != change {
 		change = Modified // several kinds piled up
@@ -405,8 +417,8 @@ func (l *Linker) Stop() {
 // wants them.
 func (l *Linker) Flush(ctx context.Context) {
 	l.mu.Lock()
-	batch := l.pending
-	l.pending, l.timer = nil, nil
+	batch, kinds := l.pending, l.kinds
+	l.pending, l.kinds, l.timer = nil, nil, nil
 	l.mu.Unlock()
 	if len(batch) == 0 {
 		return
@@ -428,7 +440,7 @@ func (l *Linker) Flush(ctx context.Context) {
 			if (ch == Created && !m.OnImport) || (ch == Modified && !m.OnRename) || (ch == Deleted && !m.OnDelete) {
 				continue
 			}
-			send = append(send, Update{Path: MapPath(m, f), Change: ch})
+			send = append(send, Update{Path: MapPath(m, f), Change: ch, Kind: kinds[f]})
 		}
 		if len(send) == 0 {
 			continue
@@ -442,6 +454,8 @@ func (l *Linker) Flush(ctx context.Context) {
 type Update struct {
 	Path   string `json:"path"`
 	Change string `json:"change"`
+	// Kind is the title kind (movie, show, artist); empty counts as movie.
+	Kind string `json:"-"`
 }
 
 // MapPath turns a HolyArrs folder into the media server's path with the
@@ -617,18 +631,26 @@ func (l *Linker) plexSections(ctx context.Context, m domain.MediaServer) ([]plex
 	if err := xml.Unmarshal(b, &mc); err != nil {
 		return nil, errors.New("the server's answer was not a Plex library list")
 	}
-	var movies []plexSection
+	var out []plexSection
 	for _, d := range mc.Directories {
-		if d.Type == "movie" {
-			movies = append(movies, d)
+		if d.Type == "movie" || d.Type == "show" || d.Type == "artist" {
+			out = append(out, d)
 		}
 	}
-	return movies, nil
+	return out, nil
 }
 
-// Tell asks the server to look at each folder again. Plex scans the movie
-// library that holds the folder, only that folder; with no library holding
-// it, every movie library is scanned. Jellyfin and Emby get one media
+// plexType is the Plex library type for a title kind.
+func plexType(kind string) string {
+	if kind == "show" || kind == "artist" {
+		return kind
+	}
+	return "movie"
+}
+
+// Tell asks the server to look at each folder again. Plex scans the movie,
+// TV or music library that holds the folder, only that folder; with no
+// library holding it, every library of the title's type is scanned. Jellyfin and Emby get one media
 // updated call with every folder and its change. Jellyfin then gets one full
 // library refresh for the batch because Jellyfin 12.2 accepts the path report
 // without reliably indexing a newly created folder.
@@ -656,6 +678,9 @@ func (l *Linker) Tell(ctx context.Context, m domain.MediaServer, us []Update) er
 			}
 			if !matched {
 				for _, s := range secs {
+					if s.Type != plexType(u.Kind) {
+						continue
+					}
 					if _, err := l.do(ctx, m, http.MethodGet, "/library/sections/"+url.PathEscape(s.Key)+"/refresh", nil); err != nil {
 						return err
 					}
@@ -685,8 +710,8 @@ func (l *Linker) Tell(ctx context.Context, m domain.MediaServer, us []Update) er
 	return nil
 }
 
-// Test checks the address and token: Plex must list at least one movie
-// library; Jellyfin and Emby must answer their system info.
+// Test checks the address and token: Plex must list at least one movie,
+// TV or music library; Jellyfin and Emby must answer their system info.
 func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error) {
 	var res string
 	var err error
@@ -694,14 +719,14 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 		var secs []plexSection
 		secs, err = l.plexSections(ctx, m)
 		if err == nil && len(secs) == 0 {
-			err = errors.New("the server has no movie library")
+			err = errors.New("the server has no movie, TV or music library")
 		}
 		if err == nil {
 			names := []string{}
 			for _, s := range secs {
 				names = append(names, s.Title)
 			}
-			res = "Movie libraries: " + strings.Join(names, ", ")
+			res = "Libraries: " + strings.Join(names, ", ")
 		}
 	} else {
 		var b []byte

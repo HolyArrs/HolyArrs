@@ -108,7 +108,8 @@ func secretValues(cfg Config) []string {
 		return []string{cfg.APIKey}
 	}
 	var out []string
-	for _, part := range strings.Split(cfg.APIKey, "&") {
+	// Feeds separate values with & or ; (u=1;tp=PASSKEY).
+	for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
 		_, v, _ := strings.Cut(part, "=")
 		if u, err := url.QueryUnescape(v); err == nil {
 			v = u
@@ -142,6 +143,9 @@ func spellings(keys []string) []spelling {
 // query or the path), so a stored Release never holds the Source secret;
 // GrabLink puts them back. Another apikey parameter is dropped.
 func cleanLink(link string, keys []string) string {
+	// A marker already in the feed's link was planted by someone else;
+	// break it so GrabLink never fills the Source key into it.
+	link = strings.ReplaceAll(link, hidden, "HOLYARRS-KEY")
 	for _, sp := range spellings(keys) {
 		if sp.value != "" {
 			link = strings.ReplaceAll(link, sp.value, sp.marker)
