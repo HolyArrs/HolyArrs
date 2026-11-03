@@ -9,6 +9,7 @@
 // metadata, kept 30 s even when the server sends no max-age.
 import { api } from './api.ts';
 import { DWELL_MS, fastEnough, mainPicture, preloadPicture } from './smart-preload.ts';
+import { appPicture, coverFor } from './music/music-pages.ts';
 
 const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ARTIST = new RegExp(`/music/artist/(${ID})(?:[/?#]|$)`, 'i');
@@ -59,11 +60,22 @@ export function pagePrefetchURLs(href: string | null | undefined): string[] {
 
 type Get = (path: string) => Promise<unknown>;
 
+/** pagePicture is the address a page shows its main picture at, so the copy
+ * fetched ahead is the one it uses: an album's hero cover (versioned, at its
+ * slot size), an artist's versioned photo, other pages' main picture as is. */
+export function pagePicture(path: string, answer: unknown): string | null {
+	const main = mainPicture(answer);
+	if (!main) return null;
+	if (path.startsWith('/music/albums/')) return coverFor(appPicture(main), 260, undefined, true).src;
+	if (path.startsWith('/music/artists/')) return appPicture(main);
+	return main;
+}
+
 /** Fetch one address ahead; a Library title then fetches its metadata too, as its page will. */
 function warmPage(path: string): Promise<unknown> {
 	const answer = api.warm<{ kind?: string; ids?: { tmdb?: string } }>(path, KEEP);
 	// The page's main picture too, when it is one of ours.
-	answer.then((a) => void preloadPicture(mainPicture(a)), () => {});
+	answer.then((a) => void preloadPicture(pagePicture(path, a)), () => {});
 	if (/^\/titles\/[0-9]+$/.test(path))
 		answer.then(
 			(t) => {
