@@ -149,7 +149,7 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 		return Show{}, ErrShowNotFound
 	}
 	base := "/tv/" + strconv.FormatInt(n, 10)
-	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids,images,credits,content_ratings,translations"}, "include_image_language": {"en,null"}})
+	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids,images,credits,content_ratings,translations,alternative_titles"}, "include_image_language": {"en,null"}})
 	if err != nil {
 		return Show{}, notFoundShow(err)
 	}
