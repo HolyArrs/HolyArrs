@@ -29,8 +29,14 @@ func TestCountInstallSetting(t *testing.T) {
 		}
 		return s
 	}
+	if !CountInstall(ctx, a.s.Store.Read()) {
+		t.Fatal("stored count_install is off by default (read before the Job queue starts)")
+	}
 	if s := put(`{"count_install": false}`); s.CountInstall || a.uiSettings(ctx).CountInstall {
 		t.Fatal("count_install off not kept")
+	}
+	if CountInstall(ctx, a.s.Store.Read()) {
+		t.Fatal("stored count_install off not read before the Job queue starts")
 	}
 	put(`{"autoplay_trailers": true}`)
 	if s := put(`{"count_install": true}`); !s.CountInstall {
