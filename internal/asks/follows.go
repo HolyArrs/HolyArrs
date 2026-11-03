@@ -29,6 +29,18 @@ type Followed struct {
 // nothing and changes nothing in the Library (Kept up to date is separate).
 // A Kid may follow only titles within their limit.
 func (s *Service) Follow(ctx context.Context, p Person, titleID int64) error {
+	return s.follow(ctx, p, titleID, false)
+}
+
+// FollowTitle is Follow from a title's bell. A movie followed before its
+// file is in is also marked as still to tell, so the person hears once
+// when the file arrives (TellMovieFollows). Not when it already has a file
+// or when the person asked for it (the ask tells them).
+func (s *Service) FollowTitle(ctx context.Context, p Person, titleID int64) error {
+	return s.follow(ctx, p, titleID, true)
+}
+
+func (s *Service) follow(ctx context.Context, p Person, titleID int64, tellOnFile bool) error {
 	db := s.Store.Read()
 	var kind string
 	err := db.QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ? AND state != 'removed'", titleID).Scan(&kind)
@@ -45,7 +57,18 @@ func (s *Service) Follow(ctx context.Context, p Person, titleID int64) error {
 	}
 	now := store.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.UserID, titleID, now)
+		res, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.UserID, titleID, now)
+		if err != nil || !tellOnFile || kind != "movie" {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return nil
+		}
+		_, err = tx.Exec(`INSERT OR IGNORE INTO tmdb_movie_follows (user_id, tmdb_id, created_at)
+			SELECT ?, json_extract(t.source_ids, '$.tmdb'), ? FROM titles t WHERE t.id = ? AND json_extract(t.source_ids, '$.tmdb') IS NOT NULL
+			AND NOT EXISTS (SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = t.id AND sl.state IN ('in_library', 'better_wanted'))
+			AND NOT EXISTS (SELECT 1 FROM asks a JOIN ask_people ap ON ap.ask_id = a.id WHERE a.title_id = t.id AND ap.user_id = ? AND a.state IN ('asked', 'approved'))`,
+			p.UserID, now, titleID, p.UserID)
 		return err
 	})
 }

@@ -150,7 +150,7 @@ func (a *API) putFollow(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	switch err := a.s.Asks.Follow(r.Context(), a.person(r), t.ID); {
+	switch err := a.s.Asks.FollowTitle(r.Context(), a.person(r), t.ID); {
 	case errors.Is(err, asks.ErrNotFollowable):
 		fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, asks.ErrAboveLimit):
