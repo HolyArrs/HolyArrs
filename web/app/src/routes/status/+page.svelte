@@ -18,7 +18,6 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Sections from '#lib/status/StatusSections.svelte';
-	import LivePills from '#lib/status/LivePills.svelte';
 	import { buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
@@ -77,7 +76,9 @@
 			[lists, 'outside lists'],
 			[alerts, 'alerts']
 		];
-		failed = named.filter(([r]) => r.status === 'rejected').map(([, w]) => w);
+		// A 403 means this account may not read that list: leave it out, not a failure.
+		const denied = (r: PromiseSettledResult<unknown>) => r.status === 'rejected' && (r.reason as { status?: number })?.status === 403;
+		failed = named.filter(([r]) => r.status === 'rejected' && !denied(r)).map(([, w]) => w);
 		input = {
 			states: val(states)?.states,
 			checks: val(checks)?.checks,
@@ -214,18 +215,12 @@
 		</PageLoader>
 	{/if}
 </div>
-<LivePills />
 
 <style>
 	/* Desktop: this page ends where its last plate ends, so the Jobs tab fits a screen.
 	   Phones keep the layout's room for the tab bar. */
 	@media (min-width: 768px) {
 		:global(main:has(> .status)) { padding-bottom: 12px; }
-		/* The Jobs tab's fixed pill bar: keep room so the last rows scroll clear of it. */
-		:global(main:has(> .status.jobs)) { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
-	}
-	@media (max-width: 767px) {
-		:global(main:has(> .status.jobs)) { padding-bottom: calc(var(--tabbar) + 72px + env(safe-area-inset-bottom)); }
 	}
 	.status {
 		max-width: 1600px; margin: 0 auto; padding: 0 var(--gutter) 0; box-sizing: border-box;

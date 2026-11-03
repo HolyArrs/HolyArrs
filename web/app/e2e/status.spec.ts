@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { noSidewaysScroll, signIn } from './helpers.ts';
 
-// Status (#71, #78): every tab and every Jobs shape at desktop width and at
+// Status (#71, #78): every tab at desktop width and at
 // 390, the tabs work from the keyboard, and the Jobs table keeps its labels
 // on a phone. Own fresh app: npx playwright test -c e2e/status.config.ts
 test.describe.configure({ mode: 'serial' });
@@ -46,7 +46,7 @@ async function open(page: Page, url: string) {
 }
 
 for (const width of [1280, 390]) {
-	test(`status: every tab and shape at ${width}`, async ({ browser }) => {
+	test(`status: every tab at ${width}`, async ({ browser }) => {
 		const page = await (await browser.newContext({ viewport: { width, height: 844 } })).newPage();
 		await signIn(page, owner());
 		for (const t of tabs) {
@@ -55,19 +55,13 @@ for (const width of [1280, 390]) {
 			await expect(page.locator('#st-panel-' + t)).toBeVisible();
 			await noSidewaysScroll(page);
 		}
-		for (let n = 1; n <= 10; n++) {
-			await open(page, `/status?tab=jobs&live=${n}`);
-			await expect(page.getByTestId('status-live-pills')).toBeVisible();
-			await noSidewaysScroll(page);
-		}
-		// The last job row scrolls clear of the pill bar.
+		// The Jobs tab draws the coming day beside the timeline; the last job row stays reachable.
 		await open(page, '/status?tab=jobs');
+		await expect(page.getByTestId('status-live')).toBeVisible();
+		await expect(page.getByTestId('status-live-pills')).toHaveCount(0);
 		const last = page.getByTestId('status-row').last();
 		await last.scrollIntoViewIfNeeded();
-		await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-		const row = await last.boundingBox();
-		const pills = await page.getByTestId('status-live-pills').boundingBox();
-		expect(row && pills && row.y + row.height <= pills.y + 1, 'last job row sits above the pills').toBeTruthy();
+		await expect(last).toBeInViewport();
 		if (width === 390) await expect(last.getByText('Next run', { exact: true })).toBeVisible();
 		await page.context().close();
 	});
