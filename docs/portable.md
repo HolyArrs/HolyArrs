@@ -96,9 +96,10 @@ account with write access only to config and the intended data tree. On
 Windows use an NTFS ACL restricted to that account; Unix file modes do not
 prove Windows ACL protection.
 
-Set the memory target explicitly as above. Unlike Docker, a standalone
-program does not inherit the image's `GOMEMLIMIT`. This is a Go memory
-target, not a hard process limit. Use your service manager for resource
+Without `GOMEMLIMIT` the program uses a 384 MiB memory target, the same
+value the Docker image sets; set `GOMEMLIMIT` to change it (about 80 percent
+of the memory you give HolyArrs). This is a Go memory target, not a hard
+process limit. Use your service manager for resource
 limits and restart handling; packaging does not create a service.
 
 Open port 18730 at your host's network address, read `setup-code.txt` only
