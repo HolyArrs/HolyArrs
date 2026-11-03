@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/CoderLuii/holyarrs/internal/domain"
 )
 
 // trimForViewer leaves out what only people who manage the Library need:
@@ -12,7 +13,7 @@ import (
 // languages stay. With no person on the request (sign-in off, as in tests)
 // nothing is left out.
 func trimForViewer(ctx context.Context, v TitleView) TitleView {
-	if who, ok := auth.From(ctx); !ok || who.Has(auth.PermManageLibrary) {
+	if seesLibraryDetail(ctx) {
 		return v
 	}
 	v.LibraryFolderID, v.PickRulesID, v.FolderPath, v.PickRulesName = 0, 0, "", ""
@@ -23,11 +24,38 @@ func trimForViewer(ctx context.Context, v TitleView) TitleView {
 	for i := range v.Slots {
 		s := &v.Slots[i]
 		s.Reason = ""
-		if s.File != nil {
-			f := *s.File
-			f.RelativePath, f.ReleaseName, f.Group, f.Fingerprint, f.PlacedBy = "", nil, nil, nil, ""
-			s.File = &f
-		}
+		s.File = trimFile(s.File)
 	}
 	return v
+}
+
+// seesLibraryDetail reports whether the person may see the details
+// trimForViewer leaves out; true with no person on the request.
+func seesLibraryDetail(ctx context.Context) bool {
+	who, ok := auth.From(ctx)
+	return !ok || who.Has(auth.PermManageLibrary)
+}
+
+// trimFile copies f without its path, release name, group, fingerprint and
+// who placed it.
+func trimFile(f *domain.File) *domain.File {
+	if f == nil {
+		return nil
+	}
+	c := *f
+	c.RelativePath, c.ReleaseName, c.Group, c.Fingerprint, c.PlacedBy = "", nil, nil, nil, ""
+	return &c
+}
+
+// trimEpisodeSlots does the same for the Slots on episode and track lists.
+func trimEpisodeSlots(ctx context.Context, slots map[int64][]EpisodeSlot) {
+	if seesLibraryDetail(ctx) {
+		return
+	}
+	for _, sl := range slots {
+		for i := range sl {
+			sl[i].Reason = ""
+			sl[i].File = trimFile(sl[i].File)
+		}
+	}
 }

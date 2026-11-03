@@ -10500,8 +10500,8 @@
           "Backups"
         ],
         "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "settings",
-        "x-holyarrs-scope": "write"
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       },
       "get": {
         "description": "The zip file.",
@@ -10545,7 +10545,7 @@
           "Backups"
         ],
         "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "settings",
+        "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
       }
     },
@@ -16136,7 +16136,7 @@
           "Organise"
         ],
         "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
       }
     },
@@ -16220,7 +16220,7 @@
           "Organise"
         ],
         "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
       }
     },
@@ -22175,6 +22175,22 @@
         "tags": [
           "Settings"
         ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/url-base": {
+      "get": {
+        "responses": {},
+        "summary": "",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "responses": {},
+        "summary": "",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
