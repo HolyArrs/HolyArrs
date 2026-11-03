@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createClient } from './api.ts';
 import { ownedIndex, ownedMark, ownedTitle, type ExploreCard } from './explore.ts';
-import { libraryTitles, ownedLibrary, stubTitle } from './owned.ts';
+import { libraryBrief, libraryTitles, ownedLibrary, stubTitle } from './owned.ts';
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
 const card = (ref: string, kind: 'movie' | 'show' | 'artist' = 'movie') => ({ key: ref, kind, ref, name: 'x' }) as unknown as ExploreCard;
@@ -52,5 +52,12 @@ describe('ownedLibrary', () => {
 		await c.post('/x');
 		await libraryTitles(c);
 		expect(n).toBe(2);
+	});
+	it('asks for the brief list once for Downloads, History and the Calendar', async () => {
+		const asked: string[] = [];
+		const c = createClient(async (u) => (asked.push(u), reply(200, { titles: [{ id: 1, kind: 'movie', name: 'A', artwork: [], slots: [] }] })), () => undefined);
+		expect(await libraryBrief(c)).toEqual([{ id: 1, kind: 'movie', name: 'A', artwork: [], slots: [] }]);
+		await libraryBrief(c);
+		expect(asked).toEqual(['/api/v1/titles?brief=1']);
 	});
 });

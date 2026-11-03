@@ -847,6 +847,10 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	if r.URL.Query().Has("brief") {
+		a.listTitlesBrief(w, r, ts)
+		return
+	}
 	out := []TitleView{}
 	ctx, err := withTitleFacts(withLookupMemo(r.Context()), a.s.Store.Read())
 	if err == nil && len(ts) > 0 {

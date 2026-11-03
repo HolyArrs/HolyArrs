@@ -173,14 +173,16 @@ export function adoptWarm(url: string): HTMLVideoElement | null {
 
 /**
  * prefetchTrailer starts the lookup at hover start (not after the dwell)
- * and, once the address is known, loads its first bytes.
+ * and, once the address is known, loads its first bytes (warmUp: hover
+ * cards, whose player takes the warmed video over; a hero never does, so
+ * warming one there only downloads the trailer twice next to the page).
  */
-export function prefetchTrailer(kind: 'movie' | 'show', tmdb: string) {
+export function prefetchTrailer(kind: 'movie' | 'show', tmdb: string, warmUp = true) {
 	if (!tmdb) return;
 	void loadUISettings().then(() => {
 		if (!autoplayHere()) return;
 		void directStream(kind, tmdb).then((s) => {
-			if (s) warm(sourcesFor(s, undefined, nativeHLS(), soundOn()).flatMap((x) => (x.kind === 'direct' ? [x.url] : [])));
+			if (s && warmUp) warm(sourcesFor(s, undefined, nativeHLS(), soundOn()).flatMap((x) => (x.kind === 'direct' ? [x.url] : [])));
 		});
 	});
 }

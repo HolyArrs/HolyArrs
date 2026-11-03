@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { rebaseBar } from '#lib/scroll-bar.svelte.ts';
-	import { libraryTitles } from '#lib/owned.ts';
+	import { libraryBrief } from '#lib/owned.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
@@ -233,7 +233,7 @@
 			// The server takes up to a year a query; a longer stretch is asked in pieces.
 			const [parts, t] = await Promise.all([
 				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`))),
-				libraryTitles()
+				libraryBrief()
 			]);
 			if (n !== asks) return;
 			movies = new Map(t.filter((x) => x.kind === 'movie').map((x) => [x.id, movieFacts(x)]));
