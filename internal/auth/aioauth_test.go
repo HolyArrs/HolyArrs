@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -261,4 +263,77 @@ func mcpEcho(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// An app may name itself with an https address (client ID metadata
+// document), as the Claude app does by default: no registration needed.
+func TestAIAppSignsInWithAMetadataDocument(t *testing.T) {
+	f := setup(t, Options{})
+	m := http.NewServeMux()
+	f.a.Routes(m)
+	f.srv.Config.Handler = f.a.Middleware(mcpEcho(routehits.Wrap(m)))
+	c := client(t)
+	csrf := setupOwner(t, f, c)
+	var docURL string
+	docs := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/client.json":
+			_, _ = w.Write([]byte(`{"client_id":"` + docURL + `","client_name":"Claude","redirect_uris":["https://claude.ai/api/mcp/auth_callback"],"token_endpoint_auth_method":"none"}`))
+		case "/other.json":
+			_, _ = w.Write([]byte(`{"client_id":"https://elsewhere.example/x","client_name":"x","redirect_uris":["https://claude.ai/cb"]}`))
+		default:
+			_, _ = w.Write([]byte(strings.Repeat("x", cimdSize+10)))
+		}
+	}))
+	defer docs.Close()
+	docURL = docs.URL + "/client.json"
+	f.a.cimd.http = docs.Client()
+
+	_, body := call(t, &http.Client{}, "GET", f.srv.URL+"/.well-known/oauth-authorization-server", "", nil)
+	if !strings.Contains(body, `"client_id_metadata_document_supported":true`) {
+		t.Fatalf("metadata: %s", body)
+	}
+	h := sha256.Sum256([]byte("a-verifier-that-is-long-enough-for-pkce-0123456789"))
+	q := url.Values{"response_type": {"code"}, "client_id": {docURL}, "redirect_uri": {"https://claude.ai/api/mcp/auth_callback"},
+		"code_challenge": {base64.RawURLEncoding.EncodeToString(h[:])}, "code_challenge_method": {"S256"}, "state": {"s"}}
+	_, body = call(t, c, "GET", f.srv.URL+"/api/v1/auth/ai-connect?"+q.Encode(), "", nil)
+	if !strings.Contains(body, `"client_name":"Claude"`) || !strings.Contains(body, `"returns_to":"claude.ai"`) {
+		t.Fatalf("info: %s", body)
+	}
+	allow, _ := json.Marshal(map[string]string{"query": q.Encode()})
+	_, body = call(t, c, "POST", f.srv.URL+"/api/v1/auth/ai-connect", string(allow), map[string]string{CSRFHeader: csrf})
+	var out struct {
+		Redirect string `json:"redirect"`
+	}
+	_ = json.Unmarshal([]byte(body), &out)
+	back, _ := url.Parse(out.Redirect)
+	form := url.Values{"grant_type": {"authorization_code"}, "code": {back.Query().Get("code")}, "client_id": {docURL},
+		"redirect_uri": {"https://claude.ai/api/mcp/auth_callback"}, "code_verifier": {"a-verifier-that-is-long-enough-for-pkce-0123456789"}}
+	resp, err := http.PostForm(f.srv.URL+"/oauth/token", form)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	var got map[string]string
+	_ = json.Unmarshal(b, &got)
+	if resp.StatusCode != 200 || !strings.HasPrefix(got["access_token"], keyPrefix) {
+		t.Fatalf("token: %d", resp.StatusCode)
+	}
+	// A document naming another client_id, or one too big, is refused.
+	for _, bad := range []string{docs.URL + "/other.json", docs.URL + "/big.json"} {
+		q.Set("client_id", bad)
+		if resp, _ := call(t, c, "GET", f.srv.URL+"/oauth/authorize?"+q.Encode(), "", nil); resp.StatusCode != 400 {
+			t.Fatalf("%s: %d", bad, resp.StatusCode)
+		}
+	}
+}
+
+func TestAIMetadataDocumentsOnlyFromPublicAddresses(t *testing.T) {
+	var c aiCIMD
+	for _, id := range []string{"https://127.0.0.1/client.json", "https://10.10.25.75/c.json", "http://example.com/c.json", "https://example.com/"} {
+		if _, ok := c.client(context.Background(), id); ok {
+			t.Errorf("%s accepted", id)
+		}
+	}
 }

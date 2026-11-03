@@ -61,12 +61,13 @@ test('the guide has steps for every major AI app, nothing to paste on this addre
 	const families = page.getByRole('group', { name: 'Kind of AI app' });
 	await expect(families.getByRole('button', { name: 'Code editors', pressed: true })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Cursor', pressed: true })).toBeVisible();
-	await expect(guide.getByRole('link', { name: 'Add to Cursor' })).toHaveAttribute('href', /^cursor:\/\//);
+	await expect(guide).toContainText('~/.cursor/mcp.json');
+	await expect(page.getByTestId('ai-full-guide')).toHaveAttribute('href', 'https://holyarrs.coderluii.dev/docs/ai/cursor/');
 	// Every family has steps and a link to its guide on the website.
 	for (const name of ['Claude', 'ChatGPT & Codex', 'Gemini', 'Copilot', 'Grok & more', 'Code editors', 'VS Code add-ons', 'Terminal tools', 'Self-hosted chat', 'Desktop AI', 'Local agents', 'Local runners', 'Any other app']) {
 		await families.getByRole('button', { name, exact: true }).click();
 		await expect(guide).toBeVisible();
-		await expect(page.getByTestId('ai-full-guide')).toHaveAttribute('href', /^https:\/\/holyarrs\.coderluii\.dev\/docs\/ai\/[a-z-]+\/$/);
+		await expect(page.getByTestId('ai-full-guide')).toHaveAttribute('href', /^https:\/\/holyarrs\.coderluii\.dev\/docs\/ai\/[a-z0-9-]+\/$/);
 	}
 	await families.getByRole('button', { name: 'Desktop AI', exact: true }).click();
 	await page.getByRole('button', { name: 'LM Studio', exact: true }).click();

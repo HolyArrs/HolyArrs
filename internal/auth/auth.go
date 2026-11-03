@@ -137,6 +137,8 @@ type Auth struct {
 	setupCode string
 	// codes are AI app sign-ins waiting for their key (aioauth.go).
 	codes aiCodes
+	// cimd reads AI apps' client ID metadata documents (aicimd.go).
+	cimd aiCIMD
 }
 
 type failure struct {

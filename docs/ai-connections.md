@@ -212,7 +212,7 @@ The AI address speaks MCP over Streamable HTTP: one JSON-RPC 2.0 message per `PO
 | AI address | `POST /api/v1/mcp` (also `POST /mcp`) |
 | Protected resource metadata | `GET /.well-known/oauth-protected-resource/api/v1/mcp` (also `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/mcp`) |
 | Sign-in server metadata | `GET /.well-known/oauth-authorization-server` |
-| Register an app | `POST /oauth/register` |
+| Register an app | `POST /oauth/register`, or an https `client_id` pointing to a client ID metadata document (public address, up to 5 KB, no redirects) |
 | Start sign-in | `GET /oauth/authorize` |
 | Get the key | `POST /oauth/token` |
 

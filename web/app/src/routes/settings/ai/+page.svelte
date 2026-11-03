@@ -186,10 +186,11 @@
 				<p class="notice" data-testid="ai-unreachable">
 					{chosen.name} connects from the internet, so it cannot reach {host}. It works once HolyArrs has a public https address (your reverse proxy,
 					Cloudflare Tunnel or Tailscale Funnel); open this page on that address for the steps.
-					{#if family.id === 'claude'}On this network, Claude Desktop can use the local bridge: pick "Claude Desktop (home)".{/if}
+					{#if family.id === 'claude'}On this network, pick "Claude Desktop (home)" instead.{/if}
 				</p>
 				<a class="xs guide-link" href={GUIDES_URL + 'reach-holyarrs/'} target="_blank" rel="noopener noreferrer">How to reach HolyArrs from outside your home</a>
 			{:else}
+				{#if chosen.needs}<p class="small muted needs">{chosen.needs}</p>{/if}
 				{#if needsKey && fresh?.app !== chosen.id}
 					<div class="keyrow">
 						<Button icon="key" variant="primary" type="button" onclick={() => newKey(chosen.name, chosen.id)} disabled={making || !!keysNote} aria-busy={making}>
@@ -203,15 +204,15 @@
 						<li>
 							<span class="num" aria-hidden="true">{i + 1}</span>
 							<div class="grow">
-								<div class="st">{s.title}</div>
-								{#if s.text}<p class="small muted">{s.text}</p>{/if}
+								<p class="st">
+									{#each s.text.split('`') as part, j (j)}{#if j % 2}<code>{part}</code>{:else}{part}{/if}{/each}
+								</p>
 								{#if s.code}
 									<div class="codebox">
 										<pre>{s.code}</pre>
 										<Button icon="copy" size="sm" type="button" onclick={() => copy(s.code ?? '')}>Copy</Button>
 									</div>
 								{/if}
-								{#if s.link}<Button size="sm" href={s.link.href}>{s.link.label}</Button>{/if}
 							</div>
 						</li>
 					{/each}
@@ -227,11 +228,12 @@
 						</div>
 					{/if}
 				{/if}
-				{#if chosen.check}<p class="xs muted">Check it worked: {chosen.check}</p>{/if}
-				{#if chosen.untried}<p class="xs muted">Not tried with HolyArrs yet: these steps follow {chosen.name}'s own docs.</p>{/if}
+				{#if chosen.check}<p class="xs muted"><b>Check:</b> {chosen.check}</p>{/if}
+				{#if chosen.note}<p class="xs muted">{chosen.note}</p>{/if}
+				{#if chosen.untried}<p class="xs muted">Not tested with HolyArrs yet: these steps follow {chosen.name}'s docs.</p>{/if}
 			{/if}
 			<p class="xs links">
-				<a class="guide-link" href={GUIDES_URL + chosen.guide} target="_blank" rel="noopener noreferrer" data-testid="ai-full-guide">Full guide: {family.name}</a>
+				<a class="guide-link" href={GUIDES_URL + chosen.guide} target="_blank" rel="noopener noreferrer" data-testid="ai-full-guide">Guide: {chosen.name}</a>
 				{#if family.local}· <a class="guide-link" href={GUIDES_URL + 'local-models/'} target="_blank" rel="noopener noreferrer">Pick a local model</a>{/if}
 				· <a class="guide-link" href={GUIDES_URL} target="_blank" rel="noopener noreferrer">All AI guides</a>
 			</p>
@@ -361,8 +363,10 @@
 		background: var(--surface-2);
 	}
 	.st {
-		font-weight: 500;
-		margin-bottom: 2px;
+		margin: 2px 0 var(--s-2);
+	}
+	.needs {
+		margin: 0;
 	}
 	.steps p {
 		margin: 0 0 var(--s-2);

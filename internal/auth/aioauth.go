@@ -27,7 +27,8 @@ import (
 // signs in as usual and allows it, and the app gets an AI key of its own
 // (scope mcp) that shows and can be revoked under Settings > AI connections.
 // This is the MCP authorization flow: OAuth 2.1 with PKCE (S256), public
-// clients only, and open client registration (RFC 7591).
+// clients only, with open client registration (RFC 7591) or a client ID
+// metadata document: an https client_id whose JSON names the app (aicimd.go).
 
 const (
 	aiCodeFor     = 5 * time.Minute
@@ -46,6 +47,8 @@ const aiConnectPage = "/ai-connect"
 type aiClient struct {
 	Name      string   `json:"n"`
 	Redirects []string `json:"r"`
+	// ID is the client_id the app sent (not part of the registration).
+	ID string `json:"-"`
 }
 
 const aiClientPrefix = "hai_"
@@ -74,7 +77,17 @@ func parseAIClient(id string) (aiClient, bool) {
 		}
 	}
 	c.Name = aiClientName(c.Name)
+	c.ID = id
 	return c, true
+}
+
+// aiClientFor reads a client_id: a registration made here, or an https
+// address with the app's metadata document.
+func (a *Auth) aiClientFor(ctx context.Context, id string) (aiClient, bool) {
+	if strings.HasPrefix(id, "https://") {
+		return a.cimd.client(ctx, id)
+	}
+	return parseAIClient(id)
 }
 
 // aiClientName is the name shown to the person and used as the key label.
@@ -267,6 +280,7 @@ func (a *Auth) aiServer(w http.ResponseWriter, r *http.Request) {
 		"token_endpoint_auth_methods_supported":          []string{"none"},
 		"scopes_supported":                               []string{ScopeMCP},
 		"authorization_response_iss_parameter_supported": true,
+		"client_id_metadata_document_supported":          true,
 	})
 }
 
@@ -325,8 +339,8 @@ type aiRequest struct {
 
 // checkAIRequest reads an authorize request: bad is a bad client or return
 // address, kind any other fault.
-func checkAIRequest(q url.Values) (req aiRequest, bad bool, errKind, msg string) {
-	c, ok := parseAIClient(q.Get("client_id"))
+func (a *Auth) checkAIRequest(ctx context.Context, q url.Values) (req aiRequest, bad bool, errKind, msg string) {
+	c, ok := a.aiClientFor(ctx, q.Get("client_id"))
 	if !ok {
 		return req, true, "invalid_client", "This AI app is not registered with HolyArrs. Remove it in the AI app and add it again."
 	}
@@ -380,7 +394,7 @@ func (a *Auth) aiAuthorize(w http.ResponseWriter, r *http.Request) {
 	// Faults are shown here, never sent back: anyone can register any return
 	// address, so sending to it before the person allows would make this an
 	// open redirect.
-	if _, bad, kind, msg := checkAIRequest(r.URL.Query()); bad || kind != "" {
+	if _, bad, kind, msg := a.checkAIRequest(r.Context(), r.URL.Query()); bad || kind != "" {
 		aiErrorPage(w, msg)
 		return
 	}
@@ -395,7 +409,7 @@ func (a *Auth) aiAuthorize(w http.ResponseWriter, r *http.Request) {
 
 // aiConnectInfo tells the allow page what is asking.
 func (a *Auth) aiConnectInfo(w http.ResponseWriter, r *http.Request) {
-	req, bad, kind, msg := checkAIRequest(r.URL.Query())
+	req, bad, kind, msg := a.checkAIRequest(r.Context(), r.URL.Query())
 	if bad || kind != "" {
 		fail(w, http.StatusBadRequest, msg)
 		return
@@ -439,7 +453,7 @@ func (a *Auth) aiConnectAllow(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "bad sign-in request")
 		return
 	}
-	req, bad, kind, msg := checkAIRequest(q)
+	req, bad, kind, msg := a.checkAIRequest(r.Context(), q)
 	if bad || kind != "" {
 		fail(w, http.StatusBadRequest, msg)
 		return
@@ -471,7 +485,7 @@ func (a *Auth) aiToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	verifier := sha256.Sum256([]byte(f.Get("code_verifier")))
-	if f.Get("client_id") != c.client.id() || !redirectMatches(c.redirect, f.Get("redirect_uri")) && f.Get("redirect_uri") != "" ||
+	if f.Get("client_id") != c.client.ID || !redirectMatches(c.redirect, f.Get("redirect_uri")) && f.Get("redirect_uri") != "" ||
 		subtle.ConstantTimeCompare([]byte(base64.RawURLEncoding.EncodeToString(verifier[:])), []byte(c.challenge)) != 1 ||
 		f.Get("resource") != "" && c.resource != "" && f.Get("resource") != c.resource {
 		oauthFail(w, http.StatusBadRequest, "invalid_grant", "the code does not match this app or its PKCE verifier")
