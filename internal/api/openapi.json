@@ -10292,7 +10292,7 @@
     },
     "/api/v1/auth/two-factor/setup": {
       "post": {
-        "description": "Answers a new secret and its otpauth link for an authenticator app.",
+        "description": "Answers a new secret, its otpauth link for an authenticator app, and the link as a QR code to scan (qr: rows of 1 for dark and 0 for light, without the quiet zone).",
         "operationId": "twoFactorSetup",
         "responses": {
           "200": {
