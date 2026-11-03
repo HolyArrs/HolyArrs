@@ -139,9 +139,10 @@ func TestOldAppBazarrSync(t *testing.T) {
 
 	// The version probe without /api/v3 answers no version, so Bazarr asks
 	// the v3 status, which reports 4 or more.
+	// An empty body, as the old apps send: a JSON body reads as no version.
 	st, _, b := f.arr(son, "GET", "/sonarr/api/system/status", "")
-	if st != 404 || strings.Contains(b, "version") {
-		t.Fatalf("short status: %d %s", st, b)
+	if st != 404 || b != "" {
+		t.Fatalf("short status: %d %q", st, b)
 	}
 	if v := f.arrOK(son, "GET", s+"system/status", "", 200).(map[string]any)["version"]; !strings.HasPrefix(v.(string), "4.") {
 		t.Fatalf("version %v", v)
@@ -158,6 +159,8 @@ func TestOldAppBazarrSync(t *testing.T) {
 
 	arrList(t, "rootfolder", f.arrOK(son, "GET", s+"rootfolder", "", 200), 1)
 	all := arrList(t, "series", f.arrOK(son, "GET", s+"series", "", 200), 1)
+	// Bazarr asks for the list as "series/".
+	arrList(t, "series/", f.arrOK(son, "GET", s+"series/", "", 200), 1)
 	sm := fields(t, "bazarr series", all[0], []string{"id", "title", "path", "tvdbId", "overview", "images", "sortTitle", "year", "alternateTitles",
 		"tags", "seriesType", "imdbId", "monitored", "ended", "lastAired", "originalLanguage"})
 	// lastAired is the newest air date gone by outside the specials (the

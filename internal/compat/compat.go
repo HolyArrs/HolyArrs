@@ -166,8 +166,15 @@ func (h *handler) serve(mux *http.ServeMux) http.Handler {
 			inner, ok = rest[1:], true
 		}
 		if !ok {
-			notFound(w)
+			// The old apps answer anything outside their API with a bare
+			// 404; Bazarr's first version probe (/api/system/status) then
+			// falls back to /api/v3. A JSON body would read as a version.
+			w.WriteHeader(http.StatusNotFound)
 			return
+		}
+		// "series/" (Bazarr's list call) is "series".
+		if len(inner) > 1 {
+			inner = strings.TrimSuffix(inner, "/")
 		}
 		r2 := new(http.Request)
 		*r2 = *r
