@@ -197,7 +197,10 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	// Approvers get the request cards: who asked is on the card, Approve is one tap.
 	await expect(phone.getByRole('button', { name: 'Open Lantern Street, asked by max' })).toBeVisible();
 	await noSidewaysScroll(phone);
+	// Approve sends after a short beat; wait for it before leaving the page.
+	const approved = phone.waitForResponse((r) => /\/api\/v1\/asks\/\d+\/approve$/.test(new URL(r.url()).pathname) && r.request().method() === 'POST');
 	await phone.getByRole('button', { name: 'Approve Lantern Street' }).click();
+	expect((await approved).ok()).toBe(true);
 	await expect(phone.getByRole('button', { name: 'Approve Lantern Street' })).toHaveCount(0);
 
 	// The show page names who asked and keeps exactly the asked seasons.
@@ -212,8 +215,9 @@ test('the owner approves from a phone: the show is added with those seasons and 
 
 	// History names who asked and who approved.
 	await own.goto('/downloads/history');
-	await expect(own.getByTestId('history-row').filter({ hasText: 'Lantern Street' }).filter({ hasText: 'Asked for by max' }).first()).toBeVisible();
-	await expect(own.getByTestId('history-row').filter({ hasText: 'Lantern Street' }).filter({ hasText: 'Approved by luis' }).first()).toBeVisible();
+	const lantern = own.getByTestId('history-row').filter({ hasText: 'Lantern Street' });
+	await expect(lantern.filter({ hasText: 'Asked' }).filter({ hasText: 'max' }).first()).toBeVisible();
+	await expect(lantern.filter({ hasText: 'Approved' }).filter({ hasText: 'luis' }).first()).toBeVisible();
 
 	// max reads the message; members see no switches on the show page.
 	await max.goto('/requests');
