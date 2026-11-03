@@ -291,7 +291,9 @@
 	}
 	// The arrows move a week from the day in view (the whole stretch is loaded, so it glides).
 	const go = (n: number) => {
-		const t = addDays(new Date((active ?? todayKey) + 'T00:00:00'), 7 * n);
+		// From the week the heading names: the day in view, else the month asked for (?month=), else today.
+		const from = active ?? (askedMonth ? ymd(weekStart(askedMonth)) : todayKey);
+		const t = addDays(new Date(from + 'T00:00:00'), 7 * n);
 		const day = ymd(t < earliest ? earliest : t >= latest ? addDays(latest, -1) : t);
 		const row = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= day);
 		if (!row && day >= firstDay && day < lastDay) return toasts.push('No more dates after this.', 'ok');
