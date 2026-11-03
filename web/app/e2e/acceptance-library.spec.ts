@@ -94,7 +94,9 @@ test('music adoption and rename stay on one fixture and prove the exact disk res
 	await page.getByTestId('adopt-results').getByRole('link', { name: 'Open the artist' }).click();
 	await page.getByRole('link', { name: 'Low Orbit' }).first().click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Low Orbit' })).toBeVisible();
-	await page.getByTestId('rename-album').click();
+	// Rename files is in the album's More menu.
+	await page.getByRole('button', { name: 'More actions' }).first().click();
+	await page.getByRole('menuitem', { name: 'Rename files' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Rename the files of Low Orbit' });
 	const steps = dialog.getByTestId('rename-step');
 	await expect(steps).toHaveCount(2);
