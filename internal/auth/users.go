@@ -401,9 +401,14 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, `send {"password": "..."}`)
 		return
 	}
-	var role string
-	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT role FROM users WHERE id = ?", id).Scan(&role); err != nil {
+	var role, permsRaw string
+	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT role, perms FROM users WHERE id = ?", id).Scan(&role, &permsRaw); err != nil {
 		fail(w, http.StatusNotFound, "no such user")
+		return
+	}
+	// Signing in as them must not give an admin more than they already have.
+	if err := mayGrant(by, role, parsePerms(permsRaw)); err != nil && role == RoleMember {
+		fail(w, http.StatusForbidden, "they may do things you may not, so only the owner can set their password")
 		return
 	}
 	if id == by.UserID {

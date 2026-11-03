@@ -39,6 +39,13 @@ func TestOwnerSetsForgottenPassword(t *testing.T) {
 			t.Fatalf("admin on %s: %d", name, resp.StatusCode)
 		}
 	}
+	// Nor a member who may do more than the admin.
+	if resp, _ := own.do(t, f, "PUT", path[:len(path)-len("/password")], `{"perms":["ask","settings"]}`); resp.StatusCode != 200 {
+		t.Fatalf("give ana settings: %d", resp.StatusCode)
+	}
+	if resp, _ := ad.do(t, f, "POST", path, body(pw2+"3")); resp.StatusCode != 403 {
+		t.Fatalf("admin on a member with more: %d", resp.StatusCode)
+	}
 	if resp, _ := ana.do(t, f, "POST", path, body(pw2+"2")); resp.StatusCode != 401 && resp.StatusCode != 403 {
 		t.Fatalf("member allowed: %d", resp.StatusCode)
 	}
