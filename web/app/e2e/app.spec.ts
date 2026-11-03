@@ -10,6 +10,8 @@ let context: BrowserContext;
 async function scanFirstRun() {
 	await expect(page.locator('main')).toHaveCount(1);
 	await expect(page.locator('#main')).toHaveCount(1);
+	// The first page fades in as the loader leaves; scan it once it is solid.
+	await page.waitForFunction(() => !document.documentElement.classList.contains('hl-arrive') && document.getAnimations().every((a) => a.playState !== 'running'));
 	const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	expect(result.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 }
