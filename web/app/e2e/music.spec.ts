@@ -197,6 +197,11 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await openFromSearch(ivy, 'lantern', 'Tin Lanterns');
 	// The hero and the slim bar that follows it on scroll both offer it.
 	await expect(ivy.getByTestId('ask-albums').first()).toBeVisible();
+	// At 390 the artist page, with its Coming soon row (Paper Boats, 2099), never scrolls sideways.
+	await ivy.setViewportSize({ width: 390, height: 844 });
+	await expect(ivy.getByRole('heading', { name: 'Coming soon' })).toBeVisible();
+	await noSidewaysScroll(ivy);
+	await ivy.setViewportSize({ width: 412, height: 915 });
 
 	await ivy.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });

@@ -240,7 +240,8 @@ for (const viewport of viewports) {
 			await expect(page.getByRole('heading', { level: 1, name: 'North Star' })).toBeVisible();
 			await expect(page.getByText('2022', { exact: false }).locator('visible=true').first()).toBeVisible();
 			// Cast and crew loads by itself on the new title page.
-			await expect(page.getByRole('link', { name: /^Alex Kim/ })).toHaveAttribute('href', '/people/202');
+			// The side facts and the Cast row both link the director.
+			await expect(page.getByRole('link', { name: /^Alex Kim/ }).first()).toHaveAttribute('href', '/people/202');
 			await verifyPage(page, testInfo, `${viewport.name}-people-and-credits`);
 		});
 
