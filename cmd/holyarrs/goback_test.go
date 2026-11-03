@@ -152,6 +152,39 @@ func TestGoBackPageLimitsTries(t *testing.T) {
 	}
 }
 
+// Posts that carry no code (a HolyArrs tab still open, Seerr, a script)
+// are not tries, so they cannot use up the tries before a person types one.
+func TestGoBackPageIgnoresPostsWithoutACode(t *testing.T) {
+	dir, err := oldThenNew(t, "CREATE TABLE future(x);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.Open(dir, store.Options{})
+	logs := captureLog(t)
+	srv := httptest.NewServer(refusedHandler(dir, err, make(chan struct{})))
+	defer srv.Close()
+	m := codeRx.FindStringSubmatch(logs.String())
+	if m == nil {
+		t.Fatal("no code")
+	}
+	for i := 0; i < maxCodeTries+2; i++ {
+		resp, err := http.Post(srv.URL+"/api/v1/auth/login", "application/json", strings.NewReader(`{"name":"a","password":"b"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != 400 {
+			t.Fatalf("post without a code %d: %d", i, resp.StatusCode)
+		}
+	}
+	if strings.Contains(logs.String(), "wrong code") {
+		t.Fatalf("a post without a code was counted: %q", logs.String())
+	}
+	if code, page := postCode(t, srv.URL, m[1]); code != 200 || !strings.Contains(page, "before-restore-") {
+		t.Fatalf("right code after posts without one: %d %q", code, page)
+	}
+}
+
 // No pre-update backup, or another reason: the plain page, no form.
 func TestGoBackPageOnlyWithABackup(t *testing.T) {
 	dir := t.TempDir()
