@@ -189,6 +189,10 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	}
 	h := sum(b.Ticket)
 	ipKey := a.clientKey(r)
+	// A ticket from single sign-on or the trusted proxy finishes like those
+	// sign-ins: a settings change or an unlink waits for it, or ends it first.
+	a.ssoMu.RLock()
+	defer a.ssoMu.RUnlock()
 	a.mu.Lock()
 	t := a.tickets[h]
 	if t != nil && (a.now().After(t.expires) || t.tries >= ticketTries) {
@@ -228,6 +232,12 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.mu.Lock()
+	if a.tickets[h] != t {
+		// Ended meanwhile, by a settings change or an unlink.
+		a.mu.Unlock()
+		fail(w, http.StatusUnauthorized, "this sign-in has ended; start again")
+		return
+	}
 	delete(a.tickets, h)
 	delete(a.fails, ipKey)
 	delete(a.fails, "name:"+strings.ToLower(t.name))

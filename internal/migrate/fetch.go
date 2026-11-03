@@ -78,6 +78,9 @@ type apiClient struct {
 	h      *http.Client
 	lim    Limits
 	header func(*http.Request)
+	// got counts the bytes read so far, so a paged read can stop before
+	// many big pages add up.
+	got int64
 }
 
 func newAPIClient(src Source, header func(*http.Request)) (*apiClient, error) {
@@ -125,6 +128,7 @@ func (c *apiClient) do(ctx context.Context, method, path string, q url.Values, f
 	}
 	defer resp.Body.Close()
 	b, err := io.ReadAll(io.LimitReader(resp.Body, c.lim.MaxAnswer+1))
+	c.got += int64(len(b))
 	if err != nil {
 		return nil, nil, resp.StatusCode, fmt.Errorf("%w: the answer was cut off", ErrUnreachable)
 	}
@@ -203,3 +207,6 @@ func checkDepth(b []byte, max int) error {
 	}
 	return nil
 }
+
+// pagedMax is the most one paged list may read in all: a few answers' worth.
+func pagedMax(l Limits) int64 { return 4 * l.MaxAnswer }

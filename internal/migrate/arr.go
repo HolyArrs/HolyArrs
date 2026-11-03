@@ -269,7 +269,11 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 // a time, until every record is read or a page comes back empty.
 func (r arrReader) pages(ctx context.Context, c *apiClient, path string) ([]map[string]any, error) {
 	var rows []map[string]any
+	start := c.got
 	for page := 1; page <= c.lim.MaxRows; page++ {
+		if c.got-start > pagedMax(c.lim) {
+			return nil, ErrTooBig
+		}
 		var env map[string]any
 		q := url.Values{"page": {strconv.Itoa(page)}, "pageSize": {"1000"}}
 		if err := c.getJSON(ctx, r.apiBase()+path, q, &env); err != nil {

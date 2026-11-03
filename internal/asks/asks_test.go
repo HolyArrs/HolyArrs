@@ -739,3 +739,25 @@ func TestDecidedByDisplayName(t *testing.T) {
 		t.Fatalf("display name %+v", vs[0].DecidedBy)
 	}
 }
+
+// An approved ask whose title was deleted from the Library later says so.
+func TestApprovedAskWithItsTitleDeletedSaysWhy(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	res, _ := r.svc.Ask(ctx, r.ana, "693134")
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil || got.TitleID == nil {
+		t.Fatalf("approve %+v %v", got, err)
+	}
+	vs, _ := r.svc.Views(ctx, "a.id = ?", res.Ask.ID)
+	if vs[0].Problem != "" {
+		t.Fatalf("problem before delete %q", vs[0].Problem)
+	}
+	if _, err := r.svc.Library.Remove(ctx, *got.TitleID, library.RemoveChoice{}, true, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	vs, _ = r.svc.Views(ctx, "a.id = ?", res.Ask.ID)
+	if vs[0].State != domain.AskApproved || !strings.Contains(vs[0].Problem, "deleted from the Library") {
+		t.Fatalf("after delete %+v", vs[0])
+	}
+}

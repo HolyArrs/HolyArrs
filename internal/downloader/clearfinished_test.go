@@ -169,6 +169,41 @@ func TestClearFinishedDeletesTheJobFolderOnDisk(t *testing.T) {
 	}
 }
 
+// SABnzbd 5 names a one-file job by its file (storage is the .mkv): the
+// job folder around it goes, and nothing beside that folder.
+func TestClearFinishedDeletesTheFoldersOfAJobNamedByItsFile(t *testing.T) {
+	share := t.TempDir()
+	movies := filepath.Join(share, "complete", "movies")
+	job := filepath.Join(movies, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS")
+	other := filepath.Join(movies, "Other.Movie.2020.1080p-GRP")
+	for _, d := range []string{job, other} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(d, filepath.Base(d)+".mkv"), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	w, m, id, spy := usenetDownload(t)
+	if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+		t.Fatal(err)
+	}
+	m.Forget(w.download(t, id).DownloaderID)
+	spy.content = "/downloads/complete/movies/Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS/Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.mkv"
+	m.ClearFinished(context.Background(), id)
+	if _, err := os.Stat(job); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("the job folder is still on disk: %v", err)
+	}
+	for _, p := range []string{movies, other} {
+		if _, err := os.Stat(p); err != nil {
+			t.Fatalf("%s was deleted: %v", p, err)
+		}
+	}
+	if countEvents(t, w, "download_removed", id) != 1 {
+		t.Fatal("no History entry")
+	}
+}
+
 func TestClearFinishedNeverDeletesOutsideOrTheShareItself(t *testing.T) {
 	share, outside := t.TempDir(), t.TempDir()
 	w, m, id, spy := usenetDownload(t)

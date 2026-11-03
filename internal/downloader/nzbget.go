@@ -157,9 +157,12 @@ func validNZB(b []byte) bool {
 		}
 		switch x := tok.(type) {
 		case xml.Directive:
-			// NZB documents need no DTD. Rejecting directives also prevents
-			// external-entity declarations from becoming part of this parser.
-			return false
+			// Most NZBs open with the NZB 1.1 DOCTYPE line, which is fine. A
+			// DOCTYPE with its own declarations ([...]) or any other directive is
+			// refused, so no entity declaration reaches this parser.
+			if dir := strings.TrimSpace(string(x)); !strings.HasPrefix(dir, "DOCTYPE ") || strings.ContainsAny(dir, "[]<>%") {
+				return false
+			}
 		case xml.StartElement:
 			if depth == 0 {
 				roots++
