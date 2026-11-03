@@ -351,7 +351,8 @@
 		...(partOn('subtitles') ? ([{ label: 'Missing subtitles', href: to('/library/missing-subtitles') }] as MenuItem[]) : []),
 		{ label: 'Video codecs', href: to('/library/copies') },
 		{ label: 'Rename files', href: to('/library/rename') },
-		{ label: 'Import a library', href: to('/library/import') }
+		{ label: 'Import a library', href: to('/library/import') },
+		{ label: 'Import files by hand', href: to('/library/import-files') }
 	]);
 	function partOn(name: string) {
 		return partsNow.answer?.parts.find((part) => part.part === name)?.on !== false;

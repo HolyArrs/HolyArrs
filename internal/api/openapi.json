@@ -16024,6 +16024,206 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/manual-import": {
+      "post": {
+        "description": "Imports files chosen by hand into their Slots. Each item names a file and its Slot (slot_id), or the title (title_id) with season and episode for a show and optionally version_id; mode is copy (the default: a hardlink on the same disk) or move. Each file is named by the naming settings and recorded; a file that cannot go is refused with the reason and the others still go. Only movies and episodes for now.",
+        "operationId": "importByHand",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "items": {
+                    "items": {
+                      "properties": {
+                        "episode": {
+                          "type": "integer"
+                        },
+                        "mode": {
+                          "enum": [
+                            "copy",
+                            "move"
+                          ],
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "season": {
+                          "type": "integer"
+                        },
+                        "slot_id": {
+                          "format": "int64",
+                          "type": "integer"
+                        },
+                        "title_id": {
+                          "format": "int64",
+                          "type": "integer"
+                        },
+                        "version_id": {
+                          "format": "int64",
+                          "type": "integer"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "placed": {
+                      "type": "integer"
+                    },
+                    "results": {
+                      "items": {
+                        "properties": {
+                          "error": {
+                            "type": "string"
+                          },
+                          "file_id": {
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "outcome": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "placed_by": {
+                            "type": "string"
+                          },
+                          "slot_id": {
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "target": {
+                            "type": "string"
+                          },
+                          "title_id": {
+                            "format": "int64",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "One result per file: outcome placed, refused or failed, with where it went or why not."
+          },
+          "400": {
+            "description": "No items, or more than 500."
+          }
+        },
+        "summary": "Import files by hand",
+        "tags": [
+          "Organise"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/manual-import/scan": {
+      "post": {
+        "description": "Lists the videos and tracks in a folder (or one file) the server can read, up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads.",
+        "operationId": "scanByHand",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "files": {
+                      "items": {
+                        "properties": {
+                          "guess": {
+                            "type": "object"
+                          },
+                          "in_library": {
+                            "type": "boolean"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "note": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "quality": {
+                            "type": "string"
+                          },
+                          "size": {
+                            "format": "int64",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "more": {
+                      "type": "boolean"
+                    },
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The files found."
+          },
+          "400": {
+            "description": "The path is not a full path the server can read, or holds .. parts."
+          }
+        },
+        "summary": "Scan a folder for files to import by hand",
+        "tags": [
+          "Organise"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/media-servers": {
       "get": {
         "description": "Plex, Jellyfin and Emby servers told to look at a movie folder again after an import, a rename or a delete; tokens masked.",

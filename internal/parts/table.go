@@ -402,6 +402,8 @@ var Routes = map[string]Owner{
 	"POST /api/v1/library-folders/{id}/scan":  Media,
 	"POST /api/v1/library-folders/{id}/adopt": Media,
 	"POST /api/v1/library/rescan":             Media,
+	"POST /api/v1/manual-import/scan":         Media,
+	"POST /api/v1/manual-import":              Media,
 
 	// The metadata server's stored title and person pictures.
 	"GET /api/v1/artwork/img/{kind}/{id}/{file}": Media,
@@ -571,6 +573,7 @@ var Screens = map[string]Owner{
 	"/library/deleted":               Media,
 	"/library/turned-down":           Media,
 	"/library/import":                Media,
+	"/library/import-files":          Media,
 	"/library/rename":                Media,
 	"/library/missing-subtitles":     subtitles,
 	"/search":                        Media,
