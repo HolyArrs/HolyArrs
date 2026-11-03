@@ -1,0 +1,244 @@
+package importer
+
+import (
+	"bytes"
+	"context"
+	"database/sql"
+	"encoding/binary"
+	"hash/crc32"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// rar4 builds a tiny RAR 4 volume holding one stored file part.
+func rar4(name string, data []byte, total int, splitBefore, splitAfter, compressed, more bool) []byte {
+	block := func(typ byte, flags uint16, body []byte) []byte {
+		b := make([]byte, 7, 7+len(body))
+		b[2] = typ
+		binary.LittleEndian.PutUint16(b[3:], flags)
+		binary.LittleEndian.PutUint16(b[5:], uint16(7+len(body)))
+		b = append(b, body...)
+		binary.LittleEndian.PutUint16(b[0:], uint16(crc32.ChecksumIEEE(b[2:])))
+		return b
+	}
+	out := []byte("Rar!\x1a\x07\x00")
+	out = append(out, block(0x73, 1, make([]byte, 6))...)
+	fl := uint16(0x8000)
+	if splitBefore {
+		fl |= 1
+	}
+	if splitAfter {
+		fl |= 2
+	}
+	body := make([]byte, 25+len(name))
+	binary.LittleEndian.PutUint32(body[0:], uint32(len(data)))
+	binary.LittleEndian.PutUint32(body[4:], uint32(total))
+	body[8], body[17], body[18] = 2, 29, 0x30
+	if compressed {
+		body[18] = 0x33
+	}
+	binary.LittleEndian.PutUint16(body[19:], uint16(len(name)))
+	copy(body[25:], name)
+	out = append(out, block(0x74, fl, body)...)
+	out = append(out, data...)
+	var end uint16
+	if more {
+		end = 1
+	}
+	return append(out, block(0x7B, end, nil)...)
+}
+
+// packedWorld is a movie world whose download holds only the given files.
+func packedWorld(t *testing.T, files map[string][]byte) world {
+	t.Helper()
+	w := setup(t)
+	if err := os.Remove(filepath.Join(w.dl, relName+".mkv")); err != nil {
+		t.Fatal(err)
+	}
+	var seen []domain.SeenFile
+	for name, b := range files {
+		p := filepath.Join(w.dl, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		seen = append(seen, domain.SeenFile{Name: name, Size: int64(len(b))})
+	}
+	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		var d domain.Download
+		if err := store.Get(context.Background(), tx, "downloads", w.dlID, &d); err != nil {
+			return err
+		}
+		d.FilesSeen = seen
+		return store.Update(tx, "downloads", &d, domain.System)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return w
+}
+
+func snapshot(root string) map[string]string {
+	out := map[string]string{}
+	_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			b, _ := os.ReadFile(p)
+			rel, _ := filepath.Rel(root, p)
+			out[rel] = string(b)
+		}
+		return nil
+	})
+	return out
+}
+
+func noLeftovers(t *testing.T, root string) {
+	t.Helper()
+	var found []string
+	_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if err == nil && strings.HasPrefix(d.Name(), ".holyarrs-unpack") {
+			found = append(found, p)
+		}
+		return nil
+	})
+	if len(found) > 0 {
+		t.Fatalf("temp folder left: %v", found)
+	}
+}
+
+func lastWhy(imp *domain.Import) string {
+	return strings.Join(imp.Plan[len(imp.Plan)-1].Why, " ")
+}
+
+func fakeTools(t *testing.T, look func(string) (string, error), run func(context.Context, string, []string) error) {
+	oldLook, oldRun := lookTool, runTool
+	lookTool, runTool = look, run
+	t.Cleanup(func() { lookTool, runTool = oldLook, oldRun })
+}
+
+var video = bytes.Repeat([]byte("v"), 3000)
+
+func TestPackedMultiVolumeIsUnpackedAndImported(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	w := packedWorld(t, map[string][]byte{
+		"Rel/" + relName + ".rar": rar4(relName+".mkv", video[:1500], len(video), false, true, false, true),
+		"Rel/" + relName + ".r00": rar4(relName+".mkv", video[1500:], len(video), true, false, false, false),
+	})
+	before := snapshot(w.dl)
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "done" {
+		t.Fatalf("state %s: %+v", imp.State, imp.Result)
+	}
+	got, err := os.ReadFile(filepath.Join(w.lib, "Dune - Part Two (2024)", "Dune - Part Two (2024) 1080p WEB.mkv"))
+	if err != nil || !bytes.Equal(got, video) {
+		t.Fatalf("library file: %v", err)
+	}
+	after := snapshot(w.dl)
+	if len(after) != len(before) {
+		t.Fatalf("download folder changed: %v", after)
+	}
+	for k, v := range before {
+		if after[k] != v {
+			t.Fatalf("%s changed", k)
+		}
+	}
+	noLeftovers(t, w.dl)
+}
+
+func TestPackedDryRunWritesNothing(t *testing.T) {
+	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", video, len(video), false, false, false, false)})
+	im := &Importer{Store: w.s}
+	if _, err := im.Import(context.Background(), w.dlID, true, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	noLeftovers(t, w.dl)
+}
+
+func TestCompressedPackWithoutToolGivesPlainReason(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	fakeTools(t, func(string) (string, error) { return "", os.ErrNotExist }, runTool)
+	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", []byte("packed"), 5000, false, false, true, false)})
+	before := snapshot(w.dl)
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "failed" || lastWhy(imp) != whyNeedTool {
+		t.Fatalf("state %s, plan %+v", imp.State, imp.Plan)
+	}
+	var state string
+	if err := w.s.Read().QueryRow(`SELECT state FROM slots WHERE id = ?`, w.slotID).Scan(&state); err != nil || state != string(domain.SlotNeedsADecision) {
+		t.Fatalf("slot %q %v", state, err)
+	}
+	if after := snapshot(w.dl); len(after) != len(before) {
+		t.Fatal("download folder changed")
+	}
+	noLeftovers(t, w.dl)
+}
+
+func TestCompressedPackUsesSystemTool(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	var args []string
+	fakeTools(t, func(n string) (string, error) {
+		if n == "unrar" {
+			return "unrar", nil
+		}
+		return "", os.ErrNotExist
+	}, func(_ context.Context, _ string, a []string) error {
+		args = a
+		dest := strings.TrimRight(a[len(a)-1], `/\`)
+		return os.WriteFile(filepath.Join(dest, relName+".mkv"), video, 0o644)
+	})
+	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", []byte("packed"), len(video), false, false, true, false)})
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || imp.State != "done" {
+		t.Fatalf("%v %+v", err, imp)
+	}
+	if args[0] != "x" || !strings.HasSuffix(args[len(args)-2], ".rar") {
+		t.Fatalf("args %v", args)
+	}
+	noLeftovers(t, w.dl)
+}
+
+func TestPackedPathTraversalIsRefused(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(`..\..\evil.mkv`, video, len(video), false, false, false, false)})
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "failed" || lastWhy(imp) != whyUnsafe {
+		t.Fatalf("%s %+v", imp.State, imp.Plan)
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(w.dl), "evil.mkv")); err == nil {
+		t.Fatal("wrote outside")
+	}
+	noLeftovers(t, w.dl)
+}
+
+func TestPackedNeedsFreeSpace(t *testing.T) {
+	fakeDisk(t, 1*mb)
+	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", video, len(video), false, false, false, false)})
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "failed" || lastWhy(imp) != whyNoSpace {
+		t.Fatalf("%s %+v", imp.State, imp.Plan)
+	}
+	noLeftovers(t, w.dl)
+}

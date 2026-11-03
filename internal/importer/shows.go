@@ -359,6 +359,13 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	}
 	root := mapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
+	// A download that holds only RAR files is unpacked next to it first.
+	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
+	defer cleanup()
+	cands = append(cands, unpacked...)
+	if unpackWhy != "" {
+		bad = append(bad, unpackStep(root, unpackWhy))
+	}
 	var plan []domain.PlanStep
 	if music {
 		at, err := albumTarget(ctx, db, lf, ver, ti, items, slotOf, slots, dryRun, ns)
@@ -692,6 +699,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			ss.outcome, ss.reason = "stuck", "nothing in the download could be matched to an episode; look at the import plan"
 			if music {
 				ss.reason = "nothing in the download could be matched to a track; look at the import plan"
+			}
+			if unpackWhy != "" {
+				ss.reason = unpackWhy
 			}
 			for _, r := range imp.Result {
 				if strings.HasPrefix(r.Error, "not enough free space") {
