@@ -238,26 +238,26 @@ test('Show page: the show follows the default languages', async () => {
 	await expect(showCard.getByTestId('subtitle-missing-link')).toContainText('2 subtitles missing');
 });
 
-test('Show page: one episode gets its own subtitle languages from its row', async () => {
-	test.skip(true, 'Roadmap #105 (Subtitles, Later): the current title page has no per-episode Subtitles on its episode rows yet; only the older show page had them.');
+test('Show page: one episode gets its own subtitle languages in its sheet', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
 	await openLibraryTab(page);
 	await openSeasonNamed(page, 'Season 1');
-	await episodeAction(page, 'S01E01', 'Subtitles');
-	const dialog = page.getByTestId('episode-subtitles-dialog');
-	await expect(dialog.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
-	await expect(dialog.getByTestId('subtitle-missing')).toHaveCount(2);
-	await dialog.getByTestId('subtitle-wish-change').click();
-	await dialog.getByRole('radio', { name: /Its own languages/ }).check();
-	await dialog.getByRole('button', { name: 'Take Spanish off' }).click();
-	await dialog.getByRole('button', { name: 'Save languages' }).click();
-	await expect(dialog.getByTestId('subtitle-wish')).toContainText('English (set for this episode)');
-	await expect(dialog.getByTestId('subtitle-missing')).toHaveCount(1);
-	await axe(page, 'episode subtitles', 'dialog[open]');
-	await dialog.getByTestId('subtitle-search').click();
+	// The episode's sheet holds its own Subtitles card.
+	await episodeAction(page, 'S01E01', 'History');
+	const sheet = page.getByTestId('episode-subtitles');
+	await expect(sheet.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
+	await expect(sheet.getByTestId('subtitle-missing')).toHaveCount(2);
+	await sheet.getByTestId('subtitle-wish-change').click();
+	await sheet.getByRole('radio', { name: /Its own languages/ }).check();
+	await sheet.getByRole('button', { name: 'Take Spanish off' }).click();
+	await sheet.getByRole('button', { name: 'Save languages' }).click();
+	await expect(sheet.getByTestId('subtitle-wish')).toContainText('English (set for this episode)');
+	await expect(sheet.getByTestId('subtitle-missing')).toHaveCount(1);
+	await axe(page, 'episode subtitles', '[data-testid="episode-subtitles"]');
+	await sheet.getByTestId('subtitle-search').click();
 	await expect(page.getByText('Looking for subtitles now.')).toBeVisible();
-	await dialog.getByRole('button', { name: 'Close' }).click();
+	await page.keyboard.press('Escape');
 });
 
 test('the subtitle screens fit a phone and pass the accessibility scan', async ({ browser }) => {
