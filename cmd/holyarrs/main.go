@@ -779,26 +779,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	wish.PrefetchParts = true
-	// Plex watchlists are read with the Plex sign-in HolyArrs keeps. Today
-	// that is only the owner's (linked under Sign-in to import people);
-	// members' Plex sign-ins are not kept yet.
+	// Plex watchlists are read with each person's own kept Plex sign-in.
 	plexWatch := &asks.Watchlists{Asks: wish, Base: env("HOLYARRS_PLEX_DISCOVER_URL", asks.DefaultPlexDiscover),
-		Token: func(ctx context.Context, userID int64) (string, error) {
-			var role string
-			err := s.Read().QueryRowContext(ctx, "SELECT u.role FROM users u JOIN user_links l ON l.user_id = u.id AND l.provider = 'plex' WHERE u.id = ?", userID).Scan(&role)
-			if errors.Is(err, sql.ErrNoRows) || err == nil && role != "owner" {
-				return "", nil
-			}
-			if err != nil {
-				return "", err
-			}
-			return vault.Setting(ctx, "this_app", "sign_in_plex_owner")
-		},
-		ClientID: func(ctx context.Context) string {
-			var id string
-			_ = s.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'sign_in_client_id'").Scan(&id)
-			return id
-		}}
+		Token: au.PlexToken, ClientID: au.PlexClientID}
 	watchlists.Store(plexWatch)
 	go wish.BackfillParts(context.Background())
 	wish.WatchEpisodes()
