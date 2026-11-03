@@ -67,7 +67,7 @@
 {#if words}
 	<div class="mb" data-testid="dl-match-banner">
 		<span class="mt">{words}</span>
-		<button type="button" class="mo" onclick={() => (open = true)} data-testid="dl-match-open">Review</button>
+		<button type="button" class="mo" onclick={() => (open = true)} data-testid="dl-match-open">Match</button>
 	</div>
 {/if}
 

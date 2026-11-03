@@ -158,9 +158,9 @@
 	.tdbar { display: flex; align-items: center; gap: 4px; min-width: 0; }
 	.sep { flex: none; width: 1px; height: 30px; margin: 0 6px; background: var(--line); }
 	.grow { flex: 1 1 0; }
-	.it { display: inline-flex; flex: none; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 52px; height: 46px; padding: 3px 8px; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); text-decoration: none; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform 180ms var(--ez); }
+	.it { display: inline-flex; flex: none; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 52px; height: 44px; padding: 3px 8px; border: 0; border-radius: var(--r-btn); background: none; color: var(--text); text-decoration: none; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform 180ms var(--ez); }
 	.it .ic { display: grid; place-items: center; transition: transform 180ms var(--ez); }
-	.it .lb { font: 500 10.5px/1.1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
+	.it .lb { font: 500 11px/1.1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
 	.it:hover:not(:disabled):not(.here) { background: var(--surface-3); }
 	.it:hover:not(:disabled):not(.here) .ic { transform: translateY(-1px); }
 	.it:active:not(:disabled):not(.here) { transform: scale(0.96); }
@@ -224,5 +224,9 @@
 	@media (prefers-reduced-motion: reduce) {
 		.it, .it .ic, .undo, .tg :global(svg) { transition: none; }
 		.it:active:not(:disabled), .undo:active:not(:disabled) { transform: none; }
+	}
+	@media (max-width: 640px) {
+		.tg, .pgb { width: 32px; height: 32px; }
+		.undo { height: 32px; }
 	}
 </style>

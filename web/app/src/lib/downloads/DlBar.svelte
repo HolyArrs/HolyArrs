@@ -164,7 +164,7 @@
 	{#if !watch}<div class="grp acts" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">{#each actions as a (a.key)}{@render act(a)}{/each}</div>{/if}
 {/snippet}
 {#snippet library()}{@render seg('Library', kinds, kindOn, kindCount, pickKind, 'bar-kind', 'dl-type-filter')}{/snippet}
-{#snippet srcs()}{@render seg('Sources', sources, srcOn, srcCount, pickSrc, 'bar-source', 'dl-source-filter')}{/snippet}
+{#snippet srcs()}{@render seg('Network', sources, srcOn, srcCount, pickSrc, 'bar-source', 'dl-source-filter')}{/snippet}
 {#snippet sideBtn()}
 	<span class="tw2" use:tip={'Show sidebar'}><button type="button" class="it side" aria-label="Show sidebar" aria-expanded={false} aria-controls={sideControls} onclick={() => onside?.()} data-testid="dl-side-btn"><span class="ic"><Icon name="sidebar" size={20} /></span></button></span>
 {/snippet}
@@ -195,8 +195,8 @@
 			{@render opt(!kindOn, 'Everything', undefined, () => (kindOn = ''), 'dl-f-kind', '')}
 			{#each kinds as k (k.key)}{@render opt(kindOn === k.key, k.label, kindCount(k.key), () => (kindOn = k.key), 'dl-f-kind', k.key)}{/each}
 		</div></section>
-		<section aria-label="Source"><h3>Source</h3><div class="fg">
-			{@render opt(!srcOn, 'Any source', undefined, () => (srcOn = ''), 'dl-f-src', '')}
+		<section aria-label="Network"><h3>Network</h3><div class="fg">
+			{@render opt(!srcOn, 'Any network', undefined, () => (srcOn = ''), 'dl-f-src', '')}
 			{#each sources as s (s.key)}{@render opt(srcOn === s.key, s.label, srcCount(s.key), () => (srcOn = s.key), 'dl-f-src', s.key)}{/each}
 		</div></section>
 		{#if trackHosts.length || trackProblems}

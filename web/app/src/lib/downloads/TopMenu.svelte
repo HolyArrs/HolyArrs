@@ -88,17 +88,16 @@
 	.caret { display: grid; place-items: center; width: 24px; height: 34px; margin-left: -6px; padding: 0; border: 0; border-radius: var(--r-btn); background: none; color: var(--text-muted); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.caret.txt { width: auto; padding: 0 6px; gap: 4px; margin-left: 0; font: 600 11px/1 var(--font-ui); color: var(--text); }
 	.caret.tight { height: 28px; margin-left: -4px; }
-	.caret.tight { height: 28px; margin-left: -4px; }
 	.caret:hover { background: var(--surface-3); color: var(--text); }
 	.caret:active { transform: scale(0.96); }
 	.caret:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.caret[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
-	.tm { position: fixed; inset: auto; margin: 0; min-width: 190px; max-height: calc(100vh - 16px); overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); color: var(--text); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28); }
+	.tm { position: fixed; inset: auto; margin: 0; min-width: 190px; max-height: calc(100vh - 16px); overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-lift); }
 	.tm:popover-open { display: grid; gap: 2px; }
-	.mi2 { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; min-height: 32px; padding: 6px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: var(--t-footnote); text-align: left; cursor: pointer; }
+	.mi2 { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; min-height: 36px; padding: 6px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-callout); text-align: left; cursor: pointer; }
 	.mi2 .h { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
 	.mi2:hover, .mi2:focus-visible { background: var(--surface-3); outline: none; }
-	.mi2:focus-visible { box-shadow: var(--focus-ring); }
+	.mi2:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 	.mi2[aria-checked='true'] .t { font-weight: 600; }
 	.mi2.bad .t { color: var(--fail-text); }
 	.mi2[aria-disabled='true'] { cursor: not-allowed; }
