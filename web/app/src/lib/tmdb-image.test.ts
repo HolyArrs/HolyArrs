@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { heroSize, pick, sharpen, sized } from './tmdb-image.ts';
+import { heroSize, pick, proxied, sharpen, sized } from './tmdb-image.ts';
 import { setBase } from './paths.ts';
 
 describe('sized', () => {
@@ -51,5 +51,19 @@ describe('hero backdrops', () => {
 		expect(heroSize(3440, 1)).toBe('original');
 		expect(sharpen('/api/v1/artwork/tmdb/w780/b.jpg', 3440, 1)).toBe('/api/v1/artwork/tmdb/original/b.jpg');
 		expect(sharpen('/x/y.jpg', 3440, 1)).toBe('/x/y.jpg');
+	});
+});
+
+describe('proxied', () => {
+	it('sends TMDB pictures through the artwork cache at a size it fetches', () => {
+		expect(proxied('https://image.tmdb.org/t/p/w500/logo.png')).toMatch(/\/api\/v1\/artwork\/tmdb\/w500\/logo\.png$/);
+		expect(proxied('https://image.tmdb.org/t/p/original/a_b-c.jpg')).toMatch(/\/api\/v1\/artwork\/tmdb\/original\/a_b-c\.jpg$/);
+		expect(proxied('https://image.tmdb.org/t/p/h632/face.jpg')).toMatch(/\/api\/v1\/artwork\/tmdb\/h632\/face\.jpg$/);
+		expect(proxied('https://image.tmdb.org/t/p/w45/tiny.jpg')).toMatch(/\/api\/v1\/artwork\/tmdb\/w500\/tiny\.jpg$/);
+	});
+	it('leaves other pictures and empty values alone', () => {
+		expect(proxied('/api/v1/artwork/tmdb/w342/p.jpg')).toBe('/api/v1/artwork/tmdb/w342/p.jpg');
+		expect(proxied('https://assets.fanart.tv/x.png')).toBe('https://assets.fanart.tv/x.png');
+		expect(proxied(null)).toBe('');
 	});
 });

@@ -110,7 +110,7 @@ func ArtworkName(url string) string {
 
 // tmdbSizes are the picture sizes TMDB serves; asking for one of them means
 // the stored file is used as it comes, with no resizing here.
-var tmdbSizes = map[string]bool{"w92": true, "w154": true, "w185": true, "w300": true, "w342": true, "w500": true, "w780": true, "w1280": true, "original": true}
+var tmdbSizes = map[string]bool{"w92": true, "w154": true, "w185": true, "w300": true, "w342": true, "w500": true, "w780": true, "w1280": true, "h632": true, "original": true}
 
 // TMDBArtworkURL is the TMDB picture at base (metadata.ImageBase) for a
 // size and file name taken from /api/v1/artwork/tmdb/{size}/{file}; ok is

@@ -59,7 +59,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
-	import { sized } from '../tmdb-image.ts';
+	import { proxied, sized } from '../tmdb-image.ts';
 	import { awardsTip, loadWikiFacts, type WikiFacts } from '../wiki-facts.ts';
 	import Billboard from './Billboard.svelte';
 	import ActionButton from './ActionButton.svelte';
@@ -218,7 +218,7 @@
 		void loadExtras(api.get, k, id).then((e) => live && (extras = e));
 		return () => (live = false);
 	});
-	const shownLogo = $derived(logo && !logoFailed ? logo : extras.logo && !fanartLogoFailed ? extras.logo : null);
+	const shownLogo = $derived(logo && !logoFailed ? proxied(logo) : extras.logo && !fanartLogoFailed ? extras.logo : null);
 	const heroBackdrop = $derived(backdrop || (mbid ? extras.backgrounds[0] : null));
 	const heroPoster = $derived(poster || (mbid ? extras.thumb : null));
 
@@ -299,7 +299,7 @@
 				<img class="cover" src={cover} alt="" decoding="async" use:viewTransitionName={vtName} />
 			{/if}
 			{#if shownLogo}
-				<h1 class="bb-logo" class:wide={wideLogo} class:dark={darkLogo}><img src={shownLogo} alt={title} onload={(e) => { const i = e.currentTarget as HTMLImageElement; wideLogo = i.naturalHeight > 0 && i.naturalWidth / i.naturalHeight > 6; checkLogo(i.src); }} onerror={() => (shownLogo === logo ? (logoFailed = true) : (fanartLogoFailed = true))} /></h1>
+				<h1 class="bb-logo" class:wide={wideLogo} class:dark={darkLogo}><img src={shownLogo} alt={title} onload={(e) => { const i = e.currentTarget as HTMLImageElement; wideLogo = i.naturalHeight > 0 && i.naturalWidth / i.naturalHeight > 6; checkLogo(i.src); }} onerror={() => (logo && shownLogo === proxied(logo) ? (logoFailed = true) : (fanartLogoFailed = true))} /></h1>
 			{:else}
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
