@@ -178,6 +178,7 @@ func (s *Server) serveMusicSimilarSet(w http.ResponseWriter, r *http.Request) {
 		problem(w, 400, "invalid_query", 0)
 		return
 	}
+	ids = s.slimKnown(r, ids)
 	d, ok := s.artistData(w)
 	if !ok {
 		return
@@ -218,6 +219,7 @@ func (s *Server) serveMusicArtistData(w http.ResponseWriter, r *http.Request) {
 		problem(w, 400, "invalid_query", 0)
 		return
 	}
+	ids = s.slimKnown(r, ids)
 	d, ok := s.artistData(w)
 	if !ok {
 		return
@@ -251,4 +253,20 @@ func parallel(ctx context.Context, ids []string, n int, f func(context.Context, 
 		}()
 	}
 	wg.Wait()
+}
+
+// slimKnown drops, for a self-registered or anonymous caller, the ids the
+// loaded slim copy does not hold: each one would be a live ListenBrainz
+// call on the server's shared budget for an artist that cannot exist.
+func (s *Server) slimKnown(r *http.Request, ids []string) []string {
+	if c, _ := r.Context().Value(callerKey{}).(caller); !c.registered {
+		return ids
+	}
+	kept := ids[:0:0]
+	for _, id := range ids {
+		if !s.SlimAbsent(r.Context(), "artist", id) {
+			kept = append(kept, id)
+		}
+	}
+	return kept
 }

@@ -163,3 +163,40 @@ func TestMusicSimilarNeverWaitsOnSource(t *testing.T) {
 		t.Fatalf("%d", w.Code)
 	}
 }
+
+type countingArtistData struct {
+	fakeArtistData
+	asked *[]string
+}
+
+func (c countingArtistData) Data(ctx context.Context, id string) (*musictrend.ArtistData, error) {
+	*c.asked = append(*c.asked, id)
+	return c.fakeArtistData.Data(ctx, id)
+}
+
+func (c countingArtistData) Scores(ctx context.Context, seed string) ([]musictrend.SimilarScore, error) {
+	*c.asked = append(*c.asked, seed)
+	return c.fakeArtistData.Scores(ctx, seed)
+}
+
+// Security 34: a self-registered caller's ids the slim copy lacks never
+// become live ListenBrainz calls; a full install credential still asks.
+func TestMusicArtistBatchesSkipSlimMissing(t *testing.T) {
+	var asked []string
+	s := &Server{opts: Options{Similar: countingArtistData{asked: &asked},
+		SlimMissing: func(_ context.Context, _, id string) bool { return id == tA1 }}}
+	reg := func(u string, registered bool) *http.Request {
+		r := httptest.NewRequest("GET", u, nil)
+		return r.WithContext(context.WithValue(r.Context(), callerKey{}, caller{registered: registered, who: "x"}))
+	}
+	s.serveMusicArtistData(httptest.NewRecorder(), reg("/v1/music/artist-data?artists="+tA1+","+tA2, true))
+	s.serveMusicSimilarSet(httptest.NewRecorder(), reg("/v1/music/similar-set?seeds="+tA1, true))
+	if len(asked) != 1 || asked[0] != tA2 {
+		t.Fatalf("asked %v", asked)
+	}
+	asked = nil
+	s.serveMusicArtistData(httptest.NewRecorder(), reg("/v1/music/artist-data?artists="+tA1, false))
+	if len(asked) != 1 {
+		t.Fatalf("full install not asked %v", asked)
+	}
+}
