@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { proxied } from '../tmdb-image.ts';
 	// One ask in the cards' window (ApprovalsDesktop): the trailer as a big
 	// banner (Explore's Billboard; for music, the artist's video over the
 	// photo), type · year · what was asked, who asked and their note, then
@@ -244,7 +245,7 @@
 {/snippet}
 
 {#snippet artistArt()}
-	{#if artistBg}<div class="artist-bg" style:background-image={`url("${artistBg}")`}></div>{/if}
+	{#if artistBg}<div class="artist-bg" style:background-image={`url("${proxied(artistBg)}")`}></div>{/if}
 	{#if mvideo}<div class="mv">{#key mvideo.key}<TrailerPlayer sources={pickedSources(mvideo.key, mvideo)} title={picked.name} sharp pausable top repeat start={heroVideoStart(mvideo)} />{/key}</div>{/if}
 {/snippet}
 
