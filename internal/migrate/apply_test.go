@@ -391,3 +391,31 @@ func TestStartRefusesWhileBusyAndBadInput(t *testing.T) {
 		t.Fatalf("missing move: %v", err)
 	}
 }
+
+// TestMoveStampsReleaseGate: a moved movie takes Radarr's release stage as
+// its Release gate and the availability delay as its gate delay, and its
+// gate date is worked out; this server's default stays as it is.
+func TestMoveStampsReleaseGate(t *testing.T) {
+	l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
+		radarr.Titles[0].Extra = map[string]any{"minimum_availability": "inCinemas"}
+		radarr.Settings = map[string]any{"availability_delay": int64(7)}
+	})
+	cinema := time.Date(1999, 3, 31, 0, 0, 0, 0, time.UTC)
+	l.mv.Library.Metadata = &metadata.Static{Movies: []metadata.Movie{{Name: "The Matrix", Year: 1999, IDs: map[string]string{"tmdb": "603", "imdb": "tt0133093"}, CinemaDate: &cinema}}}
+	mv := l.move(t, Choices{})
+	if got := lineOf(t, mv.Report, "title:movie:tmdb:603"); got.Result != ResAdopted {
+		t.Fatalf("title %+v", got)
+	}
+	var gate, opens string
+	var days int
+	if err := l.st.Read().QueryRow(`SELECT release_gate, gate_delay_days, coalesce(gate_opens_at, '') FROM titles WHERE json_extract(source_ids, '$.tmdb') = '603'`).Scan(&gate, &days, &opens); err != nil {
+		t.Fatal(err)
+	}
+	if gate != "in_cinemas" || days != 7 || !strings.HasPrefix(opens, "1999-04-07") {
+		t.Fatalf("gate %q delay %d opens %q", gate, days, opens)
+	}
+	defs, err := library.ReadGateDefaults(context.Background(), l.st.Read())
+	if err != nil || defs.Gate != library.GateReleased || defs.DelayDays != 0 {
+		t.Fatalf("this server's default changed: %+v %v", defs, err)
+	}
+}

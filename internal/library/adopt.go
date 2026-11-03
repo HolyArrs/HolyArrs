@@ -353,6 +353,10 @@ type AdoptChoice struct {
 	TMDB   string `json:"tmdb_id,omitempty"`
 	// ID is the show to adopt a show folder as: "<source>:<id>".
 	ID string `json:"id,omitempty"`
+	// ReleaseGate and GateDelayDays set a movie's Release gate ("" and
+	// nil: this server's defaults); the move brings them from Radarr.
+	ReleaseGate   string `json:"release_gate,omitempty"`
+	GateDelayDays *int   `json:"gate_delay_days,omitempty"`
 }
 
 // AdoptResult says what happened to one choice.
@@ -426,7 +430,8 @@ func (s *Service) adoptOne(ctx context.Context, lf domain.LibraryFolder, c Adopt
 	if vids := listVideos(lf.Path, c.Folder); len(vids) > 0 {
 		a.File, a.Size = vids[0].Path, vids[0].Size
 	}
-	id, err := AddMovie(ctx, s.Store, m, AddOptions{LibraryFolderID: lf.ID, WhyAdded: "import", Adopt: a}, s.downloadPaths(ctx), s.now(), by)
+	id, err := AddMovie(ctx, s.Store, m, AddOptions{LibraryFolderID: lf.ID, WhyAdded: "import", Adopt: a,
+		ReleaseGate: c.ReleaseGate, GateDelayDays: c.GateDelayDays}, s.downloadPaths(ctx), s.now(), by)
 	if err != nil {
 		return 0, "", err
 	}
