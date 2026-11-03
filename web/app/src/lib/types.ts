@@ -333,6 +333,10 @@ export interface LookupMovie extends Movie {
 	never_add: boolean;
 	/** The open request for it, if someone asked. */
 	ask?: AskBrief;
+	/** The open request for a 4K copy, if someone asked. */
+	ask_4k?: AskBrief;
+	/** The Library copy has a 4K Version already. */
+	has_4k?: boolean;
 }
 
 export type AskState = 'asked' | 'approved' | 'turned_down' | 'available';
@@ -390,6 +394,8 @@ export interface Ask {
 	note?: string;
 	auto_approved: boolean;
 	available_at?: string;
+	/** Why an approved ask will not reach the Library, when the server knows. */
+	problem?: string;
 	mine: boolean;
 }
 

@@ -759,10 +759,15 @@ type askBrief struct {
 
 // openAsk finds the open ask for a TMDB id, if any.
 func (a *API) openAsk(ctx context.Context, tmdbID string, me int64) (*askBrief, error) {
+	return a.openMovieAsk(ctx, tmdbID, me, false)
+}
+
+// openMovieAsk finds the open plain or 4K ask for a movie, if any.
+func (a *API) openMovieAsk(ctx context.Context, tmdbID string, me int64, fourK bool) (*askBrief, error) {
 	var b askBrief
 	err := a.s.Store.Read().QueryRowContext(ctx, `SELECT a.id, a.state, EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?),
-		(SELECT count(*) FROM ask_people p WHERE p.ask_id = a.id) FROM asks a WHERE a.kind = 'movie' AND a.tmdb_id = ? AND a.four_k = 0 AND a.state IN ('asked', 'approved')`,
-		me, tmdbID).Scan(&b.ID, &b.State, &b.Mine, &b.People)
+		(SELECT count(*) FROM ask_people p WHERE p.ask_id = a.id) FROM asks a WHERE a.kind = 'movie' AND a.tmdb_id = ? AND a.four_k = ? AND a.state IN ('asked', 'approved')`,
+		me, tmdbID, fourK).Scan(&b.ID, &b.State, &b.Mine, &b.People)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
