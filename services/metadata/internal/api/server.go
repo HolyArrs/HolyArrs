@@ -196,11 +196,24 @@ type Options struct {
 }
 
 // Registrar keeps self-registered credentials apart from operator-issued
-// ones, by hash only.
+// ones, by hash only. Registered also keeps the install's country: country
+// is the caller's ISO 3166 alpha-2 country ("" when unknown), counted false
+// when the install switched the country count off.
 type Registrar interface {
 	RegisterToken(ctx context.Context, token, source, network string, maxActive int, idle, protect time.Duration) error
-	Registered(ctx context.Context, token string, idle time.Duration) (source string, ok bool, err error)
+	Registered(ctx context.Context, token string, idle time.Duration, country string, counted bool) (source string, ok bool, err error)
 }
+
+// InstallCountries counts self-registered installs used since a time, per
+// country, for /v1/stats (the store's InstallCountries). Counts only.
+type InstallCountries interface {
+	InstallCountries(ctx context.Context, since time.Time) (map[string]int, error)
+}
+
+// CountHeader is the header an install sends as "off" when its owner
+// switched the per-country install count off.
+const CountHeader = "X-Country-Count"
+
 type allowance struct {
 	tokens  float64
 	updated time.Time
@@ -338,16 +351,41 @@ func (s *Server) clientAddress(r *http.Request) string {
 	if err != nil {
 		host = r.RemoteAddr
 	}
-	peer := net.ParseIP(host)
-	for _, network := range s.opts.TrustedProxies {
-		if peer != nil && network.Contains(peer) {
-			if ip := net.ParseIP(strings.TrimSpace(r.Header.Get("CF-Connecting-IP"))); ip != nil {
-				return ip.String()
-			}
-			break
+	if s.fromProxy(r) {
+		if ip := net.ParseIP(strings.TrimSpace(r.Header.Get("CF-Connecting-IP"))); ip != nil {
+			return ip.String()
 		}
 	}
 	return host
+}
+
+// fromProxy reports a request whose peer is a trusted proxy.
+func (s *Server) fromProxy(r *http.Request) bool {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	peer := net.ParseIP(host)
+	for _, network := range s.opts.TrustedProxies {
+		if peer != nil && network.Contains(peer) {
+			return true
+		}
+	}
+	return false
+}
+
+// clientCountry is Cloudflare's CF-IPCountry (ISO 3166 alpha-2), read only
+// when the peer is a trusted proxy, like CF-Connecting-IP. XX (unknown),
+// T1 (Tor) and anything but two letters answer "".
+func (s *Server) clientCountry(r *http.Request) string {
+	if !s.fromProxy(r) {
+		return ""
+	}
+	c := strings.ToUpper(strings.TrimSpace(r.Header.Get("CF-IPCountry")))
+	if len(c) != 2 || c[0] < 'A' || c[0] > 'Z' || c[1] < 'A' || c[1] > 'Z' || c == "XX" {
+		return ""
+	}
+	return c
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -463,7 +501,8 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		// Self-registered credentials: their own limit, plus a larger
 		// total per source address group.
 		if reg, isReg := s.store.(Registrar); isReg {
-			src, found, err := reg.Registered(r.Context(), token, s.opts.RegisteredIdle)
+			counted := !strings.EqualFold(strings.TrimSpace(r.Header.Get(CountHeader)), "off")
+			src, found, err := reg.Registered(r.Context(), token, s.opts.RegisteredIdle, s.clientCountry(r), counted)
 			if err != nil {
 				problem(w, 503, "authorization_unavailable", time.Second)
 				return
@@ -981,6 +1020,16 @@ func (s *Server) serveStats(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 	if snapshot != nil {
 		snap.Refresh = snapshot(r.Context())
+	}
+	if ic, ok := s.store.(InstallCountries); ok {
+		// Installs used in the last 30 days per country: counts only.
+		if counts, err := ic.InstallCountries(r.Context(), time.Now().Add(-30*24*time.Hour)); err == nil {
+			total := 0
+			for _, n := range counts {
+				total += n
+			}
+			snap.InstallCountries = map[string]any{"days": 30, "total": total, "countries": counts}
+		}
 	}
 	if s.opts.StatusExtra != nil {
 		// VM resources, queues, picture store, shared lists, hero videos.
