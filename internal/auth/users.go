@@ -783,9 +783,16 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// People who only sign in through a media server have no password yet
-	// and may set one.
-	if cur != "" && !CheckPassword(cur, body.Current) {
+	// and may set one. Changing one that exists needs a recent local proof,
+	// on purpose also for API keys: a key never changes its user's password.
+	first := cur == ""
+	if !first && !RecentLocal(r) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
+		return
+	}
+	if !first && !CheckPassword(cur, body.Current) {
 		a.failedEvent(r, who.Name, "current password")
+
 		fail(w, http.StatusUnauthorized, "the current password is wrong")
 		return
 	}
@@ -809,9 +816,12 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		// A key or outside sign-in linked by someone who knew the old
-		// password must stop too.
-		if err := endOutsideLinks(tx, who.UserID); err != nil {
-			return err
+		// password must stop too. A first password has no old one: the
+		// media server sign-in they joined with stays.
+		if !first {
+			if err := endOutsideLinks(tx, who.UserID); err != nil {
+				return err
+			}
 		}
 		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", who.UserID)
 		return err
@@ -820,8 +830,14 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "password", err)
 		return
 	}
-	log.Printf("auth: user %d changed their password", who.UserID)
-	a.accountEvent(r, who.UserID, "password_changed", who.Name+" changed their password; other sessions, API keys and outside sign-in links removed", nil)
+	if first {
+		log.Printf("auth: user %d set a first password", who.UserID)
+		a.accountEvent(r, who.UserID, "password_changed", who.Name+" set a first password; other sessions and API keys removed, media server sign-in kept", nil)
+	} else {
+		log.Printf("auth: user %d changed their password", who.UserID)
+		a.accountEvent(r, who.UserID, "password_changed", who.Name+" changed their password; other sessions, API keys and outside sign-in links removed", nil)
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 

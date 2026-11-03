@@ -199,7 +199,7 @@ func TestJellyfinImportNeedsAnAdmin(t *testing.T) {
 			http.Error(w, "no", 401)
 			return
 		}
-		_, _ = w.Write([]byte(`[{"Id":"a1","Name":"admin","Policy":{"IsAdministrator":true}},{"Id":"m1","Name":"Mum","Policy":{}},{"Id":"o1","Name":"Off","Policy":{"IsDisabled":true}}]`))
+		_, _ = w.Write([]byte(`[{"Id":"a1","Name":"admin","Policy":{"IsAdministrator":true}},{"Id":"m1","Name":"Mum","Policy":{}},{"Id":"o1","Name":"Off","Policy":{"IsDisabled":true}},{"Id":"k1","Name":"Kiddo","Policy":{"MaxParentalRating":10}}]`))
 	})
 	m.HandleFunc("POST /Sessions/Logout", func(w http.ResponseWriter, _ *http.Request) { logouts.Add(1); w.WriteHeader(204) })
 	ms := httptest.NewServer(m)
@@ -217,11 +217,20 @@ func TestJellyfinImportNeedsAnAdmin(t *testing.T) {
 	if logouts.Load() != 2 {
 		t.Fatalf("sessions ended: %d", logouts.Load())
 	}
-	own.do(t, f, "POST", "/api/v1/auth/import/jellyfin", `{"people":[{"id":"a1"},{"id":"m1"}]}`)
+	// Parental limits on the server mark a Kid, as signing in themselves would.
+	if strings.Count(out, `"kid":true`) != 1 || !strings.Contains(out, "Kiddo") {
+		t.Fatalf("limited person not marked a Kid: %s", out)
+	}
+	own.do(t, f, "POST", "/api/v1/auth/import/jellyfin", `{"people":[{"id":"a1"},{"id":"m1"},{"id":"k1"}]}`)
 	var admins int
 	_ = f.s.Read().QueryRow("SELECT count(*) FROM users WHERE role != 'member' AND role != 'owner'").Scan(&admins)
 	if admins != 0 {
 		t.Fatal("a server admin became a HolyArrs admin")
+	}
+	var rating string
+	_ = f.s.Read().QueryRow("SELECT max_rating FROM users WHERE name = 'Kiddo'").Scan(&rating)
+	if rating != "PG" {
+		t.Fatalf("imported Kid limit: %q", rating)
 	}
 }
 
