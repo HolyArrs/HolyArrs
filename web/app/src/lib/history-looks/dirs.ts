@@ -208,7 +208,7 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^media_server_told$/, { label: 'In media server', icon: 'tv' }],
 	[/^file_replaced$/, { label: 'Upgraded', icon: 'sparkle' }],
 	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { label: 'Deleted', icon: 'trash' }],
-	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed|secrets_imported|account_changed)$/, { label: 'System', icon: 'info' }]
+	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed|secrets_imported|account_changed|backup_used)$/, { label: 'System', icon: 'info' }]
 ];
 /** rowStep names what a row's newest step is; a folded download reads its furthest step. */
 export function rowStep(row: HistoryRow, fallback = ''): RowStep {
