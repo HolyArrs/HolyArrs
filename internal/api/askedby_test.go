@@ -146,6 +146,8 @@ func TestAskedByEveryoneSees(t *testing.T) {
 	if got := string(r.owner.call("GET", "/api/v1/settings/asks", "", 200)); strings.Contains(got, "show_who_asked") {
 		t.Fatalf("settings still carry show_who_asked: %s", got)
 	}
+	// Only people who may change settings change the household rules.
+	mia.call("PUT", "/api/v1/settings/asks", `{"movies_per_week":9}`, 403)
 	r.owner.call("PUT", "/api/v1/settings/asks", `{"show_who_asked":"nobody","movies_per_week":4}`, 200)
 	if got := string(r.owner.call("GET", "/api/v1/settings/asks", "", 200)); !strings.Contains(got, `"movies_per_week":4`) {
 		t.Fatalf("settings after save %s", got)

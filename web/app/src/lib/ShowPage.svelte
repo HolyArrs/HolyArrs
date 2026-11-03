@@ -72,7 +72,7 @@
 		onretry
 	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void } = $props();
 
-	// Who asked, as the server lets this reader see it.
+	// Who asked.
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = title?.id;

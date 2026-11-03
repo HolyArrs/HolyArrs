@@ -304,7 +304,7 @@
 		await tick();
 		await (owned?.kind === 'show' ? showVersions : movieVersions)?.openAdd();
 	}
-	// Who asked, as the server lets this reader see it (the hero's byline).
+	// Who asked (the hero's byline).
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = owned?.id;

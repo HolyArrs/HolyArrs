@@ -58,7 +58,7 @@
 	// The page below stays only for titles without a TMDB id.
 	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb;
 
-	// Who asked, as the server lets this reader see it.
+	// Who asked.
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = title?.id;
