@@ -1,5 +1,8 @@
 import { expect, test, type APIResponse, type Browser, type Page } from '@playwright/test';
-import { discordPort } from './fakes.mjs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { discordPort, indexerKey, indexerPort, qbitPort } from './fakes.mjs';
 import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from './helpers.ts';
 
 // Requests at phone width (Pixel 7): a member asks for movies, the owner
@@ -7,8 +10,9 @@ import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from
 // fakes.mjs) names the member, and the weekly limit says when to try again.
 // Then, each with members of its own and titles only these tests use: two
 // members ask for different seasons of a show and share one ask, an album
-// ask, 4K asks (not in the Library and in it), a failed ask says why, the
-// owner reads their own messages, and Follow on title pages.
+// ask, 4K asks (not in the Library and in it), a failed ask says why (also
+// when its download failed), the owner reads their own messages, and Follow
+// on title pages.
 // Runs after the other projects: the owner, the Movies folder and the TMDB
 // key exist. There is no show or music folder here, so show and music asks
 // are checked up to the approver's card, not approved.
@@ -269,7 +273,7 @@ async function member(browser: Browser, name: string): Promise<Page> {
 	return p;
 }
 
-type Call = (method: 'GET' | 'POST', path: string, data?: unknown) => Promise<APIResponse>;
+type Call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<APIResponse>;
 
 /** api signs requests with the page's CSRF token, as the app does. */
 async function api(p: Page): Promise<Call> {
@@ -285,6 +289,27 @@ async function inLibrary(call: Call, tmdb: number, name: string): Promise<number
 	const added = await call('POST', '/titles', { id: `tmdb:${tmdb}`, search_on_add: false, keep_up_to_date: false, follow: false });
 	expect(added.status(), await added.text()).toBe(201);
 	return ((await added.json()) as { title: { id: number } }).title.id;
+}
+
+/** giveFile imports a stand-in video into a Library movie by hand (as library-tools.spec does), so its file is in. */
+async function giveFile(call: Call, titleId: number, name: string, year: number) {
+	// Import by hand reads only from known folders: .tmp/by-hand is an extra import folder.
+	const byHand = join(dirname(fileURLToPath(import.meta.url)), '.tmp', 'by-hand');
+	const now = (await (await call('GET', '/settings/import-folders')).json()) as { extra_folders?: string[] };
+	const extra = now.extra_folders ?? [];
+	if (!extra.includes(byHand)) {
+		const put = await call('PUT', '/settings/import-folders', { extra_folders: [...extra, byHand] });
+		expect(put.ok(), await put.text()).toBe(true);
+	}
+	const dir = join(byHand, name.replace(/[^A-Za-z0-9]+/g, '-').toLowerCase());
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir, { recursive: true });
+	const file = join(dir, `${name.replace(/[^A-Za-z0-9]+/g, '.')}.${year}.1080p.WEB-DL.H264-LAB.mkv`);
+	writeFileSync(file, 'stand-in video '.repeat(64));
+	const r = await call('POST', '/manual-import', { items: [{ path: file, title_id: titleId, mode: 'move' }] });
+	expect(r.status(), await r.text()).toBe(200);
+	const [res] = ((await r.json()) as { results: { outcome: string; error?: string }[] }).results;
+	expect(res.outcome, res.error).toBe('placed');
 }
 
 /** askOf finds a plain (not 4K) ask by name and state, as the owner reads it. */
@@ -468,6 +493,75 @@ test('a failed ask says why: the member and the approver read the reason', async
 	await expect(win).toBeHidden();
 });
 
+test('an approved ask whose download failed tells the member why', async ({ browser }) => {
+	test.setTimeout(180_000);
+	const call = await api(own);
+	// A Source and a qBittorrent, the fakes in fakes.mjs, unless earlier projects added them; this
+	// test takes its own away at the end, so the Sources and Downloaders tests start as before.
+	const mine: string[] = [];
+	const { sources } = (await (await call('GET', '/sources')).json()) as { sources: { id: number; url: string }[] };
+	if (!sources.some((x) => x.url.includes(`:${indexerPort}/`))) {
+		const r = await call('POST', '/sources', { name: 'Requests Torznab', format: 'torznab', url: `http://127.0.0.1:${indexerPort}/api`, api_key: indexerKey, allow_local_network: true });
+		expect(r.status(), await r.text()).toBe(201);
+		const { id } = (await r.json()) as { id: number };
+		await call('POST', `/sources/${id}/test`);
+		mine.push(`/sources/${id}`);
+	}
+	const { downloaders } = (await (await call('GET', '/downloaders')).json()) as { downloaders: { id: number; kind: string }[] };
+	if (!downloaders.some((d) => d.kind === 'qbittorrent')) {
+		// The fake qBittorrent takes any key (a made-up one, like the fakes' stand-in keys).
+		const r = await call('POST', '/downloaders', { name: 'Requests qBittorrent', kind: 'qbittorrent', url: `http://127.0.0.1:${qbitPort}`, secret: ['e2e', 'any', 'key'].join('-'), allow_local_network: true });
+		expect(r.ok(), await r.text()).toBe(true);
+		mine.push(`/downloaders/${((await r.json()) as { id: number }).id}`);
+	}
+
+	const wren = await member(browser, 'wren');
+	const ask = await askButton(wren, 'garnet', 'Garnet Sextant');
+	await ask.click();
+	await wren.getByRole('dialog', { name: /^Ask for Garnet Sextant/ }).getByRole('button', { name: 'Ask for Garnet Sextant', exact: true }).click();
+	await expect(ask).toBeDisabled();
+	const yes = await call('POST', `/asks/${(await askOf(call, 'Garnet Sextant', 'asked')).id}/approve`, {});
+	expect(yes.ok(), await yes.text()).toBe(true);
+	const titleId = (await askOf(call, 'Garnet Sextant', 'approved')).title_id!;
+	expect(titleId).toBeTruthy();
+
+	// Approving searches and sends the 1080p copy; the owner marks it failed, then the 720p copy
+	// sent next. The cam copy is all that is left and the Pick rules refuse it.
+	type Row = { id: number; title_id?: number; phase: string };
+	const sending = async () => {
+		const { downloads } = (await (await call('GET', '/downloads/view?asked=1')).json()) as { downloads: Row[] };
+		return downloads.find((d) => d.title_id === titleId && ['waiting', 'downloading', 'stalled'].includes(d.phase))?.id ?? 0;
+	};
+	for (let i = 0; i < 2; i++) {
+		await expect.poll(sending, { timeout: 45_000 }).toBeGreaterThan(0);
+		const failed = await call('POST', `/downloads/${await sending()}/mark-failed`, {});
+		expect(failed.ok(), await failed.text()).toBe(true);
+	}
+
+	// wren reads that the download failed, and the reason.
+	const why = `The download failed. Marked failed by ${owner().name}.`;
+	const row = wren.getByTestId('ask').filter({ hasText: 'Garnet Sextant' });
+	await expect(async () => {
+		await wren.goto('/requests');
+		await wren.getByRole('button', { name: /^Approved/ }).click();
+		await expect(row.getByTestId('ask-failed')).toHaveText(why, { timeout: 3000 });
+	}).toPass({ timeout: 45_000 });
+	await noSidewaysScroll(wren);
+
+	// Leave nothing for later projects: the movie, its turned-down Releases, and this test's Source and qBittorrent.
+	const gone = await call('POST', `/titles/${titleId}/delete`, { delete_files: true, never_add: false, apply: true });
+	expect(gone.ok(), await gone.text()).toBe(true);
+	const { releases } = (await (await call('GET', '/turned-down?limit=500')).json()) as { releases: { id: number; name: string }[] };
+	for (const r of releases.filter((x) => x.name.startsWith('Garnet.Sextant.'))) {
+		const off = await call('DELETE', `/turned-down/${r.id}`);
+		expect(off.ok(), await off.text()).toBe(true);
+	}
+	for (const path of mine) {
+		const off = await call('DELETE', path);
+		expect(off.ok(), await off.text()).toBe(true);
+	}
+});
+
 test('the owner reads the messages about their own asks on Requests', async () => {
 	// Owners ask through the API (the title page offers them Add); the owner may
 	// auto-approve, else they approve it themselves. Either way a message is left.
@@ -506,17 +600,22 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await dot.goto('/requests');
 	await expect(dot.getByText('Nothing on the Requests page yet')).toBeVisible();
 
-	// A movie not in the Library: Follow waits for it, and dot is told when it lands.
+	// A movie not in the Library: Follow waits for it, and dot is told once its file is in.
 	await openFromSearch(dot, 'cobalt', 'Cobalt Orrery');
 	const movieBell = dot.getByTestId('title-detail').getByTestId('follow');
 	await expect(movieBell).toHaveAttribute('aria-pressed', 'false');
 	await movieBell.click();
 	await expect(movieBell).toHaveAttribute('aria-pressed', 'true');
 	await expect(movieBell).toHaveAttribute('title', /you hear when it is in the Library/);
-	await inLibrary(await api(own), 900033, 'Cobalt Orrery');
-	await expect
-		.poll(async () => ((await (await dot.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.some((m) => m.text.includes('Cobalt Orrery is in the Library')), { timeout: 20_000 })
-		.toBe(true);
+	const told = async () => ((await (await dot.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.some((m) => m.text.includes('Cobalt Orrery is in the Library'));
+	const ownCall = await api(own);
+	const cobalt = await inLibrary(ownCall, 900033, 'Cobalt Orrery');
+	// Added with no file is not ready to watch: no word yet.
+	await own.waitForTimeout(3000);
+	expect(await told()).toBe(false);
+	// Its file comes in: the next ready check (every 30 s, and after each import) tells dot.
+	await giveFile(ownCall, cobalt, 'Cobalt Orrery', 2016);
+	await expect.poll(told, slow).toBe(true);
 	await dot.goto('/requests');
 	await dot.getByText(/^Show the latest/).click();
 	await expect(dot.getByTestId('message').filter({ hasText: 'Cobalt Orrery is in the Library' })).toBeVisible();

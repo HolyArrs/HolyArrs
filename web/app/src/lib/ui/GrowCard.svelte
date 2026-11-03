@@ -8,7 +8,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from '../follow.ts';
 	import { fitTags, growFacts } from '../grow-lines.ts';
-	import { sized } from '../tmdb-image.ts';
+	import { proxied, sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { fromHandoff, openTheater } from '../theater.svelte.ts';
 	import { THEATER_GROW_MS } from '../motion.ts';
@@ -338,7 +338,7 @@
 		<!-- At most two lines, always in this order and always taking their room: the facts (the service logo ends it), then one context line. -->
 		<p class="facts" data-testid="grow-facts">
 			{#each facts as f, i (f.part)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f.part === 'rating'} class:stars={f.part === 'stars'}>{f.text}</span>{/each}
-			{#if service}<span class="svc" title="On {service.name}">{#if service.logo}<img src={service.logo} alt="" />{/if}<span class={service.logo ? 'sr' : 'svc-word'}>On {service.name}</span></span>{/if}
+			{#if service}<span class="svc" title="On {service.name}">{#if service.logo}<img src={proxied(service.logo)} alt="" />{/if}<span class={service.logo ? 'sr' : 'svc-word'}>On {service.name}</span></span>{/if}
 		</p>
 		{#if context}<p class="ctx" class:why={context.kind === 'why'} data-testid="grow-context">{context.text}</p>
 		{:else}<p class="tags">{#each tags as t, i (t)}{#if i}<i aria-hidden="true">·</i>{/if}<span>{t}</span>{/each}</p>{/if}

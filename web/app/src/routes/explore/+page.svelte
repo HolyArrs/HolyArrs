@@ -906,7 +906,7 @@
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}
-					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
+					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS && !back} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
 						{@const c = live(raw)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
@@ -955,7 +955,7 @@
 				{/if}
 				{#if ri === genreAt && genreCards.length >= ROW_MIN}
 					<div class="row-wrap wide-row" data-row="genre_browse" data-row-id="genre_browse">
-						<Shelf title="Browse by genre" item="var(--title-item)" items={genreCards} key={(g) => `${g.kind}:${g.id}`} defer placeholder="wide" lines={1}>
+						<Shelf title="Browse by genre" item="var(--title-item)" items={genreCards} key={(g) => `${g.kind}:${g.id}`} defer={!back} placeholder="wide" lines={1}>
 							{#snippet card(g: GenreRowCard)}
 								<WideCard cover title={g.name} href={to(genreCardHref(g))} image={g.backdrop} />
 							{/snippet}
