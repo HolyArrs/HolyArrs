@@ -67,6 +67,8 @@
 		linking = true;
 		linkNote = 'Confirm on the Plex page that opened. This waits up to 10 minutes.';
 		const win = window.open('about:blank', 'plex-link', 'width=600,height=720');
+		// The Plex page must not reach back into this tab.
+		if (win) win.opener = null;
 		try {
 			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/link/start', {});
 			if (win) win.location.href = r.auth_url;
