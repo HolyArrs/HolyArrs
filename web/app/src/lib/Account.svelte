@@ -651,4 +651,7 @@
 		.six { max-width: none; flex: 1; }
 		.acts > :global(.ui-btn) { min-height: 40px; }
 	}
+	@media (max-width: 600px) and (pointer: coarse) {
+		.acts > :global(.ui-btn) { min-height: 44px; }
+	}
 </style>
