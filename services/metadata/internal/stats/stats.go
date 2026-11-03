@@ -394,6 +394,9 @@ type Snapshot struct {
 	// Refresh is the change-driven refresh state: store size, stale rows,
 	// changes applied, upstream calls saved, feed states and disk warnings.
 	Refresh any `json:"refresh,omitempty"`
+	// InstallCountries is installs used in the last 30 days per country
+	// (days, total, countries), set by the API. Counts only.
+	InstallCountries any `json:"install_countries,omitempty"`
 }
 
 func point(start int64, b *bucket) Point {

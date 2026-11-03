@@ -1244,15 +1244,6 @@
         },
         "type": "object"
       },
-      "AskPrivacy": {
-        "properties": {
-          "show_my_name": {
-            "description": "Let the household see my name on my asks, when the household setting allows it (off by default).",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
       "AskSettings": {
         "properties": {
           "library_folder_id": {
@@ -1295,14 +1286,6 @@
             "description": "Pick rules for approved show asks; 0 takes the folder's own.",
             "type": "integer"
           },
-          "show_who_asked": {
-            "description": "Who sees other people's names on asks: approvers (owner, admins and managers; the default) or everyone in the household (only for askers who turned on showing their name). Kids never see others.",
-            "enum": [
-              "approvers",
-              "everyone"
-            ],
-            "type": "string"
-          },
           "shows_per_week": {
             "description": "Default show (one per show ask, whatever its seasons) asks per person per 7 days; a person's own limit wins. 0 is no limit. Default 10.",
             "maximum": 1000,
@@ -1313,12 +1296,8 @@
         "type": "object"
       },
       "AskedBy": {
-        "description": "Each title's askers the reader may see, earliest first. The owner, admins and managers see everyone; members see themselves, plus askers who chose to show their name when the household allows it; Kids see only themselves.",
+        "description": "Each title's askers, earliest first. Everyone in the household sees every asker.",
         "properties": {
-          "sees_all": {
-            "description": "The reader sees every asker (they approve asks).",
-            "type": "boolean"
-          },
           "titles": {
             "additionalProperties": {
               "properties": {
@@ -7896,7 +7875,7 @@
     },
     "/api/v1/asked-by": {
       "get": {
-        "description": "Pass title_id once per title (or title_ids=1,2). Names are trimmed on the server by the privacy rules.",
+        "description": "Pass title_id once per title (or title_ids=1,2). A Kid gets only titles within their age limit.",
         "operationId": "getAskedBy",
         "parameters": [
           {
@@ -16035,7 +16014,7 @@
     },
     "/api/v1/manual-import": {
       "post": {
-        "description": "Imports files chosen by hand into their Slots. Each item names a file and its Slot (slot_id), or the title (title_id) with season and episode for a show and optionally version_id; mode is copy (the default: a hardlink on the same disk) or move. Each file is named by the naming settings and recorded; a file that cannot go is refused with the reason and the others still go. Only movies and episodes for now.",
+        "description": "Imports files chosen by hand into their Slots. Each item names a file and its Slot (slot_id), or the title (title_id) with season and episode for a show and optionally version_id; mode is copy (the default: a hardlink on the same disk) or move. Each file is named by the naming settings and recorded; a file that cannot go is refused with the reason and the others still go. A file outside the places import by hand may read is refused and left where it is. Only movies and episodes for now.",
         "operationId": "importByHand",
         "requestBody": {
           "content": {
@@ -16151,7 +16130,7 @@
     },
     "/api/v1/manual-import/scan": {
       "post": {
-        "description": "Lists the videos and tracks in a folder (or one file) the server can read, up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads.",
+        "description": "Lists the videos and tracks in a folder (or one file), up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads, and only inside a Library folder, a Downloader's folder or an extra import folder (GET /api/v1/settings/import-folders).",
         "operationId": "scanByHand",
         "requestBody": {
           "content": {
@@ -16221,7 +16200,7 @@
             "description": "The files found."
           },
           "400": {
-            "description": "The path is not a full path the server can read, or holds .. parts."
+            "description": "The path is not a full path the server can read, or holds .. parts, or lies outside the places import by hand may read (the answer names them)."
           }
         },
         "summary": "Scan a folder for files to import by hand",
@@ -18688,74 +18667,6 @@
           "Alerts"
         ],
         "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "write"
-      }
-    },
-    "/api/v1/my/ask-privacy": {
-      "get": {
-        "description": "Off unless I turn it on.",
-        "operationId": "getAskPrivacy",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AskPrivacy"
-                }
-              }
-            },
-            "description": "My choice."
-          }
-        },
-        "summary": "Whether my name shows on my asks",
-        "tags": [
-          "Wishlist"
-        ],
-        "x-holyarrs-part": "wishlist",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "read"
-      },
-      "put": {
-        "description": "Others see it only when the household allows it.",
-        "operationId": "putAskPrivacy",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AskPrivacy"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AskPrivacy"
-                }
-              }
-            },
-            "description": "Saved."
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Bad body."
-          }
-        },
-        "summary": "Choose whether my name shows on my asks",
-        "tags": [
-          "Wishlist"
-        ],
-        "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "write"
       }
@@ -21255,6 +21166,134 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/import-folders": {
+      "get": {
+        "description": "Import files by hand reads only inside these folders: the Library folders, the Downloaders' folders and the extra import folders.",
+        "operationId": "getImportFolders",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader_folders": {
+                      "description": "The folders the Downloaders save into, as HolyArrs sees them: the save path and each path map's HolyArrs side.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "extra_folders": {
+                      "description": "The extra import folders added in Settings.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "library_folders": {
+                      "description": "The Library folders.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "library_folders",
+                    "downloader_folders",
+                    "extra_folders"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The places import by hand may read."
+          }
+        },
+        "summary": "Places files may be imported by hand from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Full paths (Linux or Windows form), one per item, with no .. parts and no network share paths, 32 at most. Blank items and repeats are dropped; [] clears the list.",
+        "operationId": "putImportFolders",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "extra_folders": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "extra_folders"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader_folders": {
+                      "description": "The folders the Downloaders save into, as HolyArrs sees them: the save path and each path map's HolyArrs side.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "extra_folders": {
+                      "description": "The extra import folders added in Settings.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "library_folders": {
+                      "description": "The Library folders.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "library_folders",
+                    "downloader_folders",
+                    "extra_folders"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The places import by hand may read."
+          },
+          "400": {
+            "description": "A folder is not a full path, holds .. parts, or there are more than 32."
+          }
+        },
+        "summary": "Save the extra import folders",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/settings/import-secrets": {

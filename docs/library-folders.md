@@ -48,3 +48,29 @@ files.
 HolyArrs refuses to remove it while Titles still use it; move those Titles
 first.
 
+
+## Folders for Import files by hand
+
+**Library > Import files by hand** reads, copies and moves files only inside
+these places:
+
+- the Library folders;
+- the folders the Downloaders save into, as HolyArrs sees them: the save path
+  set at start (`HOLYARRS_SAVE_PATH`) and the HolyArrs side of every path map
+  of a Downloader that is still set up; and
+- the **Extra import folders** on this page.
+
+Any other path is refused, and the answer names the places above. A path with
+`..`, a network share path (`\\server\share`) and a link or Windows junction
+that leads out of a place are refused too.
+
+When `HOLYARRS_SAVE_PATH` is not set and no Downloader has a path map, the
+download folder is not one of these places. Set `HOLYARRS_SAVE_PATH` (see
+[Install](install.md)) or add the download folder, such as `/downloads`, as an
+extra import folder.
+
+Add an extra import folder for loose files that sit somewhere else, such as
+`/data/imports` or `D:\Imports`: one full path per line, up to 32. A whole
+disk (`/` or `C:\`) is refused. Only the owner or an admin, signed in with a
+password, can change them; an API key also needs the admin scope. People with
+the **Change settings** permission see the list.

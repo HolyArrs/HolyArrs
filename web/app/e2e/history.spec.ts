@@ -29,6 +29,7 @@ interface TitleRow {
 	id: number;
 	name: string;
 	cinema_date?: string;
+	digital_date?: string;
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -102,28 +103,29 @@ test('health: checks run on Health checks, show on Home, and their settings are 
 
 });
 
-test('calendar: cards and list views with cinema, digital and disc dates', async () => {
+test('calendar: cards and list views, a movie on the day it is out to watch', async () => {
+	// The Calendar shows a movie once: the day it is out to watch, else its cinema date.
 	const titles = (await (await page.request.get('/api/v1/titles')).json()).titles as TitleRow[];
-	const dated = titles.find((t) => t.cinema_date)!;
-	const month = dated.cinema_date!.slice(0, 7);
-	await page.goto(`/calendar?month=${month}`);
-	// Cards: a day per row, from the month's first week.
+	const dated = titles.find((t) => t.digital_date) ?? titles.find((t) => t.cinema_date)!;
+	const day = (dated.digital_date ?? dated.cinema_date)!.slice(0, 10);
+	await page.goto(`/calendar?month=${day.slice(0, 7)}`);
+	// Cards: the movie's card sits on its day.
 	const cards = page.getByTestId('cal-cards');
 	await expect(cards).toBeVisible();
-	await expect(cards.locator(`[data-day="${dated.cinema_date!.slice(0, 10)}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
-	const heading = await page.getByTestId('cal-month').textContent();
-	await page.getByRole('button', { name: 'Week after' }).click();
-	await expect(page.getByTestId('cal-month')).not.toHaveText(heading!);
-	await page.getByRole('button', { name: 'Week before' }).click();
-	await expect(page.getByTestId('cal-month')).toHaveText(heading!);
+	await expect(cards.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	const list = page.getByTestId('cal-list');
-	await expect(list.getByRole('link', { name: new RegExp(dated.name) })).toBeVisible();
-	await expect(list).toContainText('In cinemas');
-	// Turning cinema dates off hides them.
-	await page.getByRole('checkbox', { name: 'In cinemas' }).uncheck();
-	await expect(list.getByText('In cinemas')).toHaveCount(0);
-	await page.getByRole('checkbox', { name: 'In cinemas' }).check();
+	await expect(list.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
+	// Paging works within a year of today: Week after moves to the next week with dates,
+	// or says there are none; Week before comes back.
+	await page.goto('/calendar');
+	const heading = await page.getByTestId('cal-month').textContent();
+	await page.getByRole('button', { name: 'Week after' }).click();
+	await expect(page.getByTestId('cal-month').filter({ hasNotText: heading! }).or(page.getByText('No more dates after this.'))).toBeVisible();
+	if ((await page.getByTestId('cal-month').textContent()) !== heading) {
+		await page.getByRole('button', { name: 'Week before' }).click();
+		await expect(page.getByTestId('cal-month')).toHaveText(heading!);
+	}
 });
 
 test('alerts: add a webhook with Library moments, send a test, the receiver gets a signed message', async () => {

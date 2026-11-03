@@ -72,8 +72,8 @@
 		onretry
 	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void } = $props();
 
-	// Who asked, as the server lets this reader see it.
-	let askedBy = $state<AskedByAnswer>({ titles: {}, sees_all: false });
+	// Who asked.
+	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = title?.id;
 		if (!id) return;
@@ -478,7 +478,7 @@
 	vtName={artName(title.id)}
 >
 	{#snippet byline()}
-		<AskedByLine {askers} seesAll={askedBy.sees_all} />
+		<AskedByLine {askers} />
 		{#if show?.next_air_date}<span data-testid="next-episode"><b>Next episode:</b> {nextWords}</span>{/if}
 		{#if staff}<span class="tp-progress" data-testid="show-progress">{showProgress(show)}</span>{/if}
 	{/snippet}

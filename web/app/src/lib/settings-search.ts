@@ -29,6 +29,7 @@ export const settingIndex: SettingEntry[] = [
 
 	// Library
 	e('/settings/library-folders', '', 'Library folders', 'root folder path movies folder shows folder music folder where files live add folder'),
+	e('/settings/library-folders', 'import-folders', 'Extra import folders', 'import files by hand manual import allowed folders downloads loose files'),
 	e('/settings/title-defaults', 'td-movie-folder', 'Library folder for new movies', 'movies defaults root folder new movie add where'),
 	e('/settings/title-defaults', 'td-movie-rules', 'Pick rules for new movies', 'movies defaults quality profile new movie add'),
 	e('/settings/title-defaults', 'td-movie-keep', 'Keep new movies up to date', 'movies defaults monitor new movie add'),

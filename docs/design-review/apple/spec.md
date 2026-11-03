@@ -132,7 +132,7 @@ Behaviour as built (user guide: [Explore](../../explore.md), [Trailers](../../tr
 - **Hero**: full-bleed backdrop (fallback: blurred poster), gradient for legibility, title (logo art if available, else large title type), meta line (year · runtime · genres), badges row (rating, 4K/HDR/Dolby/Atmos/CC from files when known), StatusPill, description clamped to 3 lines with "Show more", action row of round buttons.
 - Actions (by permission): admins — Search now, Monitor on/off, Edit, Library ▾ (move/rename/remove), ⋯ (all existing actions remain reachable). Members — Ask / "Requested" / "In your library". "Open in Jellyfin/Plex" only when that integration is configured. **Every existing title action and confirmation must stay reachable.**
 - Below: Seasons (SegmentedControl or menu → episode WideCards with status per episode), Cast & crew (PersonCircle shelf), Versions & files (ListRow), Subtitles, Similar in your library. Breadcrumb "Movies › Title (Year)" at top-left of hero.
-- **Asked by** line under the title (library title pages): "You asked", "Asked by Ana", "Asked by Ana and 2 others". The server trims it per reader (owner, admins and managers see all; members see themselves and askers who opted in when the household allows it; Kids see only themselves). Settings: **Show who asked** (household) and **Show my name on my asks**.
+- **Asked by** line under the title (library title pages): "You asked", "Asked by Ana", "Asked by Ana and 2 others". Everyone in the household sees every asker; there is no setting for it.
 - The hero backdrops move slowly (up to four pictures) and can play a muted trailer; see Explore.
 
 ### Card system: three card templates

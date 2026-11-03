@@ -414,6 +414,8 @@ var Routes = map[string]Owner{
 	"POST /api/v1/library/rescan":             Media,
 	"POST /api/v1/manual-import/scan":         Media,
 	"POST /api/v1/manual-import":              Media,
+	"GET /api/v1/settings/import-folders":     Media,
+	"PUT /api/v1/settings/import-folders":     Media,
 
 	// The metadata server's stored title and person pictures.
 	"GET /api/v1/artwork/img/{kind}/{id}/{file}": Media,
@@ -553,7 +555,6 @@ var Routes = map[string]Owner{
 	"PUT /api/v1/ask-limits/{id}":                    wishlist,
 	"GET /api/v1/settings/asks":                      wishlist,
 	"GET /api/v1/asked-by":                           wishlist,
-	"GET /api/v1/my/ask-privacy":                     wishlist,
 	"GET /api/v1/my/follows":                         wishlist,
 	"GET /api/v1/titles/{id}/follow":                 wishlist,
 	"PUT /api/v1/titles/{id}/follow":                 wishlist,
@@ -564,7 +565,6 @@ var Routes = map[string]Owner{
 	"GET /api/v1/metadata/movie/{tmdb_id}/follow":    wishlist,
 	"PUT /api/v1/metadata/movie/{tmdb_id}/follow":    wishlist,
 	"DELETE /api/v1/metadata/movie/{tmdb_id}/follow": wishlist,
-	"PUT /api/v1/my/ask-privacy":                     wishlist,
 	"PUT /api/v1/settings/asks":                      wishlist,
 	"GET /api/v1/messages":                           wishlist,
 	"POST /api/v1/messages/read":                     wishlist,

@@ -554,6 +554,9 @@ type Importer struct {
 	Store *store.Store
 	Live  Publisher // may be nil
 	Ops   Ops
+	// SavePath is where completed downloads are, as HolyArrs sees it
+	// (--save-path); it is a place files may be imported by hand from.
+	SavePath string
 	// OnRejected is told when an Import is rejected and its Release turned
 	// down, so the Slot can be searched again.
 	OnRejected func(ctx context.Context, slotID int64)

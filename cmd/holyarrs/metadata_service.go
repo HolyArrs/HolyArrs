@@ -39,6 +39,8 @@ type hostedMetadata struct {
 	// Transport is the pooled connection to the server, shared with the
 	// artwork cache for the server's picture addresses.
 	Transport http.RoundTripper
+	// Gate is that transport; it carries "Count this install".
+	Gate *metadata.Gate
 	// Disk keeps TMDB answers across restarts (lookup_cache).
 	Disk metadata.Cache
 }
@@ -61,7 +63,7 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 	// answers here, and the server's pictures through the artwork client.
 	tr := &metadata.Gate{Next: metadata.NewServerTransport(d.DialContext)}
 	cl := &http.Client{Transport: tr, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	h := &hostedMetadata{HTTP: cl, Transport: tr}
+	h := &hostedMetadata{HTTP: cl, Transport: tr, Gate: tr}
 	access := installationAccess(v, func(ctx context.Context) (string, error) { return h.Service.Register(ctx) })
 	service, err := metadata.NewService(metadata.ServiceOptions{URL: metadata.ServiceURL(), HTTP: cl, Access: access, AllowLocal: local})
 	if err != nil {

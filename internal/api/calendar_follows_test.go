@@ -21,7 +21,6 @@ type calendarFollowAnswer struct {
 			Name string `json:"name"`
 			Me   bool   `json:"me"`
 		} `json:"followers"`
-		FollowersHidden int `json:"followers_hidden"`
 	} `json:"dates"`
 }
 
@@ -53,7 +52,7 @@ func TestCalendarSaysWhoFollows(t *testing.T) {
 	c = calendarFollowAnswer{}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/calendar?from=2031-01-01&to=2031-03-01", "", 200), &c)
 	d := c.Dates[0]
-	if !d.Following || c.MyFollows != 1 || len(d.Followers) != 2 || d.Followers[0].Name != "ana" || d.Followers[1].Name != "luis" || !d.Followers[1].Me || d.FollowersHidden != 0 {
+	if !d.Following || c.MyFollows != 1 || len(d.Followers) != 2 || d.Followers[0].Name != "ana" || d.Followers[1].Name != "luis" || !d.Followers[1].Me {
 		t.Fatalf("followers %+v", c)
 	}
 }
