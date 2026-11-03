@@ -111,6 +111,8 @@
 	.pill { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
 	.pill:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Touch phones: 44px season pills (min-height, since the scrolling row would clip a larger hit area). */
+	@media (max-width: 767px) and (pointer: coarse) { .pill { min-height: 44px; } }
 	.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 	.line { margin: 10px 0 2px; }
 	/* The pills name the row, so its own heading is for screen readers only. */

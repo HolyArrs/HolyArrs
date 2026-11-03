@@ -1663,6 +1663,8 @@
 	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 20px 0 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); }
 	.atv-links .sep { margin: 0 8px; color: var(--text-faint); }
 	.atv-links a { color: var(--text-muted); text-decoration: none; }
+	/* Touch phones: a 44px-tall hit area over the 16px link line. */
+	@media (max-width: 767px) and (pointer: coarse) { .atv-links a { position: relative; } .atv-links a::after { content: ''; position: absolute; inset: -14px 0; } }
 	.atv-links a:hover { color: var(--text); }
 	@media (max-width: 899px) { .atv-cards, .atv-grid { grid-template-columns: minmax(0, 1fr); } }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
