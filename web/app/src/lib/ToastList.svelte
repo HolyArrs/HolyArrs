@@ -90,8 +90,12 @@
 	}
 	onMount(() => {
 		place();
-		const mo = new MutationObserver(place);
-		mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
+		// A dialog removed while still open (a page left mid close animation) takes the toasts
+		// with it and fires no 'open' change, so a detached host is brought home as well.
+		const mo = new MutationObserver((recs) => {
+			if ((host && !host.isConnected) || recs.some((r) => r.type === 'attributes')) place();
+		});
+		mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
 		return () => {
 			mo.disconnect();
 			// Back home before Svelte removes it, so it never lingers inside a dialog.

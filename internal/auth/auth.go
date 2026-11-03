@@ -109,6 +109,7 @@ type Auth struct {
 	now             func() time.Time
 	hash            hashParams
 	skipLocal       atomic.Bool
+	localNets       atomic.Pointer[localNets]
 	dummy           string
 	hosts           map[string]bool
 	requireAdmin2FA atomic.Bool
@@ -204,6 +205,7 @@ func New(s *store.Store, opt Options) *Auth {
 	if err == nil {
 		a.skipLocal.Store(v == "true")
 	}
+	a.localNets.Store(a.loadLocalNets(context.Background()))
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
 	a.initSSO(opt.SSO)
 	return a
@@ -228,6 +230,9 @@ type Who struct {
 	// is true only for a non-future local proof less than ten minutes old.
 	AuthMethod  string `json:"auth_method"`
 	LocalRecent bool   `json:"local_recent"`
+	// OutsideRecent is true for a Plex, Jellyfin or Emby sign-in less than
+	// ten minutes old: the proof a person with no password yet can give.
+	OutsideRecent bool `json:"outside_recent"`
 	// Scopes are an API key's scopes (see Scopes); empty for
 	// a session, which holds every scope.
 	Scopes []string
@@ -385,17 +390,6 @@ func canonicalHostPort(authority, scheme string) (string, bool) {
 	return net.JoinHostPort(host, strconv.Itoa(n)), true
 }
 
-// isLocal reports whether the peer address is on a private network or this
-// machine.
-func isLocal(remote string) bool {
-	host, _, err := net.SplitHostPort(remote)
-	if err != nil {
-		host = remote
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast())
-}
-
 // hostAllowed checks the Host header: IP literals, localhost and the
 // configured names pass. A rebinding page always carries its own domain name
 // in Host, so it fails here.
@@ -420,13 +414,13 @@ func (a *Auth) trustedProxy(ip net.IP) bool {
 	return false
 }
 
-// localPeer says whether the request comes from the local network. When a
+// localPeer says whether the request comes from a listed local network. When a
 // forwarding header is present the peer must be a trusted proxy, and then the
 // address it forwards is the one checked.
 func (a *Auth) localPeer(r *http.Request) bool {
 	xff, fwd, real := r.Header.Get("X-Forwarded-For"), r.Header.Get("Forwarded"), r.Header.Get("X-Real-IP")
 	if xff == "" && fwd == "" && real == "" {
-		return isLocal(r.RemoteAddr)
+		return a.isLocal(r.RemoteAddr)
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -441,7 +435,7 @@ func (a *Auth) localPeer(r *http.Request) bool {
 		parts := strings.Split(xff, ",")
 		client = strings.TrimSpace(parts[len(parts)-1])
 	}
-	return isLocal(client)
+	return a.isLocal(client)
 }
 
 // Strong reports whether the request uses a browser session or an API key.
@@ -758,6 +752,47 @@ func (a *Auth) noteFail(keys ...string) {
 	}
 }
 
+// failMark is how one key stood before noteFail, so undoFail can put back
+// its time as well as its count.
+type failMark struct {
+	key  string
+	had  bool
+	last time.Time
+}
+
+// markFails reads the keys before noteFail; the caller holds a.mu.
+func (a *Auth) markFails(keys ...string) []failMark {
+	out := make([]failMark, 0, len(keys))
+	for _, k := range keys {
+		m := failMark{key: k}
+		if f := a.fails[k]; f != nil {
+			m.had, m.last = true, f.last
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+// undoFail takes back the failure noted up front when the check could not
+// run at all (the media server did not answer), so an outage never locks
+// people out or restarts their wait. Each key loses one count, as parallel
+// attempts noted their own.
+func (a *Auth) undoFail(marks []failMark) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for _, m := range marks {
+		f := a.fails[m.key]
+		if f == nil {
+			continue
+		}
+		if f.n--; f.n <= 0 {
+			delete(a.fails, m.key)
+		} else if m.had {
+			f.last = m.last
+		}
+	}
+}
+
 func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	c, ok := readCreds(w, r)
 	if !ok {
@@ -788,10 +823,16 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var id int64
-	var name, hash string
-	err := a.s.Read().QueryRowContext(r.Context(), "SELECT id, name, password_hash FROM users WHERE name = ? AND state = 'active'", c.Name).
-		Scan(&id, &name, &hash)
+	var name, hash, state string
+	// One lookup in every case (no extra query on a failure path), so the
+	// time taken does not tell an unknown name from a turned-off member.
+	err := a.s.Read().QueryRowContext(r.Context(), "SELECT id, name, password_hash, state FROM users WHERE name = ?", c.Name).
+		Scan(&id, &name, &hash, &state)
 	known := err == nil // a typed name that is no user may be a password typed in the wrong box
+	turnedOff := known && state != "active"
+	if turnedOff {
+		err = errDisabled
+	}
 	if err != nil || hash == "" {
 		// Same work whether the name is unknown or has no password (people
 		// who sign in only through Plex, Jellyfin or Emby).
@@ -801,11 +842,16 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	good := CheckPassword(hash, c.Password) && err == nil
 	if !good {
 		log.Printf("auth: failed sign-in from %s", r.RemoteAddr)
-		who := "unknown name"
+		// A turned-off member keeps their name; a name that is no member stays
+		// "unknown name" (it may be a password typed in the wrong box).
+		who, how := unknownName, "password"
 		if known {
 			who = name
 		}
-		a.failedEvent(r, who)
+		if turnedOff {
+			how = "turned off"
+		}
+		a.failedEvent(r, who, how)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
@@ -892,6 +938,11 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 	localAt := parseTime(localAuthAt)
 	localMethod := who.AuthMethod == AuthMethodLocalPassword || who.AuthMethod == AuthMethodLocalSetup
 	who.LocalRecent = localMethod && !localAt.IsZero() && !localAt.After(now) && now.Sub(localAt) < localRecentFor
+	switch who.AuthMethod {
+	case ProviderPlex, ProviderJellyfin, ProviderEmby:
+		at := parseTime(created)
+		who.OutsideRecent = !at.IsZero() && !at.After(now) && now.Sub(at) < localRecentFor
+	}
 	if !now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) > IdleTimeout {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 			_, err := tx.Exec("DELETE FROM sessions WHERE hash = ?", h)
@@ -948,9 +999,13 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 
 func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	who, _ := From(r.Context())
+	// People who joined through a media server have no password until they set one.
+	hasPassword := true
+	_ = a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash != '' FROM users WHERE id = ?", who.UserID).Scan(&hasPassword)
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
+		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "has_password": hasPassword,
+		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 
 // Cleanup drops ended sessions.
@@ -1163,10 +1218,37 @@ func (a *Auth) event(r *http.Request, by domain.Actor, kind, summary string, dat
 	_ = a.s.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: by, Kind: kind, Summary: summary, Data: data})
 }
 
-// failedEvent logs a failed sign-in. Repeats from the same address for the
-// same name within 10 minutes of the first add to that row's count and
-// last_at instead of making new rows.
-func (a *Auth) failedEvent(r *http.Request, name string) {
+// unknownName stands for a typed sign-in name that is no member.
+const unknownName = "unknown name"
+
+// knownName is the member (in any state) a typed sign-in name belongs to,
+// or unknownName.
+func (a *Auth) knownName(ctx context.Context, typed string) string {
+	var n string
+	if a.s.Read().QueryRowContext(ctx, "SELECT name FROM users WHERE name = ?", typed).Scan(&n) != nil {
+		return unknownName
+	}
+	return n
+}
+
+// failedSummary is a failed sign-in row's line: how it failed and for whom.
+func failedSummary(name, how string) string {
+	switch how {
+	case "", "password":
+		return "Sign-in failed for " + name
+	case "two-factor":
+		return "Wrong two-factor code for " + name
+	case "turned off":
+		return "Sign-in by turned-off account " + name
+	}
+	return "Sign-in failed for " + name + " (" + how + ")"
+}
+
+// failedEvent logs a failed sign-in and how it failed (password,
+// two-factor, turned off, jellyfin, emby, not allowed). Repeats from the
+// same address for the same name and way within 10 minutes of the first add
+// to that row's count and last_at instead of making new rows.
+func (a *Auth) failedEvent(r *http.Request, name, how string) {
 	ip := strings.TrimPrefix(a.ClientKey(r), "ip:")
 	now := a.now().UTC()
 	ctx := context.WithoutCancel(r.Context())
@@ -1175,8 +1257,9 @@ func (a *Auth) failedEvent(r *http.Request, name string) {
 		// One row per address and name; at stays the first attempt, so the
 		// 10 minutes count from it.
 		res, err := tx.Exec(`UPDATE events SET data = json_set(data, '$.count', coalesce(json_extract(data, '$.count'), 1) + 1, '$.last_at', ?),
-			updated_at = ? WHERE id = (SELECT id FROM events WHERE kind = 'sign_in_failed' AND json_extract(data, '$.ip') = ? AND json_extract(data, '$.name') = ? AND at >= ? ORDER BY id DESC LIMIT 1)`,
-			store.FormatTime(now), store.FormatTime(now), ip, name, store.FormatTime(now.Add(-10*time.Minute)))
+			updated_at = ? WHERE id = (SELECT id FROM events WHERE kind = 'sign_in_failed' AND json_extract(data, '$.ip') = ? AND json_extract(data, '$.name') = ?
+			AND coalesce(json_extract(data, '$.how'), 'password') = ? AND at >= ? ORDER BY id DESC LIMIT 1)`,
+			store.FormatTime(now), store.FormatTime(now), ip, name, how, store.FormatTime(now.Add(-10*time.Minute)))
 		if err == nil {
 			n, err = res.RowsAffected()
 		}
@@ -1185,6 +1268,48 @@ func (a *Auth) failedEvent(r *http.Request, name string) {
 	if n > 0 {
 		return
 	}
-	_ = a.s.AddEvent(ctx, &domain.Event{At: now, Kind: "sign_in_failed", Summary: "Sign-in failed for " + name,
-		Data: map[string]any{"name": name, "ip": ip, "count": 1, "last_at": store.FormatTime(now)}})
+	_ = a.s.AddEvent(ctx, &domain.Event{At: now, Kind: "sign_in_failed", Summary: failedSummary(name, how),
+		Data: map[string]any{"name": name, "how": how, "ip": ip, "count": 1, "last_at": store.FormatTime(now)}})
+}
+
+// ssoRefusal is how an OIDC or forward-auth sign-in was refused, for its row.
+func ssoRefusal(kind string, err error) string {
+	switch {
+	case errors.Is(err, errDisabled):
+		return "turned off"
+	case errors.Is(err, errNotAllowed):
+		return kind + " not allowed"
+	}
+	return kind + " refused"
+}
+
+// EventAccountChanged is a change to someone's account: role, permissions,
+// turned off or on, password set or changed, two-factor reset or turned on
+// or off, sessions ended, an invite made. Never a password, code or key.
+const EventAccountChanged = "account_changed"
+
+// accountEvent writes an account_changed Event about the member userID.
+func (a *Auth) accountEvent(r *http.Request, userID int64, action, summary string, extra map[string]any) {
+	data := map[string]any{"user_id": userID, "action": action}
+	for k, v := range extra {
+		data[k] = v
+	}
+	a.event(r, Actor(r.Context()), EventAccountChanged, summary, data)
+}
+
+// userName is a member's name ("member <id>" when it cannot be read).
+func (a *Auth) userName(ctx context.Context, id int64) string {
+	var n string
+	if a.s.Read().QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", id).Scan(&n) != nil || n == "" {
+		return "member " + itoa(id)
+	}
+	return n
+}
+
+// byName is who made a change, for an Event line.
+func byName(r *http.Request) string {
+	if who, ok := From(r.Context()); ok && who.Name != "" {
+		return who.Name
+	}
+	return "someone"
 }

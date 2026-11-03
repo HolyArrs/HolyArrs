@@ -37,11 +37,13 @@
 	const s = $derived(rowStep(row, w.tag.word));
 	const x = $derived(rowExtra(row, s, who, w.line));
 	const part = $derived(partOf(row));
+	// The Version (HD, 4K) when the title has more than one, so its rows tell them apart.
+	const version = $derived(w.bits.find((b) => b.kind === 'version')?.text ?? '');
 </script>
 
 <button type="button" class="hit c" class:bad={s.failed} class:on data-key={row.key} data-testid="history-row" data-kind={e.Kind} data-steps={row.steps.length ? row.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={controls} {onclick}>
 	<span class="post" class:square={t?.kind === 'artist'}>{#if e.title_name}<Poster src={artOf(e, titleById)} name={e.title_name} />{:else}<span class="sys"><Icon name="settings" size={12} /></span>{/if}</span>
-	<span class="cl1"><span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#if part}<span class="bit">{` · ${part}`}</span>{/if}</span><time class="ago" datetime={e.At} title={dateTime(e.At)}>{time(e.At)}</time></span>
+	<span class="cl1"><span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#if part}<span class="bit">{` · ${part}`}</span>{/if}{#if version}<span class="bit" data-testid="event-version">{' · '}<span data-testid="history-version">{version}</span></span>{/if}</span><time class="ago" datetime={e.At} title={dateTime(e.At)}>{time(e.At)}</time></span>
 	<span class="cl2"><span class="stp"><Icon name={s.icon} size={14} />{s.label}</span>{#if x}<span class="ex">{` · ${x}`}</span>{/if}</span>
 </button>
 

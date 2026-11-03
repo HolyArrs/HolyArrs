@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/CoderLuii/holyarrs/internal/domain"
 )
 
 // RestorePath takes the uploaded zip; its body may be larger than other API bodies.
@@ -71,6 +73,8 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			return
 		}
 		defer f.Close()
+		// A backup holds the whole database (password hashes too), so taking one is on the audit trail.
+		m.audit(r, "downloaded", r.PathValue("name"))
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", `attachment; filename="`+r.PathValue("name")+`"`)
 		if fi, err := f.Stat(); err == nil {
@@ -86,6 +90,7 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			fail(w, http.StatusNotFound, "no such backup")
 			return
 		}
+		m.audit(r, "deleted", r.PathValue("name"))
 		w.WriteHeader(http.StatusNoContent)
 	})
 	mux.HandleFunc("POST /api/v1/backups/restore", func(w http.ResponseWriter, r *http.Request) {
@@ -106,4 +111,17 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			go restart()
 		}
 	})
+}
+
+// audit writes a backup_used Event: who downloaded or deleted a backup.
+func (m *Manager) audit(r *http.Request, action, name string) {
+	if m.Store == nil {
+		return
+	}
+	who := "someone"
+	if w, ok := auth.From(r.Context()); ok && w.Name != "" {
+		who = w.Name
+	}
+	_ = m.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: auth.Actor(r.Context()), Kind: "backup_used",
+		Summary: "Backup " + name + " " + action + " by " + who, Data: map[string]any{"action": action, "name": name}})
 }

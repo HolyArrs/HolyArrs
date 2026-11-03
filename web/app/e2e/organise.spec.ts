@@ -85,9 +85,13 @@ test('rename: the Movie page shows the old and new name and renames after Apply'
 	const to = (await step.locator('.new').textContent())!.trim();
 	await dialog.getByRole('button', { name: 'Rename 1 file' }).click();
 	await expect(page.getByText('1 file renamed.')).toBeVisible({ timeout: 30_000 });
+	// Done, the sheet closes; opened again it has nothing left to rename.
+	await expect(dialog).toBeHidden();
+	await titleAction(page, 'Library', 'Rename files');
 	await expect(dialog.getByTestId('rename-none')).toContainText('every file already has the right name');
 	expect(readdirSync(join(oldLib, 'Marble Comet (2014)'))).toEqual([to]);
-	await dialog.getByRole('button', { name: 'Close' }).click();
+	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+	await expect(dialog).toBeHidden();
 });
 
 test('rename: the whole Library preview lists each movie, and skipped files say why', async () => {
@@ -127,15 +131,21 @@ test('delete: the plan shows first, changes with each choice, and files go to th
 	const plan = dialog.getByTestId('delete-plan');
 	await expect(plan).toContainText('1 file stays where it is.');
 	await expect(plan).not.toContainText('holding folder');
-	await dialog.getByLabel(/Also delete its files/).check();
+	await dialog.getByRole('switch', { name: /^Also delete the files/ }).click();
 	await expect(plan).toContainText('1 file moves to the holding folder and is removed for good after 7 days');
-	await dialog.getByLabel(/Add it to the Never-add list/).check();
+	await dialog.getByRole('switch', { name: /^Never add it again/ }).click();
 	await expect(plan).toContainText('Never-add list');
-	// Still nothing has happened.
+	// Still nothing has happened; deleting files too wants the name typed first.
 	expect(readdirSync(join(oldLib, 'Willow Signal {tmdb-900013}'))).toEqual(['willow signal.mkv']);
-	await dialog.getByRole('button', { name: 'Delete movie' }).click();
-	await expect(page).toHaveURL(/\/library$/);
+	const go = dialog.getByRole('button', { name: 'Delete movie and files' });
+	await expect(go).toBeDisabled();
+	await dialog.getByRole('textbox', { name: /Type Willow Signal to confirm/ }).fill('Willow Signal');
+	await go.click();
 	await expect(page.getByText(/Willow Signal is deleted\. Its files are in the holding folder for 7 days/)).toBeVisible();
+	// The title page stays, no longer in the Library: no Library tab or status.
+	await expect(dialog).toBeHidden();
+	await expect(page.getByTestId('own-tabs')).toHaveCount(0);
+	await expect(page.getByTestId('hero-library')).toHaveCount(0);
 	expect(existsSync(join(oldLib, 'Willow Signal {tmdb-900013}', 'willow signal.mkv'))).toBe(false);
 	expect(existsSync(join(oldLib, '.holyarrs-replaced'))).toBe(true);
 });
@@ -205,7 +215,7 @@ test('the new screens fit a phone and pass the accessibility scan', async ({ bro
 	await ph.goto('/library');
 	await ph.getByRole('link', { name: /Cinder Waltz/ }).first().click();
 	for (const [button, heading] of [
-		['Rename files', 'Rename the files of Cinder Waltz'],
+		['Rename files', 'Rename files'],
 		['Delete movie', 'Delete Cinder Waltz?']
 	]) {
 		await titleAction(ph, 'Library', button);

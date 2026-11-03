@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -115,8 +116,13 @@ func (a *Auth) ways(ctx context.Context) []string {
 
 func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	nets := []string{}
+	if l := a.localNets.Load(); l != nil {
+		nets = l.list
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		settingSkipLocal:   a.skipLocal.Load(),
+		keyLocalNets:       nets,
 		keyRequireAdmin2FA: a.requireAdmin2FA.Load(),
 		keyMinLength:       MinPasswordLength(ctx, a.s.Read()),
 		ProviderPlex:       a.way(ctx, ProviderPlex),
@@ -132,6 +138,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	var body struct {
 		SkipLocal    *bool    `json:"skip_login_local_network"`
+		LocalNets    []string `json:"local_networks"`
 		RequireAdmin *bool    `json:"require_two_factor_admins"`
 		MinPassword  *int     `json:"min_password_length"`
 		Plex         *WayView `json:"plex"`
@@ -142,8 +149,8 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		ConfirmEveryone bool `json:"confirm_everyone"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil ||
-		(body.SkipLocal == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil) {
-		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
+		(body.SkipLocal == nil && body.LocalNets == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil) {
+		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "local_networks": ["192.168.1.0/24"], "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
 		return
 	}
 	if body.SkipLocal != nil && *body.SkipLocal {
@@ -185,9 +192,30 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// Skipping needs at least one listed network; an empty list skips nowhere.
+	nets := a.localNets.Load()
+	if body.LocalNets != nil {
+		var err error
+		if nets, err = parseLocalNets(body.LocalNets); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	skip := a.skipLocal.Load()
+	if body.SkipLocal != nil {
+		skip = *body.SkipLocal
+	}
+	if (body.SkipLocal != nil || body.LocalNets != nil) && skip && (nets == nil || len(nets.list) == 0) {
+		fail(w, http.StatusBadRequest, "List at least one local network first, like 192.168.1.0/24: sign-in is skipped only there.")
+		return
+	}
 	set := map[string]string{}
 	if body.SkipLocal != nil {
 		set["this_app/"+settingSkipLocal] = strconv.FormatBool(*body.SkipLocal)
+	}
+	if body.LocalNets != nil {
+		v, _ := json.Marshal(nets.list)
+		set[settingsGroup+"/"+signInPrefix+keyLocalNets] = string(v)
 	}
 	if body.RequireAdmin != nil {
 		set[settingsGroup+"/"+signInPrefix+keyRequireAdmin2FA] = strconv.FormatBool(*body.RequireAdmin)
@@ -255,6 +283,10 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "sign-in settings", err)
 		return
 	}
+	if body.LocalNets != nil {
+		a.localNets.Store(nets)
+		log.Printf("auth: local networks set to %s", strings.Join(nets.list, ", "))
+	}
 	if body.SkipLocal != nil {
 		a.skipLocal.Store(*body.SkipLocal)
 		log.Printf("auth: skip sign-in on the local network set to %t", *body.SkipLocal)
@@ -285,16 +317,19 @@ func allowed(v WayView, names ...string) bool {
 
 var errNotAllowed = errors.New("not allowed to join")
 var errDisabled = errors.New("account disabled")
+var errKidSkipLocal = errors.New("kid join while skipping local sign-in")
 
-// linkedUser finds or makes the user for an outside account.
-func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin bool) (int64, string, error) {
+// linkedUser finds or makes the user for an outside account. A new person
+// the server limits (kid) joins as a Kid, as an import would make them.
+func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin, kid bool) (int64, string, error) {
 	var id int64
 	var name, state string
 	err := a.s.Read().QueryRowContext(ctx, `SELECT u.id, u.name, u.state FROM user_links l JOIN users u ON u.id = l.user_id
 		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&id, &name, &state)
 	if err == nil {
 		if state != "active" {
-			return 0, "", errDisabled
+			// The member's name goes with the refusal, for the audit row only.
+			return 0, name, errDisabled
 		}
 		return id, name, nil
 	}
@@ -302,7 +337,16 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		return 0, "", err
 	}
 	if !mayJoin {
-		return 0, "", errNotAllowed
+		// The outside account's name (from the server) goes with the refusal.
+		return 0, strings.TrimSpace(extName), errNotAllowed
+	}
+	u := domain.User{Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}
+	if kid {
+		if a.skipLocal.Load() {
+			// A Kid could not be told apart from the owner at home.
+			return 0, "", errKidSkipLocal
+		}
+		u.Perms, u.MaxRating = permsJSON([]Perm{PermAsk}), "PG"
 	}
 	base := strings.TrimSpace(extName)
 	if base == "" {
@@ -322,8 +366,8 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 			name = fmt.Sprintf("%s-%d", base, i)
 		}
 		var err error
-		id, err = store.Insert(tx, "users", &domain.User{Name: name, Role: RoleMember, State: "active",
-			Perms: permsJSON(DefaultPerms(RoleMember))}, domain.System)
+		u.Name = name
+		id, err = store.Insert(tx, "users", &u, domain.System)
 		if err != nil {
 			return err
 		}
@@ -332,9 +376,34 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		return err
 	})
 	if err == nil {
-		log.Printf("auth: %s account joined as member %q (%d)", provider, name, id)
+		log.Printf("auth: %s account joined as member %q (%d), kid %t", provider, name, id, kid)
 	}
 	return id, name, err
+}
+
+// linkedName is the member an outside account belongs to, found through its
+// link (by id, else by its name on that server), else the member with that
+// name, else unknownName. The typed name is only matched, never stored.
+func (a *Auth) linkedName(ctx context.Context, provider, extID, extName string) string {
+	var n string
+	if extID != "" && a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
+		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&n) == nil {
+		return n
+	}
+	if a.s.Read().QueryRowContext(ctx, `SELECT u.name FROM user_links l JOIN users u ON u.id = l.user_id
+		WHERE l.provider = ? AND l.external_name = ? ORDER BY l.user_id LIMIT 1`, provider, extName).Scan(&n) == nil {
+		return n
+	}
+	return a.knownName(ctx, extName)
+}
+
+// outsideName is an outside account's name for a failed sign-in row (it
+// comes from the Plex, Jellyfin or Emby server, never typed by hand).
+func outsideName(name string) string {
+	if name == "" {
+		return unknownName
+	}
+	return name
 }
 
 // outsideDone answers after an outside account checked out.
@@ -342,9 +411,14 @@ func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider stri
 	switch {
 	case errors.Is(err, errNotAllowed):
 		log.Printf("auth: %s account not allowed to join, from %s", provider, r.RemoteAddr)
+		a.failedEvent(r, outsideName(name), provider+" not allowed")
 		fail(w, http.StatusForbidden, "this account is not allowed in yet; ask the owner")
 	case errors.Is(err, errDisabled):
+		a.failedEvent(r, outsideName(name), "turned off")
 		fail(w, http.StatusForbidden, "this account is turned off; ask the owner")
+	case errors.Is(err, errKidSkipLocal):
+		log.Printf("auth: %s account has limits on the server and sign-in is skipped at home; not joined", provider)
+		fail(w, http.StatusForbidden, "this account has an age limit, and it can't join while sign-in is skipped at home; ask the owner")
 	case err != nil:
 		serverError(w, provider+" sign-in", err)
 	default:
@@ -401,7 +475,10 @@ func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr m
 
 // pin is a Plex sign-in in progress.
 type pin struct {
-	ip      string
+	ip string
+	// secret is also in a cookie on the browser that started the pin, so
+	// another visitor behind the same address cannot finish it.
+	secret  string
 	expires time.Time
 	// checked is the last time Plex was asked about this pin; checks
 	// closer than pinCheckGap answer 429 (the page polls every 2 s).
@@ -455,9 +532,12 @@ func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, link bool) {
 		fail(w, http.StatusBadGateway, "Plex did not answer; try again in a moment")
 		return
 	}
+	secret := token(24)
 	a.mu.Lock()
-	a.pins[got.ID] = &pin{ip: ip, expires: now.Add(pinLife), link: link}
+	a.pins[got.ID] = &pin{ip: ip, secret: secret, expires: now.Add(pinLife), link: link}
 	a.mu.Unlock()
+	http.SetCookie(w, &http.Cookie{Name: pinCookie(got.ID), Value: secret, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
+		Secure: a.behindHTTPS(r), MaxAge: int(pinLife / time.Second)})
 	q := url.Values{"clientID": {a.clientID(ctx)}, "code": {got.Code}, "context[device][product]": {product}}
 	writeJSON(w, http.StatusOK, map[string]any{"id": got.ID, "auth_url": a.plexApp + "/auth#?" + q.Encode()})
 }
@@ -480,6 +560,8 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		UUID     string `json:"uuid"`
 		Username string `json:"username"`
 		Email    string `json:"email"`
+		// A managed Plex Home user with limits on what they may watch.
+		Restricted bool `json:"restricted"`
 	}
 	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/user", hdr, nil, &user)
 	if err != nil || code/100 != 2 || user.ID == 0 {
@@ -512,7 +594,7 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 			return x.ClientIdentifier == v.ServerID && !x.Owned
 		})
 	}
-	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin)
+	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin, user.Restricted)
 	a.outsideDone(w, r, ProviderPlex, id, name, err)
 }
 
@@ -531,7 +613,7 @@ func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, link bool) (stri
 	}
 	a.mu.Lock()
 	p := a.pins[body.ID]
-	ok := p != nil && p.link == link && p.ip == a.clientKey(r) && a.now().Before(p.expires)
+	ok := p != nil && p.link == link && p.ip == a.clientKey(r) && a.now().Before(p.expires) && pinSecretMatches(r, body.ID, p.secret)
 	soon := ok && !p.checked.IsZero() && a.now().Sub(p.checked) < pinCheckGap
 	if ok && !soon {
 		p.checked = a.now()
@@ -562,7 +644,18 @@ func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, link bool) (stri
 	a.mu.Lock()
 	delete(a.pins, body.ID) // one pin, one use
 	a.mu.Unlock()
+	http.SetCookie(w, &http.Cookie{Name: pinCookie(body.ID), Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
+		Secure: a.behindHTTPS(r), MaxAge: -1})
 	return pinState.AuthToken, true
+}
+
+// pinCookie names the cookie that holds one pin's secret.
+func pinCookie(id int64) string { return "holyarrs_plex_" + strconv.FormatInt(id, 10) }
+
+// pinSecretMatches reports whether the request carries the pin's cookie.
+func pinSecretMatches(r *http.Request, id int64, secret string) bool {
+	c, err := r.Cookie(pinCookie(id))
+	return err == nil && secret != "" && subtle.ConstantTimeCompare([]byte(c.Value), []byte(secret)) == 1
 }
 
 func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
@@ -586,12 +679,25 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ipKey, userKey := a.clientKey(r), "name:"+kind+":"+strings.ToLower(c.Name)
+	var marks []failMark
 	a.mu.Lock()
 	wait := max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries))
 	if wait == 0 {
+		marks = a.markFails(ipKey, userKey)
 		a.noteFail(ipKey, userKey)
 	}
 	a.mu.Unlock()
+	// Only an attempt the server could not check is taken back: no answer
+	// at all, or a proxy saying the server behind it is down (502, 503,
+	// 504). Any other answer counts, so a server that turns down wrong
+	// passwords with an odd status is still limited. A client that hung up
+	// mid-check keeps its count, so hanging up skips no wait.
+	undo := func(code int) {
+		down := code == 0 || code == http.StatusBadGateway || code == http.StatusServiceUnavailable || code == http.StatusGatewayTimeout
+		if down && ctx.Err() == nil {
+			a.undoFail(marks)
+		}
+	}
 	if wait > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 		fail(w, http.StatusTooManyRequests, "too many failed sign-ins; wait a little and try again")
@@ -605,22 +711,27 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 			Name   string `json:"Name"`
 			Policy struct {
 				IsDisabled bool `json:"IsDisabled"`
+				// Set when the server limits what this person may watch.
+				MaxParentalRating *int `json:"MaxParentalRating"`
 			} `json:"Policy"`
 		} `json:"User"`
 		AccessToken string `json:"AccessToken"`
 	}
 	code, err := a.serverFetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, &got)
 	if err != nil {
+		undo(code)
 		log.Printf("auth: %s sign-in: %v", kind, err)
 		fail(w, http.StatusBadGateway, "the "+kind+" server did not answer; ask the owner")
 		return
 	}
 	if code == http.StatusUnauthorized || code == http.StatusForbidden || code/100 == 4 {
 		log.Printf("auth: failed %s sign-in from %s", kind, r.RemoteAddr)
+		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
 	if code/100 != 2 || got.User.ID == "" {
+		undo(code)
 		log.Printf("auth: %s sign-in: status %d", kind, code)
 		fail(w, http.StatusBadGateway, "the "+kind+" server gave an odd answer; ask the owner")
 		return
@@ -632,6 +743,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		_, _ = a.serverFetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
+		a.failedEvent(r, a.linkedName(ctx, kind, got.User.ID, got.User.Name), kind+" turned off")
 		fail(w, http.StatusForbidden, "this account is turned off on the "+kind+" server")
 		return
 	}
@@ -639,6 +751,6 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	delete(a.fails, ipKey)
 	delete(a.fails, userKey)
 	a.mu.Unlock()
-	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name))
+	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)
 	a.outsideDone(w, r, kind, id, name, err)
 }

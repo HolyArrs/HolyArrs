@@ -20,6 +20,10 @@
 	let settingsOk = $state(false);
 	let settingsLoading = $state(false);
 	let savingSkip = $state(false);
+	// Networks where sign-in may be skipped, one per line.
+	let nets = $state('');
+	let savingNets = $state(false);
+	const netList = () => nets.split(/[\s,]+/).filter(Boolean);
 	let savingRequire = $state(false);
 
 	let keys = $state<ApiKey[]>([]);
@@ -42,6 +46,7 @@
 	type WayName = 'plex' | 'jellyfin' | 'emby';
 	interface SignInSettings {
 		skip_login_local_network: boolean;
+		local_networks?: string[];
 		require_two_factor_admins: boolean;
 		min_password_length: number;
 		plex: Way;
@@ -205,6 +210,7 @@
 
 	function took(r: SignInSettings) {
 		skipLocal = r.skip_login_local_network;
+		nets = (r.local_networks ?? []).join('\n');
 		requireAdmins = r.require_two_factor_admins;
 		minLength = r.min_password_length ?? 12;
 		ways = { plex: { ...blank(), ...r.plex }, jellyfin: { ...blank(), ...r.jellyfin }, emby: { ...blank(), ...r.emby } };
@@ -295,14 +301,27 @@
 		skipLocal = v;
 		savingSkip = true;
 		try {
-			const r = await api.put<{ skip_login_local_network: boolean }>('/auth/settings', { skip_login_local_network: v });
-			skipLocal = r.skip_login_local_network;
+			// Turning it on saves the networks typed below with it.
+			took(await api.put<SignInSettings>('/auth/settings', v ? { skip_login_local_network: v, local_networks: netList() } : { skip_login_local_network: v }));
 			toasts.push(skipLocal ? 'No sign-in needed on your local network.' : 'Sign-in needed everywhere.', 'ok');
 		} catch (e) {
 			skipLocal = before;
 			toasts.push(strongNote(e), 'fail');
 		} finally {
 			savingSkip = false;
+		}
+	}
+
+	async function saveNets(e: SubmitEvent) {
+		e.preventDefault();
+		savingNets = true;
+		try {
+			took(await api.put<SignInSettings>('/auth/settings', { local_networks: netList() }));
+			toasts.push('Local networks saved.', 'ok');
+		} catch (err) {
+			toasts.push(strongNote(err), 'fail');
+		} finally {
+			savingNets = false;
 		}
 	}
 
@@ -361,10 +380,16 @@
 				<span>Skip sign-in on my local network</span>
 			</label>
 			<p class="hint">
-				Devices at home (private addresses) open HolyArrs as the owner, without a password. With family or friends on the same
+				Devices on the networks below open HolyArrs as the owner, without a password. With family or friends on the same
 				network, leave this off: they would get the owner's rights too.
 			</p>
 			<p class="hint">Changing keys and passwords still needs a real sign-in.</p>
+			<form class="nets" onsubmit={saveNets}>
+				<Field id="local-nets" label="Local networks, one per line" hint="Like 192.168.1.0/24, or one address like 192.168.1.20. Up to 32.">
+					<textarea id="local-nets" class="input" rows="3" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+				</Field>
+				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save networks</Button>
+			</form>
 	</SettingsCard>
 
 	<SettingsCard id="twofactor-card" title="Two-factor sign-in">
@@ -623,7 +648,14 @@
 		gap: var(--s-3);
 		max-width: 520px;
 	}
+	.nets {
+		display: grid;
+		gap: var(--s-3);
+		margin-top: var(--s-3);
+		max-width: 520px;
+	}
 	.way :global(button),
+	.nets :global(button),
 	.passwords :global(button) {
 		justify-self: start;
 	}

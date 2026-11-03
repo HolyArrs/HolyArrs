@@ -22,4 +22,10 @@ describe("the pane's ⋯ menu", () => {
 		expect(paneExtras({ ...job, can_act: false }, { steer: true, fail: true })).toEqual([]);
 		expect(rowItems({ ...torrent, can_act: false })).toEqual([]);
 	});
+	it("keeps only HolyArrs' own records on a row whose Downloader is locked", () => {
+		const own = { ...torrent, client_locked: true, title_id: 7 };
+		expect(rowItems(own)).toEqual(['library', 'remove']);
+		expect(paneExtras(own, { steer: true, fail: true })).toEqual(['fail']);
+		expect(rowItems({ ...job, client_locked: true })).toEqual(['remove']);
+	});
 });

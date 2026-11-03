@@ -21,6 +21,10 @@ export interface Me {
 	safe_mode?: boolean;
 	auth_method?: AuthMethod;
 	local_recent?: boolean;
+	/** A Plex, Jellyfin or Emby sign-in under ten minutes old. */
+	outside_recent?: boolean;
+	/** False for someone who joined through a media server and set no password yet. */
+	has_password?: boolean;
 	/** Address of my profile picture, or null. */
 	avatar?: string | null;
 	/** Age-rating limit ('' = none; set means a Kid account). */
@@ -55,6 +59,8 @@ export function createSession(client: Client = defaultClient) {
 		mustTwoFactor: boolean;
 		authMethod: AuthMethod;
 		localRecent: boolean;
+		outsideRecent: boolean;
+		hasPassword: boolean;
 		/** Address of my profile picture; null shows the initials. */
 		avatar: string | null;
 		/** Age-rating limit; '' means none. A Kid has one. */
@@ -75,6 +81,8 @@ export function createSession(client: Client = defaultClient) {
 		mustTwoFactor: false,
 		authMethod: '',
 		localRecent: false,
+		outsideRecent: false,
+		hasPassword: true,
 		avatar: null,
 		maxRating: '',
 		ways: ['password'],
@@ -125,6 +133,8 @@ export function createSession(client: Client = defaultClient) {
 		s.mustTwoFactor = !!me.must_two_factor;
 		s.authMethod = me.auth_method ?? '';
 		s.localRecent = !!me.local_recent;
+		s.outsideRecent = !!me.outside_recent;
+		s.hasPassword = me.has_password ?? true;
 		s.avatar = me.avatar ?? null;
 		s.maxRating = me.max_rating ?? '';
 		s.safeMode = !!me.safe_mode;
@@ -140,6 +150,8 @@ export function createSession(client: Client = defaultClient) {
 		s.perms = [];
 		s.authMethod = '';
 		s.localRecent = false;
+		s.outsideRecent = false;
+		s.hasPassword = true;
 		s.avatar = null;
 		s.maxRating = '';
 		try {

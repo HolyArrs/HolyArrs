@@ -1128,6 +1128,8 @@
 	.song:hover a.num .go, .song:focus-within a.num .go { opacity: 1; }
 	a.num:hover { background: var(--surface-3); }
 	a.num:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Touch phones: a centred 44px hit area on the song-number link. */
+	@media (max-width: 767px) and (pointer: coarse) { a.num::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; } }
 	.cov { position: relative; display: block; flex: none; width: 48px; height: 48px; overflow: hidden; border-radius: 6px; background: var(--surface-2); }
 	.cov img { width: 100%; height: 100%; object-fit: cover; }
 	.cov.small { width: 72px; height: 72px; border-radius: 8px; }
@@ -1229,6 +1231,7 @@
 	/* Overview / Library tabs for an artist in the Library: the same underline tabs as a title page. */
 	.ar-tabs { display: flex; gap: 6px; margin-top: calc(var(--gap) * -1 + 16px); border-bottom: 1px solid var(--line); }
 	.ar-tabs button { height: 40px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	@media (max-width: 767px) and (pointer: coarse) { .ar-tabs button { height: 44px; } }
 	.ar-tabs button.on { color: var(--text); border-bottom-color: var(--text); }
 
 	@media (max-width: 1000px) {

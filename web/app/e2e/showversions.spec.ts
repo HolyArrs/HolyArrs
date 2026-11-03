@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Browser, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openSeasonNamed, addFromSearch } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openSeasonNamed, addFromSearch, openLibraryTab } from './helpers.ts';
 
 // Several Versions per show (4.8.11): Tidal Atlas is added with a second
 // 4K Version from the add dialog; the show page lists both Versions and
@@ -24,15 +24,17 @@ async function axe(p: Page, where: string) {
 	expect(bad.map((v) => v.id), where).toEqual([]);
 }
 
+// Tidal Atlas on its Library tab (seasons, Versions and History live there).
 async function openShow(p: Page) {
 	await p.goto('/library');
 	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Tidal Atlas' }).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText('Tidal Atlas');
+	await openLibraryTab(p);
 }
 
 async function openSeason(p: Page) {
 	const s = await openSeasonNamed(p, 'Season 1');
-	await expect(s.getByTestId('episode').first()).toBeVisible();
+	await expect(s.getByRole('button', { name: /^Episode \d+:/ }).first()).toBeVisible();
 	return s;
 }
 
@@ -59,20 +61,22 @@ test('add Tidal Atlas with a second 4K Version', async () => {
 	await expect(versions.nth(1)).toContainText('Pick rules: 4K');
 	await expect(versions.nth(1)).toContainText('[4K]');
 	const s1 = await openSeason(page);
-	await expect(s1.getByTestId('episode').first().getByTestId('episode-state')).toHaveText('Main: Missing · 4K: Missing');
+	await expect(s1.locator('.lib-ep-st').first()).toHaveText('Missing');
 });
 
 test('Search now on the season fills each Version with its own pack; History names the Version', async () => {
 	await openShow(page);
 	const s1 = await openSeason(page);
-	await page.getByTestId('season-menu').getByRole('button').click();
-	await page.getByRole('menuitem', { name: 'Search season', exact: true }).click();
-	const first = s1.getByTestId('episode').first().getByTestId('episode-state');
-	// One pill names both Versions: neither may still be missing.
-	await expect(first).not.toContainText('Main: Missing', { timeout: 30_000 });
-	await expect(first).not.toContainText('4K: Missing', { timeout: 30_000 });
-	await page.reload();
-	await expect(page.getByTestId('title-history').getByTestId('event-version').filter({ hasText: '4K' }).first()).toBeVisible({ timeout: 20_000 });
+	await s1.getByRole('button', { name: 'Get the missing episodes of season 1' }).click();
+	await expect(page.getByRole('status')).toContainText('Looking for the missing episodes of season 1.');
+	// The season rows are read when opened: reload until the first episode is no longer missing.
+	await expect(async () => {
+		await page.reload();
+		const s = await openSeason(page);
+		await expect(s.locator('.lib-ep-st').first()).not.toHaveText('Missing', { timeout: 1000 });
+	}).toPass({ timeout: 30_000 });
+	// The Library tab's History shows what happened.
+	await expect(page.getByTestId('lib-pane').getByTestId('history-row').first()).toBeVisible({ timeout: 20_000 });
 	await page.goto('/downloads/history');
 	await expect(page.getByTestId('history-version').filter({ hasText: '4K' }).first()).toBeVisible();
 	// A download's steps fold into one row; picking it shows each step in the details panel.

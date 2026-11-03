@@ -54,7 +54,7 @@
 	.t { display: inline-flex; flex: none; align-items: center; gap: 2px; padding: 2px; border-radius: 999px; background: var(--surface-2); }
 	.sg { position: relative; display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; box-sizing: border-box; padding: 0 12px; border-radius: 999px; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); white-space: nowrap; cursor: default; transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out), box-shadow 300ms var(--ease-out); }
 	.sg:hover { color: var(--text); background: color-mix(in srgb, var(--surface-3) 55%, transparent); }
-	.sl { color: inherit; opacity: 0.8; }
+	.sl { color: inherit; }
 	.sg .n { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.sg .n :global(b) { font-weight: inherit; }
 	.dn .n { color: color-mix(in srgb, var(--ok) 45%, var(--text)); }

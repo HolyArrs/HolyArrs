@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { addFromSearch, noSidewaysScroll, owner, signIn } from './helpers.ts';
 
 // AI connections (#89) and search in plain words (#90): turn AI connections
 // on, make an AI key, use it over MCP, and find a title by describing it.
@@ -14,6 +14,15 @@ const mcp = (body: object, k = key) =>
 test.beforeAll(async ({ browser }) => {
 	page = await (await browser.newContext()).newPage();
 	await signIn(page, owner());
+	// A Library movie to find; earlier specs may have added it already.
+	await page.goto('/library');
+	await page.locator('[data-testid="library-card"], [data-testid="library-row"]').or(page.getByRole('heading', { name: 'Your Library is empty' })).first().waitFor();
+	if (!(await page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Driftwood Moon' }).count())) {
+		const dialog = await addFromSearch(page, 'Driftwood Moon', 'Driftwood Moon');
+		await dialog.getByLabel('Search when added').uncheck();
+		await dialog.getByRole('button', { name: 'Add to Library' }).click();
+		await expect(page).toHaveURL(/\/library\/\d+/);
+	}
 });
 
 test('AI connections are off until the owner turns them on, then an AI key works only there', async () => {
@@ -42,21 +51,26 @@ test('AI connections are off until the owner turns them on, then an AI key works
 });
 
 test('an AI app finds a title from a description', async () => {
-	const r = await (await mcp({ method: 'tools/call', params: { name: 'search_titles', arguments: { query: 'quiet orchard movie' } } })).json();
+	const r = await (await mcp({ method: 'tools/call', params: { name: 'search_titles', arguments: { query: 'driftwood moon movie' } } })).json();
 	expect(r.result.isError).toBe(false);
-	expect(JSON.stringify(r.result.structuredContent)).toContain('Quiet Orchard');
+	expect(JSON.stringify(r.result.structuredContent)).toContain('Driftwood Moon');
 });
 
 test('search in plain words shows what it understood', async () => {
-	await page.goto('/search?q=' + encodeURIComponent('quiet orchard movie'));
+	await page.goto('/search?q=' + encodeURIComponent('driftwood moon movie'));
 	const plain = page.getByTestId('search-plain');
 	await expect(plain).toContainText('Understood as');
-	await expect(plain).toContainText('Quiet Orchard');
+	await expect(plain).toContainText('Driftwood Moon');
 });
 
-test('History has an AI filter', async () => {
+test('History offers AI apps in its Filter', async () => {
 	await page.goto('/downloads/history');
-	await expect(page.getByRole('button', { name: 'AI', exact: true }).or(page.getByRole('checkbox', { name: 'AI', exact: true })).or(page.getByText('AI', { exact: true })).first()).toBeVisible();
+	await page.getByRole('button', { name: 'Filter' }).click();
+	// AI actions are their own "who" next to You, Members and HolyArrs on its own.
+	const who = page.getByRole('combobox', { name: 'Who' });
+	await who.selectOption({ label: 'AI apps' });
+	await expect(who).toHaveValue('ai');
+	await page.keyboard.press('Escape');
 });
 
 test('AI connections and plain-words search fit a phone screen', async () => {
@@ -64,7 +78,7 @@ test('AI connections and plain-words search fit a phone screen', async () => {
 	await page.goto('/settings/ai');
 	await expect(page.getByRole('checkbox', { name: 'Let AI apps connect' })).toBeVisible();
 	await noSidewaysScroll(page);
-	await page.goto('/search?q=' + encodeURIComponent('quiet orchard movie'));
+	await page.goto('/search?q=' + encodeURIComponent('driftwood moon movie'));
 	await expect(page.getByTestId('search-plain')).toBeVisible();
 	await noSidewaysScroll(page);
 	// Leave it off for the other specs.

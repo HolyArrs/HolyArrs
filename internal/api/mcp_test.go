@@ -232,23 +232,30 @@ func TestMCPToolsFollowPartsAndPerms(t *testing.T) {
 		return strings.Contains(","+strings.Join(names, ",")+",", ","+n+",")
 	}
 	own := f.toolNames(f.ownKey)
-	for _, n := range []string{"search_titles", "calendar", "downloads", "my_asks", "health", "ask_for_title", "approve_ask", "turn_down_ask"} {
+	for _, n := range []string{"search_titles", "calendar", "downloads", "my_asks", "health", "ask_for_title"} {
 		if !has(own, n) {
 			t.Fatalf("owner misses %s: %v", n, own)
 		}
 	}
 	mem := f.toolNames(f.memKey)
-	if has(mem, "approve_ask") || has(mem, "health") || !has(mem, "ask_for_title") {
+	if has(mem, "health") || !has(mem, "ask_for_title") {
 		t.Fatalf("member tools: %v", mem)
 	}
-	if _, msg := f.tool(f.memKey, "approve_ask", `{"ask_id":1}`); !strings.Contains(msg, "not available") {
-		t.Fatalf("member approve: %q", msg)
+	// No AI tool approves or turns down someone's request: that stays a
+	// person's click on the Requests page.
+	for _, n := range []string{"approve_ask", "turn_down_ask"} {
+		if has(own, n) {
+			t.Fatalf("owner has %s: %v", n, own)
+		}
+		if _, msg := f.tool(f.ownKey, n, `{"ask_id":1}`); !strings.Contains(msg, "no tool called") {
+			t.Fatalf("%s answered: %q", n, msg)
+		}
 	}
 	if err := f.pc.Set(context.Background(), parts.Wishlist, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	own = f.toolNames(f.ownKey)
-	if has(own, "my_asks") || has(own, "ask_for_title") || has(own, "approve_ask") || !has(own, "calendar") {
+	if has(own, "my_asks") || has(own, "ask_for_title") || !has(own, "calendar") {
 		t.Fatalf("Requests off: %v", own)
 	}
 	if _, msg := f.tool(f.ownKey, "ask_for_title", `{"tmdb_id":"693134"}`); !strings.Contains(msg, "Requests is off") {

@@ -10,6 +10,7 @@
 	import Icon from './Icon.svelte';
 	import Sessions from './Sessions.svelte';
 	import Confirm from './account/Confirm.svelte';
+	import QrCode from './account/QrCode.svelte';
 	import { needsConfirm } from './account/sections.ts';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import { onMount } from 'svelte';
@@ -137,7 +138,8 @@
 		if (method === 'oidc' || method.startsWith('oidc:')) return 'single sign-on';
 		if (method === 'forward_auth' || method.startsWith('forward_auth:')) return 'trusted proxy';
 		if (method === 'legacy') return 'an older session';
-		return method;
+		const server: Record<string, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
+		return server[method] ?? method;
 	}
 	const viaShort: Record<string, string> = { session: 'Password or linked account', api_key: 'API key', local_network: 'Local network' };
 
@@ -149,7 +151,7 @@
 	let pwBusy = $state(false);
 
 	// Two-factor
-	let setup = $state<{ secret: string; uri: string } | null>(null);
+	let setup = $state<{ secret: string; uri: string; qr?: string[] } | null>(null);
 	let code = $state('');
 	let offCode = $state('');
 	let tfError = $state('');
@@ -177,11 +179,13 @@
 		if (next.length < MIN_LENGTH) return void (pwError = `The new password needs at least ${MIN_LENGTH} characters.`);
 		if (next !== again) return void (pwError = 'The two new passwords are not the same.');
 		pwBusy = true;
+		const first = !session.s.hasPassword;
 		try {
-			await api.post('/auth/password', { current, new: next });
+			await api.post('/auth/password', first ? { new: next } : { current, new: next });
 			current = next = again = '';
 			pwOpen = false;
-			toasts.push('Password changed. Your other devices are signed out.', 'ok');
+			if (first) session.s.hasPassword = true;
+			toasts.push(first ? `Password set. You can also sign in as ${session.s.name} with it.` : 'Password changed. Your other devices are signed out.', 'ok');
 		} catch (err) {
 			pwError = strong(err);
 		} finally {
@@ -193,7 +197,7 @@
 		tfError = '';
 		tfBusy = true;
 		try {
-			setup = await api.post<{ secret: string; uri: string }>('/auth/two-factor/setup');
+			setup = await api.post<{ secret: string; uri: string; qr?: string[] }>('/auth/two-factor/setup');
 		} catch (err) {
 			tfError = strong(err);
 		} finally {
@@ -413,22 +417,29 @@
 		</div>
 		<div class="box" class:wide={pwOpen} data-testid="box-password">
 			<span class="label">Password</span>
-			{#if pwOpen}
+			{#if !session.s.hasPassword && !session.s.outsideRecent}
+				<span class="hint">None yet. To set one, sign out and sign in again with {authMethodWord(session.s.authMethod)}, then come back here within 10 minutes.</span>
+			{:else if !session.s.hasPassword && !pwOpen}
+				<div class="line"><Button type="button" onclick={() => (pwOpen = true)} data-testid="change-password">Set a password</Button></div>
+				<span class="hint">So you can still sign in when {authMethodWord(session.s.authMethod)} is down.</span>
+			{:else if pwOpen}
 				<Confirm action="password" onCancel={() => (pwOpen = false)}>
 					<form class="pw" onsubmit={changePassword} novalidate>
 						<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
-						<label class="sr-only" for="pw-current">Current password</label>
-						<input id="pw-current" class="input" type="password" placeholder="Current password" bind:value={current} autocomplete="current-password" />
+						{#if session.s.hasPassword}
+							<label class="sr-only" for="pw-current">Current password</label>
+							<input id="pw-current" class="input" type="password" placeholder="Current password" bind:value={current} autocomplete="current-password" />
+						{/if}
 						<label class="sr-only" for="pw-new">New password</label>
 						<input id="pw-new" class="input" type="password" placeholder="New password (at least {MIN_LENGTH})" bind:value={next} autocomplete="new-password" />
 						<label class="sr-only" for="pw-again">Confirm new password</label>
 						<input id="pw-again" class="input" type="password" placeholder="Confirm new password" bind:value={again} autocomplete="new-password" />
 						{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
 						<div class="row acts">
-							<Button variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>Change password</Button>
+							<Button variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>{session.s.hasPassword ? 'Change password' : 'Set password'}</Button>
 							<Button variant="plain" type="button" onclick={() => (pwOpen = false)}>Cancel</Button>
 						</div>
-						<span class="hint">Signs out your other devices.</span>
+						<span class="hint">{session.s.hasPassword ? 'Signs out your other devices.' : `Your ${authMethodWord(session.s.authMethod)} sign-in keeps working.`}</span>
 					</form>
 				</Confirm>
 			{:else}
@@ -504,7 +515,13 @@
 						{:else if setup}
 							<ol class="steps small">
 								<li>
-									Add an account in your authenticator app (<a class="ul" href={setup.uri}>open in the app</a>) or type:
+									{#if setup.qr?.length}
+										Scan this with your authenticator app:
+										<QrCode rows={setup.qr} label="QR code for your authenticator app" />
+										Or <a class="ul" href={setup.uri}>open it in the app</a>, or type:
+									{:else}
+										Add an account in your authenticator app (<a class="ul" href={setup.uri}>open in the app</a>) or type:
+									{/if}
 									<code class="key">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</code>
 								</li>
 								<li>Type the six-digit code it shows.</li>

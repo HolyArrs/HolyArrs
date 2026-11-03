@@ -49,6 +49,8 @@ type Input struct {
 	AllowLocal  *bool            `json:"allow_local_network"`
 	// Writable is "HolyArrs can change this Downloader" (on when new).
 	Writable *bool `json:"writable"`
+	// ClearFinished removes finished Usenet jobs after their Import (on when new).
+	ClearFinished *bool `json:"clear_finished"`
 }
 
 func hostOf(raw string) string {
@@ -135,6 +137,11 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		d.Writable = *in.Writable
 	} else if isNew {
 		d.Writable = true
+	}
+	if in.ClearFinished != nil {
+		d.ClearFinished = *in.ClearFinished
+	} else if isNew {
+		d.ClearFinished = true
 	}
 	if isNew {
 		d.AfterImport, d.State = "leave", "ok"

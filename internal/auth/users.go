@@ -271,6 +271,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusForbidden, "the owner cannot be changed here; use the reset-owner command to change the owner")
 		return
 	}
+	oldRating, oldCountry := maxRating, country
 	if by.Role != RoleOwner && role != RoleMember {
 		fail(w, http.StatusForbidden, "only the owner can change an admin")
 		return
@@ -343,6 +344,27 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: user %d changed by user %d: role %s, state %s, age-rating limit %q", id, by.UserID, newRole, newState, maxRating)
+	var what []string
+	if newRole != role {
+		what = append(what, "role "+role+" to "+newRole)
+	}
+	if !samePerms(perms, parsePerms(permsRaw)) {
+		what = append(what, "permissions")
+	}
+	if newState != state {
+		if newState == "active" {
+			what = append(what, "turned back on")
+		} else {
+			what = append(what, "turned off, signed out and API keys removed")
+		}
+	}
+	if maxRating != oldRating || country != oldCountry {
+		what = append(what, "age-rating limit")
+	}
+	if len(what) > 0 {
+		a.accountEvent(r, id, "edited", byName(r)+" changed "+a.userName(r.Context(), id)+": "+strings.Join(what, ", "),
+			map[string]any{"role": newRole, "state": newState})
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": id, "role": newRole, "state": newState,
 		"perms": Who{Role: newRole, Perms: perms}.Effective(), "max_rating": maxRating, "rating_country": country})
 }
@@ -378,6 +400,7 @@ func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: two-factor sign-in for user %d reset by user %d", id, by.UserID)
+	a.accountEvent(r, id, "two_factor_reset", byName(r)+" reset two-factor sign-in for "+a.userName(r.Context(), id), nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -435,6 +458,9 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
 			return err
 		}
+		if err := endOutsideLinks(tx, id); err != nil {
+			return err
+		}
 		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", id)
 		return err
 	})
@@ -443,6 +469,7 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: password for user %d set by user %d", id, by.UserID)
+	a.accountEvent(r, id, "password_set", byName(r)+" set a new password for "+a.userName(r.Context(), id)+"; signed out, API keys and outside sign-in links removed", nil)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -559,6 +586,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("auth: user %d made a %s invite", by.UserID, body.Role)
+	a.accountEvent(r, by.UserID, "invite_made", byName(r)+" made an invite for a new "+body.Role, map[string]any{"role": body.Role, "days": body.Days})
 	writeJSON(w, http.StatusCreated, map[string]any{"id": sum(tok), "path": invitePath + tok, "role": body.Role, "perms": perms,
 		"expires_at": store.FormatTime(expires), "note": "This link is shown only now and works once.",
 		"max_rating": maxRating, "rating_country": country})
@@ -755,8 +783,16 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// People who only sign in through a media server have no password yet
-	// and may set one.
-	if cur != "" && !CheckPassword(cur, body.Current) {
+	// and may set one. Changing one that exists needs a recent local proof,
+	// on purpose also for API keys: a key never changes its user's password.
+	first := cur == ""
+	if !first && !RecentLocal(r) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
+		return
+	}
+	if !first && !CheckPassword(cur, body.Current) {
+		a.failedEvent(r, who.Name, "current password")
+
 		fail(w, http.StatusUnauthorized, "the current password is wrong")
 		return
 	}
@@ -779,7 +815,14 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND hash != ?", who.UserID, keep); err != nil {
 			return err
 		}
-		// A key made by someone who knew the old password must stop too.
+		// A key or outside sign-in linked by someone who knew the old
+		// password must stop too. A first password has no old one: the
+		// media server sign-in they joined with stays.
+		if !first {
+			if err := endOutsideLinks(tx, who.UserID); err != nil {
+				return err
+			}
+		}
 		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", who.UserID)
 		return err
 	})
@@ -787,6 +830,26 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "password", err)
 		return
 	}
-	log.Printf("auth: user %d changed their password", who.UserID)
+	if first {
+		log.Printf("auth: user %d set a first password", who.UserID)
+		a.accountEvent(r, who.UserID, "password_changed", who.Name+" set a first password; other sessions and API keys removed, media server sign-in kept", nil)
+	} else {
+		log.Printf("auth: user %d changed their password", who.UserID)
+		a.accountEvent(r, who.UserID, "password_changed", who.Name+" changed their password; other sessions, API keys and outside sign-in links removed", nil)
+	}
+
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// samePerms says two permission lists hold the same permissions, in any order.
+func samePerms(x, y []Perm) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	for _, p := range x {
+		if !slices.Contains(y, p) {
+			return false
+		}
+	}
+	return true
 }

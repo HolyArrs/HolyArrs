@@ -127,6 +127,7 @@ func (a *Auth) forwardLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	id, name, err := a.ssoIdentity(r.Context(), "forward_auth", a.sso.forward.opt.Issuer, subject, display, a.sso.forward.opt.AllowJoin, 0)
 	if err != nil {
+		a.failedEvent(r, outsideName(display), ssoRefusal("forward_auth", err))
 		fail(w, http.StatusForbidden, "this identity is not allowed to sign in")
 		return
 	}

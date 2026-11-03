@@ -340,6 +340,9 @@
 	.bd.blur { filter: blur(40px) saturate(1.3) brightness(.6); transform: scale(1.2); }
 	.cover { display: block; width: clamp(120px, 14vw, 220px); aspect-ratio: 1; object-fit: cover; border-radius: 12px; box-shadow: 0 12px 40px rgb(0 0 0 / 50%); margin-bottom: 12px; }
 	.ui-thero :global(.bb-name.short) { min-height: 0; }
+	/* The billboard isolates its layers, so an open menu's panel can't rise past the sections below (the About band
+	   covered its last items on phones): lift the whole hero while a panel is open, still under the top bar. */
+	.ui-thero:has(:global(.ui-pop > .panel)) { position: relative; z-index: 10; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.b.award { border-color: rgb(245 197 24 / 75%); color: #f5c518; }
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }

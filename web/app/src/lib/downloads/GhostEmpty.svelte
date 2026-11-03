@@ -36,7 +36,7 @@
 	.b2 { flex: 1 1 auto !important; max-width: 120px; }
 	.pl { width: 18px; height: 8px !important; border-radius: 4px !important; margin-left: auto; }
 	.t { margin: 0; color: var(--text-muted); font: var(--t-callout); font-weight: 500; overflow-wrap: anywhere; }
-	.x { margin: 3px 0 0; max-width: 36ch; color: var(--text-muted); opacity: 0.8; font: var(--t-footnote); }
+	.x { margin: 3px 0 0; max-width: 36ch; color: var(--text-muted); font: var(--t-footnote); }
 	.a { margin-top: 8px; }
 	.a :global(button), .a :global(a) { padding: 4px 6px; border: 0; background: none; color: var(--text-muted); font: var(--t-footnote); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 	.a :global(button:focus-visible), .a :global(a:focus-visible) { outline: 2px solid var(--text-muted); outline-offset: 2px; border-radius: 4px; }

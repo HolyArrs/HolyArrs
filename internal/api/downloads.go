@@ -54,6 +54,10 @@ type DownloadRow struct {
 	UpdatedAt      time.Time  `json:"updated_at"`
 	SlotState      string     `json:"slot_state,omitempty"`
 	CanAct         bool       `json:"can_act"` // Mark failed and Remove
+	// ClientLocked says HolyArrs may not change this row's Downloader (its switch
+	// is off, or it is listed read only): pause, queue and torrent controls are off,
+	// Mark failed and Remove (HolyArrs' own records) still work.
+	ClientLocked bool `json:"client_locked,omitempty"`
 	// Replaced says a failed copy was turned down and HolyArrs moved on (it
 	// searches again or already has another copy), so it is no problem.
 	Replaced bool `json:"replaced,omitempty"`
@@ -408,6 +412,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		}
 		row.Label = PhaseLabels[row.Phase]
 		row.CanAct = row.Active && manage
+		row.ClientLocked = downloader.ReadOnlyFor(n)
 		if (d.State == "failed" || d.State == "vanished") && row.SlotState != "" && row.SlotState != string(domain.SlotFailed) && row.SlotState != string(domain.SlotNeedsADecision) {
 			row.Replaced = true
 		}

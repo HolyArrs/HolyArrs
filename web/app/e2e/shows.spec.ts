@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openRequests, openSeason, seasonCount, episodeAction, episodeKept, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openRequests, openSeason, openSeasonNamed, seasonCount, episodeAction, episodeKept, episodeState, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss
@@ -74,38 +74,38 @@ test('the owner finds a show and adds it with only the latest season kept', asyn
 	await own.getByRole('button', { name: 'More actions', exact: true }).click();
 	await expect(own.getByRole('menuitem', { name: 'Search now', exact: true })).toBeVisible();
 	await own.keyboard.press('Escape');
-	// One season shows at a time; the Season picker holds all three.
+	// The Library tab lists all three seasons, each with its keep switch.
 	expect(await seasonCount(own)).toBe(3);
-	await openSeason(own, 0);
 	expect(await seasonKept(own, 'Specials')).toBe(false);
-	await openSeason(own, 1);
 	expect(await seasonKept(own, 'Season 1')).toBe(false);
-	const s2 = await openSeason(own, 2);
 	expect(await seasonKept(own, 'Season 2')).toBe(true);
-	await expect(s2.getByTestId('season-line')).toContainText('0 of 1 aired in the Library · 1 missing · 1 not out yet');
+	// Season 2: one episode aired and missing, one not out yet.
+	const s2 = await openSeason(own, 2);
+	await expect(s2.locator('.lib-count')).toHaveText('0 / 2');
+	await expect(await episodeState(own, 'S02E01')).toHaveText('Missing');
+	await expect(await episodeState(own, 'S02E02')).toHaveText('Not out yet');
 	await axe(own, 'show page');
 });
 
 test('seasons and episodes turn on and off; each episode says its state and why', async () => {
-	await openSeason(own, 1);
 	await toggleSeasonKept(own, 'Season 1');
-	await expect(own.getByRole('status')).toContainText('Season 1: HolyArrs keeps it up to date.');
 	expect(await seasonKept(own, 'Season 1')).toBe(true);
-	await expect(own.getByTestId('season').getByTestId('season-line')).toContainText('2 missing');
+	// Both of its episodes are missing, so Get the missing episodes is offered.
+	const s1 = await openSeasonNamed(own, 'Season 1');
+	await expect(s1.locator('.lib-count')).toHaveText('0 / 2');
+	await expect(s1.getByRole('button', { name: 'Get the missing episodes of season 1' })).toBeEnabled();
 
-	const eps = (await openSeason(own, 2)).getByTestId('episode');
+	const s2 = await openSeason(own, 2);
+	const eps = s2.getByRole('button', { name: /^Episode \d+:/ });
 	await expect(eps).toHaveCount(2);
-	await expect(eps.nth(0)).toContainText('Episode 1');
-	await expect(eps.nth(0)).toContainText('Return of the Fog');
-	await expect(eps.nth(0)).toContainText('Missing');
-	await expect(eps.nth(1)).toContainText('Not out yet');
-	await expect(eps.nth(1).getByTestId('episode-why')).toContainText('Counts as missing once it airs');
+	await expect(eps.nth(0)).toHaveAccessibleName('Episode 1: Return of the Fog');
+	await expect(s2.locator('.lib-ep-st')).toHaveText(['Missing', 'Not out yet']);
+	// An episode not out yet cannot be looked for yet.
+	await expect(s2.getByRole('button', { name: 'Look for episode 2' })).toBeDisabled();
 	await episodeAction(own, 'S02E01', 'Keep S02E01 up to date');
 	await expect.poll(() => episodeKept(own, 'S02E01')).toBe(false);
 	await own.reload();
-	await openSeason(own, 2);
 	expect(await episodeKept(own, 'S02E01')).toBe(false);
-	await expect(own.getByTestId('season').getByTestId('episode').nth(0).getByTestId('episode-why')).toContainText('Keep up to date is off for this episode.');
 	await episodeAction(own, 'S02E01', 'Keep S02E01 up to date');
 	await expect.poll(() => episodeKept(own, 'S02E01')).toBe(true);
 });
@@ -175,9 +175,10 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await expect(dialog).toBeHidden();
 	await expect(max.getByRole('status')).toContainText('Asked for Lantern Street');
 
-	// A show already in the Library offers to ask for the seasons it does not keep.
+	// A show already in the Library opens as a Library title for a member (no Add, no tools).
 	await openFromSearch(max, 'harbour', 'Harbour Lights', 'show');
-	await expect(max.getByTestId('ask-seasons-more')).toBeVisible();
+	await expect(max.getByTestId('hero-library')).toBeVisible();
+	await expect(max.getByRole('button', { name: 'More actions', exact: true })).toHaveCount(0);
 
 	await max.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = max.getByTestId('ask').filter({ hasText: 'Lantern Street' });
@@ -193,33 +194,18 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	const phone = await fresh(browser, 412);
 	await signIn(phone, owner());
 	await openRequests(phone);
-	const ask = phone.getByTestId('ask').filter({ hasText: 'Lantern Street' });
-	await expect(ask.getByTestId('asked-by')).toContainText('Asked by max');
-	// The row's Approve is one tap with Undo; Review holds Choose what to add.
-	await ask.getByRole('button', { name: 'Review Lantern Street' }).click();
-	await phone.getByRole('button', { name: 'Choose what to add' }).click();
-	const dialog = phone.getByRole('dialog', { name: /^Approve Lantern Street/ });
-	await expect(dialog).toContainText('for seasons 1 and 2');
-	await expect(dialog.getByLabel('Library folder')).toContainText('Shows');
-	await expect(dialog.getByLabel('Library folder')).not.toContainText('Movies');
-	await expect(dialog).toContainText('keeps seasons 1 and 2 up to date');
-	await dialog.getByLabel('Note (optional)').fill('Seasons 1 and 2 coming up');
+	// Approvers get the request cards: who asked is on the card, Approve is one tap.
+	await expect(phone.getByRole('button', { name: 'Open Lantern Street, asked by max' })).toBeVisible();
 	await noSidewaysScroll(phone);
-	await dialog.getByRole('button', { name: 'Approve' }).click();
-	await expect(dialog).toBeHidden();
-	await phone.getByRole('button', { name: /^Approved/ }).click();
-	await expect(ask.getByTestId('ask-state')).toHaveText('Approved');
-	await expect(ask.getByTestId('decided-by')).toContainText('Approved by luis');
+	await phone.getByRole('button', { name: 'Approve Lantern Street' }).click();
+	await expect(phone.getByRole('button', { name: 'Approve Lantern Street' })).toHaveCount(0);
 
 	// The show page names who asked and keeps exactly the asked seasons.
-	await ask.getByRole('link', { name: /Lantern Street/ }).click();
-	await expect(phone.getByTestId('title-asks')).toContainText('max');
-	await expect(phone.getByTestId('title-asks')).toContainText('seasons 1 and 2');
-	await openSeason(phone, 0);
+	await phone.goto('/library');
+	await phone.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Lantern Street' }).click();
+	await expect(phone.getByTestId('asked-by-line')).toContainText(/max/i);
 	expect(await seasonKept(phone, 'Season 1')).toBe(true);
-	await openSeason(phone, 1);
 	expect(await seasonKept(phone, 'Season 2')).toBe(true);
-	await openSeason(phone, 2);
 	expect(await seasonKept(phone, 'Season 3')).toBe(false);
 	await noSidewaysScroll(phone);
 	await axe(phone, 'show page phone');
@@ -232,10 +218,10 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	// max reads the message; members see no switches on the show page.
 	await max.goto('/requests');
 	await expect(max.getByTestId('message').first()).toContainText('Lantern Street (2023), seasons 1 and 2 was approved by luis');
-	await expect(max.getByTestId('message').first()).toContainText('Seasons 1 and 2 coming up');
 	await max.getByTestId('ask').filter({ hasText: 'Lantern Street' }).getByRole('link', { name: /Lantern Street/ }).click();
 	expect(await seasonCount(max)).toBe(3);
 	await expect(max.getByRole('checkbox')).toHaveCount(0);
+	await expect(max.getByRole('button', { name: /up to date\. Click/ })).toHaveCount(0);
 	await expect(max.getByRole('button', { name: /^Episode actions for/ })).toHaveCount(0);
 	await expect(max.getByRole('button', { name: 'Edit' })).toHaveCount(0);
 	await noSidewaysScroll(max);

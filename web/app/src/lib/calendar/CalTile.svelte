@@ -87,7 +87,8 @@
 
 <style>
 	.ct { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-	.ct.past { opacity: 0.75; }
+	/* A past day fades its picture only; its words keep full contrast. */
+	.ct.past .pile { opacity: 0.75; }
 	/* Every card keeps 8px under its art; a stack's layers peek out there, so all tops line up. */
 	.pile { position: relative; display: flex; flex-direction: column; padding-bottom: 8px; }
 	.layer { position: absolute; border-radius: var(--r-card); background: var(--surface-3); box-shadow: var(--shadow-card); }
@@ -117,4 +118,6 @@
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.art:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 	}
+	/* Phones: the caption button's tap area grows to 44px; padding and margin cancel, so the card keeps its size. */
+	@media (max-width: 767px) and (pointer: coarse) { .tap { position: relative; padding-block: 3px; margin-block: -3px; } }
 </style>

@@ -66,7 +66,7 @@
 	.head { display: flex; align-items: center; justify-content: space-between; gap: 6px; font: var(--t-subhead); }
 	.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; }
 	.wd { padding: 4px 0; color: var(--text-muted); font: var(--t-caption); }
-	.pd { position: relative; height: 34px; display: grid; place-items: center; border-radius: 999px; color: var(--text-faint); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.pd { position: relative; height: 34px; display: grid; place-items: center; border-radius: 999px; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.pd .n { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 999px; }
 	.busy { color: var(--text); font-weight: 600; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 	.busy:hover { background: var(--surface-3); }

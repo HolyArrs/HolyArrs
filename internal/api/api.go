@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -925,6 +926,9 @@ type EventView struct {
 	// Version names the Version (such as 4K) the Event is about, when its
 	// title has more than one.
 	Version string `json:"version,omitempty"`
+	// ActorName is the member who did it, so History can say who without
+	// the admin-only member list.
+	ActorName string `json:"actor_name,omitempty"`
 }
 
 // parseDay reads a date (2006-01-02) or a full RFC 3339 time.
@@ -1060,8 +1064,9 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, k := range strings.Split(q.Get("kind"), ",") {
 		if k = strings.TrimSpace(k); k != "" {
-			if len(k) > 60 || len(f.Kinds) >= 50 {
-				fail(w, http.StatusBadRequest, "kind is a comma list of at most 50 Event kinds")
+			// History's default list (every kind but routine) is about 52 long.
+			if len(k) > 60 || len(f.Kinds) >= 64 {
+				fail(w, http.StatusBadRequest, "kind is a comma list of at most 64 Event kinds")
 				return
 			}
 			f.Kinds = append(f.Kinds, k)
@@ -1131,9 +1136,30 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	// Member names for the rows a person did (a missing name stays empty).
+	var people []int64
+	for _, e := range es {
+		// An AI app acts with a member's key; its rows name that member too.
+		if (e.Actor.Kind == "user" || e.Actor.Kind == "ai") && e.Actor.ID != 0 && !slices.Contains(people, e.Actor.ID) {
+			people = append(people, e.Actor.ID)
+		}
+	}
+	names := map[int64]string{}
+	_ = eachIn(r.Context(), a.s.Store.Read(), `SELECT id, name FROM users WHERE id IN (%s)`, people, func(rs *sql.Rows) error {
+		var id int64
+		var n string
+		if err := rs.Scan(&id, &n); err != nil {
+			return err
+		}
+		names[id] = n
+		return nil
+	})
 	out := make([]EventView, 0, len(es))
 	for _, e := range es {
 		v := EventView{Event: e}
+		if e.Actor.Kind == "user" || e.Actor.Kind == "ai" {
+			v.ActorName = names[e.Actor.ID]
+		}
 		if e.TitleID != nil {
 			v.TitleName = page.titleName(e)
 			v.Episode = page.episode(e)

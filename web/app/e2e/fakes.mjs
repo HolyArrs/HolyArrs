@@ -32,6 +32,8 @@ export const sabKey = ['stand', 'in', 'sab', 'key'].join('-');
 // The lab's fake Subtitle site (cmd/holyarrs-fakesubs), started by server.mjs.
 export const subsPort = Number(process.env.HOLYARRS_E2E_SUBS_PORT ?? 18738);
 export const mediaUser = { name: 'mum', password: ['e2e', 'media', 'pw'].join('-') };
+/** The fake Emby lives under /emby on the fake Jellyfin's port, with its own person. */
+export const embyUser = { name: 'gran', password: ['e2e', 'emby', 'pw'].join('-') };
 /** The only API key the fake Jellyfin takes for the media server link (test-only). */
 export const jellyKey = ['stand', 'in', 'jf'].join('-');
 /** A fake old Radarr and a fake old Seerr for the move tests (test-only key). */
@@ -128,7 +130,10 @@ export const tmdbMovies = [
 	{ id: 900015, title: 'Quill Atlas', release_date: '2011-05-05', imdb_id: 'tt9000150', overview: 'An atlas that redraws itself with a quill.', dates: [[3, '2011-05-05'], [4, '2011-07-01']] },
 	// The old Radarr's one movie the move test adopts in place (move.spec.ts).
 	{ id: 900016, title: 'Lodestone Ferry', release_date: '2010-06-06', imdb_id: 'tt9000160', overview: 'A ferry that only sails toward north.', dates: [[3, '2010-06-06'], [4, '2010-08-01']] },
-	{ id: 900004, title: 'Glass Meridian', release_date: '2021-03-03', imdb_id: 'tt9000040', overview: 'A line of glass towers marks noon across a desert.', dates: [[3, '2021-03-03'], [4, '2021-05-01']] }
+	{ id: 900004, title: 'Glass Meridian', release_date: '2021-03-03', imdb_id: 'tt9000040', overview: 'A line of glass towers marks noon across a desert.', dates: [[3, '2021-03-03'], [4, '2021-05-01']] },
+	// One movie series (library-tools.spec.ts removes it): the only movies with belongs_to_collection.
+	{ id: 900021, title: 'Brumwick Gate', release_date: '2008-09-09', imdb_id: 'tt9000210', overview: 'A town gate that opens onto a different town each night.', dates: [[3, '2008-09-09'], [4, '2008-12-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
+	{ id: 900022, title: 'Brumwick Gate Again', release_date: '2012-10-10', imdb_id: 'tt9000220', overview: 'The gate opens once more, onto the town it left.', dates: [[3, '2012-10-10'], [4, '2013-01-01']], collection: { id: 950001, name: 'The Brumwick Films' } }
 ];
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
@@ -205,6 +210,7 @@ function tmdbMovie(m) {
 	return {
 		id: m.id, title: m.title, release_date: m.release_date, overview: m.overview, original_language: 'en', runtime: 101,
 		poster_path: `/p${m.id}.jpg`, imdb_id: m.imdb_id,
+		...('collection' in m && m.collection ? { belongs_to_collection: { id: m.collection.id, name: m.collection.name } } : {}),
 		release_dates: { results: [{ iso_3166_1: 'US', release_dates: m.dates.map(([type, d]) => ({ type, release_date: `${d}T00:00:00.000Z`, certification: m.cert ?? '' })) }] }
 	};
 }
@@ -480,6 +486,19 @@ export function startFakes() {
 	/** @type {unknown[]} */
 	const updates = [];
 	const jelly = createServer(async (req, res) => {
+		// Emby, as it often sits at http://host/emby. It wants the X-Emby-Authorization header.
+		if (req.url?.startsWith('/emby/')) {
+			if (req.method === 'POST' && req.url === '/emby/Users/AuthenticateByName') {
+				if (!String(req.headers['x-emby-authorization'] ?? '').startsWith('MediaBrowser ')) return send(res, 400, 'no client header', 'text/plain');
+				const b = JSON.parse((await body(req)) || '{}');
+				if (b.Username === embyUser.name && b.Pw === embyUser.password)
+					return send(res, 200, { User: { Id: 'em-1', Name: 'Gran', Policy: { IsDisabled: false } }, AccessToken: 'etok' });
+				return send(res, 401, 'Error processing request.', 'text/plain');
+			}
+			if (req.method === 'POST' && req.url === '/emby/Sessions/Logout') return send(res, 204, '');
+			if (req.method === 'GET' && req.url === '/emby/System/Info/Public') return send(res, 200, { ServerName: 'Fake Emby', Version: '4.8.0', ProductName: 'Emby Server', Id: 'fake-emby' });
+			return send(res, 404, { error: 'no route' });
+		}
 		if (req.method === 'POST' && req.url === '/Users/AuthenticateByName') {
 			const b = JSON.parse((await body(req)) || '{}');
 			if (b.Username === mediaUser.name && b.Pw === mediaUser.password)
@@ -584,6 +603,7 @@ export function startFakes() {
 	const deleted = [];
 	/** @type {string[]} */
 	const added = [];
+	let mainRid = 0;
 	const qbit = createServer(async (req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		const form = new URLSearchParams(req.method === 'POST' ? await body(req) : url.search);
@@ -619,6 +639,12 @@ export function startFakes() {
 				const hashes = form.get('hashes');
 				const cat = form.get('category');
 				return send(res, 200, [...torrents.values()].filter((t) => (!hashes || hashes.includes(String(t.hash))) && (!cat || t.category === cat)).map(({ files, ...t }) => t));
+			}
+			case '/api/v2/sync/maindata': {
+				// HolyArrs follows qBittorrent through sync/maindata: always a full answer here.
+				mainRid++;
+				const list = Object.fromEntries([...torrents.values()].map(({ files, ...t }) => [t.hash, t]));
+				return send(res, 200, { rid: mainRid, full_update: true, torrents: list, categories: {}, server_state: { dl_info_speed: 0, up_info_speed: 0, connection_status: 'connected', free_space_on_disk: 1_000_000_000_000 } });
 			}
 			case '/api/v2/torrents/files': {
 				const t = torrents.get(form.get('hash') ?? '');

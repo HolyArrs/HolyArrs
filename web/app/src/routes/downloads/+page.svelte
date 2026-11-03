@@ -357,6 +357,8 @@
 		removeBusy = true;
 		busy = list.length === 1 ? list[0].id : busy;
 		const bad: string[] = [];
+		// Rows whose remove failed: a second press of Remove sends only these, never the ones already gone.
+		const failed = new Set<DownloadRow>();
 		try {
 			// Client items go in one call per Downloader; HolyArrs' own each through HolyArrs.
 			const outsideRows = list.filter((r) => r.client_item);
@@ -365,6 +367,7 @@
 					await api.post(`/downloaders/${id}/bulk`, { action: 'remove', hashes: rows.map((r) => r.hash), delete_files: choice.delete_files });
 				} catch (err) {
 					bad.push(message(err));
+					rows.forEach((r) => failed.add(r));
 				}
 			}
 			// Usenet client items have no torrent bulk call: one call each.
@@ -373,6 +376,7 @@
 					await api.post(`/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash!)}/remove`, { delete_files: choice.delete_files });
 				} catch (err) {
 					bad.push(`${who(r)}: ${message(err)}`);
+					failed.add(r);
 				}
 			}
 			for (const r of list.filter((x) => !x.client_item)) {
@@ -380,10 +384,12 @@
 					await api.post(`/downloads/${r.id}/remove`, removeBody(list.length === 1 ? choice : { delete_files: choice.delete_files, turn_down: false, search_again: false }));
 				} catch (err) {
 					bad.push(`${who(r)}: ${message(err)}`);
+					failed.add(r);
 				}
 			}
 			if (bad.length) {
 				removeError = bad.join(' · ');
+				targets = targets.filter((r) => failed.has(r) || blocked.includes(r));
 			} else {
 				removeOpen = false;
 				const one = list.length === 1 && !list[0].client_item;
@@ -410,6 +416,18 @@
 		}
 	}
 	// Try again for many failed Usenet jobs: one call each.
+	// One batch at a time: a second click while a selection action, Download again or
+	// Pause all is still on its way is dropped, so nothing is sent twice.
+	let batchBusy = $state(false);
+	async function batch(run: () => Promise<void>) {
+		if (batchBusy) return;
+		batchBusy = true;
+		try {
+			await run();
+		} finally {
+			batchBusy = false;
+		}
+	}
 	async function retryMany(list: DownloadRow[]) {
 		const bad: string[] = [];
 		for (const r of list) {
@@ -544,7 +562,7 @@
 	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
 	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={all} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={bulk} onsteer={steer} onremovemany={askRemoveMany} onretry={retryMany} {watch} {upTotal} {notes} />
+	<DlSections changeOutside={session.can('settings')} rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={(p) => batch(() => all(p))} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={(l, a) => batch(() => bulk(l, a))} onsteer={steer} onremovemany={askRemoveMany} onretry={(l) => batch(() => retryMany(l))} {batchBusy} {watch} {upTotal} {notes} />
 	{#if moreOutside}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit += 200; void load(); }} data-testid="dl-outside-more">Show more torrents</Button></p>{/if}
 {/if}
 </PageLoader>

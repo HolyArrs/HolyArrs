@@ -77,6 +77,7 @@ func newLabAlbum(t *testing.T) labAlbum {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
+	labNoSizeFloors(t, s)
 	x := labAlbum{s: s, music: t.TempDir()}
 	src := os.Getenv("HOLYARRS_LAB_SOURCE")
 	if src == "" {

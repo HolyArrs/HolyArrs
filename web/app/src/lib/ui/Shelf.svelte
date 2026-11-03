@@ -157,6 +157,11 @@
 	.tools { flex: 1 0 100%; min-width: 0; }
 	h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	h2 a:hover { color: var(--accent-text); }
+	/* Phones: the shelf name is a 44px-tall target, like See all beside it. */
+	@media (max-width: 767px) and (pointer: coarse) {
+		h2 a { position: relative; }
+		h2 a::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+	}
 	p { color: var(--text-muted); font: var(--t-callout); margin-top: 2px; }
 	.all { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; flex: none; color: var(--accent-text); font: var(--t-callout); font-weight: 500; border-radius: 6px; }
 	.all:hover { text-decoration: underline; text-underline-offset: 3px; }
