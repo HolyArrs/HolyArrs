@@ -436,6 +436,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n > 0 {
 		log.Printf("secrets: encrypted %d secrets that were stored in the clear", n)
 	}
+	// Not fatal: a Source left as it was still works.
+	if n, err := source.HidePathKeys(ctx, s, vault); err != nil {
+		log.Printf("secrets: moving rss passkeys into the vault: %v", err)
+	} else if n > 0 {
+		log.Printf("secrets: moved the passkeys of %d rss Sources into the vault", n)
+	}
 	// Every value the vault stores is masked before the save returns; the
 	// minute loop is a safety net that also masks, in the files, values
 	// changed or removed by any code path before the vault forgets them.

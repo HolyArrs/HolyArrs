@@ -109,6 +109,7 @@ type Auth struct {
 	now             func() time.Time
 	hash            hashParams
 	skipLocal       atomic.Bool
+	localNets       atomic.Pointer[localNets]
 	dummy           string
 	hosts           map[string]bool
 	requireAdmin2FA atomic.Bool
@@ -204,6 +205,7 @@ func New(s *store.Store, opt Options) *Auth {
 	if err == nil {
 		a.skipLocal.Store(v == "true")
 	}
+	a.localNets.Store(a.loadLocalNets(context.Background()))
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
 	a.initSSO(opt.SSO)
 	return a
@@ -388,17 +390,6 @@ func canonicalHostPort(authority, scheme string) (string, bool) {
 	return net.JoinHostPort(host, strconv.Itoa(n)), true
 }
 
-// isLocal reports whether the peer address is on a private network or this
-// machine.
-func isLocal(remote string) bool {
-	host, _, err := net.SplitHostPort(remote)
-	if err != nil {
-		host = remote
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast())
-}
-
 // hostAllowed checks the Host header: IP literals, localhost and the
 // configured names pass. A rebinding page always carries its own domain name
 // in Host, so it fails here.
@@ -423,13 +414,13 @@ func (a *Auth) trustedProxy(ip net.IP) bool {
 	return false
 }
 
-// localPeer says whether the request comes from the local network. When a
+// localPeer says whether the request comes from a listed local network. When a
 // forwarding header is present the peer must be a trusted proxy, and then the
 // address it forwards is the one checked.
 func (a *Auth) localPeer(r *http.Request) bool {
 	xff, fwd, real := r.Header.Get("X-Forwarded-For"), r.Header.Get("Forwarded"), r.Header.Get("X-Real-IP")
 	if xff == "" && fwd == "" && real == "" {
-		return isLocal(r.RemoteAddr)
+		return a.isLocal(r.RemoteAddr)
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -444,7 +435,7 @@ func (a *Auth) localPeer(r *http.Request) bool {
 		parts := strings.Split(xff, ",")
 		client = strings.TrimSpace(parts[len(parts)-1])
 	}
-	return isLocal(client)
+	return a.isLocal(client)
 }
 
 // Strong reports whether the request uses a browser session or an API key.

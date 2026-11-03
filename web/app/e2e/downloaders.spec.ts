@@ -24,7 +24,8 @@ async function addDownloader(kind: 'qBittorrent' | 'SABnzbd', name: string, url:
 	await page.getByRole('radio', { name: new RegExp(kind) }).check();
 	await page.getByLabel('Name', { exact: true }).fill(name);
 	await page.getByLabel('Address', { exact: true }).fill(url);
-	if (secret) await page.getByLabel(kind === 'SABnzbd' ? 'API key' : 'Password', { exact: true }).fill(secret);
+	// SABnzbd and qBittorrent (its default way in) both take an API key.
+	if (secret) await page.getByRole('textbox', { name: 'API key', exact: true }).fill(secret);
 	if (category) await page.getByLabel('Category', { exact: true }).fill(category);
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 }
@@ -61,7 +62,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await r.getByRole('button', { name: 'Pause' }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Paused');
 	await expect(r.getByTestId('downloader-text')).toContainText('Paused by you');
-	await r.getByRole('button', { name: 'Start' }).click();
+	await r.getByRole('button', { name: 'Resume' }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
 });
 
@@ -87,7 +88,8 @@ test('the settings for downloads that go wrong are saved and checked', async () 
 
 test('a movie downloads through qBittorrent; Mark failed sends the next Release by itself', async () => {
 	await page.goto('/settings/downloaders');
-	await addDownloader('qBittorrent', 'Lab qBittorrent', qbit);
+	// A new qBittorrent needs its API key; the fake one accepts any.
+	await addDownloader('qBittorrent', 'Lab qBittorrent', qbit, 'e2e-any-key');
 	await expect(row('Lab qBittorrent').getByTestId('downloader-test')).toHaveText('It answered: qbittorrent v5.2.4.');
 
 	// Add a movie and let it search now.

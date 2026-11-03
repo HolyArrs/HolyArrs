@@ -128,6 +128,11 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 	expect((await posts()).some((c) => c.includes('kim asked for Copper Lighthouse'))).toBe(true);
 });
 
+// An approver's card on the Requests page (the cards list, every width).
+function card(p: Page, name: string) {
+	return p.getByRole('list', { name: 'Requests' }).getByRole('listitem').filter({ hasText: name });
+}
+
 test('the owner approves from a phone: the movie is added and kim is told', async () => {
 	await own.goto('/library');
 	// Approvers find Requests in the Manage sheet, under Your stuff; the tab shows a dot.
@@ -135,39 +140,48 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	await expect(tab).toHaveAccessibleName(/items need attention/);
 	await tab.click();
 	await own.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: 'Requests, 1 waiting' }).click();
-	await expect(own.getByRole('button', { name: /^Waiting/ })).toHaveAttribute('aria-pressed', 'true');
-	const ask = own.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
-	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');
+	// Approvers open on Pending, with the count on the tab.
+	await expect(own.getByRole('button', { name: /^Pending 1/ })).toHaveAttribute('aria-pressed', 'true');
+	const ask = card(own, 'Copper Lighthouse');
+	await expect(ask).toContainText('kim');
+	await expect(ask.getByRole('button', { name: 'Open Copper Lighthouse, asked by kim' })).toBeVisible();
 	await noSidewaysScroll(own);
-	// The row's Approve is one tap with Undo; Review holds Choose what to add.
-	await ask.getByRole('button', { name: 'Review Copper Lighthouse' }).click();
-	await own.getByRole('button', { name: 'Choose what to add' }).click();
-	const dialog = own.getByRole('dialog', { name: /^Approve Copper Lighthouse/ });
-	await expect(dialog.getByLabel('Library folder')).toBeVisible();
-	await dialog.getByLabel('Note (optional)').fill('Friday night pick');
+	// The card opens its window: the banner says who asked, and the window opens
+	// straight into What to add, which holds the Approve.
+	await ask.getByRole('button', { name: 'Open Copper Lighthouse, asked by kim' }).click();
+	const win = own.getByRole('dialog', { name: 'Copper Lighthouse' });
+	await expect(win).toBeVisible();
+	await expect(win.getByTestId('ask-banner')).toContainText('kim asked');
+	const sheet = win.getByRole('region', { name: 'What to add' });
+	await expect(sheet).toBeVisible();
+	await expect(sheet).toContainText('Approving adds the movie');
 	await noSidewaysScroll(own);
-	await dialog.getByRole('button', { name: 'Approve' }).click();
-	await expect(dialog).toBeHidden();
+	await sheet.getByRole('button', { name: 'Approve', exact: true }).click();
+	await expect(win).toBeHidden();
+	// Undo waits at the bottom for a few seconds, then the answer is sent.
+	await expect(own.getByRole('status').filter({ hasText: 'Approved Copper Lighthouse.' }).getByRole('button', { name: 'Undo' })).toBeVisible();
+	await expect(own.getByRole('button', { name: /^Pending 0/ })).toBeVisible();
+	await expect.poll(async () => (await posts()).some((c) => c.startsWith(`<@${kimDiscord}> **Approved: Copper Lighthouse`)), { timeout: 20_000 }).toBe(true);
 
-	await own.getByRole('button', { name: /^Approved/ }).click();
-	await expect(ask.getByTestId('ask-state')).toHaveText('Approved');
-	await expect(ask.getByTestId('decided-by')).toContainText('Approved by luis');
-	await expect.poll(async () => (await posts()).some((c) => c.startsWith(`<@${kimDiscord}> **Approved: Copper Lighthouse`))).toBe(true);
-
-	// The Movie page names who asked and who approved.
-	await ask.getByRole('link', { name: /Copper Lighthouse/ }).click();
-	const asks = own.getByTestId('title-asks');
-	await expect(asks).toContainText('kim');
-	await expect(asks).toContainText('Approved by luis');
+	// Processing holds it; its window says it is being got for kim.
+	await own.getByRole('button', { name: /^Processing/ }).click();
+	await ask.getByRole('button', { name: /^Open Copper Lighthouse/ }).click();
+	await expect(win.getByTestId('ask-status')).toContainText('Getting it for kim');
+	// The Movie page names who asked (the one title page has no Requests section, so
+	// who approved is checked in the Events list below).
+	await win.getByTestId('ask-title-page').click();
+	await expect(own).toHaveURL(/\/library\/\d+/);
+	await expect(own.getByTestId('asked-by-line')).toContainText('Asked by kim');
 	// The Events list names them (Home no longer has a Latest Events row).
 	// kim asked, took it back and asked again: two ask events, the take-back between them.
 	const events = ((await (await own.request.get('/api/v1/events?limit=200')).json()) as { events: { Summary: string }[] }).events.map((e) => e.Summary);
 	expect(events.filter((e) => /asked for Copper Lighthouse/.test(e))).toHaveLength(2);
 	expect(events.filter((e) => /took back the ask for Copper Lighthouse/.test(e))).toHaveLength(1);
+	expect(events.filter((e) => /Copper Lighthouse.*: approved by luis/.test(e))).toHaveLength(1);
 
 	await kim.goto('/requests');
+	await kim.getByText(/^Show the latest/).click();
 	await expect(kim.getByTestId('message').first()).toContainText('Copper Lighthouse (2017) was approved by luis');
-	await expect(kim.getByTestId('message').first()).toContainText('Friday night pick');
 	await expect(kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' }).getByTestId('ask-state')).toHaveText('Approved');
 	await kim.getByRole('button', { name: 'Mark all read' }).click();
 	await expect(kim.getByRole('button', { name: 'Mark all read' })).toHaveCount(0);
@@ -180,14 +194,17 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await expect(velvet).toBeDisabled();
 
 	await own.goto('/requests');
-	const ask = own.getByTestId('ask').filter({ hasText: 'Velvet Tide' });
-	await ask.getByRole('button', { name: 'Decline' }).click();
-	await own.getByRole('dialog').getByLabel(/^Why/).fill('We have it on disc');
-	await own.getByRole('dialog').getByRole('button', { name: 'Decline' }).click();
-	await own.getByRole('button', { name: /^Declined/ }).click();
-	await expect(ask.getByTestId('ask-state')).toHaveText('Declined');
-	// A turn down is sent after its few seconds of Undo.
+	await card(own, 'Velvet Tide').getByRole('button', { name: 'Decline Velvet Tide' }).click();
+	const why = own.getByRole('dialog', { name: /^Decline Velvet Tide/ });
+	await expect(why.getByLabel(/^Reason/)).toBeFocused();
+	await why.getByLabel(/^Reason/).fill('We have it on disc');
+	await why.getByRole('button', { name: 'Decline', exact: true }).click();
+	await expect(why).toBeHidden();
+	await own.getByRole('button', { name: /^Done/ }).click();
+	const ask = card(own, 'Velvet Tide');
+	// A turn down is sent after its few seconds of Undo (the card says Sending… till then).
 	await expect(ask.getByText('Sending…')).toHaveCount(0, { timeout: 15_000 });
+	await expect(ask).toContainText('Declined');
 
 	await kim.goto('/requests');
 	await kim.getByRole('button', { name: /^Declined/ }).click();

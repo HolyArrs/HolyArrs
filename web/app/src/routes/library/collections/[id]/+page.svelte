@@ -74,7 +74,7 @@
 			<li>
 				<label class="title">
 					<input type="checkbox" checked={selected.includes(title.id)} onchange={() => toggle(title.id)} disabled={!!review?.applied} />
-					<span class="grow"><span class="name">{title.name}</span>{#if title.year}<span class="muted"> {title.year}</span>{/if}<small>{title.version_ids.length} Version{title.version_ids.length === 1 ? '' : 's'} · {title.files.length} File{title.files.length === 1 ? '' : 's'}</small></span>
+					<span class="grow"><span class="name">{title.name}</span>{#if title.year}<span class="muted">{` ${title.year}`}</span>{/if}<small>{title.version_ids.length} Version{title.version_ids.length === 1 ? '' : 's'} · {title.files.length} File{title.files.length === 1 ? '' : 's'}</small></span>
 					{#if title.protected}<StatusPill kind="missing" label="Protected copy" />{/if}
 				</label>
 			</li>

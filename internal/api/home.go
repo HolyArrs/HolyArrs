@@ -298,7 +298,9 @@ func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any
 
 // homeArrivals is Just arrived: the latest additions, newest first, never
 // empty while the Library has files (the row's title says how fresh). A show is one card that says what is new, an
-// artist is one card with its new albums, a movie is one card.
+// artist is one card with its new albums, a movie is one card. Only files
+// from the last two weeks count as new; an older title still fills the row
+// with a plain line (Movie, Show, Music).
 func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
 	cut := store.FormatTime(now.AddDate(0, 0, -homeArrivedDays))
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork, t.created_at,
@@ -341,6 +343,9 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 			groups[c.TitleID] = g
 			order = append(order, c.TitleID)
 		}
+		if at < cut {
+			continue // an older file keeps its title on the row but is not new
+		}
 		p := g.parts[partID]
 		if p == nil {
 			p = &part{number: number, name: partName, items: map[int64]bool{}}
@@ -371,6 +376,10 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 					top = p
 				}
 			}
+			if top == nil {
+				c.Line = "Show" // nothing new in the last two weeks
+				break
+			}
 			var aired int
 			if err := db.QueryRowContext(ctx, `SELECT count(*) FROM items i JOIN parts p ON p.id = i.part_id
 				WHERE i.title_id = ? AND p.kind = 'season' AND p.number = ? AND i.air_date IS NOT NULL AND i.air_date <= ?`,
@@ -390,6 +399,9 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 			}
 			c.Albums = albums
 			c.Line = homeArtistLine(len(albums), albums)
+			if len(g.order) == 0 {
+				c.Line = "Music" // nothing new in the last two weeks
+			}
 		default:
 			c.Line = "Movie"
 			if c.At >= cut {
@@ -432,7 +444,8 @@ func homeArtistLine(n int, albums []homeAlbum) string {
 // next one, newest first, one card per show.
 func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
 	from, until := store.FormatTime(now.AddDate(0, 0, -homeSeasonDays)), store.FormatTime(now.AddDate(0, 0, homeSeasonDays))
-	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, t.year, t.backdrop, t.logo, t.artwork, p.number, min(i.air_date) AS first
+	// The bare air_timed and air_day come from the first episode's row (the one min picks).
+	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, t.year, t.backdrop, t.logo, t.artwork, p.number, min(i.air_date) AS first, i.air_timed, i.air_day
 		FROM parts p JOIN titles t ON t.id = p.title_id JOIN items i ON i.part_id = p.id
 		WHERE p.kind = 'season' AND p.number > 1 AND t.kind = 'show' AND i.air_date IS NOT NULL AND `+where+`
 		GROUP BY p.id HAVING first >= ? AND first <= ?
@@ -446,8 +459,9 @@ func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, n
 	for rows.Next() {
 		var c homeCard
 		var backdrop, logo, first string
-		var art sql.NullString
-		if err := rows.Scan(&c.TitleID, &c.Name, &c.Year, &backdrop, &logo, &art, &c.Season, &first); err != nil {
+		var art, airDay sql.NullString
+		var timed sql.NullBool
+		if err := rows.Scan(&c.TitleID, &c.Name, &c.Year, &backdrop, &logo, &art, &c.Season, &first, &timed, &airDay); err != nil {
 			return nil, err
 		}
 		if seen[c.TitleID] || len(out) == homeCardsMax {
@@ -455,12 +469,13 @@ func homeNewSeasons(ctx context.Context, db *sql.DB, where string, args []any, n
 		}
 		seen[c.TitleID] = true
 		ha := homeArtOf(backdrop, logo, art)
-		c.Kind, c.Backdrop, c.Poster, c.Logo, c.At = "show", ha.backdrop, ha.poster, ha.logo, first
+		day, at := homeAirDay(first, timed.Bool, airDay.String, now.Location())
+		c.Kind, c.Backdrop, c.Poster, c.Logo, c.At = "show", ha.backdrop, ha.poster, ha.logo, at
 		c.Key = fmt.Sprintf("s%d", c.TitleID)
 		c.Href = fmt.Sprintf("/library/%d?season=%d", c.TitleID, c.Season)
 		c.Line = fmt.Sprintf("Season %d · out now", c.Season)
 		if t, err := time.Parse(time.RFC3339, first); err == nil && t.After(now) {
-			c.Line = fmt.Sprintf("Season %d · %s", c.Season, t.Format("Jan 2"))
+			c.Line = fmt.Sprintf("Season %d · %s", c.Season, homeDayLabel(day))
 		}
 		out = append(out, c)
 	}
@@ -503,11 +518,12 @@ type homeProgress struct {
 
 // homeAskProgress is the download progress of the titles the person asked
 // for, by title id: the average over the title's active downloads, so
-// Your asks shows live progress without the Downloads screen.
+// Your asks shows live progress without the Downloads screen. The state is
+// downloading while any of them moves, else stalled, paused or queued.
 func homeAskProgress(ctx context.Context, db *sql.DB, userID int64) (map[string]homeProgress, error) {
-	rows, err := db.QueryContext(ctx, `SELECT i.title_id, avg(d.progress), max(d.state = 'downloading'), max(d.eta)
+	rows, err := db.QueryContext(ctx, `SELECT i.title_id, avg(d.progress), max(d.state = 'downloading'), max(d.state = 'stalled'), max(d.state = 'paused'), max(d.eta)
 		FROM slots s JOIN items i ON i.id = s.item_id JOIN downloads d ON d.id = s.active_download_id
-		WHERE d.state IN ('sent', 'queued', 'downloading', 'stalled') AND i.title_id IN
+		WHERE d.state IN ('sent', 'queued', 'downloading', 'stalled', 'paused') AND i.title_id IN
 			(SELECT k.title_id FROM asks k LEFT JOIN ask_people ap ON ap.ask_id = k.id
 			 WHERE k.title_id IS NOT NULL AND (k.asked_by = ? OR ap.user_id = ?))
 		GROUP BY i.title_id`, userID, userID)
@@ -519,14 +535,20 @@ func homeAskProgress(ctx context.Context, db *sql.DB, userID int64) (map[string]
 	for rows.Next() {
 		var id int64
 		var p homeProgress
-		var moving bool
+		var moving, stalled, paused bool
 		var eta sql.NullInt64
-		if err := rows.Scan(&id, &p.Progress, &moving, &eta); err != nil {
+		if err := rows.Scan(&id, &p.Progress, &moving, &stalled, &paused, &eta); err != nil {
 			return nil, err
 		}
-		p.State = "queued"
-		if moving {
+		switch {
+		case moving:
 			p.State = "downloading"
+		case stalled:
+			p.State = "stalled"
+		case paused:
+			p.State = "paused"
+		default:
+			p.State = "queued"
 		}
 		if eta.Valid {
 			p.ETA = &eta.Int64
@@ -538,15 +560,18 @@ func homeAskProgress(ctx context.Context, db *sql.DB, userID int64) (map[string]
 
 // homeComingSoon is Coming soon: the next episode of each Library show and
 // the next date of each Library movie in the coming month, soonest first.
+// A movie already in the Library is out, so its later dates are left out.
 func homeComingSoon(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
 	from, until := store.FormatTime(now), store.FormatTime(now.AddDate(0, 0, homeSeasonDays))
 	day := func(v string) string { return v[:min(len(v), 10)] }
-	rows, err := db.QueryContext(ctx, `SELECT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork, min(x.at), x.season, x.episode FROM (
-			SELECT i.title_id AS id, i.air_date AS at, json_extract(i.numbers, '$.season') AS season, json_extract(i.numbers, '$.episode') AS episode
+	rows, err := db.QueryContext(ctx, `SELECT t.id, t.kind, t.name, t.year, t.backdrop, t.logo, t.artwork, min(x.at), x.season, x.episode, x.timed, x.air_day FROM (
+			SELECT i.title_id AS id, i.air_date AS at, json_extract(i.numbers, '$.season') AS season, json_extract(i.numbers, '$.episode') AS episode,
+					i.air_timed AS timed, i.air_day AS air_day
 				FROM items i WHERE i.kind = 'episode' AND i.air_date >= ? AND i.air_date <= ?
-			UNION ALL SELECT id, d, NULL, NULL FROM (
-				SELECT id, cinema_date AS d FROM titles UNION ALL SELECT id, digital_date FROM titles UNION ALL SELECT id, physical_date FROM titles)
-				WHERE d >= ? AND d <= ?
+			UNION ALL SELECT md.id, md.d, NULL, NULL, NULL, NULL FROM (
+				SELECT id, cinema_date AS d FROM titles UNION ALL SELECT id, digital_date FROM titles UNION ALL SELECT id, physical_date FROM titles) md
+				WHERE md.d >= ? AND md.d <= ? AND NOT EXISTS (SELECT 1 FROM items mi JOIN slots ms ON ms.item_id = mi.id
+					WHERE mi.title_id = md.id AND ms.state IN ('in_library', 'better_wanted'))
 		) x JOIN titles t ON t.id = x.id WHERE `+where+`
 		GROUP BY t.id ORDER BY min(x.at), t.id LIMIT ?`, append(append([]any{from, until, day(from), until}, args...), homeCardsMax)...)
 	if err != nil {
@@ -557,25 +582,51 @@ func homeComingSoon(ctx context.Context, db *sql.DB, where string, args []any, n
 	for rows.Next() {
 		var c homeCard
 		var backdrop, logo, at string
-		var art sql.NullString
+		var art, airDay sql.NullString
 		var season, episode sql.NullInt64
-		if err := rows.Scan(&c.TitleID, &c.Kind, &c.Name, &c.Year, &backdrop, &logo, &art, &at, &season, &episode); err != nil {
+		var timed sql.NullBool
+		if err := rows.Scan(&c.TitleID, &c.Kind, &c.Name, &c.Year, &backdrop, &logo, &art, &at, &season, &episode, &timed, &airDay); err != nil {
 			return nil, err
 		}
 		ha := homeArtOf(backdrop, logo, art)
 		c.Backdrop, c.Poster, c.Logo, c.At = ha.backdrop, ha.poster, ha.logo, at
 		c.Key = fmt.Sprintf("c%d", c.TitleID)
 		c.Href = fmt.Sprintf("/library/%d", c.TitleID)
-		when := day(at)
-		if t, err := time.Parse("2006-01-02", when); err == nil {
-			when = t.Format("Jan 2")
-		}
-		c.Line = "Out " + when
+		c.Line = "Out " + homeDayLabel(day(at))
 		if season.Valid && episode.Valid {
-			c.Season = int(season.Int64)
-			c.Line = fmt.Sprintf("S%dE%d · %s", season.Int64, episode.Int64, when)
+			when, sent := homeAirDay(at, timed.Bool, airDay.String, now.Location())
+			c.Season, c.At = int(season.Int64), sent
+			c.Line = fmt.Sprintf("S%dE%d · %s", season.Int64, episode.Int64, homeDayLabel(when))
 		}
 		out = append(out, c)
 	}
 	return out, rows.Err()
+}
+
+// homeAirDay is the day an episode airs (YYYY-MM-DD) and the time Home sends
+// for it. A timed episode is shown on the server's local day and sent with
+// its offset, so its first ten characters are that day. A day-only episode
+// is stored as the day's end (midnight UTC after it), so its own air day is
+// used and sent as it is.
+func homeAirDay(at string, timed bool, airDay string, loc *time.Location) (day, sent string) {
+	t, err := time.Parse(time.RFC3339, at)
+	switch {
+	case timed && err == nil:
+		t = t.In(loc)
+		return t.Format("2006-01-02"), t.Format(time.RFC3339)
+	case !timed && len(airDay) >= 10:
+		return airDay[:10], airDay[:10]
+	case !timed && err == nil:
+		d := t.UTC().Add(-time.Second).Format("2006-01-02")
+		return d, d
+	}
+	return at[:min(len(at), 10)], at
+}
+
+// homeDayLabel writes a YYYY-MM-DD day as "Jan 2", or leaves it as it is.
+func homeDayLabel(day string) string {
+	if t, err := time.Parse("2006-01-02", day); err == nil {
+		return t.Format("Jan 2")
+	}
+	return day
 }

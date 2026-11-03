@@ -17,7 +17,7 @@ export default defineConfig({
 	webServer: [
 		{
 			command: 'node e2e/server.mjs',
-			url: `http://127.0.0.1:${port}/healthz`,
+			url: `http://127.0.0.1:${port}/readyz`,
 			reuseExistingServer: false,
 			timeout: 180_000,
 			stdout: 'ignore',
@@ -26,7 +26,7 @@ export default defineConfig({
 		// The same app under /holyarrs behind a small reverse proxy (3.5.10).
 		{
 			command: 'node e2e/urlbase-server.mjs',
-			url: `http://127.0.0.1:${process.env.HOLYARRS_E2E_BASE_PROXY_PORT ?? '18735'}/holyarrs/healthz`,
+			url: `http://127.0.0.1:${process.env.HOLYARRS_E2E_BASE_PROXY_PORT ?? '18735'}/holyarrs/readyz`,
 			reuseExistingServer: false,
 			timeout: 180_000,
 			stdout: 'ignore',
@@ -88,6 +88,7 @@ export default defineConfig({
 		{ name: 'copychoices', testMatch: 'copy-choices.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
 		// Explore memory: heap, DOM nodes and listeners back to the start after 20 Home, Explore and title rounds.
 		{ name: 'musicplaceholder', testMatch: 'music-placeholder.spec.ts', use: { ...devices['Desktop Chrome'] } },
+		{ name: 'home', testMatch: 'home.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'exploremem', testMatch: 'explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'communitybrowse', testMatch: 'community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'appframe', testMatch: 'appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },

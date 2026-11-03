@@ -121,7 +121,7 @@ func TestMigratePermissions(t *testing.T) {
 	r.owner.call("GET", "/api/v1/migrate/snapshots/1", "", 200)
 
 	// The local-network skip signs in without a password: no move routes.
-	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`, 200)
+	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	jar, _ := cookiejar.New(nil)
 	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
 	for _, rt := range routes {

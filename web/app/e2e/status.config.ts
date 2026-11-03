@@ -13,7 +13,7 @@ export default defineConfig({
 	use: { baseURL: `http://127.0.0.1:${port}`, trace: 'retain-on-failure' },
 	webServer: {
 		command: 'node phone-audit-server.mjs',
-		url: `http://127.0.0.1:${port}/healthz`,
+		url: `http://127.0.0.1:${port}/readyz`,
 		reuseExistingServer: false,
 		timeout: 180_000,
 		stdout: 'ignore',

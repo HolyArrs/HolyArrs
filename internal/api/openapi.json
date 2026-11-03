@@ -2377,6 +2377,15 @@
             "format": "date-time",
             "type": "string"
           },
+          "confirmed": {
+            "description": "The state the flap guard has confirmed, which Alerts and Home go by.",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "type": "string"
+          },
           "id": {
             "type": "integer"
           },
@@ -9966,7 +9975,7 @@
     },
     "/api/v1/auth/settings": {
       "get": {
-        "description": "Sign-in ways, local-network sign-in, two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token).",
+        "description": "Sign-in ways, local-network sign-in (skip_login_local_network and the local_networks it covers), two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token).",
         "operationId": "getAuthSettings",
         "responses": {
           "200": {
@@ -9989,7 +9998,7 @@
         "x-holyarrs-scope": "admin"
       },
       "put": {
-        "description": "Owner only. min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise).",
+        "description": "Owner only. local_networks takes up to 32 CIDRs or single addresses (400 names a bad entry); skip_login_local_network cannot be on with an empty list (400). min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise).",
         "operationId": "putAuthSettings",
         "requestBody": {
           "content": {

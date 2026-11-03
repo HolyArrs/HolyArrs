@@ -112,7 +112,7 @@
 	.nav { display: flex; align-items: center; height: 44px; padding: 0 2px; }
 	.nav :global(button) { width: 38px; height: 38px; border-radius: 999px; }
 	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
-	.crumbs a { color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
+	.crumbs a { display: inline-flex; align-items: center; min-height: 24px; color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }
 	.crumbs .here { overflow: hidden; text-overflow: ellipsis; max-width: 28vw; color: var(--text); font-weight: 600; }
