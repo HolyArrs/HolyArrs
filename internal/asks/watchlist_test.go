@@ -22,11 +22,13 @@ type fakeWatchlist struct {
 	lists map[string][]map[string]any
 	calls int
 	bad   map[string]bool // tokens answered 401
-	srv   *httptest.Server
+	// lookupFails is how many more id lookups of a key answer 500.
+	lookupFails map[string]int
+	srv         *httptest.Server
 }
 
 func newFakeWatchlist(t *testing.T) *fakeWatchlist {
-	f := &fakeWatchlist{lists: map[string][]map[string]any{}, bad: map[string]bool{}}
+	f := &fakeWatchlist{lists: map[string][]map[string]any{}, bad: map[string]bool{}, lookupFails: map[string]int{}}
 	f.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
@@ -44,7 +46,8 @@ func newFakeWatchlist(t *testing.T) *fakeWatchlist {
 		var out []map[string]any
 		switch {
 		case r.URL.Path == "/library/sections/watchlist/all":
-			if r.URL.Query().Get("X-Plex-Container-Size") != "20" || r.URL.Query().Get("includeGuids") != "1" {
+			q := r.URL.Query()
+			if q.Get("X-Plex-Container-Size") != "50" || q.Get("includeGuids") != "1" || q.Get("sort") != "watchlistedAt:desc" {
 				http.Error(w, "query", http.StatusBadRequest)
 				return
 			}
@@ -59,6 +62,11 @@ func newFakeWatchlist(t *testing.T) *fakeWatchlist {
 			}
 		case strings.HasPrefix(r.URL.Path, "/library/metadata/"):
 			key := strings.TrimPrefix(r.URL.Path, "/library/metadata/")
+			if f.lookupFails[key] > 0 {
+				f.lookupFails[key]--
+				http.Error(w, "busy", http.StatusInternalServerError)
+				return
+			}
 			for _, m := range list {
 				if m["ratingKey"] == key {
 					c := map[string]any{"ratingKey": key, "type": m["type"], "title": m["title"]}
@@ -353,5 +361,62 @@ func TestWatchlistKidAndRefusedToken(t *testing.T) {
 	_ = SaveSettings(ctx, r.st, set, domain.System)
 	if need, _, _ := w.Probe(ctx, r.clock); need {
 		t.Fatal("probe wants a pass with the Requests setting off")
+	}
+}
+
+func TestWatchlistLookupErrorIsRetriedNoIDStays(t *testing.T) {
+	r, f, w := watchRig(t)
+	ctx := context.Background()
+	if err := SaveWatchlistSwitches(ctx, r.st, r.ana.UserID, WatchlistSwitches{Movies: true}); err != nil {
+		t.Fatal(err)
+	}
+	// Both entries come without ids. Plex's lookup of the first fails once
+	// and then gives a TMDB id; the second's lookup answers with no ids.
+	f.set("tok-ana",
+		map[string]any{"ratingKey": "k-orchard", "type": "movie", "title": "Quiet Orchard", "hidden_guid": "tmdb://900003"},
+		map[string]any{"ratingKey": "k-none", "type": "movie", "title": "Nowhere"},
+	)
+	f.mu.Lock()
+	f.lookupFails["k-orchard"] = 1
+	f.mu.Unlock()
+	if _, err := w.Pass(ctx, r.ana.UserID); err != nil {
+		t.Fatal(err)
+	}
+	got := itemStates(t, r, r.ana.UserID)
+	if got["k-orchard"] != WatchFailed || got["k-none"] != WatchNoMatch {
+		t.Fatalf("first pass %v", got)
+	}
+	var n int
+	_ = r.st.Read().QueryRow("SELECT count(*) FROM asks").Scan(&n)
+	if n != 0 {
+		t.Fatal("an entry was asked for without ids")
+	}
+	// Next pass: the lookup works and the entry is asked; no_match stays,
+	// and its page is not looked up again.
+	calls := f.count()
+	if res, err := w.Pass(ctx, r.ana.UserID); err != nil || res.Asked != 1 {
+		t.Fatalf("second pass %+v %v", res, err)
+	}
+	got = itemStates(t, r, r.ana.UserID)
+	if got["k-orchard"] != WatchAsked || got["k-none"] != WatchNoMatch {
+		t.Fatalf("second pass %v", got)
+	}
+	if f.count() != calls+2 {
+		t.Fatalf("second pass made %d calls, want 2 (list + one lookup)", f.count()-calls)
+	}
+	// A lookup that keeps failing stops after the usual number of tries.
+	f.set("tok-ana", map[string]any{"ratingKey": "k-down", "type": "movie", "title": "Down", "hidden_guid": "tmdb://900004"})
+	f.mu.Lock()
+	f.lookupFails["k-down"] = 100
+	f.mu.Unlock()
+	for i := 0; i < watchlistTries+2; i++ {
+		if _, err := w.Pass(ctx, r.ana.UserID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var tries int
+	_ = r.st.Read().QueryRow("SELECT tries FROM plex_watchlist_items WHERE user_id = ? AND plex_key = 'k-down'", r.ana.UserID).Scan(&tries)
+	if got := itemStates(t, r, r.ana.UserID)["k-down"]; got != WatchFailed || tries != watchlistTries {
+		t.Fatalf("k-down %q after %d tries", got, tries)
 	}
 }
