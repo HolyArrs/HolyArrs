@@ -89,11 +89,19 @@ type ByHandResult struct {
 // ErrByHandPath says a path given by hand is not one to read from.
 var ErrByHandPath = errors.New("give the full path of a folder or file the server can read")
 
+var byHandStat = os.Stat
+
 // CleanByHandPath checks a path typed by hand: absolute, no ".." parts,
 // and there. It returns the cleaned path.
 func CleanByHandPath(p string) (string, error) {
 	p = strings.TrimSpace(p)
 	if p == "" || strings.ContainsRune(p, 0) || !filepath.IsAbs(p) {
+		return "", ErrByHandPath
+	}
+	// A Windows UNC or device path (\\host\share, \\?\, \\.\) would make
+	// the stat below open an SMB session and send the service account's
+	// credentials; a mapped drive letter still works.
+	if strings.HasPrefix(filepath.VolumeName(p), `\\`) {
 		return "", ErrByHandPath
 	}
 	for _, part := range strings.Split(filepath.ToSlash(p), "/") {
@@ -102,8 +110,8 @@ func CleanByHandPath(p string) (string, error) {
 		}
 	}
 	p = filepath.Clean(p)
-	if _, err := os.Stat(p); err != nil {
-		return "", fmt.Errorf("%w: %v", ErrByHandPath, err)
+	if _, err := byHandStat(p); err != nil {
+		return "", ErrByHandPath // the OS reason would tell which server paths exist
 	}
 	return p, nil
 }
@@ -207,6 +215,9 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 	}
 	cache := map[int64]*byHandTitle{}
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
+		if cerr := ctx.Err(); cerr != nil {
+			return cerr // the caller left; stop walking
+		}
 		if err != nil {
 			if p == root {
 				return err

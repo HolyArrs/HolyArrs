@@ -155,3 +155,50 @@ func TestByHandMovie(t *testing.T) {
 		t.Fatalf("slot %+v", sl)
 	}
 }
+
+// A failed path check answers one fixed message, not the OS reason, so it
+// does not tell "missing" from "permission denied".
+func TestCleanByHandPathHidesOSError(t *testing.T) {
+	_, err := CleanByHandPath(filepath.Join(t.TempDir(), "missing"))
+	if err == nil || err.Error() != ErrByHandPath.Error() {
+		t.Fatalf("got %v", err)
+	}
+}
+
+// A UNC or device path is refused before anything touches it, so the
+// server never opens an SMB session to a host named in a request.
+func TestCleanByHandPathRefusesUNC(t *testing.T) {
+	if filepath.VolumeName(`\\host\share\x`) == "" {
+		t.Skip("UNC paths only exist on Windows")
+	}
+	old := byHandStat
+	defer func() { byHandStat = old }()
+	byHandStat = func(p string) (os.FileInfo, error) {
+		t.Errorf("stat called on %q", p)
+		return os.Stat(t.TempDir())
+	}
+	for _, p := range []string{`\\attacker.example\share\x.mkv`, `\\?\UNC\host\share`, `\\.\pipe\x`, `//host/share/x`} {
+		if _, err := CleanByHandPath(p); err == nil {
+			t.Errorf("%q passed", p)
+		}
+	}
+}
+
+// A scan stops once its request is gone.
+func TestScanByHandStopsOnCancel(t *testing.T) {
+	w := showSetup(t, []int{2})
+	loose := t.TempDir()
+	for _, n := range []int{1, 2, 3} {
+		write(t, filepath.Join(loose, ep(n)), 2048)
+	}
+	im := &Importer{Store: w.s}
+	if _, err := im.ScanByHand(goneCtx{context.Background()}, loose); err == nil {
+		t.Fatal("a cancelled scan finished")
+	}
+}
+
+// goneCtx reports its request as gone without closing Done, so the
+// database reads before the walk still run.
+type goneCtx struct{ context.Context }
+
+func (goneCtx) Err() error { return context.Canceled }
