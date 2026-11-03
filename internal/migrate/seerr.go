@@ -191,7 +191,11 @@ func (r seerrReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 func (r seerrReader) pages(ctx context.Context, c *apiClient, path string, q url.Values) ([]map[string]any, error) {
 	const take = 100
 	var out []map[string]any
+	start := c.got
 	for skip := 0; ; skip += take {
+		if c.got-start > pagedMax(c.lim) {
+			return nil, ErrTooBig
+		}
 		qq := url.Values{"take": {strconv.Itoa(take)}, "skip": {strconv.Itoa(skip)}}
 		for k, v := range q {
 			qq[k] = v
