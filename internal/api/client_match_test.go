@@ -100,7 +100,7 @@ func addQB(t *testing.T, st *store.Store, url string) int64 {
 	t.Helper()
 	var id int64
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
-		dr := &domain.Downloader{Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: url, Category: "holyarrs", Priority: 1,
+		dr := &domain.Downloader{Writable: true, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: url, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 		var err error
 		id, err = store.Insert(tx, "downloaders", dr, domain.System)
