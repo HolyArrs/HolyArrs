@@ -7,8 +7,8 @@
 	// needle that fills up with its progress. The ruler under the strip reads
 	// time from now; the line under it says what runs now or what comes next.
 	import type { LiveJobs } from '../livejobs.svelte.ts';
-	import { clock, t } from '../livejobs.svelte.ts';
-	import type { StatusRow } from '../status.ts';
+	import { wait, t } from '../livejobs.svelte.ts';
+	import { pastResult, type StatusRow } from '../status.ts';
 
 	let { lj, upcoming, recent }: { lj: LiveJobs; upcoming: StatusRow[]; recent: StatusRow[] } = $props();
 
@@ -27,9 +27,9 @@
 
 	const ruler = [
 		{ m: -60, label: '−1 h' },
-		{ m: -10, label: '−10 m' },
+		{ m: -10, label: '−10 min' },
 		{ m: 0, label: 'Now' },
-		{ m: 10, label: '+10 m' },
+		{ m: 10, label: '+10 min' },
 		{ m: 60, label: '+1 h' },
 		{ m: 360, label: '+6 h' }
 	].map((r) => ({ ...r, x: x(r.m) }));
@@ -47,7 +47,27 @@
 	const word = (state: string) => (state === 'done' ? 'OK' : state === 'failed' ? 'failed' : state === 'cancelled' ? 'cancelled' : state);
 
 	let w = $state(400);
-	const now = $derived(lj.tick);
+	// Under reduced motion the strip moves once a minute instead of every second.
+	let still = $state(false);
+	$effect(() => {
+		if (typeof matchMedia !== 'function') return;
+		const q = matchMedia('(prefers-reduced-motion: reduce)');
+		still = q.matches;
+		const on = () => (still = q.matches);
+		q.addEventListener('change', on);
+		return () => q.removeEventListener('change', on);
+	});
+	const now = $derived(still ? Math.floor(lj.tick / MIN) * MIN : lj.tick);
+
+	// A tapped frame puts its name and time in the line under the strip for a while (touch screens have no hover).
+	let pick = $state<{ key: string; tip: string } | null>(null);
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	function show(f: { key: string; tip: string }) {
+		pick = pick?.key === f.key ? null : { key: f.key, tip: f.tip };
+		clearTimeout(timer);
+		timer = setTimeout(() => (pick = null), 6000);
+	}
+	$effect(() => () => clearTimeout(timer));
 
 	// Marks at real clock times: every minute near now, then every 5 and 15
 	// minutes, then every hour. Each is keyed by its time so it glides.
@@ -104,14 +124,14 @@
 			for (const r of recent) {
 				const ms = t(r.lastRun);
 				if (!Number.isFinite(ms) || ms < from || ms > now) continue;
-				list.push({ key: `p${r.key}`, x: x((ms - now) / MIN), c: tone[r.tone] ?? 'var(--info)', ab: abbr(r.name), tip: `${r.name}, ran at ${hm(ms)}`, next: false });
+				list.push({ key: `p${r.key}`, x: x((ms - now) / MIN), c: tone[pastResult(r).tone] ?? 'var(--info)', ab: abbr(r.name), tip: `${r.name}, ran at ${hm(ms)}`, next: false });
 			}
 		}
 		for (const r of lj.coming(upcoming, 24)) {
 			const ms = t(r.nextRun);
 			if (!Number.isFinite(ms) || ms - now > AHEAD * MIN) continue;
 			const due = ms - now;
-			list.push({ key: `n${r.key}`, x: x(Math.max(0.5, due / MIN)), c: tone[r.tone] ?? 'var(--info)', ab: abbr(r.name), tip: due <= 0 ? `${r.name}, due now` : `${r.name} at ${hm(ms)}, in ${clock(due)}`, next: true });
+			list.push({ key: `n${r.key}`, x: x(Math.max(0.5, due / MIN)), c: tone[r.tone] ?? 'var(--info)', ab: abbr(r.name), tip: due <= 0 ? `${r.name}, due now` : `${r.name} at ${hm(ms)}, in ${wait(due)}`, next: true });
 		}
 		// Two lanes: a frame drops to the lower lane when the upper one has no room.
 		list.sort((a, b) => a.x - b.x);
@@ -128,7 +148,7 @@
 	const pct = $derived(run ? Math.round(run.progress * 100) : 0);
 	const first = $derived(lj.coming(upcoming, 1)[0]);
 	const caption = $derived.by(() => {
-		const nextBit = first ? (lj.due(first) <= 0 ? `${first.name} is due` : `${first.name} in ${clock(lj.due(first))}`) : '';
+		const nextBit = first ? (lj.due(first) <= 0 ? `${first.name} is due` : `${first.name} in ${wait(lj.due(first))}`) : '';
 		if (run) {
 			const bits = [`${run.label} running`, pct > 0 ? `${pct}%` : '', lj.running.length > 1 ? `${lj.running.length - 1} more` : '', nextBit ? `then ${nextBit}` : ''];
 			return bits.filter(Boolean).join(' · ');
@@ -138,19 +158,19 @@
 </script>
 
 <div class="tape">
-	<div class="track" bind:clientWidth={w} role="img" aria-label="Timeline strip: finished runs left of now, coming runs right. {caption}.">
+	<div class="track" bind:clientWidth={w} role="group" aria-label="Timeline strip: finished runs left of now, coming runs right. {caption}.">
 		<div class="belt">
 			{#each sprockets as s (s.ms)}
-				<div class="mv" style:transform="translateX({s.x.toFixed(3)}%)">
+				<div class="mv" style:transform="translateX({s.x.toFixed(3)}%)" aria-hidden="true">
 					<i class="sp" class:hr={s.hr}></i>
 					{#if s.label}<span class="hl">{s.label}</span>{/if}
 				</div>
 			{/each}
 			{#each frames as f (f.key)}
 				<div class="mv" style:transform="translateX({f.x.toFixed(3)}%)">
-					<div class="fr" class:next={f.next} class:low={f.lane === 1} style:--c={f.c} title={f.tip}>
-						<i class="tb"></i><span>{f.ab}</span>
-					</div>
+					<button type="button" class="fr" class:next={f.next} class:low={f.lane === 1} class:sel={pick?.key === f.key} style:--c={f.c} title={f.tip} aria-label={f.tip} onclick={() => show(f)}>
+						<i class="tb"></i><span aria-hidden="true">{f.ab}</span>
+					</button>
 				</div>
 			{/each}
 		</div>
@@ -173,7 +193,7 @@
 		{/each}
 	</div>
 
-	<p class="cap" class:on={!!run}>{caption}</p>
+	<p class="cap" class:on={!!run || !!pick} aria-live="polite">{pick ? pick.tip : caption}</p>
 </div>
 
 <style>
@@ -185,9 +205,11 @@
 
 	.sp { position: absolute; left: -0.5px; bottom: 6px; width: 1px; height: 5px; background: var(--text-faint); opacity: 0.55; }
 	.sp.hr { height: 9px; opacity: 0.9; background: var(--text-muted); }
-	.hl { position: absolute; left: 4px; bottom: 4px; font: 500 9.5px/1 var(--font-mono); color: var(--text-faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.hl { position: absolute; left: 4px; bottom: 4px; font: 500 9.5px/1 var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-	.fr { position: absolute; top: 10px; left: -22px; width: 44px; height: 28px; box-sizing: border-box; display: grid; place-items: center; padding-top: 3px; border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); border-radius: 7px; background: var(--surface-1); overflow: hidden; pointer-events: auto; cursor: default; opacity: 0.72; transition: transform 0.4s ease; }
+	.fr { position: absolute; top: 10px; left: -22px; width: 44px; height: 28px; box-sizing: border-box; display: grid; place-items: center; padding: 3px 0 0; margin: 0; border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); border-radius: 7px; background: var(--surface-1); overflow: hidden; pointer-events: auto; cursor: pointer; opacity: 0.72; transition: transform 0.4s ease; font: inherit; color: inherit; }
+	.fr.sel { opacity: 1; border-color: var(--c); }
+	.fr:focus-visible { outline: none; box-shadow: var(--focus-ring); opacity: 1; }
 	.fr.next { opacity: 1; }
 	.fr.low { transform: translateY(40px); }
 	.fr .tb { position: absolute; inset: 0 0 auto; height: 3px; background: var(--c); }
@@ -208,7 +230,7 @@
 	.mt { height: 3px; opacity: 0.6; }
 	.tk { height: 6px; }
 	.tk.zero { height: 8px; width: 2px; margin-left: -1px; background: var(--accent, var(--text)); }
-	.rl { position: absolute; top: 9px; transform: translateX(-50%); font: 500 10.5px/1 var(--font-mono); color: var(--text-faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.rl { position: absolute; top: 9px; transform: translateX(-50%); font: 500 10.5px/1 var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.rl.zero { font-family: var(--font-ui); font-weight: 600; color: var(--text); }
 
 	.cap { margin: 2px 0 0; font: 500 12.5px/1.3 var(--font-ui); color: var(--text-muted); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -9,6 +9,7 @@
 	import { toasts } from '../toasts.svelte.ts';
 	import { RELEASE_PAGES, releaseLink } from '../update.ts';
 	import type { HealthCheck, UpdateInfo } from '../types.ts';
+	import Button from '../ui/Button.svelte';
 	import Releases from './Releases.svelte';
 
 	type Update = UpdateInfo & { notes?: string };
@@ -16,6 +17,7 @@
 		upd: real,
 		docker,
 		ytdlp,
+		checksKnown = true,
 		canAct,
 		onupd
 	}: {
@@ -24,13 +26,15 @@
 		docker: boolean | null;
 		/** The trailers health check, which names yt-dlp's version. */
 		ytdlp: HealthCheck | undefined;
+		/** False when the health checks call failed: a missing yt-dlp check then means unknown, not absent. */
+		checksKnown?: boolean;
 		canAct: boolean;
 		onupd: (u: Update) => void;
 	} = $props();
 
-	// ?releases=demo shows the one-release-behind state with made-up notes (Releases shows its demo history too).
+	// Dev builds only: ?releases=demo shows the one-release-behind state with made-up notes (Releases shows its demo history too).
 	const upd: Update | null = $derived(
-		page.url.searchParams.get('releases') === 'demo' && real
+		import.meta.env.DEV && page.url.searchParams.get('releases') === 'demo' && real
 			? { ...real, on: true, newer: true, version: '1.3.2', latest: '1.4.0', checked_at: new Date().toISOString(), link: `${RELEASE_PAGES}tag/v1.4.0`, problem: undefined, no_release: false, notes: ['Status page with Health, Parts and Jobs.', 'Requests page shows live steps for each ask.', 'History keeps sign-ins and settings changes for a year.'].join('\n') }
 			: real
 	);
@@ -57,7 +61,7 @@
 		problem: 'The last check did not work.',
 		none: 'No HolyArrs release is published yet.',
 		current: 'This is the newest release.',
-		unchecked: 'Not checked yet. HolyArrs checks once a day.'
+		unchecked: 'Not checked yet.'
 	};
 	const notes = $derived((upd?.newer && upd.notes ? upd.notes : '').split('\n').filter(Boolean));
 	const link = $derived(releaseLink(upd?.link));
@@ -66,22 +70,22 @@
 	const ytTone = $derived(!ytdlp ? 'none' : ytdlp.state === 'ok' ? 'ok' : ytdlp.state === 'warning' ? 'wait' : 'fail');
 </script>
 
-<section class="st-plate band" data-standing={standing} data-testid="status-updates">
+<section class="st-plate band" data-standing={standing} aria-label="Your version" data-testid="status-updates">
 	<div class="vers">
 		<span class="v"><small>This HolyArrs</small><b>v{upd?.version ?? '…'}</b></span>
 		{#if standing === 'behind' && upd?.latest}
 			<span class="arrow" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M4 10h12m-5-5 5 5-5 5" /></svg></span>
 			<span class="v new"><small>Newest</small><b>v{upd.latest}</b></span>
 		{:else if standing === 'current'}
-			<span class="pill good">Up to date</span>
+			<span class="chip ok">Up to date</span>
 		{/if}
 	</div>
 	<p class="say">{said[standing]}{#if standing === 'problem' && upd?.problem} <span class="why">{upd.problem}</span>{/if}</p>
 	<div class="acts">
 		{#if upd?.checked_at}<span class="when">Checked <time datetime={upd.checked_at} title={dateTime(upd.checked_at)}>{ago(upd.checked_at)}</time></span>{/if}
-		{#if link}<a class="btn pri" href={link} target="_blank" rel="noopener noreferrer">What changed</a>{/if}
-		{#if canAct && upd?.on}<button type="button" class="btn" disabled={busy} aria-busy={busy} onclick={check}>Check now</button>{/if}
-		{#if canAct && upd && !upd.on}<a class="btn" href={to('/settings/this-app')}>Turn the check on</a>{/if}
+		{#if link}<a class="xbtn" href={link} target="_blank" rel="noopener noreferrer">What changed</a>{/if}
+		{#if canAct && upd?.on}<Button {busy} onclick={check}>{upd.checked_at ? 'Check again' : 'Check now'}</Button>{/if}
+		{#if canAct && upd && !upd.on}<Button href={to('/settings/health')}>Turn the check on</Button>{/if}
 	</div>
 </section>
 
@@ -96,15 +100,18 @@
 	<section class="st-plate" aria-labelledby="s-how">
 		<h2 id="s-how">How to update</h2>
 		<p class="lead">HolyArrs never changes its own program. Your databases, settings, keys and backups stay in the config folder through every update.</p>
-		{#if docker === false}
+		{#if docker !== true}
+			{#if docker === null}<h3 class="kind">Without Docker</h3>{/if}
 			<ol class="steps">
 				<li><b>Stop HolyArrs</b><span>Finish or pause downloads first if you like; the queue carries on afterwards.</span></li>
 				<li><b>Replace the program</b><span>Put the new build where the old one is. Leave the config folder alone.</span></li>
 				<li><b>Start it again</b><span>The first start runs any database migration and shows the new version here.</span></li>
 			</ol>
-		{:else}
+		{/if}
+		{#if docker !== false}
+			{#if docker === null}<h3 class="kind">In Docker</h3>{/if}
 			<ol class="steps">
-				<li><b>Get the new image</b><span>Pull it, or rebuild <code>holyarrs:local</code> from the new source.</span></li>
+				<li><b>Get the new image</b><span>Pull the new HolyArrs image.</span></li>
 				<li><b>Recreate the container</b><span>Same mounts, same ports. One command:</span><code class="cmd">docker compose up -d --force-recreate</code></li>
 				<li><b>Open Status</b><span>The new version shows here; the first start runs any database migration.</span></li>
 			</ol>
@@ -119,10 +126,12 @@
 				<span class="tn">yt-dlp</span>
 				<span class="tv">
 					{#if ytdlp}
-						<i class="d {ytTone}" aria-hidden="true"></i>{ytVersion || 'version unknown'}
+						<i class="st-dot {ytTone}" aria-hidden="true"></i>{ytVersion || 'version unknown'}
 						{#if ytdlp.checked_at}<small>· checked <time datetime={ytdlp.checked_at} title={dateTime(ytdlp.checked_at)}>{ago(ytdlp.checked_at)}</time></small>{/if}
+					{:else if !checksKnown}
+						<i class="st-dot none" aria-hidden="true"></i>Version not known right now
 					{:else}
-						<i class="d none" aria-hidden="true"></i>Not bundled in this build
+						<i class="st-dot none" aria-hidden="true"></i>Not bundled in this build
 					{/if}
 				</span>
 				<span class="td">Finds trailers. Once a week HolyArrs fetches its newest official release, checks it and keeps the previous copy if the new one does not work.{#if canAct} <a class="lnk" href={to('/settings/this-app')}>Setting</a>{/if}</span>
@@ -136,7 +145,7 @@
 
 <style>
 	ul, ol { margin: 0; padding: 0; list-style: none; }
-	.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
+	.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); align-items: stretch; }
 
 	/* band */
 	.band { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 28px; padding: 20px 24px; }
@@ -152,12 +161,14 @@
 	.why { color: var(--text-muted); }
 	.acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 	.when { margin-right: 8px; font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
-	.btn { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 14px/1 var(--font-ui); text-decoration: none; cursor: pointer; white-space: nowrap; }
-	.btn.pri { border-color: transparent; background: var(--accent, var(--text)); color: var(--on-accent, #fff); font-weight: 600; }
-	.btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.btn:disabled { opacity: 0.6; }
-	.pill { padding: 3px 10px; border-radius: var(--r-pill); font-size: 12px; font-weight: 600; }
-	.pill.good { margin-top: 14px; background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--text); }
+	/* Outside link in a new tab, drawn like the shared primary Button (whose link form has no target). */
+	.xbtn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 16px; border-radius: var(--r-btn); background: var(--accent-fill); color: var(--text-on-red); font: var(--t-headline); font-size: 15px; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
+	.xbtn:hover { background: var(--accent-fill-hover); }
+	.xbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (pointer: coarse) { .xbtn { min-height: 44px; } }
+	.vers .chip { margin-top: 14px; }
+	.kind { margin: 14px 0 8px; font: 600 13px/1.3 var(--font-ui); color: var(--text); }
+	.kind:first-of-type { margin-top: 0; }
 
 	/* new since yours */
 	.notes { display: flex; flex-direction: column; gap: 8px; }
@@ -182,13 +193,8 @@
 	.tv small { font-size: 12.5px; color: var(--text-muted); }
 	.td { grid-column: 2; font-size: 13px; line-height: 1.5; color: var(--text-muted); }
 	.tools .why { grid-column: 2; font-size: 13px; color: var(--wait-text, var(--text)); }
-	.lnk { color: var(--accent, var(--text)); font-weight: 600; text-decoration: none; }
+	.lnk { color: var(--accent-text, var(--text)); font-weight: 600; text-decoration: none; }
 	.lnk:hover { text-decoration: underline; }
-	.d { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--info); }
-	.d.ok { background: var(--ok); }
-	.d.wait { background: var(--wait); }
-	.d.fail { background: var(--fail); }
-	.d.none { background: none; box-shadow: inset 0 0 0 1.5px var(--text-faint); }
 
 	@media (max-width: 900px) {
 		.pair { grid-template-columns: minmax(0, 1fr); }

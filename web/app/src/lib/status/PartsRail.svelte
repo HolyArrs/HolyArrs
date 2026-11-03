@@ -1,13 +1,14 @@
 <script lang="ts">
-	// The parts on the Status tab: every kind of part down the left with its
-	// count and worst colour, the picked kind's parts on the right. Every kind
-	// keeps its seat, linked or not, so the plate holds one shape; it opens on
+	// The linked apps on the Status tab: every kind down the left with its
+	// count and worst colour, the picked kind's apps on the right. Every kind
+	// keeps its seat, added or not, so the plate holds one shape; it opens on
 	// the first kind with a problem, else Sources.
 	import { to } from '../paths.ts';
+	import Button from '../ui/Button.svelte';
 	import GroupRows from './GroupRows.svelte';
 	import { partKinds, type StatusGroup, type StatusRow, type Tone } from './status.ts';
 
-	let { kinds, canAct, busy, oncheck }: { kinds: StatusGroup[]; canAct: boolean; busy: string | null; oncheck: (r: StatusRow) => void } = $props();
+	let { kinds, canAct, busy, oncheck }: { kinds: StatusGroup[]; canAct: boolean; busy: (key: string) => boolean; oncheck: (r: StatusRow) => void } = $props();
 
 	const icon: Record<string, string> = {
 		sources: 'M4 6h12M4 10h12M4 14h8',
@@ -20,49 +21,71 @@
 	};
 	const meta = (g: StatusGroup) => partKinds.find((k) => k.id === g.id)!;
 	const okOf = (g: StatusGroup) => g.rows.filter((r) => r.tone === 'ok').length;
+	// Rows turned off on purpose are not missing, so they stay out of the count.
+	const isOff = (r: StatusRow) => r.word === 'Off';
+	const onOf = (g: StatusGroup) => g.rows.filter((r) => !isOff(r)).length;
+	const count = (g: StatusGroup) => (!g.rows.length ? '–' : onOf(g) ? `${okOf(g)}/${onOf(g)}` : 'Off');
 	/** worst is the kind's colour: a failing part wins, then a waiting one, then working; none when empty. */
 	const worst = (g: StatusGroup): Tone | 'none' =>
 		g.rows.some((r) => r.tone === 'fail') ? 'fail' : g.rows.some((r) => r.tone === 'wait') ? 'wait' : g.rows.length ? (g.rows.every((r) => r.tone === 'idle') ? 'idle' : 'ok') : 'none';
-	/** line says a kind in a few words: "3 working", "1 needs attention", "Off", "Nothing linked yet". */
+	/** line says a kind in a few words: "3 working", "1 needs attention", "Off", "Nothing added yet". */
 	function line(g: StatusGroup): string {
-		if (!g.rows.length) return 'Nothing linked yet';
+		if (!g.rows.length) return 'Nothing added yet';
 		const bad = g.rows.filter((r) => r.tone === 'fail' || r.tone === 'wait').length;
 		if (bad) return `${bad} need${bad === 1 ? 's' : ''} attention`;
+		if (g.rows.length === 1) return g.rows[0].word;
+		if (g.rows.every(isOff)) return `${g.rows.length} off`;
 		const ok = okOf(g);
-		if (!ok) return g.rows.length === 1 ? g.rows[0].word : `${g.rows.length} off`;
-		return g.rows.length === 1 ? g.rows[0].word : `${ok} working`;
+		return ok ? `${ok} working` : `${onOf(g)} waiting`;
 	}
-	const all = $derived(kinds.reduce((n, g) => n + g.rows.length, 0));
+	const all = $derived(kinds.reduce((n, g) => n + onOf(g), 0));
 	const allOk = $derived(kinds.reduce((n, g) => n + okOf(g), 0));
 
 	let picked = $state<string | null>(null);
 	const current = $derived(kinds.find((k) => k.id === picked) ?? kinds.find((k) => worst(k) === 'fail') ?? kinds.find((k) => worst(k) === 'wait') ?? kinds[0]);
+
+	// The kinds are tabs: one tab stop, arrow keys (both ways, as the list turns sideways on narrow screens), Home and End.
+	let list = $state<HTMLElement>();
+	function kindKey(e: KeyboardEvent) {
+		const i = kinds.findIndex((k) => k.id === current.id);
+		const fwd = e.key === 'ArrowDown' || e.key === 'ArrowRight';
+		const back = e.key === 'ArrowUp' || e.key === 'ArrowLeft';
+		const n = fwd ? (i + 1) % kinds.length : back ? (i - 1 + kinds.length) % kinds.length : e.key === 'Home' ? 0 : e.key === 'End' ? kinds.length - 1 : -1;
+		if (n < 0 || n === i) return;
+		e.preventDefault();
+		picked = kinds[n].id;
+		list?.querySelector<HTMLElement>(`#pk-tab-${kinds[n].id}`)?.focus();
+	}
 </script>
 
 <section class="st-plate" aria-labelledby="p-rail" data-testid="status-parts">
-	<h2 id="p-rail">Parts<span class="cnt">{allOk}/{all}</span></h2>
+	<h2 id="p-rail">Linked apps<span class="cnt">{allOk}/{all}</span></h2>
 	<div class="rl">
-		<div class="kinds" role="tablist" aria-label="Kind of part" aria-orientation="vertical">
+		<div class="kinds" role="tablist" aria-label="Kinds of linked app" tabindex="-1" bind:this={list} onkeydown={kindKey}>
 			{#each kinds as g (g.id)}
-				<button type="button" role="tab" aria-selected={current.id === g.id} data-kind={g.id} onclick={() => (picked = g.id)}>
+				<button type="button" role="tab" id="pk-tab-{g.id}" aria-selected={current.id === g.id} aria-controls="pk-panel" tabindex={current.id === g.id ? 0 : -1} data-kind={g.id} onclick={() => (picked = g.id)}>
 					<span class="gi" aria-hidden="true"><svg viewBox="0 0 20 20"><path d={icon[g.id]} /></svg></span>
 					<span class="kl">{g.label}</span>
-					<span class="kc">{g.rows.length ? `${okOf(g)}/${g.rows.length}` : '–'}</span>
-					<i class="d {worst(g)}" aria-hidden="true"></i>
+					<span class="kc">{count(g)}</span>
+					{#if worst(g) === 'fail' || worst(g) === 'wait'}
+						<span class="ex {worst(g)}" aria-hidden="true">!</span><span class="sr-only">{line(g)}</span>
+					{:else}
+						<i class="st-dot {worst(g)}" aria-hidden="true"></i>
+					{/if}
 				</button>
 			{/each}
 		</div>
-		<div class="pane" role="tabpanel">
+		<div class="pane" role="tabpanel" id="pk-panel" aria-labelledby="pk-tab-{current.id}">
 			<h3>
 				{current.label}<span class="pl">{line(current)}</span>
-				{#if canAct && current.rows.length}<a class="lnk end" href={to(meta(current).add)}>Manage</a>{/if}
+				{#if canAct && current.rows.length}<span class="end"><Button variant="plain" size="sm" href={to(meta(current).add)}>Manage</Button></span>{/if}
 			</h3>
 			{#if current.rows.length}
-				<GroupRows rows={current.rows} {canAct} {busy} {oncheck} />
+				{#key current.id}<GroupRows rows={current.rows} {canAct} {busy} {oncheck} />{/key}
 			{:else}
 				<p class="emp">
-					<i class="d none" aria-hidden="true"></i>No {meta(current).one} linked yet.
-					{#if canAct}<a class="lnk" href={to(meta(current).add)}>Add</a>{/if}
+					<i class="st-dot none" aria-hidden="true"></i>No {meta(current).one} added yet.
+					{#if canAct}<Button variant="plain" size="sm" href={to(meta(current).add)}>Add</Button>{/if}
 				</p>
 			{/if}
 		</div>
@@ -72,20 +95,13 @@
 <style>
 	.gi { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--surface-2, var(--surface-1)); color: var(--text-muted); }
 	.gi svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-	.cnt { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.d { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--info); }
-	.d.ok { background: var(--ok); }
-	.d.wait { background: var(--wait); }
-	.d.fail { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
-	.d.idle { background: var(--text-faint); }
-	.d.none { background: none; box-shadow: inset 0 0 0 1.5px var(--text-faint); }
+	.ex { display: grid; place-items: center; flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--fail); color: #fff; font: 700 11px/1 var(--font-ui); }
+	.ex.wait { background: var(--wait); }
 	.emp { display: flex; align-items: center; gap: 10px; margin: 0; min-height: 44px; font-size: 14px; color: var(--text-muted); }
-	.lnk { display: inline-flex; align-items: center; min-height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--accent, var(--text)); font: 600 13px/1 var(--font-ui); text-decoration: none; cursor: pointer; white-space: nowrap; }
-	.lnk:hover { background: var(--surface-2, var(--surface-1)); }
-	.lnk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.end { margin-left: auto; }
 
 	.rl { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 0 24px; }
+	.kinds:focus { outline: none; }
 	.kinds { display: flex; flex-direction: column; gap: 2px; padding-right: 20px; border-right: 1px solid var(--line); }
 	.kinds button { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px 0 8px; border: 0; border-radius: 10px; background: none; color: var(--text-muted); font: 500 14px/1 var(--font-ui); text-align: left; cursor: pointer; }
 	.kinds button:hover { color: var(--text); }

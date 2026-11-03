@@ -1,11 +1,12 @@
 <script lang="ts">
 	// Every release, at the foot of the Updates tab: the newest one open with its notes, older ones
 	// folded to one line each, and only three shown until "Show more". The app
-	// knows just the current and newest release today; ?releases=demo fills in
-	// a made-up history so the many-release case can be seen.
+	// knows just the current and newest release today; in dev builds ?releases=demo
+	// fills in a made-up history so the many-release case can be seen.
 	import './plate.css';
 	import { page } from '$app/state';
 	import { ago } from '../format.ts';
+	import Button from '../ui/Button.svelte';
 
 	type Update = { on: boolean; version: string; latest?: string; newer: boolean; link?: string; notes?: string; checked_at?: string; problem?: string; no_release?: boolean };
 	type Rel = { version: string; date?: string; notes?: string; link?: string };
@@ -26,78 +27,84 @@
 		{ version: '1.1.0', date: '2026-08-15', notes: 'Subtitles from outside sites.' },
 		{ version: '1.0.0', date: '2026-07-30', notes: 'First release.' }
 	];
+	const isDemo = $derived(import.meta.env.DEV && page.url.searchParams.get('releases') === 'demo');
 
 	const list = $derived.by((): Rel[] => {
-		if (page.url.searchParams.get('releases') === 'demo') return demo;
+		if (isDemo) return demo;
 		if (!upd) return [];
 		const out: Rel[] = [];
-		if (upd.newer && upd.latest) out.push({ version: upd.latest, notes: upd.notes, link: upd.link, date: upd.checked_at });
+		// No date on the newer release: the update info has no publish date, only when HolyArrs last checked.
+		if (upd.newer && upd.latest) out.push({ version: upd.latest, notes: upd.notes, link: upd.link });
 		out.push({ version: upd.version, notes: upd.newer ? undefined : upd.notes, link: upd.newer ? undefined : upd.link });
 		return out;
 	});
-	const current = $derived(page.url.searchParams.get('releases') === 'demo' ? '1.3.2' : upd?.version);
+	const current = $derived(isDemo ? '1.3.2' : upd?.version);
+	// Only call the first row the newest when a check actually ran and worked.
+	const known = $derived(isDemo || !!(upd && upd.on && !upd.problem && !upd.no_release && upd.checked_at));
 	const isOpen = (r: Rel, i: number) => open[r.version] ?? i === 0;
 </script>
+
+{#snippet head(r: Rel, i: number, notes: boolean)}
+	<span class="chev" aria-hidden="true">{#if notes}<svg viewBox="0 0 20 20"><path d="M7 5l5 5-5 5" /></svg>{/if}</span>
+	<span class="rv">v{r.version}</span>
+	{#if i === 0 && known}<span class="chip ok">Newest</span>{/if}
+	{#if r.version === current}<span class="chip red">Yours</span>{/if}
+	{#if r.date}<span class="rd">{ago(r.date)}</span>{/if}
+{/snippet}
 
 <section class="st-plate" aria-labelledby="s-rel">
 	<h2 id="s-rel">All releases{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
 
+	{#if !list.length}<p class="none">Loading releases…</p>{/if}
 	<ol class="rels">
 		{#each list.slice(0, shown) as r, i (r.version)}
-			{@const o = isOpen(r, i)}
+			{@const o = !!r.notes && isOpen(r, i)}
 			<li class="rel" class:open={o}>
-				<button type="button" class="rh" aria-expanded={o} onclick={() => (open[r.version] = !o)} disabled={!r.notes}>
-					<span class="chev" aria-hidden="true">{#if r.notes}<svg viewBox="0 0 20 20"><path d="M7 5l5 5-5 5" /></svg>{/if}</span>
-					<span class="rv">v{r.version}</span>
-					{#if i === 0}<span class="pill new">Latest</span>{/if}
-					{#if r.version === current}<span class="pill cur">Yours</span>{/if}
-					{#if r.date}<span class="rd">{ago(r.date)}</span>{/if}
-				</button>
+				{#if r.notes}
+					<button type="button" class="rh" aria-expanded={o} onclick={() => (open[r.version] = !o)}>{@render head(r, i, true)}</button>
+				{:else}
+					<div class="rh">{@render head(r, i, false)}</div>
+				{/if}
 				{#if o && r.notes}
 					<div class="body">
 						<ul class="notes">{#each r.notes.split('\n').filter(Boolean) as line}<li>{line}</li>{/each}</ul>
-						{#if r.link}<a class="btn" href={r.link} target="_blank" rel="noopener noreferrer">Release page</a>{/if}
+						{#if r.link}<a class="xbtn" href={r.link} target="_blank" rel="noopener noreferrer">Release page</a>{/if}
 					</div>
 				{/if}
 			</li>
 		{/each}
 	</ol>
 	{#if list.length > shown}
-		<button type="button" class="more" onclick={() => (shown += STEP)}>Show {Math.min(STEP, list.length - shown)} more · {list.length - shown} older</button>
+		<div class="more"><Button variant="secondary" full onclick={() => (shown += STEP)}>Show {Math.min(STEP, list.length - shown)} more · {list.length - shown} older</Button></div>
 	{:else if shown > STEP}
-		<button type="button" class="more" onclick={() => (shown = STEP)}>Show fewer</button>
+		<div class="more"><Button variant="secondary" full onclick={() => (shown = STEP)}>Show fewer</Button></div>
 	{/if}
 </section>
 
 <style>
-	.cnt { padding: 2px 8px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; color: var(--text-muted); }
+	.none { margin: 0; font-size: 14px; color: var(--text-muted); }
 	.rels { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 	.rel { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-1); overflow: hidden; }
 	.rel.open { border-color: var(--line-strong); box-shadow: 0 8px 20px -14px rgb(0 0 0 / 0.35); }
 	.rh {
-		display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 0; background: none;
-		color: var(--text); font: inherit; text-align: left; cursor: pointer;
+		display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 0; background: none;
+		color: var(--text); font: inherit; text-align: left; box-sizing: border-box;
 	}
-	.rh:disabled { cursor: default; }
+	button.rh { cursor: pointer; }
 	.rh:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 	.chev { display: grid; place-items: center; width: 18px; color: var(--text-muted); }
 	.chev svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform 160ms var(--ease-out); }
 	.rel.open .chev svg { transform: rotate(90deg); }
 	.rv { font: 700 15.5px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.rd { margin-left: auto; font-size: 12.5px; color: var(--text-muted); }
-	.pill { padding: 3px 8px; border-radius: var(--r-pill); font-size: 11.5px; font-weight: 600; }
-	.pill.new { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--text); }
-	.pill.cur { background: color-mix(in srgb, var(--accent, var(--info)) 18%, transparent); color: var(--text); }
 	.body { display: flex; flex-direction: column; gap: 12px; padding: 4px 14px 14px 42px; border-top: 1px solid var(--line); }
 	.notes { margin: 10px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: var(--text); }
-	.btn, .more {
-		display: inline-flex; align-items: center; align-self: flex-start; min-height: 40px; padding: 0 14px; border: 1px solid var(--line);
-		border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); color: var(--text); font: 500 13.5px/1 var(--font-ui);
-		text-decoration: none; cursor: pointer;
-	}
-	.more { margin-top: 12px; width: 100%; justify-content: center; border-style: dashed; color: var(--text-muted); }
-	.more:hover, .btn:hover { border-color: var(--line-strong); color: var(--text); }
-	.btn:focus-visible, .more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Outside link in a new tab, drawn like the shared secondary Button (whose link form has no target). */
+	.xbtn { display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; min-height: 36px; padding: 0 16px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-headline); font-size: 15px; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
+	.xbtn:hover { background: var(--surface-3); }
+	.xbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (pointer: coarse) { .xbtn { min-height: 44px; } }
+	.more { margin-top: 12px; }
 	@media (max-width: 767px) {
 		.body { padding-left: 14px; }
 	}

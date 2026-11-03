@@ -7,7 +7,7 @@
 	// minutes pass. While a job runs, the line lifts into a plateau that grows
 	// with its progress. One line underneath puts the rate into words.
 	import type { LiveJobs } from '../livejobs.svelte.ts';
-	import { clock, t } from '../livejobs.svelte.ts';
+	import { wait, t } from '../livejobs.svelte.ts';
 	import type { StatusRow } from '../status.ts';
 
 	let { lj, upcoming }: { lj: LiveJobs; upcoming: StatusRow[]; recent: StatusRow[] } = $props();
@@ -20,7 +20,7 @@
 	const HOUR = 60 * MIN;
 	const PX = (X1 - X0) / HOUR;
 	const grid = [20, 40, 60, 80, 100];
-	const ticks = Array.from({ length: 13 }, (_, i) => ({ i, x: X0 + (i * (X1 - X0)) / 12, label: i === 0 ? '−60' : i === 6 ? '−30' : i === 12 ? 'now' : '' }));
+	const ticks = Array.from({ length: 13 }, (_, i) => ({ i, x: X0 + (i * (X1 - X0)) / 12, label: i === 0 ? '−60 min' : i === 6 ? '−30 min' : i === 12 ? 'now' : '' }));
 
 	type Kind = 'ok' | 'fail' | 'cut';
 	// Each beat's shape, as offsets from where it sits on the line.
@@ -99,7 +99,7 @@
 		const runs = `${hourCount} ${hourCount === 1 ? 'run' : 'runs'} in the last hour`;
 		const failed = failCount ? ` · ${failCount} failed` : '';
 		const due = first ? lj.due(first) : NaN;
-		const next = first ? (due <= 0 ? `${first.name} is due` : `next in ${clock(due)}`) : 'nothing planned';
+		const next = first ? (due <= 0 ? `${first.name} is due` : `next in ${wait(due)}`) : 'nothing planned';
 		if (run) return `${run.label} running · ${pct > 0 ? `${pct}%` : 'working'} · ${runs}${failed}`;
 		return `${hourCount ? runs : 'Quiet'}${failed} · ${next}`;
 	});
@@ -142,7 +142,7 @@
 </div>
 
 <style>
-	.pulse { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; height: 100%; color: var(--text); }
+	.pulse { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; height: 100%; color: var(--text); container-type: inline-size; }
 	.mon { display: block; width: 100%; max-width: 640px; height: auto; overflow: visible; }
 
 	.gr { stroke: color-mix(in srgb, var(--text-faint) 25%, transparent); stroke-width: 0.7; }
@@ -161,7 +161,12 @@
 
 	.tk { stroke: var(--text-faint); stroke-width: 0.8; opacity: 0.6; }
 	.tk.big { opacity: 1; }
-	.tl { font: 500 8.5px var(--font-mono); fill: var(--text-faint); font-variant-numeric: tabular-nums; }
+	.tl { font: 500 9.5px var(--font-mono); fill: var(--text-muted); font-variant-numeric: tabular-nums; }
+	/* On a narrow plate the drawing shrinks, so its words grow to stay readable. */
+	@container (max-width: 480px) {
+		.tl { font-size: 14px; }
+		.pct { font-size: 13px; }
+	}
 
 	.rate { margin: 0; max-width: 100%; font: 500 12.5px/1.3 var(--font-ui); color: var(--text-muted); font-variant-numeric: tabular-nums; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.rate.on { color: var(--text); }

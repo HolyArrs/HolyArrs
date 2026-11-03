@@ -5,7 +5,7 @@
 	// waiting jobs first, then the next runs. Clicking a peeking card lifts it
 	// to the top for six seconds, then the stack settles back.
 	import type { LiveJobs } from '../livejobs.svelte.ts';
-	import { clock, t } from '../livejobs.svelte.ts';
+	import { clock, wait, t } from '../livejobs.svelte.ts';
 	import type { StatusRow } from '../status.ts';
 	import type { ActiveJob } from '../../types.ts';
 
@@ -54,7 +54,7 @@
 		if (x.kind === 'run') return j_pct(x.job) > 0 ? `${j_pct(x.job)}%` : 'running';
 		if (x.kind === 'wait') return 'waiting';
 		const d = lj.due(x.row);
-		return d <= 0 ? 'due now' : `in ${clock(d)}`;
+		return d <= 0 ? 'due now' : `in ${wait(d)}`;
 	};
 	const j_pct = (j: ActiveJob) => Math.round(Math.min(1, Math.max(0, j.progress)) * 100);
 	const busy = $derived(lj.running.length > 0);
@@ -75,8 +75,9 @@
 			</div>
 		{/if}
 		{#each stack as x, k (x.key)}
-			<div class="cd" class:top={k === 0} class:live={x.kind === 'run'} style:--k={k} style:z-index={3 - k} aria-hidden={k === 0 ? undefined : 'true'}>
-				<div class="face">
+			<div class="cd" class:top={k === 0} class:live={x.kind === 'run'} style:--k={k} style:z-index={3 - k}>
+				<!-- Only the top card's face is read out; a card behind shows just its title line, which stays a button. -->
+				<div class="face" aria-hidden={k === 0 ? undefined : 'true'} inert={k !== 0}>
 					{#if x.kind === 'run'}
 						{@const pct = j_pct(x.job)}
 						<div class="hd"><span class="kick"><i class="dot" aria-hidden="true"></i>Running</span><span class="tm">{clock(since(x.job))}</span></div>
@@ -98,14 +99,14 @@
 						<div class="hd"><span class="kick"><i class="dot" style:--c={tone[x.row.tone] ?? 'var(--info)'} aria-hidden="true"></i>Next run</span><span class="tm">at {hm(t(x.row.nextRun))}</span></div>
 						<p class="nm">{x.row.name}</p>
 						<div class="big" class:due={d <= 0}>
-							{#if d <= 0}<b>due now</b>{:else}<span>in</span><b>{clock(d)}</b>{/if}
+							{#if d <= 0}<b>due now</b>{:else}<span>in</span><b>{wait(d)}</b>{/if}
 						</div>
 						<div class="fl" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(lj.fill(x.row) * 100)} aria-label="Wait for {x.row.name}">
 							<i style:transform="scaleX({lj.fill(x.row)})"></i>
 						</div>
 					{/if}
 				</div>
-				<button class="pk" type="button" tabindex={k === 0 ? -1 : 0} onclick={() => lift(x.key)} aria-label="Show {nameOf(x)} on top">
+				<button class="pk" type="button" inert={k === 0} onclick={() => lift(x.key)} aria-label="Show {nameOf(x)} on top">
 					<span class="pn">{nameOf(x)}</span><span class="pt">{peekTime(x)}</span>
 				</button>
 			</div>
@@ -170,7 +171,7 @@
 
 	.big { display: flex; align-items: baseline; gap: 8px; margin-top: auto; color: var(--text-muted); font-size: 13px; }
 	.big b { font: 600 28px/1 var(--font-display); color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-	.big.due b { color: var(--accent); }
+	.big.due b { color: var(--accent-text); }
 	.fl { position: relative; height: 3px; margin-top: 10px; border-radius: var(--r-pill); overflow: hidden; background: color-mix(in srgb, var(--text) 9%, transparent); }
 	.fl i { position: absolute; inset: 0; background: color-mix(in srgb, var(--text) 45%, transparent); transform-origin: left center; transition: transform 0.9s linear; }
 

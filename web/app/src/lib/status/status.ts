@@ -1,12 +1,12 @@
-// The Status page: every linked part and background job turned into one kind
+// The Status page: every linked app, health check and background job turned into one kind
 // of row, grouped in a fixed order. Pure, so grouping and wording are testable.
 import type { AlertView, HealthCheck, OutsideList, StageState } from '../types.ts';
 import type { ScheduleRow } from '../schedules.ts';
 
 export type Tone = 'ok' | 'wait' | 'fail' | 'idle';
-export type GroupId = 'sources' | 'downloaders' | 'library' | 'media' | 'subtitles' | 'lists' | 'alerts' | 'metadata' | 'jobs';
+export type GroupId = 'sources' | 'downloaders' | 'library' | 'media' | 'subtitles' | 'lists' | 'alerts' | 'metadata' | 'app' | 'jobs';
 
-/** What a "Check now" button calls; left out when no route exists. */
+/** What a row's Check or Run now button calls; left out when no route exists. */
 export type CheckAction = { kind: 'source' | 'downloader'; id: number } | { kind: 'job'; job: string } | { kind: 'checks' };
 
 export interface StatusRow {
@@ -23,6 +23,8 @@ export interface StatusRow {
 	/** Jobs only. */
 	lastRun?: string;
 	nextRun?: string;
+	/** Jobs only: how the last run ended (done, failed, cancelled). */
+	lastResult?: string;
 }
 
 export interface StatusGroup {
@@ -34,12 +36,14 @@ export interface StatusGroup {
 export const groupOrder: { id: GroupId; label: string }[] = [
 	{ id: 'sources', label: 'Sources' },
 	{ id: 'downloaders', label: 'Downloaders' },
-	{ id: 'library', label: 'Library' },
-	{ id: 'media', label: 'Media server' },
-	{ id: 'subtitles', label: 'Subtitles' },
-	{ id: 'lists', label: 'Lists' },
+	// Folder, free-space and backups checks sit in the Storage plate.
+	{ id: 'library', label: 'Storage' },
+	{ id: 'media', label: 'Media servers' },
+	{ id: 'subtitles', label: 'Subtitle sites' },
+	{ id: 'lists', label: 'Outside lists' },
 	{ id: 'alerts', label: 'Alerts' },
 	{ id: 'metadata', label: 'Metadata server' },
+	{ id: 'app', label: 'Updates' },
 	{ id: 'jobs', label: 'Jobs' }
 ];
 
@@ -70,14 +74,22 @@ const checkFix: Record<string, string> = {
 };
 const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update' };
 
-/** linkTone turns a linked part's state into a tone and a word. */
+/** checkTitle names a health check row without saying the same word twice ("Backups", not "Backups Backups"). */
+function checkTitle(c: Pick<HealthCheck, 'kind' | 'subject'>): string {
+	const n = checkName[c.kind];
+	if (!c.subject || c.subject === n) return n;
+	return c.kind === 'update' ? c.subject : `${n} ${c.subject}`;
+}
+
+/** linkTone turns a linked app's state into a tone and a word. */
 export function linkTone(s: Pick<StageState, 'state' | 'stuck'>): { tone: Tone; word: string } {
 	if (s.stuck) return { tone: 'fail', word: 'Stuck' };
 	switch (s.state) {
 		case 'running':
 			return { tone: 'ok', word: 'Working' };
 		case 'starting':
-			return { tone: 'wait', word: 'Starting' };
+			// Normal after every restart; not a problem.
+			return { tone: 'idle', word: 'Starting' };
 		case 'retrying':
 			return { tone: 'wait', word: 'Retrying' };
 		case 'failed':
@@ -102,9 +114,10 @@ export function realTime(s: string | null | undefined): string | undefined {
 
 /** jobTone says how a background job stands: failed, late, not run yet, off or OK. */
 export function jobTone(s: ScheduleRow, now = Date.now()): { tone: Tone; word: string; reason: string } {
-	if (!s.enabled) return { tone: 'idle', word: 'Off', reason: 'Automatic runs are turned off.' };
-	if (s.state === 'part_off') return { tone: 'idle', word: 'Off', reason: 'The part it belongs to is turned off.' };
-	if (s.state === 'safe_mode') return { tone: 'idle', word: 'Paused', reason: 'HolyArrs is in safe mode.' };
+	// Same words as Settings > Schedules.
+	if (!s.enabled) return { tone: 'idle', word: 'Turned off', reason: 'Automatic runs are turned off.' };
+	if (s.state === 'part_off') return { tone: 'idle', word: 'Part is off', reason: 'The part it belongs to is turned off.' };
+	if (s.state === 'safe_mode') return { tone: 'idle', word: 'Safe mode', reason: 'HolyArrs is in safe mode.' };
 	if (s.state === 'running') return { tone: 'ok', word: 'Running', reason: '' };
 	if (s.last_job === 'failed') return { tone: 'fail', word: 'Failed', reason: s.last_job_error || 'The last run failed.' };
 	const next = s.next_run ? new Date(s.next_run).getTime() : NaN;
@@ -128,9 +141,9 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		if (!checkFix[c.kind]) continue; // sources and downloaders come from their linked state
 		const tone: Tone = c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail';
 		rows.push({
-			group: 'library',
+			group: c.kind === 'update' ? 'app' : 'library',
 			key: c.key,
-			name: c.subject ? `${checkName[c.kind]} ${c.subject}` : checkName[c.kind],
+			name: checkTitle(c),
 			tone,
 			word: tone === 'ok' ? 'Working' : tone === 'wait' ? 'Warning' : 'Broken',
 			reason: c.message,
@@ -142,20 +155,21 @@ export function buildRows(i: StatusInput): StatusRow[] {
 	for (const l of i.lists ?? []) {
 		const base = { group: 'lists' as const, key: `list:${l.id}`, name: l.name, at: l.last_synced_at, fix: '/settings/outside-lists' };
 		if (!l.enabled) rows.push({ ...base, tone: 'idle', word: 'Off', reason: '' });
-		else if (l.last_error) rows.push({ ...base, tone: 'fail', word: 'Failed', reason: l.last_error });
+		else if (l.last_error) rows.push({ ...base, tone: 'fail', word: 'Broken', reason: l.last_error });
 		else if (!l.last_synced_at) rows.push({ ...base, tone: 'idle', word: 'Not synced yet', reason: '' });
 		else rows.push({ ...base, tone: 'ok', word: 'Working', reason: l.last_result });
 	}
 	for (const a of i.alerts ?? []) {
 		const base = { group: 'alerts' as const, key: `alert:${a.id}`, name: a.name, at: a.last_sent_at, fix: '/settings/alerts' };
 		if (!a.enabled) rows.push({ ...base, tone: 'idle', word: 'Off', reason: '' });
-		else if (a.last_error) rows.push({ ...base, tone: 'fail', word: 'Failed', reason: a.last_error });
-		else rows.push({ ...base, tone: 'ok', word: 'Working', reason: a.last_sent_at ? '' : 'Nothing sent yet.' });
+		else if (a.last_error) rows.push({ ...base, tone: 'fail', word: 'Broken', reason: a.last_error });
+		else if (!a.last_sent_at) rows.push({ ...base, tone: 'idle', word: 'Not sent yet', reason: '' });
+		else rows.push({ ...base, tone: 'ok', word: 'Working', reason: '' });
 	}
 	if (i.metadataUp != null) {
 		const t = i.metadataUp
 			? { tone: 'ok' as const, word: 'Working', reason: '' }
-			: { tone: 'fail' as const, word: 'Down', reason: 'Search and new artwork wait until it answers again.' };
+			: { tone: 'fail' as const, word: 'Broken', reason: 'Search and new artwork wait until it answers again.' };
 		rows.push({ group: 'metadata', key: 'metadata', name: 'HolyArrs metadata', at: i.metadataAt, ...t });
 	}
 	for (const s of i.schedules ?? []) {
@@ -167,6 +181,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 			at: s.last_job_ended || s.last_run,
 			lastRun: s.last_run,
 			nextRun: s.next_run,
+			lastResult: s.last_job,
 			fix: '/settings/schedules',
 			check: { kind: 'job', job: s.kind }
 		});
@@ -196,30 +211,36 @@ export function groupLine(g: StatusGroup): string {
 	return parts.join(' · ');
 }
 
-/** headline is the line at the top: "Everything is working" or what needs attention. */
-export function headline(rows: StatusRow[]): string {
+/** nothingLinked is true when no source and no downloader is added, so nothing can be fetched yet. */
+export function nothingLinked(rows: StatusRow[]): boolean {
+	return !rows.some((r) => r.group === 'sources' || r.group === 'downloaders');
+}
+
+/** headline is the line at the top: what needs attention, "Everything is working", or that nothing is added yet.
+ * linkedKnown is false when the linked apps could not be read, so an empty list is not taken as "none added". */
+export function headline(rows: StatusRow[], linkedKnown = true): string {
 	const bad = needsAttention(rows);
-	if (!bad.length) return 'Everything is working';
-	const parts = bad.filter((r) => r.group !== 'jobs').length;
-	const jobs = bad.length - parts;
+	if (!bad.length) return !linkedKnown ? 'No problems found' : nothingLinked(rows) ? 'No sources or downloaders added yet' : 'Everything is working';
+	const checks = bad.filter((r) => r.group !== 'jobs').length;
+	const jobs = bad.length - checks;
 	const out: string[] = [];
-	if (parts) out.push(`${parts} part${parts === 1 ? ' needs' : 's need'} attention`);
+	if (checks) out.push(`${checks} check${checks === 1 ? ' needs' : 's need'} attention`);
 	if (jobs) out.push(`${jobs} job${jobs === 1 ? ' needs' : 's need'} attention`);
 	return out.join(', ');
 }
 
-/** Which parts a Status section lists, in order; Library lives in Storage, Jobs on its own tab. */
+/** Which kinds of linked app the Status tab lists, in order; Library lives in Storage, Jobs on its own tab. */
 export const partKinds: { id: GroupId; label: string; add: string; one: string }[] = [
 	{ id: 'sources', label: 'Sources', add: '/settings/sources', one: 'source' },
 	{ id: 'downloaders', label: 'Downloaders', add: '/settings/downloaders', one: 'downloader' },
-	{ id: 'media', label: 'Media server', add: '/settings/media-servers', one: 'media server' },
-	{ id: 'subtitles', label: 'Subtitles', add: '/settings/subtitles', one: 'subtitle site' },
-	{ id: 'lists', label: 'Lists', add: '/settings/outside-lists', one: 'list' },
+	{ id: 'media', label: 'Media servers', add: '/settings/media-servers', one: 'media server' },
+	{ id: 'subtitles', label: 'Subtitle sites', add: '/settings/subtitles', one: 'subtitle site' },
+	{ id: 'lists', label: 'Outside lists', add: '/settings/outside-lists', one: 'outside list' },
 	{ id: 'alerts', label: 'Alerts', add: '/settings/alerts', one: 'alert' },
 	{ id: 'metadata', label: 'Metadata server', add: '/settings/this-app', one: 'metadata server' }
 ];
 
-/** everyKind gives one group per kind of part, empty kinds included, so the Status grid keeps its shape. */
+/** everyKind gives one group per kind of linked app, empty kinds included, so the Status grid keeps its shape. */
 export function everyKind(groups: StatusGroup[]): StatusGroup[] {
 	return partKinds.map((k) => ({ id: k.id, label: k.label, rows: groups.find((g) => g.id === k.id)?.rows ?? [] }));
 }
@@ -229,4 +250,23 @@ export function groupCounts(g: StatusGroup): { ok: number; bad: number; off: num
 	const ok = g.rows.filter((r) => r.tone === 'ok').length;
 	const off = g.rows.filter((r) => r.tone === 'idle').length;
 	return { ok, bad: g.rows.length - ok - off, off };
+}
+
+/** atVerb says what the time beside a row means, so "3 d ago" never reads as "not checked for 3 days". */
+export const atVerb: Partial<Record<GroupId, string>> = { sources: 'Since', downloaders: 'Since', media: 'Since', subtitles: 'Since', library: 'Checked', app: 'Checked', lists: 'Synced', alerts: 'Sent', metadata: 'Checked', jobs: 'Ran' };
+
+const ended: Record<string, { tone: Tone; word: string }> = {
+	done: { tone: 'ok', word: 'OK' },
+	failed: { tone: 'fail', word: 'Failed' },
+	cancelled: { tone: 'idle', word: 'Cancelled' }
+};
+
+/** pastResult is how a job's last run ended, not what the job is doing now; rows without it keep the job's own word. */
+export function pastResult(r: Pick<StatusRow, 'tone' | 'word' | 'lastResult'>): { tone: Tone; word: string } {
+	return ended[r.lastResult ?? ''] ?? { tone: r.tone, word: r.word };
+}
+
+/** stopped is true for jobs that never run on their own (turned off, their part off, safe mode), so they have no next run. */
+export function stopped(r: Pick<StatusRow, 'word'>): boolean {
+	return r.word === 'Turned off' || r.word === 'Part is off' || r.word === 'Safe mode';
 }

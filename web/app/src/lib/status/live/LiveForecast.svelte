@@ -169,10 +169,10 @@
 	.slot { position: relative; display: block; width: 100%; height: 36px; margin-top: 8px; z-index: 2; }
 	.pt { position: absolute; left: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--surface-1); transition: top 0.6s ease; }
 	.ct { margin-top: 4px; font: 600 12.5px/1.2 var(--font-ui); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.ct.zero { font-weight: 500; color: var(--text-faint); }
-	.ct b { color: var(--accent); }
+	.ct.zero { font-weight: 500; color: var(--text-muted); }
+	.ct b { color: var(--accent-text); }
 	.nm { display: flex; flex-direction: column; align-items: center; gap: 1px; width: 100%; min-height: 26px; margin-top: 4px; }
-	.nm span { max-width: 100%; font-size: 10.5px; line-height: 1.2; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.nm span { max-width: 100%; font-size: 10.5px; line-height: 1.2; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	.empty { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
 	.orbit { fill: none; stroke: color-mix(in srgb, var(--c) 30%, transparent); stroke-width: 1; }

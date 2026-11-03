@@ -30,11 +30,19 @@ export interface LogEntry {
 
 export const t = (s?: string | null) => (s ? Date.parse(s) : NaN);
 
-/** clock says a span in minutes and seconds: "0:42", "12:05", or "3 h 10 min" past an hour. */
+/** clock says a time so far in minutes and seconds: "0:42", "12:05", or "3 h 10 min" past an hour, the same words as wait(). */
 export function clock(ms: number): string {
 	const s = Math.max(0, Math.round(ms / 1000));
-	if (s >= 3600) return `${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min`;
+	if (s >= 3600) return wait(s * 1000);
 	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/** wait says a time still to go the way the rest of the page does: "12 min", "3 h 10 min", "under 1 min". */
+export function wait(ms: number): string {
+	const m = Math.round(Math.max(0, ms) / 60000);
+	if (m < 1) return 'under 1 min';
+	if (m >= 60) return `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`;
+	return `${m} min`;
 }
 
 /** kindOf is the job kind a schedule row runs, or "" for rows that are not jobs. */
@@ -93,10 +101,15 @@ export class LiveJobs {
 	#timer: ReturnType<typeof setTimeout> | undefined;
 	#offs: (() => void)[] = [];
 	#interval: ReturnType<typeof setInterval> | undefined;
+	#seq = 0;
 
 	async load() {
+		// Reads can overlap; only the newest one's answer is kept, so a slow older
+		// reply never brings back a job that has since finished.
+		const n = ++this.#seq;
 		try {
 			const [a, h] = await Promise.all([api.get<{ jobs: ActiveJob[] }>('/jobs/active'), api.get<{ jobs: HistJob[] }>('/jobs?limit=80')]);
+			if (n !== this.#seq) return;
 			this.active = a.jobs;
 			this.history = h.jobs;
 			for (const j of a.jobs) this.names[j.kind] = j.label;

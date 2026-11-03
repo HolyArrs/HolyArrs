@@ -3,48 +3,81 @@
 	// Reads only the existing health, schedules, lists, alerts and metadata
 	// routes.
 	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { checkMetadata } from '#lib/metadata-health.svelte.ts';
+	import { checkMetadata, metadataHealth } from '#lib/metadata-health.svelte.ts';
 	import type { AlertView, HealthChecks, HealthStates, OutsideList } from '#lib/types.ts';
 	import type { ScheduleRow } from '#lib/schedules.ts';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Sections from '#lib/status/StatusSections.svelte';
 	import LivePills from '#lib/status/LivePills.svelte';
-	import { buildRows, groupOrder, groupRows, headline, needsAttention, type StatusInput, type StatusRow } from '#lib/status/status.ts';
+	import { buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/status/status.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	let input = $state<StatusInput | null>(null);
 	// The trailers check names yt-dlp's version; it is not a part, so it is not a row.
 	const ytdlp = $derived(input?.checks?.find((c) => (c.kind as string) === 'trailers'));
 	let error = $state('');
-	let busy = $state<string | null>(null);
+	// Which sources failed on the last read, so a gap never looks healthy or empty.
+	let failed = $state<string[]>([]);
+	// Every running action, so one finishing never re-enables another.
+	const running = new SvelteSet<string>();
+	const busy = (key: string) => running.has(key);
+	// Goes up after each health check run, so Storage reloads its disks.
+	let checkRuns = $state(0);
 	const canAct = $derived(session.can('settings'));
 
 	const rows = $derived(input ? buildRows({ ...input, now: Date.now() }) : []);
 	const groups = $derived(groupRows(rows));
-	const problems = $derived(needsAttention(rows));
-	const top = $derived(headline(rows));
+	const top = $derived(headline(rows, !failed.includes('parts')));
 	const labelOf = (r: StatusRow) => groupOrder.find((g) => g.id === r.group)?.label ?? '';
+	const failedText = $derived(failed.length ? `Could not load ${failed.join(', ')}.` : '');
 
-	async function load() {
+	// Only the newest read may write the page; an older reply that lands late is dropped.
+	// load() is true when its answer was the one kept; latest is the newest read.
+	let seq = 0;
+	let latest: Promise<boolean> = Promise.resolve(true);
+	function load(force = false): Promise<boolean> {
+		return (latest = read(force));
+	}
+	// Waits until the newest read has landed, so a toast never reads old rows.
+	async function settle(p: Promise<boolean>) {
+		while (!(await p)) p = latest;
+	}
+	async function read(force: boolean): Promise<boolean> {
+		const n = ++seq;
 		const [states, checks, sched, lists, alerts, meta] = await Promise.allSettled([
 			api.get<HealthStates>('/health/states'),
 			api.get<HealthChecks>('/health/checks'),
 			api.get<{ schedules: ScheduleRow[] }>('/schedules'),
 			api.get<{ outside_lists: OutsideList[] }>('/outside-lists'),
 			api.get<{ alerts: AlertView[] }>('/alerts'),
-			checkMetadata(true)
+			checkMetadata(force)
 		]);
+		if (n !== seq) return false;
 		const val = <T,>(r: PromiseSettledResult<T>) => (r.status === 'fulfilled' ? r.value : undefined);
 		if (states.status === 'rejected' && sched.status === 'rejected') {
+			// Keep what was shown before; the inline notice says the read failed.
 			error = message(states.reason);
-			return;
+			return true;
 		}
 		error = '';
+		const named: [PromiseSettledResult<unknown>, string][] = [
+			[states, 'parts'],
+			[checks, 'health checks'],
+			[sched, 'jobs'],
+			[lists, 'outside lists'],
+			[alerts, 'alerts']
+		];
+		failed = named.filter(([r]) => r.status === 'rejected').map(([, w]) => w);
 		input = {
 			states: val(states)?.states,
 			checks: val(checks)?.checks,
@@ -52,54 +85,96 @@
 			lists: val(lists)?.outside_lists,
 			alerts: val(alerts)?.alerts,
 			metadataUp: meta.status === 'fulfilled' ? meta.value : false,
-			metadataAt: new Date().toISOString()
+			metadataAt: new Date(metadataHealth.checked || Date.now()).toISOString()
 		};
+		return true;
+	}
+
+	const retry = () => void load(true);
+
+	// Live pushes come on every job progress step: read at most once per 400 ms, one read at a time.
+	let soonTimer: ReturnType<typeof setTimeout> | undefined;
+	let reading = false;
+	let again = false;
+	function soon() {
+		if (soonTimer) return;
+		soonTimer = setTimeout(async () => {
+			soonTimer = undefined;
+			if (reading) {
+				again = true;
+				return;
+			}
+			reading = true;
+			try {
+				await load();
+			} finally {
+				reading = false;
+				if (again) {
+					again = false;
+					soon();
+				}
+			}
+		}, 400);
+	}
+
+	// After a health check run, say what the row shows now.
+	function afterChecks(r: StatusRow) {
+		const now = rows.find((x) => x.key === r.key);
+		if (!now) toasts.push('Checks ran.', 'ok');
+		else toasts.push(now.tone === 'ok' ? `${now.name} is working.` : `${now.name}: ${now.word}.`, now.tone === 'ok' ? 'ok' : 'fail');
 	}
 
 	async function check(r: StatusRow) {
 		const c = r.check;
-		if (!c) return;
-		busy = r.key;
+		if (!c || running.has(r.key)) return;
+		running.add(r.key);
 		try {
 			if (c.kind === 'job') {
 				const res = await api.post<{ already: boolean }>(`/schedules/${c.job}/run`);
 				toasts.push(res.already ? `${r.name} is already waiting or running.` : `${r.name} started.`, 'ok');
+				await load(true);
 			} else if (c.kind === 'checks') {
 				await api.post('/health/checks/run');
+				await settle(load(true));
+				checkRuns++;
+				afterChecks(r);
 			} else {
 				const res = await api.post<{ ok: boolean; text: string }>(`/${c.kind}s/${c.id}/test`);
 				toasts.push(res.ok ? `${r.name} answered.` : res.text || `${r.name} did not answer.`, res.ok ? 'ok' : 'fail');
+				await load(true);
 			}
-			await load();
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {
-			busy = null;
+			running.delete(r.key);
 		}
 	}
 
 	async function checkAll() {
-		busy = 'all';
+		if (running.has('all')) return;
+		running.add('all');
 		try {
 			await api.post('/health/checks/run');
-			await load();
+			await load(true);
+			checkRuns++;
+			toasts.push('Checks ran.', 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {
-			busy = null;
+			running.delete('all');
 		}
 	}
 
 	function setTab(t: string) {
 		const u = new URL(page.url.href);
 		u.searchParams.set('tab', t);
-		void goto(u.pathname + u.search);
+		void goto(u.pathname + u.search, { reset: false, replace: true });
 	}
 
 	onMount(() => {
-		void load();
+		void load(true);
 		// Live pushes cover health and jobs; the 60s poll catches lists, alerts and the metadata server.
-		const offs = [live.on('health', load), live.on('job', load)];
+		const offs = [live.on('health', soon), live.on('job', soon)];
 		const t = setInterval(() => {
 			if (document.visibilityState === 'visible') void load();
 		}, 60_000);
@@ -107,6 +182,7 @@
 		document.addEventListener('visibilitychange', vis);
 		return () => {
 			clearInterval(t);
+			clearTimeout(soonTimer);
 			offs.forEach((off) => off());
 			document.removeEventListener('visibilitychange', vis);
 		};
@@ -115,46 +191,46 @@
 
 <svelte:head><title>Status · HolyArrs</title></svelte:head>
 
-<div class="status" data-testid="status-page">
-	<header class="sbar">
-		<div class="title">
-			<h1>Status</h1>
-			{#if input}<p class="head {problems.length ? 'bad' : 'good'}" data-testid="status-headline">{top}</p>{/if}
-		</div>
-		{#if canAct}
-			<button type="button" class="btn" onclick={checkAll} disabled={busy === 'all'} aria-busy={busy === 'all'}>Check all</button>
-		{/if}
-	</header>
+<div class="status" class:jobs={tab === 'jobs'} data-testid="status-page">
+	<PageHeader title="Status" subtitle={input ? top : undefined}>
+		{#snippet actions()}
+			{#if canAct}
+				<Button onclick={checkAll} busy={running.has('all')} disabled={running.has('all')} data-testid="status-check-all">Check again</Button>
+			{/if}
+		{/snippet}
+	</PageHeader>
 
-	{#if error}
-		<p class="notice" role="alert">{error}</p>
-	{:else if !input}
-		<p class="muted">Loading…</p>
+	{#if !input && error}
+		<LoadError hasData={false} message={error} onretry={retry} />
 	{:else}
-		<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} />
+		<PageLoader loading={!input} label="Loading Status" onretry={retry}>
+			{#if input}
+				<div class="body">
+					{#if error}<LoadError hasData message={error} onretry={retry} />
+					{:else if failedText}<LoadError hasData message={failedText} onretry={retry} />{/if}
+					<Sections {groups} {tab} ontab={setTab} {canAct} {busy} oncheck={check} {labelOf} {ytdlp} {failed} {checkRuns} />
+				</div>
+			{/if}
+		</PageLoader>
 	{/if}
 </div>
 <LivePills />
 
 <style>
-	/* This page ends where its last plate ends: no shared bottom padding, so the Jobs tab fits a screen. */
-	:global(main:has(> .status)) { padding-bottom: 12px; }
+	/* Desktop: this page ends where its last plate ends, so the Jobs tab fits a screen.
+	   Phones keep the layout's room for the tab bar. */
+	@media (min-width: 768px) {
+		:global(main:has(> .status)) { padding-bottom: 12px; }
+		/* The Jobs tab's fixed pill bar: keep room so the last rows scroll clear of it. */
+		:global(main:has(> .status.jobs)) { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+	}
+	@media (max-width: 767px) {
+		:global(main:has(> .status.jobs)) { padding-bottom: calc(var(--tabbar) + 72px + env(safe-area-inset-bottom)); }
+	}
 	.status {
 		max-width: 1600px; margin: 0 auto; padding: 0 var(--gutter) 0; box-sizing: border-box;
 		display: flex; flex-direction: column; gap: 16px;
 	}
-	.sbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0 8px; }
-	h1 { margin: 0; font: 600 24px/1.15 var(--font-ui); color: var(--text); }
-	.head { margin: 2px 0 0; font-size: 14px; }
-	.head.good { color: var(--text-muted); }
-	.head.bad { color: var(--fail-text); font-weight: 500; }
-	.muted { margin: 0; color: var(--text-muted); font-size: 14px; }
-	.notice { color: var(--fail-text); }
-	.btn {
-		min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: var(--r-pill);
-		background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 14px/1 var(--font-ui); cursor: pointer;
-	}
-	.btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.btn:disabled { opacity: 0.6; }
-	@media (max-width: 767px) { h1 { font-size: 22px; } }
+	.status :global(.ui-head) { margin-bottom: 0; }
+	.body { display: flex; flex-direction: column; gap: 16px; }
 </style>

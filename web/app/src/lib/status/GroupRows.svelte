@@ -1,19 +1,22 @@
 <script lang="ts">
 	// One group's parts as ruled rows inside its own section: a dot, the name
-	// and its word, and the reason plus Check now / Fix right under any part
+	// and its word, and the reason plus Check / Fix right under any row
 	// that is not working. Problems come first; long lists show six rows
 	// until "Show all".
 	import { ago, dateTime } from '../format.ts';
 	import { to } from '../paths.ts';
-	import type { StatusRow } from './status.ts';
+	import Button from '../ui/Button.svelte';
+	import { atVerb, type StatusRow } from './status.ts';
 
 	// flat drops the list's own frame (for rows that sit inside a ledger); compact tightens the rows.
-	let { rows, canAct, busy, oncheck, flat = false, compact = false }: { rows: StatusRow[]; canAct: boolean; busy: string | null; oncheck: (r: StatusRow) => void; flat?: boolean; compact?: boolean } = $props();
+	let { rows, canAct, busy, oncheck, flat = false, compact = false }: { rows: StatusRow[]; canAct: boolean; busy: (key: string) => boolean; oncheck: (r: StatusRow) => void; flat?: boolean; compact?: boolean } = $props();
 
 	const MAX = 6;
 	let all = $state(false);
 	const rank = (r: StatusRow) => (r.tone === 'fail' ? 0 : r.tone === 'wait' ? 1 : 2);
 	const ordered = $derived([...rows].sort((a, b) => rank(a) - rank(b)));
+	// What the time next to a working row means, so "3 d ago" never reads as "not checked for 3 days".
+	const when = (r: StatusRow) => (atVerb[r.group] ? `${atVerb[r.group]} ${ago(r.at)}` : ago(r.at));
 </script>
 
 <ul class="prl" class:flat class:compact>
@@ -21,17 +24,16 @@
 		{@const bad = r.tone === 'fail' || r.tone === 'wait'}
 		<li class="pr" class:bad data-testid="status-row" data-tone={r.tone} data-key={r.key}>
 			<div class="line">
-				<i class="d {r.tone}" aria-hidden="true"></i>
 				<span class="nm" title={r.name}>{r.name}</span>
-				{#if r.at && !bad}<time class="at" datetime={r.at} title={dateTime(r.at)}>{ago(r.at)}</time>{/if}
-				<span class="wd {r.tone}">{r.word}</span>
+				{#if r.at && !bad}<time class="at" datetime={r.at} title={dateTime(r.at)}>{when(r)}</time>{/if}
+				<span class="chip {r.tone}">{r.word}</span>
 			</div>
 			{#if bad}
 				{#if r.reason}<p class="why">{r.reason}</p>{/if}
 				{#if canAct && (r.check || r.fix)}
 					<div class="acts">
-						{#if r.check}<button type="button" class="lnk" disabled={busy === r.key} onclick={() => oncheck(r)}>Check now</button>{/if}
-						{#if r.fix}<a class="lnk" href={to(r.fix)}>Fix</a>{/if}
+						{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>Check</Button>{/if}
+						{#if r.fix}<Button variant="plain" size="sm" href={to(r.fix)}>Fix</Button>{/if}
 					</div>
 				{/if}
 			{/if}
@@ -39,7 +41,7 @@
 	{/each}
 </ul>
 {#if ordered.length > MAX}
-	<button type="button" class="all" aria-expanded={all} onclick={() => (all = !all)}>{all ? 'Show fewer' : `Show all ${ordered.length}`}</button>
+	<div class="all"><Button variant="secondary" aria-expanded={all} onclick={() => (all = !all)}>{all ? 'Show fewer' : `Show all ${ordered.length}`}</Button></div>
 {/if}
 
 <style>
@@ -57,25 +59,9 @@
 	.line { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 	.nm { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.at { flex: none; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.wd { flex: none; min-width: 64px; text-align: right; font-size: 12.5px; color: var(--text-muted); }
-	.wd.ok { color: var(--text); }
-	.wd.fail { color: var(--fail-text); font-weight: 600; }
-	.wd.wait { font-weight: 600; color: var(--text); }
+	.chip { flex: none; }
 	.why { margin: -4px 0 0 17px; font-size: 13px; line-height: 1.45; color: var(--text-muted); overflow-wrap: anywhere; }
 	.acts { display: flex; gap: 4px; margin: 6px 0 0 9px; }
-	.lnk {
-		display: inline-flex; align-items: center; min-height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none;
-		color: var(--accent, var(--text)); font: 600 13px/1 var(--font-ui); text-decoration: none; cursor: pointer;
-	}
-	.lnk:hover { background: var(--surface-2, var(--surface-1)); }
-	.lnk:focus-visible, .all:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.lnk:disabled { opacity: 0.5; }
-	.d { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--info); }
-	.d.ok { background: var(--ok); }
-	.d.wait { background: var(--wait); }
-	.d.fail { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
-	.d.idle { background: var(--text-faint); }
-	.all { width: 100%; min-height: 40px; margin-top: 8px; border: 1px dashed var(--line); border-radius: 10px; background: none; color: var(--text-muted); font: 500 13px/1 var(--font-ui); cursor: pointer; }
-	.all:hover { color: var(--text); }
-	@media (max-width: 767px) { .at { display: none; } }
+	.all { display: flex; justify-content: center; margin-top: 12px; }
+	@media (max-width: 767px) { .at { display: none; } .all > :global(*) { flex: 1; min-height: 44px; } }
 </style>

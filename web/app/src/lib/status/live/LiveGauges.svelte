@@ -4,7 +4,7 @@
 	// line when the run is due. A job running now takes the first gauge in
 	// the accent colour, filled by its progress, with a soft glow.
 	import type { LiveJobs } from '../livejobs.svelte.ts';
-	import { clock, t } from '../livejobs.svelte.ts';
+	import { clock, wait, t } from '../livejobs.svelte.ts';
 	import type { StatusRow } from '../status.ts';
 
 	let { lj, upcoming, recent }: { lj: LiveJobs; upcoming: StatusRow[]; recent: StatusRow[] } = $props();
@@ -41,17 +41,27 @@
 				name: r.name,
 				fill: f,
 				c: tone[r.tone] ?? 'var(--info)',
-				sub: d <= 0 ? 'due' : clock(d),
+				sub: d <= 0 ? 'due' : wait(d),
 				mark: d <= 0 || f >= 0.9 ? 'due' : '',
 				live: false,
 				indet: false,
-				label: `${r.name}, ${d <= 0 ? 'due now' : `next run in ${clock(d)}, at ${hm(t(r.nextRun))}`}, ${Math.round(f * 100)}% of the wait gone`
+				label: `${r.name}, ${d <= 0 ? 'due now' : `next run in ${wait(d)}, at ${hm(t(r.nextRun))}`}, ${Math.round(f * 100)}% of the wait gone`
 			});
 		}
 		return out;
 	});
 	const busy = $derived(lj.running.length > 0);
 	const waiting = $derived(gauges.filter((g) => !g.live).length);
+
+	// A tapped gauge says its full name and time in the line under the row for a while (touch screens have no hover).
+	let pick = $state<{ key: string; label: string } | null>(null);
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	function show(g: Gauge) {
+		pick = pick?.key === g.key ? null : { key: g.key, label: g.label };
+		clearTimeout(timer);
+		timer = setTimeout(() => (pick = null), 6000);
+	}
+	$effect(() => () => clearTimeout(timer));
 </script>
 
 <div class="gauges">
@@ -64,7 +74,7 @@
 		<div class="field" style:--count={gauges.length}>
 			<div class="due-line" aria-hidden="true"></div>
 			{#each gauges as g (g.key)}
-				<div class="gg" class:live={g.live} style:--c={g.c} role="img" aria-label={g.label}>
+				<button type="button" class="gg" class:live={g.live} class:sel={pick?.key === g.key} style:--c={g.c} aria-label={g.label} onclick={() => show(g)}>
 					<span class="mk" class:on={g.mark !== ''}>{g.mark || '·'}</span>
 					<div class="tr" class:indet={g.indet}>
 						<i class="tk" style:bottom="25%"></i><i class="tk" style:bottom="50%"></i><i class="tk" style:bottom="75%"></i>
@@ -72,12 +82,13 @@
 					</div>
 					<span class="nm" title={g.name}>{short(g.name)}</span>
 					<span class="cd" class:due={g.sub === 'due'} class:on={g.live}>{g.sub}</span>
-				</div>
+				</button>
 			{/each}
 		</div>
 	{:else}
 		<p class="none">Nothing running and nothing planned.</p>
 	{/if}
+	<p class="pick" aria-live="polite">{pick?.label ?? ''}</p>
 </div>
 
 <style>
@@ -100,9 +111,13 @@
 	.due-line { position: absolute; left: 0; right: 0; top: 24px; border-top: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); pointer-events: none; }
 	.field::after { content: ''; position: absolute; left: 0; right: 0; top: calc(24px + var(--gh)); border-top: 1px solid var(--line); pointer-events: none; }
 
-	.gg { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 0 2px; }
+	.gg { display: flex; flex-direction: column; align-items: center; min-width: 0; margin: 0; padding: 0 2px; border: 0; border-radius: 10px; background: none; color: inherit; font: inherit; cursor: pointer; }
+	.gg:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.gg.sel .nm { color: var(--text); }
+	.pick { flex: none; margin: 8px 0 0; font-size: 12px; line-height: 1.3; color: var(--text); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pick:empty { display: none; }
 	.mk { height: 16px; margin-bottom: 4px; padding: 0 6px; border-radius: var(--r-pill); font: 600 10.5px/16px var(--font-ui); color: transparent; }
-	.mk.on { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+	.mk.on { color: var(--accent-text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 
 	.tr {
 		position: relative;
@@ -129,7 +144,7 @@
 
 	.nm { max-width: 100%; margin-top: 8px; font-size: 11px; line-height: 1.2; color: var(--text-muted); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.cd { margin-top: 2px; max-width: 100%; font-size: 11px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.cd.due, .cd.on { color: var(--accent); font-weight: 600; }
+	.cd.due, .cd.on { color: var(--accent-text); font-weight: 600; }
 	.none { margin: auto 0; font-size: 12.5px; color: var(--text-muted); text-align: center; }
 
 	@container (max-width: 400px) {

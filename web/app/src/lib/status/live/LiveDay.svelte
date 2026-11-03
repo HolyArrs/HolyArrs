@@ -95,6 +95,16 @@
 		return 'Today';
 	});
 	const busy = $derived(lj.running.length > 0);
+
+	// A tapped chip says its full name and time in the line under the column for a while (touch screens have no hover).
+	let pick = $state<{ key: string; label: string } | null>(null);
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	function show(e: Ev) {
+		pick = pick?.key === e.key ? null : { key: e.key, label: e.label };
+		clearTimeout(timer);
+		timer = setTimeout(() => (pick = null), 6000);
+	}
+	$effect(() => () => clearTimeout(timer));
 	const ahead = $derived(placed.shown.filter((e) => e.kind === 'next').length);
 </script>
 
@@ -123,7 +133,6 @@
 					<div
 						class="ev {e.kind}"
 						role="listitem"
-						aria-label={e.label}
 						title={e.label}
 						style:--c={e.c}
 						style:top="{e.top}px"
@@ -131,18 +140,20 @@
 						style:width="calc(100% / {e.lanes} - 3px)"
 					>
 						{#if e.kind === 'run'}<i class="fi" style:transform="scaleX({e.fill > 0 ? e.fill : 1})" class:indet={e.fill <= 0}></i>{/if}
-						<span class="en">{e.name}</span><span class="et">{e.time}</span>
+						<span class="en" aria-hidden="true">{e.name}</span><span class="et" aria-hidden="true">{e.time}</span>
+						<button type="button" class="hit" aria-label={e.label} onclick={() => show(e)}></button>
 					</div>
 				{/each}
 			</div>
 		</div>
 	</div>
+	<p class="pick" aria-live="polite">{pick?.label ?? ''}</p>
 </div>
 
 <style>
 	.day { display: flex; flex-direction: column; min-width: 0; height: 100%; container-type: inline-size; }
 	h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 600 13px/1.2 var(--font-ui); color: var(--text-muted); white-space: nowrap; overflow: hidden; min-width: 0; }
-	.rg { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; font-weight: 500; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+	.rg { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; font-weight: 500; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.st { flex: none; }
 	.st { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
 	.st.on { background: color-mix(in srgb, var(--accent, var(--text)) 16%, transparent); color: var(--text); }
@@ -154,11 +165,11 @@
 	.gone { position: absolute; top: var(--pad); left: var(--rule); right: 0; border-radius: 6px 6px 0 0; background: color-mix(in srgb, var(--text) 3.5%, transparent); }
 	.hr, .hf { position: absolute; left: var(--rule); right: 0; height: 0; margin-top: var(--pad); border-top: 1px solid var(--line); }
 	.hf { border-top: 1px dashed color-mix(in srgb, var(--text) 5%, transparent); }
-	.hl { position: absolute; left: 0; width: calc(var(--rule) - 10px); margin-top: var(--pad); transform: translateY(-50%); text-align: right; font: 500 10.5px/1 var(--font-ui); color: var(--text-faint); font-variant-numeric: tabular-nums; }
+	.hl { position: absolute; left: 0; width: calc(var(--rule) - 10px); margin-top: var(--pad); transform: translateY(-50%); text-align: right; font: 500 10.5px/1 var(--font-ui); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 	.nw { position: absolute; left: 0; right: 0; height: 0; margin-top: var(--pad); z-index: 3; pointer-events: none; }
 	.nw::after { content: ''; position: absolute; left: calc(var(--rule) - 3px); right: 0; top: -1px; height: 2px; border-radius: 1px; background: var(--accent); }
-	.nt { position: absolute; left: 0; width: calc(var(--rule) - 10px); transform: translateY(-50%); text-align: right; font: 700 10.5px/1 var(--font-ui); color: var(--accent); font-variant-numeric: tabular-nums; }
+	.nt { position: absolute; left: 0; width: calc(var(--rule) - 10px); transform: translateY(-50%); text-align: right; font: 700 10.5px/1 var(--font-ui); color: var(--accent-text); font-variant-numeric: tabular-nums; }
 	.nd { position: absolute; left: calc(var(--rule) - 6px); top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
 
 	.evs { position: absolute; top: var(--pad); bottom: var(--pad); left: calc(var(--rule) + 6px); right: 2px; z-index: 2; }
@@ -181,13 +192,17 @@
 	/* Finished: quiet grey with a tone stripe at the left edge. */
 	.ev.past { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); }
 	.ev.past::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); }
-	.ev.past .et { color: var(--text-faint); }
+	.ev.past .et { color: var(--text-muted); }
+	.hit { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
+	.hit:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pick { flex: none; min-height: 1.3em; margin: 6px 0 0; font: 500 12px/1.3 var(--font-ui); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pick:empty { display: none; }
 	/* Planned: outlined in the row's tone. */
 	.ev.next { background: color-mix(in srgb, var(--c) 9%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent); color: var(--text); }
 	.ev.next .et { color: var(--text-muted); }
 	/* Running: accent, filled by progress. */
 	.ev.run { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 0 0 0 1px var(--accent); color: var(--text); font-weight: 600; z-index: 1; }
-	.ev.run .et { color: var(--accent); }
+	.ev.run .et { color: var(--accent-text); }
 	.fi { position: absolute; inset: 0; background: color-mix(in srgb, var(--accent) 26%, transparent); transform-origin: left center; transition: transform 0.8s linear; }
 	.fi.indet { opacity: 0.5; }
 

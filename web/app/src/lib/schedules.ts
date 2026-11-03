@@ -62,6 +62,16 @@ export function until(s: string | null | undefined, now = Date.now()): string {
 	return `in ${Math.round(sec / 86400)} d`;
 }
 
+/** nextRun is until() for the Status page: a run more than a minute past says how late it is ("due 25 min ago"), never "now" for ever. */
+export function nextRun(s: string | null | undefined, now = Date.now()): string {
+	const t = s ? new Date(s).getTime() : NaN;
+	const late = Math.round((now - t) / 1000);
+	if (Number.isNaN(t) || late <= 60) return until(s, now);
+	if (late < 3600) return `due ${Math.round(late / 60)} min ago`;
+	if (late < 86400) return `due ${Math.round(late / 3600)} h ago`;
+	return `due ${Math.round(late / 86400)} d ago`;
+}
+
 export const stateWords: Record<ScheduleRow['state'], string> = {
 	waiting: 'Waiting',
 	queued: 'Queued',

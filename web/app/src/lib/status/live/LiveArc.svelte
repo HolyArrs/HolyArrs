@@ -7,8 +7,8 @@
 	// dashed because it is planned. While a job runs, an accent stretch grows
 	// across the top with its progress and the percent sits above it.
 	import type { LiveJobs } from '../livejobs.svelte.ts';
-	import { clock, t } from '../livejobs.svelte.ts';
-	import type { StatusRow } from '../status.ts';
+	import { wait, t } from '../livejobs.svelte.ts';
+	import { pastResult, type StatusRow } from '../status.ts';
 
 	let { lj, upcoming, recent }: { lj: LiveJobs; upcoming: StatusRow[]; recent: StatusRow[] } = $props();
 
@@ -103,7 +103,7 @@
 			.map((x): Dot => {
 				const deg = th(now - x.ms);
 				const p = pos(-1, deg);
-				return { key: `p-${x.r.key}`, side: -1, deg, ...p, c: tone[x.r.tone] ?? 'var(--info)', name: short(x.r.name), when: ago(now - x.ms), tip: `${x.r.name}, ran at ${hm(x.ms)}`, big: false };
+				return { key: `p-${x.r.key}`, side: -1, deg, ...p, c: tone[pastResult(x.r).tone] ?? 'var(--info)', name: short(x.r.name), when: ago(now - x.ms), tip: `${x.r.name}, ran at ${hm(x.ms)}`, big: false };
 			});
 		return labels(list);
 	});
@@ -124,8 +124,8 @@
 					...p,
 					c: tone[x.r.tone] ?? 'var(--info)',
 					name: short(x.r.name),
-					when: due <= 0 ? 'due' : `in ${clock(due)}`,
-					tip: due <= 0 ? `${x.r.name}, due now` : `${x.r.name} at ${hm(x.ms)}, in ${clock(due)}`,
+					when: due <= 0 ? 'due' : `in ${wait(due)}`,
+					tip: due <= 0 ? `${x.r.name}, due now` : `${x.r.name} at ${hm(x.ms)}, in ${wait(due)}`,
 					big: i === 0
 				};
 			});
@@ -167,7 +167,7 @@
 				{#if d.label}
 					<g transform="translate({f(d.label.x)} {f(d.label.y)}) rotate({f(d.label.rot)})" text-anchor={d.label.anchor}>
 						<text class="nm" x="0" y="0">{d.name}</text>
-						<text class="when" x="0" y="9">{d.when}</text>
+						<text class="when" x="0" y="0" dy="1.15em">{d.when}</text>
 					</g>
 				{/if}
 			</g>
@@ -185,11 +185,11 @@
 </div>
 
 <style>
-	.arc { display: flex; align-items: center; justify-content: center; min-width: 0; height: 100%; }
+	.arc { display: flex; align-items: center; justify-content: center; min-width: 0; height: 100%; container-type: inline-size; }
 	.sky { display: block; width: 100%; max-width: 520px; height: auto; overflow: visible; }
 
 	.hz { stroke: var(--line-strong); stroke-width: 0.8; }
-	.hzl { font: 500 8.5px var(--font-ui); fill: var(--text-faint); }
+	.hzl { font: 500 8.5px var(--font-ui); fill: var(--text-muted); }
 	.path { fill: none; stroke-width: 1.4; stroke-linecap: round; }
 	.path.past { stroke: var(--line-strong); }
 	.path.next { stroke: var(--text-faint); stroke-dasharray: 2.5 3.5; opacity: 0.8; }
@@ -208,6 +208,12 @@
 	.pct { font: 700 13px var(--font-ui); fill: var(--text); text-anchor: middle; font-variant-numeric: tabular-nums; }
 	.clk { font: 500 9px var(--font-mono); fill: var(--text-muted); text-anchor: middle; font-variant-numeric: tabular-nums; }
 
+	/* On a narrow plate the drawing shrinks, so its words grow to stay readable. */
+	@container (max-width: 440px) {
+		.hzl, .who { font-size: 11px; }
+		.nm { font-size: 11.5px; }
+		.when, .clk { font-size: 10.5px; }
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.run { transition: none; }
 	}

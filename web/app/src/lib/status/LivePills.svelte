@@ -17,6 +17,7 @@
 </script>
 
 {#if onJobs}
+	<!-- The page keeps room under the Jobs tab (routes/status/+page.svelte) so this fixed bar never covers the last rows. -->
 	<nav class="pills" aria-label="Right-half view" data-testid="status-live-pills">
 		<span class="k">Right half</span>
 		{#each liveViews as v, i (v.id)}

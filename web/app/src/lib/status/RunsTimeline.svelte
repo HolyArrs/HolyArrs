@@ -3,9 +3,9 @@
 	// coming runs below it, on one rail, five each way. Right: the live board,
 	// what runs now with its progress and what comes next, counting down.
 	import { ago, dateTime } from '../format.ts';
-	import { until } from '../schedules.ts';
+	import { nextRun } from '../schedules.ts';
 	import LiveViews from './LiveViews.svelte';
-	import type { StatusRow } from './status.ts';
+	import { pastResult, type StatusRow } from './status.ts';
 
 	let { upcoming, recent, now }: { upcoming: StatusRow[]; recent: StatusRow[]; now: number } = $props();
 
@@ -13,7 +13,8 @@
 	const up = $derived(upcoming.slice(0, MAX));
 	// Oldest run at the top, the newest right above Now.
 	const past = $derived(recent.slice(0, MAX).reverse());
-
+	// A past run shows how that run ended, not what the job is doing now.
+	const result = pastResult;
 </script>
 
 <section class="st-plate" aria-labelledby="s-tl" data-testid="status-timeline">
@@ -21,16 +22,20 @@
 	<div class="halves">
 		<ol class="tl">
 			{#each past as r (r.key)}
+				{@const res = result(r)}
 				<li class="past">
 					<time class="tm" datetime={r.lastRun} title={dateTime(r.lastRun)}>{ago(r.lastRun, now)}</time>
-					<i class="d {r.tone}" aria-hidden="true"></i>
+					<i class="st-dot {res.tone}" aria-hidden="true"></i>
 					<span class="nm">{r.name}</span>
-					<span class="res {r.tone}">{r.word}</span>
+					<span class="chip {res.tone}">{res.word}</span>
 				</li>
 			{/each}
-			<li class="nowline" aria-label="Now"><span class="tm">Now</span><i class="d pulse" aria-hidden="true"></i><span class="hr"></span></li>
+			<li class="nowline" aria-label="Now"><span class="tm">Now</span><i class="nowd pulse" aria-hidden="true"></i><span class="hr"></span></li>
 			{#each up as r (r.key)}
-				<li><span class="tm">{until(r.nextRun, now)}</span><i class="d {r.tone}" aria-hidden="true"></i><span class="nm">{r.name}</span></li>
+				<li>
+					<span class="tm">{r.word === 'Running' ? 'now' : nextRun(r.nextRun, now)}</span><i class="st-dot {r.tone}" aria-hidden="true"></i><span class="nm">{r.name}</span>
+					{#if r.tone === 'fail' || r.tone === 'wait'}<span class="chip {r.tone}">{r.word}</span>{/if}
+				</li>
 			{:else}<li class="none">No runs planned.</li>{/each}
 		</ol>
 
@@ -40,33 +45,28 @@
 
 <style>
 	ol { list-style: none; margin: 0; padding: 0; }
-	.cnt { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.halves { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 0 28px; }
-	.d { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--info); box-shadow: 0 0 0 4px color-mix(in srgb, var(--surface-1) 90%, transparent); }
-	.d.ok { background: var(--ok); }
-	.d.wait { background: var(--wait); }
-	.d.fail { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
-	.d.idle { background: var(--text-faint); }
+	/* The shared dot, centred on the rail, with a gap cut into the rail around it. */
+	.tl .st-dot { justify-self: center; }
+	.tl .st-dot:not(.fail) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--surface-1) 90%, transparent); }
+	/* The rail dot already carries the state; the chip shows only its word. */
+	.tl .chip::before { display: none; }
 	.nm { min-width: 0; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tm { font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
-	.res { min-width: 42px; padding: 2px 8px; border-radius: var(--r-pill); text-align: center; font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--surface-2, var(--surface-1)); }
-	.res.ok { color: var(--ok-text); background: color-mix(in srgb, var(--ok) 14%, transparent); }
-	.res.fail { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 16%, transparent); }
-	.res.wait { color: var(--text); background: color-mix(in srgb, var(--wait) 20%, transparent); }
 	.none { font-size: 14px; color: var(--text-muted); }
 
 	/* the rail */
 	.tl { position: relative; }
-	.tl::before { content: ''; position: absolute; left: 96px; top: 10px; bottom: 10px; width: 2px; border-radius: 1px; background: var(--line); }
+	.tl::before { content: ''; position: absolute; left: calc(84px + 14px + 4px - 1px); top: 10px; bottom: 10px; width: 2px; border-radius: 1px; background: var(--line); }
 	.tl li { position: relative; display: grid; grid-template-columns: 84px 8px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 40px; }
 	.tl .past .nm { color: var(--text-muted); }
 	.nowline { min-height: 32px; }
-	.nowline .tm { color: var(--accent, var(--text)); font-weight: 600; }
-	.nowline .d { width: 10px; height: 10px; margin-left: -1px; background: var(--accent, var(--text)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent, var(--text)) 24%, transparent); }
+	.nowline .tm { color: var(--accent-text, var(--text)); font-weight: 600; }
+	.nowd { flex: none; border-radius: 50%; width: 10px; height: 10px; margin-left: -1px; background: var(--accent, var(--text)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent, var(--text)) 24%, transparent); }
 	.hr { grid-column: 3 / 5; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent, var(--text)) 50%, transparent), transparent); }
 	.tl .none { grid-column: 3 / 5; }
 	@media (prefers-reduced-motion: no-preference) {
-		.pulse, .dot.live { animation: pulse 2.4s ease-out infinite; }
+		.pulse { animation: pulse 2.4s ease-out infinite; }
 		@keyframes pulse { 0% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent, var(--text)) 24%, transparent); } 70%, 100% { box-shadow: 0 0 0 10px transparent; } }
 	}
 
@@ -77,7 +77,7 @@
 		.day { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 	}
 	@media (max-width: 767px) {
-		.tl::before { left: 76px; }
+		.tl::before { left: calc(64px + 12px + 4px - 1px); }
 		.tl li { grid-template-columns: 64px 8px minmax(0, 1fr) auto; gap: 12px; }
 	}
 </style>
