@@ -62,10 +62,17 @@ export const APP_DATA: AppData[] = [
     needs: "Public https HolyArrs; the Free plan allows one custom connector.",
     signin: [
       {
-        text: "In Claude on web or desktop, open Customize › Connectors › Add custom connector.",
+        text: "In Claude on web or desktop, open Customize › Connectors, press + Add › Add custom connector.",
       },
-      { text: "Name it HolyArrs and paste the address.", code: "{url}" },
-      { text: "Press Connect. HolyArrs opens in your browser. Press Allow." },
+      {
+        text: "Name it HolyArrs and press Continue. Paste the address and press Continue.",
+        code: "{url}",
+      },
+      { text: "Check the details Claude found and press Continue." },
+      {
+        text: "Keep Sign in now and Use Claude's published identity, then press Add.",
+      },
+      { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [],
     check: "HolyArrs shows as connected under Customize › Connectors.",
