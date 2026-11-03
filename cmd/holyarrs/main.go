@@ -449,7 +449,18 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	q.ProbeSchedule(source.KindFeedCheck, sr.ProbeFeed)
 	q.ProbeSchedule(source.KindGrabHeld, sr.ProbeGrabHeld)
 	q.Handle(downloader.KindGrab, dm.HandleGrab)
-	q.Handle(importer.KindImport, im.HandleJob)
+	// An ask turns Ready right after its import, not on the next 30 s ready
+	// check: the Requests card would drop from Importing back to Processing.
+	var readyCheck atomic.Pointer[asks.Service]
+	q.Handle(importer.KindImport, func(ctx context.Context, r *jobs.Run) error {
+		err := im.HandleJob(ctx, r)
+		if w := readyCheck.Load(); err == nil && w != nil {
+			if _, err := w.CheckReady(ctx); err != nil {
+				log.Printf("requests: ready check after an import: %v", err)
+			}
+		}
+		return err
+	})
 	hosted, err := newHostedMetadata(vault)
 	if err != nil {
 		return fmt.Errorf("metadata server: %w", err)
@@ -665,6 +676,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	defer sender.Wait()
 	wish := &asks.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
+	readyCheck.Store(wish)
 	optional(supervisor.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
 		if _, err := wish.CheckReady(ctx); err != nil {
 			return err
