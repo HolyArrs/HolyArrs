@@ -144,7 +144,7 @@ test('your own trait is made, used in Never and taken out of the rules when remo
 		await expect(sheet.getByText('List at least one word or pattern.')).toBeVisible();
 		await sheet.getByLabel('Words').fill('NLSubs\n/(open/');
 		await sheet.getByRole('button', { name: 'Make trait' }).click();
-		await expect(sheet.getByText('/(open/ is not a pattern HolyArrs can read.')).toBeVisible();
+		await expect(sheet.getByText('/(open/ is not a pattern HolyArrs can read (missing closing )).')).toBeVisible();
 		await sheet.evaluate((el) => Promise.all(el.getAnimations().map((x) => x.finished)));
 		expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 		await sheet.getByLabel('Words').fill('NLSubs\n/\\bdutch\\b/');

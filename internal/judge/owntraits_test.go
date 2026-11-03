@@ -83,6 +83,14 @@ func TestCheckOwnTrait(t *testing.T) {
 	}
 }
 
+func TestOwnTraitPatternErrorSaysWhatIsWrong(t *testing.T) {
+	tr := domain.OwnTrait{Name: "A", Match: "name", Terms: []string{"/(open/"}}
+	err := domain.CheckOwnTrait(&tr)
+	if err == nil || err.Error() != "/(open/ is not a pattern HolyArrs can read (missing closing ))." {
+		t.Fatalf("pattern error: %v", err)
+	}
+}
+
 func TestOwnTraitKeysHaveOneForm(t *testing.T) {
 	for key, ok := range map[string]bool{"own:7": true, "own:07": false, "own:+7": false, "own:0": false, "own:-1": false, "own:": false, "own:x": false, "hevc": false} {
 		if _, got := domain.OwnTraitID(key); got != ok {

@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"errors"
 	"regexp"
+	"regexp/syntax"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -64,7 +66,13 @@ func CheckOwnTrait(t *OwnTrait) error {
 		}
 		if p, ok := TermPattern(term); ok {
 			if _, err := regexp.Compile("(?i)" + p); err != nil {
-				return fieldErr("terms", "%s is not a pattern HolyArrs can read: %v.", term, err)
+				// Only what is wrong: the raw error names the (?i) added above.
+				why := "it cannot be read"
+				var se *syntax.Error
+				if errors.As(err, &se) {
+					why = string(se.Code)
+				}
+				return fieldErr("terms", "%s is not a pattern HolyArrs can read (%s).", term, why)
 			}
 		}
 		terms = append(terms, term)
