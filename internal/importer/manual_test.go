@@ -35,7 +35,7 @@ func TestByHandShow(t *testing.T) {
 	}
 	write(t, filepath.Join(loose, "pack", "notes.txt"), 10)
 	write(t, filepath.Join(loose, "pack", "Sample", "sample-"+ep(4)), 10)
-	im := &Importer{Store: w.s}
+	im := &Importer{Store: w.s, SavePath: loose}
 	sc, err := im.ScanByHand(ctx, loose)
 	if err != nil {
 		t.Fatal(err)
@@ -137,7 +137,7 @@ func TestByHandMovie(t *testing.T) {
 	loose := t.TempDir()
 	src := filepath.Join(loose, "Dune.Part.Two.2024.2160p.WEB-DL.mkv")
 	write(t, src, 4096)
-	im := &Importer{Store: w.s}
+	im := &Importer{Store: w.s, SavePath: loose}
 	sc, err := im.ScanByHand(ctx, src)
 	if err != nil || len(sc.Files) != 1 || sc.Files[0].Guess.SlotID != w.slotID || sc.Files[0].Guess.Season != nil {
 		t.Fatalf("scan %+v %v", sc, err)
@@ -191,7 +191,7 @@ func TestScanByHandStopsOnCancel(t *testing.T) {
 	for _, n := range []int{1, 2, 3} {
 		write(t, filepath.Join(loose, ep(n)), 2048)
 	}
-	im := &Importer{Store: w.s}
+	im := &Importer{Store: w.s, SavePath: loose}
 	if _, err := im.ScanByHand(goneCtx{context.Background()}, loose); err == nil {
 		t.Fatal("a cancelled scan finished")
 	}

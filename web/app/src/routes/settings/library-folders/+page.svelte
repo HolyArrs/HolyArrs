@@ -29,6 +29,12 @@
 	let editLabel = $state('');
 	let busyId = $state<number | null>(null);
 
+	// Extra import folders: where Import files by hand may also read.
+	let extraText = $state('');
+	let extraLoaded = $state(false);
+	let extraError = $state('');
+	let extraSaving = $state(false);
+
 	async function load() {
 		try {
 			folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
@@ -39,7 +45,33 @@
 			loaded = true;
 		}
 	}
-	onMount(load);
+	async function loadExtra() {
+		try {
+			extraText = (await api.get<{ extra_folders: string[] }>('/settings/import-folders')).extra_folders.join('\n');
+			extraLoaded = true;
+		} catch {
+			extraLoaded = false; // no settings permission: the card stays hidden
+		}
+	}
+	onMount(() => {
+		void load();
+		void loadExtra();
+	});
+
+	async function saveExtra(e: SubmitEvent) {
+		e.preventDefault();
+		extraError = '';
+		extraSaving = true;
+		try {
+			const lines = extraText.split('\n').map((l) => l.trim()).filter(Boolean);
+			extraText = (await api.put<{ extra_folders: string[] }>('/settings/import-folders', { extra_folders: lines })).extra_folders.join('\n');
+			toasts.push('Extra import folders saved.', 'ok');
+		} catch (err) {
+			extraError = message(err);
+		} finally {
+			extraSaving = false;
+		}
+	}
 
 	async function add(e: SubmitEvent) {
 		e.preventDefault();
@@ -179,7 +211,29 @@
 	</ul>
 {/if}
 
+{#if extraLoaded}
+	<form class="sc-form extra" onsubmit={saveExtra} aria-label="Extra import folders">
+		<SettingsCard id="import-folders" title="Extra import folders" description="Import files by hand reads only from Library folders, Downloader folders and these.">
+			<Field id="if-paths" label="Folders" hint="One full path per line, as HolyArrs sees it, such as /data/imports. Up to 32." error={extraError}>
+				<textarea id="if-paths" class="input mono" rows="3" bind:value={extraText} placeholder="/data/imports" autocomplete="off" spellcheck="false"></textarea>
+			</Field>
+			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>Save</Button>
+			</div>
+		</SettingsCard>
+	</form>
+{/if}
+
 <style>
+	.extra {
+		margin-top: var(--s-5);
+	}
+	textarea.input {
+		height: auto;
+		padding-top: 10px;
+		width: 100%;
+		min-width: 0;
+	}
 	.folder {
 		align-items: flex-start !important;
 	}

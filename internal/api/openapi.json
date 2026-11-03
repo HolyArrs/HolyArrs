@@ -16026,7 +16026,7 @@
     },
     "/api/v1/manual-import": {
       "post": {
-        "description": "Imports files chosen by hand into their Slots. Each item names a file and its Slot (slot_id), or the title (title_id) with season and episode for a show and optionally version_id; mode is copy (the default: a hardlink on the same disk) or move. Each file is named by the naming settings and recorded; a file that cannot go is refused with the reason and the others still go. Only movies and episodes for now.",
+        "description": "Imports files chosen by hand into their Slots. Each item names a file and its Slot (slot_id), or the title (title_id) with season and episode for a show and optionally version_id; mode is copy (the default: a hardlink on the same disk) or move. Each file is named by the naming settings and recorded; a file that cannot go is refused with the reason and the others still go. A file outside the places import by hand may read is refused and left where it is. Only movies and episodes for now.",
         "operationId": "importByHand",
         "requestBody": {
           "content": {
@@ -16142,7 +16142,7 @@
     },
     "/api/v1/manual-import/scan": {
       "post": {
-        "description": "Lists the videos and tracks in a folder (or one file) the server can read, up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads.",
+        "description": "Lists the videos and tracks in a folder (or one file), up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads, and only inside a Library folder, a Downloader's folder or an extra import folder (GET /api/v1/settings/import-folders).",
         "operationId": "scanByHand",
         "requestBody": {
           "content": {
@@ -16212,7 +16212,7 @@
             "description": "The files found."
           },
           "400": {
-            "description": "The path is not a full path the server can read, or holds .. parts."
+            "description": "The path is not a full path the server can read, or holds .. parts, or lies outside the places import by hand may read (the answer names them)."
           }
         },
         "summary": "Scan a folder for files to import by hand",
@@ -21246,6 +21246,134 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/import-folders": {
+      "get": {
+        "description": "Import files by hand reads only inside these folders: the Library folders, the Downloaders' folders and the extra import folders.",
+        "operationId": "getImportFolders",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader_folders": {
+                      "description": "The folders the Downloaders save into, as HolyArrs sees them: the save path and each path map's HolyArrs side.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "extra_folders": {
+                      "description": "The extra import folders added in Settings.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "library_folders": {
+                      "description": "The Library folders.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "library_folders",
+                    "downloader_folders",
+                    "extra_folders"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The places import by hand may read."
+          }
+        },
+        "summary": "Places files may be imported by hand from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Full paths (Linux or Windows form), one per item, with no .. parts and no network share paths, 32 at most. Blank items and repeats are dropped; [] clears the list.",
+        "operationId": "putImportFolders",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "extra_folders": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "extra_folders"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "downloader_folders": {
+                      "description": "The folders the Downloaders save into, as HolyArrs sees them: the save path and each path map's HolyArrs side.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "extra_folders": {
+                      "description": "The extra import folders added in Settings.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "library_folders": {
+                      "description": "The Library folders.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "library_folders",
+                    "downloader_folders",
+                    "extra_folders"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The places import by hand may read."
+          },
+          "400": {
+            "description": "A folder is not a full path, holds .. parts, or there are more than 32."
+          }
+        },
+        "summary": "Save the extra import folders",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/settings/import-secrets": {

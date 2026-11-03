@@ -193,13 +193,21 @@ func episodeRef(it domain.Item) judge.EpisodeRef {
 }
 
 // ScanByHand lists the videos and tracks under root (a folder or one
-// file) with a guess of the movie or episode each one is. It reads only.
+// file) with a guess of the movie or episode each one is. It reads only,
+// and only inside the places (a *PlaceError otherwise).
 func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, error) {
 	out := ByHandScan{Path: root, Files: []ByHandFile{}}
 	db := im.Store.Read()
 	folders, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
 	if err != nil {
 		return out, err
+	}
+	places, err := im.byHandPlaces(ctx, db, folders)
+	if err != nil {
+		return out, err
+	}
+	if !places.Holds(root) {
+		return out, places.Refusal()
 	}
 	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind IN ('movie', 'show') AND state != 'removed'")
 	if err != nil {
@@ -332,9 +340,13 @@ func (im *Importer) ImportByHand(ctx context.Context, items []ByHandItem, by dom
 	if err != nil {
 		return nil, err
 	}
+	places, err := im.byHandPlaces(ctx, db, folders)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]ByHandResult, 0, len(items))
 	for _, it := range items {
-		r, err := im.importOneByHand(ctx, db, ns, folders, it, by)
+		r, err := im.importOneByHand(ctx, db, ns, folders, places, it, by)
 		if err != nil {
 			r.Outcome, r.Error = "failed", err.Error()
 		}
@@ -377,7 +389,7 @@ func byHandSlot(ctx context.Context, db *sql.DB, it ByHandItem) (int64, string) 
 	return id, ""
 }
 
-func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.Settings, folders []domain.LibraryFolder, it ByHandItem, by domain.Actor) (ByHandResult, error) {
+func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.Settings, folders []domain.LibraryFolder, places ByHandPlaces, it ByHandItem, by domain.Actor) (ByHandResult, error) {
 	r := ByHandResult{Path: it.Path, Outcome: "refused"}
 	refuse := func(why string) (ByHandResult, error) { r.Error = why; return r, nil }
 	mode := it.Mode
@@ -392,6 +404,9 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns naming.S
 		return refuse(err.Error())
 	}
 	r.Path = src
+	if !places.Holds(src) {
+		return refuse(places.Refusal().Error()) // nothing outside is copied, moved or removed
+	}
 	sfi, err := os.Lstat(src)
 	if err != nil || !sfi.Mode().IsRegular() {
 		return refuse("not a plain file")
