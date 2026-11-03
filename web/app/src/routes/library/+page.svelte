@@ -483,6 +483,7 @@
 	let deleteIds = $state<number[]>([]);
 	let deleteDialog = $state<HTMLDialogElement | null>(null);
 	let rules = $state<{ id: number; name: string; kinds: string[] }[]>([]);
+	let folders = $state<{ id: number; path: string; kind: string; label: string }[]>([]);
 	const pickedShown = $derived(shown.filter((t) => picked.has(t.id)));
 	const allPicked = $derived(shown.length > 0 && pickedShown.length === shown.length);
 	const deleteWord = $derived(deleteIds.length === 1 ? (titles.find((t) => t.id === deleteIds[0])?.name ?? '1 title') : `${deleteIds.length} titles`);
@@ -495,6 +496,7 @@
 	function startSelecting(id?: number) {
 		selecting = true;
 		picked = new Set(id === undefined ? [] : [id]);
+		if (!folders.length) void api.get<{ library_folders: typeof folders }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
 		if (!rules.length) void api.get<{ pick_rules: { id: number; name: string; kinds: string[] }[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 	}
 	function stopSelecting() {
@@ -563,6 +565,21 @@
 		stopSelecting();
 		await load();
 	}
+	// Move the selected titles' files to another folder of their kind; mixed kinds get no choice.
+	async function moveTitles(ids: number[], folder: { id: number; label: string; path: string }) {
+		busy = true;
+		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/move`, { library_folder_id: folder.id, apply: true }));
+		busy = false;
+		report(`moving to ${folder.label || folder.path}`, failed, ids.length);
+		stopSelecting();
+		await load();
+	}
+	const moveItems = $derived.by<MenuItem[]>(() => {
+		const kinds = new Set(pickedShown.map((t) => t.kind));
+		if (kinds.size !== 1) return [];
+		const k = [...kinds][0];
+		return folders.filter((f) => f.kind === k).map((f): MenuItem => ({ label: f.label || f.path, onselect: () => moveTitles(pickedShown.map((t) => t.id), f) }));
+	});
 	const rulesItems = $derived<MenuItem[]>(
 		rules.filter((r) => !r.kinds.length || kind === 'all' || r.kinds.includes(kind)).map((r): MenuItem => ({ label: r.name, onselect: () => setRules(pickedShown.map((t) => t.id), r) }))
 	);
@@ -1037,6 +1054,7 @@
 			<span class="bar-gap"></span>
 			<Button size="md" icon="bellOn" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), true)}>Keep up to date</Button>
 			<Button size="md" icon="bell" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), false)}>Stop keeping</Button>
+			{#if moveItems.length > 1}<Menu label="Move the selected titles to another folder" variant="button" text="Move" icon="folder" items={moveItems} width={260} placement="above" />{/if}
 			{#if rulesItems.length}<Menu label="Pick rules for the selected titles" variant="button" text="Pick rules" icon="star" items={rulesItems} width={220} placement="above" />{/if}
 			<Button size="md" icon="search" disabled={busy || !pickedShown.length} onclick={() => searchTitles(pickedShown.map((t) => t.id))}>Search now</Button>
 			<Button variant="destructive" size="md" icon="trash" disabled={busy || !pickedShown.length} onclick={() => askDelete(pickedShown.map((t) => t.id))} data-testid="select-delete">Remove {pickedShown.length || ''}</Button>
