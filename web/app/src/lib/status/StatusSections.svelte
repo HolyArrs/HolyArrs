@@ -322,6 +322,8 @@
 	.seg button[aria-selected='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
 	.seg button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { .seg button { height: 40px; } }
+	/* Phones: a 44px tap area around the 40px pill, no visual change. */
+	@media (max-width: 767px) and (pointer: coarse) { .seg button::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); } }
 	.badge { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
 	.badge.wait { background: var(--wait); }
 	.none { margin: 0; color: var(--text-muted); font-size: 14px; }

@@ -861,6 +861,7 @@
 	.range-btn { padding: 4px 8px; border-radius: var(--r-sm); color: var(--text); transition: background var(--dur-fast) var(--ease-out); }
 	.range-btn:hover { background: var(--surface-2); }
 	.range-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (max-width: 767px) and (pointer: coarse) { .range-btn { min-height: 44px; } }
 	.pop-chips { padding: 4px; }
 	.filtered-out { margin-bottom: 24px; }
 	/* The Showing menu: three rows, one picked. */
