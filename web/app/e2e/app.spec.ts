@@ -111,8 +111,8 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await expect(page).toHaveURL(/\/search/);
 	await page.getByTestId('search-close').click();
 	await expect(page).not.toHaveURL(/\/search/);
-	await nav.getByRole('link', { name: 'Downloads', exact: true }).click();
-	await page.locator('main').getByRole('link', { name: 'Needs a decision' }).first().click();
+	// Needs a decision lives on the Downloads rows now (Problems, then Review); its own page is still there.
+	await page.goto('/downloads/decide');
 	await expect(page).toHaveURL(/\/downloads\/decide$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Needs a decision');
 	await nav.getByRole('link', { name: 'Settings', exact: true }).click();
