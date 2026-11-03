@@ -32,18 +32,17 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	await page.route('**/api/v1/explore/head?**', (r) => r.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, hero: [item(0), item(1)], head: [{ id: 'row0', type: 'genre', title: 'Row 0', items: Array.from({ length: 8 }, (_, i) => item(i)) }] } }));
 	await page.goto('/explore');
 	await expect(page.getByRole('heading', { level: 1, name: 'Explore' })).toBeVisible();
+	// The hero comes with the head answer, which can be slow on a busy machine:
+	// wait for its More info control, then give its trailer time to start.
+	const info = page.getByRole('link', { name: 'More info' }).or(page.getByRole('button', { name: /^More info/ })).first();
+	await expect(info, 'the Explore hero shows its More info control').toBeVisible({ timeout: 30_000 });
 	await page.waitForTimeout(9000);
 	console.log('hero iframes', JSON.stringify(await page.locator('iframe').evaluateAll((els) => els.map((e) => (e as HTMLIFrameElement).src.slice(0, 50) + ' ' + e.getAttribute('sandbox')))));
-	const info = page.getByRole('link', { name: 'More info' }).or(page.getByRole('button', { name: /^More info/ })).first();
-	if (await info.count()) {
-		await info.click();
-		// More info opens a sheet, or the hero's link goes to the title page.
-		await expect(page.getByRole('dialog').first().or(page.getByTestId('title-detail'))).toBeVisible();
-		await page.waitForTimeout(3000);
-		await page.keyboard.press('Escape');
-	} else {
-		bad.push('no More info control found');
-	}
+	await info.click();
+	// More info opens a sheet, or the hero's link goes to the title page.
+	await expect(page.getByRole('dialog').first().or(page.getByTestId('title-detail'))).toBeVisible();
+	await page.waitForTimeout(3000);
+	await page.keyboard.press('Escape');
 	const heroFrames = await page.locator('iframe').evaluateAll((els) => els.map((e) => (e as HTMLIFrameElement).src.slice(0, 40) + ' ' + e.getAttribute('sandbox')));
 	console.log('after More info', JSON.stringify(heroFrames));
 	const frames = await page.locator('iframe').evaluateAll((els) => els.map((e) => e.getAttribute('sandbox')));
