@@ -258,7 +258,7 @@ test('Requests from Seerr and Overseerr: switch on, make a key shown once, remov
 	await expect(fresh).toContainText('shown only once');
 	const key = (await fresh.locator('code').textContent())!.trim();
 	expect(key).toMatch(/^[0-9a-f]{32}$/);
-	await expect(card.getByTestId('seerr-key-sonarr')).toContainText(`Key ending ${key.slice(-4)}`);
+	await expect(card.getByTestId('seerr-key-sonarr')).toContainText(`Key ending in ${key.slice(-4)},`);
 	await fresh.getByRole('button', { name: 'Done' }).click();
 	await expect(fresh).toHaveCount(0);
 	// Shown once: after a reload only the last four characters are left.

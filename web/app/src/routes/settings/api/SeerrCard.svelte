@@ -114,7 +114,7 @@
 							<span class="label">{sideWord[s.side].what}: add as a {sideWord[s.side].app} server</span>
 							<span class="hint">URL base <code class="mono">{s.path}</code>, with HolyArrs's address and port.</span>
 							{#if s.key}
-								<span class="hint" data-testid="seerr-key-{s.side}">Key ending {s.key.hint}, made by {s.key.owner}{s.key.last_used_at ? `, last used ${ago(s.key.last_used_at)}` : ', not used yet'}.</span>
+								<span class="hint" data-testid="seerr-key-{s.side}">Key ending in {s.key.hint.replace(/^[.…]+/, '')}, made by {s.key.owner}{s.key.last_used_at ? `, last used ${ago(s.key.last_used_at)}` : ', not used yet'}.</span>
 								{#if !s.key.owner_active}<span class="hint warn">{s.key.owner}'s account is off or may no longer manage the Library, so this key is refused. Make a new one.</span>{/if}
 							{:else}
 								<span class="hint">No key yet.</span>
