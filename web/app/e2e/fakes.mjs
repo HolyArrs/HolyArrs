@@ -610,9 +610,10 @@ export function startFakes() {
 				const c = oidcCodes.get(f.get('code') ?? '');
 				oidcCodes.delete(f.get('code') ?? '');
 				const pkce = createHash('sha256').update(f.get('code_verifier') ?? '').digest('base64url');
-				if (!c || pkce !== c.challenge || !String(req.headers.authorization ?? '').startsWith('Basic ')) return send(res, 400, { error: 'invalid_grant' });
+				const why = !c ? 'unknown code' : pkce !== c.challenge ? 'code_verifier does not match' : !String(req.headers.authorization ?? '').startsWith('Basic ') ? 'no client credentials' : '';
+				if (why || !c) return send(res, 400, { error: 'invalid_grant', error_description: why });
 				const now = Math.floor(Date.now() / 1000);
-				const part = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+				const part = (/** @type {object} */ o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 				const head = `${part({ alg: 'RS256', kid: 'e2e', typ: 'JWT' })}.${part({ iss: base, aud: 'holyarrs', sub: `sub-${c.user}`, name: c.user, nonce: c.nonce, iat: now, exp: now + 300 })}`;
 				const jwt = `${head}.${sign('sha256', Buffer.from(head), oidcKey.privateKey).toString('base64url')}`;
 				return send(res, 200, { access_token: randomBytes(16).toString('hex'), token_type: 'Bearer', expires_in: 300, id_token: jwt });

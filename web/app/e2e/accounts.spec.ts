@@ -258,6 +258,8 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 	await form.getByRole('button', { name: 'Save' }).click();
 	await expect(own.getByText('Single sign-on saved.')).toBeVisible();
 	await expect(form.getByLabel('Client secret')).toHaveValue('');
+	// The secret typed before the wrong password was saved with the right one.
+	await expect(form.getByText('A secret is saved; it is never shown.')).toBeVisible();
 
 	const visitor = await fresh(browser);
 	await visitor.goto('/login');
@@ -304,6 +306,7 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 	await own.goto('/settings/users');
 	const asked: string[] = [];
 	const yes = (d: Dialog) => (asked.push(d.message()), d.accept());
+	own.removeAllListeners('dialog'); // a once() above may still wait for a dialog that never came
 	own.on('dialog', yes);
 	await own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' }).click();
 	await expect(own.getByText('Unlinked the single sign-on sign-in of pat.')).toBeVisible();
