@@ -224,8 +224,8 @@ for (const viewport of viewports) {
 			await director.click();
 			await expect(page).toHaveURL(/\/people\/202$/);
 			await expect(page.getByRole('heading', { level: 1, name: 'Alex Kim' })).toBeVisible();
-			// The filmography is a grid of cards: the owned film opens its Library page, the others open their title page.
-			const filmography = page.getByRole('region', { name: 'Filmography' });
+			// The filmography is rows of cards by decade, under the Filmography heading and filters: the owned film opens its Library page, the others open their title page.
+			const filmography = page.getByRole('group', { name: '2020s' });
 			await expect(filmography.locator('a[href$="/library/77"]')).toHaveAttribute('aria-label', /^North Star/);
 			await expect(filmography.locator('a[href$="/title/movie/602"]')).toHaveAttribute('aria-label', /^Second Light/);
 			await expect(filmography.locator('a[href$="/title/movie/603"]')).toHaveAttribute('aria-label', /^Third Light/);
