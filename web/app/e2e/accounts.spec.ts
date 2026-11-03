@@ -181,6 +181,22 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
 	await expect(mum).toHaveURL(/\/$/);
 	await expect(mum.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
+
+	// A first HolyArrs password, for when Jellyfin is down.
+	const first = `${mediaUser.password}-holyarrs`;
+	await mum.goto('/account');
+	await mum.getByRole('button', { name: 'Set a password' }).click();
+	await expect(mum.getByLabel('Current password')).toHaveCount(0);
+	await mum.getByLabel('New password', { exact: true }).fill(first);
+	await mum.getByLabel('Confirm new password').fill(first);
+	await mum.getByRole('button', { name: 'Set password' }).click();
+	await expect(mum.getByText('Password set.', { exact: false })).toBeVisible();
+	const back = await fresh(browser);
+	await back.goto('/login');
+	await back.getByLabel('Name').fill('Mum');
+	await back.getByLabel('Password', { exact: true }).fill(first);
+	await back.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(back).toHaveURL(/\/$/);
 });
 
 test('sign in with Emby makes a member, next to Jellyfin', async ({ browser }) => {

@@ -317,9 +317,11 @@ func allowed(v WayView, names ...string) bool {
 
 var errNotAllowed = errors.New("not allowed to join")
 var errDisabled = errors.New("account disabled")
+var errKidSkipLocal = errors.New("kid join while skipping local sign-in")
 
-// linkedUser finds or makes the user for an outside account.
-func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin bool) (int64, string, error) {
+// linkedUser finds or makes the user for an outside account. A new person
+// the server limits (kid) joins as a Kid, as an import would make them.
+func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin, kid bool) (int64, string, error) {
 	var id int64
 	var name, state string
 	err := a.s.Read().QueryRowContext(ctx, `SELECT u.id, u.name, u.state FROM user_links l JOIN users u ON u.id = l.user_id
@@ -337,6 +339,14 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 	if !mayJoin {
 		// The outside account's name (from the server) goes with the refusal.
 		return 0, strings.TrimSpace(extName), errNotAllowed
+	}
+	u := domain.User{Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}
+	if kid {
+		if a.skipLocal.Load() {
+			// A Kid could not be told apart from the owner at home.
+			return 0, "", errKidSkipLocal
+		}
+		u.Perms, u.MaxRating = permsJSON([]Perm{PermAsk}), "PG"
 	}
 	base := strings.TrimSpace(extName)
 	if base == "" {
@@ -356,8 +366,8 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 			name = fmt.Sprintf("%s-%d", base, i)
 		}
 		var err error
-		id, err = store.Insert(tx, "users", &domain.User{Name: name, Role: RoleMember, State: "active",
-			Perms: permsJSON(DefaultPerms(RoleMember))}, domain.System)
+		u.Name = name
+		id, err = store.Insert(tx, "users", &u, domain.System)
 		if err != nil {
 			return err
 		}
@@ -366,7 +376,7 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		return err
 	})
 	if err == nil {
-		log.Printf("auth: %s account joined as member %q (%d)", provider, name, id)
+		log.Printf("auth: %s account joined as member %q (%d), kid %t", provider, name, id, kid)
 	}
 	return id, name, err
 }
@@ -406,6 +416,9 @@ func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider stri
 	case errors.Is(err, errDisabled):
 		a.failedEvent(r, outsideName(name), "turned off")
 		fail(w, http.StatusForbidden, "this account is turned off; ask the owner")
+	case errors.Is(err, errKidSkipLocal):
+		log.Printf("auth: %s account has limits on the server and sign-in is skipped at home; not joined", provider)
+		fail(w, http.StatusForbidden, "this account has an age limit, and it can't join while sign-in is skipped at home; ask the owner")
 	case err != nil:
 		serverError(w, provider+" sign-in", err)
 	default:
@@ -547,6 +560,8 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		UUID     string `json:"uuid"`
 		Username string `json:"username"`
 		Email    string `json:"email"`
+		// A managed Plex Home user with limits on what they may watch.
+		Restricted bool `json:"restricted"`
 	}
 	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/user", hdr, nil, &user)
 	if err != nil || code/100 != 2 || user.ID == 0 {
@@ -579,7 +594,7 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 			return x.ClientIdentifier == v.ServerID && !x.Owned
 		})
 	}
-	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin)
+	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin, user.Restricted)
 	a.outsideDone(w, r, ProviderPlex, id, name, err)
 }
 
@@ -664,12 +679,25 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ipKey, userKey := a.clientKey(r), "name:"+kind+":"+strings.ToLower(c.Name)
+	var marks []failMark
 	a.mu.Lock()
 	wait := max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries))
 	if wait == 0 {
+		marks = a.markFails(ipKey, userKey)
 		a.noteFail(ipKey, userKey)
 	}
 	a.mu.Unlock()
+	// Only an attempt the server could not check is taken back: no answer
+	// at all, or a proxy saying the server behind it is down (502, 503,
+	// 504). Any other answer counts, so a server that turns down wrong
+	// passwords with an odd status is still limited. A client that hung up
+	// mid-check keeps its count, so hanging up skips no wait.
+	undo := func(code int) {
+		down := code == 0 || code == http.StatusBadGateway || code == http.StatusServiceUnavailable || code == http.StatusGatewayTimeout
+		if down && ctx.Err() == nil {
+			a.undoFail(marks)
+		}
+	}
 	if wait > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 		fail(w, http.StatusTooManyRequests, "too many failed sign-ins; wait a little and try again")
@@ -683,12 +711,15 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 			Name   string `json:"Name"`
 			Policy struct {
 				IsDisabled bool `json:"IsDisabled"`
+				// Set when the server limits what this person may watch.
+				MaxParentalRating *int `json:"MaxParentalRating"`
 			} `json:"Policy"`
 		} `json:"User"`
 		AccessToken string `json:"AccessToken"`
 	}
 	code, err := a.serverFetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, &got)
 	if err != nil {
+		undo(code)
 		log.Printf("auth: %s sign-in: %v", kind, err)
 		fail(w, http.StatusBadGateway, "the "+kind+" server did not answer; ask the owner")
 		return
@@ -700,6 +731,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if code/100 != 2 || got.User.ID == "" {
+		undo(code)
 		log.Printf("auth: %s sign-in: status %d", kind, code)
 		fail(w, http.StatusBadGateway, "the "+kind+" server gave an odd answer; ask the owner")
 		return
@@ -719,6 +751,6 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	delete(a.fails, ipKey)
 	delete(a.fails, userKey)
 	a.mu.Unlock()
-	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name))
+	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)
 	a.outsideDone(w, r, kind, id, name, err)
 }
