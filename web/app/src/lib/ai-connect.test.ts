@@ -64,6 +64,9 @@ describe('ai-connect', () => {
 		expect(familyOf('lm-studio').id).toBe('desktop-apps');
 		expect(familyOf('nope').id).toBe('claude');
 	});
+	it('keeps placeholders only in steps, where they are filled in', () => {
+		for (const d of APP_DATA) expect(`${d.needs} ${d.check} ${d.note}`, d.slug).not.toMatch(/\{url\}|\{key\}/);
+	});
 	it('names each app the same way the website key step does', () => {
 		for (const d of APP_DATA) {
 			if (d.key[0]?.text.startsWith('In HolyArrs')) expect(d.key[0].text).toContain(`pick ${d.name} and press Make a key`);

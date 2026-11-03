@@ -1171,7 +1171,7 @@ export const APP_DATA: AppData[] = [
       { text: "Open Agent Settings › Connectors, select HolyArrs and save." },
     ],
     check: "Settings › Connectors shows HolyArrs as connected.",
-    note: "No API Key field? Add the header Authorization: Bearer {key} instead.",
+    note: "No API Key field? Add the header Authorization: Bearer followed by your key instead.",
     source: "docs",
   },
   {
