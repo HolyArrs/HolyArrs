@@ -557,6 +557,9 @@ type Importer struct {
 	// OnRejected is told when an Import is rejected and its Release turned
 	// down, so the Slot can be searched again.
 	OnRejected func(ctx context.Context, slotID int64)
+	// OnImported is told when an Import is done (every file placed), so the
+	// finished job can be cleared out of its Downloader.
+	OnImported func(ctx context.Context, downloadID int64)
 	// OnLowSpace is told when an import is refused because the disk would
 	// be left too full: the hook for the health checks.
 	OnLowSpace func(ctx context.Context, dir string, free, need int64)
@@ -1128,6 +1131,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 	}
 	im.publish("import", imp)
+	if imp.State == "done" && !dryRun && im.OnImported != nil {
+		im.OnImported(ctx, d.ID)
+	}
 	return imp, nil
 }
 

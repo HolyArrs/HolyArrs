@@ -502,6 +502,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		enqueue(ctx, source.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
 	}
+	// A finished Import: clear a Usenet download out of its Downloader.
+	im.OnImported = dm.ClearFinished
 	// A failed Download: search its Slot for the next Release (a failed
 	// season pack: one season search for its episodes).
 	dm.OnFailed = func(ctx context.Context, slotID int64) {

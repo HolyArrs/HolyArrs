@@ -359,6 +359,9 @@ type Downloader struct {
 	Removed      bool       `db:"removed"` // removed by a person but kept for its Download history
 	// Writable is "HolyArrs can change this Downloader"; off, HolyArrs only reads it.
 	Writable bool `db:"writable"`
+	// ClearFinished removes a Usenet job and its files from the client once
+	// its Import fully succeeded.
+	ClearFinished bool `db:"clear_finished"`
 }
 
 // SeenFile is one file a Download reports.

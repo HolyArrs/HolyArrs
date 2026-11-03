@@ -942,6 +942,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	im.publish("import", imp)
+	if imp.State == "done" && !dryRun && im.OnImported != nil {
+		im.OnImported(ctx, d.ID)
+	}
 	if im.OnRejected != nil {
 		for _, id := range lookAgain {
 			im.OnRejected(ctx, id)
