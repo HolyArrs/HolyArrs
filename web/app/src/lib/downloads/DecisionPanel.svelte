@@ -206,7 +206,7 @@
 	.mono { font-family: var(--font-mono); }
 	.ed { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 	.ed .input { flex: 1 1 180px; min-width: 0; height: 32px; }
-	.err { color: var(--fail); font: var(--t-footnote); }
+	.err { color: var(--fail-text); font: var(--t-footnote); }
 	.state { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	.subs { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }

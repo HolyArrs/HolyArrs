@@ -309,6 +309,12 @@
 	let trTier = $state(0);
 	let trAdd = $state('');
 	let trBusy = $state(false);
+	$effect(() => {
+		// Typed tracker addresses belong to the download they were typed for.
+		void openId;
+		trUrl = '';
+		trAdd = '';
+	});
 	function pickTracker(r: DownloadRow, x: Tracker) {
 		sel[`${r.id}:t`] = x.ref || x.url;
 		trUrl = '';
@@ -591,7 +597,10 @@
 		}
 		return items;
 	}
-	const steerable = (r: DownloadRow) => !!onsteer && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent';
+	// Only qBittorrent takes location, speed and seeding changes; read-only rows never do.
+	const steerable = (r: DownloadRow) => !!onsteer && r.can_act && !!r.downloader_id && !!r.hash && protocolOf(r) === 'torrent' && controllable(r.downloader_kind);
+	// The selection bars send only rows HolyArrs may change, so one read-only row cannot fail the rest.
+	const actable = (rows: DownloadRow[]) => rows.filter((r) => r.can_act);
 	const STEER: { mode: SteerMode; label: string; short: string }[] = [
 		{ mode: 'location', label: 'Set location…', short: 'Set location' },
 		{ mode: 'speed', label: 'Speed limits…', short: 'Speed limits' },
@@ -604,7 +613,7 @@
 	// The desktop selection bar: what the toolbar's Start, Pause and Remove do not cover.
 	const BULK: { action: BulkAction; label: string }[] = [
 		{ action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
-		{ action: 'up', label: 'Up' }, { action: 'down', label: 'Down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
+		{ action: 'up', label: 'Move up' }, { action: 'down', label: 'Move down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
 	];
 	// The detail pane under the list: its height is kept in this browser.
 	const PANE_KEY = 'holyarrs.downloads.pane';
@@ -632,7 +641,8 @@
 		const read = () =>
 			untrack(() => {
 				const r = everyRow.find((x) => x.id === id);
-				if (r) void readDetail(r, tab);
+				// A decision with no download yet (negative id) has nothing to read.
+				if (r && !watch && !(r.id < 0 && !r.client_item)) void readDetail(r, tab);
 			});
 		read();
 		const t = setInterval(() => {
@@ -647,8 +657,9 @@
 			document.removeEventListener('visibilitychange', back);
 		};
 	});
-	// The Downloaders' own status for the pills, every 5 seconds.
+	// The Downloaders' own status for the pills, every 5 seconds (managers only: watchers would get a 403 each time).
 	$effect(() => {
+		if (watch) return;
 		void readClients();
 		const t = setInterval(() => {
 			if (document.visibilityState === 'visible') void readClients();
@@ -680,8 +691,13 @@
 	// Phones have no top bar: the tab strip carries a magnifier that opens the same scoped search.
 	let psOpen = $state(false);
 	let psEl = $state<HTMLInputElement>();
-	// One row goes through its own call (the client answers with its new state); several go through the bulk call.
-	const runOn = (t: { rows: DownloadRow[] }, one: 'resume' | 'pause', many: BulkAction) => (t.rows.length === 1 ? onact?.(t.rows[0], one) : onbulk?.(t.rows, many));
+	// Several torrents go through one bulk call; a single torrent and every Usenet job (which the
+	// bulk call cannot address) go through their own call, so none is dropped.
+	const runOn = (t: { rows: DownloadRow[] }, one: 'resume' | 'pause', many: BulkAction) => {
+		const tor = t.rows.filter((r) => protocolOf(r) === 'torrent' && !!r.downloader_id && !!r.hash);
+		if (tor.length > 1) onbulk?.(tor, many);
+		for (const r of t.rows) if (tor.length < 2 || !tor.includes(r)) onact?.(r, one);
+	};
 	const barActs = $derived([
 		...(onadd ? [{ key: 'add', icon: 'plus' as const, label: 'Add', hint: 'Add torrents by link or file', disabled: false, run: () => onadd?.() }] : []),
 		{ key: 'start', icon: 'play' as const, label: countLabel('Start', startT.rows.length), hint: startT.why ? `Start (${startT.why})` : countLabel('Start', startT.rows.length), disabled: !startT.rows.length, run: () => runOn(startT, 'resume', 'start'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
@@ -753,6 +769,8 @@
 			return;
 		}
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+		// Only the pills themselves move with the arrows; the Review button and the status popover keep theirs.
+		if (!(e.target as HTMLElement | null)?.closest('[data-nav]')) return;
 		const root = e.currentTarget as HTMLElement;
 		const list = [...root.querySelectorAll<HTMLElement>('[data-nav]')].filter((el) => !el.closest('[inert]'));
 		let i = list.indexOf(document.activeElement as HTMLElement);
@@ -796,7 +814,10 @@
 		next.click();
 	}
 	function listKey(e: KeyboardEvent) {
-		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && fqEl && openRow && paneOpen && tabNow(openRow) === 'Files') {
+		// A menu or sheet already handled this key: the list behind it stays put.
+		if (e.defaultPrevented) return;
+		// Ctrl+F jumps to the files filter only from inside the pane; elsewhere the browser's Find stays.
+		if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F') && fqEl && openRow && paneOpen && tabNow(openRow) === 'Files' && (e.target as HTMLElement | null)?.closest('.dpane')) {
 			e.preventDefault();
 			fqEl.focus();
 			fqEl.select();
@@ -810,14 +831,14 @@
 			}
 			return;
 		}
-		if (e.key === 'Escape' && listEsc(choosing ? Math.max(1, picked.size) : 0, !!openId) === 'clear' && !(e.target as HTMLElement | null)?.closest('input, select, textarea, [role="dialog"]')) {
+		if (e.key === 'Escape' && listEsc(choosing ? Math.max(1, picked.size) : 0, !!openId) === 'clear' && !(e.target as HTMLElement | null)?.closest('input, select, textarea, dialog, [role="dialog"], [role="menu"], [popover]')) {
 			e.preventDefault();
 			clearPicked();
 			return;
 		}
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Escape' && e.key !== 'Delete') return;
 		const t = e.target as HTMLElement | null;
-		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], [role="dialog"]')) return;
+		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], dialog, [role="dialog"], [role="menu"], [popover]')) return;
 		if (e.key === 'Escape') {
 			if (listEsc(picked.size, !!openId) === 'close') {
 				// Escape from inside the pane: the focus goes back to the row the pane was about, never to nowhere.
@@ -1575,8 +1596,8 @@
 			{/if}
 			<div class="fbar" hidden={files.length === 1}>
 				<input type="search" class="tfld" bind:this={fqEl} bind:value={fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fq = ''; } }} data-testid="dl-files-filter" />
-				{#if fsel.size && !watch}
-					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} picked</span>
+				{#if fsel.size && !watch && r.can_act}
+					<span class="k" aria-live="polite" data-testid="dl-files-picked">{fsel.size} selected</span>
 					{#each PRIOS as o (o.v)}<button type="button" class="xbn" disabled={filesBusy} onclick={() => setPrio(r, indexesUnder(files, fsel), o.v)} data-testid="dl-files-prio-{o.v}">{o.label}</button>{/each}
 					<button type="button" class="xbn" onclick={() => (fsel = new Set())} data-testid="dl-files-clear">Clear</button>
 				{/if}
@@ -1590,7 +1611,7 @@
 						<td class="c-name"><span class="fn" title={f.name}>{f.name.split('/').pop()}</span></td>
 						<td class="c-num c-size">{bytes(f.size)}</td>
 						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
+						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !r.can_act} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
 					</tr></tbody>
 				</table></div>
 			{:else if !shownF.length}
@@ -1606,11 +1627,11 @@
 						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<tr class:sel={sel[`${r.id}:f`] === x.key || fsel.has(x.key)} class:off={skipped} tabindex={ri === 0 ? 0 : -1} aria-selected={fsel.has(x.key)} onclick={(e) => fileClick(e, r, keys, x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileClick(e, r, keys, x.key); } }} data-testid="dl-filerow">
-							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
+							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || filesBusy || !r.can_act} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
 							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={closed[`${r.id}|${x.key}`]} aria-label="{closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); closed[`${r.id}|${x.key}`] = !closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
 							<td class="c-num c-size">{bytes(x.size)}</td>
 							<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
+							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || filesBusy || !r.can_act} onclick={(e) => e.stopPropagation()} onchange={(e) => setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
 							<td class="c-num c-rem">{bytes(Math.max(0, x.size - x.done))}</td>
 						</tr>
 					{/each}
@@ -1649,7 +1670,7 @@
 			{@render calm(r, 'Trackers', det.id === r.id ? det.swarmErr : undefined)}
 		{:else}
 			<div class="tblw" data-testid="dl-trackertable"><table class="t2">
-				<thead><tr><th class="c-name">Source</th><th class="c-num c-tier">Tier</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
+				<thead><tr><th class="c-name">Tracker</th><th class="c-num c-tier">Tier</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
 				<tbody>
 					{#each trs as x, ri (x.url + x.tier)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -1666,7 +1687,7 @@
 					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
 				</tbody>
 			</table></div>
-			{#if !watch && r.downloader_id && r.hash}
+			{#if !watch && r.can_act && r.downloader_id && r.hash}
 				{@const chosen = trs.find((x) => x.ref && sel[`${r.id}:t`] === x.ref)}
 				<div class="tred" data-testid="dl-tracker-edit">
 					{#if chosen}
@@ -1782,7 +1803,7 @@
 {#if (pickedRows.length || selecting) && !watch}
 	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
 		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
-		{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}
+		{#each BULK as b (b.action)}<button type="button" class="xbn" onclick={() => onbulk?.(actable(pickedRows), b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}
 		{#if pickedRows.some(steerable)}{#each STEER as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
 		{#if pickedRows.some(retryable)}<button type="button" class="xbn" onclick={() => onretry?.(pickedRows.filter(retryable))} data-testid="dl-bulk-retry">Try again</button>{/if}
 		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
@@ -1791,7 +1812,7 @@
 		<div class="psel" role="toolbar" aria-label="Selected downloads" data-testid="dl-psel">
 			<div class="pst"><span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span><button type="button" class="plk" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-psel-all">Select all</button><button type="button" class="plk" onclick={clearPicked} data-testid="dl-psel-cancel">Cancel</button></div>
 			<div class="psa">
-				{#each PHONE_BULK as b (b.action)}<button type="button" class="pa" onclick={() => onbulk?.(pickedRows, b.action)} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
+				{#each PHONE_BULK as b (b.action)}<button type="button" class="pa" onclick={() => (b.action === 'start' ? runOn(startT, 'resume', 'start') : b.action === 'pause' ? runOn(pauseT, 'pause', 'pause') : onbulk?.(actable(pickedRows), b.action))} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
 				<button type="button" class="pa bad" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-psel-remove"><Icon name="trash" size={20} /><span>Remove</span></button>
 			</div>
 		</div>
@@ -1911,7 +1932,7 @@
 	.k { color: var(--text-muted); font: var(--t-footnote); }
 	.strip b { font-weight: 600; }
 	.sp { gap: 8px; }
-	.up { color: var(--info); }
+	.up { color: var(--info-text); }
 
 	.tops { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0 16px; }
 	.types { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 12px; border-radius: var(--r-btn); background: var(--surface-2); }
@@ -1953,7 +1974,7 @@
 	.drow > .dline:hover { background: var(--surface-2); }
 	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 
-	.bin:focus-visible, .lk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.bin:focus-visible, .lk:focus-visible, .fold:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* The poster sits at the right of its column so the row checkbox at the left edge never covers it. */
 	.post { width: var(--pi, 26px); height: calc(var(--pi, 26px) * 1.5); justify-self: center; overflow: hidden; border-radius: 3px; --poster-ratio: 2 / 3; }
@@ -1997,7 +2018,7 @@
 	.st.queued .dot { background: var(--info); }
 	.st.held .dot { background: var(--wait); }
 	.st.bad .dot { background: var(--fail); }
-	.st.bad { color: var(--fail); }
+	.st.bad { color: var(--fail-text); }
 
 	.dline > .ph { display: none; }
 	/* A column narrowed past its content cuts it off cleanly instead of spilling into the next one. */
@@ -2038,7 +2059,7 @@
 	.tred { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px; min-width: 0; }
 	.tred .tl { margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font: var(--t-footnote); }
 	.trow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-width: 0; }
-	.tfld { flex: 1 1 200px; min-width: 0; box-sizing: border-box; min-height: 36px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-footnote); resize: vertical; }
+	.tfld { flex: 1 1 200px; min-width: 0; box-sizing: border-box; min-height: 36px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: var(--t-footnote); resize: vertical; }
 	.tfld.tier { flex: 0 0 72px; }
 	.tfld:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	tr.fixed td { color: var(--text-muted); }
@@ -2057,7 +2078,7 @@
 	.cm { display: flex; justify-content: flex-end; }
 	.del { display: flex; justify-content: flex-end; }
 	.bin { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
-	.bin:hover:not(:disabled) { color: var(--fail); background: var(--surface-3); }
+	.bin:hover:not(:disabled) { color: var(--fail-text); background: var(--surface-3); }
 	.bin:disabled { opacity: 0.35; cursor: not-allowed; }
 
 	/* The panel starts at the Title column: ▾ + poster + two gaps. */
@@ -2090,7 +2111,7 @@
 	.lg { list-style: none; padding: 0; margin: 0; display: grid; gap: 3px; font: var(--t-caption); min-width: 0; max-height: 220px; overflow: auto; }
 	.lg li { overflow-wrap: anywhere; }
 	.lg time { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
-	.lg .bad { color: var(--fail); }
+	.lg .bad { color: var(--fail-text); }
 	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; overflow: clip; }
 	.body { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
@@ -2124,7 +2145,7 @@
 	.dpane { flex: none; display: flex; flex-direction: column; min-height: 0; background: none; }
 	.dpane.shut { height: auto; }
 	.phd { flex: none; }
-	.trchip { flex: none; align-self: center; min-height: 24px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--fail) 45%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail); font: var(--t-caption); font-weight: 600; cursor: pointer; white-space: nowrap; }
+	.trchip { flex: none; align-self: center; min-height: 24px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--fail) 45%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail-text); font: var(--t-caption); font-weight: 600; cursor: pointer; white-space: nowrap; }
 	.trchip.on, .trchip:hover { background: color-mix(in srgb, var(--fail) 22%, transparent); }
 	.trchip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.grab { display: none; }
@@ -2238,9 +2259,9 @@
 	.dep { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card, 10px); background: var(--surface-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 6px 16px rgb(0 0 0 / 0.06); min-width: 0; }
 	.story { border-color: color-mix(in srgb, var(--fail) 40%, var(--line)); }
 	.src { margin-top: 8px; }
-	.st-working { color: var(--ok); }
-	.st-updating { color: var(--info); }
-	.st-error { color: var(--fail); }
+	.st-working { color: var(--ok-text); }
+	.st-updating { color: var(--info-text); }
+	.st-error { color: var(--fail-text); }
 	.more { min-width: 36px; padding: 0 10px; }
 	.strip.sub { margin-top: -4px; font: var(--t-footnote); color: var(--text-muted); }
 	.lim { display: inline-flex; align-items: center; gap: 8px; }
@@ -2304,7 +2325,7 @@
 	.pact .xbn:active:not(:disabled) { transform: scale(0.97); }
 	.pact .more { display: inline-flex; }
 	.xbn.quiet { border-color: transparent; background: none; color: var(--text-muted); }
-	.xbn.quiet:hover:not(:disabled) { border-color: color-mix(in srgb, var(--fail) 35%, transparent); background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail); }
+	.xbn.quiet:hover:not(:disabled) { border-color: color-mix(in srgb, var(--fail) 35%, transparent); background: color-mix(in srgb, var(--fail) 10%, transparent); color: var(--fail-text); }
 	.tdl { color: var(--text-muted); font: var(--t-caption); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--r-sm); }
 	.tdl:hover { color: var(--text); }
 	.tdl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -2410,7 +2431,7 @@
 		.tabrow :global([data-testid='dl-stat']) { display: none; }
 		.qline { display: flex; align-items: center; gap: 6px; min-height: 24px; margin: 0; padding: 2px var(--dl-gutter) 4px; color: var(--text-muted); font: 400 12px/16px var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 		.qline .qd { color: color-mix(in srgb, var(--ok) 45%, var(--text-muted)); font-weight: 600; }
-		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); font: 600 12px/1 var(--font-ui); }
+		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); }
 		/* The selection bar sits over the tab bar, thumb-sized. */
 		.selbar { display: none; }
 		.psel { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 8px); z-index: 45; display: grid; gap: 4px; padding: 6px 8px 8px; border: 1px solid var(--line-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface-1) 97%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: var(--shadow-modal); animation: pselIn 220ms var(--ease-out); }
@@ -2422,7 +2443,7 @@
 		.pa { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 52px; padding: 4px 2px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--text); font: 500 11px/1.1 var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 		.pa span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 		.pa:active, .plk:active { transform: scale(0.97); }
-		.pa.bad { color: var(--fail); }
+		.pa.bad { color: var(--fail-text); }
 		.pa:focus-visible, .plk:focus-visible, .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 		.listbox:has(.psel) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
@@ -2495,7 +2516,7 @@
 		.dlrows .drow.sel > .dline, .dlrows .drow.sel > .dline:hover { background: var(--surface-1); box-shadow: inset 3px 0 0 var(--accent), var(--shadow-card); }
 	}
 	/* Our own Downloader marks: short letters on a tinted rounded badge. */
-	.pm.cmk { display: inline-grid; place-items: center; width: auto; min-width: 22px; height: 22px; padding: 0 3px; border-radius: 5px; font: 700 9px/1 var(--font-sans, system-ui); letter-spacing: 0.02em; color: var(--cm); background: color-mix(in srgb, var(--cm) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cm) 40%, transparent); }
+	.pm.cmk { display: inline-grid; place-items: center; width: auto; min-width: 22px; height: 22px; padding: 0 3px; border-radius: 5px; font: 700 9px/1 var(--font-ui); letter-spacing: 0.02em; color: var(--cm); background: color-mix(in srgb, var(--cm) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cm) 40%, transparent); }
 	.pm[data-tone='qb'] { --cm: #2f6fd6; }
 	.pm[data-tone='tr'] { --cm: #d23c3c; }
 	.pm[data-tone='de'] { --cm: #5b7388; }
@@ -2536,7 +2557,7 @@
 	.sw1 .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 	.sw1 .dot.p { background: var(--info); }
 	.sw1 .rp { justify-self: start; padding: 1px 6px; border-radius: 999px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-weight: 500; font-variant-numeric: tabular-nums; }
-	.sw1 .rp.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+	.sw1 .rp.good { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok-text); }
 	/* The header's three facets: the picked one is bold and carries the sort line. */
 	.fc { position: relative; justify-self: start; padding: 0; border: 0; background: none; color: var(--text-muted); font: var(--t-caption); cursor: pointer; }
 	.fc.on { color: var(--text); font-weight: 600; }
@@ -2635,6 +2656,7 @@
 	.fcol { border-right: 1px solid var(--line); margin-right: -1px; }
 	/* Sentence case, like the column headings: one voice on the page. */
 	.fcap { padding: 12px 16px 4px; letter-spacing: 0; text-transform: none; }
+	.pb .t2 th, .lgday { letter-spacing: 0; text-transform: none; }
 	.hlink { margin: 10px 16px 2px; font-weight: 600; }
 	.pb .lgw, .pb .tblw, .pb .quiet0 { border-radius: var(--r-card); border-color: var(--line); }
 	@media (min-width: 641px) {

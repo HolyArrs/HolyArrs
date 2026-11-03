@@ -30,7 +30,7 @@
 
 	const groups = $derived(byClient(rows));
 	const count = $derived([...groups.values()].reduce((k, g) => k + g.length, 0));
-	const noun = $derived(count === 1 ? 'torrent' : `${count} torrents`);
+	const noun = $derived(count === 1 ? 'this torrent' : `${count} torrents`);
 
 	// Each opening starts from the first torrent's own rules.
 	let wasOpen = false;
@@ -127,7 +127,7 @@
 			<input type="text" bind:value={folder} placeholder="A subfolder, like tv/old (full paths need settings access)" spellcheck="false" data-testid="steer-folder" />
 		</label>
 	{:else if mode === 'speed'}
-		<p class="lead">Caps {noun} on its own, under the Downloader's overall limits. 0 is no cap.</p>
+		<p class="lead">Caps {noun} on its own, under the Downloader's overall limits. 0 means no limit.</p>
 		<div class="two">
 			<label class="fl"><span class="lb">Download</span><span class="val"><input type="number" min="0" step="1" bind:value={down} data-testid="steer-down" /><span>KB/s</span></span></label>
 			<label class="fl"><span class="lb">Upload</span><span class="val"><input type="number" min="0" step="1" bind:value={up} data-testid="steer-up" /><span>KB/s</span></span></label>
@@ -162,18 +162,18 @@
 	.lim { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.lb { font: var(--t-subhead); color: var(--text-muted); padding: 0; }
 	.fl { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-	.seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
+	.seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line-strong); }
 	.seg button { flex: 1 1 auto; min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: var(--t-callout); cursor: pointer; }
-	.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1, 0 1px 2px rgb(0 0 0 / 0.12)); }
+	.seg button.on { background: var(--seg-thumb); color: var(--text); box-shadow: var(--shadow-1, 0 1px 2px rgb(0 0 0 / 0.12)); }
 	.seg button:focus-visible, input:focus-visible, select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.val { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font: var(--t-callout); min-width: 0; }
 	.opt { opacity: 0.75; }
 	.two { display: flex; flex-wrap: wrap; gap: 12px; }
 	.two .fl { flex: 1 1 140px; }
-	input[type='text'] { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
+	input[type='text'] { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
 	input[type='text']:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	input[type='number'], select { box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
+	input[type='number'], select { box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
 	input[type='number'] { width: 120px; }
 	select { width: 100%; }
-	.err { color: var(--fail); font: var(--t-callout); margin: 0; }
+	.err { color: var(--fail-text); font: var(--t-callout); margin: 0; }
 </style>

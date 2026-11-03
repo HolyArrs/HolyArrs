@@ -100,7 +100,7 @@
 			{#if files.length}
 				<ul class="fs">
 					{#each files as f, i (f.name + f.size)}
-						<li><span class="fn" title={f.name}>{f.name}</span><button type="button" class="lk" aria-label="Leave out {f.name}" onclick={() => (files = files.filter((_, j) => j !== i))}>Remove</button></li>
+						<li><span class="fn" title={f.name}>{f.name}</span><button type="button" class="lk" aria-label="Remove {f.name}" onclick={() => (files = files.filter((_, j) => j !== i))}>Remove</button></li>
 					{/each}
 				</ul>
 			{/if}
@@ -135,11 +135,11 @@
 	.fl { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 160px; }
 	.lb { font: var(--t-subhead); color: var(--text-muted); }
 	.opt { opacity: 0.75; }
-	textarea, input[type='text'], select { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
+	textarea, input[type='text'], select { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
 	textarea { resize: vertical; font-family: var(--font-mono); font-size: 13px; }
 	textarea:focus-visible, input:focus-visible, select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.row2 { display: flex; flex-wrap: wrap; gap: 12px; }
-	.drop { border: 1px dashed var(--border); border-radius: 12px; padding: 14px; color: var(--text-muted); font: var(--t-callout); text-align: center; transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+	.drop { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 14px; color: var(--text-muted); font: var(--t-callout); text-align: center; transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
 	.drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 	.drop p { margin: 0; }
 	.fs { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
@@ -149,5 +149,5 @@
 	.lk:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 	.ck { display: flex; gap: 10px; align-items: center; font: var(--t-callout); cursor: pointer; }
 	.ck input { width: 20px; height: 20px; accent-color: var(--accent); }
-	.err { color: var(--fail); font: var(--t-callout); margin: 0; }
+	.err { color: var(--fail-text); font: var(--t-callout); margin: 0; }
 </style>

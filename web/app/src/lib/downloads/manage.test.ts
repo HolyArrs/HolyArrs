@@ -75,7 +75,7 @@ describe('tracker filter', () => {
 	it('lists problems first, then hosts, with counts', () => {
 		expect(trackerOptions(rows)).toEqual([
 			{ key: 'p:warning', label: 'Tracker warning', count: 1 },
-			{ key: 'p:announce', label: 'Not answering', count: 1 },
+			{ key: 'p:announce', label: 'No tracker reply', count: 1 },
 			{ key: 'host:a.example', label: 'a.example', count: 1 },
 			{ key: 'host:b.example', label: 'b.example', count: 2 }
 		]);
@@ -93,9 +93,9 @@ describe('tracker filter', () => {
 import { bytesOf, kbOf } from './manage.ts';
 describe('speed boxes', () => {
 	it('read and write KB/s', () => {
-		expect(kbOf(2048)).toBe(2);
+		expect(kbOf(2000)).toBe(2);
 		expect(kbOf(undefined)).toBe(0);
-		expect(bytesOf('1.5')).toBe(1536);
+		expect(bytesOf('1.5')).toBe(1500);
 		expect(bytesOf('')).toBe(0);
 		expect(bytesOf(-3)).toBe(0);
 	});

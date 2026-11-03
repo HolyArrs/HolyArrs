@@ -9,13 +9,13 @@ export type ServerStat = { name: string; total: number; month: number; week: num
 /** The Servers and Repair tabs of one Usenet job. */
 export type UsenetView = { stages: JobStage[]; job_servers: { name: string; amount: string }[]; servers?: { total: number; month: number; week: number; day: number; servers: ServerStat[] } };
 
-type RetryBits = Pick<DownloadRow, 'phase' | 'protocol' | 'client_item' | 'hash' | 'downloader_id'>;
+type RetryBits = Pick<DownloadRow, 'phase' | 'protocol' | 'client_item' | 'hash' | 'downloader_id' | 'outside'>;
 
 /** retryable says a row is a failed Usenet job the Downloader still holds
  *  and HolyArrs did not send (its own failed downloads were searched again).
  *  NZBGet takes Try again too. */
 export function retryable(r: RetryBits & { downloader_kind?: string }): boolean {
-	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !!r.client_item && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
+	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !!r.client_item && !!r.outside && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
 }
 
 /** pausable says whether Pause/Resume means anything: a Usenet job in the

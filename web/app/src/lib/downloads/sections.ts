@@ -104,7 +104,7 @@ export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { t
 		return { text: why ? `Failed: ${why}` : 'Failed', bad: true };
 	}
 	if (r.phase === 'removed') return { text: 'Removed', bad: false };
-	return { text: s === 'seeding' ? 'Completed · seeding' : 'Completed', bad: false };
+	return { text: s === 'seeding' ? 'Done · seeding' : 'Done', bad: false };
 }
 
 export interface Fact {

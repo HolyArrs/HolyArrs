@@ -65,7 +65,7 @@ func clientControlError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, store.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such download")
-	case errors.Is(err, downloader.ErrNotActive), errors.Is(err, downloader.ErrNotSupported):
+	case errors.Is(err, downloader.ErrNotActive), errors.Is(err, downloader.ErrNotSupported), errors.Is(err, downloader.ErrReadOnly):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, downloader.ErrNotFound):
 		fail(w, http.StatusNotFound, err.Error())
@@ -348,7 +348,11 @@ func (a *API) downloadClients(w http.ResponseWriter, r *http.Request) {
 // allAct pauses or resumes everything in every Downloader that can.
 func (a *API) allAct(pause bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		out, err := a.eachClient(r.Context(), func(_ domain.Downloader, e downloader.Engine, _ *ClientView) error {
+		out, err := a.eachClient(r.Context(), func(d domain.Downloader, e downloader.Engine, _ *ClientView) error {
+			// A read-only Downloader is left alone, not reported as a failure of Pause all.
+			if downloader.ReadOnlyFor(d) {
+				return downloader.ErrNotSupported
+			}
 			return asController(e, func(c downloader.Controller) error {
 				if pause {
 					return c.PauseAll(r.Context())

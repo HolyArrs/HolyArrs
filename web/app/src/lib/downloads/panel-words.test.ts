@@ -15,7 +15,7 @@ describe('healthLine', () => {
 	});
 	it('paused and errored', () => {
 		expect(healthLine({ phase: 'paused', progress: 0.5 })).toBe('Paused · 50%');
-		expect(healthLine({ phase: 'failed', progress: 0.5, client_hint: 'errored' })).toBe('Errored · 50%');
+		expect(healthLine({ phase: 'failed', progress: 0.5, client_hint: 'errored' })).toBe('Failed · 50%');
 		expect(healthLine({ phase: 'done', state: 'paused', ratio: 1 })).toBe('Done, paused · ratio 1.00');
 	});
 });

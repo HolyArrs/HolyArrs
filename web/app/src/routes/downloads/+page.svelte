@@ -189,12 +189,17 @@
 		}
 	}
 
+	// Reads can overlap (a timed read, then a Remove's own read): only the newest one is applied,
+	// so an older answer never brings a removed row back.
+	let loadSeq = 0;
 	async function load() {
+		const seq = ++loadSeq;
 		try {
 			const [d, i] = await Promise.all([
 				api.get<ViewAnswer>(`/downloads/view?limit=100${outsideLimit > 200 ? `&outside_limit=${outsideLimit}` : ''}`),
 				watch ? Promise.resolve({ imports: [] as ImportRecord[] }) : api.get<{ imports: ImportRecord[] }>('/imports?limit=100')
 			]);
+			if (seq !== loadSeq) return;
 			rows = d.downloads.map(withId);
 			clientHealth = d.clients ?? [];
 			upTotal = d.totals?.up_speed;
@@ -207,7 +212,7 @@
 			reads++;
 			error = '';
 		} catch (e) {
-			error = message(e);
+			if (seq === loadSeq) error = message(e);
 		} finally {
 			loaded = true;
 		}
@@ -599,7 +604,7 @@
 	.lim { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px; min-width: 0; }
 	.lim legend { font: var(--t-headline); margin-bottom: 6px; padding: 0; }
 	.lim label { display: flex; flex-direction: column; gap: 4px; font: var(--t-subhead); color: var(--text-muted); flex: 1 1 120px; min-width: 0; }
-	.lim input { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: var(--t-callout); width: 100%; box-sizing: border-box; }
+	.lim input { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: var(--t-callout); width: 100%; box-sizing: border-box; }
 	.pad { padding: var(--s-6) var(--gutter); }
 	.matchpad { padding: 0 var(--gutter); }
 	.notes { list-style: none; margin: 0; padding: var(--s-2) var(--gutter) 0; display: grid; gap: 2px; color: var(--text-muted); font: var(--t-footnote); }

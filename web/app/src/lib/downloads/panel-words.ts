@@ -18,7 +18,7 @@ export type HealthIn = {
 /** One short line under the panel title: what the torrent is doing now. */
 export function healthLine(h: HealthIn, now = Date.now()): string {
 	const pc = `${Math.floor(percent(h.progress))}%`;
-	if (h.client_hint === 'errored' || h.phase === 'failed') return `Errored · ${pc}`;
+	if (h.client_hint === 'errored' || h.phase === 'failed') return `Failed · ${pc}`;
 	if (h.client_hint === 'missing') return `Files missing · ${pc}`;
 	if (h.client_hint === 'checking') return `Checking · ${pc}`;
 	if (h.client_hint === 'moving') return `Moving · ${pc}`;

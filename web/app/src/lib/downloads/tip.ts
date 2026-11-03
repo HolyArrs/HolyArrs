@@ -71,14 +71,15 @@ export function tip(node: HTMLElement, opts: string | { text: string; side?: Tip
 		clearTimeout(timer);
 		timer = setTimeout(show, 400);
 	};
-	const focus = () => {
-		if (node.matches(':focus-visible')) show();
+	// focusin bubbles, so a tip on a wrapper also shows when the button inside gets keyboard focus.
+	const focus = (e: FocusEvent) => {
+		if ((e.target as Element | null)?.matches(':focus-visible')) show();
 	};
 	node.addEventListener('pointerenter', enter);
 	node.addEventListener('pointerleave', hideTip);
 	node.addEventListener('pointerdown', hideTip);
-	node.addEventListener('focus', focus);
-	node.addEventListener('blur', hideTip);
+	node.addEventListener('focusin', focus);
+	node.addEventListener('focusout', hideTip);
 	node.addEventListener('keydown', (e) => e.key === 'Escape' && hideTip());
 	return {
 		update(next: string | { text: string; side?: TipSide }) {
@@ -89,8 +90,8 @@ export function tip(node: HTMLElement, opts: string | { text: string; side?: Tip
 			node.removeEventListener('pointerenter', enter);
 			node.removeEventListener('pointerleave', hideTip);
 			node.removeEventListener('pointerdown', hideTip);
-			node.removeEventListener('focus', focus);
-			node.removeEventListener('blur', hideTip);
+			node.removeEventListener('focusin', focus);
+			node.removeEventListener('focusout', hideTip);
 		}
 	};
 }

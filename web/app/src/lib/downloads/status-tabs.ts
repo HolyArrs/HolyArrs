@@ -260,11 +260,11 @@ export interface Empty {
 }
 
 const EMPTY: Record<string, Omit<Empty, 'title'>> = {
-	active: { text: 'Anything HolyArrs or your downloader is fetching shows up here.', glyph: 'down' },
+	active: { text: 'Anything HolyArrs or your Downloader is fetching shows up here.', glyph: 'down' },
 	waiting: { text: 'Downloads queued or paused show up here.', glyph: 'clock' },
-	progress: { text: 'Active downloads show up here with their speed.', glyph: 'down' },
+	progress: { text: 'Downloads in progress show up here with their speed.', glyph: 'down' },
 	problems: { text: 'Failed downloads and ones that need a decision show up here.', glyph: 'check' },
-	done: { text: 'Completed and seeding downloads show up here.', glyph: 'done' }
+	done: { text: 'Finished and seeding downloads show up here.', glyph: 'done' }
 };
 
 const KIND_NOUN: Record<string, string> = { movie: 'movie', show: 'TV show', artist: 'music', usenet: 'Usenet', torrent: 'torrent' };

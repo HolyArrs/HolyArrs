@@ -16,7 +16,7 @@ describe('row actions menu', () => {
 		expect(rowItems({ ...tor, title_id: 4, outside: true, linked: true })).toContain('library');
 	});
 	it('gives a failed Usenet job Try again but no pause or queue moves', () => {
-		const job = { can_act: true, protocol: 'usenet', downloader_kind: 'sabnzbd', downloader_id: 2, hash: 'n', client_item: true, phase: 'failed' };
+		const job = { can_act: true, protocol: 'usenet', downloader_kind: 'sabnzbd', downloader_id: 2, hash: 'n', client_item: true, outside: true, phase: 'failed' };
 		expect(rowItems(job)).toEqual(['retry', 'remove']);
 	});
 	it('gives a live SABnzbd or NZBGet job pause, queue moves, priority and remove', () => {

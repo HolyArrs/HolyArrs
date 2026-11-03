@@ -128,7 +128,7 @@ describe('showOf', () => {
 
 describe('emptyOf', () => {
 	it('gives each tab its own calm card', () => {
-		expect(emptyOf('active')).toMatchObject({ title: 'No downloads yet', text: 'Anything HolyArrs or your downloader is fetching shows up here.' });
+		expect(emptyOf('active')).toMatchObject({ title: 'No downloads yet', text: 'Anything HolyArrs or your Downloader is fetching shows up here.' });
 		expect(emptyOf('active').action).toBeUndefined();
 		expect(emptyOf('problems')).toMatchObject({ title: 'All clear', glyph: 'check' });
 		expect(emptyOf('done').title).toBe('Nothing finished yet');

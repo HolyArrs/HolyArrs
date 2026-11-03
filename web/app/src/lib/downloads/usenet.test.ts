@@ -14,17 +14,19 @@ const view: UsenetView = {
 };
 
 describe('retryable', () => {
-	const base = { client_item: true, hash: 'SABnzbd_nzo_1', downloader_id: 2, protocol: 'usenet', phase: 'failed' } as const;
+	const base = { client_item: true, outside: true, hash: 'SABnzbd_nzo_1', downloader_id: 2, protocol: 'usenet', phase: 'failed' } as const;
 	it('a failed outside Usenet job', () => expect(retryable(base)).toBe(true));
 	it('not torrents, not running jobs, not HolyArrs downloads', () => {
 		expect(retryable({ ...base, protocol: 'torrent' })).toBe(false);
 		expect(retryable({ ...base, phase: 'downloading' })).toBe(false);
 		expect(retryable({ ...base, client_item: false })).toBe(false);
+		// A job HolyArrs sent was already searched again: the server refuses Try again on it.
+		expect(retryable({ ...base, outside: false })).toBe(false);
 	});
 });
 
 describe('nzbget', () => {
-	const job = { client_item: true, hash: 'nzbid-7', downloader_id: 3, protocol: 'usenet', phase: 'failed', downloader_kind: 'nzbget' } as const;
+	const job = { client_item: true, outside: true, hash: 'nzbid-7', downloader_id: 3, protocol: 'usenet', phase: 'failed', downloader_kind: 'nzbget' } as const;
 	it('takes Try again on a failed job and pause on a live one', () => {
 		expect(retryable(job)).toBe(true);
 		expect(pausable({ protocol: 'usenet', phase: 'downloading', downloader_kind: 'nzbget' })).toBe(true);

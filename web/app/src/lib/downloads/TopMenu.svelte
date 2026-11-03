@@ -100,7 +100,7 @@
 	.mi2:hover, .mi2:focus-visible { background: var(--surface-3); outline: none; }
 	.mi2:focus-visible { box-shadow: var(--focus-ring); }
 	.mi2[aria-checked='true'] .t { font-weight: 600; }
-	.mi2.bad .t { color: var(--fail); }
+	.mi2.bad .t { color: var(--fail-text); }
 	.mi2[aria-disabled='true'] { cursor: not-allowed; }
 	.mi2[aria-disabled='true'] .t { opacity: 0.55; }
 	@media (max-width: 640px) { .mi2 { align-items: center; min-height: 44px; font: var(--t-callout); } }

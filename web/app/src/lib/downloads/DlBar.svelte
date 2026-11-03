@@ -62,7 +62,8 @@
 	];
 	type F = { key: string; label: string; icon: IconName };
 	// The accessible name starts with the visible label (WCAG 2.5.3); a longer hint follows it.
-	const nameOf = (a: Act) => (a.hint && a.hint !== a.label ? `${a.label} — ${a.hint}` : a.label);
+	// A hint that already holds the label ("Start (select a download)", "Speed limit: 42 MB/s") is the whole name.
+	const nameOf = (a: Act) => (!a.hint || a.hint === a.label ? a.label : a.hint.includes(a.label) ? a.hint : `${a.label} — ${a.hint}`);
 
 	const pickKind = (k: string) => (kindOn = kindOn === k ? '' : k);
 	const pickSrc = (k: string) => (srcOn = srcOn === k ? '' : k);
@@ -133,10 +134,10 @@
 			{#if a.href}
 				<a class="it act stk" href={a.href} aria-label={nameOf(a)}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
 			{:else}
-				<button type="button" class="it act stk" disabled={a.disabled} aria-label={nameOf(a)} onclick={() => a.run?.()} data-testid={a.key === 'remove' ? 'tb-remove' : `tb-${a.key}-btn`}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
+				<button type="button" class="it act stk" disabled={a.disabled} aria-label={nameOf(a)} onclick={() => a.run?.()} data-testid="tb-{a.key}-btn"><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
 			{/if}
 		</span>
-		{#if a.more}<TopMenu label="More {a.label.toLowerCase()} actions" items={a.more} />{/if}
+		{#if a.more}<TopMenu label="More {a.key} actions" items={a.more} />{/if}
 	</span>
 {/snippet}
 
@@ -292,7 +293,7 @@
 	.fo b { color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
 	.fo .ck { display: grid; place-items: center; width: 18px; color: var(--accent-text, var(--text)); }
 	.fo.on { font-weight: 600; }
-	.fo.bad .fl2 { color: var(--fail); }
+	.fo.bad .fl2 { color: var(--fail-text); }
 	.fbtn { min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 12px; background: none; color: var(--text); font: 500 15px/1 var(--font-ui); cursor: pointer; }
 	.fbtn:disabled { opacity: 0.45; cursor: default; }
 	.fbtn.pri { flex: 1; border-color: transparent; background: var(--text); color: var(--bg); }

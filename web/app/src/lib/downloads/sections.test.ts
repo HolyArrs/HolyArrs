@@ -72,8 +72,8 @@ describe('history', () => {
 		expect(matches(row({}), 'nope')).toBe(false);
 		expect(matches(row({}), ' ')).toBe(true);
 	});
-	it('reads Completed, or Failed with its reason', () => {
-		expect(historyStatus(row({ phase: 'done' }), undefined)).toEqual({ text: 'Completed', bad: false });
+	it('reads Done, or Failed with its reason', () => {
+		expect(historyStatus(row({ phase: 'done' }), undefined)).toEqual({ text: 'Done', bad: false });
 		expect(historyStatus(row({ phase: 'vanished' }), undefined)).toEqual({ text: 'Failed: removed outside HolyArrs', bad: true });
 	});
 });

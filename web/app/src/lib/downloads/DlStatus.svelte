@@ -70,7 +70,7 @@
 	.ml { line-height: 1; }
 
 	/* The review call: its own red pill at track height, after the two tracks. */
-	.rv { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail); font: var(--t-footnote); font-weight: 600; cursor: pointer; transition: background-color 160ms var(--ease-out); }
+	.rv { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: var(--t-footnote); font-weight: 600; cursor: pointer; transition: background-color 160ms var(--ease-out); }
 	.rv i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 	.rv:hover { background: color-mix(in srgb, var(--fail) 22%, transparent); }
 	.rv:focus-visible { outline: none; box-shadow: var(--focus-ring); }

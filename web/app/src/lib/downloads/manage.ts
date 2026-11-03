@@ -117,17 +117,17 @@ export function checkLimits(l: ShareLimits): string {
 /** What the steering sheet edits. */
 export type SteerMode = 'seed' | 'location' | 'speed';
 
-/** kbOf turns bytes per second into whole KB/s for the speed boxes (0: no cap). */
-export const kbOf = (b: number | undefined) => (b && b > 0 ? Math.round(b / 1024) : 0);
+/** kbOf turns bytes per second into whole KB/s for the speed boxes (0: no cap); 1000-based like every speed the page shows. */
+export const kbOf = (b: number | undefined) => (b && b > 0 ? Math.round(b / 1000) : 0);
 /** bytesOf reads a KB/s box: blank, negative or not a number is no cap. */
 export const bytesOf = (kb: number | string) => {
 	const v = Number(kb);
-	return Number.isFinite(v) && v > 0 ? Math.round(v * 1024) : 0;
+	return Number.isFinite(v) && v > 0 ? Math.round(v * 1000) : 0;
 };
 
 /** The tracker filter: '' all, host:<name> one tracker host, or p:<problem>. */
 export type TrackerProblem = 'error' | 'warning' | 'announce';
-const PROBLEM_WORD: Record<TrackerProblem, string> = { error: 'Tracker error', warning: 'Tracker warning', announce: 'Not answering' };
+const PROBLEM_WORD: Record<TrackerProblem, string> = { error: 'Tracker error', warning: 'Tracker warning', announce: 'No tracker reply' };
 type Tracked = { tracker?: string; tracker_problem?: TrackerProblem };
 
 /** trackerOptions lists the tracker hosts and problems in these rows, with counts. */
