@@ -317,3 +317,33 @@ func TestSSOChangeWaitsForFinishingSignIns(t *testing.T) {
 		t.Fatal("a session made while turning off survived")
 	}
 }
+
+// A two-factor step left from a single sign-on sign-in ends with it: a
+// change waits for one in flight, and one it dropped cannot finish later.
+func TestSSOChangeEndsTwoFactorSteps(t *testing.T) {
+	f, own, _ := ssoFixture(t)
+	join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
+	put := func(tok string) {
+		f.a.mu.Lock()
+		f.a.tickets[sum(tok)] = &ticket{userID: userID(t, f, "ana"), name: "ana", method: "oidc", expires: f.a.now().Add(time.Minute)}
+		f.a.mu.Unlock()
+	}
+	put("step-1")
+	f.a.ssoMu.Lock() // a settings change in flight
+	done := make(chan int, 1)
+	go func() {
+		resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login/two-factor", `{"ticket":"step-1","code":"123456"}`, nil)
+		done <- resp.StatusCode
+	}()
+	select {
+	case code := <-done:
+		f.a.ssoMu.Unlock()
+		t.Fatalf("the two-factor step did not wait for the change: %d", code)
+	case <-time.After(300 * time.Millisecond):
+	}
+	f.a.dropTickets(func(tk *ticket) bool { return tk.method == "oidc" })
+	f.a.ssoMu.Unlock()
+	if code := <-done; code != 401 {
+		t.Fatalf("a dropped step finished: %d", code)
+	}
+}
