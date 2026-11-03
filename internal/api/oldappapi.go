@@ -48,7 +48,15 @@ func (a *API) oldAppRoutes(m *http.ServeMux) {
 
 func (a *API) compatDeps() compat.Deps {
 	return compat.Deps{Store: a.s.Store, Library: a.s.Library, Metadata: a.s.Metadata, Queue: a.s.Queue, DeleteFiles: a.oldAppDeleteFiles,
-		Picture: a.oldAppPicture}
+		Picture: a.oldAppPicture, Secrets: a.s.Secrets, SourceSaved: a.publishSource, SourceRemoved: a.forgetSource}
+}
+
+// forgetSource drops what the searcher keeps of a removed Source, as the
+// Sources page's delete does.
+func (a *API) forgetSource(id int64) {
+	if a.s.Search != nil {
+		a.s.Search.ForgetSource(id)
+	}
 }
 
 // oldAppPicture sends a cover for those apps (Bazarr shows them): a

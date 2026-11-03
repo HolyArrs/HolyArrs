@@ -5,6 +5,8 @@
 // (subtitles), Unpackerr (unpacking) and Homepage's Sonarr widget read
 // the same answers.
 //
+// Prowlarr writes its indexers in as Sources (indexers.go).
+//
 // It keeps no data of its own beyond a small tag table: every answer is
 // read from the Library and every change goes through the same library,
 // search and Job code the app uses. The field names those apps expect
@@ -30,6 +32,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
 )
@@ -64,6 +67,13 @@ type Deps struct {
 	// wide picture's address, fetched once into the artwork cache. The
 	// adapter itself never fetches anything; nil answers 404.
 	Picture func(w http.ResponseWriter, r *http.Request, src string, px int)
+	// Secrets keeps the keys of the Sources Prowlarr writes in; nil
+	// refuses a key.
+	Secrets *secrets.Vault
+	// SourceSaved and SourceRemoved tell the rest of the app about a
+	// Source Prowlarr wrote or removed; nil does nothing.
+	SourceSaved   func(domain.Source)
+	SourceRemoved func(id int64)
 	// Now is the clock; nil is time.Now.
 	Now func() time.Time
 }
@@ -131,6 +141,13 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("POST /command", h.command)
 	mux.HandleFunc("GET /command/{id}", h.getCommand)
 	mux.HandleFunc("GET /mediacover/{id}/{file}", h.cover)
+	mux.HandleFunc("GET /indexer", h.listIndexers)
+	mux.HandleFunc("GET /indexer/schema", h.indexerSchema)
+	mux.HandleFunc("GET /indexer/{id}", h.getIndexer)
+	mux.HandleFunc("POST /indexer", h.addIndexer)
+	mux.HandleFunc("PUT /indexer/{id}", h.putIndexer)
+	mux.HandleFunc("DELETE /indexer/{id}", h.deleteIndexer)
+	mux.HandleFunc("POST /indexer/test", h.testIndexer)
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { notFound(w) })
 }
 

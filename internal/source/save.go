@@ -319,8 +319,9 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 
 // Change saves a Source. A stored key is never sent to a new host on its
 // own: when the address's host changes, the key must be typed again (the
-// same for the proxy password).
-func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Source, error) {
+// same for the proxy password). then, when given, may change the Source
+// further in the same transaction, just before it is written.
+func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor, then ...func(tx *sql.Tx, src *domain.Source) error) (domain.Source, error) {
 	var src domain.Source
 	if err := store.Get(ctx, s.Read(), "sources", id, &src); err != nil {
 		return src, err
@@ -396,6 +397,11 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			}
 		} else if err := putSecret(tx, v, &src.ProxySecretRef, "source_proxy_password", pass, by); err != nil {
 			return err
+		}
+		for _, f := range then {
+			if err := f(tx, &src); err != nil {
+				return err
+			}
 		}
 		return store.Update(tx, "sources", &src, by)
 	})

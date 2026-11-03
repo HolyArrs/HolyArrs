@@ -23,6 +23,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
@@ -44,6 +45,7 @@ type oldAppFix struct {
 	showFolder, movieFold int64
 	base                  string // the URL base, "" for none
 	art                   *library.ArtworkCache
+	vault                 *secrets.Vault // keeps the keys of the Sources Prowlarr writes
 }
 
 func (f *oldAppFix) call(c *http.Client, csrf, method, path, body string, hdr ...string) (int, http.Header, string) {
@@ -117,9 +119,13 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	// The artwork cache allows no address, so nothing is ever fetched.
 	art := &library.ArtworkCache{Dir: t.TempDir()}
 	lib := &library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvdb": &fakeShowSource{err: metadata.ErrNoTVDBKey}}, Artwork: art}
+	vault, err := secrets.Open(context.Background(), s, make([]byte, secrets.KeySize))
+	if err != nil {
+		t.Fatal(err)
+	}
 	h := New(Server{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
-		Auth: auth.New(s, auth.Options{}), Parts: pc}).Handler()
-	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art}
+		Auth: auth.New(s, auth.Options{}), Parts: pc, Secrets: vault}).Handler()
+	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art, vault: vault}
 	if len(base) > 0 {
 		h, f.base = urlbase.Handler(base[0], h), base[0]
 	}

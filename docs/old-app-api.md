@@ -2,7 +2,7 @@
 
 Seerr and Overseerr send approved requests to Sonarr and Radarr. HolyArrs can answer them in their place: point Seerr's Sonarr server at HolyArrs's `/sonarr` address and its Radarr server at `/radarr`, and requests land in your HolyArrs Library and show up as available once the files are in.
 
-The same addresses also serve Bazarr (subtitles), Unpackerr and the Sonarr widget of the Homepage start page. See [Other apps](#other-apps) below.
+The same addresses also serve Bazarr (subtitles), Unpackerr, Prowlarr (it fills in your Sources) and the Sonarr widget of the Homepage start page. See [Other apps](#other-apps) below.
 
 This is a small, separate API made only for those apps. HolyArrs's own API stays [the API for other apps](api.md).
 
@@ -62,7 +62,7 @@ Use one HolyArrs side per Seerr server. Do not add the same `/radarr` address as
 
 ## Other apps
 
-Every app below uses the same two keys as Seerr: the Sonarr-side key on `/sonarr` and the Radarr-side key on `/radarr`. They only read, except Bazarr's rescan.
+Every app below uses the same two keys as Seerr: the Sonarr-side key on `/sonarr` and the Radarr-side key on `/radarr`. They only read, except Bazarr's rescan and Prowlarr, which writes Sources.
 
 ### Bazarr
 
@@ -88,6 +88,34 @@ Unpackerr is not needed with HolyArrs. HolyArrs unpacks RAR sets itself during t
 
 If you run it anyway, point its Sonarr and Radarr entries at `/sonarr` and `/radarr` with the keys. It polls the download list: a finished download waiting for its import shows as completed, with the download's own folder (or its single file) as the place to unpack, mapped through the downloader's path map the way HolyArrs sees it. Once HolyArrs has imported it, it leaves the list. Unpackerr changes nothing in HolyArrs.
 
+### Prowlarr
+
+Prowlarr can fill in HolyArrs's Sources from its own indexers, the way it does for Sonarr and Radarr. Each Prowlarr indexer becomes one Newznab or Torznab Source that points at Prowlarr.
+
+In Prowlarr: Settings > Apps, add a Sonarr app for shows and a Radarr app for movies (one is enough if you only want one kind).
+
+| Field | Sonarr app | Radarr app |
+| --- | --- | --- |
+| Prowlarr server | Prowlarr's address as HolyArrs reaches it, for example `http://prowlarr:9696` on the same Docker network or `http://10.10.25.25:9696` | same |
+| Sonarr server or Radarr server | HolyArrs's address with the side on the end, for example `http://10.10.25.25:18730/sonarr` | `http://10.10.25.25:18730/radarr` |
+| API key | the Sonarr-side key | the Radarr-side key |
+
+If HolyArrs runs under a URL base such as `/holyarrs`, put it in front: `http://10.10.25.25:18730/holyarrs/sonarr`. Press Test, then Save. Prowlarr then writes its indexers in.
+
+What happens:
+
+- **New Sources arrive paused.** Look them over on the Sources page and resume the ones you want. When Prowlarr moves a Source to another address, or turns the local network back on after you turned it off, it is paused again; other changes (priority, categories, key) leave it on or off as it was.
+- **The local network.** These Sources may reach the local network, because Prowlarr usually sits there. Only Sources Prowlarr writes with a valid key get this; every other Source still needs its own "May reach the local network" tick.
+- **What HolyArrs uses:** the address and feed path, the key (kept encrypted like every Source key and only ever shown masked), the categories (on the shows side the anime ones too), the least seeders, the priority, and the three switches for the feed, automatic searches and hand searches. Shows-side Sources search for shows, movies-side ones for movies.
+- **What is only kept:** seed ratio and seed times, extra address values, tags and the other values Prowlarr sends are stored as sent, so its next sync sees no difference and does not write again. HolyArrs does not use them; seeding follows the downloader's seed goal.
+- **Updates.** Prowlarr reads each Source back and writes only when something differs. If you change a value Prowlarr manages (the name, address, categories or priority) in HolyArrs, Prowlarr puts its own back at its next full sync, as it does with Sonarr.
+- **Removing.** Removing an indexer in Prowlarr removes its Source. A removed Source's number is never given to another, so Prowlarr never mixes two indexers up. Prowlarr only sees, changes and removes the Sources it wrote, each side its own, never the ones you added by hand.
+- **Both sides.** The same indexer sent to both sides makes two Sources. When the name is taken, the second one gets "(shows)" or "(movies)" after it; Prowlarr still sees the name it sent.
+- **Testing.** Prowlarr's Test, and each save, make HolyArrs ask Prowlarr's feed for its capabilities once. If that fails, Prowlarr saves again with its force option and the Source is made anyway, paused.
+- **Who may.** The key acts as the person who made it, who must be allowed to change settings (Sources) as well as manage the Library. Otherwise Prowlarr gets 403 and nothing is written.
+
+The calls answered on each side, under `/api/v3`: `GET /indexer`, `GET /indexer/{id}`, `GET /indexer/schema` (Newznab and Torznab only), `POST /indexer`, `PUT /indexer/{id}` (both with `forceSave`), `DELETE /indexer/{id}` and `POST /indexer/test`.
+
 ### Homepage
 
 Homepage's Sonarr widget works: the show count, the download list and its unpaged details, the list of episodes that have aired but have no file (kept up to date ones by default), and the calendar (today to two days on by default, only kept up to date episodes unless it asks for all). Lists are paged the way Sonarr pages them: newest first when no direction is sent, 10 a page.
@@ -96,11 +124,13 @@ Homepage's Radarr widget is not supported yet: its missing list and calendar ans
 
 ## What does not work (yet)
 
-- Supported apps: Seerr, Overseerr, Bazarr, Unpackerr and Homepage's Sonarr widget. Prowlarr, Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not.
+- If you delete a Source that Prowlarr made by hand, sync it again from Prowlarr (Sync App Indexers) so Prowlarr forgets the old one.
+
+- Supported apps: Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr and Homepage's Sonarr widget. Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not.
 - These apps see one copy per title: the main Version. A 4K Version next to it is invisible to them.
 - Choosing another Library folder for a title in Seerr is ignored; move titles in HolyArrs. Choosing other Pick rules in Seerr switches the main Version's Pick rules, which can start a search for a better copy.
 - Changing a show's type (Seerr's series type) for a show already in the Library is ignored.
-- Settings-type calls (Pick rules edits, scoring rules, naming, indexers, notifications, backups) are not answered. Anything not listed here answers an error, never a pretend success.
+- Settings-type calls (Pick rules edits, scoring rules, naming, notifications, backups) are not answered. Indexers are answered only as Prowlarr writes them: Newznab and Torznab, one at a time (no bulk edits). Anything not listed here answers an error, never a pretend success.
 - Tags are not attached to titles, so a calendar or list asked for by tag is not narrowed.
 - Languages carry only their name (their number is always 0), and a title with no known original language says "Unknown".
 - The status answer gives HolyArrs's own name and reports a version of 4.0.99.0 (Sonarr side) or 5.0.99.0 (Radarr side), because these apps decide which calls to make from the version number.
