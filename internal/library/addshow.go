@@ -39,6 +39,9 @@ type ShowAddOptions struct {
 	// SeasonNumbers, when not nil, are exactly the seasons kept up to
 	// date (Seasons is then none): the old-app API's per-season choice.
 	SeasonNumbers []int `json:"-"`
+	// FirstSeason keeps only the show's first season up to date: season 1,
+	// else the lowest numbered season after it, else Specials (Luis, 11-03).
+	FirstSeason bool `json:"-"`
 }
 
 // ShowAlreadyAddedError says the show is already in the Library.
@@ -148,7 +151,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	if err != nil {
 		return 0, 0, err
 	}
-	if opt.SeasonNumbers != nil {
+	if opt.SeasonNumbers != nil || opt.FirstSeason {
 		opt.Seasons = SeasonsNone
 	}
 	if opt.Seasons == "" {
@@ -292,6 +295,15 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		// add already see them.
 		if keep {
 			ts, who := store.FormatTime(now), actorText(by)
+			if opt.FirstSeason {
+				var first sql.NullInt64
+				if err := tx.QueryRow("SELECT COALESCE(MIN(CASE WHEN number >= 1 THEN number END), MIN(number)) FROM parts WHERE title_id = ? AND kind = 'season'", t.ID).Scan(&first); err != nil {
+					return err
+				}
+				if first.Valid {
+					opt.SeasonNumbers = append(opt.SeasonNumbers, int(first.Int64))
+				}
+			}
 			for _, n := range opt.SeasonNumbers {
 				if _, err := tx.Exec("UPDATE parts SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE title_id = ? AND kind = 'season' AND number = ?", ts, who, t.ID, n); err != nil {
 					return err

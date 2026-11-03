@@ -11,7 +11,7 @@ export const titleKinds: [string, string][] = [
  *  added with by hand, plus the first season only. */
 export const listSeasons: [string, string, string][] = [
 	...seasonChoices.filter(([v]) => v !== 'none'),
-	['first', 'The first season', 'Only season 1, to try a show out.'],
+	['first', 'The first season', 'Only season 1 (or the earliest season when a show has no season 1), to try a show out.'],
 	...seasonChoices.filter(([v]) => v === 'none')
 ];
 

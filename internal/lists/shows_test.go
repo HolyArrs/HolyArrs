@@ -90,6 +90,7 @@ func showEnv(t *testing.T) (*env, domain.LibraryFolder) {
 		newShow("Gull Watch", "700002", "710002", "tt7000020"),
 		newShow("Not Here", "700003", "710003", "tt7000030"),
 		newShow("Reed Signal", "700004", "710004", "tt7000040"),
+		lateStart(),
 	} {
 		for k, v := range sh.IDs {
 			src[k+":"+v] = sh
@@ -103,6 +104,28 @@ func showEnv(t *testing.T) (*env, domain.LibraryFolder) {
 		t.Fatal(err)
 	}
 	return e, lf
+}
+
+// lateStart is a show with Specials and seasons 2 and 3, but no season 1.
+func lateStart() metadata.Show {
+	sh := newShow("Late Start", "700005", "710005", "tt7000050")
+	sh.Seasons = []metadata.Season{{Number: 0}, {Number: 2}, {Number: 3}}
+	sh.Episodes = []metadata.Episode{{Season: 0, Number: 1, Name: "Late Start", AirDate: day2("2023-12-01"), AirDay: "2023-12-01"},
+		{Season: 2, Number: 1, Name: "Late Start", AirDate: day2("2024-01-07"), AirDay: "2024-01-07"},
+		{Season: 3, Number: 1, Name: "Late Start", AirDate: day2("2025-01-05"), AirDay: "2025-01-05"}}
+	return sh
+}
+
+// The first season of a show with no season 1 is its earliest numbered one (Luis, 2026-11-03).
+func TestFirstSeasonWithoutSeasonOne(t *testing.T) {
+	e, lf := showEnv(t)
+	id, _, err := e.svc.Library.AddShow(context.Background(), "tmdb:700005", library.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := keptSeasons(t, e.s, id); got[0] || !got[2] || got[3] {
+		t.Fatalf("kept %+v, want only season 2", got)
+	}
 }
 
 // keptSeasons lists a show's seasons kept up to date.

@@ -252,7 +252,7 @@ func (s *Service) addShow(ctx context.Context, l domain.OutsideList, e entry, by
 	opt := library.ShowAddOptions{LibraryFolderID: l.LibraryFolderID, KeepUpToDate: &l.KeepUpToDate, Seasons: l.Seasons,
 		NewSeasons: l.NewSeasons, SearchOnAdd: l.SearchOnAdd, WhyAdded: "list"}
 	if l.Seasons == SeasonsFirst {
-		opt.Seasons, opt.SeasonNumbers = "", []int{1}
+		opt.Seasons, opt.FirstSeason = "", true
 	}
 	if l.PickRulesID != nil {
 		opt.PickRulesID = *l.PickRulesID
