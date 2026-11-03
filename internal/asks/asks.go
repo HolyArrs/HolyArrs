@@ -396,8 +396,40 @@ func get(ctx context.Context, q store.Querier, id int64) (domain.Ask, error) {
 
 // Ask asks for a movie by TMDB id for p.
 func (s *Service) Ask(ctx context.Context, p Person, tmdbID string) (Result, error) {
-	return s.ask(ctx, p, tmdbID, false)
+	return s.ask(ctx, p, tmdbID, false, false)
 }
+
+// Ask4K asks for a 4K copy of a movie by TMDB id for p. It is its own ask,
+// approved apart from a plain ask, and may be made for a movie already in
+// the Library that has no 4K Version yet.
+func (s *Service) Ask4K(ctx context.Context, p Person, tmdbID string) (Result, error) {
+	return s.ask(ctx, p, tmdbID, true, false)
+}
+
+// fourKVersion finds the title's 4K Version (labelled 4K or on the 4K
+// Pick rules), 0 when it has none.
+func fourKVersion(ctx context.Context, db store.Querier, titleID int64) (int64, error) {
+	var id int64
+	err := db.QueryRowContext(ctx, `SELECT v.id FROM versions v LEFT JOIN pick_rules p ON p.id = v.pick_rules_id
+		WHERE v.title_id = ? AND (v.label = ? COLLATE NOCASE OR p.name = ?) ORDER BY v.id LIMIT 1`, titleID, domain.FourKName, domain.FourKName).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return id, err
+}
+
+// fourKRules is the 4K Pick rules preset's id (0 when it was removed).
+func fourKRules(ctx context.Context, db store.Querier) (int64, error) {
+	var id int64
+	err := db.QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ? ORDER BY id LIMIT 1", domain.FourKName).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return id, err
+}
+
+// ErrNoFourKRules: a 4K ask cannot be approved without the 4K Pick rules.
+var ErrNoFourKRules = errors.New("no 4K Pick rules: add Pick rules named 4K first")
 
 // openAskConflict says err is the one-open-ask-per-movie index refusing a
 // second open ask (asks_one_open on kind and tmdb_id).
@@ -405,7 +437,7 @@ func openAskConflict(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed: asks.kind, asks.tmdb_id")
 }
 
-func (s *Service) ask(ctx context.Context, p Person, tmdbID string, retried bool) (Result, error) {
+func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retried bool) (Result, error) {
 	db := s.Store.Read()
 	tmdbID = strings.TrimSpace(tmdbID)
 	if p.MaxRating != "" {
@@ -429,7 +461,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, retried bool
 	}
 	// An open ask for the same movie: join it.
 	var openID int64
-	err := db.QueryRowContext(ctx, "SELECT id FROM asks WHERE kind = 'movie' AND tmdb_id = ? AND state IN ('asked', 'approved')", tmdbID).Scan(&openID)
+	err := db.QueryRowContext(ctx, "SELECT id FROM asks WHERE kind = 'movie' AND tmdb_id = ? AND four_k = ? AND state IN ('asked', 'approved')", tmdbID, fourK).Scan(&openID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return Result{}, err
 	}
@@ -439,9 +471,22 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, retried bool
 	if tid, err := library.TitleByTMDB(ctx, db, tmdbID); err != nil {
 		return Result{}, err
 	} else if tid != 0 {
-		var n int
-		_ = db.QueryRowContext(ctx, "SELECT count(*) FROM slots WHERE state = 'in_library' AND item_id IN (SELECT id FROM items WHERE title_id = ?)", tid).Scan(&n)
-		return Result{}, &InLibraryError{TitleID: tid, Ready: n > 0}
+		// A 4K ask is fine for a movie in the Library without a 4K Version.
+		vid := int64(0)
+		if fourK {
+			if vid, err = fourKVersion(ctx, db, tid); err != nil {
+				return Result{}, err
+			}
+		}
+		if !fourK || vid != 0 {
+			q, args := "SELECT count(*) FROM slots WHERE state = 'in_library' AND item_id IN (SELECT id FROM items WHERE title_id = ?)", []any{tid}
+			if fourK {
+				q, args = q+" AND version_id = ?", append(args, vid)
+			}
+			var n int
+			_ = db.QueryRowContext(ctx, q, args...).Scan(&n)
+			return Result{}, &InLibraryError{TitleID: tid, Ready: n > 0}
+		}
 	}
 	if never, err := library.OnNeverAdd(ctx, db, tmdbID); err != nil {
 		return Result{}, err
@@ -457,7 +502,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, retried bool
 	}
 	now := s.now()
 	a := domain.Ask{Kind: "movie", TMDBID: tmdbID, Ref: "tmdb:" + tmdbID, SourceIDs: map[string]string{"tmdb": tmdbID}, Seasons: []int{},
-		Name: m.Name, Poster: m.Poster, State: domain.AskAsked, AskedBy: p.UserID, AskedAt: now}
+		Name: m.Name, Poster: m.Poster, State: domain.AskAsked, AskedBy: p.UserID, AskedAt: now, FourK: fourK}
 	if m.Year > 0 {
 		y := m.Year
 		a.Year = &y
@@ -477,7 +522,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, retried bool
 	if err != nil {
 		// Two people asking at the same moment: the second joins (once).
 		if openAskConflict(err) && !retried {
-			return s.ask(ctx, p, tmdbID, true)
+			return s.ask(ctx, p, tmdbID, fourK, true)
 		}
 		return Result{}, err
 	}
@@ -598,7 +643,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		if cur.State == domain.AskTurnedDown {
 			// Another open ask for the same thing means it was asked again.
 			// Artist asks have no TMDB id: they match by MusicBrainz id.
-			q, args := "SELECT count(*) FROM asks WHERE kind = ? AND tmdb_id = ? AND state IN ('asked', 'approved') AND id != ?", []any{cur.Kind, cur.TMDBID, id}
+			q, args := "SELECT count(*) FROM asks WHERE kind = ? AND tmdb_id = ? AND four_k = ? AND state IN ('asked', 'approved') AND id != ?", []any{cur.Kind, cur.TMDBID, cur.FourK, id}
 			if cur.Kind == "artist" {
 				q = "SELECT count(*) FROM asks WHERE kind = 'artist' AND json_extract(source_ids, '$.musicbrainz') = ? AND state IN ('asked', 'approved') AND id != ?"
 				args = []any{cur.SourceIDs["musicbrainz"], id}
@@ -725,11 +770,42 @@ func (s *Service) setAudio(ctx context.Context, titleID int64, langs []string, b
 	return err
 }
 
-// addForAsk adds the asked-for movie to the Library, or finds it there.
+// addForAsk adds the asked-for movie to the Library, or finds it there. A
+// 4K ask always uses the 4K Pick rules: on a movie already in the Library
+// it adds a 4K Version (unless one is there), otherwise the movie is added
+// with its main copy on the 4K Pick rules.
 func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt ApproveOptions, by Person) (int64, error) {
-	tid, err := library.TitleByTMDB(ctx, s.Store.Read(), a.TMDBID)
-	if err != nil || tid != 0 {
-		return tid, err
+	db := s.Store.Read()
+	tid, err := library.TitleByTMDB(ctx, db, a.TMDBID)
+	if err != nil {
+		return 0, err
+	}
+	if a.FourK {
+		rules, err := fourKRules(ctx, db)
+		if err != nil {
+			return 0, err
+		}
+		if rules == 0 {
+			return 0, ErrNoFourKRules
+		}
+		opt.PickRulesID = rules
+		if tid != 0 {
+			if vid, err := fourKVersion(ctx, db, tid); err != nil || vid != 0 {
+				return tid, err
+			}
+			v, err := library.AddVersion(ctx, s.Store, tid, library.VersionInput{Label: domain.FourKName, PickRulesID: rules}, nil, s.Library.Clock(), by.actor())
+			if err != nil {
+				return 0, err
+			}
+			var t domain.Title
+			if store.Get(ctx, db, "titles", tid, &t) == nil {
+				s.Library.VersionEvent(ctx, t, "Added the "+v.Label+" Version", v, by.actor())
+			}
+			return tid, nil
+		}
+	}
+	if tid != 0 {
+		return tid, nil
 	}
 	m, err := s.Metadata.Movie(ctx, "tmdb:"+a.TMDBID)
 	if err != nil {
@@ -876,8 +952,11 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 // CheckReady marks approved asks whose movie has a file in the Library as
 // available and tells the people who asked. It returns how many it marked.
 func (s *Service) CheckReady(ctx context.Context) (int, error) {
+	// A 4K ask is ready once its 4K copy is in (labelled 4K or on the 4K Pick rules).
 	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", `kind = 'movie' AND state = 'approved' AND title_id IS NOT NULL AND EXISTS (
-		SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = asks.title_id AND sl.state IN ('in_library', 'better_wanted')) ORDER BY id`)
+		SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = asks.title_id AND sl.state IN ('in_library', 'better_wanted')
+		AND (asks.four_k = 0 OR sl.version_id IN (SELECT v.id FROM versions v LEFT JOIN pick_rules p ON p.id = v.pick_rules_id
+			WHERE v.title_id = asks.title_id AND (v.label = '4K' COLLATE NOCASE OR p.name = '4K')))) ORDER BY id`)
 	if err != nil {
 		return 0, err
 	}

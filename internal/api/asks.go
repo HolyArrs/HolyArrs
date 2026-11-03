@@ -87,7 +87,7 @@ func askError(w http.ResponseWriter, err error) {
 	case errors.Is(err, asks.ErrNotYours), errors.Is(err, asks.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, asks.ErrNoteLength), errors.Is(err, asks.ErrPerWeek), errors.Is(err, asks.ErrEmail), errors.Is(err, asks.ErrDiscordID),
-		errors.Is(err, asks.ErrNoSuchSeason), errors.Is(err, asks.ErrBadEpisode), errors.Is(err, asks.ErrNotAlbumTrack), errors.Is(err, asks.ErrShowWhoAsked), errors.Is(err, asks.ErrNotAskedPart):
+		errors.Is(err, asks.ErrNoSuchSeason), errors.Is(err, asks.ErrBadEpisode), errors.Is(err, asks.ErrNotAlbumTrack), errors.Is(err, asks.ErrShowWhoAsked), errors.Is(err, asks.ErrNotAskedPart), errors.Is(err, asks.ErrNoFourKRules):
 		fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, asks.ErrNoSuchAlbum), errors.Is(err, library.ErrCopyChoice):
 		fail(w, http.StatusBadRequest, err.Error())
@@ -218,11 +218,13 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		Editions map[string]string `json:"editions"`
 		// Follow puts the title on the asker's calendar (default true).
 		Follow *bool `json:"follow"`
+		// FourK asks a movie for a 4K copy (approved apart from a plain ask).
+		FourK bool `json:"four_k"`
 	}
 	if !decode(w, r, &body, askHelp) {
 		return
 	}
-	if len(body.Editions) > 0 && body.Kind != "artist" {
+	if (len(body.Editions) > 0 && body.Kind != "artist") || (body.FourK && body.Kind != "" && body.Kind != "movie") {
 		fail(w, http.StatusBadRequest, askHelp)
 		return
 	}
@@ -244,7 +246,11 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
-		res, err = a.s.Asks.Ask(r.Context(), a.person(r), num)
+		if body.FourK {
+			res, err = a.s.Asks.Ask4K(r.Context(), a.person(r), num)
+		} else {
+			res, err = a.s.Asks.Ask(r.Context(), a.person(r), num)
+		}
 	case "show":
 		if !ok || num == "" || len(num) > 20 || (src != "tmdb" && src != "tvdb" && src != "tvmaze" && src != "imdb") || len(body.Seasons) > 200 || len(body.Albums) > 0 ||
 			len(body.Episodes) > 200 || (body.FutureOnly && (len(body.Seasons) > 0 || len(body.Episodes) > 0)) || tooManyEpisodes(body.Episodes) {
@@ -307,7 +313,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	a.answerAsk(w, r, code, res.Ask.ID, map[string]any{"joined": res.Joined, "already": res.Already})
 }
 
-const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "episodes": [{"season": 2, "episodes": [1, 2, 5]}] adds single episodes of other seasons; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional); any ask may add "follow": false to leave the title off your calendar`
+const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "episodes": [{"season": 2, "episodes": [1, 2, 5]}] adds single episodes of other seasons; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional); any ask may add "follow": false to leave the title off your calendar; a movie ask may add "four_k": true to ask for a 4K copy`
 
 func (a *API) askLimit(w http.ResponseWriter, r *http.Request) {
 	l, err := a.s.Asks.LimitOf(r.Context(), a.person(r))
@@ -747,7 +753,7 @@ type askBrief struct {
 func (a *API) openAsk(ctx context.Context, tmdbID string, me int64) (*askBrief, error) {
 	var b askBrief
 	err := a.s.Store.Read().QueryRowContext(ctx, `SELECT a.id, a.state, EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?),
-		(SELECT count(*) FROM ask_people p WHERE p.ask_id = a.id) FROM asks a WHERE a.kind = 'movie' AND a.tmdb_id = ? AND a.state IN ('asked', 'approved')`,
+		(SELECT count(*) FROM ask_people p WHERE p.ask_id = a.id) FROM asks a WHERE a.kind = 'movie' AND a.tmdb_id = ? AND a.four_k = 0 AND a.state IN ('asked', 'approved')`,
 		me, tmdbID).Scan(&b.ID, &b.State, &b.Mine, &b.People)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

@@ -264,7 +264,7 @@
 				>
 					{#snippet heading()}<h2 class="bb-name" id="stage-title-{picked.id}">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
-						<p class="facts"><span>{kindOf(picked)}</span>{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
+						<p class="facts"><span>{kindOf(picked)}</span>{#if picked.four_k}<span>4K copy</span>{/if}{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
 						{#each [ctx.who(picked)] as w (w.id)}
 							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> asked <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time></span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
 						{/each}

@@ -39,6 +39,8 @@ type View struct {
 	Episodes []domain.AskEpisodes `json:"episodes"`
 	// FutureOnly: the show's future seasons only.
 	FutureOnly bool `json:"future_only"`
+	// FourK: a movie ask for a 4K copy.
+	FourK bool `json:"four_k"`
 	// Albums are the albums of an artist asked for; empty: the whole artist.
 	Albums []domain.AskAlbum `json:"albums"`
 	// ArtistID is an artist ask's MusicBrainz id, for its page and picture.
@@ -81,7 +83,7 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		return n
 	}
 	for _, a := range as {
-		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, FutureOnly: a.FutureOnly, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
+		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, FutureOnly: a.FutureOnly, FourK: a.FourK, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
 			TitleID: a.TitleID, AskedBy: Who{a.AskedBy, userName(a.AskedBy)}, AskedAt: a.AskedAt, DecidedAt: a.DecidedAt, Note: a.Note,
 			AutoApproved: a.AutoApproved, AvailableAt: a.AvailableAt, People: []Asker{}}
 		if v.Seasons == nil {

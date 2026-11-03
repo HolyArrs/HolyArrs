@@ -600,6 +600,8 @@ type Ask struct {
 	// Albums are the albums of an artist asked for; empty is the whole
 	// artist (and always empty for movies and shows).
 	Albums []AskAlbum `db:"albums,json"`
+	// FourK asks a movie for a 4K copy; approving it adds a 4K Version.
+	FourK bool `db:"four_k"`
 }
 
 // AskEpisodes are the episodes of one season asked for (episode numbers).

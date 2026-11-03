@@ -463,7 +463,7 @@
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${a.poster}")`}></span>{/if}
 					</div>
 					<div class="top">
-						<div class="ban-cap"><h2 class="ban-t">{a.name}</h2><span class="ban-f">{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
+						<div class="ban-cap"><h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title="Asked for a 4K copy, approved on its own">4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
 					</div>
 					<div class="sheet-b">
 					<div class="body">
@@ -634,6 +634,7 @@
 	.ban-cap { min-width: 0; display: flex; flex-direction: column; gap: 3px; color: #fff; }
 	.ban-t { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.ap4k-tag { display: inline-block; margin-right: 6px; padding: 0 5px; border: 1px solid rgb(255 255 255 / 0.7); border-radius: 4px; background: rgb(0 0 0 / 0.35); color: #fff; font: 800 10.5px/1.5 var(--font-ui); letter-spacing: 0.04em; vertical-align: 1px; }
 	/* Clicks pass through the sheet to the card's open layer; only its buttons take their own. */
 	.sheet-b, .top { pointer-events: none; }
 	.sheet-b button { pointer-events: auto; }

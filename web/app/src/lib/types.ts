@@ -366,6 +366,8 @@ export interface Ask {
 	/** A show ask's single episodes, by season (seasons not asked whole). */
 	episodes?: { season: number; episodes: number[] }[];
 	future_only?: boolean;
+	/** A movie ask for a 4K copy (approved apart from the regular one). */
+	four_k?: boolean;
 	/** An artist ask's albums; empty is the whole artist. */
 	albums?: AskAlbum[];
 	/** For an artist: "every album", or the albums' names. */
