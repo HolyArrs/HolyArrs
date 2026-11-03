@@ -35,7 +35,7 @@ func TestWritableSwitchLive(t *testing.T) {
 	pause := x.srv.URL + "/api/v1/downloaders/" + itoa(did) + "/items/" + outHash + "/pause"
 	exec41(t, x.s, "UPDATE downloaders SET writable = 0")
 	x.api.manager().Forget(did)
-	do(t, "POST", pause, "", http.StatusBadGateway)
+	do(t, "POST", pause, "", http.StatusConflict)
 	if strings.Contains(f.saw(), "torrents/stop") || strings.Contains(f.saw(), "torrents/pause") {
 		t.Fatalf("a read-only pause reached the client: %s", f.saw())
 	}
@@ -47,7 +47,7 @@ func TestWritableSwitchLive(t *testing.T) {
 	do(t, "POST", pause, "", http.StatusOK)
 	t.Setenv(downloader.ReadOnlyEnv, itoa(did))
 	x.api.manager().Forget(did)
-	do(t, "POST", pause, "", http.StatusBadGateway)
+	do(t, "POST", pause, "", http.StatusConflict)
 	var list struct {
 		Downloaders []DownloaderView `json:"downloaders"`
 	}
