@@ -114,10 +114,13 @@ test('calendar: cards and list views, a movie on the day it is out to watch', as
 	await expect(cards).toBeVisible();
 	await expect(cards.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
 	const heading = await page.getByTestId('cal-month').textContent();
+	// Week after moves to the next week with dates, or says there are none; Week before comes back.
 	await page.getByRole('button', { name: 'Week after' }).click();
-	await expect(page.getByTestId('cal-month')).not.toHaveText(heading!);
-	await page.getByRole('button', { name: 'Week before' }).click();
-	await expect(page.getByTestId('cal-month')).toHaveText(heading!);
+	await expect(page.getByTestId('cal-month').filter({ hasNotText: heading! }).or(page.getByText('No more dates after this.'))).toBeVisible();
+	if ((await page.getByTestId('cal-month').textContent()) !== heading) {
+		await page.getByRole('button', { name: 'Week before' }).click();
+		await expect(page.getByTestId('cal-month')).toHaveText(heading!);
+	}
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	const list = page.getByTestId('cal-list');
 	await expect(list.locator(`[data-day="${day}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
