@@ -823,7 +823,7 @@ func TestOldAppOpenLink(t *testing.T) {
 		if st != want {
 			t.Fatalf("%s: %d, want %d", path, st, want)
 		}
-		if want == 302 && !strings.HasPrefix(hd.Get("Location"), "/holyarrs/library/") {
+		if loc := hd.Get("Location"); want == 302 && loc != "/holyarrs/library/12" && loc != "/holyarrs/title/movie/7" {
 			t.Fatalf("%s: Location %q", path, hd.Get("Location"))
 		}
 	}
