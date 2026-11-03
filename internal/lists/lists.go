@@ -140,15 +140,24 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 	return nil
 }
 
-// Add saves a new Outside list.
-func Add(ctx context.Context, s *store.Store, in Input, by domain.Actor) (domain.OutsideList, error) {
+// Add saves a new Outside list. then, when given, runs in the same
+// transaction with the new id.
+func Add(ctx context.Context, s *store.Store, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.OutsideList, error) {
 	var l domain.OutsideList
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := fill(ctx, tx, in, &l); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "outside_lists", &l, by)
-		return err
+		id, err := store.Insert(tx, "outside_lists", &l, by)
+		if err != nil {
+			return err
+		}
+		for _, f := range then {
+			if err := f(tx, id); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	return l, err
 }

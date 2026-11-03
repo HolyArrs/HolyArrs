@@ -11,7 +11,7 @@ Nothing in HolyArrs changes when you read an app. What was read is kept as a
 
 | App | What is read |
 | --- | --- |
-| Radarr, Sonarr, Lidarr | Every movie, show (with its seasons) or artist: ids, folder, whether it is watched, its quality profile, tags and the date it was added. Library folders, tags, quality profiles, custom formats, release word rules, delay profiles, naming, indexers, download clients, lists, notifications, metadata writers, exclusions, language profiles (Sonarr v3), metadata profiles (Lidarr) and Radarr's availability delay. |
+| Radarr, Sonarr, Lidarr | Every movie, show (with its seasons) or artist: ids, folder, whether it is watched, its quality profile, tags and the date it was added. Library folders, tags, quality profiles, custom formats, release word rules, wait rules (with their skip switches), naming, indexers, download clients, lists (with the list number, Trakt user and list name, folder and choices each one needs; never its sign-in), notifications, metadata writers, exclusions, language profiles (Sonarr v3), metadata profiles (Lidarr) and Radarr's availability delay. |
 | Prowlarr | Its indexers, its links to the other apps, sync profiles, indexer proxies, download clients and notifications. |
 | Bazarr | Enabled languages, language profiles, enabled subtitle sites and the default profiles. |
 | qBittorrent, SABnzbd | Address, port, user name, download folders, categories and (SABnzbd) usenet servers. |

@@ -148,6 +148,11 @@ type DelayProfile struct {
 	TorrentDelay      int      `json:"torrent_delay"`
 	Order             int      `json:"order"`
 	Tags              []string `json:"tags,omitempty"`
+	// BypassIfHighestQuality skips the wait at the top allowed quality;
+	// BypassIfAboveScore skips it at a format score (a snapshot kept before
+	// they were read has both false).
+	BypassIfHighestQuality bool `json:"bypass_if_highest_quality,omitempty"`
+	BypassIfAboveScore     bool `json:"bypass_if_above_score,omitempty"`
 }
 
 // Exclusion is a title the app was told never to add.

@@ -139,6 +139,7 @@ export const groupLabels: Record<string, string> = {
 	pick_rules: 'Pick rules',
 	titles: 'Titles',
 	never_add: 'Never-add list',
+	outside_lists: 'Outside lists',
 	sources: 'Sources',
 	downloaders: 'Downloaders',
 	naming: 'Naming',

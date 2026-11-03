@@ -459,15 +459,17 @@ func TestPlanImportListLines(t *testing.T) {
 		s.finish()
 	}
 	p := BuildPlan([]Input{{1, sonarr}, {2, radarr}, {3, lidarr}}, Choices{})
-	for from, want := range map[string]string{
-		"sonarr import_lists[0]": "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr; its sign-in does not come over",
-		"radarr import_lists[0]": "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists",
-		"radarr import_lists[1]": "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists (a private list needs to be made public first); its sign-in does not come over",
-		"radarr import_lists[2]": "HolyArrs is one app; it does not copy from another instance; its sign-in does not come over",
-		"radarr import_lists[3]": "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr",
-		"lidarr import_lists[0]": "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr; its sign-in does not come over",
+	// A Radarr TMDB or Trakt list without its list number or names cannot
+	// come over as an Outside list; it says what is missing.
+	for from, want := range map[string]NotMoved{
+		"sonarr import_lists[0]": {GroupOther, "", "", "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr; its sign-in does not come over"},
+		"radarr import_lists[0]": {GroupLists, "", "", "its TMDB list number did not come over; add it again under Settings > Outside lists"},
+		"radarr import_lists[1]": {GroupLists, "", "", "its Trakt user or list name did not come over; add it again under Settings > Outside lists"},
+		"radarr import_lists[2]": {GroupOther, "", "", "HolyArrs is one app; it does not copy from another instance; its sign-in does not come over"},
+		"radarr import_lists[3]": {GroupOther, "", "", "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr"},
+		"lidarr import_lists[0]": {GroupOther, "", "", "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr; its sign-in does not come over"},
 	} {
-		if n, ok := notMoved(p, from); !ok || n.Group != GroupOther || n.Why != want {
+		if n, ok := notMoved(p, from); !ok || n.Group != want.Group || n.Why != want.Why {
 			t.Errorf("%s: %+v", from, n)
 		}
 	}
@@ -525,21 +527,22 @@ func TestPlanTagScope(t *testing.T) {
 		}
 	}
 	if n, _ := notMoved(p, "radarr delay_profiles[0]"); n.What != "wait before grabbing (tags: kids)" ||
-		n.Why != "HolyArrs has waits in Pick rules (prefer, Usenet and torrent minutes) but this one was not carried over: prefer torrent, Usenet 30 min, torrent 0 min; set them under Pick rules" {
+		n.Why != "applied only to titles tagged kids; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not moved; set them on a copy of the Pick rules if those titles need them" {
 		t.Errorf("tagged delay %+v", n)
 	}
-	if n, _ := notMoved(p, "radarr delay_profiles[1]"); n.What != "wait before grabbing (every title)" || !strings.Contains(n.Why, "prefer usenet, Usenet 0 min, torrent 60 min, torrent off; set them under Pick rules") {
+	// With no quality profile read, the default rule has no Pick rules to go to.
+	if n, _ := notMoved(p, "radarr delay_profiles[1]"); n.What != "wait before grabbing (every title)" || n.Why != "no quality profile came over to carry it: prefer usenet, Usenet 0 min, torrent 60 min, torrent off; set them under Pick rules" {
 		t.Errorf("torrent-off delay %+v", n)
 	}
-	if n, _ := notMoved(p, "radarr delay_profiles[1]"); !strings.HasSuffix(n.Why, "; Pick rules cannot turn a protocol off, so pause those Sources instead") {
+	if n, _ := notMoved(p, "radarr delay_profiles[1].enable_torrent"); n.Why != "Pick rules cannot turn a protocol off, so pause the torrent Sources instead; Usenet is preferred" {
 		t.Errorf("torrent-off delay %+v", n)
 	}
 	// The old app's untouched default asks nothing; a long name keeps its tags.
 	s.DelayProfiles = []DelayProfile{{ID: 1, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "usenet", Order: 2147483647}}
 	s.Indexers[0].Name = strings.Repeat("N", 300)
 	p = BuildPlan([]Input{{1, s}}, Choices{})
-	if n, _ := notMoved(p, "radarr delay_profiles[0]"); n.Why != "the old app's default: no wait, Usenet preferred only to break ties; nothing to set here" {
-		t.Errorf("default delay %+v", n)
+	if n, ok := notMoved(p, "radarr delay_profiles[0]"); ok || !slices.Contains(p.Mapped, "radarr delay_profiles[0]") {
+		t.Errorf("default delay %+v %v", n, p.Mapped)
 	}
 	if n, _ := notMoved(p, "radarr indexers[0].tags"); !strings.HasSuffix(n.What, " (tags: kids, anime)") {
 		t.Errorf("long name tag line %q", n.What)
@@ -607,5 +610,223 @@ func TestPlanReleaseGate(t *testing.T) {
 	p = BuildPlan([]Input{{1, s}}, Choices{})
 	if it := item(t, p, GroupTitles, "title:movie:tmdb:1"); it.Title.GateDelayDays != nil || !strings.HasSuffix(it.Detail, "; release gate: released") {
 		t.Errorf("no delay %+v %q", it.Title, it.Detail)
+	}
+}
+
+// waitSnap is a read whose one quality profile matches Good everyday, with
+// the given wait rules.
+func waitSnap(kind Kind, ds ...DelayProfile) *Snapshot {
+	return &Snapshot{Kind: kind, QualityProfiles: []Profile{{ID: 1, Name: "HD", UpgradeAllowed: true, Cutoff: "Bluray-1080p"}}, DelayProfiles: ds}
+}
+
+// waitItem returns the planned wait change for a ready-made Pick rules (nil
+// when there is none).
+func waitItem(p *Plan, preset string) *Item {
+	for _, it := range p.Group(GroupRules).Items {
+		if it.Key == "pick_rules_protocol:"+preset {
+			return &it
+		}
+	}
+	return nil
+}
+
+// TestPlanDefaultWait: the untagged default wait rule becomes the wait of
+// the ready-made Pick rules its app's profiles matched, unless it is the old
+// app's untouched default; waits are cut to 7 days, a protocol switched off
+// or a score skip is listed, tagged rules are listed, and apps that disagree
+// change nothing.
+func TestPlanDefaultWait(t *testing.T) {
+	def := DelayProfile{ID: 1, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "usenet", Order: 2147483647}
+	// The factory default plans nothing and lists nothing.
+	p := BuildPlan([]Input{{1, waitSnap(Radarr, def)}}, Choices{})
+	if it := waitItem(p, "Good everyday"); it != nil {
+		t.Fatalf("factory default planned %+v", it)
+	}
+	if _, ok := notMoved(p, "radarr delay_profiles[0]"); ok || !slices.Contains(p.Mapped, "radarr delay_profiles[0]") {
+		t.Fatalf("factory default not mapped: %v", p.Mapped)
+	}
+	// Its skip switches do nothing without a wait, so it stays the default.
+	f := def
+	f.BypassIfHighestQuality, f.BypassIfAboveScore = true, true
+	p = BuildPlan([]Input{{1, waitSnap(Radarr, f)}}, Choices{})
+	if it := waitItem(p, "Good everyday"); it != nil || len(p.NotMoved) != 0 {
+		t.Fatalf("factory default with skips planned %+v %+v", it, p.NotMoved)
+	}
+
+	// A torrent wait of 120 minutes, Usenet preferred.
+	d := def
+	d.TorrentDelay = 120
+	tagged := DelayProfile{ID: 2, EnableUsenet: true, EnableTorrent: true, PreferredProtocol: "torrent", UsenetDelay: 30, Order: 1, Tags: []string{"anime"}}
+	p = BuildPlan([]Input{{1, waitSnap(Radarr, tagged, d)}}, Choices{})
+	it := waitItem(p, "Good everyday")
+	if it == nil || *it.Protocol != (ProtocolPlan{Preset: "Good everyday", Prefer: "usenet", WaitTorrent: 120, Part: "movies"}) || it.From != "radarr delay_profiles[1]" {
+		t.Fatalf("wait item %+v", it)
+	}
+	if it.Detail != "from the default wait rule of radarr: prefer usenet, Usenet 0 min, torrent 120 min" {
+		t.Errorf("detail %q", it.Detail)
+	}
+	if n, ok := notMoved(p, "radarr delay_profiles[0]"); !ok || !strings.HasPrefix(n.Why, "applied only to titles tagged anime; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not moved") {
+		t.Errorf("tagged rule %+v", n)
+	}
+
+	// Waits over 7 days are cut; the top-quality skip becomes the Good
+	// enough skip with a note; a score skip is listed.
+	d = def
+	d.UsenetDelay, d.TorrentDelay, d.BypassIfHighestQuality, d.BypassIfAboveScore = 20000, 60, true, true
+	p = BuildPlan([]Input{{1, waitSnap(Radarr, d)}}, Choices{})
+	it = waitItem(p, "Good everyday")
+	if it == nil || *it.Protocol != (ProtocolPlan{Preset: "Good everyday", Prefer: "usenet", WaitUsenet: 10080, WaitTorrent: 60, SkipAtGoodEnough: true, Part: "movies"}) {
+		t.Fatalf("cut wait %+v", it)
+	}
+	for _, want := range []string{"Usenet 20000 min cut to 10080 (HolyArrs allows up to 7 days)", "no wait once a release is Good enough", "which can be below the top allowed quality"} {
+		if !strings.Contains(it.Detail, want) {
+			t.Errorf("detail %q lacks %q", it.Detail, want)
+		}
+	}
+	if n, ok := notMoved(p, "radarr delay_profiles[0].bypass_score"); !ok || !strings.HasPrefix(n.Why, "format scores do not move") {
+		t.Errorf("score skip %+v", n)
+	}
+
+	// Only torrent on: torrent is preferred and the switch is listed.
+	d = def
+	d.EnableUsenet, d.TorrentDelay = false, 10
+	p = BuildPlan([]Input{{1, waitSnap(Radarr, d)}}, Choices{})
+	if it = waitItem(p, "Good everyday"); it == nil || it.Protocol.Prefer != "torrent" || it.Protocol.WaitTorrent != 10 {
+		t.Fatalf("torrent only %+v", it)
+	}
+	if n, ok := notMoved(p, "radarr delay_profiles[0].enable_usenet"); !ok || n.Why != "Pick rules cannot turn a protocol off, so pause the Usenet Sources instead; torrent is preferred" {
+		t.Errorf("usenet off %+v", n)
+	}
+
+	// Radarr and Sonarr disagree on Good everyday: nothing changes there and
+	// both are listed with their values.
+	r := def
+	r.TorrentDelay = 120
+	s := def
+	s.UsenetDelay = 15
+	p = BuildPlan([]Input{{1, waitSnap(Radarr, r)}, {2, waitSnap(Sonarr, s)}}, Choices{})
+	if it := waitItem(p, "Good everyday"); it != nil {
+		t.Fatalf("disagreeing apps planned %+v", it)
+	}
+	for from, values := range map[string]string{"radarr delay_profiles[0]": "radarr had prefer usenet, Usenet 0 min, torrent 120 min", "sonarr delay_profiles[0]": "sonarr had prefer usenet, Usenet 15 min, torrent 0 min"} {
+		if n, ok := notMoved(p, from); !ok || n.Why != "the old apps set different waits for Good everyday, so this server's wait stays; "+values {
+			t.Errorf("%s: %+v", from, n)
+		}
+	}
+	// An app left at its default counts as no wait, so it disagrees too.
+	p = BuildPlan([]Input{{1, waitSnap(Radarr, def)}, {2, waitSnap(Sonarr, r)}}, Choices{})
+	if it := waitItem(p, "Good everyday"); it != nil {
+		t.Fatalf("default and a wait planned %+v", it)
+	}
+	for _, from := range []string{"radarr delay_profiles[0]", "sonarr delay_profiles[0]"} {
+		if n, ok := notMoved(p, from); !ok || !strings.HasPrefix(n.Why, "the old apps set different waits for Good everyday") {
+			t.Errorf("%s: %+v", from, n)
+		}
+	}
+	// When they agree, one change names both; a second profile on 4K gets its own.
+	ra := waitSnap(Radarr, r)
+	ra.QualityProfiles = append(ra.QualityProfiles, Profile{ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"})
+	p = BuildPlan([]Input{{1, ra}, {2, waitSnap(Sonarr, r)}}, Choices{})
+	if it := waitItem(p, "Good everyday"); it == nil || !strings.HasPrefix(it.Detail, "from the default wait rule of radarr and sonarr: ") || !slices.Contains(p.Mapped, "sonarr delay_profiles[0]") {
+		t.Fatalf("agreeing apps %+v %v", it, p.Mapped)
+	}
+	if it := waitItem(p, "Good everyday"); it.Protocol.Part != "" {
+		t.Errorf("a change from two parts has part %q", it.Protocol.Part)
+	}
+	if it := waitItem(p, "4K"); it == nil || it.Protocol.WaitTorrent != 120 || it.Protocol.Part != "movies" {
+		t.Fatalf("4K wait %+v", it)
+	}
+}
+
+// listSnap is a Radarr read with one movie folder, an HD and an Ultra-HD
+// profile, and the given lists.
+func listSnap(ls ...Provider) *Snapshot {
+	return &Snapshot{Kind: Radarr, Folders: []Folder{{Path: "/movies"}},
+		QualityProfiles: []Profile{{ID: 1, Name: "HD", Cutoff: "Bluray-1080p"}, {ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"}}, ImportLists: ls}
+}
+
+// TestPlanOutsideLists: Radarr TMDB lists, Trakt lists and Trakt watchlists
+// become paused Outside lists with their folder, Pick rules, keep up to
+// date, search on add, Release gate and refresh gap; a folder that did not
+// come over, a watched or collection list and the other kinds are listed.
+func TestPlanOutsideLists(t *testing.T) {
+	s := listSnap(
+		Provider{Name: "Top", Kind: "TMDbListImport", Enabled: true, Settings: map[string]any{"listId": "8136", "link.rootfolderpath": "/movies",
+			"link.qualityprofileid": int64(2), "link.monitor": "movieOnly", "link.searchonadd": true, "link.minimumavailability": "inCinemas", "link.minrefreshinterval": "1.00:00:00"}},
+		Provider{Name: "Favs", Kind: "TraktListImport", Settings: map[string]any{"username": "Sean", "listname": "My Favs!", "link.rootfolderpath": "/movies",
+			"link.monitor": int64(2), "link.minimumavailability": int64(3)}, NeedsReentry: []string{"accessToken"}},
+		Provider{Name: "Watch", Kind: "TraktUserImport", Enabled: true, Settings: map[string]any{"traktListType": int64(0), "username": "", "authUser": "luis", "link.rootfolderpath": "/movies/",
+			"link.monitor": "movieAndCollection", "link.enabled": true, "link.enableauto": false}},
+		Provider{Name: "Shelf", Kind: "TraktUserImport", Settings: map[string]any{"traktListType": int64(2), "username": "luis", "link.rootfolderpath": "/movies"}},
+		Provider{Name: "Away", Kind: "TMDbListImport", Settings: map[string]any{"listId": "77", "link.rootfolderpath": "/elsewhere"}},
+		Provider{Name: "top", Kind: "TMDbListImport", Enabled: true, Settings: map[string]any{"listId": "99", "link.rootfolderpath": "/movies", "link.enabled": false, "link.enableauto": true}},
+		Provider{Name: "Picks", Kind: "IMDbListImport"},
+	)
+	s.finish()
+	p := BuildPlan([]Input{{1, s}}, Choices{PathRules: []PathRule{{From: "/movies", To: "/data/movies"}}})
+	top := item(t, p, GroupLists, "outside_list:tmdb_list:8136")
+	if *top.OutsideList != (OutsideListPlan{Kind: "tmdb_list", Ref: "8136", Library: "/data/movies", Preset: "4K", KeepUpToDate: true, SearchOnAdd: true, ReleaseGate: "in_cinemas", SyncEveryHours: 24}) || top.Name != "Top" {
+		t.Fatalf("tmdb list %+v %+v", top, top.OutsideList)
+	}
+	if top.Detail != "TMDB list 8136 into /data/movies; added paused (was on there), every 24 hours; release gate: in cinemas" {
+		t.Errorf("detail %q", top.Detail)
+	}
+	favs := item(t, p, GroupLists, "outside_list:trakt_list:sean/my-favs")
+	if *favs.OutsideList != (OutsideListPlan{Kind: "trakt_list", Ref: "Sean/my-favs", Library: "/data/movies", ReleaseGate: "released", SyncEveryHours: 12}) {
+		t.Fatalf("trakt list %+v", favs.OutsideList)
+	}
+	if !strings.Contains(favs.Detail, "(was off there)") || !strings.Contains(favs.Detail, "Keep up to date off") || !strings.HasSuffix(favs.Detail, "needs your Trakt key, and the list must be public") {
+		t.Errorf("trakt detail %q", favs.Detail)
+	}
+	watch := item(t, p, GroupLists, "outside_list:trakt_list:luis/watchlist")
+	if w := watch.OutsideList; w.Ref != "luis/watchlist" || !w.KeepUpToDate || w.ReleaseGate != "" {
+		t.Fatalf("watchlist %+v", w)
+	}
+	// On but not adding by itself, and off but adding (Radarr never read it).
+	if !strings.Contains(watch.Detail, "(was on there but added no movies by itself)") {
+		t.Errorf("watchlist detail %q", watch.Detail)
+	}
+	if n, ok := notMoved(p, "radarr import_lists[2].monitor"); !ok || n.Why != "lists add only the movies on the list, not the rest of their movie series; add those by hand" {
+		t.Errorf("collection part %+v", n)
+	}
+	if clash := item(t, p, GroupLists, "outside_list:tmdb_list:99"); clash.Name != "top (radarr)" || !strings.Contains(clash.Detail, "(was off there)") {
+		t.Errorf("name clash %q %q", clash.Name, clash.Detail)
+	}
+	for from, want := range map[string]NotMoved{
+		"radarr import_lists[3]": {GroupLists, "", "", "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Radarr"},
+		"radarr import_lists[4]": {GroupLists, "", "", "its library folder /elsewhere did not come over"},
+		"radarr import_lists[6]": {GroupOther, "", "", "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr"},
+	} {
+		if n, ok := notMoved(p, from); !ok || n.Group != want.Group || n.Why != want.Why {
+			t.Errorf("%s: %+v", from, n)
+		}
+	}
+	for _, n := range p.NeedsInput {
+		if strings.Contains(n, "import list") {
+			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
+		}
+	}
+	// A Sonarr Trakt list stays report-only.
+	so := &Snapshot{Kind: Sonarr, ImportLists: []Provider{{Name: "Shows", Kind: "TraktListImport", Settings: map[string]any{"username": "sean", "listname": "tv"}}}}
+	if p := BuildPlan([]Input{{1, so}}, Choices{}); len(p.Group(GroupLists).Items) != 0 {
+		t.Fatalf("a show list was planned: %+v", p.Group(GroupLists).Items)
+	}
+}
+
+func TestSyncHours(t *testing.T) {
+	for in, want := range map[any]int{"12:00:00": 12, "06:30:00": 7, "00:30:00": 6, "1.00:00:00": 24, "200.00:00:00": 168, "soon": 12, nil: 12, int64(5): 12} {
+		if got := syncHours(in); got != want {
+			t.Errorf("%v: %d, want %d", in, got, want)
+		}
+	}
+	if got := listSlug("  My Favs! (2024) "); got != "my-favs-2024" {
+		t.Errorf("slug %q", got)
+	}
+	taken := map[string]bool{"top": true, "top (radarr)": true}
+	if got := freeListName("top", func(n string) bool { return taken[n] }); got != "top (radarr 2)" {
+		t.Errorf("second clash %q", got)
+	}
+	if got := freeListName("new", func(n string) bool { return taken[n] }); got != "new" {
+		t.Errorf("free name %q", got)
 	}
 }
