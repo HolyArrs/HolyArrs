@@ -209,4 +209,8 @@ describe('Your Library cards', () => {
 		expect(arrivedHead([{ at: '2026-08-01T00:00:00Z' }], now)).toEqual({ title: 'Recently added', subtitle: undefined });
 		expect(arrivedHead([{}], now)).toEqual({ title: 'Just arrived' });
 	});
+	it('names a failed download with no matched title by its own name', () => {
+		const items = attention({ failed: [{ id: 1, title: '', name: 'Some.Release.2024', text: '' }, { id: 2, title: '', text: '' }], decisions: [], health: [] });
+		expect(items.map((i) => i.title)).toEqual(['Some.Release.2024', 'A download']);
+	});
 });

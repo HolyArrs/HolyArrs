@@ -132,7 +132,7 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
  * viewer may open Settings (yes when left out).
  */
 export function attention(input: {
-	failed: (Pick<DownloadRow, 'id' | 'title' | 'title_id' | 'text'> & { phase?: string })[];
+	failed: (Pick<DownloadRow, 'id' | 'title' | 'title_id' | 'text'> & { name?: string; phase?: string })[];
 	decisions: { slot_id: number; title: string; reason?: string; episode?: { label: string } | null }[];
 	health: HealthCheck[];
 	metadata?: string;
@@ -141,7 +141,9 @@ export function attention(input: {
 	const out: Attention[] = [];
 	const admin = input.admin ?? true;
 	for (const c of input.health.filter((h) => shownState(h) === 'error')) out.push(healthItem(c, 'fail', 'Problem', 'Fix', admin));
-	for (const d of input.failed) {
+	for (const raw of input.failed) {
+		// A download with no matched title (an outside torrent, one that vanished) goes by its own name.
+		const d = { ...raw, title: raw.title || raw.name || 'A download' };
 		const refused = d.phase === 'import_refused';
 		const r = plainReason(d.text || (refused ? 'The import was refused.' : 'The download failed.'));
 		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: refused ? 'import refused' : 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.failed&open=${d.id}`, action: 'Downloads' });
