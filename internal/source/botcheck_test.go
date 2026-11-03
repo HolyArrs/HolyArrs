@@ -85,7 +85,7 @@ func TestBotCheckPauseHealthAndRecovery(t *testing.T) {
 	if got.Extra["block"] != BlockBotCheck || got.Extra["failures"] != "1" {
 		t.Fatalf("extra %+v", got.Extra)
 	}
-	if h := HealthOf(got); !strings.HasPrefix(h.Text, "Blocked by the site's bot check") || h.Reason != "blocked" {
+	if h := HealthOf(got); h.Text != "Blocked by the site's bot check. Reach this site through Jackett or Prowlarr. HolyArrs tries again on its own." || h.Reason != "blocked" {
 		t.Fatalf("health %+v", h)
 	}
 	if BlockOf(got) != BlockBotCheck || pauseWords(BlockBotCheck) != "blocked by the site's bot check" {

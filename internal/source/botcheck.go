@@ -23,7 +23,7 @@ const (
 
 // blockText says what each kind of block means for the person.
 var blockText = map[string]string{
-	BlockBotCheck: "Blocked by the site's bot check (Cloudflare or DDoS-Guard), which HolyArrs cannot pass. Reach this site through Jackett or Prowlarr.",
+	BlockBotCheck: "Blocked by the site's bot check. Reach this site through Jackett or Prowlarr.",
 	BlockSiteBan:  "The site's protection refuses HolyArrs's address. Changing anything in HolyArrs does not help; the site has to allow it.",
 }
 
