@@ -197,10 +197,13 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	var wait time.Duration
 	if t != nil {
 		userKey := "name:" + strings.ToLower(t.name)
-		wait = max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries))
+		// codeKey survives a correct password, so a fresh ticket brings back
+		// no free code guesses; only a right code clears it.
+		codeKey := "2fa:" + itoa(t.userID)
+		wait = max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries), a.waitFor(codeKey, freeTries))
 		if wait == 0 {
 			t.tries++
-			a.noteFail(ipKey, userKey)
+			a.noteFail(ipKey, userKey, codeKey)
 		}
 	}
 	a.mu.Unlock()
@@ -226,6 +229,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	delete(a.tickets, h)
 	delete(a.fails, ipKey)
 	delete(a.fails, "name:"+strings.ToLower(t.name))
+	delete(a.fails, "2fa:"+itoa(t.userID))
 	a.mu.Unlock()
 	a.startSessionAs(w, r, t.userID, t.name, http.StatusOK, t.method)
 }

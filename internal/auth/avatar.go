@@ -26,7 +26,7 @@ const (
 	avatarMaxUpload = 5 << 20 // bytes
 	avatarSide      = 256     // pixels, the stored picture is a square
 	avatarMaxSide   = 8000    // pixels, longest side we agree to decode
-	avatarMaxPixels = 40e6
+	avatarMaxPixels = 25e6    // a 24 MP camera photo fits; bounds decode memory
 )
 
 var errAvatarImage = errors.New("send a JPEG, PNG or WebP picture")
@@ -55,9 +55,14 @@ func (a *Auth) avatarOf(ctx context.Context, id int64) *string {
 	return avatarURL(id, etag)
 }
 
+var avatarSlot = make(chan struct{}, 1)
+
 // makeAvatar decodes an upload, crops the middle square, shrinks it to
 // 256 by 256 and writes a JPEG.
 func makeAvatar(raw []byte) ([]byte, error) {
+	// One decode at a time: a big picture can need a few hundred MB.
+	avatarSlot <- struct{}{}
+	defer func() { <-avatarSlot }()
 	cfg, _, err := image.DecodeConfig(bytes.NewReader(raw))
 	if err != nil || cfg.Width < 1 || cfg.Height < 1 {
 		return nil, errAvatarImage

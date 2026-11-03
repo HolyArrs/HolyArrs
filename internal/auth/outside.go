@@ -494,6 +494,7 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		var res []struct {
 			ClientIdentifier string `json:"clientIdentifier"`
 			Provides         string `json:"provides"`
+			Owned            bool   `json:"owned"`
 		}
 		code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/resources?includeHttps=1", hdr, nil, &res)
 		if err != nil || code/100 != 2 {
@@ -504,8 +505,11 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		mayJoin = slices.ContainsFunc(res, func(x struct {
 			ClientIdentifier string `json:"clientIdentifier"`
 			Provides         string `json:"provides"`
+			Owned            bool   `json:"owned"`
 		}) bool {
-			return x.ClientIdentifier == v.ServerID
+			// A server the joiner owns is their own, not a share: anyone
+			// can copy the owner's server id onto a server they run.
+			return x.ClientIdentifier == v.ServerID && !x.Owned
 		})
 	}
 	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin)

@@ -671,13 +671,17 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		var role, perms, expires, maxRating, country string
-		err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at, i.max_rating, i.rating_country FROM invites i JOIN users c ON c.id = i.created_by
+		var role, perms, expires, maxRating, country, byRole, byPerms string
+		err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at, i.max_rating, i.rating_country, c.role, c.perms FROM invites i JOIN users c ON c.id = i.created_by
 			WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
-			Scan(&role, &perms, &expires, &maxRating, &country)
+			Scan(&role, &perms, &expires, &maxRating, &country, &byRole, &byPerms)
 		if err != nil || !a.now().Before(parseTime(expires)) {
 			return errInviteGone
 		}
+		// The link gives only what its maker still holds today.
+		perms = permsJSON(slices.DeleteFunc(parsePerms(perms), func(p Perm) bool {
+			return !(Who{Role: byRole, Perms: parsePerms(byPerms)}).Has(p)
+		}))
 		var n int
 		if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", c.Name).Scan(&n); err != nil {
 			return err
@@ -772,7 +776,11 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, store.FormatTime(a.now()), who.UserID); err != nil {
 			return err
 		}
-		_, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND hash != ?", who.UserID, keep)
+		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND hash != ?", who.UserID, keep); err != nil {
+			return err
+		}
+		// A key made by someone who knew the old password must stop too.
+		_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", who.UserID)
 		return err
 	})
 	if err != nil {

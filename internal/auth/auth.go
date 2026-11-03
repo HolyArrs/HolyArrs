@@ -669,13 +669,9 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 var errOwnerExists = errors.New("owner exists")
 var errNoLocalSignIn = errors.New("signs in only through an outside account")
 
-func (a *Auth) clientKey(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	return "ip:" + host
-}
+// clientKey is the key every sign-in limit uses: the proxy-aware ClientKey,
+// so behind a trusted proxy each visitor gets their own budget.
+func (a *Auth) clientKey(r *http.Request) string { return a.ClientKey(r) }
 
 // ClientKey names the caller for rate limits: the peer address, or the
 // address a trusted proxy forwards (the last X-Forwarded-For entry, else
@@ -737,6 +733,10 @@ func (a *Auth) noteFail(keys ...string) {
 func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	c, ok := readCreds(w, r)
 	if !ok {
+		return
+	}
+	if len(c.Name) > 64 { // no account has a longer name; keeps the back-off map small
+		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
 	ipKey, userKey := a.clientKey(r), "name:"+strings.ToLower(c.Name)

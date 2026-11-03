@@ -485,8 +485,8 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/backups":                  PermSettings,
 	"POST /api/v1/backups":                 PermSettings,
 	"PUT /api/v1/backups/settings":         PermSettings,
-	"GET /api/v1/backups/{name}":           PermSettings,
-	"DELETE /api/v1/backups/{name}":        PermSettings,
+	"GET /api/v1/backups/{name}":           needOwner, // the whole database, password hashes included
+	"DELETE /api/v1/backups/{name}":        needOwner,
 	"GET /api/v1/auth/keys":                PermSettings,
 	"POST /api/v1/auth/keys":               PermSettings,
 	"DELETE /api/v1/auth/keys/{id}":        PermSettings,

@@ -431,6 +431,8 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 	return out, true
 }
 
+var errImportKidSkip = errors.New("kid import while skipping local sign-in")
+
 func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 	if !RequireStrong(w, r) {
 		return
@@ -503,6 +505,9 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				kid = *pick.Kid // clearing a restricted flag was confirmed above
 			}
 			if kid {
+				if a.skipLocal.Load() {
+					return errImportKidSkip
+				}
 				u.Perms, u.MaxRating = kidPerms, "PG"
 			}
 			id, err := store.Insert(tx, "users", u, Actor(ctx))
@@ -517,6 +522,10 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
+	if errors.Is(err, errImportKidSkip) {
+		fail(w, http.StatusConflict, errSkipLocalKid)
+		return
+	}
 	if err != nil {
 		serverError(w, "import", err)
 		return
