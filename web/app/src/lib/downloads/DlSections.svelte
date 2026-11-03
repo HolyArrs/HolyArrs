@@ -2278,7 +2278,7 @@
 	.pw { display: flex; align-items: center; flex: none; border-radius: 999px; background: transparent; transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.pw.on { background: var(--hl-bg); box-shadow: var(--hl-shadow, none); }
 	.tab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-footnote); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out); }
-	.tab .n { color: inherit; opacity: 0.75; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.tab .n { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tab:hover { color: var(--text); }
 	.pw.on .tab { color: var(--hl-fg); }
 	/* A tab with nothing in it reads its 0; it is not dimmed, so its label keeps readable contrast. */
@@ -2288,7 +2288,7 @@
 	.subin { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; }
 	.pw.open .subin { padding: 0 2px 0 6px; margin-right: 2px; border-left: 1px solid var(--hl-line); }
 	.stab { display: inline-flex; align-items: center; flex: none; gap: 6px; height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--hl-sub); font: var(--t-footnote); white-space: nowrap; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.stab b { color: inherit; opacity: 0.8; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.stab b { color: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.stab:hover { color: var(--hl-fg); }
 	.stab.on { background: var(--hl-sub-on-bg); color: var(--hl-sub-on-fg); }
 	/* No sub-option picked: the parent itself carries the red inner highlight. */
