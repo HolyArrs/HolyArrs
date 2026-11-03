@@ -195,7 +195,8 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 
 	// An artist in the Library offers to ask for the albums it does not keep (on its page).
 	await openFromSearch(ivy, 'lantern', 'Tin Lanterns');
-	await expect(ivy.getByTestId('ask-albums')).toBeVisible();
+	// The hero and the slim bar that follows it on scroll both offer it.
+	await expect(ivy.getByTestId('ask-albums').first()).toBeVisible();
 
 	await ivy.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });
@@ -255,7 +256,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(ivy.getByRole('button', { name: 'Refresh' })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Edit album kinds' })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'More actions' })).toHaveCount(0);
-	await expect(ivy.getByTestId('ask-albums')).toBeVisible();
+	await expect(ivy.getByTestId('ask-albums').first()).toBeVisible();
 	await noSidewaysScroll(ivy);
 	await ivy.getByRole('link', { name: /^Fern Hymns/ }).first().click();
 	await expect(ivy.getByRole('heading', { level: 1, name: /Fern Hymns/ })).toBeVisible();
