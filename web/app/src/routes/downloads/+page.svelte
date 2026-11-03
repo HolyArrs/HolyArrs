@@ -471,6 +471,7 @@
 	let limitOpen = $state(false);
 	let clients = $state<ClientView[]>([]);
 	let limits = $state<Record<number, { down: number; up: number }>>({});
+	let limitsWere: Record<number, { down: number; up: number }> = {};
 	let limitError = $state('');
 	let limitBusy = $state(false);
 	const MB = 1_000_000;
@@ -479,8 +480,10 @@
 		limitOpen = true;
 		try {
 			const r = await api.get<{ clients: ClientView[] }>('/downloads/clients');
-			clients = r.clients.filter((c) => c.controls);
+			// Only Downloaders whose limits were read: one that did not answer would otherwise start at 0 and lose its cap on save.
+			clients = r.clients.filter((c) => c.controls && !!c.status);
 			limits = Object.fromEntries(clients.map((c) => [c.id, { down: +((c.status?.speed_limit ?? 0) / MB).toFixed(1), up: +((c.status?.up_limit ?? 0) / MB).toFixed(1) }]));
+			limitsWere = $state.snapshot(limits);
 		} catch (e) {
 			limitError = message(e);
 		}
@@ -492,6 +495,9 @@
 		try {
 			for (const c of clients) {
 				const l = limits[c.id];
+				// Only what was changed is sent, so an untouched Downloader (a read-only one, say) is left alone.
+				const was = limitsWere[c.id];
+				if (was && was.down === l.down && was.up === l.up) continue;
 				failing = c.name;
 				await api.put(`/downloaders/${c.id}/speed-limit`, { down: Math.round(Math.max(0, l.down || 0) * MB), up: Math.round(Math.max(0, l.up || 0) * MB) });
 			}
