@@ -172,7 +172,7 @@ func (s *Service) restoreOne(ctx context.Context, h heldRow, by domain.Actor) (s
 	from := filepath.Join(h.root, filepath.FromSlash(h.HeldPath))
 	to := filepath.Join(h.root, filepath.FromSlash(h.Path))
 	if !filepath.IsLocal(filepath.FromSlash(h.Path)) || strings.HasPrefix(h.Path, importer.HoldingDir+"/") ||
-		!importer.InsideReal(h.root, filepath.Dir(from)) {
+		!importer.InsideReal(h.root, filepath.Dir(from)) || !importer.InsideReal(h.root, filepath.Dir(to)) {
 		return "its place is outside the Library folder", nil
 	}
 	if _, err := os.Lstat(to); err == nil {
@@ -204,10 +204,14 @@ func (s *Service) restoreOne(ctx context.Context, h heldRow, by domain.Actor) (s
 			continue
 		}
 		sf, st := filepath.Join(h.root, filepath.FromSlash(sub)), filepath.Join(h.root, filepath.FromSlash(orig))
-		if _, err := os.Lstat(st); err == nil || !importer.InsideReal(h.root, filepath.Dir(sf)) {
+		if _, err := os.Lstat(st); err == nil || !importer.InsideReal(h.root, filepath.Dir(sf)) || !importer.InsideReal(h.root, filepath.Dir(st)) {
 			continue
 		}
 		if moveFile(sf, st) == nil {
+			if !importer.InsideReal(h.root, filepath.Dir(st)) {
+				_ = moveFile(st, sf)
+				continue
+			}
 			subsBack = append(subsBack, orig)
 		}
 	}
