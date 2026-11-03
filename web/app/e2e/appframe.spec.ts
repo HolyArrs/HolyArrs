@@ -74,7 +74,9 @@ test('This app shows where things are kept, and the log', async () => {
 	await page.getByRole('button', { name: 'Show', exact: true }).click();
 	await expect(page.getByTestId('log-line').first()).toContainText('listening on');
 	await page.getByLabel('Level').selectOption('error');
-	await expect(page.getByTestId('log-lines').getByRole('status')).toBeVisible();
+	// Wait for the lines that answer the Level filter, not the ones shown before.
+	await expect(page.getByTestId('log-lines')).toHaveAttribute('data-query', /(^|&)level=error(&|$)/);
+	await expect(page.getByTestId('log-lines')).toHaveAttribute('aria-busy', 'false');
 	for (const l of await page.getByTestId('log-line').all()) await expect(l).toHaveAttribute('data-level', 'error');
 	// The first-run setup code is in the log, hidden.
 	await page.getByRole('button', { name: 'Clear' }).click();
