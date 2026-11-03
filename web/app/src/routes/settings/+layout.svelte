@@ -17,8 +17,8 @@
 	import '#lib/ui/settings-looks.css';
 
 	// Settings is one layout: folding groups on the left (look 6, Luis
-	// 2026-11-02), the page on the right, with the Paper grain finish (Luis
-	// 2026-11-03): fine grain behind, warm cards, a 1px bevel on buttons.
+	// 2026-11-02), the page on the right. Plain cards and buttons on one
+	// surface that holds the menu and the page together (Luis, 2026-11-03).
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
@@ -243,27 +243,27 @@
 	.fold-head:hover { background: var(--surface-2); }
 	.look-fold .nav-section { padding: 2px 0 6px 8px; margin-left: 16px; border-left: 1px solid var(--line); }
 
-	/* Paper grain (Luis, 2026-11-03): a fine grain behind the Settings area,
-	   cards a warm tone off the page, a 1px bevel on buttons, inputs set in.
-	   Built from the theme tokens, so light and dark both get it. */
+	/* One surface for all of Settings (Luis, 2026-11-03): a quiet panel holds
+	   the side menu and the page, so the menu is not left on the bare page.
+	   Cards and buttons stay plain. Built from theme tokens: light and dark. */
 	.look-fold { position: relative; isolation: isolate;
-		--fin-r: 10px; --fin-card: color-mix(in srgb, var(--surface-1) 94%, #fffaf0); --fin-edge: var(--line);
-		--fin-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 1px 2px rgb(0 0 0 / 12%); --fin-btn-r: 8px; }
-	.look-fold::before { content: ''; position: absolute; inset: -24px -16px -48px; z-index: -1; pointer-events: none; border-radius: 28px;
-		background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.07'/></svg>"); }
+		--fin-r: 12px; --fin-card: var(--surface-1); --fin-edge: var(--line);
+		--fin-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 8px 24px -14px rgb(0 0 0 / 35%); --fin-btn-r: var(--r-btn); }
+	.look-fold::before { content: ''; position: absolute; inset: -20px -20px -40px; z-index: -1; pointer-events: none; border-radius: 24px;
+		background: color-mix(in srgb, var(--surface-1) 45%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
+	.look-fold .settings-nav { padding-right: 16px; border-right: 1px solid var(--line); }
 	.look-fold .settings-content :global(.ui-settings) { border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); }
-	.look-fold :global(.ui-btn) { border-radius: var(--fin-btn-r); box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%), inset 0 -1px 0 rgb(0 0 0 / 18%); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
-	.look-fold :global(.ui-btn.plain) { box-shadow: none; }
-	.look-fold :global(.ui-btn.secondary) { background: color-mix(in srgb, var(--surface-2) 92%, #fffaf0); }
+	.look-fold :global(.ui-btn) { border-radius: var(--fin-btn-r); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.look-fold :global(.ui-btn:active:not(:disabled)) { transform: scale(0.98); }
-	.look-fold :global(.input) { border-radius: var(--fin-btn-r); box-shadow: inset 0 1px 2px rgb(0 0 0 / 14%); }
+	.look-fold :global(.input) { border-radius: var(--fin-btn-r); }
 	.look-fold .nav-row, .look-fold .fold-head { border-radius: calc(var(--fin-btn-r) - 2px); }
 
 	@media (prefers-reduced-motion: reduce) {
 		.look-fold .settings-content :global(.ui-settings), .look-fold :global(.ui-btn) { transition: none; }
 		.look-fold :global(.ui-btn:hover:not(:disabled)), .look-fold :global(.ui-btn:active:not(:disabled)) { transform: none; }
 	}
-	@media (max-width: 767px) { .look-fold::before { inset: -16px -16px -48px; border-radius: 0; } }
+	@media (max-width: 1023px) { .look-fold .settings-nav { padding-right: 4px; border-right: 0; } }
+	@media (max-width: 767px) { .look-fold::before { inset: -16px -16px -48px; border-radius: 0; box-shadow: none; } }
 
 	/* ---------- phones: Settings home is the index; a page opens alone with a back link ---------- */
 	@media (max-width: 1023px) {
