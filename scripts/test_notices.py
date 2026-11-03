@@ -73,6 +73,14 @@ class Check(unittest.TestCase):
                 p.write_text("")
             return notices.problems(go, web, others, STATIC, want, table, have_docs if have_docs is not None else want, summary, Path(d))
 
+    def test_ytdlp_bundled_parts_are_never_listed_or_flagged(self):
+        self.assertTrue(notices.SKIPPED.search("yt-dlp bundled parts"))
+        self.assertTrue(notices.SKIPPED.search("THIRD_PARTY_LICENSES.txt"))
+        self.assertFalse(notices.SKIPPED.search("yt-dlp@2026.08.19"))
+        self.assertEqual(self.run_check(None, ["index.html"]), [])
+        found = self.run_check("### example.org/m@v1.0.0\n### svelte@5.0.0\n### yt-dlp@1\n### yt-dlp bundled parts\n### Deluge logo (/clients/deluge.svg)\n")
+        self.assertFalse(any("bundled" in f for f in found), found)
+
     def test_complete_notices_pass(self):
         self.assertEqual(self.run_check(None, ["index.html", "brand/mark.svg", "clients/deluge.svg", "vendor/hls-1.min.js", "_app/immutable/assets/geist.woff2"]), [])
 
