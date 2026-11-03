@@ -32,6 +32,8 @@ export const sabKey = ['stand', 'in', 'sab', 'key'].join('-');
 // The lab's fake Subtitle site (cmd/holyarrs-fakesubs), started by server.mjs.
 export const subsPort = Number(process.env.HOLYARRS_E2E_SUBS_PORT ?? 18738);
 export const mediaUser = { name: 'mum', password: ['e2e', 'media', 'pw'].join('-') };
+/** The fake Emby lives under /emby on the fake Jellyfin's port, with its own person. */
+export const embyUser = { name: 'gran', password: ['e2e', 'emby', 'pw'].join('-') };
 /** The only API key the fake Jellyfin takes for the media server link (test-only). */
 export const jellyKey = ['stand', 'in', 'jf'].join('-');
 /** A fake old Radarr and a fake old Seerr for the move tests (test-only key). */
@@ -480,6 +482,19 @@ export function startFakes() {
 	/** @type {unknown[]} */
 	const updates = [];
 	const jelly = createServer(async (req, res) => {
+		// Emby, as it often sits at http://host/emby. It wants the X-Emby-Authorization header.
+		if (req.url?.startsWith('/emby/')) {
+			if (req.method === 'POST' && req.url === '/emby/Users/AuthenticateByName') {
+				if (!String(req.headers['x-emby-authorization'] ?? '').startsWith('MediaBrowser ')) return send(res, 400, 'no client header', 'text/plain');
+				const b = JSON.parse((await body(req)) || '{}');
+				if (b.Username === embyUser.name && b.Pw === embyUser.password)
+					return send(res, 200, { User: { Id: 'em-1', Name: 'Gran', Policy: { IsDisabled: false } }, AccessToken: 'etok' });
+				return send(res, 401, 'Error processing request.', 'text/plain');
+			}
+			if (req.method === 'POST' && req.url === '/emby/Sessions/Logout') return send(res, 204, '');
+			if (req.method === 'GET' && req.url === '/emby/System/Info/Public') return send(res, 200, { ServerName: 'Fake Emby', Version: '4.8.0', ProductName: 'Emby Server', Id: 'fake-emby' });
+			return send(res, 404, { error: 'no route' });
+		}
 		if (req.method === 'POST' && req.url === '/Users/AuthenticateByName') {
 			const b = JSON.parse((await body(req)) || '{}');
 			if (b.Username === mediaUser.name && b.Pw === mediaUser.password)

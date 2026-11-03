@@ -132,6 +132,7 @@
 				{#each placed.shown as e (e.key)}
 					<div
 						class="ev {e.kind}"
+						class:shared={e.lanes > 1}
 						role="listitem"
 						title={e.label}
 						style:--c={e.c}
@@ -209,6 +210,9 @@
 	@container (max-width: 340px) {
 		.col { --rule: 34px; }
 		.nt { font-size: 9.5px; }
+		/* Side by side on a phone, a chip keeps the name; the ruler gives the hour and a tap gives the time. */
+		.ev.shared .et { display: none; }
+		.ev.shared { padding: 0 5px 0 7px; }
 	}
 
 	@media (prefers-reduced-motion: no-preference) {

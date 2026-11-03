@@ -245,12 +245,13 @@
 
 	/* One surface for all of Settings (Luis, 2026-11-03): a quiet panel holds
 	   the side menu and the page, so the menu is not left on the bare page.
-	   Cards and buttons stay plain. Built from theme tokens: light and dark. */
+	   Cards and buttons stay plain. The panel is a light tint of the text
+	   colour: soft grey under white cards in light, a slight lift in dark. */
 	.look-fold { position: relative; isolation: isolate;
 		--fin-r: 12px; --fin-card: var(--surface-1); --fin-edge: var(--line);
 		--fin-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 8px 24px -14px rgb(0 0 0 / 35%); --fin-btn-r: var(--r-btn); }
 	.look-fold::before { content: ''; position: absolute; inset: -20px -20px -40px; z-index: -1; pointer-events: none; border-radius: 24px;
-		background: color-mix(in srgb, var(--surface-1) 45%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
+		background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
 	.look-fold .settings-nav { padding-right: 16px; border-right: 1px solid var(--line); }
 	.look-fold .settings-content :global(.ui-settings) { border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); }
 	.look-fold :global(.ui-btn) { border-radius: var(--fin-btn-r); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
@@ -271,7 +272,11 @@
 		.settings-nav { position: static; max-height: none; }
 	}
 	@media (max-width: 767px) {
-		.settings-shell:not(.home) .settings-nav, .settings-shell.home .settings-workspace { display: none; }
+		.settings-shell:not(.home) .settings-nav { display: none; }
+		/* Home on a phone: the page title stays (screen readers, the sticky
+		   mini title) above the menu; the rest of the index is the menu itself. */
+		.settings-shell.home .settings-workspace { order: -1; }
+		.settings-shell.home .settings-content > :global(:not(.ui-head)) { display: none; }
 		.back-home { display: inline-flex; }
 		.phone-top, .phone-top:not(:has(.page-status)) { display: flex; margin-bottom: 4px; }
 	}
