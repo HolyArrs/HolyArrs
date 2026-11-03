@@ -455,7 +455,7 @@
 						{:else if tested[w]}<p class="notice warn" role="status">{tested[w]?.text}</p>
 						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested yet. Save runs the test; you can save even if it fails.</p>{/if}
 					{/if}
-					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Change them on Users and roles.">
+					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Someone the server limits (a Plex managed user, a parental rating) joins as a Kid, up to PG. Change them on Users and roles.">
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
 							<option value="nobody">Nobody new; only people already linked</option>
 							<option value="list">Only the names or emails below</option>

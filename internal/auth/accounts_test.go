@@ -461,6 +461,8 @@ type fakePlex struct {
 	confirmed atomic.Bool
 	server    string
 	calls     atomic.Int32
+	// restricted makes the signed-in Plex account a managed (restricted) one.
+	restricted atomic.Bool
 }
 
 func newFakePlex(t *testing.T) *fakePlex {
@@ -487,7 +489,7 @@ func newFakePlex(t *testing.T) *fakePlex {
 			http.Error(w, "no", 401)
 			return
 		}
-		_, _ = w.Write([]byte(`{"id":4242,"uuid":"u","username":"kidplex","email":"kid@example.test"}`))
+		_, _ = fmt.Fprintf(w, `{"id":4242,"uuid":"u","username":"kidplex","email":"kid@example.test","restricted":%t}`, p.restricted.Load())
 	})
 	m.HandleFunc("GET /api/v2/resources", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = fmt.Fprintf(w, `[{"clientIdentifier":%q,"provides":"server"}]`, p.server)
@@ -595,6 +597,8 @@ func fakeMediaServer(t *testing.T, logouts *atomic.Int32) *httptest.Server {
 		switch {
 		case b.Username == "mum" && b.Pw == "right":
 			_, _ = w.Write([]byte(`{"User":{"Id":"abc123","Name":"Mum","Policy":{"IsDisabled":false}},"AccessToken":"tok"}`))
+		case b.Username == "kiddo" && b.Pw == "right":
+			_, _ = w.Write([]byte(`{"User":{"Id":"kid9","Name":"Kiddo","Policy":{"IsDisabled":false,"MaxParentalRating":10}},"AccessToken":"tok"}`))
 		case b.Username == "off" && b.Pw == "right":
 			_, _ = w.Write([]byte(`{"User":{"Id":"off1","Name":"off","Policy":{"IsDisabled":true}},"AccessToken":"tok"}`))
 		default:
@@ -735,4 +739,82 @@ func TestResetOwnerTurnsOffTwoFactor(t *testing.T) {
 	if resp.StatusCode != 200 || strings.Contains(out, "ticket") {
 		t.Fatalf("after reset-owner: %d %s", resp.StatusCode, out)
 	}
+}
+
+// route: POST /api/v1/auth/plex/finish
+// route: POST /api/v1/auth/media-server/{kind}
+// #140: a person the media server limits (a Plex restricted user, a
+// Jellyfin or Emby parental rating) joins as a Kid, up to PG and asks only.
+// While sign-in is skipped at home no Kid can join, so the join is refused.
+func TestLimitedMediaServerAccountsJoinAsKids(t *testing.T) {
+	kidMe := func(t *testing.T, me string) {
+		t.Helper()
+		if !strings.Contains(me, `"max_rating":"PG"`) || !strings.Contains(me, `"role":"member"`) {
+			t.Fatalf("not a Kid: %s", me)
+		}
+	}
+	t.Run("plex", func(t *testing.T) {
+		p := newFakePlex(t)
+		p.restricted.Store(true)
+		f := gated(t, Options{PlexURL: p.srv.URL, PlexAppURL: "https://app.example.test"})
+		own := ownerOf(t, f)
+		own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"server_id":"machine-1","join":"everyone"},"confirm_everyone":true}`)
+		c, code, out := plexSignIn(t, f, p)
+		if code != 200 {
+			t.Fatalf("plex sign-in: %d %s", code, out)
+		}
+		_, me := call(t, c, "GET", f.srv.URL+"/api/v1/auth/me", "", nil)
+		kidMe(t, me)
+		var perms string
+		_ = f.s.Read().QueryRow("SELECT perms FROM users WHERE name = 'kidplex'").Scan(&perms)
+		if perms != `["ask"]` {
+			t.Fatalf("kid perms %s", perms)
+		}
+	})
+	for _, kind := range []string{"jellyfin", "emby"} {
+		t.Run(kind, func(t *testing.T) {
+			var logouts atomic.Int32
+			ms := fakeMediaServer(t, &logouts)
+			f := gated(t, Options{})
+			own := ownerOf(t, f)
+			own.do(t, f, "PUT", "/api/v1/auth/settings", `{"`+kind+`":{"on":true,"url":"`+ms.URL+`/","join":"everyone"},"confirm_everyone":true}`)
+			login := func(name string) (*http.Client, int, string) {
+				c := client(t)
+				b, _ := json.Marshal(map[string]string{"name": name, "password": "right"})
+				resp, out := call(t, c, "POST", f.srv.URL+"/api/v1/auth/media-server/"+kind, string(b), nil)
+				return c, resp.StatusCode, out
+			}
+			c, code, out := login("kiddo")
+			if code != 200 {
+				t.Fatalf("kid sign-in: %d %s", code, out)
+			}
+			_, me := call(t, c, "GET", f.srv.URL+"/api/v1/auth/me", "", nil)
+			kidMe(t, me)
+			// An unlimited account still joins as a plain member.
+			c, _, _ = login("mum")
+			if _, me := call(t, c, "GET", f.srv.URL+"/api/v1/auth/me", "", nil); strings.Contains(me, `"max_rating":"PG"`) {
+				t.Fatalf("adult became a Kid: %s", me)
+			}
+		})
+	}
+	t.Run("skip local sign-in refuses", func(t *testing.T) {
+		var logouts atomic.Int32
+		ms := fakeMediaServer(t, &logouts)
+		f := gated(t, Options{})
+		own := ownerOf(t, f)
+		own.do(t, f, "PUT", "/api/v1/auth/settings", `{"jellyfin":{"on":true,"url":"`+ms.URL+`/","join":"everyone"},"confirm_everyone":true}`)
+		if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`); resp.StatusCode != 200 {
+			t.Fatalf("skip local: %d %s", resp.StatusCode, out)
+		}
+		b, _ := json.Marshal(map[string]string{"name": "kiddo", "password": "right"})
+		resp, out := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/media-server/jellyfin", string(b), nil)
+		if resp.StatusCode != 403 || !strings.Contains(out, "limited") {
+			t.Fatalf("kid joined with local sign-in skipped: %d %s", resp.StatusCode, out)
+		}
+		var n int
+		_ = f.s.Read().QueryRow("SELECT count(*) FROM users WHERE max_rating != ''").Scan(&n)
+		if n != 0 {
+			t.Fatalf("%d Kids made", n)
+		}
+	})
 }

@@ -286,9 +286,14 @@ func allowed(v WayView, names ...string) bool {
 
 var errNotAllowed = errors.New("not allowed to join")
 var errDisabled = errors.New("account disabled")
+var errKidJoinSkip = errors.New("kid join while skipping local sign-in")
 
-// linkedUser finds or makes the user for an outside account.
-func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin bool) (int64, string, error) {
+// linkedUser finds or makes the user for an outside account. kid says the
+// outside account is limited there (a Plex restricted user, a Jellyfin or
+// Emby parental rating): a new person then joins as a Kid, up to PG and
+// asks only, the same as an import of that account (#140). The owner can
+// change the limit later on Users and roles.
+func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin, kid bool) (int64, string, error) {
 	var id int64
 	var name, state string
 	err := a.s.Read().QueryRowContext(ctx, `SELECT u.id, u.name, u.state FROM user_links l JOIN users u ON u.id = l.user_id
@@ -304,6 +309,10 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 	}
 	if !mayJoin {
 		return 0, "", errNotAllowed
+	}
+	// With sign-in skipped at home, anyone there is the owner: no Kids.
+	if kid && a.skipLocal.Load() {
+		return 0, "", errKidJoinSkip
 	}
 	base := strings.TrimSpace(extName)
 	if base == "" {
@@ -323,8 +332,11 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 			name = fmt.Sprintf("%s-%d", base, i)
 		}
 		var err error
-		id, err = store.Insert(tx, "users", &domain.User{Name: name, Role: RoleMember, State: "active",
-			Perms: permsJSON(DefaultPerms(RoleMember))}, domain.System)
+		u := &domain.User{Name: name, Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}
+		if kid {
+			u.Perms, u.MaxRating = permsJSON([]Perm{PermAsk}), "PG"
+		}
+		id, err = store.Insert(tx, "users", u, domain.System)
 		if err != nil {
 			return err
 		}
@@ -333,7 +345,11 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		return err
 	})
 	if err == nil {
-		log.Printf("auth: %s account joined as member %q (%d)", provider, name, id)
+		as := "member"
+		if kid {
+			as = "kid"
+		}
+		log.Printf("auth: %s account joined as %s %q (%d)", provider, as, name, id)
 	}
 	return id, name, err
 }
@@ -346,6 +362,9 @@ func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider stri
 		fail(w, http.StatusForbidden, "this account is not allowed in yet; ask the owner")
 	case errors.Is(err, errDisabled):
 		fail(w, http.StatusForbidden, "this account is turned off; ask the owner")
+	case errors.Is(err, errKidJoinSkip):
+		log.Printf("auth: limited %s account not joined while local sign-in is skipped, from %s", provider, r.RemoteAddr)
+		fail(w, http.StatusForbidden, "this account is limited on the media server, and HolyArrs can't take limited accounts while sign-in is skipped at home; ask the owner")
 	case err != nil:
 		serverError(w, provider+" sign-in", err)
 	default:
@@ -487,6 +506,8 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		UUID     string `json:"uuid"`
 		Username string `json:"username"`
 		Email    string `json:"email"`
+		// Restricted is a Plex managed or restricted user.
+		Restricted bool `json:"restricted"`
 	}
 	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/user", hdr, nil, &user)
 	if err != nil || code/100 != 2 || user.ID == 0 {
@@ -519,7 +540,7 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 			return x.ClientIdentifier == v.ServerID && !x.Owned
 		})
 	}
-	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin)
+	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin, user.Restricted)
 	a.outsideDone(w, r, ProviderPlex, id, name, err)
 }
 
@@ -623,6 +644,8 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 			Name   string `json:"Name"`
 			Policy struct {
 				IsDisabled bool `json:"IsDisabled"`
+				// MaxParentalRating is set when the server limits this person.
+				MaxParentalRating *int `json:"MaxParentalRating"`
 			} `json:"Policy"`
 		} `json:"User"`
 		AccessToken string `json:"AccessToken"`
@@ -657,6 +680,6 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	delete(a.fails, ipKey)
 	delete(a.fails, userKey)
 	a.mu.Unlock()
-	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name))
+	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)
 	a.outsideDone(w, r, kind, id, name, err)
 }
