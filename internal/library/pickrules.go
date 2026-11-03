@@ -91,11 +91,23 @@ func pickRulesUse(ctx context.Context, q reader, id int64) (Use, map[string]bool
 	if err := rows.Err(); err != nil {
 		return u, nil, err
 	}
-	if err := q.QueryRowContext(ctx, `SELECT count(*) FROM outside_lists WHERE pick_rules_id = ?`, id).Scan(&u.OutsideLists); err != nil {
+	// Outside lists add movies or shows: each list counts with its own kind.
+	rows, err = q.QueryContext(ctx, `SELECT title_kind FROM outside_lists WHERE pick_rules_id = ?`, id)
+	if err != nil {
 		return u, nil, err
 	}
-	if u.OutsideLists > 0 {
-		kinds["movie"] = true // Outside lists add movies
+	for rows.Next() {
+		var k string
+		if err := rows.Scan(&k); err != nil {
+			rows.Close()
+			return u, nil, err
+		}
+		u.OutsideLists++
+		kinds[k] = true
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return u, nil, err
 	}
 	rows, err = q.QueryContext(ctx, `SELECT grp, key FROM settings WHERE value = ? AND key IN
 		('ask_pick_rules_id', 'ask_show_pick_rules_id', 'ask_music_pick_rules_id', 'movie_pick_rules_id', 'show_pick_rules_id')`, strconv.FormatInt(id, 10))

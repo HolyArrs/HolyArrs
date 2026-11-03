@@ -12,10 +12,12 @@ const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 // Each list keeps its own season choice; Never-add shows are skipped; a list
 // with Search when added looks for the new show's episodes. The lists use
 // the 4K Pick rules, so the fake Source's Releases are all turned away and
-// nothing downloads. Everything made here is taken away again at the end.
+// nothing downloads. Everything made here (lists, shows, the Never-add
+// entry, a show folder it had to make) is taken away in afterAll through the
+// API, so a failed test leaves nothing behind for the specs after it.
 test.describe.configure({ mode: 'serial' });
 
-type Call = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) => Promise<APIResponse>;
+type Call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<APIResponse>;
 
 async function api(page: Page): Promise<Call> {
 	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
@@ -30,11 +32,38 @@ async function show(call: Call, name: string): Promise<TitleRow | undefined> {
 	return t && ((await (await call('GET', `/titles/${t.id}`)).json()) as TitleRow);
 }
 
+/** searchesFor counts the searches (queued, running or done) for one title. */
+async function searchesFor(call: Call, titleId: number | undefined): Promise<number> {
+	type Search = { title_id?: number };
+	const { running, recent } = (await (await call('GET', '/searches?limit=100')).json()) as { running: Search[]; recent: Search[] };
+	return [...running, ...recent].filter((s) => s.title_id === titleId).length;
+}
+
+/** noSearchFor checks for a few seconds that no search starts for a title. */
+async function noSearchFor(titleId: number | undefined) {
+	for (let i = 0; i < 5; i++) {
+		expect(await searchesFor(call, titleId), 'no search without Search when added').toBe(0);
+		await page.waitForTimeout(1000);
+	}
+}
+
+/** removeShow takes a show out of the Library, trying again while its scan or search still runs. */
+async function removeShow(call: Call, name: string) {
+	const t = await show(call, name);
+	if (!t) return;
+	await expect
+		.poll(async () => (await call('POST', `/titles/${t.id}/delete`, { delete_files: true, never_add: false, apply: true })).ok(), { timeout: 30_000 })
+		.toBe(true);
+}
+
 /** kept says which seasons of a show are kept up to date, as "1:on 2:off". */
 const kept = (t: TitleRow | undefined) => (t?.show?.seasons ?? []).map((s) => `${s.number}:${s.keep_up_to_date ? 'on' : 'off'}`).join(' ');
 
 let page: Page;
 let call: Call;
+// A show folder this spec made, taken away again at the end.
+let madeFolder = 0;
+const listNames = ['Lab shows', 'Trakt picks', 'Nothing kept'];
 
 test.beforeAll(async ({ browser }) => {
 	page = await (await browser.newContext()).newPage();
@@ -46,14 +75,17 @@ test.beforeAll(async ({ browser }) => {
 		mkdirSync(join(tmp, 'shows'), { recursive: true });
 		const made = await call('POST', '/library-folders', { path: join(tmp, 'shows'), kind: 'show', label: 'Shows' });
 		expect(made.status(), await made.text()).toBe(201);
+		madeFolder = ((await made.json()) as { id: number }).id;
 	}
 });
 
 test.afterAll(async () => {
-	for (const name of ['Bellwether Ferry', 'Rookery Dial']) {
-		const t = await show(call, name);
-		if (t) await call('POST', `/titles/${t.id}/delete`, { delete_files: true, never_add: false, apply: true });
-	}
+	const { outside_lists } = (await (await call('GET', '/outside-lists')).json()) as { outside_lists: { id: number; name: string }[] };
+	for (const l of outside_lists.filter((x) => listNames.includes(x.name))) await call('DELETE', `/outside-lists/${l.id}`);
+	const { never_add } = (await (await call('GET', '/never-add')).json()) as { never_add: { id: number; name: string }[] };
+	for (const n of never_add.filter((x) => x.name === 'Cinder Lane')) await call('DELETE', `/never-add/${n.id}`);
+	for (const name of ['Bellwether Ferry', 'Rookery Dial']) await removeShow(call, name).catch(() => {});
+	if (madeFolder) await call('DELETE', `/library-folders/${madeFolder}`);
 	await page.close();
 });
 
@@ -98,16 +130,7 @@ test('a TMDB show list adds its shows with the first season kept, skips the Neve
 	expect(await show(call, 'Cinder Lane')).toBeUndefined();
 
 	// Search when added: once its folder is scanned, season 1 is looked for at the Source.
-	type Search = { title_id?: number; kind: string };
-	await expect
-		.poll(
-			async () => {
-				const { running, recent } = (await (await call('GET', '/searches?limit=100')).json()) as { running: Search[]; recent: Search[] };
-				return [...running, ...recent].filter((s) => s.title_id === ferry?.id).length;
-			},
-			{ timeout: 30_000 }
-		)
-		.toBeGreaterThan(0);
+	await expect.poll(async () => searchesFor(call, ferry?.id), { timeout: 30_000 }).toBeGreaterThan(0);
 
 	await page.goto('/library');
 	const item = (name: string) => page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: name });
@@ -128,6 +151,21 @@ test('a Trakt show list adds a show by its TVDB id with the latest season kept, 
 	const rookery = await show(call, 'Rookery Dial');
 	expect(rookery?.why_added).toBe('list');
 	expect(kept(rookery)).toBe('1:off 2:on');
+	// Search when added is off: the new show's folder is scanned, nothing is looked for.
+	await noSearchFor(rookery?.id);
+});
+
+test('a show list with no seasons kept adds the show with every season off', async () => {
+	// Take the show the first list added out again, so this list adds it anew.
+	await removeShow(call, 'Bellwether Ferry');
+	await page.goto('/settings/outside-lists');
+	await addList('Nothing kept', 'tmdb_list', '104', 'none', false);
+	const row = page.getByTestId('outside-list').filter({ hasText: 'Nothing kept' });
+	await expect(row.getByTestId('list-result')).toContainText('2 on the list, 1 added', { timeout: 20_000 });
+	await expect(row.getByTestId('list-result')).toContainText('1 on the Never-add list');
+	const ferry = await show(call, 'Bellwether Ferry');
+	expect(kept(ferry)).toBe('1:off 2:off 3:off');
+	await noSearchFor(ferry?.id);
 });
 
 test('change a show list, then remove both lists and take the show off the Never-add list', async () => {
@@ -146,7 +184,7 @@ test('change a show list, then remove both lists and take the show off the Never
 	const { outside_lists } = (await (await call('GET', '/outside-lists')).json()) as { outside_lists: { name: string; seasons: string; new_seasons: string }[] };
 	expect(outside_lists.find((l) => l.name === 'Lab shows')).toMatchObject({ seasons: 'future', new_seasons: 'all' });
 
-	for (const name of ['Lab shows', 'Trakt picks']) {
+	for (const name of listNames) {
 		page.once('dialog', (d) => d.accept());
 		await page.getByTestId('outside-list').filter({ hasText: name }).getByRole('button', { name: 'Remove' }).click();
 		await expect(page.getByTestId('outside-list').filter({ hasText: name })).toHaveCount(0);

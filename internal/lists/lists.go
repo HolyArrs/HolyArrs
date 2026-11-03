@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -33,6 +34,7 @@ var (
 	ErrEvery      = errors.New("sync_every_hours must be between 6 and 168")
 	ErrTitleKind  = errors.New("title_kind must be movie or show")
 	ErrSeasons    = errors.New("seasons must be all, future, latest, first or none, and new_seasons all or none")
+	ErrRulesKind  = errors.New("those Pick rules are not for this kind of list: pick rules made for its movies or shows")
 	ErrNoTraktKey = errors.New("add your Trakt key (the client id of your Trakt app) in Outside lists settings first")
 )
 
@@ -98,7 +100,11 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 	if err != nil {
 		return err
 	}
+	// A change that leaves title_kind out keeps what the list adds.
 	kind := in.TitleKind
+	if kind == "" {
+		kind = l.TitleKind
+	}
 	if kind == "" {
 		kind = "movie"
 	}
@@ -110,8 +116,8 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 		if seasons == "" {
 			seasons = library.SeasonsAll
 		}
-		if newSeasons == "" {
-			newSeasons = "all"
+		if newSeasons == "" || seasons == library.SeasonsFuture {
+			newSeasons = "all" // future only keeps every season to come, as when adding by hand
 		}
 		if (!library.ValidSeasonChoice(seasons) && seasons != SeasonsFirst) || (newSeasons != "all" && newSeasons != "none") {
 			return ErrSeasons
@@ -152,12 +158,14 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 	}
 	var rules *int64
 	if in.PickRulesID != 0 {
-		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM pick_rules WHERE id = ?", in.PickRulesID).Scan(&n); err != nil {
+		var pr domain.PickRules
+		if err := store.Get(ctx, tx, "pick_rules", in.PickRulesID, &pr); errors.Is(err, store.ErrNotFound) {
+			return library.ErrNoPickRules
+		} else if err != nil {
 			return err
 		}
-		if n == 0 {
-			return library.ErrNoPickRules
+		if !slices.Contains(pr.Kinds, kind) {
+			return ErrRulesKind
 		}
 		id := in.PickRulesID
 		rules = &id

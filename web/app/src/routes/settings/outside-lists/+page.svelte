@@ -260,17 +260,17 @@
 			</Field>
 			{#if titleKind === 'show'}
 				<Field id="ol-seasons" label="Seasons to keep up to date">
-					<select id="ol-seasons" class="input" bind:value={seasons}>
+					<select id="ol-seasons" class="input" bind:value={seasons} aria-describedby="ol-seasons-hint">
 						{#each listSeasons as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
-					<span class="hint">{listSeasons.find(([v]) => v === seasons)?.[2]}</span>
+					<span class="hint" id="ol-seasons-hint">{listSeasons.find(([v]) => v === seasons)?.[2]}</span>
 				</Field>
 				<Field id="ol-new" label="New seasons">
-					<select id="ol-new" class="input" bind:value={newSeasons} disabled={seasons === 'future'}>
+					<select id="ol-new" class="input" bind:value={newSeasons} disabled={seasons === 'future'} aria-describedby="ol-new-hint">
 						<option value="all">Keep them up to date</option>
 						<option value="none">Leave them off</option>
 					</select>
-					<span class="hint">{seasons === 'future' ? 'Future seasons only keeps new seasons up to date.' : 'What happens to a season that comes out later.'}</span>
+					<span class="hint" id="ol-new-hint">{seasons === 'future' ? 'Future seasons only keeps new seasons up to date.' : 'What happens to a season that comes out later.'}</span>
 				</Field>
 			{/if}
 			<Field id="ol-hours" label="Read every (hours)" hint="Between 6 hours and a week. Saving reads the list once straight away.">

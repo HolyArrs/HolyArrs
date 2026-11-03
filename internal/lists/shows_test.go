@@ -153,6 +153,26 @@ func TestShowListInputChecks(t *testing.T) {
 	if err != nil || m.LastSyncedAt != nil || m.Seasons != library.SeasonsLatest || m.LibraryFolderID != lf.ID {
 		t.Fatalf("edit to shows %+v %v", m, err)
 	}
+	// A change without title_kind keeps the show list a show list.
+	m, err = Edit(ctx, e.s, m.ID, Input{Name: "Movies", Kind: KindTMDB, Ref: "61", Seasons: library.SeasonsFuture, NewSeasons: "none"}, domain.System)
+	if err != nil || m.TitleKind != "show" || m.Seasons != library.SeasonsFuture || m.NewSeasons != "all" {
+		t.Fatalf("edit without title_kind %+v %v", m, err)
+	}
+	// Pick rules must be made for what the list adds.
+	movieOnly, err := library.CreatePickRules(ctx, e.s, library.PickRulesInput{Name: "Movies only", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	showOnly, _ := library.CreatePickRules(ctx, e.s, library.PickRulesInput{Name: "Shows only", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System)
+	if _, err := Add(ctx, e.s, Input{Name: "Wrong rules", Kind: KindTMDB, Ref: "61", TitleKind: "show", PickRulesID: movieOnly.ID}, domain.System); !errors.Is(err, ErrRulesKind) {
+		t.Fatalf("movie rules on a show list: %v", err)
+	}
+	if _, err := Add(ctx, e.s, Input{Name: "Wrong rules", Kind: KindTMDB, Ref: "61", PickRulesID: showOnly.ID}, domain.System); !errors.Is(err, ErrRulesKind) {
+		t.Fatalf("show rules on a movie list: %v", err)
+	}
+	if _, err := Add(ctx, e.s, Input{Name: "Right rules", Kind: KindTMDB, Ref: "61", TitleKind: "show", PickRulesID: showOnly.ID}, domain.System); err != nil {
+		t.Fatalf("show rules on a show list: %v", err)
+	}
 	// No show folder yet: a show list cannot be saved.
 	e2 := setup(t)
 	if _, err := Add(ctx, e2.s, Input{Name: "Shows", Kind: KindTMDB, Ref: "61", TitleKind: "show"}, domain.System); !errors.Is(err, library.ErrNoShowFolder) {

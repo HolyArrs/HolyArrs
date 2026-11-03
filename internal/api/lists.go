@@ -47,7 +47,7 @@ func listError(w http.ResponseWriter, err error) {
 	case errors.Is(err, lists.ErrNameTaken), errors.Is(err, library.ErrNoShowFolder):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, lists.ErrName), errors.Is(err, lists.ErrKind), errors.Is(err, lists.ErrRef), errors.Is(err, lists.ErrEvery),
-		errors.Is(err, lists.ErrTitleKind), errors.Is(err, lists.ErrSeasons):
+		errors.Is(err, lists.ErrTitleKind), errors.Is(err, lists.ErrSeasons), errors.Is(err, lists.ErrRulesKind):
 		fail(w, http.StatusBadRequest, err.Error())
 	default:
 		libraryError(w, err)

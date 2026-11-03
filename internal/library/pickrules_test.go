@@ -212,3 +212,34 @@ func TestPickRulesUsesMatchesOneByOne(t *testing.T) {
 		t.Fatalf("only %d rules in use; the test needs several", used)
 	}
 }
+
+// TestPickRulesUsedByShowList: an Outside list counts with the kind it
+// adds. Show-only rules used by a show list stay editable, and rules for
+// movies and shows used by a show list cannot drop show.
+func TestPickRulesUsedByShowList(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	lf := addShowFolder(t, s)
+	showOnly, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Shows only", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System)
+	both, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Both", Kinds: []string{"movie", "show"}, Body: domain.GoodEveryday()}, domain.System)
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(fmt.Sprintf(`INSERT INTO outside_lists(created_at, created_by, updated_at, updated_by, name, kind, title_kind, ref, library_folder_id, pick_rules_id)
+			VALUES ('x', '{}', 'x', '{}', 'S1', 'tmdb_list', 'show', '1', %d, %d), ('x', '{}', 'x', '{}', 'S2', 'tmdb_list', 'show', '2', %d, %d)`, lf.ID, showOnly.ID, lf.ID, both.ID))
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u, err := PickRulesUse(ctx, s, showOnly.ID); err != nil || u.OutsideLists != 1 {
+		t.Fatalf("use %+v %v", u, err)
+	}
+	if _, err := UpdatePickRules(ctx, s, showOnly.ID, PickRulesInput{Name: "Shows only, renamed", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System); err != nil {
+		t.Fatalf("edit show-only rules used by a show list: %v", err)
+	}
+	if _, err := UpdatePickRules(ctx, s, both.ID, PickRulesInput{Name: "Both", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System); !errors.Is(err, ErrPickRulesInUse) {
+		t.Fatalf("dropped show while a show list uses it: %v", err)
+	}
+	if _, err := UpdatePickRules(ctx, s, both.ID, PickRulesInput{Name: "Both", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System); err != nil {
+		t.Fatalf("drop unused movie: %v", err)
+	}
+}

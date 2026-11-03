@@ -59,7 +59,7 @@ export const sections: Section[] = [
 	{ href: '/settings/sources', group: 'downloads', tint: 'blue', label: 'Sources', icon: 'source', about: 'Where HolyArrs looks for Releases.' },
 	{ href: '/settings/search', group: 'downloads', tint: 'indigo', label: 'Search', icon: 'search', about: 'How often feeds are checked, the nightly search and the early and fake guards.' },
 	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', label: 'Downloaders', icon: 'downloader', about: 'The apps that download for HolyArrs, and what happens when a download goes wrong.' },
-	{ href: '/settings/outside-lists', group: 'downloads', tint: 'teal', label: 'Outside lists', icon: 'inbox', about: 'TMDB and Trakt lists that add movies by themselves, and the Never-add list.' },
+	{ href: '/settings/outside-lists', group: 'downloads', tint: 'teal', label: 'Outside lists', icon: 'inbox', about: 'TMDB and Trakt lists that add movies and shows by themselves, and the Never-add list.' },
 
 	{ href: '/settings/users', group: 'users', tint: 'blue', label: 'Users and roles', icon: 'people', about: 'Invite family and friends, roles, permissions and devices.', need: 'users' },
 	{ href: '/settings/wishlist', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Weekly limits, and the folder and Pick rules approved asks get.' },
