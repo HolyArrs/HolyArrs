@@ -142,7 +142,7 @@ test('the API page: key, scopes, base address, examples and every route', async 
 	await page.goto('/settings');
 	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'API for other apps' }).click();
 	await expect(page.getByRole('heading', { name: 'API for other apps', level: 1 })).toBeVisible();
-	await expect(page.getByRole('link', { name: 'Settings > Sign-in > API keys' })).toHaveAttribute('href', '/settings/sign-in');
+	await expect(page.getByRole('link', { name: 'Sign-in and security' })).toHaveAttribute('href', '/settings/sign-in');
 	await expect(page.getByTestId('api-base')).toHaveText(/^http:\/\/127\.0\.0\.1:\d+\/api\/v1$/);
 	await expect(page.getByTestId('api-scopes')).toContainText('control');
 	expect(await page.getByTestId('api-op').count()).toBeGreaterThan(150);

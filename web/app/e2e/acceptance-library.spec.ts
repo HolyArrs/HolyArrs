@@ -126,7 +126,7 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await page.getByLabel('Wait between calls (ms)').fill('10');
 	await page.getByLabel('Calls per window, at most').fill('5000');
 	await page.getByLabel(/May reach the local network/).check();
-	await page.getByRole('button', { name: 'Save Subtitle site' }).click();
+	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const site = page.getByTestId('subtitle-site').filter({ hasText: 'Lab subtitle site' }).first();
 	await expect(site.getByTestId('subtitle-site-test')).toContainText('The site answered', { timeout: 15_000 });
 

@@ -65,6 +65,8 @@ test.beforeAll(async ({ browser }) => {
 
 test('Settings > Subtitles: English and Spanish become the default languages; the Pass marks say what they mean', async () => {
 	await page.goto('/settings');
+	// The side menu folds: open the Library group first.
+	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Library' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Subtitles' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Subtitles' })).toBeVisible();
 	const editor = page.getByTestId('wish-editor').first();
@@ -97,7 +99,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await page.getByLabel('Wait between calls (ms)').fill('10');
 	await page.getByLabel('Calls per window, at most').fill('5000');
 	await page.getByLabel(/May reach the local network/).check();
-	await page.getByRole('button', { name: 'Save Subtitle site' }).click();
+	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const lab = page.getByTestId('subtitle-site').filter({ hasText: 'Lab subtitle site' }).first();
 	await expect(lab.getByTestId('subtitle-site-state')).toHaveText('On');
 	await expect(lab.getByTestId('subtitle-site-test')).toContainText('The site answered', { timeout: 15_000 });
@@ -111,10 +113,10 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await expect(key).toHaveAttribute('type', 'password');
 	await page.getByRole('textbox', { name: 'Address' }).fill(siteURL);
 	await page.getByLabel(/May reach the local network/).check();
-	await page.getByRole('button', { name: 'Save Subtitle site' }).click();
+	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByRole('alert')).toContainText('needs your account');
 	await key.fill('xxxx-xxxx');
-	await page.getByRole('button', { name: 'Save Subtitle site' }).click();
+	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
 	const acct = page.getByTestId('subtitle-site').filter({ hasText: 'with an account' });
 	await expect(acct).toContainText('account saved');
 	await expect(acct.getByTestId('subtitle-site-test')).toContainText('The site answered', { timeout: 15_000 });

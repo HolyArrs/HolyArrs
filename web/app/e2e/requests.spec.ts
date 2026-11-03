@@ -38,11 +38,11 @@ test('the owner adds a Discord Alert and sends a test', async () => {
 	await own.goto('/settings/alerts');
 	await expect(own.getByRole('heading', { level: 1, name: 'Alerts' })).toBeVisible();
 	await expect(own.getByText('No Alerts yet')).toBeVisible();
-	await own.getByRole('button', { name: 'Add an Alert' }).click();
+	await own.getByRole('button', { name: 'Add an Alert' }).first().click();
 	await own.getByLabel('Name', { exact: true }).fill('Family Discord');
 	await own.getByLabel('Discord link').fill(`http://127.0.0.1:${discordPort}/api/webhooks/1/stand-in`);
 	await own.getByLabel('May reach the local network').check();
-	await own.getByRole('button', { name: 'Save Alert' }).click();
+	await own.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const row = own.getByTestId('alert');
 	await expect(row).toContainText('Family Discord');
 	await expect(row).toContainText('Someone asks · Approved · Declined · Ready');
@@ -68,7 +68,7 @@ test('a member asks for a movie from a phone and sees it on the Requests page', 
 
 	await kim.goto('/account');
 	await kim.getByLabel('Discord user id').fill(kimDiscord);
-	await kim.locator('section', { has: kim.getByRole('heading', { name: 'Alerts for you' }) }).getByRole('button', { name: 'Save' }).click();
+	await kim.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(kim.getByText('Saved where Alerts reach you.')).toBeVisible();
 
 	await kim.goto('/requests');

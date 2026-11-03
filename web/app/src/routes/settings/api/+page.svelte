@@ -5,6 +5,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -16,6 +17,7 @@
 	let ops = $state<ApiOp[]>([]);
 	let q = $state('');
 	let error = $state('');
+	let loading = $state(false);
 	let open = $state<string | null>(null);
 	const shown = $derived(groups(filterOps(ops, q)));
 	const base = $derived(typeof location === 'undefined' ? to('/api/v1') : `${location.origin}${to('/api/v1')}`);
@@ -35,14 +37,20 @@
 		}
 	}
 
-	onMount(async () => {
+	async function load() {
+		loading = true;
+		error = '';
 		try {
 			spec = await api.get<Spec>('/openapi.json');
 			ops = operations(spec);
 		} catch (e) {
 			error = message(e);
+		} finally {
+			loading = false;
 		}
-	});
+	}
+
+	onMount(load);
 </script>
 
 <svelte:head><title>API for other apps · HolyArrs</title></svelte:head>
@@ -56,7 +64,7 @@
 <div class="sc-form">
 <SettingsCard id="api-start" title="Start here">
 	<ol class="steps small">
-		<li>Make a key in <a href={to(`/settings/sign-in`)}>Settings > Sign-in > API keys</a>. Give it only the scopes it needs. The key is shown once; copy it then.</li>
+		<li>Make a key under API keys in <a href={to(`/settings/sign-in`)}>Sign-in and security</a>. The key is shown once; copy it then.</li>
 		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
 		<li>
 			The base address is
@@ -100,7 +108,7 @@
 <div data-testid="api-routes">
 	<SettingsCard id="api-routes" title="Every route">
 		{#if error}
-			<p class="form-error" role="alert">{error}</p>
+			<LoadError hasData={false} message={error} onretry={load} busy={loading} />
 		{:else if !spec}
 			<SkSettings rows={2} />
 		{:else}

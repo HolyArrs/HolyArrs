@@ -26,7 +26,7 @@ async function addDownloader(kind: 'qBittorrent' | 'SABnzbd', name: string, url:
 	await page.getByLabel('Address', { exact: true }).fill(url);
 	if (secret) await page.getByLabel(kind === 'SABnzbd' ? 'API key' : 'Password', { exact: true }).fill(secret);
 	if (category) await page.getByLabel('Category', { exact: true }).fill(category);
-	await page.getByRole('button', { name: 'Save Downloader' }).click();
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 }
 
 test('a SABnzbd is added and tested, a wrong key is said in plain words, it pauses and resumes', async () => {
@@ -43,7 +43,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	// A wrong key.
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('API key', { exact: true }).fill('not-the-key');
-	await page.getByRole('button', { name: 'Save Downloader' }).click();
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(r.getByTestId('downloader-test')).toContainText('turned down the key');
 	await expect(r.getByTestId('downloader-state')).toHaveText('Sign-in refused');
 
@@ -51,11 +51,11 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('API key', { exact: true }).fill(sabKey);
 	await page.getByLabel('Category', { exact: true }).fill('holyarrs');
-	await page.getByRole('button', { name: 'Save Downloader' }).click();
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(r.getByTestId('downloader-test')).toContainText('category does not exist in SABnzbd');
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('Category', { exact: true }).fill('movies');
-	await page.getByRole('button', { name: 'Save Downloader' }).click();
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
 
 	await r.getByRole('button', { name: 'Pause' }).click();
@@ -164,7 +164,7 @@ test('the Downloaders page and the Downloads screen pass the accessibility scan 
 	await p.goto('/settings/downloaders');
 	await expect(p.getByTestId('downloader').first()).toBeVisible();
 	await noSidewaysScroll(p);
-	await p.getByRole('button', { name: 'Add a Downloader' }).click();
+	await p.getByRole('button', { name: 'Add a Downloader' }).first().click();
 	await noSidewaysScroll(p);
 	await p.goto('/downloads');
 	await expect(p.getByTestId('dl-line').first()).toBeVisible();

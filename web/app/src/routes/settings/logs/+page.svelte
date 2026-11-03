@@ -5,6 +5,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -81,11 +82,14 @@
 	</div>
 </form>
 
-{#if error}
-	<p class="notice bad" role="alert">{error}</p>
-{:else if !result}
-	<SkSettings rows={3} />
+{#if !result}
+	{#if error}
+		<LoadError hasData={false} message={error} onretry={load} {busy} />
+	{:else}
+		<SkSettings rows={3} />
+	{/if}
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} {busy} />{/if}
 	<div data-testid="log-lines">
 		<SettingsCard title="Lines">
 			<p class="small muted" role="status">{pageWords(result, result.lines.length)}</p>

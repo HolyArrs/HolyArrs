@@ -6,6 +6,7 @@
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount, onDestroy } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -286,7 +287,7 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else if loadError}
-	<p class="notice bad" role="alert">{loadError}</p>
+	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<ol class="steps">
 		<li>

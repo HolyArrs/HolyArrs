@@ -83,7 +83,7 @@ async function verifyFieldMatrix(page: Page) {
 	await openAdd(page);
 	for (const item of kinds) {
 		await choose(page, item.label);
-		await expect(page.getByLabel('Sign-in name')).toHaveCount(item.username ? 1 : 0);
+		await expect(page.getByLabel('Username')).toHaveCount(item.username ? 1 : 0);
 		await expect(page.getByLabel('API key', { exact: true })).toHaveCount(item.secretLabel === 'API key' ? 1 : 0);
 		await expect(page.getByLabel('Password', { exact: true })).toHaveCount(item.secretLabel === 'Password' ? 1 : 0);
 		if (item.kind === 'deluge') await expect(page.getByText(/must already be connected to the intended daemon/)).toBeVisible();
@@ -100,7 +100,7 @@ async function addDownloader(page: Page, item: (typeof kinds)[number]) {
 	savedSecrets.set(item.kind, secret);
 	await page.getByLabel('Name', { exact: true }).fill(`UI ${item.label}`);
 	await page.getByLabel('Address', { exact: true }).fill('http://127.0.0.1:9');
-	if (item.username) await page.getByLabel('Sign-in name').fill(`user-${item.kind}`);
+	if (item.username) await page.getByLabel('Username').fill(`user-${item.kind}`);
 	await page.getByLabel(item.secretLabel, { exact: true }).fill(secret);
 	await page.getByLabel('Category', { exact: true }).fill(item.category);
 
@@ -108,7 +108,7 @@ async function addDownloader(page: Page, item: (typeof kinds)[number]) {
 		const request = response.request();
 		return request.method() === 'POST' && new URL(response.url()).pathname === '/api/v1/downloaders';
 	});
-	await page.getByRole('button', { name: 'Save Downloader' }).click();
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	const response = await responsePromise;
 	expect([200, 201]).toContain(response.status());
 	const body = (await response.json()) as { kind: Kind; username: string; secret: string };
@@ -129,7 +129,7 @@ async function editWithMaskedSecret(page: Page, item: (typeof kinds)[number], pr
 	if (!masked || masked === savedSecrets.get(item.kind)) throw new Error('stored secret was not masked in the edit form');
 	await page.getByLabel('Priority', { exact: true }).fill(String(priority));
 	const responsePromise = page.waitForResponse((response) => response.request().method() === 'PUT' && /\/api\/v1\/downloaders\/\d+$/.test(new URL(response.url()).pathname));
-	await page.getByRole('button', { name: 'Save Downloader' }).click();
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	const response = await responsePromise;
 	expect(response.status()).toBe(200);
 	const body = (await response.json()) as { priority: number; secret: string };

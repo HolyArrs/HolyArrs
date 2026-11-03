@@ -130,7 +130,7 @@ test('calendar: cards and list views with cinema, digital and disc dates', async
 
 test('alerts: add a webhook with Library moments, send a test, the receiver gets a signed message', async () => {
 	await page.goto('/settings/alerts');
-	await page.getByRole('button', { name: 'Add an Alert' }).click();
+	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Home server hook');
 	await page.getByLabel('Kind').selectOption('webhook');
 	await page.getByLabel('Webhook link').fill(`http://127.0.0.1:${discordPort}/hook`);
@@ -140,7 +140,7 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 	await expect(page.getByTestId('moments-requests').getByRole('checkbox', { name: /Someone asks/ })).not.toBeChecked();
 	await expect(page.getByTestId('moments-library').getByRole('checkbox', { name: /Sent to download/ })).toBeChecked();
 	await page.getByRole('checkbox', { name: /May reach the local network/ }).check();
-	await page.getByRole('button', { name: 'Save Alert' }).click();
+	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const card = page.getByTestId('alert').filter({ hasText: 'Home server hook' });
 	await expect(card).toContainText('Webhook');
 	await expect(card).toContainText('Sent to download · In the Library · Renamed');
@@ -163,7 +163,7 @@ test('media servers: add Jellyfin, test it, a wrong key is said plainly', async 
 	await page.goto('/settings');
 	await page.getByRole('link', { name: 'Media servers' }).first().click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Media servers' })).toBeVisible();
-	await page.getByRole('button', { name: 'Add a media server' }).click();
+	await page.getByRole('button', { name: 'Add a media server' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Lab Jellyfin');
 	await page.getByLabel('Kind').selectOption('jellyfin');
 	await page.getByLabel('Address').fill(`http://127.0.0.1:${jellyfinPort}`);

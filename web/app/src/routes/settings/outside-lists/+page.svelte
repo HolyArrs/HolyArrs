@@ -10,7 +10,8 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { dateTime } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { every, listKinds, listLink } from '#lib/lists.ts';
 	import type { LibraryFolder, NeverAddEntry, OutsideList, PickRulesView } from '#lib/types.ts';
 
@@ -19,6 +20,7 @@
 	let rules = $state<PickRulesView[]>([]);
 	let never = $state<NeverAddEntry[]>([]);
 	let loaded = $state(false);
+	let hasData = $state(false);
 	let error = $state('');
 	let busyId = $state<number | null>(null);
 
@@ -69,6 +71,7 @@
 			rules = r.pick_rules;
 			never = n.never_add;
 			traktMasked = (await api.get<{ key: string }>('/settings/trakt-key')).key;
+			hasData = true;
 			error = '';
 		} catch (e) {
 			error = message(e);
@@ -203,13 +206,13 @@
 
 <PageHeader title="Outside lists">
 	{#snippet actions()}
-		{#if !formOpen && loaded && !error}<Button icon="plus" variant="primary" type="button" onclick={() => openForm()}>Add a list</Button>{/if}
+		{#if !formOpen && loaded && hasData && lists.length}<Button icon="plus" variant="primary" type="button" onclick={() => openForm()}>Add a list</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 {#if formOpen}
-	<form class="sc-form" onsubmit={save} aria-label={editId === null ? 'New Outside list' : `Change ${name}`}>
-		<SettingsCard title={editId === null ? 'New Outside list' : `Change ${name}`}>
+	<form class="sc-form" onsubmit={save} aria-label={editId === null ? 'Add a list' : `Change ${name}`}>
+		<SettingsCard title={editId === null ? 'Add a list' : `Change ${name}`}>
 			<Field id="ol-name" label="Name">
 				<input id="ol-name" class="input" bind:value={name} maxlength="80" required placeholder="Family favourites" />
 			</Field>
@@ -246,12 +249,12 @@
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={enabled} />
-				<span><b>On</b><br /><span class="hint">Off keeps the list but stops reading it.</span></span>
+				<span><b>Read this list</b><br /><span class="hint">Off keeps the list but stops reading it.</span></span>
 			</label>
 			{#if kind === 'trakt_list' && !traktMasked}<p class="notice warn">Add your Trakt key below first, or this list cannot be read.</p>{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={saving || movieFolders.length === 0} aria-busy={saving}>Save list</Button>
+				<Button variant="primary" type="submit" disabled={saving || movieFolders.length === 0} aria-busy={saving}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (formOpen = false)}>Cancel</Button>
 			</div>
 		</SettingsCard>
@@ -260,14 +263,12 @@
 
 {#if !loaded}
 	<SkSettings rows={2} />
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+{:else if !hasData}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if lists.length === 0 && !formOpen}
-		<EmptyState icon="source" title="No Outside lists yet">
-			<p>Add a TMDB or Trakt list and its movies come into your Library by themselves.</p>
-			{#snippet actions()}<Button variant="primary" type="button" onclick={() => openForm()}>Add a list</Button>{/snippet}
-		</EmptyState>
+		<EmptyState icon="inbox" title="No Outside lists yet" text="Add a TMDB or Trakt list and its movies come into your Library by themselves." action={{ label: 'Add a list', onclick: () => openForm(), icon: 'plus' }} />
 	{:else if lists.length}
 		<ul class="card rows" aria-label="Outside lists">
 			{#each lists as l (l.id)}
@@ -291,7 +292,7 @@
 						{#if l.last_error}<p class="small bad-text" role="status">{l.last_error}</p>{/if}
 					</div>
 					<div class="row acts">
-						<Button icon="refresh" type="button" onclick={() => syncNow(l)} disabled={busyId === l.id || !l.enabled}>Read now</Button>
+						<Button icon="refresh" type="button" onclick={() => syncNow(l)} disabled={busyId === l.id || !l.enabled} aria-busy={busyId === l.id}>Read now</Button>
 						<Button variant="plain" type="button" onclick={() => openForm(l)}>Change</Button>
 						<Button variant="plain" type="button" onclick={() => remove(l)} disabled={busyId === l.id}>Remove</Button>
 					</div>
@@ -313,7 +314,7 @@
 				<input id="trakt" class="input mono" type="password" bind:value={traktKey} autocomplete="off" spellcheck="false" />
 			</Field>
 			{#if traktError}<p class="form-error" role="alert">{traktError}</p>{/if}
-			<Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>Save the Trakt key</Button>
+			<Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>Save</Button>
 		</form>
 	</section>
 
@@ -329,7 +330,7 @@
 				<label for="na-reason">Why <span class="muted">(optional)</span></label>
 				<input id="na-reason" class="input" bind:value={naReason} maxlength="200" />
 			</div>
-			<Button type="submit">Add to the Never-add list</Button>
+			<div class="na-act"><Button type="submit">Add to the Never-add list</Button></div>
 		</form>
 		{#if naError}<p class="form-error" role="alert">{naError}</p>{/if}
 		{#if never.length}
@@ -365,13 +366,12 @@
 		text-decoration: underline;
 	}
 	.bad-text {
-		color: var(--fail);
+		color: var(--fail-text);
 	}
 	.never-form {
-		display: grid;
-		grid-template-columns: 160px 1fr 1fr auto;
-		gap: var(--s-3);
-		align-items: end;
+		margin-top: var(--s-4);
+	}
+	.na-act {
 		margin-top: var(--s-4);
 	}
 	.never li {
@@ -389,9 +389,6 @@
 		}
 		.acts {
 			flex-wrap: wrap;
-		}
-		.never-form {
-			grid-template-columns: 1fr;
 		}
 	}
 </style>

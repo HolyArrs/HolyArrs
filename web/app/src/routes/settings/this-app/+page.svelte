@@ -6,6 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Table from '#lib/ui/Table.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -228,10 +229,43 @@
 		}
 	}
 
+	// URL base: the path HolyArrs lives under behind a reverse proxy. A saved
+	// base applies on the next start, unless HOLYARRS_URL_BASE or -url-base is set.
+	let urlBase = $state<{ saved: string; in_use: string; restart_needed: boolean } | null>(null);
+	let urlBaseTyped = $state('');
+	let urlBaseBusy = $state(false);
+	let urlBaseErr = $state('');
+	let urlBaseGone = $state(false);
+	async function loadURLBase() {
+		try {
+			urlBase = await api.get<{ saved: string; in_use: string; restart_needed: boolean }>('/settings/url-base');
+			urlBaseTyped = urlBase.saved;
+		} catch (err) {
+			// An older server without the setting: no card rather than an error.
+			if (err instanceof ApiError && err.status === 404) urlBaseGone = true;
+			else urlBaseErr = message(err);
+		}
+	}
+	async function saveURLBase(e: SubmitEvent) {
+		e.preventDefault();
+		urlBaseBusy = true;
+		urlBaseErr = '';
+		try {
+			urlBase = await api.put<{ saved: string; in_use: string; restart_needed: boolean }>('/settings/url-base', { url_base: urlBaseTyped.trim() });
+			urlBaseTyped = urlBase.saved;
+			toasts.push(urlBase.restart_needed ? 'URL base saved. Restart HolyArrs to use it.' : 'URL base saved.', 'ok');
+		} catch (err) {
+			urlBaseErr = message(err);
+		} finally {
+			urlBaseBusy = false;
+		}
+	}
+
 	onMount(() => {
 		void load();
 		if (session.s.role === 'owner') void loadTrakt();
 		if (session.can('settings')) void loadAutoplay();
+		if (session.can('settings')) void loadURLBase();
 		if (session.s.role === 'owner') void loadTitleStats();
 		const t = setInterval(load, 30000);
 		const offs = [live.on('health', load)];
@@ -246,11 +280,12 @@
 
 <PageHeader title="This app" />
 
-{#if error}
-	<p class="notice bad" role="alert">{error}</p>
+{#if error && !health}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if !health}
 	<SkSettings rows={3} />
 {:else}
+	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<section class="card" id="h-about-card" aria-labelledby="h-about">
 		<div class="card-head">
 			<h2 id="h-about" class="h2">HolyArrs</h2>
@@ -426,6 +461,19 @@
 		</SettingsCard>
 	</div>
 
+	{#if session.can('settings') && !urlBaseGone}
+		<SettingsCard id="url-base-card" title="URL base" description="The path HolyArrs lives under behind a reverse proxy, for example /holyarrs. Leave it empty to use the whole address.">
+			<form class="sc-urlbase" onsubmit={saveURLBase} data-testid="url-base">
+				<Field id="url-base" label="URL base" hint={urlBase ? `In use now: ${urlBase.in_use || 'none'}` : undefined}>
+					<input id="url-base" class="input mono" bind:value={urlBaseTyped} placeholder="/holyarrs" autocomplete="off" spellcheck="false" maxlength="200" />
+				</Field>
+				{#if urlBase?.restart_needed}<p class="notice warn" role="status">Restart HolyArrs to use it. A URL base set when HolyArrs starts (HOLYARRS_URL_BASE or -url-base) wins over this one.</p>{/if}
+				{#if urlBaseErr}<p class="form-error" role="alert">{urlBaseErr}</p>{/if}
+				<div class="row acts"><Button variant="primary" type="submit" disabled={!urlBase || urlBaseTyped.trim() === urlBase.saved} aria-busy={urlBaseBusy}>Save</Button></div>
+			</form>
+		</SettingsCard>
+	{/if}
+
 	{#if session.s.role === 'owner'}
 		<section class="card" id="trakt-reviews-card" aria-labelledby="h-trakt-reviews" data-testid="trakt-reviews-setting">
 			<div class="card-head">
@@ -443,7 +491,7 @@
 					<input id="trakt-token" class="input mono" type="password" bind:value={traktVip} autocomplete="off" spellcheck="false" />
 				</Field>
 				{#if traktErr}<p class="form-error" role="alert">{traktErr}</p>{/if}
-				<Button type="submit" disabled={traktBusy} aria-busy={traktBusy}>Save Trakt</Button>
+				<Button type="submit" disabled={traktBusy} aria-busy={traktBusy}>Save</Button>
 			</form>
 		</section>
 	{/if}

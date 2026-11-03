@@ -3,6 +3,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/rating-picks.svelte.ts';
 	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/about-picks.svelte.ts';
 	const aboutGroups = ['Information', 'Production', 'Links', 'Ratings', 'Feel'] as const;
@@ -40,7 +41,7 @@
 		{/each}
 	</ul>
 	<p class="hint">Up to three, shown next to the year at the top of a title page; every source is listed in Ratings at the bottom. Turn them all off for no scores at the top. While you keep the default three, a title missing one shows the next score it has instead.</p>
-	{#if !isDefault}<button type="button" class="btn ghost" onclick={resetRatingPicks}>Back to the default three</button>{/if}
+	{#if !isDefault}<Button variant="plain" size="sm" onclick={resetRatingPicks}>Back to the default three</Button>{/if}
 </SettingsCard>
 
 <SettingsCard id="about-card" title="About on title pages" description="Which lines the About section at the bottom of movie and show pages shows. Kept short by default; year, length, age rating and genres are already at the top. Kept in this browser." icon="info">
@@ -58,7 +59,7 @@
 			{/each}
 		</ul>
 	{/each}
-	{#if !aboutIsDefault()}<button type="button" class="btn ghost" onclick={resetAboutPicks}>Back to the defaults</button>{/if}
+	{#if !aboutIsDefault()}<Button variant="plain" size="sm" onclick={resetAboutPicks}>Back to the defaults</Button>{/if}
 </SettingsCard>
 
 <SettingsCard id="motion-card" title="Motion" description="HolyArrs follows this device's own Reduce motion setting: when it is on, screens change without sliding or growing.">

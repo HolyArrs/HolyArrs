@@ -31,7 +31,7 @@
 	<section class="card" id="metadata-card" tabindex="-1" aria-labelledby="h-server">
 		<div class="card-head">
 			<h2 id="h-server" class="h2">Metadata server</h2>
-			<span class="chip {metadataHealth.up ? 'ok' : ''}">{metadataHealth.up ? 'Answering' : 'Down'}</span>
+			<span class="chip {metadataHealth.up ? 'ok' : 'fail'}">{metadataHealth.up ? 'Answering' : 'Down'}</span>
 		</div>
 		{#if metadataHealth.up}
 			<p class="small muted">Searches, details, Explore and artwork are ready.</p>

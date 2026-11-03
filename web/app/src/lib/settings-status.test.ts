@@ -88,7 +88,7 @@ describe('settings groups', () => {
 
 	it('filters the menu by page name, its words or its group', () => {
 		expect(filterSections(sections, 'sched').map((s) => s.label)).toEqual(['Schedules']);
-		expect(filterSections(sections, 'system logs').map((s) => s.label)).toContain('Logs');
+		expect(filterSections(sections, 'system backups').map((s) => s.label)).toContain('Backups and restore');
 		expect(filterSections(sections, '  ')).toHaveLength(sections.length);
 		expect(filterSections(sections, 'zebra')).toEqual([]);
 	});
@@ -119,7 +119,7 @@ describe('searchSettings', () => {
 	});
 
 	it('matches the group name too', () => {
-		const g = searchSettings('getting copies sources', all, (h) => (sections.find((s) => s.href === h)?.group === 'copies' ? 'Getting copies' : ''));
+		const g = searchSettings('downloads sources', all, (h) => (sections.find((s) => s.href === h)?.group === 'downloads' ? 'Downloads' : ''));
 		expect(g[0].href).toBe('/settings/sources');
 	});
 

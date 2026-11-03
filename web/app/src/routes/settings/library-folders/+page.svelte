@@ -5,12 +5,13 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import type { LibraryFolder } from '#lib/types.ts';
 
 	let folders = $state<LibraryFolder[]>([]);
@@ -108,13 +109,13 @@
 
 <PageHeader title="Library folders">
 	{#snippet actions()}
-		{#if !adding}<Button icon="plus" variant="primary" type="button" onclick={() => (adding = true)}>Add a folder</Button>{/if}
+		{#if !adding && folders.length}<Button icon="plus" variant="primary" type="button" onclick={() => (adding = true)}>Add a folder</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 {#if adding}
-	<form class="sc-form" onsubmit={add} aria-label="New Library folder">
-		<SettingsCard title="New Library folder">
+	<form class="sc-form" onsubmit={add} aria-label="Add a Library folder">
+		<SettingsCard title="Add a Library folder">
 			<Field id="lf-kind" label="Holds" hint="Movies, shows and music each get their own folders.">
 				<select id="lf-kind" class="input" bind:value={kind}>
 					<option value="movie">Movies</option>
@@ -141,12 +142,9 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if folders.length === 0 && !adding}
-	<EmptyState icon="folder" title="No Library folder yet">
-		<p>Add the folder where your movies should live, for example <code>/movies</code>, and one for shows, for example <code>/shows</code>. HolyArrs needs one before it can add a movie or a show.</p>
-		{#snippet actions()}<Button variant="primary" type="button" onclick={() => (adding = true)}>Add a folder</Button>{/snippet}
-	</EmptyState>
+	<EmptyState icon="folder" title="No Library folder yet" text="Add the folder where your movies live, for example /movies, and one for shows, for example /shows. HolyArrs needs one before it can add a movie or a show." action={{ label: 'Add a folder', icon: 'plus', onclick: () => (adding = true) }} />
 {:else if folders.length}
 	<ul class="card rows">
 		{#each folders as f (f.id)}
@@ -211,9 +209,6 @@
 		display: flex;
 		align-items: center;
 		gap: var(--s-1);
-	}
-	code {
-		font-family: var(--font-mono);
 	}
 	@media (max-width: 600px) {
 		.folder {

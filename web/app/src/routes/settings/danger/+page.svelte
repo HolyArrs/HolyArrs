@@ -105,9 +105,4 @@
 	code {
 		font-family: var(--font-mono);
 	}
-	@media (max-width: 600px) {
-		.acts > :global(.ui-btn) {
-			min-height: var(--tap);
-		}
-	}
 </style>

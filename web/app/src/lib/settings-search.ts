@@ -21,6 +21,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/this-app', 'h-about-card', 'Version', 'about holyarrs build database schema uptime url base'),
 	e('/settings/this-app', 'update-card', 'Updates', 'update new version release check for updates'),
 	e('/settings/this-app', 'storage-card', 'Storage', 'paths config folder disk free space where things are stored'),
+	e('/settings/this-app', 'url-base', 'URL base', 'reverse proxy path subfolder base url nginx traefik'),
 	e('/settings/parts', 'parts-card', 'Turn parts on or off', 'parts movies shows music subtitles wishlist switch off disable enable'),
 	e('/settings/parts', 'stages-card', 'Pause or restart a stage', 'stages background work stuck restart pause resume'),
 	e('/settings/parts', 'links-card', 'Reconnect a linked app', 'reconnect downloader test source media server subtitle site'),
@@ -114,7 +115,6 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/search', 'min-track', 'Smallest track file to place', 'size minimum KB music', true),
 	e('/settings/search', 'episode-minutes', 'Episode length when not known', 'runtime minutes', true),
 	e('/settings/search', 'hold-unknown', 'Hold Releases of unknown size or date', 'hold unknown', true),
-	e('/settings/search', 'try-next', 'Try the next Downloader', 'fallback downloader', true),
 	e('/settings/search', 'search-now', 'Search now', 'search missing better copy feeds run'),
 	e('/settings/downloaders', 'downloaders-card', 'Downloaders', 'download client qbittorrent sabnzbd transmission deluge nzbget torrent client add'),
 	e('/settings/downloaders', 'st-stall', 'Stalled after', 'stalled stuck hours download', true),
@@ -123,6 +123,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/downloaders', 'fail-programs', 'Fail downloads that hold programs or fakes', 'exe virus fake', true),
 	e('/settings/downloaders', 'replace-removed', 'Replace downloads removed outside HolyArrs', 'removed outside', true),
 	e('/settings/downloaders', 'remove-defaults', 'What removing a download does by default', 'remove delete files turned down search again'),
+	e('/settings/downloaders', 'try-next-dl', 'Try the next Downloader', 'fallback downloader', true),
 	e('/settings/downloaders', 'st-gap', 'Seconds between sends to one Downloader', 'delay seconds send', true),
 	e('/settings/pick-rules', 'pick-rules-card', 'Pick rules', 'quality profile quality formats resolution 4k 1080p pick rules'),
 	// The editor works on one set at a time, so these open the list to pick which set to change.

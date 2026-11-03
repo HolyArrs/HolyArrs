@@ -9,7 +9,8 @@
 	import { api, message } from '#lib/api.ts';
 	import { ago, words } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
 	import SourceCheck from '#lib/ui/SourceCheck.svelte';
@@ -31,6 +32,7 @@
 	async function load() {
 		try {
 			sources = (await api.get<{ sources: SourceView[] }>('/sources')).sources;
+			error = '';
 		} catch (e) {
 			error = message(e);
 		} finally {
@@ -117,13 +119,13 @@
 
 <PageHeader title="Sources">
 	{#snippet actions()}
-		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Source</Button>{/if}
+		{#if !editing && sources.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Source</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 <p class="small muted lead">
 	Sources are asked in priority order, 1 first. A Source that fails rests for a while and is tried again on its own: one minute, then twice as long each time, up to six hours.
-	For sites without a feed of their own, see the guide on using Jackett or Prowlarr as a bridge (<code>docs/sources-bridge.md</code>).
+	For sites without a feed of their own, run Jackett or Prowlarr as a bridge and add it here as a Torznab feed.
 </p>
 
 {#if editing}
@@ -137,7 +139,7 @@
 					<select id="so-format" class="input" bind:value={form.format}>
 						<option value="torznab">Torznab (torrents, also Jackett and Prowlarr)</option>
 						<option value="newznab">Newznab (Usenet)</option>
-						<option value="rss">Plain rss feed (newest list only)</option>
+						<option value="rss">Plain RSS feed (newest list only)</option>
 					</select>
 				</Field>
 				<Field id="so-proto" label="Downloads">
@@ -218,8 +220,8 @@
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Source</Button>
 			</div>
 		</SettingsCard>
 	</form>
@@ -227,13 +229,17 @@
 
 {#if !loaded}
 	<SkSettings rows={1} />
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+{:else if error && !sources.length}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if sources.length === 0 && !editing}
-	<EmptyState icon="source" title="No Sources yet">
-		<p>Without a Source, HolyArrs cannot find Releases. Add a Torznab or Newznab feed, or a bridge such as Jackett or Prowlarr.</p>
-	</EmptyState>
+	<EmptyState
+		icon="source"
+		title="No Sources yet"
+		text="Without a Source, HolyArrs cannot find Releases. Add a Torznab or Newznab feed, or a bridge such as Jackett or Prowlarr."
+		action={{ label: 'Add a Source', onclick: startAdd, icon: 'plus' }}
+	/>
 {:else}
+	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<ul class="list">
 		{#each sources as s (s.id)}
 			<li class="card" data-testid="source">
@@ -247,7 +253,7 @@
 				</div>
 				<p class="small" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
 				<p class="xs muted">
-					{words(s.format)} · {words(s.protocol)} · priority {s.priority} · {uses(s)}
+					{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)} · priority {s.priority} · {uses(s)}
 					{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
 					{#if s.proxy} · through {s.proxy}{/if}
 					{#if s.allow_local_network} · may reach the local network{/if}
@@ -339,11 +345,8 @@
 		cursor: pointer;
 		font-weight: var(--weight-semibold);
 	}
-	code {
-		font-family: var(--font-mono);
-	}
 	.bad-text {
-		color: var(--fail);
+		color: var(--fail-text);
 	}
 	.ok-text {
 		color: var(--ok-text, inherit);

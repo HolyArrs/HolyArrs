@@ -127,7 +127,7 @@ test('clear all empties the Turned down list', async () => {
 	await expect(page.getByText('Nothing turned down')).toBeVisible();
 });
 
-test('Settings > Search: the four settings are saved and a wrong interval is refused', async () => {
+test('Settings > Search: the three settings are saved and a wrong interval is refused', async () => {
 	await page.goto('/settings/search');
 	await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeVisible();
 	await openAdvanced(page);
@@ -138,14 +138,12 @@ test('Settings > Search: the four settings are saved and a wrong interval is ref
 	await page.getByLabel('Check Source feeds every (minutes)').fill('30');
 	await page.getByLabel('Movies to search for each night').fill('7');
 	await page.getByLabel('Also Find a better copy each night').check();
-	await page.getByLabel('Try the next Downloader').uncheck();
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Search settings saved.')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Check Source feeds every (minutes)')).toHaveValue('30');
 	await expect(page.getByLabel('Movies to search for each night')).toHaveValue('7');
 	await expect(page.getByLabel('Also Find a better copy each night')).toBeChecked();
-	await expect(page.getByLabel('Try the next Downloader')).not.toBeChecked();
 });
 
 test('Settings > Search: the early and fake switches are saved', async () => {

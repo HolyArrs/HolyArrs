@@ -30,7 +30,7 @@ test('a TMDB list adds its movies by itself and skips the Never-add list', async
 	await page.getByRole('button', { name: 'Add a list' }).first().click();
 	await page.getByLabel('Name', { exact: true }).first().fill('Lab list');
 	await page.getByLabel('Which list').fill('https://www.themoviedb.org/list/501-lab-list');
-	await page.getByRole('button', { name: 'Save list' }).click();
+	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const row = page.getByTestId('outside-list');
 	await expect(row).toContainText('Lab list');
 	await expect(row).toContainText('read every 12 hours');
@@ -44,17 +44,17 @@ test('a TMDB list adds its movies by itself and skips the Never-add list', async
 
 test('a Trakt list needs the Trakt key, then adds its movie', async () => {
 	await page.goto('/settings/outside-lists');
-	await page.getByRole('button', { name: 'Add a list' }).click();
+	await page.getByRole('button', { name: 'Add a list' }).first().click();
 	await page.getByLabel('Name', { exact: true }).first().fill('Trakt favourites');
 	await page.getByLabel('Kind').selectOption('trakt_list');
 	await expect(page.getByText('Add your Trakt key below first')).toBeVisible();
 	await page.getByLabel('Which list').fill('lab/favourites');
-	await page.getByRole('button', { name: 'Save list' }).click();
+	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const row = page.getByTestId('outside-list').filter({ hasText: 'Trakt favourites' });
 	await expect(row).toContainText('Trakt key', { timeout: 15_000 });
 
 	await page.getByLabel('Paste the Trakt key').fill(traktKey);
-	await page.getByRole('button', { name: 'Save the Trakt key' }).click();
+	await page.locator('form').filter({ has: page.locator('#trakt') }).getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByText('Trakt key saved.')).toBeVisible();
 	await expect(page.locator('body')).not.toContainText(traktKey);
 	await row.getByRole('button', { name: 'Read now' }).click();
@@ -68,8 +68,8 @@ test('change, turn off and remove a list; take a movie off the Never-add list', 
 	const row = page.getByTestId('outside-list').filter({ hasText: 'Lab list' });
 	await row.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('Read every (hours)').fill('48');
-	await page.getByRole('checkbox', { name: /^On Off keeps/ }).uncheck();
-	await page.getByRole('button', { name: 'Save list' }).click();
+	await page.getByRole('checkbox', { name: /^Read this list/ }).uncheck();
+	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(row).toContainText('every 2 days');
 	await expect(row).toContainText('Off');
 	await expect(row.getByRole('button', { name: 'Read now' })).toBeDisabled();

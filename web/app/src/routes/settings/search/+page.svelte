@@ -5,6 +5,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -35,20 +36,25 @@
 	let loaded = $state(false);
 	let busy = $state(false);
 	let error = $state('');
-	let now = $state(false);
+	let loadError = $state('');
+	// The path of the search started from Search now, while it is being sent.
+	let now = $state('');
 	let saved = $state('');
 	const dirty = $derived(loaded && !!saved && JSON.stringify(settings) !== saved);
 
-	onMount(async () => {
+	async function load() {
+		loaded = false;
+		loadError = '';
 		try {
 			settings = await api.get<SearchSettings>('/settings/search');
 			saved = JSON.stringify(settings);
 		} catch (e) {
-			error = message(e);
+			loadError = message(e);
 		} finally {
 			loaded = true;
 		}
-	});
+	}
+	onMount(load);
 
 	async function save(e: SubmitEvent) {
 		e.preventDefault();
@@ -79,24 +85,26 @@
 	}
 
 	async function run(path: string, said: string) {
-		now = true;
+		now = path;
 		try {
 			await api.post(path);
 			toasts.push(said, 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {
-			now = false;
+			now = '';
 		}
 	}
 </script>
 
-<svelte:head><title>Search settings · HolyArrs</title></svelte:head>
+<svelte:head><title>Search · HolyArrs</title></svelte:head>
 
 <PageHeader title="Search" />
 
 {#if !loaded}
 	<SkSettings rows={3} />
+{:else if loadError}
+	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<form class="sc-form" id="search-form" onsubmit={save} aria-label="Search settings">
 		<SettingsCard id="nightly" title="Nightly search" description="Once a day HolyArrs looks for what is missing, by itself.">
@@ -220,21 +228,15 @@
 						<p class="hint">Program files, password notes, web shortcuts and torrents holding only archives are failed in the Downloader (Settings, Downloaders, Fail downloads that hold programs or fakes).</p>
 			{/snippet}
 		</SettingsCard>
-		<SettingsCard id="search-downloaders" title="Downloaders" description="What happens when a Downloader cannot take a Release.">
-				<label class="checkline">
-					<input id="try-next" type="checkbox" bind:checked={settings.try_next_downloader} />
-					<span><b>Try the next Downloader</b><br /><span class="hint">When a Downloader cannot take a Release, hand it to the next one of the same kind.</span></span>
-				</label>
-		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
 	<SaveBar {dirty} form="search-form" saving={busy} ondiscard={() => (settings = JSON.parse(saved))} />
 
 	<SettingsCard id="search-now" title="Search now" description="Start a search without waiting for the timer. Home shows it running and what it found.">
 		<div class="row now">
-			<Button type="button" disabled={now} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</Button>
-			<Button type="button" disabled={now} onclick={() => run('/search/missing', 'Searching for every missing movie and episode.')}>Search every missing one</Button>
-			<Button type="button" disabled={now} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</Button>
+			<Button type="button" disabled={!!now} aria-busy={now === '/search/feed-check'} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</Button>
+			<Button type="button" disabled={!!now} aria-busy={now === '/search/missing'} onclick={() => run('/search/missing', 'Searching for every missing movie and episode.')}>Search every missing one</Button>
+			<Button type="button" disabled={!!now} aria-busy={now === '/search/better'} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</Button>
 		</div>
 	</SettingsCard>
 {/if}

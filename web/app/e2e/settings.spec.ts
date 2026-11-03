@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn, addFromSearch } from './helpers.ts';
 
-// Settings: the six groups and My account, setting search with a deep link that scrolls to
+// Settings: the eight groups and My account, setting search with a deep link that scrolls to
 // and highlights the field, the save bar and its leave guard, Advanced
 // disclosures that stay as each person left them, and Movies and TV defaults
 // that the add dialog starts from.
@@ -17,25 +17,16 @@ test.afterAll(async () => {
 	await page.context().close();
 });
 
-test('Settings home: six groups, each with its pages, and My account on its own', async () => {
+test('Settings home: eight groups and My account; the side menu folds, one group open', async () => {
 	await page.goto('/settings');
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-	const groups = page.getByTestId('settings-group');
-	await expect(groups.getByRole('heading', { level: 2 })).toHaveText([
-		'General',
-		'Library',
-		'Getting copies',
-		'People and sign-in',
-		'Linked apps',
-		'System',
-		'My account'
+	await expect(page.getByTestId('settings-group').getByRole('heading', { level: 2 })).toHaveText([
+		'General', 'Library', 'Downloads', 'Users', 'Services', 'Notifications', 'Logs', 'System', 'My account'
 	]);
-	const system = groups.filter({ has: page.getByRole('heading', { name: 'System' }) });
-	await expect(system.getByRole('link').last()).toContainText('Danger zone');
-	await expect(system.getByRole('link', { name: /Schedules/ })).toBeVisible();
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
-	await expect(nav.getByRole('heading', { name: 'Getting copies' })).toBeVisible();
+	await nav.getByRole('button', { name: 'Downloads' }).click();
 	await expect(nav.getByRole('link', { name: 'Pick rules' })).toBeVisible();
+	await expect(nav.getByRole('link', { name: 'Library folders' })).toHaveCount(0);
 });
 
 test('search finds one setting, and its link scrolls to it, opens Advanced and highlights it', async () => {
@@ -87,6 +78,8 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await page.goto('/settings/wishlist');
 	await page.getByLabel('Movie asks', { exact: true }).fill('7');
 	await expect(page.getByTestId('savebar')).toBeVisible();
+	// The side menu folds: open the Downloads group first.
+	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Downloads' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sources' }).click();
 	const ask = page.getByRole('dialog', { name: 'Leave without saving?' });
 	await expect(ask).toBeVisible();
@@ -95,6 +88,8 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await expect(page).toHaveURL(/\/settings\/wishlist$/);
 	await expect(page.getByLabel('Movie asks', { exact: true })).toHaveValue('7');
 
+	// The side menu folds: open the Downloads group first.
+	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Downloads' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sources' }).click();
 	await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Leave without saving' }).click();
 	await expect(page.getByRole('heading', { name: 'Sources', level: 1 })).toBeVisible();
@@ -204,11 +199,11 @@ test('Danger zone is last, outlined, and asks before a restart', async () => {
 	await expect(box).toHaveCount(0);
 });
 
-test('a phone: Settings home is the index, a page opens with a back link, no sideways scroll', async () => {
+test('a phone: Settings home is the folding menu, a page opens alone with a back link, no sideways scroll', async () => {
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.goto('/settings');
 	await noSidewaysScroll(page);
-	await page.getByTestId('settings-group').first().getByRole('link').first().click();
+	await page.getByTestId('settings-nav').getByRole('link').first().click();
 	const back = page.getByRole('link', { name: 'Settings', exact: true });
 	await expect(back).toBeVisible();
 	await noSidewaysScroll(page);
@@ -229,4 +224,18 @@ test('accessibility: Settings home, a search and a page with the save bar', asyn
 	await page.getByTestId('savebar').evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((x) => x.finished)));
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 	await page.getByTestId('savebar').getByRole('button', { name: 'Discard' }).click();
+});
+
+test('URL base: a saved path is cleaned, asks for a restart, and can be cleared', async () => {
+	await page.goto('/settings/this-app');
+	const card = page.getByTestId('url-base');
+	await card.getByLabel('URL base').fill('holyarrs/');
+	await card.getByRole('button', { name: 'Save' }).click();
+	await expect(card.getByLabel('URL base')).toHaveValue('/holyarrs');
+	await expect(card.getByRole('status')).toContainText('Restart HolyArrs to use it');
+	// Back to none so the tests after this one start the same way.
+	await card.getByLabel('URL base').fill('');
+	await card.getByRole('button', { name: 'Save' }).click();
+	await expect(card.getByLabel('URL base')).toHaveValue('');
+	await expect(card.getByRole('status')).toHaveCount(0);
 });

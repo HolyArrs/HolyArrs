@@ -5,11 +5,12 @@
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { dateTime } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import WishEditor from '#lib/WishEditor.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -59,8 +60,9 @@
 		}
 	}
 
-	onMount(() => {
-		Promise.all([
+	function load() {
+		error = '';
+		return Promise.all([
 			api.get<SubtitleSettings>('/settings/subtitles').then((s) => {
 				settings = s;
 				saved = JSON.stringify(s);
@@ -71,6 +73,10 @@
 		])
 			.catch((e) => (error = message(e)))
 			.finally(() => (loaded = true));
+	}
+
+	onMount(() => {
+		void load();
 		const offs = [
 			live.on('event', (d) => {
 				if (String((d as { Kind?: string })?.Kind) === 'subtitle_site_paused') void loadSites();
@@ -188,8 +194,9 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else if error && !settings}
-	<p class="notice bad" role="alert">{error}</p>
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if settings}
+	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<form class="sc-form" id="subtitle-form" onsubmit={saveSettings} aria-label="Default languages">
 		<SettingsCard id="lang-card" title="Default languages" description="Every movie and show without languages of its own gets these. Change a title's own languages on its page. With no languages, nothing is looked for.">
 			<WishEditor bind:wants={settings.languages} {langs} id="def" />
@@ -203,7 +210,7 @@
 					<Field id="pm-ep" label="Pass mark for episodes" hint="A subtitle is saved on its own only when it scores this or more.">
 						<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_episode} />
 					</Field>
-					<Field id="pm-mov" label="Pass mark for movies" hint="The same for movies.">
+					<Field id="pm-mov" label="Pass mark for movies" hint="A subtitle is saved on its own only when it scores this or more.">
 						<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_movie} />
 					</Field>
 				</div>
@@ -274,7 +281,7 @@
 		</SettingsCard>
 		<SettingsCard id="sync-fix" title="Sync fix" description="Where the by-hand fix for a subtitle out of time starts.">
 			<p class="small muted">
-				A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. These are where the fix starts. HolyArrs does
+				A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. HolyArrs does
 				not listen to the sound to line subtitles up.
 			</p>
 			{#snippet advanced()}
@@ -301,7 +308,7 @@
 				<h2 id="h-sites" class="h2">Subtitle sites</h2>
 				<p class="small muted">Where HolyArrs looks for subtitles, lowest priority number first. A site that fails rests for a while and is tried again later.</p>
 			</div>
-			{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Subtitle site</Button>{/if}
+			{#if !editing && sites.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Subtitle site</Button>{/if}
 		</div>
 
 		{#if editing && form}
@@ -379,16 +386,14 @@
 				</label>
 				{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 				<div class="row" style="margin-top: var(--s-5)">
+					<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
 					<Button variant="plain" type="button" onclick={() => ((editing = null), (form = null))}>Cancel</Button>
-					<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Subtitle site</Button>
 				</div>
 			</form>
 		{/if}
 
 		{#if sites.length === 0 && !editing}
-			<EmptyState icon="subtitle" title="No Subtitle site yet">
-				<p>Add one so HolyArrs can look for the subtitles your movies and shows are missing.</p>
-			</EmptyState>
+			<EmptyState compact icon="subtitle" title="No Subtitle site yet" text="Add one so HolyArrs can look for the subtitles your movies and shows are missing." action={{ label: 'Add a Subtitle site', icon: 'plus', onclick: startAdd }} />
 		{:else}
 			<ul class="list">
 				{#each sites as s (s.ID)}
@@ -467,6 +472,12 @@
 	.sites-sec {
 		margin-top: var(--s-6, 32px);
 	}
+	/* The section heading matches the card titles above it. */
+	.sites-head .h2 {
+		font: var(--t-headline);
+		font-size: 15px;
+		font-weight: 600;
+	}
 	.sites-head {
 		display: flex;
 		justify-content: space-between;
@@ -517,7 +528,7 @@
 		flex-wrap: wrap;
 	}
 	.bad-text {
-		color: var(--fail);
+		color: var(--fail-text);
 	}
 	.ok-text {
 		color: var(--ok-text, inherit);

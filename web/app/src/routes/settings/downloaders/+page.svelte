@@ -9,7 +9,8 @@
 	import { api, message } from '#lib/api.ts';
 	import { ago } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import {
@@ -28,6 +29,7 @@
 
 	let list = $state<DownloaderView[]>([]);
 	let loaded = $state(false);
+	let listOk = $state(false);
 	let error = $state('');
 
 	let editing = $state<DownloaderView | null>(null);
@@ -58,11 +60,28 @@
 	let saved = $state('');
 	const dirty = $derived(!!saved && JSON.stringify(settings) !== saved);
 	let setError = $state('');
+	let setLoadError = $state('');
+	let setLoading = $state(false);
+
+	async function loadSettings() {
+		setLoading = true;
+		setLoadError = '';
+		try {
+			const s = await api.get<DownloaderSettings>('/settings/downloaders');
+			settings = s;
+			saved = JSON.stringify(s);
+		} catch (e) {
+			setLoadError = message(e);
+		} finally {
+			setLoading = false;
+		}
+	}
 
 	async function load() {
 		try {
 			const next = (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders;
 			list = next;
+			listOk = true;
 			error = '';
 			await Promise.all(next.map(loadAttempts));
 		} catch (e) {
@@ -82,13 +101,7 @@
 	}
 	onMount(() => {
 		void load();
-		api.get<DownloaderSettings>('/settings/downloaders').then(
-			(s) => {
-				settings = s;
-				saved = JSON.stringify(s);
-			},
-			(e) => (setError = message(e))
-		);
+		void loadSettings();
 		const off = live.on('downloader', () => load());
 		return off;
 	});
@@ -251,7 +264,7 @@
 
 <PageHeader title="Downloaders">
 	{#snippet actions()}
-		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Downloader</Button>{/if}
+		{#if !editing && list.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Downloader</Button>{/if}
 	{/snippet}
 </PageHeader>
 
@@ -320,9 +333,9 @@
 			{#if hasUsername(form.kind)}
 				{@const qbit = form.kind === 'qbittorrent'}
 				<div class="two">
-					<Field id="dl-user" label={qbit ? 'Username' : 'Sign-in name'}>
+					<Field id="dl-user" label="Username">
 						<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" required={qbit} data-testid="dl-user" />
-						<span class="hint">{qbit ? 'The qBittorrent Web UI user name.' : `Leave empty when ${kindWords[form.kind]} does not require it from this network.`}</span>
+						<span class="hint">{qbit ? 'The qBittorrent Web UI username.' : `Leave empty when ${kindWords[form.kind]} does not require it from this network.`}</span>
 					</Field>
 					<Field id="dl-secret" label="Password" hint="Kept encrypted, never shown again. Leave as it is to keep the stored one.">
 						<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" required={qbit && isNew} data-testid="dl-secret" />
@@ -353,10 +366,10 @@
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
 				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">Test connection</Button>{/if}
-				{#if !isNew && editing && results[editing.id]}<span class="small" class:muted={results[editing.id].ok} role="status">{results[editing.id].text}</span>{/if}
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Downloader</Button>
+				{#if !isNew && editing && results[editing.id]}<span class="small" class:muted={results[editing.id].ok} class:bad-text={!results[editing.id].ok} role="status">{results[editing.id].text}</span>{/if}
 			</div>
 		</SettingsCard>
 	</form>
@@ -364,13 +377,12 @@
 
 {#if !loaded}
 	<SkSettings rows={1} />
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+{:else if error && !listOk}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if list.length === 0 && !editing}
-	<EmptyState icon="downloader" title="No Downloader yet">
-		<p>HolyArrs needs a Downloader to fetch what it chooses. Add a torrent or Usenet app.</p>
-	</EmptyState>
+	<EmptyState icon="downloader" title="No Downloader yet" text="HolyArrs needs a Downloader to fetch what it chooses. Add a torrent or Usenet app." action={{ label: 'Add a Downloader', onclick: startAdd, icon: 'plus' }} />
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
 		{#each list as d (d.id)}
 			<li class="card" data-testid="downloader">
@@ -396,7 +408,7 @@
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label="Uncertain sends" data-testid="downloader-attempts">
-						<h3 class="h4">A send needs review</h3>
+						<h3 class="h3">A send needs review</h3>
 						<p class="small">HolyArrs could not confirm whether {kindWords[d.kind]} accepted it. Inspect {kindWords[d.kind]} before choosing a different Release.</p>
 						{#each pendingAttempts(attempts[d.id]) as attempt (attempt.id)}
 							<div class="attempt-row">
@@ -424,6 +436,13 @@
 	</ul>
 {/if}
 
+{#if !saved}
+	{#if setLoadError}
+		<div class="settings"><LoadError hasData={false} message={setLoadError} onretry={loadSettings} busy={setLoading} /></div>
+	{:else}
+		<div class="settings"><SkSettings rows={2} /></div>
+	{/if}
+{:else}
 <form class="sc-form settings" id="wrong-form" onsubmit={saveSettings} aria-labelledby="h-wrong">
 	<SettingsCard id="wrong-card" title="When downloads go wrong" description="What HolyArrs does with a download that stalls, fails or holds something it should not.">
 		<span id="h-wrong" class="sr-only">When downloads go wrong</span>
@@ -483,6 +502,7 @@
 	{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 </form>
 <SaveBar {dirty} form="wrong-form" saving={setBusy} ondiscard={() => (settings = JSON.parse(saved))} />
+{/if}
 
 <style>
 	.lead {
@@ -567,7 +587,7 @@
 		font-weight: var(--weight-semibold);
 	}
 	.bad-text {
-		color: var(--fail);
+		color: var(--fail-text);
 	}
 	.ok-text {
 		color: var(--ok-text, inherit);

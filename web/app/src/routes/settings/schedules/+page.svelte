@@ -2,6 +2,7 @@
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick } from 'svelte';
@@ -128,11 +129,14 @@
 
 {#if safeMode}<p class="notice warn">Safe mode: only the core runs. Schedules outside the core wait for a normal start.</p>{/if}
 
-{#if error}
-	<p class="notice bad" role="alert">{error}</p>
-{:else if !rows}
-	<SkSettings rows={4} />
+{#if !rows}
+	{#if error}
+		<LoadError hasData={false} message={error} onretry={load} />
+	{:else}
+		<SkSettings rows={4} />
+	{/if}
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if running.length}
 		<section class="now" aria-labelledby="h-now" data-testid="running-now">
 			<h2 id="h-now" class="group-head">Running now</h2>
@@ -220,8 +224,8 @@
 										{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 										<div class="ed-acts">
 											{#if s.settings}<a class="its" href={to(s.settings)}>Its settings<Icon name="chevronRight" size={14} /></a>{/if}
-											<Button variant="plain" type="button" onclick={() => closeEditor(s)}>Cancel</Button>
 											<Button variant="primary" type="submit" busy={busy === s.kind} disabled={busy === s.kind}>Save</Button>
+											<Button variant="plain" type="button" onclick={() => closeEditor(s)}>Cancel</Button>
 										</div>
 									</form>
 								{/if}
@@ -251,8 +255,8 @@
 								</div>
 								<div class="meta">
 								<div class="cell"><span class="k">How often</span><span>{l.every_s ? often(l.every_s) : 'All the time'}</span></div>
-								<div class="cell" class:empty={!l.last_pass}><span class="k">Last run</span>{#if l.last_pass}<time datetime={l.last_pass} title={dateTime(l.last_pass)}>{ago(l.last_pass, now)}</time>{:else}<span class="faint">—</span>{/if}</div>
-								<div class="cell" class:empty={!l.next_pass}><span class="k">Next run</span>{#if l.next_pass}<time datetime={l.next_pass} title={dateTime(l.next_pass)}>{until(l.next_pass, now)}</time>{:else}<span class="faint">—</span>{/if}</div>
+								<div class="cell" class:empty={!l.last_pass}><span class="k">Last run</span>{#if l.last_pass}<time datetime={l.last_pass} title={dateTime(l.last_pass)}>{ago(l.last_pass, now)}</time>{:else}<span class="faint">Not yet</span>{/if}</div>
+								<div class="cell" class:empty={!l.next_pass}><span class="k">Next run</span>{#if l.next_pass}<time datetime={l.next_pass} title={dateTime(l.next_pass)}>{until(l.next_pass, now)}</time>{:else}<span class="faint">Not yet</span>{/if}</div>
 								</div>
 								<div class="acts"><span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
 							</div>
@@ -301,7 +305,7 @@
 	.cell { min-width: 0; font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cell time { text-decoration: underline dotted color-mix(in srgb, var(--text-muted) 50%, transparent); text-underline-offset: 3px; cursor: help; }
 	.k { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-	.faint { color: var(--text-faint); }
+	.faint { color: var(--text-muted); }
 	.meta { display: contents; }
 	.acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 
@@ -322,7 +326,7 @@
 	li.open { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
 	.editor { display: grid; gap: 12px; margin: 0 12px 12px 36px; padding: 14px 16px; border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line), 0 6px 20px -12px rgb(0 0 0 / 30%); animation: open var(--dur-fast, 160ms) var(--ease-out); }
 	@keyframes open { from { opacity: 0; transform: translateY(-4px); } }
-	.ed-row { display: flex; align-items: center; gap: 16px; justify-content: space-between; }
+	.ed-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; justify-content: space-between; }
 	.ed-row + .ed-row { padding-top: 12px; border-top: 1px solid var(--line); }
 	.ed-copy { display: grid; gap: 2px; min-width: 0; }
 	.ed-about { margin-bottom: 6px; color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }

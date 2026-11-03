@@ -30,7 +30,7 @@ test('copy Good everyday, change a step and a trait, save, and the changes stay 
 	await expect(row('Good everyday')).toContainText('Ready-made');
 	await more('Good everyday', 'Make a copy');
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/new\?from=\d+$/);
-	await expect(page.getByRole('heading', { name: 'New Pick rules', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Add Pick rules', level: 1 })).toBeVisible();
 	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Good everyday copy');
 
 	// A step: 4K web on.
@@ -43,7 +43,7 @@ test('copy Good everyday, change a step and a trait, save, and the changes stay 
 	await hevc.fill('25');
 
 	const bar = page.getByTestId('savebar');
-	await bar.getByRole('button', { name: 'Make these Pick rules' }).click();
+	await bar.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Good everyday copy made.')).toBeVisible();
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
 	await expect(bar).toHaveCount(0);
@@ -143,7 +143,7 @@ test('accessibility: the list, the remove sheet and a copy in the editor with Ad
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 	// The remove sheet, on a set nothing uses (a fresh copy, made and then removed).
 	await more('Good everyday', 'Make a copy');
-	await page.getByTestId('savebar').getByRole('button', { name: 'Make these Pick rules' }).click();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/\d+$/);
 	await page.goto('/settings/pick-rules');
 	await more('Good everyday copy', 'Remove…');

@@ -5,6 +5,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -96,11 +97,14 @@
 	{/snippet}
 </PageHeader>
 
-{#if error}
-	<p class="notice bad" role="alert">{error}</p>
-{:else if !checks}
-	<SkSettings rows={3} />
+{#if !checks}
+	{#if error}
+		<LoadError hasData={false} message={error} onretry={load} />
+	{:else}
+		<SkSettings rows={3} />
+	{/if}
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<section class="card" id="health-checks-card" aria-labelledby="h-checks" data-testid="health-checks" tabindex="-1">
 		<div class="card-head">
 			<h2 id="h-checks" class="h2">Results</h2>

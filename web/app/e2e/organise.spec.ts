@@ -165,17 +165,17 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await expect(page.getByLabel('Keep deleted files for (days)')).toHaveValue('14');
 	await expect(page.getByLabel('Always leave this much free space (MB)')).toHaveValue('250');
 	// 5.1.7: the folders one Import a library scan reads.
-	await expect(page.getByLabel('Folders read per Import a library scan')).toHaveValue('5000');
-	await page.getByLabel('Folders read per Import a library scan').fill('5');
+	await expect(page.getByLabel('Folders read per library scan')).toHaveValue('5000');
+	await page.getByLabel('Folders read per library scan').fill('5');
 	await page.getByRole('button', { name: 'Save' }).click();
 	// The browser holds the form back: under 10 is not a valid number here.
-	expect(await page.getByLabel('Folders read per Import a library scan').evaluate((e) => (e as HTMLInputElement).validity.valid)).toBe(false);
+	expect(await page.getByLabel('Folders read per library scan').evaluate((e) => (e as HTMLInputElement).validity.valid)).toBe(false);
 	// Nothing was saved; put the change back so leaving does not ask first.
 	await page.getByTestId('savebar').getByRole('button', { name: 'Discard' }).click();
 	await page.reload();
-	await expect(page.getByLabel('Folders read per Import a library scan')).toHaveValue('5000');
-	await page.getByRole('button', { name: 'Empty old holding days now' }).click();
-	await expect(page.getByText('Emptying holding days older than 14 days.')).toBeVisible();
+	await expect(page.getByLabel('Folders read per library scan')).toHaveValue('5000');
+	await page.getByRole('button', { name: 'Remove old held files now' }).click();
+	await expect(page.getByText('Removing held files older than 14 days.')).toBeVisible();
 });
 
 test('the new screens fit a phone and pass the accessibility scan', async ({ browser }) => {

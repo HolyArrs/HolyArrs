@@ -5,6 +5,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -36,6 +37,7 @@
 	let busy = $state(false);
 	let cleaning = $state(false);
 	let error = $state('');
+	let loadError = $state('');
 	let ask = 0;
 	// What the server holds now, to tell changes and to put them back.
 	let saved = $state('');
@@ -47,7 +49,9 @@
 		fr = v.fr;
 	}
 
-	onMount(async () => {
+	async function load() {
+		loaded = false;
+		loadError = '';
 		try {
 			const [n, f] = await Promise.all([api.get<NamingView>('/settings/naming'), api.get<FileRules>('/settings/files')]);
 			ns = n.naming;
@@ -59,16 +63,17 @@
 			fr = f;
 			saved = snapshot();
 		} catch (e) {
-			error = message(e);
+			loadError = message(e);
 		} finally {
 			loaded = true;
 		}
-	});
+	}
+	onMount(load);
 
 	// The live example: what the patterns on screen would name a sample
 	// movie. Nothing is saved.
 	$effect(() => {
-		if (!loaded) return;
+		if (!loaded || loadError) return;
 		const body = {
 			file_pattern: ns.file_pattern,
 			folder_pattern: ns.folder_pattern,
@@ -118,7 +123,7 @@
 		const days = Number(fr.holding_days);
 		const floor = Number(fr.min_free_mb);
 		if (!Number.isInteger(days) || days < 0) {
-			error = 'Holding days must be 0 or more.';
+			error = 'Days to keep deleted files must be 0 or more.';
 			return;
 		}
 		if (!Number.isFinite(floor) || floor < 100) {
@@ -154,7 +159,7 @@
 		try {
 			await api.post('/holding/clean');
 			toasts.push(
-				fr.holding_days > 0 ? `Emptying holding days older than ${fr.holding_days} days.` : 'Holding days is 0, so held files are kept; nothing is removed.',
+				fr.holding_days > 0 ? `Removing held files older than ${fr.holding_days} days.` : 'Deleted files are kept for 0 days, which means until you empty them yourself. Nothing is removed.',
 				'ok'
 			);
 		} catch (e) {
@@ -176,6 +181,8 @@
 
 {#if !loaded}
 	<SkSettings rows={4} />
+{:else if loadError}
+	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<form class="sc-form stack" id="naming-form" onsubmit={save} aria-label="Naming and files">
 		<SettingsCard id="movie-names" title="Movie names" description="How a movie's file and folder are named.">
@@ -239,7 +246,7 @@
 			<div class="example" aria-live="polite" data-testid="episode-examples">
 				<p class="xs muted">Examples</p>
 				{#if exampleError}
-					<p class="form-error" role="alert">{exampleError}</p>
+					<p class="small muted">No example yet. The problem is shown under Movie names.</p>
 				{:else}
 					<dl class="exlist">
 						{#each episodeExampleRows(episodes) as [label, path] (label)}
@@ -313,7 +320,7 @@
 				<div class="example" aria-live="polite" data-testid="music-examples">
 					<p class="xs muted">Examples</p>
 					{#if exampleError}
-						<p class="form-error" role="alert">{exampleError}</p>
+						<p class="small muted">No example yet. The problem is shown under Movie names.</p>
 					{:else}
 						<dl class="exlist">
 							{#each musicExampleRows(music) as [label, path] (label)}
@@ -383,7 +390,7 @@
 				>
 			</Field>
 			{#snippet advanced()}
-			<Field id="scan-limit" label="Folders read per Import a library scan" hint="A bigger library is scanned in parts: the scan offers Scan the rest for the next part.">
+			<Field id="scan-limit" label="Folders read per library scan" hint="A bigger library is scanned in parts: the scan offers Scan the rest for the next part.">
 				<input id="scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.adopt_scan_limit} />
 			</Field>
 			<Field id="music-scan-limit" label="Artist folders read per music scan" hint="Each artist folder takes a few MusicBrainz lookups, about one a second, so music is scanned in smaller parts.">
@@ -402,9 +409,9 @@
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
 
-	<SettingsCard id="holding-card" title="Holding folder" description="HolyArrs empties old holding days once a day. Run it now to free the space straight away.">
+	<SettingsCard id="holding-card" title="Holding folder" description="HolyArrs removes old held files once a day. Run it now to free the space straight away.">
 		<div class="row" style="margin-top: var(--s-4)">
-			<Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Empty old holding days now</Button>
+			<Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Remove old held files now</Button>
 		</div>
 	</SettingsCard>
 	<SaveBar {dirty} form="naming-form" saving={busy} disabled={!!exampleError} ondiscard={discard} />

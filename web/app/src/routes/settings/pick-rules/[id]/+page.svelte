@@ -250,10 +250,10 @@
 	}
 </script>
 
-<svelte:head><title>{id === null ? 'New Pick rules' : savedName} · HolyArrs</title></svelte:head>
+<svelte:head><title>{id === null ? 'Add Pick rules' : savedName} · HolyArrs</title></svelte:head>
 
 <PageHeader
-	title={id === null ? 'New Pick rules' : savedName || 'Pick rules'}
+	title={id === null ? 'Add Pick rules' : savedName || 'Pick rules'}
 	subtitle={id === null ? 'Choose the steps, traits, sizes and waits a new set takes.' : inUse ? usedWords(inUse) + '.' : undefined}
 	back={{ href: to('/settings/pick-rules'), label: 'Pick rules' }}
 >
@@ -272,7 +272,7 @@
 {:else}
 	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these Pick rules. Changing them takes the settings permission.</p>{/if}
 	<form class="sc-form" id="pick-rules-form" onsubmit={save} aria-label="Pick rules" novalidate>
-	<fieldset class="group" disabled={!mayEdit}>
+	<fieldset class="group cards" disabled={!mayEdit}>
 	<legend class="sr-only">{mayEdit ? 'Pick rules' : 'Pick rules, read only'}</legend>
 		<SettingsCard id="rules-name" title="Name and kinds" description="What these rules are called and what they are for.">
 			{#if preset}
@@ -440,7 +440,7 @@
 	</fieldset>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
-	{#if mayEdit}<SaveBar {dirty} form="pick-rules-form" saving={busy} label={id === null ? 'Make these Pick rules' : 'Save'} ondiscard={() => start(JSON.parse(saved))} />{/if}
+	{#if mayEdit}<SaveBar {dirty} form="pick-rules-form" saving={busy} ondiscard={() => start(JSON.parse(saved))} />{/if}
 {/if}
 </PageLoader>
 
@@ -451,6 +451,7 @@
 	.ro { font: var(--t-body); }
 	.group { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
 	.group:focus { outline: none; }
+	.cards { min-width: 0; gap: 12px; }
 	.boxes { display: flex; flex-wrap: wrap; gap: 4px 20px; }
 	.box { align-items: center; padding: 0; }
 	.box input { margin-top: 0; }

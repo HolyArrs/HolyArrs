@@ -12,10 +12,13 @@
 	import type { ApiKey } from '#lib/types.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 
 	let skipLocal = $state(false);
 	let loaded = $state(false);
 	let error = $state('');
+	let settingsOk = $state(false);
+	let settingsLoading = $state(false);
 	let savingSkip = $state(false);
 	let savingRequire = $state(false);
 
@@ -266,10 +269,21 @@
 		}
 	}
 
+	async function loadSettings() {
+		settingsLoading = true;
+		error = '';
+		try {
+			took(await api.get<SignInSettings>('/auth/settings'));
+			settingsOk = true;
+		} catch (e) {
+			error = message(e);
+		} finally {
+			settingsLoading = false;
+		}
+	}
+
 	onMount(async () => {
-		const [s, k] = await Promise.allSettled([api.get<SignInSettings>('/auth/settings'), api.get<{ keys: ApiKey[] }>('/auth/keys')]);
-		if (s.status === 'fulfilled') took(s.value);
-		else error = message(s.reason);
+		const [, k] = await Promise.allSettled([loadSettings(), api.get<{ keys: ApiKey[] }>('/auth/keys')]);
 		if (k.status === 'fulfilled') keys = k.value.keys;
 		else keysNote = strongNote(k.reason);
 		loaded = true;
@@ -330,17 +344,17 @@
 	}
 </script>
 
-<svelte:head><title>Sign-in · HolyArrs</title></svelte:head>
+<svelte:head><title>Sign-in and security · HolyArrs</title></svelte:head>
 
 <PageHeader title="Sign-in and security" />
 
 {#if !loaded}
 	<SkSettings rows={3} />
 {:else}
+	{#if !settingsOk}
+		<LoadError hasData={false} message={error} onretry={loadSettings} busy={settingsLoading} />
+	{:else}
 	<SettingsCard id="local-card" title="Local network">
-		{#if error}
-			<p class="notice bad" role="alert" style="margin-top: var(--s-3)">{error}</p>
-		{:else}
 			<label class="switch" style="margin-top: var(--s-3)">
 				<input type="checkbox" checked={skipLocal} disabled={savingSkip} aria-busy={savingSkip} onchange={(e) => setSkip(e.currentTarget.checked)} />
 				<span class="sw" aria-hidden="true"></span>
@@ -351,7 +365,6 @@
 				network, leave this off: they would get the owner's rights too.
 			</p>
 			<p class="hint">Changing keys and passwords still needs a real sign-in.</p>
-		{/if}
 	</SettingsCard>
 
 	<SettingsCard id="twofactor-card" title="Two-factor sign-in">
@@ -370,13 +383,15 @@
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
 				<Field id="min-pw" label="Shortest password allowed">
-					<input id="min-pw" class="input" style="max-width: 120px" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby="min-pw-hint min-pw-warn" />
+					<input id="min-pw" class="input" style="max-width: 120px" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby={Number(minLength) < 12 ? 'min-pw-hint min-pw-warn' : 'min-pw-hint'} />
 					<span id="min-pw-hint" class="hint">4 to 64 characters. It counts for new passwords: first setup, invites, password changes and reset-owner. Passwords people already have keep working.</span>
 				</Field>
-				<p id="min-pw-warn" class="notice warn">
-					Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins, which helps, but it does not make a short
-					password safe. If HolyArrs can be reached from outside your home, use 12 or more.
-				</p>
+				{#if Number(minLength) < 12}
+					<p id="min-pw-warn" class="notice warn">
+						Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins, which helps, but it does not make a short
+						password safe. If HolyArrs can be reached from outside your home, use 12 or more.
+					</p>
+				{/if}
 				{#if isOwner}
 					<Button variant="primary" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>Save</Button>
 				{:else}
@@ -436,10 +451,11 @@
 								<Button type="button" onclick={() => testUrl(w)} disabled={!ways[w].url || testing === w} aria-busy={testing === w}>Test</Button>
 							</div>
 						</Field>
-						{#if tested[w]}<p class="notice {tested[w]?.ok ? 'ok' : 'warn'}" role="status">{tested[w]?.text}</p>
+						{#if tested[w]?.ok}<p class="notice" role="status"><span class="ok-mark"><Icon name="check" size={17} /></span><span>{tested[w]?.text}</span></p>
+						{:else if tested[w]}<p class="notice warn" role="status">{tested[w]?.text}</p>
 						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested yet. Save runs the test; you can save even if it fails.</p>{/if}
 					{/if}
-					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Change them on the Users page.">
+					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Change them on Users and roles.">
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
 							<option value="nobody">Nobody new; only people already linked</option>
 							<option value="list">Only the names or emails below</option>
@@ -466,6 +482,7 @@
 			</form>
 		</SettingsCard>
 	{/each}
+	{/if}
 
 	<SettingsCard id="proxy-card" title="Trusted proxies">
 		<p class="small muted" style="margin-top: var(--s-2)">
@@ -620,6 +637,11 @@
 	}
 	.name {
 		font-weight: var(--weight-semibold);
+	}
+	.ok-mark {
+		display: inline-flex;
+		flex: none;
+		color: var(--ok-text);
 	}
 	.fresh {
 		padding: var(--s-4);

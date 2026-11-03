@@ -1,11 +1,13 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { ago } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -21,6 +23,7 @@
 	const kindWord: Record<Kind, string> = { discord: 'Discord', email: 'Email', webhook: 'Webhook' };
 	let alerts = $state<AlertView[]>([]);
 	let loaded = $state(false);
+	let hasData = $state(false);
 	let error = $state('');
 
 	// The add or change form.
@@ -48,8 +51,22 @@
 	let testing = $state(0);
 
 	// How a pack of several episodes is told (5.2.5).
-	let pack = $state<'one' | 'each'>('one');
+	// Null until the stored value is loaded, so no made-up default shows.
+	let pack = $state<'one' | 'each' | null>(null);
 	let packBusy = $state(false);
+	let packError = $state('');
+
+	async function loadPack() {
+		packBusy = true;
+		packError = '';
+		try {
+			pack = (await api.get<{ pack_alerts: 'one' | 'each' }>('/settings/alerts')).pack_alerts;
+		} catch (e) {
+			packError = message(e);
+		} finally {
+			packBusy = false;
+		}
+	}
 
 	async function savePack(v: 'one' | 'each') {
 		packBusy = true;
@@ -65,18 +82,19 @@
 
 	async function load() {
 		try {
-			void api
-				.get<{ pack_alerts: 'one' | 'each' }>('/settings/alerts')
-				.then((s) => (pack = s.pack_alerts))
-				.catch(() => {});
 			alerts = (await api.get<{ alerts: AlertView[] }>('/alerts')).alerts;
+			hasData = true;
+			error = '';
 		} catch (e) {
 			error = message(e);
 		} finally {
 			loaded = true;
 		}
 	}
-	onMount(load);
+	onMount(() => {
+		void load();
+		void loadPack();
+	});
 
 	function startAdd() {
 		isNew = true;
@@ -162,12 +180,12 @@
 
 <PageHeader title="Alerts">
 	{#snippet actions()}
-		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add an Alert</Button>{/if}
+		{#if !editing && alerts.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add an Alert</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 <p class="small muted lead">
-	Everyone also gets these messages inside HolyArrs, on their Requests page. For email and Discord, each person adds their address or Discord user id in My account.
+	Everyone also gets these messages inside HolyArrs, on their Requests page. For email and Discord, each person adds their address or Discord user ID in My account.
 </p>
 
 {#if editing}
@@ -222,7 +240,7 @@
 				<Field id="al-from" label="From address">
 					<input id="al-from" class="input" type="email" bind:value={form.smtp_from} autocomplete="off" />
 				</Field>
-				<Field id="al-user" label="Mail sign-in name">
+				<Field id="al-user" label="Mail username">
 					<input id="al-user" class="input" bind:value={form.smtp_user} autocomplete="off" />
 				</Field>
 				<Field id="al-pw" label="Mail password" hint="Kept encrypted. Leave as it is to keep the stored one.">
@@ -252,24 +270,26 @@
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />
-				<span><b>On</b><br /><span class="hint">Off keeps the Alert but sends nothing.</span></span>
+				<span><b>Send messages</b><br /><span class="hint">Off keeps the Alert but sends nothing.</span></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save Alert</Button>
 			</div>
 		</SettingsCard>
 	</form>
 {/if}
 
-{#if error}
-	<p class="notice bad" role="alert">{error}</p>
-{:else if loaded && alerts.length === 0 && !editing}
-	<EmptyState icon="bell" title="No Alerts yet">
-		<p>Add a Discord link, an email server or a webhook to tell people (or your own tools) outside HolyArrs.</p>
-	</EmptyState>
+{#if !loaded}
+	<SkSettings rows={2} />
+{:else if !hasData}
+	<LoadError hasData={false} message={error} onretry={load} />
+{:else if alerts.length === 0 && !editing}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
+	<EmptyState icon="bell" title="No Alerts yet" text="Add a Discord link, an email server or a webhook to tell people (or your own tools) outside HolyArrs." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
 		{#each alerts as a (a.id)}
 			<li class="card" data-testid="alert">
@@ -297,6 +317,13 @@
 <section class="card packs" id="pack-alerts" tabindex="-1" aria-labelledby="h-packs" data-testid="pack-alerts">
 	<h2 id="h-packs" class="h2">Season packs</h2>
 	<p class="small muted">When one download brings several episodes of a show into the Library.</p>
+	{#if pack === null}
+		{#if packError}
+			<LoadError hasData={false} message={packError} onretry={loadPack} busy={packBusy} />
+		{:else}
+			<SkSettings rows={1} />
+		{/if}
+	{:else}
 	<fieldset class="pack-choice" disabled={packBusy}>
 		<legend class="sr-only">Alerts for a pack</legend>
 		<label class="checkline">
@@ -308,6 +335,7 @@
 			<span><b>One Alert per episode</b><br /><span class="hint">A ten-episode pack sends ten messages.</span></span>
 		</label>
 	</fieldset>
+	{/if}
 </section>
 
 <style>
@@ -356,7 +384,7 @@
 		margin: var(--s-5) 0 0;
 	}
 	.bad-text {
-		color: var(--fail);
+		color: var(--fail-text);
 	}
 	@media (max-width: 600px) {
 		.two {

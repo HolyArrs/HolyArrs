@@ -18,6 +18,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { kidLabel, ratingChoices } from '#lib/kid.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 
 	interface User {
 		id: number;
@@ -96,6 +97,7 @@
 	let allPerms = $state<Perm[]>(['ask', 'auto_approve', 'approve', 'manage_library', 'settings']);
 	let loaded = $state(false);
 	let error = $state('');
+	let hasData = $state(false);
 
 	// New invite
 	let role = $state<'admin' | 'member'>('member');
@@ -125,6 +127,8 @@
 			allPerms = u.perms;
 			invites = i.invites;
 			loadLimits();
+			hasData = true;
+			error = '';
 		} catch (e) {
 			error = message(e);
 		} finally {
@@ -209,10 +213,6 @@
 		devDialog?.showModal();
 	}
 
-	function mayChange(u: User): boolean {
-		if (u.role === 'owner' || u.name === session.s.name) return false;
-		return isOwner || u.role === 'member';
-	}
 	let pwFor = $state<User | null>(null);
 	let pwNew = $state('');
 	let pwDialog: HTMLDialogElement | undefined = $state();
@@ -234,6 +234,10 @@
 		}
 	}
 
+	function mayChange(u: User): boolean {
+		if (u.role === 'owner' || u.name === session.s.name) return false;
+		return isOwner || u.role === 'member';
+	}
 
 	function openEdit(u: User) {
 		editing = u;
@@ -309,15 +313,16 @@
 	}
 </script>
 
-<svelte:head><title>Users · HolyArrs</title></svelte:head>
+<svelte:head><title>Users and roles · HolyArrs</title></svelte:head>
 
 <PageHeader title="Users and roles" />
 
 {#if !loaded}
 	<SkSettings rows={3} />
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+{:else if !hasData}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<SettingsCard id="invite-card" title="Invite someone">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Send them a one-time link. They pick their own name and password.</p>
 
@@ -394,12 +399,12 @@
 							{/if}
 						{#if mayChange(u)}
 							<Button type="button" onclick={() => openEdit(u)} aria-label="Change {u.name}">Change</Button>
+							<Button variant="plain" type="button" onclick={() => openPassword(u)} aria-label="Set a new password for {u.name}">Set password</Button>
 							{#if u.two_factor}
 								<Button variant="plain" type="button" onclick={() => resetTwoFactor(u)} aria-label="Reset two-factor sign-in for {u.name}"
 									>Reset two-factor</Button>
 							{/if}
 							{#if u.state === 'active'}
-							<Button variant="plain" type="button" onclick={() => openPassword(u)} aria-label="Set a new password for {u.name}">Set password</Button>
 								<Button variant="destructive" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label="Turn off {u.name}"
 									>Turn off</Button>
 							{:else}
@@ -492,11 +497,6 @@
 	{/if}
 </dialog>
 
-<dialog bind:this={dialog} class="dlg" aria-labelledby="h-edit" onclose={() => (editing = null)}>
-	{#if editing}
-		<form onsubmit={saveEdit}>
-			<h2 id="h-edit" class="h2">Change {editing.name}</h2>
-			{#if isOwner}
 <dialog bind:this={pwDialog} class="dlg" aria-labelledby="h-password" onclose={() => { pwFor = null; pwNew = ''; }}>
 	{#if pwFor}
 		<form onsubmit={savePassword}>
@@ -513,6 +513,11 @@
 	{/if}
 </dialog>
 
+<dialog bind:this={dialog} class="dlg" aria-labelledby="h-edit" onclose={() => (editing = null)}>
+	{#if editing}
+		<form onsubmit={saveEdit}>
+			<h2 id="h-edit" class="h2">Change {editing.name}</h2>
+			{#if isOwner}
 				<fieldset class="field">
 					<legend class="label">Role</legend>
 					<div class="row">
@@ -592,6 +597,10 @@
 		border: 0;
 		padding: 0;
 		margin: 0 0 var(--s-3);
+	}
+	/* A floated legend is a normal child, so it takes the label column like other Field rows. */
+	.invite fieldset.field > legend {
+		float: left;
 	}
 	.presets { align-items: center; }
 	.soon { color: var(--text-muted); }

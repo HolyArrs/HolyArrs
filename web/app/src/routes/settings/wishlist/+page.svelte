@@ -4,6 +4,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -30,6 +31,8 @@
 	let busy = $state(false);
 	let error = $state('');
 	let loaded = $state(false);
+	let loading = $state(false);
+	let loadError = $state('');
 	let saved = $state('');
 	const dirty = $derived(loaded && !!saved && JSON.stringify(settings) !== saved);
 
@@ -45,15 +48,22 @@
 		{ key: 'music_per_week', id: 'per-week-music', label: 'Music asks', hint: 'An artist or album ask counts as one, whatever its albums.' }
 	] as const;
 
-	onMount(async () => {
+	async function load() {
+		loading = true;
+		loadError = '';
 		try {
 			settings = await api.get<AskSettings>('/settings/asks');
 			saved = JSON.stringify(settings);
 		} catch (e) {
-			error = message(e);
+			loadError = message(e);
 		} finally {
 			loaded = true;
+			loading = false;
 		}
+	}
+
+	onMount(async () => {
+		await load();
 		api
 			.get<{ library_folders: LibraryFolder[] }>('/library-folders')
 			.then((r) => (folders = r.library_folders))
@@ -91,6 +101,8 @@
 
 {#if !loaded}
 	<SkSettings rows={3} />
+{:else if !saved}
+	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
 	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label="Request rules">
 		<SettingsCard id="weekly-limits" title="Weekly limits" description="How many asks each person may make in 7 days.">
@@ -120,7 +132,7 @@
 			</Field>
 		</SettingsCard>
 		<SettingsCard id="approved-asks" title="Approved asks" description="Where an approved ask goes, and whether the search starts straight away.">
-			<Field id="ask-folder" label="Library folder for approved movie asks" hint="An approved movie ask is added to this folder.">
+			<Field id="ask-folder" label="Library folder for approved movie asks">
 				<select id="ask-folder" class="input" bind:value={settings.library_folder_id}>
 					<option value={0}>The first movie folder</option>
 					{#each movieFolders as f (f.id)}
@@ -128,7 +140,7 @@
 					{/each}
 				</select>
 			</Field>
-			<Field id="ask-show-folder" label="Library folder for approved show asks" hint="An approved show ask is added to this folder.">
+			<Field id="ask-show-folder" label="Library folder for approved show asks">
 				<select id="ask-show-folder" class="input" bind:value={settings.show_library_folder_id}>
 					<option value={0}>The first show folder</option>
 					{#each showFolders as f (f.id)}

@@ -4,6 +4,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	// Settings > Music: what a new artist gets by default, which Pressing is
 	// used for an album, and where MusicBrainz answers come from.
 	import { onMount } from 'svelte';
@@ -26,18 +27,32 @@
 	let busy = $state(false);
 	let error = $state('');
 	let saved = $state('');
+	let loadError = $state('');
 	const dirty = $derived(loaded && !!saved && JSON.stringify(settings) !== saved);
+	// Save waits until each group of kinds has at least one ticked.
+	const emptyKinds = $derived(
+		!settings.album_types.length
+			? 'Tick at least one Album kind to save.'
+			: !settings.secondary_types.length
+				? 'Tick at least one Extra kind (under Advanced) to save.'
+				: !settings.release_statuses.length
+					? 'Tick at least one kind under Pressings that count (under Advanced) to save.'
+					: ''
+	);
 
-	onMount(async () => {
+	async function load() {
+		loaded = false;
+		loadError = '';
 		try {
 			settings = await api.get<MusicSettings>('/settings/music');
 			saved = JSON.stringify(settings);
 		} catch (e) {
-			error = message(e);
+			loadError = message(e);
 		} finally {
 			loaded = true;
 		}
-	});
+	}
+	onMount(load);
 
 	async function save(e: SubmitEvent) {
 		e.preventDefault();
@@ -61,6 +76,8 @@
 
 {#if !loaded}
 	<SkSettings rows={3} />
+{:else if loadError}
+	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	<form class="sc-form" id="music-form" onsubmit={save} aria-label="Music defaults">
 		<SettingsCard id="new-artist" title="A new artist" description="What every artist you add gets, unless you choose otherwise when adding.">
@@ -114,16 +131,17 @@
 				<div class="field">
 					<label for="m-url">MusicBrainz address <span class="muted">(optional)</span></label>
 					<input id="m-url" class="input mono" bind:value={settings.musicbrainz_url} placeholder="https://musicbrainz.org" autocomplete="off" spellcheck="false" />
-					<span class="hint">Leave empty for musicbrainz.org. A mirror of your own works too. HolyArrs asks at most once a second.</span>
+					<span class="hint">Leave empty for musicbrainz.org. A mirror of your own works too.</span>
 				</div>
 				<Field id="m-hours" label="Keep answers for (hours)" hint="Answers are reused for this long before HolyArrs asks again.">
 					<input id="m-hours" class="input narrow" type="number" min="1" max="720" bind:value={settings.cache_hours} />
 				</Field>
 			{/snippet}
 		</SettingsCard>
+		{#if emptyKinds}<p class="form-error" role="status">{emptyKinds}</p>{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
-	<SaveBar {dirty} form="music-form" saving={busy} disabled={!settings.album_types.length || !settings.secondary_types.length || !settings.release_statuses.length} ondiscard={() => (settings = JSON.parse(saved))} />
+	<SaveBar {dirty} form="music-form" saving={busy} disabled={!!emptyKinds} ondiscard={() => (settings = JSON.parse(saved))} />
 {/if}
 
 <style>

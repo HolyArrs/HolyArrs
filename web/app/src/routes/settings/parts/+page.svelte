@@ -3,6 +3,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/paths.ts';
 	import { api, message } from '#lib/api.ts';
@@ -104,7 +105,7 @@
 
 	function stage(s: StageState, action: 'pause' | 'resume' | 'restart') {
 		const name = s.key.replace(/^stage:/, '');
-		run(`stage-${name}-${action}`, `${action} ${s.name}`, `/stages/${encodeURIComponent(name)}/${action}`, done(`${s.name}: done.`));
+		run(`stage-${name}-${action}`, `${action[0].toUpperCase()}${action.slice(1)} ${s.name}`, `/stages/${encodeURIComponent(name)}/${action}`, done(`${s.name}: done.`));
 	}
 
 	function reconnect(l: StageState) {
@@ -132,11 +133,12 @@
 
 {#if !allowed}
 	<p class="notice warn">Only the owner and admins can use these controls.</p>
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+{:else if error && !parts}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if !parts}
 	<SkSettings rows={3} />
 {:else}
+	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	{#if safeMode}
 		<p class="notice warn" data-testid="parts-safe-mode">
 			HolyArrs runs in safe mode: only the core runs, and part switches and stage controls are refused until a normal start. Use
@@ -202,7 +204,7 @@
 								{:else}
 									<Button variant="plain" type="button" onclick={() => stage(s, 'pause')} disabled={!!busy} aria-label="Pause {s.name}">Pause</Button>
 								{/if}
-								<Button variant="plain" type="button" onclick={() => stage(s, 'restart')} disabled={!!busy} aria-label="Restart {s.name}">Restart</Button>
+								<Button type="button" onclick={() => stage(s, 'restart')} disabled={!!busy} aria-label="Restart {s.name}">Restart</Button>
 							</div>{:else}<span class="xs muted">Restarts with the whole app</span>{/if}
 						</li>
 					{/each}
@@ -279,8 +281,8 @@
 	.acts {
 		flex-wrap: wrap;
 	}
-	.confirm {
-		border-color: var(--ha-red);
+	:global(.settings-content) .card.confirm {
+		box-shadow: 0 0 0 1px var(--ha-red);
 	}
 	.confirm .row {
 		margin-top: var(--s-3);

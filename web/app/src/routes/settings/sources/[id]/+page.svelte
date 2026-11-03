@@ -9,6 +9,7 @@
 	import { barHeight, ms, opWords, uses } from '#lib/sources.ts';
 	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
 	import Button from '#lib/ui/Button.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { SourceCall, SourceDay, SourceView } from '#lib/types.ts';
 
 	let src = $state<SourceView | null>(null);
@@ -61,19 +62,25 @@
 
 <svelte:head><title>{src?.name ?? 'Source'} health · HolyArrs</title></svelte:head>
 
-{#if error}
-	<p class="notice bad" role="alert">{error}</p>
+<PageHeader
+	back={{ href: to('/settings/sources'), label: 'Sources' }}
+	title={src?.name ?? 'Source'}
+	subtitle={src ? `${src.format === 'rss' ? 'RSS' : words(src.format)} · ${words(src.protocol)} · priority ${src.priority} · ${uses(src)}` : undefined}
+>
+	{#snippet actions()}
+		{#if src}
+			{#if src.state === 'paused'}<Button type="button" disabled={trying} aria-busy={trying} onclick={tryNow} data-testid="source-try">Try now</Button>{/if}
+			<span class="chip {healthTone(src.health)}" data-testid="health-state">{healthWord(src.health)}</span>
+		{/if}
+	{/snippet}
+</PageHeader>
+
+{#if error && !src}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if !src}
 	<SkSettings rows={2} />
 {:else}
-	<PageHeader back={{ href: to('/settings/sources'), label: 'Sources' }} title={src.name} subtitle={`${words(src.format)} · ${words(src.protocol)} · priority ${src.priority} · ${uses(src)}`}>
-		{#snippet actions()}
-			{#if src}
-				{#if src.state === 'paused'}<Button type="button" disabled={trying} aria-busy={trying} onclick={tryNow} data-testid="source-try">Try now</Button>{/if}
-				<span class="chip {healthTone(src.health)}" data-testid="health-state">{healthWord(src.health)}</span>
-			{/if}
-		{/snippet}
-	</PageHeader>
+	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 
 	<section class="tiles" aria-label="At a glance">
 		<div class="card tile">
@@ -273,7 +280,7 @@
 		border-bottom: 1px solid var(--line);
 	}
 	.bad-text {
-		color: var(--fail);
+		color: var(--fail-text);
 	}
 	.table-scroll {
 		max-width: 100%;

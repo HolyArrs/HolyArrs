@@ -20,7 +20,7 @@ async function addSource(name: string, format: string, url: string, key = '') {
 	await page.getByLabel('Address', { exact: true }).fill(url);
 	if (key) await page.getByLabel('Key', { exact: true }).fill(key);
 	await page.getByText('May reach the local network', { exact: true }).click();
-	await page.getByRole('button', { name: 'Save Source' }).click();
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
 }
 
 test('a Source is added, tested, shows a wrong key in plain words, pauses and resumes', async () => {
@@ -36,14 +36,14 @@ test('a Source is added, tested, shows a wrong key in plain words, pauses and re
 	// A wrong key.
 	await row.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('Key', { exact: true }).fill('not-the-right-key');
-	await page.getByRole('button', { name: 'Save Source' }).click();
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await row.getByRole('button', { name: 'Test' }).click();
 	await expect(row.getByTestId('source-test')).toContainText('turned down the key');
 
 	// Back to the right key, then pause and resume.
 	await row.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('Key', { exact: true }).fill(indexerKey);
-	await page.getByRole('button', { name: 'Save Source' }).click();
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await row.getByRole('button', { name: 'Pause' }).click();
 	await expect(row.getByTestId('source-state')).toHaveText('Paused');
 	await expect(row.getByTestId('source-text')).toContainText('Paused by you');

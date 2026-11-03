@@ -11,7 +11,8 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes, dateTime, words } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { BackupInfo } from '#lib/types.ts';
 
 	type Preset = 'balanced' | 'light' | 'careful';
@@ -28,6 +29,7 @@
 	let loaded = $state(false);
 	let missing = $state(false);
 	let error = $state('');
+	let hasData = $state(false);
 	let making = $state(false);
 	let savingPreset = $state(false);
 	let restoring = $state(false);
@@ -40,6 +42,7 @@
 			preset = r.preset;
 			waiting = r.restore_waiting;
 			keyNote = r.key_note;
+			hasData = true;
 			error = '';
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 404) missing = true;
@@ -111,7 +114,7 @@
 	}
 </script>
 
-<svelte:head><title>Backups · HolyArrs</title></svelte:head>
+<svelte:head><title>Backups and restore · HolyArrs</title></svelte:head>
 
 <PageHeader title="Backups and restore">
 	{#snippet actions()}
@@ -124,12 +127,11 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else if missing}
-	<EmptyState icon="archive" title="Backups are off in this build">
-		<p>This HolyArrs runs without its backup manager.</p>
-	</EmptyState>
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<EmptyState icon="archive" title="Backups are off in this build" text="This HolyArrs runs without its backup manager." />
+{:else if !hasData}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if waiting}
 		<p class="notice warn" role="status" style="margin-bottom: var(--s-4)">
 			<Icon name="info" size={18} /><span>A restore is checked and waiting. HolyArrs puts it in place the next time it starts.</span>
@@ -137,7 +139,7 @@
 	{/if}
 
 	<SettingsCard id="backup-often" title="How often">
-		<div class="presets" role="radiogroup" aria-labelledby="h-plan" aria-busy={savingPreset}>
+		<div class="presets" role="radiogroup" aria-label="How often" aria-busy={savingPreset}>
 			{#each presets as p (p.key)}
 				<label class="preset" class:on={preset === p.key}>
 					<input type="radio" name="preset" value={p.key} checked={preset === p.key} disabled={savingPreset} onchange={() => choose(p.key)} />
@@ -167,7 +169,7 @@
 							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {b.detail || words(b.kind)}</div>
 						</div>
 						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download>Download</AdminLinkButton>
-						<IconButton icon="trash" label="Delete {b.name}" type="button" onclick={() => remove(b)} />
+						<IconButton icon="trash" label="Delete {b.name}" tipSide="below-end" type="button" onclick={() => remove(b)} />
 					</li>
 				{/each}
 			</ul>

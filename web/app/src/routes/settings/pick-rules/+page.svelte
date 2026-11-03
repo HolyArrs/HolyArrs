@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PageLoader from '#lib/ui/PageLoader.svelte';
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import { onMount } from 'svelte';
 	import { api, ApiError, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
@@ -77,19 +77,19 @@
 
 <PageHeader title="Pick rules">
 	{#snippet actions()}
-		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>New Pick rules</Button>{/if}
+		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>Add Pick rules</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 {#if error && !rules}
 	<LoadError hasData={false} message={error} onretry={load} busy={loading} />
+{:else if !rules}
+	<SkSettings rows={3} />
 {:else}
-<PageLoader loading={!rules} label="Loading pick rules" onretry={load}>
-{#if rules}
 	{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
 	<SettingsCard id="pick-rules-card" title="Your Pick rules" description="Each Library folder has its own Pick rules, and a title can use other ones.">
 		{#if rules.length === 0}
-			<EmptyState compact icon="star" title="No Pick rules yet" text="HolyArrs makes its ready-made Pick rules when it starts." action={mayEdit ? { label: 'New Pick rules', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
+			<EmptyState compact icon="star" title="No Pick rules yet" text="HolyArrs makes its ready-made Pick rules when it starts." action={mayEdit ? { label: 'Add Pick rules', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="pick-rules">
 				{#each rules as r (r.id)}
@@ -126,8 +126,6 @@
 		{#if mayEdit}<p class="hint">Change opens the steps, traits, sizes and waits of one set. Ready-made rules keep their name and kinds; make a copy to start your own from one.</p>
 		{:else}<p class="hint" data-testid="read-only">You can see Pick rules here. Changing them takes the settings permission.</p>{/if}
 	</SettingsCard>
-{/if}
-</PageLoader>
 {/if}
 
 <Sheet bind:open={removeOpen} title="Remove these Pick rules?" description={removing?.name} size="sm">

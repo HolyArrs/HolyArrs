@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PageLoader from '#lib/ui/PageLoader.svelte';
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	// Settings > Movies and TV defaults: what a new movie or show gets (folder,
 	// Pick rules, Keep up to date, Search when added), with the Release gate
 	// and the show choices behind Advanced. Three server routes, one form.
@@ -96,8 +96,9 @@
 
 <PageHeader title="Movies and TV defaults" />
 
-<PageLoader loading={loading && !form && !loadError} label="Loading title defaults">
-{#if !form}
+{#if loading && !form}
+	<SkSettings rows={4} />
+{:else if !form}
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
 	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these defaults. Changing them takes the settings permission.</p>{/if}
@@ -192,7 +193,6 @@
 	</form>
 	{#if mayEdit}<SaveBar {dirty} form="title-defaults-form" saving={busy} ondiscard={() => (form = JSON.parse(saved))} />{/if}
 {/if}
-</PageLoader>
 
 <style>
 	/* The fieldset only turns the form read only; it adds no box of its own. */

@@ -6,7 +6,8 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { ago } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -18,6 +19,7 @@
 
 	let servers = $state<MediaServerView[]>([]);
 	let loaded = $state(false);
+	let hasData = $state(false);
 	let error = $state('');
 	let editing = $state<MediaServerView | null>(null);
 	let isNew = $state(false);
@@ -42,6 +44,7 @@
 	async function load() {
 		try {
 			servers = (await api.get<{ media_servers: MediaServerView[] }>('/media-servers')).media_servers;
+			hasData = true;
 			error = '';
 		} catch (e) {
 			error = message(e);
@@ -115,7 +118,7 @@
 
 <PageHeader title="Media servers">
 	{#snippet actions()}
-		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a media server</Button>{/if}
+		{#if !editing && servers.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a media server</Button>{/if}
 	{/snippet}
 </PageHeader>
 
@@ -165,26 +168,26 @@
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />
-				<span><b>On</b><br /><span class="hint">Off keeps it but tells it nothing.</span></span>
+				<span><b>Tell it about changes</b><br /><span class="hint">Off keeps it but tells it nothing.</span></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save</Button>
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
 			</div>
 		</SettingsCard>
 	</form>
 {/if}
 
-{#if error}
-	<p class="notice bad" role="alert">{error}</p>
-{:else if !loaded}
+{#if !loaded}
 	<SkSettings rows={2} />
+{:else if !hasData}
+	<LoadError hasData={false} message={error} onretry={load} />
 {:else if servers.length === 0 && !editing}
-	<EmptyState icon="film" title="No media servers yet">
-		<p>Add your Plex, Jellyfin or Emby server and new movies show up there by themselves.</p>
-	</EmptyState>
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
+	<EmptyState icon="tv" title="No media servers yet" text="Add your Plex, Jellyfin or Emby server and new movies show up there by themselves." action={{ label: 'Add a media server', onclick: startAdd, icon: 'plus' }} />
 {:else}
+	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
 		{#each servers as m (m.id)}
 			<li class="card" data-testid="media-server">
@@ -248,7 +251,7 @@
 		margin-top: 0;
 	}
 	.bad-text {
-		color: var(--fail);
+		color: var(--fail-text);
 	}
 	@media (max-width: 600px) {
 		.two {

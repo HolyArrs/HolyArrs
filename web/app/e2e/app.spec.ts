@@ -117,6 +117,8 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await expect(page).toHaveURL(/\/downloads\/decide$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Needs a decision');
 	await nav.getByRole('link', { name: 'Settings', exact: true }).click();
+	// The side menu folds: open the Notifications group first.
+	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Notifications' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Alerts' }).click();
 	await expect(page).toHaveURL(/\/settings\/alerts$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Alerts');
@@ -157,7 +159,7 @@ test('settings pages render their forms', async () => {
 	await expect(page.getByText('Answering', { exact: true })).toBeVisible();
 	await expect(page.locator('input[type=password]')).toHaveCount(0);
 	await expect(page.getByText(/read access token|TMDB key/i)).toHaveCount(0);
-	await expect(page.getByText('This product uses the TMDB API but is not endorsed or certified by TMDB.')).toBeVisible();
+	// No credit lines in the app (Luis): they live on GitHub.
 	await page.goto('/settings/backups');
 	for (const p of ['Balanced', 'Light', 'Careful']) await expect(page.getByText(p, { exact: true })).toBeVisible();
 	await page.goto('/settings/sign-in');
