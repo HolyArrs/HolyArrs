@@ -130,6 +130,35 @@ test('the owner changes what a member may do, and can turn them off', async () =
 	await expect(own.getByText('ana turned on.')).toBeVisible();
 });
 
+test('the owner sets a forgotten password, and ana switches account on a shared screen', async () => {
+	const newPw = `${memberPw}-new`;
+	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Set a new password for ana' }).click();
+	const dlg = own.getByRole('dialog', { name: 'New password for ana' });
+	await dlg.getByLabel('New password').fill(newPw);
+	await dlg.getByRole('button', { name: 'Set password' }).click();
+	await expect(own.getByText('New password set for ana.')).toBeVisible();
+	await ana.goto('/library');
+	await expect(ana).toHaveURL(/\/login/);
+	await ana.getByLabel('Name').fill('ana');
+	await ana.getByLabel('Password', { exact: true }).fill(newPw);
+	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await ana.getByLabel('Code').fill(backup[1]);
+	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(ana.getByRole('heading', { name: 'Two-factor sign-in' })).toHaveCount(0);
+	await expect(ana).not.toHaveURL(/\/login/);
+
+	// Switch account: signs out, and ana is one tap away on this device.
+	await ana.getByRole('button', { name: 'Account and appearance' }).click();
+	await ana.getByRole('menuitem', { name: 'Switch account' }).click();
+	await expect(ana).toHaveURL(/\/login/);
+	const people = ana.getByTestId('recent-people');
+	await people.getByRole('button', { name: 'ana', exact: true }).click();
+	await expect(ana.getByLabel('Name')).toHaveValue('ana');
+	await people.getByRole('button', { name: 'Forget ana on this device' }).click();
+	await expect(people).toHaveCount(0);
+});
+
 test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await own.goto('/settings/sign-in');
 	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Sign in with Jellyfin' }) });
