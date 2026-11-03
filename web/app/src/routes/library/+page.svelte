@@ -1237,6 +1237,8 @@
 
 	/* Bulk bar */
 	.select-bar { position: sticky; bottom: 16px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; padding: 10px 12px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card), 0 8px 28px rgb(0 0 0 / 25%); }
+	/* Phones: the bar stays above the bottom tab bar and the safe area. */
+	@media (max-width: 767px) { .select-bar { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom, 0px) + 8px); } }
 	.select-bar .count { padding: 0 8px; font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.bar-gap { flex: 1 1 auto; }
 	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
