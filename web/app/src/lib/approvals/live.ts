@@ -54,6 +54,16 @@ export interface PartCounts {
 	complete: boolean;
 	/** false: not counted in "n more available" (a single, remix, bootleg, or a season with nothing aired yet). */
 	real?: boolean;
+	/** Episodes aired or tracks the part holds, and how many of them are in the Library (for parts asked only in part). */
+	size?: number;
+	have?: number;
+}
+
+/** A part asked only in part: a season with single episodes, an album with kept songs. */
+export interface PartPick {
+	key: string | number;
+	/** How many episodes or songs were kept. */
+	count: number;
 }
 
 // Title words that mark a release as not a real album (MusicBrainz sometimes leaves these untyped).
@@ -66,12 +76,28 @@ export function realAlbum(a: { type?: string; secondary_types?: string[] | null;
 
 /**
  * partialFacts counts the parts the ask covers that are fully in the Library.
- * `asked` is the ask's seasons or album ids (empty: everything). Parts the
- * ask did not cover are counted as `more`.
+ * `asked` is the ask's whole seasons or album ids (empty, with no picks:
+ * everything). `picks` are parts asked only in part: one is in once its kept
+ * episodes or songs are, and the ones left unticked are counted as `skipped`.
+ * Parts the ask did not cover are counted as `more`.
  */
-export function partialFacts(unit: 'seasons' | 'albums', parts: PartCounts[], asked: (string | number)[]): LifeFacts {
+export function partialFacts(unit: 'seasons' | 'albums', parts: PartCounts[], asked: (string | number)[], picks: PartPick[] = []): LifeFacts {
 	if (!parts.length) return {};
-	const want = asked.length ? parts.filter((p) => asked.includes(p.key)) : parts;
+	const pick = new Map(picks.filter((p) => !asked.includes(p.key)).map((p) => [p.key, p.count]));
+	const want = asked.length || pick.size ? parts.filter((p) => asked.includes(p.key) || pick.has(p.key)) : parts;
 	if (!want.length) return {};
-	return { partial: { have: want.filter((p) => p.complete).length, total: want.length, unit }, more: parts.filter((p) => p.real !== false && !want.includes(p)).length };
+	let skipped = 0;
+	let have = 0;
+	for (const p of want) {
+		const n = pick.get(p.key);
+		if (n === undefined || p.size === undefined) {
+			if (p.complete) have++;
+			continue;
+		}
+		skipped += Math.max(p.size - n, 0);
+		if (p.size > 0 && (p.have ?? 0) >= Math.min(n, p.size)) have++;
+	}
+	const out: LifeFacts = { partial: { have, total: want.length, unit }, more: parts.filter((p) => p.real !== false && !want.includes(p)).length };
+	if (skipped > 0) out.skipped = skipped;
+	return out;
 }

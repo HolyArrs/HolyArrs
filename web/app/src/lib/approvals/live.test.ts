@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { liveByTitle, liveFacts, partialFacts, realAlbum } from './live.ts';
+import { lifecycle } from './lifecycle.ts';
 
 const dl = (title_id: number, phase: string, progress = 0) => ({ title_id, phase, progress });
 const se = (title_id: number, state = 'running', kind = 'search_slot') => ({ title_id, state, kind }) as Parameters<typeof liveByTitle>[1][number];
@@ -50,6 +51,46 @@ describe('real parts in "more available" (#135)', () => {
 		expect(realAlbum({ type: 'Single', secondary_types: [], name: 'Hotline Bling' })).toBe(false);
 		expect(realAlbum({ type: 'Album', secondary_types: ['Remix'], name: 'X' })).toBe(false);
 		expect(realAlbum({ type: 'Album', secondary_types: [], name: 'Unreleased Bootleg Vol. 2' })).toBe(false);
+	});
+});
+
+describe('episodes or songs left unticked (#135)', () => {
+	const seasons = [
+		{ key: 1, complete: true, real: true, size: 10, have: 10 },
+		{ key: 2, complete: false, real: true, size: 8, have: 3 },
+		{ key: 3, complete: false, real: true, size: 6, have: 0 }
+	];
+	it('counts the episodes left out of a season asked in part', () => {
+		const f = partialFacts('seasons', seasons, [1], [{ key: 2, count: 3 }]);
+		expect(f).toEqual({ partial: { have: 2, total: 2, unit: 'seasons' }, more: 1, skipped: 5 });
+		expect(lifecycle({ state: 'available', title_id: 7 }, f).more).toBe('1 more season available');
+		const all = partialFacts('seasons', seasons, [1, 3], [{ key: 2, count: 3 }]);
+		expect(lifecycle({ state: 'approved', title_id: 7 }, all).label).toBe('Processing · 1 season left');
+	});
+	it('a season with picks is asked, not more: Ready says the unticked episodes', () => {
+		const f = partialFacts('seasons', seasons.slice(0, 2), [1], [{ key: 2, count: 3 }]);
+		expect(f.more).toBe(0);
+		expect(lifecycle({ state: 'approved', title_id: 7 }, f)).toMatchObject({ stage: 'ready', label: 'Ready · 2 seasons', more: '5 more episodes available' });
+	});
+	it('picks only (no whole season) cover just the picked seasons', () => {
+		const f = partialFacts('seasons', seasons, [], [{ key: 3, count: 2 }]);
+		expect(f).toEqual({ partial: { have: 0, total: 1, unit: 'seasons' }, more: 2, skipped: 4 });
+	});
+	it('a part asked whole and in part counts as whole', () => {
+		expect(partialFacts('seasons', seasons, [2], [{ key: 2, count: 3 }]).skipped).toBeUndefined();
+	});
+	it('counts the songs left out of an album', () => {
+		const albums = [
+			{ key: 'a', complete: false, real: true, size: 12, have: 9 },
+			{ key: 'b', complete: true, real: true, size: 10, have: 10 }
+		];
+		const f = partialFacts('albums', albums, ['b'], [{ key: 'a', count: 9 }]);
+		expect(f).toEqual({ partial: { have: 2, total: 2, unit: 'albums' }, more: 0, skipped: 3 });
+		expect(lifecycle({ state: 'available', title_id: 7 }, f).more).toBe('3 more songs available');
+	});
+	it('no sizes known: nothing skipped, nothing guessed', () => {
+		const f = partialFacts('albums', [{ key: 'a', complete: false }], [], [{ key: 'a', count: 2 }]);
+		expect(f).toEqual({ partial: { have: 0, total: 1, unit: 'albums' }, more: 0 });
 	});
 });
 
