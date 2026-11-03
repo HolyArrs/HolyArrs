@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/parse"
 	"github.com/CoderLuii/holyarrs/internal/unrar"
 )
 
@@ -68,8 +69,16 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 	}
 	var firsts []string
 	for _, c := range cands {
+		// A video already there means nothing to unpack, but a scene set's
+		// Sample clip beside the RARs does not count.
 		if IsMedia(filepath.Ext(c.Path)) {
-			return nil, noop, ""
+			rel, err := filepath.Rel(root, c.Path)
+			if err != nil {
+				rel = filepath.Base(c.Path)
+			}
+			if !isSample(rel, parse.Parse(filepath.Base(c.Path), parse.Hints{Size: c.Size})) {
+				return nil, noop, ""
+			}
 		}
 		if unrar.IsVolume(c.Path) && unrar.IsFirstVolume(c.Path) {
 			firsts = append(firsts, c.Path)

@@ -156,6 +156,31 @@ func TestPackedMultiVolumeIsUnpackedAndImported(t *testing.T) {
 	noLeftovers(t, w.dl)
 }
 
+// A scene set: RAR volumes, an .nfo and a Sample folder with a short clip.
+// The clip is not the movie, so the set is still unpacked and imported.
+func TestPackedSetWithSampleIsUnpacked(t *testing.T) {
+	fakeDisk(t, 10<<30)
+	w := packedWorld(t, map[string][]byte{
+		"Rel/" + relName + ".rar":                                rar4(relName+".mkv", video[:1500], len(video), false, true, false, true),
+		"Rel/" + relName + ".r00":                                rar4(relName+".mkv", video[1500:], len(video), true, false, false, false),
+		"Rel/" + relName + ".nfo":                                []byte("info"),
+		"Rel/Sample/" + strings.ToLower(relName) + "-sample.mkv": bytes.Repeat([]byte("s"), 200),
+	})
+	im := &Importer{Store: w.s}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "done" {
+		t.Fatalf("state %s: %+v", imp.State, imp.Result)
+	}
+	got, err := os.ReadFile(filepath.Join(w.lib, "Dune - Part Two (2024)", "Dune - Part Two (2024) 1080p WEB.mkv"))
+	if err != nil || !bytes.Equal(got, video) {
+		t.Fatalf("library file: %v", err)
+	}
+	noLeftovers(t, w.dl)
+}
+
 func TestPackedDryRunWritesNothing(t *testing.T) {
 	w := packedWorld(t, map[string][]byte{"Rel/" + relName + ".rar": rar4(relName+".mkv", video, len(video), false, false, false, false)})
 	im := &Importer{Store: w.s}
