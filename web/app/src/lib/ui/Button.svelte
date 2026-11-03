@@ -16,6 +16,8 @@
 	};
 	let { variant = 'secondary', size = 'md', href, icon, iconAfter, busy = false, full = false, type = 'button', disabled, children, class: cls = '', ...rest }: Props = $props();
 	const iconSize = $derived(size === 'lg' ? 20 : size === 'sm' ? 16 : 18);
+	// Pages that pass aria-busy by hand get the same spinner and lock as busy.
+	const working = $derived(busy || rest['aria-busy'] === true || rest['aria-busy'] === 'true');
 </script>
 
 {#if href && !disabled}
@@ -23,8 +25,8 @@
 		{#if icon}<Icon name={icon} size={iconSize} />{/if}<span>{@render children()}</span>{#if iconAfter}<Icon name={iconAfter} size={iconSize} />{/if}
 	</a>
 {:else}
-	<button class="ui-btn {variant} {size} {cls}" class:full {type} disabled={disabled || busy} aria-busy={busy || undefined} use:press={'button'} {...rest}>
-		{#if busy}<span class="spin" aria-hidden="true"></span>{:else if icon}<Icon name={icon} size={iconSize} />{/if}<span>{@render children()}</span>{#if iconAfter}<Icon name={iconAfter} size={iconSize} />{/if}
+	<button class="ui-btn {variant} {size} {cls}" class:full {type} use:press={'button'} {...rest} disabled={disabled || working} aria-busy={working || undefined}>
+		{#if working}<span class="spin" aria-hidden="true"></span>{:else if icon}<Icon name={icon} size={iconSize} />{/if}<span>{@render children()}</span>{#if iconAfter}<Icon name={iconAfter} size={iconSize} />{/if}
 	</button>
 {/if}
 
@@ -54,6 +56,7 @@
 	.ui-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
 	@keyframes spin { to { transform: rotate(1turn); } }
-	@media (pointer: coarse) { .ui-btn { min-height: 44px; } }
 	@media (max-width: 767px) { .sm { min-height: 36px; padding: 0 14px; font-size: 14px; } }
+	/* Last, so the phone size above cannot undo the touch size. */
+	@media (pointer: coarse) { .ui-btn { min-height: 44px; } }
 </style>
