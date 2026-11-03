@@ -144,13 +144,13 @@ export async function toggleSeasonKept(page: Page, season: string) {
 	await expect(keep).toHaveAttribute('aria-pressed', was === 'true' ? 'false' : 'true');
 }
 
-/** episodeRow opens the episode's season and returns its row ("S02E01"). */
+/** episodeRow opens the episode's season and returns its row ("S02E01"): keep toggle, name button, state and searches. */
 export async function episodeRow(page: Page, code: string): Promise<Locator> {
 	const m = /^S(\d+)E(\d+)$/.exec(code);
 	if (!m) throw new Error(`not an episode code: ${code}`);
 	const season = Number(m[1]);
 	const row = await openSeasonNamed(page, season === 0 ? 'Specials' : `Season ${season}`);
-	const ep = row.getByRole('button', { name: new RegExp(`^Episode ${Number(m[2])}:`) });
+	const ep = row.locator('.lib-ep').filter({ has: page.getByRole('button', { name: new RegExp(`^Episode ${Number(m[2])}:`) }) });
 	await expect(ep).toHaveCount(1);
 	return ep;
 }
@@ -168,7 +168,7 @@ export async function episodeAction(page: Page, code: string, item: string) {
 	} else if (item === 'Search now') await ep.getByRole('button', { name: `Look for episode ${n}` }).click();
 	else if (item === 'Choose a release') await ep.getByRole('button', { name: `Choose a release for episode ${n}` }).click();
 	else if (item === 'History') {
-		await ep.click();
+		await ep.getByRole('button', { name: /^Episode \d+:/ }).click();
 		await expect(page.getByTestId('episode-sheet')).toBeVisible();
 	} else throw new Error(`the Library tab has no "${item}" for ${code}`);
 }
