@@ -327,9 +327,16 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		// Exiting would only restart into the same refusal: keep saying
 		// what is wrong until a person stops the app.
 		log.Printf("holyarrs: not started: %v", err)
-		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
-		<-ctx.Done()
-		return err
+		// Older than the data: the page may offer to put back the data
+		// from before the update; once it has, stop so the app starts on it.
+		putBackDone := make(chan struct{})
+		swap.set(urlbase.Handler(c.URLBase, refusedHandler(c.ConfigDir, err, putBackDone)))
+		select {
+		case <-ctx.Done():
+			return err
+		case <-putBackDone:
+			return errRestart
+		}
 	}
 	defer s.Close()
 	pc.Store = s

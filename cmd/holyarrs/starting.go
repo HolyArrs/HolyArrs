@@ -1,10 +1,19 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
 	"errors"
+	"html"
+	"log"
 	"net/http"
+	"path/filepath"
+	"strings"
+	"sync"
 	"sync/atomic"
+	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/backup"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -54,9 +63,9 @@ func publicReason(err error) string {
 	case errors.Is(err, store.ErrBackup):
 		return "the backup before updating failed, so nothing was changed. Check that the backups folder can be written, see the log, and restart."
 	case errors.Is(err, store.ErrMigration):
-		return "the update of the data failed and was undone." + goBack
+		return "the update of the data failed and the step that failed was undone. You can run the version you had before again (change the image tag back); if it says the data is newer, its page offers to put back the data from before the update." + goBack
 	case errors.Is(err, store.ErrCheckFailed):
-		return "the data check after updating failed." + goBack
+		return "the data check after updating failed. You can run the version you had before again (change the image tag back); its page offers to put back the data from before the update." + goBack
 	}
 	return "see the log for details." + goBack
 }
@@ -83,4 +92,160 @@ func holdingPage(healthCode int, health, page string) http.Handler {
 func needsPerson(err error) bool {
 	var nd *store.NewerDataError
 	return errors.As(err, &nd) || errors.Is(err, store.ErrNoSpace) || errors.Is(err, store.ErrBackup) || errors.Is(err, store.ErrCheckFailed) || errors.Is(err, store.ErrMigration)
+}
+
+// maxCodeTries is how many wrong codes the go-back form takes before it
+// refuses until the next start (which logs a new code).
+const maxCodeTries = 10
+
+// codeAlphabet leaves out letters and digits that are easy to mix up.
+const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+// newCode makes a one-time code like K7PQX-2MZRA (50 bits).
+func newCode() string {
+	b := make([]byte, 10)
+	_, _ = rand.Read(b)
+	for i := range b {
+		b[i] = codeAlphabet[int(b[i])%len(codeAlphabet)]
+	}
+	return string(b[:5]) + "-" + string(b[5:])
+}
+
+// normCode drops spaces and dashes and upper-cases, so a code typed
+// loosely still matches.
+func normCode(s string) string {
+	return strings.Map(func(r rune) rune {
+		switch {
+		case r == '-' || r == ' ' || r == '\t':
+			return -1
+		case r >= 'a' && r <= 'z':
+			return r - 'a' + 'A'
+		}
+		return r
+	}, s)
+}
+
+// goBackBackup finds the pre-update backup this build can put back, under
+// the config folder's lock (raw copies an update left are made into
+// backups first). ok is false when there is none, or the folder is busy.
+func goBackBackup(dir string) (backup.Info, bool) {
+	bm, unlock, err := openBackups(dir)
+	if err != nil {
+		log.Printf("holyarrs: cannot look for a pre-update backup: %v", err)
+		return backup.Info{}, false
+	}
+	defer unlock()
+	b, err := bm.NewestPreUpdate()
+	if err != nil {
+		return backup.Info{}, false
+	}
+	return b, true
+}
+
+// refusedHandler is the page shown when the data could not be opened. When
+// this build is older than the data and a pre-update backup is there, the
+// page offers to put that backup back (what holyarrs restore --pre-update
+// does). The page is open to anyone and no accounts can be read from data
+// this build refuses, so the button needs a one-time code that is written
+// only to the log (docker logs): whoever can read it controls the
+// container anyway. done is closed once the data is back, so the app
+// stops and starts again on it.
+func refusedHandler(dir string, err error, done chan<- struct{}) http.Handler {
+	msg := publicReason(err)
+	plain := failedHandler(msg)
+	var nd *store.NewerDataError
+	if !errors.As(err, &nd) {
+		return plain
+	}
+	b, ok := goBackBackup(dir)
+	if !ok {
+		return plain
+	}
+	code := newCode()
+	log.Printf("holyarrs: the page can put back the data from before the update (%s); to confirm there, type this one-time code: %s", b.Name, code)
+	var (
+		mu    sync.Mutex
+		tries int
+		over  bool
+	)
+	about := b.Detail
+	if about == "" {
+		about = "taken before the data was updated"
+	}
+	about += ", " + b.CreatedAt.UTC().Format("2006-01-02 15:04 UTC")
+	page := func(w http.ResponseWriter, status int, body string) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>HolyArrs did not start</title>` +
+			`<style>body{font:16px/1.5 system-ui,sans-serif;max-width:40rem;margin:2rem auto;padding:0 16px;background:#111;color:#eee}code{background:#222;padding:0 .3em;word-break:break-all}input,button{font:inherit;padding:.5em .7em;margin:.3em 0;max-width:100%}button{cursor:pointer}.bad{color:#f99}</style></head><body>` +
+			body + `</body></html>`))
+	}
+	form := func(w http.ResponseWriter, status int, note string) {
+		if note != "" {
+			note = `<p class="bad">` + html.EscapeString(note) + `</p>`
+		}
+		page(w, status, `<h1>HolyArrs did not start</h1><p>`+html.EscapeString(msg)+`</p>`+
+			`<h2>Put back the data from before the update</h2>`+
+			`<p>This HolyArrs is older than its data. It can put back the copy kept from before the update (`+html.EscapeString(about)+`). Changes made since that update are not in that copy. The newer data is not deleted: it moves to the backups folder (before-restore-&lt;time&gt;), so this can be undone.</p>`+
+			`<p>To confirm, type the one-time code from the log: run <code>docker logs &lt;container&gt;</code> and look for "one-time code".</p>`+note+
+			`<form method="post"><label>Code <input name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" required></label><br>`+
+			`<button type="submit">Put back the data from before the update</button></form>`)
+	}
+	m := http.NewServeMux()
+	m.Handle("GET /healthz", plain)
+	m.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+		given := ""
+		if r.ParseForm() == nil {
+			given = normCode(r.PostForm.Get("code"))
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if over {
+			page(w, http.StatusOK, `<h1>Done</h1><p>The data was already put back. HolyArrs is starting again; reload this page in a moment.</p>`)
+			return
+		}
+		if tries >= maxCodeTries {
+			form(w, http.StatusTooManyRequests, "Too many wrong codes. Restart HolyArrs (docker restart <container>) for a new code.")
+			return
+		}
+		if subtle.ConstantTimeCompare([]byte(given), []byte(normCode(code))) != 1 {
+			tries++
+			log.Printf("holyarrs: a wrong code was typed on the go-back page (%d of %d)", tries, maxCodeTries)
+			form(w, http.StatusForbidden, "That code does not match the one in the log.")
+			return
+		}
+		bm, unlock, err := openBackups(dir)
+		if err != nil {
+			log.Printf("holyarrs: putting back the data from before the update: %v", err)
+			form(w, http.StatusConflict, "The data could not be put back; nothing was changed. See the log.")
+			return
+		}
+		name, kept, err := putBack(bm, b.Name)
+		unlock()
+		if err != nil {
+			log.Printf("holyarrs: putting back the data from before the update: %v", err)
+			form(w, http.StatusInternalServerError, "The data could not be put back; nothing was changed. See the log.")
+			return
+		}
+		over = true
+		log.Printf("holyarrs: put back %s from the page; the data it replaced is kept in %s", name, kept)
+		page(w, http.StatusOK, `<h1>Done</h1><p>The data from before the update is back in place. The newer data is kept in the backups folder as `+
+			html.EscapeString(filepath.Base(kept))+`.</p><p>HolyArrs stops now and starts again on this data (Docker's restart policy starts it; without one, start the container). Reload this page in a moment.</p>`)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		go func() {
+			time.Sleep(500 * time.Millisecond) // let the answer reach the page
+			close(done)
+		}()
+	})
+	m.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Retry-After", "10")
+		form(w, http.StatusServiceUnavailable, "")
+	})
+	return m
 }
