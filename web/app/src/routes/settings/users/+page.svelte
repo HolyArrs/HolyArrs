@@ -6,7 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api, message, ApiError } from '#lib/api.ts';
 	import { session, type Perm, type Role } from '#lib/session.svelte.ts';
 	import { presetOf, presetPerms, presetsFor, type PresetId } from '#lib/presets.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -29,6 +29,7 @@
 		two_factor: boolean;
 		password: boolean;
 		links: { provider: string; name: string }[];
+		sso_links?: { kind: 'oidc' | 'forward_auth'; issuer: string; name: string }[];
 		created_at: string;
 		avatar?: string | null;
 		last_seen_at?: string;
@@ -306,6 +307,34 @@
 		}
 	}
 
+	// The owner unlinks someone's single sign-on or trusted proxy identity;
+	// the sessions it made end with it.
+	const ssoWord = (k: string) => (k === 'oidc' ? 'single sign-on' : 'trusted proxy');
+	const hostOf = (u: string) => {
+		try {
+			return new URL(u).host;
+		} catch {
+			return u;
+		}
+	};
+	async function unlinkSSO(u: User, l: { kind: string; issuer: string }) {
+		if (!confirm(`Unlink the ${ssoWord(l.kind)} sign-in of ${u.name} (${hostOf(l.issuer)})? The devices it signed in are signed out.`)) return;
+		const body: Record<string, unknown> = { kind: l.kind, issuer: l.issuer };
+		try {
+			try {
+				await api.post(`/users/${u.id}/sso/unlink`, body);
+			} catch (e) {
+				if (!(e instanceof ApiError && e.body.code === 'no_way_in')) throw e;
+				if (!confirm(`This is how ${u.name} signs in, and they have no HolyArrs password. Unlink anyway? Set a password for them first if they should keep a way in.`)) return;
+				await api.post(`/users/${u.id}/sso/unlink`, { ...body, confirm_no_way_in: true });
+			}
+			toasts.push(`Unlinked the ${ssoWord(l.kind)} sign-in of ${u.name}.`, 'ok');
+			await load();
+		} catch (e) {
+			toasts.push(e instanceof ApiError && e.body.code === 'reauth' ? 'Confirm your password in My account first, then try again.' : message(e), 'fail');
+		}
+	}
+
 	function inviteState(i: Invite): string {
 		if (i.used_at) return `Used by ${i.used_by ?? 'someone'} ${ago(i.used_at)}`;
 		if (new Date(i.expires_at).getTime() < Date.now()) return 'Ended';
@@ -388,6 +417,18 @@
 							{/if}{u.role === 'owner' ? 'Can do everything' : u.perms.map((p) => permWord[p]).join(', ') || 'Nothing yet'} ·
 							{u.last_seen_at ? `seen ${ago(u.last_seen_at)}` : 'not seen yet'}
 						</div>
+						{#if u.sso_links?.length}
+							<ul class="sso-links" data-testid="user-sso-links">
+								{#each u.sso_links as l (l.kind + l.issuer)}
+									<li class="xs muted">
+										<span>{l.kind === 'oidc' ? 'Single sign-on' : 'Trusted proxy'}: <span class="mono">{hostOf(l.issuer)}</span>{#if l.name}, {l.name}{/if}</span>
+										{#if isOwner}
+											<Button variant="plain" size="sm" type="button" onclick={() => unlinkSSO(u, l)} aria-label={`Unlink the ${ssoWord(l.kind)} sign-in of ${u.name}`}>Unlink</Button>
+										{/if}
+									</li>
+								{/each}
+							</ul>
+						{/if}
 						{#if limits[u.id] && u.role !== 'owner'}
 							<div class="xs muted" data-testid="user-limits">This week: {limitWords(limits[u.id])}</div>
 						{/if}
@@ -571,6 +612,9 @@
 </dialog>
 
 <style>
+	.sso-links { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+	.sso-links li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+	.sso-links .mono { overflow-wrap: anywhere; }
 	.name {
 		font-weight: var(--weight-semibold);
 		display: flex;

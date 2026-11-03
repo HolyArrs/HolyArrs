@@ -10097,6 +10097,242 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/sso": {
+      "get": {
+        "description": "The single sign-on setup as Settings shows it: where it comes from (Settings or the environment), the issuer, client id, callback address, whether a secret is saved (never the secret), how many people are linked, and trusted proxy sign-in read-only. The owner only, with a recent local password.",
+        "operationId": "getSSO",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden."
+          }
+        },
+        "summary": "Single sign-on setup",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Saves single sign-on. Needs the owner's password (and two-factor code) in the body. A saved client secret never follows a new issuer or client id; changing either removes the links made through the old one and ends single sign-on sessions. Refused with 409 when the environment owns single sign-on, or when letting everyone join is not confirmed.",
+        "operationId": "putSSO",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong password or code."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          }
+        },
+        "summary": "Change single sign-on",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/sso/links": {
+      "get": {
+        "description": "The single sign-on and trusted proxy identities linked to my account.",
+        "operationId": "mySSOLinks",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          }
+        },
+        "summary": "My linked sign-ins",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/auth/sso/test": {
+      "post": {
+        "description": "Checks that an issuer answers like an OpenID Connect provider. Never sends a secret; answers ok or one plain failure; rate limited.",
+        "operationId": "testSSO",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many tests."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No provider answered."
+          }
+        },
+        "summary": "Test a single sign-on issuer",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/sso/unlink": {
+      "post": {
+        "description": "Removes one of my linked identities and ends the sessions it made. Needs a recent local password, and refused when it is my only way to sign in.",
+        "operationId": "unlinkMySSO",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          }
+        },
+        "summary": "Unlink my single sign-on",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/state": {
       "get": {
         "description": "Whether the owner exists yet, which sign-in ways are on and min_password_length (the shortest new password allowed); open to everyone.",
@@ -27183,6 +27419,64 @@
         ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/users/{id}/sso/unlink": {
+      "post": {
+        "description": "The owner removes one of a person's linked identities and ends the sessions it made. When it is their only way in, send confirm_no_way_in.",
+        "operationId": "unlinkUserSSO",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          }
+        },
+        "summary": "Unlink a person's single sign-on",
+        "tags": [
+          "Users"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
       }
     },

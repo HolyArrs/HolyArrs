@@ -161,6 +161,8 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/auth/logout":                  needSelf,
 	"POST /api/v1/auth/reauth":                  needSelf,
 	"POST /api/v1/auth/oidc/link":               needSelf,
+	"GET /api/v1/auth/sso/links":                needSelf,
+	"POST /api/v1/auth/sso/unlink":              needSelf,
 	"POST /api/v1/auth/oidc/link-finish":        needSelf,
 	"POST /api/v1/auth/forward/link":            needSelf,
 	"POST /api/v1/auth/password":                needSelf,
@@ -516,6 +518,11 @@ var RoutePerms = map[string]Perm{
 
 	// Owner only: how people sign in, and putting a backup back.
 	"PUT /api/v1/auth/settings": needOwner,
+	// Single sign-on setup and unlinking someone else: the owner only (#143).
+	"GET /api/v1/auth/sso":               needOwner,
+	"PUT /api/v1/auth/sso":               needOwner,
+	"POST /api/v1/auth/sso/test":         needOwner,
+	"POST /api/v1/users/{id}/sso/unlink": needOwner,
 	// Setting up outside sign-in: link the owner's Plex, test an address, import people.
 	"POST /api/v1/auth/plex/link/start":          needOwner,
 	"POST /api/v1/auth/plex/link/finish":         needOwner,
@@ -654,6 +661,11 @@ var RouteScopes = map[string]string{
 	"POST /api/v1/auth/keys":                    ScopeAdmin,
 	"POST /api/v1/auth/reauth":                  ScopeAdmin,
 	"POST /api/v1/auth/oidc/link":               ScopeAdmin,
+	"GET /api/v1/auth/sso":                      ScopeAdmin,
+	"PUT /api/v1/auth/sso":                      ScopeAdmin,
+	"POST /api/v1/auth/sso/test":                ScopeAdmin,
+	"POST /api/v1/auth/sso/unlink":              ScopeAdmin,
+	"POST /api/v1/users/{id}/sso/unlink":        ScopeAdmin,
 	"POST /api/v1/auth/oidc/link-finish":        ScopeAdmin,
 	"POST /api/v1/auth/forward/link":            ScopeAdmin,
 	"DELETE /api/v1/auth/keys/{id}":             ScopeAdmin,
@@ -729,7 +741,7 @@ func init() {
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",
 		"GET /api/v1/artists/lookup", "GET /api/v1/artwork/{name}", "GET /api/v1/artwork/tmdb/{size}/{file}", "GET /api/v1/artwork/img/{kind}/{id}/{file}", "GET /api/v1/asks",
-		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/asks/{id}/parts", "GET /api/v1/auth/me",
+		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/asks/{id}/parts", "GET /api/v1/auth/me", "GET /api/v1/auth/sso/links",
 		"GET /api/v1/calendar", "GET /api/v1/downloaders",
 		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/downloads/speeds", "GET /api/v1/downloads/matches", "GET /api/v1/downloads/clients", "GET /api/v1/events",
 		"GET /api/v1/health", "GET /api/v1/health/checks", "GET /api/v1/health/disks", "GET /api/v1/app/about",

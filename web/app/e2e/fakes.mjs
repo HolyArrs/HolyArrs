@@ -486,6 +486,11 @@ export function startFakes() {
 	/** @type {unknown[]} */
 	const updates = [];
 	const jelly = createServer(async (req, res) => {
+		// A single sign-on provider's discovery document, for the Settings Test button.
+		if (req.method === 'GET' && req.url === '/oidc/.well-known/openid-configuration') {
+			const base = `http://127.0.0.1:${jellyfinPort}/oidc`;
+			return send(res, 200, { issuer: base, authorization_endpoint: `${base}/auth`, token_endpoint: `${base}/token`, jwks_uri: `${base}/keys`, id_token_signing_alg_values_supported: ['RS256'] });
+		}
 		// Emby, as it often sits at http://host/emby. It wants the X-Emby-Authorization header.
 		if (req.url?.startsWith('/emby/')) {
 			if (req.method === 'POST' && req.url === '/emby/Users/AuthenticateByName') {

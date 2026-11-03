@@ -82,6 +82,7 @@
 	let tgError = $state('');
 	onMount(() => {
 		void loadProfile();
+		void loadLinks();
 		void session.loadWays().then(() => {
 			if (page.url.searchParams.get('sso') === 'finish') void finishOIDCLink();
 		});
@@ -249,6 +250,42 @@
 		}
 	}
 
+	// Single sign-on and trusted proxy identities linked to me. Unlinking one
+	// also signs out the sessions it made; it needs a fresh password sign-in.
+	type SsoLink = { kind: 'oidc' | 'forward_auth'; issuer: string; name: string; created_at: string };
+	let myLinks = $state<SsoLink[]>([]);
+	let unlinkKey = $state('');
+	const linkKey = (l: SsoLink) => `${l.kind}|${l.issuer}`;
+	const linkWord = (k: string) => (k === 'oidc' ? 'Single sign-on' : 'Trusted proxy');
+	const hostOf = (u: string) => {
+		try {
+			return new URL(u).host;
+		} catch {
+			return u;
+		}
+	};
+	async function loadLinks() {
+		try {
+			myLinks = (await api.get<{ links: SsoLink[] }>('/auth/sso/links')).links;
+		} catch {
+			myLinks = [];
+		}
+	}
+	async function unlink(l: SsoLink) {
+		linkError = '';
+		linkBusy = true;
+		try {
+			await api.post('/auth/sso/unlink', { kind: l.kind, issuer: l.issuer });
+			toasts.push(`${linkWord(l.kind)} unlinked. Sessions it signed in are signed out.`, 'ok');
+			unlinkKey = '';
+			await loadLinks();
+		} catch (err) {
+			linkError = message(err);
+		} finally {
+			linkBusy = false;
+		}
+	}
+
 	async function startOIDCLink() {
 		linkError = '';
 		linkBusy = true;
@@ -267,6 +304,7 @@
 		try {
 			await session.oidcLinkFinish();
 			toasts.push('Single sign-on linked.', 'ok');
+			await loadLinks();
 			await goto(to('/settings/account'), { replace: true });
 		} catch (err) {
 			linkError = message(err);
@@ -281,6 +319,7 @@
 		try {
 			await session.forwardLink();
 			toasts.push('Trusted proxy sign-in linked.', 'ok');
+			await loadLinks();
 		} catch (err) {
 			linkError = message(err);
 		} finally {
@@ -515,10 +554,29 @@
 			</div>
 		{/if}
 	</div>
-	{#if hasLinkWay}
+	{#if hasLinkWay || myLinks.length}
 		<div class="srow" id="linked-me">
 			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="HolyArrs matches the provider's stable account id and never links accounts by email address.">Matched by account id, never by email.</span></div>
-			<div class="ctl">{#if !linkOpen}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			<div class="ctl">{#if hasLinkWay && !linkOpen}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			{#if myLinks.length}
+				<ul class="below my-links" data-testid="my-sso-links">
+					{#each myLinks as l (linkKey(l))}
+						<li>
+							<span class="small">{linkWord(l.kind)} at <span class="mono">{hostOf(l.issuer)}</span>{#if l.name}, as {l.name}{/if}</span>
+							{#if unlinkKey === linkKey(l)}
+								<Confirm action="link" onCancel={() => (unlinkKey = '')}>
+									<div class="row acts">
+										<Button variant="secondary" type="button" onclick={() => unlink(l)} busy={linkBusy}>Unlink</Button>
+										<Button variant="plain" type="button" onclick={() => (unlinkKey = '')}>Cancel</Button>
+									</div>
+								</Confirm>
+							{:else}
+								<Button variant="plain" type="button" onclick={() => (unlinkKey = linkKey(l))} aria-label={`Unlink ${linkWord(l.kind)} at ${hostOf(l.issuer)}`}>Unlink</Button>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
 			{#if linkOpen || linkError}
 				<div class="below">
 					{#if linkOpen}
@@ -593,6 +651,9 @@
 <SaveBar dirty={alertsDirty} form="alerts-form" saving={tgBusy} ondiscard={() => (targets = JSON.parse(savedTargets))} />
 
 <style>
+	.my-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+	.my-links li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+	.my-links .mono { overflow-wrap: anywhere; }
 	/* Profile full width; Preferences and Security pair up; Alerts (with its inputs) and Devices full width. */
 	/* One column, like every Settings page. */
 	.acct { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }

@@ -125,7 +125,8 @@ type Auth struct {
 	proxies         []*net.IPNet
 	checks          chan struct{}
 	safeMode        bool
-	sso             *ssoState
+	sso             atomic.Pointer[ssoState] // swapped whole when single sign-on settings change; read with ssoNow
+	ssoOpt          SSOOptions               // as started: who owns single sign-on, and the address rules
 
 	mu        sync.Mutex
 	fails     map[string]*failure
@@ -208,6 +209,10 @@ func New(s *store.Store, opt Options) *Auth {
 	a.localNets.Store(a.loadLocalNets(context.Background()))
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
 	a.initSSO(opt.SSO)
+	a.ssoOpt = opt.SSO
+	if !opt.SSO.OIDCFromEnv {
+		a.loadSavedOIDC(context.Background())
+	}
 	return a
 }
 
