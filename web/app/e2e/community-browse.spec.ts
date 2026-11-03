@@ -135,6 +135,9 @@ async function mockCommunity(page: Page) {
 		}
 
 		if (path === '/titles/77' && method === 'GET') return json(route, title);
+		// The title page reads the film's facts from the lookup and the metadata answer.
+		if (path === '/titles/lookup') return json(route, { movies: [{ ...films[0], title_id: 77 }] });
+		if (path === '/metadata/movie/601') return json(route, { name: 'North Star', year: 2022, overview: '', poster: films[0].poster, genres: [], cast: [], similar: [] });
 		if (path === '/titles/77/people') return json(route, { people: [{ person, roles: ['Director'], characters: [] }] });
 		if (path === '/titles/77/copies') return json(route, { files: [], versions: [version] });
 		if (path === '/titles/77/subtitles') return json(route, { files: [], wishes: [] });
