@@ -70,7 +70,9 @@ let bad = 0;
 for (const u of [...pages, ...new Set(details)]) {
 	try {
 		await page.goto(B + u);
-		await page.waitForTimeout(2500);
+		// Wait for the page title (slow data loads), then let it settle.
+		await page.locator('h1').first().waitFor({ timeout: 8000 }).catch(() => {});
+		await page.waitForTimeout(1000);
 		const s = await survey();
 		s.allowed = s.short.filter((o) => EXCEPTIONS.some((e) => e.k.test(o.k) && (!e.path || e.path.test(s.path))));
 		s.short = s.short.filter((o) => !s.allowed.includes(o));
