@@ -3,9 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -42,6 +44,8 @@ const (
 	artistVideosEmpty = 5 * time.Minute
 	artistVideosDisk  = 30 * 24 * time.Hour
 	artistVideosMax   = 2000
+	// artistVideoPrefetchMax caps prefetch loops running at once.
+	artistVideoPrefetchMax = 2
 )
 
 type artistVideoList struct {
@@ -54,6 +58,9 @@ type artistVideoCache struct {
 	m    map[string]artistVideoList
 	busy map[string]bool
 	now  func() time.Time
+	// prefetching counts running prefetchArtistVideos loops; a few at a
+	// time is enough, more only pile up behind the same budget.
+	prefetching atomic.Int32
 }
 
 func (c *artistVideoCache) clock() time.Time {
@@ -136,6 +143,11 @@ func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo 
 	}
 	l, err := a.s.ArtistVideos(ctx, mbid)
 	if err != nil {
+		// An artist the server does not know is kept as an empty list, so
+		// asking again within a few minutes costs no lookup.
+		if errors.Is(err, metadata.ErrNotFound) {
+			a.keepVideos(ctx, mbid, artistVideoList{at: now})
+		}
 		return nil
 	}
 	a.keepVideos(ctx, mbid, artistVideoList{at: now, list: l})
@@ -376,7 +388,13 @@ func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
 		return
 	}
 	ctx := metadata.Ahead(metadata.MemberLookup(context.WithoutCancel(r.Context())))
+	c := &a.artistVideos
+	if c.prefetching.Add(1) > artistVideoPrefetchMax {
+		c.prefetching.Add(-1)
+		return
+	}
 	go func() {
+		defer c.prefetching.Add(-1)
 		for _, mbid := range mbids {
 			vids := a.videosOf(ctx, mbid)
 			if _, _, ok := a.readyVideo(ctx, vids); ok || len(vids) == 0 {

@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -46,6 +47,9 @@ type signinSeedState struct {
 	mu     sync.Mutex
 	thumbs map[string]signinThumb // by original picture address
 	tried  map[string]time.Time   // failed or running, by address
+	// rebuilding is set while a background art build started here runs,
+	// so a flood of /login opens starts one build, not one per request.
+	rebuilding atomic.Bool
 	// fetch is a test hook; nil downloads with a short timeout.
 	fetch func(ctx context.Context, url string) ([]byte, error)
 }
@@ -58,8 +62,11 @@ func (a *API) signinSeedJSON(ctx context.Context) []byte {
 		return nil
 	}
 	shots, ok := a.signinShotsCached(ctx)
-	if !ok {
-		go a.signinShots(context.WithoutCancel(ctx))
+	if !ok && a.signinSeed.rebuilding.CompareAndSwap(false, true) {
+		go func() {
+			defer a.signinSeed.rebuilding.Store(false)
+			a.signinShots(context.WithoutCancel(ctx))
+		}()
 	}
 	if len(shots) == 0 {
 		return nil

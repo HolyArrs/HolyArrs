@@ -195,6 +195,8 @@ type API struct {
 	signin signinArtState
 	// signinSeed keeps the first sign-in slide's tiny thumbnails.
 	signinSeed signinSeedState
+	// artMisses is each person's budget of artwork cache misses.
+	artMisses artworkBudget
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore   exploreState
 	genreRows genreRowCache
@@ -466,6 +468,9 @@ func secure(h http.Handler) http.Handler {
 		hd.Set("X-Content-Type-Options", "nosniff")
 		hd.Set("Referrer-Policy", "no-referrer")
 		hd.Set("X-Frame-Options", "DENY")
+		// Pages an outside site opens lose their handle on HolyArrs; popups
+		// HolyArrs opens itself (Plex sign-in) keep theirs.
+		hd.Set("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
 		hd.Set("Content-Security-Policy", web.CSP(nil))
 		h.ServeHTTP(w, r)
 	})
@@ -723,14 +728,14 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 			return v, err
 		}
 		v.Asks, err = titleAsks()
-		return v, err
+		return trimForViewer(ctx, v), err
 	}
 	if t.Kind == "artist" {
 		if v.Artist, err = a.artistInfo(ctx, t); err != nil {
 			return v, err
 		}
 		v.Asks, err = titleAsks()
-		return v, err
+		return trimForViewer(ctx, v), err
 	}
 	var slots []domain.Slot
 	if batch != nil {
@@ -780,7 +785,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	if v.Asks, err = titleAsks(); err != nil {
 		return v, err
 	}
-	return v, nil
+	return trimForViewer(ctx, v), nil
 }
 
 // gateReason says in one sentence why a movie is or is not searched yet.

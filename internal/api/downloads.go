@@ -380,6 +380,10 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		row.Phase = phase(d, row.SlotState)
+		// The save folder on the host is for people who manage the Library.
+		if !manage {
+			row.Path = ""
+		}
 		if row.Kind == "artist" && len(d.SlotIDs) > 0 {
 			row.Album, row.Year = "", nil
 			if si, ok := slots[d.SlotIDs[0]]; ok && si.album.Valid {

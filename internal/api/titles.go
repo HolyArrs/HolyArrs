@@ -842,6 +842,9 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		c.Recheck(src, nil) // a copy past TMDB's six months is fetched again
 	} else {
+		if !a.artworkMissOK(w, r) {
+			return
+		}
 		if _, err := c.Fetch(r.Context(), src); err != nil {
 			http.Error(w, "picture unavailable", http.StatusBadGateway)
 			return
