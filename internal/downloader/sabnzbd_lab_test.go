@@ -225,6 +225,13 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 		t.Fatal(err)
 	}
 	w.addDownloader(t, &domain.Downloader{Name: "Lab SABnzbd", Adapter: "sabnzbd", Protocol: "usenet", URL: base, Category: "movies", Priority: 1, AllowLocal: true, Writable: true, SecretRef: &ref})
+	// Our news server and NZBs are on the lab network: the Source may reach it.
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE sources SET allow_local_network = 1 WHERE id = 1")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
 	rels := map[string]int64{}
 	for _, n := range []string{labDead, labNext} {
 		link := nzbBase + "/dead.nzb"
