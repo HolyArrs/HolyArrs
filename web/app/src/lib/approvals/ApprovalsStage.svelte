@@ -27,7 +27,7 @@
 	import { partialFacts, realAlbum } from './live.ts';
 	import { api } from '../api.ts';
 	import type { AlbumSummary, TitleView } from '../types.ts';
-	import { shortDate, whenDate } from './inbox.ts';
+	import { nextWhen, shortDate, whenDate } from './inbox.ts';
 	import { askTab } from '../requests.ts';
 	import { askHref } from './approvals.ts';
 	import { askedFor } from './asked-for.ts';
@@ -135,7 +135,7 @@
 		// Nothing in flight and nothing found yet (#139): say why and when it last looked.
 		if (life.label === 'Looking for a release') {
 			// Never looked for: when the search for missing comes round to it.
-			if (!life.searchedAt) return life.nextSearch ? `Not looked for yet. The search for missing looks next ${whenDate(life.nextSearch)}.` : 'Not looked for yet.';
+			if (!life.searchedAt) return life.nextSearch ? `Not looked for yet. The search for missing runs next ${nextWhen(life.nextSearch)}.` : 'Not looked for yet.';
 			const why = life.reason ? `${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : 'Nothing found yet.';
 			return `${why} Last looked ${whenDate(life.searchedAt)}.`;
 		}

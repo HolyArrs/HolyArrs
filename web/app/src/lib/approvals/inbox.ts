@@ -60,6 +60,20 @@ export function whenDate(iso: string, now = new Date()): string {
 	return d.toLocaleDateString('en-US', opts);
 }
 
+/** nextWhen says when something comes next, in the viewer's time zone: "tonight at 11:19 PM", "today at 2:00 PM", "tomorrow at 5:19 AM", else "Nov 6". A time already gone reads "soon". */
+export function nextWhen(iso: string, now = new Date()): string {
+	const t = new Date(iso);
+	if (Number.isNaN(t.getTime())) return '';
+	if (t <= now) return 'soon';
+	const at = t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+	const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+	if (t < midnight) return `${t.getHours() >= 18 ? 'tonight' : 'today'} at ${at}`;
+	if (t < new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2)) return `tomorrow at ${at}`;
+	const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+	if (t.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+	return t.toLocaleDateString('en-US', opts);
+}
+
 /** shortDate says "Mar 3", or "Mar 3, 2027" outside this year. */
 export function shortDate(iso: string, now = new Date()): string {
 	const [y, m, d] = day(iso).split('-').map(Number);
