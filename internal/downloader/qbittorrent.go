@@ -1,11 +1,13 @@
 package downloader
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -242,14 +244,36 @@ func (q *Qbittorrent) Add(ctx context.Context, r AddRequest) (string, error) {
 			return "", err
 		}
 	}
-	f := url.Values{"urls": {r.URL}}
-	if r.Category != "" {
-		f.Set("category", r.Category)
+	var b []byte
+	var err error
+	if len(r.File) > 0 {
+		// The file HolyArrs fetched goes up as a .torrent; qBittorrent never
+		// gets the address (#152).
+		var body bytes.Buffer
+		mw := multipart.NewWriter(&body)
+		if r.Category != "" {
+			_ = mw.WriteField("category", r.Category)
+		}
+		if r.SavePath != "" {
+			_ = mw.WriteField("savepath", r.SavePath)
+		}
+		w, werr := mw.CreateFormFile("torrents", "release.torrent")
+		if werr != nil {
+			return "", werr
+		}
+		_, _ = w.Write(r.File)
+		_ = mw.Close()
+		_, b, err = q.callRaw(ctx, "torrents/add", mw.FormDataContentType(), body.Bytes())
+	} else {
+		f := url.Values{"urls": {r.URL}}
+		if r.Category != "" {
+			f.Set("category", r.Category)
+		}
+		if r.SavePath != "" {
+			f.Set("savepath", r.SavePath)
+		}
+		b, err = q.call(ctx, http.MethodPost, "torrents/add", f)
 	}
-	if r.SavePath != "" {
-		f.Set("savepath", r.SavePath)
-	}
-	b, err := q.call(ctx, http.MethodPost, "torrents/add", f)
 	if err != nil {
 		return "", err
 	}

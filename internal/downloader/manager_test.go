@@ -83,7 +83,8 @@ func setup(t *testing.T) (*world, *Manager) {
 		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
-		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}
+		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{},
+			AllowLocal: true} // the lab indexer is on the local network; qBittorrent fetches its links (#152)
 		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}

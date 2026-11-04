@@ -1,12 +1,14 @@
 package downloader
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"slices"
 	"strings"
 	"sync"
@@ -52,6 +54,10 @@ type Manager struct {
 	// Link gives the link to send for a Release: its stored link with the
 	// Source's key put back from the vault. Nil sends the stored link.
 	Link func(ctx context.Context, rel domain.Release) (string, error)
+	// SourceTransport is how a Release file is fetched for a Source with a
+	// proxy: through the proxy, every address checked (#152). Nil refuses
+	// such a send to qBittorrent or SABnzbd.
+	SourceTransport func(ctx context.Context, src domain.Source) (http.RoundTripper, error)
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
 	// Sync, when set and on (downloads.sync = on), is the background reader:
@@ -670,6 +676,61 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	if link, err = grabLinkAllowed(d.Adapter, link, allowLocal); err != nil {
 		return "", err
 	}
+	// qBittorrent and SABnzbd would fetch a link themselves, from inside the
+	// home network, where a name leading home is never checked (#152).
+	// Without local network access HolyArrs fetches the file and hands it
+	// over; a link that redirects to a magnet sends the magnet. A Source with
+	// a proxy is fetched through it, with the same checks.
+	var file []byte
+	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && !allowLocal && !strings.HasPrefix(link, "magnet:") {
+		var rt http.RoundTripper
+		if src.ProxyURL != "" {
+			if m.SourceTransport == nil {
+				return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
+			}
+			if rt, err = m.SourceTransport(ctx, src); err != nil {
+				return "", err
+			}
+		}
+		limit := addFetchMax
+		if d.Adapter == "sabnzbd" {
+			limit = sabMaxNZB
+		}
+		var magnet string
+		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt); err == nil && magnet != "" {
+			link, _, err = safeMagnet(magnet, allowLocal)
+		}
+		if err != nil {
+			return "", err
+		}
+	}
+	if d.Adapter == "qbittorrent" && file != nil {
+		// Some trackers print a newline after the file; qBittorrent reads past it.
+		file = bytes.TrimRight(file, " \t\r\n")
+		h, err := torrentFileHash(file)
+		if err != nil {
+			// Often a one-off page (a limit or a check) instead of the file:
+			// tried again, not turned down.
+			return "", errors.New("the Release file is not a torrent")
+		}
+		if hash != "" && !strings.EqualFold(hash, h) {
+			return "", releaseRefused{"the torrent file does not match its info hash"}
+		}
+		if hash == "" {
+			// The hash came from the file, so the look for it in qBittorrent
+			// above did not run: an add of a torrent it has would fail.
+			if j, err := e.Get(ctx, h); err == nil {
+				if skip[j.ID] {
+					return "", errors.New("the torrent belongs to another download or category")
+				}
+				if j.ID != "" {
+					return j.ID, nil
+				}
+				return h, nil
+			}
+		}
+		hash = h
+	}
 	// qBittorrent answers an add without an id: HolyArrs follows the torrent
 	// by its info hash, from the Release or its magnet link. Without one the
 	// torrent would download unseen, so it is not sent.
@@ -682,7 +743,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	if err != nil {
 		return "", err
 	}
-	req := AddRequest{URL: link, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip,
+	req := AddRequest{URL: link, File: file, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip,
 		AllowLocal: allowLocal, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID)}
 	if a != nil {
 		req.AttemptMarker, req.ReconcileOnly = a.marker, !a.created
