@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { fakeYouTube, tmdbPort } from './fakes.mjs';
+import { fakeArtists, fakeYouTube, tmdbPort } from './fakes.mjs';
 import { owner, signIn } from './helpers.ts';
 
 // Trailers from HolyArrs's own reader, against the fake YouTube (fakes.mjs):
@@ -8,7 +8,9 @@ import { owner, signIn } from './helpers.ts';
 // Lumen Cistern plays; Aster Funicular's first trailer is behind YouTube's
 // age sign-in, so its second one plays; both of Gossamer Weir's trailers
 // were removed; Pumice Belfry is not looked up yet when its page opens.
-// The title page's Trailer button on Gossamer Weir says why at once.
+// The title page's Trailer button on Gossamer Weir says why at once. An
+// artist's music video (Tin Lanterns) is only noted when its page asks: the
+// pass makes it ready, and the page and the in-view batch then answer it.
 // Nothing leaves this machine: the browser's calls to YouTube's video
 // servers and player are answered here (page routes), everything else
 // outside 127.0.0.1 is refused.
@@ -191,4 +193,29 @@ test("every trailer removed: the title page's Trailer button says why at once", 
 	expect(embedAsks.slice(embedsBefore).some((k) => k.startsWith('weirGone'))).toBe(false);
 	await line.getByRole('button', { name: 'Close' }).click();
 	await expect(theater).toBeHidden();
+});
+
+test("an artist's music video: the page only notes it, the pass makes it ready", async () => {
+	const artist = fakeArtists[0].id;
+	const video = `/api/v1/music/artists/${artist}?part=video`;
+	const first = await page.request.get(video);
+	expect(first.status(), await first.text()).toBe(404);
+	expect((await first.json()).error).toBe('no video ready yet');
+	// The page ask looked nothing up on YouTube.
+	expect(await readerCalls()).not.toContain('tinLantVid1');
+	let ready: { key?: string; proxy_url?: string } = {};
+	await expect
+		.poll(async () => {
+			const r = await page.request.get(video);
+			if (r.status() === 200) ready = await r.json();
+			return r.status();
+		}, { message: 'the trailer pass made the music video ready', timeout: 45_000, intervals: [500] })
+		.toBe(200);
+	expect(ready.key).toBe('tinLantVid1');
+	expect(ready.proxy_url).toMatch(/\/api\/v1\/trailer\/stream\/[0-9a-f]+\/manifest\.m3u8$/);
+	expect((await readerCalls()).filter((k) => k === 'tinLantVid1')).toHaveLength(1);
+	// The in-view batch answers it too, with nothing pending.
+	const b = await (await page.request.get(`/api/v1/trailer/batch?ids=artist:${artist}&language=en`)).json();
+	expect(b.videos[`artist:${artist}`]?.key).toBe('tinLantVid1');
+	expect(b.pending).toEqual([]);
 });

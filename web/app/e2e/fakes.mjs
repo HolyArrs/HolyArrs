@@ -162,6 +162,14 @@ async function fakeYouTubeServe(req, res, url) {
 	if (mode === 'age') return send(res, 200, { playabilityStatus: { status: 'LOGIN_REQUIRED', reason: 'Sign in to confirm your age' } });
 	if (mode === 'gone') return send(res, 200, { playabilityStatus: { status: 'ERROR', reason: 'Video unavailable' } });
 	const expire = Math.floor(Date.now() / 1000) + 6 * 3600;
+	// A music video: YouTube's HLS manifest (what an artist page plays, relayed).
+	if (mode === 'hls') {
+		return send(res, 200, {
+			playabilityStatus: { status: 'OK' },
+			videoDetails: { title: id, lengthSeconds: '200' },
+			streamingData: { hlsManifestUrl: `https://manifest.googlevideo.com/api/manifest/hls_variant/expire/${expire}/id/${id}/file/index.m3u8`, formats: [] }
+		});
+	}
 	send(res, 200, {
 		playabilityStatus: { status: 'OK' },
 		videoDetails: { title: id, lengthSeconds: '90' },
@@ -235,11 +243,15 @@ export const tmdbMovies = [
 
 /**
  * How the fake YouTube answers each video (trailers.spec.ts): ok gives a
- * muxed MP4 on a made-up googlevideo address, age is behind YouTube's age
- * sign-in, gone was removed. Any other key answers as removed too.
- * @type {Record<string, 'ok' | 'age' | 'gone'>}
+ * muxed MP4 on a made-up googlevideo address, hls an HLS manifest (a music
+ * video), age is behind YouTube's age sign-in, gone was removed. Any other
+ * key answers as removed too.
+ * @type {Record<string, 'ok' | 'hls' | 'age' | 'gone'>}
  */
-export const fakeYouTube = { lumenCist01: 'ok', asterAge001: 'age', asterPlay02: 'ok', weirGone001: 'gone', weirGone002: 'gone', pumiceBel01: 'ok' };
+export const fakeYouTube = { lumenCist01: 'ok', asterAge001: 'age', asterPlay02: 'ok', weirGone001: 'gone', weirGone002: 'gone', pumiceBel01: 'ok', tinLantVid1: 'hls' };
+
+/** The music videos the fake metadata server lists, by artist MBID (only the first made-up artist has one). */
+export const fakeArtistVideos = () => ({ [fakeArtists[0].id]: [{ youtube_id: 'tinLantVid1', title: 'Tin Lanterns - Harbour Song (Official Video)', duration: 200 }] });
 
 /** The address the fake YouTube gives for an ok video (expire is a Unix time). */
 export const fakeVideoAddress = (/** @type {string} */ key, /** @type {number} */ expire) => `https://rr1---sn-lab.googlevideo.com/videoplayback?expire=${expire}&id=${key}&itag=18`;
@@ -543,6 +555,15 @@ export function startFakes() {
 			return send(res, 201, { schema_version: 1, token: fakeInstallToken });
 		}
 		if (url.pathname.startsWith('/youtube/')) return fakeYouTubeServe(req, res, url);
+		// An artist's music videos (the hosted MusicBrainz artist, videos only).
+		const artistVids = url.pathname.match(/^\/v1\/music\/musicbrainz\/artist\/([0-9a-f-]{36})$/);
+		if (artistVids) {
+			if (req.headers.authorization !== `Bearer ${fakeInstallToken}`) return send(res, 401, { error: { code: 'unauthorized', retry_after_seconds: 0 } });
+			const vids = fakeArtistVideos()[artistVids[1]];
+			if (!vids) return send(res, 404, { error: { code: 'not_found', retry_after_seconds: 0 } });
+			const fetched = new Date();
+			return send(res, 200, { schema_version: 1, source: 'musicbrainz', source_id: artistVids[1], completeness: 'complete', stale: false, fetched_at: fetched.toISOString(), expires_at: new Date(fetched.getTime() + 86_400_000).toISOString(), data: { videos: vids } });
+		}
 		// The server's trailer pick: only the trailer test movies have one.
 		const pick = url.pathname.match(/^\/v1\/trailers\/(movie|tv)\/(\d+)$/);
 		if (pick) {
