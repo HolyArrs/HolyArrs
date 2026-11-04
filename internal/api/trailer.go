@@ -148,6 +148,7 @@ const (
 	trailerUpkeepKey   = "trailerhealth|reader" // the health check's state in lookup_cache
 	trailerUpkeepKeep  = 90 * 24 * time.Hour    // ...kept this long after its last write
 	trailerUpkeepVideo = 50                     // different failing titles and videos remembered
+	trailerUpkeepStale = 7 * time.Hour          // no good lookup for this long: first lookups count too (an address lives about 6 hours)
 )
 
 // trailerUpkeep is the health check's state as kept in lookup_cache.
@@ -199,7 +200,11 @@ func (t *trailerState) note(key string, err error, now time.Time, played bool) b
 	if !r.VideoReason() {
 		t.failed.Add(1)
 	}
-	if !upkeepReason(r) || (r.VideoReason() && !played) {
+	// No good lookup for longer than an address lives (the machine was off,
+	// trailers were turned off): nothing is a renewal any more, so a
+	// first lookup's video reason counts too, until something plays.
+	stale := t.lastGood.IsZero() || now.Sub(t.lastGood) > trailerUpkeepStale
+	if !upkeepReason(r) || (r.VideoReason() && !played && !stale) {
 		return false
 	}
 	changed := r != t.lastReason

@@ -378,6 +378,14 @@ func TestTrailerAskedEvictsLeastLately(t *testing.T) {
 	if len(got) != trailerAskedMax || got[0][1] != "1" || got[1][1] != "3" || got[len(got)-1][1] != "9999" {
 		t.Fatalf("%d noted, first %v %v, last %v", len(got), got[0], got[1], got[len(got)-1])
 	}
+	// A new title before an old one in the same call: the old one is asked
+	// for again, so it is not the one that makes room, and keeps its place.
+	time.Sleep(2 * time.Millisecond)
+	a.noteTrailerTitles("en", [][2]string{{"movie", "8888"}, {"movie", "3"}})
+	got = a.trailerAsks(time.Now())
+	if len(got) != trailerAskedMax || got[1][1] != "3" || got[2][1] == "4" || got[len(got)-1][1] != "8888" {
+		t.Fatalf("same call: %d noted, %v %v %v, last %v", len(got), got[0], got[1], got[2], got[len(got)-1])
+	}
 }
 
 // Kid pools, trailers turned off and a kind that is off are skipped:
@@ -595,6 +603,7 @@ func TestTrailerPassRenewalFailureCounts(t *testing.T) {
 	fakeReader(t, "unavailable")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a, _ := passRig(t, st, nil)
+	recentGood(a, time.Hour)
 	storePool(t, st, passPool(1, "all", false))
 	ctx := metadata.Ahead(context.Background())
 	now := time.Now()

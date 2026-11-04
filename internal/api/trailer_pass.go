@@ -225,11 +225,24 @@ func (a *API) noteTrailerTitles(lang string, titles [][2]string) {
 	if t.m == nil {
 		t.m = map[string]trailerAsk{}
 	}
+	// Titles already noted are refreshed first (they keep their place), so
+	// making room for a new one in the same call never drops one of them.
+	var fresh []string
 	for _, ti := range titles {
 		if (ti[0] != "movie" && ti[0] != "show") || !digitsOnly(ti[1]) || !trailerLangRe.MatchString(lang) {
 			continue
 		}
 		k := ti[0] + "|" + ti[1] + "|" + lang
+		if e, ok := t.m[k]; ok {
+			e.at = now
+			t.m[k] = e
+			continue
+		}
+		if !slices.Contains(fresh, k) {
+			fresh = append(fresh, k)
+		}
+	}
+	for _, k := range fresh {
 		if _, ok := t.m[k]; !ok && len(t.m) >= trailerAskedMax {
 			// Full: the one asked for least lately goes (not the one that
 			// has waited longest, which may have been asked for just now).
@@ -240,13 +253,6 @@ func (a *API) noteTrailerTitles(lang string, titles [][2]string) {
 				}
 			}
 			delete(t.m, oldest)
-		}
-		// Asked again: still recent, but it keeps its place in the queue
-		// (a title people keep seeing does not slide to the back).
-		if e, ok := t.m[k]; ok {
-			e.at = now
-			t.m[k] = e
-			continue
 		}
 		t.n++
 		t.m[k] = trailerAsk{at: now, n: t.n}

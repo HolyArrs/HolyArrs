@@ -84,6 +84,7 @@ func TestTrailerUpkeepCountsATitleOnce(t *testing.T) {
 	a := New(Server{Store: st, Metadata: p, Version: "test"})
 	// A first lookup of a title that will not play says nothing about the
 	// reader (after a restart, known misses are looked up again).
+	recentGood(a, time.Hour)
 	_ = lookUp(t, a, "movie", "77")
 	if s := a.TrailerReader(); s.Videos != 0 {
 		t.Fatalf("first lookup counted: %+v", s)

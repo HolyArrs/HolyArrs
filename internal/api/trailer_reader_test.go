@@ -350,6 +350,7 @@ func TestTrailerUpkeepIgnoresFirstLookupMisses(t *testing.T) {
 	fakeReader(t, "unavailable")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	recentGood(a, time.Hour)
 	for i := range 2 * health.TrailerFailLimit {
 		k := fmt.Sprintf("deadVideo%02d", i)
 		_, _ = a.readTrailer(context.Background(), k, k, time.Now(), false)
@@ -361,5 +362,36 @@ func TestTrailerUpkeepIgnoresFirstLookupMisses(t *testing.T) {
 	_, _ = a.readTrailer(context.Background(), "doorVideo01", "doorVideo01", time.Now(), false)
 	if s := a.TrailerReader(); s.Videos != 1 || s.LastReason != youtube.BotCheck {
 		t.Fatalf("door failure not counted: %+v", s)
+	}
+}
+
+// recentGood sets the reader's last good lookup to ago before now (after
+// the kept state was read).
+func recentGood(a *API, ago time.Duration) {
+	a.TrailerReader()
+	a.trailers.mu.Lock()
+	a.trailers.lastGood = time.Now().Add(-ago)
+	a.trailers.mu.Unlock()
+}
+
+// Nothing played for longer than an address lives (the machine was off
+// overnight, trailers were off): no title is a renewal any more, so first
+// lookups that will not play count again, and a YouTube change that shows
+// only as removed videos still warns. Never a good lookup counts the same.
+func TestTrailerUpkeepCountsAfterALongGap(t *testing.T) {
+	for _, ago := range []time.Duration{trailerUpkeepStale + time.Minute, 0} {
+		fakeReader(t, "unavailable")
+		_, st := discoverRig(t, trailerTMDB(t))
+		a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+		if ago > 0 {
+			recentGood(a, ago)
+		}
+		for i := range health.TrailerFailLimit {
+			k := fmt.Sprintf("deadVideo%02d", i)
+			_, _ = a.readTrailer(context.Background(), k, k, time.Now(), false)
+		}
+		if s := a.TrailerReader(); s.Videos != health.TrailerFailLimit {
+			t.Fatalf("last good %v ago: %+v", ago, s)
+		}
 	}
 }

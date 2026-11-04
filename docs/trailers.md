@@ -142,8 +142,9 @@ The trailer reader's state shows on **Status > Updates** and under
 why and for how many different titles in a row. A trailer that played here
 and then stops playing (removed or blocked) counts too, and is named only
 once they add up to a warning. A trailer that never played here does not
-count, and neither does one behind an age check, a sign-in or a content
-warning, since that is about the video.
+count (unless nothing at all has played for over 7 hours, as after the
+machine was off), and neither does one behind an age check, a sign-in or a
+content warning, since that is about the video.
 After 5 different titles fail with no good lookup in between, Health warns
 with the reason in plain words: usually YouTube changed something and a
 HolyArrs update is needed. The count, and a warning already shown, are kept
