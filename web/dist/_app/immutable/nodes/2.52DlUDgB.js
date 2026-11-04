@@ -1,1 +1,0 @@
-import{$i as e,Mi as t,ji as n,ki as r}from"../chunks/C_FuRc5h.js";function i(i,a){var o=t(),s=e(o);r(s,()=>a.children),n(i,o)}export{i as component};
