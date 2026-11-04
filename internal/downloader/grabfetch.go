@@ -14,8 +14,10 @@ import (
 )
 
 // errLinkLocal is a Release link that leads to this machine or the local
-// network, found when its address is dialled.
-var errLinkLocal = errors.New("the Release link leads to a local or blocked address")
+// network, found when its address is dialled. It is final: the Release is
+// turned down once, not fetched again on every retry (each fetch can count
+// against the Source's grab limit).
+var errLinkLocal = releaseRefused{`the Release link leads to a local or blocked address; if this Source is on your home network, turn on "May reach the local network" for it`}
 
 // sabMaxNZB caps an NZB fetched for SABnzbd: a few hundred GB of release.
 var sabMaxNZB int64 = 128 << 20
@@ -49,6 +51,7 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 		}
 		return d.DialContext(ctx, network, addr)
 	}
+	proxied := rt != nil
 	if rt == nil {
 		rt = &http.Transport{Proxy: nil, DialContext: dial, TLSHandshakeTimeout: 10 * time.Second}
 	}
@@ -79,6 +82,11 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 			return nil, "", ctx.Err()
 		}
 		if errors.Is(err, source.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
+			if proxied {
+				// Through a proxy a refusal may be a name not looked up here
+				// or the proxy's own address: tried again, not turned down.
+				return nil, "", errors.New(errLinkLocal.msg)
+			}
 			return nil, "", errLinkLocal
 		}
 		return nil, "", errors.New("the Release file could not be read from its Source")

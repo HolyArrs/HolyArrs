@@ -347,10 +347,11 @@ func NotMetadata(ip net.IP) bool {
 // blocked are ranges refused besides the ones net.IP names: CGNAT (also
 // Tailscale), "this network", benchmarking, reserved, and the IPv6 ranges
 // that carry an IPv4 address inside (NAT64 and 6to4), which could reach a
-// local IPv4 host.
+// local IPv4 host; also the old site-local fec0::/10 and the old IPv4-compatible
+// ::/96 (an IPv4 address in the low bits).
 var blocked = func() []*net.IPNet {
 	var out []*net.IPNet
-	for _, c := range []string{"100.64.0.0/10", "0.0.0.0/8", "198.18.0.0/15", "240.0.0.0/4", "64:ff9b::/96", "64:ff9b:1::/48", "2002::/16"} {
+	for _, c := range []string{"100.64.0.0/10", "0.0.0.0/8", "198.18.0.0/15", "240.0.0.0/4", "64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "fec0::/10", "::/96"} {
 		_, n, _ := net.ParseCIDR(c)
 		out = append(out, n)
 	}

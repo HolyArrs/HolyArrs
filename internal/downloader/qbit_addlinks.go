@@ -113,7 +113,7 @@ func safeMagnet(link string, allowLocal bool) (string, int, error) {
 // trackerAllowed checks one magnet tracker without looking its name up.
 func trackerAllowed(v string, allowLocal bool) bool {
 	u, err := url.Parse(v)
-	if err != nil || u.Hostname() == "" || u.User != nil {
+	if err != nil || u.Hostname() == "" || u.User != nil || oddAuthority(v) {
 		return false
 	}
 	switch strings.ToLower(u.Scheme) {
@@ -204,7 +204,7 @@ func peerAllowed(k, v string) bool {
 		host = h
 	} else {
 		u, err := url.Parse(v)
-		if err != nil || u.Hostname() == "" {
+		if err != nil || u.Hostname() == "" || oddAuthority(v) {
 			return false
 		}
 		host = u.Hostname()

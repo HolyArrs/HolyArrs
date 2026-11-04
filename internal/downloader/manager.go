@@ -707,6 +707,12 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	if d.Adapter == "qbittorrent" && file != nil {
 		// Some trackers print a newline after the file; qBittorrent reads past it.
 		file = bytes.TrimRight(file, " \t\r\n")
+		// Trackers, web seeds and DHT nodes inside the file that point at
+		// home are left out; the info hash stays the same.
+		file, err = safeTorrent(file)
+		if err != nil {
+			return "", errors.New("the Release file is not a torrent")
+		}
 		h, err := torrentFileHash(file)
 		if err != nil {
 			// Often a one-off page (a limit or a check) instead of the file:
