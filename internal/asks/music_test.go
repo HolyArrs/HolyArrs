@@ -2,6 +2,7 @@ package asks
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"database/sql"
 	"errors"
@@ -473,5 +474,24 @@ func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
 	}
 	if !p.Included || !p.KeepUpToDate {
 		t.Fatalf("after refresh included=%v keep=%v", p.Included, p.KeepUpToDate)
+	}
+}
+
+// #139: an approved album ask is looked for at once too.
+func TestApprovedArtistAskSearchesAtOnce(t *testing.T) {
+	r := musicRig(t)
+	ctx := context.Background()
+	res, err := r.svc.AskArtist(ctx, r.ana, "mbid:"+mArtist, []string{mLive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil || got.TitleID == nil {
+		t.Fatalf("approve %+v %v", got, err)
+	}
+	var n int
+	_ = r.st.Read().QueryRow("SELECT count(*) FROM jobs WHERE dedupe_key = ?", fmt.Sprintf("scan_then_search:%d", *got.TitleID)).Scan(&n)
+	if n != 1 {
+		t.Fatalf("scan then search queued %d times, want 1", n)
 	}
 }

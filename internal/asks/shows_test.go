@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"strconv"
 	"testing"
 	"time"
 
@@ -555,5 +556,44 @@ func TestShowAskFutureOnlyForShowInLibrary(t *testing.T) {
 	whole, err := r.svc.AskShow(ctx, r.bo, "tmdb:100", nil)
 	if err != nil || whole.Ask.ID == res.Ask.ID || whole.Ask.FutureOnly {
 		t.Fatalf("whole %+v %v", whole, err)
+	}
+}
+
+// #139: an approved show ask is looked for at once (scan, then a search of
+// what the title wants), not at the next missing search hours away; with
+// Search on approve off it waits for that search as before.
+func TestApprovedShowAskSearchesAtOnce(t *testing.T) {
+	queued := func(r *rig, tid int64) int {
+		var n int
+		_ = r.st.Read().QueryRow("SELECT count(*) FROM jobs WHERE dedupe_key = ?", "scan_then_search:"+strconv.FormatInt(tid, 10)).Scan(&n)
+		return n
+	}
+	r := showRig(t)
+	ctx := context.Background()
+	res, err := r.svc.AskShow(ctx, r.ana, "tmdb:100", []int{1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil || got.TitleID == nil {
+		t.Fatalf("approve %+v %v", got, err)
+	}
+	if n := queued(r, *got.TitleID); n != 1 {
+		t.Fatalf("scan then search queued %d times, want 1", n)
+	}
+
+	off := showRig(t)
+	set, _ := ReadSettings(ctx, off.st.Read())
+	set.SearchOnApprove = false
+	if err := SaveSettings(ctx, off.st, set, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	res, _ = off.svc.AskShow(ctx, off.ana, "tmdb:100", []int{1})
+	got, err = off.svc.Approve(ctx, res.Ask.ID, off.luis, ApproveOptions{})
+	if err != nil || got.TitleID == nil {
+		t.Fatalf("approve off %+v %v", got, err)
+	}
+	if n := queued(off, *got.TitleID); n != 0 {
+		t.Fatalf("Search on approve off still queued %d", n)
 	}
 }
