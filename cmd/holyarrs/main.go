@@ -541,6 +541,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err != nil {
 		return fmt.Errorf("metadata server: %w", err)
 	}
+	// A stand-in YouTube and a quicker trailer pass (browser tests only).
+	if err := trailerStandIns(); err != nil {
+		return err
+	}
 	hosted.Disk = store.LookupCache{Store: s}
 	// "Count this install" is set before the Job queue starts: a Job's
 	// request must not go out counted after the owner switched it off.

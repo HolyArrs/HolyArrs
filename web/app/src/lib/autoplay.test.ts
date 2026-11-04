@@ -76,4 +76,10 @@ describe('embedKey', () => {
 	it("keeps its own pick when only YouTube's door failed and no key came", () => {
 		expect(embedKey({ reason: 'network', key: '' }, videos, 'en')).toBe('ownPick0001');
 	});
+	it('puts the reason on the embed when there is no stream, never beside a stream', () => {
+		expect(sourcesFor(null, 'nextKey0001', false, false, 'age_restricted')).toStrictEqual([{ kind: 'embed', key: 'nextKey0001', why: 'age_restricted' }]);
+		expect(sourcesFor(null, 'nextKey0001', false, false, '')).toStrictEqual([{ kind: 'embed', key: 'nextKey0001' }]);
+		const mp4 = { type: 'mp4' as const, url: 'https://rr1.googlevideo.com/videoplayback?itag=18', expires_at: '2099-01-01T00:00:00Z', key: 'abcdefghijk' };
+		expect(sourcesFor(mp4, undefined, false, false, 'age_restricted').at(-1)).toStrictEqual({ kind: 'embed', key: 'abcdefghijk' });
+	});
 });

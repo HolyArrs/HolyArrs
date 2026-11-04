@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/health"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/youtube"
 )
@@ -145,8 +147,10 @@ func TestTrailerAllUnplayableSaysWhy(t *testing.T) {
 	}
 }
 
-// Only failures at YouTube's door count toward the health check's
-// failures in a row; a video YouTube will not play here does not.
+// Door failures count in a row for every lookup (the trailer pass stops on
+// one); the health check counts different videos instead, so one video
+// failing again and again stays one. A video that is plainly about itself
+// (age) counts toward neither.
 func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
@@ -155,15 +159,110 @@ func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 	for i := 1; i <= 2; i++ {
 		a.trailers.cache = nil
 		_, _ = a.resolveTitle(ctx, "movie", "11", "en")
-		if s := a.TrailerReader(); s.Failed != i || s.LastReason != youtube.BotCheck {
+		if s := a.TrailerReader(); s.Failed != i || s.Videos != 1 || s.LastReason != youtube.BotCheck {
 			t.Fatalf("bot check %d: %+v", i, s)
 		}
 	}
-	yt := fakeReader(t, "unavailable")
-	a.trailers.cache = nil
-	_, _ = a.resolveTitle(ctx, "movie", "11", "en")
-	if s := a.TrailerReader(); yt.runs.Load() != 1 || s.Failed != 2 || s.LastReason != youtube.BotCheck {
-		t.Fatalf("a removed video counted: %+v", s)
+	fakeReader(t, "age", "ageVideo001", "ageVideo002")
+	for _, k := range []string{"ageVideo001", "ageVideo002"} {
+		_, _ = a.readTrailer(ctx, k, k, time.Now(), false)
+	}
+	if s := a.TrailerReader(); s.Failed != 2 || s.Videos != 1 || s.LastReason != youtube.BotCheck {
+		t.Fatalf("an age-restricted video counted: %+v", s)
+	}
+}
+
+// failVideos looks n different videos up (deadVideo00, deadVideo01...).
+func failVideos(a *API, from, n int) {
+	for i := from; i < from+n; i++ {
+		k := fmt.Sprintf("deadVideo%02d", i)
+		_, _ = a.readTrailer(context.Background(), k, k, time.Now(), false)
+	}
+}
+
+// When YouTube changes, videos that played before fail one after another:
+// five different ones failing with no good lookup in between reach the
+// health check's limit, even when each says only "unavailable". The same
+// video failing five times does not, and a good lookup starts again.
+func TestTrailerUpkeepCountsDifferentVideos(t *testing.T) {
+	fakeReader(t, "unavailable")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	ctx := context.Background()
+	for range health.TrailerFailLimit {
+		_, _ = a.readTrailer(ctx, "deadVideo00", "deadVideo00", time.Now(), false)
+	}
+	if s := a.TrailerReader(); s.Videos != 1 || s.Failed != 0 || s.LastReason != youtube.Unavailable {
+		t.Fatalf("one video five times: %+v", s)
+	}
+	failVideos(a, 1, health.TrailerFailLimit-1)
+	if s := a.TrailerReader(); s.Videos != health.TrailerFailLimit || s.LastReason != youtube.Unavailable || !s.LastGood.IsZero() {
+		t.Fatalf("five videos: %+v", s)
+	}
+	yt := fakeReader(t, "ok", "goodVideo01")
+	if _, err := a.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false); err != nil {
+		t.Fatal(err)
+	}
+	if s := a.TrailerReader(); s.Videos != 0 || s.Failed != 0 || time.Since(s.LastGood) > time.Minute {
+		t.Fatalf("not reset: %+v", s)
+	}
+	// After the reset, four more different failures stay below the limit.
+	yt.set("deadVideo00", "premiere") // unplayable
+	failVideos(a, 0, health.TrailerFailLimit-1)
+	if s := a.TrailerReader(); s.Videos != health.TrailerFailLimit-1 {
+		t.Fatalf("after the reset: %+v", s)
+	}
+}
+
+// The health state is kept in lookup_cache: a restart (a new API on the
+// same store) carries on counting, and the same videos are not counted
+// twice. It is written on a change only: a video failing again with the
+// same reason writes nothing, and good lookups write at most once a minute.
+func TestTrailerUpkeepSurvivesARestart(t *testing.T) {
+	fakeReader(t, "unavailable", "goodVideo01")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	ctx := context.Background()
+	failVideos(a, 0, 3)
+	b := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	if s := b.TrailerReader(); s.Videos != 3 || s.LastReason != youtube.Unavailable {
+		t.Fatalf("after a restart: %+v", s)
+	}
+	failVideos(b, 1, 4) // deadVideo01..04: two of them new
+	if s := b.TrailerReader(); s.Videos != health.TrailerFailLimit {
+		t.Fatalf("carried on: %+v", s)
+	}
+	lc := store.LookupCache{Store: st}
+	gone := func() bool {
+		_, ok, _ := lc.Get(ctx, trailerUpkeepKey, time.Now())
+		return !ok
+	}
+	wipe := func() { _ = lc.Put(ctx, trailerUpkeepKey, []byte("{}"), time.Now(), time.Now()) }
+	wipe()
+	failVideos(b, 2, 1)
+	if !gone() {
+		t.Fatal("written for a video that failed again")
+	}
+	fakeReader(t, "ok", "goodVideo01")
+	_, _ = b.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
+	if gone() {
+		t.Fatal("the reset is not written")
+	}
+	wipe()
+	_, _ = b.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
+	if !gone() {
+		t.Fatal("written on every good lookup")
+	}
+	b.trailers.mu.Lock()
+	b.trailers.saved = time.Now().Add(-2 * time.Minute)
+	b.trailers.mu.Unlock()
+	_, _ = b.readTrailer(ctx, "goodVideo01", "goodVideo01", time.Now(), false)
+	if gone() {
+		t.Fatal("the last good lookup is not written after a minute")
+	}
+	c := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	if s := c.TrailerReader(); s.Videos != 0 || time.Since(s.LastGood) > time.Minute {
+		t.Fatalf("after the reset and a restart: %+v", s)
 	}
 }
 

@@ -347,23 +347,31 @@ func label(kind string) string {
 	return kind
 }
 
-// TrailerFailLimit is how many trailer lookups in a row must fail before
-// the trailers check warns.
+// TrailerFailLimit is how many different titles (or music videos) must
+// fail, with no good lookup in between, before the trailers check warns.
+// A title counts once, however many of its trailers were tried.
 const TrailerFailLimit = 5
 
 // Trailers is what the trailers check reads: the state of HolyArrs's own
 // YouTube reader.
 type Trailers struct {
-	On       bool      // trailers are looked up at all
-	Failed   int       // lookups that failed in a row at YouTube's door
+	On bool // trailers are looked up at all
+	// Failed is how many different titles or music videos failed since the
+	// last good lookup, for any reason but one about that video alone (age, sign-in, a content
+	// warning); kept across restarts.
+	Failed   int
 	LastGood time.Time // the last lookup that found addresses (zero: none yet)
-	// LastReason is the last door failure's reason (youtube.Reason), "" when none.
+	// LastReason is the reason of the last failure Failed counts
+	// (youtube.Reason), "" when none.
 	LastReason string
 }
 
-// readerTrouble says a door failure in plain words.
+// readerTrouble says a failure in plain words: YouTube's door, or videos
+// that played before no longer being found.
 func readerTrouble(reason string) string {
 	switch youtube.Reason(reason) {
+	case youtube.Unavailable, youtube.Unplayable:
+		return "Trailers are not being found; a HolyArrs update may be needed"
 	case youtube.BotCheck:
 		return "YouTube asks to confirm you're not a bot"
 	case youtube.NoAddress:
@@ -376,10 +384,11 @@ func readerTrouble(reason string) string {
 	return "Trailer lookups are failing"
 }
 
-// trailers names the reader's last good lookup and, while lookups fail at
-// YouTube's door, why and how many in a row; it warns after
-// TrailerFailLimit of them. A video YouTube will not play here (age,
-// removed) is about that video, not the reader, and is not counted.
+// trailers names the reader's last good lookup and, while lookups fail,
+// why and how many different videos failed; it warns after
+// TrailerFailLimit of them, which is how a change at YouTube shows. One
+// video failing again and again, or a video that is plainly about itself
+// (age, sign-in, a content warning), does not add up to a warning.
 func (e *Engine) trailers(ctx context.Context) ([]Result, error) {
 	if e.Trailers == nil {
 		return nil, nil
@@ -393,7 +402,7 @@ func (e *Engine) trailers(ctx context.Context) ([]Result, error) {
 		r.Subject += ", last good lookup " + t.LastGood.UTC().Format("2 Jan 15:04 UTC")
 	}
 	if t.Failed > 0 {
-		in := strconv.Itoa(t.Failed) + " lookups in a row failed"
+		in := strconv.Itoa(t.Failed) + " different videos failed in a row"
 		if t.Failed == 1 {
 			in = "the last lookup failed"
 		}

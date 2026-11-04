@@ -138,6 +138,37 @@ function send(res, code, obj, type = 'application/json') {
 	res.end(typeof obj === 'string' ? obj : JSON.stringify(obj));
 }
 
+/** The videos the fake YouTube's player call was asked for, in order (GET /youtube/lab/calls reads them). */
+const youtubeCalls = /** @type {string[]} */ ([]);
+
+/**
+ * The fake YouTube, under /youtube on the fake metadata server: the watch
+ * page (a visitor id only) and the player call, answered from fakeYouTube.
+ * @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res @param {URL} url
+ */
+async function fakeYouTubeServe(req, res, url) {
+	const path = url.pathname.slice('/youtube'.length);
+	if (req.method === 'GET' && path === '/lab/calls') return send(res, 200, { player: youtubeCalls });
+	if (req.method === 'GET' && path === '/watch') return send(res, 200, '<html><script>ytcfg.set({"VISITOR_DATA":"LAB-VISITOR"});</script></html>', 'text/html');
+	if (req.method !== 'POST' || path !== '/youtubei/v1/player') return send(res, 404, {});
+	let id = '';
+	try {
+		id = String(JSON.parse(await body(req)).videoId ?? '');
+	} catch {
+		return send(res, 400, {});
+	}
+	youtubeCalls.push(id);
+	const mode = fakeYouTube[id] ?? 'gone';
+	if (mode === 'age') return send(res, 200, { playabilityStatus: { status: 'LOGIN_REQUIRED', reason: 'Sign in to confirm your age' } });
+	if (mode === 'gone') return send(res, 200, { playabilityStatus: { status: 'ERROR', reason: 'Video unavailable' } });
+	const expire = Math.floor(Date.now() / 1000) + 6 * 3600;
+	send(res, 200, {
+		playabilityStatus: { status: 'OK' },
+		videoDetails: { title: id, lengthSeconds: '90' },
+		streamingData: { formats: [{ itag: 18, url: fakeVideoAddress(id, expire), mimeType: 'video/mp4; codecs="avc1.42001E, mp4a.40.2"', width: 640, height: 360 }] }
+	});
+}
+
 // A few made-up movies for the fake TMDB. Dates use TMDB release types:
 // 3 cinema, 4 digital, 5 disc.
 export const tmdbMovies = [
@@ -193,8 +224,28 @@ export const tmdbMovies = [
 	{ id: 900104, title: 'Nettle Observatory', release_date: '2010-10-10', imdb_id: 'tt9001040', overview: 'A telescope that only sees the weeds below it.', dates: [[3, '2010-10-10'], [4, '2010-12-01']] },
 	// On a member's Plex watchlist only: the first is asked, the second held back by their weekly limit of one.
 	{ id: 900105, title: 'Juniper Lantern', release_date: '2013-05-05', imdb_id: 'tt9001050', overview: 'A lantern that lights only the paths nobody took.', dates: [[3, '2013-05-05'], [4, '2013-07-01']] },
-	{ id: 900106, title: 'Quill Aqueduct', release_date: '2014-08-08', imdb_id: 'tt9001060', overview: 'Water that writes letters as it runs downhill.', dates: [[3, '2014-08-08'], [4, '2014-10-01']] }
+	{ id: 900106, title: 'Quill Aqueduct', release_date: '2014-08-08', imdb_id: 'tt9001060', overview: 'Water that writes letters as it runs downhill.', dates: [[3, '2014-08-08'], [4, '2014-10-01']] },
+	// Only trailers.spec.ts uses these, the only movies with trailers. videos: [YouTube key, name, official];
+	// trailer is the metadata server's pick. How the fake YouTube answers each key is in fakeYouTube.
+	{ id: 900501, title: 'Lumen Cistern', release_date: '2016-03-03', imdb_id: 'tt9005010', overview: 'A cistern that fills with light instead of rain.', dates: [[3, '2016-03-03'], [4, '2016-05-01']], trailer: 'lumenCist01', videos: [['lumenCist01', 'Lumen Cistern official trailer', true]] },
+	{ id: 900502, title: 'Aster Funicular', release_date: '2017-05-05', imdb_id: 'tt9005020', overview: 'A hillside railway that only climbs for passengers in love.', dates: [[3, '2017-05-05'], [4, '2017-07-01']], trailer: 'asterAge001', videos: [['asterAge001', 'Aster Funicular red band trailer', true], ['asterPlay02', 'Aster Funicular trailer 2', false]] },
+	{ id: 900503, title: 'Gossamer Weir', release_date: '2018-07-07', imdb_id: 'tt9005030', overview: 'A river weir spun overnight by spiders.', dates: [[3, '2018-07-07'], [4, '2018-09-01']], trailer: 'weirGone001', videos: [['weirGone001', 'Gossamer Weir official trailer', true], ['weirGone002', 'Gossamer Weir trailer 2', false]] },
+	{ id: 900504, title: 'Pumice Belfry', release_date: '2019-09-09', imdb_id: 'tt9005040', overview: 'A bell tower so light it floats off in a storm.', dates: [[3, '2019-09-09'], [4, '2019-11-01']], trailer: 'pumiceBel01', videos: [['pumiceBel01', 'Pumice Belfry official trailer', true]] }
 ];
+
+/**
+ * How the fake YouTube answers each video (trailers.spec.ts): ok gives a
+ * muxed MP4 on a made-up googlevideo address, age is behind YouTube's age
+ * sign-in, gone was removed. Any other key answers as removed too.
+ * @type {Record<string, 'ok' | 'age' | 'gone'>}
+ */
+export const fakeYouTube = { lumenCist01: 'ok', asterAge001: 'age', asterPlay02: 'ok', weirGone001: 'gone', weirGone002: 'gone', pumiceBel01: 'ok' };
+
+/** The address the fake YouTube gives for an ok video (expire is a Unix time). */
+export const fakeVideoAddress = (/** @type {string} */ key, /** @type {number} */ expire) => `https://rr1---sn-lab.googlevideo.com/videoplayback?expire=${expire}&id=${key}&itag=18`;
+
+/** Where the fake YouTube answers, on the fake metadata server's port. */
+export const youtubeURL = () => `http://127.0.0.1:${tmdbPort}/youtube`;
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
 // same ids. Episodes: [season, number, name, air day]; 2099 is not out yet.
@@ -337,6 +388,7 @@ function tmdbMovie(m) {
 		id: m.id, title: m.title, release_date: m.release_date, overview: m.overview, original_language: 'en', runtime: 101,
 		poster_path: `/p${m.id}.jpg`, imdb_id: m.imdb_id,
 		...('collection' in m && m.collection ? { belongs_to_collection: { id: m.collection.id, name: m.collection.name } } : {}),
+		...('videos' in m && m.videos ? { videos: { results: m.videos.map(([key, name, official]) => ({ key, name, official, site: 'YouTube', type: 'Trailer', iso_639_1: 'en' })) } } : {}),
 		release_dates: { results: [{ iso_3166_1: 'US', release_dates: m.dates.map(([type, d]) => ({ type, release_date: `${d}T00:00:00.000Z`, certification: m.cert ?? '' })) }] }
 	};
 }
@@ -489,6 +541,15 @@ export function startFakes() {
 			if (req.method !== 'POST') return send(res, 405, { error: { code: 'method_not_allowed', retry_after_seconds: 0 } });
 			metadataCalls.registered++;
 			return send(res, 201, { schema_version: 1, token: fakeInstallToken });
+		}
+		if (url.pathname.startsWith('/youtube/')) return fakeYouTubeServe(req, res, url);
+		// The server's trailer pick: only the trailer test movies have one.
+		const pick = url.pathname.match(/^\/v1\/trailers\/(movie|tv)\/(\d+)$/);
+		if (pick) {
+			if (req.headers.authorization !== `Bearer ${fakeInstallToken}`) return send(res, 401, { error: { code: 'unauthorized', retry_after_seconds: 0 } });
+			const pm = pick[1] === 'movie' ? tmdbMovies.find((x) => x.id === Number(pick[2])) : undefined;
+			if (!pm || !('trailer' in pm) || !pm.trailer) return send(res, 404, { error: { code: 'not_found', retry_after_seconds: 0 } });
+			return send(res, 200, { key: pm.trailer, name: `${pm.title} trailer`, language: 'en', checked_at: '2026-11-01T00:00:00Z', status: 'ok' });
 		}
 		if (!url.pathname.startsWith('/v1/tmdb/')) return send(res, 404, { status_message: 'TMDB reads are at /v1/tmdb' });
 		if (req.headers.authorization !== `Bearer ${fakeInstallToken}`) return send(res, 401, { error: { code: 'unauthorized', retry_after_seconds: 0 } });

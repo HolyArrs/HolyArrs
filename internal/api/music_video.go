@@ -476,7 +476,7 @@ func (a *API) resolveMusicVideo(ctx context.Context, key string) (TrailerStream,
 
 func (a *API) lookupMusicVideo(ctx context.Context, key, ckey string) (trailerEntry, error) {
 	now := time.Now()
-	s, err := a.readTrailer(ctx, key, now, true)
+	s, err := a.readTrailer(ctx, key, key, now, true)
 	if err != nil {
 		if youtube.ReasonOf(err) == "" {
 			return trailerEntry{}, err

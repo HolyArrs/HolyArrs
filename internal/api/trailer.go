@@ -116,12 +116,20 @@ type trailerState struct {
 	ahead   []time.Time
 	pool    chan struct{}
 	// failed counts lookups that failed in a row at YouTube's door (a
-	// success resets; a video YouTube will not play here does not count).
+	// success resets; a video YouTube will not play here does not count);
+	// the trailer pass stops on one.
 	failed atomic.Int32
-	// lastGood is the last lookup that found addresses and lastReason the
-	// last door failure's reason, for the health check.
-	lastGood   time.Time
+	// For the health check, kept across restarts (trailerUpkeepKey): the
+	// different titles and music videos that failed since the last good
+	// lookup (upkeep, by readTrailer's upkeep key), the
+	// last of those failures' reason and the last lookup that found
+	// addresses. saved is when they were last written.
+	upkeep     []string
 	lastReason youtube.Reason
+	lastGood   time.Time
+	saved      time.Time
+	loaded     sync.Once
+	saving     sync.Mutex
 	// bad keeps videos YouTube will not play here (by key) until a time.
 	bad map[string]trailerBadEntry
 }
@@ -136,24 +144,105 @@ func (t *trailerState) lookupPool() chan struct{} {
 	return t.pool
 }
 
-// note counts a lookup's outcome for the health check: a success resets
-// the failures in a row, a door failure adds one, and a video reason
-// (about that one video) leaves them as they are.
-func (t *trailerState) note(err error) {
+const (
+	trailerUpkeepKey   = "trailerhealth|reader" // the health check's state in lookup_cache
+	trailerUpkeepKeep  = 90 * 24 * time.Hour    // ...kept this long after its last write
+	trailerUpkeepVideo = 50                     // different failing titles and videos remembered
+)
+
+// trailerUpkeep is the health check's state as kept in lookup_cache.
+type trailerUpkeep struct {
+	Videos   []string       `json:"videos,omitempty"`
+	Reason   youtube.Reason `json:"reason,omitempty"`
+	LastGood time.Time      `json:"last_good,omitzero"`
+}
+
+// upkeepReason says whether a failure for r counts toward the health
+// check: every reason but one that is plainly about that video alone (age,
+// sign-in, a content warning, a bad key). When YouTube changes, videos that
+// played before come back without an address, refused, behind a bot check,
+// unplayable or unavailable, across many videos at once.
+func upkeepReason(r youtube.Reason) bool {
+	switch r {
+	case youtube.AgeRestricted, youtube.SignInNeeded, youtube.ContentCheck, youtube.BadID:
+		return false
+	}
+	return true
+}
+
+// note counts a lookup's outcome under key (a title, or a music video): a
+// success resets both counts, a door failure adds one to the failures in a
+// row, and a failure for an upkeep reason adds key to the different ones
+// that failed, so a title whose trailers all fail counts once. It
+// says whether the health state should be written now: on a change, or
+// at most once a minute for a success that changed nothing but the time.
+func (t *trailerState) note(key string, err error, now time.Time) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	r := trailerReason(err)
-	switch {
-	case err == nil:
+	if err == nil {
 		t.failed.Store(0)
-		t.lastGood = time.Now()
-	case r.VideoReason():
-	default:
-		if r == "" {
-			r = youtube.Network
+		t.lastGood = now
+		if len(t.upkeep) > 0 {
+			t.upkeep = nil
+			return true
 		}
+		return now.Sub(t.saved) >= time.Minute
+	}
+	r := trailerReason(err)
+	if r == "" {
+		r = youtube.Network
+	}
+	if !r.VideoReason() {
 		t.failed.Add(1)
-		t.lastReason = r
+	}
+	if !upkeepReason(r) {
+		return false
+	}
+	changed := r != t.lastReason
+	t.lastReason = r
+	if !slices.Contains(t.upkeep, key) && len(t.upkeep) < trailerUpkeepVideo {
+		t.upkeep = append(t.upkeep, key)
+		changed = true
+	}
+	return changed
+}
+
+// loadUpkeep reads the health state kept before a restart, once, before
+// anything counts.
+func (a *API) loadUpkeep(ctx context.Context) {
+	t := &a.trailers
+	t.loaded.Do(func() {
+		if a.s.Store == nil || a.s.Store.Read() == nil {
+			return
+		}
+		b, ok, err := store.LookupCache{Store: a.s.Store}.Get(context.WithoutCancel(ctx), trailerUpkeepKey, time.Now())
+		var k trailerUpkeep
+		if err != nil || !ok || json.Unmarshal(b, &k) != nil {
+			return
+		}
+		t.mu.Lock()
+		defer t.mu.Unlock()
+		t.upkeep = k.Videos[:min(len(k.Videos), trailerUpkeepVideo)]
+		t.lastReason, t.lastGood = k.Reason, k.LastGood
+	})
+}
+
+// saveUpkeep writes the health state as it is now (one write at a time, so
+// an older state never lands after a newer one).
+func (a *API) saveUpkeep(ctx context.Context) {
+	if a.s.Store == nil {
+		return
+	}
+	t := &a.trailers
+	t.saving.Lock()
+	defer t.saving.Unlock()
+	now := time.Now()
+	t.mu.Lock()
+	k := trailerUpkeep{Videos: slices.Clone(t.upkeep), Reason: t.lastReason, LastGood: t.lastGood}
+	t.saved = now
+	t.mu.Unlock()
+	if b, err := json.Marshal(k); err == nil {
+		_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), trailerUpkeepKey, b, now, now.Add(trailerUpkeepKeep))
 	}
 }
 
@@ -224,17 +313,30 @@ func (t *trailerState) allowAhead(now time.Time) bool {
 
 // TrailerReaderState is the YouTube reader's state for the health check.
 type TrailerReaderState struct {
-	Failed     int            // lookups that failed in a row at YouTube's door
+	Failed int // lookups that failed in a row at YouTube's door
+	// Videos is how many different titles and music videos failed since the
+	// last good lookup, for any reason but one about that video alone
+	// (upkeepReason); a title counts once, however many trailers it tried.
+	Videos     int
 	LastGood   time.Time      // the last lookup that found addresses (zero: none yet)
-	LastReason youtube.Reason // the last door failure's reason ("" when none)
+	LastReason youtube.Reason // the reason of the last failure Videos counts ("" when none)
 }
 
-// TrailerReader reports the reader's state (for the health check).
+// TrailersOn says whether trailers are looked up at all: every YouTube
+// lookup (the trailer pass, music videos) waits on trailer autoplay, so the
+// health check is off while it is off.
+func (a *API) TrailersOn(ctx context.Context) bool {
+	return a.s.Store == nil || a.uiSettings(ctx).AutoplayTrailers
+}
+
+// TrailerReader reports the reader's state (for the health check), with
+// what was kept before a restart.
 func (a *API) TrailerReader() TrailerReaderState {
+	a.loadUpkeep(context.Background())
 	t := &a.trailers
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return TrailerReaderState{Failed: int(t.failed.Load()), LastGood: t.lastGood, LastReason: t.lastReason}
+	return TrailerReaderState{Failed: int(t.failed.Load()), Videos: len(t.upkeep), LastGood: t.lastGood, LastReason: t.lastReason}
 }
 
 var trailerLangRe = regexp.MustCompile(`^[a-z]{2}(-[A-Z]{2})?$`)
@@ -569,7 +671,7 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 			}
 			more++
 		}
-		s, err := a.readTrailer(ctx, k, now, false)
+		s, err := a.readTrailer(ctx, k, ckey, now, false)
 		if err == nil {
 			// A next trailer that plays is not kept as the title's key: the
 			// picked one is asked again once its bad mark is over.
@@ -632,9 +734,11 @@ func trailerReason(err error) youtube.Reason {
 }
 
 // readTrailer looks one video up in the shared pool and counts the outcome
-// for the health check. withPeak also reads the "most replayed" point (the
+// for the health check under upkeep (the title's "kind|id|lang", or the
+// video key for a music video). withPeak also reads the "most replayed" point (the
 // watch page, about a second); a trailer needs only the addresses.
-func (a *API) readTrailer(ctx context.Context, key string, now time.Time, withPeak bool) (TrailerStream, error) {
+func (a *API) readTrailer(ctx context.Context, key, upkeep string, now time.Time, withPeak bool) (TrailerStream, error) {
+	a.loadUpkeep(ctx)
 	pool := a.trailers.lookupPool()
 	select {
 	case pool <- struct{}{}:
@@ -643,7 +747,9 @@ func (a *API) readTrailer(ctx context.Context, key string, now time.Time, withPe
 	}
 	s, err := resolveTrailer(ctx, key, now, withPeak)
 	<-pool
-	a.trailers.note(err)
+	if a.trailers.note(upkeep, err, time.Now()) {
+		a.saveUpkeep(ctx)
+	}
 	return s, err
 }
 

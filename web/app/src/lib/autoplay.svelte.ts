@@ -49,12 +49,13 @@ export function autoplayHere(): boolean {
 /**
  * direct: straight from YouTube (pass: the same trailer through HolyArrs,
  * for switching to when sound is turned on); pass: the HLS stream relayed
- * by HolyArrs (pass-through); embed: the YouTube embed.
+ * by HolyArrs (pass-through); embed: the YouTube embed (why: the server's
+ * reason no direct stream plays, for the line shown if the embed fails too).
  */
 export type TrailerSource =
 	| { kind: 'direct'; url: string; key?: string; audio: boolean; pass?: string }
 	| { kind: 'pass'; url: string; key?: string }
-	| { kind: 'embed'; key: string };
+	| { kind: 'embed'; key: string; why?: string };
 
 interface Stream {
 	/** hls: url is YouTube's adaptive manifest; mp4: url is the muxed 360p MP4. */
@@ -306,7 +307,13 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
  */
 export async function trailerSources(kind: 'movie' | 'show', tmdb: string, videos: Video[] | undefined, signal?: AbortSignal): Promise<TrailerSource[]> {
 	const s = await directStream(kind, tmdb, signal);
-	return sourcesFor(s, embedKey(misses.get(`${kind}:${tmdb}`), videos, lang()), nativeHLS(), soundOn()).filter((x) => x.kind !== 'direct' || !refused.has(x.url));
+	const miss = misses.get(`${kind}:${tmdb}`);
+	return sourcesFor(s, embedKey(miss, videos, lang()), nativeHLS(), soundOn(), miss?.reason).filter((x) => x.kind !== 'direct' || !refused.has(x.url));
+}
+
+/** missReason is the server's reason a title has no direct stream ("" when it gave none or was not asked yet). */
+export function missReason(kind: 'movie' | 'show', tmdb: string): string {
+	return misses.get(`${kind}:${tmdb}`)?.reason ?? '';
 }
 
 /**
@@ -338,9 +345,10 @@ export function embedKey(miss: TrailerMiss | undefined, videos: Video[] | undefi
  * server bandwidth); once sound was turned on this session, a browser
  * without native HLS starts on pass-through instead. Pass-through is also
  * the fallback when direct playback is refused (YouTube ties addresses to
- * the IP that resolved them), then the embed.
+ * the IP that resolved them), then the embed. why is the server's reason
+ * there is no stream; it rides on the embed.
  */
-export function sourcesFor(s: Stream | null, videoKey: string | undefined, hls: boolean, sound: boolean): TrailerSource[] {
+export function sourcesFor(s: Stream | null, videoKey: string | undefined, hls: boolean, sound: boolean, why?: string): TrailerSource[] {
 	const out: TrailerSource[] = [];
 	const u = s && playable(s, hls);
 	const pass = s?.type === 'hls' ? s.proxy_url : undefined;
@@ -355,7 +363,7 @@ export function sourcesFor(s: Stream | null, videoKey: string | undefined, hls: 
 	if (s?.type === 'hls' && u === s.url && s.mp4_url) out.push({ kind: 'direct', url: s.mp4_url, key: s.key, audio: !!s.mp4_audio, pass });
 	if (s && pass && !out.some((o) => o.kind === 'pass')) out.push({ kind: 'pass', url: pass, key: s.key });
 	const key = s?.key || videoKey;
-	if (key) out.push({ kind: 'embed', key });
+	if (key) out.push(!s && why ? { kind: 'embed', key, why } : { kind: 'embed', key });
 	return out;
 }
 

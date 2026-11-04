@@ -39,7 +39,7 @@ content warning. HolyArrs never gets around those. Instead:
 - A video that asks for a sign-in, was removed or made private, or sits
   behind a content warning is skipped for 7 days, for every title that
   lists it. A video that is blocked here or not on yet is tried again on the
-  next lookup round (within 15 minutes), so a premiere plays soon after it
+  next lookup round (within 5 minutes), so a premiere plays soon after it
   starts.
 - The title's next trailer is tried, in the same order as above, up to four
   more in one lookup. The one that plays is shown meanwhile; once the first
@@ -59,6 +59,12 @@ still play, or `""` when none is left. For a title not looked up yet it
 answers 404 with only `key`, the title's YouTube trailer when known, so the
 embed plays it.
 
+When the full-screen player cannot play a trailer either, it says why in
+plain words when HolyArrs knows: YouTube wants a sign-in to confirm the
+viewer's age, the video was removed or is private, YouTube won't play it
+here (blocked in a region, embedding turned off, or a live stream not on),
+it sits behind a content warning, or trailers can't be reached right now. Otherwise it says the trailer can't play here.
+
 ## When a trailer starts
 
 - The Explore hero starts after 1.5 seconds in view.
@@ -68,11 +74,12 @@ embed plays it.
 - Only one video plays at a time; a new one stops the one before it.
 
 Trailers are looked up on a fixed schedule, never when a page opens. Every
-15 minutes (the first round a few minutes after HolyArrs starts) the server
-looks up to 30 trailers, one after another. It covers what Explore shows
-first for each household member who is not a Kid account: the featured
-titles first, then the first four cards of the first three rows, in up to
-three languages pages asked for lately. After those come the titles asked
+5 minutes (the first round a few minutes after HolyArrs starts) the server
+looks up to 20 trailers, a few seconds apart. It covers everything Explore
+shows for each household member who is not a Kid account: the featured
+titles first, then every card of every row, in up to three languages pages
+asked for lately. Addresses about to expire are renewed before new titles
+are looked up. After those come the titles asked
 for elsewhere that had nothing yet (a person's page, the Requests banner,
 New & Popular's featured titles), each in the language it was asked in.
 An address is looked up again shortly before it expires. A title with no
@@ -120,14 +127,16 @@ It is under **Settings > This app**, and applies to the whole household.
 `GET` and `PUT /api/v1/settings/ui` read and change it (`autoplay_trailers`).
 The old switch that kept a separate trailer tool up to date is gone: the
 trailer reader is part of HolyArrs and gets its fixes with HolyArrs updates.
-`keep_ytdlp_updated` is still accepted and answered, so older scripts keep
-working, but it does nothing.
+Older scripts that still send that switch keep working: it is ignored.
 
 The trailer reader's state shows on **Status > Updates** and under
 **Health**: the last good lookup, and while lookups keep failing, why and how
-many failed in a row. A video YouTube will not play here does not count;
-only YouTube refusing HolyArrs as a whole does. After 5 failures in a row
-Health warns with the reason in plain words:
+for how many different titles in a row. A trailer behind an age check, a
+sign-in or a content warning does not count, since that is about the video.
+After 5 different titles fail with no good lookup in between, Health warns
+with the reason in plain words: usually YouTube changed something and a
+HolyArrs update is needed. The count is kept across restarts. While trailer autoplay is off
+nothing is looked up, and Health leaves the trailer reader out.
 
 | Reason | Health says |
 | --- | --- |
@@ -135,6 +144,7 @@ Health warns with the reason in plain words:
 | YouTube changed how its videos are reached | YouTube changed how its videos are reached; a HolyArrs update will fix it |
 | An error answer from YouTube | YouTube turned the lookups away |
 | No connection | YouTube could not be reached |
+| Videos removed or blocked across many titles | Trailers are not being found; a HolyArrs update may be needed |
 
 ## Kid accounts and reduced motion
 

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -15,20 +16,32 @@ import (
 )
 
 // The trailer pass: the only place trailers are looked up on YouTube. On a
-// fixed schedule it covers what Explore shows first (each stored pool's
-// hero candidates, then the first cards of its first rows), then the titles
-// asked for elsewhere that nothing was kept for (noted, never looked up on
-// the ask), within a budget per pass, and looks kept addresses up again
-// before they expire. Pages only read what it kept.
+// fixed schedule it covers every movie and show Explore shows from the
+// stored pools (each pool's hero candidates, then every card of every head
+// and tail row in page order), then the titles asked for elsewhere that
+// nothing was kept for (noted, never looked up on the ask). It spreads the
+// work, a few lookups per pass with a gap between them, so YouTube sees a
+// steady trickle, and looks kept addresses up again before they expire
+// (they last 6 hours). Pages only read what it kept.
 
 const (
-	trailerPassEvery  = 15 * time.Minute
-	trailerPassFirst  = 3 * time.Minute    // the first pass after start
-	trailerPassBudget = 30                 // lookups per pass, one after another
+	trailerPassBudget = 20                 // lookups per pass, one after another
 	trailerPassLangs  = 3                  // languages a pass covers
 	trailerPassTitle  = 40 * time.Second   // one title's lookup at most
 	trailerAskedMax   = 500                // noted titles at most (the oldest goes)
 	trailerAskedKeep  = 7 * 24 * time.Hour // a noted title no pass reached is dropped after this
+)
+
+var (
+	// trailerPassEvery is how often the pass runs and trailerPassFirst when
+	// it first runs after start (TrailerPassTiming changes them for tests).
+	trailerPassEvery = 5 * time.Minute
+	trailerPassFirst = 3 * time.Minute
+	// trailerPassGap is the wait between two lookups of a pass (tests set 0).
+	trailerPassGap = 2 * time.Second
+	// trailerPassMax is the most titles x languages a pass lists; the rest
+	// waits until the list is shorter.
+	trailerPassMax = 1000
 )
 
 // TrailerLoops are the trailer pass's loop.
@@ -50,11 +63,13 @@ func (a *API) trailerPassLoop(ctx context.Context) error {
 }
 
 // trailerPass looks up, one after another and at most budget times, the
-// trailers of the pass's titles in each noted language. A title with a
-// fresh address, a kept miss or a lookup under way is skipped; an address
-// that would expire before the next two passes is looked up again. What is
-// left over waits for the next pass, and so does everything once YouTube's
-// door fails. It answers how many lookups ran.
+// trailers of the pass's titles in each noted language, trailerPassGap
+// apart. A title with a fresh address, a kept miss or a lookup under way is
+// skipped; an address that would expire before trailerRenewAhead is looked
+// up again, and those renewals go first, so new titles never push a kept
+// address out. What is left over waits for the next pass, and so does
+// everything once YouTube's door fails. It logs one line when anything was
+// due and answers how many lookups ran.
 func (a *API) trailerPass(ctx context.Context, budget int) int {
 	if a.s.Store == nil || !a.uiSettings(ctx).AutoplayTrailers {
 		return 0
@@ -67,7 +82,7 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		}
 	}
 	jobs = append(jobs, a.trailerAsks(time.Now())...)
-	n := 0
+	var list [][3]string
 	seen := map[string]bool{}
 	for _, j := range jobs {
 		ckey := j[0] + "|" + j[1] + "|" + j[2]
@@ -75,18 +90,60 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 			continue
 		}
 		seen[ckey] = true
-		if n >= budget || ctx.Err() != nil {
-			return n
+		list = append(list, j)
+	}
+	capped := max(0, len(list)-trailerPassMax)
+	list = list[:len(list)-capped]
+	type passJob struct {
+		j     [3]string
+		ckey  string
+		renew bool
+	}
+	var due []passJob
+	for _, j := range list {
+		if ctx.Err() != nil {
+			return 0
 		}
+		ckey := j[0] + "|" + j[1] + "|" + j[2]
 		now := time.Now()
-		due, renew := a.trailerPassDue(ctx, ckey, now)
-		if !due {
+		ok, renew := a.trailerPassDue(ctx, ckey, now)
+		if !ok {
 			// Kept or under way: a noted title is done, unless what is kept
 			// is a short miss (YouTube's door) a later pass asks again.
 			if e, ok := a.trailers.get(ckey, now); !ok || e.miss.IsZero() || e.miss.Sub(now) > trailerMiss {
 				a.trailerAsked.drop(ckey)
 			}
 			continue
+		}
+		due = append(due, passJob{j, ckey, renew})
+	}
+	// Renewals first (in page order), then first lookups.
+	slices.SortStableFunc(due, func(x, y passJob) int {
+		if x.renew == y.renew {
+			return 0
+		}
+		if x.renew {
+			return -1
+		}
+		return 1
+	})
+	n, left := 0, 0
+	stopped := false
+	for _, d := range due {
+		if ctx.Err() != nil {
+			return n
+		}
+		j, ckey, renew := d.j, d.ckey, d.renew
+		if stopped || n >= budget {
+			left++
+			continue
+		}
+		if n > 0 && trailerPassGap > 0 {
+			select {
+			case <-ctx.Done():
+				return n
+			case <-time.After(trailerPassGap):
+			}
 		}
 		n++
 		failed := a.trailers.failed.Load()
@@ -103,9 +160,19 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		// noted title stays noted for the next pass.
 		var m *trailerMissed
 		if a.trailers.failed.Load() > failed || (err != nil && !errors.Is(err, errNoTrailer) && !errors.As(err, &m)) {
-			return n
+			stopped = true
+			continue
 		}
 		a.trailerAsked.drop(ckey)
+	}
+	if n+left > 0 || capped > 0 {
+		line := "trailers: read-ahead %d due, %d looked up, %d left for the next pass"
+		args := []any{n + left, n, left}
+		if capped > 0 {
+			line += ", %d past the cap"
+			args = append(args, capped)
+		}
+		log.Printf(line, args...)
 	}
 	return n
 }
@@ -183,8 +250,16 @@ func (t *trailerAsked) drop(ckey string) {
 	delete(t.m, ckey)
 }
 
+// trailerRenewAhead is how long before a kept address is dropped the pass
+// looks it up again: two passes apart, plus a full pass with every lookup
+// at its time limit (far longer than the gaps between them), so a renewal
+// gets at least two chances.
+func trailerRenewAhead() time.Duration {
+	return 2*trailerPassEvery + time.Duration(trailerPassBudget)*trailerPassTitle
+}
+
 // trailerPassDue says whether the pass looks the title up (nothing kept,
-// or a kept address that expires within the next two passes) and whether
+// or a kept address that is dropped within trailerRenewAhead) and whether
 // that renews a kept address.
 func (a *API) trailerPassDue(ctx context.Context, ckey string, now time.Time) (due, renew bool) {
 	if a.trailers.inFlight(ckey) {
@@ -197,12 +272,14 @@ func (a *API) trailerPassDue(ctx context.Context, ckey string, now time.Time) (d
 	case !e.miss.IsZero():
 		return false, false
 	}
-	return e.s.ExpiresAt.Add(-trailerEarly).Sub(now) < 2*trailerPassEvery, true
+	return e.s.ExpiresAt.Add(-trailerEarly).Sub(now) < trailerRenewAhead(), true
 }
 
-// trailerPassTitles are the titles of every stored Explore pool (Kid pools
-// left out): every pool's hero candidates first, then its row cards, each
-// title once.
+// trailerPassTitles are the movies and shows of every stored Explore pool
+// (Kid pools left out) as each page shows them: every pool's hero
+// candidates first, then every card of its head and tail rows in page order
+// (Trending on streaming from its kept lists), each title once and none on
+// the Never-add list.
 func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT DISTINCT member_id, type_switch FROM explore_pool ORDER BY member_id, type_switch")
 	if err != nil {
@@ -218,7 +295,8 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 	rows.Close()
 	now := a.exploreNow()
 	day := explore.Day(now)
-	var heroes, cards [][2]string
+	var heroes [][2]string
+	var cards []explore.Item
 	for _, k := range keys {
 		m, err := a.loadMember(ctx, k.member)
 		if err != nil || m.kid {
@@ -234,12 +312,31 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 		}
 		pg := a.poolPage(*pool, k.member, k.sw, m.region, explore.Moment{Local: now.Local()})
 		heroes = append(heroes, exploreTrailerTitles(heroCandidates(pg, k.sw == "all"), nil)...)
-		cards = append(cards, exploreTrailerTitles(nil, pg.Head)...)
+		for _, row := range append(append([]explore.Row{}, pg.Head...), pg.Tail...) {
+			if row.Type == explore.TypeTopServices {
+				// The page fills this row itself, from the kept lists.
+				cards = append(cards, a.keptServiceTop(strings.ToUpper(m.region), k.sw)...)
+				continue
+			}
+			cards = append(cards, row.Items...)
+		}
+	}
+	items := make([]metadata.DiscoverItem, 0, len(heroes)+len(cards))
+	for _, t := range heroes {
+		items = append(items, metadata.DiscoverItem{Kind: t[0], TMDBID: t[1]})
+	}
+	for _, it := range cards {
+		items = append(items, metadata.DiscoverItem{Kind: it.Kind, TMDBID: it.TMDBID})
+	}
+	items, err = a.dropNeverAdd(ctx, items)
+	if err != nil {
+		return nil
 	}
 	var out [][2]string
 	seen := map[[2]string]bool{}
-	for _, t := range append(heroes, cards...) {
-		if !seen[t] {
+	for _, it := range items {
+		t := [2]string{it.Kind, it.TMDBID}
+		if (it.Kind == "movie" || it.Kind == "show") && it.TMDBID != "" && !seen[t] {
 			seen[t] = true
 			out = append(out, t)
 		}

@@ -5,6 +5,7 @@
 	import { embedUrl, playingWord, setSoundOn } from '../trailer.ts';
 	import { flipFrames, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '../motion.ts';
 	import { nativeHLS } from '../autoplay.svelte.ts';
+	import { missLine } from '../trailer-miss.ts';
 	import { attachHLS, screenTarget } from '../hls-player.ts';
 
 	// The full-screen trailer, one shared element from the card to full screen
@@ -46,6 +47,11 @@
 	// The source, then its fallbacks one by one while they fail; "can't play here" only after the last.
 	let tried = $state(0);
 	const list = $derived(now ? [now.source, ...(now.fallbacks ?? [])] : []);
+	// Why it will not play, when the server said (the reason rides on the embed): the line says so in plain words.
+	const why = $derived.by(() => {
+		for (const s of list) if (s.kind === 'embed' && s.why) return s.why;
+		return undefined;
+	});
 	const src = $derived(list[Math.min(tried, list.length - 1)]);
 	function fail() {
 		if (tried + 1 < list.length) tried += 1;
@@ -349,7 +355,7 @@
 			{/if}
 			{#if unavailable}
 				<div class="gone" role="status">
-					<p>This {word} can't play here.</p>
+					<p>{missLine(why, word)}</p>
 					<button type="button" class="gone-close" onclick={() => void close()}>Close</button>
 				</div>
 			{/if}
@@ -382,8 +388,8 @@
 	.still :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: contain; background: #000; }
 	iframe { pointer-events: none; }
-	.gone { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 16px; background: #0b0b0c; color: var(--on-art); text-align: center; }
-	.gone p { margin: 0; font: var(--t-title3); }
+	.gone { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px; background: #0b0b0c; color: var(--on-art); text-align: center; }
+	.gone p { max-width: 32ch; margin: 0; font: var(--t-title3); text-wrap: balance; }
 	.gone-close { min-height: 44px; padding: 0 22px; border: 0; border-radius: var(--r-pill); background: #fff; color: #000; font: var(--t-headline); cursor: pointer; }
 	/* A click on the picture only brings the controls back (pause is the button or Space); focus rings show for the keyboard only. */
 	dialog:focus, dialog :focus:not(:focus-visible) { outline: none; }

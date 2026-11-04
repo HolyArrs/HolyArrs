@@ -107,6 +107,8 @@ export default defineConfig({
 		{ name: 'pickrules', testMatch: 'pick-rules.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Kid accounts: invite a Kid (PG), join, the Library shows only titles rated up to PG, an R title and an ask for it are refused in plain words, no Music.
 		{ name: 'kid', testMatch: 'kid.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
+		// Trailers: the trailer pass looks titles up on a fake YouTube; the title hero plays the kept address, an age-restricted trailer gives way to the next, removed ones say so on screen, a title not looked up yet plays in YouTube's player.
+		{ name: 'trailers', testMatch: 'trailers.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Library tools: Movie series, Recently deleted and Import files by hand from the Add menu; a phone.
 		{ name: 'librarytools', testMatch: /library-[a-z0-9-]+\.spec\.ts$/, use: { ...devices['Desktop Chrome'] }, dependencies: ['search', 'kid'] }
 	]

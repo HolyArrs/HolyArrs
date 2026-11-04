@@ -20,9 +20,6 @@ import (
 
 const (
 	settingAutoplay = "autoplay_trailers"
-	// SettingYTDLPUpdate was the weekly yt-dlp update's switch. Trailers use
-	// HolyArrs's own YouTube reader now, so it is kept but does nothing.
-	SettingYTDLPUpdate = "ytdlp_auto_update"
 	// settingCountryCount is "Count this install" (the metadata server's
 	// per-country install total).
 	settingCountryCount = "install_country_count"
@@ -33,10 +30,6 @@ type UISettings struct {
 	// AutoplayTrailers lets heroes and hover cards play a muted trailer by
 	// themselves (never for Kid accounts or with Reduce motion). Default on.
 	AutoplayTrailers bool `json:"autoplay_trailers"`
-	// KeepYTDLPUpdated was "Keep yt-dlp up to date". It is still accepted
-	// and answered so older pages keep working, but it is ignored: trailers
-	// use HolyArrs's own YouTube reader, which updates with HolyArrs.
-	KeepYTDLPUpdated bool `json:"keep_ytdlp_updated"`
 	// SigninLibraryArt: "Show Library art on the sign-in page" (Library
 	// titles first). Off shows trending titles only. Default off.
 	SigninLibraryArt bool `json:"signin_library_art"`
@@ -65,9 +58,8 @@ func (a *API) applyArtworkCap(ctx context.Context) {
 }
 
 func (a *API) uiSettings(ctx context.Context) UISettings {
-	var v, u string
+	var v string
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingAutoplay).Scan(&v)
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", SettingYTDLPUpdate).Scan(&u)
 	var l string
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingSigninLibraryArt).Scan(&l)
 	var g string
@@ -77,7 +69,7 @@ func (a *API) uiSettings(ctx context.Context) UISettings {
 		gb = int(library.DefaultArtworkCap >> 30)
 	}
 	k := store.ReadHistoryKeep(ctx, a.s.Store.Read())
-	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb,
+	return UISettings{AutoplayTrailers: v != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb,
 		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays, CountInstall: CountInstall(ctx, a.s.Store.Read())}
 }
 
@@ -103,16 +95,18 @@ func (a *API) getUISettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
+	// keep_ytdlp_updated, the old trailer tool's update switch, is not read:
+	// older pages may still send it, and like any field not listed here it
+	// is ignored.
 	var in struct {
 		AutoplayTrailers *bool `json:"autoplay_trailers"`
-		KeepYTDLPUpdated *bool `json:"keep_ytdlp_updated"`
 		SigninLibraryArt *bool `json:"signin_library_art"`
 		ArtworkCacheGB   *int  `json:"artwork_cache_gb"`
 		RoutineDays      *int  `json:"history_routine_days"`
 		OtherDays        *int  `json:"history_other_days"`
 		CountInstall     *bool `json:"count_install"`
 	}
-	if !decode(w, r, &in, `send {"autoplay_trailers": true, "keep_ytdlp_updated": true, "signin_library_art": true, "artwork_cache_gb": 5, "count_install": true}`) {
+	if !decode(w, r, &in, `send {"autoplay_trailers": true, "signin_library_art": true, "artwork_cache_gb": 5, "count_install": true}`) {
 		return
 	}
 	if in.RoutineDays != nil || in.OtherDays != nil {
@@ -155,7 +149,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		}
 		a.applyArtworkCap(r.Context())
 	}
-	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, SettingYTDLPUpdate: in.KeepYTDLPUpdated, settingSigninLibraryArt: in.SigninLibraryArt, settingCountryCount: in.CountInstall} {
+	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, settingSigninLibraryArt: in.SigninLibraryArt, settingCountryCount: in.CountInstall} {
 		if on == nil {
 			continue
 		}

@@ -353,9 +353,9 @@ func heroCandidates(pg explore.Page, all bool) []explore.Item {
 	return explore.HeroRank(explore.HeroCandidates(pg.Head, pg.Leans, n), pg.Taste)
 }
 
-// exploreTrailerTitles are the titles whose trailers the trailer pass looks
-// up: the hero's candidates first, then the first 4 cards of the first 3
-// rows that have cards.
+// exploreTrailerTitles are the movies and shows a page shows first, each
+// once: the hero's candidates, then the first 4 cards of the first 3 rows
+// that have cards (the trailer pass hands it the hero's candidates only).
 func exploreTrailerTitles(hero []explore.Item, head []explore.Row) [][2]string {
 	var out [][2]string
 	seen := map[string]bool{}

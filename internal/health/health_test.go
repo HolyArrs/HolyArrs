@@ -277,15 +277,23 @@ func TestTrailersCheck(t *testing.T) {
 	if c := w.run(t)["trailers"]; c.State != OK || c.Message != "YouTube could not be reached (the last lookup failed)" {
 		t.Fatalf("one failure %+v", c)
 	}
+	tr.Failed, tr.LastReason = TrailerFailLimit-1, "unavailable"
+	if c := w.run(t)["trailers"]; c.State != OK || c.Message != "Trailers are not being found; a HolyArrs update may be needed (4 different videos failed in a row)" {
+		t.Fatalf("below the limit %+v", c)
+	}
+	// Door reasons keep their words; videos that no longer play anywhere
+	// say an update may be needed.
 	for reason, words := range map[string]string{
-		"bot_check":  "YouTube asks to confirm you're not a bot",
-		"no_address": "YouTube changed how its videos are reached; a HolyArrs update will fix it",
-		"refused":    "YouTube turned the lookups away",
-		"network":    "YouTube could not be reached",
-		"":           "Trailer lookups are failing",
+		"bot_check":   "YouTube asks to confirm you're not a bot",
+		"no_address":  "YouTube changed how its videos are reached; a HolyArrs update will fix it",
+		"refused":     "YouTube turned the lookups away",
+		"network":     "YouTube could not be reached",
+		"unavailable": "Trailers are not being found; a HolyArrs update may be needed",
+		"unplayable":  "Trailers are not being found; a HolyArrs update may be needed",
+		"":            "Trailer lookups are failing",
 	} {
 		tr.Failed, tr.LastReason = TrailerFailLimit, reason
-		if c := w.run(t)["trailers"]; c.State != Warning || c.Message != words+" (5 lookups in a row failed)" {
+		if c := w.run(t)["trailers"]; c.State != Warning || c.Message != words+" (5 different videos failed in a row)" {
 			t.Fatalf("%q: %+v", reason, c)
 		}
 	}
