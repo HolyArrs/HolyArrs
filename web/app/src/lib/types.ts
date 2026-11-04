@@ -367,6 +367,8 @@ export interface AskStep {
 	text?: string;
 	/** When it was last looked for. */
 	searched_at?: string;
+	/** Not looked for yet: when the search for missing looks next. */
+	next_search?: string;
 }
 
 /** Ask is one movie or show someone asked for on the Requests page. */

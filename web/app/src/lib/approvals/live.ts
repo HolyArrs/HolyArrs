@@ -66,6 +66,7 @@ export function stepFacts(step: AskStep | undefined): LifeFacts {
 			const f: LifeFacts = { phase: 'waiting' };
 			if (step.text) f.reason = step.text;
 			if (step.searched_at) f.searchedAt = step.searched_at;
+			if (step.next_search) f.nextSearch = step.next_search;
 			return f;
 		}
 	}

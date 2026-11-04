@@ -755,7 +755,10 @@ func TestAskStepOverHTTP(t *testing.T) {
 		if _, err := tx.Exec("UPDATE jobs SET state = 'done'"); err != nil {
 			return err
 		}
-		_, err := tx.Exec("UPDATE slots SET state = 'wanted', last_reason = 'no Release passed the Pick rules (1 found, 1 refused)'")
+		if _, err := tx.Exec("UPDATE slots SET state = 'wanted', last_reason = 'no Release passed the Pick rules (1 found, 1 refused)'"); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE items SET last_searched_at = '2026-11-03T08:00:00.000000000Z'")
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -781,7 +784,7 @@ func TestAskStepOverHTTP(t *testing.T) {
 	if s := step(r.ana); s["kind"] != "waiting" || s["text"] != nil {
 		t.Fatalf("member's step %v", s)
 	}
-	if s := step(r.owner); s["kind"] != "waiting" || s["text"] != "no Release passed the Pick rules (1 found, 1 refused)" {
+	if s := step(r.owner); s["kind"] != "waiting" || s["text"] != "no Release passed the Pick rules (1 found, 1 refused)" || s["searched_at"] == nil {
 		t.Fatalf("approver's step %v", s)
 	}
 }

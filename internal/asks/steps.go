@@ -22,6 +22,9 @@ type Step struct {
 	Text string `json:"text,omitempty"`
 	// SearchedAt is when it was last looked for (waiting only).
 	SearchedAt *time.Time `json:"searched_at,omitempty"`
+	// NextSearch is when the search for missing looks next, for an ask not
+	// looked for yet (waiting only; empty when that search is off).
+	NextSearch *time.Time `json:"next_search,omitempty"`
 }
 
 // AddSteps fills Step on approved asks that are not in the Library yet.
@@ -123,11 +126,15 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		switch st {
 		case domain.SlotWanted, domain.SlotBetterWanted, domain.SlotFailed, domain.SlotRejected:
 			missing++
-			if reason == "" && why != "" {
-				reason = why
-			}
-			if t, ok := parseAt(at); ok && (searched == nil || t.After(*searched)) {
-				searched = &t
+			// Only a search's own words say why nothing came: a slot never
+			// looked for still has the reason it is wanted ("aired …").
+			if t, ok := parseAt(at); ok {
+				if reason == "" && why != "" {
+					reason = why
+				}
+				if searched == nil || t.After(*searched) {
+					searched = &t
+				}
 			}
 		}
 	}
@@ -146,7 +153,17 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 	case seen[domain.SlotSearching] || seen[domain.SlotHeld] || searchQueued(ctx, db, titleID, slotIDs, partIDs):
 		return Step{Kind: "searching"}, true
 	case missing > 0:
-		return Step{Kind: "waiting", Text: reason, SearchedAt: searched}, true
+		st := Step{Kind: "waiting", Text: reason, SearchedAt: searched}
+		if searched == nil {
+			var next sql.NullString
+			var on bool
+			if db.QueryRowContext(ctx, "SELECT next_run, enabled FROM schedules WHERE kind = 'search_missing'").Scan(&next, &on) == nil && on {
+				if t, ok := parseAt(next); ok {
+					st.NextSearch = &t
+				}
+			}
+		}
+		return st, true
 	case seen[domain.SlotNotOutYet]:
 		return Step{Kind: "not_out"}, true
 	}

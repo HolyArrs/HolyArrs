@@ -1,1 +1,0 @@
-export{t as component,wa as universal}from"../chunks/likDl-y8.js";
