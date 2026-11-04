@@ -240,7 +240,9 @@ export const tmdbMovies = [
 	{ id: 900503, title: 'Gossamer Weir', release_date: '2018-07-07', imdb_id: 'tt9005030', overview: 'A river weir spun overnight by spiders.', dates: [[3, '2018-07-07'], [4, '2018-09-01']], trailer: 'weirGone001', videos: [['weirGone001', 'Gossamer Weir official trailer', true], ['weirGone002', 'Gossamer Weir trailer 2', false]] },
 	{ id: 900504, title: 'Pumice Belfry', release_date: '2019-09-09', imdb_id: 'tt9005040', overview: 'A bell tower so light it floats off in a storm.', dates: [[3, '2019-09-09'], [4, '2019-11-01']], trailer: 'pumiceBel01', videos: [['pumiceBel01', 'Pumice Belfry official trailer', true]] },
 	// Only requests.spec.ts (#136): asked again and declined by three admins in turn.
-	{ id: 900601, title: 'Harrow Teaspoon', release_date: '2015-04-04', imdb_id: 'tt9006010', overview: 'A teaspoon that stirs the whole village awake.', dates: [[3, '2015-04-04'], [4, '2015-06-01']] }
+	{ id: 900601, title: 'Harrow Teaspoon', release_date: '2015-04-04', imdb_id: 'tt9006010', overview: 'A teaspoon that stirs the whole village awake.', dates: [[3, '2015-04-04'], [4, '2015-06-01']] },
+	// Only requests.spec.ts (#139): a member's open Requests page follows its decision live.
+	{ id: 900602, title: 'Quince Lamplight', release_date: '2016-05-05', imdb_id: 'tt9006020', overview: 'A lamplighter who only lights the lamps no one walks under.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] }
 ];
 
 /**

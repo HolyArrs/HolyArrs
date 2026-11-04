@@ -863,3 +863,30 @@ test('#136 several admins decline the same movie: the window names who else decl
 	const halSees = JSON.stringify(await (await hal.request.get('/api/v1/asks')).json());
 	expect(halSees).not.toContain('also_declined');
 });
+
+// #139: a member's open Requests page follows their own request live: the
+// approver's answer moves it without a reload, and who decided reads as a
+// display name or "an admin", never the sign-in name.
+test('a member sees the answer to their request live, without a reload', async ({ browser }) => {
+	const zed = await member(browser, 'zed');
+	await zed.goto('/');
+	const made = await zed.evaluate(async () => {
+		const me = (await (await fetch('/api/v1/auth/me')).json()) as { csrf: string };
+		const r = await fetch('/api/v1/asks', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': me.csrf }, body: JSON.stringify({ id: 'tmdb:900602' }) });
+		return { status: r.status, body: await r.json() };
+	});
+	expect(made.status, JSON.stringify(made.body)).toBeLessThan(300);
+	const id = (made.body as { ask: { id: number } }).ask.id;
+	await zed.goto('/requests');
+	const card = zed.getByTestId('ask').filter({ hasText: 'Quince Lamplight' });
+	await expect(card.getByTestId('ask-state')).toHaveText('Requested');
+	// The owner answers from somewhere else; zed's page is left alone.
+	const me = (await (await own.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const res = await own.request.post(`/api/v1/asks/${id}/turn-down`, { headers: { 'X-CSRF-Token': me.csrf }, data: { note: '' } });
+	expect(res.ok()).toBe(true);
+	await expect(card).toHaveCount(0, { timeout: 15_000 });
+	await zed.getByRole('button', { name: /^Declined/ }).click();
+	await expect(card.getByTestId('ask-state')).toHaveText('Declined');
+	await expect(card.getByTestId('decided-by')).toContainText('Declined by an admin');
+	await expect(card).not.toContainText('luis');
+});

@@ -353,8 +353,9 @@
 			void goto(to(session.s.mustTwoFactor ? '/account' : homeHref()), { replace: true });
 		}
 		// The live stream carries Library and download news for staff; on
-		// Downloads with push updates, everyone else gets their own rows' patches.
-		if (st === 'signed_in' && (allowed('manage_library') || (path === '/downloads' && dlPush.on))) live.start();
+		// Downloads with push updates, everyone else gets their own rows' patches,
+		// and on Requests their own asks and downloads as they move (#139).
+		if (st === 'signed_in' && (allowed('manage_library') || (path === '/downloads' && dlPush.on) || path === '/requests')) live.start();
 		else live.stop();
 	});
 
