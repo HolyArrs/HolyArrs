@@ -14,10 +14,9 @@ import (
 // An artist named in the in-view batch has its music video's stream looked
 // up ahead of time, like a trailer, within the same ahead-of-time budget;
 // the artist page then answers from that warm cache without running
-// yt-dlp again.
+// a lookup again.
 func TestArtistVideoPrefetch(t *testing.T) {
-	t.Setenv("FAKE_YTDLP_KEY", "dQw4w9WgXcQ")
-	runs := fakeYTDLP(t, "heat")
+	yt := fakeReader(t, "heat", "dQw4w9WgXcQ")
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ", MostReplayed: 42}}, nil
 	})
@@ -42,11 +41,11 @@ func TestArtistVideoPrefetch(t *testing.T) {
 	if v.Key != "dQw4w9WgXcQ" || v.Start != 42 || !strings.HasSuffix(v.ProxyURL, "/manifest.m3u8") || len(b.Pending) != 0 {
 		t.Fatalf("batch %+v", b)
 	}
-	before := runs.Load()
+	before := yt.runs.Load()
 	var got ArtistVideoView
 	_ = json.Unmarshal(do(t, "GET", u, "", 200), &got)
-	if got.Key != "dQw4w9WgXcQ" || got.ProxyURL == "" || runs.Load() != before {
-		t.Fatalf("page video %+v, yt-dlp runs %d -> %d", got, before, runs.Load())
+	if got.Key != "dQw4w9WgXcQ" || got.ProxyURL == "" || yt.runs.Load() != before {
+		t.Fatalf("page video %+v, lookups %d -> %d", got, before, yt.runs.Load())
 	}
 	// Not a MusicBrainz id.
 	do(t, "GET", base+"/api/v1/trailer/batch?ids=artist:nope", "", 400)

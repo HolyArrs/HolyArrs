@@ -27,6 +27,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
 	"github.com/CoderLuii/holyarrs/internal/updatelist"
+	"github.com/CoderLuii/holyarrs/internal/youtube"
 )
 
 // KindCheck is the Job kind that runs the checks (scheduled every 5 minutes).
@@ -60,6 +61,9 @@ type Backups struct {
 	Newest  time.Time     // zero when there is none
 	Every   time.Duration // how often a scheduled backup is made
 	LastErr string        // the last failed scheduled backup, if any
+	// Started says the first scheduled pass since start has finished (a
+	// fresh install has no backup until then, which is not a problem).
+	Started bool
 }
 
 // Engine runs the checks.
@@ -92,7 +96,7 @@ type Engine struct {
 	Now func() time.Time
 	// Publish tells the web app the checks changed (may be nil).
 	Publish func(topic string, data any)
-	// Trailers reports trailer lookups and yt-dlp (nil skips the check).
+	// Trailers reports the trailer lookups (nil skips the check).
 	Trailers func(ctx context.Context) Trailers
 
 	mu  sync.Mutex
@@ -347,19 +351,35 @@ func label(kind string) string {
 // the trailers check warns.
 const TrailerFailLimit = 5
 
-// Trailers is what the trailers check reads.
+// Trailers is what the trailers check reads: the state of HolyArrs's own
+// YouTube reader.
 type Trailers struct {
-	On      bool   // a yt-dlp is there
-	Failed  int    // lookups that failed in a row
-	Version string // yt-dlp's version
-	// Update is the last automatic update's result in plain words, and
-	// UpdateFailed whether it failed ("" when none ran).
-	Update       string
-	UpdateFailed bool
+	On       bool      // trailers are looked up at all
+	Failed   int       // lookups that failed in a row at YouTube's door
+	LastGood time.Time // the last lookup that found addresses (zero: none yet)
+	// LastReason is the last door failure's reason (youtube.Reason), "" when none.
+	LastReason string
 }
 
-// trailers warns when trailer lookups keep failing (usually an old yt-dlp)
-// or the last yt-dlp update failed; it names yt-dlp's version.
+// readerTrouble says a door failure in plain words.
+func readerTrouble(reason string) string {
+	switch youtube.Reason(reason) {
+	case youtube.BotCheck:
+		return "YouTube asks to confirm you're not a bot"
+	case youtube.NoAddress:
+		return "YouTube changed how its videos are reached; a HolyArrs update will fix it"
+	case youtube.Refused:
+		return "YouTube turned the lookups away"
+	case youtube.Network:
+		return "YouTube could not be reached"
+	}
+	return "Trailer lookups are failing"
+}
+
+// trailers names the reader's last good lookup and, while lookups fail at
+// YouTube's door, why and how many in a row; it warns after
+// TrailerFailLimit of them. A video YouTube will not play here (age,
+// removed) is about that video, not the reader, and is not counted.
 func (e *Engine) trailers(ctx context.Context) ([]Result, error) {
 	if e.Trailers == nil {
 		return nil, nil
@@ -368,12 +388,19 @@ func (e *Engine) trailers(ctx context.Context) ([]Result, error) {
 	if !t.On {
 		return nil, nil
 	}
-	r := Result{Key: "trailers", Kind: "trailers", Subject: strings.TrimSpace("yt-dlp " + t.Version), State: OK}
-	switch {
-	case t.Failed >= TrailerFailLimit:
-		r.State, r.Message = Warning, "Trailer lookups failing: update yt-dlp"
-	case t.UpdateFailed:
-		r.State, r.Message = Warning, "yt-dlp "+t.Update
+	r := Result{Key: "trailers", Kind: "trailers", Subject: "Trailer reader", State: OK}
+	if !t.LastGood.IsZero() {
+		r.Subject += ", last good lookup " + t.LastGood.UTC().Format("2 Jan 15:04 UTC")
+	}
+	if t.Failed > 0 {
+		in := strconv.Itoa(t.Failed) + " lookups in a row failed"
+		if t.Failed == 1 {
+			in = "the last lookup failed"
+		}
+		r.Message = readerTrouble(t.LastReason) + " (" + in + ")"
+		if t.Failed >= TrailerFailLimit {
+			r.State = Warning
+		}
 	}
 	return []Result{r}, nil
 }
@@ -517,6 +544,8 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 		r.State, r.Message = Warning, "The backups folder cannot be read"
 	case b.LastErr != "":
 		r.State, r.Message = Error, "The last scheduled backup failed: "+b.LastErr
+	case b.Newest.IsZero() && !b.Started:
+		// Right after start: the first scheduled backup is still being made.
 	case b.Newest.IsZero():
 		r.State, r.Message = Warning, "There is no backup yet"
 	case b.Every > 0 && e.now().Sub(b.Newest) > 2*b.Every+24*time.Hour:

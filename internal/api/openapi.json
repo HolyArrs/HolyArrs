@@ -6694,6 +6694,26 @@
         },
         "type": "object"
       },
+      "TrailerMiss": {
+        "description": "A trailer with no direct stream. reason and key come with a lookup that found none; key alone with a title not looked up yet.",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "key": {
+            "description": "A YouTube video the YouTube player may still play, for the embed: \"\" when every trailer tried will not play here.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Why: about the video (age_restricted, unavailable, sign_in, unplayable, content_check, bad_id) or about YouTube's door (bot_check, no_address, refused, network).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
       "TrailerStream": {
         "properties": {
           "audio": {
@@ -27975,7 +27995,7 @@
     },
     "/api/v1/trailer/batch": {
       "get": {
-        "description": "The trailers of the cards on screen at once (?ids=kind:tmdb_id,..., at most 40). streams holds the ones already known (memory or SQLite); pending names the ones being looked up ahead of time, one after another within the install's ahead-of-time budget, so a later hover is answered from the cache. It never spends a person's own resolves. Kid accounts are refused.",
+        "description": "The trailers of the cards on screen at once (?ids=kind:tmdb_id,..., at most 40). streams holds the ones the trailer pass already looked up (memory or SQLite); a title not looked up yet is left out and no lookup starts. Artists' music videos (artist:mbid) not yet known are looked up ahead of time and named in pending. Kid accounts are refused.",
         "operationId": "getTrailerBatch",
         "parameters": [
           {
@@ -27989,7 +28009,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The known streams and the titles still pending."
+            "description": "The known streams and the artists still pending."
           },
           "400": {
             "content": {
@@ -28192,7 +28212,7 @@
     },
     "/api/v1/trailer/{kind}/{tmdb_id}": {
       "get": {
-        "description": "The title's trailer (TMDB videos: an official Trailer, the language of ?language= or Accept-Language first) as a direct MP4 address resolved by yt-dlp (HOLYARRS_YTDLP or yt-dlp in PATH, 8 second limit). Only the address is kept (memory and SQLite) until shortly before it expires, and the title's YouTube key for 30 days; video is never stored. An HLS answer carries proxy_url, the pass-through relay of the same stream. Each person may start 12 resolves a minute. Kid accounts are refused.",
+        "description": "The title's trailer (TMDB videos: an official Trailer, the language of ?language= or Accept-Language first) as YouTube's HLS manifest or an H.264 MP4, found by HolyArrs's own YouTube reader (8 second limit). Trailers are looked up only by the trailer pass, every 15 minutes (Explore's heroes first, then the first cards of its first rows); this route reads what it kept and never starts a lookup. When YouTube will not play a trailer here, the title's next trailers are tried, at most four more per lookup, and the one that plays is answered; a video that asks for a sign-in (age), was removed or sits behind a content warning is skipped for 7 days, one blocked here or not on yet (a premiere) is tried again on the next pass. YouTube's \"try again later\" is a refusal of this server: nothing is skipped and no other trailer is tried. Only the address is kept (memory and SQLite) until shortly before it expires, and the title's YouTube key for 30 days; video is never stored. An HLS answer carries proxy_url, the pass-through relay of the same stream. Kid accounts are refused.",
         "operationId": "getTrailerStream",
         "parameters": [
           {
@@ -28247,21 +28267,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/TrailerMiss"
                 }
               }
             },
-            "description": "No trailer, no direct stream (yt-dlp missing or refused) or trailers turned off."
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Too many resolves this minute."
+            "description": "No trailer, no direct stream or trailers turned off. A lookup that found no stream adds reason and key; a title not looked up yet gives key, the kept YouTube key for the embed (\"\" when none), and no reason."
           }
         },
         "summary": "Trailer stream",

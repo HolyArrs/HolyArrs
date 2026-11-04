@@ -46,13 +46,11 @@ Library folders reports a warning when HolyArrs has to copy instead.
 
 ## The image
 
-The image is built on `debian:12-slim`, not an empty base. The bundled yt-dlp
-(for [trailers](trailers.md)) is a release program that needs glibc and zlib.
-It runs as `1000:1000` and still holds only HolyArrs, yt-dlp, CA certificates
-and the licence. The amd64 and arm64 images ship yt-dlp 2026.08.19, checked
-against its published SHA-256 at build time; the armv7 image has none and
-plays trailers through the YouTube embed. A newer yt-dlp, when **Keep yt-dlp up
-to date** is on, is saved under `/config/bin`, so keep `/config` on a volume.
+The image is built on `debian:12-slim`, not an empty base, and runs as
+`1000:1000`. It holds HolyArrs, CA certificates and the licence, plus an older
+trailer program that HolyArrs no longer runs and that a later update removes.
+[Trailers](trailers.md) are found by HolyArrs' own trailer reader on every
+image, armv7 included. Keep `/config` on a volume.
 
 ### Raspberry Pi and other ARM boards
 

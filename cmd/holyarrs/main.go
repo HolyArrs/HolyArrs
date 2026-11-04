@@ -624,7 +624,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	he := &health.Engine{Store: s, Version: version, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)
-			return health.Backups{Newest: newest, Every: every, LastErr: lastErr}, err
+			return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed()}, err
 		}}
 	// The update check: once a day from the release feed, through the
 	// network policy (public only unless the setting allows the local
@@ -829,7 +829,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	for _, l := range a.MusicLoops() {
 		optional(l)
 	}
-	startYTDLP(ctx, c.ConfigDir, a, he)
+	for _, l := range a.TrailerLoops() {
+		optional(l)
+	}
+	startTrailers(a, he)
 	pc.Start(ctx)
 	swap.set(urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)

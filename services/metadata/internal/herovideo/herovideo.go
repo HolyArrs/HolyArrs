@@ -14,11 +14,11 @@
 // of YouTube's frames compared; unclear ones get a storyboard check later).
 // Verdicts are kept for good. Lists are gathered again every 30 days and
 // the known channels' feeds are read daily for new uploads. For the first
-// few listed videos yt-dlp reads YouTube's "most replayed" peak and the
-// storyboard, and the start is the peak when the first seconds from there
-// move, else a moving moment near it (start.go); without a storyboard the
-// peak as it is, and without a peak the start is left for the app (30% of
-// the duration).
+// few listed videos HolyArrs's own YouTube reader reads the "most
+// replayed" peak (the opening skipped) and the storyboard, and the start is
+// the peak when the first seconds from there move, else a moving moment
+// near it (start.go); without a storyboard the peak as it is, and without
+// a peak the start is left for the app (30% of the duration).
 package herovideo
 
 import (
@@ -36,6 +36,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs-metadata/internal/imgstore"
+	"github.com/CoderLuii/holyarrs-metadata/internal/youtube"
 	_ "modernc.org/sqlite"
 )
 
@@ -121,9 +122,10 @@ type Options struct {
 	Artist func(ctx context.Context, mbid string) imgstore.Subject
 	// Heatmap reads the most replayed start (nil: left for the app).
 	Heatmap func(ctx context.Context, id string) (peak, duration float64, found bool, err error)
-	// VideoJSON is yt-dlp's JSON of a video, for the storyboard check
-	// (nil: unclear videos stay pending).
-	VideoJSON func(ctx context.Context, id string) ([]byte, error)
+	// Look reads a video with HolyArrs's own YouTube reader (most replayed
+	// peak, length and storyboard spec), for the storyboard check and the
+	// start (nil: unclear videos stay pending).
+	Look func(ctx context.Context, id string) (youtube.Video, error)
 	// Deep queues a video's storyboard check (DeepCheck); nil: the daily
 	// pass finds it.
 	Deep func(id string)
@@ -144,8 +146,8 @@ type Service struct {
 	o  Options
 	db *sql.DB
 
-	mu        sync.Mutex
-	ytdlpWait time.Time // yt-dlp reads are skipped until then
+	mu       sync.Mutex
+	lookWait time.Time // YouTube reads are skipped until then
 }
 
 // Open opens (or creates) the store at path.
@@ -924,13 +926,13 @@ func (s *Service) store(ctx context.Context, mbid string, cands []cand, checks m
 		if dropped(ck.verdict) {
 			continue
 		}
-		if s.startReadable() && len(vids) < s.o.HeatmapMax && !ck.heat && !s.ytdlpPaused() && ctx.Err() == nil {
+		if s.startReadable() && len(vids) < s.o.HeatmapMax && !ck.heat && !s.looksPaused() && ctx.Err() == nil {
 			err := s.readStart(ctx, c.ID, ck)
 			switch {
 			case err != nil && ctx.Err() == nil:
 				// YouTube's bot check blocks datacenter addresses at times:
 				// stop trying for a while so no job is slowed by failing reads.
-				s.pauseYTDLP()
+				s.pauseAfter(err)
 			case err == nil:
 				if err := s.keep(ctx, c.ID, ck); err != nil {
 					return err
@@ -965,15 +967,15 @@ func (s *Service) store(ctx context.Context, mbid string, cands []cand, checks m
 }
 
 // boardOn reports whether starts are judged on the storyboard.
-func (s *Service) boardOn() bool { return s.o.VideoJSON != nil && s.on("youtube_storyboard") }
+func (s *Service) boardOn() bool { return s.o.Look != nil && s.on("youtube_storyboard") }
 
 // startReadable reports whether a start can be read at all.
 func (s *Service) startReadable() bool { return s.o.Heatmap != nil || s.boardOn() }
 
-// readStart reads a video's start into ck with one yt-dlp read: judged on
+// readStart reads a video's start into ck with one reader lookup: judged on
 // the storyboard when it is on (start.go), else the most replayed peak as
 // it is. A sheet that cannot be read keeps the peak unjudged (judged again
-// a day later); err is yt-dlp's failure, with ck unchanged.
+// a day later); err is the lookup's failure, with ck unchanged.
 func (s *Service) readStart(ctx context.Context, id string, ck *check) error {
 	var (
 		p         Pick
@@ -1022,23 +1024,34 @@ func (s *Service) readStart(ctx context.Context, id string, ck *check) error {
 	return nil
 }
 
-func (s *Service) ytdlpPaused() bool {
+func (s *Service) looksPaused() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.o.Now().Before(s.ytdlpWait)
+	return s.o.Now().Before(s.lookWait)
 }
 
-func (s *Service) pauseYTDLP() {
+func (s *Service) pauseLooks() {
 	s.mu.Lock()
-	s.ytdlpWait = s.o.Now().Add(30 * time.Minute)
+	s.lookWait = s.o.Now().Add(30 * time.Minute)
 	s.mu.Unlock()
+}
+
+// pauseAfter pauses YouTube reads after a failure about the door (the bot
+// check, a changed or missing answer), not after one about this video
+// (age-restricted, removed, private) or a sheet's status.
+func (s *Service) pauseAfter(err error) {
+	var se *StatusError
+	if errors.As(err, &se) || errors.Is(err, errNoBoard) || youtube.ReasonOf(err).VideoReason() {
+		return
+	}
+	s.pauseLooks()
 }
 
 // DeepCheck runs the storyboard check on an unclear video (a picture-queue
 // job) and keeps its verdict; a still is taken off the lists that show
 // it. A check that fails is tried again by the daily pass a day later.
 func (s *Service) DeepCheck(ctx context.Context, id string) error {
-	if !s.on("youtube") || !s.on("youtube_storyboard") || s.o.VideoJSON == nil || !videoID.MatchString(id) || s.ytdlpPaused() {
+	if !s.on("youtube") || !s.on("youtube_storyboard") || s.o.Look == nil || !videoID.MatchString(id) || s.looksPaused() {
 		return nil
 	}
 	cks := s.checks(ctx, []cand{{ID: id}})
@@ -1051,10 +1064,7 @@ func (s *Service) DeepCheck(ctx context.Context, id string) error {
 	}
 	v, err := s.storyboard(ctx, id)
 	if err != nil {
-		var se *StatusError
-		if !errors.As(err, &se) {
-			s.pauseYTDLP()
-		}
+		s.pauseAfter(err)
 		return s.keep(ctx, id, ck) // checked again a day later
 	}
 	ck.verdict = v
@@ -1068,16 +1078,13 @@ func (s *Service) DeepCheck(ctx context.Context, id string) error {
 }
 
 // rejudgeStart judges a listed video's stored start on its storyboard (a
-// start read before the judgement, or one whose sheets failed): one yt-dlp
-// read and the sheets, nothing else. A changed start is written into the
+// start read before the judgement, or one whose sheets failed): one reader
+// lookup and the sheets, nothing else. A changed start is written into the
 // lists that show the video; a failure is tried again a day later.
 func (s *Service) rejudgeStart(ctx context.Context, id string, ck *check) error {
 	old := ck.start
 	if err := s.readStart(ctx, id, ck); err != nil {
-		var se *StatusError
-		if !errors.As(err, &se) {
-			s.pauseYTDLP()
-		}
+		s.pauseAfter(err)
 		ck.why = WhyUnjudged
 		return s.keep(ctx, id, ck) // judged again a day later
 	}
@@ -1167,9 +1174,9 @@ func (s *Service) Due(ctx context.Context, limit int) (artists, deep []string) {
 		add(scan(`SELECT DISTINCT c.mbid FROM cands c JOIN artists a ON a.mbid=c.mbid LEFT JOIN verdicts v ON v.video=c.video
 WHERE c.listed=1 AND a.judged<=? AND (v.video IS NULL OR `+strings.Join(open, " OR ")+`) LIMIT ?`, now.Add(-recheckEvery).Unix(), limit))
 	}
-	// While yt-dlp is paused a check does nothing, so none are queued;
-	// the next pass picks them up.
-	if s.o.VideoJSON != nil && s.on("youtube_storyboard") && !s.ytdlpPaused() {
+	// While YouTube reads are paused a check does nothing, so none are
+	// queued; the next pass picks them up.
+	if s.o.Look != nil && s.on("youtube_storyboard") && !s.looksPaused() {
 		dayAgo := now.Add(-recheckEvery).Unix()
 		deep = scan(`SELECT video FROM verdicts WHERE verdict=? AND checked<=? ORDER BY checked LIMIT ?`, VerdictPending, dayAgo, limit)
 		if n := limit - len(deep); n > 0 {

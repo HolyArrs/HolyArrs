@@ -83,11 +83,14 @@ func fakeYouTube(t *testing.T) (release chan struct{}) {
 
 func proxyRig(t *testing.T) (*httptest.Server, *API) {
 	t.Helper()
-	fakeYTDLP(t, "ok")
+	fakeReader(t, "ok")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
+	if err := lookUp(t, a, "movie", "11"); err != nil {
+		t.Fatal(err)
+	}
 	return srv, a
 }
 
@@ -262,7 +265,7 @@ func TestTrailerPassThroughCap(t *testing.T) {
 // The trailer key is kept 30 days (memory and SQLite) and Explore cards
 // carry it once known.
 func TestTrailerKeyKept(t *testing.T) {
-	fakeYTDLP(t, "ok")
+	fakeReader(t, "ok")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()

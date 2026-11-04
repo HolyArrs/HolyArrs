@@ -55,7 +55,7 @@ points HolyArrs at another server. See [docs/metadata-keys.md](docs/metadata-key
 Explore builds a page of rows for each person from the Library, their asks and
 the metadata server's charts, and can play a muted trailer over the art. See
 [Explore](docs/explore.md) and [Trailers](docs/trailers.md). The Docker image
-is built on `debian:12-slim` and bundles yt-dlp for trailers
+is built on `debian:12-slim`
 ([details](docs/install.md#the-image)).
 
 ## Master key and backups

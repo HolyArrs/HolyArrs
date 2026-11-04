@@ -2,7 +2,6 @@ package herovideo
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"image"
 	"math"
@@ -185,40 +184,6 @@ func PickStart(tiles []Tile, dur, peak float64, found bool) (p Pick, judged bool
 	return Pick{Start: cands[best].at, Motion: cands[best].motion, Why: WhyMostMoving}, true
 }
 
-// board is a video's storyboard as yt-dlp lists it, with its heatmap peak.
-type board struct {
-	Duration float64 `json:"duration"`
-	Heatmap  []struct {
-		Start float64 `json:"start_time"`
-		Value float64 `json:"value"`
-	} `json:"heatmap"`
-	Formats []sbFormat `json:"formats"`
-}
-
-type sbFormat struct {
-	ID        string  `json:"format_id"`
-	Width     int     `json:"width"`
-	Height    int     `json:"height"`
-	Columns   int     `json:"columns"`
-	Rows      int     `json:"rows"`
-	FPS       float64 `json:"fps"`
-	Fragments []struct {
-		URL      string  `json:"url"`
-		Duration float64 `json:"duration"`
-	} `json:"fragments"`
-}
-
-// peak is the heatmap's highest point.
-func (b board) peak() (at float64, found bool) {
-	best := -1.0
-	for _, h := range b.Heatmap {
-		if h.Value > best {
-			best, at = h.Value, h.Start
-		}
-	}
-	return at, best >= 0
-}
-
 // grid is each sheet's columns and rows (5x5 when not given).
 func (f sbFormat) grid() (int, int) {
 	c, r := f.Columns, f.Rows
@@ -245,11 +210,11 @@ func (f sbFormat) step() float64 {
 
 // startFormat is the storyboard for the start: the finest steps within
 // maxSheets sheets, the smallest tiles among equal steps.
-func (b board) startFormat() (sbFormat, bool) {
+func startFormat(formats []sbFormat) (sbFormat, bool) {
 	var best sbFormat
 	found := false
-	for _, f := range b.Formats {
-		if len(f.ID) < 2 || f.ID[:2] != "sb" || len(f.Fragments) == 0 || len(f.Fragments) > maxSheets || f.step() <= 0 {
+	for _, f := range formats {
+		if len(f.Fragments) == 0 || len(f.Fragments) > maxSheets || f.step() <= 0 {
 			continue
 		}
 		switch {
@@ -299,22 +264,19 @@ func SheetTiles(sheets []image.Image, spans []float64, cols, rows, w, h int, ste
 // errNoBoard: the video lists no storyboard to judge a start by.
 var errNoBoard = errors.New("herovideo: no storyboard")
 
-// startOf reads a video's start: one yt-dlp read (heatmap and storyboard)
-// and the sheets of the start's storyboard. err is yt-dlp's failure;
-// sheetErr a sheet that could not be read (the peak is kept, unjudged).
+// startOf reads a video's start: one reader lookup (most replayed peak,
+// length and storyboard spec) and the sheets of the start's storyboard.
+// err is the lookup's failure; sheetErr a sheet that could not be read
+// (the peak is kept, unjudged).
 func (s *Service) startOf(ctx context.Context, id string) (p Pick, dur float64, peak float64, found bool, sheetErr, err error) {
-	raw, err := s.o.VideoJSON(ctx, id)
+	v, err := s.o.Look(ctx, id)
 	if err != nil {
 		return Pick{}, 0, 0, false, nil, err
 	}
-	var b board
-	if err := json.Unmarshal(raw, &b); err != nil {
-		return Pick{}, 0, 0, false, nil, err
-	}
-	dur = b.Duration
-	peak, found = b.peak()
+	dur = v.Duration
+	peak, found = v.Peak, v.PeakFound
 	keep := Pick{Start: peak, Motion: -1, Why: WhyNoBoard}
-	f, ok := b.startFormat()
+	f, ok := startFormat(storyboards(v.Storyboard, dur))
 	if !ok {
 		return keep, dur, peak, found, errNoBoard, nil
 	}

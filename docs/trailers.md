@@ -10,8 +10,9 @@ kept.
 1. The title's YouTube trailer or teaser is listed by the metadata server
    (an official Trailer first, then a Teaser, in the person's language before
    English). Clips never play.
-2. **yt-dlp** looks up a direct video address on YouTube's video servers. It
-   asks for the formats only and downloads nothing.
+2. HolyArrs' own **trailer reader** looks up a direct video address on
+   YouTube's video servers. It reads the video's page and its list of
+   formats, downloads nothing, and never signs in.
 3. The browser plays that address in HolyArrs' own video. HolyArrs does not
    copy, store or pass the video through; only the address is kept, until
    shortly before it expires.
@@ -28,7 +29,35 @@ Playback tries these in order and stops at the first that works:
 Heroes also slowly zoom and pan through up to four backdrops from TMDB, with
 or without a trailer.
 
-An armv7 image has no yt-dlp build and goes straight to the embed.
+## When a trailer will not play
+
+Some videos YouTube does not play here: it asks to sign in to confirm the
+viewer's age, the video was removed or made private, it is blocked in this
+country, it is a premiere that has not started yet, or it sits behind a
+content warning. HolyArrs never gets around those. Instead:
+
+- A video that asks for a sign-in, was removed or made private, or sits
+  behind a content warning is skipped for 7 days, for every title that
+  lists it. A video that is blocked here or not on yet is tried again on the
+  next lookup round (within 15 minutes), so a premiere plays soon after it
+  starts.
+- The title's next trailer is tried, in the same order as above, up to four
+  more in one lookup. The one that plays is shown meanwhile; once the first
+  is no longer skipped, it is tried first again.
+- When none of them plays, the page shows the moving backdrop pictures and
+  no YouTube embed, since the embed would only show YouTube's refusal.
+
+When YouTube refuses HolyArrs as a whole (its "confirm you're not a bot"
+check, its "try again later", or YouTube could not be reached), the title
+is not marked and no other trailer is tried: that round of lookups stops,
+the same trailer is tried again on the next round, and the embed may still
+play it meanwhile.
+
+`GET /api/v1/trailer/{kind}/{tmdb_id}` then answers 404 with `reason` (for
+example `age_restricted` or `bot_check`) and `key`, the video the embed may
+still play, or `""` when none is left. For a title not looked up yet it
+answers 404 with only `key`, the title's YouTube trailer when known, so the
+embed plays it.
 
 ## When a trailer starts
 
@@ -37,10 +66,37 @@ An armv7 image has no yt-dlp build and goes straight to the embed.
   desktop pointer only. A wide card grows after 0.5 seconds first. Keyboard
   focus also opens a card, and Esc closes it.
 - Only one video plays at a time; a new one stops the one before it.
-- The server looks up the first trailers ahead of time (the hero first, then
-  the first four cards of the first three rows) so they start quickly. A
-  person may start 12 new lookups a minute, up to 4 run at once, and a title
-  with no direct stream is not tried again for 10 minutes.
+
+Trailers are looked up on a fixed schedule, never when a page opens. Every
+15 minutes (the first round a few minutes after HolyArrs starts) the server
+looks up to 30 trailers, one after another. It covers what Explore shows
+first for each household member who is not a Kid account: the featured
+titles first, then the first four cards of the first three rows, in up to
+three languages pages asked for lately. After those come the titles asked
+for elsewhere that had nothing yet (a person's page, the Requests banner,
+New & Popular's featured titles), each in the language it was asked in.
+An address is looked up again shortly before it expires. A title with no
+trailer, or none that plays here, is tried again after 2 hours. A title
+not looked up yet plays the YouTube embed until a round reaches it.
+
+## Where a music video starts
+
+For artists' music videos, the metadata server picks where each one starts.
+It reads YouTube's "most replayed" graph and the video's storyboard (the
+small preview pictures YouTube shows along the timeline) with HolyArrs' own
+trailer reader, the same one that finds trailers. Nothing is downloaded, and
+there is no sign-in. When the metadata server has no start for a video,
+HolyArrs reads the most replayed moment itself in the same way, with the
+opening left out.
+
+- The start is the most replayed moment. The first part of the video is left
+  out of that choice, because every play starts there, so a start is not
+  0:00 just for that.
+- If the storyboard shows the picture barely moving from there, a moving
+  moment nearby is used instead.
+- A video YouTube keeps behind a sign-in or an age check gets no start, and
+  the app starts it 30% in. When YouTube refuses the server as a whole (its
+  "confirm you're not a bot" check), the server stops asking for 30 minutes.
 
 ## Sound
 
@@ -55,23 +111,30 @@ from the HLS stream, a muxed MP4, or the embed.
 
 ## Settings
 
-Both are under **Settings > This app**, and apply to the whole household.
+It is under **Settings > This app**, and applies to the whole household.
 
 | Setting | What it does |
 | --- | --- |
 | **Autoplay trailers** ("Play trailers by themselves") | On by default. Off stops every autoplay and the lookups behind it. |
-| **Keep yt-dlp up to date** | On by default. Once a week HolyArrs fetches yt-dlp's newest official release, checks its SHA-256 against the release's `SHA2-256SUMS`, and keeps the previous copy if the new one fails a test lookup. |
 
-`GET` and `PUT /api/v1/settings/ui` read and change both
-(`autoplay_trailers`, `keep_ytdlp_updated`).
+`GET` and `PUT /api/v1/settings/ui` read and change it (`autoplay_trailers`).
+The old switch that kept a separate trailer tool up to date is gone: the
+trailer reader is part of HolyArrs and gets its fixes with HolyArrs updates.
+`keep_ytdlp_updated` is still accepted and answered, so older scripts keep
+working, but it does nothing.
 
-yt-dlp's version and the last update's result show under **Health**. Health
-warns "Trailer lookups failing: update yt-dlp" after 5 failed lookups in a
-row. How HolyArrs finds yt-dlp (`HOLYARRS_YTDLP`, the checked copy in
-`<config>/bin`, the bundled copy, then `PATH`) is in
-[Portable packages](portable.md). The Docker image ships yt-dlp 2026.08.19 and
-is built on `debian:12-slim`, because the yt-dlp release program needs glibc
-(see [Install](install.md#the-image)).
+The trailer reader's state shows on **Status > Updates** and under
+**Health**: the last good lookup, and while lookups keep failing, why and how
+many failed in a row. A video YouTube will not play here does not count;
+only YouTube refusing HolyArrs as a whole does. After 5 failures in a row
+Health warns with the reason in plain words:
+
+| Reason | Health says |
+| --- | --- |
+| The bot check | YouTube asks to confirm you're not a bot |
+| YouTube changed how its videos are reached | YouTube changed how its videos are reached; a HolyArrs update will fix it |
+| An error answer from YouTube | YouTube turned the lookups away |
+| No connection | YouTube could not be reached |
 
 ## Kid accounts and reduced motion
 

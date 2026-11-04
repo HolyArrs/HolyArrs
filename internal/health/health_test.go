@@ -179,7 +179,12 @@ func TestBackupsCheck(t *testing.T) {
 	if c := w.run(t)["backups"]; c.State != Warning {
 		t.Fatalf("old backup %+v", c)
 	}
+	// Right after start the first backup is still being made: no warning.
 	w.bk.Newest = time.Time{}
+	if c := w.run(t)["backups"]; c.State != OK {
+		t.Fatalf("first backup still to come %+v", c)
+	}
+	w.bk.Started = true
 	if c := w.run(t)["backups"]; c.State != Warning {
 		t.Fatalf("no backup %+v", c)
 	}
@@ -254,23 +259,38 @@ func TestBreakAndRecoverEventsWithFlapGuard(t *testing.T) {
 
 func TestTrailersCheck(t *testing.T) {
 	w := newWorld(t)
-	failed, on, upd := 0, false, false
-	w.e.Trailers = func(context.Context) Trailers {
-		return Trailers{On: on, Failed: failed, Version: "2026.08.19", Update: "update failed: checksum mismatch", UpdateFailed: upd}
-	}
+	tr := Trailers{}
+	w.e.Trailers = func(context.Context) Trailers { return tr }
 	if _, ok := w.run(t)["trailers"]; ok {
-		t.Fatal("no yt-dlp: no check")
+		t.Fatal("trailers off: no check")
 	}
-	on = true
-	if c := w.run(t)["trailers"]; c.State != OK || c.Subject != "yt-dlp 2026.08.19" {
+	tr.On = true
+	if c := w.run(t)["trailers"]; c.State != OK || c.Subject != "Trailer reader" || c.Message != "" {
+		t.Fatalf("no lookup yet %+v", c)
+	}
+	tr.LastGood = time.Date(2026, 11, 3, 14, 5, 0, 0, time.UTC)
+	if c := w.run(t)["trailers"]; c.State != OK || c.Subject != "Trailer reader, last good lookup 3 Nov 14:05 UTC" {
 		t.Fatalf("fine %+v", c)
 	}
-	upd = true
-	if c := w.run(t)["trailers"]; c.State != Warning || c.Message != "yt-dlp update failed: checksum mismatch" {
-		t.Fatalf("update failed %+v", c)
+	// Failures below the limit are named but do not warn yet.
+	tr.Failed, tr.LastReason = 1, "network"
+	if c := w.run(t)["trailers"]; c.State != OK || c.Message != "YouTube could not be reached (the last lookup failed)" {
+		t.Fatalf("one failure %+v", c)
 	}
-	failed = TrailerFailLimit
-	if c := w.run(t)["trailers"]; c.State != Warning || c.Message != "Trailer lookups failing: update yt-dlp" {
-		t.Fatalf("failing %+v", c)
+	for reason, words := range map[string]string{
+		"bot_check":  "YouTube asks to confirm you're not a bot",
+		"no_address": "YouTube changed how its videos are reached; a HolyArrs update will fix it",
+		"refused":    "YouTube turned the lookups away",
+		"network":    "YouTube could not be reached",
+		"":           "Trailer lookups are failing",
+	} {
+		tr.Failed, tr.LastReason = TrailerFailLimit, reason
+		if c := w.run(t)["trailers"]; c.State != Warning || c.Message != words+" (5 lookups in a row failed)" {
+			t.Fatalf("%q: %+v", reason, c)
+		}
+	}
+	tr.Failed = 0
+	if c := w.run(t)["trailers"]; c.State != OK || c.Message != "" {
+		t.Fatalf("recovered %+v", c)
 	}
 }

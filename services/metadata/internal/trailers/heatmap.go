@@ -2,55 +2,46 @@ package trailers
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"regexp"
-	"time"
+
+	"github.com/CoderLuii/holyarrs-metadata/internal/youtube"
 )
 
-var youtubeID = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
+// Replays reads YouTube's "most replayed" point with HolyArrs's own reader
+// (nothing is downloaded). Reader nil: one shared default reader.
+type Replays struct{ Reader *youtube.Reader }
 
-// Heatmap reads a YouTube video's "most replayed" data with yt-dlp (no
-// download) and answers the start of the most replayed part and the
-// duration in seconds. found is false when YouTube shows no heatmap.
-func (y *YTDLP) Heatmap(ctx context.Context, id string) (peak, duration float64, found bool, err error) {
-	out, err := y.VideoJSON(ctx, id)
+var defaultReader = &youtube.Reader{}
+
+// Look is the reader's lookup as the server needs it. The server plays
+// nothing, so a video that gives no plain address (only SABR or scrambled
+// formats) still counts when the watch page gave its graph or storyboard.
+// With neither, the failure stays: the door may have changed.
+func (r Replays) Look(ctx context.Context, id string) (youtube.Video, error) {
+	rd := r.Reader
+	if rd == nil {
+		rd = defaultReader
+	}
+	v, err := rd.Look(ctx, id)
+	if youtube.ReasonOf(err) == youtube.NoAddress && (v.PeakFound || v.Storyboard != "") {
+		err = nil
+	}
+	// An unread watch page is not "no graph": nothing is stored, and the
+	// video is read again later.
+	if err == nil && !v.Page {
+		err = &youtube.Error{Reason: youtube.Network, Detail: "watch page not read"}
+	}
+	return v, err
+}
+
+// Heatmap answers the start of a video's most replayed part and its
+// duration in seconds. The opening is skipped, since every play starts
+// there, so a start is not 0:00 just for that. found is false when YouTube
+// shows no graph. A failure is the reader's *youtube.Error, whose reason
+// tells one video's trouble from the door's.
+func (r Replays) Heatmap(ctx context.Context, id string) (peak, duration float64, found bool, err error) {
+	v, err := r.Look(ctx, id)
 	if err != nil {
 		return 0, 0, false, err
 	}
-	return ParseHeatmap(out)
-}
-
-// VideoJSON is yt-dlp's JSON for one YouTube video (no download): its
-// formats (the storyboard sheets among them), duration and heatmap.
-func (y *YTDLP) VideoJSON(ctx context.Context, id string) ([]byte, error) {
-	if !youtubeID.MatchString(id) {
-		return nil, errors.New("bad video id")
-	}
-	bin := y.Path()
-	if bin == "" {
-		return nil, errors.New("yt-dlp missing")
-	}
-	return run(ctx, bin, 60*time.Second, "-J", "--skip-download", "--no-warnings", "--no-playlist", "https://www.youtube.com/watch?v="+id)
-}
-
-// ParseHeatmap reads yt-dlp's JSON: the heatmap's highest point.
-func ParseHeatmap(b []byte) (peak, duration float64, found bool, err error) {
-	var d struct {
-		Duration float64 `json:"duration"`
-		Heatmap  []struct {
-			Start float64 `json:"start_time"`
-			Value float64 `json:"value"`
-		} `json:"heatmap"`
-	}
-	if err := json.Unmarshal(b, &d); err != nil {
-		return 0, 0, false, err
-	}
-	best := -1.0
-	for _, h := range d.Heatmap {
-		if h.Value > best {
-			best, peak = h.Value, h.Start
-		}
-	}
-	return peak, d.Duration, best >= 0, nil
+	return v.Peak, v.Duration, v.PeakFound, nil
 }

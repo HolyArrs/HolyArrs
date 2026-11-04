@@ -22,8 +22,6 @@
 	// Autoplay trailers: one app-wide switch, owner and settings people only.
 	let autoplay = $state<boolean | null>(null);
 	let autoplayBusy = $state(false);
-	// Keep yt-dlp up to date: the weekly update from yt-dlp's own releases.
-	let keepYTDLP = $state(true);
 	// Show Library art on the sign-in page (off: trending only).
 	let signinArt = $state(false);
 	// Count this install in the metadata server's per-country install total.
@@ -37,28 +35,15 @@
 	const keepWord = (d: number) => (d === 0 ? 'Forever' : d === 365 ? '1 year' : `${d} days`);
 	async function loadAutoplay() {
 		try {
-			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean; count_install?: boolean; artwork_cache_gb?: number; history_routine_days?: number; history_other_days?: number }>('/settings/ui');
+			const s = await api.get<{ autoplay_trailers: boolean; signin_library_art?: boolean; count_install?: boolean; artwork_cache_gb?: number; history_routine_days?: number; history_other_days?: number }>('/settings/ui');
 			keepRoutine = s.history_routine_days ?? 30;
 			keepOther = s.history_other_days ?? 0;
 			cacheGB = s.artwork_cache_gb ?? 5;
 			autoplay = s.autoplay_trailers;
-			keepYTDLP = s.keep_ytdlp_updated !== false;
 			signinArt = s.signin_library_art === true;
 			countInstall = s.count_install !== false;
 		} catch {
 			autoplay = null;
-		}
-	}
-	async function saveKeepYTDLP(on: boolean) {
-		autoplayBusy = true;
-		try {
-			keepYTDLP = (await api.put<{ keep_ytdlp_updated: boolean }>('/settings/ui', { keep_ytdlp_updated: on })).keep_ytdlp_updated;
-			toasts.push(keepYTDLP ? 'yt-dlp stays up to date' : 'yt-dlp is no longer updated automatically', 'ok');
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-			await loadAutoplay();
-		} finally {
-			autoplayBusy = false;
 		}
 	}
 	async function saveCacheGB(gb: number) {
@@ -349,10 +334,6 @@
 			<label class="checkline">
 				<input type="checkbox" checked={autoplay} disabled={autoplayBusy} onchange={(e) => saveAutoplay(e.currentTarget.checked)} />
 				<span><b>Play trailers by themselves</b><br /><span class="hint">On Explore the featured title and the larger card that opens over a poster play a muted trailer. Never for Kid accounts, with Reduce motion on, or on slow or data-saving connections. Applies to everyone.</span></span>
-			</label>
-			<label class="checkline" data-testid="ytdlp-update-setting">
-				<input type="checkbox" checked={keepYTDLP} disabled={autoplayBusy} onchange={(e) => saveKeepYTDLP(e.currentTarget.checked)} />
-				<span><b>Keep yt-dlp up to date</b><br /><span class="hint">Trailers are found with yt-dlp. Once a week HolyArrs fetches its newest official release, checks it and keeps the previous copy if the new one does not work. Its version and the last update show under Health.</span></span>
 			</label>
 			<label class="checkline" data-testid="signin-art-setting">
 				<input type="checkbox" checked={signinArt} disabled={autoplayBusy} onchange={(e) => saveSigninArt(e.currentTarget.checked)} />
