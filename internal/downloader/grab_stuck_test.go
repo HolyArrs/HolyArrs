@@ -86,7 +86,7 @@ func TestGrabHashlessReleaseFreesTheSlot(t *testing.T) {
 	gone := httptest.NewServer(http.NotFoundHandler())
 	t.Cleanup(gone.Close)
 	w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", gone.URL+"/decoy.torrent")
-	w.exec(t, "UPDATE sources SET allow_local_network = 1")
+	w.exec(t, "UPDATE sources SET allow_local_network = 1, url = ?", gone.URL+"/api")
 	if err := m.HandleGrab(context.Background(), grabRun(w, 1)); err != nil {
 		t.Fatalf("the Job should end, not retry: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 		src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { _, _ = rw.Write(tor) }))
 		t.Cleanup(src.Close)
 		w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", src.URL+"/dl/site/?path=x")
-		w.exec(t, "UPDATE sources SET allow_local_network = 1")
+		w.exec(t, "UPDATE sources SET allow_local_network = 1, url = ?", src.URL+"/api/v2.0/indexers/site/results/torznab/")
 		id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
 		if err != nil {
 			t.Fatal(err)
@@ -138,7 +138,7 @@ func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 		src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { rw.WriteHeader(http.StatusUnauthorized) }))
 		t.Cleanup(src.Close)
 		w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", src.URL+"/dl/site/?path=x")
-		w.exec(t, "UPDATE sources SET allow_local_network = 1")
+		w.exec(t, "UPDATE sources SET allow_local_network = 1, url = ?", src.URL+"/api/v2.0/indexers/site/results/torznab/")
 		if err := m.HandleGrab(context.Background(), grabRun(w, 1)); err == nil {
 			t.Fatal("a 401 should be tried again")
 		}
@@ -146,6 +146,24 @@ func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 			t.Fatalf("release %s, slot %s, added %v", st, w.slot(t).State, w.fake.added)
 		}
 	})
+}
+
+// A home Source may only be reached at home itself: its Release link to
+// another local address is never fetched, so a link from a site cannot make
+// HolyArrs call a device at home.
+func TestGrabHashlessLocalLinkOnlyTheSourceItself(t *testing.T) {
+	w, m := setup(t)
+	hit := 0
+	dev := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { hit++ }))
+	t.Cleanup(dev.Close)
+	w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", dev.URL+"/router/admin")
+	w.exec(t, "UPDATE sources SET allow_local_network = 1, url = 'http://jackett.lan:9117/api'")
+	if _, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System); err == nil {
+		t.Fatal("a link to another local address was sent")
+	}
+	if hit != 0 || len(w.fake.added) != 0 {
+		t.Fatalf("the device was called %d times, added %v", hit, w.fake.added)
+	}
 }
 
 // A magnet link carries the info hash itself.

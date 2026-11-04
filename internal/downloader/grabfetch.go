@@ -35,25 +35,27 @@ var (
 // address is checked as it is dialled, after DNS and on each redirect, so a
 // name or a redirect that leads home is refused. A redirect to a magnet
 // link returns that link instead of a file, as Sonarr does. rt, when set,
-// is the Source's own checked transport (through its proxy). allowLocal is
-// the Source's own allowance (a Jackett or Prowlarr at home): the local
-// network is reached then, cloud metadata addresses never.
-func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper, allowLocal bool) (file []byte, magnet string, err error) {
+// is the Source's own checked transport (through its proxy). localHost,
+// when set, is the host of a Source allowed on the local network (a
+// Jackett or Prowlarr at home): only that host may be a local address,
+// on the first request and on any redirect; every other one stays public,
+// and cloud metadata addresses are never reached.
+func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper, localHost string) (file []byte, magnet string, err error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return nil, "", errors.New("the Release file needs an http or https address without a sign-in")
 	}
-	allow := grabAllow
-	if allowLocal {
-		allow = source.NotMetadata
-	}
-	d := source.PolicyDialer(allow)
+	d, home := source.PolicyDialer(grabAllow), source.PolicyDialer(source.NotMetadata)
 	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		if h, _, err := net.SplitHostPort(addr); err == nil && metadataName(h) {
+		h, _, err := net.SplitHostPort(addr)
+		if err == nil && metadataName(h) {
 			return nil, &net.OpError{Op: "dial", Net: network, Err: source.ErrAddressRefused}
 		}
 		if grabDial != nil {
 			addr = grabDial(addr)
+		}
+		if localHost != "" && err == nil && strings.EqualFold(strings.TrimSuffix(h, "."), localHost) {
+			return home.DialContext(ctx, network, addr)
 		}
 		return d.DialContext(ctx, network, addr)
 	}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -702,7 +703,11 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, allowLocal); err == nil && magnet != "" {
+		localHost := "" // a home Source may be local itself, nothing else may
+		if su, err := url.Parse(src.URL); allowLocal && err == nil {
+			localHost = strings.TrimSuffix(strings.ToLower(su.Hostname()), ".")
+		}
+		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, localHost); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {

@@ -195,7 +195,7 @@ func newLabShow(t *testing.T, qb string, state domain.SlotState) labShow {
 			}
 			x.slots = append(x.slots, sl.ID)
 		}
-		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", Kinds: []string{}, Categories: map[string][]int{},
+		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home (#152) */, Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
 		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
