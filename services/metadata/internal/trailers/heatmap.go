@@ -15,7 +15,8 @@ var defaultReader = &youtube.Reader{}
 // Look is the reader's lookup as the server needs it. The server plays
 // nothing, so a video that gives no plain address (only SABR or scrambled
 // formats) still counts when the watch page gave its graph or storyboard.
-// With neither, the failure stays: the door may have changed.
+// With neither, the failure stays: the door may have changed. A bot check
+// on the player call alone keeps the page's graph the same way.
 func (r Replays) Look(ctx context.Context, id string) (youtube.Video, error) {
 	rd := r.Reader
 	if rd == nil {
@@ -23,6 +24,12 @@ func (r Replays) Look(ctx context.Context, id string) (youtube.Video, error) {
 	}
 	v, err := rd.Look(ctx, id)
 	if youtube.ReasonOf(err) == youtube.NoAddress && (v.PeakFound || v.Storyboard != "") {
+		err = nil
+	}
+	// YouTube's bot check refuses the player call from the server's
+	// address at times while the watch page, graph included, still reads:
+	// the most replayed start is kept (only the storyboard is missing).
+	if youtube.ReasonOf(err) == youtube.BotCheck && v.Page && v.PeakFound {
 		err = nil
 	}
 	// An unread watch page is not "no graph": nothing is stored, and the

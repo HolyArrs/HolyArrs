@@ -448,7 +448,15 @@ func (r *Reader) page(ctx context.Context, id string) (watchPage, error) {
 	}
 	var data any
 	if jsonAfter(html, "ytInitialData = ", &data) == nil {
-		w.peak, w.peakFound = Peak(heatMarks(data))
+		marks := heatMarks(data)
+		w.peak, w.peakFound = Peak(marks)
+		// Without the player part (YouTube's bot check can withhold it) the
+		// graph still spans the whole video: its parts give the length.
+		if w.duration == 0 && len(marks) >= 2 {
+			sort.Slice(marks, func(i, j int) bool { return marks[i].Start < marks[j].Start })
+			last, prev := marks[len(marks)-1].Start, marks[len(marks)-2].Start
+			w.duration = last + (last - prev)
+		}
 	}
 	return w, nil
 }

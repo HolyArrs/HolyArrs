@@ -326,3 +326,16 @@ func TestPeakSkipsTheEnd(t *testing.T) {
 		t.Fatalf("peak %v", p)
 	}
 }
+
+// A watch page without the player part (YouTube's bot check withholds it)
+// still gives the length, from the graph's parts.
+func TestLengthFromTheGraph(t *testing.T) {
+	page := watchHTML("VISITOR-NEW", 3)
+	i := strings.Index(page, `<script>var ytInitialPlayerResponse`)
+	j := strings.Index(page[i:], `</script>`) + i + len(`</script>`)
+	f := &fakeYouTube{play: status("LOGIN_REQUIRED", "Sign in to confirm you're not a bot"), page: func() (int, string) { return 200, page[:i] + page[j:] }}
+	v, err := f.serve(t).Look(context.Background(), vid)
+	if ReasonOf(err) != BotCheck || !v.Page || !v.PeakFound || v.Peak != 30 || v.Duration != 100 {
+		t.Fatalf("%+v %v", v, err)
+	}
+}

@@ -108,3 +108,34 @@ func TestHeatmapUnreadPageIsAFailure(t *testing.T) {
 		t.Fatal(ok, err)
 	}
 }
+
+// YouTube's bot check on the player call alone (seen from the server's
+// address) keeps the watch page's most replayed start; the length comes
+// from the graph. With no graph, the bot check stays a failure.
+func TestHeatmapKeepsThePageOnABotCheck(t *testing.T) {
+	serve := func(marks []float64) *youtube.Reader {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/watch" {
+				var ms []string
+				for i, v := range marks {
+					ms = append(ms, fmt.Sprintf(`{"startMillis":"%d","intensityScoreNormalized":%v}`, i*20000, v))
+				}
+				io.WriteString(w, `<script>ytcfg.set({"VISITOR_DATA":"V1"});</script>`+
+					`<script>var ytInitialData = {"m":{"markersList":{"markerType":"MARKER_TYPE_HEATMAP","markers":[`+strings.Join(ms, ",")+`]}}};</script>`)
+				return
+			}
+			io.WriteString(w, `{"playabilityStatus":{"status":"LOGIN_REQUIRED","reason":"Sign in to confirm you're not a bot"}}`)
+		}))
+		t.Cleanup(srv.Close)
+		return &youtube.Reader{Base: srv.URL, HTTP: srv.Client()}
+	}
+	r := Replays{Reader: serve([]float64{1, 0.2, 0.3, 0.9, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1})}
+	p, d, ok, err := r.Heatmap(context.Background(), CanaryKey)
+	if err != nil || !ok || p != 60 || d != 200 {
+		t.Fatal(p, d, ok, err)
+	}
+	r = Replays{Reader: serve(nil)}
+	if _, _, _, err := r.Heatmap(context.Background(), CanaryKey); youtube.ReasonOf(err) != youtube.BotCheck {
+		t.Fatalf("no graph must stay a bot check: %v", err)
+	}
+}
