@@ -3,6 +3,7 @@ package importer
 import (
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
@@ -401,5 +402,90 @@ func TestAlbumImportM4AByReleaseName(t *testing.T) {
 		if (lossy == 3) != c.refused {
 			t.Fatalf("%s: %d refused as lossy, want refused %v: %+v", c.listing, lossy, c.refused, imp.Plan)
 		}
+	}
+}
+
+// m4aHeader is a minimal .m4a whose one audio track holds codec (an MP4
+// sample entry: "alac" or "mp4a").
+func m4aHeader(codec string) []byte {
+	box := func(kind string, payload []byte) []byte {
+		b := make([]byte, 8+len(payload))
+		binary.BigEndian.PutUint32(b[:4], uint32(len(b)))
+		copy(b[4:8], kind)
+		copy(b[8:], payload)
+		return b
+	}
+	hdlr := append(append([]byte{0, 0, 0, 0, 0, 0, 0, 0}, []byte("soun")...), make([]byte, 12)...)
+	entry := make([]byte, 16)
+	binary.BigEndian.PutUint32(entry[:4], 16)
+	copy(entry[4:8], codec)
+	stsd := append([]byte{0, 0, 0, 0, 0, 0, 0, 1}, entry...)
+	mdia := append(box("mdhd", make([]byte, 24)), box("hdlr", hdlr)...)
+	mdia = append(mdia, box("minf", box("stbl", box("stsd", stsd)))...)
+	return append(box("ftyp", []byte("M4A \x00\x00\x00\x00M4A ")), box("moov", box("trak", box("mdia", mdia)))...)
+}
+
+// #43: an adopted ALAC library (.m4a files stored as "[M4A]") is lossless by
+// its codec: an MP3 album never replaces it at import. A new AAC .m4a whose
+// Release name gives no format is lossy by its codec and never replaces FLAC.
+func TestAlbumImportReadsM4ACodec(t *testing.T) {
+	t.Run("mp3 over adopted alac", func(t *testing.T) {
+		w := albumSetup(t, 1, "01 - Dawn.mp3", "02 - Glass River.mp3", "03 - Night Train.mp3")
+		w.haveTracks(t, "m4a", "Lab Band - First Light (2020) [M4A]")
+		for i, n := range []string{"Dawn", "Glass River", "Night Train"} {
+			if err := os.WriteFile(filepath.Join(w.lib, "Lab Band", "First Light (2020)", fmt.Sprintf("%02d - %s.m4a", i+1, n)), m4aHeader("alac"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+		if err != nil || lossyRefused(imp) != 3 {
+			t.Fatalf("import %v: %+v", err, imp.Plan)
+		}
+	})
+	t.Run("aac m4a with no format word over flac", func(t *testing.T) {
+		w := albumSetup(t, 1)
+		for i, n := range []string{"Dawn", "Glass River", "Night Train"} {
+			name := fmt.Sprintf("%02d - %s.m4a", i+1, n)
+			if err := os.MkdirAll(filepath.Join(w.dl, albumRel), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(w.dl, albumRel, name), m4aHeader("mp4a"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			seen := fmt.Sprintf(`[{"name":%q,"size":%d}]`, albumRel+"/"+name, len(m4aHeader("mp4a")))
+			if i == 0 {
+				mapExec(t, w.s, "UPDATE downloads SET files_seen = ?", seen)
+			} else {
+				mapExec(t, w.s, "UPDATE downloads SET files_seen = json_insert(files_seen, '$[#]', json(?))", fmt.Sprintf(`{"name":%q,"size":%d}`, albumRel+"/"+name, len(m4aHeader("mp4a"))))
+			}
+		}
+		mapExec(t, w.s, "UPDATE releases SET name = 'Lab Band - First Light (2020) [WEB]'")
+		w.haveTracks(t, "flac", albumRel)
+		imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+		if err != nil || lossyRefused(imp) != 3 {
+			t.Fatalf("import %v: %+v", err, imp.Plan)
+		}
+	})
+}
+
+func lossyRefused(imp *domain.Import) int {
+	n := 0
+	for _, st := range imp.Plan {
+		if strings.Contains(strings.Join(st.Why, " "), "lower than the lossless copy in place") {
+			n++
+		}
+	}
+	return n
+}
+
+// #43: an .m4a whose format cannot be read never replaces a lossless copy
+// unless its Release says lossless.
+func TestAlbumImportUnreadableM4AOverFLAC(t *testing.T) {
+	w := albumSetup(t, 1, "01 - Dawn.m4a", "02 - Glass River.m4a", "03 - Night Train.m4a")
+	w.haveTracks(t, "flac", albumRel)
+	mapExec(t, w.s, "UPDATE releases SET name = 'Lab Band - First Light (2020) [WEB]'")
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || lossyRefused(imp) != 3 {
+		t.Fatalf("import %v: %+v", err, imp.Plan)
 	}
 }

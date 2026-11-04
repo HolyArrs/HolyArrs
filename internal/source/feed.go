@@ -385,6 +385,25 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 		if err := store.Get(ctx, s.Store.Read(), "releases", *sl.HeldReleaseID, &rel); err != nil || rel.State != "held" {
 			continue
 		}
+		if s.dangerousRel(ctx, rel) {
+			// Its files turned out to be a program during the wait (#41):
+			// refused, and its Slots go back to looking.
+			_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
+				// Only while it is still held: a person may have chosen it meanwhile.
+				res, err := tx.Exec(`UPDATE releases SET state = 'refused', hold_until = NULL,
+					verdict = json_set(COALESCE(verdict, '{}'), '$.outcome', 'refused', '$.dangerous_files', json('true')), updated_at = ?, updated_by = ? WHERE id = ? AND state = 'held'`,
+					store.FormatTime(now), actorText(by), rel.ID)
+				if err != nil {
+					return err
+				}
+				if n, err := res.RowsAffected(); err != nil || n == 0 {
+					return err
+				}
+				return unholdTx(tx, rel.ID, "not sent: "+dangerousWhy, by)
+			})
+			done[sl.ID] = true
+			continue
+		}
 		// A season pack held for several Slots is chosen for all of them
 		// that still hold it.
 		// A Slot missing from the pick list (an old list) is chosen alone.

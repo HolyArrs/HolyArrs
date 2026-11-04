@@ -27,6 +27,40 @@ type Info struct {
 	AudioLanguages []string
 	AudioTracks    int
 	AudioUnknown   bool
+	// AudioCodecs are the audio tracks' codecs ("alac", "flac", "aac",
+	// "mp3", ...); a track whose codec is not known adds nothing.
+	AudioCodecs []string
+}
+
+// losslessCodecs are the audio codecs that keep every sample.
+var losslessCodecs = map[string]bool{"alac": true, "flac": true, "wavpack": true, "pcm": true, "tta": true, "truehd": true}
+
+// AudioWord is the one codec every audio track shares, upper case ("ALAC",
+// "AAC"); "" when there is none or they differ.
+func (i Info) AudioWord() string {
+	if len(i.AudioCodecs) == 0 {
+		return ""
+	}
+	for _, c := range i.AudioCodecs[1:] {
+		if c != i.AudioCodecs[0] {
+			return ""
+		}
+	}
+	return strings.ToUpper(i.AudioCodecs[0])
+}
+
+// Lossless says whether every audio track read is lossless; known is false
+// when no audio codec could be read (an .m4a may hold AAC or ALAC).
+func (i Info) Lossless() (lossless, known bool) {
+	if len(i.AudioCodecs) == 0 {
+		return false, false
+	}
+	for _, c := range i.AudioCodecs {
+		if !losslessCodecs[c] {
+			return false, true
+		}
+	}
+	return true, true
 }
 
 // Inspect reads media headers from a regular file. It does not decode samples.

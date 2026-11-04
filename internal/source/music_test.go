@@ -460,3 +460,67 @@ func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
 		t.Fatalf("with force: %+v %v", ch, err)
 	}
 }
+
+// #43: a FLAC copy whose stored name says no format (an adopted or older
+// row) is still known as lossless by its extension: an MP3 album is no gain.
+func TestCurrentCopyKnownByExtension(t *testing.T) {
+	ms := &musicServer{answer: func(url.Values) []string { return []string{mp3} }}
+	f := seedArtist(t, ms.start(t))
+	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		for _, l := range ltaTracks {
+			name := "Velvet Cartography - Low Tide Atlas (2019)"
+			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
+				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
+			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sr := &Searcher{Store: f.s}
+	f.albumJob(t, sr, lta, nil)
+	if st := f.state(t, ltaTracks[0]); st == domain.SlotChosen {
+		t.Fatalf("MP3 320 chosen over FLAC with a plain name: %s", st)
+	}
+	// Picked by hand for one track, it needs force too.
+	r := relByName(t, f.fixture, "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]")
+	exec(t, f.fixture, "UPDATE releases SET state = 'passed_over', matched_slot_ids = json_array(?) WHERE id = ?", f.slots[ltaTracks[0]], r.ID)
+	var nf *NeedsForceError
+	if _, err := sr.Choose(context.Background(), r.ID, f.slots[ltaTracks[0]], false, domain.System); !errors.As(err, &nf) {
+		t.Fatalf("picked by hand over a plain-named FLAC copy: %v", err)
+	}
+}
+
+// #43: a TAK copy with a plain stored name is lossless at search: an MP3
+// album is no gain over it.
+func TestTAKCopyKnownAtSearch(t *testing.T) {
+	ms := &musicServer{answer: func(url.Values) []string { return []string{mp3} }}
+	f := seedArtist(t, ms.start(t))
+	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		for _, l := range ltaTracks {
+			name := "Velvet Cartography - Low Tide Atlas (2019)"
+			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".tak", Size: 1, AddedAt: time.Now(),
+				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
+			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.albumJob(t, &Searcher{Store: f.s}, lta, nil)
+	if st := f.state(t, ltaTracks[0]); st == domain.SlotChosen {
+		t.Fatalf("MP3 320 chosen over TAK: %s", st)
+	}
+}

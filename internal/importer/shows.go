@@ -472,7 +472,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 		why = lieOf(name, relName, len(olds[i]) > 0, oldName, pr.Body)
 		if why == "" && music && len(olds[i]) > 0 {
-			why = lossyOverLossless(plan[i].SourceFile, relName, olds[i][0], pr.Body)
+			why = lossyOverLossless(plan[i].SourceFile, relName, olds[i][0], filepath.Join(lf.Path, filepath.FromSlash(olds[i][0].RelativePath)), pr.Body)
 		}
 		if why != "" {
 			for _, id := range plan[i].TargetSlotIDs {

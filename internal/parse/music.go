@@ -73,7 +73,8 @@ var musicFormats = map[string]struct {
 	"flac": {"flac", true}, "alac": {"alac", true}, "wav": {"wav", true}, "wave": {"wav", true}, "ape": {"ape", true},
 	"wv": {"wavpack", true}, "wavpack": {"wavpack", true}, "dsd": {"dsd", true}, "dsf": {"dsd", true}, "dff": {"dsd", true},
 	"mp3": {"mp3", false}, "aac": {"aac", false}, "m4a": {"aac", false}, "ogg": {"vorbis", false}, "vorbis": {"vorbis", false},
-	"opus": {"opus", false}, "wma": {"wma", false},
+	"opus": {"opus", false}, "wma": {"wma", false}, "pcm": {"pcm", true}, "tta": {"tta", true},
+	"aiff": {"aiff", true}, "aif": {"aiff", true},
 }
 
 var musicSources = map[string]string{

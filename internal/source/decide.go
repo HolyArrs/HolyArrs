@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
 	"slices"
 	"strconv"
 	"strings"
@@ -59,18 +58,8 @@ func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) 
 	if err := store.Get(ctx, db, "pick_rules", c.ver.PickRulesID, &c.pr); err != nil {
 		return c, err
 	}
-	if c.sl.FileID != nil {
-		var f domain.File
-		if err := store.Get(ctx, db, "files", *c.sl.FileID, &f); err == nil && f.State == "present" {
-			name := strings.TrimSuffix(path.Base(f.RelativePath), path.Ext(f.RelativePath))
-			if f.ReleaseName != nil && *f.ReleaseName != "" {
-				name = *f.ReleaseName
-			}
-			if cur := judge.CurrentOf(name, f.AddedAt, c.pr.Body); cur.Step != "" {
-				c.cur = &cur
-			}
-		}
-	}
+	// The same reading of the copy in place as the searches (#43).
+	c.cur = currentOf(ctx, db, c.sl, c.pr)
 	return c, nil
 }
 
@@ -117,6 +106,7 @@ func dedupe(all []found) []found {
 // Release gate is open; hand says a person started a single-Item search;
 // skipGate says a bulk search may skip the gate (bulk_search_respects_gate off).
 func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, hand, skipGate bool) ([]judge.Release, []judge.Verdict, error) {
+	bad := s.dangerousSeen(ctx)
 	turned, err := s.turnedDown(ctx, c.sl.ID)
 	if err != nil {
 		return nil, nil, err
@@ -132,7 +122,7 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	for i, f := range all {
 		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
-			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority}
+			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := judge.MatchTitle(p, []judge.TitleRef{ref})
 		set := judge.SlotSet{Match: m, RuntimeMinutes: ref.Runtime, Out: out, MinSeeders: f.src.MinSeeders, TurnedDown: turned,
 			HandSearch: hand, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}

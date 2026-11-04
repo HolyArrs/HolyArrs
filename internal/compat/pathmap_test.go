@@ -20,3 +20,10 @@ func TestQueueMapsWindowsPathsAsTheImport(t *testing.T) {
 		}
 	}
 }
+
+// #50: a reported folder with a ".." part is not handed to Unpackerr.
+func TestQueueOutputPathRefusesDotDot(t *testing.T) {
+	if got := outputPath("/data/downloads/../../etc", []domain.PathMap{{Theirs: "/data/downloads", Ours: "/downloads"}}, nil); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}

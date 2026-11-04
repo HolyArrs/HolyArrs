@@ -23,6 +23,9 @@ type Release struct {
 	InfoHash       string
 	Files          []string
 	SourcePriority int // lower wins
+	// Dangerous: a Download of this Release (by info hash or name) failed
+	// before because its files were a program (#41).
+	Dangerous bool
 }
 
 // TitleRef is a library Title as the matcher sees it.
@@ -526,6 +529,9 @@ func (v *Verdict) safety(rel Release, rules domain.PickRulesBody, step string, s
 	never := func(t string) bool { return slices.Contains(rules.Never, t) }
 	if p.Has("double_extension") {
 		v.add("hard", "safety:double_extension", "fail", "file name hides a program", 0)
+	}
+	if rel.Dangerous {
+		v.add("hard", "safety:dangerous_files", "fail", "its files were a program when it was downloaded before", 0)
 	}
 	if p.Has("executable") {
 		what := "a program file"
