@@ -1,1 +1,0 @@
-export{t as component,wa as universal}from"../chunks/BwmWsqIy.js";
