@@ -477,7 +477,7 @@
 	/** approvedLine says what happens after approval. */
 	function approvedLine(a: Ask) {
 		if (a.kind === 'show') return `HolyArrs keeps ${what(a)} up to date and looks for the episodes.`;
-		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date. HolyArrs can't look for music downloads yet.`;
+		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date and looks for the albums.`;
 		return 'HolyArrs is looking for it.';
 	}
 
@@ -840,9 +840,9 @@
 			{#if mode === 'approve'}
 				<p class="hint">
 					{picked.kind === 'show'
-						? `Approving adds the show to the Library and keeps ${what(picked)} up to date. HolyArrs looks for episodes soon and again each night.`
+						? `Approving adds the show to the Library, keeps ${what(picked)} up to date and starts looking for the episodes.`
 						: picked.kind === 'artist'
-							? `Approving adds the artist to the Library with ${what(picked)} kept up to date. HolyArrs can't look for music downloads yet.`
+							? `Approving adds the artist to the Library, keeps ${what(picked)} up to date and starts looking for the albums.`
 							: 'Approving adds the movie to the Library and starts looking for it.'}
 				</p>
 			{/if}

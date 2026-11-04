@@ -726,6 +726,13 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 			opt.AudioLanguages = nil
 		}
 	}
+	// An artist already in the Library has its tracks: it is searched below.
+	hadArtist := false
+	if a.Kind == "artist" {
+		if id, herr := library.ArtistByMBID(ctx, db, a.SourceIDs["musicbrainz"]); herr == nil && id != 0 {
+			hadArtist = true
+		}
+	}
 	var tid int64
 	switch a.Kind {
 	case "show":
@@ -764,8 +771,9 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	}
 	// A movie is searched as it is added; a show's episodes and an artist's
 	// albums are kept up to date above, then looked for at once too, not
-	// at the next missing search (hours away).
-	if set.SearchOnApprove && (a.Kind == "show" || a.Kind == "artist") && s.Library != nil && s.Library.Queue != nil {
+	// at the next missing search (hours away). A new artist is searched at
+	// the end of its add (its tracks come with the MusicBrainz refresh).
+	if set.SearchOnApprove && (a.Kind == "show" || (a.Kind == "artist" && hadArtist)) && s.Library != nil && s.Library.Queue != nil {
 		if err := s.Library.ScanThenSearch(ctx, tid, by.actor()); err != nil {
 			log.Printf("asks: search for ask %d: %v", a.ID, err)
 		}

@@ -477,7 +477,9 @@ func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
 	}
 }
 
-// #139: an approved album ask is looked for at once too.
+// #139: an approved album ask is looked for at once too. A new artist's
+// tracks come with its MusicBrainz refresh, so the search ends the add's
+// own chain; an artist already in the Library is scanned and searched.
 func TestApprovedArtistAskSearchesAtOnce(t *testing.T) {
 	r := musicRig(t)
 	ctx := context.Background()
@@ -489,9 +491,28 @@ func TestApprovedArtistAskSearchesAtOnce(t *testing.T) {
 	if err != nil || got.TitleID == nil {
 		t.Fatalf("approve %+v %v", got, err)
 	}
-	var n int
-	_ = r.st.Read().QueryRow("SELECT count(*) FROM jobs WHERE dedupe_key = ?", fmt.Sprintf("scan_then_search:%d", *got.TitleID)).Scan(&n)
-	if n != 1 {
-		t.Fatalf("scan then search queued %d times, want 1", n)
+	var then string
+	_ = r.st.Read().QueryRow("SELECT json_extract(params, '$.then') FROM jobs WHERE dedupe_key = ?", fmt.Sprintf("refresh_title:%d", *got.TitleID)).Scan(&then)
+	if then != `["scan_title","search_wanted"]` {
+		t.Fatalf("new artist's add chain %q", then)
+	}
+	queued := func() int {
+		var n int
+		_ = r.st.Read().QueryRow("SELECT count(*) FROM jobs WHERE dedupe_key = ?", fmt.Sprintf("scan_then_search:%d", *got.TitleID)).Scan(&n)
+		return n
+	}
+	if n := queued(); n != 0 {
+		t.Fatalf("a new artist also queued scan then search %d", n)
+	}
+	// Another album of the same artist: it is in the Library now.
+	res, err = r.svc.AskArtist(ctx, r.bo, "mbid:"+mArtist, []string{mFirst})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if n := queued(); n != 1 {
+		t.Fatalf("artist in the Library: scan then search queued %d, want 1", n)
 	}
 }

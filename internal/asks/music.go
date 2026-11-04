@@ -384,6 +384,9 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		if o.PickRulesID == 0 {
 			o.PickRulesID = set.MusicPickRulesID
 		}
+		// A new artist's tracks come with its MusicBrainz refresh: the search
+		// waits for that (and the scan) in the add's own chain.
+		o.SearchAfter = set.SearchOnApprove
 		var dup *library.ArtistAlreadyAddedError
 		tid, _, err = s.Library.AddArtist(ctx, "mbid:"+mbid, o, by.actor())
 		switch {
