@@ -681,8 +681,13 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// Without local network access HolyArrs fetches the file and hands it
 	// over; a link that redirects to a magnet sends the magnet. A Source with
 	// a proxy is fetched through it, with the same checks.
+	// A qBittorrent Release with no info hash at all (an http link to a
+	// .torrent, as private sites through Jackett or Prowlarr give) is fetched
+	// the same way, even from a local Source: the hash comes from the file,
+	// so the download can be followed.
 	var file []byte
-	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && !allowLocal && !strings.HasPrefix(link, "magnet:") {
+	noHash := d.Adapter == "qbittorrent" && hash == "" && linkHash(link) == ""
+	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash) && !strings.HasPrefix(link, "magnet:") {
 		var rt http.RoundTripper
 		if src.ProxyURL != "" {
 			if m.SourceTransport == nil {
@@ -697,7 +702,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt); err == nil && magnet != "" {
+		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, allowLocal); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {

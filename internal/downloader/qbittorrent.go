@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -327,6 +328,9 @@ type qbitTorrent struct {
 	SeenDone    int64    `json:"seen_complete"`
 	Uploaded    int64    `json:"uploaded"`
 	TimeActive  int64    `json:"time_active"`
+
+	// DownloadPath is the incomplete-files folder ("" when not used).
+	DownloadPath string `json:"download_path"`
 }
 
 func (t qbitTorrent) job() Job { return jobFromTorrent(t) }
@@ -339,12 +343,40 @@ func jobFromTorrent(t qbitTorrent) Job {
 	if eta >= 8640000 || eta < 0 { // qBittorrent's "infinite"
 		eta = 0
 	}
-	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
-		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), SeedsTotal: max(t.NumComplete, 0), PeersTotal: max(t.NumIncompl, 0), ETA: eta, State: qbitState(t.State), Detail: t.State,
+	state, save := qbitState(t.State), t.SavePath
+	if state == StateFinished && t.stillIncomplete() {
+		// Complete but still in the incomplete-files folder (qBittorrent
+		// moves it a moment later, or never when it found the files there
+		// already): its file names are relative to that folder.
+		save = t.DownloadPath
+	}
+	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: save, ContentPath: t.ContentPath,
+		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), SeedsTotal: max(t.NumComplete, 0), PeersTotal: max(t.NumIncompl, 0), ETA: eta, State: state, Detail: t.State,
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
 		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: HostOnly(t.Tracker), TrackerProblem: t.problem(),
 		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0),
 		LastActivity: max(t.LastAct, 0), SeedingTime: max(t.SeedTime, 0), SeenComplete: max(t.SeenDone, 0), Uploaded: max(t.Uploaded, 0), TimeActive: max(t.TimeActive, 0), Availability: t.avail()}
+}
+
+// stillIncomplete says whether a complete torrent's files are still in
+// qBittorrent's incomplete-files folder, not under its save path: with that
+// folder set, qBittorrent moves a torrent to its save path after it
+// completes, but not one it found complete on disk when it was added.
+func (t qbitTorrent) stillIncomplete() bool {
+	if t.DownloadPath == "" || t.ContentPath == "" || t.Progress < 1 {
+		return false
+	}
+	clean := func(p string) string { return path.Clean(strings.ReplaceAll(p, `\`, "/")) }
+	in := func(p, dir string) bool {
+		p, dir = clean(p), clean(dir)
+		return dir != "." && (p == dir || strings.HasPrefix(p, strings.TrimSuffix(dir, "/")+"/"))
+	}
+	if !in(t.ContentPath, t.DownloadPath) {
+		return false
+	}
+	// Under both: the deeper folder holds it (an incomplete folder inside
+	// the save folder, such as /downloads/incomplete in /downloads).
+	return !in(t.ContentPath, t.SavePath) || (in(t.DownloadPath, t.SavePath) && clean(t.DownloadPath) != clean(t.SavePath))
 }
 
 // avail is the swarm's full copies; nil when not sent (qBittorrent sends -1

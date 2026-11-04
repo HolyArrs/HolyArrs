@@ -35,13 +35,19 @@ var (
 // address is checked as it is dialled, after DNS and on each redirect, so a
 // name or a redirect that leads home is refused. A redirect to a magnet
 // link returns that link instead of a file, as Sonarr does. rt, when set,
-// is the Source's own checked transport (through its proxy).
-func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper) (file []byte, magnet string, err error) {
+// is the Source's own checked transport (through its proxy). allowLocal is
+// the Source's own allowance (a Jackett or Prowlarr at home): the local
+// network is reached then, cloud metadata addresses never.
+func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper, allowLocal bool) (file []byte, magnet string, err error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return nil, "", errors.New("the Release file needs an http or https address without a sign-in")
 	}
-	d := source.PolicyDialer(grabAllow)
+	allow := grabAllow
+	if allowLocal {
+		allow = source.NotMetadata
+	}
+	d := source.PolicyDialer(allow)
 	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		if h, _, err := net.SplitHostPort(addr); err == nil && metadataName(h) {
 			return nil, &net.OpError{Op: "dial", Net: network, Err: source.ErrAddressRefused}
@@ -94,6 +100,11 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 	defer resp.Body.Close()
 	if loc := resp.Header.Get("Location"); resp.StatusCode >= 300 && resp.StatusCode < 400 && len(loc) >= 7 && strings.EqualFold(loc[:7], "magnet:") {
 		return nil, loc, nil
+	}
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone {
+		// The file is not there: trying again changes nothing (a sign-in
+		// or rate answer may pass, so those are tried again).
+		return nil, "", releaseRefused{"the Source has no such Release file"}
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, "", errors.New("the Source refused the Release file")

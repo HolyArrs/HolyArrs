@@ -3,6 +3,8 @@ package downloader
 import (
 	"context"
 	"database/sql"
+	"net/http"
+	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
@@ -76,12 +78,15 @@ func TestGrabDoesNotReuseImportedDownload(t *testing.T) {
 	}
 }
 
-// A torrent Release with no info hash is never handed to qBittorrent (it
-// could not be followed there): the grab ends at once, the Release is turned
-// down and the Slot is searched again.
+// A torrent Release with no info hash whose link has no file behind it (the
+// #99 decoy: the Source answers 404) is never handed to qBittorrent: the
+// grab ends at once, the Release is turned down and the Slot is searched again.
 func TestGrabHashlessReleaseFreesTheSlot(t *testing.T) {
 	w, m := setup(t)
-	w.exec(t, "UPDATE releases SET info_hash = NULL")
+	gone := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(gone.Close)
+	w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", gone.URL+"/decoy.torrent")
+	w.exec(t, "UPDATE sources SET allow_local_network = 1")
 	if err := m.HandleGrab(context.Background(), grabRun(w, 1)); err != nil {
 		t.Fatalf("the Job should end, not retry: %v", err)
 	}
@@ -89,7 +94,7 @@ func TestGrabHashlessReleaseFreesTheSlot(t *testing.T) {
 		t.Fatalf("sent to qBittorrent anyway: %v", w.fake.added)
 	}
 	s := w.slot(t)
-	if s.State != domain.SlotWanted || s.ChosenReleaseID != nil || s.LastReason == nil || !strings.Contains(*s.LastReason, "no info hash") {
+	if s.State != domain.SlotWanted || s.ChosenReleaseID != nil || s.LastReason == nil || !strings.Contains(*s.LastReason, "no such Release file") {
 		t.Fatalf("slot %s, chosen %v, reason %v", s.State, s.ChosenReleaseID, s.LastReason)
 	}
 	if st, why := w.releaseState(t); st != "turned_down" || !strings.HasPrefix(why, "could not be sent: ") {
@@ -98,6 +103,49 @@ func TestGrabHashlessReleaseFreesTheSlot(t *testing.T) {
 	if !slices.Equal(w.failedSlots, []int64{w.slotID}) {
 		t.Fatalf("searched again: %v", w.failedSlots)
 	}
+}
+
+// A link to a .torrent file with no info hash from a Source at home (a
+// private site through a Jackett or Prowlarr on the local network, #47):
+// HolyArrs fetches the file, reads its hash and uploads it, and follows the
+// download by that hash. A Source that turns the key down for now (401) is
+// tried again, not turned down.
+func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
+	tor := []byte("d8:announce14:http://t/a/ann4:infod6:lengthi3e4:name5:dune.12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee")
+	want, err := torrentFileHash(tor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("uploaded", func(t *testing.T) {
+		w, m := setup(t)
+		src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { _, _ = rw.Write(tor) }))
+		t.Cleanup(src.Close)
+		w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", src.URL+"/dl/site/?path=x")
+		w.exec(t, "UPDATE sources SET allow_local_network = 1")
+		id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(w.fake.added) != 1 || w.fake.added[0]["torrent"] != string(tor) || w.fake.added[0]["category"] != "holyarrs" {
+			t.Fatalf("added %+v, want the file", w.fake.added)
+		}
+		if d := w.download(t, id); d.ExternalID != want {
+			t.Fatalf("followed as %q, want %s", d.ExternalID, want)
+		}
+	})
+	t.Run("key turned down", func(t *testing.T) {
+		w, m := setup(t)
+		src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { rw.WriteHeader(http.StatusUnauthorized) }))
+		t.Cleanup(src.Close)
+		w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", src.URL+"/dl/site/?path=x")
+		w.exec(t, "UPDATE sources SET allow_local_network = 1")
+		if err := m.HandleGrab(context.Background(), grabRun(w, 1)); err == nil {
+			t.Fatal("a 401 should be tried again")
+		}
+		if st, _ := w.releaseState(t); st != "chosen" || w.slot(t).State != domain.SlotChosen || len(w.fake.added) != 0 {
+			t.Fatalf("release %s, slot %s, added %v", st, w.slot(t).State, w.fake.added)
+		}
+	})
 }
 
 // A magnet link carries the info hash itself.
