@@ -897,27 +897,27 @@ test('a member sees the answer to their request live, without a reload', async (
 // "Processing".
 test('a member follows their approved request step by step', async ({ browser }) => {
 	test.setTimeout(90_000);
-	const wren = await member(browser, 'wren');
-	await wren.goto('/');
-	const made = await wren.evaluate(async () => {
+	const tamsin = await member(browser, 'tamsin');
+	await tamsin.goto('/');
+	const made = await tamsin.evaluate(async () => {
 		const me = (await (await fetch('/api/v1/auth/me')).json()) as { csrf: string };
 		const r = await fetch('/api/v1/asks', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': me.csrf }, body: JSON.stringify({ id: 'tmdb:900603' }) });
 		return { status: r.status, body: await r.json() };
 	});
 	expect(made.status, JSON.stringify(made.body)).toBeLessThan(300);
 	const id = (made.body as { ask: { id: number } }).ask.id;
-	await wren.goto('/requests');
-	const card = wren.getByTestId('ask').filter({ hasText: 'Rook Lantern' });
+	await tamsin.goto('/requests');
+	const card = tamsin.getByTestId('ask').filter({ hasText: 'Rook Lantern' });
 	await expect(card.getByTestId('ask-state')).toHaveText('Requested');
 	const me = (await (await own.request.get('/api/v1/auth/me')).json()) as { csrf: string };
 	expect((await own.request.post(`/api/v1/asks/${id}/approve`, { headers: { 'X-CSRF-Token': me.csrf }, data: {} })).ok()).toBe(true);
 	// The card leaves Requested on its own and shows where it is.
 	await expect(card).toHaveCount(0, { timeout: 15_000 });
-	await wren.getByRole('button', { name: /^Approved/ }).click();
+	await tamsin.getByRole('button', { name: /^Approved/ }).click();
 	await expect(card.getByTestId('ask-step')).toHaveText(/^(Searching for it now|Nothing found yet.*)$/);
 	await expect(card.getByTestId('ask-step')).toContainText('Nothing found yet', { timeout: 45_000 });
 	await expect(card).not.toContainText('%');
-	await noSidewaysScroll(wren);
+	await noSidewaysScroll(tamsin);
 	// The approver's window: what it waits for, never a bare Processing.
 	await own.goto(`/requests?ask=${id}`);
 	const said = own.getByRole('dialog', { name: 'Rook Lantern' }).getByTestId('ask-status');
