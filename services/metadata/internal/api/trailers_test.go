@@ -23,7 +23,7 @@ func (f *fakeTrailers) Pick(_ context.Context, kind string, id int64, lang, who 
 }
 
 func (f *fakeTrailers) Stats() trailers.Stats {
-	return trailers.Stats{Checked: 7, Broken: 2, Replaced: 1, CanaryOK: true, LastRun: "2026-10-19T00:00:00Z"}
+	return trailers.Stats{Checked: 7, Broken: 2, Replaced: 1, LastRun: "2026-10-19T00:00:00Z"}
 }
 
 func TestTrailerRoute(t *testing.T) {
@@ -78,7 +78,7 @@ func TestStatsCarryTrailers(t *testing.T) {
 	var b struct {
 		Trailers *trailers.Stats `json:"trailers"`
 	}
-	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &b) != nil || b.Trailers == nil || b.Trailers.Checked != 7 || b.Trailers.Broken != 2 || b.Trailers.Replaced != 1 || !b.Trailers.CanaryOK {
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &b) != nil || b.Trailers == nil || b.Trailers.Checked != 7 || b.Trailers.Broken != 2 || b.Trailers.Replaced != 1 {
 		t.Fatalf("stats %d %s", w.Code, w.Body)
 	}
 }

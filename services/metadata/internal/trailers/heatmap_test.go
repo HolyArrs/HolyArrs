@@ -14,6 +14,9 @@ import (
 
 // fakeYouTube answers the watch page (with a "most replayed" graph of the
 // given parts, none: no graph) and the player call (status OK or not).
+// sampleVideo is a known trailer id the fakes answer for.
+const sampleVideo = "aqz-KE-bpKQ"
+
 func fakeYouTube(t *testing.T, marks []float64, status string) *youtube.Reader {
 	t.Helper()
 	return fakeYouTubeWith(t, marks, status, `{"hlsManifestUrl":"https://manifest.googlevideo.com/api/manifest/hls_variant/x/index.m3u8"}`)
@@ -46,12 +49,12 @@ func fakeYouTubeWith(t *testing.T, marks []float64, status, streaming string) *y
 // (always the highest part) skipped.
 func TestHeatmapFromTheReader(t *testing.T) {
 	r := Replays{Reader: fakeYouTube(t, []float64{1, 0.2, 0.3, 0.9, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1}, "OK")}
-	p, d, ok, err := r.Heatmap(context.Background(), CanaryKey)
+	p, d, ok, err := r.Heatmap(context.Background(), sampleVideo)
 	if err != nil || !ok || p != 60 || d != 200 {
 		t.Fatal(p, d, ok, err)
 	}
 	r = Replays{Reader: fakeYouTube(t, nil, "OK")}
-	if _, d, ok, err := r.Heatmap(context.Background(), CanaryKey); err != nil || ok || d != 200 {
+	if _, d, ok, err := r.Heatmap(context.Background(), sampleVideo); err != nil || ok || d != 200 {
 		t.Fatal("no graph must be not found", d, ok, err)
 	}
 }
@@ -60,7 +63,7 @@ func TestHeatmapFromTheReader(t *testing.T) {
 // trouble (no pause) from the door's.
 func TestHeatmapKeepsTheReason(t *testing.T) {
 	r := Replays{Reader: fakeYouTube(t, []float64{1, 0.5}, "LOGIN_REQUIRED")}
-	_, _, _, err := r.Heatmap(context.Background(), CanaryKey)
+	_, _, _, err := r.Heatmap(context.Background(), sampleVideo)
 	if youtube.ReasonOf(err) != youtube.AgeRestricted || !youtube.ReasonOf(err).VideoReason() {
 		t.Fatalf("reason of %v", err)
 	}
@@ -75,18 +78,18 @@ func TestHeatmapKeepsTheReason(t *testing.T) {
 func TestHeatmapWithoutAnAddress(t *testing.T) {
 	sabr := `{"serverAbrStreamingUrl":"https://rr1.googlevideo.com/videoplayback?sabr=1"}`
 	r := Replays{Reader: fakeYouTubeWith(t, []float64{1, 0.2, 0.3, 0.9, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1}, "OK", sabr)}
-	p, d, ok, err := r.Heatmap(context.Background(), CanaryKey)
+	p, d, ok, err := r.Heatmap(context.Background(), sampleVideo)
 	if err != nil || !ok || p != 60 || d != 200 {
 		t.Fatal(p, d, ok, err)
 	}
 	r = Replays{Reader: fakeYouTubeWith(t, nil, "OK", sabr)}
-	if _, _, _, err := r.Heatmap(context.Background(), CanaryKey); youtube.ReasonOf(err) != youtube.NoAddress {
+	if _, _, _, err := r.Heatmap(context.Background(), sampleVideo); youtube.ReasonOf(err) != youtube.NoAddress {
 		t.Fatalf("no graph, no storyboard and no address must stay a failure: %v", err)
 	}
 	// A storyboard alone is enough for the storyboard check.
 	board := sabr + `,"storyboards":{"playerStoryboardSpecRenderer":{"spec":"https://i.ytimg.com/sb/x/storyboard3_L$L/$N.jpg|48#27#100#10#10#0#default#rs$x"}}`
 	r = Replays{Reader: fakeYouTubeWith(t, nil, "OK", board)}
-	if v, err := r.Look(context.Background(), CanaryKey); err != nil || v.Storyboard == "" || v.Duration != 200 {
+	if v, err := r.Look(context.Background(), sampleVideo); err != nil || v.Storyboard == "" || v.Duration != 200 {
 		t.Fatal(v, err)
 	}
 }
@@ -104,7 +107,7 @@ func TestHeatmapUnreadPageIsAFailure(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 	r := Replays{Reader: &youtube.Reader{Base: srv.URL, HTTP: srv.Client()}}
-	if _, _, ok, err := r.Heatmap(context.Background(), CanaryKey); ok || youtube.ReasonOf(err) != youtube.Network {
+	if _, _, ok, err := r.Heatmap(context.Background(), sampleVideo); ok || youtube.ReasonOf(err) != youtube.Network {
 		t.Fatal(ok, err)
 	}
 }
@@ -130,12 +133,12 @@ func TestHeatmapKeepsThePageOnABotCheck(t *testing.T) {
 		return &youtube.Reader{Base: srv.URL, HTTP: srv.Client()}
 	}
 	r := Replays{Reader: serve([]float64{1, 0.2, 0.3, 0.9, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1})}
-	p, d, ok, err := r.Heatmap(context.Background(), CanaryKey)
+	p, d, ok, err := r.Heatmap(context.Background(), sampleVideo)
 	if err != nil || !ok || p != 60 || d != 200 {
 		t.Fatal(p, d, ok, err)
 	}
 	r = Replays{Reader: serve(nil)}
-	if _, _, _, err := r.Heatmap(context.Background(), CanaryKey); youtube.ReasonOf(err) != youtube.BotCheck {
+	if _, _, _, err := r.Heatmap(context.Background(), sampleVideo); youtube.ReasonOf(err) != youtube.BotCheck {
 		t.Fatalf("no graph must stay a bot check: %v", err)
 	}
 }

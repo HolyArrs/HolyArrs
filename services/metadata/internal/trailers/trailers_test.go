@@ -98,11 +98,7 @@ func TestRefreshMarksBrokenAndPromotes(t *testing.T) {
 	}))
 	defer yt.Close()
 	now := time.Date(2026, 10, 19, 3, 0, 0, 0, time.UTC)
-	canary := errors.New("canary lookup failed")
-	updates := 0
-	s := open(t, Options{Fetcher: &fakeTMDB{}, OEmbedURL: yt.URL, Pause: -1, Now: func() time.Time { return now },
-		Canary: func(context.Context) (string, error) { return "2026.08.19", canary },
-		Update: func(context.Context) (string, error) { updates++; return "2026.08.19", nil }})
+	s := open(t, Options{Fetcher: &fakeTMDB{}, OEmbedURL: yt.URL, Pause: -1, Now: func() time.Time { return now }})
 	ctx := context.Background()
 	if p, _ := s.Pick(ctx, "movie", 11, "de", "tester"); p.Key != "deTrailer01" {
 		t.Fatal(p)
@@ -115,16 +111,15 @@ func TestRefreshMarksBrokenAndPromotes(t *testing.T) {
 		t.Fatalf("promoted %+v %v", p, err)
 	}
 	st := s.Stats()
-	if st.Checked != 2 || st.Broken != 1 || st.Replaced != 1 || st.CanaryOK || st.CanaryError == "" || st.LastRun == "" || updates != 1 || st.Titles != 1 {
-		t.Fatalf("stats %+v updates %d", st, updates)
+	if st.Checked != 2 || st.Broken != 1 || st.Replaced != 1 || st.LastRun == "" || st.Titles != 1 {
+		t.Fatalf("stats %+v", st)
 	}
-	// A second run the same day re-checks nothing and does not update again.
-	canary = nil
+	// A second run the same day re-checks nothing.
 	if err := s.Refresh(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if asked["enTrailer01"] != 1 || updates != 1 || !s.Stats().CanaryOK || s.Stats().YTDLPVersion != "2026.08.19" {
-		t.Fatalf("second run %v %d %+v", asked, updates, s.Stats())
+	if asked["enTrailer01"] != 1 {
+		t.Fatalf("second run %v %+v", asked, s.Stats())
 	}
 	// An unknown answer (YouTube down) keeps the key.
 	now = now.Add(25 * time.Hour)
@@ -134,53 +129,6 @@ func TestRefreshMarksBrokenAndPromotes(t *testing.T) {
 	}
 	if p, _ := s.Pick(ctx, "movie", 11, "de", "tester"); p.Key != "enTrailer01" {
 		t.Fatal("kept on unknown")
-	}
-}
-
-func TestCanaryBlockedIsInformational(t *testing.T) {
-	yt := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`{}`)) }))
-	defer yt.Close()
-	now := time.Date(2026, 10, 19, 3, 0, 0, 0, time.UTC)
-	s := open(t, Options{Fetcher: &fakeTMDB{}, OEmbedURL: yt.URL, Pause: -1, Now: func() time.Time { return now },
-		Canary: func(context.Context) (string, error) { return "2026.08.19", ErrBotCheck },
-		Latest: func(context.Context) (string, time.Time, error) {
-			return "2026.09.30", time.Date(2026, 9, 30, 12, 0, 0, 0, time.UTC), nil
-		}})
-	ctx := context.Background()
-	s.Pick(ctx, "movie", 11, "de", "tester")
-	if err := s.Refresh(ctx); err != nil {
-		t.Fatal(err)
-	}
-	st := s.Stats()
-	if st.CanaryState != CanaryBlocked || st.CanaryOK || st.Broken != 0 || st.Checked != 1 || st.ChecksToday != 1 {
-		t.Fatalf("blocked %+v", st)
-	}
-	if p, _ := s.Pick(ctx, "movie", 11, "de", "tester"); p.Key != "deTrailer01" || p.Status != StatusOK {
-		t.Fatalf("key kept %+v", p)
-	}
-	if st.YTDLPLatest != "2026.09.30" || st.YTDLPBehindDays != 42 {
-		t.Fatalf("behind %+v", st)
-	}
-}
-
-func TestBlockedCanaryStaysQuietForAWeek(t *testing.T) {
-	now := time.Date(2026, 10, 19, 3, 0, 0, 0, time.UTC)
-	runs := 0
-	s := open(t, Options{Fetcher: &fakeTMDB{}, Pause: -1, Now: func() time.Time { return now },
-		Canary: func(context.Context) (string, error) { runs++; return "2026.08.19", ErrBotCheck }})
-	ctx := context.Background()
-	s.Daily(ctx)
-	now = now.Add(24 * time.Hour)
-	s.Daily(ctx)
-	now = now.Add(5 * 24 * time.Hour)
-	s.Daily(ctx)
-	if runs != 1 || s.Stats().CanaryState != CanaryBlocked {
-		t.Fatalf("runs %d %+v", runs, s.Stats())
-	}
-	now = now.Add(24 * time.Hour)
-	s.Daily(ctx)
-	if runs != 2 {
-		t.Fatalf("retry after a week: runs %d", runs)
 	}
 }
 
@@ -211,33 +159,6 @@ func TestChecksCappedAndBackOffOn429(t *testing.T) {
 	did, limited, _ := s.CheckNext(ctx)
 	if !did || !limited || s.Stats().Broken != 0 || s.Stats().ChecksToday != 0 {
 		t.Fatalf("429 %v %v %+v", did, limited, s.Stats())
-	}
-}
-
-func TestLatestUsesETag(t *testing.T) {
-	calls := 0
-	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		if r.Header.Get("If-None-Match") == `"v1"` {
-			w.WriteHeader(304)
-			return
-		}
-		w.Header().Set("ETag", `"v1"`)
-		w.Write([]byte(`{"tag_name":"2026.10.10","published_at":"2026-10-10T08:00:00Z"}`))
-	}))
-	defer gh.Close()
-	y := &YTDLP{LatestURL: gh.URL}
-	for i := 0; i < 2; i++ {
-		tag, at, err := y.Latest(context.Background())
-		if err != nil || tag != "2026.10.10" || at.Day() != 10 {
-			t.Fatalf("run %d %q %v %v", i, tag, at, err)
-		}
-	}
-	if calls != 2 {
-		t.Fatal(calls)
-	}
-	if behind("2026.08.19", "2026.08.19", "2026-08-19T00:00:00Z") != 0 || behind("2026.08.19", "2026.10.10", "2026-10-10T08:00:00Z") != 52 {
-		t.Fatal("behind")
 	}
 }
 
