@@ -1,0 +1,1 @@
+export{t as component,wa as universal}from"../chunks/C_FuRc5h.js";

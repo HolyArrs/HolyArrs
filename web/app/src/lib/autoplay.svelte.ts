@@ -230,31 +230,33 @@ export function watchArtistVideo(el: Element, mbid: string): () => void {
 	return mbid ? watchId(el, `artist:${mbid}`) : () => {};
 }
 
+// The one observer's callback lives out here: made inside watchId it shared
+// that call's scope with the clean-up below, which holds the first card ever
+// watched, so the observer kept that card's whole page alive for the session.
+function onSeen(entries: IntersectionObserverEntry[]) {
+	for (const e of entries) {
+		const t = viewTimers.get(e.target);
+		if (e.isIntersecting && t === undefined) {
+			const target = e.target;
+			viewTimers.set(
+				target,
+				setTimeout(() => {
+					const tid = viewIds.get(target);
+					if (!tid || streams.has(tid)) return;
+					void loadUISettings().then(() => autoplayHere() && batch.add(tid));
+				}, IN_VIEW_MS)
+			);
+		} else if (!e.isIntersecting && t !== undefined) {
+			clearTimeout(t);
+			viewTimers.delete(e.target);
+		}
+	}
+}
+
 function watchId(el: Element, id: string): () => void {
 	if (typeof IntersectionObserver === 'undefined' || !finePointer()) return () => {};
-	seen ??= new IntersectionObserver(
-		(entries) => {
-			for (const e of entries) {
-				const t = viewTimers.get(e.target);
-				if (e.isIntersecting && t === undefined) {
-					const target = e.target;
-					viewTimers.set(
-						target,
-						setTimeout(() => {
-							const tid = viewIds.get(target);
-							if (!tid || streams.has(tid)) return;
-							void loadUISettings().then(() => autoplayHere() && batch.add(tid));
-						}, IN_VIEW_MS)
-					);
-				} else if (!e.isIntersecting && t !== undefined) {
-					clearTimeout(t);
-					viewTimers.delete(e.target);
-				}
-			}
-		},
-		// Rows just below the screen count too: a cold lookup takes 1-3 s.
-		{ rootMargin: '300px 0px 600px 0px', threshold: 0 }
-	);
+	// Rows just below the screen count too: a cold lookup takes 1-3 s.
+	seen ??= new IntersectionObserver(onSeen, { rootMargin: '300px 0px 600px 0px', threshold: 0 });
 	viewIds.set(el, id);
 	seen.observe(el);
 	return () => {
