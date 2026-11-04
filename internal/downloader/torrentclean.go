@@ -96,6 +96,13 @@ func bstr(s []byte) []byte { return append(strconv.AppendInt(nil, int64(len(s)),
 // name. Other names are kept, as for magnet trackers: qBittorrent looks
 // them up itself, so they cannot be checked here in a way that lasts.
 func homeHost(host string) bool {
+	// A space, control byte or NUL is never in a real host, and libtorrent
+	// cuts a name at a NUL ("localhost\x00x" is localhost to it).
+	if strings.IndexFunc(host, func(r rune) bool { return r < 0x21 || r == 0x7f }) >= 0 {
+		return true
+	}
+	// Name lookups read the full-width and ideographic dots as dots.
+	host = strings.NewReplacer("。", ".", "．", ".", "｡", ".").Replace(host)
 	host = strings.TrimSuffix(strings.ToLower(strings.Trim(host, "[]")), ".")
 	if host == "" || metadataName(host) {
 		return true

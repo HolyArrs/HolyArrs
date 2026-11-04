@@ -1,13 +1,31 @@
 // Setup for every AI app, the same words as the website guides
-// (holyarrs.coderluii.dev/docs/ai/<slug>/). Copied from the site repo's
+// (holyarrs.coderluii.dev/docs/ai/). Copied from the site repo's
 // dev/ai-clients.json; keep the two in step. {url} and {key} are filled in.
 
-export type AppStep = { text: string; code?: string };
+export type AppStep = {
+  text: string;
+  code?: string;
+  /** UI labels in the text that show in bold. */
+  bold?: string[];
+  /** A link shown under the step. */
+  link?: { text: string; href: string };
+  /** The app's own one-click install button (sign-in only). */
+  deeplink?: "cursor" | "vscode";
+};
+
+export type AppTable = {
+  group: "chat" | "agents" | "computer";
+  order: number;
+  /** The row name when it differs from the app name. */
+  label?: string;
+  /** Where the setting is; `code` in backticks, <address> is the AI address. */
+  where: string;
+  deeplink?: "cursor" | "vscode";
+};
 
 export type AppData = {
   slug: string;
   name: string;
-  family: string;
   /** Connects from the maker's servers: needs a public https address. */
   cloud: boolean;
   needs: string;
@@ -17,8 +35,14 @@ export type AppData = {
   key: AppStep[];
   check: string;
   note: string;
-  /** live: tried with HolyArrs; docs or second-hand: not yet. */
-  source: string;
+  /** Its guide page under /docs/ai/, if it has one. */
+  page: string | null;
+  /** Its row in the Where to add HolyArrs table, if it has one. */
+  table?: AppTable;
+  /** The day it was tested with HolyArrs (YYYY-MM-DD), or null. */
+  tested: string | null;
+  /** An agent that can set itself up from the agent guide. */
+  agent?: boolean;
   /** The app does not register itself: Settings makes it a client ID. */
   clientIdHelper?: boolean;
 };
@@ -27,17 +51,17 @@ export const APP_DATA: AppData[] = [
   {
     slug: "claude-code",
     name: "Claude Code",
-    family: "claude",
     cloud: false,
     needs:
-      "Any Claude Code install; VS Code and JetBrains extensions share it.",
+      "Any Claude Code install. The VS Code and JetBrains extensions share it.",
     signin: [
       {
         text: "Run this in a terminal.",
         code: "claude mcp add --transport http --scope user holyarrs {url}",
       },
       {
-        text: "Start Claude Code, run /mcp, pick holyarrs, choose Authenticate.",
+        text: "Start claude, run /mcp, pick holyarrs and choose Authenticate. If no browser opens, run claude mcp login holyarrs in a terminal.",
+        bold: ["Authenticate"],
       },
       { text: "HolyArrs opens in your browser. Press Allow." },
     ],
@@ -51,102 +75,138 @@ export const APP_DATA: AppData[] = [
       },
     ],
     check: "claude mcp list shows holyarrs as Connected.",
-    note: "The key sits in plain text in ~/.claude.json.",
-    source: "live",
+    note: 'Claude Code only sends a sign-in to https or localhost addresses. On plain http it stops with "Refusing to send credentials to non-https token endpoint". If you see that, use an AI key. The key sits in plain text in ~/.claude.json.',
+    page: "claude-code",
+    table: { group: "agents", order: 1, where: "`claude mcp add`" },
+    tested: "2026-11-03",
+    agent: true,
   },
   {
     slug: "claude-app",
     name: "Claude app",
-    family: "claude",
     cloud: true,
-    needs: "Public https HolyArrs; the Free plan allows one custom connector.",
+    needs:
+      "HolyArrs at a public https address. The Free plan allows one custom connector.",
     signin: [
       {
-        text: "In Claude on web or desktop, open Customize › Connectors, press + Add › Add custom connector.",
+        text: "In Claude on the web or desktop, open Customize › Connectors, press + and pick Add custom connector.",
+        bold: ["Customize › Connectors", "+", "Add custom connector"],
+        link: {
+          text: "Open Connectors in Claude",
+          href: "https://claude.ai/customize/connectors",
+        },
       },
       {
-        text: "Name it HolyArrs, paste the address and press Continue.",
+        text: "Name it HolyArrs, paste the address and press Continue. Check what Claude found and press Continue again. Keep Sign in now and Use Claude's published identity, then press Add.",
         code: "{url}",
-      },
-      { text: "Check the details Claude found and press Continue." },
-      {
-        text: "Keep Sign in now and Use Claude's published identity, then press Add.",
+        bold: [
+          "Continue",
+          "Sign in now",
+          "Use Claude's published identity",
+          "Add",
+        ],
       },
       { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [],
     check: "HolyArrs shows as connected under Customize › Connectors.",
-    note: "Add it on web or desktop; the phone app and Cowork can then use it too.",
-    source: "live",
+    note: "Add it on the web or desktop, and the phone app and Cowork can use it too.",
+    page: "claude-app",
+    table: {
+      group: "chat",
+      order: 1,
+      where: "Customize › Connectors › Add custom connector",
+    },
+    tested: "2026-11-03",
   },
   {
     slug: "claude-desktop-bridge",
     name: "Claude Desktop (home)",
-    family: "claude",
     cloud: false,
     needs: "Claude Desktop and Node.js, so npx runs.",
     signin: [],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Claude Desktop (home) and press Make a key.",
+        text: "In HolyArrs, open Settings › AI connections, pick Claude Desktop at home and press Make a key.",
       },
       {
-        text: "In Claude Desktop, open Settings › Developer and press Edit config.",
+        text: "From the Claude menu (Windows: the app menu), open Settings… › Developer and press Edit Config. Add the holyarrs entry under mcpServers, beside any others.",
+        code: '{\n  "mcpServers": {\n    "holyarrs": {\n      "command": "npx",\n      "args": [\n        "-y",\n        "mcp-remote",\n        "{url}",\n        "--transport",\n        "http-only",\n        "--allow-http",\n        "--header",\n        "Authorization:${AUTH_HEADER}"\n      ],\n      "env": {\n        "AUTH_HEADER": "Bearer {key}"\n      }\n    }\n  }\n}',
+        bold: ["Settings… › Developer", "Edit Config"],
       },
       {
-        text: "Add the holyarrs entry under mcpServers in claude_desktop_config.json.",
-        code: '{\n  "mcpServers": {\n    "holyarrs": {\n      "command": "npx",\n      "args": [\n        "-y",\n        "mcp-remote@latest",\n        "{url}",\n        "--transport",\n        "http-only",\n        "--allow-http",\n        "--header",\n        "Authorization:${AUTH_HEADER}"\n      ],\n      "env": {\n        "AUTH_HEADER": "Bearer {key}"\n      }\n    }\n  }\n}',
-      },
-      {
-        text: "Quit Claude Desktop from the tray or menu bar, then reopen it.",
+        text: "Fully quit Claude Desktop from the tray or menu bar, then open it again.",
       },
     ],
-    check:
-      "In a chat, press + › Connectors › Manage connectors; holyarrs is listed.",
-    note: "Keep Authorization:${AUTH_HEADER} without a space; Windows splits arguments at spaces.",
-    source: "docs",
+    check: "In a chat, press + › Connectors and look for HolyArrs.",
+    note: "Keep Authorization:${AUTH_HEADER} without a space, because Windows splits arguments at spaces. Logs: %APPDATA%\\Claude\\logs\\mcp*.log (macOS: ~/Library/Logs/Claude/). mcp-remote is not pinned to a tested version yet.",
+    page: "claude-desktop-home",
+    table: {
+      group: "computer",
+      order: 1,
+      label: "Claude Desktop at home",
+      where: "Settings › Developer › Edit Config (mcp-remote bridge)",
+    },
+    tested: null,
+    agent: true,
   },
   {
     slug: "chatgpt",
     name: "ChatGPT",
-    family: "chatgpt-codex",
     cloud: true,
     needs:
-      "Check your ChatGPT plan first: not every plan can add a custom MCP server.",
+      "HolyArrs at a public https address, and your plan or workspace has to allow custom MCP servers.",
     signin: [
       {
-        text: "On chatgpt.com, open Plugins, press + and choose Add custom MCP server.",
+        text: "On chatgpt.com, open Plugins, press + and pick Add custom MCP server.",
+        bold: ["Plugins", "+", "Add custom MCP server"],
+        link: {
+          text: "Open Plugins in ChatGPT",
+          href: "https://chatgpt.com/plugins",
+        },
       },
       {
-        text: "Name it HolyArrs and paste the address into Server URL.",
+        text: "Name it HolyArrs. Under Connection, choose Server URL and paste the address.",
         code: "{url}",
+        bold: ["Server URL"],
       },
       {
-        text: "Choose OAuth, leave client ID and secret empty, accept the warning, press Create as a plugin.",
+        text: "Under Authentication, pick OAuth and leave client ID and secret empty, because HolyArrs registers ChatGPT on its own. Accept the warning and press Create as a plugin.",
+        bold: ["OAuth", "Create as a plugin"],
       },
       {
         text: "Install the HolyArrs plugin. HolyArrs opens in your browser. Press Allow.",
       },
     ],
     key: [],
-    check: "Type @HolyArrs in a new chat and ask a question.",
-    note: "Any login in front of HolyArrs, such as Cloudflare Access, blocks ChatGPT.",
-    source: "docs",
+    check: "Type @, pick HolyArrs and ask a question.",
+    note: "Any login in front of HolyArrs, such as Cloudflare Access, blocks ChatGPT. After a HolyArrs update, open the plugin and press Refresh. The Tunnel option (Secure MCP Tunnel) could reach a home address, but it isn't tested with HolyArrs yet.",
+    page: "chatgpt",
+    table: {
+      group: "chat",
+      order: 2,
+      where: "Plugins › + › Add custom MCP server",
+    },
+    tested: null,
   },
   {
     slug: "chatgpt-desktop",
     name: "ChatGPT desktop app",
-    family: "chatgpt-codex",
     cloud: false,
-    needs: "New ChatGPT desktop app (July 2026 or later), not ChatGPT Classic.",
+    needs: "The new ChatGPT desktop app, not ChatGPT Classic.",
     signin: [
-      { text: "Open Settings › MCP servers › Add server." },
+      {
+        text: "Open Settings › MCP servers › Add server.",
+        bold: ["Settings › MCP servers › Add server"],
+      },
       {
         text: "Name it holyarrs, choose Streamable HTTP, paste the address and save.",
         code: "{url}",
+        bold: ["Streamable HTTP"],
       },
       {
         text: "Restart the app. In MCP servers, press Authenticate next to holyarrs.",
+        bold: ["Authenticate"],
       },
       { text: "HolyArrs opens in your browser. Press Allow." },
     ],
@@ -161,13 +221,14 @@ export const APP_DATA: AppData[] = [
       { text: "Restart the ChatGPT app." },
     ],
     check: "Settings › MCP servers lists holyarrs.",
-    note: "Shares ~/.codex/config.toml with Codex; a server added in either shows in both.",
-    source: "docs",
+    note: "It shares ~/.codex/config.toml with Codex, so a server added in either one shows in both.",
+    page: "codex",
+    tested: null,
+    agent: true,
   },
   {
     slug: "codex-cli",
     name: "Codex CLI",
-    family: "chatgpt-codex",
     cloud: false,
     needs: "Current Codex, signed in with ChatGPT or an OpenAI API key.",
     signin: [
@@ -175,36 +236,55 @@ export const APP_DATA: AppData[] = [
         text: "Run this in a terminal.",
         code: "codex mcp add holyarrs --url {url}",
       },
+      {
+        text: "Sign in. On a computer without a browser, add --no-browser and paste the redirect URL back.",
+        code: "codex mcp login holyarrs",
+      },
       { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [
       {
-        text: "In HolyArrs, open Settings › AI connections, pick Codex CLI and press Make a key.",
+        text: "In HolyArrs, open Settings › AI connections, pick Codex and press Make a key.",
+      },
+      {
+        text: "Save the key in an environment variable named HOLYARRS_AI_KEY.",
       },
       {
         text: "Add this block to ~/.codex/config.toml (Windows: %USERPROFILE%\\.codex\\config.toml).",
-        code: '[mcp_servers.holyarrs]\nurl = "{url}"\nhttp_headers = { "Authorization" = "Bearer {key}" }',
+        code: '[mcp_servers.holyarrs]\nurl = "{url}"\nbearer_token_env_var = "HOLYARRS_AI_KEY"',
       },
       { text: "Restart Codex." },
     ],
-    check: "Run codex mcp list; holyarrs is listed.",
+    check: "Run codex mcp list and look for holyarrs.",
     note: "If no browser opens, run codex mcp login holyarrs.",
-    source: "live",
+    page: "codex",
+    table: {
+      group: "agents",
+      order: 2,
+      label: "Codex",
+      where: "`codex mcp add` (CLI, IDE extension and ChatGPT desktop)",
+    },
+    tested: "2026-11-03",
+    agent: true,
   },
   {
     slug: "codex-ide",
     name: "Codex IDE extension",
-    family: "chatgpt-codex",
     cloud: false,
     needs: "Current Codex IDE extension, signed in.",
     signin: [
-      { text: "Open the gear menu, then MCP servers › Add server." },
+      {
+        text: "Open the gear menu, then MCP servers › Add server.",
+        bold: ["MCP servers › Add server"],
+      },
       {
         text: "Name it holyarrs, choose Streamable HTTP, paste the address and save.",
         code: "{url}",
+        bold: ["Streamable HTTP"],
       },
       {
         text: "Press Restart extension. In MCP servers, press Authenticate next to holyarrs.",
+        bold: ["Restart extension", "Authenticate"],
       },
       { text: "HolyArrs opens in your browser. Press Allow." },
     ],
@@ -218,14 +298,15 @@ export const APP_DATA: AppData[] = [
       },
       { text: "Press Restart extension." },
     ],
-    check: "Type /mcp in Codex; holyarrs is listed.",
+    check: "Type /mcp in Codex and look for holyarrs.",
     note: "Codex inside WSL reads its own ~/.codex/config.toml.",
-    source: "docs",
+    page: "codex",
+    tested: null,
+    agent: true,
   },
   {
     slug: "gemini-cli",
     name: "Gemini CLI",
-    family: "gemini",
     cloud: false,
     needs:
       "Paid Gemini API key, Vertex AI, or Code Assist Standard/Enterprise license.",
@@ -251,13 +332,20 @@ export const APP_DATA: AppData[] = [
       { text: "Start gemini and run /mcp list.", code: "/mcp list" },
     ],
     check: "gemini mcp list shows holyarrs as connected.",
-    note: "Personal Google accounts can no longer sign in to Gemini CLI; Google points them to Antigravity.",
-    source: "docs",
+    note: "Personal Google accounts can no longer sign in to Gemini CLI. Google points them to Antigravity instead.",
+    page: null,
+    table: {
+      group: "agents",
+      order: 5,
+      where:
+        "`gemini mcp add --scope user --transport http holyarrs <address>`",
+    },
+    tested: "2026-11-03",
+    agent: true,
   },
   {
     slug: "antigravity",
     name: "Antigravity",
-    family: "gemini",
     cloud: false,
     needs: "Antigravity editor, app or CLI.",
     signin: [
@@ -292,12 +380,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Run /mcp in the Antigravity CLI; holyarrs shows connected.",
     note: "Google does not say plain http works; if refused, use https and sign-in.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "gemini-code-assist",
     name: "Gemini Code Assist",
-    family: "gemini",
     cloud: false,
     needs: "Standard or Enterprise license; extension in VS Code.",
     signin: [],
@@ -313,50 +401,71 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Type /mcp in Code Assist chat; holyarrs lists its tools.",
     note: "JetBrains IDEs need the npx mcp-remote bridge, which needs Node.js.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "gemini-app",
     name: "Gemini app",
-    family: "gemini",
     cloud: true,
-    needs: "US, 18+, personal Google account, English, Gemini chat history on.",
+    needs:
+      "US, 18+, personal Google account, Gemini in English, Gemini chat history on, on a computer browser.",
     signin: [
-      { text: "In Gemini, open Connected Apps and press + Custom." },
       {
-        text: "Paste the address. Under Additional settings, press Copy redirect URI.",
+        text: "On gemini.google.com, open Settings › Connected Apps (or Personal Intelligence › Connected Apps). Under Custom apps, press Add a custom app (it may show as + Custom) and paste the address.",
         code: "{url}",
+        bold: [
+          "Settings › Connected Apps",
+          "Personal Intelligence › Connected Apps",
+          "Add a custom app",
+          "+ Custom",
+        ],
+      },
+      {
+        text: "Under Show more next to Advanced features (or Additional settings), copy the redirect URI.",
+        bold: ["Show more", "Advanced features", "Additional settings"],
       },
       {
         text: "In HolyArrs, open Settings › AI connections › Gemini app, paste it and press Make client ID.",
       },
       {
-        text: "Paste that Client ID into Gemini, leave Client secret empty, press Next.",
+        text: "Paste the client ID into Gemini, leave the client secret empty and press Next. HolyArrs opens in your browser. Press Allow.",
+        bold: ["Next"],
       },
-      { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [],
     check: "In a chat, type @, pick HolyArrs and ask a question.",
     note: "Gemini does not register itself, so it needs this client ID.",
-    source: "live",
+    page: "gemini-app",
+    table: {
+      group: "chat",
+      order: 3,
+      where: "Settings › Connected Apps › Add a custom app (needs a client ID)",
+    },
+    tested: "2026-11-03",
     clientIdHelper: true,
   },
   {
     slug: "vs-code-copilot",
     name: "VS Code with Copilot",
-    family: "copilot",
     cloud: false,
     needs:
-      "GitHub Copilot signed in; Business or Enterprise admins can block MCP servers.",
+      "GitHub Copilot signed in. Business or Enterprise admins can block MCP servers.",
     signin: [
-      { text: "In VS Code, run MCP: Add Server from the Command Palette." },
+      {
+        text: "In VS Code, run Chat: Open Customizations › MCP Servers › Add Server, or MCP: Add Server from the Command Palette.",
+        bold: [
+          "Chat: Open Customizations › MCP Servers › Add Server",
+          "MCP: Add Server",
+        ],
+      },
       {
         text: "Pick HTTP, paste this address and name it holyarrs.",
         code: "{url}",
       },
       { text: "Choose Global, then Copilot Global." },
       {
-        text: "Run MCP: List Servers, pick holyarrs, choose Start. HolyArrs opens in your browser. Press Allow.",
+        text: "Run MCP: List Servers, pick holyarrs and choose Start. HolyArrs opens in your browser. Press Allow.",
       },
     ],
     key: [
@@ -369,14 +478,21 @@ export const APP_DATA: AppData[] = [
         code: '{\n  "mcpServers": {\n    "holyarrs": {\n      "type": "http",\n      "url": "{url}",\n      "headers": {\n        "Authorization": "Bearer {key}"\n      },\n      "tools": ["*"]\n    }\n  }\n}',
       },
     ],
-    check: "Run MCP: List Servers; holyarrs shows as running.",
-    note: "~/.copilot/mcp-config.json is shared with the Copilot CLI.",
-    source: "docs",
+    check: "Run MCP: List Servers and check that holyarrs is running.",
+    note: "~/.copilot/mcp-config.json is shared with the Copilot CLI. VS Code's own mcp.json uses servers; the Copilot file uses mcpServers. Don't copy between them.",
+    page: null,
+    table: {
+      group: "agents",
+      order: 4,
+      where: "Chat: Open Customizations › MCP Servers › Add Server",
+      deeplink: "vscode",
+    },
+    tested: null,
+    agent: true,
   },
   {
     slug: "copilot-cli",
     name: "GitHub Copilot CLI",
-    family: "copilot",
     cloud: false,
     needs: "A GitHub Copilot plan.",
     signin: [],
@@ -395,12 +511,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Run copilot mcp get holyarrs, or type /mcp show holyarrs.",
     note: "Browser sign-in for remote servers is undocumented; use a key.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "copilot-cloud-agent",
     name: "GitHub Copilot cloud agent",
-    family: "copilot",
     cloud: true,
     needs:
       "Copilot cloud agent enabled on the repository; HolyArrs on public https.",
@@ -420,12 +536,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Give it a task asking what's downloading in HolyArrs.",
     note: "It runs tools without asking, so ask_for_title is left out.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "m365-copilot",
     name: "Microsoft 365 Copilot",
-    family: "copilot",
     cloud: true,
     needs:
       "Work account, Agents Toolkit 6.12+, admin allowing custom app upload.",
@@ -447,12 +563,12 @@ export const APP_DATA: AppData[] = [
     key: [],
     check: "Ask the agent what's downloading; it answers from HolyArrs.",
     note: "Unconfirmed whether it accepts sign-in without refresh tokens or client secrets.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "copilot-studio",
     name: "Copilot Studio",
-    family: "copilot",
     cloud: true,
     needs: "Copilot Studio licence and environment; HolyArrs on public https.",
     signin: [
@@ -488,15 +604,15 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Ask the agent what's downloading; it answers from HolyArrs.",
     note: "OAuth fit is unconfirmed (no refresh token); the key way avoids it.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "grok",
     name: "Grok",
-    family: "chat-apps",
     cloud: true,
     needs:
-      "Public https HolyArrs; on Business and Enterprise, an admin sets up connectors first.",
+      "HolyArrs at a public https address. On Business and Enterprise, an admin sets up connectors first.",
     signin: [
       {
         text: "Open grok.com/connectors, press New Connector and pick Custom.",
@@ -506,18 +622,31 @@ export const APP_DATA: AppData[] = [
     ],
     key: [],
     check: "The connector shows as connected and lists its tools.",
-    note: "Grok's help names no sign-in types, so browser sign-in is unconfirmed.",
-    source: "live",
+    note: "Grok rejects home and private addresses (10.x, 192.168.x, 127.0.0.1). Grok's help names no sign-in types, so browser sign-in is unconfirmed.",
+    page: null,
+    table: {
+      group: "chat",
+      order: 4,
+      where: "grok.com/connectors › New Connector › Custom",
+    },
+    tested: "2026-11-03",
   },
   {
     slug: "perplexity",
     name: "Perplexity",
-    family: "chat-apps",
     cloud: true,
-    needs: "Pro, Max or Enterprise plan, and public https HolyArrs.",
+    needs:
+      "HolyArrs at a public https address, and your plan has to allow custom connectors.",
     signin: [
       {
-        text: "Open Plugins, press Add custom, then Add MCP connector, then Remote.",
+        text: "Open Plugins (or Customize › Connectors), press Add custom, then Add MCP connector, then Remote.",
+        bold: [
+          "Plugins",
+          "Customize › Connectors",
+          "Add custom",
+          "Add MCP connector",
+          "Remote",
+        ],
       },
       {
         text: "Set Name to HolyArrs and paste the address under MCP server URL.",
@@ -532,14 +661,19 @@ export const APP_DATA: AppData[] = [
       },
     ],
     key: [],
-    check: "Switch HolyArrs on under Sources; its card lists the tools.",
-    note: "On a client_secret error, set Authentication to API Key and paste an AI key (unconfirmed).",
-    source: "live",
+    check: "Switch HolyArrs on under Sources. Its card lists the tools.",
+    note: "On a client_secret error, set Authentication to API Key and paste an AI key (unconfirmed). Network access has a Cloudflare Access option for HolyArrs behind Access.",
+    page: null,
+    table: {
+      group: "chat",
+      order: 5,
+      where: "Plugins › Add custom › Add MCP connector › Remote",
+    },
+    tested: "2026-11-03",
   },
   {
     slug: "perplexity-mac-helper",
     name: "Perplexity Mac helper",
-    family: "chat-apps",
     cloud: false,
     needs: "Mac App Store version of Perplexity, and Node.js.",
     signin: [],
@@ -558,12 +692,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "The server status reads Running.",
     note: "Keep the command on one line.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "le-chat",
     name: "Mistral Le Chat",
-    family: "chat-apps",
     cloud: true,
     needs: "Public https HolyArrs. On team plans, an admin adds connectors.",
     signin: [
@@ -580,12 +714,12 @@ export const APP_DATA: AppData[] = [
     check:
       "Under My Connectors, the HolyArrs card lists its tools in Functions.",
     note: "Mistral's docs now file connectors under Vibe Work, so labels may differ.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "manus",
     name: "Manus",
-    family: "chat-apps",
     cloud: true,
     needs: "Public https HolyArrs.",
     signin: [],
@@ -604,12 +738,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Test connection lists the HolyArrs tools.",
     note: "Older help puts this under Settings › Integrations › Custom MCP Servers › Add Server.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "genspark",
     name: "Genspark",
-    family: "chat-apps",
     cloud: true,
     needs:
       "Public https HolyArrs. Work accounts follow the admin's custom MCP policy.",
@@ -624,12 +758,12 @@ export const APP_DATA: AppData[] = [
     key: [],
     check: "The connector shows as connected and lists its tools.",
     note: "Whether Genspark can sign in or send a key is unconfirmed.",
-    source: "second-hand",
+    page: null,
+    tested: null,
   },
   {
     slug: "huggingchat",
     name: "HuggingChat",
-    family: "chat-apps",
     cloud: true,
     needs: "Public https HolyArrs, and a model that supports tools.",
     signin: [
@@ -642,12 +776,12 @@ export const APP_DATA: AppData[] = [
     key: [],
     check: "Health Check passes; switch HolyArrs on in MCP Servers.",
     note: "No key field and sign-in is unconfirmed, so this may not work yet.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "qwen-desktop",
     name: "Qwen Chat desktop app",
-    family: "chat-apps",
     cloud: false,
     needs: "Qwen Chat desktop app on Mac or Windows, and Node.js 20+.",
     signin: [],
@@ -663,42 +797,56 @@ export const APP_DATA: AppData[] = [
     ],
     check: "A green mark shows next to holyarrs.",
     note: "Quick Add has no key field; use the JSON form.",
-    source: "second-hand",
+    page: null,
+    tested: null,
   },
   {
     slug: "cursor",
     name: "Cursor",
-    family: "code-editors",
     cloud: false,
     needs: "",
     signin: [
-      { text: "Open ~/.cursor/mcp.json." },
       {
-        text: "Add this entry and save:",
+        text: "Press Add to Cursor. Or open ~/.cursor/mcp.json and add this entry beside any others.",
         code: '{\n  "mcpServers": {\n    "holyarrs": {\n      "url": "{url}"\n    }\n  }\n}',
+        bold: ["Add to Cursor"],
+        deeplink: "cursor",
       },
       {
-        text: "Under Customize, click Needs login next to holyarrs. HolyArrs opens in your browser. Press Allow.",
+        text: "In Cursor, find holyarrs under Customize (older builds: Settings › Tools & MCP) and press Needs login (some builds say Needs authentication or Connect).",
+        bold: [
+          "Customize",
+          "Settings › Tools & MCP",
+          "Needs login",
+          "Needs authentication",
+          "Connect",
+        ],
       },
+      { text: "HolyArrs opens in your browser. Press Allow." },
     ],
     key: [
       {
         text: "In HolyArrs, open Settings › AI connections, pick Cursor and press Make a key.",
       },
-      { text: "Open ~/.cursor/mcp.json." },
       {
-        text: "Add this entry and save:",
+        text: "Open ~/.cursor/mcp.json and add this entry beside any others.",
         code: '{\n  "mcpServers": {\n    "holyarrs": {\n      "url": "{url}",\n      "headers": {\n        "Authorization": "Bearer {key}"\n      }\n    }\n  }\n}',
       },
     ],
-    check: "Customize lists holyarrs; errors show in Output › MCP Logs.",
-    note: "The Needs login label is second-hand; Cursor's docs do not name it.",
-    source: "docs",
+    check: "holyarrs shows its tools under Customize.",
+    note: "If Connect does nothing, open the sign-in link from Output › MCP Logs.",
+    page: "cursor",
+    table: {
+      group: "agents",
+      order: 3,
+      where: "Add to Cursor, or `~/.cursor/mcp.json`",
+    },
+    tested: null,
+    agent: true,
   },
   {
     slug: "windsurf",
     name: "Windsurf",
-    family: "code-editors",
     cloud: false,
     needs: "Teams plans need a full seat; an admin allow-list can block it.",
     signin: [
@@ -727,12 +875,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Customize › MCPs lists holyarrs, switched on.",
     note: "Older Windsurf builds read ~/.codeium/windsurf/mcp_config.json instead (second-hand).",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "zed",
     name: "Zed",
-    family: "code-editors",
     cloud: false,
     needs: "",
     signin: [
@@ -757,12 +905,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: 'holyarrs shows a green dot and "Server is active".',
     note: "",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "jetbrains-ai",
     name: "JetBrains AI Assistant",
-    family: "code-editors",
     cloud: false,
     needs:
       "AI Assistant installed; a company admin can block self-added servers.",
@@ -781,12 +929,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "The Status column shows holyarrs; its icon lists the tools.",
     note: "JetBrains documents only url; whether it sends headers is unconfirmed.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "kiro",
     name: "Kiro",
-    family: "code-editors",
     cloud: false,
     needs: "An https HolyArrs address, or Kiro on the HolyArrs computer.",
     signin: [
@@ -805,12 +953,12 @@ export const APP_DATA: AppData[] = [
     key: [],
     check: "Kiro's MCP panel lists holyarrs with its tools.",
     note: "Kiro refuses plain http network addresses, so there is no key way.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "cline",
     name: "Cline",
-    family: "vscode-add-ons",
     cloud: false,
     needs: "",
     signin: [],
@@ -828,12 +976,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "holyarrs shows in Cline's MCP server list without an error.",
     note: 'Keep "type": "streamableHttp"; without it Cline falls back to SSE and fails.',
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "continue",
     name: "Continue",
-    family: "vscode-add-ons",
     cloud: false,
     needs: "",
     signin: [],
@@ -852,12 +1000,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "HolyArrs shows in Continue's MCP list without an error.",
     note: 'Some versions may not send the key header; if HolyArrs answers "sign in", use Cline.',
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "kilo-code",
     name: "Kilo Code",
-    family: "vscode-add-ons",
     cloud: false,
     needs: "",
     signin: [
@@ -879,12 +1027,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "holyarrs shows in Kilo Code's MCP server list without an error.",
     note: 'If Kilo Code tries sign-in on plain http, add "oauth": false to the entry.',
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "opencode",
     name: "OpenCode",
-    family: "terminal-tools",
     cloud: false,
     needs: "",
     signin: [
@@ -907,12 +1055,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "opencode mcp list shows holyarrs and its sign-in state.",
     note: "A project can use its own opencode.json instead.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "warp",
     name: "Warp",
-    family: "terminal-tools",
     cloud: false,
     needs: "",
     signin: [
@@ -941,12 +1089,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "holyarrs is listed under Settings › Agents › MCP servers.",
     note: "Covers local agents only; cloud agents set up separately. Sign-in is per computer.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "amp",
     name: "Amp",
-    family: "terminal-tools",
     cloud: false,
     needs: "",
     signin: [
@@ -965,12 +1113,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "amp mcp doctor shows holyarrs and its state.",
     note: "In a project's .amp/settings.json, run amp mcp approve holyarrs first.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "pi",
     name: "Pi",
-    family: "terminal-tools",
     cloud: false,
     needs: "Pi 0.99.0 or newer.",
     signin: [
@@ -996,12 +1144,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Type /mcp inside Pi; holyarrs is listed.",
     note: "",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "mistral-vibe",
     name: "Mistral Vibe CLI",
-    family: "terminal-tools",
     cloud: false,
     needs: "",
     signin: [
@@ -1024,12 +1172,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "/mcp holyarrs inside Vibe lists the HolyArrs tools.",
     note: "If no browser opens, run /mcp login holyarrs inside Vibe.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "kimi-code",
     name: "Kimi Code CLI",
-    family: "terminal-tools",
     cloud: false,
     needs: "",
     signin: [
@@ -1055,12 +1203,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "/mcp inside Kimi Code shows holyarrs connected.",
     note: "",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "devin",
     name: "Devin",
-    family: "terminal-tools",
     cloud: true,
     needs:
       "Public https HolyArrs without a login wall; Manage MCP Servers permission.",
@@ -1088,28 +1236,37 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Press Test tools; it lists the HolyArrs tools.",
     note: "Access Organization shares one sign-in: everyone acts as whoever pressed Allow.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "open-webui",
     name: "Open WebUI",
-    family: "self-hosted-chat",
     cloud: false,
     needs: "Open WebUI v0.6.31 or newer and an Open WebUI admin account.",
     signin: [
       {
         text: "In Open WebUI, open Admin Panel › Settings › Integrations and press + Add Connection.",
+        bold: ["Admin Panel › Settings › Integrations", "+ Add Connection"],
       },
       {
-        text: "Set Type MCP (Streamable HTTP), Auth OAuth 2.1, Server URL {url}; leave Key empty.",
-        code: "Server URL: {url}",
+        text: "Set Type to MCP (Streamable HTTP) and paste the address as Server URL. Set Auth to OAuth 2.1, press Register Client, then Save.",
+        code: "{url}",
+        bold: [
+          "MCP (Streamable HTTP)",
+          "Server URL",
+          "OAuth 2.1",
+          "Register Client",
+          "Save",
+        ],
       },
       {
-        text: "Give Open WebUI a fixed secret so the sign-in survives restarts.",
+        text: "Set a fixed secret so the sign-in survives Open WebUI restarts.",
         code: "WEBUI_SECRET_KEY=<long random text you keep>",
       },
       {
-        text: "Turn on HolyArrs in a chat's tools menu. HolyArrs opens in your browser. Press Allow.",
+        text: "In a chat, open + › Integrations › Tools and turn HolyArrs on. HolyArrs opens in your browser. Press Allow.",
+        bold: ["+ › Integrations › Tools"],
       },
     ],
     key: [
@@ -1118,21 +1275,32 @@ export const APP_DATA: AppData[] = [
       },
       {
         text: "In Open WebUI, open Admin Panel › Settings › Integrations and press + Add Connection.",
+        bold: ["Admin Panel › Settings › Integrations", "+ Add Connection"],
       },
       {
-        text: "Set Type MCP (Streamable HTTP), Auth Bearer, fill in these fields and save.",
+        text: "Set Type to MCP (Streamable HTTP), Auth to Bearer, fill in these two fields and save.",
         code: "Server URL: {url}\nKey: {key}",
+        bold: ["MCP (Streamable HTTP)", "Bearer"],
       },
-      { text: "Turn on HolyArrs in a chat's tools menu." },
+      {
+        text: "In a chat, open + › Integrations › Tools and turn HolyArrs on.",
+        bold: ["+ › Integrations › Tools"],
+      },
     ],
     check: "A new chat's tools menu lists the HolyArrs tools.",
-    note: "In Docker, localhost is the container; use HolyArrs's network IP.",
-    source: "docs",
+    note: "In Docker, localhost is the Open WebUI container. Use HolyArrs's network address or host.docker.internal.",
+    page: "local-ai",
+    table: {
+      group: "computer",
+      order: 2,
+      label: "Open WebUI, LM Studio, Ollama",
+      where: "Each app's MCP settings, with an AI key",
+    },
+    tested: null,
   },
   {
     slug: "librechat",
     name: "LibreChat",
-    family: "self-hosted-chat",
     cloud: false,
     needs: "A LibreChat role that may add MCP servers.",
     signin: [
@@ -1167,12 +1335,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "The message box's + › MCP Servers lists HolyArrs.",
     note: "Use allowedAddresses; allowedDomains blocks every unlisted server.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "lobehub",
     name: "LobeHub",
-    family: "self-hosted-chat",
     cloud: false,
     needs: "The LobeHub desktop app when HolyArrs is on a home address.",
     signin: [],
@@ -1191,17 +1359,19 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Settings › Connectors shows HolyArrs as connected.",
     note: "No API Key field? Add the header Authorization: Bearer followed by your key instead.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "lm-studio",
     name: "LM Studio",
-    family: "desktop-apps",
     cloud: false,
-    needs: "LM Studio 0.3.17 or newer; 0.4.10 or newer for browser sign-in.",
+    needs:
+      "LM Studio 0.3.17 or newer, and 0.4.10 or newer for browser sign-in (0.4.12 on Windows).",
     signin: [
       {
         text: "In LM Studio, open the Program tab, pick Install, then Edit mcp.json.",
+        bold: ["Program", "Install", "Edit mcp.json"],
       },
       {
         text: "Add this entry and save.",
@@ -1215,6 +1385,7 @@ export const APP_DATA: AppData[] = [
       },
       {
         text: "In LM Studio, open the Program tab, pick Install, then Edit mcp.json.",
+        bold: ["Program", "Install", "Edit mcp.json"],
       },
       {
         text: "Add this entry and save.",
@@ -1223,12 +1394,13 @@ export const APP_DATA: AppData[] = [
     ],
     check: "holyarrs lists its tools in LM Studio.",
     note: "If mcp.json lists other servers, add holyarrs beside them.",
-    source: "docs",
+    page: "local-ai",
+    tested: null,
+    agent: true,
   },
   {
     slug: "jan",
     name: "Jan",
-    family: "desktop-apps",
     cloud: false,
     needs: "Node.js for the key way.",
     signin: [
@@ -1255,12 +1427,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "holyarrs lists its tools in Jan.",
     note: "Jan stops a tool call after 30 seconds by default.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "anythingllm",
     name: "AnythingLLM",
-    family: "desktop-apps",
     cloud: false,
     needs: "AnythingLLM Desktop v1.8.0 or newer.",
     signin: [],
@@ -1279,12 +1451,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "holyarrs shows as running under Agent Skills.",
     note: "Start chat messages with @agent so the model can use tools.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "cherry-studio",
     name: "Cherry Studio",
-    family: "desktop-apps",
     cloud: false,
     needs: "",
     signin: [],
@@ -1303,12 +1475,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "holyarrs shows as running in MCP Servers.",
     note: 'Without "type": "streamableHttp", Cherry Studio treats the entry as a program.',
-    source: "second-hand",
+    page: null,
+    tested: null,
   },
   {
     slug: "msty-studio",
     name: "Msty Studio",
-    family: "desktop-apps",
     cloud: false,
     needs: "",
     signin: [],
@@ -1330,12 +1502,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Run a HolyArrs tool in the Tool Console.",
     note: "Msty's docs do not show the Headers field format.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "5ire",
     name: "5ire",
-    family: "desktop-apps",
     cloud: false,
     needs: "5ire v0.11.0 or newer, and Node.js.",
     signin: [],
@@ -1352,12 +1524,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "",
     note: "Drop --allow-http when HolyArrs is on https.",
-    source: "second-hand",
+    page: null,
+    tested: null,
   },
   {
     slug: "hermes-agent",
     name: "Hermes Agent",
-    family: "local-agents",
     cloud: false,
     needs: "",
     signin: [
@@ -1383,12 +1555,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "hermes mcp test holyarrs lists the HolyArrs tools.",
     note: "Tools show as mcp_holyarrs_<tool>; hide one under tools: exclude.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "goose",
     name: "Goose",
-    family: "local-agents",
     cloud: false,
     needs: "",
     signin: [
@@ -1424,14 +1596,14 @@ export const APP_DATA: AppData[] = [
     ],
     check: "Goose's extension list shows holyarrs.",
     note: "Desktop app: Extensions › Add custom extension, same URI and header.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "ollmcp",
     name: "ollmcp",
-    family: "local-agents",
     cloud: false,
-    needs: "Python 3.11 or newer; Ollama running with a pulled model.",
+    needs: "Python 3.11 or newer, and Ollama running with a model pulled.",
     signin: [],
     key: [
       {
@@ -1444,17 +1616,18 @@ export const APP_DATA: AppData[] = [
       },
       {
         text: "Start a chat with your Ollama model.",
-        code: "ollmcp -j holyarrs.json -m qwen3.5",
+        code: "ollmcp -j holyarrs.json -m qwen3:8b",
       },
     ],
-    check: "Type /tools in the chat; HolyArrs tools are listed.",
+    check: "Type /tools in the chat to see the HolyArrs tools.",
     note: "-H on the ollmcp command sets the Ollama host, not a header.",
-    source: "live",
+    page: "local-ai",
+    tested: "2026-11-03",
+    agent: true,
   },
   {
     slug: "llama-cpp",
     name: "llama.cpp web UI",
-    family: "local-runners",
     cloud: false,
     needs: "Node.js for npx. llama.cpp MCP support is experimental.",
     signin: [],
@@ -1474,12 +1647,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "The HolyArrs tools show in the web UI.",
     note: "On an https address, drop --allow-http.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "localai",
     name: "LocalAI",
-    family: "local-runners",
     cloud: false,
     needs: "",
     signin: [],
@@ -1495,12 +1668,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "In chat, MCP > Servers lists holyarrs with no errors.",
     note: "In the model editor, paste only the inner mcpServers JSON into Remote MCP Servers.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "text-generation-webui",
     name: "text-generation-webui",
-    family: "local-runners",
     cloud: false,
     needs: "",
     signin: [],
@@ -1516,12 +1689,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: 'Ask "Use HolyArrs: what is downloading?"; a tool runs.',
     note: "Tool calls run without asking you first.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "koboldcpp",
     name: "KoboldCpp",
-    family: "local-runners",
     cloud: false,
     needs: "KoboldCpp 1.106 or newer, and Node.js for npx.",
     signin: [],
@@ -1543,12 +1716,12 @@ export const APP_DATA: AppData[] = [
     ],
     check: "No MCP errors at startup; HolyArrs tools listed in Lite.",
     note: "Turn on Manually Approve Tools, or every tool call runs unasked.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
   {
     slug: "page-assist",
     name: "Page Assist",
-    family: "local-runners",
     cloud: false,
     needs: "",
     signin: [
@@ -1567,6 +1740,7 @@ export const APP_DATA: AppData[] = [
     ],
     check: 'The key shows "last used" in Settings › AI connections.',
     note: "It calls from your browser, so HolyArrs may refuse it as another site.",
-    source: "docs",
+    page: null,
+    tested: null,
   },
 ];
