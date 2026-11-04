@@ -70,7 +70,7 @@ func TestLabMovieZeroToDone(t *testing.T) {
 		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
-		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", Kinds: []string{}, Categories: map[string][]int{},
+		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home (#152) */, Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
 		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
 			return err

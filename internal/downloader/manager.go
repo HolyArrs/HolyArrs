@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -681,8 +682,13 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// Without local network access HolyArrs fetches the file and hands it
 	// over; a link that redirects to a magnet sends the magnet. A Source with
 	// a proxy is fetched through it, with the same checks.
+	// A qBittorrent Release with no info hash at all (an http link to a
+	// .torrent, as private sites through Jackett or Prowlarr give) is fetched
+	// the same way, even from a local Source: the hash comes from the file,
+	// so the download can be followed.
 	var file []byte
-	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && !allowLocal && !strings.HasPrefix(link, "magnet:") {
+	noHash := d.Adapter == "qbittorrent" && hash == "" && linkHash(link) == ""
+	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash) && !strings.HasPrefix(link, "magnet:") {
 		var rt http.RoundTripper
 		if src.ProxyURL != "" {
 			if m.SourceTransport == nil {
@@ -697,7 +703,15 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt); err == nil && magnet != "" {
+		localHost := "" // a home Source may be local itself (its host and port), nothing else may
+		if su, err := url.Parse(src.URL); allowLocal && err == nil && su.Hostname() != "" {
+			port := su.Port()
+			if port == "" {
+				port = map[string]string{"http": "80", "https": "443"}[strings.ToLower(su.Scheme)]
+			}
+			localHost = net.JoinHostPort(strings.TrimSuffix(strings.ToLower(su.Hostname()), "."), port)
+		}
+		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, localHost); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {
@@ -708,10 +722,13 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		// Some trackers print a newline after the file; qBittorrent reads past it.
 		file = bytes.TrimRight(file, " \t\r\n")
 		// Trackers, web seeds and DHT nodes inside the file that point at
-		// home are left out; the info hash stays the same.
-		file, err = safeTorrent(file)
-		if err != nil {
-			return "", errors.New("the Release file is not a torrent")
+		// home are left out; the info hash stays the same. A Source allowed
+		// on the local network keeps them (its file is fetched only to learn
+		// the hash, and a tracker at home is then the user's own).
+		if !allowLocal {
+			if file, err = safeTorrent(file); err != nil {
+				return "", errors.New("the Release file is not a torrent")
+			}
 		}
 		h, err := torrentFileHash(file)
 		if err != nil {
