@@ -134,8 +134,10 @@
 		}
 		// Nothing in flight and nothing found yet (#139): say why and when it last looked.
 		if (life.label === 'Looking for a release') {
+			// Never looked for: when the search for missing comes round to it.
+			if (!life.searchedAt) return life.nextSearch ? `Not looked for yet. The search for missing looks next ${whenDate(life.nextSearch)}.` : 'Not looked for yet.';
 			const why = life.reason ? `${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : 'Nothing found yet.';
-			return life.searchedAt ? `${why} Last looked ${whenDate(life.searchedAt)}.` : why;
+			return `${why} Last looked ${whenDate(life.searchedAt)}.`;
 		}
 		return life.stage === 'upcoming' ? `Getting it for ${who}. It isn’t out yet.` : `Getting it for ${who}.`;
 	});

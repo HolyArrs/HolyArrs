@@ -20,6 +20,8 @@ export interface Life {
 	reason?: string;
 	/** Waiting for a release: when it was last looked for. */
 	searchedAt?: string;
+	/** Not looked for yet: when the search for missing looks next. */
+	nextSearch?: string;
 }
 
 /** What else is known about an approved ask; each part is left out when unknown. */
@@ -43,6 +45,8 @@ export interface LifeFacts {
 	reason?: string;
 	/** Waiting: when it was last looked for. */
 	searchedAt?: string;
+	/** Not looked for yet: when the search for missing looks next. */
+	nextSearch?: string;
 }
 
 /** lifecycle places an ask on its line; `facts` adds what is known beyond its state. */
@@ -70,6 +74,7 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 		const life: Life = { stage: 'getting', pct: lo, tone: 'wait', label: 'Looking for a release' };
 		if (facts.reason) life.reason = facts.reason;
 		if (facts.searchedAt) life.searchedAt = facts.searchedAt;
+		if (facts.nextSearch) life.nextSearch = facts.nextSearch;
 		return life;
 	}
 	// Everything asked for is in: Ready, however much more the title has.

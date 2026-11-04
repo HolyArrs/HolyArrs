@@ -521,7 +521,7 @@
 			case 'not_out':
 				return 'Not out yet';
 			case 'waiting':
-				return a.step.searched_at ? `Nothing found yet · last looked ${ago(a.step.searched_at)}` : 'Nothing found yet';
+				return a.step.searched_at ? `Nothing found yet · last looked ${ago(a.step.searched_at)}` : 'Not looked for yet';
 		}
 		return '';
 	}

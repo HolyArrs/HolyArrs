@@ -39,6 +39,11 @@ func TestAskSteps(t *testing.T) {
 		t.Fatalf("after approval %+v", s)
 	}
 	exec("UPDATE jobs SET state = 'done'")
+	// Never looked for yet: its slot's reason is why it is wanted, not why nothing came.
+	exec("UPDATE slots SET state = 'wanted', last_reason = 'out since 2024-03-01' WHERE "+slot, *got.TitleID)
+	if s := step(true); s == nil || s.Kind != "waiting" || s.Text != "" || s.SearchedAt != nil {
+		t.Fatalf("not looked for yet %+v", s)
+	}
 	exec("UPDATE slots SET last_reason = 'no Release passed the Pick rules (2 found, 2 refused)' WHERE "+slot, *got.TitleID)
 	exec("UPDATE items SET last_searched_at = '2026-11-03T08:00:00Z' WHERE title_id = ?", *got.TitleID)
 	if s := step(true); s == nil || s.Kind != "waiting" || s.Text != "no Release passed the Pick rules (2 found, 2 refused)" || s.SearchedAt == nil {
