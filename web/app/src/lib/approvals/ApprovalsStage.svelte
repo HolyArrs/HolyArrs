@@ -108,7 +108,7 @@
 		const part: LifeFacts = partial && partial.id === a.title_id ? partial.facts : {};
 		if (live.phase) return lifecycle(a, { ...part, ...live });
 		const out = a.kind === 'artist' ? '' : upcoming(a, ctx.info(a), (season) => ctx.episodes(a.tmdb_id, season)?.map((e) => e.air_day ?? '').filter(Boolean).sort()[0] ?? null);
-		return lifecycle(a, out ? { ...part, upcoming: shortDate(out) } : part);
+		return lifecycle(a, out ? { ...part, upcoming: shortDate(out) } : live.upcoming !== undefined ? { ...part, upcoming: live.upcoming } : part);
 	});
 	const failed = $derived(status && askTab(picked) === 'failed');
 	// A declined ask had nothing approved: its list is what was asked for.

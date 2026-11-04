@@ -69,7 +69,8 @@
 		const live = ctx.live(a);
 		if (live.phase || a.kind === 'artist') return lifecycle(a, live);
 		const out = upcoming(a, ctx.info(a), firstAir(a));
-		return lifecycle(a, out ? { upcoming: shortDate(out) } : {});
+		// A known date first; else the server's "not out yet" (#139).
+		return lifecycle(a, out ? { upcoming: shortDate(out) } : live.upcoming !== undefined ? { upcoming: live.upcoming } : {});
 	};
 	// Worked out once per ask; the cards, the status filter and its counts all read it.
 	const lives = $derived(new Map(ctx.viewed.map((a) => [a.id, lifeNow(a)])));
