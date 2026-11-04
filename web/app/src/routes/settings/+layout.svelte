@@ -169,7 +169,7 @@
 		{/if}
 		<div class="settings-content">
 			{#if reauth}
-				<SettingsCard id="settings-reauth" title="Confirm your password" description="This page holds sign-in details, so HolyArrs asks for your password again." icon="shield">
+				<SettingsCard id="settings-reauth" title="Confirm your password" description="This touches keys, passwords, people or backups, so HolyArrs asks for your password again. It then won't ask for 10 minutes." icon="shield">
 					<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 				</SettingsCard>
 			{/if}
