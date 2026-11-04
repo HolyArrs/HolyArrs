@@ -61,7 +61,7 @@
 	.past .big { color: color-mix(in srgb, var(--text, #fff) 62%, transparent); }
 	.small { font: 600 11px/1.2 var(--font-ui); color: var(--text-muted); letter-spacing: .02em; }
 	.titles { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--shelf-gap, 12px); }
-	/* The same width as a Hot and new card. */
+	/* The same width as a Top 10 card. */
 	.t { width: var(--rail-item, 240px); flex: none; display: flex; flex-direction: column; gap: 6px; }
 	.what { font: 500 12px/1.25 var(--font-ui); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	@media (max-width: 767px) {

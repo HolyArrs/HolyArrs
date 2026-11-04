@@ -18,6 +18,7 @@ const (
 	TypeNPCinema   = "np_cinema"
 	TypeNPGenre    = "np_genre"
 	TypeNPAcclaim  = "np_acclaimed"
+	TypeNPWatching = "np_watching"
 	TypeNPWorld    = "np_world"
 )
 
@@ -141,7 +142,7 @@ func SortByScore(items []Item, score func(Item) float64) {
 
 // NewRowCap is a row type's own cap when it is not RowMax: the services row
 // carries about 20 titles per service for its chips.
-var NewRowCap = map[string]int{TypeNPServices: 120}
+var NewRowCap = map[string]int{TypeNPServices: 120, TypeNPTopShows: 10, TypeNPTopFilms: 10}
 
 // DedupeRows keeps each title once on the page (the first row wins), caps
 // rows at RowMax (or NewRowCap) and drops rows left under min.
@@ -174,9 +175,10 @@ func DedupeRows(rows []Row, min int) []Row {
 	return out
 }
 
-// NewFixed are the row types that keep their place at the top of the page;
-// the others are ordered by score.
-var NewFixed = map[string]bool{TypeNPServices: true, TypeNPTopShows: true, TypeNPTopFilms: true}
+// NewFixed are the row types that keep their place at the top of the page,
+// in the order they are built (the two Top 10s, what everyone is watching,
+// then the critics' best); the others are ordered by score.
+var NewFixed = map[string]bool{TypeNPTopShows: true, TypeNPTopFilms: true, TypeNPWatching: true, TypeNPAcclaim: true}
 
 // OrderNewRows puts the fixed rows first (in their order), then the rest
 // by the mean score of their first 8 titles times the row's weight (1 when
