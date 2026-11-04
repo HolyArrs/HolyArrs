@@ -30,7 +30,8 @@
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
 	const watch = $derived(!session.can('manage_library'));
-	let rows = $state<DownloadRow[]>([]);
+	// Raw: rows are only ever replaced (patches and reads build new arrays), so 2,000 rows are not wrapped in proxies on every patch.
+	let rows = $state.raw<DownloadRow[]>([]);
 	let imports = $state<ImportRecord[]>([]);
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);

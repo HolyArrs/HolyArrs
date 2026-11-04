@@ -962,6 +962,21 @@
 			ro.disconnect();
 		};
 	});
+	// The details below the list fit their content, so the list can get shorter
+	// after a row was scrolled into view (its details arrive): keep the focused row on screen.
+	$effect(() => {
+		const el = listEl;
+		if (!el || typeof ResizeObserver === 'undefined') return;
+		let h = el.clientHeight;
+		const ro = new ResizeObserver(() => {
+			const was = h;
+			h = el.clientHeight;
+			const a = document.activeElement as HTMLElement | null;
+			if (h < was && a?.classList.contains('dline') && el.contains(a)) a.scrollIntoView({ block: 'nearest' });
+		});
+		ro.observe(el);
+		return () => ro.disconnect();
+	});
 	// The real row height (desktop and phone rows differ), read from a drawn row.
 	$effect(() => {
 		void shownRows;
