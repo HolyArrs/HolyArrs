@@ -31,18 +31,14 @@ RUN set -eu; \
     if [ -n "${VERSION:-}" ]; then ldflags="$ldflags -X main.version=$VERSION"; fi; \
     GOARM="${TARGETVARIANT#v}" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath -ldflags="$ldflags" -o /out/holyarrs ./cmd/holyarrs
-RUN mkdir -p /out/config && chown 1000:1000 /out/config
-# yt-dlp for trailers: the official pinned release, checked against its
-# published SHA-256 (yt-dlp's SHA2-256SUMS for 2026.08.19). It sits next to
-# /holyarrs, where HolyArrs looks after HOLYARRS_YTDLP; the weekly update
-# writes newer releases to /config/bin. No armv7 build exists: those images
-# play trailers through the YouTube embed instead.
-ARG YTDLP_VERSION=2026.08.19
-RUN set -eu; mkdir -p /out/ytdlp;     case "$TARGETARCH" in       amd64) asset=yt-dlp_linux; sum=58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a ;;       arm64) asset=yt-dlp_linux_aarch64; sum=b16e4dab368a816cd05d477d698a605a6ae87ccee1c8ffd38fa21d7254141fcc ;;       *) exit 0 ;;     esac;     curl -fsSL -o /out/ytdlp/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/$YTDLP_VERSION/$asset";     echo "$sum  /out/ytdlp/yt-dlp" | sha256sum -c -;     chmod 755 /out/ytdlp/yt-dlp
+# The folders the bare image needs: /config for the owner (1000:1000) and a
+# /tmp anyone may write (Move's working copies, temporary files).
+RUN mkdir -p /out/config /out/tmp && chown 1000:1000 /out/config && chmod 1777 /out/tmp
 
-# Final stage: Debian slim, because the yt-dlp release program needs glibc
-# and zlib (a scratch image cannot run it).
-FROM debian:12-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587
+# Final stage: an empty image with only HolyArrs, CA certificates and the
+# licences. No shell and no system tools: HolyArrs is one static Go program
+# with its own time zone database, RAR/7z/zip reader and healthcheck.
+FROM scratch
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="HolyArrs" \
       org.opencontainers.image.source="https://github.com/CoderLuii/holyarrs" \
@@ -50,7 +46,7 @@ LABEL org.opencontainers.image.title="HolyArrs" \
       org.opencontainers.image.version="$VERSION"
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /out/holyarrs /holyarrs
-COPY --from=build /out/ytdlp/ /
+COPY --from=build --chmod=1777 /out/tmp /tmp
 COPY --from=build --chown=1000:1000 /out/config /config
 COPY LICENSE /LICENSE
 # The licences of every part shipped here (scripts/notices.py keeps them complete).

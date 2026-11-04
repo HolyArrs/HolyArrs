@@ -12,8 +12,7 @@ the "Open-source parts" table at the end of THIRD_PARTY_NOTICES.md from:
   which the build copies beside the app;
 - the third-party files in web/app/static (web/app/static-parts.json),
   which the build copies as they are;
-- the few other parts below (Go itself, yt-dlp, the Docker image's base
-  and CA list).
+- the few other parts below (Go itself and the Docker image's CA list).
 
     python scripts/notices.py          write both files
     python scripts/notices.py --check  fail when a shipped part is missing,
@@ -103,7 +102,7 @@ def package_info():
     spec = importlib.util.spec_from_file_location("holyarrs_package", ROOT / "scripts" / "package.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return mod.TARGETS, mod.YTDLP_VERSION, mod.YTDLP
+    return mod.TARGETS
 
 
 def go_version() -> str:
@@ -113,7 +112,7 @@ def go_version() -> str:
 
 def go_modules() -> list[dict]:
     """Each linked module once, with every licence file of its linked packages."""
-    targets, _, _ = package_info()
+    targets = package_info()
     mods: dict[str, dict] = {}
     for goos, goarch, goarm in targets.values():
         env = dict(os.environ, GOOS=goos, GOARCH=goarch, GOARM=goarm, CGO_ENABLED="0")
@@ -238,25 +237,12 @@ def mpl_text(go: list[dict]) -> tuple[str, str] | None:
 
 
 def other_parts(go: list[dict]) -> list[dict]:
-    _, ytdlp, ytdlp_builds = package_info()
     goroot = subprocess.run(["go", "env", "GOROOT"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
     gofiles = [(n, read(Path(goroot) / n)) for n in ("LICENSE", "PATENTS") if (Path(goroot) / n).is_file()]
     mpl = mpl_text(go)
-    builds = ", ".join(sorted(ytdlp_builds))
     return [
         {"name": "Go standard library and runtime", "version": go_version(), "licence": "BSD-3-Clause", "in": "the holyarrs program",
          "used": "Compiled into every holyarrs program, with Go's copy of the time zone list (IANA, public domain).", "files": gofiles},
-        {"name": "yt-dlp", "version": ytdlp,
-         "licence": "GPL-3.0-or-later (the release program as a whole; yt-dlp's own code is Unlicense)",
-         "in": f"release packages ({builds}) and the Docker image (amd64, arm64)",
-         "used": (f"Trailers. The release program yt-dlp publishes, shipped unchanged beside holyarrs. It is built with PyInstaller "
-                  f"and bundles Python and other parts, so the program as a whole is under GPL-3.0-or-later; yt-dlp lists the "
-                  f"bundled parts' licences with that release. Source: https://github.com/yt-dlp/yt-dlp/tree/{ytdlp} "
-                  f"(release: https://github.com/yt-dlp/yt-dlp/releases/tag/{ytdlp}). Not in the linux-armv7 or linux-386 "
-                  f"packages or the armv7 image: yt-dlp makes no build for them."), "files": []},
-        {"name": "Debian 12 slim base image", "version": "", "licence": "each package's own (in /usr/share/doc/*/copyright in the image)",
-         "in": "the Docker image",
-         "used": "The system under holyarrs in the Docker image (needed by the yt-dlp program). Sources: https://sources.debian.org.", "files": []},
         {"name": "Mozilla CA certificate list (Debian ca-certificates)", "version": "", "licence": "MPL-2.0", "in": "the Docker image",
          "used": "Trusted certificate authorities for HTTPS, copied unchanged from the build image.",
          "files": [mpl] if mpl else [], "missing": "" if mpl else "NO MPL-2.0 TEXT"},

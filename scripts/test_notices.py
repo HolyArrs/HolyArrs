@@ -51,10 +51,8 @@ class Layout(unittest.TestCase):
         self.assertEqual(notices.headers("### a\n```text\n### inside\n```\n### b\n"), ["a", "b"])
 
     def test_release_targets_come_from_packaging(self):
-        targets, ytdlp, builds = notices.package_info()
+        targets = notices.package_info()
         self.assertIn(("windows", "amd64", ""), targets.values())
-        self.assertRegex(ytdlp, r"^\d{4}\.\d{2}\.\d{2}$")
-        self.assertIn("linux-amd64", builds)
 
 
 class Check(unittest.TestCase):

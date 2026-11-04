@@ -7611,18 +7611,6 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 ```
 
-### yt-dlp@2026.08.19
-
-Trailers. The release program yt-dlp publishes, shipped unchanged beside holyarrs. It is built with PyInstaller and bundles Python and other parts, so the program as a whole is under GPL-3.0-or-later; yt-dlp lists the bundled parts' licences with that release. Source: https://github.com/yt-dlp/yt-dlp/tree/2026.08.19 (release: https://github.com/yt-dlp/yt-dlp/releases/tag/2026.08.19). Not in the linux-armv7 or linux-386 packages or the armv7 image: yt-dlp makes no build for them.
-
-Licence: GPL-3.0-or-later (the release program as a whole; yt-dlp's own code is Unlicense)
-
-### Debian 12 slim base image
-
-The system under holyarrs in the Docker image (needed by the yt-dlp program). Sources: https://sources.debian.org.
-
-Licence: each package's own (in /usr/share/doc/*/copyright in the image)
-
 ### Mozilla CA certificate list (Debian ca-certificates)
 
 Trusted certificate authorities for HTTPS, copied unchanged from the build image.

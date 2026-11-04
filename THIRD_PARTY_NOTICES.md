@@ -81,8 +81,6 @@ Every open-source part HolyArrs ships: the Go modules in the program, the packag
 | SABnzbd logo |  | GPL-2.0-or-later | the web app (/clients/sabnzbd.svg) |
 | Transmission logo |  | GPL-2.0-only OR GPL-3.0-only | the web app (/clients/transmission.svg) |
 | Go standard library and runtime | 1.27.2 | BSD-3-Clause | the holyarrs program |
-| yt-dlp | 2026.08.19 | GPL-3.0-or-later (the release program as a whole; yt-dlp's own code is Unlicense) | release packages (linux-amd64, linux-arm64, windows-amd64) and the Docker image (amd64, arm64) |
-| Debian 12 slim base image |  | each package's own (in /usr/share/doc/*/copyright in the image) | the Docker image |
 | Mozilla CA certificate list (Debian ca-certificates) |  | MPL-2.0 | the Docker image |
 
 Full licence texts: [`docs/third-party-notices.md`](docs/third-party-notices.md).

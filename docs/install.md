@@ -46,11 +46,12 @@ Library folders reports a warning when HolyArrs has to copy instead.
 
 ## The image
 
-The image is built on `debian:12-slim`, not an empty base, and runs as
-`1000:1000`. It holds HolyArrs, CA certificates and the licence, plus an older
-trailer program that HolyArrs no longer runs and that a later update removes.
-[Trailers](trailers.md) are found by HolyArrs' own trailer reader on every
-image, armv7 included. Keep `/config` on a volume.
+The image is an empty base with only HolyArrs in it: the program, CA
+certificates, the licences, `/config` and a writable `/tmp`. It runs as
+`1000:1000` and has no shell and no other programs, so `docker exec` into it
+to look around does not work (read its log instead). HolyArrs carries its own
+time zone database (set `TZ` as usual), healthcheck, unpacker and
+[trailer reader](trailers.md). Keep `/config` on a volume.
 
 ### Raspberry Pi and other ARM boards
 
