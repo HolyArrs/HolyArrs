@@ -2,8 +2,7 @@
 
 Every NAS below runs HolyArrs as a Docker container, so first read
 [Install HolyArrs with Docker](install.md). This page only says where things
-go on each box. None of these boxes has been tested with HolyArrs yet; each
-section says so until it has.
+go on each box.
 
 The same three rules hold on every NAS:
 
@@ -14,8 +13,6 @@ The same three rules hold on every NAS:
   on both folders through the NAS permissions screen.
 
 ## Synology (Container Manager)
-
-Untested.
 
 1. In File Station, make `docker/holyarrs/config` and one shared folder for
    media, for example `media` with `downloads` and `library` inside.
@@ -28,16 +25,12 @@ Untested.
 
 ## QNAP (Container Station)
 
-Untested.
-
 1. Make `Container/holyarrs/config` and one `media` share.
 2. In Container Station, Applications, Create, paste the Compose file.
 3. Use `/share/Container/holyarrs/config:/config` and `/share/media:/data`.
 4. Set the owner of both folders to 1000:1000.
 
 ## TrueNAS SCALE (custom app)
-
-Untested.
 
 1. Make two datasets: `apps/holyarrs-config` and `media`. Put `downloads`
    and `library` inside `media`, so both are on one dataset.
@@ -48,7 +41,7 @@ Untested.
 
 ## Unraid
 
-Untested. A template is being prepared; see [NAS packages](nas-packages.md).
+A template is being prepared; see [NAS packages](nas-packages.md).
 
 - Put `/config` on a pool path such as `/mnt/cache/appdata/holyarrs`.
 - Use one share for `/data`, mounted from a disk or pool path. Do not use
