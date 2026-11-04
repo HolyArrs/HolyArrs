@@ -50,7 +50,7 @@ func TestAskSteps(t *testing.T) {
 	}
 	for _, c := range []struct{ state, want string }{
 		{"searching", "searching"}, {"downloading", "downloading"}, {"importing", "importing"},
-		{"needs_a_decision", "waiting_on_admin"}, {"held", "waiting_on_admin"}, {"not_out_yet", "not_out"},
+		{"needs_a_decision", "waiting_on_admin"}, {"held", "searching"}, {"not_out_yet", "not_out"},
 	} {
 		exec("UPDATE slots SET state = ? WHERE "+slot, c.state, *got.TitleID)
 		if s := step(false); s == nil || s.Kind != c.want {
@@ -60,5 +60,55 @@ func TestAskSteps(t *testing.T) {
 	exec("UPDATE slots SET state = 'in_library' WHERE "+slot, *got.TitleID)
 	if s := step(true); s != nil {
 		t.Fatalf("nothing left to get, step %+v", s)
+	}
+}
+
+// #139 review: a step is read for what the ask covers. ana asked season 1
+// and bo season 2 of one show: bo's season downloading is not ana's step,
+// and a Version nobody keeps up to date (so nobody searches) gives no step.
+func TestAskStepsAreTheAsksOwn(t *testing.T) {
+	r := showRig(t)
+	ctx := context.Background()
+	exec := func(q string, args ...any) {
+		if err := r.st.Write(ctx, func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err }); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ana, err := r.svc.AskShow(ctx, r.ana, "tmdb:100", []int{1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.Approve(ctx, ana.Ask.ID, r.luis, ApproveOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	bo, err := r.svc.AskShow(ctx, r.bo, "tmdb:100", []int{2})
+	if err != nil || bo.Ask.ID == ana.Ask.ID {
+		t.Fatalf("bo's ask %+v %v", bo, err)
+	}
+	got, err := r.svc.Approve(ctx, bo.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil || got.TitleID == nil {
+		t.Fatalf("approve bo %+v %v", got, err)
+	}
+	exec("UPDATE jobs SET state = 'done'")
+	season := func(n int) string {
+		return "id IN (SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id WHERE p.number = " + map[int]string{1: "1", 2: "2"}[n] + ")"
+	}
+	exec("UPDATE slots SET state = 'wanted' WHERE " + season(1))
+	exec("UPDATE slots SET state = 'downloading' WHERE " + season(2))
+	step := func(id int64) *Step {
+		vs, _ := r.svc.Views(ctx, "a.id = ?", id)
+		r.svc.AddSteps(ctx, vs, true)
+		return vs[0].Step
+	}
+	if s := step(ana.Ask.ID); s == nil || s.Kind != "waiting" {
+		t.Fatalf("ana's season 1 %+v", s)
+	}
+	if s := step(bo.Ask.ID); s == nil || s.Kind != "downloading" {
+		t.Fatalf("bo's season 2 %+v", s)
+	}
+	// Nobody searches a Version that is not kept up to date: no "nothing found yet" forever.
+	exec("UPDATE versions SET keep_up_to_date = 0 WHERE title_id = ?", *got.TitleID)
+	if s := step(ana.Ask.ID); s != nil {
+		t.Fatalf("a Version nobody searches still gives a step %+v", s)
 	}
 }

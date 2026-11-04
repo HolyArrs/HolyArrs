@@ -250,7 +250,8 @@
 	const kindRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes(pickKind)));
 
 	let loadGen = 0;
-	async function load() {
+	/** load reads the list; quiet (a poll) keeps a failed read to itself. */
+	async function load(quiet = false) {
 		const gen = ++loadGen;
 		try {
 			const r = await api.get<{ asks: Ask[] }>('/asks');
@@ -258,7 +259,9 @@
 			asks = r.asks;
 			error = '';
 		} catch (e) {
-			// A background refresh that fails keeps the list on screen and says so once.
+			// A background refresh that fails keeps the list on screen and says so once;
+			// a poll says nothing and tries again on its next turn.
+			if (quiet && asks.length) return;
 			if (asks.length) toasts.push(`Couldn’t refresh your requests. ${message(e)}`, 'fail');
 			error = message(e);
 		} finally {
@@ -334,14 +337,18 @@
 	// A dl patch with rows in it means a download moved; one read for a burst of them.
 	let dlSoon: ReturnType<typeof setTimeout> | undefined;
 	let slotSoon: ReturnType<typeof setTimeout> | undefined;
+	let stepReadAt = 0;
 	function onDlPatch(data: unknown) {
 		const p = data as { upsert?: unknown[]; remove?: unknown[] } | null;
 		if (!p || (!p.upsert?.length && !p.remove?.length) || dlSoon) return;
 		dlSoon = setTimeout(() => {
 			dlSoon = undefined;
 			void loadLive();
-			// The person's own ask steps move with their downloads.
-			if (!approver) void load();
+			// The person's own ask steps move with their downloads (one read in 10 s at most).
+			if (!approver && Date.now() - stepReadAt > 10_000) {
+				stepReadAt = Date.now();
+				void load(true);
+			}
 		}, 1500);
 	}
 	onDestroy(() => (clearTimeout(dlSoon), clearTimeout(slotSoon)));
@@ -520,11 +527,18 @@
 	}
 	// While one of the person's own asks is on its way, read the list again now and then:
 	// a search starting or an import finishing reaches them only this way.
-	const inFlight = $derived(asks.some((a) => a.state === 'approved' && ['searching', 'downloading', 'importing', 'waiting_on_admin'].includes(a.step?.kind ?? '')));
+	// Without "Run the Library" there are no download events: the downloads read here
+	// would freeze, so the poll reads them again too while any are on screen.
+	const noDlEvents = $derived(!session.can('manage_library'));
+	const inFlight = $derived(
+		asks.some((a) => a.state === 'approved' && ['searching', 'downloading', 'importing', 'waiting_on_admin'].includes(a.step?.kind ?? '')) || (noDlEvents && [...titleLive.values()].some((t) => t.download && t.download.phase !== 'failed'))
+	);
 	$effect(() => {
 		if (!inFlight) return;
 		const t = setInterval(() => {
-			if (document.visibilityState === 'visible') void load();
+			if (document.visibilityState !== 'visible') return;
+			void load(true);
+			if (noDlEvents) void loadLive();
 		}, 15_000);
 		return () => clearInterval(t);
 	});

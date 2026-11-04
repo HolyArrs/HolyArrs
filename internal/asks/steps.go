@@ -33,7 +33,7 @@ func (s *Service) AddSteps(ctx context.Context, vs []View, staff bool) {
 		if v.State != domain.AskApproved || v.TitleID == nil {
 			continue
 		}
-		if st, ok := stepOf(ctx, db, *v.TitleID); ok {
+		if st, ok := stepOf(ctx, db, *v); ok {
 			if !staff {
 				st.Text = ""
 			}
@@ -42,13 +42,63 @@ func (s *Service) AddSteps(ctx context.Context, vs []View, staff bool) {
 	}
 }
 
-// stepOf reads where the title's kept items are: a decision waiting on a
-// person first, then an import, a download, a search, and else why
-// nothing is coming yet. Nothing left to get (or a failed read): no step.
-func stepOf(ctx context.Context, db *sql.DB, titleID int64) (Step, bool) {
-	rows, err := db.QueryContext(ctx, `SELECT s.id, s.state, COALESCE(s.last_reason, ''), COALESCE(i.part_id, 0), i.last_searched_at
-		FROM slots s JOIN items i ON i.id = s.item_id
-		WHERE i.title_id = ? AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL`, titleID)
+// stepOf reads where the ask's own part of the title is (its seasons or
+// episodes, its albums, its 4K or plain copy), over the items the searcher
+// would look for: a decision waiting on a person first, then an import, a
+// download, a search (or a found release waiting out its delay), and else
+// why nothing is coming yet. Nothing left to get (or a failed read): no step.
+func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
+	titleID := *v.TitleID
+	q := `SELECT s.id, s.state, COALESCE(s.last_reason, ''), COALESCE(i.part_id, 0), i.last_searched_at
+		FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id JOIN titles t ON t.id = i.title_id
+		LEFT JOIN parts p ON p.id = i.part_id
+		WHERE i.title_id = ? AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL AND v.keep_up_to_date = 1 AND t.state = 'active'
+		AND (t.kind = 'movie' OR t.keep_up_to_date = 1)
+		AND (i.part_id IS NULL OR (p.keep_up_to_date = 1 AND p.dropped_at IS NULL AND (t.kind != 'artist' OR p.included = 1)))`
+	args := []any{titleID}
+	fourK := `(SELECT v4.id FROM versions v4 LEFT JOIN pick_rules pr ON pr.id = v4.pick_rules_id
+		WHERE v4.title_id = i.title_id AND (v4.label = '4K' COLLATE NOCASE OR pr.name = '4K'))`
+	switch v.Kind {
+	case "movie":
+		if v.FourK {
+			q += " AND s.version_id IN " + fourK
+		} else {
+			q += " AND s.version_id NOT IN " + fourK
+		}
+	case "show":
+		var or []string
+		if len(v.Seasons) > 0 {
+			or = append(or, "p.number IN ("+marks(len(v.Seasons))+")")
+			for _, n := range v.Seasons {
+				args = append(args, n)
+			}
+		}
+		for _, e := range v.Episodes {
+			if len(e.Episodes) == 0 {
+				continue
+			}
+			or = append(or, "(p.number = ? AND json_extract(i.numbers, '$.episode') IN ("+marks(len(e.Episodes))+"))")
+			args = append(args, e.Season)
+			for _, n := range e.Episodes {
+				args = append(args, n)
+			}
+		}
+		if len(or) > 0 {
+			q += " AND (" + strings.Join(or, " OR ") + ")"
+		}
+	case "artist":
+		var ids []any
+		for _, al := range v.Albums {
+			if al.MBID != "" {
+				ids = append(ids, al.MBID)
+			}
+		}
+		if len(ids) > 0 {
+			q += " AND json_extract(p.source_ids, '$.musicbrainz') IN (" + marks(len(ids)) + ")"
+			args = append(args, ids...)
+		}
+	}
+	rows, err := db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return Step{}, false
 	}
@@ -85,13 +135,15 @@ func stepOf(ctx context.Context, db *sql.DB, titleID int64) (Step, bool) {
 		return Step{}, false
 	}
 	switch {
-	case seen[domain.SlotNeedsADecision] || seen[domain.SlotHeld]:
+	case seen[domain.SlotNeedsADecision]:
 		return Step{Kind: "waiting_on_admin"}, true
 	case seen[domain.SlotImporting]:
 		return Step{Kind: "importing"}, true
 	case seen[domain.SlotChosen] || seen[domain.SlotDownloading] || seen[domain.SlotStalled]:
 		return Step{Kind: "downloading"}, true
-	case seen[domain.SlotSearching] || searchQueued(ctx, db, titleID, slotIDs, partIDs):
+	// Held: a release was found and waits out the Pick rules' delay; it is
+	// grabbed by itself, nobody has to act.
+	case seen[domain.SlotSearching] || seen[domain.SlotHeld] || searchQueued(ctx, db, titleID, slotIDs, partIDs):
 		return Step{Kind: "searching"}, true
 	case missing > 0:
 		return Step{Kind: "waiting", Text: reason, SearchedAt: searched}, true
