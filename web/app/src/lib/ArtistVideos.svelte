@@ -33,15 +33,16 @@
 	const named = (v: Item) => (v.title ?? '').replace(new RegExp(`^${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-–—:|]\\s*`, 'i'), '').trim() || `${artist} music video`;
 	const length = (s?: number) => (s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '');
 
-	// The server looks a video's stream up once; pointing at a card starts that
-	// lookup, so the click mostly finds it done. A miss is asked again next time,
-	// and so is a relayed stream past its end.
+	// Pointing at a card or focusing it reads the stream the server keeps
+	// (no lookup); only a click asks the server to look that one video up
+	// (play=1). A miss is asked again next time, and so is a relayed stream
+	// past its end.
 	const streams = new Map<string, Promise<HeroVideo | null>>();
-	function stream(id: string): Promise<HeroVideo | null> {
-		const k = `${mbid}|${id}`;
+	function stream(id: string, click = false): Promise<HeroVideo | null> {
+		const k = `${mbid}|${id}|${click ? 'play' : 'kept'}`;
 		let p = streams.get(k);
 		if (!p) {
-			p = api.get<HeroVideo>(`/music/artists/${encodeURIComponent(mbid)}?part=video&id=${encodeURIComponent(id)}`).catch(() => null);
+			p = api.get<HeroVideo>(`/music/artists/${encodeURIComponent(mbid)}?part=video&id=${encodeURIComponent(id)}${click ? '&play=1' : ''}`).catch(() => null);
 			streams.set(k, p);
 			void p.then((s) => {
 				if (!s) streams.delete(k);
@@ -57,7 +58,8 @@
 		if (busy) return;
 		busy = v.id;
 		try {
-			const [source, ...fallbacks] = pickedSources(v.id, await stream(v.id));
+			const kept = await stream(v.id);
+			const [source, ...fallbacks] = pickedSources(v.id, kept ?? (await stream(v.id, true)));
 			// One video at a time: the hero's own video stops for this one.
 			claimPlayer(() => {})();
 			const r = el.getBoundingClientRect();

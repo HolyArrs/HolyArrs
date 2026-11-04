@@ -217,9 +217,10 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	// ?id= is a card in the Music videos row: a click, not autoplay.
+	// ?id= is a card in the Music videos row: pointing at it reads what is
+	// kept; a click (&play=1) may look that one video up.
 	if id := r.URL.Query().Get("id"); id != "" {
-		a.pickedVideo(w, r, mbid, id)
+		a.pickedVideo(w, r, mbid, id, r.URL.Query().Get("play") == "1")
 		return
 	}
 	if !a.uiSettings(r.Context()).AutoplayTrailers {
@@ -267,9 +268,11 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 
 // pickedVideo answers ?id=: that one of the artist's videos, relayed. Label
 // videos refuse YouTube's embedded player (error 150), so the row plays
-// them through the relay. One that will not play answers 404 and stays in
-// the list (the row's embed may still play it).
-func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id string) {
+// them through the relay. Only a click (play) looks a video not kept yet
+// up, behind the answer: pointing at a card or focusing it reads what is
+// kept. One that will not play answers 404 and stays in the list (the
+// row's embed may still play it).
+func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id string, play bool) {
 	var v metadata.ArtistVideo
 	if a.s.ArtistVideos != nil {
 		for _, k := range a.videosOf(metadata.MemberLookup(r.Context()), mbid) {
@@ -285,8 +288,10 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 	}
 	s, known := a.videoKnown(r.Context(), v.ID)
 	if !known {
-		// Looked up behind the answer; the row's embed plays meanwhile.
-		a.resolveVideoBehind(r, mbid, nil, v.ID)
+		// A click: looked up behind the answer; the row's embed plays meanwhile.
+		if play {
+			a.resolveVideoBehind(r, mbid, nil, v.ID)
+		}
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Retry-After", "5")
 		fail(w, http.StatusNotFound, "no video ready yet")

@@ -101,9 +101,17 @@
 	}
 	// When a video ends: the artist's next unplayed video, else the same one again.
 	let playedVideos: string[] = [];
+	// Videos that would not play here (twice: as picked, then at the tallest
+	// picture): never attached again on this page, so a failing stream drops
+	// back to the photo instead of being attached over and over.
+	let heroBad = new Set<string>();
+	// The key of the video being tried once more at the tallest picture.
+	let heroTall = $state('');
 	$effect(() => {
 		void mbid;
 		playedVideos = [];
+		heroBad = new Set();
+		heroTall = '';
 	});
 	async function nextVideo() {
 		const cur = heroVideo;
@@ -273,7 +281,7 @@
 		const ctl = new AbortController();
 		void loadUISettings().then(() => {
 			if (ctl.signal.aborted || want !== mbid || !autoplayHere()) return;
-			void artistVideo(want, ctl.signal).then((v) => !ctl.signal.aborted && want === mbid && v?.proxy_url && (heroVideo = v));
+			void artistVideo(want, ctl.signal).then((v) => !ctl.signal.aborted && want === mbid && v?.proxy_url && !heroBad.has(v.key) && (heroVideo = v));
 		});
 		return () => ctl.abort();
 	});
@@ -284,9 +292,18 @@
 		const v = heroVideo;
 		const el = videoEl;
 		if (!v || !el) return;
+		// One more try at the tallest picture: a stream can carry one rendition
+		// the browser will not decode (one music video's 720p did, its 1080p played).
+		const tall = heroTall === v.key;
 		let detach: (() => void) | null = null;
 		let stopped = false;
 		const fail = () => {
+			if (stopped) return;
+			if (!tall) {
+				heroTall = v.key;
+				return;
+			}
+			heroBad.add(v.key);
 			videoIn = false;
 			heroVideo = null;
 		};
@@ -295,7 +312,7 @@
 		el.addEventListener('error', fail);
 		// Never the opening: a start the browser dropped (Safari's own HLS) jumps back to it.
 		const unhold = holdStart(el, heroVideoStart(v));
-		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), screenTarget('cover'))
+		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), tall ? 1080 : screenTarget('cover'))
 			.then((d) => {
 				if (stopped) return d();
 				detach = d;
@@ -329,7 +346,11 @@
 				}
 				videoMuted = el.muted;
 			})
-			.catch(() => {
+			.catch((e: unknown) => {
+				// A play the page itself cut short (the stream was swapped or
+				// detached) is not the video failing.
+				if (e instanceof DOMException && e.name === 'AbortError') return;
+				if (heroVideo) heroBad.add(heroVideo.key);
 				videoIn = false;
 				heroVideo = null;
 			});

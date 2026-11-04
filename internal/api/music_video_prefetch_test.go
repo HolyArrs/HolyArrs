@@ -116,3 +116,31 @@ func TestArtistAskedKeptAndBounded(t *testing.T) {
 		t.Fatalf("old ones kept: %d", len(old))
 	}
 }
+
+// A noted artist with no videos is asked of the metadata server again about
+// once a day by the pass, not on every pass.
+func TestArtistNoVideosAskedDaily(t *testing.T) {
+	asks := 0
+	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) { asks++; return nil, nil })
+	a := apiOf(t, u)
+	ctx := context.Background()
+	clock := time.Now()
+	a.artistVideos.mu.Lock()
+	a.artistVideos.now = func() time.Time { return clock }
+	a.artistVideos.mu.Unlock()
+	a.noteArtistVideos(ctx, []string{apiArtist})
+	// Passes 6 minutes apart (past the page's 5-minute wait for an empty list).
+	for range 5 {
+		videoPass(t, u)
+		clock = clock.Add(6 * time.Minute)
+	}
+	if asks != 1 {
+		t.Fatalf("asked %d times in 5 passes", asks)
+	}
+	// A day later it is asked again.
+	clock = clock.Add(artistEmptyRecheck)
+	videoPass(t, u)
+	if asks != 2 {
+		t.Fatalf("not asked again after a day: %d", asks)
+	}
+}
