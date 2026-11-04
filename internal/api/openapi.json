@@ -1425,6 +1425,10 @@
             "description": "The last problem, in plain words; empty when the last check worked.",
             "type": "string"
           },
+          "local": {
+            "description": "Jackett only: its address is on this machine or the local network, so its Sources may reach the local network there.",
+            "type": "boolean"
+          },
           "sites": {
             "description": "Sites in Jackett at the last check (Prowlarr: the Sources its sync wrote).",
             "type": "integer"

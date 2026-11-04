@@ -26,6 +26,8 @@ type BridgeView struct {
 	LastError   string     `json:"last_error,omitempty"`
 	Sites       int        `json:"sites"`
 	Sources     int        `json:"sources"`
+	// Local: a Jackett on the local network, whose Sources may reach it there.
+	Local bool `json:"local,omitempty"`
 }
 
 // BridgeInput is a Jackett or Prowlarr to test or connect.
@@ -57,7 +59,7 @@ func (a *API) bridges() *bridge.Service {
 func (a *API) bridgeView(ctx context.Context, b bridge.Bridge) BridgeView {
 	svc := a.bridges()
 	return BridgeView{ID: b.ID, Kind: b.Kind, URL: b.URL, CallbackURL: b.CallbackURL, LastCheck: svc.LastChecked(b), LastError: b.LastError,
-		Sites: b.SiteCount, Sources: svc.SourceCount(ctx, b)}
+		Sites: b.SiteCount, Sources: svc.SourceCount(ctx, b), Local: b.Kind == bridge.KindJackett && b.Extra["local"] == "1"}
 }
 
 func bridgeFail(w http.ResponseWriter, status int, err error, field string) {
