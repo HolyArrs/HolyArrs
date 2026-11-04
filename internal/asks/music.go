@@ -343,6 +343,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 	if err != nil {
 		return 0, err
 	}
+	added := false // a new artist is searched at the end of its own add
 	if tid == 0 {
 		defs, err := library.ReadMusicDefaults(ctx, db)
 		if err != nil {
@@ -384,6 +385,9 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		if o.PickRulesID == 0 {
 			o.PickRulesID = set.MusicPickRulesID
 		}
+		// A new artist's tracks come with its MusicBrainz refresh: the search
+		// waits for that (and the scan) in the add's own chain.
+		o.SearchAfter = set.SearchOnApprove
 		var dup *library.ArtistAlreadyAddedError
 		tid, _, err = s.Library.AddArtist(ctx, "mbid:"+mbid, o, by.actor())
 		switch {
@@ -393,6 +397,8 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 			return 0, err
 		case len(a.Albums) == 0:
 			return tid, nil
+		default:
+			added = true
 		}
 	}
 	var artistKeep bool
@@ -417,8 +423,11 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 			widen = append(widen, p.ID)
 		}
 	}
+	// Albums taken in get their tracks with the refresh that follows: an
+	// artist already in the Library is searched after it (#139).
+	searchAfter := set.SearchOnApprove && !added && len(widen) > 0
 	if len(widen) > 0 {
-		if err := s.Library.IncludeAlbums(ctx, tid, widen, by.actor()); err != nil {
+		if err := s.Library.IncludeAlbumsThen(ctx, tid, widen, searchAfter, by.actor()); err != nil {
 			return 0, err
 		}
 		if parts, err = store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid); err != nil {
@@ -445,6 +454,13 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 			if _, err := s.Library.ChooseEdition(ctx, p.ID, ed, by.actor()); err != nil {
 				log.Printf("asks: edition %s of %s: %v", ed, p.Name, err)
 			}
+		}
+	}
+	// An artist already in the Library has its kept albums' tracks: look
+	// for them at once (a new artist and widened albums wait as above).
+	if set.SearchOnApprove && !added && len(widen) == 0 && s.Library.Queue != nil {
+		if err := s.Library.ScanThenSearch(ctx, tid, by.actor()); err != nil {
+			log.Printf("asks: search for artist %d: %v", tid, err)
 		}
 	}
 	return tid, nil

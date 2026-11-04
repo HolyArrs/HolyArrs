@@ -35,6 +35,9 @@ type ArtistAddOptions struct {
 	WhyAdded string `json:"-"`
 	// Adopt keeps an artist folder found on disk as the artist's folder.
 	Adopt *MusicAdoption `json:"-"`
+	// SearchAfter searches all the artist still wants once the MusicBrainz
+	// refresh (which fills the tracks) and the folder scan are done.
+	SearchAfter bool `json:"-"`
 }
 
 // ArtistAlreadyAddedError says the artist is already in the Library.
@@ -380,8 +383,12 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 		KindArtistPictures+":"+strconv.FormatInt(t.ID, 10), by); err != nil {
 		log.Printf("library: queue pictures for artist %d: %v", t.ID, err)
 	}
+	then := []any{KindScanTitle}
+	if opt.SearchAfter {
+		then = append(then, stepSearchWanted)
+	}
 	jobID, _, err := s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID},
-		map[string]any{"then": []any{KindScanTitle}, "new": true}, "refresh_title:"+strconv.FormatInt(t.ID, 10), by)
+		map[string]any{"then": then, "new": true}, "refresh_title:"+strconv.FormatInt(t.ID, 10), by)
 	return t.ID, jobID, err
 }
 

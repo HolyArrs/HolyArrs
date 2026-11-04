@@ -539,7 +539,9 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	// Episodes count when the show and their season are kept up to date
 	// too, and only once they are out (setting missing_search_shows, on by
 	// default).
-	args = append(args, Setting(ctx, db, SettingMissingShows) != "false", Setting(ctx, db, SettingMissingMusic) != "false")
+	// Those two settings are for the nightly and bulk searches: a search kept
+	// to one title (an approved request) always covers its shows and music.
+	args = append(args, titleID > 0 || Setting(ctx, db, SettingMissingShows) != "false", titleID > 0 || Setting(ctx, db, SettingMissingMusic) != "false")
 	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
 		JOIN titles t ON t.id = i.title_id
 		WHERE s.state IN (` + ph + `) AND (? = '' OR t.kind = ?) AND (? = 0 OR t.id = ?) AND i.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND t.state = 'active' AND s.active_download_id IS NULL

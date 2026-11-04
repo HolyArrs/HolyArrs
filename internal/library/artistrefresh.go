@@ -668,6 +668,13 @@ func (s *Service) ChooseEdition(ctx context.Context, partID int64, release strin
 // kinds say. The kinds stay as they are; an album kept up to date stays
 // included on later refreshes.
 func (s *Service) IncludeAlbums(ctx context.Context, titleID int64, partIDs []int64, by domain.Actor) error {
+	return s.IncludeAlbumsThen(ctx, titleID, partIDs, false, by)
+}
+
+// IncludeAlbumsThen is IncludeAlbums; with search, everything the artist
+// still wants is searched once the refresh has made the new albums'
+// tracks (and the folder scan is done).
+func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs []int64, search bool, by domain.Actor) error {
 	if len(partIDs) == 0 {
 		return nil
 	}
@@ -707,7 +714,11 @@ func (s *Service) IncludeAlbums(ctx context.Context, titleID int64, partIDs []in
 	}
 	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": asked albums included and kept up to date; album kinds unchanged",
 		Data: map[string]any{"part_ids": partIDs}, GroupKey: groupKey(t.ID)})
-	_, _, err = s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID}, map[string]any{"new": true},
+	params := map[string]any{"new": true}
+	if search {
+		params["then"] = []any{KindScanTitle, stepSearchWanted}
+	}
+	_, _, err = s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID}, params,
 		fmt.Sprintf("refresh_title:%d", t.ID), by)
 	return err
 }

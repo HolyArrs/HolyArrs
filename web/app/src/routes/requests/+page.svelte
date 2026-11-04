@@ -313,13 +313,27 @@
 		const offs = [
 			live.on('ask', () => void load()),
 			live.on('ask_removed', () => void load()),
-			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive()))
+			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive())),
+			// Members get their own downloads as dl patches (#139): read again when one changes.
+			live.on('dl', onDlPatch)
 		];
 		return () => {
 			compactQuery.removeEventListener('change', syncCompactReview);
 			offs.forEach((off) => off());
 		};
 	});
+
+	// A dl patch with rows in it means a download moved; one read for a burst of them.
+	let dlSoon: ReturnType<typeof setTimeout> | undefined;
+	function onDlPatch(data: unknown) {
+		const p = data as { upsert?: unknown[]; remove?: unknown[] } | null;
+		if (!p || (!p.upsert?.length && !p.remove?.length) || dlSoon) return;
+		dlSoon = setTimeout(() => {
+			dlSoon = undefined;
+			void loadLive();
+		}, 1500);
+	}
+	onDestroy(() => clearTimeout(dlSoon));
 
 	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
 	let titleLive = $state(new Map<number, TitleLive>());
@@ -477,7 +491,7 @@
 	/** approvedLine says what happens after approval. */
 	function approvedLine(a: Ask) {
 		if (a.kind === 'show') return `HolyArrs keeps ${what(a)} up to date and looks for the episodes.`;
-		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date. HolyArrs can't look for music downloads yet.`;
+		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date and looks for the albums.`;
 		return 'HolyArrs is looking for it.';
 	}
 
@@ -840,9 +854,9 @@
 			{#if mode === 'approve'}
 				<p class="hint">
 					{picked.kind === 'show'
-						? `Approving adds the show to the Library and keeps ${what(picked)} up to date. HolyArrs looks for episodes soon and again each night.`
+						? `Approving adds the show to the Library, keeps ${what(picked)} up to date and starts looking for the episodes.`
 						: picked.kind === 'artist'
-							? `Approving adds the artist to the Library with ${what(picked)} kept up to date. HolyArrs can't look for music downloads yet.`
+							? `Approving adds the artist to the Library, keeps ${what(picked)} up to date and starts looking for the albums.`
 							: 'Approving adds the movie to the Library and starts looking for it.'}
 				</p>
 			{/if}

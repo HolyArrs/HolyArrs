@@ -79,8 +79,9 @@ describe('episodes or songs left unticked (#135)', () => {
 		// One episode asked and in: "Ready · 1 episode", more counts whole seasons.
 		const one = partialFacts('seasons', [{ key: 1, complete: false, real: true, size: 9, have: 1 }, { key: 2, complete: false, real: true, size: 9, have: 0 }], [], [{ key: 1, count: 1 }]);
 		expect(lifecycle({ state: 'available', title_id: 7 }, one)).toMatchObject({ label: 'Ready · 1 episode', more: '1 more season available' });
-		const half = partialFacts('seasons', [{ key: 2, complete: false, real: true, size: 8, have: 1 }], [], [{ key: 2, count: 3 }]);
-		expect(lifecycle({ state: 'approved', title_id: 7 }, half).label).toBe('Processing · 2 episodes left');
+		// Files on disk are counted per season, unpicked ones too: never Ready early from them.
+		const disk = partialFacts('seasons', [{ key: 2, complete: false, real: true, size: 8, have: 5 }], [], [{ key: 2, count: 3 }]);
+		expect(lifecycle({ state: 'approved', title_id: 7 }, disk).label).toBe('Processing');
 	});
 	it('a part asked whole and in part counts as whole', () => {
 		expect(partialFacts('seasons', seasons, [2], [{ key: 2, count: 3 }]).skipped).toBeUndefined();
