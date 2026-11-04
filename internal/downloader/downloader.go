@@ -27,7 +27,10 @@ var (
 
 // AddRequest is one Release to send.
 type AddRequest struct {
-	URL        string // link to the torrent or nzb
+	URL string // link to the torrent or nzb
+	// File, when set, is the torrent or nzb HolyArrs already fetched from
+	// URL; qBittorrent and SABnzbd get it instead of the address (#152).
+	File       []byte
 	Name       string // the Release name; Usenet jobs are found again by it
 	Category   string
 	SavePath   string

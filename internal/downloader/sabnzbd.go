@@ -1,11 +1,13 @@
 package downloader
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -53,6 +55,32 @@ func (s *Sabnzbd) call(ctx context.Context, mode string, q url.Values, keyed boo
 	if err != nil {
 		return nil, fmt.Errorf("sabnzbd %s: bad address", mode)
 	}
+	return s.do(req, mode)
+}
+
+// callFile posts one file as the "name" field (addfile), with the other
+// arguments in the query as call sends them.
+func (s *Sabnzbd) callFile(ctx context.Context, mode string, q url.Values, file string, data []byte) ([]byte, error) {
+	q.Set("mode", mode)
+	q.Set("output", "json")
+	q.Set("apikey", s.key)
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	w, err := mw.CreateFormFile("name", file)
+	if err != nil {
+		return nil, err
+	}
+	_, _ = w.Write(data)
+	_ = mw.Close()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/api?"+q.Encode(), &body)
+	if err != nil {
+		return nil, fmt.Errorf("sabnzbd %s: bad address", mode)
+	}
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	return s.do(req, mode)
+}
+
+func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 	resp, err := s.http.Do(req)
 	if err != nil {
 		// url.Error holds the address, and the address holds the key.
@@ -167,14 +195,27 @@ func (s *Sabnzbd) Add(ctx context.Context, r AddRequest) (string, error) {
 			}
 		}
 	}
-	q := url.Values{"name": {r.URL}}
+	q := url.Values{}
 	if r.Category != "" {
 		q.Set("cat", r.Category)
 	}
 	if r.Name != "" {
 		q.Set("nzbname", r.Name)
 	}
-	b, err := s.call(ctx, "addurl", q, true)
+	var b []byte
+	var err error
+	if len(r.File) > 0 {
+		// The NZB HolyArrs fetched goes up as a file; SABnzbd never gets the
+		// address (#152).
+		name := "release.nzb"
+		if r.Name != "" {
+			name = safeFileName(r.Name) + ".nzb"
+		}
+		b, err = s.callFile(ctx, "addfile", q, name, r.File)
+	} else {
+		q.Set("name", r.URL)
+		b, err = s.call(ctx, "addurl", q, true)
+	}
 	if err != nil {
 		return "", err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -118,7 +119,15 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte("Fails."))
 			return
 		}
-		f.added = append(f.added, map[string]string{"urls": r.PostForm.Get("urls"), "category": r.PostForm.Get("category"), "savepath": r.PostForm.Get("savepath")})
+		add := map[string]string{"urls": r.PostForm.Get("urls"), "category": r.PostForm.Get("category"), "savepath": r.PostForm.Get("savepath")}
+		if r.ParseMultipartForm(1<<20) == nil {
+			add["category"], add["savepath"] = r.FormValue("category"), r.FormValue("savepath")
+			if file, _, err := r.FormFile("torrents"); err == nil {
+				b, _ := io.ReadAll(file)
+				add["torrent"] = string(b)
+			}
+		}
+		f.added = append(f.added, add)
 		_, _ = w.Write([]byte("Ok."))
 	case "/api/v2/torrents/info":
 		var out []map[string]any
