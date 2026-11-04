@@ -357,8 +357,12 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 		t.Episodes = append(t.Episodes, e)
 	}
-	root := mapPath(d.SavePath, dr.PathMap)
+	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
+	if !rootOK {
+		// A folder with a ".." part could lead anywhere: nothing in it is read.
+		cands, bad = nil, []domain.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
+	}
 	// A download that holds only archives (RAR, 7-Zip, zip, tar) is unpacked next to it first.
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
@@ -466,7 +470,11 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if len(olds[i]) > 0 {
 			oldName = fileName(olds[i][0])
 		}
-		if why := lieOf(name, relName, len(olds[i]) > 0, oldName, pr.Body); why != "" {
+		why = lieOf(name, relName, len(olds[i]) > 0, oldName, pr.Body)
+		if why == "" && music && len(olds[i]) > 0 {
+			why = lossyOverLossless(plan[i].SourceFile, relName, olds[i][0], pr.Body)
+		}
+		if why != "" {
 			for _, id := range plan[i].TargetSlotIDs {
 				slots[id].lie = why
 			}

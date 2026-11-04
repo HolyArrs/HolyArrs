@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -294,5 +295,111 @@ func TestPlanTracksMatching(t *testing.T) {
 	}
 	if !slices.Equal(plan[2].TargetSlotIDs, []int64{12}) || filepath.ToSlash(plan[1].TargetPath) != "/lib/A/B/01 - Dawn.flac" {
 		t.Errorf("targets %v %s", plan[2].TargetSlotIDs, plan[1].TargetPath)
+	}
+}
+
+// haveTracks puts a copy of every track in the Library as files named
+// after ext, from a Release called listing, each Slot looking for better.
+func (w albumWorld) haveTracks(t *testing.T, ext, listing string) {
+	t.Helper()
+	names := []string{"Dawn", "Glass River", "Night Train"}
+	var verID int64
+	_ = w.s.Read().QueryRow("SELECT version_id FROM slots WHERE id = ?", w.slots[0]).Scan(&verID)
+	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		for i, n := range names {
+			rel := fmt.Sprintf("Lab Band/First Light (2020)/%02d - %s.%s", i+1, n, ext)
+			write(t, filepath.Join(w.lib, filepath.FromSlash(rel)), 4096)
+			name := listing
+			f := &domain.File{SlotIDs: []int64{w.slots[i]}, VersionID: verID, RelativePath: rel, Size: 4096, AddedAt: time.Now(), Languages: []string{},
+				MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
+			if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", f.ID, w.slots[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// #43: an MP3 album never replaces the FLAC copies in place at import, even
+// when its Release was taken by hand (with force) and says MP3 320.
+func TestAlbumImportKeepsLosslessOverLossy(t *testing.T) {
+	w := albumSetup(t, 1, "01 - Dawn.mp3", "02 - Glass River.mp3", "03 - Night Train.mp3")
+	w.haveTracks(t, "flac", albumRel)
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE releases SET name = 'Lab Band - First Light (2020) [MP3 320]'")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	refused := 0
+	for _, st := range imp.Plan {
+		if st.Method == "refuse" && strings.Contains(strings.Join(st.Why, " "), "lower than the lossless copy in place") {
+			refused++
+		}
+	}
+	if refused != 3 || imp.State == "done" {
+		t.Fatalf("import %s, %d refused: %+v", imp.State, refused, imp.Plan)
+	}
+	for _, n := range []string{"01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac"} {
+		if !exists(filepath.Join(w.lib, "Lab Band", "First Light (2020)", n)) {
+			t.Fatalf("%s is gone", n)
+		}
+	}
+	if exists(filepath.Join(w.lib, "Lab Band", "First Light (2020)", "01 - Dawn.mp3")) {
+		t.Fatal("an MP3 was placed over FLAC")
+	}
+}
+
+// The other way is an upgrade: FLAC over MP3 copies is imported.
+func TestAlbumImportLosslessOverLossy(t *testing.T) {
+	w := albumSetup(t, 1, "01 - Dawn.flac", "02 - Glass River.flac", "03 - Night Train.flac")
+	w.haveTracks(t, "mp3", "Lab Band - First Light (2020) [MP3 320]")
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || imp.State != "done" {
+		t.Fatalf("import %v %s: %+v", err, imp.State, imp.Plan)
+	}
+}
+
+// #43: a .m4a file may be AAC or ALAC; its Release name says which. AAC
+// over FLAC is refused, ALAC over FLAC is not.
+func TestAlbumImportM4AByReleaseName(t *testing.T) {
+	for _, c := range []struct {
+		listing string
+		refused bool
+	}{
+		{"Lab Band - First Light (2020) [AAC 256 iTunes]", true},
+		{"Lab Band - First Light (2020) [ALAC]", false},
+	} {
+		w := albumSetup(t, 1, "01 - Dawn.m4a", "02 - Glass River.m4a", "03 - Night Train.m4a")
+		w.haveTracks(t, "flac", albumRel)
+		if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+			_, err := tx.Exec("UPDATE releases SET name = ?", c.listing)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lossy := 0
+		for _, st := range imp.Plan {
+			if strings.Contains(strings.Join(st.Why, " "), "lower than the lossless copy in place") {
+				lossy++
+			}
+		}
+		if (lossy == 3) != c.refused {
+			t.Fatalf("%s: %d refused as lossy, want refused %v: %+v", c.listing, lossy, c.refused, imp.Plan)
+		}
 	}
 }

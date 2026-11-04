@@ -96,19 +96,8 @@ func outputPath(save string, maps []domain.PathMap, seen []domain.SeenFile) stri
 // mapPath turns a Downloader's path into HolyArrs' own through its path
 // map (the first entry whose Downloader side starts the path).
 func mapPath(p string, maps []domain.PathMap) string {
-	for _, m := range maps {
-		theirs, ours := strings.TrimRight(m.Theirs, `/\`), strings.TrimRight(m.Ours, `/\`)
-		if theirs == "" {
-			continue
-		}
-		if p == theirs {
-			return ours
-		}
-		if rest, ok := strings.CutPrefix(p, theirs); ok && (rest[0] == '/' || rest[0] == '\\') {
-			return ours + rest
-		}
-	}
-	return p
+	out, _ := domain.MapPath(p, maps)
+	return out
 }
 
 // queueSlot is one Slot a download holds, with its episode or movie.

@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -410,5 +411,52 @@ func TestAlbumHeldThenChosenAndPicksLimit(t *testing.T) {
 	}
 	if r := relByName(t, g.fixture, flac); !hasCode(r, "rank.source_limit") {
 		t.Fatalf("limit not said: %v", reasonCodes(r))
+	}
+}
+
+// #43: choosing an MP3 album by hand over tracks that are all FLAC already
+// needs force, whatever state the Release is in: no track would gain.
+func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
+	ms := &musicServer{answer: func(url.Values) []string { return []string{mp3} }}
+	f := seedArtist(t, ms.start(t))
+	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		for _, l := range ltaTracks {
+			name := flac
+			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
+				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
+			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sr := &Searcher{Store: f.s}
+	f.albumJob(t, sr, lta, map[string]any{"choose": false})
+	r := relByName(t, f.fixture, "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]")
+	// Whatever the verdict made of it, a person picks it from the list.
+	ids := make([]string, len(ltaTracks))
+	for i, l := range ltaTracks {
+		ids[i] = fmt.Sprint(f.slots[l])
+	}
+	exec(t, f.fixture, "UPDATE releases SET state = 'passed_over', matched_slot_ids = ? WHERE id = ?", "["+strings.Join(ids, ",")+"]", r.ID)
+	var nf *NeedsForceError
+	if _, err := sr.Choose(context.Background(), r.ID, 0, false, domain.System); !errors.As(err, &nf) || !strings.Contains(strings.Join(nf.Reasons, " "), "already has a copy as good") {
+		t.Fatalf("picked over FLAC without force: %v", err)
+	}
+	// The same for one track named by the page.
+	if _, err := sr.Choose(context.Background(), r.ID, f.slots[ltaTracks[0]], false, domain.System); !errors.As(err, &nf) {
+		t.Fatalf("picked over FLAC for one track without force: %v", err)
+	}
+	if st := f.state(t, ltaTracks[0]); st != domain.SlotBetterWanted {
+		t.Fatalf("slot moved: %s", st)
+	}
+	if ch, err := sr.Choose(context.Background(), r.ID, 0, true, domain.System); err != nil || !ch.Forced || len(ch.SlotIDs) != len(ltaTracks) {
+		t.Fatalf("with force: %+v %v", ch, err)
 	}
 }

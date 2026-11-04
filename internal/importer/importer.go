@@ -682,19 +682,8 @@ func (im *Importer) HandleJob(ctx context.Context, r *jobs.Run) error {
 }
 
 func mapPath(p string, maps []domain.PathMap) string {
-	for _, m := range maps {
-		theirs, ours := strings.TrimRight(m.Theirs, `/\`), strings.TrimRight(m.Ours, `/\`)
-		if theirs == "" {
-			continue
-		}
-		if p == theirs {
-			return ours
-		}
-		if rest, ok := strings.CutPrefix(p, theirs); ok && (rest[0] == '/' || rest[0] == '\\') {
-			return ours + rest
-		}
-	}
-	return p
+	out, _ := domain.MapPath(p, maps)
+	return out
 }
 
 // Import plans a finished Download and, unless dryRun, places its files,
@@ -771,8 +760,12 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		year = *ti.Year
 	}
 	// Only the files the Download reported: nothing else in the folder is ours.
-	root := mapPath(d.SavePath, dr.PathMap)
+	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
+	if !rootOK {
+		// A folder with a ".." part could lead anywhere: nothing in it is read.
+		cands, bad = nil, []domain.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
+	}
 	folder := safeName(ver.FolderName)
 	if folder == "" || folder == "." || folder == ".." {
 		folder = FolderName(ti.Name, year)

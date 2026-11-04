@@ -162,10 +162,16 @@ func (f *labFeed) set(keep []string, extra ...labFeedItem) {
 // listing for the feed.
 func labOwnMovie(t *testing.T, cat, name string, seed byte) labFeedItem {
 	t.Helper()
+	return labOwnFile(t, cat, name, name+".mkv", seed)
+}
+
+// labOwnFile is labOwnMovie with the file inside named file.
+func labOwnFile(t *testing.T, cat, name, file string, seed byte) labFeedItem {
+	t.Helper()
 	// 24 MB: over the fake check's floor for a video of unknown length (20 MB).
-	files := []labFile{{name: name + ".mkv", data: video(seed, 24<<20)}}
+	files := []labFile{{name: file, data: video(seed, 24<<20)}}
 	tor, hash := labTorrent("", files)
-	base := labServe(t, map[string][]byte{"own.torrent": tor})
+	base := labServe(t, map[string][]byte{"own-" + fmt.Sprint(seed) + ".torrent": tor})
 	dir := labHere(filepath.Join("/data/downloads/incomplete", cat))
 	if err := os.MkdirAll(dir, 0o777); err != nil {
 		t.Fatal(err)
@@ -173,7 +179,7 @@ func labOwnMovie(t *testing.T, cat, name string, seed byte) labFeedItem {
 	if err := os.WriteFile(filepath.Join(dir, files[0].name), files[0].data, 0o666); err != nil {
 		t.Fatal(err)
 	}
-	return labFeedItem{name: name, link: base + "/own.torrent", hash: hash, size: int64(len(files[0].data))}
+	return labFeedItem{name: name, link: base + "/own-" + fmt.Sprint(seed) + ".torrent", hash: hash, size: int64(len(files[0].data))}
 }
 
 // labMovie is Dune: Part Two with one movie Slot in a Version, a Source,
@@ -187,15 +193,17 @@ type labMovie struct {
 	vault  *secrets.Vault
 	cat    string
 	movies string
-	title  int64
-	slot   int64
-	ver    int64
+	// mayFail names Releases whose Download is meant to fail on the way.
+	mayFail map[string]bool
+	title   int64
+	slot    int64
+	ver     int64
 }
 
 type labMovieOpts struct {
 	cat     string
-	movies  string                    // the Library folder; a temp folder when ""
-	feed    string                    // the Source (Torznab); none when ""
+	movies  string                      // the Library folder; a temp folder when ""
+	feed    string                      // the Source (Torznab); none when ""
 	rules   func(*domain.PickRulesBody) // changes to Good everyday
 	pathMap []domain.PathMap
 	notOut  bool // the digital release is a month away: the gate is closed
@@ -288,7 +296,9 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	md := metadata.Lab()
 	x.lib = &library.Service{Store: s, Queue: x.q, Metadata: md}
 	x.m = &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", o.cat)}
-	x.m.Link = func(ctx context.Context, rel domain.Release) (string, error) { return source.GrabLink(ctx, s, vault, rel) }
+	x.m.Link = func(ctx context.Context, rel domain.Release) (string, error) {
+		return source.GrabLink(ctx, s, vault, rel)
+	}
 	im := &importer.Importer{Store: s}
 	q := x.q
 	sr := &source.Searcher{Store: s, Queue: q, Secrets: vault, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
@@ -447,7 +457,9 @@ func (x *labMovie) untilPlaced(t *testing.T) (domain.File, DownloadRow) {
 				}
 				switch r.Phase {
 				case "failed", "vanished", "import_refused", "needs_a_decision":
-					t.Fatalf("download %s: %+v; %s", r.Phase, r, x.dump())
+					if !x.mayFail[r.Name] {
+						t.Fatalf("download %s: %+v; %s", r.Phase, r, x.dump())
+					}
 				}
 			}
 		}
@@ -567,6 +579,59 @@ func TestLabBeta41PickReleaseYourself(t *testing.T) {
 		t.Fatalf("chosen by hand events %d, release %+v", byHand, x.releases(t)[labDune1080])
 	}
 	t.Logf("#41: %d listings shown, the .exe needs force (%s), our Dune chosen by hand, imported as %s (%s); row %s", len(rels), exe.has("hard.safety:executable")+exe.has("hard.never"), f.RelativePath, f.PlacedBy, row.Label)
+}
+
+// #41 the whole chain: a program file behind a video name, chosen by hand
+// with force, is sent; when qBittorrent lists its files it fails as
+// dangerous, is turned down, and the Slot is searched again, which sends our
+// Dune test torrent, imported. Clearing the Turned down list afterwards
+// leaves the program file refused: picking it again needs force again.
+func TestLabBeta41ForcedProgramFileChain(t *testing.T) {
+	const cat = "holyarrs-lab-b41c"
+	// A program file behind a video name, said in the listing (as the
+	// lab fake indexer's own decoy says it), with our own file behind it.
+	const exeName = "Dune.Part.Two.2024.1080p.WEB.H264-LABEXE.mkv.exe"
+	feed := newLabFeed(t)
+	exe := labOwnFile(t, cat, exeName, exeName, 41)
+	feed.set([]string{labDune1080}, exe)
+	x := newLabMovie(t, labMovieOpts{cat: cat, feed: feed.URL})
+	x.mayFail = map[string]bool{exeName: true}
+	x.remove(t, exe.hash, labDuneHash)
+	x.handSearch(t, false)
+	r := x.releases(t)[exeName]
+	if r.Outcome != "refused" || !r.NeedsForce || r.has("hard.safety:executable")+r.has("hard.never") == "" {
+		t.Fatalf("the program file: %+v", r)
+	}
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d,"force":true}`, x.slot), 200)
+	f, _ := x.untilPlaced(t)
+	var failed, why string
+	_ = x.s.Read().QueryRow("SELECT d.state, COALESCE(d.state_reason, '') FROM downloads d JOIN releases r ON r.id = d.release_id WHERE r.name = ?", exeName).Scan(&failed, &why)
+	if failed != "failed" || !strings.Contains(why, "dangerous") {
+		t.Fatalf("the program file's Download is %s (%s)", failed, why)
+	}
+	// Turned down for this Slot: on the list (state turned_down), or judged
+	// again by the next search with that as a failed reason.
+	td := x.releases(t)[exeName]
+	down := td.State == "turned_down"
+	for _, r := range td.Reasons {
+		down = down || r.Code == "hard.turned_down" && r.Effect == "fail"
+	}
+	if !down || !td.NeedsForce {
+		t.Fatalf("the program file after failing: %+v", td)
+	}
+	if got := x.labDownloads(); got[exeName] != 1 || got[labDune1080] != 1 {
+		t.Fatalf("sent %v", got)
+	}
+	if strings.Contains(f.RelativePath, ".exe") {
+		t.Fatalf("placed %s", f.RelativePath)
+	}
+	do(t, "DELETE", x.srv.URL+"/api/v1/turned-down", "", 200)
+	if r := x.releases(t)[exeName]; r.State != "refused" || !r.NeedsForce {
+		t.Fatalf("after clearing the list: %+v", r)
+	}
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(r.ID)+"/choose", fmt.Sprintf(`{"slot_id":%d}`, x.slot), 409)
+	t.Logf("#41 chain: forced %s failed as dangerous (%s), turned down, our Dune sent next and imported as %s; after clearing the list it still needs force", exeName, why, f.RelativePath)
 }
 
 // #46 Pick your quality: with Good everyday the 1080p copy ranks over our

@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -250,5 +252,47 @@ func TestImportRemovesStalePartFromTargetFolder(t *testing.T) {
 	}
 	if _, err := os.Stat(keep); err != nil {
 		t.Fatal("an unrelated file was touched")
+	}
+}
+
+// #50: a Windows Downloader's folder (qBittorrent on the Windows host,
+// HolyArrs in Docker) is found through the mapping whatever its case and
+// separators, and the file is imported.
+func TestImportThroughWindowsMapping(t *testing.T) {
+	w := setup(t)
+	parent, base := filepath.Dir(w.dl), filepath.Base(w.dl)
+	maps, _ := json.Marshal([]domain.PathMap{{Theirs: `D:\Downloads`, Ours: parent}})
+	mapExec(t, w.s, "UPDATE downloaders SET path_map = ?", string(maps))
+	mapExec(t, w.s, "UPDATE downloads SET save_path = ?", `d:\downloads\`+base)
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || imp.State != "done" {
+		t.Fatalf("import %v %+v", err, imp)
+	}
+}
+
+// #50: a folder with a ".." part is never read, mapped or not: the import
+// refuses it and places nothing.
+func TestImportRefusesDotDotFolder(t *testing.T) {
+	w := setup(t)
+	mapExec(t, w.s, "UPDATE downloads SET save_path = ?", filepath.Join(w.dl, "x")+string(filepath.Separator)+".."+string(filepath.Separator)+filepath.Base(w.dl))
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if imp.State == "done" || len(imp.Plan) != 1 || imp.Plan[0].Method != "refuse" || !strings.Contains(strings.Join(imp.Plan[0].Why, " "), `".."`) {
+		t.Fatalf("import %s plan %+v", imp.State, imp.Plan)
+	}
+	if n := count(t, w.s, "files"); n != 0 {
+		t.Fatalf("%d files placed", n)
+	}
+}
+
+func mapExec(t *testing.T, s *store.Store, q string, args ...any) {
+	t.Helper()
+	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(q, args...)
+		return err
+	}); err != nil {
+		t.Fatal(err)
 	}
 }

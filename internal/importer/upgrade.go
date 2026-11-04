@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -144,6 +145,38 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickR
 	}
 	return ""
 }
+
+// lossyOverLossless says why a track file may not replace the copy in
+// place: a lossy file over a lossless copy (#43), whatever its Release
+// said. Only the kinds of file are compared, by extension (and the copy in
+// place also by its Release name): bit rates in bare track names are not
+// known well enough to rank one lossy copy over another.
+func lossyOverLossless(newPath, relName string, old domain.File, rules domain.PickRulesBody) string {
+	ext := strings.ToLower(filepath.Ext(newPath))
+	lossy := lossyExts[ext]
+	if !lossy && !losslessExts[ext] && relName != "" {
+		// .m4a, .mka: the file may be either; its Release name says which.
+		step, _ := judge.StepOf(relName, rules)
+		lossy = strings.HasPrefix(step, "lossy_")
+	}
+	if !lossy {
+		return ""
+	}
+	lossless := losslessExts[strings.ToLower(path.Ext(old.RelativePath))]
+	if !lossless {
+		step, _ := judge.StepOf(fileName(old), rules)
+		lossless = step == "lossless" || step == "lossless_hires"
+	}
+	if !lossless {
+		return ""
+	}
+	return fmt.Sprintf("file is lossy (%s), lower than the lossless copy in place", strings.TrimPrefix(ext, "."))
+}
+
+var (
+	lossyExts    = map[string]bool{".mp3": true, ".mp2": true, ".aac": true, ".ogg": true, ".oga": true, ".opus": true, ".wma": true, ".mpc": true}
+	losslessExts = map[string]bool{".flac": true, ".wav": true, ".aiff": true, ".aif": true, ".ape": true, ".wv": true, ".dsf": true, ".dff": true, ".alac": true}
+)
 
 // renameFile is os.Rename; tests replace it to force the copy fallback.
 var renameFile = os.Rename

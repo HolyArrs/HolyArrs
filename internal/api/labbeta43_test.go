@@ -139,3 +139,43 @@ func TestLabBeta43LossyUpgradedToLossless(t *testing.T) {
 	_ = x.s.Read().QueryRow("SELECT count(*) FROM files WHERE release_name = ? AND state != 'present'", smallMP3).Scan(&replaced)
 	t.Logf("#43: MP3 320 album upgraded to FLAC; %d MP3 files no longer present; slots %v", replaced, x.states())
 }
+
+// #43, the two nets for a person: picking the lab MP3 320 copy by hand over
+// an album held as FLAC needs force; forced, it is downloaded, and the
+// import still refuses every MP3 over its FLAC copy, which stays.
+func TestLabBeta43ForcedLossyRefusedAtImport(t *testing.T) {
+	x := newLabAlbum(t)
+	flac := albumFiles(11, "flac")
+	mp3 := albumFiles(71, "mp3")
+	mh := serveAlbum(t, "lab-small-hours-mp3", smallMP3, smallMP3Hash, mp3, true)
+	fh := serveAlbum(t, "lab-small-hours-flac", smallFLAC, smallFLACHash, flac, false)
+	labRemove(t, x.m, labQbit(), fh, mh)
+	x.haveAlbum(t, smallFLAC, "flac", flac)
+	x.albumSearch(t)
+	x.albumDone(t)
+	var id int64
+	_ = x.s.Read().QueryRow("SELECT id FROM releases WHERE name = ? ORDER BY id DESC LIMIT 1", smallMP3).Scan(&id)
+	body := fmt.Sprintf(`{"slot_id":%d}`, x.slots[0])
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(id)+"/choose", body, 409)
+	do(t, "POST", x.srv.URL+"/api/v1/releases/"+itoa(id)+"/choose", fmt.Sprintf(`{"slot_id":%d,"force":true}`, x.slots[0]), 200)
+	var plan string
+	x.until(t, "the forced MP3 copy's import to end", func() bool {
+		var st string
+		_ = x.s.Read().QueryRow("SELECT state, COALESCE(plan, '') FROM imports ORDER BY id DESC LIMIT 1").Scan(&st, &plan)
+		return st != "" && st != "running" && st != "planned"
+	})
+	if !strings.Contains(plan, "lower than the lossless copy in place") {
+		t.Fatalf("import plan %s", plan)
+	}
+	for i, s := range smallSongs {
+		dir := filepath.Join(x.music, "Lab Lanterns", "Small Hours (2025)")
+		b, err := os.ReadFile(filepath.Join(dir, fmt.Sprintf("%02d - %s.flac", i+1, s)))
+		if err != nil || string(b) != string(flac[i].data) {
+			t.Fatalf("FLAC track %d changed: %v", i+1, err)
+		}
+		if _, err := os.Stat(filepath.Join(dir, fmt.Sprintf("%02d - %s.mp3", i+1, s))); err == nil {
+			t.Fatalf("MP3 track %d placed over FLAC", i+1)
+		}
+	}
+	t.Logf("#43: hand pick of MP3 320 over FLAC needed force; forced, downloaded, and the import refused it: FLAC kept; slots %v", x.states())
+}
