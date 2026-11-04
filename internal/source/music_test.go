@@ -460,3 +460,32 @@ func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
 		t.Fatalf("with force: %+v %v", ch, err)
 	}
 }
+
+// #43: a FLAC copy whose stored name says no format (an adopted or older
+// row) is still known as lossless by its extension: an MP3 album is no gain.
+func TestCurrentCopyKnownByExtension(t *testing.T) {
+	ms := &musicServer{answer: func(url.Values) []string { return []string{mp3} }}
+	f := seedArtist(t, ms.start(t))
+	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		for _, l := range ltaTracks {
+			name := "Velvet Cartography - Low Tide Atlas (2019)"
+			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
+				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
+			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sr := &Searcher{Store: f.s}
+	f.albumJob(t, sr, lta, nil)
+	if st := f.state(t, ltaTracks[0]); st == domain.SlotChosen {
+		t.Fatalf("MP3 320 chosen over FLAC with a plain name: %s", st)
+	}
+}

@@ -61,6 +61,9 @@ func inspectMP4(r io.ReaderAt, size int64) (Info, error) {
 				videoCodecs = append(videoCodecs, track.codec)
 			case "soun":
 				info.AudioTracks++
+				if track.codec != "" {
+					info.AudioCodecs = append(info.AudioCodecs, track.codec)
+				}
 				if normalized, ok := normalizeLanguage(track.language); ok {
 					info.AudioLanguages = append(info.AudioLanguages, normalized)
 				} else {
@@ -260,6 +263,8 @@ func (p *mp4Parser) readSTSD(box mp4BoxHeader) (string, error) {
 		}
 		if codec := normalizeCodec(string(entry[4:8])); codec != "" {
 			codecs = append(codecs, codec)
+		} else if codec := normalizeAudioCodec(string(entry[4:8])); codec != "" {
+			codecs = append(codecs, codec)
 		}
 		position += size
 	}
@@ -360,6 +365,31 @@ func normalizeCodec(value string) string {
 		return "xvid"
 	case "wvc1", "WVC1", "vc-1":
 		return "vc1"
+	default:
+		return ""
+	}
+}
+
+// normalizeAudioCodec names an MP4 audio sample entry (#43: an .m4a holds
+// ALAC or AAC).
+func normalizeAudioCodec(value string) string {
+	switch value {
+	case "alac":
+		return "alac"
+	case "fLaC":
+		return "flac"
+	case "mp4a":
+		return "aac"
+	case "Opus":
+		return "opus"
+	case ".mp3":
+		return "mp3"
+	case "ac-3":
+		return "ac3"
+	case "ec-3":
+		return "eac3"
+	case "lpcm", "sowt", "twos", "ipcm", "fpcm":
+		return "pcm"
 	default:
 		return ""
 	}

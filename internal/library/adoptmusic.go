@@ -18,6 +18,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/judge"
+	"github.com/CoderLuii/holyarrs/internal/mediainfo"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/naming"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -700,7 +701,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 					continue
 				}
 				ext := strings.ToLower(path.Ext(f.Path))
-				release := d.name + " [" + strings.ToUpper(strings.TrimPrefix(ext, ".")) + "]"
+				release := d.name + " [" + adoptedFormat(filepath.Join(lf.Path, filepath.FromSlash(f.Path)), ext) + "]"
 				file := &domain.File{SlotIDs: []int64{f.slot}, VersionID: v.ID, RelativePath: f.Path, Size: f.Size, AddedAt: s.now(),
 					Quality: domain.Quality{Source: strings.TrimPrefix(ext, ".")}, Languages: []string{}, MediaInfo: map[string]any{},
 					ReleaseName: &release, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
@@ -756,4 +757,19 @@ func (s *Service) recordFoundTracks(ctx context.Context, lf domain.LibraryFolder
 		known[strings.ToLower(f.Path)] = true
 	}
 	return n, nil
+}
+
+// adoptedFormat is the format word an adopted file's Release name gets: its
+// extension, or for a file that may hold either kind (.m4a, .mka, .mp4)
+// the codec read from its headers, so an ALAC library is known as lossless
+// (#43).
+func adoptedFormat(abs, ext string) string {
+	word := strings.ToUpper(strings.TrimPrefix(ext, "."))
+	switch ext {
+	case ".m4a", ".mka", ".mp4":
+		if info, err := mediainfo.Inspect(abs); err == nil && len(info.AudioCodecs) == 1 {
+			return strings.ToUpper(info.AudioCodecs[0])
+		}
+	}
+	return word
 }

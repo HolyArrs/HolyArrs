@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 )
 
 const (
@@ -78,6 +79,9 @@ func inspectMatroska(r io.ReaderAt, size int64) (Info, error) {
 					codecs = append(codecs, matroskaCodec(track.codec, track.codecPrivate))
 				case 2:
 					info.AudioTracks++
+					if c := matroskaAudioCodec(track.codec); c != "" {
+						info.AudioCodecs = append(info.AudioCodecs, c)
+					}
 					value := track.languageBCP
 					if value == "" {
 						value = track.language
@@ -310,6 +314,41 @@ func matroskaCodec(codec string, private []byte) string {
 		if len(private) >= 20 {
 			return normalizeCodec(string(private[16:20]))
 		}
+	}
+	return ""
+}
+
+// matroskaAudioCodec names a Matroska audio codec id.
+func matroskaAudioCodec(id string) string {
+	switch {
+	case id == "A_FLAC":
+		return "flac"
+	case id == "A_ALAC":
+		return "alac"
+	case id == "A_WAVPACK4":
+		return "wavpack"
+	case id == "A_TTA1":
+		return "tta"
+	case id == "A_TRUEHD":
+		return "truehd"
+	case strings.HasPrefix(id, "A_PCM"):
+		return "pcm"
+	case strings.HasPrefix(id, "A_AAC"):
+		return "aac"
+	case id == "A_MPEG/L3":
+		return "mp3"
+	case id == "A_MPEG/L2":
+		return "mp2"
+	case id == "A_VORBIS":
+		return "vorbis"
+	case id == "A_OPUS":
+		return "opus"
+	case id == "A_AC3":
+		return "ac3"
+	case id == "A_EAC3":
+		return "eac3"
+	case strings.HasPrefix(id, "A_DTS"):
+		return "dts"
 	}
 	return ""
 }

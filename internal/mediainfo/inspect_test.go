@@ -402,3 +402,30 @@ func ebmlSize(size int) []byte {
 		panic("test EBML payload too large")
 	}
 }
+
+// #43: an .m4a or .mka holds lossless (ALAC, FLAC) or lossy (AAC) audio:
+// the codec read from its headers says which.
+func TestInspectAudioCodecsLossless(t *testing.T) {
+	for _, c := range []struct {
+		name      string
+		data      []byte
+		lossless  bool
+		known     bool
+		wantCodec string
+	}{
+		{"mp4 alac", append(mp4Box("ftyp", []byte("M4A \x00\x00\x00\x00M4A ")), mp4Movie(mp4Track("soun", "alac", "", "eng"))...), true, true, "alac"},
+		{"mp4 aac", append(mp4Box("ftyp", []byte("M4A \x00\x00\x00\x00M4A ")), mp4Movie(mp4Track("soun", "mp4a", "", "eng"))...), false, true, "aac"},
+		{"mka flac", matroskaFixture("matroska", mkvTrack(2, "A_FLAC", "eng", "", nil)), true, true, "flac"},
+		{"mka aac", matroskaFixture("matroska", mkvTrack(2, "A_AAC/MPEG4/LC", "eng", "", nil)), false, true, "aac"},
+		{"no audio codec", matroskaFixture("matroska", mkvTrack(2, "A_SOMETHING", "eng", "", nil)), false, false, ""},
+	} {
+		got, err := InspectReaderAt(bytes.NewReader(c.data), int64(len(c.data)))
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		l, k := got.Lossless()
+		if l != c.lossless || k != c.known || strings.Join(got.AudioCodecs, ",") != c.wantCodec {
+			t.Errorf("%s: codecs %v lossless %v known %v", c.name, got.AudioCodecs, l, k)
+		}
+	}
+}

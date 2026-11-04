@@ -73,7 +73,10 @@ func outputPath(save string, maps []domain.PathMap, seen []domain.SeenFile) stri
 	if save == "" {
 		return ""
 	}
-	root := mapPath(save, maps)
+	root, ok := domain.MapPath(save, maps)
+	if !ok {
+		return "" // a folder with a ".." part is not handed on (#50)
+	}
 	top := ""
 	for i, f := range seen {
 		name := strings.Trim(strings.ReplaceAll(f.Name, `\`, "/"), "/")

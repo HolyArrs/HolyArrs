@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/judge"
+	"github.com/CoderLuii/holyarrs/internal/mediainfo"
 	"github.com/CoderLuii/holyarrs/internal/parse"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/tagset"
@@ -100,7 +102,38 @@ func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRu
 	if cur := judge.CurrentOf(name, f.AddedAt, pr.Body); cur.Step != "" {
 		return &cur
 	}
+	// A track whose stored name has no format word: its own extension, or
+	// for .m4a and .mka its codec, says what it is (#43: a lossless copy is
+	// protected however it was named).
+	if domain.IsMusicRules(pr.Body) {
+		if word := trackFormat(ctx, db, f); word != "" {
+			if cur := judge.CurrentOf(name+" ["+word+"]", f.AddedAt, pr.Body); cur.Step != "" {
+				return &cur
+			}
+		}
+	}
 	return nil
+}
+
+// trackFormat is the format word of a track File: its extension, or for a
+// file that may hold either kind the codec read from it in its Library folder.
+func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
+	ext := strings.ToLower(path.Ext(f.RelativePath))
+	switch ext {
+	case "":
+		return ""
+	case ".m4a", ".mka", ".mp4":
+		var lib string
+		if db.QueryRowContext(ctx, "SELECT lf.path FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id WHERE v.id = ?", f.VersionID).Scan(&lib) != nil {
+			return ""
+		}
+		info, err := mediainfo.Inspect(filepath.Join(lib, filepath.FromSlash(f.RelativePath)))
+		if err != nil || len(info.AudioCodecs) != 1 {
+			return ""
+		}
+		return strings.ToUpper(info.AudioCodecs[0])
+	}
+	return strings.ToUpper(strings.TrimPrefix(ext, "."))
 }
 
 // loadShow reads a show's episodes with their Slots in one Version.
@@ -215,6 +248,7 @@ var lookingNow = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted}
 
 // judgeShow judges every Release for a show search and ranks them.
 func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand, skipGate bool, rules showRules) ([]judge.Release, []judge.Verdict, error) {
+	bad := s.dangerousSeen(ctx)
 	refs := make([]judge.EpisodeRef, len(set.eps))
 	byItem := map[int64]*epSlot{}
 	for i := range set.eps {
@@ -237,7 +271,7 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 	for i, f := range all {
 		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Show: true})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
-			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority}
+			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(f.item.InfoHash, f.item.Title)}
 		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
 			Checks: checks}
 		if ss.Match.Title != nil {

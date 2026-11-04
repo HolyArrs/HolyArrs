@@ -128,6 +128,10 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	ch := Choice{ReleaseID: rel.ID, SlotID: slotID, Warnings: []string{}}
 	refused := RefusedByRules(rel) || turnedDownFor(rel, slotID) || len(rel.MatchedSlotIDs) > 0 && !slices.Contains(rel.MatchedSlotIDs, slotID)
 	var overridden []string
+	if s.dangerousRel(ctx, rel) {
+		refused = true
+		overridden = append(overridden, dangerousWhy)
+	}
 	// A track whose copy in place is as good (an MP3 over FLAC) gains
 	// nothing: that needs force too (#43, Lossless protection).
 	if c.cur != nil && domain.IsMusicRules(c.pr.Body) {
@@ -352,7 +356,10 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 		used := " AND (EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = releases.id) OR EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.release_id = releases.id))"
 		// One the Pick rules refused (a forced .exe, say) stays refused, so
 		// picking it again still needs force (#41).
-		res, err = tx.Exec(`UPDATE releases SET state = CASE WHEN json_extract(verdict, '$.outcome') = 'refused' THEN 'refused' ELSE 'passed_over' END,
+		res, err = tx.Exec(`UPDATE releases SET state = CASE WHEN json_extract(verdict, '$.outcome') = 'refused' AND EXISTS (SELECT 1 FROM json_each(verdict, '$.reasons') rr
+				WHERE json_extract(rr.value, '$.effect') = 'fail' AND NOT (json_extract(rr.value, '$.step') = 'hard' AND json_extract(rr.value, '$.rule') = 'turned_down'))
+				OR EXISTS (SELECT 1 FROM downloads dd WHERE dd.release_id = releases.id AND dd.state = 'failed' AND dd.state_reason LIKE 'dangerous files%')
+				THEN 'refused' ELSE 'passed_over' END,
 			verdict = json_set(COALESCE(verdict, '{}'), '$.taken_off_turned_down', json('true')),
 			updated_at = ?, updated_by = ? WHERE `+where+used, append([]any{store.FormatTime(time.Now()), actorText(by)}, args...)...)
 		if err != nil {
@@ -509,13 +516,77 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 
 // RefusedByRules says whether the Pick rules refused a Release, whatever its
 // state now: one sent with force and then removed, or taken off the Turned
-// down list, still needs force to be picked again (#41).
+// down list, still needs force to be picked again (#41). A verdict whose
+// only failing reason is that it was turned down before does not count:
+// clearing the list clears that.
 func RefusedByRules(rel domain.Release) bool {
 	if rel.State == "refused" {
 		return true
 	}
-	o, _ := rel.Verdict["outcome"].(string)
-	return o == "refused"
+	if o, _ := rel.Verdict["outcome"].(string); o != "refused" {
+		return false
+	}
+	reasons, _ := rel.Verdict["reasons"].([]any)
+	if len(reasons) == 0 {
+		return true // an older verdict without its reasons
+	}
+	for _, x := range reasons {
+		r, _ := x.(map[string]any)
+		if r["effect"] == "fail" && !(r["step"] == "hard" && r["rule"] == "turned_down") {
+			return true
+		}
+	}
+	return false
+}
+
+// dangerousRels are the info hashes and names of Releases whose Download
+// failed because its files were a program (fail_dangerous). The Downloads
+// stay as history, so this outlives clearing the Turned down list.
+type dangerousRels struct{ hashes, names map[string]bool }
+
+func (d dangerousRels) has(hash, name string) bool {
+	return hash != "" && d.hashes[strings.ToLower(hash)] || name != "" && d.names[name]
+}
+
+// dangerousWhy is the reason a Release known to hold a program needs force.
+const dangerousWhy = "its files were a program when it was downloaded before"
+
+// dangerousRel says whether a Download of rel (by info hash or name) failed
+// because its files were a program: picking it again needs force, whatever
+// its stored verdict says (#41).
+func (s *Searcher) dangerousRel(ctx context.Context, rel domain.Release) bool {
+	h := ""
+	if rel.InfoHash != nil {
+		h = *rel.InfoHash
+	}
+	if d := s.dangerousSeen(ctx); d.has(h, rel.Name) {
+		return true
+	}
+	var n int
+	_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM downloads WHERE release_id = ? AND state = 'failed' AND state_reason LIKE 'dangerous files%'", rel.ID).Scan(&n)
+	return n > 0
+}
+
+func (s *Searcher) dangerousSeen(ctx context.Context) dangerousRels {
+	d := dangerousRels{hashes: map[string]bool{}, names: map[string]bool{}}
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT lower(d.external_id), COALESCE(r.name, '') FROM downloads d LEFT JOIN releases r ON r.id = d.release_id
+		WHERE d.state = 'failed' AND d.state_reason LIKE 'dangerous files%'`)
+	if err != nil {
+		return d
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var h, n string
+		if rows.Scan(&h, &n) == nil {
+			if ValidInfoHash(h) {
+				d.hashes[h] = true
+			}
+			if n != "" {
+				d.names[n] = true
+			}
+		}
+	}
+	return d
 }
 
 // unprotectedSlots are the Slots a Release matched that can take a pick, that
@@ -554,6 +625,9 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 	var overridden []string
 	if RefusedByRules(rel) {
 		overridden = failReasons(rel)
+	}
+	if s.dangerousRel(ctx, rel) {
+		overridden = append(overridden, dangerousWhy)
 	}
 	if album && len(skipped) > 0 {
 		overridden = append(overridden, "the album would mix copies: "+strings.Join(skipped, "; "))
