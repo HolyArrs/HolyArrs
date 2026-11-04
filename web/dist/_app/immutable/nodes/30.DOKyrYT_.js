@@ -1,1 +1,0 @@
-import{Vi as e,Xr as t,ca as n,fa as r,pa as i,zr as a}from"../chunks/CUTn7xFI.js";import"../chunks/DiEZKSli.js";import{t as o}from"../chunks/CYhkUaUw.js";function s(s,c){i(c,!1),t();{let t=n(()=>a.params.mbid??``);o(s,{get mbid(){return e(t)}})}r()}export{s as component};
