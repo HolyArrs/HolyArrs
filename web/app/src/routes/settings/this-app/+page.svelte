@@ -176,12 +176,6 @@
 	async function loadStorage() {
 		if (!session.can('settings')) return;
 		if (storageNeedsProof) return;
-		if (session.s.via !== 'api_key' && !session.s.localRecent) {
-			storage = null;
-			storageError = '';
-			storageNeedsProof = true;
-			return;
-		}
 		try {
 			storage = await api.get('/app/storage');
 			storageError = '';

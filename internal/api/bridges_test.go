@@ -2,6 +2,8 @@ package api
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +11,9 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // Connect Jackett or Prowlarr (#96), through the API, against fakes on this machine.
@@ -267,6 +272,25 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	if keys != 0 {
 		t.Fatalf("%d old-app keys were made for a refused call", keys)
 	}
+	// Making the keys is a risky action: a sign-in whose password proof is
+	// older than 10 minutes is asked to confirm it, and nothing is made.
+	stale := func(at string) {
+		if err := f.s.WriteCore(context.Background(), func(tx *sql.Tx) error {
+			_, err := tx.Exec("UPDATE sessions SET local_auth_at = ?", at)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	stale(store.FormatTime(time.Now().Add(-time.Hour)))
+	if st, out := f.session("POST", "/api/v1/bridges", body); st != 403 || !strings.Contains(out, `"reauth"`) {
+		t.Fatalf("stale sign-in made old-app keys: %d %s", st, out)
+	}
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
+	if keys != 0 {
+		t.Fatalf("%d old-app keys were made for a stale sign-in", keys)
+	}
+	stale(store.FormatTime(time.Now()))
 	// Connect: the old-app API turns on, a key is made per side, HolyArrs is
 	// added to Prowlarr on both sides, and Prowlarr's sync writes the Sources.
 	st, out = f.session("POST", "/api/v1/bridges", body)

@@ -913,8 +913,7 @@ func Gate(m *http.ServeMux) http.Handler {
 			fail(w, http.StatusForbidden, "this API key's scope does not cover this route; make a key with the "+scope+" scope")
 			return
 		}
-		if who.Via != "api_key" && (RouteScope(pattern) == ScopeAdmin || RouteScope(pattern) == ScopeControl) &&
-			!RecentLocal(r) && !recentLocalExempt(pattern, who) {
+		if needsRecentLocal(pattern, who) && !RecentLocal(r) {
 			writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
 			return
 		}

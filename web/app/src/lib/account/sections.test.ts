@@ -14,9 +14,13 @@ describe('needsConfirm', () => {
 		expect(needsConfirm('password', { localRecent: false, via: 'session', hasPassword: false })).toBe(false);
 		expect(needsConfirm('link', { localRecent: false, via: 'session', hasPassword: false })).toBe(true);
 	});
-	it('asks before two-factor changes only on a local-network visit', () => {
-		expect(needsConfirm('two-factor', { localRecent: false, via: 'session' })).toBe(false);
+	it('asks before two-factor changes without a recent local sign-in', () => {
+		expect(needsConfirm('two-factor', { localRecent: false, via: 'session' })).toBe(true);
+		expect(needsConfirm('two-factor', { localRecent: true, via: 'session' })).toBe(false);
 		expect(needsConfirm('two-factor', { localRecent: false, via: 'local_network' })).toBe(true);
+	});
+	it('lets an administrator who must enroll set up two-factor straight away', () => {
+		expect(needsConfirm('two-factor', { localRecent: false, via: 'session', mustTwoFactor: true })).toBe(false);
 	});
 });
 

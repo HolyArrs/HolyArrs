@@ -54,8 +54,8 @@
 	let openGroup = $state<string | null>(null);
 	const isOpen = (id: string) => (openGroup ?? currentGroup?.group.id ?? menuGroups[0]?.group.id) === id || !!find.trim();
 
-	// Some pages (sign-in details, users, logs, backups) want the password
-	// typed again. The server answers 403 "reauth"; instead of leaving that
+	// Risky actions (keys, passwords, roles, backups, single sign-on) want
+	// the password typed again. The server answers 403 "reauth"; instead of leaving that
 	// bare error on the page, ask here, then load the page again. A failed
 	// save keeps the page (and its edits) under the box.
 	let reauth = $state<'load' | 'save' | null>(null);

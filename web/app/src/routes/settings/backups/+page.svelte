@@ -14,6 +14,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { BackupInfo } from '#lib/types.ts';
+	import { session } from '#lib/session.svelte.ts';
 
 	type Preset = 'balanced' | 'light' | 'careful';
 	const presets: { key: Preset; name: string; about: string }[] = [
@@ -52,6 +53,15 @@
 		}
 	}
 	onMount(load);
+
+	// A backup file is the whole database: downloading it is a risky action,
+	// so a sign-in older than 10 minutes is asked for the password first
+	// (the box above the page), then Download works.
+	function download(e: MouseEvent) {
+		if (session.s.via !== 'session' || session.s.localRecent) return;
+		e.preventDefault();
+		window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
+	}
 
 	async function choose(p: Preset) {
 		if (savingPreset) return;
@@ -168,7 +178,7 @@
 							<div class="mono small ellipsis">{b.name}</div>
 							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {b.detail || words(b.kind)}</div>
 						</div>
-						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download>Download</AdminLinkButton>
+						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>Download</AdminLinkButton>
 						<IconButton icon="trash" label="Delete {b.name}" tipSide="below-end" type="button" onclick={() => remove(b)} />
 					</li>
 				{/each}
