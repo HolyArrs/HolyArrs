@@ -252,8 +252,11 @@ export const tmdbMovies = [
  */
 export const fakeYouTube = { lumenCist01: 'ok', asterAge001: 'age', asterPlay02: 'ok', weirGone001: 'gone', weirGone002: 'gone', pumiceBel01: 'ok', tinLantVid1: 'hls' };
 
-/** The music videos the fake metadata server lists, by artist MBID (only the first made-up artist has one). */
-export const fakeArtistVideos = () => ({ [fakeArtists[0].id]: [{ youtube_id: 'tinLantVid1', title: 'Tin Lanterns - Harbour Song (Official Video)', duration: 200 }] });
+/** An artist only trailers.spec.ts opens (no other spec or pass reaches it first), with one music video. */
+export const videoArtist = 'a9999999-0000-4000-8000-000000000191';
+
+/** The music videos the fake metadata server lists, by artist MBID. @returns {Record<string, { youtube_id: string; title: string; duration: number }[]>} */
+export const fakeArtistVideos = () => ({ [videoArtist]: [{ youtube_id: 'tinLantVid1', title: 'Lab Artist - Harbour Song (Official Video)', duration: 200 }] });
 
 /** The address the fake YouTube gives for an ok video (expire is a Unix time). */
 export const fakeVideoAddress = (/** @type {string} */ key, /** @type {number} */ expire) => `https://rr1---sn-lab.googlevideo.com/videoplayback?expire=${expire}&id=${key}&itag=18`;

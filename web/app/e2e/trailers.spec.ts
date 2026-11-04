@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { fakeArtists, fakeYouTube, tmdbPort } from './fakes.mjs';
+import { fakeYouTube, tmdbPort, videoArtist } from './fakes.mjs';
 import { owner, signIn } from './helpers.ts';
 
 // Trailers from HolyArrs's own reader, against the fake YouTube (fakes.mjs):
@@ -9,7 +9,7 @@ import { owner, signIn } from './helpers.ts';
 // age sign-in, so its second one plays; both of Gossamer Weir's trailers
 // were removed; Pumice Belfry is not looked up yet when its page opens.
 // The title page's Trailer button on Gossamer Weir says why at once. An
-// artist's music video (Tin Lanterns) is only noted when its page asks: the
+// artist's music video (an artist only this spec opens) is only noted when its page asks: the
 // pass makes it ready, and the page and the in-view batch then answer it.
 // Nothing leaves this machine: the browser's calls to YouTube's video
 // servers and player are answered here (page routes), everything else
@@ -196,7 +196,8 @@ test("every trailer removed: the title page's Trailer button says why at once", 
 });
 
 test("an artist's music video: the page only notes it, the pass makes it ready", async () => {
-	const artist = fakeArtists[0].id;
+	// An artist no other spec opens, so nothing made its video ready first.
+	const artist = videoArtist;
 	const video = `/api/v1/music/artists/${artist}?part=video`;
 	const first = await page.request.get(video);
 	expect(first.status(), await first.text()).toBe(404);
