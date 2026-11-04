@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { liveByTitle, liveFacts, partialFacts, realAlbum } from './live.ts';
+import { liveByTitle, liveFacts, partialFacts, realAlbum, stepFacts } from './live.ts';
 import { lifecycle } from './lifecycle.ts';
 
 const dl = (title_id: number, phase: string, progress = 0) => ({ title_id, phase, progress });
@@ -110,5 +110,21 @@ describe('a download waiting on a person', () => {
 	});
 	it('a copy still downloading wins over a stuck one', () => {
 		expect(liveByTitle([dl(7, 'needs_a_decision', 1), dl(7, 'downloading', 0.4)], []).get(7)?.download?.phase).toBe('downloading');
+	});
+});
+
+describe('the server step when the page has no live detail (#139)', () => {
+	const approved = { state: 'approved' as const, title_id: 7 };
+	it('names each step, never a made-up percent', () => {
+		expect(lifecycle(approved, stepFacts({ kind: 'searching' })).label).toBe('Searching');
+		expect(lifecycle(approved, stepFacts({ kind: 'downloading' })).label).toBe('Downloading');
+		expect(lifecycle(approved, stepFacts({ kind: 'importing' })).label).toBe('Importing');
+		expect(lifecycle(approved, stepFacts({ kind: 'waiting_on_admin' })).label).toBe('Needs a decision');
+		expect(lifecycle(approved, stepFacts({ kind: 'not_out' })).label).toBe('Upcoming');
+		expect(lifecycle(approved, stepFacts(undefined)).label).toBe('Processing');
+	});
+	it('waiting says why and when it last looked, instead of a bare Processing', () => {
+		const life = lifecycle(approved, stepFacts({ kind: 'waiting', text: 'no Release passed the Pick rules (2 found, 2 refused)', searched_at: '2026-11-03T08:00:00Z' }));
+		expect(life).toMatchObject({ label: 'Looking for a release', tone: 'wait', reason: 'no Release passed the Pick rules (2 found, 2 refused)', searchedAt: '2026-11-03T08:00:00Z' });
 	});
 });

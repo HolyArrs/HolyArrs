@@ -27,9 +27,9 @@ type interestState struct {
 func (a *API) liveViewer(r *http.Request) live.Viewer {
 	who, ok := auth.From(r.Context())
 	if !ok {
-		return live.Viewer{All: a.s.Auth == nil}
+		return live.Viewer{All: a.s.Auth == nil, Approve: a.s.Auth == nil}
 	}
-	return live.Viewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary)}
+	return live.Viewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}
 }
 
 func (a *API) liveRoutes(m *http.ServeMux) {

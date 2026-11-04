@@ -743,3 +743,45 @@ func TestDeciderSignInNameHiddenFromMembers(t *testing.T) {
 		t.Fatalf("with a display name the member reads %q %q", n, d)
 	}
 }
+
+// route: GET /api/v1/asks
+// #139: an approved ask says where it is. The person who asked reads the
+// step only; people who approve also read the search's words for why.
+func TestAskStepOverHTTP(t *testing.T) {
+	r := newAskRig(t)
+	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
+	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", `{}`, 200)
+	if err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE jobs SET state = 'done'"); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE slots SET state = 'wanted', last_reason = 'no Release passed the Pick rules (1 found, 1 refused)'")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	step := func(s *signedIn) map[string]any {
+		var x struct {
+			Asks []struct {
+				ID   int64          `json:"id"`
+				Step map[string]any `json:"step"`
+			} `json:"asks"`
+		}
+		if err := json.Unmarshal(s.call("GET", "/api/v1/asks", "", 200), &x); err != nil {
+			t.Fatal(err)
+		}
+		for _, v := range x.Asks {
+			if v.ID == a.ID {
+				return v.Step
+			}
+		}
+		t.Fatal("ask not listed")
+		return nil
+	}
+	if s := step(r.ana); s["kind"] != "waiting" || s["text"] != nil {
+		t.Fatalf("member's step %v", s)
+	}
+	if s := step(r.owner); s["kind"] != "waiting" || s["text"] != "no Release passed the Pick rules (1 found, 1 refused)" {
+		t.Fatalf("approver's step %v", s)
+	}
+}

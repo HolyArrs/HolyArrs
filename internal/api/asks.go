@@ -123,6 +123,9 @@ func (a *API) askViews(r *http.Request, where string, args ...any) ([]asks.View,
 			vs[i].Mine = vs[i].Mine || p.ID == me
 		}
 	}
+	// Where each approved ask is now (#139): the search's own words for
+	// why one waits are for people who approve.
+	a.s.Asks.AddSteps(r.Context(), vs, mayApprove(r))
 	// Who else declined the same title is for people who approve (#136).
 	// The people who asked see who decided by display name only, never
 	// the sign-in name.

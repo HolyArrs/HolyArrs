@@ -242,7 +242,9 @@ export const tmdbMovies = [
 	// Only requests.spec.ts (#136): asked again and declined by three admins in turn.
 	{ id: 900601, title: 'Harrow Teaspoon', release_date: '2015-04-04', imdb_id: 'tt9006010', overview: 'A teaspoon that stirs the whole village awake.', dates: [[3, '2015-04-04'], [4, '2015-06-01']] },
 	// Only requests.spec.ts (#139): a member's open Requests page follows its decision live.
-	{ id: 900602, title: 'Quince Lamplight', release_date: '2016-05-05', imdb_id: 'tt9006020', overview: 'A lamplighter who only lights the lamps no one walks under.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] }
+	{ id: 900602, title: 'Quince Lamplight', release_date: '2016-05-05', imdb_id: 'tt9006020', overview: 'A lamplighter who only lights the lamps no one walks under.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] },
+	// Only requests.spec.ts (#139): approved, nothing found for it; its steps show live.
+	{ id: 900603, title: 'Rook Lantern', release_date: '2017-02-02', imdb_id: 'tt9006030', overview: 'A lantern a rook carries across the moor each night.', dates: [[3, '2017-02-02'], [4, '2017-04-01']] }
 ];
 
 /**

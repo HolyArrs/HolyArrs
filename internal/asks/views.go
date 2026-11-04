@@ -69,6 +69,8 @@ type View struct {
 	Note         string     `json:"note,omitempty"`
 	AutoApproved bool       `json:"auto_approved"`
 	AvailableAt  *time.Time `json:"available_at,omitempty"`
+	// Step says where an approved ask is now (filled by AddSteps).
+	Step *Step `json:"step,omitempty"`
 	// Problem says why an approved ask will not reach the Library, when the
 	// server knows (the people who asked see it on Requests).
 	Problem string `json:"problem,omitempty"`

@@ -34,6 +34,8 @@ type Options struct {
 type Viewer struct {
 	UserID int64
 	All    bool
+	// Approve: the person approves asks (they read everyone's asks).
+	Approve bool
 }
 
 // Audience says whether a non-manager viewer may receive an event.
@@ -171,10 +173,16 @@ func (h *Hub) PublishDLUser(key string, data any, userID int64) uint64 {
 	return h.publishEvent(TopicDL, key, data, func(v Viewer) bool { return !v.All && userID > 0 && v.UserID == userID }, true)
 }
 
-// PublishUser sends data on topic to one non-manager person's streams
-// only; managers get their own, fuller event on the topic.
+// PublishApprovers sends data on topic to the people who approve asks
+// only, the same people the asks routes show everyone's asks to (#139).
+func (h *Hub) PublishApprovers(topic string, data any) uint64 {
+	return h.publishEvent(topic, "", data, func(v Viewer) bool { return v.Approve }, true)
+}
+
+// PublishUser sends data on topic to one person's streams when they do
+// not approve asks; approvers get their own, fuller event on the topic.
 func (h *Hub) PublishUser(topic string, data any, userID int64) uint64 {
-	return h.publishEvent(topic, "", data, func(v Viewer) bool { return !v.All && userID > 0 && v.UserID == userID }, true)
+	return h.publishEvent(topic, "", data, func(v Viewer) bool { return !v.Approve && userID > 0 && v.UserID == userID }, true)
 }
 
 // Viewers lists the people holding a stream who are not managers.

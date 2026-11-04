@@ -309,7 +309,11 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	who, ok := auth.From(r.Context())
 	manage := !ok || who.Has(auth.PermManageLibrary)
 	where, args := "1=1", []any{}
-	if !manage {
+	// People who approve read the downloads of every approved ask on the
+	// Requests page (?asked=1), as they read everyone's asks there (#139);
+	// the rows stay the plain ones members get.
+	asked := r.URL.Query().Get("asked") == "1"
+	if !manage && !(asked && ok && who.Has(auth.PermApprove)) {
 		where = `EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
 			JOIN asks a ON a.title_id = i.title_id JOIN ask_people p ON p.ask_id = a.id WHERE p.user_id = ?)`
 		args = append(args, who.UserID)
@@ -332,7 +336,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	// ?asked=1 reads every download for a title with an approved ask, with
 	// no 500-row cap, so the Requests page counts failed asks exactly.
 	n := limit(r, 100)
-	if r.URL.Query().Get("asked") == "1" {
+	if asked {
 		where += ` AND EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
 			JOIN asks a ON a.title_id = i.title_id WHERE a.state = 'approved')`
 		n = -1
