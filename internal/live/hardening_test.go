@@ -82,7 +82,7 @@ func TestQueryLastResumes(t *testing.T) {
 
 func viewerFromHeader(r *http.Request) Viewer {
 	id, _ := strconv.ParseInt(r.Header.Get("X-User"), 10, 64)
-	return Viewer{UserID: id, All: r.Header.Get("X-Manager") == "1"}
+	return Viewer{UserID: id, All: r.Header.Get("X-Manager") == "1", Approve: r.Header.Get("X-Approve") == "1"}
 }
 
 // A member receives only events meant for them, live and on replay; the
@@ -274,18 +274,20 @@ func TestDLUserOnly(t *testing.T) {
 	}
 }
 
-// PublishUser reaches one member's streams only: managers get their own,
-// fuller event, and other members nothing (#139 asks followed live).
-func TestPublishUserSkipsManagers(t *testing.T) {
+// Ask events follow the asks routes (#139): the full one goes to people
+// who approve, each asker who does not approve gets their own copy, and
+// someone who only runs the Library (or another member) gets neither.
+func TestAskEventsFollowApprove(t *testing.T) {
 	h := NewHub(Options{})
 	srv := httptest.NewServer(h.Handler(viewerFromHeader))
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	open := func(user, manager string) chan got {
+	open := func(user, manager, approve string) chan got {
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
 		req.Header.Set("X-User", user)
 		req.Header.Set("X-Manager", manager)
+		req.Header.Set("X-Approve", approve)
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatal(err)
@@ -295,23 +297,26 @@ func TestPublishUserSkipsManagers(t *testing.T) {
 		go readEvents(t, resp, ch, nil)
 		return ch
 	}
-	member := open("7", "0")
-	other := open("8", "0")
-	manager := open("1", "1")
-	waitClients(t, h, 3)
-	h.Publish("ask", "full")
+	member := open("7", "0", "0")
+	other := open("8", "0", "0")
+	approver := open("1", "0", "1")
+	librarian := open("9", "1", "0")
+	waitClients(t, h, 4)
+	h.PublishApprovers("ask", "full")
 	h.PublishUser("ask", "for 7", 7)
 	if e := next(t, member); string(e.data) != `"for 7"` {
 		t.Fatalf("member got %s", e.data)
 	}
-	if e := next(t, manager); string(e.data) != `"full"` {
-		t.Fatalf("manager got %s", e.data)
+	if e := next(t, approver); string(e.data) != `"full"` {
+		t.Fatalf("approver got %s", e.data)
 	}
 	select {
-	case e := <-manager:
-		t.Fatalf("manager got the member's copy too: %s", e.data)
+	case e := <-approver:
+		t.Fatalf("approver got the member's copy too: %s", e.data)
 	case e := <-other:
 		t.Fatalf("another member got %s", e.data)
+	case e := <-librarian:
+		t.Fatalf("a Library manager who does not approve got %s", e.data)
 	case <-time.After(150 * time.Millisecond):
 	}
 }

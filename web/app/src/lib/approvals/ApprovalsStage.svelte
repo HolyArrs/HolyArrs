@@ -132,6 +132,11 @@
 			const why = life.reason ? ` ${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : '';
 			return (picked.title_id ? 'Couldn’t download it.' : 'Couldn’t add it to the Library.') + why;
 		}
+		// Nothing in flight and nothing found yet (#139): say why and when it last looked.
+		if (life.label === 'Looking for a release') {
+			const why = life.reason ? `${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : 'Nothing found yet.';
+			return life.searchedAt ? `${why} Last looked ${whenDate(life.searchedAt)}.` : why;
+		}
 		return life.stage === 'upcoming' ? `Getting it for ${who}. It isn’t out yet.` : `Getting it for ${who}.`;
 	});
 	const year = $derived(d?.year ?? picked.year ?? null);

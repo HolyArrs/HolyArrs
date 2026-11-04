@@ -16,8 +16,14 @@ import (
 // viewAs reads the Downloads rows as one person, past the sign-in.
 func viewAs(t *testing.T, x *dl41, who auth.Who) []DownloadRow {
 	t.Helper()
+	return viewAt(t, x, who, "/api/v1/downloads/view")
+}
+
+// viewAt is viewAs at a given address (?asked=1 for the Requests page).
+func viewAt(t *testing.T, x *dl41, who auth.Who, url string) []DownloadRow {
+	t.Helper()
 	a := New(Server{Store: x.s, Queue: x.q, Live: live.NewHub(live.Options{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
-	r := httptest.NewRequest("GET", "/api/v1/downloads/view", nil)
+	r := httptest.NewRequest("GET", url, nil)
 	r = r.WithContext(auth.ContextWith(r.Context(), who))
 	w := httptest.NewRecorder()
 	a.downloadsView(w, r)
@@ -57,6 +63,15 @@ func TestDownloadsViewOwnAsksOnly(t *testing.T) {
 	admin := viewAs(t, x, auth.Who{UserID: 1, Role: auth.RoleAdmin, Perms: []auth.Perm{auth.PermManageLibrary}, Via: "session"})
 	if len(admin) != 1 || !admin[0].CanAct {
 		t.Fatalf("admin rows %+v", admin)
+	}
+	// #139: someone who approves (but does not run the Library) reads every
+	// approved ask's downloads on the Requests page, as plain rows with no actions.
+	approver := auth.Who{UserID: 3, Role: auth.RoleMember, Perms: []auth.Perm{auth.PermAsk, auth.PermApprove}, Via: "session"}
+	if rows := viewAt(t, x, approver, "/api/v1/downloads/view?asked=1"); len(rows) != 1 || rows[0].CanAct {
+		t.Fatalf("approver's Requests rows %+v", rows)
+	}
+	if rows := viewAs(t, x, approver); len(rows) != 0 {
+		t.Fatalf("approver's own Downloads page shows someone else's download: %+v", rows)
 	}
 	// Every action and the swarm stay with people who manage the Library.
 	for _, p := range []string{"POST /api/v1/downloads/{id}/mark-failed", "POST /api/v1/downloads/{id}/remove", "POST /api/v1/downloads/{id}/pause",

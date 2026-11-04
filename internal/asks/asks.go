@@ -387,12 +387,20 @@ func (s *Service) changed(ctx context.Context, id int64) {
 	if err != nil || len(vs) != 1 {
 		return
 	}
+	s.AddSteps(ctx, vs, true)
 	v := vs[0]
-	s.Live.Publish("ask", v)
+	// Everyone's asks, decline notes and names go to the people who
+	// approve, as the asks routes show them (#139).
+	s.Live.PublishApprovers("ask", v)
 	// The people who asked follow their own ask live too (#139), told who
 	// decided by display name only, as their Requests list reads it.
 	mine := v
 	mine.Mine, mine.AlsoDeclined = true, nil
+	if v.Step != nil {
+		st := *v.Step
+		st.Text = ""
+		mine.Step = &st
+	}
 	if v.DecidedBy != nil {
 		d := *v.DecidedBy
 		d.Name = ""
@@ -988,7 +996,7 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskWithdrawn, Summary: p.Name + " took back the ask for " + label(a),
 		Data: map[string]any{"ask_id": a.ID}, GroupKey: groupKey(a.ID)})
 	if s.Live != nil {
-		s.Live.Publish("ask_removed", map[string]any{"id": id})
+		s.Live.PublishApprovers("ask_removed", map[string]any{"id": id})
 		// The people who asked see it go from their own open pages too (#139):
 		// only p when the others keep the ask, else everyone on it.
 		gone := ids

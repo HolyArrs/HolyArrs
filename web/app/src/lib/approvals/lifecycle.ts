@@ -18,6 +18,8 @@ export interface Life {
 	more?: string;
 	/** Why it failed, when known (said in the window, not in the label). */
 	reason?: string;
+	/** Waiting for a release: when it was last looked for. */
+	searchedAt?: string;
 }
 
 /** What else is known about an approved ask; each part is left out when unknown. */
@@ -25,7 +27,7 @@ export interface LifeFacts {
 	/** The download's 0..1. */
 	progress?: number;
 	/** What the pipeline is doing for it right now (from the live searches and downloads). */
-	phase?: 'searching' | 'downloading' | 'importing' | 'stuck' | 'failed';
+	phase?: 'searching' | 'downloading' | 'importing' | 'stuck' | 'failed' | 'waiting';
 	/** Not released yet: the short date it comes out ('' when the date is unknown). */
 	upcoming?: string;
 	/**
@@ -37,8 +39,10 @@ export interface LifeFacts {
 	more?: number;
 	/** Episodes or songs left unticked inside the asked seasons or albums. */
 	skipped?: number;
-	/** Why it failed, when known. */
+	/** Why it failed (or, while waiting, why nothing came yet), when known. */
 	reason?: string;
+	/** Waiting: when it was last looked for. */
+	searchedAt?: string;
 }
 
 /** lifecycle places an ask on its line; `facts` adds what is known beyond its state. */
@@ -56,8 +60,17 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	if (facts.phase === 'stuck') return { stage: 'getting', pct: hi - 3, tone: 'wait', label: 'Needs a decision' };
 	if (facts.phase === 'importing') return { stage: 'importing', pct: hi - 3, tone: 'go', label: 'Importing' };
 	if (facts.phase === 'downloading') {
-		const d = facts.progress === undefined || !Number.isFinite(facts.progress) ? 0 : Math.min(Math.max(facts.progress, 0), 1);
+		// The server's step knows a download runs, not how far: no made-up 0%.
+		if (facts.progress === undefined || !Number.isFinite(facts.progress)) return { stage: 'downloading', pct: lo + (hi - lo) * 0.15, tone: 'go', label: 'Downloading' };
+		const d = Math.min(Math.max(facts.progress, 0), 1);
 		return { stage: 'downloading', pct: lo + (hi - lo) * (0.15 + 0.75 * d), tone: 'go', label: `Downloading · ${Math.round(d * 100)}%` };
+	}
+	// Nothing in flight and nothing found yet: say so, with why and when it last looked.
+	if (facts.phase === 'waiting') {
+		const life: Life = { stage: 'getting', pct: lo, tone: 'wait', label: 'Looking for a release' };
+		if (facts.reason) life.reason = facts.reason;
+		if (facts.searchedAt) life.searchedAt = facts.searchedAt;
+		return life;
 	}
 	// Everything asked for is in: Ready, however much more the title has.
 	if (part && part.total > 0 && part.have >= part.total) return ready(facts);

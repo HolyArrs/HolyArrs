@@ -360,6 +360,15 @@ export interface Who {
 	display_name?: string;
 }
 
+/** AskStep says where an approved ask is: searching, downloading, importing, waiting_on_admin, waiting (nothing found yet) or not_out. */
+export interface AskStep {
+	kind: 'searching' | 'downloading' | 'importing' | 'waiting_on_admin' | 'waiting' | 'not_out';
+	/** Why it waits, in the search's words (people who approve only). */
+	text?: string;
+	/** When it was last looked for. */
+	searched_at?: string;
+}
+
 /** Ask is one movie or show someone asked for on the Requests page. */
 export interface Ask {
 	id: number;
@@ -394,6 +403,8 @@ export interface Ask {
 	decided_by?: Who;
 	/** Others who declined the same title on earlier requests, newest first. */
 	also_declined?: Who[];
+	/** Where an approved ask is now, from the server's records (#139). */
+	step?: AskStep;
 	decided_at?: string;
 	note?: string;
 	auto_approved: boolean;

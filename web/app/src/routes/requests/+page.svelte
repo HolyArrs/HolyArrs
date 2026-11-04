@@ -26,7 +26,7 @@
 	import { inbox, markRead, refreshInbox } from '#lib/requests.svelte.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView, SearchView } from '#lib/types.ts';
 	import type { DownloadRow } from '#lib/downloaders.ts';
-	import { liveByTitle, liveFacts, type TitleLive } from '#lib/approvals/live.ts';
+	import { liveByTitle, liveFacts, stepFacts, type TitleLive } from '#lib/approvals/live.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { albumWords } from '#lib/music/music.ts';
 	import { titleStatus } from '#lib/title-status.ts';
@@ -312,6 +312,14 @@
 		void loadLive();
 		const offs = [
 			live.on('ask', () => void load()),
+			// A slot moving (a search found nothing, an import waits on a person) changes an ask's step.
+			live.on('slot', () => {
+				if (slotSoon) return;
+				slotSoon = setTimeout(() => {
+					slotSoon = undefined;
+					void load();
+				}, 2000);
+			}),
 			live.on('ask_removed', () => void load()),
 			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive())),
 			// Members get their own downloads as dl patches (#139): read again when one changes.
@@ -325,15 +333,18 @@
 
 	// A dl patch with rows in it means a download moved; one read for a burst of them.
 	let dlSoon: ReturnType<typeof setTimeout> | undefined;
+	let slotSoon: ReturnType<typeof setTimeout> | undefined;
 	function onDlPatch(data: unknown) {
 		const p = data as { upsert?: unknown[]; remove?: unknown[] } | null;
 		if (!p || (!p.upsert?.length && !p.remove?.length) || dlSoon) return;
 		dlSoon = setTimeout(() => {
 			dlSoon = undefined;
 			void loadLive();
+			// The person's own ask steps move with their downloads.
+			if (!approver) void load();
 		}, 1500);
 	}
-	onDestroy(() => clearTimeout(dlSoon));
+	onDestroy(() => (clearTimeout(dlSoon), clearTimeout(slotSoon)));
 
 	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
 	let titleLive = $state(new Map<number, TitleLive>());
@@ -488,6 +499,36 @@
 		return f.phase === 'failed' ? `The download failed.${f.reason ? ` ${f.reason}` : ''}` : '';
 	}
 
+	/** stepLine says, in plain words, where the person's own approved ask is now (#139): no percent, no download names. */
+	function stepLine(a: Ask): string {
+		if (a.state !== 'approved' || !a.step) return '';
+		switch (a.step.kind) {
+			case 'searching':
+				return 'Searching for it now';
+			case 'downloading':
+				return 'Downloading now';
+			case 'importing':
+				return 'Adding it to the Library';
+			case 'waiting_on_admin':
+				return 'Waiting on an admin';
+			case 'not_out':
+				return 'Not out yet';
+			case 'waiting':
+				return a.step.searched_at ? `Nothing found yet · last looked ${ago(a.step.searched_at)}` : 'Nothing found yet';
+		}
+		return '';
+	}
+	// While one of the person's own asks is on its way, read the list again now and then:
+	// a search starting or an import finishing reaches them only this way.
+	const inFlight = $derived(asks.some((a) => a.state === 'approved' && ['searching', 'downloading', 'importing', 'waiting_on_admin'].includes(a.step?.kind ?? '')));
+	$effect(() => {
+		if (!inFlight) return;
+		const t = setInterval(() => {
+			if (document.visibilityState === 'visible') void load();
+		}, 15_000);
+		return () => clearInterval(t);
+	});
+
 	/** approvedLine says what happens after approval. */
 	function approvedLine(a: Ask) {
 		if (a.kind === 'show') return `HolyArrs keeps ${what(a)} up to date and looks for the episodes.`;
@@ -528,7 +569,12 @@
 	const people = $derived(askers(asks));
 	const ctx: ApprovalsCtx = {
 		get shown() { return shown; },
-		live: (a) => (a.problem ? { phase: 'failed', reason: a.problem } : liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined)),
+		live: (a) => {
+			if (a.problem) return { phase: 'failed', reason: a.problem };
+			// The page's own live search or download first, else the server's step (#139).
+			const f = liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined);
+			return f.phase ? f : { ...f, ...stepFacts(a.step) };
+		},
 		get viewed() { return viewed; },
 		get tab() { return tab; },
 		get counts() { return counts; },
@@ -707,7 +753,9 @@
 							{#if a.state === 'approved'}
 								{@const why = whyFailed(a)}
 								{#if why}<p class="line rq-fail" data-testid="ask-failed">{why}</p>
-								{:else}<p class="line muted">{approvedLine(a)}</p>{#if a.title_id && a.title_id > 0}<SearchOutcomeLine titleId={a.title_id} />{/if}{/if}
+								{:else}<p class="line muted">{approvedLine(a)}</p>
+									{#if stepLine(a)}<p class="line rq-step" data-testid="ask-step">{stepLine(a)}</p>{/if}
+									{#if a.title_id && a.title_id > 0 && !a.step}<SearchOutcomeLine titleId={a.title_id} />{/if}{/if}
 							{/if}
 							<div class="actions">
 								{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
@@ -937,6 +985,7 @@
 	.muted { color: var(--text-muted); }
 	.note { color: var(--text); }
 	.rq-fail { color: var(--fail-text); }
+	.rq-step { color: var(--text); font-weight: 600; }
 	.rq-gap { margin-top: 12px; }
 	.rq-mine { max-width: 560px; margin-top: 24px; }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }

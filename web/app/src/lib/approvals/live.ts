@@ -1,7 +1,7 @@
 // Where an approved ask is in the pipeline right now, from the local searches
 // and downloads lists (no outside calls): one small entry per Library title.
 import { notAlbumName } from './ask-parts.ts';
-import type { SearchView } from '../types.ts';
+import type { AskStep, SearchView } from '../types.ts';
 import type { DownloadRow } from '../downloaders.ts';
 import type { LifeFacts } from './lifecycle.ts';
 
@@ -43,6 +43,32 @@ export function liveFacts(t: TitleLive | undefined): LifeFacts {
 	if (t?.download && t.download.phase !== 'failed') return { phase: t.download.phase, progress: t.download.progress };
 	if (t?.searching) return { phase: 'searching' };
 	if (t?.download) return t.download.reason ? { phase: 'failed', reason: t.download.reason } : { phase: 'failed' };
+	return {};
+}
+
+/**
+ * stepFacts reads the server's step for an approved ask (#139): what the
+ * page says when it has no live search or download of its own for it.
+ */
+export function stepFacts(step: AskStep | undefined): LifeFacts {
+	switch (step?.kind) {
+		case 'searching':
+			return { phase: 'searching' };
+		case 'downloading':
+			return { phase: 'downloading' };
+		case 'importing':
+			return { phase: 'importing' };
+		case 'waiting_on_admin':
+			return { phase: 'stuck' };
+		case 'not_out':
+			return { upcoming: '' };
+		case 'waiting': {
+			const f: LifeFacts = { phase: 'waiting' };
+			if (step.text) f.reason = step.text;
+			if (step.searched_at) f.searchedAt = step.searched_at;
+			return f;
+		}
+	}
 	return {};
 }
 
