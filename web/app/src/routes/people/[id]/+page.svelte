@@ -314,7 +314,21 @@
 		}, HERO_DELAY);
 		return () => (clearTimeout(t), ctl.abort());
 	});
-	const nextClip = () => top.length > 1 && (clip = (clip + 1) % top.length);
+	// A trailer that will not play moves to the next; once every one failed,
+	// the banner settles on the stills (it never goes round again).
+	let clipsFailed = 0;
+	$effect(() => {
+		void top;
+		clipsFailed = 0;
+	});
+	const nextClip = () => {
+		clipsFailed++;
+		if (top.length <= 1 || clipsFailed >= top.length) {
+			clipDone = true;
+			return;
+		}
+		clip = (clip + 1) % top.length;
+	};
 	const nowShowing = $derived(top[clip % Math.max(1, top.length)]);
 	onMount(() => void loadUISettings());
 

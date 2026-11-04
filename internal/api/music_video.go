@@ -55,6 +55,9 @@ type artistVideoCache struct {
 	mu   sync.Mutex
 	m    map[string]artistVideoList
 	busy map[string]bool
+	// failed is when asking the metadata server about an artist last
+	// failed (not "no such artist"): the pass waits artistFailWait.
+	failed map[string]time.Time
 	now  func() time.Time
 }
 
@@ -93,7 +96,11 @@ func (a *API) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
 	}
 	lc := store.LookupCache{Store: a.s.Store}
 	if len(e.list) == 0 {
-		_ = lc.Put(context.WithoutCancel(ctx), videoDiskKey(mbid), []byte("{}"), e.at, e.at)
+		// Kept until the pass would ask again (a restart does not re-ask
+		// every artist with no videos at once).
+		if b, err := json.Marshal(storedVideos{At: e.at, Videos: []metadata.ArtistVideo{}}); err == nil {
+			_ = lc.Put(context.WithoutCancel(ctx), videoDiskKey(mbid), b, e.at, e.at.Add(artistEmptyRecheck))
+		}
 		return
 	}
 	if b, err := json.Marshal(storedVideos{At: e.at, Videos: e.list}); err == nil {
@@ -111,7 +118,7 @@ func (a *API) keptVideos(ctx context.Context, mbid string) (artistVideoList, boo
 	if !ok && a.s.Store != nil {
 		if b, found, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, videoDiskKey(mbid), time.Now()); found {
 			var sv storedVideos
-			if json.Unmarshal(b, &sv) == nil && len(sv.Videos) > 0 {
+			if json.Unmarshal(b, &sv) == nil && !sv.At.IsZero() {
 				e, ok = artistVideoList{at: sv.At, list: sv.Videos}, true
 				c.mu.Lock()
 				c.putLocked(mbid, e)
@@ -139,9 +146,17 @@ func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo 
 	l, err := a.s.ArtistVideos(ctx, mbid)
 	if err != nil {
 		// An artist the server does not know is kept as an empty list, so
-		// asking again within a few minutes costs no lookup.
+		// asking again within a few minutes costs no lookup. Any other
+		// failure (the server down) is remembered for the pass.
 		if errors.Is(err, metadata.ErrNotFound) {
 			a.keepVideos(ctx, mbid, artistVideoList{at: now})
+		} else {
+			c.mu.Lock()
+			if c.failed == nil {
+				c.failed = map[string]time.Time{}
+			}
+			c.failed[mbid] = now
+			c.mu.Unlock()
 		}
 		return nil
 	}

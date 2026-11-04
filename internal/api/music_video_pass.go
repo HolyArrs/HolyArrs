@@ -27,6 +27,9 @@ const (
 	// again about a noted artist that has no videos (a page open asks
 	// sooner, see artistVideosEmpty).
 	artistEmptyRecheck = 24 * time.Hour
+	// artistFailWait is how long the pass leaves an artist alone after
+	// asking the metadata server about it failed (the server down).
+	artistFailWait = time.Hour
 )
 
 // artistAsked are the artists whose music videos the pass keeps ready, by
@@ -164,6 +167,13 @@ func (a *API) artistVideoDue(ctx context.Context, mbid string, now time.Time) (d
 	// so an install's noted artists cost the metadata server about one call
 	// a day each, not one every pass.
 	if e, kept := a.keptVideos(ctx, mbid); kept && len(e.list) == 0 && a.artistVideos.clock().Sub(e.at) < artistEmptyRecheck {
+		return false, false, false
+	}
+	c := &a.artistVideos
+	c.mu.Lock()
+	failedAt, failed := c.failed[mbid]
+	c.mu.Unlock()
+	if failed && c.clock().Sub(failedAt) < artistFailWait {
 		return false, false, false
 	}
 	vids := a.videosOf(ctx, mbid)
