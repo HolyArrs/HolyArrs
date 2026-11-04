@@ -647,9 +647,13 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		perService = append(perService, l)
 		pg.perService[explore.TypeNPServices][s.Service] = l
 	}
-	addRow("np_services", explore.TypeNPServices, "Fresh on your services", explore.RankMerge(perService, explore.NewRowCap[explore.TypeNPServices]))
-	// Hot and new: each service's real chart, new titles only, topped up from
-	// the scored pool.
+	services := explore.RankMerge(perService, explore.NewRowCap[explore.TypeNPServices])
+	// The top of the page, in this order: the Top 10 new shows and movies
+	// (each service's real chart, new titles only, topped up from the scored
+	// pool), what everyone is watching (the same charts past their top 10,
+	// shows and movies together), then the critics' best new releases. A
+	// title shows once: the first row it is in keeps it.
+	var watching [][]explore.Item
 	for _, k := range []string{"show", "movie"} {
 		if !kinds[k] {
 			continue
@@ -670,6 +674,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 				}
 			}
 			lists2 = append(lists2, l)
+			watching = append(watching, l)
 			pg.perService[typ][marks[i].Service] = l
 		}
 		hot := explore.RankMerge(lists2, 10)
@@ -686,11 +691,14 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		}
 		hot = append(hot, ranked(rest)...)
 		if k == "show" {
-			addRow("np_top_shows", explore.TypeNPTopShows, "Hot and new: shows", hot)
+			addRow("np_top_shows", explore.TypeNPTopShows, "Top 10 new shows", hot)
 		} else {
-			addRow("np_top_movies", explore.TypeNPTopFilms, "Hot and new: movies", hot)
+			addRow("np_top_movies", explore.TypeNPTopFilms, "Top 10 new movies", hot)
 		}
 	}
+	addRow("np_watching", explore.TypeNPWatching, "Everyone's watching", explore.RankMerge(watching, 3*explore.RowMax))
+	addRow("np_acclaimed", explore.TypeNPAcclaim, "Critically acclaimed new releases", both(func(l newLists) []explore.Item { return l.critics }))
+	addRow("np_services", explore.TypeNPServices, "Fresh on your services", services)
 	if kinds["show"] {
 		var mine []explore.Item
 		for _, e := range h.episodes {
@@ -730,7 +738,6 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		}
 		addRow("np_genre", explore.TypeNPGenre, "Just out in "+strings.ToLower(g), both(func(l newLists) []explore.Item { return l.genre }))
 	}
-	addRow("np_acclaimed", explore.TypeNPAcclaim, "Critics' new favourites", both(func(l newLists) []explore.Item { return l.critics }))
 	addRow("np_world", explore.TypeNPWorld, "New from abroad", both(func(l newLists) []explore.Item {
 		var all []explore.Item
 		for _, w := range l.world {

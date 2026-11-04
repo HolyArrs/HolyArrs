@@ -390,7 +390,7 @@
 	/* Ghost cards while a chip's list loads, the same size as the cards they stand for. */
 	.ghost { display: flex; flex-direction: column; gap: 8px; }
 	.ghost.pc-ghost { margin-left: 32%; width: 68%; }
-	/* The rail's cards are as wide as a Hot and new card. */
+	/* The rail's cards are as wide as a Top 10 card. */
 	.np { --rail-item: calc(var(--explore-item) / 0.68); }
 	/* Hero badges (as on Explore): small glass pills, the chart one in the brand red. */
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }

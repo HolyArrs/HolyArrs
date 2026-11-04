@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -105,7 +106,10 @@ func TestExploreNewPage(t *testing.T) {
 			break
 		}
 	}
-	if len(ids) < 4 || ids[0] != "np_services" || ids[1] != "np_top_shows" || ids[2] != "np_top_movies" {
+	// The top of the page: the Top 10s, then the critics' best (everyone's
+	// watching needs charts past their top 10, which this rig has not), then
+	// the rest by score, Fresh on your services among them.
+	if len(ids) < 4 || ids[0] != "np_top_shows" || ids[1] != "np_top_movies" || ids[2] != "np_acclaimed" || !slices.Contains(ids, "np_services") {
 		t.Fatalf("rows %v", ids)
 	}
 	for _, gone := range []string{"np_week", "np_people", "np_returning"} {

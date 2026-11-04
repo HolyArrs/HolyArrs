@@ -1,6 +1,8 @@
 package explore
 
 import (
+	"slices"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -94,24 +96,58 @@ func TestPopPercentile(t *testing.T) {
 func TestOrderNewRowsAndRankMerge(t *testing.T) {
 	rows := OrderNewRows([]Row{
 		{Type: TypeNPWorld, Items: items("movie", "1")},
+		{Type: TypeNPTopShows, Items: items("show", "4")},
 		{Type: TypeNPServices, Items: items("movie", "2")},
+		{Type: TypeNPWatching, Items: items("movie", "5")},
 		{Type: TypeNPPicks, Items: items("movie", "3")},
+		{Type: TypeNPAcclaim, Items: items("movie", "6")},
 	}, func(it Item) float64 {
 		if it.TMDBID == "3" {
 			return 1
 		}
 		return 0.5
 	}, map[string]float64{TypeNPPicks: 0.4})
-	// Picks: 1 × 0.4 = 0.4 < world 0.5 × 1.
-	if rows[0].Type != TypeNPServices || rows[1].Type != TypeNPWorld || rows[2].Type != TypeNPPicks {
-		t.Fatalf("order %+v", rows)
+	// The top rows keep their order (Top 10, everyone's watching, critics);
+	// then by score: picks 1 × 0.4 = 0.4 < world and services 0.5 × 1.
+	var got []string
+	for _, r := range rows {
+		got = append(got, r.Type)
+	}
+	if want := []string{TypeNPTopShows, TypeNPWatching, TypeNPAcclaim, TypeNPWorld, TypeNPServices, TypeNPPicks}; !slices.Equal(got, want) {
+		t.Fatalf("order %v", got)
 	}
 	m := RankMerge([][]Item{items("show", "1", "2"), items("show", "1", "3")}, 3)
 	if len(m) != 3 || m[1].TMDBID != "2" || m[2].TMDBID != "3" {
 		t.Fatalf("merge %+v", m)
 	}
-	c := CapPer(items("movie", "1", "2", "3", "4", "5"), func(it Item) string { return map[string]string{"1": "a", "2": "a", "3": "a", "4": "b", "5": "b"}[it.TMDBID] }, 2, 3)
+	c := CapPer(items("movie", "1", "2", "3", "4", "5"), func(it Item) string {
+		return map[string]string{"1": "a", "2": "a", "3": "a", "4": "b", "5": "b"}[it.TMDBID]
+	}, 2, 3)
 	if len(c) != 3 || c[2].TMDBID != "4" {
 		t.Fatalf("cap %+v", c)
+	}
+}
+
+// The Top 10 rows stop at 10 (their numbers say so), and what everyone is
+// watching (the same charts) keeps only the titles past them: a title shows
+// once on the page.
+func TestNewTopTenAndWatching(t *testing.T) {
+	var chart []string
+	for i := 1; i <= 15; i++ {
+		chart = append(chart, strconv.Itoa(i))
+	}
+	rows := DedupeRows([]Row{
+		{Type: TypeNPTopShows, Items: items("show", chart...)},
+		{Type: TypeNPWatching, Items: append(items("show", chart...), items("movie", "90", "91")...)},
+	}, 1)
+	if len(rows) != 2 || len(rows[0].Items) != 10 || rows[0].Items[9].TMDBID != "10" {
+		t.Fatalf("top 10 %+v", rows[0].Items)
+	}
+	var got []string
+	for _, it := range rows[1].Items {
+		got = append(got, it.Kind+":"+it.TMDBID)
+	}
+	if want := []string{"show:11", "show:12", "show:13", "show:14", "show:15", "movie:90", "movie:91"}; !slices.Equal(got, want) {
+		t.Fatalf("watching %v", got)
 	}
 }

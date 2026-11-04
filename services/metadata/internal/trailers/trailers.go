@@ -4,9 +4,8 @@
 // marks removed, private or blocked keys broken and moves on to the next
 // candidate. The checks are spread over the day (one every Pause, with
 // jitter, at most DailyCap a day, most asked first, backing off on 429).
-// A daily job runs a yt-dlp canary on one known trailer, reads yt-dlp's
-// newest release and, weekly, updates yt-dlp. The canary only informs: a
-// bot check on the server's address never marks keys broken.
+// Video addresses, storyboards and the "most replayed" graph come from
+// HolyArrs's own reader (heatmap.go); nothing here runs another program.
 package trailers
 
 import (
@@ -49,19 +48,6 @@ type Options struct {
 	HTTP *http.Client
 	// OEmbedURL is YouTube's oEmbed endpoint.
 	OEmbedURL string
-	// Canary resolves one known trailer with yt-dlp and returns yt-dlp's
-	// version (nil: no canary).
-	Canary func(ctx context.Context) (version string, err error)
-	// Update installs a newer yt-dlp when there is one (nil: none). It runs
-	// at most once every UpdateEvery.
-	Update      func(ctx context.Context) (version string, err error)
-	UpdateEvery time.Duration
-	// BlockedRetry is how long the canary stays quiet after YouTube's bot
-	// check named this server's address (default 7 days), so a blocked
-	// address is not asked again every day.
-	BlockedRetry time.Duration
-	// Latest reads yt-dlp's newest release (nil: none).
-	Latest func(ctx context.Context) (tag string, published time.Time, err error)
 	// Every is how often the health job runs (default 24 h).
 	Every time.Duration
 	// Top is how many of the most asked-for titles are re-checked (default 500).
@@ -93,30 +79,10 @@ type Stats struct {
 	Checked     int64  `json:"checked"`
 	Broken      int64  `json:"broken"`
 	Replaced    int64  `json:"replaced"`
-	CanaryOK    bool   `json:"canary_ok"`
-	CanaryAt    string `json:"canary_at"`
-	CanaryError string `json:"canary_error,omitempty"`
-	// CanaryState is ok, blocked (YouTube's bot check for this server's
-	// address: expected on a datacenter address, not a product failure)
-	// or failed.
-	CanaryState  string `json:"canary_state,omitempty"`
-	YTDLPVersion string `json:"ytdlp_version,omitempty"`
-	// YTDLPLatest is yt-dlp's newest release and when it came out;
-	// YTDLPBehindDays is how much older the version in use is.
-	YTDLPLatest     string `json:"ytdlp_latest,omitempty"`
-	YTDLPLatestAt   string `json:"ytdlp_latest_at,omitempty"`
-	YTDLPBehindDays int64  `json:"ytdlp_behind_days"`
 	ChecksToday     int64  `json:"checks_today"`
 	LastRun         string `json:"last_run"`
 	Titles          int64  `json:"titles"`
 }
-
-// Canary states.
-const (
-	CanaryOK      = "ok"
-	CanaryBlocked = "blocked"
-	CanaryFailed  = "failed"
-)
 
 type candidate struct {
 	Key      string `json:"key"`
@@ -141,12 +107,6 @@ func Open(path string, o Options) (*Service, error) {
 	}
 	if o.Every <= 0 {
 		o.Every = 24 * time.Hour
-	}
-	if o.UpdateEvery <= 0 {
-		o.UpdateEvery = 7 * 24 * time.Hour
-	}
-	if o.BlockedRetry <= 0 {
-		o.BlockedRetry = 7 * 24 * time.Hour
 	}
 	if o.Top <= 0 {
 		o.Top = 500
@@ -550,46 +510,11 @@ func (s *Service) CheckNext(ctx context.Context) (did, limited bool, err error) 
 	return true, false, nil
 }
 
-// Daily runs the once-a-day part: the weekly yt-dlp update, the canary
-// (informational only) and yt-dlp's newest release.
+// Daily runs the once-a-day part: it notes the run.
 func (s *Service) Daily(ctx context.Context) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	now := s.opts.Now()
-	if s.opts.Update != nil {
-		last, _ := time.Parse(time.RFC3339, s.meta("update_at"))
-		if now.Sub(last) >= s.opts.UpdateEvery {
-			if _, err := s.opts.Update(ctx); err == nil {
-				s.setMeta("update_at", now.UTC().Format(time.RFC3339))
-			}
-		}
-	}
-	lastCanary, _ := time.Parse(time.RFC3339, s.meta("canary_at"))
-	quiet := s.meta("canary_state") == CanaryBlocked && now.Sub(lastCanary) < s.opts.BlockedRetry
-	if s.opts.Canary != nil && !quiet {
-		v, err := s.opts.Canary(ctx)
-		s.setMeta("canary_at", now.UTC().Format(time.RFC3339))
-		if v != "" {
-			s.setMeta("ytdlp_version", v)
-		}
-		state, msg := CanaryOK, ""
-		if err != nil {
-			state, msg = CanaryFailed, err.Error()
-			if errors.Is(err, ErrBotCheck) {
-				state = CanaryBlocked
-			}
-		}
-		s.setMeta("canary_ok", strconv.FormatBool(err == nil))
-		s.setMeta("canary_state", state)
-		s.setMeta("canary_error", msg)
-	}
-	if s.opts.Latest != nil {
-		if tag, at, err := s.opts.Latest(ctx); err == nil && tag != "" {
-			s.setMeta("ytdlp_latest", tag)
-			s.setMeta("ytdlp_latest_at", at.UTC().Format(time.RFC3339))
-		}
-	}
-	s.setMeta("last_run", now.UTC().Format(time.RFC3339))
+	s.setMeta("last_run", s.opts.Now().UTC().Format(time.RFC3339))
 }
 
 // Refresh checks every due key at once (no pacing, still capped), then
@@ -611,28 +536,9 @@ func (s *Service) Refresh(ctx context.Context) error {
 	return nil
 }
 
-// behind is how many days the version in use (yt-dlp versions are dates,
-// 2026.08.19) is older than the newest release.
-func behind(version, latest, latestAt string) int64 {
-	if version == "" || latest == "" || version == latest {
-		return 0
-	}
-	v, err := time.Parse("2006.01.02", version[:min(len(version), 10)])
-	if err != nil {
-		return 0
-	}
-	l, err := time.Parse(time.RFC3339, latestAt)
-	if err != nil {
-		return 0
-	}
-	return max(int64(l.Sub(v)/(24*time.Hour)), 0)
-}
-
 // Stats reads the numbers for /v1/stats.
 func (s *Service) Stats() Stats {
-	st := Stats{CanaryOK: s.meta("canary_ok") == "true", CanaryAt: s.meta("canary_at"), CanaryError: s.meta("canary_error"), CanaryState: s.meta("canary_state"),
-		YTDLPVersion: s.meta("ytdlp_version"), YTDLPLatest: s.meta("ytdlp_latest"), YTDLPLatestAt: s.meta("ytdlp_latest_at"), LastRun: s.meta("last_run")}
-	st.YTDLPBehindDays = behind(st.YTDLPVersion, st.YTDLPLatest, st.YTDLPLatestAt)
+	st := Stats{LastRun: s.meta("last_run")}
 	if s.meta("checks_day") == s.opts.Now().UTC().Format("2006-01-02") {
 		st.ChecksToday, _ = strconv.ParseInt(s.meta("checks_today"), 10, 64)
 	}

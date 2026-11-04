@@ -106,13 +106,14 @@ type config struct {
 	// Unset: MusicBrainz answers come from the live queue only.
 	MBSlimRoot string `json:"mb_slim_root"`
 	// Trailers serves GET /v1/trailers/{movie|tv}/{tmdb_id} and runs the
-	// daily trailer health job (oEmbed re-checks, yt-dlp canary, weekly
-	// yt-dlp update into <data_dir>/bin).
+	// daily trailer health job (oEmbed re-checks).
 	Trailers bool `json:"trailers"`
 	// Anime downloads the Anime-Lists and Fribb ID lists daily and serves
 	// GET /v1/anime/map.
 	Anime bool `json:"anime"`
-	// YTDLP is the built-in yt-dlp (default /usr/local/bin/yt-dlp).
+	// YTDLP is ignored: nothing runs an outside program for trailers any
+	// more. It stays so a config that still names it loads (unknown keys
+	// are refused).
 	YTDLP string `json:"ytdlp"`
 	// Wikidata serves /v1/wikidata/... (awards, people, cross-walk IDs,
 	// Wikipedia summaries) and rebuilds the award-winner lists weekly.
@@ -570,12 +571,7 @@ func serve(c config) error {
 	}
 	var tr *trailers.Service
 	if c.Trailers {
-		builtin := c.YTDLP
-		if builtin == "" {
-			builtin = "/usr/local/bin/yt-dlp"
-		}
-		y := &trailers.YTDLP{Builtin: builtin, Dir: filepath.Join(c.DataDir, "bin"), ReleaseBase: trailers.DefaultReleaseBase, CanaryKey: trailers.CanaryKey, LatestURL: trailers.DefaultLatestURL}
-		tr, e = trailers.Open(filepath.Join(c.DataDir, "trailers.sqlite"), trailers.Options{Fetcher: client, Canary: y.Canary, Update: y.Update, Latest: y.Latest})
+		tr, e = trailers.Open(filepath.Join(c.DataDir, "trailers.sqlite"), trailers.Options{Fetcher: client})
 		if e != nil {
 			return e
 		}
