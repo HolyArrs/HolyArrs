@@ -1,7 +1,8 @@
 // Every link to an artist page (rows, cards, similar artists, credits) gets
 // the trailers' two moments: on screen for a while, the artist is named in
-// the in-view batch; at hover start, the lookup begins. Both only resolve
-// the stream address, within the trailers' budget and settings.
+// the in-view batch; at hover start, its video is asked for. Both only note
+// the artist on the server, whose trailer pass makes one of its music
+// videos ready on its schedule; a page never starts a lookup.
 import { prefetchArtistVideo, watchArtistVideo } from '../autoplay.svelte.ts';
 
 const ARTIST = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[/?#]|$)/i;

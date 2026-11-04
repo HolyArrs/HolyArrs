@@ -15,9 +15,9 @@ import (
 const trailerBatchMax = 40
 
 // trailerBatchView is the answer of GET /trailer/batch: the streams the
-// trailer pass kept (memory or SQLite), by "kind:tmdb_id", and the artists
-// whose videos are still being looked up ahead of time (ask again). A title
-// is never pending: its trailer is looked up on the pass's schedule only.
+// trailer pass kept (memory or SQLite), by "kind:tmdb_id", and the artists'
+// ready music videos. Nothing is ever pending: everything is looked up on
+// the pass's schedule only (Pending stays for older pages, always empty).
 type trailerBatchView struct {
 	Streams map[string]TrailerStream `json:"streams"`
 	// Videos are artists' music videos ("artist:mbid") already looked up,
@@ -30,8 +30,8 @@ type trailerBatchView struct {
 // trailer pass kept; a title without one is left out (the card plays the
 // embed) and no lookup starts: a title nothing was kept for is noted, so
 // the next pass looks it up (rows outside the stored Explore pools, such as
-// a genre's rows or New on your services, get covered this way). Artists'
-// videos not yet known are looked up ahead of time (prefetchArtistVideos).
+// a genre's rows or New on your services, get covered this way). Artists
+// are noted the same way, so the pass makes their music videos ready.
 func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 	if a.kidMax(r) != "" {
 		fail(w, http.StatusForbidden, "trailers do not play for Kid accounts")
@@ -69,18 +69,15 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			seen[id] = true
-			switch e, kept := a.keptVideos(r.Context(), mbid); {
-			case kept && len(e.list) == 0:
-				// No videos (for now): nothing to wait for.
-			default:
+			// Noted for the trailer pass, which makes one of the artist's
+			// videos ready and keeps it ready; none is looked up here.
+			artists = append(artists, mbid)
+			if e, kept := a.keptVideos(r.Context(), mbid); kept {
 				if v, s, ready := a.readyVideo(r.Context(), e.list); ready {
 					if view, ok := a.videoView(r, v, s); ok {
 						out.Videos[id] = view
-						continue
 					}
 				}
-				out.Pending = append(out.Pending, id)
-				artists = append(artists, mbid)
 			}
 			continue
 		}
@@ -108,7 +105,7 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.noteTrailerTitles(lang, unknown)
-	a.prefetchArtistVideos(r, artists)
+	a.noteArtistVideos(r.Context(), artists)
 	w.Header().Set("Cache-Control", "private, no-store")
 	writeJSON(w, http.StatusOK, out)
 }

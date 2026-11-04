@@ -86,7 +86,7 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 	seen := map[string]bool{}
 	add := func(j [3]string) bool {
 		ckey := j[0] + "|" + j[1] + "|" + j[2]
-		if seen[ckey] || len(a.kindsOn(j[0])) == 0 {
+		if seen[ckey] || (j[0] != "artist" && len(a.kindsOn(j[0])) == 0) {
 			return false
 		}
 		seen[ckey] = true
@@ -96,6 +96,16 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 	for _, j := range a.trailerAsks(time.Now()) {
 		if add(j) {
 			asked[j[0]+"|"+j[1]+"|"+j[2]] = true
+		}
+	}
+	// Artists whose music videos are kept ready (#191), ranked like the
+	// noted titles.
+	if a.artistVideosOn() {
+		for _, mbid := range a.artistAsks(ctx, time.Now()) {
+			j := [3]string{"artist", mbid, ""}
+			if add(j) {
+				asked[j[0]+"|"+j[1]+"|"+j[2]] = true
+			}
 		}
 	}
 	pooled, capped := 0, 0
@@ -119,13 +129,29 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		renew bool
 		rank  int // the order below: 0 goes first
 	}
-	var due []passJob
+	var dueList []passJob
 	for _, j := range list {
 		if ctx.Err() != nil {
 			return 0
 		}
 		ckey := j[0] + "|" + j[1] + "|" + j[2]
 		now := time.Now()
+		if j[0] == "artist" {
+			due, renew, urgent := a.artistVideoDue(ctx, j[1], now)
+			if !due {
+				continue
+			}
+			rank := 1
+			switch {
+			case urgent:
+				rank = 0
+			case renew:
+				rank = 2
+			}
+			due2 := passJob{j, ckey, renew, rank}
+			dueList = append(dueList, due2)
+			continue
+		}
 		ok, renew := a.trailerPassDue(ctx, ckey, now)
 		if !ok {
 			// Kept or under way: a noted title is done, unless what is kept
@@ -147,8 +173,9 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		case renew:
 			rank = 2
 		}
-		due = append(due, passJob{j, ckey, renew, rank})
+		dueList = append(dueList, passJob{j, ckey, renew, rank})
 	}
+	due := dueList
 	slices.SortStableFunc(due, func(x, y passJob) int { return cmp.Compare(x.rank, y.rank) })
 	n, left := 0, 0
 	stopped := false
@@ -172,9 +199,12 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		failed := a.trailers.failed.Load()
 		lctx, cancel := context.WithTimeout(ctx, trailerPassTitle)
 		var err error
-		if renew {
+		switch {
+		case j[0] == "artist":
+			err = a.passArtistVideo(lctx, j[1], renew)
+		case renew:
 			_, err = a.lookupShared(renewing(lctx), j[0], j[1], j[2])
-		} else {
+		default:
 			_, err = a.resolveTitle(lctx, j[0], j[1], j[2])
 		}
 		cancel()
@@ -188,6 +218,7 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		}
 		a.trailerAsked.drop(ckey)
 	}
+	a.saveArtistAsks(ctx)
 	if n+left > 0 || capped > 0 {
 		line := "trailers: read-ahead %d due, %d looked up, %d left for the next pass"
 		args := []any{n + left, n, left}

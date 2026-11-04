@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -26,10 +27,31 @@ func videoSetup(t *testing.T, vids func(context.Context, string) ([]metadata.Art
 	t.Cleanup(func() { _ = s.Close() })
 	q := jobs.New(s, jobs.Options{})
 	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic()}
-	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, ArtistVideos: vids}).Handler())
+	a := New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, ArtistVideos: vids})
+	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"music","label":"Music"}`, t.TempDir()), 201)
+	gap := trailerPassGap
+	trailerPassGap = 0
+	t.Cleanup(func() { trailerPassGap = gap })
+	videoAPIs.Store(srv.URL, a)
+	t.Cleanup(func() { videoAPIs.Delete(srv.URL) })
 	return srv.URL + "/api/v1/music/artists/" + apiArtist + "?part=video"
+}
+
+// videoAPIs are the APIs videoSetup made, by server address, so a test can
+// run the trailer pass that makes their videos ready.
+var videoAPIs sync.Map
+
+// videoPass runs one trailer pass on the API behind u.
+func videoPass(t *testing.T, u string) int {
+	t.Helper()
+	base := u[:strings.Index(u, "/api/v1/")]
+	v, ok := videoAPIs.Load(base)
+	if !ok {
+		t.Fatalf("no API for %s", base)
+	}
+	return v.(*API).trailerPass(metadata.Ahead(context.Background()), trailerPassBudget)
 }
 
 // route: GET /api/v1/music/artists/{mbid}?part=video
@@ -109,6 +131,7 @@ func videoReady(t *testing.T, u string) []byte {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
 	for {
+		// The page notes the artist; the trailer pass makes a video ready.
 		resp, err := http.Get(u)
 		if err != nil {
 			t.Fatal(err)
@@ -121,12 +144,15 @@ func videoReady(t *testing.T, u string) []byte {
 		if resp.StatusCode != 404 || time.Now().After(deadline) {
 			t.Fatalf("GET %s: %d %s", u, resp.StatusCode, b)
 		}
+		videoPass(t, u)
 		time.Sleep(30 * time.Millisecond)
 	}
 }
 
 // The first ask for an artist whose stream is not looked up answers 404 at
-// once (no lookup in the request) and the lookup runs behind it.
+// once and starts no lookup at all (#191): it only notes the artist, and
+// the trailer pass makes a video ready, which the page then plays without
+// another lookup.
 func TestArtistVideoNeverWaitsOnLookup(t *testing.T) {
 	yt := fakeReader(t, "plain", "dQw4w9WgXcQ")
 	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
@@ -137,7 +163,14 @@ func TestArtistVideoNeverWaitsOnLookup(t *testing.T) {
 	if d := time.Since(start); d > 500*time.Millisecond {
 		t.Fatalf("first ask waited %v", d)
 	}
-	videoReady(t, u)
+	time.Sleep(200 * time.Millisecond)
+	do(t, "GET", u, "", 404)
+	if n := yt.runs.Load(); n != 0 {
+		t.Fatalf("the page looked up: %d reader calls", n)
+	}
+	if n := videoPass(t, u); n != 1 || yt.runs.Load() != 1 {
+		t.Fatalf("pass: %d lookups, %d reader calls", n, yt.runs.Load())
+	}
 	before := yt.runs.Load()
 	do(t, "GET", u, "", 200)
 	if yt.runs.Load() != before {

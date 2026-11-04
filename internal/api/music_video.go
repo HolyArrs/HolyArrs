@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -45,8 +44,6 @@ const (
 	artistVideosEmpty = 5 * time.Minute
 	artistVideosDisk  = 30 * 24 * time.Hour
 	artistVideosMax   = 2000
-	// artistVideoPrefetchMax caps prefetch loops running at once.
-	artistVideoPrefetchMax = 2
 )
 
 type artistVideoList struct {
@@ -59,9 +56,6 @@ type artistVideoCache struct {
 	m    map[string]artistVideoList
 	busy map[string]bool
 	now  func() time.Time
-	// prefetching counts running prefetchArtistVideos loops; a few at a
-	// time is enough, more only pile up behind the same budget.
-	prefetching atomic.Int32
 }
 
 func (c *artistVideoCache) clock() time.Time {
@@ -241,6 +235,8 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no video")
 		return
 	}
+	// Noted on every view, so the pass keeps a video ready (and renewed).
+	a.noteArtistVideos(r.Context(), []string{mbid})
 	// ?skip=id,id names videos already played: the next one is another of the
 	// artist's videos, and none left answers 404 so the page repeats its last.
 	if skip := r.URL.Query().Get("skip"); skip != "" {
@@ -251,11 +247,10 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// Only a stream already looked up answers: the visitor never waits on a
-	// lookup. None ready yet answers 404 at once and one is looked up
-	// behind it (the hero keeps its photo; the next view plays).
+	// lookup, and none starts here. None ready yet answers 404 at once (the
+	// hero keeps its photo); the trailer pass makes one ready.
 	v, s, ready := a.readyVideo(r.Context(), vids)
 	if !ready {
-		a.resolveVideoBehind(r, mbid, vids, "")
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Retry-After", "5")
 		fail(w, http.StatusNotFound, "no video ready yet")
@@ -374,49 +369,6 @@ func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.A
 	}()
 }
 
-// prefetchArtistVideos looks artists' music video streams up ahead of time:
-// one after another, within the install's ahead-of-time budget, never for
-// Kid accounts or with trailers off. Only the stream address is resolved; nothing is downloaded.
-func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
-	if len(mbids) == 0 || a.kidMax(r) != "" || !a.uiSettings(r.Context()).AutoplayTrailers || a.s.ArtistVideos == nil {
-		return
-	}
-	ctx := metadata.Ahead(metadata.MemberLookup(context.WithoutCancel(r.Context())))
-	c := &a.artistVideos
-	if c.prefetching.Add(1) > artistVideoPrefetchMax {
-		c.prefetching.Add(-1)
-		return
-	}
-	go func() {
-		defer c.prefetching.Add(-1)
-		for _, mbid := range mbids {
-			vids := a.videosOf(ctx, mbid)
-			if _, _, ok := a.readyVideo(ctx, vids); ok || len(vids) == 0 {
-				continue
-			}
-			// The first video that has not failed is the one made ready.
-			var next string
-			for _, v := range vids {
-				if _, known := a.videoKnown(ctx, v.ID); !known {
-					next = v.ID
-					break
-				}
-			}
-			if next == "" || a.trailers.inFlight("musicvideo|"+next) {
-				continue
-			}
-			if !a.trailers.allowAhead(time.Now()) {
-				return
-			}
-			lctx, cancel := context.WithTimeout(ctx, 40*time.Second)
-			if _, err := a.resolveMusicVideo(lctx, next); videoWontPlay(err) && lctx.Err() == nil {
-				a.dropVideo(ctx, mbid, next)
-			}
-			cancel()
-		}
-	}()
-}
-
 // videoWontPlay says whether a music video's lookup failed for that video
 // (removed, age, blocked): it is dropped. A failure at YouTube's door
 // (a bot check, say) is no reason to drop the artist's videos.
@@ -485,6 +437,11 @@ func (a *API) lookupMusicVideo(ctx context.Context, key, ckey string) (trailerEn
 		a.trailers.put(ckey, e)
 		return e, nil
 	}
+	return a.keepMusicVideo(ctx, ckey, s, now), nil
+}
+
+// keepMusicVideo keeps a music video's stream in memory and SQLite.
+func (a *API) keepMusicVideo(ctx context.Context, ckey string, s TrailerStream, now time.Time) trailerEntry {
 	e := trailerEntry{s: s}
 	a.trailers.put(ckey, e)
 	if a.s.Store != nil {
@@ -492,7 +449,16 @@ func (a *API) lookupMusicVideo(ctx context.Context, key, ckey string) (trailerEn
 			_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailer|"+ckey, b, now, s.ExpiresAt.Add(-trailerEarly))
 		}
 	}
-	return e, nil
+	return e
+}
+
+// missedFor turns a reader error with a reason into the miss callers
+// test with videoWontPlay; other errors pass as they are.
+func missedFor(err error) error {
+	if err == nil || youtube.ReasonOf(err) == "" {
+		return err
+	}
+	return trailerEntry{reason: trailerReason(err)}.missErr()
 }
 
 // withoutVideos drops the listed video ids (at most 50 are honoured).

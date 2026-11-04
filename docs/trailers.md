@@ -94,6 +94,18 @@ embed until a round reaches it. Right after HolyArrs is first set up, the
 first round of every title can take a few hours; after that the rounds
 keep up.
 
+## Artists' music videos
+
+An artist page plays one of the artist's official music videos, muted, the
+same way. These follow the trailers' schedule too: an artist page, or a link
+to one that stays on screen, notes the artist, and the next lookup round
+makes one of the artist's videos ready. While the artist is asked for, it is
+kept ready: its address is renewed before it expires, up to 300 artists, for
+a week after the last time anyone looked. Until a round reaches an artist,
+the page shows the artist's photo. Pressing play on one video in the Music
+videos row is the one exception: that video is looked up right away, since
+someone asked for it.
+
 ## Where a music video starts
 
 For artists' music videos, the metadata server picks where each one starts.

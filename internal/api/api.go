@@ -224,6 +224,8 @@ type API struct {
 	trailerKeys trailerKeyCache
 	// trailerAsked notes titles asked for that the next trailer pass covers.
 	trailerAsked trailerAsked
+	// artistAsked notes artists whose music videos the pass keeps ready.
+	artistAsked artistAsked
 	// warm fills listed titles' details, extras and trailers ahead.
 	warm titleWarmer
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
