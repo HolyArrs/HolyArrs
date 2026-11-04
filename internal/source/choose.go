@@ -3,6 +3,8 @@ package source
 import (
 	"context"
 	"database/sql"
+	"encoding/base32"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"regexp"
@@ -554,17 +556,26 @@ func (d dangerousRels) has(hash, name string) bool {
 	return name != "" && d.names[name]
 }
 
-var magnetBtih = regexp.MustCompile(`(?i)[?&]xt=urn:btih:([0-9a-f]{40})`)
+var magnetBtih = regexp.MustCompile(`(?i)[?&]xt=urn:btih:([0-9a-f]{40}|[a-z2-7]{32})(?:&|$)`)
 
-// listingHash is a listing's info hash, from its own field or its magnet link.
+// listingHash is a listing's info hash, from its own field or its magnet
+// link (hex, or base32 as some sites write it).
 func listingHash(hash, link string) string {
 	if hash != "" {
 		return hash
 	}
-	if m := magnetBtih.FindStringSubmatch(link); m != nil {
+	m := magnetBtih.FindStringSubmatch(link)
+	if m == nil {
+		return ""
+	}
+	if len(m[1]) == 40 {
 		return strings.ToLower(m[1])
 	}
-	return ""
+	b, err := base32.StdEncoding.DecodeString(strings.ToUpper(m[1]))
+	if err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b)
 }
 
 // dangerousWhy is the reason a Release known to hold a program needs force.

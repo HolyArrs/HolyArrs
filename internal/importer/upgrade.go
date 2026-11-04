@@ -154,35 +154,62 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickR
 // known well enough to rank one lossy copy over another.
 func lossyOverLossless(newPath, relName string, old domain.File, oldPath string, rules domain.PickRulesBody) string {
 	ext := strings.ToLower(filepath.Ext(newPath))
-	lossy := lossyExts[ext]
-	if !lossy && !losslessExts[ext] {
-		// .m4a, .mka: the file may be either; its codec says which, else
-		// its Release name.
-		if l, known := fileLossless(newPath); known {
-			lossy = !l
-		} else {
-			// Its format could not be read: lossless only when its Release
-			// name says so (an unreadable file never replaces lossless).
-			step, _ := judge.StepOf(relName, rules)
-			lossy = step != "lossless" && step != "lossless_hires"
+	newKind := audioKind(ext, newPath)
+	if newKind == "lossless" {
+		return ""
+	}
+	oldKind := audioKind(strings.ToLower(path.Ext(old.RelativePath)), oldPath)
+	switch oldKind {
+	case "unknown":
+		// An .m4a/.mka whose codec cannot be read counts as lossless: its
+		// stored name ("[M4A]" from an older adopt) may only be its
+		// extension, so it is never replaced by what may be lossy.
+		oldKind = "lossless"
+	case "":
+		// Any other file: its stored name says.
+		if step, _ := judge.StepOf(fileName(old), rules); step == "lossless" || step == "lossless_hires" {
+			oldKind = "lossless"
 		}
 	}
-	if !lossy {
+	if oldKind != "lossless" {
 		return ""
 	}
-	oldExt := strings.ToLower(path.Ext(old.RelativePath))
-	lossless := losslessExts[oldExt]
-	if !lossless && !lossyExts[oldExt] && oldPath != "" {
-		lossless, _ = fileLossless(oldPath)
+	if newKind == "unknown" {
+		// Over a lossless copy the file itself must say it is lossless: a
+		// Release name may lie (#43).
+		return fmt.Sprintf("the format of the file (%s) could not be read, so it may not replace the lossless copy in place", strings.TrimPrefix(ext, "."))
 	}
-	if !lossless {
-		step, _ := judge.StepOf(fileName(old), rules)
-		lossless = step == "lossless" || step == "lossless_hires"
-	}
-	if !lossless {
-		return ""
+	if newKind == "" {
+		// A plain track file (no known kind): only its Release name says.
+		if step, _ := judge.StepOf(relName, rules); !strings.HasPrefix(step, "lossy_") {
+			return ""
+		}
 	}
 	return fmt.Sprintf("file is lossy (%s), lower than the lossless copy in place", strings.TrimPrefix(ext, "."))
+}
+
+// audioKind is "lossless" or "lossy" for a file by its extension, or for
+// an .m4a/.mka/.mp4 by the codec read from it ("unknown" when it cannot be
+// read); "" for any other file.
+func audioKind(ext, p string) string {
+	switch {
+	case losslessExts[ext]:
+		return "lossless"
+	case lossyExts[ext]:
+		return "lossy"
+	case ext == ".m4a" || ext == ".mka" || ext == ".mp4":
+		if p == "" {
+			return "unknown"
+		}
+		if l, known := fileLossless(p); known {
+			if l {
+				return "lossless"
+			}
+			return "lossy"
+		}
+		return "unknown"
+	}
+	return ""
 }
 
 // fileLossless reads an audio file's codec from its headers: known is false

@@ -344,7 +344,7 @@ func TestAlbumImportKeepsLosslessOverLossy(t *testing.T) {
 	}
 	refused := 0
 	for _, st := range imp.Plan {
-		if st.Method == "refuse" && strings.Contains(strings.Join(st.Why, " "), "lower than the lossless copy in place") {
+		if st.Method == "refuse" && strings.Contains(strings.Join(st.Why, " "), "lossless copy in place") {
 			refused++
 		}
 	}
@@ -376,12 +376,24 @@ func TestAlbumImportLosslessOverLossy(t *testing.T) {
 func TestAlbumImportM4AByReleaseName(t *testing.T) {
 	for _, c := range []struct {
 		listing string
+		header  string // "" leaves the file unreadable
 		refused bool
 	}{
-		{"Lab Band - First Light (2020) [AAC 256 iTunes]", true},
-		{"Lab Band - First Light (2020) [ALAC]", false},
+		{"Lab Band - First Light (2020) [AAC 256 iTunes]", "", true},
+		// Over a lossless copy the codec counts, not the name.
+		{"Lab Band - First Light (2020) [ALAC]", "", true},
+		{"Lab Band - First Light (2020) [ALAC]", "alac", false},
 	} {
 		w := albumSetup(t, 1, "01 - Dawn.m4a", "02 - Glass River.m4a", "03 - Night Train.m4a")
+		if c.header != "" {
+			for _, n := range []string{"01 - Dawn.m4a", "02 - Glass River.m4a", "03 - Night Train.m4a"} {
+				if err := os.WriteFile(filepath.Join(w.dl, albumRel, n), m4aHeader(c.header), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			mapExec(t, w.s, "UPDATE downloads SET files_seen = json(?)", fmt.Sprintf(`[{"name":%q,"size":%d},{"name":%q,"size":%d},{"name":%q,"size":%d}]`,
+				albumRel+"/01 - Dawn.m4a", len(m4aHeader(c.header)), albumRel+"/02 - Glass River.m4a", len(m4aHeader(c.header)), albumRel+"/03 - Night Train.m4a", len(m4aHeader(c.header))))
+		}
 		w.haveTracks(t, "flac", albumRel)
 		if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE releases SET name = ?", c.listing)
@@ -395,7 +407,7 @@ func TestAlbumImportM4AByReleaseName(t *testing.T) {
 		}
 		lossy := 0
 		for _, st := range imp.Plan {
-			if strings.Contains(strings.Join(st.Why, " "), "lower than the lossless copy in place") {
+			if strings.Contains(strings.Join(st.Why, " "), "lossless copy in place") {
 				lossy++
 			}
 		}
@@ -471,7 +483,7 @@ func TestAlbumImportReadsM4ACodec(t *testing.T) {
 func lossyRefused(imp *domain.Import) int {
 	n := 0
 	for _, st := range imp.Plan {
-		if strings.Contains(strings.Join(st.Why, " "), "lower than the lossless copy in place") {
+		if strings.Contains(strings.Join(st.Why, " "), "lossless copy in place") {
 			n++
 		}
 	}
@@ -487,5 +499,20 @@ func TestAlbumImportUnreadableM4AOverFLAC(t *testing.T) {
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
 	if err != nil || lossyRefused(imp) != 3 {
 		t.Fatalf("import %v: %+v", err, imp.Plan)
+	}
+}
+
+// #43: a copy in place whose format cannot be read (an .m4a stored as
+// [M4A] or with no format word) counts as lossless: an MP3 album does not
+// replace it.
+func TestAlbumImportKeepsUnreadableM4ACopy(t *testing.T) {
+	for _, stored := range []string{"Lab Band - First Light (2020) [M4A]", "Lab Band - First Light (2020)"} {
+		w := albumSetup(t, 1, "01 - Dawn.mp3", "02 - Glass River.mp3", "03 - Night Train.mp3")
+		w.haveTracks(t, "m4a", stored)
+		mapExec(t, w.s, "UPDATE releases SET name = 'Lab Band - First Light (2020) [MP3 320]'")
+		imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+		if err != nil || lossyRefused(imp) != 3 {
+			t.Fatalf("%s: import %v: %+v", stored, err, imp.Plan)
+		}
 	}
 }

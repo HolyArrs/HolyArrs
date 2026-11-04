@@ -3,6 +3,8 @@ package source
 import (
 	"context"
 	"database/sql"
+	"encoding/base32"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"testing"
@@ -140,5 +142,17 @@ func TestHeldDangerousNotSentAfterTheWait(t *testing.T) {
 	}
 	if st := slotState(t, f).State; st != domain.SlotWanted {
 		t.Fatalf("slot %s", st)
+	}
+}
+
+// A magnet link may carry its hash in base32.
+func TestListingHashBase32(t *testing.T) {
+	const h = "0123456789abcdef0123456789abcdef01234567"
+	b, _ := hex.DecodeString(h)
+	if got := listingHash("", "magnet:?xt=urn:btih:"+base32.StdEncoding.EncodeToString(b)+"&dn=x"); got != h {
+		t.Fatalf("got %q", got)
+	}
+	if got := listingHash("", "magnet:?xt=urn:btih:"+strings.ToUpper(h)); got != h {
+		t.Fatalf("hex at the end: %q", got)
 	}
 }
