@@ -8,6 +8,8 @@ import { owner, signIn, libraryStatus, libraryView, addFromSearch, openFromSearc
 test.describe.configure({ mode: 'serial' });
 
 let page: Page;
+// Other projects in the chain add their own titles; counts look only at this file's four.
+const ours = /Driftwood Moon|The Lantern Keepers|Paper Harbour|Quiet Orchard/;
 const memberPw = `e2e-${Math.random().toString(36).slice(2)}-viewer`;
 
 async function fresh(browser: Browser) {
@@ -61,8 +63,6 @@ test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest s
 test('Library filters, find by name, posters and list', async () => {
 	await page.goto('/library');
 	await libraryView(page, 'Posters');
-	// Other projects in the chain add their own titles; count only this file's four.
-	const ours = /Driftwood Moon|The Lantern Keepers|Paper Harbour|Quiet Orchard/;
 	const grid = page.locator('[data-testid="library-card"], [data-testid="library-row"]').filter({ hasText: ours });
 	const rows = page.getByTestId('library-row').filter({ hasText: ours });
 	await expect(grid).toHaveCount(4);
@@ -146,7 +146,7 @@ test('a member sees the movie but none of the staff controls', async ({ browser 
 	await expect(m).toHaveURL(/\/$/);
 
 	await m.goto('/library');
-	await expect(m.locator('[data-testid="library-card"], [data-testid="library-row"]')).toHaveCount(4);
+	await expect(m.locator('[data-testid="library-card"], [data-testid="library-row"]').filter({ hasText: ours })).toHaveCount(4);
 	await expect(m.getByRole('link', { name: 'Add a movie' })).toHaveCount(0);
 	await m.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'The Lantern Keepers' }).click();
 	await expect(m.getByRole('heading', { level: 1 })).toContainText('The Lantern Keepers');
