@@ -272,7 +272,7 @@
 	let tfOpen = $state(false);
 	function openTwoFactor() {
 		tfOpen = true;
-		if (!session.s.twoFactor && !needsConfirm('two-factor', { localRecent: session.s.localRecent, via: session.s.via })) void startTwoFactor();
+		if (!session.s.twoFactor && !needsConfirm('two-factor', { localRecent: session.s.localRecent, via: session.s.via, mustTwoFactor: session.s.mustTwoFactor })) void startTwoFactor();
 	}
 
 	async function copyCodes() {

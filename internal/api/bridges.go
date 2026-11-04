@@ -295,6 +295,14 @@ func (a *API) addBridge(w http.ResponseWriter, r *http.Request) {
 			undo()
 			return
 		}
+		// Making a key is a risky action: a browser session confirms its
+		// password first, as on the old-app key routes (only here, so adding
+		// a bridge without a new key never asks).
+		if who, ok := auth.From(r.Context()); ok && who.Via == "session" && !auth.RecentLocal(r) {
+			undo()
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before making an old-app key", "code": "reauth"})
+			return
+		}
 		if who, ok := auth.From(r.Context()); ok && !who.HasScope(auth.ScopeAdmin) {
 			undo()
 			fail(w, http.StatusForbidden, "this API key needs the admin scope to make an old-app key")

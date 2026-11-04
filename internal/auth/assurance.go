@@ -26,6 +26,72 @@ func RecentLocal(r *http.Request) bool {
 	return ok && who.Via == "session" && who.LocalRecent && !who.MustTwoFactor
 }
 
+// riskyRoutes are the routes a browser session may use only with a local
+// password proof from the last localRecentFor. Opening pages and ordinary
+// settings never ask (Luis, 2026-11-04): passwords and two-factor, API and
+// AI keys, accounts and roles, backups, single sign-on and Plex links, the
+// trusted-network sign-in skip, and answers that carry a secret (the
+// backup file, a new key, invite link or backup codes) do.
+// Single sign-on and Plex link handlers also check on their own.
+var riskyRoutes = map[string]bool{
+	// Passwords and two-factor sign-in, mine and other people's.
+	"POST /api/v1/auth/password":                true,
+	"POST /api/v1/auth/two-factor/setup":        true,
+	"POST /api/v1/auth/two-factor/enable":       true,
+	"POST /api/v1/auth/two-factor/disable":      true,
+	"POST /api/v1/auth/two-factor/backup-codes": true,
+	"POST /api/v1/users/{id}/password":          true,
+	"POST /api/v1/users/{id}/two-factor/reset":  true,
+	// API keys, AI keys and old-app API keys.
+	"POST /api/v1/auth/keys":                          true,
+	"DELETE /api/v1/auth/keys/{id}":                   true,
+	"POST /api/v1/auth/ai-connect":                    true,
+	"POST /api/v1/settings/old-app-api/keys/{side}":   true,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}": true,
+	// Accounts: role and state changes, new accounts (an invite, people
+	// brought in from a media server or by a Move from the old apps).
+	"PUT /api/v1/users/{id}":          true,
+	"POST /api/v1/users/invites":      true,
+	"POST /api/v1/auth/import/{kind}": true,
+	"POST /api/v1/migrate/moves":      true,
+	// Backups: the file holds the whole database.
+	"GET /api/v1/backups/{name}":    true,
+	"DELETE /api/v1/backups/{name}": true,
+	"POST /api/v1/backups/restore":  true,
+	// Single sign-on, trusted proxy and Plex links.
+	"GET /api/v1/auth/sso":                  true,
+	"PUT /api/v1/auth/sso":                  true,
+	"POST /api/v1/auth/sso/test":            true,
+	"POST /api/v1/auth/sso/unlink":          true,
+	"POST /api/v1/users/{id}/sso/unlink":    true,
+	"POST /api/v1/auth/oidc/link":           true,
+	"POST /api/v1/auth/oidc/link-finish":    true,
+	"POST /api/v1/auth/forward/link":        true,
+	"POST /api/v1/auth/plex/link/start":     true,
+	"POST /api/v1/auth/plex/link/finish":    true,
+	"DELETE /api/v1/auth/plex/link":         true,
+	"POST /api/v1/auth/plex/my-link/start":  true,
+	"POST /api/v1/auth/plex/my-link/finish": true,
+	"DELETE /api/v1/auth/plex/my-link":      true,
+	// Sign-in settings, the trusted-network skip among them.
+	"PUT /api/v1/auth/settings": true,
+}
+
+// needsRecentLocal says whether a signed-in request must show a recent local
+// password proof first. A browser session needs one only on a risky route.
+// Every other kind of sign-in without an API key (the trusted-network skip)
+// can never show one, so it keeps off every admin and control route.
+func needsRecentLocal(pattern string, who Who) bool {
+	if who.Via == "api_key" || recentLocalExempt(pattern, who) {
+		return false
+	}
+	if who.Via == "session" {
+		return riskyRoutes[pattern]
+	}
+	sc := RouteScope(pattern)
+	return sc == ScopeAdmin || sc == ScopeControl
+}
+
 // recentLocalExempt keeps the recovery path open when a browser session has
 // no recent local proof. Two-factor setup and enable are open only while an
 // administrator is required to enroll, so that policy cannot lock them out.

@@ -554,10 +554,9 @@
 	let members = $state<Record<number, Member>>({});
 	let membersAsked = false;
 	$effect(() => {
-		// The people list is an admin route that wants a recent local password proof
-		// (10 minutes): without one it answers 403, so it is not asked; the rows
-		// then show initials and no age-limit mark.
-		if (!approver || membersAsked || !session.s.localRecent) return;
+		// The people list is an admin route: when it is refused, the rows show
+		// initials and no age-limit mark.
+		if (!approver || membersAsked) return;
 		membersAsked = true;
 		api
 			.get<{ users: Member[] }>('/users')

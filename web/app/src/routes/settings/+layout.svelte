@@ -54,8 +54,8 @@
 	let openGroup = $state<string | null>(null);
 	const isOpen = (id: string) => (openGroup ?? currentGroup?.group.id ?? menuGroups[0]?.group.id) === id || !!find.trim();
 
-	// Some pages (sign-in details, users, logs, backups) want the password
-	// typed again. The server answers 403 "reauth"; instead of leaving that
+	// Risky actions (keys, passwords, roles, backups, single sign-on) want
+	// the password typed again. The server answers 403 "reauth"; instead of leaving that
 	// bare error on the page, ask here, then load the page again. A failed
 	// save keeps the page (and its edits) under the box.
 	let reauth = $state<'load' | 'save' | null>(null);
@@ -169,7 +169,7 @@
 		{/if}
 		<div class="settings-content">
 			{#if reauth}
-				<SettingsCard id="settings-reauth" title="Confirm your password" description="This page holds sign-in details, so HolyArrs asks for your password again." icon="shield">
+				<SettingsCard id="settings-reauth" title="Confirm your password" description="This touches keys, passwords, people or backups, so HolyArrs asks for your password again. It then won't ask for 10 minutes." icon="shield">
 					<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 				</SettingsCard>
 			{/if}

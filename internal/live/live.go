@@ -73,6 +73,7 @@ type client struct {
 	pending map[string]Event // dl patches waiting while ch is full
 	order   []string
 	wake    chan struct{}
+	check   chan struct{} // Recheck asks this stream to check its viewer now
 }
 
 func (c *client) drop() { c.once.Do(func() { close(c.gone) }) }
@@ -278,7 +279,7 @@ func parseID(s string) (boot string, n uint64, ok bool) {
 // after it that who may see. A last from another boot, from the future or
 // older than the ring keeps returns one "resync" event instead.
 func (h *Hub) subscribe(who Viewer, last string) (*client, []Event) {
-	c := &client{who: who, ch: make(chan Event, h.opt.ClientQueue), gone: make(chan struct{}), wake: make(chan struct{}, 1)}
+	c := &client{who: who, ch: make(chan Event, h.opt.ClientQueue), gone: make(chan struct{}), wake: make(chan struct{}, 1), check: make(chan struct{}, 1)}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.clients[c] = struct{}{}
@@ -312,6 +313,19 @@ func (h *Hub) subscribe(who Viewer, last string) (*client, []Event) {
 	return c, out
 }
 
+// Recheck asks every stream opened through Checked to check its viewer
+// now, after a sign-out, an ended session or changed rights.
+func (h *Hub) Recheck() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for c := range h.clients {
+		select {
+		case c.check <- struct{}{}:
+		default:
+		}
+	}
+}
+
 func (h *Hub) unsubscribe(c *client) {
 	h.mu.Lock()
 	delete(h.clients, c)
@@ -335,18 +349,36 @@ func (h *Hub) write(w http.ResponseWriter, e Event) error {
 
 // ServeHTTP serves one event stream to a viewer who sees everything.
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.serve(w, r, Viewer{All: true})
+	h.serve(w, r, Viewer{All: true}, nil)
 }
 
 // Handler serves streams to the viewer view finds on each request; events
 // reach a non-manager only when their audience lets them in.
 func (h *Hub) Handler(view func(*http.Request) Viewer) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { h.serve(w, r, view(r)) })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { h.serve(w, r, view(r), nil) })
+}
+
+// Checked serves streams like Handler, and asks view again at every
+// heartbeat and after Recheck. A stream whose sign-in stopped working or
+// whose viewer changed ends; the browser comes back with the rights it has
+// now and resumes from its last event.
+func (h *Hub) Checked(view func(*http.Request) (Viewer, bool)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		who, ok := view(r)
+		if !ok {
+			http.Error(w, `sign in first`, http.StatusUnauthorized)
+			return
+		}
+		h.serve(w, r, who, func() bool {
+			now, ok := view(r)
+			return ok && now == who
+		})
+	})
 }
 
 // serve resumes from the Last-Event-ID header or the ?last= query (a new
 // stream opened by the page itself carries no header).
-func (h *Hub) serve(w http.ResponseWriter, r *http.Request, who Viewer) {
+func (h *Hub) serve(w http.ResponseWriter, r *http.Request, who Viewer, still func() bool) {
 	rc := http.NewResponseController(w)
 	hd := w.Header()
 	hd.Set("Content-Type", "text/event-stream")
@@ -382,10 +414,26 @@ func (h *Hub) serve(w http.ResponseWriter, r *http.Request, who Viewer) {
 		case <-c.gone:
 			return
 		case e := <-c.ch:
+			// A check asked for meanwhile goes first, so a viewer whose rights
+			// just changed is not handed one more event.
+			select {
+			case <-c.check:
+				if still != nil && !still() {
+					return
+				}
+			default:
+			}
 			if h.write(w, e) != nil || rc.Flush() != nil {
 				return
 			}
 		case <-c.wake:
+			select {
+			case <-c.check:
+				if still != nil && !still() {
+					return
+				}
+			default:
+			}
 			for _, e := range c.take() {
 				if h.write(w, e) != nil {
 					return
@@ -394,7 +442,14 @@ func (h *Hub) serve(w http.ResponseWriter, r *http.Request, who Viewer) {
 			if rc.Flush() != nil {
 				return
 			}
+		case <-c.check:
+			if still != nil && !still() {
+				return
+			}
 		case <-beat.C:
+			if still != nil && !still() {
+				return
+			}
 			if _, err := fmt.Fprintf(w, ": ping\n\n"); err != nil || rc.Flush() != nil {
 				return
 			}

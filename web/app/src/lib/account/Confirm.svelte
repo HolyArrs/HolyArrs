@@ -15,7 +15,7 @@
 	let code = $state('');
 	let error = $state('');
 	let busy = $state(false);
-	const need = $derived(needsConfirm(action, { localRecent: session.s.localRecent, via: session.s.via, hasPassword: session.s.hasPassword }));
+	const need = $derived(needsConfirm(action, { localRecent: session.s.localRecent, via: session.s.via, hasPassword: session.s.hasPassword, mustTwoFactor: session.s.mustTwoFactor }));
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();

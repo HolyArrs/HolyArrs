@@ -160,14 +160,19 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		src.onerror = () => {
 			// Lost the server (restart, update): retry after 1 s, 2 s, 4 s… up to 15 s.
 			// Without an id to resume from, the reopened stream cannot replay.
+			// The server also ends a stream on purpose when the sign-in behind it
+			// changed (a confirmed password, new rights): a live stream reopens at
+			// once, quietly, and shows Reconnecting only if that fails too.
 			if (!lastId && status.state === 'live') missed = true;
-			setState('reconnecting');
+			const quiet = status.state === 'live' && tries === 0;
+			if (!quiet) setState('reconnecting');
 			src?.close();
 			src = null;
 			clearTimeout(retry);
 			retry = setTimeout(() => {
-				if (status.state === 'reconnecting' && (!shared || status.leader)) open(true);
-			}, backoff(tries++));
+				if ((quiet ? status.state === 'live' : status.state === 'reconnecting') && (!shared || status.leader)) open(true);
+			}, quiet ? 0 : backoff(tries));
+			tries++;
 		};
 		src.onmessage = (e: MessageEvent) => {
 			const id = e.lastEventId ?? '';
