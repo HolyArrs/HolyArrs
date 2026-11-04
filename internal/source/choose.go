@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -520,7 +521,7 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 // only failing reason is that it was turned down before does not count:
 // clearing the list clears that.
 func RefusedByRules(rel domain.Release) bool {
-	if rel.State == "refused" {
+	if rel.State == "refused" || rel.Verdict["dangerous_files"] == true {
 		return true
 	}
 	if o, _ := rel.Verdict["outcome"].(string); o != "refused" {
@@ -544,8 +545,26 @@ func RefusedByRules(rel domain.Release) bool {
 // stay as history, so this outlives clearing the Turned down list.
 type dangerousRels struct{ hashes, names map[string]bool }
 
+// has matches by info hash; by name only when there is no hash (a fake
+// may copy a real scene name, and the real torrent must stay free).
 func (d dangerousRels) has(hash, name string) bool {
-	return hash != "" && d.hashes[strings.ToLower(hash)] || name != "" && d.names[name]
+	if hash != "" {
+		return d.hashes[strings.ToLower(hash)]
+	}
+	return name != "" && d.names[name]
+}
+
+var magnetBtih = regexp.MustCompile(`(?i)[?&]xt=urn:btih:([0-9a-f]{40})`)
+
+// listingHash is a listing's info hash, from its own field or its magnet link.
+func listingHash(hash, link string) string {
+	if hash != "" {
+		return hash
+	}
+	if m := magnetBtih.FindStringSubmatch(link); m != nil {
+		return strings.ToLower(m[1])
+	}
+	return ""
 }
 
 // dangerousWhy is the reason a Release known to hold a program needs force.
@@ -559,7 +578,7 @@ func (s *Searcher) dangerousRel(ctx context.Context, rel domain.Release) bool {
 	if rel.InfoHash != nil {
 		h = *rel.InfoHash
 	}
-	if d := s.dangerousSeen(ctx); d.has(h, rel.Name) {
+	if d := s.dangerousSeen(ctx); d.has(listingHash(h, rel.LinkRef), rel.Name) {
 		return true
 	}
 	var n int

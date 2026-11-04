@@ -313,3 +313,12 @@ func TestMusicTitleWordIsNotAFormat(t *testing.T) {
 		}
 	}
 }
+
+// #43: AIFF is a lossless format word.
+func TestMusicAIFFIsLossless(t *testing.T) {
+	for _, n := range []string{"Artist - Album (2020) [AIFF]", "Artist - Album (2020) AIF"} {
+		if m := Parse(n, Hints{Music: true}).Music; m == nil || !m.Lossless || m.Format != "aiff" {
+			t.Errorf("%s: %+v", n, m)
+		}
+	}
+}

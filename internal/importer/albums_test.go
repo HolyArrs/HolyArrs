@@ -477,3 +477,15 @@ func lossyRefused(imp *domain.Import) int {
 	}
 	return n
 }
+
+// #43: an .m4a whose format cannot be read never replaces a lossless copy
+// unless its Release says lossless.
+func TestAlbumImportUnreadableM4AOverFLAC(t *testing.T) {
+	w := albumSetup(t, 1, "01 - Dawn.m4a", "02 - Glass River.m4a", "03 - Night Train.m4a")
+	w.haveTracks(t, "flac", albumRel)
+	mapExec(t, w.s, "UPDATE releases SET name = 'Lab Band - First Light (2020) [WEB]'")
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || lossyRefused(imp) != 3 {
+		t.Fatalf("import %v: %+v", err, imp.Plan)
+	}
+}

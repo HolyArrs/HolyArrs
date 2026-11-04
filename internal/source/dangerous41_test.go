@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -78,5 +79,66 @@ func TestDangerousFilesStayRefused(t *testing.T) {
 	}
 	if st := slotState(t, f).State; st == domain.SlotChosen {
 		t.Fatal("the known program file was chosen again")
+	}
+}
+
+// #41: a real torrent that shares a name with a known program file (fakes
+// copy scene names) but has its own info hash stays free.
+func TestDangerousNameWithOtherHashStaysFree(t *testing.T) {
+	const bad = "0123456789abcdef0123456789abcdef01234567"
+	const good = "89abcdef0123456789abcdef0123456789abcdef"
+	lf := &liveFeed{}
+	f := seed(t, lf.url(t))
+	// The fake: the same scene name, its own hash, a Download that failed
+	// as dangerous.
+	a := addRelease(t, f, web1080, "turned_down")
+	exec(t, f, `UPDATE releases SET info_hash = ?, link_ref = 'http://src/fake.torrent' WHERE id = ?`, bad, a)
+	failedDownload(t, f, a, bad, "dangerous files: x.exe")
+	sr := &Searcher{Store: f.s}
+	if _, err := sr.RemoveTurnedDown(context.Background(), 0, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	lf.set(feedOf(item(web1080, time.Now(), 50, good)))
+	if (dangerousRels{hashes: map[string]bool{bad: true}, names: map[string]bool{web1080: true}}).has(good, web1080) {
+		t.Fatal("a listing with its own hash was matched by name")
+	}
+	if (dangerousRels{names: map[string]bool{web1080: true}}).has("", web1080) != true {
+		t.Fatal("a hashless listing with the known name was not matched")
+	}
+	if got := listingHash("", "magnet:?xt=urn:btih:"+strings.ToUpper(bad)+"&dn=x"); got != bad {
+		t.Fatalf("magnet hash %q", got)
+	}
+	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	var st, ver string
+	if err := f.s.Read().QueryRow("SELECT state, COALESCE(verdict, '') FROM releases WHERE info_hash = ?", good).Scan(&st, &ver); err != nil {
+		t.Fatalf("the real torrent was not stored: %v", err)
+	}
+	if strings.Contains(ver, "dangerous_files") || st == "refused" {
+		t.Fatalf("the real torrent was refused by name: %s %s", st, ver)
+	}
+}
+
+// #41: a held Release whose torrent fails as dangerous during the wait is
+// not sent when the wait ends: refused, and its Slot looks again.
+func TestHeldDangerousNotSentAfterTheWait(t *testing.T) {
+	const h = "0123456789abcdef0123456789abcdef01234567"
+	f := seed(t, "http://127.0.0.1:1/api")
+	held := addRelease(t, f, web1080, "held")
+	exec(t, f, `UPDATE releases SET info_hash = ?, verdict = json('{"outcome":"held","reasons":[]}') WHERE id = ?`, h, held)
+	exec(t, f, `UPDATE slots SET state = 'held', held_release_id = ?, next_try_at = ? WHERE id = ?`, held, store.FormatTime(time.Now().Add(-time.Minute)), f.slotID)
+	other := addRelease(t, f, "Dune.Part.Two.2024.1080p.WEB-DL-OTHERNAME", "turned_down")
+	failedDownload(t, f, other, h, "dangerous files: Dune.mkv.exe")
+	var chosen []int64
+	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, _, rel int64) { chosen = append(chosen, rel) }}
+	runKind(t, f, sr, KindGrabHeld, nil, nil)
+	if len(chosen) != 0 {
+		t.Fatalf("sent after the wait: %v", chosen)
+	}
+	r := relByName(t, f, web1080)
+	if r.State != "refused" || !RefusedByRules(r) {
+		t.Fatalf("held Release is %s", r.State)
+	}
+	if st := slotState(t, f).State; st != domain.SlotWanted {
+		t.Fatalf("slot %s", st)
 	}
 }

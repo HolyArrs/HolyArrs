@@ -160,9 +160,11 @@ func lossyOverLossless(newPath, relName string, old domain.File, oldPath string,
 		// its Release name.
 		if l, known := fileLossless(newPath); known {
 			lossy = !l
-		} else if relName != "" {
+		} else {
+			// Its format could not be read: lossless only when its Release
+			// name says so (an unreadable file never replaces lossless).
 			step, _ := judge.StepOf(relName, rules)
-			lossy = strings.HasPrefix(step, "lossy_")
+			lossy = step != "lossless" && step != "lossless_hires"
 		}
 	}
 	if !lossy {

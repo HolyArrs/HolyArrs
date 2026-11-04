@@ -191,7 +191,7 @@ func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, ha
 	for i, f := range all {
 		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Music: true})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
-			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(f.item.InfoHash, f.item.Title)}
+			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
 			OutSince: outSince, Checks: checks}
 		if ss.Match.Title != nil {

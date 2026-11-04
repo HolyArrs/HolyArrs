@@ -122,7 +122,7 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	for i, f := range all {
 		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
-			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(f.item.InfoHash, f.item.Title)}
+			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := judge.MatchTitle(p, []judge.TitleRef{ref})
 		set := judge.SlotSet{Match: m, RuntimeMinutes: ref.Runtime, Out: out, MinSeeders: f.src.MinSeeders, TurnedDown: turned,
 			HandSearch: hand, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}
