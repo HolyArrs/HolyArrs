@@ -57,15 +57,13 @@ restore --pre-update` and `docker exec holyarrs /holyarrs import-secrets ...`. H
 time zone database (set `TZ` as usual), healthcheck, unpacker and
 [trailer reader](trailers.md). Keep `/config` on a volume.
 
-### Raspberry Pi and other ARM boards
+### ARM machines
 
-The same image runs on 64-bit ARM (`linux/arm64`, a Raspberry Pi 4 or 5 with a
-64-bit OS) and on 32-bit ARM (`linux/arm/v7`); Docker picks the right one. The
-program is pure Go, so nothing extra is installed on the board. On a board or a
-container with about 2.5 GiB of memory or less, HolyArrs turns on its
+Release images are built for 64-bit ARM (`linux/arm64`) and 32-bit ARM
+(`linux/arm/v7`) as well as amd64. On a machine or a container with about
+2.5 GiB of memory or less, HolyArrs turns on its
 [low-memory mode](parts-and-safe-mode.md#low-memory-mode) by itself; its first
-log line says so. Keep `/config` on the board's own disk or SSD, not on a
-network share, and prefer an SSD over an SD card for it.
+log line says so.
 
 ## Set permissions
 

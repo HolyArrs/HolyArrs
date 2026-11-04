@@ -1,5 +1,5 @@
-// Package lowmem is the low-memory mode (roadmap #131): smaller in-memory
-// caches and a smaller SQLite page cache for a small NAS or a Raspberry Pi.
+// Package lowmem is the low-memory mode (roadmap #95): smaller in-memory
+// caches and a smaller SQLite page cache for any small machine.
 // HOLYARRS_LOW_MEMORY=1 turns it on, =0 off; unset, it is on when the
 // machine (or the container's memory limit) has about 2.5 GiB or less. It is
 // decided once at start and read everywhere through On and Pick.
@@ -18,8 +18,8 @@ import (
 // Env is the setting's name.
 const Env = "HOLYARRS_LOW_MEMORY"
 
-// AutoAtOrBelow turns the mode on by itself: a 2 GB board reports about
-// 1.8-1.9 GiB, a container limited to 2g exactly 2 GiB, a 4 GB board 3.7 GiB.
+// AutoAtOrBelow turns the mode on by itself: a 2 GB machine reports about
+// 1.8-1.9 GiB, a container limited to 2g exactly 2 GiB, a 4 GB machine 3.7 GiB.
 const AutoAtOrBelow = 2560 << 20
 
 var on atomic.Bool

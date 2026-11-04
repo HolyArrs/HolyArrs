@@ -61,13 +61,12 @@ Verify `SHA256SUMS`, then extract the archive into a new directory. Keep the
 program and config in separate directories. Choose explicit local paths:
 
 ```sh
-GOMEMLIMIT=384MiB ./holyarrs -config /srv/holyarrs/config -addr :18730
+./holyarrs -config /srv/holyarrs/config -addr :18730
 ```
 
 On Windows PowerShell:
 
 ```powershell
-$env:GOMEMLIMIT = '384MiB'
 .\holyarrs.exe -config 'C:\HolyArrs\config' -addr ':18730'
 ```
 
@@ -118,7 +117,7 @@ lost. Test recovery with a disposable config copy first. See [Backups](backups.m
 | --- | --- | --- |
 | Windows amd64 | Native disposable first-run, restart and backup/recovery when a receipt records them | Service installation, ACL hardening and a separate user's experience |
 | Linux amd64 | Cross-build plus native Linux runtime only when a receipt records it | NAS OS and catalog installation |
-| Linux arm64 | Cross-build | Native ARM64, Pi hardware and day-long resource gates |
+| Linux arm64 | Cross-build | Native ARM64 hardware and day-long resource gates |
 | Linux armv7 and 386 | Mandatory selected-target cross-build for these candidates | Native runtime and platform installation; historical support policy remains in decision 0002 |
 | Unraid, Synology, QNAP, TrueNAS | Unraid template preparation only | Every actual NAS installation check |
 

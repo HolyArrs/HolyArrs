@@ -94,11 +94,11 @@ HolyArrs aims to stay under 384 MiB of Go memory (its memory target, the point w
 
 ### Low-memory mode
 
-For a small NAS or a Raspberry Pi. It keeps fewer answers in memory and gives SQLite a smaller page cache, so HolyArrs stays smaller over a long run. Pages that need an answer it no longer holds read it from the database again, which takes a moment longer; a show or artist you open again after a while may be looked up again.
+For a small machine, such as a small NAS or a container with a low memory limit. It keeps fewer answers in memory and gives SQLite a smaller page cache, so HolyArrs stays smaller over a long run. Pages that need an answer it no longer holds read it from the database again, which takes a moment longer; a show or artist you open again after a while may be looked up again.
 
 - **On by itself** when the machine, or the container's memory limit, has about 2.5 GiB or less (Linux; read from `/proc/meminfo` and the cgroup limit).
 - `HOLYARRS_LOW_MEMORY=1` turns it on anywhere, `HOLYARRS_LOW_MEMORY=0` turns it off.
-- Without `GOMEMLIMIT`, the memory target is a quarter of the machine, between 192 and 384 MiB. A `GOMEMLIMIT` or `GOGC` you set always wins.
+- Without `GOMEMLIMIT`, the memory target is a quarter of the machine, between 192 and 384 MiB. A `GOMEMLIMIT` you set always wins.
 - The first line HolyArrs writes to its log says whether the mode is on and why.
 
 What it changes: the SQLite page cache (4 MB per writer and 2 MB per reader instead of 8 MB each), the movie and show details kept in memory (150 instead of 1000; the rest come from the database), and the show, music and Wikipedia answers kept in memory (250 instead of 1000). Background work runs less at once: the music catalog copy every 3 hours instead of every 30 minutes, with 2 picture downloads at a time instead of 4, and Explore builds one list of picks at a time instead of 3 (after a restart they take longer to catch up).

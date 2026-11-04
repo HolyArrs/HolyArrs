@@ -28,7 +28,6 @@ def render(image: str, config: str, data: str, port: int) -> bytes:
         ("Web port", "18730", str(port), "Port", "tcp", "Choose an unused host port."),
         ("Config", "/config", config, "Path", "rw", "Direct local pool only; do not use /mnt/user. UID 1000 must have write access."),
         ("Data", "/data", data, "Path", "rw", "One shared tree for downloads and Library folders; hardlinks need one filesystem."),
-        ("Memory target", "GOMEMLIMIT", "384MiB", "Variable", "", "Go memory target; not a hard process memory limit."),
         ("Completed downloads", "HOLYARRS_SAVE_PATH", "/data/downloads", "Variable", "", "Match the Downloader path."),
     ):
         ET.SubElement(root, "Config", Name=name, Target=target, Default=default, Mode=mode,

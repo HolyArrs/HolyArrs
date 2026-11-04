@@ -6,3 +6,8 @@ config/
 .git/
 web/app/node_modules/
 web/app/.svelte-kit/
+web/app/e2e/.tmp/
+.claude/
+.omc/
+.env
+.env.*

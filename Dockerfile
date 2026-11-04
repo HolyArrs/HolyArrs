@@ -53,7 +53,7 @@ COPY LICENSE /LICENSE
 COPY THIRD_PARTY_NOTICES.md /THIRD_PARTY_NOTICES.md
 COPY docs/third-party-notices.md /docs/third-party-notices.md
 # No GOMEMLIMIT here: the program aims at 384 MiB by itself, and on a small
-# board or a container limited to about 2.5 GiB or less it turns on its
+# machine or a container limited to about 2.5 GiB or less it turns on its
 # low-memory mode and aims lower (a quarter of the memory, 192-384 MiB; see
 # docs/parts-and-safe-mode.md). SQLite's page caches and the driver's own heap
 # sit outside that target (measured up to about 69 MiB with a 12,800-Item

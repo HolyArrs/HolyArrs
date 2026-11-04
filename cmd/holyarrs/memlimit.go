@@ -9,9 +9,8 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/lowmem"
 )
 
-// defaultMemoryTarget is the Go memory target when GOMEMLIMIT is not set:
-// the value the Docker image and the install notes already use, so a
-// Windows or standalone install behaves the same. It is a target, not a hard
+// defaultMemoryTarget is the Go memory target when GOMEMLIMIT is not set,
+// in the Docker image and standalone installs alike. It is a target, not a hard
 // limit: past it Go collects garbage more often (at most about half the CPU),
 // and SQLite's page cache sits outside it. GOMEMLIMIT overrides it.
 const defaultMemoryTarget = 384 << 20
@@ -38,7 +37,7 @@ func applyMemoryTarget(getenv func(string) string, set func(int64) int64, target
 	return true
 }
 
-// useMemoryMode decides the low-memory mode (#131) and applies the memory
+// useMemoryMode decides the low-memory mode (#95) and applies the memory
 // target for the server (run), with one line saying which and why.
 func useMemoryMode() {
 	total := lowmem.TotalMemory("/")
