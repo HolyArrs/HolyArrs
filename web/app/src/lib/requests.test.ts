@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './requests.ts';
+import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './requests.ts';
 import type { AskKindLimit, AskLimit, AskState } from './types.ts';
 
 describe('requests words', () => {
@@ -119,5 +119,25 @@ describe('approver tabs', () => {
 		const done = [a(1, 'available', 1, '2026-10-02T00:00:00Z'), a(2, 'turned_down', undefined, '2026-10-08T00:00:00Z')];
 		expect(approverSort('done', done).map((x) => x.id)).toEqual([2, 1]);
 		expect(approverSort('pending', [a(1, 'asked'), a(3, 'asked'), a(2, 'asked')]).map((x) => x.id)).toEqual([3, 2, 1]);
+	});
+});
+
+describe('alsoDeclined (#136)', () => {
+	const w = (id: number, name: string, display_name?: string) => ({ id, name, display_name });
+	it('is empty when nobody declined before', () => {
+		expect(alsoDeclined({})).toBe('');
+		expect(alsoDeclined({ also_declined: [] })).toBe('');
+	});
+	it('names everyone, display name first', () => {
+		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B')] })).toBe('Bo B declined it before.');
+		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B'), w(3, 'cy'), w(4, 'di', ' Di ')] })).toBe('Bo B, cy and Di declined it before.');
+	});
+	it('uses my own fresh display name for me', () => {
+		expect(alsoDeclined({ also_declined: [w(1, 'luis', 'Old')] }, { id: 1, displayName: 'Luis R' })).toBe('Luis R declined it before.');
+	});
+	it('counts people without a display name when account names are not said', () => {
+		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B'), w(3, 'cy')] }, undefined, true)).toBe('Bo B and 1 other declined it before.');
+		expect(alsoDeclined({ also_declined: [w(3, 'cy')] }, undefined, true)).toBe('1 other person declined it before.');
+		expect(alsoDeclined({ also_declined: [w(3, 'cy'), w(4, 'di')] }, undefined, true)).toBe('2 other people declined it before.');
 	});
 });

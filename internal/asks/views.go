@@ -61,6 +61,9 @@ type View struct {
 	People       []Asker    `json:"people"` // everyone who asked, first one first
 	DecidedBy    *Who       `json:"decided_by,omitempty"`
 	DecidedAt    *time.Time `json:"decided_at,omitempty"`
+	// AlsoDeclined are the other people who declined the same thing on
+	// earlier asks for it, newest first (the decider of this ask left out).
+	AlsoDeclined []Who `json:"also_declined"`
 	Note         string     `json:"note,omitempty"`
 	AutoApproved bool       `json:"auto_approved"`
 	AvailableAt  *time.Time `json:"available_at,omitempty"`
@@ -149,9 +152,66 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		for _, p := range ps {
 			v.People = append(v.People, Asker{Who{ID: p.ID, Name: p.Name}, p.AskedAt, p.FromWatchlist})
 		}
+		v.AlsoDeclined = []Who{}
+		for _, id := range alsoDeclined(ctx, db, a) {
+			v.AlsoDeclined = append(v.AlsoDeclined, Who{ID: id, Name: userName(id), DisplayName: displayName(id)})
+		}
 		out = append(out, v)
 	}
 	return out, nil
+}
+
+// alsoDeclined lists who declined earlier asks for the same thing as a,
+// newest first, each person once, without a's own decider. Movies match by
+// TMDB id and 4K, shows by any id they share (a show found through TVmaze
+// has no TMDB id), artists by MusicBrainz id. A failed read lists nobody.
+func alsoDeclined(ctx context.Context, db *sql.DB, a domain.Ask) []int64 {
+	var match []string
+	var args []any
+	switch a.Kind {
+	case "artist":
+		if mb := a.SourceIDs["musicbrainz"]; mb != "" {
+			match, args = []string{"json_extract(source_ids, '$.musicbrainz') = ?"}, []any{mb}
+		}
+	case "show":
+		var or []string
+		for _, k := range []string{"tmdb", "tvdb", "tvmaze", "imdb"} {
+			if v := a.SourceIDs[k]; v != "" {
+				or = append(or, "json_extract(source_ids, '$."+k+"') = ?")
+				args = append(args, v)
+			}
+		}
+		if len(or) > 0 {
+			match = []string{"(" + strings.Join(or, " OR ") + ")"}
+		}
+	default:
+		if a.TMDBID != "" {
+			match, args = []string{"tmdb_id = ?", "four_k = ?"}, []any{a.TMDBID, a.FourK}
+		}
+	}
+	if len(match) == 0 {
+		return nil
+	}
+	q := "SELECT decided_by FROM asks WHERE kind = ? AND " + strings.Join(match, " AND ") + " AND state = 'turned_down' AND decided_by IS NOT NULL AND id != ? ORDER BY decided_at DESC, id DESC"
+	args = append([]any{a.Kind}, append(args, a.ID)...)
+	rows, err := db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	seen := map[int64]bool{}
+	if a.DecidedBy != nil && a.State == domain.AskTurnedDown {
+		seen[*a.DecidedBy] = true
+	}
+	var out []int64
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil && !seen[id] {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // Message is an in-app message for one person.
