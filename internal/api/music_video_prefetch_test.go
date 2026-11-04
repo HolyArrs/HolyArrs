@@ -184,3 +184,25 @@ func TestArtistOutageAndEmptyKept(t *testing.T) {
 		t.Fatalf("after a restart: due %v, asked %d", due, asks)
 	}
 }
+
+// The failures kept for the pass are bounded: old ones go, the map never
+// passes artistVideosMax, and an answer clears an artist's failure.
+func TestArtistFailedBounded(t *testing.T) {
+	var c artistVideoCache
+	now := time.Now()
+	for i := range artistVideosMax + 50 {
+		c.noteFailed(fmt.Sprintf("a0000000-0000-0000-0000-%012d", i), now)
+	}
+	if n := len(c.failed); n != artistVideosMax {
+		t.Fatalf("%d failures kept", n)
+	}
+	later := now.Add(artistFailWait + time.Minute)
+	c.noteFailed("b0000000-0000-0000-0000-000000000001", later)
+	if n := len(c.failed); n != 1 {
+		t.Fatalf("old failures not pruned: %d", n)
+	}
+	c.forgetFailed("b0000000-0000-0000-0000-000000000001")
+	if n := len(c.failed); n != 0 {
+		t.Fatalf("an answer did not clear the failure: %d", n)
+	}
+}

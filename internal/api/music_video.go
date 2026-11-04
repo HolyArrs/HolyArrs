@@ -61,6 +61,34 @@ type artistVideoCache struct {
 	now  func() time.Time
 }
 
+// noteFailed remembers that asking about mbid failed at now. Entries older
+// than artistFailWait go first, and the map stays under artistVideosMax.
+func (c *artistVideoCache) noteFailed(mbid string, now time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.failed == nil {
+		c.failed = map[string]time.Time{}
+	}
+	if _, ok := c.failed[mbid]; !ok && len(c.failed) >= artistVideosMax {
+		for k, at := range c.failed {
+			if now.Sub(at) >= artistFailWait {
+				delete(c.failed, k)
+			}
+		}
+		if len(c.failed) >= artistVideosMax {
+			return
+		}
+	}
+	c.failed[mbid] = now
+}
+
+// forgetFailed drops mbid's failure once the server answered about it.
+func (c *artistVideoCache) forgetFailed(mbid string) {
+	c.mu.Lock()
+	delete(c.failed, mbid)
+	c.mu.Unlock()
+}
+
 func (c *artistVideoCache) clock() time.Time {
 	if c.now != nil {
 		return c.now()
@@ -148,18 +176,17 @@ func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo 
 		// An artist the server does not know is kept as an empty list, so
 		// asking again within a few minutes costs no lookup. Any other
 		// failure (the server down) is remembered for the pass.
-		if errors.Is(err, metadata.ErrNotFound) {
+		switch {
+		case errors.Is(err, metadata.ErrNotFound):
+			c.forgetFailed(mbid)
 			a.keepVideos(ctx, mbid, artistVideoList{at: now})
-		} else {
-			c.mu.Lock()
-			if c.failed == nil {
-				c.failed = map[string]time.Time{}
-			}
-			c.failed[mbid] = now
-			c.mu.Unlock()
+		case ctx.Err() == nil:
+			// Not the caller giving up (its own cancel or deadline).
+			c.noteFailed(mbid, now)
 		}
 		return nil
 	}
+	c.forgetFailed(mbid)
 	a.keepVideos(ctx, mbid, artistVideoList{at: now, list: l})
 	return l
 }
