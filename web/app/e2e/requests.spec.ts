@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIResponse, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -727,4 +728,134 @@ test('Approve on a card still lands when the approver leaves the page at once', 
 		const { asks } = (await (await own.request.get('/api/v1/asks?state=approved')).json()) as { asks: { name: string }[] };
 		return asks.some((a) => a.name === 'Marigold Bellows');
 	}, { timeout: 15_000 }).toBe(true);
+});
+
+
+// #136: three admins (made here, in this throwaway HolyArrs only) decline
+// the same movie in turn. Two of them answer one request at the same moment:
+// one decision wins and the other is told who answered first. The newest
+// request's window then names the others who declined it before, on a phone
+// and at desktop width, in light and dark.
+const harrow = 'Harrow Teaspoon';
+
+/** admin joins with an Admin invite and sets the display name everyone sees. */
+async function admin(browser: Browser, name: string, shown: string): Promise<Page> {
+	await own.goto('/settings/users');
+	await own.getByLabel('Note for yourself').fill(name);
+	await own.locator('form.invite').getByRole('group', { name: 'Role' }).getByLabel('Admin').check();
+	await own.getByRole('button', { name: 'Make an invite link' }).click();
+	const link = (await own.locator('.fresh code').textContent())!.trim();
+	const p = await fresh(browser);
+	const pw = `e2e-${Math.random().toString(36).slice(2)}-${name}`;
+	await p.goto(new URL(link).pathname);
+	await p.getByLabel('Name', { exact: true }).fill(name);
+	await p.getByLabel('Password', { exact: true }).fill(pw);
+	await p.getByLabel('Password again').fill(pw);
+	await p.getByRole('button', { name: 'Join and sign in' }).click();
+	await expect(p).toHaveURL(/\/$/);
+	await p.goto('/account');
+	const box = p.getByTestId('box-display-name');
+	await box.getByTestId('edit-display-name').click();
+	await box.getByRole('textbox').fill(shown);
+	await box.getByRole('button', { name: 'Save' }).click();
+	await expect(box).toContainText(shown);
+	return p;
+}
+
+type AskRow = { id: number; name: string; state: string; decided_by?: { name: string; display_name?: string }; also_declined: { name: string; display_name?: string }[] };
+
+/** asksFor reads every request for name, newest first (as an approver sees them). */
+async function asksFor(p: Page, name: string): Promise<AskRow[]> {
+	const { asks } = (await (await p.request.get('/api/v1/asks')).json()) as { asks: AskRow[] };
+	return asks.filter((a) => a.name === name).sort((a, b) => b.id - a.id);
+}
+
+/** askHarrow asks for Harrow Teaspoon as p (a member), through the API the Ask button uses. */
+async function askHarrow(p: Page): Promise<number> {
+	if (!p.url().startsWith('http')) await p.goto('/');
+	const r = await p.evaluate(async () => {
+		const me = (await (await fetch('/api/v1/auth/me')).json()) as { csrf: string };
+		const res = await fetch('/api/v1/asks', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': me.csrf }, body: JSON.stringify({ id: 'tmdb:900601' }) });
+		return { status: res.status, body: await res.json() };
+	});
+	expect(r.status, JSON.stringify(r.body)).toBeLessThan(300);
+	return (r.body as { ask: { id: number } }).ask.id;
+}
+
+/** declineOnCard declines the waiting Harrow Teaspoon from p's Requests cards (no reason). */
+async function declineOnCard(p: Page) {
+	await card(p, harrow).getByRole('button', { name: `Decline ${harrow}` }).click();
+	const why = p.getByRole('dialog', { name: new RegExp(`^Decline ${harrow}`) });
+	await why.getByRole('button', { name: 'Decline', exact: true }).click();
+	await expect(why).toBeHidden();
+}
+
+test('#136 several admins decline the same movie: the window names who else declined', async ({ browser }) => {
+	test.setTimeout(150_000);
+	const hal = await member(browser, 'hal');
+	const ada = await admin(browser, 't-req-ada', 'Ada Quill');
+	const bea = await admin(browser, 't-req-bea', 'Bea Thorn');
+	const cy = await admin(browser, 't-req-cy', 'Cy Marsh');
+	const stateOf = async (id: number) => (await asksFor(ada, harrow)).find((a) => a.id === id)?.state;
+
+	// 1. Ada declines hal's first request.
+	const first = await askHarrow(hal);
+	await ada.goto('/requests');
+	await declineOnCard(ada);
+	await expect.poll(() => stateOf(first), { timeout: 20_000 }).toBe('turned_down');
+
+	// 2. hal asks again; Bea and Cy both press Decline on it at once. One wins,
+	// the other is told who answered first (not "Try again").
+	const second = await askHarrow(hal);
+	await bea.goto('/requests');
+	await cy.goto('/requests');
+	await expect(card(bea, harrow)).toBeVisible();
+	await expect(card(cy, harrow)).toBeVisible();
+	await Promise.all([declineOnCard(bea), declineOnCard(cy)]);
+	await expect.poll(() => stateOf(second), { timeout: 20_000 }).toBe('turned_down');
+	const winner = (await asksFor(ada, harrow)).find((a) => a.id === second)!.decided_by!.display_name!;
+	expect(['Bea Thorn', 'Cy Marsh']).toContain(winner);
+	const [loserPage, loser] = winner === 'Bea Thorn' ? [cy, 'Cy Marsh'] : [bea, 'Bea Thorn'];
+	await expect(loserPage.getByRole('status').filter({ hasText: `${winner} already declined ${harrow}.` })).toBeVisible({ timeout: 20_000 });
+	await expect(loserPage.getByText(/Try again/)).toHaveCount(0);
+
+	// 3. hal asks a third time; the admin who lost the race declines it.
+	const third = await askHarrow(hal);
+	await loserPage.goto('/requests');
+	await declineOnCard(loserPage);
+	await expect.poll(() => stateOf(third), { timeout: 20_000 }).toBe('turned_down');
+
+	// The server lists the others, newest first, each once, without the request's own decider.
+	const rows = await asksFor(ada, harrow);
+	const others = (id: number) => rows.find((a) => a.id === id)!.also_declined.map((w) => w.display_name);
+	expect(others(third)).toEqual([winner, 'Ada Quill']);
+	expect(others(second)).toEqual([loser, 'Ada Quill']);
+	expect(others(first)).toEqual([loser, winner]);
+
+	// 4. The newest request's window, as Ada: phone and desktop, light and dark.
+	const sentence = `By ${loser}. ${winner} and Ada Quill declined it before.`;
+	for (const colorScheme of ['light', 'dark'] as const) {
+		for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+			await ada.emulateMedia({ colorScheme });
+			await ada.setViewportSize(viewport);
+			await ada.goto(`/requests?ask=${third}`);
+			const win = ada.getByRole('dialog', { name: harrow });
+			await expect(win).toBeVisible();
+			const said = win.getByTestId('ask-status');
+			await expect(said).toContainText('Declined');
+			await expect(said).toContainText(sentence);
+			await noSidewaysScroll(ada);
+			// Contrast is read once the window's open fade is over (looping art drift aside).
+			await ada.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity));
+			const axe = await new AxeBuilder({ page: ada }).include('[data-testid="ask-status"]').withRules(['color-contrast']).analyze();
+			expect(axe.violations, `${colorScheme} ${viewport.width}: ${JSON.stringify(axe.violations.map((v) => v.nodes.map((n) => n.failureSummary)))}`).toEqual([]);
+			await ada.screenshot({ path: test.info().outputPath(`also-declined-${colorScheme}-${viewport.width}.png`) });
+		}
+	}
+
+	// hal's own list says it too, on the newest declined request (account names are fine there).
+	await hal.goto('/requests');
+	await hal.getByRole('button', { name: /^Declined/ }).click();
+	const mine = hal.locator(`[data-ask-id="${third}"]`);
+	await expect(mine.getByTestId('also-declined')).toHaveText(`${winner} and Ada Quill declined it before.`);
 });

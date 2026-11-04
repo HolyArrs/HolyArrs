@@ -7,7 +7,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onDestroy, onMount, tick } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api, ApiError, message } from '#lib/api.ts';
 	import Chip from '#lib/ui/Chip.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -21,7 +21,7 @@
 	import { loadProfile, profile } from '#lib/account/profile.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/plain.ts';
-	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/requests.ts';
+	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/requests.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { inbox, markRead, refreshInbox } from '#lib/requests.svelte.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView, SearchView } from '#lib/types.ts';
@@ -97,7 +97,20 @@
 			void refreshInbox();
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
-			toasts.push(`Couldn’t ${p.mode === 'approve' ? 'approve' : 'decline'} ${a?.name ?? 'the request'}. ${message(err)} Try again.`, 'fail');
+			const name = a?.name ?? 'the request';
+			if (err instanceof ApiError && err.status === 409 && /already decided/.test(err.message)) {
+				// Someone else answered it first (two approvers at once): show their answer, not "Try again".
+				// The one ask is read on its own, so a list load started meanwhile can't drop it.
+				const now = await api.get<Ask>(`/asks/${id}`).catch(() => undefined);
+				if (now) {
+					const i = asks.findIndex((x) => x.id === id);
+					if (i >= 0) asks[i] = now;
+				}
+				const m = /^(Declined|Approved) by (.+)$/.exec(now ? decided(now) : '');
+				toasts.push(m ? `${m[2]} already ${m[1].toLowerCase()} ${name}.` : `${name} was already answered.`, 'info');
+				return;
+			}
+			toasts.push(`Couldn’t ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}. ${message(err)} Try again.`, 'fail');
 		} finally {
 			delete pending[id];
 		}
@@ -440,6 +453,7 @@
 	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? 'someone in your household' : w));
 	const askedBy = (a: Ask) => plain(askedByRaw(a));
 	const decided = (a: Ask) => plain(decidedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined) ?? '');
+	const alsoDeclined = (a: Ask, namedOnly = false) => plain(alsoDeclinedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined, namedOnly));
 
 	function year(a: Ask) {
 		return a.year ? ` (${a.year})` : '';
@@ -544,6 +558,7 @@
 		year,
 		askedBy,
 		decided,
+		alsoDeclined: (a) => alsoDeclined(a, true),
 		pill: askPill,
 		approvedLine,
 		href: askHref,
@@ -674,6 +689,7 @@
 									{decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
 								</p>
 							{/if}
+							{#if a.state === 'turned_down' && alsoDeclined(a)}<p class="line muted" data-testid="also-declined">{alsoDeclined(a)}</p>{/if}
 							{#if a.note}<p class="line note">“{a.note}”</p>{/if}
 							{#if a.state === 'approved'}
 								{@const why = whyFailed(a)}

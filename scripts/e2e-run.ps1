@@ -4,7 +4,9 @@ param(
   [ValidateSet('agent', 'owner')][string]$As = 'agent',
   [int]$StaleMinutes = 3,
   [int]$WaitMinutes = 120,
-  [int]$Slots = 4,
+  # GhostPC rule (coord 2026-11-04 05:20): at most 2 e2e runs at once. After any
+  # stall or reset it is one heavy job at a time again: run with -Exclusive.
+  [int]$Slots = 2,
   [switch]$Exclusive,
   [string]$StateDir = 'C:\HolyForge\coderluii\cl\holyarrs\.omc\state'
 )
@@ -33,7 +35,11 @@ param(
 #   or redirecting this script never breaks a run; its exit code passes through.
 # - A run waiting for a slot restarts itself when this script is updated.
 # - -Exclusive holds every slot (slot 0's ports) so nothing else runs beside
-#   it: for timing-sensitive checks (frame times, load numbers).
+#   it: for timing-sensitive checks only (explore-memory, frame times, AC6, load
+#   numbers). Pass/fail chains run without it, so a second run can go beside.
+# - A second run beside another needs C: with 50 GB free and CPU under 60%;
+#   Docker builds and pulls, installers, a full go test ./... and night soaks
+#   still run alone (coord 2026-11-04 05:20).
 $ErrorActionPreference = 'Stop'
 $logins = @{ agent = 'C:\HolyForge\coderluii\cl\holyarrs\secrets\showcase-18729-agent.txt'; owner = 'C:\HolyForge\coderluii\cl\holyarrs\secrets\showcase-18729-home.txt' }
 $env:HOLYARRS_SHOWCASE_LOGIN = $logins[$As]

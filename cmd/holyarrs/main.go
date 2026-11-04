@@ -489,6 +489,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Link: func(ctx context.Context, rel domain.Release) (string, error) {
 			return source.GrabLink(ctx, s, vault, rel)
 		},
+		SourceTransport: func(ctx context.Context, src domain.Source) (http.RoundTripper, error) {
+			cfg, err := source.ConfigFor(ctx, src, vault)
+			if err != nil {
+				return nil, err
+			}
+			return source.Transport(cfg), nil
+		},
 		FromVault: vault.Get}
 	// Background download reader: one reader per Downloader inside the
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.

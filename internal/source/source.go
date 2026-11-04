@@ -124,6 +124,19 @@ func New(cfg Config) *Client {
 	return &Client{cfg: cfg, http: &h}
 }
 
+// Transport is the Source's own checked way out, for fetching its Release
+// files (#152): through its proxy when it has one, with every address asked
+// of its network rule, as Client does.
+func Transport(cfg Config) http.RoundTripper {
+	if cfg.AllowAddr == nil {
+		cfg.AllowAddr = PublicOnly
+		if cfg.AllowLocal {
+			cfg.AllowAddr = NotMetadata
+		}
+	}
+	return transport(cfg)
+}
+
 // transport dials the Source through the network policy. With a proxy, the
 // policy checks the proxy's address, and the Source's name is looked up and
 // checked here. The proxy is only ever handed the checked address, so it

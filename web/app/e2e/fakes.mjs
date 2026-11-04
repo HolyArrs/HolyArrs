@@ -238,7 +238,9 @@ export const tmdbMovies = [
 	{ id: 900501, title: 'Lumen Cistern', release_date: '2016-03-03', imdb_id: 'tt9005010', overview: 'A cistern that fills with light instead of rain.', dates: [[3, '2016-03-03'], [4, '2016-05-01']], trailer: 'lumenCist01', videos: [['lumenCist01', 'Lumen Cistern official trailer', true]] },
 	{ id: 900502, title: 'Aster Funicular', release_date: '2017-05-05', imdb_id: 'tt9005020', overview: 'A hillside railway that only climbs for passengers in love.', dates: [[3, '2017-05-05'], [4, '2017-07-01']], trailer: 'asterAge001', videos: [['asterAge001', 'Aster Funicular red band trailer', true], ['asterPlay02', 'Aster Funicular trailer 2', false]] },
 	{ id: 900503, title: 'Gossamer Weir', release_date: '2018-07-07', imdb_id: 'tt9005030', overview: 'A river weir spun overnight by spiders.', dates: [[3, '2018-07-07'], [4, '2018-09-01']], trailer: 'weirGone001', videos: [['weirGone001', 'Gossamer Weir official trailer', true], ['weirGone002', 'Gossamer Weir trailer 2', false]] },
-	{ id: 900504, title: 'Pumice Belfry', release_date: '2019-09-09', imdb_id: 'tt9005040', overview: 'A bell tower so light it floats off in a storm.', dates: [[3, '2019-09-09'], [4, '2019-11-01']], trailer: 'pumiceBel01', videos: [['pumiceBel01', 'Pumice Belfry official trailer', true]] }
+	{ id: 900504, title: 'Pumice Belfry', release_date: '2019-09-09', imdb_id: 'tt9005040', overview: 'A bell tower so light it floats off in a storm.', dates: [[3, '2019-09-09'], [4, '2019-11-01']], trailer: 'pumiceBel01', videos: [['pumiceBel01', 'Pumice Belfry official trailer', true]] },
+	// Only requests.spec.ts (#136): asked again and declined by three admins in turn.
+	{ id: 900601, title: 'Harrow Teaspoon', release_date: '2015-04-04', imdb_id: 'tt9006010', overview: 'A teaspoon that stirs the whole village awake.', dates: [[3, '2015-04-04'], [4, '2015-06-01']] }
 ];
 
 /**

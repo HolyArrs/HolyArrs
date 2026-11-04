@@ -134,6 +134,8 @@ export interface ApprovalsCtx {
 	year(a: Ask): string;
 	askedBy(a: Ask): string;
 	decided(a: Ask): string;
+	/** Others who declined the same title before, display names only: "bo declined it before." */
+	alsoDeclined(a: Ask): string;
 	pill(a: Ask): { kind: StatusKind; label: string };
 	approvedLine(a: Ask): string;
 	href(a: Ask): string;

@@ -30,6 +30,27 @@ export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, 
 	return `Approved by ${who}`;
 }
 
+/**
+ * alsoDeclined names the others who declined the same title on earlier
+ * requests: "bo and cy declined it before.", or '' when nobody did. A display
+ * name wins (mine freshest); with namedOnly an account name alone isn't said,
+ * those people are counted instead ("bo and 1 other declined it before.").
+ */
+export function alsoDeclined(a: Pick<Ask, 'also_declined'>, me?: { id: number; displayName: string }, namedOnly = false): string {
+	const list = a.also_declined ?? [];
+	if (!list.length) return '';
+	const said: string[] = [];
+	let unnamed = 0;
+	for (const w of list) {
+		const mine = me && me.id === w.id ? me.displayName.trim() : '';
+		const n = mine || w.display_name?.trim() || (namedOnly ? '' : w.name);
+		if (n) said.push(n);
+		else unnamed++;
+	}
+	if (unnamed) said.push(said.length ? `${unnamed} other${unnamed > 1 ? 's' : ''}` : unnamed > 1 ? `${unnamed} other people` : '1 other person');
+	return `${names(said)} declined it before.`;
+}
+
 /** waitWords says a wait in words, like the server: "2 days and 3 hours". */
 export function waitWords(ms: number): string {
 	if (ms <= 60000) return 'a minute';
