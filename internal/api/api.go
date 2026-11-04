@@ -15,12 +15,14 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/alerts"
 	"github.com/CoderLuii/holyarrs/internal/applog"
 	"github.com/CoderLuii/holyarrs/internal/asks"
 	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/CoderLuii/holyarrs/internal/bridge"
 	"github.com/CoderLuii/holyarrs/internal/backup"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
@@ -62,6 +64,8 @@ type Server struct {
 	Restart func()
 	// Secrets stores the encrypted settings.
 	Secrets *secrets.Vault
+	// Bridges keeps the connected Jackett and Prowlarr (#96); nil makes one.
+	Bridges *bridge.Service
 	// TraktBase is the Trakt API address for reviews; empty is the real one.
 	TraktBase string
 	// MetadataUp reports whether the metadata server answers (cached
@@ -160,6 +164,9 @@ type Server struct {
 // API serves HTTP.
 type API struct {
 	s Server
+	// bridgeSvc keeps the connected Jackett and Prowlarr (bridges.go, #96).
+	bridgeOnce sync.Once
+	bridgeSvc  *bridge.Service
 	// tlog is the torrent log's last seen state per torrent (torrentlog.go).
 	tlog torrentLog
 	// interest limits each session's live interest calls (live.go).
@@ -367,6 +374,12 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("POST /api/v1/search/feed-check", a.feedCheckNow)
 	m.HandleFunc("GET /api/v1/searches", a.searches)
 	m.HandleFunc("GET /api/v1/settings/search", a.getSearchSettings)
+	m.HandleFunc("GET /api/v1/bridges", a.listBridges)
+	m.HandleFunc("POST /api/v1/bridges", a.addBridge)
+	m.HandleFunc("POST /api/v1/bridges/find", a.findBridges)
+	m.HandleFunc("POST /api/v1/bridges/test", a.testBridge)
+	m.HandleFunc("POST /api/v1/bridges/{id}/check", a.checkBridge)
+	m.HandleFunc("DELETE /api/v1/bridges/{id}", a.deleteBridge)
 	m.HandleFunc("PUT /api/v1/settings/search", a.putSearchSettings)
 	m.HandleFunc("GET /api/v1/downloads", a.listDownloads)
 	m.HandleFunc("GET /api/v1/imports", a.listImports)

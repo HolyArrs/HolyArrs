@@ -43,6 +43,22 @@ A Source that fails rests for a while and is tried again on its own: one minute,
 
 Press **Health** on a Source to see its state, its last answer, its average response time, and its calls, failures and picked Releases per day for up to 90 days, plus its last 20 calls. Calls that find work, fail or recover a Source are kept on disk for 90 days. Successful scheduled checks that find nothing new are kept in memory so an idle app does not write to disk. Those checks appear in Health while the app runs and are forgotten when it restarts. The daily totals cover up to 90 days; the rolling last-day count keeps up to 2,048 quiet checks per Source, enough for the fastest supported schedule.
 
+## Connect Jackett or Prowlarr in one step
+
+On **Settings > Sources**, the card **Connect Jackett or Prowlarr** brings every site you set up there in as Sources.
+
+1. Press **Connect Jackett or Prowlarr**, then **Look for them**. HolyArrs looks on this machine, on the Docker host and at the usual Docker names (`jackett`, `prowlarr`) on ports 9117 and 9696. It looks nowhere else and never scans your network. Pick one it found, or type the address.
+2. Paste the key. Jackett shows its key at the top of its page; Prowlarr has it under **Settings > General**. The key is kept encrypted.
+3. Press **Test** to see what HolyArrs found, then **Connect**.
+
+**Jackett.** HolyArrs adds one Torznab Source per site you set up in Jackett, with the categories the site offers. Every 6 hours, and when you press **Check now**, it keeps them in step: a new site becomes a Source, a site you remove in Jackett takes its Source away, and an address or category change follows. A Source's own name, priority, use and limits are yours and stay as you set them. **Disconnect** asks whether to remove its Sources or keep them as ordinary ones.
+
+**Prowlarr.** HolyArrs adds itself to Prowlarr as an app, once for TV shows and once for movies (only for the parts you have on), and asks Prowlarr to send its sites. Prowlarr then keeps them up to date through the old-app API (`docs/old-app-api.md`). The setup turns the old-app API on if it is off and makes a key for each side that has none. If a side already has a key, it asks first, because a new key replaces the old one and an app using it (such as Seerr) must get the new one too; or type the key you have. Give the address Prowlarr reaches HolyArrs at, such as `http://192.168.1.10:18730`. The card starts with the address you opened HolyArrs at. A key the setup makes is shown once, right after connecting, so an app that used a replaced one can get it. **Disconnect** takes HolyArrs out of Prowlarr's apps and removes the Sources Prowlarr wrote (or only forgets the connection here, keeping both). Connecting the same Jackett or Prowlarr again takes its new key, and for Prowlarr the new address HolyArrs is reached at.
+
+A site behind a bot check (Cloudflare, DDoS-Guard) cannot be read by HolyArrs directly. Its Source says so and links to this card.
+
+You can still add a bridge site by hand, as below.
+
 ## Use Jackett as a bridge
 
 1. Run Jackett next to HolyArrs and add the site in Jackett, signing in there with your own account on that site.

@@ -261,6 +261,12 @@ var Routes = map[string]Owner{
 
 	// Sources, Downloaders and Downloads (linked apps are core).
 	"GET /api/v1/sources":                                        Core,
+	"GET /api/v1/bridges":                                        Core,
+	"POST /api/v1/bridges":                                       Core,
+	"POST /api/v1/bridges/find":                                  Core,
+	"POST /api/v1/bridges/test":                                  Core,
+	"POST /api/v1/bridges/{id}/check":                            Core,
+	"DELETE /api/v1/bridges/{id}":                                Core,
 	"GET /api/v1/sources/{id}/stats":                             Core,
 	"POST /api/v1/sources":                                       Core,
 	"PUT /api/v1/sources/{id}":                                   Core,
@@ -707,6 +713,7 @@ var JobKinds = map[string]Owner{
 	"health_check":          Core,
 	"check_library_folders": Core,
 	"clean_history":         Core,
+	"check_bridges":         Core,
 	// A move checks each part itself (a part that is off is left out).
 	"migrate_move": Core,
 	"migrate_undo": Core,

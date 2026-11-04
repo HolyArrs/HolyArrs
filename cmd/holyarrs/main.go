@@ -30,6 +30,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/asks"
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/backup"
+	"github.com/CoderLuii/holyarrs/internal/bridge"
 	"github.com/CoderLuii/holyarrs/internal/compress"
 	"github.com/CoderLuii/holyarrs/internal/dlsync"
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -649,6 +650,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	})
 	q.ProbeSchedule(health.KindCheck, he.Probe)
+	// Connected Jackett (#96): its Sources follow its sites; no bridge, no run.
+	bridges := &bridge.Service{Store: s, Vault: vault}
+	q.Handle(bridge.KindCheck, bridges.HandleCheck)
+	q.ProbeSchedule(bridge.KindCheck, bridges.Probe)
 	// Plex watchlists (Requests): registered here with the other kinds; the
 	// reader is set once Requests and sign-in are up, and a pass before
 	// that finds nothing to do.
@@ -809,7 +814,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// the hosted music source answers from them first.
 	pkgs := &musicsync.Sync{Store: s, Source: hosted.Service}
 	hosted.Service.SetLocalMusic(pkgs)
-	a := api.New(api.Server{Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
+	a := api.New(api.Server{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err

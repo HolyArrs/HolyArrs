@@ -72,3 +72,70 @@ test('the health page shows state, last answer and calls over time', async () =>
 	await row2.getByRole('button', { name: 'Remove Lab feed' }).click();
 	await expect(page.getByTestId('source').filter({ hasText: 'Lab feed' })).toHaveCount(0);
 });
+
+// Connect Jackett (#96): the guided setup tests the address and key, brings
+// the site in as a Source, checks it again, and disconnects (asked first);
+// a Source behind a bot check points to it. Only the fake Jackett and the
+// fake indexer on this machine answer.
+test('Jackett is connected in one step, kept in step, and disconnected; a bot check points to it', async () => {
+	test.setTimeout(90_000);
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const call = (method: string, path: string, data?: unknown) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+	try {
+		await page.goto('/settings/sources');
+		const card = page.locator('#connect-bridge');
+		await card.getByTestId('bridge-start').click();
+		await card.getByTestId('bridge-find').click();
+		await expect(card.getByTestId('bridge-found-none').or(card.getByTestId('bridge-found'))).toBeVisible();
+		await card.getByLabel('Address').fill(`${base}/jackett`);
+		await card.getByLabel('Key').fill('not-the-key');
+		await card.getByTestId('bridge-test').click();
+		await expect(card.getByTestId('bridge-result')).toContainText('Jackett turned down the key');
+		await card.getByLabel('Key').fill(indexerKey);
+		await card.getByTestId('bridge-test').click();
+		await expect(card.getByTestId('bridge-result')).toContainText('Jackett answered with 1 site. Lab Jackett Site.');
+		await card.getByTestId('bridge-connect').click();
+		await expect(page.getByText('Jackett connected: 1 Source added.')).toBeVisible();
+		const row = card.getByTestId('bridge');
+		await expect(row).toContainText('1 site, 1 Source');
+		const src = page.getByTestId('source').filter({ hasText: 'Lab Jackett Site' });
+		await expect(src).toContainText('/jackett/api/v2.0/indexers/labsite/results/torznab/');
+		await expect(src).toContainText('may reach the local network');
+		await row.getByTestId('bridge-check').click();
+		await expect(page.getByText('Already in step.')).toBeVisible();
+
+		// A site behind a bot check says so, and points here.
+		await addSource('Lab Guarded', 'torznab', `${base}/guarded/api`, indexerKey);
+		const guarded = page.getByTestId('source').filter({ hasText: 'Lab Guarded' });
+		await expect(guarded.getByTestId('source-test')).toContainText("Blocked by the site's bot check. Reach this site through Jackett or Prowlarr.");
+		await expect(guarded.getByTestId('source-bridge-link')).toHaveAttribute('href', '#connect-bridge');
+
+		await row.getByTestId('bridge-remove').click();
+		const sheet = page.getByRole('dialog', { name: 'Disconnect Jackett?' });
+		await expect(sheet).toContainText('Remove its 1 Source');
+		await sheet.getByRole('button', { name: 'Disconnect', exact: true }).click();
+		await expect(page.getByText('Jackett disconnected.')).toBeVisible();
+		await expect(card.getByTestId('bridge')).toHaveCount(0);
+		await expect(page.getByTestId('source').filter({ hasText: 'Lab Jackett Site' })).toHaveCount(0);
+	} finally {
+		const bs = ((await (await call('GET', '/bridges')).json()) as { bridges: { id: number }[] }).bridges;
+		for (const b of bs) await call('DELETE', `/bridges/${b.id}`);
+		const list = ((await (await call('GET', '/sources')).json()) as { sources: { id: number; name: string }[] }).sources;
+		for (const s of list.filter((x) => x.name === 'Lab Guarded' || x.name.startsWith('Lab Jackett Site'))) await call('DELETE', `/sources/${s.id}`);
+	}
+});
+
+test('the Connect card fits a phone and passes the accessibility check', async () => {
+	await page.goto('/settings/sources');
+	const card = page.locator('#connect-bridge');
+	await card.getByTestId('bridge-start').click();
+	await card.getByText('Prowlarr', { exact: true }).click();
+	// Opened at this machine's own address, which Prowlarr can't reach: the field starts empty.
+	await expect(card.getByLabel("HolyArrs's address for Prowlarr")).toHaveValue('');
+	const AxeBuilder = (await import('@axe-core/playwright')).default;
+	expect((await new AxeBuilder({ page }).include('#connect-bridge').analyze()).violations).toEqual([]);
+	await page.setViewportSize({ width: 360, height: 760 });
+	await expect(card.getByTestId('bridge-connect')).toBeVisible();
+	expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+	await page.setViewportSize({ width: 1280, height: 720 });
+});

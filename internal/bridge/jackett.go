@@ -1,0 +1,152 @@
+package bridge
+
+import (
+	"context"
+	"encoding/xml"
+	"net/http"
+	"net/url"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Jackett is a Jackett the person runs. Its key alone lists the sites set
+// up there and each one's categories; HolyArrs keeps one Torznab Source per
+// site. Calls and answers: research/upstream/jackett/manual/integrations/
+// holyarrs-adapter.md, "Listing configured sites with the API key".
+type Jackett struct {
+	URL  string // as the person typed it, any base path included
+	Key  string
+	http *http.Client
+}
+
+// NewJackett is a client for one Jackett.
+func NewJackett(base, key string) *Jackett {
+	return &Jackett{URL: strings.TrimRight(base, "/"), Key: key, http: client(30 * time.Second)}
+}
+
+// Site is one site set up in Jackett.
+type Site struct {
+	ID         string
+	Title      string
+	Type       string           // public, private, semi-private
+	Categories map[string][]int // by HolyArrs kind (movie, tv, music), from its caps
+}
+
+// FeedURL is the site's Torznab address in this Jackett.
+func (j *Jackett) FeedURL(id string) string {
+	return j.URL + "/api/v2.0/indexers/" + url.PathEscape(id) + "/results/torznab/"
+}
+
+type jackettCategory struct {
+	ID   int               `xml:"id,attr"`
+	Subs []jackettCategory `xml:"subcat"`
+}
+
+type jackettList struct {
+	XMLName  xml.Name
+	Code     int    `xml:"code,attr"`
+	Text     string `xml:"description,attr"`
+	Indexers []struct {
+		ID         string `xml:"id,attr"`
+		Configured string `xml:"configured,attr"`
+		Title      string `xml:"title"`
+		Type       string `xml:"type"`
+		Caps       struct {
+			Categories []jackettCategory `xml:"categories>category"`
+		} `xml:"caps"`
+	} `xml:"indexer"`
+}
+
+// Sites lists the sites set up in this Jackett. A wrong key is answered
+// with 200 and an error in the body, so the body decides.
+func (j *Jackett) Sites(ctx context.Context) ([]Site, error) {
+	q := url.Values{"apikey": {j.Key}, "t": {"indexers"}, "configured": {"true"}}
+	status, b, err := call(ctx, j.http, http.MethodGet, j.URL+"/api/v2.0/indexers/all/results/torznab/api?"+q.Encode(), nil, nil, 16<<20)
+	if err != nil {
+		return nil, err
+	}
+	var l jackettList
+	if xml.Unmarshal(b, &l) != nil {
+		if status == http.StatusNotFound || status == http.StatusOK {
+			return nil, fail("That address answers, but not like Jackett. Check the address (and its base path, if Jackett has one).")
+		}
+		return nil, fail("Jackett answered with an error (%d).", status)
+	}
+	if l.XMLName.Local == "error" {
+		if l.Code == 100 {
+			return nil, fail("Jackett turned down the key. Copy it again from the top of Jackett's page.")
+		}
+		return nil, fail("Jackett answered with an error: %s", clip(strings.TrimSpace(l.Text), 200))
+	}
+	if l.XMLName.Local != "indexers" {
+		return nil, fail("That address answers, but not like Jackett.")
+	}
+	var out []Site
+	for _, ix := range l.Indexers {
+		id := strings.TrimSpace(ix.ID)
+		// The combined feeds are never sites of their own.
+		if id == "" || id == "all" || strings.Contains(id, ":") || (ix.Configured != "" && ix.Configured != "true") {
+			continue
+		}
+		title := strings.TrimSpace(ix.Title)
+		if title == "" {
+			title = id
+		}
+		out = append(out, Site{ID: id, Title: clipRunes(title, 64), Type: strings.TrimSpace(ix.Type), Categories: kindsOf(ix.Caps.Categories)})
+	}
+	sort.Slice(out, func(a, b int) bool { return strings.ToLower(out[a].Title) < strings.ToLower(out[b].Title) })
+	return out, nil
+}
+
+// kindsOf splits a site's categories into HolyArrs's kinds by the standard
+// numbers (movies 2000s, TV 5000s, audio 3000s); a site's own numbers (from
+// 100000) are left out, since Jackett names their standard parent too.
+func kindsOf(cats []jackettCategory) map[string][]int {
+	out := map[string][]int{}
+	var walk func([]jackettCategory)
+	walk = func(cs []jackettCategory) {
+		for _, c := range cs {
+			switch {
+			case c.ID >= 2000 && c.ID < 3000:
+				out["movie"] = append(out["movie"], c.ID)
+			case c.ID >= 5000 && c.ID < 6000:
+				out["tv"] = append(out["tv"], c.ID)
+			case c.ID >= 3000 && c.ID < 4000:
+				out["music"] = append(out["music"], c.ID)
+			}
+			walk(c.Subs)
+		}
+	}
+	walk(cats)
+	for k, v := range out {
+		sort.Ints(v)
+		uniq := v[:0]
+		for i, n := range v {
+			if i == 0 || n != v[i-1] {
+				uniq = append(uniq, n)
+			}
+		}
+		out[k] = uniq
+	}
+	return out
+}
+
+// clipRunes keeps at most n letters, so a Source name with " (Jackett N)"
+// after it stays within the 80 a name may hold.
+func clipRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return strings.TrimSpace(string(r[:n-1])) + "…"
+}
+
+// Version is not given by the site list; Test says how many sites instead.
+func siteWords(n int) string {
+	if n == 1 {
+		return "1 site"
+	}
+	return strconv.Itoa(n) + " sites"
+}

@@ -848,6 +848,28 @@ export function startFakes() {
 	const indexer = createServer((req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		res.setHeader('Content-Type', 'application/xml');
+		// A site behind a bot check (#106): a check page, as Cloudflare answers it.
+		if (url.pathname.startsWith('/guarded/')) {
+			res.writeHead(403, { 'Content-Type': 'text/html', 'Cf-Mitigated': 'challenge', Server: 'cloudflare' });
+			res.end('<html><head><title>Just a moment...</title></head><body><script>window._cf_chl_opt={}</script></body></html>');
+			return;
+		}
+		// A Jackett (#96) at /jackett: its sign-in page, and its list of sites set up there
+		// (one, whose feed is this fake indexer). A wrong key gets 200 with an error, as Jackett answers.
+		if (url.pathname === '/jackett/UI/Login') {
+			res.setHeader('Content-Type', 'text/html');
+			res.end('<html><head><title>Jackett</title></head><body>Jackett</body></html>');
+			return;
+		}
+		if (url.pathname === '/jackett/api/v2.0/indexers/all/results/torznab/api') {
+			if (url.searchParams.get('apikey') !== indexerKey) {
+				res.end('<?xml version="1.0" encoding="UTF-8"?><error code="100" description="Invalid API Key" />');
+				return;
+			}
+			res.end('<?xml version="1.0" encoding="UTF-8"?><indexers><indexer id="labsite" configured="true"><title>Lab Jackett Site</title><type>public</type>' +
+				'<caps><categories><category id="2000" name="Movies"><subcat id="2040" name="Movies/HD"/></category><category id="5000" name="TV"/></categories></caps></indexer></indexers>');
+			return;
+		}
 		if (url.pathname === '/rss') {
 			res.end('<?xml version="1.0"?><rss version="2.0"><channel><title>lab</title>' +
 				'<item><title>Lab.Movie.2024.1080p.WEB.H264-HOLYARRS</title><enclosure url="http://127.0.0.1/a.torrent" length="1000" type="application/x-bittorrent"/></item>' +

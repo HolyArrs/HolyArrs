@@ -40,6 +40,7 @@ var kindPools = map[string]Pool{
 	"subtitle_better":      PoolIO,
 	"sync_outside_lists":   PoolIO,
 	"sync_plex_watchlists": PoolIO,
+	"check_bridges":        PoolIO,
 	"refresh_title":        PoolIO,
 	"refresh_titles":       PoolIO,
 	"refresh_shows":        PoolIO,

@@ -16,6 +16,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';
 	import SourceCheck from '#lib/ui/SourceCheck.svelte';
+	import ConnectBridge from './ConnectBridge.svelte';
 	import { emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources.ts';
 	import type { SourceHealth, SourceView } from '#lib/types.ts';
 
@@ -244,6 +245,7 @@
 		text="Without a Source, HolyArrs cannot find Releases. Add a Torznab or Newznab feed, or a bridge such as Jackett or Prowlarr."
 		action={{ label: 'Add a Source', onclick: startAdd, icon: 'plus' }}
 	/>
+	<ConnectBridge onchange={load} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<ul class="list">
@@ -258,6 +260,7 @@
 					<span class="chip {healthTone(s.health)}" data-testid="source-state">{healthWord(s.health)}</span>
 				</div>
 				<p class="small" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
+				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="small"><a href="#connect-bridge" data-testid="source-bridge-link">Connect Jackett or Prowlarr</a></p>{/if}
 				<p class="xs muted">
 					{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)} · priority {s.priority} · {uses(s)}
 					{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
@@ -287,6 +290,7 @@
 			</li>
 		{/each}
 	</ul>
+	<ConnectBridge onchange={load} />
 	{#if sources.length}<SourceCheck />{/if}
 {/if}
 

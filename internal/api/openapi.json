@@ -1399,6 +1399,93 @@
         },
         "type": "object"
       },
+      "Bridge": {
+        "description": "A connected Jackett or Prowlarr. Jackett: HolyArrs keeps one Torznab Source per site set up there. Prowlarr: HolyArrs is an app in Prowlarr, which writes its sites in through the old-app API.",
+        "properties": {
+          "callback_url": {
+            "description": "Prowlarr only: how Prowlarr reaches HolyArrs.",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "jackett",
+              "prowlarr"
+            ],
+            "type": "string"
+          },
+          "last_check": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "last_error": {
+            "description": "The last problem, in plain words; empty when the last check worked.",
+            "type": "string"
+          },
+          "sites": {
+            "description": "Sites in Jackett at the last check (Prowlarr: the Sources its sync wrote).",
+            "type": "integer"
+          },
+          "sources": {
+            "description": "Sources it brought in.",
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "url",
+          "sites",
+          "sources"
+        ],
+        "type": "object"
+      },
+      "BridgeInput": {
+        "properties": {
+          "callback_url": {
+            "description": "Prowlarr only: the address Prowlarr reaches HolyArrs at.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Its API key; kept encrypted, never shown.",
+            "type": "string"
+          },
+          "keys": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Prowlarr only: old-app keys typed in, by side (sonarr, radarr), used instead of making new ones.",
+            "type": "object"
+          },
+          "kind": {
+            "enum": [
+              "jackett",
+              "prowlarr"
+            ],
+            "type": "string"
+          },
+          "new_keys": {
+            "description": "Prowlarr only: replace an old-app key that exists already (an app using it must get the new one).",
+            "type": "boolean"
+          },
+          "url": {
+            "description": "Its address, any base path included.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "url",
+          "key"
+        ],
+        "type": "object"
+      },
       "CalendarEntry": {
         "description": "One movie date or one episode air time.",
         "properties": {
@@ -11440,6 +11527,451 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/bridges": {
+      "get": {
+        "description": "Every connected Jackett and Prowlarr with its state.",
+        "operationId": "listBridges",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "bridges": {
+                      "items": {
+                        "$ref": "#/components/schemas/Bridge"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The connections."
+          }
+        },
+        "summary": "Connected Jackett and Prowlarr",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Jackett: reads its sites with the key and adds one Torznab Source per site (categories from each site's caps; the Sources may reach the local network), then keeps them in step every 6 hours. Prowlarr: turns the old-app API on if needed, makes an old-app key for each side that has none (needs a recent password sign-in), adds HolyArrs to Prowlarr as an app on each side whose part is on (Sonarr kind for TV, Radarr kind for movies), and asks it to sync. A Jackett or Prowlarr already connected at that address takes the new key (and for Prowlarr the new callback address) instead. A failed Prowlarr connect takes back the keys it made and the switch it turned on.",
+        "operationId": "addBridge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BridgeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Bridge"
+                    },
+                    {
+                      "properties": {
+                        "keys": {
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Connected. For Prowlarr, keys holds the old-app keys made now, by side, shown only this once."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "A field is wrong; field names it."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Making an old-app key needs a recent password sign-in."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Already connected (field is url); or a side has an old-app key already (need is keys, sides names them): send new_keys or keys; or Movies and TV shows are both off."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "It did not answer, or turned the key down; error says how."
+          }
+        },
+        "summary": "Connect Jackett or Prowlarr",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/bridges/find": {
+      "post": {
+        "description": "Tries a few usual addresses (this machine, the Docker host, the Docker names jackett and prowlarr; ports 9117 and 9696) with a page that needs no key. Never a scan of the network.",
+        "operationId": "findBridges",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "found": {
+                      "items": {
+                        "properties": {
+                          "kind": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "What answered."
+          }
+        },
+        "summary": "Look for Jackett and Prowlarr",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/bridges/test": {
+      "post": {
+        "description": "Checks the address and key and saves nothing. Jackett: the sites set up there. Prowlarr: its version, and for each side whether an old-app key exists (have) or would be made (new).",
+        "operationId": "testBridge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BridgeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "keys": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "sites": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "It answered."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "A field is wrong; field names it."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "It did not answer, or turned the key down; error says how."
+          }
+        },
+        "summary": "Test a Jackett or Prowlarr",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/bridges/{id}": {
+      "delete": {
+        "description": "Jackett: removes its Sources, or with keep_sources=true keeps them as ordinary Sources. Prowlarr: takes HolyArrs out of Prowlarr's apps and removes the Sources Prowlarr wrote (keep_sources=true only forgets the connection here and leaves Prowlarr and its Sources as they are).",
+        "operationId": "deleteBridge",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Keep its Sources as ordinary ones.",
+            "in": "query",
+            "name": "keep_sources",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "kept": {
+                      "type": "boolean"
+                    },
+                    "sources": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Disconnected."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The id is not a number."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "No such connection."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Prowlarr did not answer; error says how."
+          }
+        },
+        "summary": "Disconnect",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/bridges/{id}/check": {
+      "post": {
+        "description": "Jackett: brings its Sources in step with its sites now (a new site is added, a site gone is removed, an address or category change follows; a Source's own name, priority, use and limits stay). Prowlarr: asks it to sync.",
+        "operationId": "checkBridge",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "bridge": {
+                      "$ref": "#/components/schemas/Bridge"
+                    },
+                    "result": {
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Checked."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The id is not a number."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "No such connection."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "It did not answer; error says how."
+          }
+        },
+        "summary": "Check a connection now",
+        "tags": [
+          "Sources"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/calendar": {

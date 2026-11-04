@@ -865,6 +865,8 @@ export interface SourceHealth {
 	until?: string;
 	/** Why it waits: slowed, down, blocked or key. */
 	reason?: 'slowed' | 'down' | 'blocked' | 'key';
+	/** A site's protection stops it: bot_check or site_ban (#106). */
+	block?: string;
 }
 
 export interface SourceUse {

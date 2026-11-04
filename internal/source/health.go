@@ -27,6 +27,8 @@ type Health struct {
 	// Reason tells waits apart: slowed, down, blocked or key (empty when
 	// the Source is not waiting).
 	Reason string `json:"reason,omitempty"`
+	// Block is the kind of block when a site's protection stops it (bot_check, site_ban).
+	Block string `json:"block,omitempty"`
 }
 
 // reasonWord is the short reason, by pause reason.
@@ -70,7 +72,7 @@ func HealthOf(src domain.Source) Health {
 		if src.PauseReason != nil && reasonWord[*src.PauseReason] != "" {
 			reason = reasonWord[*src.PauseReason]
 		}
-		return Health{State: StateUnreachable, Text: text + " HolyArrs tries again on its own.", Until: src.PausedUntil, Reason: reason}
+		return Health{State: StateUnreachable, Text: text + " HolyArrs tries again on its own.", Until: src.PausedUntil, Reason: reason, Block: BlockOf(src)}
 	}
 	return Health{State: StateWorking, Text: "Working."}
 }
