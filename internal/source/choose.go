@@ -88,8 +88,22 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		return Choice{}, ErrNoRelease
 	}
 	if slotID == 0 && len(rel.MatchedSlotIDs) > 1 {
-		if many, skipped, kind := s.packSlots(ctx, rel); len(many) > 1 || len(many) == 1 && len(skipped) > 0 {
-			return s.chooseMany(ctx, rel, many, skipped, kind == "artist", force, by)
+		many, skipped, kind := s.packSlots(ctx, rel)
+		if len(many) > 1 || len(many) == 1 && len(skipped) > 0 {
+			return s.chooseMany(ctx, rel, many, skipped, kind == "artist", force, nil, by)
+		}
+		if len(many) == 0 && len(skipped) > 0 {
+			// Every Slot already has a copy as good (or a protected one):
+			// taking the Release over them would be no gain, which needs
+			// force like a refused Release (#43: an MP3 album over FLAC).
+			// With force it goes to every Slot without a protected copy.
+			why := []string{"nothing would gain: " + strings.Join(skipped, "; ")}
+			if !force {
+				return Choice{}, &NeedsForceError{Reasons: why}
+			}
+			if open := s.unprotectedSlots(ctx, rel); len(open) > 0 {
+				return s.chooseMany(ctx, rel, open, nil, kind == "artist", true, why, by)
+			}
 		}
 	}
 	if slotID == 0 {
@@ -112,10 +126,19 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		return Choice{}, busyErr(c.sl.State)
 	}
 	ch := Choice{ReleaseID: rel.ID, SlotID: slotID, Warnings: []string{}}
-	refused := rel.State == "refused" || turnedDownFor(rel, slotID) || len(rel.MatchedSlotIDs) > 0 && !slices.Contains(rel.MatchedSlotIDs, slotID)
+	refused := RefusedByRules(rel) || turnedDownFor(rel, slotID) || len(rel.MatchedSlotIDs) > 0 && !slices.Contains(rel.MatchedSlotIDs, slotID)
 	var overridden []string
+	// A track whose copy in place is as good (an MP3 over FLAC) gains
+	// nothing: that needs force too (#43, Lossless protection).
+	if c.cur != nil && domain.IsMusicRules(c.pr.Body) {
+		jr := judge.Release{Name: rel.Name, Parse: parse.Parse(rel.Name, parse.Hints{Size: rel.Size, Music: true}), Size: rel.Size, Protocol: rel.Protocol}
+		if !judge.Gains(jr, c.pr.Body, c.cur) {
+			refused = true
+			overridden = append(overridden, trackName(c.it)+" already has a copy as good")
+		}
+	}
 	if refused {
-		overridden = failReasons(rel)
+		overridden = append(failReasons(rel), overridden...)
 		if turnedDownFor(rel, slotID) && len(TurnedDownSlots(rel)) > 0 {
 			why := "it was turned down for this episode"
 			if d, _ := rel.Verdict["turned_down_reason"].(string); d != "" {
@@ -305,7 +328,8 @@ func (s *Searcher) RemoveHeld(ctx context.Context, id int64, by domain.Actor) (i
 // RemoveTurnedDown takes Releases off the Turned down list (id 0: all), so
 // they may be picked again. The rows are deleted, like an old block list
 // entry being removed; a Release a Download came from is kept as passed
-// over instead, so the Download keeps its Release and its Source's picks.
+// over instead (or refused, when the Pick rules refused it), so the
+// Download keeps its Release and its Source's picks.
 func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Actor) (int, error) {
 	n := 0
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -326,7 +350,10 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 		forgot, _ := res.RowsAffected()
 		n += int(forgot)
 		used := " AND (EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = releases.id) OR EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.release_id = releases.id))"
-		res, err = tx.Exec(`UPDATE releases SET state = 'passed_over', verdict = json_set(COALESCE(verdict, '{}'), '$.taken_off_turned_down', json('true')),
+		// One the Pick rules refused (a forced .exe, say) stays refused, so
+		// picking it again still needs force (#41).
+		res, err = tx.Exec(`UPDATE releases SET state = CASE WHEN json_extract(verdict, '$.outcome') = 'refused' THEN 'refused' ELSE 'passed_over' END,
+			verdict = json_set(COALESCE(verdict, '{}'), '$.taken_off_turned_down', json('true')),
 			updated_at = ?, updated_by = ? WHERE `+where+used, append([]any{store.FormatTime(time.Now()), actorText(by)}, args...)...)
 		if err != nil {
 			return err
@@ -480,6 +507,33 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 	return out, skipped, kind
 }
 
+// RefusedByRules says whether the Pick rules refused a Release, whatever its
+// state now: one sent with force and then removed, or taken off the Turned
+// down list, still needs force to be picked again (#41).
+func RefusedByRules(rel domain.Release) bool {
+	if rel.State == "refused" {
+		return true
+	}
+	o, _ := rel.Verdict["outcome"].(string)
+	return o == "refused"
+}
+
+// unprotectedSlots are the Slots a Release matched that can take a pick, that
+// it was not turned down for and that hold no protected copy: where a
+// forced pick of a Release that gains nothing goes.
+func (s *Searcher) unprotectedSlots(ctx context.Context, rel domain.Release) []int64 {
+	var out []int64
+	for _, id := range rel.MatchedSlotIDs {
+		var st string
+		if s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st) != nil ||
+			!canTakePick(domain.SlotState(st)) || turnedDownFor(rel, id) || slotHasProtectedCopy(ctx, s.Store.Read(), id) {
+			continue
+		}
+		out = append(out, id)
+	}
+	return out
+}
+
 // episodeLabel names an episode as S01E02.
 func episodeLabel(it domain.Item) string {
 	if it.Numbers.Season == nil || it.Numbers.Episode == nil {
@@ -492,18 +546,19 @@ func episodeLabel(it domain.Item) string {
 // to every Slot it fills, as one Download. For an album (album), leaving
 // tracks out would mix copies within it: that needs force, like a refused
 // Release.
-func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []int64, skipped []string, album, force bool, by domain.Actor) (Choice, error) {
+func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []int64, skipped []string, album, force bool, also []string, by domain.Actor) (Choice, error) {
 	ch := Choice{ReleaseID: rel.ID, SlotID: slots[0], Warnings: []string{}}
 	if len(skipped) > 0 {
 		ch.Warnings = append(ch.Warnings, "left out: "+strings.Join(skipped, "; "))
 	}
 	var overridden []string
-	if rel.State == "refused" {
+	if RefusedByRules(rel) {
 		overridden = failReasons(rel)
 	}
 	if album && len(skipped) > 0 {
 		overridden = append(overridden, "the album would mix copies: "+strings.Join(skipped, "; "))
 	}
+	overridden = append(overridden, also...)
 	if len(overridden) > 0 {
 		if !force {
 			return Choice{}, &NeedsForceError{Reasons: overridden}

@@ -116,3 +116,93 @@ func TestArtistAskedKeptAndBounded(t *testing.T) {
 		t.Fatalf("old ones kept: %d", len(old))
 	}
 }
+
+// A noted artist with no videos is asked of the metadata server again about
+// once a day by the pass, not on every pass.
+func TestArtistNoVideosAskedDaily(t *testing.T) {
+	asks := 0
+	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) { asks++; return nil, nil })
+	a := apiOf(t, u)
+	ctx := context.Background()
+	clock := time.Now()
+	a.artistVideos.mu.Lock()
+	a.artistVideos.now = func() time.Time { return clock }
+	a.artistVideos.mu.Unlock()
+	a.noteArtistVideos(ctx, []string{apiArtist})
+	// Passes 6 minutes apart (past the page's 5-minute wait for an empty list).
+	for range 5 {
+		videoPass(t, u)
+		clock = clock.Add(6 * time.Minute)
+	}
+	if asks != 1 {
+		t.Fatalf("asked %d times in 5 passes", asks)
+	}
+	// A day later it is asked again.
+	clock = clock.Add(artistEmptyRecheck)
+	videoPass(t, u)
+	if asks != 2 {
+		t.Fatalf("not asked again after a day: %d", asks)
+	}
+}
+
+// The metadata server down: a noted artist is asked again after about an
+// hour, not on every pass; and an artist with no videos stays known across
+// a restart (a new API on the same store does not ask at once).
+func TestArtistOutageAndEmptyKept(t *testing.T) {
+	asks := 0
+	down := true
+	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
+		asks++
+		if down {
+			return nil, metadata.ErrServiceUnavailable
+		}
+		return nil, nil
+	})
+	a := apiOf(t, u)
+	ctx := context.Background()
+	clock := time.Now()
+	a.artistVideos.mu.Lock()
+	a.artistVideos.now = func() time.Time { return clock }
+	a.artistVideos.mu.Unlock()
+	a.noteArtistVideos(ctx, []string{apiArtist})
+	for range 5 {
+		videoPass(t, u)
+		clock = clock.Add(6 * time.Minute)
+	}
+	if asks != 1 {
+		t.Fatalf("server down: asked %d times in 5 passes", asks)
+	}
+	clock = clock.Add(artistFailWait)
+	down = false
+	videoPass(t, u)
+	if asks != 2 {
+		t.Fatalf("not asked again after an hour: %d", asks)
+	}
+	// Now kept as "no videos": a restart (new API, same store) does not ask.
+	b := New(Server{Store: a.s.Store, Library: a.s.Library, ArtistVideos: a.s.ArtistVideos, Metadata: &metadata.Static{}})
+	if due, _, _ := b.artistVideoDue(ctx, apiArtist, time.Now()); due || asks != 2 {
+		t.Fatalf("after a restart: due %v, asked %d", due, asks)
+	}
+}
+
+// The failures kept for the pass are bounded: old ones go, the map never
+// passes artistVideosMax, and an answer clears an artist's failure.
+func TestArtistFailedBounded(t *testing.T) {
+	var c artistVideoCache
+	now := time.Now()
+	for i := range artistVideosMax + 50 {
+		c.noteFailed(fmt.Sprintf("a0000000-0000-0000-0000-%012d", i), now)
+	}
+	if n := len(c.failed); n != artistVideosMax {
+		t.Fatalf("%d failures kept", n)
+	}
+	later := now.Add(artistFailWait + time.Minute)
+	c.noteFailed("b0000000-0000-0000-0000-000000000001", later)
+	if n := len(c.failed); n != 1 {
+		t.Fatalf("old failures not pruned: %d", n)
+	}
+	c.forgetFailed("b0000000-0000-0000-0000-000000000001")
+	if n := len(c.failed); n != 0 {
+		t.Fatalf("an answer did not clear the failure: %d", n)
+	}
+}

@@ -69,15 +69,28 @@ test('Explore gives memory back after 20 rounds', async ({ browser }) => {
 	for (let i = 0; i < 10; i++) await round(page);
 	await page.waitForTimeout(500);
 	const base = await metrics(cdp);
-	console.log('DBG0', await page.evaluate(() => JSON.stringify({ u: location.pathname, all: document.getElementsByTagName('*').length, posters: document.querySelectorAll('.ui-poster').length })));
 
 	for (let i = 0; i < 20; i++) await round(page);
 	await page.waitForTimeout(500);
 	const after = await metrics(cdp);
-	console.log('DBG', await page.evaluate(() => JSON.stringify({ u: location.pathname, all: document.getElementsByTagName('*').length, posters: document.querySelectorAll('.ui-poster').length, imgs: document.images.length, mains: document.querySelectorAll('main').length, h1: [...document.querySelectorAll('h1')].map((h) => h.textContent) })));
 	const table = (['heap', 'nodes', 'listeners'] as const).map((k) => `${k}: ${Math.round(base[k])} -> ${Math.round(after[k])} (${(((after[k] - base[k]) / base[k]) * 100).toFixed(1)}%)`);
 	console.log(`explore memory\n${table.join('\n')}`);
 	for (const k of ['heap', 'nodes', 'listeners'] as const) expect(after[k], `${k}: ${table.join('; ')}`).toBeLessThanOrEqual(base[k] * 1.1);
+
+	// A slow answer must not keep the page that asked: Explore is left while
+	// its "new on your services" request is still open (held 3 s here), and the
+	// page is gone at once, not only when the answer comes (each open request
+	// used to keep a whole Explore page, about 7000 nodes).
+	await page.route('**/api/v1/explore/new/services**', async (r) => {
+		await new Promise((f) => setTimeout(f, 3000));
+		await r.continue().catch(() => {});
+	});
+	await round(page);
+	await page.waitForTimeout(300);
+	const open = await metrics(cdp);
+	await page.waitForTimeout(3500);
+	const settled = await metrics(cdp);
+	expect(open.nodes - settled.nodes, `nodes with a slow request open ${open.nodes}, after it answered ${settled.nodes}`).toBeLessThan(2000);
 
 	// Row cards ask the artwork cache for a picture sized to the card
 	// (w92-w342 posters and logos, w300 or w780 backdrops), never a full-size one.

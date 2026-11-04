@@ -141,7 +141,7 @@ type ReleaseView struct {
 func releaseView(x domain.Release) ReleaseView {
 	v := ReleaseView{ID: x.ID, Name: x.Name, Size: x.Size, Seeders: x.Seeders, Peers: x.Peers, Protocol: x.Protocol, State: x.State, FoundBy: x.FoundBy,
 		JobID: x.JobID, SourceID: x.SourceID, Published: x.PublishedAt, HoldUntil: x.HoldUntil, Verdict: x.Verdict, CreatedAt: x.CreatedAt,
-		Reasons: []Reason{}, NeedsForce: x.State == "refused" || x.State == "turned_down"}
+		Reasons: []Reason{}, NeedsForce: x.State == "refused" || x.State == "turned_down" || source.RefusedByRules(x)}
 	if len(x.MatchedSlotIDs) > 0 {
 		id := x.MatchedSlotIDs[0]
 		v.SlotID = &id

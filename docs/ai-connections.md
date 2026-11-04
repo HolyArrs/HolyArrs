@@ -2,7 +2,7 @@
 
 AI apps such as Claude, ChatGPT, Codex, Gemini or Cursor can use HolyArrs for you. Once connected, you can ask them things like "what's downloading?" or "is Dune in the Library?", and ask them to request a movie or show. They talk to HolyArrs over MCP, the common way AI apps reach outside tools.
 
-This page covers what every app shares: turning it on, the two ways to connect, which address you need, what an AI app may do, and what to do when it fails. Each app has its own guide with exact steps (see [Pick your app](#pick-your-app)).
+This page covers what every app shares: turning it on, the two ways to connect, which address you need, what an AI app may do, and what to do when it fails. The steps for each app are under [Pick your app](#pick-your-app).
 
 ## Turn on AI connections
 
@@ -36,7 +36,7 @@ Settings > AI connections shows the address with a "Copy" button. It builds the 
 
 **Browser sign-in.** You add the address to the AI app. The app opens HolyArrs in your browser, you sign in with your HolyArrs password if asked, and you press "Allow" on the "Connect an AI app" page. That page names the app, the person it will act as, what it may do and where you go back to afterwards. The app then gets its own AI key. You never copy or paste a key.
 
-**AI key.** You make a key in HolyArrs and the app sends it with every call, in the header `Authorization: Bearer <key>` (`X-Api-Key: <key>` works too). In the guide under Settings > AI connections, press "Make a key for <app>": HolyArrs makes a key named after the app, fills it into the command or config shown, and shows it only that once. Copy the command then.
+**AI key.** You make a key in HolyArrs and the app sends it with every call, in the header `Authorization: Bearer <key>` (`X-Api-Key: <key>` works too). In the guide under Settings > AI connections, pick your app and press "Make a key": HolyArrs makes a key named after the app, fills it into the command or config shown, and shows it only that once. Copy the command then.
 
 Never put an AI key in a link, and never paste it into a chat with the AI. It belongs only in the app's command or config file.
 
@@ -55,7 +55,7 @@ Cloud apps are a separate case. The Claude app (web, desktop and phone connector
 | `http://localhost:18730`, on the same computer as the app | Browser sign-in | Cannot reach it |
 | A plain `http` home or Tailscale IP, such as `http://10.10.25.25:18730` | AI key | Cannot reach it |
 
-The page under Settings > AI connections follows this table by itself, as far as it can tell from the address. On a plain `http` address it shows "Make a key for <app>" for apps on your computer, and for a cloud app it explains that the app cannot reach your address. It cannot tell whether an `https` name is open to the internet, so on a Tailscale Serve name or another home-only `https` name it still shows the cloud app steps; those apps will not reach it. One exception: Claude Desktop can still reach a home address through the `mcp-remote` local bridge, which needs Node.js (see [Claude](ai-claude.md)).
+The page under Settings > AI connections follows this table by itself, as far as it can tell from the address. On a plain `http` address it shows "Make a key" for apps on your computer, and for a cloud app it explains that the app cannot reach your address. It cannot tell whether an `https` name is open to the internet, so on a Tailscale Serve name or another home-only `https` name it still shows the cloud app steps; those apps will not reach it. One exception: Claude Desktop can still reach a home address through the `mcp-remote` local bridge, which needs Node.js (see [Pick your app](#pick-your-app)).
 
 ## Get an https or public address
 
@@ -77,34 +77,28 @@ A public address puts the HolyArrs sign-in page on the internet. Use a strong pa
 
 ## Pick your app
 
-| App | Runs on | On a plain `http` home address | Guide |
-| --- | --- | --- | --- |
-| Claude Code (terminal, VS Code and JetBrains extensions) | Your computer | AI key | [Claude](ai-claude.md) |
-| Claude app (web, desktop, phone) | Anthropic's servers | Cannot reach it; needs a public `https` address | [Claude](ai-claude.md) |
-| Claude Desktop through the local bridge | Your computer (needs Node.js) | AI key | [Claude](ai-claude.md) |
-| ChatGPT | OpenAI's servers | Cannot reach it; needs a public `https` address | [ChatGPT and Codex](ai-chatgpt-codex.md) |
-| Codex (terminal, IDE extension, Codex app) | Your computer | AI key | [ChatGPT and Codex](ai-chatgpt-codex.md) |
-| Gemini CLI and Antigravity | Your computer | AI key | [Gemini](ai-gemini.md) |
-| Gemini app (gemini.google.com) | Google's servers | Cannot reach it; needs a public `https` address | [Gemini](ai-gemini.md) |
-| Cursor, VS Code, Windsurf, Zed, Cline, Roo Code, GitHub Copilot CLI, JetBrains AI, Warp | Your computer | AI key | [Coding tools](ai-coding-tools.md) |
-| Open WebUI with Ollama, LM Studio, Jan, AnythingLLM, Msty, Goose | Your computer or home server | AI key | [Local AI apps](ai-local.md) |
-| Perplexity, Le Chat, Copilot Studio | Their maker's servers | Cannot reach it; needs a public `https` address | [Below](#other-cloud-apps) |
+The full step-by-step guides are on the website: [holyarrs.coderluii.dev/docs/ai](https://holyarrs.coderluii.dev/docs/ai/). Settings > AI connections shows the same table with your own address and key filled in: pick a row to see that app's steps.
 
-Ollama runs the model but does not add MCP servers itself (its own docs never mention MCP). Use it through an app that can, such as Open WebUI; see [Local AI apps](ai-local.md).
+| App | Where to add HolyArrs | On a plain `http` home address |
+| --- | --- | --- |
+| Claude app (web, desktop, phone, Cowork) | Customize > Connectors > + Add > Add custom connector | Cannot reach it; needs a public `https` address |
+| ChatGPT | Plugins > + > Add custom MCP server | Cannot reach it |
+| Gemini app | Connected Apps > + Custom, with a client ID from Settings > AI connections | Cannot reach it |
+| Grok | grok.com/connectors > New Connector > Custom | Cannot reach it |
+| Perplexity | Plugins > Add custom > Add MCP connector > Remote | Cannot reach it |
+| Claude Code | `claude mcp add` | AI key |
+| Codex (terminal, IDE extension, ChatGPT desktop app) | `codex mcp add` | AI key |
+| Cursor | Add to Cursor, or `~/.cursor/mcp.json` | AI key |
+| VS Code with Copilot | MCP Servers > Add Server, or Add to VS Code | AI key |
+| Gemini CLI | `gemini mcp add` | AI key |
+| Claude Desktop at home | Settings > Developer > Edit Config, through the `mcp-remote` bridge (needs Node.js) | AI key |
+| Open WebUI, LM Studio, Ollama (through ollmcp) | Each app's MCP settings | AI key |
 
-Each guide marks steps that have not been tried live with HolyArrs.
-
-### Other cloud apps
-
-These need HolyArrs on a public `https` address. All three are (not tried live).
-
-- **Perplexity** (Pro, Max or Enterprise): open Plugins in the sidebar (older versions: Settings, Connectors), then Add custom, Add MCP connector, Remote. Name it HolyArrs, paste the AI address, and under Advanced pick OAuth and Streamable HTTP. Tick the box and press Add, then click its card: HolyArrs opens in your browser, sign in if asked, then press "Allow". Switch it on for a thread under Sources. Some people have reported Perplexity sign-in failing with servers that, like HolyArrs, give apps no client secret; this has not been checked with HolyArrs.
-- **Le Chat**: under Connectors press Add Connector, pick Custom MCP Connector, paste the AI address and connect. The sign-in starts by itself.
-- **Copilot Studio**: add an MCP server with the AI address and choose OAuth 2.0 with dynamic discovery.
+Ollama runs the model but does not add MCP servers itself. Use it through an app that can, such as Open WebUI or ollmcp.
 
 ### Any other app
 
-Any app that can add a remote (Streamable HTTP) MCP server works. Give it the AI address, then either sign in when asked or add the AI key as a header. Under Settings > AI connections, "More apps" has a ready entry for several apps. Many use this shape:
+Any app that can add a remote (Streamable HTTP) MCP server works. Give it the AI address, then either sign in when asked or add the AI key as a header. Many use this shape:
 
 ```json
 {
@@ -123,13 +117,13 @@ On a browser sign-in address, leave out `headers`.
 
 ## Check that it worked
 
-Each guide names the app's own check, such as `claude mcp list` or `/mcp list`. On the HolyArrs side, the app shows under Settings > AI connections > "Connected apps and AI keys", with "last used" filled in after its first call.
+Each app's steps end with its own check, such as `claude mcp list`. On the HolyArrs side, the app shows under Settings > AI connections > "Connected apps", with "last used" filled in after its first call.
 
 Then try the first question, the same in every app:
 
-> "Use HolyArrs: what's downloading right now, and what's coming out this week?"
+> "What's downloading in HolyArrs?"
 
-On a browser sign-in address, the guide for Claude Code, Codex and Gemini also has "Or let <app> set itself up": a short prompt you paste into that app so it adds HolyArrs and starts the sign-in itself. It never holds a key.
+Settings > AI connections also has "Or let your agent do it": a short prompt you paste into Claude Code, Codex, Cursor or another agent so it adds HolyArrs itself. On a plain `http` address, after "Make a key", the prompt holds that app's key, so paste it only into your own agent.
 
 ## What AI apps can do
 
@@ -175,7 +169,7 @@ Look-ups (searches, the calendar, downloads) are not written to History. The "la
 
 ## Manage and revoke connected apps
 
-Settings > AI connections > "Connected apps and AI keys" lists every AI key: the app's name, the last four characters of the key, when it was made and when it was last used.
+Settings > AI connections > "Connected apps" lists every AI key: the app's name, the last four characters of the key, when it was made and when it was last used.
 
 - Each app that connected through browser sign-in has its own key here, named after the app.
 - To disconnect an app, press "Revoke". It stops working at once. To use it again, sign in from the app again or make a new key.
@@ -192,7 +186,7 @@ Settings > AI connections > "Connected apps and AI keys" lists every AI key: the
 | 401, "sign in", "needs authentication" or "API key not accepted" | The app has no key yet, its key was revoked, or the account is turned off. | Sign in again from the app (each guide shows how), or make a new key and put it in place of the old one. |
 | 403 "this API key's scope does not cover this route; make a key with the mcp scope" | The app sent an ordinary API key. | Make an AI key; ordinary API keys do not work on the AI address. |
 | A cloud app says it cannot reach the server | It connects from the internet and cannot reach a home address. | Give HolyArrs a public `https` address (see above), or use an app that runs on your computer. |
-| Sign-in is refused or fails on a plain `http` address | Claude Code, Gemini CLI and other newer apps refuse sign-in to plain `http` on the network. | Use "Make a key for <app>" on that address, or reach HolyArrs over `https` or `localhost`. |
+| Sign-in is refused or fails on a plain `http` address | Claude Code, Gemini CLI and other newer apps refuse sign-in to plain `http` on the network. | Use "Make a key" on that address, or reach HolyArrs over `https` or `localhost`. |
 | Sign-in fails behind a reverse proxy or tunnel | HolyArrs does not know it is on `https`, so it hands out `http` sign-in addresses. | Add the proxy to `HOLYARRS_TRUSTED_PROXIES` and have it send `X-Forwarded-Proto: https`. |
 | Signing in on the new name says "request from another site or host name refused" | The public name is not on the allow-list. | Add it to `HOLYARRS_ALLOWED_HOSTS`. |
 | "Could not connect the AI app": "This AI app is not registered with HolyArrs." | The app's sign-in details no longer match. | Remove HolyArrs in the AI app and add it again. |
@@ -201,7 +195,7 @@ Settings > AI connections > "Connected apps and AI keys" lists every AI key: the
 | "too many calls from this key; try again in N seconds" | The app hit its limit. | Wait that long. |
 | "that confirm_token is unknown, used or expired" | More than 5 minutes passed, or the token was already used. | Ask the AI app again; it gets a new summary and token. |
 | A tool such as `ask_for_title` is missing | The person may not ask for titles, or Requests is off. | Check the person's permissions and the parts in Settings > Parts and controls. |
-| The app never uses HolyArrs | The model may be too small to use tools well. | See [Local AI apps](ai-local.md) for models that handle tools. |
+| The app never uses HolyArrs | The model may be too small to use tools well. | Use a model made for tool calls; the website's Local AI guide lists some. |
 
 ## For app makers
 

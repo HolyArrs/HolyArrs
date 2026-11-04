@@ -343,6 +343,12 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 		if fetchErr != nil {
 			return "", fetchErr
 		}
+		if !r.AllowLocal {
+			// Home trackers, web seeds and DHT nodes left out (#152).
+			if payload, fetchErr = safeTorrent(payload); fetchErr != nil {
+				return "", fetchErr
+			}
+		}
 		fileHash, hashErr := torrentFileHash(payload)
 		if hashErr != nil {
 			return "", hashErr

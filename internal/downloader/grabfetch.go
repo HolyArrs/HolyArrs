@@ -14,8 +14,10 @@ import (
 )
 
 // errLinkLocal is a Release link that leads to this machine or the local
-// network, found when its address is dialled.
-var errLinkLocal = errors.New("the Release link leads to a local or blocked address")
+// network, found when its address is dialled. It is final: the Release is
+// turned down once, not fetched again on every retry (each fetch can count
+// against the Source's grab limit).
+var errLinkLocal = releaseRefused{`the Release link leads to a local or blocked address; if this Source is on your home network, turn on "May reach the local network" for it`}
 
 // sabMaxNZB caps an NZB fetched for SABnzbd: a few hundred GB of release.
 var sabMaxNZB int64 = 128 << 20
@@ -33,22 +35,31 @@ var (
 // address is checked as it is dialled, after DNS and on each redirect, so a
 // name or a redirect that leads home is refused. A redirect to a magnet
 // link returns that link instead of a file, as Sonarr does. rt, when set,
-// is the Source's own checked transport (through its proxy).
-func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper) (file []byte, magnet string, err error) {
+// is the Source's own checked transport (through its proxy). localHost,
+// when set, is the host:port of a Source allowed on the local network (a
+// Jackett or Prowlarr at home): only that host and port may be a local
+// address, on the first request and on any redirect; every other one stays
+// public, and cloud metadata addresses are never reached.
+func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper, localHost string) (file []byte, magnet string, err error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return nil, "", errors.New("the Release file needs an http or https address without a sign-in")
 	}
-	d := source.PolicyDialer(grabAllow)
+	d, home := source.PolicyDialer(grabAllow), source.PolicyDialer(source.NotMetadata)
 	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		if h, _, err := net.SplitHostPort(addr); err == nil && metadataName(h) {
+		h, port, err := net.SplitHostPort(addr)
+		if err == nil && metadataName(h) {
 			return nil, &net.OpError{Op: "dial", Net: network, Err: source.ErrAddressRefused}
 		}
 		if grabDial != nil {
 			addr = grabDial(addr)
 		}
+		if localHost != "" && err == nil && strings.EqualFold(net.JoinHostPort(strings.TrimSuffix(h, "."), port), localHost) {
+			return home.DialContext(ctx, network, addr)
+		}
 		return d.DialContext(ctx, network, addr)
 	}
+	proxied := rt != nil
 	if rt == nil {
 		rt = &http.Transport{Proxy: nil, DialContext: dial, TLSHandshakeTimeout: 10 * time.Second}
 	}
@@ -79,6 +90,11 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 			return nil, "", ctx.Err()
 		}
 		if errors.Is(err, source.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
+			if proxied {
+				// Through a proxy a refusal may be a name not looked up here
+				// or the proxy's own address: tried again, not turned down.
+				return nil, "", errors.New(errLinkLocal.msg)
+			}
 			return nil, "", errLinkLocal
 		}
 		return nil, "", errors.New("the Release file could not be read from its Source")
@@ -86,6 +102,11 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 	defer resp.Body.Close()
 	if loc := resp.Header.Get("Location"); resp.StatusCode >= 300 && resp.StatusCode < 400 && len(loc) >= 7 && strings.EqualFold(loc[:7], "magnet:") {
 		return nil, loc, nil
+	}
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone {
+		// The file is not there: trying again changes nothing (a sign-in
+		// or rate answer may pass, so those are tried again).
+		return nil, "", releaseRefused{"the Source has no such Release file"}
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, "", errors.New("the Source refused the Release file")

@@ -50,7 +50,7 @@ func TestGrabFetchRefusesNamesThatLeadHome(t *testing.T) {
 	_, port, _ := net.SplitHostPort(hostPort(t, srv))
 	fakeDNS(t, map[string]string{"loop.example": "127.0.0.1:" + port, "nas.example": "10.20.30.40:" + port, "router.example": "192.168.1.1:" + port}, false)
 	for _, name := range []string{"loop.example", "nas.example", "router.example"} {
-		if _, _, err := fetchGrabLink(context.Background(), "http://"+name+"/x.torrent", addFetchMax, nil); !errors.Is(err, errLinkLocal) {
+		if _, _, err := fetchGrabLink(context.Background(), "http://"+name+"/x.torrent", addFetchMax, nil, ""); !errors.Is(err, errLinkLocal) {
 			t.Errorf("%s: err = %v, want the local-address refusal", name, err)
 		}
 	}
@@ -71,7 +71,7 @@ func TestGrabFetchRefusesRedirectsHome(t *testing.T) {
 	t.Cleanup(srv.Close)
 	fakeDNS(t, map[string]string{"public.example": hostPort(t, srv), "rebind.example": "127.0.0.2:" + port}, true)
 	for _, p := range []string{"/to-ip", "/to-name"} {
-		if _, _, err := fetchGrabLink(context.Background(), "http://public.example"+p, addFetchMax, nil); !errors.Is(err, errLinkLocal) {
+		if _, _, err := fetchGrabLink(context.Background(), "http://public.example"+p, addFetchMax, nil, ""); !errors.Is(err, errLinkLocal) {
 			t.Errorf("%s: err = %v, want the local-address refusal", p, err)
 		}
 	}
@@ -93,12 +93,12 @@ func TestGrabFetchPublicNameAndMagnetRedirect(t *testing.T) {
 	t.Cleanup(srv.Close)
 	fakeDNS(t, map[string]string{"public.example": hostPort(t, srv)}, true)
 	for _, p := range []string{"/file", "/moved"} {
-		b, m, err := fetchGrabLink(context.Background(), "http://public.example"+p, addFetchMax, nil)
+		b, m, err := fetchGrabLink(context.Background(), "http://public.example"+p, addFetchMax, nil, "")
 		if err != nil || string(b) != string(grabPayload) || m != "" {
 			t.Errorf("%s: %q %q %v", p, b, m, err)
 		}
 	}
-	if b, m, err := fetchGrabLink(context.Background(), "http://public.example/magnet", addFetchMax, nil); err != nil || b != nil || m != magnet {
+	if b, m, err := fetchGrabLink(context.Background(), "http://public.example/magnet", addFetchMax, nil, ""); err != nil || b != nil || m != magnet {
 		t.Errorf("magnet redirect: %q %q %v", b, m, err)
 	}
 }

@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -82,5 +83,49 @@ func TestFeedStoresReleaseOncePerRun(t *testing.T) {
 	}
 	if bs, _ := rs[0].Verdict["by_slot"].(map[string]any); len(bs) != 2 {
 		t.Fatalf("verdict per Slot missing: %v", strings.Join(nil, ""))
+	}
+}
+
+// #41: a Release the Pick rules refused for safety, once forced, sent and
+// turned down, stays refused when the Turned down list is cleared: picking
+// it again still needs force (no one-click send of a program file).
+func TestTurnedDownRemovalKeepsRefusedNeedingForce(t *testing.T) {
+	f := seed(t, "http://127.0.0.1:1/api")
+	ctx := context.Background()
+	exe := addRelease(t, f, "Dune.Part.Two.2024.1080p.WEB.H264-X.mkv.exe", "turned_down")
+	exec(t, f, `UPDATE releases SET matched_slot_ids = json_array(?), verdict = json('{"outcome":"refused","passed":false,"reasons":[{"step":"hard","rule":"safety:executable","effect":"fail","detail":"contains a program file, not a video"}],"turned_down_reason":"dangerous files"}') WHERE id = ?`, f.slotID, exe)
+	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
+		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
+		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+			return err
+		}
+		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &exe, SlotIDs: []int64{f.slotID}, ExternalID: "e", State: "failed", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
+		_, err := store.Insert(tx, "downloads", dl, domain.System)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	sr := &Searcher{Store: f.s}
+	if n, err := sr.RemoveTurnedDown(ctx, 0, domain.System); err != nil || n != 1 {
+		t.Fatalf("removed %d %v", n, err)
+	}
+	if got := relByName(t, f, "Dune.Part.Two.2024.1080p.WEB.H264-X.mkv.exe"); got.State != "refused" {
+		t.Fatalf("after clearing the list: %s", got.State)
+	}
+	var nf *NeedsForceError
+	if _, err := sr.Choose(ctx, exe, f.slotID, false, domain.System); !errors.As(err, &nf) {
+		t.Fatalf("picked again without force: %v", err)
+	}
+}
+
+// #41: a refused Release sent once with force and then removed (not turned
+// down) is still refused by its verdict: picking it again needs force.
+func TestForcedRefusedReleaseNeedsForceAgain(t *testing.T) {
+	f := seed(t, "http://127.0.0.1:1/api")
+	exe := addRelease(t, f, "Dune.Part.Two.2024.1080p.WEB.H264-X.mkv.exe", "chosen")
+	exec(t, f, `UPDATE releases SET matched_slot_ids = json_array(?), verdict = json('{"outcome":"refused","passed":false,"reasons":[{"step":"hard","rule":"safety:executable","effect":"fail","detail":"contains a program file, not a video"}]}') WHERE id = ?`, f.slotID, exe)
+	var nf *NeedsForceError
+	if _, err := (&Searcher{Store: f.s}).Choose(context.Background(), exe, f.slotID, false, domain.System); !errors.As(err, &nf) {
+		t.Fatalf("picked again without force: %v", err)
 	}
 }

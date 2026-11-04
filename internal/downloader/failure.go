@@ -344,19 +344,8 @@ func underAny(p string, roots []string) bool {
 
 // mapLocal turns a Downloader's path into ours with the Downloader's path map.
 func mapLocal(p string, maps []domain.PathMap) string {
-	for _, m := range maps {
-		theirs, ours := strings.TrimRight(m.Theirs, `/\`), strings.TrimRight(m.Ours, `/\`)
-		if theirs == "" {
-			continue
-		}
-		if p == theirs {
-			return ours
-		}
-		if rest, ok := strings.CutPrefix(p, theirs); ok && (rest[0] == '/' || rest[0] == '\\') {
-			return ours + rest
-		}
-	}
-	return p
+	out, _ := domain.MapPath(p, maps)
+	return out
 }
 
 // Discard removes a Download from its Downloader with its files after its

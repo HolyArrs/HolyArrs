@@ -55,7 +55,38 @@ type artistVideoCache struct {
 	mu   sync.Mutex
 	m    map[string]artistVideoList
 	busy map[string]bool
+	// failed is when asking the metadata server about an artist last
+	// failed (not "no such artist"): the pass waits artistFailWait.
+	failed map[string]time.Time
 	now  func() time.Time
+}
+
+// noteFailed remembers that asking about mbid failed at now. Entries older
+// than artistFailWait go first, and the map stays under artistVideosMax.
+func (c *artistVideoCache) noteFailed(mbid string, now time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.failed == nil {
+		c.failed = map[string]time.Time{}
+	}
+	if _, ok := c.failed[mbid]; !ok && len(c.failed) >= artistVideosMax {
+		for k, at := range c.failed {
+			if now.Sub(at) >= artistFailWait {
+				delete(c.failed, k)
+			}
+		}
+		if len(c.failed) >= artistVideosMax {
+			return
+		}
+	}
+	c.failed[mbid] = now
+}
+
+// forgetFailed drops mbid's failure once the server answered about it.
+func (c *artistVideoCache) forgetFailed(mbid string) {
+	c.mu.Lock()
+	delete(c.failed, mbid)
+	c.mu.Unlock()
 }
 
 func (c *artistVideoCache) clock() time.Time {
@@ -93,7 +124,11 @@ func (a *API) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
 	}
 	lc := store.LookupCache{Store: a.s.Store}
 	if len(e.list) == 0 {
-		_ = lc.Put(context.WithoutCancel(ctx), videoDiskKey(mbid), []byte("{}"), e.at, e.at)
+		// Kept until the pass would ask again (a restart does not re-ask
+		// every artist with no videos at once).
+		if b, err := json.Marshal(storedVideos{At: e.at, Videos: []metadata.ArtistVideo{}}); err == nil {
+			_ = lc.Put(context.WithoutCancel(ctx), videoDiskKey(mbid), b, e.at, e.at.Add(artistEmptyRecheck))
+		}
 		return
 	}
 	if b, err := json.Marshal(storedVideos{At: e.at, Videos: e.list}); err == nil {
@@ -111,7 +146,7 @@ func (a *API) keptVideos(ctx context.Context, mbid string) (artistVideoList, boo
 	if !ok && a.s.Store != nil {
 		if b, found, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, videoDiskKey(mbid), time.Now()); found {
 			var sv storedVideos
-			if json.Unmarshal(b, &sv) == nil && len(sv.Videos) > 0 {
+			if json.Unmarshal(b, &sv) == nil && !sv.At.IsZero() {
 				e, ok = artistVideoList{at: sv.At, list: sv.Videos}, true
 				c.mu.Lock()
 				c.putLocked(mbid, e)
@@ -139,12 +174,19 @@ func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo 
 	l, err := a.s.ArtistVideos(ctx, mbid)
 	if err != nil {
 		// An artist the server does not know is kept as an empty list, so
-		// asking again within a few minutes costs no lookup.
-		if errors.Is(err, metadata.ErrNotFound) {
+		// asking again within a few minutes costs no lookup. Any other
+		// failure (the server down) is remembered for the pass.
+		switch {
+		case errors.Is(err, metadata.ErrNotFound):
+			c.forgetFailed(mbid)
 			a.keepVideos(ctx, mbid, artistVideoList{at: now})
+		case ctx.Err() == nil:
+			// Not the caller giving up (its own cancel or deadline).
+			c.noteFailed(mbid, now)
 		}
 		return nil
 	}
+	c.forgetFailed(mbid)
 	a.keepVideos(ctx, mbid, artistVideoList{at: now, list: l})
 	return l
 }
@@ -217,9 +259,10 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	// ?id= is a card in the Music videos row: a click, not autoplay.
+	// ?id= is a card in the Music videos row: pointing at it reads what is
+	// kept; a click (&play=1) may look that one video up.
 	if id := r.URL.Query().Get("id"); id != "" {
-		a.pickedVideo(w, r, mbid, id)
+		a.pickedVideo(w, r, mbid, id, r.URL.Query().Get("play") == "1")
 		return
 	}
 	if !a.uiSettings(r.Context()).AutoplayTrailers {
@@ -267,9 +310,11 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 
 // pickedVideo answers ?id=: that one of the artist's videos, relayed. Label
 // videos refuse YouTube's embedded player (error 150), so the row plays
-// them through the relay. One that will not play answers 404 and stays in
-// the list (the row's embed may still play it).
-func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id string) {
+// them through the relay. Only a click (play) looks a video not kept yet
+// up, behind the answer: pointing at a card or focusing it reads what is
+// kept. One that will not play answers 404 and stays in the list (the
+// row's embed may still play it).
+func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id string, play bool) {
 	var v metadata.ArtistVideo
 	if a.s.ArtistVideos != nil {
 		for _, k := range a.videosOf(metadata.MemberLookup(r.Context()), mbid) {
@@ -285,8 +330,10 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 	}
 	s, known := a.videoKnown(r.Context(), v.ID)
 	if !known {
-		// Looked up behind the answer; the row's embed plays meanwhile.
-		a.resolveVideoBehind(r, mbid, nil, v.ID)
+		// A click: looked up behind the answer; the row's embed plays meanwhile.
+		if play {
+			a.resolveVideoBehind(r, mbid, nil, v.ID)
+		}
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Retry-After", "5")
 		fail(w, http.StatusNotFound, "no video ready yet")

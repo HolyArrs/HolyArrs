@@ -104,7 +104,9 @@ kept ready: its address is renewed before it expires, up to 300 artists, for
 a week after the last time anyone looked. Until a round reaches an artist,
 the page shows the artist's photo. Pressing play on one video in the Music
 videos row is the one exception: that video is looked up right away, since
-someone asked for it.
+someone asked for it. Pointing at a card, or moving to it with the keyboard,
+only plays what is already kept. A video that will not play in the artist
+banner is tried once more at the largest picture, then the photo stays.
 
 ## Where a music video starts
 
