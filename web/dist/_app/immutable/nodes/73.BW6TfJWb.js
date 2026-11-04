@@ -1,0 +1,1 @@
+import{t as e}from"../chunks/DK3Fl9T5.js";import{Hr as t}from"../chunks/DNOTOb5g.js";import{n}from"../chunks/CcIGKOr6.js";var r=e({load:()=>i}),i=({url:e})=>{n(307,t(`/requests`)+e.search+e.hash)};export{r as universal};
