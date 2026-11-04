@@ -300,6 +300,8 @@ describe('session', () => {
 		});
 		const s = createSession(c);
 		const initialLoad = s.load();
+		// A shared read goes out on the next microtask (api.ts start).
+		await Promise.resolve();
 		expect(meCalls).toBe(1);
 		expect(await s.oidcFinish()).toEqual({ done: true });
 		answerInitial(new Response(JSON.stringify({ error: 'sign in first' }), { status: 401 }));

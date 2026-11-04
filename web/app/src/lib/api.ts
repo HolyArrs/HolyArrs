@@ -25,6 +25,37 @@ export interface RequestOptions {
 
 type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
+type Follower<T> = { res?: (v: T) => void; rej?: (e: unknown) => void; signal?: AbortSignal; stop?: () => void };
+
+function settle<T>(f: Follower<T>, ok: boolean, v: unknown) {
+	const { res, rej, signal, stop } = f;
+	f.res = f.rej = f.signal = f.stop = undefined;
+	if (signal && stop) signal.removeEventListener('abort', stop);
+	if (ok) res?.(v as T);
+	else rej?.(v);
+}
+
+// follow is one caller's own copy of a shared answer. All the shared request
+// keeps of it is f, which an abort empties: a page that was left (its signal
+// and the abort error's stack) is free while the request is still open.
+function follow<T>(shared: Promise<unknown>, signal?: AbortSignal): Promise<T> {
+	const f: Follower<T> = {};
+	const out = new Promise<T>((res, rej) => {
+		f.res = res;
+		f.rej = rej;
+	});
+	shared.then(
+		(v) => settle(f, true, v === undefined ? v : structuredClone(v)),
+		(e) => settle(f, false, e)
+	);
+	if (signal) {
+		f.signal = signal;
+		f.stop = () => settle(f, false, f.signal?.reason ?? new DOMException('Aborted', 'AbortError'));
+		signal.addEventListener('abort', f.stop, { once: true });
+	}
+	return out;
+}
+
 // Calls that answer 401 as part of their normal job; a 401 there is not a
 // lost session.
 const quiet401 = [
@@ -159,12 +190,20 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 	// session (a new CSRF token) forgets them. Each caller gets its own copy.
 	const shared = new Map<string, { p: Promise<unknown>; done: number; keep: number }>();
 
+	// A shared GET starts on its own microtask, from here, not inside the caller:
+	// the browser keeps a fetch's call stack until the answer comes (for its
+	// error), and a stack through the caller kept the page that asked alive
+	// after it was left (a whole Explore page per slow request).
+	function start(path: string, entry: { keep: number }): Promise<unknown> {
+		return Promise.resolve().then(() => request<unknown>(path, {}, (res) => (entry.keep = keepFor(res.headers.get('Cache-Control')))));
+	}
+
 	function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 		const now = Date.now();
 		let hit = shared.get(path);
 		if (!hit || (hit.done && (!hit.keep || now - hit.done > hit.keep))) {
 			const entry = { p: Promise.resolve<unknown>(undefined), done: 0, keep: KEEP_MOMENT };
-			entry.p = request<unknown>(path, {}, (res) => (entry.keep = keepFor(res.headers.get('Cache-Control'))));
+			entry.p = start(path, entry);
 			entry.p.then(
 				(v) => {
 					entry.done = Date.now();
@@ -175,14 +214,8 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			shared.set(path, entry);
 			hit = entry;
 		}
-		const copy = hit.p.then((v) => (v === undefined ? v : structuredClone(v)) as T);
-		if (!signal) return copy;
-		if (signal.aborted) return Promise.reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
-		return new Promise<T>((resolve, reject) => {
-			const stop = () => reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
-			signal.addEventListener('abort', stop, { once: true });
-			copy.then(resolve, reject).finally(() => signal.removeEventListener('abort', stop));
-		});
+		if (signal?.aborted) return Promise.reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+		return follow<T>(hit.p, signal);
 	}
 
 	function change<T>(path: string, opts: RequestOptions): Promise<T> {
