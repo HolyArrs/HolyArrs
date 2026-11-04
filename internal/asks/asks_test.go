@@ -787,6 +787,52 @@ func TestAlsoDeclinedNamesEarlierDecliners(t *testing.T) {
 	}
 }
 
+// Shows found through TVmaze have no TMDB id: they match by the ids they
+// share, so two different such shows never name each other's decliners.
+func TestAlsoDeclinedShowsWithoutTMDBID(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	at := r.clock
+	add := func(ids map[string]string, by *int64) int64 {
+		var id int64
+		at = at.Add(time.Minute)
+		if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+			a := &domain.Ask{Kind: "show", SourceIDs: ids, Seasons: []int{}, Episodes: []domain.AskEpisodes{}, Albums: []domain.AskAlbum{}, Name: "Show", State: domain.AskAsked, AskedBy: r.ana.UserID, AskedAt: at}
+			if by != nil {
+				a.State, a.DecidedBy, a.DecidedAt = domain.AskTurnedDown, by, &at
+			}
+			var err error
+			id, err = store.Insert(tx, "asks", a, domain.System)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	luis, bo := r.luis.UserID, r.bo.UserID
+	add(map[string]string{"tvmaze": "82"}, &luis)
+	add(map[string]string{"tvmaze": "999"}, &bo)
+	again := add(map[string]string{"tvmaze": "82", "tvdb": "121361"}, nil)
+	other := add(map[string]string{"tvmaze": "5"}, nil)
+	names := func(id int64) []string {
+		vs, err := r.svc.Views(ctx, "a.id = ?", id)
+		if err != nil || len(vs) != 1 {
+			t.Fatalf("views %v %v", vs, err)
+		}
+		out := []string{}
+		for _, w := range vs[0].AlsoDeclined {
+			out = append(out, w.Name)
+		}
+		return out
+	}
+	if got := names(again); len(got) != 1 || got[0] != "luis" {
+		t.Fatalf("same show %v", got)
+	}
+	if got := names(other); len(got) != 0 {
+		t.Fatalf("other show %v", got)
+	}
+}
+
 // An approved ask whose title was deleted from the Library later says so.
 func TestApprovedAskWithItsTitleDeletedSaysWhy(t *testing.T) {
 	r := newRig(t)

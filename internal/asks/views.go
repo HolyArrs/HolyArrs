@@ -161,19 +161,39 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 	return out, nil
 }
 
-// alsoDeclined lists who declined earlier asks for the same thing as a
-// (same kind, title and 4K; artists by MusicBrainz id), newest first, each
-// person once, without a's own decider. A failed read lists nobody.
+// alsoDeclined lists who declined earlier asks for the same thing as a,
+// newest first, each person once, without a's own decider. Movies match by
+// TMDB id and 4K, shows by any id they share (a show found through TVmaze
+// has no TMDB id), artists by MusicBrainz id. A failed read lists nobody.
 func alsoDeclined(ctx context.Context, db *sql.DB, a domain.Ask) []int64 {
-	q, args := "SELECT decided_by FROM asks WHERE kind = ? AND tmdb_id = ? AND four_k = ? AND state = 'turned_down' AND decided_by IS NOT NULL AND id != ? ORDER BY decided_at DESC, id DESC", []any{a.Kind, a.TMDBID, a.FourK, a.ID}
-	if a.Kind == "artist" {
-		mb := a.SourceIDs["musicbrainz"]
-		if mb == "" {
-			return nil
+	var match []string
+	var args []any
+	switch a.Kind {
+	case "artist":
+		if mb := a.SourceIDs["musicbrainz"]; mb != "" {
+			match, args = []string{"json_extract(source_ids, '$.musicbrainz') = ?"}, []any{mb}
 		}
-		q = "SELECT decided_by FROM asks WHERE kind = 'artist' AND json_extract(source_ids, '$.musicbrainz') = ? AND state = 'turned_down' AND decided_by IS NOT NULL AND id != ? ORDER BY decided_at DESC, id DESC"
-		args = []any{mb, a.ID}
+	case "show":
+		var or []string
+		for _, k := range []string{"tmdb", "tvdb", "tvmaze", "imdb"} {
+			if v := a.SourceIDs[k]; v != "" {
+				or = append(or, "json_extract(source_ids, '$."+k+"') = ?")
+				args = append(args, v)
+			}
+		}
+		if len(or) > 0 {
+			match = []string{"(" + strings.Join(or, " OR ") + ")"}
+		}
+	default:
+		if a.TMDBID != "" {
+			match, args = []string{"tmdb_id = ?", "four_k = ?"}, []any{a.TMDBID, a.FourK}
+		}
 	}
+	if len(match) == 0 {
+		return nil
+	}
+	q := "SELECT decided_by FROM asks WHERE kind = ? AND " + strings.Join(match, " AND ") + " AND state = 'turned_down' AND decided_by IS NOT NULL AND id != ? ORDER BY decided_at DESC, id DESC"
+	args = append([]any{a.Kind}, append(args, a.ID)...)
 	rows, err := db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil

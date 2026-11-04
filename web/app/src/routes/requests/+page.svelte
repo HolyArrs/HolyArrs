@@ -100,9 +100,12 @@
 			const name = a?.name ?? 'the request';
 			if (err instanceof ApiError && err.status === 409 && /already decided/.test(err.message)) {
 				// Someone else answered it first (two approvers at once): show their answer, not "Try again".
-				delete pending[id];
-				await load();
-				const now = asks.find((x) => x.id === id);
+				// The one ask is read on its own, so a list load started meanwhile can't drop it.
+				const now = await api.get<Ask>(`/asks/${id}`).catch(() => undefined);
+				if (now) {
+					const i = asks.findIndex((x) => x.id === id);
+					if (i >= 0) asks[i] = now;
+				}
 				const m = /^(Declined|Approved) by (.+)$/.exec(now ? decided(now) : '');
 				toasts.push(m ? `${m[2]} already ${m[1].toLowerCase()} ${name}.` : `${name} was already answered.`, 'info');
 				return;
