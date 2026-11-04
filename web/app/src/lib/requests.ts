@@ -32,18 +32,17 @@ export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, 
 
 /**
  * alsoDeclined names the others who declined the same title on earlier
- * requests: "bo and cy declined it before.", or '' when nobody did. A display
- * name wins (mine freshest); with namedOnly an account name alone isn't said,
- * those people are counted instead ("bo and 1 other declined it before.").
+ * requests (approvers only get the list): "Bo and Cy declined it before.",
+ * or '' when nobody did. Display names only (mine freshest); a sign-in name
+ * is never said, those people are counted ("Bo and 1 other declined it before.").
  */
-export function alsoDeclined(a: Pick<Ask, 'also_declined'>, me?: { id: number; displayName: string }, namedOnly = false): string {
+export function alsoDeclined(a: Pick<Ask, 'also_declined'>, me?: { id: number; displayName: string }): string {
 	const list = a.also_declined ?? [];
 	if (!list.length) return '';
 	const said: string[] = [];
 	let unnamed = 0;
 	for (const w of list) {
-		const mine = me && me.id === w.id ? me.displayName.trim() : '';
-		const n = mine || w.display_name?.trim() || (namedOnly ? '' : w.name);
+		const n = (me && me.id === w.id ? me.displayName.trim() : '') || w.display_name?.trim() || '';
 		if (n) said.push(n);
 		else unnamed++;
 	}

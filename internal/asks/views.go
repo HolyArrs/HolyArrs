@@ -63,7 +63,8 @@ type View struct {
 	DecidedAt    *time.Time `json:"decided_at,omitempty"`
 	// AlsoDeclined are the other people who declined the same thing on
 	// earlier asks for it, newest first (the decider of this ask left out).
-	AlsoDeclined []Who `json:"also_declined"`
+	// Filled by AddAlsoDeclined, for people who approve only.
+	AlsoDeclined []Who `json:"also_declined,omitempty"`
 	Note         string     `json:"note,omitempty"`
 	AutoApproved bool       `json:"auto_approved"`
 	AvailableAt  *time.Time `json:"available_at,omitempty"`
@@ -152,13 +153,38 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		for _, p := range ps {
 			v.People = append(v.People, Asker{Who{ID: p.ID, Name: p.Name}, p.AskedAt, p.FromWatchlist})
 		}
-		v.AlsoDeclined = []Who{}
-		for _, id := range alsoDeclined(ctx, db, a) {
-			v.AlsoDeclined = append(v.AlsoDeclined, Who{ID: id, Name: userName(id), DisplayName: displayName(id)})
-		}
 		out = append(out, v)
 	}
 	return out, nil
+}
+
+// AddAlsoDeclined fills each view's AlsoDeclined (always a list, maybe
+// empty). It names who turned down other people's asks, so it is for
+// people who approve only; members see who decided their own ask.
+func (s *Service) AddAlsoDeclined(ctx context.Context, vs []View) {
+	db := s.Store.Read()
+	shown := map[int64]Who{}
+	who := func(id int64) Who {
+		if w, ok := shown[id]; ok {
+			return w
+		}
+		w := Who{ID: id}
+		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", id).Scan(&w.Name)
+		_ = db.QueryRowContext(ctx, "SELECT display_name FROM user_profiles WHERE user_id = ?", id).Scan(&w.DisplayName)
+		w.DisplayName = strings.TrimSpace(w.DisplayName)
+		shown[id] = w
+		return w
+	}
+	for i := range vs {
+		vs[i].AlsoDeclined = []Who{}
+		a, err := get(ctx, db, vs[i].ID)
+		if err != nil {
+			continue
+		}
+		for _, id := range alsoDeclined(ctx, db, a) {
+			vs[i].AlsoDeclined = append(vs[i].AlsoDeclined, who(id))
+		}
+	}
 }
 
 // alsoDeclined lists who declined earlier asks for the same thing as a,

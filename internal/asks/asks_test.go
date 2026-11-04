@@ -765,6 +765,10 @@ func TestAlsoDeclinedNamesEarlierDecliners(t *testing.T) {
 	}
 	names := func(id int64) []string {
 		vs, _ := r.svc.Views(ctx, "a.id = ?", id)
+		if vs[0].AlsoDeclined != nil {
+			t.Fatalf("Views fills also_declined by itself: %+v", vs[0].AlsoDeclined)
+		}
+		r.svc.AddAlsoDeclined(ctx, vs)
 		out := []string{}
 		for _, w := range vs[0].AlsoDeclined {
 			out = append(out, w.Name)
@@ -819,6 +823,7 @@ func TestAlsoDeclinedShowsWithoutTMDBID(t *testing.T) {
 		if err != nil || len(vs) != 1 {
 			t.Fatalf("views %v %v", vs, err)
 		}
+		r.svc.AddAlsoDeclined(ctx, vs)
 		out := []string{}
 		for _, w := range vs[0].AlsoDeclined {
 			out = append(out, w.Name)

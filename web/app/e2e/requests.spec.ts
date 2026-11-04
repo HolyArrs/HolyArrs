@@ -853,9 +853,13 @@ test('#136 several admins decline the same movie: the window names who else decl
 		}
 	}
 
-	// hal's own list says it too, on the newest declined request (account names are fine there).
+	// Who else declined is for approvers only: hal (a member) sees who declined his
+	// own request and nothing about the earlier ones, on the page or in the API.
 	await hal.goto('/requests');
 	await hal.getByRole('button', { name: /^Declined/ }).click();
 	const mine = hal.locator(`[data-ask-id="${third}"]`);
-	await expect(mine.getByTestId('also-declined')).toHaveText(`${winner} and Ada Quill declined it before.`);
+	await expect(mine.getByTestId('decided-by')).toContainText(`Declined by ${loser}`);
+	await expect(hal.getByText(/declined it before/)).toHaveCount(0);
+	const halSees = JSON.stringify(await (await hal.request.get('/api/v1/asks')).json());
+	expect(halSees).not.toContain('also_declined');
 });
