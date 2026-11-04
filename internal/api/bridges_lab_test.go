@@ -116,6 +116,9 @@ func TestLabBridgeJackett(t *testing.T) {
 		t.Fatalf("site list: %v", err)
 	}
 	t.Logf("the lab Jackett has %d sites set up", len(sites))
+	if len(sites) == 0 {
+		t.Fatal("the lab Jackett has no site set up: set up the lab definition first")
+	}
 	if _, err := bridge.NewJackett(jackett, "not-the-key").Sites(ctx); err == nil || !strings.Contains(bridge.Words(err), "turned down the key") {
 		t.Fatalf("wrong key: %v", err)
 	}

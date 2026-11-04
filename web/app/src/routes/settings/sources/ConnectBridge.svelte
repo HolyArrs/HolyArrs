@@ -26,6 +26,7 @@
 		last_error?: string;
 		sites: number;
 		sources: number;
+		local?: boolean;
 	}
 
 	let { onchange }: { onchange?: () => void } = $props();
@@ -46,6 +47,7 @@
 	let callback = $state('');
 	let finding = $state(false);
 	let found = $state<{ kind: Kind; url: string }[] | null>(null);
+	let findError = $state('');
 	let testing = $state(false);
 	let connecting = $state(false);
 	let result = $state<{ ok: boolean; text: string } | null>(null);
@@ -87,11 +89,13 @@
 
 	async function look() {
 		finding = true;
+		findError = '';
 		try {
 			found = (await api.post<{ found: { kind: Kind; url: string }[] }>('/bridges/find', {})).found;
 		} catch (e) {
-			found = [];
-			toasts.push(message(e), 'fail');
+			// Not "none found": the look itself failed.
+			found = null;
+			findError = message(e);
 		} finally {
 			finding = false;
 		}
@@ -233,6 +237,8 @@
 							<b>{names[b.kind]}</b> <span class="mono xs muted">{b.url}</span>
 							<div class="small">{stateLine(b)}{#if b.last_check} · checked {ago(b.last_check)}{/if}</div>
 							{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
+							{#if b.local}<div class="small muted" data-testid="bridge-local">These Sources may reach your home network, because Jackett runs there.</div>{/if}
+							{#if b.kind === 'jackett'}<div class="small muted">A Source you remove stays away. Connect this Jackett again to bring every site back.</div>{/if}
 						</div>
 						{#if mayEdit}
 							<div class="acts">
@@ -253,6 +259,9 @@
 					<Button type="button" busy={finding} onclick={look} data-testid="bridge-find">Look for them</Button>
 					<span class="hint">Looks on this machine and the usual Docker names, nowhere else.</span>
 				</div>
+				{#if findError}
+					<p class="small bad-text" role="alert" data-testid="bridge-find-error">Could not look: {findError}</p>
+				{/if}
 				{#if found}
 					{#if found.length}
 						<ul class="found" data-testid="bridge-found">

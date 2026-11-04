@@ -47,6 +47,9 @@
 	// Outside torrents come 200 at a time; Show more asks for the next 200 too.
 	let outsideLimit = $state(200);
 	let moreOutside = $state(false);
+	let outsideTotal = $state(0);
+	// The server sends at most this many torrents it did not add (downloads.go outsideMax).
+	const outsideMax = 2000;
 	const clientNotes = $derived(
 		clientHealth
 			.filter((c) => c.health !== 'ok')
@@ -204,6 +207,7 @@
 			clientHealth = d.clients ?? [];
 			upTotal = d.totals?.up_speed;
 			moreOutside = !!d.next_cursor;
+			outsideTotal = d.outside_total ?? 0;
 			const was = sync;
 			sync = fromAnswer(d);
 			dlPush.on = sync !== null;
@@ -232,6 +236,8 @@
 				const out = mergeClient(rows, sync, id, d.downloads.map(withId), d.revs);
 				rows = out.rows;
 				sync = out.sync;
+				// That client has more torrents than this page holds: offer them.
+				if (d.next_cursor) moreOutside = true;
 			})
 			.catch(() => soon())
 			.finally(() => rereading.delete(id));
@@ -563,7 +569,8 @@
 	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
 	<DlSections changeOutside={session.can('settings')} rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={(p) => batch(() => all(p))} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={(l, a) => batch(() => bulk(l, a))} onsteer={steer} onremovemany={askRemoveMany} onretry={(l) => batch(() => retryMany(l))} {batchBusy} {watch} {upTotal} {notes} />
-	{#if moreOutside}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit += 200; void load(); }} data-testid="dl-outside-more">Show more torrents</Button></p>{/if}
+	{#if moreOutside && outsideLimit < outsideMax}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit = Math.min(outsideLimit + 200, outsideMax); void load(); }} data-testid="dl-outside-more">Show more torrents</Button></p>
+	{:else if moreOutside}<p class="more small muted" data-testid="dl-outside-capped">Showing the first {outsideMax.toLocaleString()} of {outsideTotal.toLocaleString()} torrents HolyArrs did not add.</p>{/if}
 {/if}
 </PageLoader>
 
@@ -638,6 +645,8 @@
 	/* On desktop the notes live in the status popover (DlSections), behind a dot; the bare list is for phones. */
 	@media (min-width: 641px) { .notes { display: none; } }
 	.more { display: flex; justify-content: center; padding: var(--s-4) var(--gutter); }
+	/* Phones: the page fits the screen, so keep Show more torrents above the tab bar. */
+	@media (max-width: 640px) { .more { padding-bottom: calc(var(--tabbar, 60px) + env(safe-area-inset-bottom, 0px) + var(--s-4)); } }
 	.matchpad:empty { display: none; }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }

@@ -49,7 +49,11 @@ Library folders reports a warning when HolyArrs has to copy instead.
 The image is an empty base with only HolyArrs in it: the program, CA
 certificates, the licences, `/config` and a writable `/tmp`. It runs as
 `1000:1000` and has no shell and no other programs, so `docker exec` into it
-to look around does not work (read its log instead). HolyArrs carries its own
+to look around does not work. Read its log instead: `docker logs holyarrs`, or
+`logs/holyarrs.log` in the config folder (see [Logs](logs.md)). HolyArrs' own
+commands still work through `docker exec`, because they need no shell:
+`docker exec -i holyarrs /holyarrs reset-owner`, `docker exec holyarrs /holyarrs
+restore --pre-update` and `docker exec holyarrs /holyarrs import-secrets ...`. HolyArrs carries its own
 time zone database (set `TZ` as usual), healthcheck, unpacker and
 [trailer reader](trailers.md). Keep `/config` on a volume.
 

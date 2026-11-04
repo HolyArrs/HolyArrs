@@ -61,7 +61,10 @@ test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest s
 test('Library filters, find by name, posters and list', async () => {
 	await page.goto('/library');
 	await libraryView(page, 'Posters');
-	const grid = page.locator('[data-testid="library-card"], [data-testid="library-row"]');
+	// Other projects in the chain add their own titles; count only this file's four.
+	const ours = /Driftwood Moon|The Lantern Keepers|Paper Harbour|Quiet Orchard/;
+	const grid = page.locator('[data-testid="library-card"], [data-testid="library-row"]').filter({ hasText: ours });
+	const rows = page.getByTestId('library-row').filter({ hasText: ours });
 	await expect(grid).toHaveCount(4);
 	await libraryStatus(page, 'not_out_yet');
 	await expect(page).toHaveURL(/show=not_out_yet/);
@@ -73,7 +76,7 @@ test('Library filters, find by name, posters and list', async () => {
 	await expect(page.locator('.grid')).not.toContainText('The Lantern Keepers');
 
 	await libraryStatus(page, 'better');
-	await expect(page.getByText('Nothing matches these filters.')).toBeVisible();
+	await expect(grid).toHaveCount(0);
 
 	await libraryStatus(page, 'all');
 	await page.getByLabel('Find in the Library').fill('harbour');
@@ -81,11 +84,11 @@ test('Library filters, find by name, posters and list', async () => {
 	await page.getByLabel('Find in the Library').fill('');
 
 	await libraryView(page, 'Banners');
-	await expect(page.getByTestId('library-row')).toHaveCount(4);
+	await expect(rows).toHaveCount(4);
 	await page.reload();
 	// remembered
 	await expect(page.getByRole('radio', { name: 'Banners', exact: true })).toHaveAttribute('aria-checked', 'true');
-	await expect(page.getByTestId('library-row')).toHaveCount(4);
+	await expect(rows).toHaveCount(4);
 	await libraryView(page, 'Posters');
 	await expect(grid).toHaveCount(4);
 });

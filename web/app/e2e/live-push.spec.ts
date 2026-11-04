@@ -168,13 +168,17 @@ test('AC6: 2,000-row list scrolls smoothly and draws fewer than 100 rows', async
 	await p.goto('/downloads');
 	await expect(p.locator('[data-testid="dl-table-row"]').first()).toBeVisible({ timeout: 30_000 });
 	await expect.poll(async () => (await page.request.get('/api/v1/downloads/view?limit=1')).json().then((v) => v.outside_total), { timeout: 30_000 }).toBeGreaterThanOrEqual(2000);
+	// The page may still hold its first read (before the reader saw the 2,000):
+	// the client's patches bring them all, or a reread brings a page of them and
+	// Show more torrents. Wait for either.
+	const rowsAttr = async () => Number(await p.locator('[data-testid="dl-list"]').getAttribute('data-rows'));
+	await expect.poll(async () => (await rowsAttr()) >= 2000 || (await p.getByTestId('dl-outside-more').isVisible()), { timeout: 30_000 }).toBe(true);
 	for (let i = 0; i < 12; i++) {
 		const more = p.getByTestId('dl-outside-more');
 		if (!(await more.isVisible().catch(() => false))) break;
 		await more.click();
 		await p.waitForTimeout(1200);
 	}
-	const rowsAttr = async () => Number(await p.locator('[data-testid="dl-list"]').getAttribute('data-rows'));
 	await expect.poll(rowsAttr, { timeout: 30_000 }).toBeGreaterThanOrEqual(2000);
 	const cdp = await ctx.newCDPSession(p);
 	await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });

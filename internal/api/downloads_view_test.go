@@ -289,6 +289,17 @@ func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 	}
 }
 
+// Show more past the most one answer carries stays at that most, never back
+// to the first page's size (2,000 torrents, then 2,200 asked: still 2,000).
+func TestOutsideLimitHoldsAtItsMost(t *testing.T) {
+	for q, want := range map[string]int{"": 200, "x": 200, "0": 200, "-5": 200, "400": 400, "2000": 2000, "2200": 2000, "99999": 2000} {
+		r := httptest.NewRequest(http.MethodGet, "/api/v1/downloads/view?outside_limit="+q, nil)
+		if got := outsideLimit(r); got != want {
+			t.Errorf("outside_limit=%q: %d, want %d", q, got, want)
+		}
+	}
+}
+
 // ?asked=1 reads only downloads for titles with an approved ask, past the
 // usual 500-row cap, so the Requests page can count failed asks exactly.
 func TestDownloadsViewAsked(t *testing.T) {

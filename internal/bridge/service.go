@@ -3,6 +3,7 @@ package bridge
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"maps"
 	"slices"
@@ -38,6 +39,14 @@ type Bridge struct {
 const (
 	extraBridge = "bridge"
 	extraSite   = "bridge_site"
+)
+
+// Extras a Jackett bridge keeps: the sites it has brought in (a site in it
+// with no Source was removed by the person and stays away), and whether its
+// address is on the local network ("1").
+const (
+	extraKnown = "known_sites"
+	extraLocal = "local"
 )
 
 // ErrTaken says that Jackett or Prowlarr is already connected.
@@ -149,6 +158,7 @@ func (s *Service) Update(ctx context.Context, b Bridge, key, callback string, by
 			b.SecretRef = &id
 		}
 		b.CallbackURL = callback
+		delete(b.Extra, extraKnown) // connecting again brings back the sites the person removed
 		return store.Update(tx, "bridges", &b, by)
 	})
 	if err != nil {
@@ -219,6 +229,7 @@ type Result struct {
 	Added   int `json:"added"`
 	Updated int `json:"updated"`
 	Removed int `json:"removed"`
+	Skipped int `json:"skipped"` // sites whose Source the person removed
 }
 
 // record keeps the outcome of a check. A quiet check (same count, same
@@ -274,8 +285,20 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 		bySite[src.Extra[extraSite]] = src
 	}
 	keyChanged := b.Extra["key_hint"] != hint(key)
-	local := true
+	// Only a Jackett on this machine or the local network gives its Sources
+	// the local-network allowance; a name that can't be looked up keeps the last answer.
+	local, ok := IsLocal(ctx, b.URL)
+	if !ok {
+		local = b.Extra[extraLocal] == "1"
+	}
+	known := map[string]bool{}
+	var knownList []string
+	_ = json.Unmarshal([]byte(b.Extra[extraKnown]), &knownList)
+	for _, id := range knownList {
+		known[id] = true
+	}
 	var failed []string
+	notIn := map[string]bool{} // sites that could not be added: tried again next time
 	adopted := map[string]bool{}
 	for _, site := range sites {
 		feed := j.FeedURL(site.ID)
@@ -300,10 +323,10 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 		}
 		if src, ok := bySite[site.ID]; ok {
 			delete(bySite, site.ID)
-			if src.URL == feed && !keyChanged && sameCategories(src.Categories, site.Categories) {
+			if src.URL == feed && !keyChanged && sameCategories(src.Categories, site.Categories) && src.AllowLocal == local {
 				continue
 			}
-			in := source.Input{Name: src.Name, URL: feed, APIKey: key, Categories: site.Categories}
+			in := source.Input{Name: src.Name, URL: feed, APIKey: key, Categories: site.Categories, AllowLocal: &local}
 			if _, err := source.Change(ctx, s.Store, s.Vault, src.ID, in, by); err != nil {
 				failed = append(failed, site.Title)
 				continue
@@ -311,6 +334,10 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 			if !adopted[site.ID] {
 				res.Updated++
 			}
+			continue
+		}
+		if known[site.ID] {
+			res.Skipped++ // brought in before and removed by the person
 			continue
 		}
 		in := source.Input{Name: s.freeName(ctx, site.Title), Format: "torznab", Protocol: "torrent", URL: feed, APIKey: key,
@@ -323,6 +350,7 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 		})
 		if err != nil {
 			failed = append(failed, site.Title) // one site that can't be added does not stop the others
+			notIn[site.ID] = true
 			continue
 		}
 		res.Added++
@@ -335,9 +363,22 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 		res.Removed++
 	}
 	changed := res.Added+res.Updated+res.Removed > 0 || keyChanged
-	if keyChanged {
+	var now []string
+	for _, site := range sites {
+		if !notIn[site.ID] {
+			now = append(now, site.ID)
+		}
+	}
+	slices.Sort(now)
+	nowJSON, _ := json.Marshal(now)
+	localWord := ""
+	if local {
+		localWord = "1"
+	}
+	if keyChanged || string(nowJSON) != b.Extra[extraKnown] || localWord != b.Extra[extraLocal] {
 		_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, e := tx.ExecContext(ctx, `UPDATE bridges SET extra = json_set(extra, '$.key_hint', ?) WHERE id = ?`, hint(key), b.ID)
+			_, e := tx.ExecContext(ctx, `UPDATE bridges SET extra = json_set(extra, '$.key_hint', ?, '$.known_sites', ?, '$.local', ?) WHERE id = ?`,
+				hint(key), string(nowJSON), localWord, b.ID)
 			return e
 		})
 	}

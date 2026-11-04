@@ -431,3 +431,90 @@ func TestJackettAdoptsHandAddedLongTitlesAndQuietWhenDown(t *testing.T) {
 }
 
 func ptrTrue() *bool { t := true; return &t }
+
+// A Source the person removes stays away at the next check; connecting the
+// same Jackett again brings it back.
+func TestJackettRemovedSourceStaysAway(t *testing.T) {
+	ctx := context.Background()
+	s, v := openStore(t)
+	f := newFakeJackett(t, "alpha", "beta")
+	svc := &Service{Store: s, Vault: v}
+	b, _ := svc.Add(ctx, KindJackett, f.srv.URL, jackettKey, "", domain.System)
+	if res, err := svc.CheckJackett(ctx, b, domain.System); err != nil || res.Added != 2 {
+		t.Fatalf("first %+v %v", res, err)
+	}
+	srcs, _ := svc.sourcesOf(ctx, b)
+	if err := source.Remove(ctx, s, srcs[0].ID); err != nil {
+		t.Fatal(err)
+	}
+	b, _ = svc.Get(ctx, b.ID)
+	res, err := svc.CheckJackett(ctx, b, domain.System)
+	if err != nil || res.Added != 0 || res.Skipped != 1 || svc.SourceCount(ctx, b) != 1 {
+		t.Fatalf("after removal %+v %v", res, err)
+	}
+	// A new site in Jackett still comes in.
+	f.set("alpha", "beta", "gamma")
+	b, _ = svc.Get(ctx, b.ID)
+	if res, err := svc.CheckJackett(ctx, b, domain.System); err != nil || res.Added != 1 || res.Skipped != 1 {
+		t.Fatalf("new site %+v %v", res, err)
+	}
+	// Connecting again brings every site back.
+	b, _ = svc.Get(ctx, b.ID)
+	if b, err = svc.Update(ctx, b, jackettKey, "", domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if res, err := svc.CheckJackett(ctx, b, domain.System); err != nil || res.Added != 1 || res.Skipped != 0 || svc.SourceCount(ctx, b) != 3 {
+		t.Fatalf("reconnect %+v %v", res, err)
+	}
+}
+
+// Only a Jackett on the local network gives its Sources the local-network
+// allowance, and a change follows on the next check.
+func TestJackettLocalAllowanceFollowsItsAddress(t *testing.T) {
+	ctx := context.Background()
+	s, v := openStore(t)
+	f := newFakeJackett(t, "alpha")
+	svc := &Service{Store: s, Vault: v}
+	local := false
+	IsLocal = func(context.Context, string) (bool, bool) { return local, true }
+	t.Cleanup(func() { IsLocal = LocalAddress })
+	b, _ := svc.Add(ctx, KindJackett, f.srv.URL, jackettKey, "", domain.System)
+	if _, err := svc.CheckJackett(ctx, b, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	srcs, _ := svc.sourcesOf(ctx, b)
+	b, _ = svc.Get(ctx, b.ID)
+	if len(srcs) != 1 || srcs[0].AllowLocal || b.Extra["local"] != "" {
+		t.Fatalf("public Jackett: %+v %v", srcs, b.Extra)
+	}
+	local = true
+	if res, err := svc.CheckJackett(ctx, b, domain.System); err != nil || res.Updated != 1 {
+		t.Fatalf("now local %+v %v", res, err)
+	}
+	srcs, _ = svc.sourcesOf(ctx, b)
+	b, _ = svc.Get(ctx, b.ID)
+	if !srcs[0].AllowLocal || b.Extra["local"] != "1" {
+		t.Fatalf("local Jackett: %+v %v", srcs[0], b.Extra)
+	}
+	// A name that can't be looked up keeps the last answer.
+	IsLocal = func(context.Context, string) (bool, bool) { return false, false }
+	if res, err := svc.CheckJackett(ctx, b, domain.System); err != nil || res.Updated != 0 {
+		t.Fatalf("lookup failed %+v %v", res, err)
+	}
+}
+
+func TestLocalAddress(t *testing.T) {
+	ctx := context.Background()
+	for raw, want := range map[string]bool{
+		"http://127.0.0.1:9117": true, "http://10.0.0.5:9117": true, "http://192.168.1.2:9117/jackett": true,
+		"http://localhost:9117": true, "http://[::1]:9117": true, "http://100.87.70.86:9117": true,
+		"http://8.8.8.8:9117": false, "https://1.1.1.1": false,
+	} {
+		if got, ok := LocalAddress(ctx, raw); got != want || !ok {
+			t.Errorf("%s: %v %v", raw, got, ok)
+		}
+	}
+	if _, ok := LocalAddress(ctx, "::bad"); ok {
+		t.Error("a bad address looked up")
+	}
+}
