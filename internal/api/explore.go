@@ -81,6 +81,9 @@ type exploreState struct {
 	paced   *explore.Paced
 	lists   map[string]exploreList
 	flight  map[string]*listFlight
+	// failing are the list keys whose last outside ask failed, so a failing
+	// list is logged once until it answers, not on every ask.
+	failing map[string]bool
 	pages   map[string]explorePage
 	// now is the clock (tests set it).
 	now func() time.Time
@@ -476,12 +479,15 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 	s.calls.Add(q)
 	f.items, f.err = p.List(ctx, q)
 	if f.err != nil {
-		log.Printf("explore: list %s failed: %v", q.List, f.err)
+		if ctx.Err() == nil && s.noteListDown(key, true) {
+			log.Printf("explore: list %s failed: %v", q.List, f.err)
+		}
 		if ok {
 			return got.items, nil
 		}
 		return nil, f.err
 	}
+	s.noteListDown(key, false)
 	now := time.Now()
 	s.keepList(key, exploreList{at: now, items: f.items})
 	if s.a.s.Store != nil {
@@ -490,6 +496,28 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 		}
 	}
 	return f.items, nil
+}
+
+// noteListDown records whether key's last outside ask failed and says
+// whether that changed. Kept per key: one list's keys fail on their own (a
+// removed title's "similar"), and some answer from the TMDB copy in an
+// outage. Bounded like the list cache; starting over only logs again.
+func (s exploreSource) noteListDown(key string, down bool) bool {
+	e := &s.a.explore
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.failing[key] == down {
+		return false
+	}
+	if !down {
+		delete(e.failing, key)
+		return true
+	}
+	if e.failing == nil || len(e.failing) >= maxExploreRows {
+		e.failing = map[string]bool{}
+	}
+	e.failing[key] = true
+	return true
 }
 
 // keywordIDs keeps TMDB keyword ids by name (they never change), so a

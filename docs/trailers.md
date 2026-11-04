@@ -147,9 +147,6 @@ It is under **Settings > This app**, and applies to the whole household.
 | **Autoplay trailers** ("Play trailers by themselves") | On by default. Off stops every autoplay and the lookups behind it. |
 
 `GET` and `PUT /api/v1/settings/ui` read and change it (`autoplay_trailers`).
-The old switch that kept a separate trailer tool up to date is gone: the
-trailer reader is part of HolyArrs and gets its fixes with HolyArrs updates.
-Older scripts that still send that switch keep working: it is ignored.
 
 The trailer reader's state shows on **Status > Updates** and under
 **Health**: the last good lookup, and while YouTube turns the reader away,

@@ -20,7 +20,7 @@ services:
     cpus: 2.0
     pids_limit: 256
     read_only: true
-    # yt-dlp (one-file program) unpacks itself here and loads from it.
+    # Scratch space. Nothing runs from here any more; exec is left as it was.
     tmpfs:
       - /tmp:size=256m,exec,mode=1777
     security_opt: ["no-new-privileges:true"]
