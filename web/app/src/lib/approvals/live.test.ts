@@ -72,9 +72,15 @@ describe('episodes or songs left unticked (#135)', () => {
 		expect(f.more).toBe(0);
 		expect(lifecycle({ state: 'approved', title_id: 7 }, f)).toMatchObject({ stage: 'ready', label: 'Ready · 2 seasons', more: '5 more episodes available' });
 	});
-	it('picks only (no whole season) cover just the picked seasons', () => {
+	it('picks only (no whole season) count the picked episodes (#139)', () => {
 		const f = partialFacts('seasons', seasons, [], [{ key: 3, count: 2 }]);
-		expect(f).toEqual({ partial: { have: 0, total: 1, unit: 'seasons' }, more: 2, skipped: 4 });
+		expect(f).toEqual({ partial: { have: 0, total: 2, unit: 'episodes' }, more: 2, skipped: 4 });
+		expect(lifecycle({ state: 'approved', title_id: 7 }, f).label).toBe('Processing');
+		// One episode asked and in: "Ready · 1 episode", more counts whole seasons.
+		const one = partialFacts('seasons', [{ key: 1, complete: false, real: true, size: 9, have: 1 }, { key: 2, complete: false, real: true, size: 9, have: 0 }], [], [{ key: 1, count: 1 }]);
+		expect(lifecycle({ state: 'available', title_id: 7 }, one)).toMatchObject({ label: 'Ready · 1 episode', more: '1 more season available' });
+		const half = partialFacts('seasons', [{ key: 2, complete: false, real: true, size: 8, have: 1 }], [], [{ key: 2, count: 3 }]);
+		expect(lifecycle({ state: 'approved', title_id: 7 }, half).label).toBe('Processing · 2 episodes left');
 	});
 	it('a part asked whole and in part counts as whole', () => {
 		expect(partialFacts('seasons', seasons, [2], [{ key: 2, count: 3 }]).skipped).toBeUndefined();

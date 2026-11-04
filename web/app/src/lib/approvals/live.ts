@@ -98,6 +98,18 @@ export function partialFacts(unit: 'seasons' | 'albums', parts: PartCounts[], as
 		if (p.size > 0 && (p.have ?? 0) >= Math.min(n, p.size)) have++;
 	}
 	const out: LifeFacts = { partial: { have, total: want.length, unit }, more: parts.filter((p) => p.real !== false && !want.includes(p)).length };
+	// Only single episodes or songs asked (no whole season or album): count those,
+	// so one asked episode reads "Ready · 1 episode", not "1 season".
+	if (!asked.length && want.every((p) => pick.has(p.key) && p.size !== undefined)) {
+		let total = 0;
+		let got = 0;
+		for (const p of want) {
+			const n = Math.min(pick.get(p.key) ?? 0, p.size ?? 0);
+			total += n;
+			got += Math.min(p.have ?? 0, n);
+		}
+		if (total > 0) out.partial = { have: got, total, unit: unit === 'seasons' ? 'episodes' : 'songs' };
+	}
 	if (skipped > 0) out.skipped = skipped;
 	return out;
 }
