@@ -134,6 +134,22 @@ func TestGrabHashlessLocalLinkUploadsTheFile(t *testing.T) {
 			t.Fatalf("followed as %q, want %s", d.ExternalID, want)
 		}
 	})
+	t.Run("home tracker kept", func(t *testing.T) {
+		// A Source allowed at home keeps a tracker at home in the file (the
+		// cleaning is for Sources that may not reach the local network).
+		home := []byte("d8:announce32:http://192.168.1.5:9000/announce4:infod6:lengthi3e4:name5:dune.12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee")
+		w, m := setup(t)
+		src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { _, _ = rw.Write(home) }))
+		t.Cleanup(src.Close)
+		w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", src.URL+"/dl/site/?path=x")
+		w.exec(t, "UPDATE sources SET allow_local_network = 1, url = ?", src.URL+"/api")
+		if _, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System); err != nil {
+			t.Fatal(err)
+		}
+		if len(w.fake.added) != 1 || w.fake.added[0]["torrent"] != string(home) {
+			t.Fatalf("added %+v, want the file as it was", w.fake.added)
+		}
+	})
 	t.Run("key turned down", func(t *testing.T) {
 		w, m := setup(t)
 		src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { rw.WriteHeader(http.StatusUnauthorized) }))

@@ -722,10 +722,13 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		// Some trackers print a newline after the file; qBittorrent reads past it.
 		file = bytes.TrimRight(file, " \t\r\n")
 		// Trackers, web seeds and DHT nodes inside the file that point at
-		// home are left out; the info hash stays the same.
-		file, err = safeTorrent(file)
-		if err != nil {
-			return "", errors.New("the Release file is not a torrent")
+		// home are left out; the info hash stays the same. A Source allowed
+		// on the local network keeps them (its file is fetched only to learn
+		// the hash, and a tracker at home is then the user's own).
+		if !allowLocal {
+			if file, err = safeTorrent(file); err != nil {
+				return "", errors.New("the Release file is not a torrent")
+			}
 		}
 		h, err := torrentFileHash(file)
 		if err != nil {
