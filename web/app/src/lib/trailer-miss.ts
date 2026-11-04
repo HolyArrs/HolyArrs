@@ -13,11 +13,11 @@ const DOOR_REASONS = new Set(['bot_check', 'no_address', 'refused', 'network']);
 export function missLine(why: string | undefined, word = 'trailer'): string {
 	switch (why) {
 		case 'age_restricted':
-			return `YouTube only plays this ${word} after you sign in to confirm your age.`;
+			return `YouTube plays this ${word} only for signed-in adults, so it can't play here.`;
 		case 'unavailable':
 			return `This ${word} was removed from YouTube.`;
 		case 'sign_in':
-			return `This ${word} is private on YouTube.`;
+			return `This ${word} is private or for members only on YouTube.`;
 		case 'unplayable':
 			return `YouTube won't play this ${word} here.`;
 		case 'content_check':

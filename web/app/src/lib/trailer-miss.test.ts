@@ -4,9 +4,9 @@ import { missLine } from './trailer-miss.ts';
 
 describe('missLine', () => {
 	it('says why a video will not play, in plain words', () => {
-		expect(missLine('age_restricted')).toBe('YouTube only plays this trailer after you sign in to confirm your age.');
+		expect(missLine('age_restricted')).toBe("YouTube plays this trailer only for signed-in adults, so it can't play here.");
 		expect(missLine('unavailable')).toBe('This trailer was removed from YouTube.');
-		expect(missLine('sign_in')).toBe('This trailer is private on YouTube.');
+		expect(missLine('sign_in')).toBe('This trailer is private or for members only on YouTube.');
 		expect(missLine('unplayable')).toBe("YouTube won't play this trailer here.");
 		expect(missLine('content_check')).toBe('YouTube shows this trailer only after a content warning.');
 	});

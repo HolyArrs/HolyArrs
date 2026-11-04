@@ -94,4 +94,12 @@ func TestTrailerUpkeepCountsATitleOnce(t *testing.T) {
 			t.Fatalf("lookup %d: %+v", i, s)
 		}
 	}
+	// The same title in another language is still one title.
+	a.trailers.mu.Lock()
+	a.trailers.cache = nil
+	a.trailers.mu.Unlock()
+	_, _ = a.resolveTitle(context.Background(), "movie", "77", "de")
+	if s := a.TrailerReader(); s.Videos != 1 {
+		t.Fatalf("another language counted again: %+v", s)
+	}
 }

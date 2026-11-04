@@ -60,8 +60,8 @@ answers 404 with only `key`, the title's YouTube trailer when known, so the
 embed plays it.
 
 When the full-screen player cannot play a trailer either, it says why in
-plain words when HolyArrs knows: YouTube wants a sign-in to confirm the
-viewer's age, the video was removed or is private, YouTube won't play it
+plain words when HolyArrs knows: YouTube plays it only for signed-in
+adults, the video was removed, it is private or for members only, YouTube won't play it
 here (blocked in a region, embedding turned off, or a live stream not on),
 it sits behind a content warning, or trailers can't be reached right now.
 Otherwise it says the trailer can't play here. When HolyArrs already knows
@@ -78,12 +78,14 @@ still opens the player, and it says why at once.
 
 Trailers are looked up on a fixed schedule, never when a page opens. Every
 5 minutes (the first round a few minutes after HolyArrs starts) the server
-looks up to 20 trailers, a few seconds apart. Addresses about to expire are
-renewed first. Then come the titles people have looked at that had nothing
-yet: any card that stayed on screen (a genre's rows and New on your
+looks up to 20 trailers, a few seconds apart. Addresses that would expire
+before the next round are renewed first. Then come the titles people have
+looked at that had nothing yet, oldest first (seeing one again keeps its
+place): any card that stayed on screen (a genre's rows and New on your
 services too), a person's page, the Requests banner, New & Popular's
-featured titles, each in the language it was asked in. Then everything
-Explore shows for each household member who is not a Kid account: the
+featured titles, each in the language it was asked in. Then the other
+renewals, then everything Explore shows for each household member who is
+not a Kid account: the
 featured titles first, then every card of every row, in up to three
 languages pages asked for lately. An address is looked up again shortly
 before it expires. A title with no trailer, or none that plays here, is

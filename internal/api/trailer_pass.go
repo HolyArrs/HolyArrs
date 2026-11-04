@@ -82,6 +82,7 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 	// people are looking at them. There are at most trailerAskedMax, and
 	// the cap applies to the pool titles after them only, so none starves.
 	var list [][3]string
+	asked := map[string]bool{}
 	seen := map[string]bool{}
 	add := func(j [3]string) bool {
 		ckey := j[0] + "|" + j[1] + "|" + j[2]
@@ -93,7 +94,9 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		return true
 	}
 	for _, j := range a.trailerAsks(time.Now()) {
-		add(j)
+		if add(j) {
+			asked[j[0]+"|"+j[1]+"|"+j[2]] = true
+		}
 	}
 	pooled, capped := 0, 0
 	for _, t := range a.trailerPassTitles(ctx) {
@@ -114,6 +117,7 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		j     [3]string
 		ckey  string
 		renew bool
+		rank  int // the order below: 0 goes first
 	}
 	var due []passJob
 	for _, j := range list {
@@ -131,18 +135,21 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 			}
 			continue
 		}
-		due = append(due, passJob{j, ckey, renew})
+		// Renewals that would lapse before the next pass first, then the
+		// noted titles (people are looking at them), then the other
+		// renewals (they get one more pass), then the pool's first lookups.
+		rank := 3
+		switch {
+		case renew && a.trailerRenewUrgent(ctx, ckey, now):
+			rank = 0
+		case asked[ckey]:
+			rank = 1
+		case renew:
+			rank = 2
+		}
+		due = append(due, passJob{j, ckey, renew, rank})
 	}
-	// Renewals first (in page order), then first lookups.
-	slices.SortStableFunc(due, func(x, y passJob) int {
-		if x.renew == y.renew {
-			return 0
-		}
-		if x.renew {
-			return -1
-		}
-		return 1
-	})
+	slices.SortStableFunc(due, func(x, y passJob) int { return cmp.Compare(x.rank, y.rank) })
 	n, left := 0, 0
 	stopped := false
 	for _, d := range due {
@@ -232,6 +239,13 @@ func (a *API) noteTrailerTitles(lang string, titles [][2]string) {
 			}
 			delete(t.m, oldest)
 		}
+		// Asked again: still recent, but it keeps its place in the queue
+		// (a title people keep seeing does not slide to the back).
+		if e, ok := t.m[k]; ok {
+			e.at = now
+			t.m[k] = e
+			continue
+		}
 		t.n++
 		t.m[k] = trailerAsk{at: now, n: t.n}
 	}
@@ -272,6 +286,14 @@ func (t *trailerAsked) drop(ckey string) {
 // gets at least two chances.
 func trailerRenewAhead() time.Duration {
 	return 2*trailerPassEvery + time.Duration(trailerPassBudget)*trailerPassTitle
+}
+
+// trailerRenewUrgent says whether a kept address is dropped before the
+// next pass could renew it (its last chance, of the two trailerRenewAhead
+// gives it).
+func (a *API) trailerRenewUrgent(ctx context.Context, ckey string, now time.Time) bool {
+	e, ok := a.keptTrailer(ctx, ckey, now)
+	return ok && e.miss.IsZero() && e.s.ExpiresAt.Add(-trailerEarly).Sub(now) < trailerRenewAhead()-trailerPassEvery
 }
 
 // trailerPassDue says whether the pass looks the title up (nothing kept,

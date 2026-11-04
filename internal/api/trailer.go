@@ -671,7 +671,7 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 			}
 			more++
 		}
-		s, err := a.readTrailer(ctx, k, ckey, now, false)
+		s, err := a.readTrailer(ctx, k, upkeepTitle(ckey), now, false)
 		if err == nil {
 			// A next trailer that plays is not kept as the title's key: the
 			// picked one is asked again once its bad mark is over.
@@ -734,7 +734,7 @@ func trailerReason(err error) youtube.Reason {
 }
 
 // readTrailer looks one video up in the shared pool and counts the outcome
-// for the health check under upkeep (the title's "kind|id|lang", or the
+// for the health check under upkeep (the title's "kind|id", or the
 // video key for a music video). withPeak also reads the "most replayed" point (the
 // watch page, about a second); a trailer needs only the addresses.
 func (a *API) readTrailer(ctx context.Context, key, upkeep string, now time.Time, withPeak bool) (TrailerStream, error) {
@@ -751,6 +751,16 @@ func (a *API) readTrailer(ctx context.Context, key, upkeep string, now time.Time
 		a.saveUpkeep(ctx)
 	}
 	return s, err
+}
+
+// upkeepTitle is a title's key for the health count, without its
+// language ("movie|603" from "movie|603|de"): one title failing in three
+// languages is one title, not three.
+func upkeepTitle(ckey string) string {
+	if p := strings.SplitN(ckey, "|", 3); len(p) == 3 {
+		return p[0] + "|" + p[1]
+	}
+	return ckey
 }
 
 // trailerBadEntry is a video YouTube will not play here, until a time.

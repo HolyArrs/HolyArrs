@@ -536,3 +536,35 @@ func TestTrailerLoops(t *testing.T) {
 		t.Fatal("trailer_pass has no part")
 	}
 }
+
+// The pass's order: a renewal that would lapse before the next pass, then
+// the noted titles (people are looking at them), then renewals that get
+// one more pass, then the pool's first lookups. A title noted again keeps
+// its place in the queue.
+func TestTrailerPassOrder(t *testing.T) {
+	fakeReader(t, "ok")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a, asked := passRig(t, st, nil)
+	storePool(t, st, passPool(1, "all", false))
+	ctx := metadata.Ahead(context.Background())
+	now := time.Now()
+	for id, left := range map[string]time.Duration{"305": time.Minute, "203": trailerRenewAhead() - time.Minute} {
+		exp := now.Add(trailerEarly + left)
+		s := TrailerStream{Type: "mp4", URL: "https://rr1---sn-abc.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(exp.Unix(), 10), ExpiresAt: exp, Key: "trailerKey1"}
+		b, _ := json.Marshal(s)
+		if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|movie|"+id+"|en", b, now, exp.Add(-trailerEarly)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	a.noteTrailerTitles("en", [][2]string{{"movie", "555"}, {"movie", "556"}})
+	a.noteTrailerTitles("en", [][2]string{{"movie", "555"}})
+	if got := a.trailerAsks(time.Now()); len(got) != 2 || got[0][1] != "555" || got[1][1] != "556" {
+		t.Fatalf("noted again moved it: %v", got)
+	}
+	if n := a.trailerPass(ctx, 4); n != 4 {
+		t.Fatalf("%d lookups", n)
+	}
+	if got := strings.Join(asked(), " "); got != "movie:305 movie:555 movie:556 movie:203" {
+		t.Fatalf("order %q", got)
+	}
+}
