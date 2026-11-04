@@ -408,6 +408,12 @@ func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if !r.AllowLocal {
+			// Home trackers, web seeds and DHT nodes left out (#152).
+			if b, err = safeTorrent(b); err != nil {
+				return "", err
+			}
+		}
 		h, err := torrentFileHash(b)
 		if err != nil {
 			return "", err
