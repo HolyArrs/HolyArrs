@@ -139,9 +139,11 @@ Older scripts that still send that switch keep working: it is ignored.
 
 The trailer reader's state shows on **Status > Updates** and under
 **Health**: the last good lookup, and while YouTube turns the reader away,
-why and for how many different titles in a row. Trailers that will not play
-(removed or blocked) are named only once they add up to a warning. A trailer behind an age check, a
-sign-in or a content warning does not count, since that is about the video.
+why and for how many different titles in a row. A trailer that played here
+and then stops playing (removed or blocked) counts too, and is named only
+once they add up to a warning. A trailer that never played here does not
+count, and neither does one behind an age check, a sign-in or a content
+warning, since that is about the video.
 After 5 different titles fail with no good lookup in between, Health warns
 with the reason in plain words: usually YouTube changed something and a
 HolyArrs update is needed. The count, and a warning already shown, are kept
@@ -154,7 +156,7 @@ nothing is looked up, and Health leaves the trailer reader out.
 | YouTube changed how its videos are reached | YouTube changed how its videos are reached; a HolyArrs update will fix it |
 | An error answer from YouTube | YouTube turned the lookups away |
 | No connection | YouTube could not be reached |
-| Videos removed or blocked across many titles | Trailers are not being found; a HolyArrs update may be needed |
+| Trailers that played stop playing across many titles | Trailers are not being found; a HolyArrs update may be needed |
 
 ## Kid accounts and reduced motion
 

@@ -361,6 +361,25 @@ func TestTrailerAskedBounded(t *testing.T) {
 	}
 }
 
+// At the cap, the title asked for least lately goes: one that has waited
+// longest but was asked for again just now stays, and keeps its place.
+func TestTrailerAskedEvictsLeastLately(t *testing.T) {
+	a := New(Server{Version: "test"})
+	var full [][2]string
+	for i := 1; i <= trailerAskedMax; i++ {
+		full = append(full, [2]string{"movie", strconv.Itoa(i)})
+	}
+	a.noteTrailerTitles("en", full)
+	time.Sleep(2 * time.Millisecond)
+	a.noteTrailerTitles("en", [][2]string{{"movie", "1"}})
+	time.Sleep(2 * time.Millisecond)
+	a.noteTrailerTitles("en", [][2]string{{"movie", "9999"}})
+	got := a.trailerAsks(time.Now())
+	if len(got) != trailerAskedMax || got[0][1] != "1" || got[1][1] != "3" || got[len(got)-1][1] != "9999" {
+		t.Fatalf("%d noted, first %v %v, last %v", len(got), got[0], got[1], got[len(got)-1])
+	}
+}
+
 // Kid pools, trailers turned off and a kind that is off are skipped:
 // nothing is asked for.
 func TestTrailerPassSkips(t *testing.T) {
@@ -566,5 +585,35 @@ func TestTrailerPassOrder(t *testing.T) {
 	}
 	if got := strings.Join(asked(), " "); got != "movie:305 movie:555 movie:556 movie:203" {
 		t.Fatalf("order %q", got)
+	}
+}
+
+// A renewal that fails because the video will not play any more counts
+// toward the health check (it played here before); the same failure on a
+// first lookup does not.
+func TestTrailerPassRenewalFailureCounts(t *testing.T) {
+	fakeReader(t, "unavailable")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a, _ := passRig(t, st, nil)
+	storePool(t, st, passPool(1, "all", false))
+	ctx := metadata.Ahead(context.Background())
+	now := time.Now()
+	exp := now.Add(trailerEarly + time.Minute)
+	s := TrailerStream{Type: "mp4", URL: "https://rr1---sn-abc.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(exp.Unix(), 10), ExpiresAt: exp, Key: "trailerKey1"}
+	b, _ := json.Marshal(s)
+	if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|movie|305|en", b, now, exp.Add(-trailerEarly)); err != nil {
+		t.Fatal(err)
+	}
+	if n := a.trailerPass(ctx, 1); n != 1 {
+		t.Fatalf("%d lookups", n)
+	}
+	if r := a.TrailerReader(); r.Videos != 1 {
+		t.Fatalf("renewal failure not counted: %+v", r)
+	}
+	if n := a.trailerPass(ctx, 3); n != 3 {
+		t.Fatalf("%d lookups", n)
+	}
+	if r := a.TrailerReader(); r.Videos != 1 {
+		t.Fatalf("first lookups counted: %+v", r)
 	}
 }

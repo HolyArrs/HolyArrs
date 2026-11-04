@@ -82,11 +82,22 @@ func TestTrailerUpkeepCountsATitleOnce(t *testing.T) {
 	yt := fakeReader(t, "premiere", keys...)
 	_, st := discoverRig(t, p)
 	a := New(Server{Store: st, Metadata: p, Version: "test"})
+	// A first lookup of a title that will not play says nothing about the
+	// reader (after a restart, known misses are looked up again).
+	_ = lookUp(t, a, "movie", "77")
+	if s := a.TrailerReader(); s.Videos != 0 {
+		t.Fatalf("first lookup counted: %+v", s)
+	}
+	yt.runs.Store(0)
+	// The same title failing on its renewals (it played here before) counts,
+	// once.
 	for i := 1; i <= 3; i++ {
 		a.trailers.mu.Lock()
 		a.trailers.cache = nil
 		a.trailers.mu.Unlock()
-		_ = lookUp(t, a, "movie", "77")
+		if _, err := a.resolveTitle(renewing(context.Background()), "movie", "77", "en"); err == nil {
+			t.Fatal("played")
+		}
 		if n := yt.runs.Load(); n != int32(5*i) {
 			t.Fatalf("lookup %d: %d videos tried, want %d", i, n, 5*i)
 		}
@@ -98,7 +109,7 @@ func TestTrailerUpkeepCountsATitleOnce(t *testing.T) {
 	a.trailers.mu.Lock()
 	a.trailers.cache = nil
 	a.trailers.mu.Unlock()
-	_, _ = a.resolveTitle(context.Background(), "movie", "77", "de")
+	_, _ = a.resolveTitle(renewing(context.Background()), "movie", "77", "de")
 	if s := a.TrailerReader(); s.Videos != 1 {
 		t.Fatalf("another language counted again: %+v", s)
 	}

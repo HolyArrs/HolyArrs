@@ -173,7 +173,7 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		lctx, cancel := context.WithTimeout(ctx, trailerPassTitle)
 		var err error
 		if renew {
-			_, err = a.lookupShared(lctx, j[0], j[1], j[2])
+			_, err = a.lookupShared(renewing(lctx), j[0], j[1], j[2])
 		} else {
 			_, err = a.resolveTitle(lctx, j[0], j[1], j[2])
 		}
@@ -231,9 +231,11 @@ func (a *API) noteTrailerTitles(lang string, titles [][2]string) {
 		}
 		k := ti[0] + "|" + ti[1] + "|" + lang
 		if _, ok := t.m[k]; !ok && len(t.m) >= trailerAskedMax {
+			// Full: the one asked for least lately goes (not the one that
+			// has waited longest, which may have been asked for just now).
 			oldest := ""
 			for k2, e := range t.m {
-				if oldest == "" || e.n < t.m[oldest].n {
+				if o, ok := t.m[oldest]; !ok || e.at.Before(o.at) || (e.at.Equal(o.at) && e.n < o.n) {
 					oldest = k2
 				}
 			}

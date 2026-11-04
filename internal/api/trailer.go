@@ -173,10 +173,14 @@ func upkeepReason(r youtube.Reason) bool {
 // note counts a lookup's outcome under key (a title, or a music video): a
 // success resets both counts, a door failure adds one to the failures in a
 // row, and a failure for an upkeep reason adds key to the different ones
-// that failed, so a title whose trailers all fail counts once. It
-// says whether the health state should be written now: on a change, or
-// at most once a minute for a success that changed nothing but the time.
-func (t *trailerState) note(key string, err error, now time.Time) bool {
+// that failed, so a title whose trailers all fail counts once. A video
+// reason (removed, blocked) counts only when played says the title played
+// here before (a renewal): when YouTube changes, trailers that played stop
+// playing, while a title that never played (a known miss looked up again
+// after a restart, say) says nothing about the reader. It says whether the
+// health state should be written now: on a change, or at most once a
+// minute for a success that changed nothing but the time.
+func (t *trailerState) note(key string, err error, now time.Time, played bool) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if err == nil {
@@ -195,7 +199,7 @@ func (t *trailerState) note(key string, err error, now time.Time) bool {
 	if !r.VideoReason() {
 		t.failed.Add(1)
 	}
-	if !upkeepReason(r) {
+	if !upkeepReason(r) || (r.VideoReason() && !played) {
 		return false
 	}
 	changed := r != t.lastReason
@@ -747,10 +751,23 @@ func (a *API) readTrailer(ctx context.Context, key, upkeep string, now time.Time
 	}
 	s, err := resolveTrailer(ctx, key, now, withPeak)
 	<-pool
-	if a.trailers.note(upkeep, err, time.Now()) {
+	if a.trailers.note(upkeep, err, time.Now(), isRenewal(ctx)) {
 		a.saveUpkeep(ctx)
 	}
 	return s, err
+}
+
+type renewalKey struct{}
+
+// renewing marks a lookup of a title that has a kept address (the pass's
+// renewals): it played here before.
+func renewing(ctx context.Context) context.Context {
+	return context.WithValue(ctx, renewalKey{}, true)
+}
+
+func isRenewal(ctx context.Context) bool {
+	v, _ := ctx.Value(renewalKey{}).(bool)
+	return v
 }
 
 // upkeepTitle is a title's key for the health count, without its

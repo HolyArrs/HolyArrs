@@ -172,11 +172,12 @@ func TestTrailerFailuresCountDoorReasonsOnly(t *testing.T) {
 	}
 }
 
-// failVideos looks n different videos up (deadVideo00, deadVideo01...).
+// failVideos looks n different videos up again (deadVideo00,
+// deadVideo01...), as renewals: they played here before.
 func failVideos(a *API, from, n int) {
 	for i := from; i < from+n; i++ {
 		k := fmt.Sprintf("deadVideo%02d", i)
-		_, _ = a.readTrailer(context.Background(), k, k, time.Now(), false)
+		_, _ = a.readTrailer(renewing(context.Background()), k, k, time.Now(), false)
 	}
 }
 
@@ -188,7 +189,7 @@ func TestTrailerUpkeepCountsDifferentVideos(t *testing.T) {
 	fakeReader(t, "unavailable")
 	_, st := discoverRig(t, trailerTMDB(t))
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
-	ctx := context.Background()
+	ctx := renewing(context.Background())
 	for range health.TrailerFailLimit {
 		_, _ = a.readTrailer(ctx, "deadVideo00", "deadVideo00", time.Now(), false)
 	}
@@ -338,5 +339,27 @@ func TestTrailerUnknownTitleIsNoTrailer(t *testing.T) {
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	if _, err := a.resolveTitle(context.Background(), "movie", "987654", "en"); !errors.Is(err, errNoTrailer) {
 		t.Fatalf("unknown title: %v", err)
+	}
+}
+
+// After a restart, titles that never played here (known misses, looked up
+// again) fail one after another: removed or blocked videos found on a
+// first lookup say nothing about the reader, so no warning builds up. A
+// door failure still counts on a first lookup.
+func TestTrailerUpkeepIgnoresFirstLookupMisses(t *testing.T) {
+	fakeReader(t, "unavailable")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	for i := range 2 * health.TrailerFailLimit {
+		k := fmt.Sprintf("deadVideo%02d", i)
+		_, _ = a.readTrailer(context.Background(), k, k, time.Now(), false)
+	}
+	if s := a.TrailerReader(); s.Videos != 0 {
+		t.Fatalf("first lookups counted: %+v", s)
+	}
+	fakeReader(t, "bot", "doorVideo01")
+	_, _ = a.readTrailer(context.Background(), "doorVideo01", "doorVideo01", time.Now(), false)
+	if s := a.TrailerReader(); s.Videos != 1 || s.LastReason != youtube.BotCheck {
+		t.Fatalf("door failure not counted: %+v", s)
 	}
 }
