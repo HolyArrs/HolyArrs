@@ -109,6 +109,15 @@ type Manager struct {
 
 	mu      sync.Mutex
 	lastErr string // the last scheduled backup's error, "" after a good one
+	passed  bool   // a scheduled pass has finished since start
+}
+
+// Passed says whether a scheduled pass has finished since start, so "no
+// backup yet" is not said while the first one is still being made.
+func (m *Manager) Passed() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.passed
 }
 
 // State is what the health check needs: the newest backup's time (zero when
@@ -465,7 +474,7 @@ func (m *Manager) Pass(ctx context.Context) error {
 	}
 	if ctx.Err() == nil {
 		m.mu.Lock()
-		m.lastErr = ""
+		m.lastErr, m.passed = "", true
 		if err != nil {
 			m.lastErr = err.Error()
 		}

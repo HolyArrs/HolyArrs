@@ -624,7 +624,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	he := &health.Engine{Store: s, Version: version, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)
-			return health.Backups{Newest: newest, Every: every, LastErr: lastErr}, err
+			return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed()}, err
 		}}
 	// The update check: once a day from the release feed, through the
 	// network policy (public only unless the setting allows the local

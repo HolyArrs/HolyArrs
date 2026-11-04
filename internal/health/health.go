@@ -61,6 +61,9 @@ type Backups struct {
 	Newest  time.Time     // zero when there is none
 	Every   time.Duration // how often a scheduled backup is made
 	LastErr string        // the last failed scheduled backup, if any
+	// Started says the first scheduled pass since start has finished (a
+	// fresh install has no backup until then, which is not a problem).
+	Started bool
 }
 
 // Engine runs the checks.
@@ -541,6 +544,8 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 		r.State, r.Message = Warning, "The backups folder cannot be read"
 	case b.LastErr != "":
 		r.State, r.Message = Error, "The last scheduled backup failed: "+b.LastErr
+	case b.Newest.IsZero() && !b.Started:
+		// Right after start: the first scheduled backup is still being made.
 	case b.Newest.IsZero():
 		r.State, r.Message = Warning, "There is no backup yet"
 	case b.Every > 0 && e.now().Sub(b.Newest) > 2*b.Every+24*time.Hour:

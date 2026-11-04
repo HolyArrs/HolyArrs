@@ -179,7 +179,12 @@ func TestBackupsCheck(t *testing.T) {
 	if c := w.run(t)["backups"]; c.State != Warning {
 		t.Fatalf("old backup %+v", c)
 	}
+	// Right after start the first backup is still being made: no warning.
 	w.bk.Newest = time.Time{}
+	if c := w.run(t)["backups"]; c.State != OK {
+		t.Fatalf("first backup still to come %+v", c)
+	}
+	w.bk.Started = true
 	if c := w.run(t)["backups"]; c.State != Warning {
 		t.Fatalf("no backup %+v", c)
 	}
