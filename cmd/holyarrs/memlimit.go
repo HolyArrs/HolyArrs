@@ -37,7 +37,7 @@ func applyMemoryTarget(getenv func(string) string, set func(int64) int64, target
 	return true
 }
 
-// useMemoryMode decides the low-memory mode (#95) and applies the memory
+// useMemoryMode decides the low-memory mode (#131) and applies the memory
 // target for the server (run), with one line saying which and why.
 func useMemoryMode() {
 	total := lowmem.TotalMemory("/")

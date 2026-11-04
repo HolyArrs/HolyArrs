@@ -154,7 +154,7 @@ func (s *Sync) Stats() Stats {
 	return s.stats
 }
 
-// LowMemoryEvery is the copy's schedule in low-memory mode (#95): fewer
+// LowMemoryEvery is the copy's schedule in low-memory mode (#131): fewer
 // copies, each catching up on more packages.
 const LowMemoryEvery = 3 * time.Hour
 

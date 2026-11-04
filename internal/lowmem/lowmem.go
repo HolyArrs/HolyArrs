@@ -1,4 +1,4 @@
-// Package lowmem is the low-memory mode (roadmap #95): smaller in-memory
+// Package lowmem is the low-memory mode (roadmap #131): smaller in-memory
 // caches and a smaller SQLite page cache for any small machine.
 // HOLYARRS_LOW_MEMORY=1 turns it on, =0 off; unset, it is on when the
 // machine (or the container's memory limit) has about 2.5 GiB or less. It is
