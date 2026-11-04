@@ -389,9 +389,14 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 			// Its files turned out to be a program during the wait (#41):
 			// refused, and its Slots go back to looking.
 			_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-				if _, err := tx.Exec(`UPDATE releases SET state = 'refused', hold_until = NULL,
-					verdict = json_set(COALESCE(verdict, '{}'), '$.outcome', 'refused', '$.dangerous_files', json('true')), updated_at = ?, updated_by = ? WHERE id = ?`,
-					store.FormatTime(now), actorText(by), rel.ID); err != nil {
+				// Only while it is still held: a person may have chosen it meanwhile.
+				res, err := tx.Exec(`UPDATE releases SET state = 'refused', hold_until = NULL,
+					verdict = json_set(COALESCE(verdict, '{}'), '$.outcome', 'refused', '$.dangerous_files', json('true')), updated_at = ?, updated_by = ? WHERE id = ? AND state = 'held'`,
+					store.FormatTime(now), actorText(by), rel.ID)
+				if err != nil {
+					return err
+				}
+				if n, err := res.RowsAffected(); err != nil || n == 0 {
 					return err
 				}
 				return unholdTx(tx, rel.ID, "not sent: "+dangerousWhy, by)
