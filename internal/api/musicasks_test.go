@@ -113,7 +113,7 @@ func TestMusicAskOverHTTP(t *testing.T) {
 			t.Fatalf("history lacks %q: %s", w, b)
 		}
 	}
-	if m := string(r.bo.call("GET", "/api/v1/messages", "", 200)); !strings.Contains(m, "Lab Band, Live Night was approved by luis") {
+	if m := string(r.bo.call("GET", "/api/v1/messages", "", 200)); !strings.Contains(m, "Lab Band, Live Night was approved by an admin") {
 		t.Fatalf("messages %s", m)
 	}
 	// The lookup now says which albums are kept.
@@ -128,7 +128,7 @@ func TestMusicAskOverHTTP(t *testing.T) {
 	// Turning down an ask for another album tells the member.
 	b2 := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiAlbum+`"]}`, 201))
 	r.owner.call("POST", fmt.Sprintf("/api/v1/asks/%d/turn-down", b2.ID), `{"note":"not now"}`, 200)
-	if m := string(r.ana.call("GET", "/api/v1/messages", "", 200)); !strings.Contains(m, "Lab Band, First Light was turned down by luis") {
+	if m := string(r.ana.call("GET", "/api/v1/messages", "", 200)); !strings.Contains(m, "Lab Band, First Light was turned down by an admin") {
 		t.Fatalf("messages %s", m)
 	}
 

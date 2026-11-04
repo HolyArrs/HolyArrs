@@ -351,7 +351,7 @@ func (s *Service) tellReporter(ctx context.Context, r domain.Report, v ReportVie
 	if err != nil {
 		return
 	}
-	text := "The problem you reported with " + v.label() + " (" + v.KindLabel + ") was fixed by " + by.Name + "."
+	text := "The problem you reported with " + v.label() + " (" + v.KindLabel + ") was fixed by " + s.shownAs(ctx, by) + "."
 	if r.Reply != "" {
 		text += " Reply: " + r.Reply
 	}

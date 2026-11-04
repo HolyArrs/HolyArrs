@@ -317,10 +317,11 @@ test('the owner approves from a phone: the artist is added with that single and 
 	// ivy reads the message; members see no switches on the artist page.
 	await ivy.goto('/requests');
 	await ivy.getByText(/^Show the latest/).click();
-	await expect(ivy.getByTestId('message').first()).toContainText('Moss Choir, Fern Hymns was approved by luis');
+	await expect(ivy.getByTestId('message').first()).toContainText('Moss Choir, Fern Hymns was approved by an admin');
 	const mine = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });
 	await expect(mine.getByTestId('ask-state')).toHaveText('Approved');
-	await expect(mine.getByTestId('decided-by')).toContainText('Approved by luis');
+	// Members read who decided by display name only; luis set none (#136).
+	await expect(mine.getByTestId('decided-by')).toContainText('Approved by an admin');
 	await ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' }).getByRole('link', { name: /Moss Choir/ }).click();
 	// Members see the albums as cards; the Albums list with its switches is for managers.
 	await expect(ivy.getByRole('heading', { level: 1, name: /Moss Choir/ })).toBeVisible();

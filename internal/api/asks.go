@@ -124,8 +124,12 @@ func (a *API) askViews(r *http.Request, where string, args ...any) ([]asks.View,
 		}
 	}
 	// Who else declined the same title is for people who approve (#136).
+	// The people who asked see who decided by display name only, never
+	// the sign-in name.
 	if mayApprove(r) {
 		a.s.Asks.AddAlsoDeclined(r.Context(), vs)
+	} else {
+		hideDeciderNames(vs)
 	}
 	return vs, nil
 }
@@ -827,6 +831,16 @@ func (a *API) openShowAsk(ctx context.Context, ids map[string]string, me int64) 
 	return &b, nil
 }
 
+// hideDeciderNames drops the decider's sign-in name from asks shown to
+// people who do not approve; the display name stays (#136).
+func hideDeciderNames(vs []asks.View) {
+	for i := range vs {
+		if vs[i].DecidedBy != nil {
+			vs[i].DecidedBy.Name = ""
+		}
+	}
+}
+
 // titleAsks are the asks that led to a Title: who asked and who decided.
 // People who do not approve see only the asks they are part of.
 func (a *API) titleAsks(ctx context.Context, titleID int64) ([]asks.View, error) {
@@ -838,6 +852,7 @@ func (a *API) titleAsks(ctx context.Context, titleID int64) ([]asks.View, error)
 	for i := range vs {
 		vs[i].Mine = true
 	}
+	hideDeciderNames(vs)
 	return vs, err
 }
 
