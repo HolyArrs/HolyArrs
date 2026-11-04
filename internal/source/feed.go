@@ -529,27 +529,88 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 		states = append(states, string(domain.SlotNotOutYet))
 	}
 	ph := strings.TrimSuffix(strings.Repeat("?, ", len(states)), ", ")
-	args := []any{}
-	for _, st := range states {
-		args = append(args, st)
-	}
 	// A person may keep a bulk search to one kind (movie, show or artist).
 	only, _ := r.Job.Params["kind"].(string)
-	args = append(args, only, only, int64(titleID), int64(titleID))
 	// Episodes count when the show and their season are kept up to date
 	// too, and only once they are out (setting missing_search_shows, on by
 	// default).
 	// Those two settings are for the nightly and bulk searches: a search kept
 	// to one title (an approved request) always covers its shows and music.
-	args = append(args, titleID > 0 || Setting(ctx, db, SettingMissingShows) != "false", titleID > 0 || Setting(ctx, db, SettingMissingMusic) != "false")
-	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
+	argsFor := func(shows, music bool) []any {
+		a := []any{}
+		for _, st := range states {
+			a = append(a, st)
+		}
+		return append(a, only, only, int64(titleID), int64(titleID), shows, music)
+	}
+	args := argsFor(titleID > 0 || Setting(ctx, db, SettingMissingShows) != "false", titleID > 0 || Setting(ctx, db, SettingMissingMusic) != "false")
+	from := ` FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id
 		JOIN titles t ON t.id = i.title_id
 		WHERE s.state IN (` + ph + `) AND (? = '' OR t.kind = ?) AND (? = 0 OR t.id = ?) AND i.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND t.state = 'active' AND s.active_download_id IS NULL
 		AND (t.kind = 'movie' OR (? AND t.kind = 'show' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
 			AND (i.part_id IS NULL OR EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.dropped_at IS NULL)))
 			OR (? AND t.kind = 'artist' AND t.keep_up_to_date = 1 AND s.state != 'not_out_yet' AND i.dropped_at IS NULL
-			AND EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.included = 1 AND p.dropped_at IS NULL)))
-		ORDER BY i.last_searched_at IS NOT NULL, i.last_searched_at, s.id`
+			AND EXISTS (SELECT 1 FROM parts p WHERE p.id = i.part_id AND p.keep_up_to_date = 1 AND p.included = 1 AND p.dropped_at IS NULL)))`
+	// Approved requests first: a title with an approved ask that still has
+	// something never searched gets the one-title search approval starts
+	// (the same Job, so the two never run twice), oldest approval first. It
+	// covers what the ask is waiting for whatever the cap, once per approval:
+	// not while approval's own scan and search are still to run (a scan that
+	// failed or was stopped does not count), and not again after a one-title
+	// search was queued since the approval (one whose Sources all failed
+	// included; the turn below retries those). Then the
+	// title is back in the oldest-searched-first turn below. Without this an
+	// ask approved behind a large never-searched Library waits for months.
+	// Like approval, it covers shows and music whatever the nightly switches,
+	// unless "Search when approved" is off.
+	asked := 0
+	var askTitles []string
+	if titleID == 0 && states[0] == string(domain.SlotWanted) && limit > 0 {
+		var onApprove string
+		_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'ask_search_on_approve'").Scan(&onApprove)
+		approveOn := onApprove != "false"
+		// From the approved asks (few); the jobs table, which only grows, is
+		// read once for the last one-title search of each title (w), and
+		// through its state index for what is still to run.
+		cq := `WITH c AS (SELECT a.title_id AS id, MIN(a.decided_at) AS d FROM asks a WHERE a.state = 'approved' AND a.title_id IS NOT NULL GROUP BY a.title_id),
+			w AS (SELECT dedupe_key AS k, MAX(created_at) AS m FROM jobs WHERE dedupe_key LIKE 'search_wanted:%' GROUP BY dedupe_key)
+			SELECT c.id FROM c LEFT JOIN w ON w.k = 'search_wanted:' || c.id
+			WHERE (w.m IS NULL OR w.m < c.d) AND EXISTS (SELECT 1` + from + ` AND t.id = c.id AND i.last_searched_at IS NULL)
+			AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.state IN ('queued', 'running') AND (j.dedupe_key = 'search_wanted:' || c.id
+				OR (j.kind IN ('refresh_title', 'scan_title') AND json_extract(j.subject, '$.type') = 'title' AND json_extract(j.subject, '$.id') = c.id AND j.params LIKE '%search%')))
+			ORDER BY c.d, c.id LIMIT ` + strconv.Itoa(limit)
+		trows, err := db.QueryContext(ctx, cq, argsFor(approveOn || Setting(ctx, db, SettingMissingShows) != "false", approveOn || Setting(ctx, db, SettingMissingMusic) != "false")...)
+		if err != nil {
+			return err
+		}
+		var tids []int64
+		for trows.Next() {
+			var id int64
+			if err := trows.Scan(&id); err != nil {
+				trows.Close()
+				return err
+			}
+			tids = append(tids, id)
+		}
+		trows.Close()
+		if err := trows.Err(); err != nil {
+			return err
+		}
+		for _, id := range tids {
+			if _, _, err := s.Queue.Enqueue(ctx, KindSearchMissing, &domain.Subject{Type: "title", ID: id},
+				map[string]any{"title_id": id}, "search_wanted:"+strconv.FormatInt(id, 10), jobActor(r)); err != nil {
+				return err
+			}
+			asked++
+			askTitles = append(askTitles, strconv.FormatInt(id, 10))
+		}
+	}
+	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id` + from
+	if len(askTitles) > 0 {
+		// Their own search covers them; the cap goes to the rest.
+		q += ` AND t.id NOT IN (` + strings.Join(askTitles, ", ") + `)`
+	}
+	q += ` ORDER BY i.last_searched_at IS NOT NULL, i.last_searched_at, s.id`
 	if limit >= 0 {
 		q += " LIMIT " + strconv.Itoa(limit)
 	}
@@ -627,7 +688,7 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 			}
 		}
 	}
-	r.SetResult(map[string]any{"slots": len(ids), "queued": queued, "seasons": seasons, "albums": albums})
+	r.SetResult(map[string]any{"slots": len(ids), "queued": queued, "seasons": seasons, "albums": albums, "asks": asked})
 	return nil
 }
 
