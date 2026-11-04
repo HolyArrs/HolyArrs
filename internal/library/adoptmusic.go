@@ -767,8 +767,8 @@ func adoptedFormat(abs, ext string) string {
 	word := strings.ToUpper(strings.TrimPrefix(ext, "."))
 	switch ext {
 	case ".m4a", ".mka", ".mp4":
-		if info, err := mediainfo.Inspect(abs); err == nil && len(info.AudioCodecs) == 1 {
-			return strings.ToUpper(info.AudioCodecs[0])
+		if info, err := mediainfo.Inspect(abs); err == nil && info.AudioWord() != "" {
+			return info.AudioWord()
 		}
 	}
 	return word

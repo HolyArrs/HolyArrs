@@ -488,4 +488,11 @@ func TestCurrentCopyKnownByExtension(t *testing.T) {
 	if st := f.state(t, ltaTracks[0]); st == domain.SlotChosen {
 		t.Fatalf("MP3 320 chosen over FLAC with a plain name: %s", st)
 	}
+	// Picked by hand for one track, it needs force too.
+	r := relByName(t, f.fixture, "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]")
+	exec(t, f.fixture, "UPDATE releases SET state = 'passed_over', matched_slot_ids = json_array(?) WHERE id = ?", f.slots[ltaTracks[0]], r.ID)
+	var nf *NeedsForceError
+	if _, err := sr.Choose(context.Background(), r.ID, f.slots[ltaTracks[0]], false, domain.System); !errors.As(err, &nf) {
+		t.Fatalf("picked by hand over a plain-named FLAC copy: %v", err)
+	}
 }

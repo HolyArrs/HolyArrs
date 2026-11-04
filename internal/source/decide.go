@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
 	"slices"
 	"strconv"
 	"strings"
@@ -59,18 +58,8 @@ func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) 
 	if err := store.Get(ctx, db, "pick_rules", c.ver.PickRulesID, &c.pr); err != nil {
 		return c, err
 	}
-	if c.sl.FileID != nil {
-		var f domain.File
-		if err := store.Get(ctx, db, "files", *c.sl.FileID, &f); err == nil && f.State == "present" {
-			name := strings.TrimSuffix(path.Base(f.RelativePath), path.Ext(f.RelativePath))
-			if f.ReleaseName != nil && *f.ReleaseName != "" {
-				name = *f.ReleaseName
-			}
-			if cur := judge.CurrentOf(name, f.AddedAt, c.pr.Body); cur.Step != "" {
-				c.cur = &cur
-			}
-		}
-	}
+	// The same reading of the copy in place as the searches (#43).
+	c.cur = currentOf(ctx, db, c.sl, c.pr)
 	return c, nil
 }
 

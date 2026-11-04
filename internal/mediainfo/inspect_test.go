@@ -429,3 +429,18 @@ func TestInspectAudioCodecsLossless(t *testing.T) {
 		}
 	}
 }
+
+// AudioWord names the codec only when every audio track shares it.
+func TestInspectAudioWord(t *testing.T) {
+	two := append(mp4Box("ftyp", []byte("M4A \x00\x00\x00\x00M4A ")), mp4Movie(mp4Track("soun", "alac", "", "eng"), mp4Track("soun", "alac", "", "eng"))...)
+	mixed := append(mp4Box("ftyp", []byte("M4A \x00\x00\x00\x00M4A ")), mp4Movie(mp4Track("soun", "alac", "", "eng"), mp4Track("soun", "mp4a", "", "eng"))...)
+	for name, c := range map[string]struct {
+		data []byte
+		want string
+	}{"two alac": {two, "ALAC"}, "mixed": {mixed, ""}} {
+		got, err := InspectReaderAt(bytes.NewReader(c.data), int64(len(c.data)))
+		if err != nil || got.AudioWord() != c.want {
+			t.Errorf("%s: %q %v", name, got.AudioWord(), err)
+		}
+	}
+}

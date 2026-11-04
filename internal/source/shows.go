@@ -128,10 +128,10 @@ func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 			return ""
 		}
 		info, err := mediainfo.Inspect(filepath.Join(lib, filepath.FromSlash(f.RelativePath)))
-		if err != nil || len(info.AudioCodecs) != 1 {
+		if err != nil {
 			return ""
 		}
-		return strings.ToUpper(info.AudioCodecs[0])
+		return info.AudioWord()
 	}
 	return strings.ToUpper(strings.TrimPrefix(ext, "."))
 }
