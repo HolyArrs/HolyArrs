@@ -1,1 +1,0 @@
-export{t as component,ca as universal}from"../chunks/yBcoejDl.js";

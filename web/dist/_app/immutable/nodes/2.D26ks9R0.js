@@ -1,0 +1,1 @@
+import{Ai as e,Di as t,Zi as n,ki as r}from"../chunks/CfHOAF0w.js";function i(i,a){var o=e(),s=n(o);t(s,()=>a.children),r(i,o)}export{i as component};
