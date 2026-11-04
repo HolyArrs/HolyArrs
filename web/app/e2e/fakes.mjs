@@ -244,7 +244,9 @@ export const tmdbMovies = [
 	// Only requests.spec.ts (#139): a member's open Requests page follows its decision live.
 	{ id: 900602, title: 'Quince Lamplight', release_date: '2016-05-05', imdb_id: 'tt9006020', overview: 'A lamplighter who only lights the lamps no one walks under.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] },
 	// Only requests.spec.ts (#139): approved, nothing found for it; its steps show live.
-	{ id: 900603, title: 'Rook Lantern', release_date: '2017-02-02', imdb_id: 'tt9006030', overview: 'A lantern a rook carries across the moor each night.', dates: [[3, '2017-02-02'], [4, '2017-04-01']] }
+	{ id: 900603, title: 'Rook Lantern', release_date: '2017-02-02', imdb_id: 'tt9006030', overview: 'A lantern a rook carries across the moor each night.', dates: [[3, '2017-02-02'], [4, '2017-04-01']] },
+	// Only requests.spec.ts (#139): approved, found and downloaded; the member sees each step.
+	{ id: 900604, title: 'Cobalt Weathervane', release_date: '2018-03-03', imdb_id: 'tt9006040', overview: 'A weathervane that points to whoever is lost.', dates: [[3, '2018-03-03'], [4, '2018-05-01']] }
 ];
 
 /**
@@ -1032,12 +1034,12 @@ export function startFakes() {
 			case '/set': {
 				// Test control: move every torrent on (progress, speed, eta),
 				// or only the one named by hash; state, save_path and files
-				// (names joined by |) finish it with files to import.
+				// (names joined by |) finish it with files to import (filesize: their listed size).
 				for (const t of torrents.values()) {
 					if (form.get('hash') && form.get('hash') !== t.hash) continue;
 					for (const k of ['progress', 'dlspeed', 'eta']) if (form.get(k)) t[k] = Number(form.get(k));
 					for (const k of ['state', 'save_path']) if (form.get(k)) t[k] = form.get(k);
-					if (form.get('files')) t.files = (form.get('files') ?? '').split('|').map((name) => ({ name, size: 1000, progress: 1 }));
+					if (form.get('files')) t.files = (form.get('files') ?? '').split('|').map((name) => ({ name, size: Number(form.get('filesize') ?? 1000), progress: 1 }));
 				}
 				return send(res, 200, { ok: true });
 			}

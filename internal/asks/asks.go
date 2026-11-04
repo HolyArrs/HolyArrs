@@ -395,9 +395,11 @@ func (s *Service) changed(ctx context.Context, id int64) {
 		return
 	}
 	s.AddSteps(ctx, vs, true)
+	s.AddAlsoDeclined(ctx, vs)
 	v := vs[0]
 	// Everyone's asks, decline notes and names go to the people who
-	// approve, as the asks routes show them (#139).
+	// approve, as the asks routes show them (#139), who else declined too
+	// (#136), so a live copy never drops what the list read showed.
 	s.Live.PublishApprovers("ask", v)
 	// The people who asked follow their own ask live too (#139), told who
 	// decided by display name only, as their Requests list reads it.

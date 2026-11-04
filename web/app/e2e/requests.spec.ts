@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIResponse, type Browser, type Page } from '@playwright/test';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { discordPort, indexerKey, indexerPort, qbitPort } from './fakes.mjs';
+import { discordPort, indexerKey, indexerPort, movieReleaseHash, qbitPort } from './fakes.mjs';
 import { ensureInLibrary, noSidewaysScroll, openFromSearch, owner, signIn } from './helpers.ts';
 
 // Requests at phone width (Pixel 7): a member asks for movies, the owner
@@ -923,4 +923,82 @@ test('a member follows their approved request step by step', async ({ browser })
 	const said = own.getByRole('dialog', { name: 'Rook Lantern' }).getByTestId('ask-status');
 	await expect(said).toContainText('Looking for a release');
 	await expect(said).not.toContainText('Processing');
+});
+
+// #139: the member's own card follows the download through to the Library:
+// "Downloading now", then "Adding it to the Library" (or straight to Ready
+// when the import is quicker than the page's next read), never a percent.
+test('a member sees their request downloading, then added to the Library', async ({ browser }) => {
+	test.setTimeout(120_000);
+	const call = await api(own);
+	// The fake Source and qBittorrent, unless earlier projects added them; taken away at the end.
+	const mine: string[] = [];
+	const { sources } = (await (await call('GET', '/sources')).json()) as { sources: { id: number; url: string }[] };
+	if (!sources.some((x) => x.url.includes(`:${indexerPort}/`))) {
+		const r = await call('POST', '/sources', { name: 'Requests Torznab', format: 'torznab', url: `http://127.0.0.1:${indexerPort}/api`, api_key: indexerKey, allow_local_network: true });
+		expect(r.status(), await r.text()).toBe(201);
+		const { id } = (await r.json()) as { id: number };
+		await call('POST', `/sources/${id}/test`);
+		mine.push(`/sources/${id}`);
+	}
+	const { downloaders } = (await (await call('GET', '/downloaders')).json()) as { downloaders: { id: number; kind: string }[] };
+	if (!downloaders.some((d) => d.kind === 'qbittorrent')) {
+		const r = await call('POST', '/downloaders', { name: 'Requests qBittorrent', kind: 'qbittorrent', url: `http://127.0.0.1:${qbitPort}`, secret: ['e2e', 'any', 'key'].join('-'), allow_local_network: true });
+		expect(r.ok(), await r.text()).toBe(true);
+		mine.push(`/downloaders/${((await r.json()) as { id: number }).id}`);
+	}
+
+	const odile = await member(browser, 'odile');
+	const made = await (await api(odile))('POST', '/asks', { id: 'tmdb:900604' });
+	expect(made.status(), await made.text()).toBeLessThan(300);
+	const id = ((await made.json()) as { ask: { id: number } }).ask.id;
+	await odile.goto('/requests');
+	const card = odile.getByTestId('ask').filter({ hasText: 'Cobalt Weathervane' });
+	await expect(card.getByTestId('ask-state')).toHaveText('Requested');
+	expect((await call('POST', `/asks/${id}/approve`, {})).ok()).toBe(true);
+	await expect(card).toHaveCount(0, { timeout: 15_000 });
+	await odile.getByRole('button', { name: /^Approved/ }).click();
+
+	// Every card text odile's page shows on the way: none may hold a percent.
+	const seen: string[] = [];
+	const look = async () => {
+		const text = (await card.count()) ? await card.innerText().catch(() => '') : '';
+		if (text) seen.push(text);
+		return (await card.count()) ? ((await card.getByTestId('ask-step').textContent().catch(() => '')) ?? '').trim() : 'gone';
+	};
+	await expect.poll(look, { timeout: 45_000, intervals: [250] }).toBe('Downloading now');
+
+	// The download finishes with the movie file in its folder; HolyArrs imports it.
+	const qbit = `http://127.0.0.1:${qbitPort}`;
+	const prefix = movieReleaseHash(900604, 1).slice(0, 8);
+	const hash = ((await (await fetch(`${qbit}/state`)).json()) as { added: string[] }).added.find((h) => h.startsWith(prefix));
+	expect(hash, 'a Cobalt Weathervane release went to qBittorrent').toBeTruthy();
+	const name = 'Cobalt.Weathervane.2018.1080p.WEB-DL.H264-HOLYARRS';
+	const dl = join(dirname(fileURLToPath(import.meta.url)), '.tmp', 'downloads');
+	rmSync(join(dl, name), { recursive: true, force: true });
+	mkdirSync(join(dl, name), { recursive: true });
+	// Big enough for the import's fake checks: 1 MB a minute of a 101-minute movie on disk
+	// (sparse, so quick), and a listed size near the Release's own.
+	writeFileSync(join(dl, name, `${name}.mkv`), '');
+	truncateSync(join(dl, name, `${name}.mkv`), 120 << 20);
+	const done = await fetch(`${qbit}/set?hash=${hash}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(`${name}/${name}.mkv`)}&filesize=${3_900_000_000}`);
+	expect(done.ok).toBe(true);
+	await expect.poll(look, { timeout: 45_000, intervals: [250] }).toMatch(/^(Adding it to the Library|gone)$/);
+	await odile.getByRole('button', { name: /^Ready/ }).click();
+	await expect(card).toHaveCount(1, { timeout: 15_000 });
+	seen.push(await card.innerText());
+	expect(seen.some((t) => t.includes('Downloading now'))).toBe(true);
+	expect(seen.filter((t) => t.includes('%'))).toEqual([]);
+	await noSidewaysScroll(odile);
+
+	// Leave nothing for later projects: the movie, its torrent, and this test's Source and qBittorrent.
+	const titleId = ((await (await call('GET', `/asks?state=available`)).json()) as { asks: { id: number; title_id?: number }[] }).asks.find((a) => a.id === id)?.title_id;
+	expect(titleId, 'the approved ask has its title').toBeTruthy();
+	expect((await call('POST', `/titles/${titleId}/delete`, { delete_files: true, never_add: false, apply: true })).ok()).toBe(true);
+	await fetch(`${qbit}/api/v2/torrents/delete?hashes=${hash}`);
+	rmSync(join(dl, name), { recursive: true, force: true });
+	for (const path of mine) {
+		const off = await call('DELETE', path);
+		expect(off.ok(), await off.text()).toBe(true);
+	}
 });
