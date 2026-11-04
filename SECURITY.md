@@ -45,10 +45,13 @@ minor release does.
 - **Sources cannot reach your local network** (loopback, private, link-local
   and CGNAT addresses) unless you allow it for that Source. The check runs on
   every connection, after DNS and on redirects.
-- **Images** are built for amd64, arm64 and armv7, signed with cosign
-  (keyless, through GitHub's OIDC identity) and published with an SBOM.
+- **Images:** none is published yet. Release images will be built for amd64,
+  arm64 and armv7, signed with cosign (keyless, through GitHub's OIDC
+  identity) and published with an SBOM.
 
 ## Checking an image
+
+Once a release image is published, check it with:
 
     cosign verify ghcr.io/coderluii/holyarrs:<tag> \
       --certificate-identity-regexp 'https://github.com/CoderLuii/holyarrs/.github/workflows/release.yml@refs/tags/.*' \
