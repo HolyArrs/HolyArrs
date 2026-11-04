@@ -597,8 +597,7 @@ func TestTrailerPassOrder(t *testing.T) {
 }
 
 // A renewal that fails because the video will not play any more counts
-// toward the health check (it played here before); the same failure on a
-// first lookup does not.
+// toward the health check (it played here before): the pass marks it.
 func TestTrailerPassRenewalFailureCounts(t *testing.T) {
 	fakeReader(t, "unavailable")
 	_, st := discoverRig(t, trailerTMDB(t))
@@ -619,10 +618,7 @@ func TestTrailerPassRenewalFailureCounts(t *testing.T) {
 	if r := a.TrailerReader(); r.Videos != 1 {
 		t.Fatalf("renewal failure not counted: %+v", r)
 	}
-	if n := a.trailerPass(ctx, 3); n != 3 {
-		t.Fatalf("%d lookups", n)
-	}
-	if r := a.TrailerReader(); r.Videos != 1 {
-		t.Fatalf("first lookups counted: %+v", r)
-	}
+	// That first lookups do not count is TestTrailerUpkeepIgnoresFirstLookupMisses
+	// and TestTrailerUncountedMissNotMarked: here every title lists the same
+	// key, which this renewal marked bad, so they would not reach YouTube.
 }

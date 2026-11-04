@@ -38,9 +38,9 @@ content warning. HolyArrs never gets around those. Instead:
 
 - A video that asks for a sign-in, was removed or made private, or sits
   behind a content warning is skipped for 7 days, for every title that
-  lists it. A video that is blocked here or not on yet is tried again on the
-  next lookup round (within 5 minutes), so a premiere plays soon after it
-  starts.
+  lists it, or until HolyArrs is updated. A video that is blocked here or
+  not on yet is tried again within the hour, so a premiere plays soon after
+  it starts.
 - The title's next trailer is tried, in the same order as above, up to four
   more in one lookup. The one that plays is shown meanwhile; once the first
   is no longer skipped, it is tried first again.

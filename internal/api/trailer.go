@@ -30,16 +30,17 @@ import (
 // a fixed schedule (trailer_pass.go); a page open reads what it kept.
 
 const (
-	trailerTimeout   = 8 * time.Second
-	trailerPerMinute = 12                 // music video resolves a person may start in a minute (cached answers are free)
-	trailerKeep      = 4 * time.Hour      // when the address names no expiry
-	trailerEarly     = 10 * time.Minute   // dropped this long before it expires
-	trailerMiss      = 10 * time.Minute   // a title with no direct stream is not tried again before this
-	trailerLongMiss  = 2 * time.Hour      // ...when it has no trailer, or none plays here for a lasting reason
-	trailerPool      = 4                  // reader lookups at once
-	trailerAhead     = 40                 // ahead-of-time music video lookups per 10 minutes for the whole install
-	trailerBadKeep   = 7 * 24 * time.Hour // a video YouTube will not play here is not tried again before this
-	trailerMore      = 4                  // other trailers of the title tried in one lookup (up to 5 in all, 4 when the first is marked bad)
+	trailerTimeout        = 8 * time.Second
+	trailerPerMinute      = 12                 // music video resolves a person may start in a minute (cached answers are free)
+	trailerKeep           = 4 * time.Hour      // when the address names no expiry
+	trailerEarly          = 10 * time.Minute   // dropped this long before it expires
+	trailerMiss           = 10 * time.Minute   // a title with no direct stream is not tried again before this
+	trailerLongMiss       = 2 * time.Hour      // ...when it has no trailer, or none plays here for a lasting reason
+	trailerUnplayableMiss = time.Hour          // ...when one is blocked here or a premiere not on yet
+	trailerPool           = 4                  // reader lookups at once
+	trailerAhead          = 40                 // ahead-of-time music video lookups per 10 minutes for the whole install
+	trailerBadKeep        = 7 * 24 * time.Hour // a video YouTube will not play here is not tried again before this
+	trailerMore           = 4                  // other trailers of the title tried in one lookup (up to 5 in all, 4 when the first is marked bad)
 )
 
 // trailerReader looks videos up on YouTube; tests point it at a fake.
@@ -200,11 +201,7 @@ func (t *trailerState) note(key string, err error, now time.Time, played bool) b
 	if !r.VideoReason() {
 		t.failed.Add(1)
 	}
-	// No good lookup for longer than an address lives (the machine was off,
-	// trailers were turned off): nothing is a renewal any more, so a
-	// first lookup's video reason counts too, until something plays.
-	stale := t.lastGood.IsZero() || now.Sub(t.lastGood) > trailerUpkeepStale
-	if !upkeepReason(r) || (r.VideoReason() && !played && !stale) {
+	if !upkeepReason(r) || (r.VideoReason() && !t.countsVideoLocked(played, now)) {
 		return false
 	}
 	changed := r != t.lastReason
@@ -705,10 +702,15 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 		}
 		// Unplayable may not last (a premiere not on yet, say): only the
 		// normal miss, so it is asked again after trailerMiss.
-		if miss.reason != youtube.Unplayable {
-			a.markTrailerBad(ctx, k, miss.reason, now)
-		} else {
+		// A removed video found on a lookup Health does not count (a first
+		// lookup while trailers play fine) is not marked either: if the
+		// reader itself broke that way, the next lookups must reach it.
+		switch {
+		case miss.reason == youtube.Unplayable:
 			sawUnplayable = true
+		case upkeepReason(miss.reason) && !a.trailers.countsVideo(isRenewal(ctx), now):
+		default:
+			a.markTrailerBad(ctx, k, miss.reason, now)
 		}
 	}
 	// No trailer plays here for a lasting reason: the pass asks again after
@@ -716,6 +718,10 @@ func (a *API) lookupTrailer(ctx context.Context, kind, id, lang string) (trailer
 	// asked again on the next pass.
 	if miss.reason.VideoReason() && miss.reason != youtube.Unplayable && !sawUnplayable {
 		miss.miss = now.Add(trailerLongMiss)
+	} else if miss.reason.VideoReason() {
+		// Blocked here, or a premiere not on yet: asked again within the
+		// hour, not every pass (each ask tries all of the title's trailers).
+		miss.miss = now.Add(trailerUnplayableMiss)
 	}
 	return a.missOrKept(ctx, ckey, miss, now), nil
 }
@@ -762,6 +768,20 @@ func (a *API) readTrailer(ctx context.Context, key, upkeep string, now time.Time
 	return s, err
 }
 
+// countsVideo says whether a video reason counts toward the health check
+// now: on a renewal (the title played here before), or when nothing played
+// for longer than an address lives (the machine was off, trailers were
+// turned off), since then nothing is a renewal any more.
+func (t *trailerState) countsVideo(played bool, now time.Time) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.countsVideoLocked(played, now)
+}
+
+func (t *trailerState) countsVideoLocked(played bool, now time.Time) bool {
+	return played || t.lastGood.IsZero() || now.Sub(t.lastGood) > trailerUpkeepStale
+}
+
 type renewalKey struct{}
 
 // renewing marks a lookup of a title that has a kept address (the pass's
@@ -804,7 +824,7 @@ func (a *API) trailerBad(ctx context.Context, key string, now time.Time) (youtub
 	if a.s.Store == nil || a.s.Store.Read() == nil {
 		return "", false
 	}
-	b, found, err := store.LookupCache{Store: a.s.Store}.Get(ctx, "trailerbad|"+key, now)
+	b, found, err := store.LookupCache{Store: a.s.Store}.Get(ctx, a.trailerBadKey(key), now)
 	if err != nil || !found {
 		return "", false
 	}
@@ -813,6 +833,13 @@ func (a *API) trailerBad(ctx context.Context, key string, now time.Time) (youtub
 
 // markTrailerBad keeps that YouTube will not play the video here (the
 // reason is the row's body) for trailerBadKeep.
+// trailerBadKey is where a bad mark is kept, per HolyArrs version: an
+// update starts with none, so trailers a broken reader marked play again
+// once the update fixed it (old marks just expire).
+func (a *API) trailerBadKey(key string) string {
+	return "trailerbad|" + a.s.Version + "|" + key
+}
+
 func (a *API) markTrailerBad(ctx context.Context, key string, reason youtube.Reason, now time.Time) {
 	t := &a.trailers
 	t.mu.Lock()
@@ -822,7 +849,7 @@ func (a *API) markTrailerBad(ctx context.Context, key string, reason youtube.Rea
 	t.bad[key] = trailerBadEntry{until: now.Add(trailerBadKeep), reason: reason}
 	t.mu.Unlock()
 	if a.s.Store != nil {
-		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailerbad|"+key, []byte(reason), now, now.Add(trailerBadKeep))
+		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, a.trailerBadKey(key), []byte(reason), now, now.Add(trailerBadKeep))
 	}
 }
 

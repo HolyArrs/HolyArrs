@@ -45,10 +45,10 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 		t.Fatalf("not kept across a restart: %q %v", why, bad)
 	}
 	lc := store.LookupCache{Store: st}
-	if _, ok, _ := lc.Get(ctx, "trailerbad|ageGated001", now.Add(6*24*time.Hour)); !ok {
+	if _, ok, _ := lc.Get(ctx, "trailerbad|test|ageGated001", now.Add(6*24*time.Hour)); !ok {
 		t.Fatal("gone before 7 days")
 	}
-	if _, ok, _ := lc.Get(ctx, "trailerbad|ageGated001", now.Add(8*24*time.Hour)); ok {
+	if _, ok, _ := lc.Get(ctx, "trailerbad|test|ageGated001", now.Add(8*24*time.Hour)); ok {
 		t.Fatal("kept past 7 days")
 	}
 	if _, bad := b.trailerBad(ctx, "secondKey01", now); bad {
@@ -57,7 +57,7 @@ func TestTrailerNextOnVideoReason(t *testing.T) {
 	// Past 7 days (the bad mark and the kept address over), and YouTube
 	// plays it again: the picked trailer plays, not the next one.
 	yt.set("ageGated001", "ok")
-	_ = lc.Put(ctx, "trailerbad|ageGated001", []byte(youtube.AgeRestricted), now, now)
+	_ = lc.Put(ctx, "trailerbad|test|ageGated001", []byte(youtube.AgeRestricted), now, now)
 	_ = lc.Put(ctx, "trailer|movie|13|en", []byte("{}"), now, now)
 	if s, err := b.resolveTitle(ctx, "movie", "13", "en"); err != nil || s.Key != "ageGated001" {
 		t.Fatalf("after the bad mark %+v %v", s, err)
@@ -316,8 +316,10 @@ func TestTrailerSkipsTheWatchPage(t *testing.T) {
 	}
 }
 
-// A premiere among the trailers keeps the short miss, even when a later
-// trailer is age-restricted: it is asked again on the next pass.
+// A premiere among the trailers keeps a shorter miss, even when a later
+// trailer is age-restricted: it is asked again within the hour (not every
+// pass, since each ask tries all of the title's trailers, and not after the
+// 2-hour miss of a lasting reason).
 func TestTrailerPremiereKeepsTheShortMiss(t *testing.T) {
 	yt := fakeReader(t, "premiere", "ageGated001")
 	yt.set("secondKey01", "age")
@@ -326,8 +328,17 @@ func TestTrailerPremiereKeepsTheShortMiss(t *testing.T) {
 	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	_, _ = a.resolveTitle(context.Background(), "movie", "13", "en")
 	e, ok := a.trailers.get("movie|13|en", time.Now())
-	if !ok || e.miss.IsZero() || time.Until(e.miss) > trailerMiss+time.Minute {
+	if !ok || e.miss.IsZero() || time.Until(e.miss) > trailerUnplayableMiss+time.Minute || time.Until(e.miss) < trailerUnplayableMiss-time.Minute {
 		t.Fatalf("miss until %v (ok %v)", e.miss, ok)
+	}
+	// YouTube's door failing is still asked again on the next pass.
+	yt.set("ageGated001", "later")
+	a.trailers.mu.Lock()
+	a.trailers.cache = nil
+	a.trailers.mu.Unlock()
+	_, _ = a.resolveTitle(context.Background(), "movie", "13", "en")
+	if e, ok := a.trailers.get("movie|13|en", time.Now()); !ok || time.Until(e.miss) > trailerMiss+time.Minute {
+		t.Fatalf("door miss until %v (ok %v)", e.miss, ok)
 	}
 }
 
@@ -393,5 +404,51 @@ func TestTrailerUpkeepCountsAfterALongGap(t *testing.T) {
 		if s := a.TrailerReader(); s.Videos != health.TrailerFailLimit {
 			t.Fatalf("last good %v ago: %+v", ago, s)
 		}
+	}
+}
+
+// Bad marks are kept per HolyArrs version: after an update, trailers a
+// broken reader marked are tried again at once.
+func TestTrailerBadMarksPerVersion(t *testing.T) {
+	_, st := discoverRig(t, trailerTMDB(t))
+	ctx := context.Background()
+	now := time.Now()
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"})
+	a.markTrailerBad(ctx, "deadVideo00", youtube.Unavailable, now)
+	if _, bad := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.0"}).trailerBad(ctx, "deadVideo00", now); !bad {
+		t.Fatal("a restart of the same version forgot the mark")
+	}
+	if _, bad := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "1.0.1"}).trailerBad(ctx, "deadVideo00", now); bad {
+		t.Fatal("an update kept the old mark")
+	}
+}
+
+// A removed video found on a lookup Health does not count (a first lookup
+// while trailers play fine) is not marked bad, so if the reader itself
+// broke that way the next lookups reach it and, once counted, warn. On a
+// renewal it is marked; an age-restricted video is marked either way.
+func TestTrailerUncountedMissNotMarked(t *testing.T) {
+	yt := fakeReader(t, "unavailable", "trailerKey1")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	recentGood(a, time.Hour)
+	ctx := context.Background()
+	now := time.Now()
+	_, _ = a.resolveTitle(ctx, "movie", "11", "en")
+	if _, bad := a.trailerBad(ctx, "trailerKey1", now); bad {
+		t.Fatal("an uncounted first-lookup miss marked the key bad")
+	}
+	a.trailers.mu.Lock()
+	a.trailers.cache = nil
+	a.trailers.mu.Unlock()
+	_, _ = a.resolveTitle(renewing(ctx), "movie", "11", "en")
+	if _, bad := a.trailerBad(ctx, "trailerKey1", now); !bad {
+		t.Fatal("a renewal miss did not mark the key bad")
+	}
+	// Age-restricted is about the video, never counted, and marked either way.
+	yt.set("ageGated001", "age")
+	_, _ = a.resolveTitle(ctx, "movie", "13", "en")
+	if r, bad := a.trailerBad(ctx, "ageGated001", now); !bad || r != youtube.AgeRestricted {
+		t.Fatalf("age-restricted not marked: %v %v", r, bad)
 	}
 }
