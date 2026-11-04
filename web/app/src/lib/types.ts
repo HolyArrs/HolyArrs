@@ -392,6 +392,8 @@ export interface Ask {
 	asked_at: string;
 	people: (Who & { asked_at: string; from_watchlist?: boolean })[];
 	decided_by?: Who;
+	/** Others who declined the same title on earlier requests, newest first. */
+	also_declined?: Who[];
 	decided_at?: string;
 	note?: string;
 	auto_approved: boolean;

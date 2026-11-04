@@ -123,8 +123,10 @@
 			// Same rule as the card: a display name only, never a bare account name, and the
 			// status word isn't said twice.
 			const by = ctx.decided(picked).replace(/^Declined by\s*/, '').trim();
-			if (by && by !== picked.decided_by?.name) return `By ${by}.`;
-			return picked.decided_at ? `On ${whenDate(picked.decided_at)}.` : '';
+			// Others who said no to the same title before (#136), after this ask's own decider.
+			const also = ctx.alsoDeclined(picked);
+			const first = by && by !== picked.decided_by?.name ? `By ${by}.` : picked.decided_at ? `On ${whenDate(picked.decided_at)}.` : '';
+			return [first, also].filter(Boolean).join(' ');
 		}
 		if (life.stage === 'failed') {
 			const why = life.reason ? ` ${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : '';
