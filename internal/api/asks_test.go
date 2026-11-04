@@ -207,11 +207,16 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	r.owner.call("POST", "/api/v1/asks/999/approve", ``, 404)
 
 	// The Movie page names who asked and who approved; a member sees
-	// everyone who asked.
+	// everyone who asked, and who decided by display name only (#136).
 	var tv TitleView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/titles/"+itoa(*got.TitleID), "", 200), &tv)
-	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 2 || tv.Asks[0].DecidedBy.Name != "luis" || tv.WhyAdded != "ask" {
+	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 2 || tv.Asks[0].DecidedBy == nil || tv.Asks[0].DecidedBy.Name != "" || tv.WhyAdded != "ask" {
 		t.Fatalf("title asks %+v", tv.Asks)
+	}
+	var owv TitleView
+	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/titles/"+itoa(*got.TitleID), "", 200), &owv)
+	if len(owv.Asks) != 1 || owv.Asks[0].DecidedBy == nil || owv.Asks[0].DecidedBy.Name != "luis" {
+		t.Fatalf("owner's title asks %+v", owv.Asks)
 	}
 	msgs.Waiting = nil
 	// A member who did not ask does not see who did.
@@ -692,5 +697,49 @@ func TestAlsoDeclinedForApproversOnly(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("the approver does not see the new ask")
+	}
+}
+
+// route: GET /api/v1/asks
+// The people who asked read who decided by display name only: their list
+// carries no sign-in name and their message says "an admin" until the
+// decider picks a display name (#136 follow-up).
+func TestDeciderSignInNameHiddenFromMembers(t *testing.T) {
+	r := newAskRig(t)
+	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
+	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/turn-down", `{}`, 200)
+	decider := func(s *signedIn) (string, string) {
+		var x struct {
+			Asks []struct {
+				ID        int64 `json:"id"`
+				DecidedBy *struct {
+					Name        string `json:"name"`
+					DisplayName string `json:"display_name"`
+				} `json:"decided_by"`
+			} `json:"asks"`
+		}
+		if err := json.Unmarshal(s.call("GET", "/api/v1/asks", "", 200), &x); err != nil {
+			t.Fatal(err)
+		}
+		for _, v := range x.Asks {
+			if v.ID == a.ID && v.DecidedBy != nil {
+				return v.DecidedBy.Name, v.DecidedBy.DisplayName
+			}
+		}
+		t.Fatal("ask not listed")
+		return "", ""
+	}
+	if n, _ := decider(r.ana); n != "" {
+		t.Fatalf("a member reads the decider's sign-in name %q", n)
+	}
+	if n, _ := decider(r.owner); n != "luis" {
+		t.Fatalf("an approver reads %q", n)
+	}
+	if m := string(r.ana.call("GET", "/api/v1/messages", "", 200)); !strings.Contains(m, "was turned down by an admin") || strings.Contains(m, "by luis") {
+		t.Fatalf("message %s", m)
+	}
+	r.owner.call("PUT", "/api/v1/my/profile", `{"display_name":"Luis R"}`, 200)
+	if n, d := decider(r.ana); n != "" || d != "Luis R" {
+		t.Fatalf("with a display name the member reads %q %q", n, d)
 	}
 }

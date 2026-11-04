@@ -195,7 +195,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 
 	await kim.goto('/requests');
 	await kim.getByText(/^Show the latest/).click();
-	await expect(kim.getByTestId('message').first()).toContainText('Copper Lighthouse (2017) was approved by luis');
+	await expect(kim.getByTestId('message').first()).toContainText('Copper Lighthouse (2017) was approved by an admin');
 	await expect(kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' }).getByTestId('ask-state')).toHaveText('Approved');
 	await kim.getByRole('button', { name: 'Mark all read' }).click();
 	await expect(kim.getByRole('button', { name: 'Mark all read' })).toHaveCount(0);

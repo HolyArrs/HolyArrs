@@ -92,7 +92,7 @@ func TestShowAskOverHTTP(t *testing.T) {
 		}
 	}
 	// bo's in-app message says it was approved.
-	if m := string(r.bo.call("GET", "/api/v1/messages", "", 200)); !strings.Contains(m, "Lab Show (2025), season 1 was approved by luis") {
+	if m := string(r.bo.call("GET", "/api/v1/messages", "", 200)); !strings.Contains(m, "Lab Show (2025), season 1 was approved by an admin") {
 		t.Fatalf("messages %s", m)
 	}
 

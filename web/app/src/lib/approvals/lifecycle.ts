@@ -32,7 +32,7 @@ export interface LifeFacts {
 	 * How many of the seasons or albums the ask covers (as approved, never the whole
 	 * catalogue) are in the Library. `unit` adds the word: "Processing · 1 season left".
 	 */
-	partial?: { have: number; total: number; unit?: 'seasons' | 'albums' };
+	partial?: { have: number; total: number; unit?: 'seasons' | 'albums' | 'episodes' | 'songs' };
 	/** Seasons or albums the title has beyond what was asked (shown once Ready). */
 	more?: number;
 	/** Episodes or songs left unticked inside the asked seasons or albums. */
@@ -88,8 +88,11 @@ function ready(f: LifeFacts): Life {
 	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs.
 	// The unit stays when known: "2 more seasons available", "3 more episodes available".
 	const one = (n: number, unit: string) => (n === 1 ? unit.slice(0, -1) : unit);
-	if (f.more && f.more > 0) life.more = part?.unit ? `${f.more} more ${one(f.more, part.unit)} available` : `${f.more} more available`;
-	else if (f.skipped && f.skipped > 0 && part?.unit) life.more = `${f.skipped} more ${one(f.skipped, part.unit === 'seasons' ? 'episodes' : 'songs')} available`;
+	// "More" counts whole seasons or albums, also when only episodes or songs were asked.
+	const whole = part?.unit === 'episodes' ? 'seasons' : part?.unit === 'songs' ? 'albums' : part?.unit;
+	const inside = whole === 'seasons' ? 'episodes' : 'songs';
+	if (f.more && f.more > 0) life.more = whole ? `${f.more} more ${one(f.more, whole)} available` : `${f.more} more available`;
+	else if (f.skipped && f.skipped > 0 && whole) life.more = `${f.skipped} more ${one(f.skipped, inside)} available`;
 	return life;
 }
 

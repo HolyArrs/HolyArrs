@@ -241,7 +241,7 @@ func TestAskJoinApproveAndAlreadyInLibrary(t *testing.T) {
 	}
 	r.svc.Wait()
 	last := r.fake.last()
-	if last.Moment != alerts.MomentApproved || len(last.People) != 2 || !strings.Contains(last.Text, "approved by luis") || !strings.Contains(last.Text, "Note: enjoy") {
+	if last.Moment != alerts.MomentApproved || len(last.People) != 2 || !strings.Contains(last.Text, "approved by an admin") || !strings.Contains(last.Text, "Note: enjoy") {
 		t.Fatalf("approved alert %+v", last)
 	}
 	for _, p := range []Person{r.ana, r.bo} {

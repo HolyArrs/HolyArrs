@@ -243,6 +243,7 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 		for i := range views {
 			views[i].Mine = true
 		}
+		hideDeciderNames(views)
 	}
 	if err != nil {
 		return ctx, err

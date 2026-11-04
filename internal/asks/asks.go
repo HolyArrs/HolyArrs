@@ -383,9 +383,35 @@ func (s *Service) changed(ctx context.Context, id int64) {
 	if s.Live == nil {
 		return
 	}
-	if vs, err := s.Views(ctx, "a.id = ?", id); err == nil && len(vs) == 1 {
-		s.Live.Publish("ask", vs[0])
+	vs, err := s.Views(ctx, "a.id = ?", id)
+	if err != nil || len(vs) != 1 {
+		return
 	}
+	v := vs[0]
+	s.Live.Publish("ask", v)
+	// The people who asked follow their own ask live too (#139), told who
+	// decided by display name only, as their Requests list reads it.
+	mine := v
+	mine.Mine, mine.AlsoDeclined = true, nil
+	if v.DecidedBy != nil {
+		d := *v.DecidedBy
+		d.Name = ""
+		mine.DecidedBy = &d
+	}
+	for _, p := range v.People {
+		s.Live.PublishUser("ask", mine, p.ID)
+	}
+}
+
+// shownAs is how the people who asked read who decided: the display name
+// the decider chose, else "an admin" (their sign-in name is never told).
+func (s *Service) shownAs(ctx context.Context, by Person) string {
+	var n string
+	_ = s.Store.Read().QueryRowContext(ctx, "SELECT display_name FROM user_profiles WHERE user_id = ?", by.UserID).Scan(&n)
+	if n = strings.TrimSpace(n); n != "" {
+		return n
+	}
+	return "an admin"
 }
 
 func get(ctx context.Context, q store.Querier, id int64) (domain.Ask, error) {
@@ -753,7 +779,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		Data: map[string]any{"ask_id": a.ID, "asked_by": names(people), "approved_by": by.Name, "auto": auto, "note": a.Note}, GroupKey: groupKey(a.ID)})
 	text := label(a) + " was approved"
 	if !auto {
-		text += " by " + by.Name
+		text += " by " + s.shownAs(ctx, by)
 	}
 	switch a.Kind {
 	case "show":
@@ -876,7 +902,7 @@ func (s *Service) TurnDown(ctx context.Context, id int64, by Person, note string
 	people, _ := s.people(ctx, a.ID)
 	s.event(ctx, &domain.Event{Actor: by.actor(), Kind: domain.EventAskTurnedDown, Summary: label(a) + ": turned down by " + by.Name,
 		Data: map[string]any{"ask_id": a.ID, "asked_by": names(people), "turned_down_by": by.Name, "note": note}, GroupKey: groupKey(a.ID)})
-	text := label(a) + " was turned down by " + by.Name + "."
+	text := label(a) + " was turned down by " + s.shownAs(ctx, by) + "."
 	if note != "" {
 		text += " Note: " + note
 	}
