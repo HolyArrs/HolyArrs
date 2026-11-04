@@ -313,13 +313,27 @@
 		const offs = [
 			live.on('ask', () => void load()),
 			live.on('ask_removed', () => void load()),
-			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive()))
+			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive())),
+			// Members get their own downloads as dl patches (#139): read again when one changes.
+			live.on('dl', onDlPatch)
 		];
 		return () => {
 			compactQuery.removeEventListener('change', syncCompactReview);
 			offs.forEach((off) => off());
 		};
 	});
+
+	// A dl patch with rows in it means a download moved; one read for a burst of them.
+	let dlSoon: ReturnType<typeof setTimeout> | undefined;
+	function onDlPatch(data: unknown) {
+		const p = data as { upsert?: unknown[]; remove?: unknown[] } | null;
+		if (!p || (!p.upsert?.length && !p.remove?.length) || dlSoon) return;
+		dlSoon = setTimeout(() => {
+			dlSoon = undefined;
+			void loadLive();
+		}, 1500);
+	}
+	onDestroy(() => clearTimeout(dlSoon));
 
 	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
 	let titleLive = $state(new Map<number, TitleLive>());

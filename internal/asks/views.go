@@ -48,24 +48,24 @@ type View struct {
 	// Albums are the albums of an artist asked for; empty: the whole artist.
 	Albums []domain.AskAlbum `json:"albums"`
 	// ArtistID is an artist ask's MusicBrainz id, for its page and picture.
-	ArtistID     string     `json:"artist_id,omitempty"`
-	AlbumWords   string     `json:"album_words,omitempty"`
-	Name         string     `json:"name"`
-	Year         *int       `json:"year,omitempty"`
-	Poster       string     `json:"poster,omitempty"`
-	State        string     `json:"state"`
-	StateLabel   string     `json:"state_label"`
-	TitleID      *int64     `json:"title_id,omitempty"`
-	AskedBy      Who        `json:"asked_by"`
-	AskedAt      time.Time  `json:"asked_at"`
-	People       []Asker    `json:"people"` // everyone who asked, first one first
-	DecidedBy    *Who       `json:"decided_by,omitempty"`
-	DecidedAt    *time.Time `json:"decided_at,omitempty"`
+	ArtistID   string     `json:"artist_id,omitempty"`
+	AlbumWords string     `json:"album_words,omitempty"`
+	Name       string     `json:"name"`
+	Year       *int       `json:"year,omitempty"`
+	Poster     string     `json:"poster,omitempty"`
+	State      string     `json:"state"`
+	StateLabel string     `json:"state_label"`
+	TitleID    *int64     `json:"title_id,omitempty"`
+	AskedBy    Who        `json:"asked_by"`
+	AskedAt    time.Time  `json:"asked_at"`
+	People     []Asker    `json:"people"` // everyone who asked, first one first
+	DecidedBy  *Who       `json:"decided_by,omitempty"`
+	DecidedAt  *time.Time `json:"decided_at,omitempty"`
 	// AlsoDeclined are the other people who declined the same thing on
 	// earlier asks for it, newest first (the decider of this ask left out).
 	// Filled by AddAlsoDeclined, for people who approve only (a list, maybe
 	// empty); left out for everyone else.
-	AlsoDeclined *[]Who `json:"also_declined,omitempty"`
+	AlsoDeclined *[]Who     `json:"also_declined,omitempty"`
 	Note         string     `json:"note,omitempty"`
 	AutoApproved bool       `json:"auto_approved"`
 	AvailableAt  *time.Time `json:"available_at,omitempty"`

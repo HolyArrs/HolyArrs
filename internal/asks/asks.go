@@ -726,13 +726,6 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 			opt.AudioLanguages = nil
 		}
 	}
-	// An artist already in the Library has its tracks: it is searched below.
-	hadArtist := false
-	if a.Kind == "artist" {
-		if id, herr := library.ArtistByMBID(ctx, db, a.SourceIDs["musicbrainz"]); herr == nil && id != 0 {
-			hadArtist = true
-		}
-	}
 	var tid int64
 	switch a.Kind {
 	case "show":
@@ -769,11 +762,11 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	if err := s.followAskers(ctx, a.ID, tid); err != nil {
 		log.Printf("asks: follows of ask %d: %v", a.ID, err)
 	}
-	// A movie is searched as it is added; a show's episodes and an artist's
-	// albums are kept up to date above, then looked for at once too, not
-	// at the next missing search (hours away). A new artist is searched at
-	// the end of its add (its tracks come with the MusicBrainz refresh).
-	if set.SearchOnApprove && (a.Kind == "show" || (a.Kind == "artist" && hadArtist)) && s.Library != nil && s.Library.Queue != nil {
+	// A movie is searched as it is added; a show's episodes are kept up to
+	// date above, then looked for at once too, not at the next missing
+	// search (hours away). Artists are searched in addArtistForAsk, after
+	// the MusicBrainz refresh when it brings the asked albums' tracks.
+	if set.SearchOnApprove && a.Kind == "show" && s.Library != nil && s.Library.Queue != nil {
 		if err := s.Library.ScanThenSearch(ctx, tid, by.actor()); err != nil {
 			log.Printf("asks: search for ask %d: %v", a.ID, err)
 		}
@@ -931,6 +924,8 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 	}
 	// Check and change inside one write, so a decision made at the same
 	// moment cannot slip in between.
+	var ids []int64 // everyone on the ask, read inside the write
+	left := false   // only p left it; the others keep it
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var state string
 		var owner int64
@@ -947,7 +942,7 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 		if err != nil {
 			return err
 		}
-		var ids []int64
+		ids = ids[:0]
 		for rows.Next() {
 			var u int64
 			if err := rows.Scan(&u); err != nil {
@@ -965,6 +960,7 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 			return ErrNotYours
 		}
 		if mine && len(ids) > 1 {
+			left = true
 			if _, err := tx.Exec("DELETE FROM ask_people WHERE ask_id = ? AND user_id = ?", id, p.UserID); err != nil {
 				return err
 			}
@@ -993,6 +989,16 @@ func (s *Service) Withdraw(ctx context.Context, id int64, p Person, staff bool) 
 		Data: map[string]any{"ask_id": a.ID}, GroupKey: groupKey(a.ID)})
 	if s.Live != nil {
 		s.Live.Publish("ask_removed", map[string]any{"id": id})
+		// The people who asked see it go from their own open pages too (#139):
+		// only p when the others keep the ask, else everyone on it.
+		gone := ids
+		if left {
+			gone = []int64{p.UserID}
+			s.changed(ctx, id)
+		}
+		for _, u := range gone {
+			s.Live.PublishUser("ask_removed", map[string]any{"id": id}, u)
+		}
 	}
 	return nil
 }

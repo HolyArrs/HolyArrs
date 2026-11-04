@@ -585,3 +585,20 @@ func TestMissingSearchOneTitle(t *testing.T) {
 		t.Fatalf("the movie was searched too (%d)", movie)
 	}
 }
+
+// #139 review: the nightly "missing search covers shows" switch does not
+// stop the search an approved show request starts for its own title.
+func TestMissingSearchOneTitleIgnoresNightlyShowSwitch(t *testing.T) {
+	ts := &tvServer{answer: func(url.Values) []string { return nil }}
+	f := seedShow(t, ts.start(t), nil)
+	setSetting(t, f.fixture, SettingMissingShows, "false")
+	sr := &Searcher{Store: f.s}
+	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"title_id": float64(f.titleID)})
+	if n, _ := j.Result["slots"].(float64); n != 4 {
+		t.Fatalf("one title with the nightly show switch off: %+v", j.Result)
+	}
+	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	if n, _ := j.Result["slots"].(float64); n != 1 {
+		t.Fatalf("nightly with shows off searches the movie only: %+v", j.Result)
+	}
+}
