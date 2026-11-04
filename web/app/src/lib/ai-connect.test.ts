@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { FAMILIES, agentPrompt, aiURL, canSignIn, familyOf, isAIKey, onlyLocal } from './ai-connect.ts';
+import { GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, rowFor, stepParts, testedLine, whereText } from './ai-connect.ts';
 import { APP_DATA } from './ai-apps.ts';
 
 const https = { url: 'https://m.example/api/v1/mcp', signIn: true };
 const home = { url: 'http://10.10.25.25:18730/api/v1/mcp', key: 'hak_test', signIn: false };
-const app = (id: string) => familyOf(id).apps.find((a) => a.id === id)!;
+const app = (id: string) => ROWS.find((r) => r.id === id)!.app;
 const all = (steps: { text: string; code?: string }[]) => steps.map((s) => s.text + '\n' + (s.code ?? '')).join('\n');
+// The website's 8 guide pages; every Guide link goes to one of them or a main-page anchor.
+const PAGES = ['claude-app', 'chatgpt', 'gemini-app', 'claude-code', 'codex', 'cursor', 'claude-desktop-home', 'local-ai'];
 
 describe('ai-connect', () => {
 	it('tells AI keys from other keys', () => {
@@ -28,55 +30,135 @@ describe('ai-connect', () => {
 		expect(onlyLocal('https://100.87.70.86/api/v1/mcp')).toBe(true);
 		expect(onlyLocal('https://media.example/api/v1/mcp')).toBe(false);
 	});
+	it('lays out the table like the website: three groups, then Any other app', () => {
+		expect(GROUPS.map(([g]) => g)).toEqual(['chat', 'agents', 'computer']);
+		expect(ROWS.map((r) => r.name)).toEqual([
+			'Claude app', 'ChatGPT', 'Gemini app', 'Grok', 'Perplexity',
+			'Claude Code', 'Codex', 'Cursor', 'VS Code with Copilot', 'Gemini CLI',
+			'Claude Desktop at home', 'Open WebUI, LM Studio, Ollama', 'Any other app'
+		]);
+		expect(ROWS.length).toBe(APP_DATA.filter((d) => d.table).length + 1);
+		// Every app stays in the data; only table rows show.
+		expect(APP_DATA.length).toBe(56);
+	});
+	it('links each row only to an existing guide page or a main-page anchor', () => {
+		for (const r of ROWS) {
+			const m = r.guide.match(/^https:\/\/holyarrs\.coderluii\.dev\/docs\/ai\/(?:([a-z0-9-]+)\/|#(apps|any-other-app))$/);
+			expect(m, r.guide).toBeTruthy();
+			if (m![1]) expect(PAGES, r.id).toContain(m![1]);
+		}
+		expect(rowFor('grok')!.guide).toBe(GUIDES_URL + '#apps');
+		expect(rowFor('cursor')!.guide).toBe(GUIDES_URL + 'cursor/');
+		expect(ROWS.at(-1)!.guide).toBe(GUIDES_URL + '#any-other-app');
+	});
+	it('picks a row from ?app=, old slugs included', () => {
+		expect(rowFor('cursor')!.id).toBe('cursor');
+		expect(rowFor('codex-ide')!.name).toBe('Codex');
+		expect(rowFor('chatgpt-desktop')!.name).toBe('Codex');
+		expect(rowFor('lm-studio')!.id).toBe('open-webui');
+		expect(rowFor('ollmcp')!.id).toBe('open-webui');
+		expect(rowFor('local-ai')!.id).toBe('open-webui');
+		expect(rowFor('any-app')!.name).toBe('Any other app');
+		expect(rowFor('nope')).toBeUndefined();
+		expect(rowFor('librechat')).toBeUndefined();
+		expect(rowFor(null)).toBeUndefined();
+	});
+	it("opens the linked app's own steps, under the row of its guide or on their own", () => {
+		// LM Studio sits under the local row but keeps its own steps (not Open WebUI's).
+		const lm = pickFor('lm-studio')!;
+		expect(lm.row!.id).toBe('open-webui');
+		expect(lm.app.name).toBe('LM Studio');
+		expect(all(lm.app.steps(https))).toContain('Edit mcp.json');
+		expect(pickFor('codex-ide')!.app.id).toBe('codex-ide');
+		expect(pickFor('codex-ide')!.row!.name).toBe('Codex');
+		// The website's key steps say "pick Windsurf": the link opens Windsurf's steps, with no row.
+		const w = pickFor('windsurf')!;
+		expect(w.row).toBeUndefined();
+		expect(w.app.name).toBe('Windsurf');
+		for (const d of APP_DATA) expect(pickFor(d.slug)!.app.id, d.slug).toBe(d.slug);
+		expect(pickFor('cursor')!.row!.id).toBe('cursor');
+		expect(pickFor('any-other-app')!.row!.name).toBe('Any other app');
+		expect(pickFor('nope')).toBeUndefined();
+		expect(pickFor('')).toBeUndefined();
+	});
+	it('fills the address into a row and marks its code', () => {
+		const gemini = whereText(rowFor('gemini-cli')!, home.url);
+		expect(gemini).toContain('holyarrs http://10.10.25.25:18730/api/v1/mcp');
+		expect(codeParts(gemini)).toEqual([{ text: gemini.replaceAll('`', ''), code: true }]);
+		expect(codeParts('Add to Cursor, or `~/.cursor/mcp.json`')).toEqual([{ text: 'Add to Cursor, or ' }, { text: '~/.cursor/mcp.json', code: true }]);
+	});
+	it('fits the "where" cell to the address: no one-click button or header-less command on a home address', () => {
+		// Cursor's "Add to Cursor, or ..." becomes its one-click button, like VS Code's.
+		const cursor = rowFor('cursor')!;
+		expect(cursor.deeplink).toBe('cursor');
+		expect(whereText(cursor, home.url, false)).toBe('`~/.cursor/mcp.json`');
+		expect(rowFor('vs-code-copilot')!.deeplink).toBe('vscode');
+		// The Gemini CLI command takes the key header on a home address, never a real key.
+		const g = whereText(rowFor('gemini-cli')!, home.url, false);
+		expect(g).toBe('`gemini mcp add --scope user --transport http --header "Authorization: Bearer <your AI key>" holyarrs http://10.10.25.25:18730/api/v1/mcp`');
+		expect(whereText(rowFor('gemini-cli')!, https.url, true)).not.toContain('Authorization');
+		for (const r of ROWS) expect(whereText(r, home.url, false), r.id).not.toMatch(/hak_|<address>/);
+	});
 	it('signs Claude Code in without a key on https, and fills the key on a home address', () => {
 		const signIn = all(app('claude-code').steps(https));
 		expect(signIn).toContain('claude mcp add --transport http --scope user holyarrs https://m.example/api/v1/mcp');
 		expect(signIn).not.toMatch(/Bearer/);
 		const key = all(app('claude-code').steps(home));
 		expect(key).toContain('Authorization: Bearer hak_test');
-		// The Make a key button replaces the "make a key" step.
-		expect(key).not.toContain('press Make a key');
+		// The Make a key button replaces the step done in HolyArrs.
+		expect(key).not.toContain('In HolyArrs');
+	});
+	it('bolds labels and marks commands like the website', () => {
+		expect(stepParts('Start claude, run /mcp, pick holyarrs and choose Authenticate.', ['Authenticate'])).toEqual([
+			{ text: 'Start claude, run ' },
+			{ text: '/mcp', code: true },
+			{ text: ', pick holyarrs and choose ' },
+			{ text: 'Authenticate', b: true },
+			{ text: '.' }
+		]);
+		expect(stepParts('Press Allow.')).toEqual([{ text: 'Press ' }, { text: 'Allow', b: true }, { text: '.' }]);
+		expect(stepParts('Open ~/.cursor/mcp.json.')).toEqual([{ text: 'Open ' }, { text: '~/.cursor/mcp.json', code: true }, { text: '.' }]);
+	});
+	it("gives Cursor's one-click button only on sign-in, built from the address", () => {
+		const s = app('cursor').steps(https);
+		expect(s[0].deeplink).toBe('cursor');
+		expect(app('cursor').steps(home).some((x) => x.deeplink)).toBe(false);
+		const c = deeplinkHref('cursor', https.url);
+		expect(c.startsWith('cursor://anysphere.cursor-deeplink/mcp/install?name=holyarrs&config=')).toBe(true);
+		expect(JSON.parse(atob(c.split('config=')[1]))).toEqual({ url: https.url });
+		expect(decodeURIComponent(deeplinkHref('vscode', https.url).replace('vscode:mcp/install?', ''))).toBe(JSON.stringify({ name: 'holyarrs', type: 'http', url: https.url }));
 	});
 	it('gives the Gemini app a client ID form in place of its HolyArrs step', () => {
 		const g = app('gemini-app');
 		expect(g.clientIdHelper).toBe(true);
-		expect(all(g.steps(https))).toContain('Copy redirect URI');
-		expect(all(g.steps(https))).not.toContain('In HolyArrs, open Settings');
+		expect(all(g.steps(https))).not.toContain('In HolyArrs');
 		expect(app('claude-app').clientIdHelper).toBeFalsy();
 	});
-	it('never puts a key in an agent prompt', () => {
-		expect(agentPrompt('Codex', 'https://m.example/api/v1/mcp')).not.toMatch(/Bearer|hak_/);
+	it('says when the steps were tested', () => {
+		expect(testedLine(app('claude-code'))).toBe('Tested with HolyArrs on 3 Nov 2026');
+		expect(testedLine(app('cursor'))).toBe("Not tested with HolyArrs yet. These steps follow Cursor's own help pages.");
+		expect(testedLine(ROWS.at(-1)!.app)).toBe('');
 	});
-	it('has one tab per family, every app filled in, and the website words', () => {
-		expect(FAMILIES.map((f) => f.id)).toEqual([
-			'claude', 'chatgpt-codex', 'gemini', 'copilot', 'chat-apps', 'code-editors', 'vscode-add-ons',
-			'terminal-tools', 'self-hosted-chat', 'desktop-apps', 'local-agents', 'local-runners', 'any-app'
-		]);
-		expect(FAMILIES.flatMap((f) => f.apps).length).toBe(APP_DATA.length + 1);
-		const ids = new Set<string>();
-		for (const f of FAMILIES) {
-			for (const a of f.apps) {
-				expect(ids.has(a.id), a.id).toBe(false);
-				ids.add(a.id);
-				expect(a.guide).toMatch(/^[a-z0-9-]+\/$/);
-				for (const c of [https, home]) {
-					const text = all(a.steps(c));
-					expect(a.steps(c).length, a.id).toBeGreaterThan(0);
-					expect(text, a.id).not.toMatch(/\{url\}|\{key\}/);
-					// Apps that only sign in never show a key.
-					if (!APP_DATA.find((d) => d.slug === a.id)?.key.length && a.id !== 'any-app') expect(text, a.id).not.toContain('hak_test');
-				}
+	it('puts a key in the agent prompt only when one is given', () => {
+		const o = 'https://m.example';
+		expect(agentPrompt(o)).toBe(
+			'Read https://holyarrs.coderluii.dev/docs/ai/ai.md and connect yourself to my HolyArrs at https://m.example. Only add the HolyArrs MCP server. Ask me before you change anything else.'
+		);
+		expect(agentPrompt(o)).not.toMatch(/hak_/);
+		expect(agentPrompt(o, { home: true })).toMatch(/I'll give you an AI key when you ask\.$/);
+		expect(agentPrompt(o, { key: 'hak_test', home: true })).toContain('Use this AI key: hak_test. Only add');
+	});
+	it('fills every row on both kinds of address', () => {
+		for (const r of ROWS) {
+			for (const c of [https, home]) {
+				const steps = r.app.steps(c);
+				expect(steps.length, r.id).toBeGreaterThan(0);
+				expect(all(steps), r.id).not.toMatch(/\{url\}|\{key\}/);
+				for (const s of steps) expect(s.parts.map((p) => p.text).join(''), r.id).toBe(s.text);
 			}
 		}
-		expect(familyOf('lm-studio').id).toBe('desktop-apps');
-		expect(familyOf('nope').id).toBe('claude');
 	});
 	it('keeps placeholders only in steps, where they are filled in', () => {
 		for (const d of APP_DATA) expect(`${d.needs} ${d.check} ${d.note}`, d.slug).not.toMatch(/\{url\}|\{key\}/);
-	});
-	it('names each app the same way the website key step does', () => {
-		for (const d of APP_DATA) {
-			if (d.key[0]?.text.startsWith('In HolyArrs')) expect(d.key[0].text).toContain(`pick ${d.name} and press Make a key`);
-		}
 	});
 });

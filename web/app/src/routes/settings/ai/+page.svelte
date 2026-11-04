@@ -4,8 +4,9 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -14,7 +15,30 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { getBase } from '#lib/paths.ts';
 	import type { ApiKey } from '#lib/types.ts';
-	import { AI_SCOPE, FAMILIES, GUIDES_URL, TRY_FIRST, agentPrompt, aiURL, canSignIn, familyOf, isAIKey, onlyLocal, type Ctx } from '#lib/ai-connect.ts';
+	import {
+		AI_SCOPE,
+		CHECK_QUESTION,
+		DEEPLINK_LABEL,
+		GROUPS,
+		GUIDES_URL,
+		ROWS,
+		agentPrompt,
+		aiURL,
+		appsFor,
+		canSignIn,
+		codeParts,
+		deeplinkHref,
+		isAIKey,
+		onlyLocal,
+		pickFor,
+		testedLine,
+		whereText,
+		type AIApp,
+		type Ctx,
+		type Part,
+		type Picked,
+		type Row
+	} from '#lib/ai-connect.ts';
 
 	let loaded = $state(false);
 	let error = $state('');
@@ -24,29 +48,68 @@
 	let keysNote = $state('');
 	let label = $state('');
 	let making = $state(false);
-	// A key made from the guide fills in only for the app it was made for.
-	let fresh = $state<{ key: string; label: string; app?: string } | null>(null);
-	// The chosen app sits in the address (?app=cursor), so a link opens on it.
-	let app = $state(page.url.searchParams.get('app') ?? FAMILIES[0].apps[0].id);
-	let showPrompt = $state(false);
+	// A key made from an app's steps fills in only for that app (its steps and the agent prompt).
+	let fresh = $state<{ id: number; key: string; label: string; app?: string } | null>(null);
+	// The picked app sits in the address (?app=cursor), so a link opens on it. None by default.
+	let picked = $state<Picked | undefined>(pickFor(page.url.searchParams.get('app')));
+	// On phones the steps open under the picked row, on wider screens under the table.
+	const phone = '(max-width: 767px)';
+	let narrow = $state(typeof window !== 'undefined' && window.matchMedia(phone).matches);
+	let panelEl = $state<HTMLElement>();
+	let panelHead = $state<HTMLElement>();
+	let freshEl = $state<HTMLElement>();
+	let byHand = $state<HTMLElement>();
+	let revoking = $state<ApiKey | null>(null);
+	let revokeOpen = $state(false);
+	let revokeBusy = $state(false);
 
 	const isOwner = $derived(session.s.role === 'owner');
+	const origin = $derived(typeof window === 'undefined' ? '' : (window.location.origin + getBase()).replace(/\/+$/, ''));
 	const url = $derived(typeof window === 'undefined' ? '/api/v1/mcp' : aiURL(window.location.origin, getBase()));
 	const aiKeys = $derived(keys.filter(isAIKey));
 	const signIn = $derived(canSignIn(url));
-	const ctx = $derived<Ctx>({ url, key: fresh?.app === app ? fresh.key : undefined, signIn });
-	const family = $derived(familyOf(app));
-	const chosen = $derived(family.apps.find((x) => x.id === app) ?? family.apps[0]);
-	const unreachable = $derived(!!chosen?.cloud && onlyLocal(url));
-	const needsKey = $derived(!chosen.cloud && (!signIn || chosen.signIn === false));
-	const host = $derived(url.replace(/^https?:\/\//, '').split('/')[0]);
+	const local = $derived(onlyLocal(url));
+	const app = $derived(picked?.app);
+	// The key made for the picked app; never one made for another app or by hand.
+	const appKey = $derived(app && fresh?.app === app.id ? fresh.key : undefined);
+	const ctx = $derived<Ctx>({ url, key: appKey, signIn });
+	const unreachable = $derived(!!app?.cloud && local);
+	const needsKey = $derived(!!app && !app.cloud && (!signIn || !app.signIn));
+	const promptKey = $derived(signIn ? undefined : appKey);
+	const prompt = $derived(agentPrompt(origin, { key: promptKey, home: !signIn }));
 
-	function pick(id: string) {
-		app = id;
-		showPrompt = false;
+	onMount(() => {
+		const mq = window.matchMedia(phone);
+		narrow = mq.matches;
+		const on = () => (narrow = mq.matches);
+		mq.addEventListener('change', on);
+		return () => mq.removeEventListener('change', on);
+	});
+
+	// A row whose guide covers several apps (Codex, local AI) switches between their steps.
+	function pickApp(a: AIApp) {
+		if (!picked?.row || a.id === app?.id) return;
+		picked = { id: a.id, row: picked.row, app: a };
 		const u = new URL(page.url.href);
-		u.searchParams.set('app', id);
+		u.searchParams.set('app', a.id);
 		replaceState(u, page.state);
+	}
+
+	async function pick(r: Row) {
+		picked = picked?.row?.id === r.id ? undefined : { id: r.id, row: r, app: r.app };
+		const u = new URL(page.url.href);
+		if (picked) u.searchParams.set('app', picked.id);
+		else u.searchParams.delete('app');
+		replaceState(u, page.state);
+		redirectURI = '';
+		clientID = '';
+		clientError = '';
+		if (picked) {
+			// Focus follows the steps, so a keyboard needn't pass every later row.
+			await tick();
+			panelHead?.focus({ preventScroll: true });
+			panelEl?.scrollIntoView({ block: 'nearest' });
+		}
 	}
 
 	function keyNote(e: unknown): string {
@@ -66,7 +129,13 @@
 		} catch (e) {
 			keysNote = keyNote(e);
 		}
+		const first = !loaded;
 		loaded = true;
+		// A ?app= link opens with its steps in view (on a phone they sit far down).
+		if (first && picked) {
+			await tick();
+			panelEl?.scrollIntoView({ block: 'nearest' });
+		}
 	}
 
 	onMount(load);
@@ -96,24 +165,48 @@
 	async function newKey(name: string, forApp?: string) {
 		making = true;
 		try {
-			const r = await api.post<{ key: string; label: string }>('/auth/keys', { label: name, scopes: [AI_SCOPE] });
-			fresh = { key: r.key, label: r.label, app: forApp };
+			const r = await api.post<{ id: number; key: string; label: string }>('/auth/keys', { label: name, scopes: [AI_SCOPE] });
+			fresh = { id: r.id, key: r.key, label: r.label, app: forApp };
 			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
 		} catch (err) {
 			toasts.push(keyNote(err), 'fail');
 		} finally {
 			making = false;
 		}
+		// The pressed button is gone now; focus the new key's Copy.
+		if (fresh && forApp) {
+			await tick();
+			freshEl?.querySelector('button')?.focus();
+		}
+	}
+
+	async function doneWithKey() {
+		const inPanel = !!app && fresh?.app === app.id;
+		fresh = null;
+		await tick();
+		if (inPanel) panelHead?.focus();
+		else byHand?.focus();
+	}
+
+	function askRevoke(k: ApiKey) {
+		revoking = k;
+		revokeOpen = true;
 	}
 
 	async function revoke(k: ApiKey) {
-		if (!confirm(`Revoke the AI key "${k.label}"? The AI app using it stops working.`)) return;
+		if (revokeBusy) return;
+		revokeBusy = true;
+		revokeOpen = false;
 		try {
 			await api.del(`/auth/keys/${k.id}`);
 			keys = keys.filter((x) => x.id !== k.id);
-			toasts.push('AI key revoked.', 'ok');
+			// A revoked key leaves the steps and the prompt, and Make a key comes back.
+			if (fresh?.id === k.id) fresh = null;
+			toasts.push(`${k.label} revoked.`, 'ok');
 		} catch (e) {
 			toasts.push(keyNote(e), 'fail');
+		} finally {
+			revokeBusy = false;
 		}
 	}
 
@@ -126,17 +219,24 @@
 		e.preventDefault();
 		clientError = '';
 		clientID = '';
+		if (!redirectURI.trim()) {
+			clientError = "Paste Gemini's redirect URI first.";
+			return;
+		}
 		try {
 			const r = await fetch(`${getBase()}/oauth/register`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ client_name: chosen.name, redirect_uris: [redirectURI.trim()] })
+				body: JSON.stringify({ client_name: app?.name ?? 'Gemini app', redirect_uris: [redirectURI.trim()] })
 			});
-			const out = await r.json();
-			if (!r.ok) throw new Error(out.error_description ?? 'HolyArrs did not accept that address.');
-			clientID = out.client_id;
-		} catch (err) {
-			clientError = message(err);
+			if (r.status === 400) {
+				clientError = "HolyArrs didn't accept that address. Copy the redirect URI from Gemini again, starting with https://.";
+				return;
+			}
+			if (!r.ok) throw new Error(String(r.status));
+			clientID = (await r.json()).client_id;
+		} catch {
+			clientError = "HolyArrs didn't answer. Try again.";
 		}
 	}
 
@@ -145,10 +245,113 @@
 			await navigator.clipboard.writeText(text);
 			toasts.push('Copied.', 'ok');
 		} catch {
-			toasts.push('Copy did not work here; select the text and copy it by hand.', 'fail');
+			toasts.push("Couldn't copy here. Select the text and copy it yourself.", 'fail');
 		}
 	}
+
+	const copyName = (code: string) => (code.includes('\n') ? 'Copy config' : code === url ? 'Copy AI address' : code.startsWith('Authorization:') ? 'Copy header' : 'Copy command');
 </script>
+
+{#snippet text(parts: Part[])}{#each parts as p, i (i)}{#if p.code}<code>{p.text}</code>{:else if p.b}<b>{p.text}</b>{:else}{p.text}{/if}{/each}{/snippet}
+
+{#snippet freshBox()}
+	{#if fresh}
+		<div class="fresh" role="status" bind:this={freshEl}>
+			<p class="small"><b>Copy this key now</b></p>
+			<p class="small">{fresh.label}: it's shown only once. If you lose it, make a new one.</p>
+			<div class="fresh-row">
+				<code class="key grow">{fresh.key}</code>
+				<Button icon="copy" type="button" onclick={() => fresh && copy(fresh.key)}>Copy</Button>
+				<Button variant="plain" type="button" onclick={doneWithKey}>Done</Button>
+			</div>
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet panel()}
+	{#if picked && app}
+		<div class="panel" id="ai-app-panel" data-testid="ai-guide" bind:this={panelEl}>
+			<h4 class="h3" tabindex="-1" bind:this={panelHead}>{app.name}</h4>
+			{#if picked.row && appsFor(picked.row).length > 1}
+				<div class="which" role="group" aria-label="Which app">
+					{#each appsFor(picked.row) as a (a.id)}
+						<Chip label={a.name} selected={a.id === app.id} onclick={() => pickApp(a)} />
+					{/each}
+				</div>
+			{/if}
+			{#if unreachable}
+				<p class="notice" data-testid="ai-unreachable">Needs a public https address.</p>
+				<a class="small guide-link" href="{GUIDES_URL}#home-network" target="_blank" rel="noopener noreferrer">Only on your home network?</a>
+			{:else}
+				{#if app.needs}<p class="small muted">{app.needs}</p>{/if}
+				{#if needsKey && fresh?.app !== app.id}
+					<div class="keyrow">
+						<Button icon="key" variant="primary" type="button" onclick={() => newKey(app.name, app.id)} disabled={making || !!keysNote} aria-busy={making} aria-label="Make a key for {app.name}">
+							{making ? 'Making a key…' : 'Make a key'}
+						</Button>
+						<span class="xs muted">{keysNote || "It's filled into the steps and the agent prompt, and shown only now."}</span>
+					</div>
+				{:else if fresh && fresh.app === app.id}
+					{@render freshBox()}
+				{/if}
+				<ol class="steps">
+					{#each app.steps(ctx) as s, i (i)}
+						<li>
+							<span class="num" aria-hidden="true">{i + 1}</span>
+							<div class="grow">
+								<p class="st">{@render text(s.parts)}</p>
+								{#if s.link}<p class="st"><a class="guide-link" href={s.link.href} target="_blank" rel="noopener noreferrer">{s.link.text}</a></p>{/if}
+								{#if s.deeplink}
+									<p class="st"><Button size="sm" href={deeplinkHref(s.deeplink, url)}>{DEEPLINK_LABEL[s.deeplink]}</Button></p>
+								{/if}
+								{#if s.code}
+									<div class="codebox">
+										<pre>{s.code}</pre>
+										<Button icon="copy" size="sm" type="button" aria-label={copyName(s.code)} onclick={() => copy(s.code ?? '')}>Copy</Button>
+									</div>
+								{/if}
+							</div>
+						</li>
+					{/each}
+				</ol>
+				{#if app.clientIdHelper}
+					<form class="client-id" onsubmit={makeClientID} data-testid="ai-client-id" novalidate>
+						<p class="small">Gemini doesn't register itself, so HolyArrs makes a client ID for it.</p>
+						<label class="label" for="ai-redirect">Gemini's redirect URI</label>
+						<div class="keyrow">
+							<input
+								id="ai-redirect"
+								name="redirect_uri"
+								type="url"
+								inputmode="url"
+								spellcheck="false"
+								class="input grow"
+								bind:value={redirectURI}
+								placeholder="https://…"
+								autocomplete="off"
+								aria-describedby="ai-redirect-hint"
+							/>
+							<Button type="submit">Make client ID</Button>
+						</div>
+						<p class="hint" id="ai-redirect-hint">In Gemini, open <b>Show more</b> next to <b>Advanced features</b> and copy the redirect URI.</p>
+						{#if clientError}<p class="notice warn" role="alert">{clientError}</p>{/if}
+						{#if clientID}
+							<div class="xs muted">Client ID</div>
+							<div class="codebox">
+								<pre>{clientID}</pre>
+								<Button icon="copy" size="sm" type="button" aria-label="Copy client ID" onclick={() => copy(clientID)}>Copy</Button>
+							</div>
+							<p class="small">Paste it into Gemini, leave the client secret empty and press <b>Next</b>.</p>
+						{/if}
+					</form>
+				{/if}
+				{#if testedLine(app)}<p class="xs muted" data-testid="ai-tested">{testedLine(app)}</p>{/if}
+				{#if app.check}<p class="xs muted"><b>Check:</b> {app.check}</p>{/if}
+				{#if app.note}<p class="xs muted">{app.note}</p>{/if}
+			{/if}
+		</div>
+	{/if}
+{/snippet}
 
 <svelte:head><title>AI connections · HolyArrs</title></svelte:head>
 
@@ -161,8 +364,8 @@
 {:else}
 	<SettingsCard id="ai-switch" title="AI connections">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-3)">
-			AI assistants like Claude, ChatGPT or Cursor can check your library, calendar and downloads, and ask for titles for you. They can only do what you
-			allow, and every request they make shows in History.
+			AI apps like Claude, ChatGPT or Cursor can check your library, calendar and downloads, and ask for titles for you. They can only do what you allow,
+			and every request they make shows in History.
 		</p>
 		<label class="switch">
 			<input type="checkbox" checked={enabled} disabled={!isOwner || saving} aria-busy={saving} onchange={(e) => setEnabled(e.currentTarget.checked)} />
@@ -171,138 +374,118 @@
 		</label>
 		{#if !isOwner}<p class="hint">Only the owner can turn this on or off.</p>{/if}
 		<ul class="facts small muted">
-			<li>An AI app acts as you: your permissions and request limits apply.</li>
-			<li>Before it asks for a title, the AI app has to check with you. Approving requests stays with people, on the Requests page.</li>
+			<li>An AI app acts as you, so your permissions and request limits apply.</li>
+			<li>Before it asks for a title, the AI app checks with you. Approving requests stays with people, on the Requests page.</li>
 			<li>At most 60 calls a minute and 5 requests an hour per app.</li>
 		</ul>
 	</SettingsCard>
 
 	<SettingsCard id="ai-connect" title="Connect an AI app">
+		<div class="small addr-label">AI address</div>
 		<div class="addr-row">
 			<code class="addr grow" data-testid="ai-address">{url}</code>
-			<Button icon="copy" size="sm" type="button" onclick={() => copy(url)}>Copy</Button>
+			<Button icon="copy" size="sm" type="button" aria-label="Copy AI address" onclick={() => copy(url)}>Copy</Button>
 		</div>
+		<p class="xs muted">This address shows an error in a browser. That's normal, because only AI apps use it.</p>
+		{#if !enabled}<p class="notice warn"><span>Turn on <b>Let AI apps connect</b> above first. Until then, AI apps get "not found".</span></p>{/if}
 		<p class="small muted mode" data-testid="ai-mode">
 			{#if signIn}
-				Apps sign in through your browser with your HolyArrs password. Nothing to paste.
+				Apps sign in through your browser. You press Allow once.
 			{:else}
-				On this address apps use an AI key. Press <b>Make a key</b> in the steps and it is filled in for you.
+				This is a plain-http address, so most apps won't sign in through the browser. Use an AI key: press <b>Make a key</b> next to your app below.
 			{/if}
 		</p>
-		{#if !enabled}<p class="notice warn">Turn on AI connections above first, or the app gets "not found".</p>{/if}
 
-		<div class="apps" role="group" aria-label="Kind of AI app">
-			{#each FAMILIES as f (f.id)}
-				<Chip label={f.name} selected={family.id === f.id} onclick={() => pick(f.apps[0].id)} />
-			{/each}
-		</div>
-		{#if family.apps.length > 1}
-			<div class="apps sub" role="group" aria-label="{family.name} app">
-				{#each family.apps as a (a.id)}
-					<Chip label={a.name} selected={chosen.id === a.id} onclick={() => pick(a.id)} />
-				{/each}
-			</div>
-		{/if}
-
-		<div class="guide" data-testid="ai-guide">
-			{#if unreachable}
-				<p class="notice" data-testid="ai-unreachable">
-					{chosen.name} connects from the internet, so it cannot reach {host}. It works once HolyArrs has a public https address (your reverse proxy,
-					Cloudflare Tunnel or Tailscale Funnel); open this page on that address for the steps.
-					{#if family.id === 'claude'}On this network, pick "Claude Desktop (home)" instead.{/if}
-				</p>
-				<a class="xs guide-link" href={GUIDES_URL + 'reach-holyarrs/'} target="_blank" rel="noopener noreferrer">How to reach HolyArrs from outside your home</a>
-			{:else}
-				{#if chosen.needs}<p class="small muted needs">{chosen.needs}</p>{/if}
-				{#if needsKey && fresh?.app !== chosen.id}
-					<div class="keyrow">
-						<Button icon="key" variant="primary" type="button" onclick={() => newKey(chosen.name, chosen.id)} disabled={making || !!keysNote} aria-busy={making}>
-							Make a key for {chosen.name}
-						</Button>
-						<span class="xs muted">It is filled into the steps below and shown only now.</span>
-					</div>
-				{/if}
-				<ol class="steps">
-					{#each chosen.steps(ctx) as s, i (i)}
-						<li>
-							<span class="num" aria-hidden="true">{i + 1}</span>
-							<div class="grow">
-								<p class="st">
-									{#each s.text.split('`') as part, j (j)}{#if j % 2}<code>{part}</code>{:else}{part}{/if}{/each}
-								</p>
-								{#if s.code}
-									<div class="codebox">
-										<pre>{s.code}</pre>
-										<Button icon="copy" size="sm" type="button" onclick={() => copy(s.code ?? '')}>Copy</Button>
-									</div>
-								{/if}
-							</div>
-						</li>
-					{/each}
-				</ol>
-				{#if chosen.clientIdHelper}
-					<form class="client-id" onsubmit={makeClientID} data-testid="ai-client-id">
-						<label class="small" for="ai-redirect">{chosen.name}'s redirect URI</label>
-						<div class="keyrow">
-							<input id="ai-redirect" class="input grow" bind:value={redirectURI} placeholder="https://…" autocomplete="off" />
-							<Button type="submit" disabled={!redirectURI.trim()}>Make client ID</Button>
-						</div>
-						{#if clientError}<p class="notice warn">{clientError}</p>{/if}
-						{#if clientID}
-							<div class="codebox">
-								<pre>{clientID}</pre>
-								<Button icon="copy" size="sm" type="button" onclick={() => copy(clientID)}>Copy</Button>
-							</div>
+		<section class="part" aria-labelledby="ai-steps-h">
+			<h3 class="h3" id="ai-steps-h">Connect in 3 steps</h3>
+			<ol class="steps" data-testid="ai-steps">
+				<li><span class="num" aria-hidden="true">1</span><p class="st">In your AI app, add a custom connector or MCP server.</p></li>
+				<li><span class="num" aria-hidden="true">2</span><p class="st">Paste your AI address.</p></li>
+				<li>
+					<span class="num" aria-hidden="true">3</span>
+					<p class="st">
+						{#if signIn}
+							HolyArrs opens in your browser. Sign in if it asks, then press <b>Allow</b>.
+						{:else}
+							Paste the AI key from <b>Make a key</b> where your app asks for a header or key.
 						{/if}
-					</form>
-				{/if}
-				{#if chosen.agent && signIn}
-					<button type="button" class="linkish small" aria-expanded={showPrompt} onclick={() => (showPrompt = !showPrompt)}>
-						Or let {chosen.name} set itself up
-					</button>
-					{#if showPrompt}
-						<div class="codebox">
-							<pre>{agentPrompt(chosen.name, url)}</pre>
-							<Button icon="copy" size="sm" type="button" onclick={() => copy(agentPrompt(chosen.name, url))}>Copy</Button>
-						</div>
-					{/if}
-				{/if}
-				{#if chosen.check}<p class="xs muted"><b>Check:</b> {chosen.check}</p>{/if}
-				{#if chosen.note}<p class="xs muted">{chosen.note}</p>{/if}
-				{#if chosen.untried}<p class="xs muted">Not tested with HolyArrs yet: these steps follow {chosen.name}'s docs.</p>{/if}
-			{/if}
-			<p class="xs links">
-				<a class="guide-link" href={GUIDES_URL + chosen.guide} target="_blank" rel="noopener noreferrer" data-testid="ai-full-guide">Guide: {chosen.name}</a>
-				{#if family.local}· <a class="guide-link" href={GUIDES_URL + 'local-models/'} target="_blank" rel="noopener noreferrer">Pick a local model</a>{/if}
-				· <a class="guide-link" href={GUIDES_URL} target="_blank" rel="noopener noreferrer">All AI guides</a>
-			</p>
-		</div>
+					</p>
+				</li>
+			</ol>
+			<p class="small muted">Claude, ChatGPT, Gemini, Grok and Perplexity connect from the cloud, so they need HolyArrs at a public https address.</p>
+			<a class="small guide-link" href="{GUIDES_URL}#home-network" target="_blank" rel="noopener noreferrer">Only on your home network?</a>
+		</section>
 
-		<div class="try">
-			<div class="xs muted">Try this first</div>
-			<p class="small">"{TRY_FIRST}"</p>
-		</div>
+		<section class="part" aria-labelledby="ai-apps-h">
+			<h3 class="h3" id="ai-apps-h">Where to add HolyArrs</h3>
+			<table class="apps" data-testid="ai-table" aria-labelledby="ai-apps-h">
+				<thead>
+					<tr><th scope="col">App</th><th scope="col">Where to add it</th><th scope="col" class="guide-h"><span class="sr-only">Guide</span></th></tr>
+				</thead>
+				{#each GROUPS as [g, title] (g)}
+					<tbody>
+						<tr class="group"><th scope="rowgroup" colspan="3">{title}</th></tr>
+						{#each ROWS.filter((r) => r.group === g) as r (r.id)}
+							{@const off = !!r.app.cloud && local}
+							{@const on = picked?.row?.id === r.id}
+							<tr class="app-row" class:on class:off>
+								<th scope="row" class="app">
+									<button type="button" class="pick" aria-expanded={on} aria-controls={on ? 'ai-app-panel' : undefined} onclick={() => pick(r)}>{r.name}</button>
+								</th>
+								<td class="where">
+									{#if off}
+										Needs a public https address.
+									{:else}
+										{@render text(codeParts(whereText(r, url, signIn)))}{#if r.deeplink && signIn}, or <Button size="sm" href={deeplinkHref(r.deeplink, url)}>{DEEPLINK_LABEL[r.deeplink]}</Button>{/if}
+									{/if}
+								</td>
+								<td class="guide"><a class="guide-link" href={r.guide} target="_blank" rel="noopener noreferrer" aria-label="Guide for {r.name}">Guide</a></td>
+							</tr>
+							{#if narrow && on}
+								<tr class="panel-row"><td colspan="3">{@render panel()}</td></tr>
+							{/if}
+						{/each}
+					</tbody>
+				{/each}
+			</table>
+			{#if !narrow || !picked?.row}{@render panel()}{/if}
+			<a class="small guide-link" href={GUIDES_URL} target="_blank" rel="noopener noreferrer">All AI guides</a>
+		</section>
+
+		<section class="part" aria-labelledby="ai-agent-h">
+			<h3 class="h3" id="ai-agent-h">Or let your agent do it</h3>
+			<p class="small">Using Claude Code, Codex, Cursor or another agent? Paste this into it.</p>
+			<div class="codebox">
+				<pre data-testid="ai-prompt">{prompt}</pre>
+				<Button icon="copy" size="sm" type="button" onclick={() => copy(prompt)}>Copy prompt</Button>
+			</div>
+			{#if promptKey}
+				<p class="xs muted">This prompt has your key in it. Paste it only into your own agent.</p>
+			{:else if !signIn}
+				<p class="xs muted">Press <b>Make a key</b> first to put your key in the prompt.</p>
+			{/if}
+		</section>
+
+		<section class="part" aria-labelledby="ai-check-h" data-testid="ai-check">
+			<h3 class="h3" id="ai-check-h">Check it works</h3>
+			<p class="small">Ask your AI:</p>
+			<div class="codebox">
+				<pre>{CHECK_QUESTION}</pre>
+				<Button icon="copy" size="sm" type="button" onclick={() => copy(CHECK_QUESTION)}>Copy question</Button>
+			</div>
+			<p class="xs muted">If it lists your downloads, or says nothing is downloading, you're connected.</p>
+		</section>
 	</SettingsCard>
 
-	<SettingsCard id="ai-keys" title="Connected apps and AI keys">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
-			Each app that signs in gets its own key here. A key works only for AI connections; revoke it to disconnect the app.
-		</p>
+	<SettingsCard id="ai-keys" title="Connected apps">
+		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Each app that signs in or uses a key shows here. Revoke it to disconnect the app.</p>
 		{#if keysNote}
 			<p class="notice warn">{keysNote}</p>
 		{:else}
-			{#if fresh}
-				<div class="fresh" role="status">
-					<p class="small"><b>{fresh.label}</b>: copy this key now. It is shown only once.</p>
-					<div class="row">
-						<code class="key grow">{fresh.key}</code>
-						<Button icon="copy" type="button" onclick={() => fresh && copy(fresh.key)}>Copy</Button>
-						<Button variant="plain" type="button" onclick={() => (fresh = null)}>Done</Button>
-					</div>
-				</div>
-			{/if}
+			<!-- A key made for the open app shows in its steps instead. -->
+			{#if fresh && !(app && fresh.app === app.id)}{@render freshBox()}{/if}
 			{#if aiKeys.length === 0}
-				<p class="small muted">No AI apps yet.</p>
+				<p class="small muted">No AI apps yet. Connect one above and it shows here.</p>
 			{:else}
 				<ul class="rows">
 					{#each aiKeys as k (k.id)}
@@ -311,21 +494,28 @@
 								<div class="name">{k.label} <span class="mono xs muted">{k.hint}</span></div>
 								<div class="xs muted">Made {date(k.created_at)} · {k.last_used_at ? `last used ${ago(k.last_used_at)}` : 'never used'}</div>
 							</div>
-							<Button variant="destructive" type="button" onclick={() => revoke(k)}>Revoke</Button>
+							<Button variant="destructive" type="button" onclick={() => askRevoke(k)}>Revoke</Button>
 						</li>
 					{/each}
 				</ul>
 			{/if}
 			<details class="more" style="margin-top: var(--s-4)">
-				<summary>Make a key by hand</summary>
+				<summary bind:this={byHand}>Make a key by hand</summary>
 				<form class="row" onsubmit={makeKey}>
 					<label class="sr-only" for="ai-key-label">Key name</label>
-					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="Which AI app? (Claude Desktop)" maxlength="64" />
+					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="Which AI app? (for example Claude Desktop)" maxlength="64" />
 					<Button icon="key" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make an AI key</Button>
 				</form>
 			</details>
 		{/if}
 	</SettingsCard>
+
+	<Sheet bind:open={revokeOpen} size="sm" title={revoking ? `Revoke ${revoking.label}?` : 'Revoke'} description="It stops working until you connect it again.">
+		<div class="confirm-actions">
+			<Button variant="plain" type="button" onclick={() => (revokeOpen = false)}>Keep it</Button>
+			<Button variant="destructive" type="button" disabled={revokeBusy} onclick={() => revoking && void revoke(revoking)}>Revoke</Button>
+		</div>
+	</Sheet>
 {/if}
 
 <style>
@@ -335,13 +525,17 @@
 		display: grid;
 		gap: 4px;
 	}
+	.addr-label {
+		margin-top: var(--s-2);
+		font-weight: var(--weight-semibold);
+	}
 	.addr-row,
 	.keyrow {
 		display: flex;
 		align-items: center;
 		gap: var(--s-2);
 		flex-wrap: wrap;
-		margin-top: var(--s-2);
+		margin: var(--s-2) 0;
 	}
 	.addr,
 	.key {
@@ -353,38 +547,27 @@
 		overflow-wrap: anywhere;
 	}
 	.mode {
-		margin: var(--s-2) 0 var(--s-3);
+		margin: var(--s-3) 0 0;
 	}
-	.apps {
-		display: flex;
-		gap: var(--s-2);
-		overflow-x: auto;
-		padding-bottom: 4px;
-		margin-bottom: var(--s-3);
-		scrollbar-width: thin;
+	.notice {
+		margin-top: var(--s-2);
 	}
-	.apps :global(*) {
-		flex-shrink: 0;
-	}
-	.apps.sub {
-		margin-top: calc(-1 * var(--s-2));
-	}
-	.links {
-		margin: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px;
-	}
-	.guide {
+	.part {
 		display: grid;
 		gap: var(--s-3);
+		margin-top: var(--s-5);
+		min-width: 0;
+	}
+	.part > p,
+	.part > h3 {
+		margin: 0;
 	}
 	.steps {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: var(--s-4);
+		gap: var(--s-3);
 	}
 	.steps li {
 		display: flex;
@@ -403,22 +586,116 @@
 	}
 	.st {
 		margin: 2px 0 var(--s-2);
+		overflow-wrap: anywhere;
 	}
-	.needs {
+	.steps li > .st {
+		margin-bottom: 0;
+	}
+	.st code,
+	.where code {
+		font-size: 0.92em;
+		padding: 1px 4px;
+		border-radius: 4px;
+		background: var(--surface-2);
+		overflow-wrap: anywhere;
+	}
+	.apps {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--text-sm);
+		table-layout: fixed;
+	}
+	.apps thead th {
+		text-align: left;
+		color: var(--text-muted);
+		font: var(--t-footnote);
+		font-weight: 600;
+		padding: 0 var(--s-2) var(--s-2);
+		border-bottom: 1px solid var(--line);
+	}
+	.apps thead th:first-child {
+		width: 34%;
+	}
+	.apps thead .guide-h {
+		width: 72px;
+	}
+	.apps .group th {
+		text-align: left;
+		font-weight: var(--weight-semibold);
+		padding: var(--s-4) var(--s-2) var(--s-2);
+		border-bottom: 1px solid var(--line);
+	}
+	.apps .app-row th,
+	.apps .app-row td {
+		text-align: left;
+		vertical-align: top;
+		padding: var(--s-2);
+		border-bottom: 1px solid var(--line);
+		overflow-wrap: anywhere;
+	}
+	.apps .app-row.on th,
+	.apps .app-row.on td {
+		background: var(--surface-2);
+	}
+	.apps .app-row.off .where {
+		color: var(--text-muted);
+	}
+	.apps .guide {
+		text-align: right;
+		white-space: nowrap;
+	}
+	.pick {
+		display: inline-flex;
+		align-items: center;
+		min-height: 36px;
+		background: none;
+		border: 0;
+		padding: 0;
+		font: inherit;
+		font-weight: var(--weight-semibold);
+		color: var(--text);
+		text-align: left;
+		cursor: pointer;
+		text-decoration: underline;
+		text-decoration-color: var(--line-strong);
+		text-underline-offset: 3px;
+	}
+	.pick:hover,
+	.pick[aria-expanded='true'] {
+		text-decoration-color: currentColor;
+	}
+	.panel-row td {
+		padding: var(--s-3) 0;
+		border-bottom: 1px solid var(--line);
+	}
+	.panel {
+		display: grid;
+		gap: var(--s-3);
+		padding: var(--s-4);
+		border-radius: var(--r-btn);
+		border: 1px solid var(--line);
+		min-width: 0;
+	}
+	.which {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s-2);
+	}
+	.panel > p,
+	.panel > h4 {
 		margin: 0;
 	}
 	.client-id {
 		display: grid;
 		gap: var(--s-2);
 	}
-	.steps p {
-		margin: 0 0 var(--s-2);
+	.client-id p {
+		margin: 0;
 	}
 	.codebox {
 		display: flex;
 		align-items: flex-start;
 		gap: var(--s-2);
-		margin-bottom: var(--s-2);
 		min-width: 0;
 	}
 	.codebox pre {
@@ -432,30 +709,15 @@
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
-	.linkish {
-		justify-self: start;
-		background: none;
-		border: 0;
-		padding: 0;
-		color: var(--ha-red);
-		cursor: pointer;
-	}
 	.guide-link {
 		justify-self: start;
 		color: var(--ha-red);
+		text-decoration: underline;
+		text-underline-offset: 3px;
 	}
 	.more summary {
 		cursor: pointer;
 		padding: 6px 0;
-	}
-	.try {
-		margin-top: var(--s-4);
-		padding: var(--s-3);
-		border-radius: var(--r-sm);
-		background: var(--surface-2);
-	}
-	.try p {
-		margin: 2px 0 0;
 	}
 	.fresh {
 		padding: var(--s-4);
@@ -464,15 +726,64 @@
 		border-radius: var(--r-btn);
 		margin-bottom: var(--s-4);
 	}
-	.fresh .row {
+	.fresh p {
+		margin: 0 0 var(--s-1);
+	}
+	.fresh-row {
+		display: flex;
+		align-items: center;
+		gap: var(--s-2);
+		flex-wrap: wrap;
 		margin-top: var(--s-2);
 	}
-	.row {
+	.panel .fresh {
+		margin-bottom: 0;
+	}
+	.confirm-actions {
+		display: flex;
+		justify-content: flex-end;
 		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 6px;
+	}
+	@media (pointer: coarse) {
+		.pick {
+			min-height: 44px;
+		}
 	}
 	@media (max-width: 767px) {
 		.codebox {
 			flex-direction: column;
+		}
+		/* The table stacks: app and Guide on one line, where under them. */
+		.apps,
+		.apps tbody {
+			display: block;
+		}
+		.apps thead {
+			display: none;
+		}
+		.apps .group,
+		.apps .panel-row {
+			display: block;
+		}
+		.apps .group th,
+		.apps .panel-row td {
+			display: block;
+		}
+		.apps .app-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			border-bottom: 1px solid var(--line);
+		}
+		.apps .app-row th,
+		.apps .app-row td {
+			border-bottom: 0;
+		}
+		.apps .app-row .where {
+			grid-column: 1 / -1;
+			grid-row: 2;
+			padding-top: 0;
 		}
 	}
 </style>
