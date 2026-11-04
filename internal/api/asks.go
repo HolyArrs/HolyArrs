@@ -123,6 +123,10 @@ func (a *API) askViews(r *http.Request, where string, args ...any) ([]asks.View,
 			vs[i].Mine = vs[i].Mine || p.ID == me
 		}
 	}
+	// Who else declined the same title is for people who approve (#136).
+	if mayApprove(r) {
+		a.s.Asks.AddAlsoDeclined(r.Context(), vs)
+	}
 	return vs, nil
 }
 

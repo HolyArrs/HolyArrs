@@ -640,3 +640,53 @@ func pushForm(call string) url.Values {
 	f, _ := url.ParseQuery(strings.TrimPrefix(call, "/1/messages.json||"))
 	return f
 }
+
+// route: GET /api/v1/asks
+// #136: who else declined the same title is told to people who approve
+// only. A member's list and their own ask carry no also_declined at all.
+func TestAlsoDeclinedForApproversOnly(t *testing.T) {
+	r := newAskRig(t)
+	first := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
+	r.owner.call("POST", "/api/v1/asks/"+itoa(first.ID)+"/turn-down", `{}`, 200)
+	again := askOf(t, r.bo.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
+	if again.ID == first.ID {
+		t.Fatalf("asked again is the same ask %d", again.ID)
+	}
+	list := func(s *signedIn) []map[string]json.RawMessage {
+		var x struct {
+			Asks []map[string]json.RawMessage `json:"asks"`
+		}
+		if err := json.Unmarshal(s.call("GET", "/api/v1/asks", "", 200), &x); err != nil {
+			t.Fatal(err)
+		}
+		return x.Asks
+	}
+	for _, m := range []*signedIn{r.ana, r.bo} {
+		for _, a := range list(m) {
+			if _, ok := a["also_declined"]; ok {
+				t.Fatalf("a member's list carries also_declined: %s", a["also_declined"])
+			}
+		}
+	}
+	if b := string(r.bo.call("GET", "/api/v1/asks/"+itoa(again.ID), "", 200)); strings.Contains(b, "also_declined") {
+		t.Fatalf("a member's own ask carries also_declined: %s", b)
+	}
+	found := false
+	for _, a := range list(r.owner) {
+		var id int64
+		_ = json.Unmarshal(a["id"], &id)
+		if id != again.ID {
+			continue
+		}
+		found = true
+		var who []struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(a["also_declined"], &who); err != nil || len(who) != 1 || who[0].Name != "luis" {
+			t.Fatalf("approver's also_declined %s %v", a["also_declined"], err)
+		}
+	}
+	if !found {
+		t.Fatal("the approver does not see the new ask")
+	}
+}
