@@ -33,8 +33,10 @@ function loadHls(): Promise<typeof HlsType> {
 }
 
 /** attachHLS plays url on video from start seconds; the answer detaches.
- * target is the tallest picture worth fetching (playerTarget; hover cards keep 720). */
-export async function attachHLS(video: HTMLVideoElement, url: string, native: boolean, start = 0, target = 720): Promise<() => void> {
+ * target is the tallest picture worth fetching (playerTarget; hover cards keep 720).
+ * floor keeps the picture at least that tall whatever the player's size (a
+ * retry at the largest picture, when a smaller one would not decode). */
+export async function attachHLS(video: HTMLVideoElement, url: string, native: boolean, start = 0, target = 720, floor = 0): Promise<() => void> {
 	if (native) {
 		if (start > 0) video.addEventListener('loadedmetadata', () => (video.currentTime = start), { once: true });
 		video.src = url;
@@ -53,7 +55,7 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	let avc: { height: number }[] = [];
 	const recap = () => {
 		if (!avc.length) return;
-		const cap = capLevel(avc.map((l) => l.height), shownHeight(video));
+		const cap = capLevel(avc.map((l) => l.height), Math.max(shownHeight(video), floor));
 		if (hls.autoLevelCapping !== cap) hls.autoLevelCapping = cap;
 	};
 	hls.on(Hls.Events.MANIFEST_PARSED, () => {

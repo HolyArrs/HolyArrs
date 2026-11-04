@@ -312,7 +312,7 @@
 		el.addEventListener('error', fail);
 		// Never the opening: a start the browser dropped (Safari's own HLS) jumps back to it.
 		const unhold = holdStart(el, heroVideoStart(v));
-		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), tall ? 1080 : screenTarget('cover'))
+		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), tall ? 1080 : screenTarget('cover'), tall ? 1080 : 0)
 			.then((d) => {
 				if (stopped) return d();
 				detach = d;
