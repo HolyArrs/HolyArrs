@@ -130,14 +130,14 @@ describe('alsoDeclined (#136)', () => {
 	});
 	it('names everyone, display name first', () => {
 		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B')] })).toBe('Bo B declined it before.');
-		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B'), w(3, 'cy'), w(4, 'di', ' Di ')] })).toBe('Bo B, cy and Di declined it before.');
+		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B'), w(3, 'cy', 'Cy'), w(4, 'di', ' Di ')] })).toBe('Bo B, Cy and Di declined it before.');
 	});
 	it('uses my own fresh display name for me', () => {
 		expect(alsoDeclined({ also_declined: [w(1, 'luis', 'Old')] }, { id: 1, displayName: 'Luis R' })).toBe('Luis R declined it before.');
 	});
-	it('counts people without a display name when account names are not said', () => {
-		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B'), w(3, 'cy')] }, undefined, true)).toBe('Bo B and 1 other declined it before.');
-		expect(alsoDeclined({ also_declined: [w(3, 'cy')] }, undefined, true)).toBe('1 other person declined it before.');
-		expect(alsoDeclined({ also_declined: [w(3, 'cy'), w(4, 'di')] }, undefined, true)).toBe('2 other people declined it before.');
+	it('never says a sign-in name: people without a display name are counted', () => {
+		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B'), w(3, 'cy')] })).toBe('Bo B and 1 other declined it before.');
+		expect(alsoDeclined({ also_declined: [w(3, 'cy')] })).toBe('1 other person declined it before.');
+		expect(alsoDeclined({ also_declined: [w(3, 'cy'), w(4, 'di', '  ')] })).toBe('2 other people declined it before.');
 	});
 });

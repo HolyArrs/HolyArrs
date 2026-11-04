@@ -1,0 +1,1 @@
+import{Ki as e,Xi as t,yi as n}from"../chunks/d9XHFsTb.js";import"../chunks/wllIIK1T.js";import{r}from"../chunks/CWlejVbO.js";function i(i){n(`98rkey`,n=>{e(()=>{t.title=`Turned down · HolyArrs`})}),r(i,{list:`turned-down`})}export{i as component};

@@ -453,7 +453,7 @@
 	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? 'someone in your household' : w));
 	const askedBy = (a: Ask) => plain(askedByRaw(a));
 	const decided = (a: Ask) => plain(decidedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined) ?? '');
-	const alsoDeclined = (a: Ask, namedOnly = false) => plain(alsoDeclinedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined, namedOnly));
+	const alsoDeclined = (a: Ask) => plain(alsoDeclinedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined));
 
 	function year(a: Ask) {
 		return a.year ? ` (${a.year})` : '';
@@ -558,7 +558,7 @@
 		year,
 		askedBy,
 		decided,
-		alsoDeclined: (a) => alsoDeclined(a, true),
+		alsoDeclined,
 		pill: askPill,
 		approvedLine,
 		href: askHref,
@@ -689,7 +689,6 @@
 									{decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
 								</p>
 							{/if}
-							{#if a.state === 'turned_down' && alsoDeclined(a)}<p class="line muted" data-testid="also-declined">{alsoDeclined(a)}</p>{/if}
 							{#if a.note}<p class="line note">“{a.note}”</p>{/if}
 							{#if a.state === 'approved'}
 								{@const why = whyFailed(a)}
