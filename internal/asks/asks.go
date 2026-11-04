@@ -736,6 +736,14 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	if err := s.followAskers(ctx, a.ID, tid); err != nil {
 		log.Printf("asks: follows of ask %d: %v", a.ID, err)
 	}
+	// A movie is searched as it is added; a show's episodes and an artist's
+	// albums are kept up to date above, then looked for at once too, not
+	// at the next missing search (hours away).
+	if set.SearchOnApprove && (a.Kind == "show" || a.Kind == "artist") && s.Library != nil && s.Library.Queue != nil {
+		if err := s.Library.ScanThenSearch(ctx, tid, by.actor()); err != nil {
+			log.Printf("asks: search for ask %d: %v", a.ID, err)
+		}
+	}
 	people, _ := s.people(ctx, a.ID)
 	how := "approved by " + by.Name
 	if auto {

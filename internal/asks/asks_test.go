@@ -770,7 +770,7 @@ func TestAlsoDeclinedNamesEarlierDecliners(t *testing.T) {
 		}
 		r.svc.AddAlsoDeclined(ctx, vs)
 		out := []string{}
-		for _, w := range vs[0].AlsoDeclined {
+		for _, w := range *vs[0].AlsoDeclined {
 			out = append(out, w.Name)
 		}
 		return out
@@ -825,7 +825,7 @@ func TestAlsoDeclinedShowsWithoutTMDBID(t *testing.T) {
 		}
 		r.svc.AddAlsoDeclined(ctx, vs)
 		out := []string{}
-		for _, w := range vs[0].AlsoDeclined {
+		for _, w := range *vs[0].AlsoDeclined {
 			out = append(out, w.Name)
 		}
 		return out

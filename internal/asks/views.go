@@ -63,8 +63,9 @@ type View struct {
 	DecidedAt    *time.Time `json:"decided_at,omitempty"`
 	// AlsoDeclined are the other people who declined the same thing on
 	// earlier asks for it, newest first (the decider of this ask left out).
-	// Filled by AddAlsoDeclined, for people who approve only.
-	AlsoDeclined []Who `json:"also_declined,omitempty"`
+	// Filled by AddAlsoDeclined, for people who approve only (a list, maybe
+	// empty); left out for everyone else.
+	AlsoDeclined *[]Who `json:"also_declined,omitempty"`
 	Note         string     `json:"note,omitempty"`
 	AutoApproved bool       `json:"auto_approved"`
 	AvailableAt  *time.Time `json:"available_at,omitempty"`
@@ -176,14 +177,13 @@ func (s *Service) AddAlsoDeclined(ctx context.Context, vs []View) {
 		return w
 	}
 	for i := range vs {
-		vs[i].AlsoDeclined = []Who{}
-		a, err := get(ctx, db, vs[i].ID)
-		if err != nil {
-			continue
+		list := []Who{}
+		if a, err := get(ctx, db, vs[i].ID); err == nil {
+			for _, id := range alsoDeclined(ctx, db, a) {
+				list = append(list, who(id))
+			}
 		}
-		for _, id := range alsoDeclined(ctx, db, a) {
-			vs[i].AlsoDeclined = append(vs[i].AlsoDeclined, who(id))
-		}
+		vs[i].AlsoDeclined = &list
 	}
 }
 

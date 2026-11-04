@@ -344,6 +344,27 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 // added with search when added.
 const stepSearchShow = "search_show"
 
+// stepSearchWanted is the chain step that searches everything one title
+// still wants (its kept episodes, seasons or albums), the way the missing
+// search would, now.
+const stepSearchWanted = "search_wanted"
+
+// ScanThenSearch scans the title's folder, then searches all it still
+// wants. An approved request for a show or an artist uses it, so what was
+// asked for is looked for at once, not at the next missing search.
+func (s *Service) ScanThenSearch(ctx context.Context, titleID int64, by domain.Actor) error {
+	_, _, err := s.Queue.Enqueue(ctx, KindScanTitle, &domain.Subject{Type: "title", ID: titleID},
+		map[string]any{"then": []any{stepSearchWanted}}, "scan_then_search:"+strconv.FormatInt(titleID, 10), by)
+	return err
+}
+
+// searchWanted queues the missing search for this one title.
+func (s *Service) searchWanted(ctx context.Context, titleID int64, by domain.Actor) error {
+	_, _, err := s.Queue.Enqueue(ctx, source.KindSearchMissing, &domain.Subject{Type: "title", ID: titleID},
+		map[string]any{"title_id": titleID}, "search_wanted:"+strconv.FormatInt(titleID, 10), by)
+	return err
+}
+
 // SeasonVersion is one season and Version of a show to search.
 type SeasonVersion struct{ PartID, VersionID int64 }
 

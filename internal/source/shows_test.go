@@ -568,3 +568,20 @@ func TestDailyEpisodeQuery(t *testing.T) {
 		t.Fatalf("daily episode %s", f.state(t, "S02E01"))
 	}
 }
+
+// #139: title_id keeps the missing search to one title (an approved show
+// request): its episodes are searched, the other title's movie is not.
+func TestMissingSearchOneTitle(t *testing.T) {
+	ts := &tvServer{answer: func(url.Values) []string { return nil }}
+	f := seedShow(t, ts.start(t), nil)
+	sr := &Searcher{Store: f.s}
+	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"title_id": float64(f.titleID)})
+	if n, _ := j.Result["slots"].(float64); j.State != "done" || n != 4 {
+		t.Fatalf("one title: %s %+v", j.State, j.Result)
+	}
+	var movie int
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", KindSearchSlot, f.slotID).Scan(&movie)
+	if movie != 0 {
+		t.Fatalf("the movie was searched too (%d)", movie)
+	}
+}
