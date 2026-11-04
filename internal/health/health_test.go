@@ -277,9 +277,19 @@ func TestTrailersCheck(t *testing.T) {
 	if c := w.run(t)["trailers"]; c.State != OK || c.Message != "YouTube could not be reached (the last lookup failed)" {
 		t.Fatalf("one failure %+v", c)
 	}
-	tr.Failed, tr.LastReason = TrailerFailLimit-1, "unavailable"
-	if c := w.run(t)["trailers"]; c.State != OK || c.Message != "Trailers are not being found; a HolyArrs update may be needed (4 different videos failed in a row)" {
+	tr.Failed, tr.LastReason = TrailerFailLimit-1, "network"
+	if c := w.run(t)["trailers"]; c.State != OK || c.Message != "YouTube could not be reached (4 different videos failed in a row)" {
 		t.Fatalf("below the limit %+v", c)
+	}
+	// A few trailers that will not play (removed, blocked) say nothing yet:
+	// that is everyday, not a sign the reader broke.
+	for _, reason := range []string{"unavailable", "unplayable"} {
+		for _, n := range []int{1, TrailerFailLimit - 1} {
+			tr.Failed, tr.LastReason = n, reason
+			if c := w.run(t)["trailers"]; c.State != OK || c.Message != "" {
+				t.Fatalf("%s x%d: %+v", reason, n, c)
+			}
+		}
 	}
 	// Door reasons keep their words; videos that no longer play anywhere
 	// say an update may be needed.

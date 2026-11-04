@@ -409,7 +409,13 @@ func (e *Engine) trailers(ctx context.Context) ([]Result, error) {
 		if t.Failed == 1 {
 			in = "the last lookup failed"
 		}
-		r.Message = readerTrouble(t.LastReason) + " (" + in + ")"
+		// Below the limit, a trailer that will not play (removed, blocked)
+		// is nothing to report: that happens all the time. YouTube turning
+		// the reader away is named at once.
+		video := youtube.Reason(t.LastReason).VideoReason()
+		if t.Failed >= TrailerFailLimit || !video {
+			r.Message = readerTrouble(t.LastReason) + " (" + in + ")"
+		}
 		if t.Failed >= TrailerFailLimit {
 			r.State = Warning
 		}

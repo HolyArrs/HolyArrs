@@ -138,8 +138,9 @@ trailer reader is part of HolyArrs and gets its fixes with HolyArrs updates.
 Older scripts that still send that switch keep working: it is ignored.
 
 The trailer reader's state shows on **Status > Updates** and under
-**Health**: the last good lookup, and while lookups keep failing, why and how
-for how many different titles in a row. A trailer behind an age check, a
+**Health**: the last good lookup, and while YouTube turns the reader away,
+why and for how many different titles in a row. Trailers that will not play
+(removed or blocked) are named only once they add up to a warning. A trailer behind an age check, a
 sign-in or a content warning does not count, since that is about the video.
 After 5 different titles fail with no good lookup in between, Health warns
 with the reason in plain words: usually YouTube changed something and a
