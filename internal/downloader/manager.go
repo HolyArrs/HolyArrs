@@ -703,9 +703,13 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		localHost := "" // a home Source may be local itself, nothing else may
-		if su, err := url.Parse(src.URL); allowLocal && err == nil {
-			localHost = strings.TrimSuffix(strings.ToLower(su.Hostname()), ".")
+		localHost := "" // a home Source may be local itself (its host and port), nothing else may
+		if su, err := url.Parse(src.URL); allowLocal && err == nil && su.Hostname() != "" {
+			port := su.Port()
+			if port == "" {
+				port = map[string]string{"http": "80", "https": "443"}[strings.ToLower(su.Scheme)]
+			}
+			localHost = net.JoinHostPort(strings.TrimSuffix(strings.ToLower(su.Hostname()), "."), port)
 		}
 		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, localHost); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)

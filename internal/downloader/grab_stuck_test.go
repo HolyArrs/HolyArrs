@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"slices"
 	"strings"
 	"testing"
@@ -163,6 +164,12 @@ func TestGrabHashlessLocalLinkOnlyTheSourceItself(t *testing.T) {
 	}
 	if hit != 0 || len(w.fake.added) != 0 {
 		t.Fatalf("the device was called %d times, added %v", hit, w.fake.added)
+	}
+	// The Source's own host on another port is another service: refused too.
+	u, _ := url.Parse(dev.URL)
+	w.exec(t, "UPDATE sources SET url = ?", "http://"+u.Hostname()+":1/api")
+	if _, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System); err == nil || hit != 0 {
+		t.Fatalf("another port of the Source's host was reached (%v, %d calls)", err, hit)
 	}
 }
 
