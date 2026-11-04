@@ -673,6 +673,10 @@ func TestAlsoDeclinedForApproversOnly(t *testing.T) {
 	}
 	found := false
 	for _, a := range list(r.owner) {
+		// Every ask an approver reads carries the list, empty when nobody else declined.
+		if _, ok := a["also_declined"]; !ok {
+			t.Fatalf("an approver's ask has no also_declined: %v", a["id"])
+		}
 		var id int64
 		_ = json.Unmarshal(a["id"], &id)
 		if id != again.ID {
