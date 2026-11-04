@@ -21,10 +21,6 @@ TARGETS = {"linux-amd64": ("linux", "amd64", ""),
            "linux-armv7": ("linux", "arm", "7"),
            "linux-386": ("linux", "386", ""),
            "windows-amd64": ("windows", "amd64", "")}
-# Nothing ships next to holyarrs any more (trailers use the built-in reader);
-# the empty table stays for scripts/notices.py.
-YTDLP_VERSION = "2026.08.19"
-YTDLP: dict = {}
 SOURCE_DIRS = {"cmd", "internal", "web", "scripts", "docs", ".github"}
 SOURCE_FILES = {"go.mod", "go.sum", "LICENSE", "README.md", "SECURITY.md",
                 "Makefile", "Dockerfile", ".gitignore", ".gitattributes", ".dockerignore"}
