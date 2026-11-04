@@ -88,7 +88,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 		var existing string
 		if err := tx.QueryRowContext(ctx, `SELECT external_id FROM downloads WHERE downloader_id = ? AND release_id = ?
 			AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)
-			AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND i.state = 'rejected') LIMIT 1`, d.ID, releaseID, slotID).Scan(&existing); err == nil {
+			AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND (i.state = 'rejected' OR downloads.state = 'finished')) LIMIT 1`, d.ID, releaseID, slotID).Scan(&existing); err == nil {
 			a = &sendAttempt{Attempt: Attempt{DownloaderID: d.ID, ReleaseID: releaseID, SlotID: slotID, State: "resolved"}, marker: existing}
 			return nil
 		} else if !errors.Is(err, sql.ErrNoRows) {

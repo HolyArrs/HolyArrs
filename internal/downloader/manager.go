@@ -220,11 +220,87 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(map[string]any{"not_sent": te.Error()})
 		return nil
 	}
+	var fe interface{ Final() bool }
+	if errors.As(err, &fe) && fe.Final() {
+		// The Release can never be sent: it is turned down and the Slot is
+		// searched again, instead of trying it five times and staying chosen.
+		m.giveUp(ctx, r.Job.Subject.ID, int64(relID), err.Error(), true, domain.Actor{Kind: "job", ID: r.Job.ID})
+		r.SetResult(map[string]any{"not_sent": err.Error()})
+		return nil
+	}
 	if err != nil {
+		// The last try failed on the Downloader's side (it did not answer,
+		// or is resting): the Slot goes back to wanted so a later search can
+		// choose again. An unknown outcome stays for a person.
+		if r.Job.MaxAttempts > 0 && r.Job.Attempt >= r.Job.MaxAttempts && !errors.Is(err, ErrUncertain) && !errors.Is(err, ErrAttemptStopped) {
+			m.giveUp(ctx, r.Job.Subject.ID, int64(relID), err.Error(), false, domain.Actor{Kind: "job", ID: r.Job.ID})
+		}
 		return err
 	}
 	r.SetResult(map[string]any{"download_id": id})
 	return nil
+}
+
+// releaseRefused is a send this Release can never make, on any Downloader:
+// trying it again changes nothing.
+type releaseRefused struct{ msg string }
+
+func (e releaseRefused) Error() string { return e.msg }
+func (releaseRefused) Final() bool     { return true }
+
+// grabFailed is each Downloader's refusal of one grab, in the order tried.
+// It is final only when every refusal was the Release's own.
+type grabFailed []error
+
+func (g grabFailed) Error() string {
+	s := make([]string, len(g))
+	for i, e := range g {
+		s[i] = e.Error()
+	}
+	return strings.Join(s, "; ")
+}
+
+func (g grabFailed) Final() bool {
+	for _, e := range g {
+		var rr releaseRefused
+		if !errors.As(e, &rr) {
+			return false
+		}
+	}
+	return len(g) > 0
+}
+
+// giveUp frees a Slot whose grab ended without a send: back to wanted, so a
+// search can choose again. turnDown also turns the Release down (it can
+// never be sent) and searches the Slot again at once. A Slot that moved on
+// meanwhile is left as it is.
+func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason string, turnDown bool, by domain.Actor) {
+	freed := false
+	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, "UPDATE slots SET chosen_release_id = NULL WHERE id = ? AND state = 'chosen' AND chosen_release_id = ?", slotID, releaseID)
+		if err != nil {
+			return err
+		}
+		if n, err := res.RowsAffected(); err != nil || n == 0 {
+			return err
+		}
+		if turnDown {
+			if _, err := tx.ExecContext(ctx, `UPDATE releases SET state = 'turned_down', hold_until = NULL,
+				verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?), updated_at = ? WHERE id = ?`,
+				"could not be sent: "+reason, store.FormatTime(m.now()), releaseID); err != nil {
+				return err
+			}
+		}
+		freed = true
+		return store.MoveSlotTx(tx, slotID, domain.SlotWanted, "not sent: "+reason, by)
+	})
+	if err != nil || !freed {
+		return
+	}
+	m.publish("slot", map[string]any{"id": slotID, "state": domain.SlotWanted, "reason": reason})
+	if turnDown && m.OnFailed != nil {
+		m.OnFailed(ctx, slotID)
+	}
 }
 
 // Grab sends a Release to a Downloader for its protocol (by priority, equal
@@ -274,11 +350,13 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	// Unknown outcomes pin the original Downloader before ordering or backoff.
 	// An empty lookup after a restart never permits a failover append.
 	// A retry after a kill finds the Download the first try wrote, or the
-	// torrent already in the Downloader: it must not add a second one.
+	// torrent already in the Downloader: it must not add a second one. A
+	// finished Download that already went through an Import is an old one
+	// (the same Release chosen again): it is sent again, not waited on.
 	var dl *domain.Download
 	if prior, err := store.Select[domain.Download](ctx, db, "downloads",
 		"release_id = ? AND state IN ("+activeStates+", 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)"+
-			" AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND i.state = 'rejected') ORDER BY id DESC LIMIT 1",
+			" AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND (i.state = 'rejected' OR downloads.state = 'finished')) ORDER BY id DESC LIMIT 1",
 		rel.ID, slotID); err != nil {
 		return 0, err
 	} else if len(prior) == 1 {
@@ -327,7 +405,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		if db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'what_to_pick' AND key = 'try_next_downloader'").Scan(&v) == nil && v == "false" {
 			tryNext = false
 		}
-		var fails []string
+		var fails []error
 		for i := 0; dl == nil && i < len(dls); i++ {
 			if i > 0 && !tryNext {
 				break
@@ -338,14 +416,14 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) {
 					return 0, err
 				}
-				fails = append(fails, err.Error())
+				fails = append(fails, err)
 				continue
 			}
 			dl = &domain.Download{DownloaderID: d.ID, ReleaseID: &rel.ID, SlotIDs: []int64{slotID}, ExternalID: ext, State: "sent",
 				FilesSeen: []domain.SeenFile{}, SavePath: m.SavePath, StartedBy: by, ProgressAt: &now}
 		}
 		if dl == nil {
-			return 0, errors.New(strings.Join(fails, "; "))
+			return 0, grabFailed(fails)
 		}
 	}
 	// The Download row and the Slot move are one write, so a kill cannot
@@ -358,7 +436,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		if dl.ID == 0 {
 			prior, err := store.Select[domain.Download](ctx, tx, "downloads", `downloader_id = ? AND external_id = ? AND release_id = ?
 				AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)
-				AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND i.state = 'rejected') LIMIT 1`, d.ID, dl.ExternalID, rel.ID, slotID)
+				AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND (i.state = 'rejected' OR downloads.state = 'finished')) LIMIT 1`, d.ID, dl.ExternalID, rel.ID, slotID)
 			if err != nil {
 				return err
 			}
@@ -591,6 +669,14 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	}
 	if link, err = grabLinkAllowed(d.Adapter, link, allowLocal); err != nil {
 		return "", err
+	}
+	// qBittorrent answers an add without an id: HolyArrs follows the torrent
+	// by its info hash, from the Release or its magnet link. Without one the
+	// torrent would download unseen, so it is not sent.
+	if d.Adapter == "qbittorrent" && hash == "" {
+		if hash = linkHash(link); hash == "" {
+			return "", releaseRefused{"the Release has no info hash, so " + d.Name + "'s download of it could not be followed"}
+		}
 	}
 	done, err := m.space(ctx, d.URL)
 	if err != nil {
