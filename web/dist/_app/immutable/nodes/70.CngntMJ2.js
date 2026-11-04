@@ -1,1 +1,0 @@
-import{Ai as e,Ci as t,Lr as n,Zi as r,da as i,ki as a,sa as o,ua as s,zi as c}from"../chunks/CfHOAF0w.js";import{t as l}from"../chunks/BQq90GuM.js";function u(u,d){i(d,!0);let f=o(()=>n.params.kind??``),p=o(()=>n.params.tmdb??``);var m=e(),h=r(m);t(h,()=>`${c(f)}/${c(p)}`,e=>{l(e,{get kind(){return c(f)},get tmdb(){return c(p)}})}),a(u,m),s()}export{u as component};

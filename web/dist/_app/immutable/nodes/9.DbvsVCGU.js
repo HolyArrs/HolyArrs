@@ -1,1 +1,0 @@
-import{Br as e,Ei as t,Ji as n,Jr as r,Wi as i,_i as a,da as o,kr as s,ua as c}from"../chunks/CfHOAF0w.js";import"../chunks/DUX8mnqW.js";function l(l,u){o(u,!1),t(()=>{s(e(`/downloads?show=problems.decide`),{replaceState:!0})}),r(),a(`1on3u6n`,e=>{i(()=>{n.title=`Downloads · HolyArrs`})}),c()}export{l as component};
