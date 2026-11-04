@@ -8,6 +8,7 @@ import { owner, signIn } from './helpers.ts';
 // Lumen Cistern plays; Aster Funicular's first trailer is behind YouTube's
 // age sign-in, so its second one plays; both of Gossamer Weir's trailers
 // were removed; Pumice Belfry is not looked up yet when its page opens.
+// The title page's Trailer button on Gossamer Weir says why at once.
 // Nothing leaves this machine: the browser's calls to YouTube's video
 // servers and player are answered here (page routes), everything else
 // outside 127.0.0.1 is refused.
@@ -166,11 +167,28 @@ test('every trailer removed: the player says why in plain words', async () => {
 	await page.goto(`/title/movie/${weir}`);
 	await page.getByTestId('title-trailers').getByRole('button', { name: 'Play Gossamer Weir official trailer' }).click();
 	const theater = page.getByTestId('theater');
-	// No address was kept, so YouTube's player gets one try; it refuses the removed video too.
-	await expect(theater.locator('iframe')).toHaveAttribute('src', /^https:\/\/www\.youtube-nocookie\.com\/embed\/weirGone001\?/);
+	// HolyArrs already knows both were removed: the line shows at once, with no YouTube player behind it.
 	const line = theater.getByRole('status').filter({ hasText: /\S/ });
 	await expect(line).toHaveText(/^This trailer was removed from YouTube\.\s*Close$/);
+	await expect(theater.locator('iframe')).toHaveCount(0);
+	expect(embedAsks.some((k) => k.startsWith('weirGone'))).toBe(false);
 	expect(videoAsks.some((u) => u.includes('id=weirGone'))).toBe(false);
 	// The line is plain words: no reason code reaches the screen.
 	await expect(line).not.toContainText('unavailable');
+});
+
+test("every trailer removed: the title page's Trailer button says why at once", async () => {
+	await waitForPass(weir, (a) => a.status === 404 && a.body.reason === 'unavailable');
+	await page.goto(`/title/movie/${weir}`);
+	await expect(page.getByTestId('title-detail').getByRole('heading', { level: 1, name: 'Gossamer Weir' })).toBeVisible();
+	const embedsBefore = embedAsks.length;
+	await page.getByTestId('hero-trailer').click();
+	const theater = page.getByTestId('theater');
+	// HolyArrs already knows none plays here: the line shows with no YouTube player behind it.
+	const line = theater.getByRole('status').filter({ hasText: /\S/ });
+	await expect(line).toHaveText(/^This trailer was removed from YouTube\.\s*Close$/);
+	await expect(theater.locator('iframe')).toHaveCount(0);
+	expect(embedAsks.slice(embedsBefore).some((k) => k.startsWith('weirGone'))).toBe(false);
+	await line.getByRole('button', { name: 'Close' }).click();
+	await expect(theater).toBeHidden();
 });

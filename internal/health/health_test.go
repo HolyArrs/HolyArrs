@@ -302,3 +302,35 @@ func TestTrailersCheck(t *testing.T) {
 		t.Fatalf("recovered %+v", c)
 	}
 }
+
+// A restart: the first run comes before the trailers check is wired. The
+// kept warning stays as it was (not dropped and announced again later);
+// once the check reports again it carries on from there.
+func TestTrailersRowKeptUntilWired(t *testing.T) {
+	w := newWorld(t)
+	tr := Trailers{On: true, Failed: TrailerFailLimit, LastReason: "bot_check"}
+	w.e.Trailers = func(context.Context) Trailers { return tr }
+	for range 3 {
+		w.run(t)
+	}
+	before := len(w.events(t))
+	if c := w.run(t)["trailers"]; c.Confirmed != Warning {
+		t.Fatalf("set-up %+v", c)
+	}
+	w.e.Trailers = nil
+	if c, ok := w.run(t)["trailers"]; !ok || c.Confirmed != Warning {
+		t.Fatalf("kept before wiring: %v %+v", ok, c)
+	}
+	w.e.Trailers = func(context.Context) Trailers { return tr }
+	if c := w.run(t)["trailers"]; c.State != Warning || c.Confirmed != Warning {
+		t.Fatalf("after wiring %+v", c)
+	}
+	if n := len(w.events(t)); n != before {
+		t.Fatalf("announced again: %d events, had %d", n, before)
+	}
+	// Trailer autoplay off still removes it.
+	tr.On = false
+	if _, ok := w.run(t)["trailers"]; ok {
+		t.Fatal("off: no check")
+	}
+}

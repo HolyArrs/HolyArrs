@@ -280,9 +280,12 @@ func (e *Engine) Run(ctx context.Context) ([]domain.HealthCheck, error) {
 				return err
 			}
 		}
-		// Things that are gone (a removed Downloader) drop their check.
+		// Things that are gone (a removed Downloader) drop their check. A
+		// trailers check stays while nothing reports trailers yet (at start,
+		// before the reader is wired), so a kept warning is not dropped and
+		// announced again.
 		for k, c := range byKey {
-			if !seen[k] {
+			if !seen[k] && (c.Kind != "trailers" || e.Trailers != nil) {
 				if _, err := tx.Exec("DELETE FROM health_checks WHERE id = ?", c.ID); err != nil {
 					return err
 				}

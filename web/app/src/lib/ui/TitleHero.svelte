@@ -64,7 +64,7 @@
 	import Billboard from './Billboard.svelte';
 	import ActionButton from './ActionButton.svelte';
 	import { heroPictures } from '../trailer.ts';
-	import { autoplayHere, loadUISettings, trailerSources } from '../autoplay.svelte.ts';
+	import { autoplayHere, loadUISettings, trailerClickSources } from '../autoplay.svelte.ts';
 	import { openTheater } from '../theater.svelte.ts';
 	import { api } from '../api.ts';
 	import { loadExtras, type Extras } from '../outside-ratings.ts';
@@ -281,7 +281,8 @@
 		// The hero's picture is held while the big player loads (no black frame).
 		const still = heroStill(hero);
 		try {
-			const s = await trailerSources(kind, tmdb, videos);
+			// Nothing plays here: the player still opens and says why.
+			const s = await trailerClickSources(kind, tmdb, videos);
 			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], fallbacks: s.slice(1), time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero', still, returnTo: btn });
 		} finally {
 			opening = false;

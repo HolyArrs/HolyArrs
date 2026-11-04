@@ -727,12 +727,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	optional(supervisor.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
-	reg.Set(supervisor.StageKey("health"), "stage", "Health checks", supervisor.Running, "")
-	reg.GoGuard("health", func() {
-		if _, err := he.Run(ctx); err != nil && ctx.Err() == nil {
-			log.Printf("health: %v", err)
-		}
-	})
 
 	sso, err := auth.SSOFromEnv(c.URLBase)
 	if err != nil {
@@ -842,6 +836,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		optional(l)
 	}
 	startTrailers(a, he)
+	// Health starts once every check is wired (the trailers check comes
+	// from the API), so its first run sees them all.
+	reg.Set(supervisor.StageKey("health"), "stage", "Health checks", supervisor.Running, "")
+	reg.GoGuard("health", func() {
+		if _, err := he.Run(ctx); err != nil && ctx.Err() == nil {
+			log.Printf("health: %v", err)
+		}
+	})
 	pc.Start(ctx)
 	swap.set(urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)

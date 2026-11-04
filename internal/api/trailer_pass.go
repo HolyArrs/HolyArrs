@@ -39,8 +39,8 @@ var (
 	trailerPassFirst = 3 * time.Minute
 	// trailerPassGap is the wait between two lookups of a pass (tests set 0).
 	trailerPassGap = 2 * time.Second
-	// trailerPassMax is the most titles x languages a pass lists; the rest
-	// waits until the list is shorter.
+	// trailerPassMax is the most pool titles x languages a pass lists (the
+	// noted ones come on top); the rest waits until the list is shorter.
 	trailerPassMax = 1000
 )
 
@@ -57,8 +57,11 @@ func (a *API) trailerPassLoop(ctx context.Context) error {
 			return nil
 		case <-time.After(wait):
 		}
-		wait = trailerPassEvery
+		// Every trailerPassEvery from one start to the next (the pass's own
+		// time counts), never back to back.
+		began := time.Now()
 		a.trailerPass(metadata.Ahead(ctx), trailerPassBudget)
+		wait = max(trailerPassEvery-time.Since(began), trailerPassEvery/10)
 	}
 }
 
@@ -75,25 +78,38 @@ func (a *API) trailerPass(ctx context.Context, budget int) int {
 		return 0
 	}
 	langs := a.trailerPassLanguages(ctx)
-	var jobs [][3]string
-	for _, t := range a.trailerPassTitles(ctx) {
-		for _, lang := range langs {
-			jobs = append(jobs, [3]string{t[0], t[1], lang})
-		}
-	}
-	jobs = append(jobs, a.trailerAsks(time.Now())...)
+	// The noted titles (asked for or on screen with nothing kept) go first:
+	// people are looking at them. There are at most trailerAskedMax, and
+	// the cap applies to the pool titles after them only, so none starves.
 	var list [][3]string
 	seen := map[string]bool{}
-	for _, j := range jobs {
+	add := func(j [3]string) bool {
 		ckey := j[0] + "|" + j[1] + "|" + j[2]
 		if seen[ckey] || len(a.kindsOn(j[0])) == 0 {
-			continue
+			return false
 		}
 		seen[ckey] = true
 		list = append(list, j)
+		return true
 	}
-	capped := max(0, len(list)-trailerPassMax)
-	list = list[:len(list)-capped]
+	for _, j := range a.trailerAsks(time.Now()) {
+		add(j)
+	}
+	pooled, capped := 0, 0
+	for _, t := range a.trailerPassTitles(ctx) {
+		for _, lang := range langs {
+			j := [3]string{t[0], t[1], lang}
+			if pooled >= trailerPassMax {
+				if !seen[j[0]+"|"+j[1]+"|"+j[2]] && len(a.kindsOn(j[0])) > 0 {
+					capped++
+				}
+				continue
+			}
+			if add(j) {
+				pooled++
+			}
+		}
+	}
 	type passJob struct {
 		j     [3]string
 		ckey  string

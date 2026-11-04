@@ -43,7 +43,16 @@ describe('players use the shared line', () => {
 	});
 	it("a title's trailer row hands the main trailer's reason to the YouTube player", () => {
 		expect(trailers).toContain('missReason(kind, tmdb)');
-		expect(trailers).toContain("{ kind: 'embed', key: v.key, why }");
+		expect(trailers).toContain("{ kind: 'embed', key: v.key, why, told: videoReason(why) || undefined }");
+	});
+	it("the title page's Trailer button opens the player with the reason when nothing plays", () => {
+		const hero = readFileSync(new URL('./ui/TitleHero.svelte', import.meta.url), 'utf8');
+		expect(hero).toContain('await trailerClickSources(kind, tmdb, videos)');
+		expect(hero).not.toMatch(/await trailerSources\(/);
+	});
+	it('a reason the server already gave shows at once, with no YouTube player behind it', () => {
+		expect(theater).toMatch(/unavailable = now\.source\.kind === 'embed' && !!now\.source\.told && !now\.fallbacks\?\.length/);
+		expect(theater).toContain("{#if !mediaOn || (src.kind === 'embed' && src.told)}");
 	});
 	it('the line wraps on a phone', () => {
 		expect(theater).toMatch(/\.gone \{[^}]*padding: 24px/);

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"testing"
+	"time"
 )
 
 // route: GET /api/v1/trailer/batch
@@ -18,6 +19,11 @@ func TestTrailerBatch(t *testing.T) {
 	if len(b.Streams) != 0 || len(b.Pending) != 0 || yt.runs.Load() != 0 {
 		t.Fatalf("first batch %+v, lookups %d", b, yt.runs.Load())
 	}
+	// ...but noted, once, so the next pass looks it up (cards outside the
+	// stored Explore pools get covered this way).
+	if got := a.trailerAsks(time.Now()); len(got) != 1 || got[0][0] != "movie" || got[0][1] != "11" {
+		t.Fatalf("noted %v", got)
+	}
 	// Once the trailer pass kept it, a batch has it.
 	if err := lookUp(t, a, "movie", "11"); err != nil {
 		t.Fatal(err)
@@ -29,6 +35,12 @@ func TestTrailerBatch(t *testing.T) {
 	s, ok := b.Streams["movie:11"]
 	if !ok || s.Type != "hls" || s.Key != "trailerKey1" || s.ProxyURL == "" || len(b.Pending) != 0 {
 		t.Fatalf("batch %+v", b)
+	}
+	// A kept title is not noted again.
+	a.trailerAsked.drop(a.trailerAsks(time.Now())[0][0] + "|11|" + a.trailerAsks(time.Now())[0][2])
+	do(t, "GET", srv.URL+"/api/v1/trailer/batch?ids=movie:11", "", 200)
+	if got := a.trailerAsks(time.Now()); len(got) != 0 {
+		t.Fatalf("kept, noted again %v", got)
 	}
 	// The single route answers from the cache.
 	before := yt.runs.Load()

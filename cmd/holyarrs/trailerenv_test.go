@@ -20,8 +20,8 @@ func TestYouTubeStandInAddress(t *testing.T) {
 		{"http://LOCALHOST:18744", "http://LOCALHOST:18744", true},
 		{"http://[::1]:18744", "http://[::1]:18744", true},
 		{"https://yt.example.com", "https://yt.example.com", true},
-		{"https://10.10.25.25:8443/yt", "https://10.10.25.25:8443/yt", true},
-		{"http://10.10.25.25:18744", "", false},
+		{"https://192.0.2.10:8443/yt", "https://192.0.2.10:8443/yt", true},
+		{"http://192.0.2.10:18744", "", false},
 		{"http://yt.example.com", "", false},
 		{"http://127.0.0.1.example.com", "", false},
 		{"ftp://127.0.0.1/yt", "", false},
@@ -81,7 +81,7 @@ func TestTrailerStandIns(t *testing.T) {
 	}{
 		{"", "", "", ""},
 		{"http://127.0.0.1:18744/youtube", "", "", ""},
-		{"http://10.10.25.25:18744", "", "", EnvYouTubeURL},
+		{"http://192.0.2.10:18744", "", "", EnvYouTubeURL},
 		{"", "soon", "", EnvTrailerPassFirst},
 		{"", "", "-1s", EnvTrailerPassEvery},
 	} {

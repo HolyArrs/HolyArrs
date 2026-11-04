@@ -4,7 +4,7 @@
 	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
 	import { sized } from './tmdb-image.ts';
 	import { claimPlayer, pickTrailer, type Video } from './trailer.ts';
-	import { missReason, trailerSources, type TrailerSource } from './autoplay.svelte.ts';
+	import { missReason, trailerSources, videoReason, type TrailerSource } from './autoplay.svelte.ts';
 	import { openTheater } from './theater.svelte.ts';
 
 	// A title's trailers and teasers (YouTube, as TMDB lists them) as one row
@@ -60,7 +60,8 @@
 			// The main trailer with no stream left plays in the YouTube player,
 			// with the server's reason for the line shown if that refuses it too.
 			const why = isMain ? missReason(kind, tmdb) : '';
-			const [source, ...fallbacks]: TrailerSource[] = list.length ? list : [why ? { kind: 'embed', key: v.key, why } : { kind: 'embed', key: v.key }];
+			// When the server said none of the trailers plays here, the player says why at once.
+			const [source, ...fallbacks]: TrailerSource[] = list.length ? list : [why ? { kind: 'embed', key: v.key, why, told: videoReason(why) || undefined } : { kind: 'embed', key: v.key }];
 			// One video at a time: the hero's muted trailer stops for this one.
 			claimPlayer(() => {})();
 			const r = el.getBoundingClientRect();

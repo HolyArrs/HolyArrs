@@ -55,7 +55,7 @@ export function autoplayHere(): boolean {
 export type TrailerSource =
 	| { kind: 'direct'; url: string; key?: string; audio: boolean; pass?: string }
 	| { kind: 'pass'; url: string; key?: string }
-	| { kind: 'embed'; key: string; why?: string };
+	| { kind: 'embed'; key: string; why?: string; told?: boolean };
 
 interface Stream {
 	/** hls: url is YouTube's adaptive manifest; mp4: url is the muxed 360p MP4. */
@@ -311,6 +311,27 @@ export async function trailerSources(kind: 'movie' | 'show', tmdb: string, video
 	return sourcesFor(s, embedKey(miss, videos, lang()), nativeHLS(), soundOn(), miss?.reason).filter((x) => x.kind !== 'direct' || !refused.has(x.url));
 }
 
+/**
+ * clickSources are what a Trailer button plays: the sources, else (no
+ * stream and no embed left, as when every trailer will not play here) the
+ * title's own trailer in the YouTube player carrying the server's reason,
+ * so the click opens the player and it says why instead of doing nothing.
+ */
+export function clickSources(s: TrailerSource[], why: string, videos: Video[] | undefined, language: string): TrailerSource[] {
+	if (s.length) return s;
+	const v = pickTrailer(videos, language);
+	if (!v) return [];
+	// The server said none of its trailers plays here (a reason about the
+	// videos): the player says so at once instead of loading YouTube's refusal.
+	if (videoReason(why)) return [{ kind: 'embed', key: v.key, why, told: true }];
+	return [why ? { kind: 'embed', key: v.key, why } : { kind: 'embed', key: v.key }];
+}
+
+/** trailerClickSources is clickSources for a title, in the page's language. */
+export async function trailerClickSources(kind: 'movie' | 'show', tmdb: string, videos: Video[] | undefined): Promise<TrailerSource[]> {
+	return clickSources(await trailerSources(kind, tmdb, videos), missReason(kind, tmdb), videos, lang());
+}
+
 /** missReason is the server's reason a title has no direct stream ("" when it gave none or was not asked yet). */
 export function missReason(kind: 'movie' | 'show', tmdb: string): string {
 	return misses.get(`${kind}:${tmdb}`)?.reason ?? '';
@@ -328,6 +349,11 @@ export interface TrailerMiss {
 
 /** Reasons about one video (age, removed, blocked), not YouTube's door. */
 const VIDEO_REASONS = new Set(['age_restricted', 'unavailable', 'sign_in', 'unplayable', 'content_check', 'bad_id']);
+
+/** videoReason says the reason is about the video (it will not play here), not YouTube's door. */
+export function videoReason(why: string | undefined): boolean {
+	return !!why && VIDEO_REASONS.has(why);
+}
 
 /**
  * embedKey is the video the embed fallback plays: the server's key when it

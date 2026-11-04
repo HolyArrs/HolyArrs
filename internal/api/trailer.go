@@ -39,7 +39,7 @@ const (
 	trailerPool      = 4                  // reader lookups at once
 	trailerAhead     = 40                 // ahead-of-time music video lookups per 10 minutes for the whole install
 	trailerBadKeep   = 7 * 24 * time.Hour // a video YouTube will not play here is not tried again before this
-	trailerMore      = 4                  // other trailers of the title tried in one lookup (5 in all)
+	trailerMore      = 4                  // other trailers of the title tried in one lookup (up to 5 in all, 4 when the first is marked bad)
 )
 
 // trailerReader looks videos up on YouTube; tests point it at a fake.

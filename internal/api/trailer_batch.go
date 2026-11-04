@@ -28,8 +28,10 @@ type trailerBatchView struct {
 
 // trailerBatch answers the cards on screen at once with the streams the
 // trailer pass kept; a title without one is left out (the card plays the
-// embed) and no lookup starts. Artists' videos not yet known are looked up
-// ahead of time (prefetchArtistVideos).
+// embed) and no lookup starts: a title nothing was kept for is noted, so
+// the next pass looks it up (rows outside the stored Explore pools, such as
+// a genre's rows or New on your services, get covered this way). Artists'
+// videos not yet known are looked up ahead of time (prefetchArtistVideos).
 func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 	if a.kidMax(r) != "" {
 		fail(w, http.StatusForbidden, "trailers do not play for Kid accounts")
@@ -53,6 +55,7 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	out := trailerBatchView{Streams: map[string]TrailerStream{}, Videos: map[string]ArtistVideoView{}, Pending: []string{}}
 	var artists []string
+	var unknown [][2]string
 	seen := map[string]bool{}
 	for _, id := range ids {
 		kind, tmdb, ok := strings.Cut(id, ":")
@@ -90,7 +93,11 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		seen[id] = true
-		if e, known := a.keptTrailer(r.Context(), kind+"|"+tmdb+"|"+lang, now); known && e.miss.IsZero() {
+		e, known := a.keptTrailer(r.Context(), kind+"|"+tmdb+"|"+lang, now)
+		if !known {
+			unknown = append(unknown, [2]string{kind, tmdb})
+		}
+		if known && e.miss.IsZero() {
 			s := e.s
 			if s.Type == "hls" {
 				if rid := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt); rid != "" {
@@ -100,6 +107,7 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 			out.Streams[id] = s
 		}
 	}
+	a.noteTrailerTitles(lang, unknown)
 	a.prefetchArtistVideos(r, artists)
 	w.Header().Set("Cache-Control", "private, no-store")
 	writeJSON(w, http.StatusOK, out)

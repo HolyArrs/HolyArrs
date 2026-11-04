@@ -274,13 +274,15 @@ func TestTrailerPassCap(t *testing.T) {
 	storePool(t, st, passPool(1, "all", false))
 	a.noteTrailerTitles("en", [][2]string{{"movie", "555"}})
 	ctx := metadata.Ahead(context.Background())
-	if n := a.trailerPass(ctx, 30); n != 5 || strings.Join(asked(), " ") != "movie:100 movie:101 movie:102 movie:103 movie:104" {
+	// The noted title goes first and is never cut; the cap counts pool
+	// titles only.
+	if n := a.trailerPass(ctx, 30); n != 6 || strings.Join(asked(), " ") != "movie:555 movie:100 movie:101 movie:102 movie:103 movie:104" {
 		t.Fatalf("%d lookups: %v", n, asked())
 	}
-	if got := strings.Join(logs.passLines(), "|"); got != "trailers: read-ahead 5 due, 5 looked up, 0 left for the next pass, 20 past the cap" {
+	if got := strings.Join(logs.passLines(), "|"); got != "trailers: read-ahead 6 due, 6 looked up, 0 left for the next pass, 19 past the cap" {
 		t.Fatalf("log %q", got)
 	}
-	if got := a.trailerAsks(time.Now()); len(got) != 1 {
+	if got := a.trailerAsks(time.Now()); len(got) != 0 {
 		t.Fatalf("noted %v", got)
 	}
 }

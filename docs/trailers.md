@@ -63,7 +63,10 @@ When the full-screen player cannot play a trailer either, it says why in
 plain words when HolyArrs knows: YouTube wants a sign-in to confirm the
 viewer's age, the video was removed or is private, YouTube won't play it
 here (blocked in a region, embedding turned off, or a live stream not on),
-it sits behind a content warning, or trailers can't be reached right now. Otherwise it says the trailer can't play here.
+it sits behind a content warning, or trailers can't be reached right now.
+Otherwise it says the trailer can't play here. When HolyArrs already knows
+none of a title's trailers plays here, the title page's Trailer button
+still opens the player, and it says why at once.
 
 ## When a trailer starts
 
@@ -75,16 +78,19 @@ it sits behind a content warning, or trailers can't be reached right now. Otherw
 
 Trailers are looked up on a fixed schedule, never when a page opens. Every
 5 minutes (the first round a few minutes after HolyArrs starts) the server
-looks up to 20 trailers, a few seconds apart. It covers everything Explore
-shows for each household member who is not a Kid account: the featured
-titles first, then every card of every row, in up to three languages pages
-asked for lately. Addresses about to expire are renewed before new titles
-are looked up. After those come the titles asked
-for elsewhere that had nothing yet (a person's page, the Requests banner,
-New & Popular's featured titles), each in the language it was asked in.
-An address is looked up again shortly before it expires. A title with no
-trailer, or none that plays here, is tried again after 2 hours. A title
-not looked up yet plays the YouTube embed until a round reaches it.
+looks up to 20 trailers, a few seconds apart. Addresses about to expire are
+renewed first. Then come the titles people have looked at that had nothing
+yet: any card that stayed on screen (a genre's rows and New on your
+services too), a person's page, the Requests banner, New & Popular's
+featured titles, each in the language it was asked in. Then everything
+Explore shows for each household member who is not a Kid account: the
+featured titles first, then every card of every row, in up to three
+languages pages asked for lately. An address is looked up again shortly
+before it expires. A title with no trailer, or none that plays here, is
+tried again after 2 hours. A title not looked up yet plays the YouTube
+embed until a round reaches it. Right after HolyArrs is first set up, the
+first round of every title can take a few hours; after that the rounds
+keep up.
 
 ## Where a music video starts
 
@@ -135,7 +141,8 @@ for how many different titles in a row. A trailer behind an age check, a
 sign-in or a content warning does not count, since that is about the video.
 After 5 different titles fail with no good lookup in between, Health warns
 with the reason in plain words: usually YouTube changed something and a
-HolyArrs update is needed. The count is kept across restarts. While trailer autoplay is off
+HolyArrs update is needed. The count, and a warning already shown, are kept
+across restarts. While trailer autoplay is off
 nothing is looked up, and Health leaves the trailer reader out.
 
 | Reason | Health says |

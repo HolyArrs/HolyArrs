@@ -121,7 +121,8 @@
 	$effect(() => {
 		if (!now || !dialog || dialog.open) return;
 		leaving = false;
-		unavailable = false;
+		// The server already said this will not play here: say why at once.
+		unavailable = now.source.kind === 'embed' && !!now.source.told && !now.fallbacks?.length;
 		tried = 0;
 		paused = false;
 		muted = now.muted ?? false;
@@ -308,8 +309,8 @@
 	{#if now && src}
 		<div class="stage" bind:this={stage}>
 			<div class="pic" bind:this={pic}>
-			{#if !mediaOn}
-				<!-- The held frame alone while it grows. -->
+			{#if !mediaOn || (src.kind === 'embed' && src.told)}
+				<!-- The held frame alone while it grows (or for good, when nothing plays here). -->
 			{:else if src.kind === 'direct' || src.kind === 'pass'}
 				<!-- svelte-ignore a11y_media_has_caption -->
 				<video

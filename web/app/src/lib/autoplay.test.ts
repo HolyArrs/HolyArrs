@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { embedKey, hasSound, onUnmute, playable, sourcesFor, type TrailerSource } from './autoplay.svelte.ts';
+import { clickSources, embedKey, hasSound, onUnmute, playable, sourcesFor, type TrailerSource } from './autoplay.svelte.ts';
 
 describe('playable', () => {
 	const hls = { type: 'hls' as const, url: 'https://manifest.googlevideo.com/api/manifest/hls_variant/x', mp4_url: 'https://rr1.googlevideo.com/videoplayback?itag=18' };
@@ -81,5 +81,25 @@ describe('embedKey', () => {
 		expect(sourcesFor(null, 'nextKey0001', false, false, '')).toStrictEqual([{ kind: 'embed', key: 'nextKey0001' }]);
 		const mp4 = { type: 'mp4' as const, url: 'https://rr1.googlevideo.com/videoplayback?itag=18', expires_at: '2099-01-01T00:00:00Z', key: 'abcdefghijk' };
 		expect(sourcesFor(mp4, undefined, false, false, 'age_restricted').at(-1)).toStrictEqual({ kind: 'embed', key: 'abcdefghijk' });
+	});
+});
+
+describe('clickSources', () => {
+	const videos = [{ key: 'ownPick0001', type: 'Trailer', official: true, language: 'en' }];
+	const mp4: TrailerSource = { kind: 'direct', url: 'https://rr1.googlevideo.com/videoplayback?itag=18', audio: false };
+	it('keeps the sources when there are any', () => {
+		expect(clickSources([mp4], 'age_restricted', videos, 'en')).toStrictEqual([mp4]);
+	});
+	it('opens the title trailer with the reason when nothing plays here', () => {
+		const s = sourcesFor(null, embedKey({ reason: 'age_restricted', key: '' }, videos, 'en'), false, false, 'age_restricted');
+		expect(s).toEqual([]);
+		expect(clickSources(s, 'age_restricted', videos, 'en')).toStrictEqual([{ kind: 'embed', key: 'ownPick0001', why: 'age_restricted', told: true }]);
+		// YouTube's door failing is not about the video: the player still tries.
+		expect(clickSources([], 'bot_check', videos, 'en')).toStrictEqual([{ kind: 'embed', key: 'ownPick0001', why: 'bot_check' }]);
+		expect(clickSources([], '', videos, 'en')).toStrictEqual([{ kind: 'embed', key: 'ownPick0001' }]);
+	});
+	it('stays empty with no trailer at all', () => {
+		expect(clickSources([], 'unavailable', [], 'en')).toEqual([]);
+		expect(clickSources([], 'unavailable', undefined, 'en')).toEqual([]);
 	});
 });
