@@ -22,7 +22,7 @@ The proxy must pass the path on unchanged (do not strip `/holyarrs`), keep the `
 Proxy host for your domain, then Custom locations > Add location:
 
 - Location: `/holyarrs`
-- Forward hostname / IP: `holyarrs` (the container), port `18730`
+- Forward hostname / IP: `holyarrs` (the container), port `6262`
 - In the gear (advanced) box of that location:
 
 ```
@@ -39,7 +39,7 @@ Do not add a trailing slash to the forward address (that would strip the path).
 labels:
   - traefik.enable=true
   - traefik.http.routers.holyarrs.rule=Host(`home.example`) && PathPrefix(`/holyarrs`)
-  - traefik.http.services.holyarrs.loadbalancer.server.port=18730
+  - traefik.http.services.holyarrs.loadbalancer.server.port=6262
 ```
 
 No StripPrefix middleware: HolyArrs expects the base in the path. Traefik streams by default.
@@ -49,7 +49,7 @@ No StripPrefix middleware: HolyArrs expects the base in the path. Traefik stream
 ```
 home.example {
 	handle /holyarrs* {
-		reverse_proxy holyarrs:18730 {
+		reverse_proxy holyarrs:6262 {
 			flush_interval -1
 		}
 	}

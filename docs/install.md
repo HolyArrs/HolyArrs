@@ -108,7 +108,7 @@ services:
     container_name: holyarrs
     user: "1000:1000"
     ports:
-      - "18730:18730"
+      - "6262:6262"
     environment:
       HOLYARRS_SAVE_PATH: /data/downloads
     volumes:
@@ -148,7 +148,7 @@ The container becomes healthy after `GET /healthz` answers successfully.
 
 ## Finish the first run
 
-Open port `18730` at the Docker host's network address. There are no default
+Open port `6262` at the Docker host's network address. There are no default
 credentials.
 
 On the first start, HolyArrs writes a one-time code to
@@ -248,7 +248,7 @@ your private network.
 
 ## Security basics
 
-- Do not forward port `18730` on your router. Reach HolyArrs from outside
+- Do not forward port `6262` on your router. Reach HolyArrs from outside
   through a VPN such as Tailscale, or through a reverse proxy with HTTPS
   (see [Host names and reverse proxies](#host-names-and-reverse-proxies)).
 - Treat `setup-code.txt` like a password until the owner is made; it is

@@ -24,7 +24,7 @@ The same card lists the ground rules:
 Every app connects to one address: HolyArrs's own address followed by `/api/v1/mcp`, for example:
 
 ```
-http://10.10.25.25:18730/api/v1/mcp
+http://10.10.25.25:6262/api/v1/mcp
 https://holyarrs.example.com/api/v1/mcp
 ```
 
@@ -44,7 +44,7 @@ An AI key reaches only the AI address and nothing else in HolyArrs. Ordinary Hol
 
 ### Which way fits your address
 
-Browser sign-in works only when HolyArrs is on `https`, or on the same computer as the app (`localhost`). Newer AI apps refuse to sign in to a plain `http` address on the network, such as `http://10.10.25.25:18730`; Claude Code and Gemini CLI are two that refuse.
+Browser sign-in works only when HolyArrs is on `https`, or on the same computer as the app (`localhost`). Newer AI apps refuse to sign in to a plain `http` address on the network, such as `http://10.10.25.25:6262`; Claude Code and Gemini CLI are two that refuse.
 
 Cloud apps are a separate case. The Claude app (web, desktop and phone connectors), ChatGPT, the Gemini app, Perplexity, Le Chat and Copilot Studio connect from their maker's servers on the internet, not from your computer. They cannot reach a home address at all, so they need HolyArrs on a public `https` address.
 
@@ -52,8 +52,8 @@ Cloud apps are a separate case. The Claude app (web, desktop and phone connector
 | --- | --- | --- |
 | A public `https` name (reverse proxy, Cloudflare Tunnel or Tailscale Funnel) | Browser sign-in | Browser sign-in |
 | A Tailscale `https` name that only your devices reach (Tailscale Serve) | Browser sign-in | Cannot reach it |
-| `http://localhost:18730`, on the same computer as the app | Browser sign-in | Cannot reach it |
-| A plain `http` home or Tailscale IP, such as `http://10.10.25.25:18730` | AI key | Cannot reach it |
+| `http://localhost:6262`, on the same computer as the app | Browser sign-in | Cannot reach it |
+| A plain `http` home or Tailscale IP, such as `http://10.10.25.25:6262` | AI key | Cannot reach it |
 
 The page under Settings > AI connections follows this table by itself, as far as it can tell from the address. On a plain `http` address it shows "Make a key" for apps on your computer, and for a cloud app it explains that the app cannot reach your address. It cannot tell whether an `https` name is open to the internet, so on a Tailscale Serve name or another home-only `https` name it still shows the cloud app steps; those apps will not reach it. One exception: Claude Desktop can still reach a home address through the `mcp-remote` local bridge, which needs Node.js (see [Pick your app](#pick-your-app)).
 
@@ -63,8 +63,8 @@ You only need this for browser sign-in on another computer, or for cloud apps. P
 
 - **Reverse proxy with a domain.** Caddy, Traefik, nginx-proxy-manager or similar, with a certificate, in front of HolyArrs. Cloud apps can reach it if the domain is open to the internet. See [Host names and reverse proxies](install.md#host-names-and-reverse-proxies) and [Running under a path](url-base.md).
 - **Cloudflare Tunnel.** A `cloudflared` connector in your network gives HolyArrs a public `https` name without opening a port on your router. Cloud apps can reach it. (not tried live)
-- **Tailscale Serve.** Gives HolyArrs an `https://<machine>.<tailnet>.ts.net` name with a real certificate, reachable only from your own Tailscale devices. Enough for browser sign-in in apps on those devices; cloud apps cannot reach it. For example `tailscale serve --bg 18730`. (not tried live)
-- **Tailscale Funnel.** Opens that same `ts.net` name to the internet, so cloud apps can reach it. For example `tailscale funnel --bg 18730`. (not tried live)
+- **Tailscale Serve.** Gives HolyArrs an `https://<machine>.<tailnet>.ts.net` name with a real certificate, reachable only from your own Tailscale devices. Enough for browser sign-in in apps on those devices; cloud apps cannot reach it. For example `tailscale serve --bg 6262`. (not tried live)
+- **Tailscale Funnel.** Opens that same `ts.net` name to the internet, so cloud apps can reach it. For example `tailscale funnel --bg 6262`. (not tried live)
 
 Whichever you use, tell HolyArrs about it:
 
@@ -104,7 +104,7 @@ Any app that can add a remote (Streamable HTTP) MCP server works. Give it the AI
 {
   "mcpServers": {
     "holyarrs": {
-      "url": "http://10.10.25.25:18730/api/v1/mcp",
+      "url": "http://10.10.25.25:6262/api/v1/mcp",
       "headers": {
         "Authorization": "Bearer <your AI key>"
       }

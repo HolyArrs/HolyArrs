@@ -42,7 +42,7 @@ func parseCommon(name string, args []string) (options, error) {
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 	var o options
 	fs.StringVar(&o.ConfigDir, "config", "/config", "the HolyArrs config folder (stop HolyArrs first)")
-	fs.StringVar(&o.AppURL, "app-url", "http://holyarrs:18730", "where HolyArrs answers when it runs; nothing is changed while it does (empty skips the check)")
+	fs.StringVar(&o.AppURL, "app-url", "http://holyarrs:6262", "where HolyArrs answers when it runs; nothing is changed while it does (empty skips the check)")
 	fs.StringVar(&o.MediaRoot, "media", "/data/media", "the lab media folder: movies, tv and music are made inside it")
 	fs.BoolVar(&o.Force, "force", false, "allow a media folder other than /data/media, and go on when the app address gives no clear answer (the lab marker and the app's lock are always checked)")
 	fs.BoolVar(&o.InitLab, "init-lab", false, "seed: mark this config folder as the lab's ("+labMarker+") and stop; do this once, by hand")

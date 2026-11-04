@@ -60,8 +60,8 @@ COPY docs/third-party-notices.md /docs/third-party-notices.md
 # Library), so about 20 percent of a 500 MB limit stays headroom
 # (releases/3.7-fault-and-memory.md). Set GOMEMLIMIT to choose the target.
 USER 1000:1000
-EXPOSE 18730
+EXPOSE 6262
 VOLUME ["/config"]
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 CMD ["/holyarrs", "-healthcheck"]
 ENTRYPOINT ["/holyarrs"]
-CMD ["-config", "/config", "-addr", ":18730"]
+CMD ["-config", "/config", "-addr", ":6262"]

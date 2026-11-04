@@ -49,7 +49,7 @@ A template is being prepared; see [NAS packages](nas-packages.md).
 
 ## Ports and updates
 
-Map port `18730` only to your home network. Updates follow the Docker guide:
+Map port `6262` only to your home network. Updates follow the Docker guide:
 rebuild or pull the new image, then recreate the container. Your data stays
 in `/config`.
 

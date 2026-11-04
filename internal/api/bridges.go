@@ -89,7 +89,7 @@ func cleanBridge(w http.ResponseWriter, in *BridgeInput) bool {
 	if in.Kind == bridge.KindProwlarr {
 		cb, err := bridge.CleanURL(in.CallbackURL)
 		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Give the address Prowlarr can reach HolyArrs at, such as http://192.168.1.10:18730.", "field": "callback_url"})
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Give the address Prowlarr can reach HolyArrs at, such as http://192.168.1.10:6262.", "field": "callback_url"})
 			return false
 		}
 		in.CallbackURL = cb

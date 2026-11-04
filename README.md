@@ -16,12 +16,12 @@ Local v1 pre-release build. The image is not published yet.
 ## Run
 
     make build
-    ./bin/holyarrs -config ./config -addr :18730
+    ./bin/holyarrs -config ./config -addr :6262
 
 Or with Docker:
 
     make docker
-    docker run -p 18730:18730 -v ./config:/config holyarrs:dev
+    docker run -p 6262:6262 -v ./config:/config holyarrs:dev
 
 The config folder must sit on a local disk. HolyArrs refuses to start its
 database on a network share.

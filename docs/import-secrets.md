@@ -102,7 +102,7 @@ It ends with exit code 0 when every item went well, 1 when an item failed (fix i
 
 Mount the file **read-only**, next to the config volume.
 
-This is the default route. While HolyArrs runs, run the command inside its container with `docker exec`. The app holds the config folder, so the command goes through the API: set `holyarrs.address` to `http://127.0.0.1:18730` (the app as seen from inside its own container) and `holyarrs.owner_api_key` to your owner key.
+This is the default route. While HolyArrs runs, run the command inside its container with `docker exec`. The app holds the config folder, so the command goes through the API: set `holyarrs.address` to `http://127.0.0.1:6262` (the app as seen from inside its own container) and `holyarrs.owner_api_key` to your owner key.
 
 ```
 docker run ... -v /srv/holyarrs/holyarrs-secrets.yaml:/run/secrets/holyarrs.yaml:ro ... holyarrs-image

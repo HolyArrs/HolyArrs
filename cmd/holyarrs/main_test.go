@@ -10,7 +10,7 @@ func TestParseFlagsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.ConfigDir != "/config" || c.Addr != ":18730" {
+	if c.ConfigDir != "/config" || c.Addr != ":6262" {
 		t.Fatalf("defaults wrong: %+v", c)
 	}
 }

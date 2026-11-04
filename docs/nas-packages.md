@@ -13,7 +13,7 @@ digest. Do not invent a public tag or use a digest from another source build.
 The renderer does not pull, install or publish anything:
 
 ```sh
-python scripts/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<verified-manifest-digest>' --config /mnt/cache/appdata/holyarrs-candidate --data /mnt/user/holyarrs-test-data --port 18730 --output holyarrs-candidate.xml
+python scripts/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<verified-manifest-digest>' --config /mnt/cache/appdata/holyarrs-candidate --data /mnt/user/holyarrs-test-data --port 6262 --output holyarrs-candidate.xml
 ```
 
 Replace `cache` with your actual local pool name and the digest placeholder

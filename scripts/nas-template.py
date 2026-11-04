@@ -21,11 +21,11 @@ def render(image: str, config: str, data: str, port: int) -> bytes:
     root = ET.Element("Container", version="2")
     for name, text in {"Name": "holyarrs-candidate", "Repository": image, "Network": "bridge",
                        "Privileged": "false", "ExtraParams": "--user=1000:1000",
-                       "WebUI": "http://[IP]:[PORT:18730]/", "Category": "MediaApp:Other:",
+                       "WebUI": "http://[IP]:[PORT:6262]/", "Category": "MediaApp:Other:",
                        "Overview": "Unpublished candidate. NAS installation remains unverified. Keep config on a direct local pool; keep downloads and Library folders in one data filesystem."}.items():
         ET.SubElement(root, name).text = text
     for name, target, default, kind, mode, description in (
-        ("Web port", "18730", str(port), "Port", "tcp", "Choose an unused host port."),
+        ("Web port", "6262", str(port), "Port", "tcp", "Choose an unused host port."),
         ("Config", "/config", config, "Path", "rw", "Direct local pool only; do not use /mnt/user. UID 1000 must have write access."),
         ("Data", "/data", data, "Path", "rw", "One shared tree for downloads and Library folders; hardlinks need one filesystem."),
         ("Completed downloads", "HOLYARRS_SAVE_PATH", "/data/downloads", "Variable", "", "Match the Downloader path."),
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--image", required=True)
     parser.add_argument("--config", required=True)
     parser.add_argument("--data", required=True)
-    parser.add_argument("--port", type=int, default=18730)
+    parser.add_argument("--port", type=int, default=6262)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     try:

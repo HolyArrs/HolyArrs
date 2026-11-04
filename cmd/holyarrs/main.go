@@ -90,12 +90,16 @@ func envOn(key string) bool {
 	return false
 }
 
+// defaultPort is the web port HolyArrs listens on unless -addr says otherwise
+// (6262, Psalm 62). The health check uses the same port.
+const defaultPort = "6262"
+
 func parseFlags(args []string, errOut io.Writer) (config, error) {
 	fs := flag.NewFlagSet("holyarrs", flag.ContinueOnError)
 	fs.SetOutput(errOut)
 	var c config
 	fs.StringVar(&c.ConfigDir, "config", "/config", "folder for the database and settings (must be on local disk)")
-	fs.StringVar(&c.Addr, "addr", ":18730", "address to listen on")
+	fs.StringVar(&c.Addr, "addr", ":"+defaultPort, "address to listen on")
 	fs.StringVar(&c.SourceURL, "source-url", env("HOLYARRS_SOURCE_URL", ""), "Torznab Source to add on start (no key)")
 	fs.StringVar(&c.QbitURL, "qbittorrent-url", env("HOLYARRS_QBITTORRENT_URL", ""), "qBittorrent Web UI to add on start")
 	fs.StringVar(&c.Movies, "movies", env("HOLYARRS_MOVIES", ""), "movie Library folder to add on start")
@@ -985,7 +989,7 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-healthcheck" {
 		// Under a URL base the health check lives under it too.
 		base, _ := urlbase.Clean(os.Getenv(urlbase.Env))
-		os.Exit(healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:18730"+base)))
+		os.Exit(healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort+base)))
 	}
 	if len(os.Args) > 1 && os.Args[1] == "reset-owner" {
 		os.Exit(resetOwner(os.Args[2:]))

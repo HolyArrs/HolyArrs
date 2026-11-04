@@ -39,7 +39,7 @@ In Seerr: Settings > Services > Add Sonarr Server (and Add Radarr Server).
 | Field | Sonarr side | Radarr side |
 | --- | --- | --- |
 | Hostname or IP | HolyArrs's address, for example `10.10.25.25`, or `holyarrs` on the same Docker network | same |
-| Port | HolyArrs's port, for example `18730` | same |
+| Port | HolyArrs's port, for example `6262` | same |
 | Use SSL | only if you reach HolyArrs over HTTPS | same |
 | API key | the Sonarr-side key | the Radarr-side key |
 | URL base | `/sonarr` | `/radarr` |
@@ -97,10 +97,10 @@ In Prowlarr: Settings > Apps, add a Sonarr app for shows and a Radarr app for mo
 | Field | Sonarr app | Radarr app |
 | --- | --- | --- |
 | Prowlarr server | Prowlarr's address as HolyArrs reaches it, for example `http://prowlarr:9696` on the same Docker network or `http://10.10.25.25:9696` | same |
-| Sonarr server or Radarr server | HolyArrs's address with the side on the end, for example `http://10.10.25.25:18730/sonarr` | `http://10.10.25.25:18730/radarr` |
+| Sonarr server or Radarr server | HolyArrs's address with the side on the end, for example `http://10.10.25.25:6262/sonarr` | `http://10.10.25.25:6262/radarr` |
 | API key | the Sonarr-side key | the Radarr-side key |
 
-If HolyArrs runs under a URL base such as `/holyarrs`, put it in front: `http://10.10.25.25:18730/holyarrs/sonarr`. Press Test, then Save. Prowlarr then writes its indexers in.
+If HolyArrs runs under a URL base such as `/holyarrs`, put it in front: `http://10.10.25.25:6262/holyarrs/sonarr`. Press Test, then Save. Prowlarr then writes its indexers in.
 
 What happens:
 
