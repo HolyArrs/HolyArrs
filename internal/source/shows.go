@@ -882,6 +882,9 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 		return 0, errors.New("searching episodes needs the job queue")
 	}
 	n := 0
+	// Spread out like the missing search, so a season's worth of episode
+	// searches does not ask the Sources all at once.
+	start := time.Now().UTC()
 	for _, e := range eps {
 		params := map[string]any{}
 		key := "search_slot:" + strconv.FormatInt(e.sl.ID, 10)
@@ -892,7 +895,7 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 		if skipGate {
 			params["skip_gate"] = true
 		}
-		_, created, err := s.Queue.Enqueue(ctx, KindSearchSlot, &domain.Subject{Type: "slot", ID: e.sl.ID}, params, key, by)
+		_, created, err := s.Queue.EnqueueAt(ctx, KindSearchSlot, &domain.Subject{Type: "slot", ID: e.sl.ID}, params, key, by, start.Add(time.Duration(n)*bulkStagger))
 		if err != nil {
 			return n, err
 		}

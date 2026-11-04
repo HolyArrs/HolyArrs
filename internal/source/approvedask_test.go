@@ -282,3 +282,110 @@ func TestMissingSearchApprovedAskIgnoresNightlyShowSwitch(t *testing.T) {
 		t.Fatalf("approved show with the nightly switch off: %+v", j.Result)
 	}
 }
+
+// runAfters reads when the queued Jobs matching where may start, in order.
+func runAfters(t *testing.T, f fixture, where string, args ...any) []time.Time {
+	t.Helper()
+	rows, err := f.s.Read().Query("SELECT run_after FROM jobs WHERE "+where+" ORDER BY run_after", args...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var out []time.Time
+	for rows.Next() {
+		var s string
+		if err := rows.Scan(&s); err != nil {
+			t.Fatal(err)
+		}
+		at, err := time.Parse(time.RFC3339Nano, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, at)
+	}
+	return out
+}
+
+// Indexers ban bursts: the catch-up's titles go one after the other (each
+// after the most searches the one before can queue, 2 s apart), and the
+// normal turn after them all, so the titles do not ask the Sources at once.
+func TestMissingSearchApprovedAsksSpreadOut(t *testing.T) {
+	ts := &tvServer{answer: func(url.Values) []string { return nil }}
+	f := seedShow(t, ts.start(t), nil)
+	var movieTitle int64
+	_ = f.s.Read().QueryRow("SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", f.slotID).Scan(&movieTitle)
+	askFor(t, f.fixture, movieTitle, "approved", "2026-10-30T22:21:16Z")
+	askFor(t, f.fixture, f.titleID, "approved", "2026-10-31T17:07:51Z")
+	// A third title in the normal turn, so the turn has something to queue.
+	exec(t, f.fixture, `INSERT INTO titles (created_at, created_by, updated_at, updated_by, kind, gate_driver, name, sort_name, aliases, source_ids, metadata_source, keep_up_to_date, new_parts_policy, release_gate, music_types, why_added, artwork, status, state)
+		SELECT created_at, created_by, updated_at, updated_by, kind, gate_driver, 'Other', 'other', aliases, '{"tmdb":"77"}', metadata_source, keep_up_to_date, new_parts_policy, release_gate, music_types, why_added, artwork, status, state FROM titles WHERE id = ?`, movieTitle)
+	var other, ver, item int64
+	_ = f.s.Read().QueryRow("SELECT max(id) FROM titles").Scan(&other)
+	_ = f.s.Read().QueryRow("SELECT version_id FROM slots WHERE id = ?", f.slotID).Scan(&ver)
+	exec(t, f.fixture, `INSERT INTO items (created_at, created_by, updated_at, updated_by, title_id, kind, keep_up_to_date, source_ids)
+		VALUES ('t', '{}', 't', '{}', ?, 'movie', 1, '{}')`, other)
+	_ = f.s.Read().QueryRow("SELECT max(id) FROM items").Scan(&item)
+	exec(t, f.fixture, `INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, keep_up_to_date, is_main)
+		SELECT created_at, created_by, updated_at, updated_by, ?, label, pick_rules_id, library_folder_id, 'Other', keep_up_to_date, is_main FROM versions WHERE id = ?`, other, ver)
+	_ = f.s.Read().QueryRow("SELECT max(id) FROM versions").Scan(&ver)
+	exec(t, f.fixture, `INSERT INTO slots (created_at, created_by, updated_at, updated_by, item_id, version_id, state) VALUES ('t', '{}', 't', '{}', ?, ?, 'wanted')`, item, ver)
+	var otherSlot int64
+	_ = f.s.Read().QueryRow("SELECT max(id) FROM slots").Scan(&otherSlot)
+	before := time.Now().UTC()
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	if n, _ := j.Result["asks"].(float64); n != 2 {
+		t.Fatalf("asks %+v", j.Result)
+	}
+	movie := runAfters(t, f.fixture, "dedupe_key = ?", "search_wanted:"+strconv.FormatInt(movieTitle, 10))
+	show := runAfters(t, f.fixture, "dedupe_key = ?", "search_wanted:"+strconv.FormatInt(f.titleID, 10))
+	turn := runAfters(t, f.fixture, "dedupe_key = ?", "search_slot:"+strconv.FormatInt(otherSlot, 10))
+	if len(movie) != 1 || len(show) != 1 || len(turn) != 1 {
+		t.Fatalf("jobs: movie %v show %v turn %v", movie, show, turn)
+	}
+	// The movie has one Slot: the show starts 2 s after it; the show has 4
+	// wanted Slots: the turn starts 8 s after the show.
+	if movie[0].Before(before.Add(-time.Second)) || show[0].Sub(movie[0]) < BulkStagger || turn[0].Sub(show[0]) < 4*BulkStagger {
+		t.Fatalf("not spread out: movie %v, show %v, turn %v", movie[0], show[0], turn[0])
+	}
+}
+
+// A season search that found nothing queues its episodes 2 s apart, not
+// all at once.
+func TestSeasonFallbackEpisodesSpreadOut(t *testing.T) {
+	ts := &tvServer{answer: func(url.Values) []string { return nil }}
+	f := seedShow(t, ts.start(t), nil)
+	runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	at := runAfters(t, f.fixture, "kind = ? AND json_extract(subject, '$.id') IN (?, ?, ?)", KindSearchSlot, f.slots["S01E01"], f.slots["S01E02"], f.slots["S01E03"])
+	if len(at) != 3 {
+		t.Fatalf("episode searches %v", at)
+	}
+	for i := 1; i < len(at); i++ {
+		if at[i].Sub(at[i-1]) < BulkStagger-10*time.Millisecond {
+			t.Fatalf("episode searches not spread out: %v", at)
+		}
+	}
+}
+
+// A few titles a run (askCatchUpPerRun), whatever missing_search_count:
+// each is searched in full one after the other, so many would push the
+// normal turn far out.
+func TestMissingSearchApprovedAsksFewPerRun(t *testing.T) {
+	ts := &tvServer{answer: func(url.Values) []string { return nil }}
+	f := seedShow(t, ts.start(t), nil)
+	var movieTitle int64
+	_ = f.s.Read().QueryRow("SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", f.slotID).Scan(&movieTitle)
+	askFor(t, f.fixture, movieTitle, "approved", "2026-10-30T22:21:16Z")
+	askFor(t, f.fixture, f.titleID, "approved", "2026-10-31T17:07:51Z")
+	old := askCatchUpPerRun
+	askCatchUpPerRun = 1
+	defer func() { askCatchUpPerRun = old }()
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, movieTitle) != 1 || wantedJobs(t, f.fixture, f.titleID) != 0 {
+		t.Fatalf("one title a run: %+v", j.Result)
+	}
+	// The next run takes the next one.
+	j = runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, f.titleID) != 1 {
+		t.Fatalf("second run: %+v", j.Result)
+	}
+}

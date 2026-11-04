@@ -484,6 +484,11 @@ func Setting(ctx context.Context, db *sql.DB, key string) string {
 	return v
 }
 
+// askCatchUpPerRun is the most approved-ask titles one missing search
+// catches up (each is searched in full, one after the other); a variable
+// for tests.
+var askCatchUpPerRun = 3
+
 // HandleSearchMissing queues a search_slot Job for Slots still looking,
 // oldest searched first. Scheduled: up to missing_search_count Slots that
 // are wanted (and better_wanted when missing_search_better is on). Params
@@ -565,6 +570,7 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	// unless "Search when approved" is off.
 	asked := 0
 	var askTitles []string
+	var startAfter time.Time
 	if titleID == 0 && states[0] == string(domain.SlotWanted) && limit > 0 {
 		var onApprove string
 		_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'ask_search_on_approve'").Scan(&onApprove)
@@ -574,36 +580,46 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 		// through its state index for what is still to run.
 		cq := `WITH c AS (SELECT a.title_id AS id, MIN(a.decided_at) AS d FROM asks a WHERE a.state = 'approved' AND a.title_id IS NOT NULL GROUP BY a.title_id),
 			w AS (SELECT dedupe_key AS k, MAX(created_at) AS m FROM jobs WHERE dedupe_key LIKE 'search_wanted:%' GROUP BY dedupe_key)
-			SELECT c.id FROM c LEFT JOIN w ON w.k = 'search_wanted:' || c.id
+			SELECT c.id, (SELECT count(*)` + from + ` AND t.id = c.id) FROM c LEFT JOIN w ON w.k = 'search_wanted:' || c.id
 			WHERE (w.m IS NULL OR w.m < c.d) AND EXISTS (SELECT 1` + from + ` AND t.id = c.id AND i.last_searched_at IS NULL)
 			AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.state IN ('queued', 'running') AND (j.dedupe_key = 'search_wanted:' || c.id
 				OR (j.kind IN ('refresh_title', 'scan_title') AND json_extract(j.subject, '$.type') = 'title' AND json_extract(j.subject, '$.id') = c.id AND j.params LIKE '%search%')))
-			ORDER BY c.d, c.id LIMIT ` + strconv.Itoa(limit)
-		trows, err := db.QueryContext(ctx, cq, argsFor(approveOn || Setting(ctx, db, SettingMissingShows) != "false", approveOn || Setting(ctx, db, SettingMissingMusic) != "false")...)
+			ORDER BY c.d, c.id LIMIT ` + strconv.Itoa(min(limit, askCatchUpPerRun))
+		ca := argsFor(approveOn || Setting(ctx, db, SettingMissingShows) != "false", approveOn || Setting(ctx, db, SettingMissingMusic) != "false")
+		trows, err := db.QueryContext(ctx, cq, append(append([]any{}, ca...), ca...)...)
 		if err != nil {
 			return err
 		}
-		var tids []int64
+		type askTitle struct{ id, slots int64 }
+		var tids []askTitle
 		for trows.Next() {
-			var id int64
-			if err := trows.Scan(&id); err != nil {
+			var a askTitle
+			if err := trows.Scan(&a.id, &a.slots); err != nil {
 				trows.Close()
 				return err
 			}
-			tids = append(tids, id)
+			tids = append(tids, a)
 		}
 		trows.Close()
 		if err := trows.Err(); err != nil {
 			return err
 		}
-		for _, id := range tids {
-			if _, _, err := s.Queue.Enqueue(ctx, KindSearchMissing, &domain.Subject{Type: "title", ID: id},
-				map[string]any{"title_id": id}, "search_wanted:"+strconv.FormatInt(id, 10), jobActor(r)); err != nil {
+		// Each title's searches are spread 2 s apart from when its Job
+		// starts, so the next title starts after the last of them (its Slots
+		// are the most searches it can queue), and the turn below after all,
+		// so titles do not ask the Sources at the same time. At most
+		// askCatchUpPerRun titles a run keep that wait short.
+		at := time.Now().UTC()
+		for _, a := range tids {
+			if _, _, err := s.Queue.EnqueueAt(ctx, KindSearchMissing, &domain.Subject{Type: "title", ID: a.id},
+				map[string]any{"title_id": a.id}, "search_wanted:"+strconv.FormatInt(a.id, 10), jobActor(r), at); err != nil {
 				return err
 			}
+			at = at.Add(time.Duration(min(a.slots, maxMissingCount)) * bulkStagger)
 			asked++
-			askTitles = append(askTitles, strconv.FormatInt(id, 10))
+			askTitles = append(askTitles, strconv.FormatInt(a.id, 10))
 		}
+		startAfter = at
 	}
 	q := `SELECT s.id, t.kind, COALESCE(i.part_id, 0), s.version_id` + from
 	if len(askTitles) > 0 {
@@ -648,6 +664,9 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	}
 	queued, seasons, albums := 0, 0, 0
 	start := time.Now().UTC()
+	if startAfter.After(start) {
+		start = startAfter
+	}
 	seen := map[seasonKey]bool{}
 	for _, f := range list {
 		params := map[string]any{"bulk": true}
