@@ -136,7 +136,7 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.s.Live != nil {
-		a.s.Live.Publish("title", v)
+		a.publishTitleView(v)
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
 }
@@ -195,7 +195,7 @@ func (a *API) editTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !dry && a.s.Live != nil {
-		a.s.Live.Publish("title", v)
+		a.publishTitleView(v)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"title": v, "changes": res})
 }

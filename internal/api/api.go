@@ -491,7 +491,7 @@ func (a *API) Handler() http.Handler {
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
 		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
-		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m)))))))))
+		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))))
 	}
 	a.ai.inner = a.partGate(m, m)
 	return secure(a.oldAppGate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
@@ -1156,6 +1156,11 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	// the owner and people who manage users or settings.
 	if who, signed := auth.From(r.Context()); signed && !who.MaySeeAudit() {
 		f.HideKinds = store.AuditEventKinds
+	}
+	// Asks' Events name who asked and who decided, with the decline note:
+	// only for people who approve, as on the asks routes.
+	if who, signed := auth.From(r.Context()); signed && !who.Has(auth.PermApprove) {
+		f.HideKinds = append(slices.Clone(f.HideKinds), domain.AskEventKinds...)
 	}
 	es, total, err := a.s.Store.Events(r.Context(), f)
 	if err != nil {

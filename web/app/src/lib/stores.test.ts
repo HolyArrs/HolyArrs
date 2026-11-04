@@ -62,8 +62,16 @@ describe('live', () => {
 		expect(live.status.state).toBe('connecting');
 		src.onopen?.(new Event('open'));
 		expect(live.status.state).toBe('live');
+		// A live stream that drops reopens at once, quietly; only when that
+		// fails too does it show Reconnecting.
+		vi.useFakeTimers();
+		src.onerror?.(new Event('error'));
+		expect(live.status.state).toBe('live');
+		vi.advanceTimersByTime(0);
+		expect(factory).toHaveBeenCalledTimes(2);
 		src.onerror?.(new Event('error'));
 		expect(live.status.state).toBe('reconnecting');
+		vi.useRealTimers();
 		src.onmessage?.(new MessageEvent('message', { data: JSON.stringify({ topic: 'x' }) }));
 		expect(live.status.last).toBeGreaterThan(0);
 		live.stop();

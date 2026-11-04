@@ -35,6 +35,7 @@ type liveSetup struct {
 	own  liveUser
 	mem  liveUser
 	mem2 liveUser
+	st   *store.Store
 }
 
 func (x liveSetup) call(t *testing.T, u liveUser, method, path, body string, csrf bool) (int, string) {
@@ -72,7 +73,7 @@ func setupLive(t *testing.T) liveSetup {
 	}
 	hub := live.NewHub(live.Options{})
 	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: s}
-	x := liveSetup{hub: hub, sy: sy}
+	x := liveSetup{hub: hub, sy: sy, st: s}
 	x.srv = httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: auth.New(s, auth.Options{Vault: v}), Secrets: v,
 		Live: hub, DLSync: sy}).Handler())
 	t.Cleanup(x.srv.Close)

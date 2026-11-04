@@ -373,9 +373,16 @@ func (s *Service) event(ctx context.Context, e *domain.Event) {
 		log.Printf("asks: event %s: %v", e.Kind, err)
 		return
 	}
-	if s.Live != nil {
-		s.Live.Publish("event", e)
+	if s.Live == nil {
+		return
 	}
+	// An ask's Event names who asked and who decided, with the decline
+	// note: only people who approve read those, as on the asks routes.
+	if strings.HasPrefix(e.Kind, "ask_") {
+		s.Live.PublishApprovers("event", e)
+		return
+	}
+	s.Live.Publish("event", e)
 }
 
 func (s *Service) changed(ctx context.Context, id int64) {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -32,9 +33,57 @@ func (a *API) liveViewer(r *http.Request) live.Viewer {
 	return live.Viewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}
 }
 
+// liveViewerNow is liveViewer read again from the sign-in itself, for a
+// stream that is already open: false once that sign-in no longer works.
+func (a *API) liveViewerNow(r *http.Request) (live.Viewer, bool) {
+	if a.s.Auth == nil {
+		return a.liveViewer(r), true
+	}
+	// An administrator who must turn on two-factor first is refused every
+	// route but My account, so an open stream ends too.
+	who, ok := a.s.Auth.Still(r)
+	if !ok || who.MustTwoFactor {
+		return live.Viewer{}, false
+	}
+	return live.Viewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}, true
+}
+
+// liveRecheck has every open /live stream check its viewer again after a
+// write to the sign-in or people routes: a sign-out, ended sessions, a
+// disabled account or changed rights end the streams they no longer fit.
+func (a *API) liveRecheck(h http.Handler) http.Handler {
+	if a.s.Live == nil {
+		return h
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(w, r)
+		if r.Method != http.MethodGet && r.Method != http.MethodHead &&
+			(strings.HasPrefix(r.URL.Path, "/api/v1/auth/") || strings.HasPrefix(r.URL.Path, "/api/v1/users")) {
+			a.s.Live.Recheck()
+		}
+	})
+}
+
+// publishTitleView tells managers' pages a title changed. Its asks name who
+// asked and who decided, with the decline note, so they stay out: pages
+// read the title again from its route, which shows them to approvers only.
+func (a *API) publishTitleView(v TitleView) {
+	if a.s.Live == nil {
+		return
+	}
+	v.Asks = nil
+	a.s.Live.Publish("title", v)
+}
+
 func (a *API) liveRoutes(m *http.ServeMux) {
 	if a.s.Live != nil {
-		m.Handle("GET /live", a.s.Live.Handler(a.liveViewer))
+		h := a.s.Live.Checked(a.liveViewerNow)
+		m.Handle("GET /live", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if a.s.Auth != nil {
+				r = a.s.Auth.WithSessionFamily(r)
+			}
+			h.ServeHTTP(w, r)
+		}))
 	}
 	m.HandleFunc("POST /api/v1/live/interest", a.liveInterest)
 }

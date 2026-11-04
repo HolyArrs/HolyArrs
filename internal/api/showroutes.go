@@ -181,7 +181,7 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.s.Live != nil {
-		a.s.Live.Publish("title", v)
+		a.publishTitleView(v)
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
 }

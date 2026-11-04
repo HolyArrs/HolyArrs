@@ -29,6 +29,10 @@ const (
 	EventAlertFailed   = "alert_failed"    // an Alert could not be sent
 )
 
+// AskEventKinds are the asks' Event kinds. They name who asked and who
+// decided, so only people who approve asks read them.
+var AskEventKinds = []string{EventAskMade, EventAskJoined, EventAskWithdrawn, EventAskApproved, EventAskTurnedDown, EventAskAvailable, "ai_ask_made"}
+
 // Event kinds for Reports (problems people report with titles).
 const (
 	EventReportMade     = "report_made"     // someone reported a problem

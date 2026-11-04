@@ -120,7 +120,7 @@ func (a *API) publishTitle(r *http.Request, id int64) {
 		return
 	}
 	if v, err := a.titleView(r.Context(), t); err == nil {
-		a.s.Live.Publish("title", v)
+		a.publishTitleView(v)
 	}
 }
 
