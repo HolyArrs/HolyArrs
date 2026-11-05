@@ -8,7 +8,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
@@ -205,23 +205,17 @@
 
 <svelte:head><title>Import a library · HolyArrs</title></svelte:head>
 
-<div class="page">
-<PageHeader
-	title="Import a library"
-	subtitle="Bring movies, shows and music you already have into HolyArrs. It reads a Library folder, works out which movie, show or artist each folder holds (for a show, which episode each file is; for an artist, which album each folder is and which track each file is), and you approve them."
-	back={{ href: to('/library'), label: 'Library' }}
-/>
+<LibraryToolPage title="Import a library">
 
-<p class="notice calm" data-testid="nothing-moved">
-	<Icon name="shield" size={18} /><span><b>Nothing is moved or renamed.</b> Scanning only reads the folder. Adopting adds each movie, show or artist with its folder and files exactly as they
-	are. You can rename them later from Rename files.</span>
+<p class="tp-msg good" data-testid="nothing-moved">
+	<Icon name="shield" size={18} /><span><b>Nothing is moved or renamed.</b> Files stay exactly where they are.</span>
 </p>
 
 <PageLoader loading={!loaded} label="Loading folders">
 {#if !folders.length}
 	<EmptyState icon="folder" title="No Library folder yet" text="Add the folder that holds your movies, shows or music first." action={session.can('settings') ? { label: 'Library folders', href: to('/settings/library-folders') } : undefined} />
 {:else}
-	<section class="card" aria-labelledby="h-pick">
+	<section class="tp-sheet tp-pad" aria-labelledby="h-pick">
 		<h2 id="h-pick" class="h2">1. Pick a folder</h2>
 		<div class="row pick">
 			<div class="field grow">
@@ -244,7 +238,7 @@
 	</section>
 
 	{#if results}
-		<section class="card" aria-labelledby="h-done" data-testid="adopt-results">
+		<section class="tp-sheet tp-pad" aria-labelledby="h-done" data-testid="adopt-results">
 			<h2 id="h-done" class="h2">Done</h2>
 			<p class="small">{okCount === 1 ? `1 ${word} is now in the Library.` : `${okCount} ${word}s are now in the Library.`} Their files were not moved.</p>
 			<ul class="list">
@@ -271,7 +265,7 @@
 	{/if}
 
 	{#if plan}
-		<section class="card" aria-labelledby="h-check" data-testid="adopt-plan">
+		<section class="tp-sheet tp-pad" aria-labelledby="h-check" data-testid="adopt-plan">
 			<h2 id="h-check" class="h2">2. Check and approve</h2>
 			<p class="small muted">
 				{plan.folders.length} folder{plan.folders.length === 1 ? '' : 's'} in <span class="mono path">{plan.path}</span>. Tick the {word}s to adopt. Matched ones are
@@ -411,15 +405,12 @@
 	{/if}
 {/if}
 </PageLoader>
-</div>
+</LibraryToolPage>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.page :global(.card) { margin: 0; padding: 16px 20px 20px; border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.page :global(.h2) { margin: 0 0 12px; font: var(--t-title3); }
-	.page :global(.h3) { margin: 0 0 2px; font: var(--t-headline); }
+	:global(.tp) .h2 { margin: 0 0 12px; font: var(--t-title3); }
+	:global(.tp) .h3 { margin: 0 0 2px; font: var(--t-headline); }
 	.notice { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
-	.notice.calm :global(svg) { flex: none; margin-top: 1px; color: var(--ok); }
 	.notice.bad { color: var(--fail); }
 	.notice[data-testid='scan-more'] { flex-direction: column; }
 	.pick {
@@ -539,7 +530,7 @@
 		border-top: 1px solid var(--line);
 	}
 	@media (max-width: 600px) {
-		.notice[data-testid='nothing-moved'] b {
+		.tp-msg b {
 			display: block;
 			margin-bottom: var(--s-1);
 		}

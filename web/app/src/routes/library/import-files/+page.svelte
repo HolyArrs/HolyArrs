@@ -4,7 +4,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
@@ -173,14 +173,9 @@
 
 <svelte:head><title>Import files by hand · HolyArrs</title></svelte:head>
 
-<div class="page">
-	<PageHeader
-		title="Import files by hand"
-		subtitle="Point at a folder, such as a download that did not import or loose files, check what each file is and import the ones you pick. They are named by your naming settings."
-		back={{ href: to('/library'), label: 'Library' }}
-	/>
+<LibraryToolPage title="Import files by hand">
 
-	<section class="card" aria-labelledby="h-path">
+	<section class="tp-sheet tp-pad" aria-labelledby="h-path">
 		<h2 id="h-path" class="h2">1. Pick a folder</h2>
 		<form class="row pick" onsubmit={doScan}>
 			<div class="field grow">
@@ -194,7 +189,7 @@
 	</section>
 
 	{#if scan}
-		<section class="card" aria-labelledby="h-files" data-testid="import-files">
+		<section class="tp-sheet tp-pad" aria-labelledby="h-files" data-testid="import-files">
 			<h2 id="h-files" class="h2">2. Check and import</h2>
 			{#if !files.length}
 				<EmptyState compact icon="folder" title="No video or music files here" text="Pick the folder that holds the files, or one file." />
@@ -298,16 +293,13 @@
 			{/if}
 		</section>
 	{:else if !scanning}
-		<p class="notice calm"><Icon name="shield" size={18} /><span>Scanning only reads the folder. Nothing is moved until you press Import.</span></p>
+		<p class="tp-msg good"><Icon name="shield" size={18} /><span>Nothing is moved until you press Import.</span></p>
 	{/if}
-</div>
+</LibraryToolPage>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.page :global(.card) { margin: 0; padding: 16px 20px 20px; border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.page :global(.h2) { margin: 0 0 12px; font: var(--t-title3); }
+	:global(.tp) .h2 { margin: 0 0 12px; font: var(--t-title3); }
 	.notice { display: flex; gap: 10px; align-items: flex-start; margin: var(--s-2) 0 0; padding: 12px 14px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
-	.notice.calm :global(svg) { flex: none; margin-top: 1px; color: var(--ok); }
 	.pick { align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; padding: var(--s-3); border-radius: var(--r-btn); background: var(--surface-2); }
 	.grow { flex: 1 1 260px; margin-bottom: 0; min-width: 0; }
 	.where { margin: var(--s-2) 0 0; overflow-wrap: anywhere; }
@@ -336,7 +328,6 @@
 	.ok-text { color: var(--ok); }
 	.bad-text { color: var(--fail); }
 	@media (max-width: 600px) {
-		.page :global(.card) { padding: 14px 16px 16px; }
 		.pick > :global(.ui-btn), .end > :global(.ui-btn) { width: 100%; }
 		.top, .found li { align-items: flex-start; flex-direction: column; }
 		.modes { flex-direction: column; }

@@ -4,7 +4,8 @@
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { to } from '#lib/paths.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
+	import DlFind from '#lib/downloads/DlFind.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -45,6 +46,14 @@
 		offset = 0;
 		void load();
 	}
+	// The search field filters as you type (a short pause, so each letter is not its own request).
+	let typing: ReturnType<typeof setTimeout> | undefined;
+	function setQ(v: string) {
+		q = v.slice(0, 256);
+		clearTimeout(typing);
+		typing = setTimeout(applyFilters, 250);
+	}
+	const sortWords: Record<string, string> = { title: 'Title', codec: 'Codec', added: 'Added' };
 
 	function toggle(copy: CopySelection) {
 		selected = toggleCopy(selected, copy);
@@ -86,117 +95,102 @@
 		void load();
 	}
 
-	onMount(load);
+	onMount(() => { load(); return () => clearTimeout(typing); });
 </script>
 
 <svelte:head><title>Video codecs · HolyArrs</title></svelte:head>
 
-<div class="page">
-<PageHeader title="Video codecs" back={{ href: to('/library'), label: 'Library' }} />
+<LibraryToolPage title="Video codecs" count={loaded && !error ? `${page.total} ${page.total === 1 ? 'file' : 'files'}` : ''}>
+	{#snippet bar()}
+		{#if session.can('manage_library')}
+			<DlFind bind:term={() => q, setQ} shown={page.copies.length} total={page.total} searchKey="" placeholder="Search movies" testid="copies-find" />
+			<span class="tp-cap">
+				<select aria-label="Codec" bind:value={codec} onchange={applyFilters}>
+					{#each copyCodecs as value}<option {value}>{value === 'all' ? 'All codecs' : `${codecLabel(value)} (${page.codecs[value] ?? 0})`}</option>{/each}
+				</select>
+			</span>
+			<span class="tp-cap">
+				<span class="tp-lab">Sort</span>
+				<select aria-label="Sort" bind:value={sort} onchange={applyFilters}>
+					{#each copySorts as value}<option {value}>{sortWords[value] ?? 'Added'}</option>{/each}
+				</select>
+			</span>
+			<span class="tp-gap"></span>
+			<span class="tp-cap">
+				<span class="tp-val" aria-live="polite">{selected.length} selected</span>
+				<Button variant="primary" disabled={selected.length === 0 || busy} onclick={review}>Review</Button>
+			</span>
+		{/if}
+	{/snippet}
 
 {#if !session.can('manage_library')}
 	<EmptyState icon="shield" title="You do not have permission to manage the Library." />
 {:else}
-	<form class="tools" onsubmit={(event) => { event.preventDefault(); applyFilters(); }}>
-		<label>Find by title <input class="input" type="search" bind:value={q} maxlength="256" /></label>
-		<label>Codec
-			<select class="input" bind:value={codec} onchange={applyFilters}>
-				{#each copyCodecs as value}<option {value}>{value === 'all' ? 'All codecs' : `${codecLabel(value)} (${page.codecs[value] ?? 0})`}</option>{/each}
-			</select>
-		</label>
-		<label>Sort
-			<select class="input" bind:value={sort} onchange={applyFilters}>
-				{#each copySorts as value}<option {value}>{value === 'title' ? 'Title' : value === 'codec' ? 'Codec' : 'Recently added'}</option>{/each}
-			</select>
-		</label>
-		<Button type="submit">Apply</Button>
-	</form>
-
-	{#if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
-	{#if result}<p class="notice good" role="status"><Icon name="check" size={17} />Started {result.job_ids.length} search{result.job_ids.length === 1 ? '' : 'es'}. Results will use the current Pick rules.</p>{/if}
-
-	<div class="selection-bar">
-		<span><b>{selected.length}</b> selected across all pages</span>
-		<Button variant="primary" disabled={selected.length === 0 || busy} onclick={review}>Review searches</Button>
-	</div>
+	{#if error}<p class="tp-msg bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
+	{#if result}<p class="tp-msg good" role="status"><Icon name="check" size={17} />Started {result.job_ids.length} search{result.job_ids.length === 1 ? '' : 'es'}.</p>{/if}
 
 	{#if preview}
-		<section class="review" aria-labelledby="review-title">
-			<h2 id="review-title">Review {preview.copies.length} {preview.copies.length === 1 ? 'copy' : 'copies'}</h2>
-			<p>This starts {preview.slot_count} search{preview.slot_count === 1 ? '' : 'es'} for the exact selected Versions. Each search applies the current Pick rules and saves candidates for review. It does not guarantee a replacement or download anything automatically.</p>
-			<ul>{#each preview.copies as copy (copyKey(copy))}<li><b>{copy.title}</b> · {copy.version} · {codecLabel(copy.codec)}</li>{/each}</ul>
-			<div class="actions"><Button variant="primary" disabled={busy} onclick={search}>Start searches</Button><Button variant="plain" onclick={() => preview = null}>Cancel</Button></div>
+		<section class="tp-sheet tp-pad review" aria-labelledby="review-title">
+			<h2 id="review-title">Search {preview.copies.length} {preview.copies.length === 1 ? 'copy' : 'copies'} again</h2>
+			<p class="tp-note">{preview.slot_count} search{preview.slot_count === 1 ? '' : 'es'} with your Pick rules. Nothing downloads on its own.</p>
+			<ul>{#each preview.copies as copy (copyKey(copy))}<li><b>{copy.title}</b><span>{copy.version} · {codecLabel(copy.codec)}</span></li>{/each}</ul>
+			<div class="actions"><Button variant="plain" onclick={() => preview = null}>Cancel</Button><Button variant="primary" disabled={busy} onclick={search}>Start</Button></div>
 		</section>
 	{/if}
 
 	<PageLoader loading={!loaded} label="Loading copies">
 	{#if page.copies.length === 0}
-		<EmptyState compact icon="film" title="No movie files match these filters." />
+		<EmptyState compact icon="film" title="Nothing matches." />
 	{:else}
-		<div class="table-wrap">
-			<table class="copies">
-				<caption class="sr-only">Inspected movie files and video codecs</caption>
-				<thead><tr><th scope="col"><span class="sr-only">Select</span></th><th scope="col">Movie and Version</th><th scope="col">Codec</th><th scope="col">Audio</th><th scope="col">File</th></tr></thead>
+		<div class="tp-sheet table-wrap">
+			<table class="tp-table copies">
+				<caption class="sr-only">Movie files and their video codecs</caption>
+				<thead><tr><th scope="col"><span class="sr-only">Select</span></th><th scope="col">Movie</th><th scope="col">Codec</th><th scope="col">Audio</th><th scope="col">File</th></tr></thead>
 				<tbody>
 					{#each page.copies as copy (copyKey(copy))}
-						<tr>
+						<tr class:picked={selectedKeys.has(copyKey(copy))}>
 							<td class="pick"><label><input type="checkbox" aria-label={`Select ${copy.title}, ${copy.version}`} checked={selectedKeys.has(copyKey(copy))} disabled={copy.protected} onchange={() => toggle(copy)} /></label></td>
-							<td><a href={to(`/library/${copy.title_id}`)}><b>{copy.title}</b>{#if copy.year} <span class="muted">({copy.year})</span>{/if}</a><span class="block small">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</td>
-							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="block xs muted">{copy.container || 'Container unknown'} · {copy.inspection_status || 'not inspected'}</span></td>
-							<td>{copy.audio_languages.length ? copy.audio_languages.join(', ') : 'Unknown'}<span class="block xs muted">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
+							<td><a href={to(`/library/${copy.title_id}`)}>{copy.title}{#if copy.year} <span class="yr">{copy.year}</span>{/if}</a><span class="tp-sub">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</td>
+							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="tp-sub">{[copy.container, copy.inspection_status].filter(Boolean).join(' · ') || 'Not read yet'}</span></td>
+							<td>{copy.audio_languages.length ? copy.audio_languages.join(', ') : '—'}<span class="tp-sub">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
 							<td class="path">{copy.relative_path}</td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 		</div>
-		<nav class="pager" aria-label="Codec pages">
-			<Button icon="chevronLeft" disabled={page.offset === 0 || busy} onclick={() => move(-pageSize)}>Previous</Button>
-			<span class="count">{page.offset + 1}–{last} of {page.total}</span>
-			<Button iconAfter="chevronRight" disabled={last >= page.total || busy} onclick={() => move(pageSize)}>Next</Button>
-		</nav>
+		{#if page.total > page.copies.length}
+			<nav class="tp-foot" aria-label="Codec pages">
+				<Button icon="chevronLeft" disabled={page.offset === 0 || busy} onclick={() => move(-pageSize)}>Previous</Button>
+				<span class="tp-note">{page.offset + 1}–{last} of {page.total}</span>
+				<Button iconAfter="chevronRight" disabled={last >= page.total || busy} onclick={() => move(pageSize)}>Next</Button>
+			</nav>
+		{/if}
 	{/if}
 	</PageLoader>
 {/if}
-</div>
+</LibraryToolPage>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.tools { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; margin: 0; }
-	.tools label { display: grid; gap: 4px; font: var(--t-subhead); color: var(--text-muted); }
-	.selection-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; padding: 8px 8px 8px 16px; border-radius: var(--r-panel); background: var(--surface-2); font: var(--t-callout); }
-	.notice { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
-	.notice.bad { color: var(--fail); }
-	.notice.good { color: var(--text); }
-	.notice.good :global(svg) { color: var(--ok); }
-	.review { border-radius: var(--r-panel); padding: 16px 20px 20px; margin: 0; background: var(--surface-1); box-shadow: var(--shadow-card); font: var(--t-callout); }
-	.review h2 { margin: 0 0 8px; font: var(--t-title3); }
-	.review ul { margin: .75rem 0; padding-left: 1.25rem; }
-	.actions { display: flex; flex-wrap: wrap; gap: 8px; }
-	.count { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
-	.table-wrap { overflow-x: auto; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.copies { width: 100%; border-collapse: collapse; font: var(--t-callout); font-variant-numeric: tabular-nums; }
-	.copies th { position: sticky; top: 0; padding: 10px 12px; text-align: left; background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); border-bottom: 1px solid var(--line); }
+	.review h2 { margin: 0 0 4px; font: var(--t-title3); }
+	.review ul { margin: 12px 0; padding: 0; list-style: none; display: grid; gap: 6px; font: var(--t-callout); }
+	.review li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+	.review li span { color: var(--text-muted); font: var(--t-footnote); }
+	.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+	.table-wrap { overflow-x: auto; }
 	.copies input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); }
+	.copies td { vertical-align: top; }
+	.copies tr.picked { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+	.pick { width: 1%; }
 	/* On touch phones the label around the box is the 44px tap target; the drawn box and the row stay the same. */
 	.pick label { display: inline-flex; }
 	/* The title link keeps its place in the line; on touch phones its box is 44px tall (inline padding moves nothing). */
 	@media (max-width: 767px) and (pointer: coarse) { td > a { padding-block: 13px; } }
 	@media (max-width: 767px) and (pointer: coarse) { .pick label { align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -12px; } }
-	.copies a { color: var(--text); }
-	.copies td { padding: var(--s-3); vertical-align: top; }
-	.copies tbody tr + tr { border-top: 1px solid var(--line); }
-	.copies tbody tr:hover { background: var(--surface-2); }
+	.yr { margin-left: 4px; color: var(--text-muted); font-weight: 400; }
+	.codec { font-weight: 650; }
 	.path { max-width: 24rem; overflow-wrap: anywhere; color: var(--text-muted); font: var(--t-footnote); }
-	.codec { font-weight: 700; }
-	.block { display: block; }
-	.pager { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); margin-top: var(--s-4); }
 	@media (max-width: 700px) {
-		.tools, .tools label { width: 100%; }
-		.tools .input, .tools :global(.ui-btn) { width: 100%; }
-		.selection-bar { align-items: stretch; flex-direction: column; }
-		.selection-bar { padding: 12px; }
-
 		.copies th:nth-child(4), .copies td:nth-child(4), .copies th:nth-child(5), .copies td:nth-child(5) { display: none; }
 	}
 </style>

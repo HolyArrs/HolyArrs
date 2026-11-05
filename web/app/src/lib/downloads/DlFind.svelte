@@ -33,7 +33,7 @@
 		{#if note}<span class="note" aria-live="polite">{note}</span>{/if}
 		{#if has}
 			<button type="button" class="clr" aria-label="Clear search" onclick={() => { term = ''; el?.focus(); }} data-testid="{testid}-clear"><Icon name="x" size={14} /></button>
-		{:else}
+		{:else if searchKey}
 			<kbd class="kb" aria-hidden="true">{searchKey}</kbd>
 		{/if}
 	</span>

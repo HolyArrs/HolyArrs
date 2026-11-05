@@ -1,8 +1,7 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
-	// Missing subtitles: every movie and episode missing a wished subtitle,
-	// by language, kind and show; Search all with its progress, or one row.
+	// Missing subtitles: every movie and episode missing a wished subtitle.
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -11,13 +10,12 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { pager } from '#lib/releases.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import { plainReason } from '#lib/plain.ts';
-	import Icon from '#lib/Icon.svelte';
 	import { jobsDone, langName, missingName, missingQuery, missingWords, wantLabel, type Language, type MissingRow, type MissingTitle } from '#lib/subtitles.ts';
 
 	const limit = 100;
@@ -150,140 +148,91 @@
 
 <svelte:head><title>Missing subtitles · HolyArrs</title></svelte:head>
 
-<div class="page">
-<PageHeader title="Missing subtitles" back={{ href: to('/library'), label: 'Library' }}>
-	{#snippet actions()}
-		<Button variant="primary" icon="search" onclick={searchAll} disabled={total === 0} busy={searchAllBusy} data-testid="search-all-subtitles">Search all</Button>
+<LibraryToolPage title="Missing subtitles" count={loaded && !error ? `${total} missing` : ''}>
+	{#snippet bar()}
+		<span class="tp-cap">
+			<select aria-label="Language" bind:value={language} onchange={filter}>
+				<option value="">Every language</option>
+				{#each langs as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
+			</select>
+		</span>
+		<span class="tp-cap">
+			<select aria-label="Kind" bind:value={kind} onchange={filter}>
+				<option value="">Movies and episodes</option>
+				<option value="movie">Movies</option>
+				<option value="episode">Episodes</option>
+			</select>
+		</span>
+		<span class="tp-cap">
+			<select aria-label="Movie or show" bind:value={title} onchange={filter}>
+				<option value={0}>All of them</option>
+				{#each titles as t (t.id)}<option value={t.id}>{t.name} ({t.count})</option>{/each}
+			</select>
+		</span>
+		<span class="tp-gap"></span>
+		<span class="tp-cap">
+			<Button variant="primary" icon="search" onclick={searchAll} disabled={total === 0} busy={searchAllBusy} data-testid="search-all-subtitles">Search all</Button>
+		</span>
 	{/snippet}
-</PageHeader>
 
-<form class="filters" onsubmit={(e) => (e.preventDefault(), filter())} aria-label="Filters">
-	<div class="field">
-		<label for="f-lang">Language</label>
-		<select id="f-lang" class="input" bind:value={language} onchange={filter}>
-			<option value="">Every language</option>
-			{#each langs as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
-		</select>
-	</div>
-	<div class="field">
-		<label for="f-kind">Kind</label>
-		<select id="f-kind" class="input" bind:value={kind} onchange={filter}>
-			<option value="">Movies and episodes</option>
-			<option value="movie">Movies</option>
-			<option value="episode">Episodes</option>
-		</select>
-	</div>
-	<div class="field">
-		<label for="f-title">Movie or show</label>
-		<select id="f-title" class="input" bind:value={title} onchange={filter}>
-			<option value={0}>All of them</option>
-			{#each titles as t (t.id)}<option value={t.id}>{t.name} ({t.count})</option>{/each}
-		</select>
-	</div>
-</form>
-
-{#if jobIds.length}
-	<div class="progress" aria-live="polite" data-testid="search-all-progress">
-		<ProgressBar value={(done / jobIds.length) * 100} label="Subtitle searches done" />
-		<p class="xs muted">{running ? `Searched ${done} of ${jobIds.length} files.` : `Done: searched ${jobIds.length} ${jobIds.length === 1 ? 'file' : 'files'}.`}</p>
-	</div>
-{/if}
-
-{#if error}
-	<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
-{:else}
-<PageLoader loading={!loaded} label="Loading missing subtitles">
-{#if total === 0}
-	<EmptyState
-		icon="subtitle"
-		title={language || kind || title ? 'Nothing missing here' : 'No subtitles missing'}
-		text={language || kind || title
-			? 'Nothing matches these filters.'
-			: 'Every movie and episode has the subtitles it should. Set the languages in Settings > Subtitles or on a movie or show.'}
-	/>
-{:else}
-	<p class="small muted count">{total} missing {total === 1 ? 'subtitle' : 'subtitles'}</p>
-	<ul class="rows-list">
-		{#each rows as r (r.file_id + r.language + String(r.forced))}
-			<li class="row-item" data-testid="missing-subtitle">
-				<div class="grow">
-					<a class="name" href={to(`/library/${r.title_id}`)}>{missingName(r)}</a>
-					<div class="sub">
-						<span data-testid="missing-language">{wantLabel({ language: r.language, hearing_impaired: r.hearing_impaired ? 'hi' : 'normal', forced: r.forced }, langs)}</span>
-						<span class="muted"> · {missingWords(r, dateTime)}</span>
-					</div>
-				</div>
-				<Button
-					icon="search"
-					onclick={() => searchOne(r)}
-					disabled={searchingRow === r.file_id}
-					aria-label="Search {langName(r.language, langs)} subtitles for {missingName(r)}"
-					data-testid="missing-search">Search</Button
-				>
-			</li>
-		{/each}
-	</ul>
-	{#if pages.prev !== null || pages.next !== null}
-		<nav class="pager" aria-label="Pages">
-			<Button icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
-			<span class="sub">{pages.from} to {pages.to} of {total}</span>
-			<Button iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
-		</nav>
+	{#if jobIds.length}
+		<div class="tp-sheet tp-pad progress" aria-live="polite" data-testid="search-all-progress">
+			<ProgressBar value={(done / jobIds.length) * 100} label="Subtitle searches done" />
+			<p class="tp-note">{running ? `Searched ${done} of ${jobIds.length} files.` : `Done: searched ${jobIds.length} ${jobIds.length === 1 ? 'file' : 'files'}.`}</p>
+		</div>
 	{/if}
-{/if}
-</PageLoader>
-{/if}
-</div>
+
+	{#if error}
+		<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
+	{:else}
+	<PageLoader loading={!loaded} label="Loading missing subtitles">
+	{#if total === 0}
+		<EmptyState compact icon="subtitle" title={language || kind || title ? 'Nothing matches.' : 'Nothing missing.'} />
+	{:else}
+		<div class="tp-sheet table-wrap">
+			<table class="tp-table missing">
+				<caption class="sr-only">Movies and episodes missing subtitles</caption>
+				<thead><tr><th scope="col">Title</th><th scope="col">Language</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Search</span></th></tr></thead>
+				<tbody>
+					{#each rows as r (r.file_id + r.language + String(r.forced))}
+						<tr data-testid="missing-subtitle">
+							<td><a href={to(`/library/${r.title_id}`)}>{missingName(r)}</a></td>
+							<td data-testid="missing-language">{wantLabel({ language: r.language, hearing_impaired: r.hearing_impaired ? 'hi' : 'normal', forced: r.forced }, langs)}</td>
+							<td class="status">{missingWords(r, dateTime)}</td>
+							<td class="act">
+								<Button
+									icon="search"
+									onclick={() => searchOne(r)}
+									disabled={searchingRow === r.file_id}
+									aria-label="Search {langName(r.language, langs)} subtitles for {missingName(r)}"
+									data-testid="missing-search">Search</Button
+								>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+		{#if pages.prev !== null || pages.next !== null}
+			<nav class="tp-foot" aria-label="Pages">
+				<Button icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
+				<span class="tp-note">{pages.from}–{pages.to} of {total}</span>
+				<Button iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
+			</nav>
+		{/if}
+	{/if}
+	</PageLoader>
+	{/if}
+</LibraryToolPage>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.name { font: var(--t-headline); color: var(--text); overflow-wrap: anywhere; }
-	.sub { margin-top: 2px; font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
-	.muted { color: var(--text-muted); }
-	.filters {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 12px;
-		margin: 0;
-		padding: 0;
+	.progress { display: grid; gap: 8px; }
+	.table-wrap { overflow-x: auto; }
+	.status { color: var(--text-muted); font: var(--t-footnote); }
+	.act { width: 1%; text-align: right; white-space: nowrap; }
+	@media (max-width: 639px) {
+		.missing th:nth-child(3), .missing td:nth-child(3) { display: none; }
 	}
-	.filters .field + .field {
-		margin-top: 0;
-	}
-	.progress { display: grid; gap: 6px; }
-	.count { margin: 0 0 -8px; color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
-	.rows-list {
-		margin: 0;
-		padding: 4px;
-		list-style: none;
-		border-radius: var(--r-panel);
-		background: var(--surface-1);
-		box-shadow: var(--shadow-card);
-	}
-	.row-item {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		padding: 10px 12px;
-		border: 0;
-		border-radius: 0;
-		background: transparent;
-	}
-	.row-item + .row-item {
-		margin-top: 0;
-		border-top: 1px solid var(--line);
-	}
-	.grow {
-		flex: 1;
-		min-width: 0;
-	}
-	.pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-	@media (max-width: 600px) {
-		.filters {
-			grid-template-columns: 1fr;
-		}
-		.row-item { align-items: flex-start; flex-direction: column; }
-		.row-item :global(.ui-btn) { width: 100%; }
-
-	}
+	/* The title link is the 44px tap target on touch phones. */
+	@media (pointer: coarse) { .missing td > a { display: inline-block; padding-block: 13px; } }
 </style>

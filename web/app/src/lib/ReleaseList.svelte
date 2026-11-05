@@ -7,7 +7,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes, date, dateTime } from '#lib/format.ts';
 	import { facts, keyReasons, listedName, pager } from '#lib/releases.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -94,44 +94,34 @@
 	}
 </script>
 
-<div class="page">
-<PageHeader
-	title={held ? 'Held' : 'Turned down'}
-	subtitle={held
-		? 'Releases HolyArrs picked that are waiting out their wait. A better one found meanwhile takes their place.'
-		: dl
-			? 'Copies HolyArrs will not pick again, with why. Undo one to let it be picked again.'
-			: 'Releases HolyArrs never picks again for their movie or episode. Take one off the list to let it be picked again.'}
-	back={dl ? { href: to('/downloads'), label: 'Downloads' } : { href: to('/library'), label: 'Library' }}
->
-	{#snippet actions()}
+<LibraryToolPage title={held ? 'Held' : 'Turned down'} count={loaded && !error && total ? `${total} ${total === 1 ? 'Release' : 'Releases'}` : ''}>
+	{#snippet bar()}
 		{#if !dl}
-		<nav class="switch-list" aria-label="Release lists">
-			<a href={to(`/library/held`)} aria-current={held ? 'page' : undefined}>Held</a>
-			<a href={to(`/library/turned-down`)} aria-current={held ? undefined : 'page'}>Turned down</a>
-		</nav>
+			<nav class="tp-cap switch-list" aria-label="Release lists">
+				<a href={to(`/library/held`)} aria-current={held ? 'page' : undefined}>Held</a>
+				<a href={to(`/library/turned-down`)} aria-current={held ? undefined : 'page'}>Turned down</a>
+			</nav>
+		{/if}
+		{#if loaded && !error && total > 0}
+			<span class="tp-gap"></span>
+			<span class="tp-cap"><Button variant="secondary" onclick={clearAll} disabled={busy}>Clear all</Button></span>
 		{/if}
 	{/snippet}
-</PageHeader>
 
 {#if error}
 	<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
 {:else if !loaded}
-	<ul class="rels" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="rel"><Skeleton lines={3} /></li>{/each}</ul>
+	<ul class="tp-sheet tp-rows" aria-hidden="true">{#each Array(3) as _, i (i)}<li><Skeleton lines={3} /></li>{/each}</ul>
 {:else if total === 0}
 	<EmptyState
 		icon={held ? 'clock' : 'shield'}
 		title={held ? 'Nothing is held' : 'Nothing is turned down'}
 		text={held
-			? 'When Pick rules ask HolyArrs to wait before sending a Release, it waits here.'
-			: 'Turn a Release down from a movie or show page, or HolyArrs does it when a download turns out wrong.'}
+			? 'Releases wait here when Pick rules ask for a wait.'
+			: 'Turn a Release down from its movie or show page. Wrong downloads land here too.'}
 	/>
 {:else}
-	<div class="list-head">
-		<span class="count">{total} {total === 1 ? 'Release' : 'Releases'}</span>
-		<Button variant="plain" onclick={clearAll} disabled={busy}>Clear all</Button>
-	</div>
-	<ul class="rels">
+	<ul class="tp-sheet tp-rows">
 		{#each rows as r (r.id)}
 			{@const key = keyReasons(r.reasons)}
 			<li class="rel" data-testid="listed-release">
@@ -160,40 +150,31 @@
 		{/each}
 	</ul>
 	{#if pages.prev !== null || pages.next !== null}
-		<nav class="pager" aria-label="Pages">
+		<nav class="tp-foot" aria-label="Pages">
 			<Button variant="secondary" icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
-			<span class="count">{pages.from} to {pages.to} of {total}</span>
+			<span class="tp-note">{pages.from} to {pages.to} of {total}</span>
 			<Button variant="secondary" iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
 		</nav>
 	{/if}
 {/if}
-</div>
+</LibraryToolPage>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.switch-list { display: flex; gap: 2px; padding: 3px; border-radius: var(--r-btn); background: var(--surface-2); }
-	.switch-list a { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 8px; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.switch-list a:hover { color: var(--text); }
+	.switch-list a { display: inline-flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 10px; color: var(--text-muted); font: 600 13.5px/1 var(--font-ui); white-space: nowrap; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.switch-list a:hover { color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.switch-list a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.switch-list a[aria-current='page'] { background: var(--surface-1); color: var(--text); font-weight: 600; box-shadow: var(--shadow-card); }
+	.switch-list a[aria-current='page'] { background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-card); }
 	.switch-list a[aria-current='page']:focus-visible { box-shadow: var(--focus-ring); }
-	@media (pointer: coarse) { .switch-list a { min-height: 44px; } }
-	.list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-	.count { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
-	.rels { margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.rel { padding: 12px 14px; }
-	.rel + .rel { border-top: 1px solid var(--line); }
 	.rel-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 4px; }
 	.grow { min-width: 0; flex: 1; }
 	.for { font: var(--t-headline); color: var(--text); }
 	/* On touch phones the title link's box is 44px tall (inline padding moves nothing). */
-	@media (max-width: 767px) and (pointer: coarse) { .for { padding-block: 12px; } }
+	@media (max-width: 767px) and (pointer: coarse) { .for { display: inline-block; padding-block: 12px; } }
 	.rel-name { margin-top: 2px; color: var(--text-muted); font: var(--t-callout); overflow-wrap: anywhere; }
 	.facts { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.reasons { margin: 8px 0 0; padding: 0; list-style: none; font: var(--t-footnote); color: var(--text-muted); }
 	.reasons li { padding: 2px 0 2px 10px; border-left: 2px solid var(--line-strong); }
 	.reasons li.fail { border-left-color: var(--fail); }
 	.reasons li.hold, .reasons li.warn { border-left-color: var(--wait); }
-	.pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-	@media (max-width: 600px) { .rel-top { flex-direction: column; } }
+	@media (max-width: 600px) { .rel-top { flex-direction: column; } .switch-list a { flex: 1; justify-content: center; } }
 </style>

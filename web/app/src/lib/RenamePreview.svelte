@@ -13,7 +13,8 @@
 	import Skeleton from './ui/Skeleton.svelte';
 
 	// season narrows a show's preview to that season's files (read from the SxxEyy in their names).
-	let { titleId, albumId, season, onDone }: { titleId?: number; albumId?: number; season?: number; onDone?: () => void } = $props();
+	// page: the Library's Rename files screen (its own look and shorter words); changeCount reports how many files get a new name there.
+	let { titleId, albumId, season, onDone, page = false, changeCount = $bindable(0) }: { titleId?: number; albumId?: number; season?: number; onDone?: () => void; page?: boolean; changeCount?: number } = $props();
 
 	let steps = $state<RenameStep[]>([]);
 	// The hash of what this preview shows: the rename does only that, and
@@ -25,6 +26,9 @@
 	let applying = $state(false);
 	const parts = $derived(splitSteps(steps));
 	const many = $derived(titleId === undefined);
+	$effect(() => {
+		if (page) changeCount = parts.change.length;
+	});
 
 	async function load() {
 		try {
@@ -75,6 +79,68 @@
 	}
 </script>
 
+{#if page}
+<div class="rename" data-testid="rename-preview">
+	{#if !loaded}
+		<div class="tp-sheet tp-pad"><Skeleton lines={4} /></div>
+	{:else}
+		{#if parts.change.length}<p class="tp-note">Nothing changes until you press Rename.</p>{/if}
+		{#if error}<p class="tp-msg bad" role="alert">{error}</p>{/if}
+		{#if job && !['done', 'failed', 'cancelled'].includes(job.State)}
+			<div class="tp-sheet tp-pad" aria-live="polite">
+				<ProgressBar value={job.Progress * 100} label="Rename progress" />
+				<p class="tp-note">{job.ProgressNote || (job.State === 'queued' ? 'Waiting to start.' : 'Renaming.')}</p>
+			</div>
+		{/if}
+		<div class="tp-sheet">
+			{#if parts.change.length === 0}
+				<p class="tp-pad none" data-testid="rename-none">Nothing to rename.</p>
+			{:else}
+				<h2 class="sr-only">{parts.change.length === 1 ? '1 file gets a new name' : `${parts.change.length} files get a new name`}</h2>
+				<ul class="tp-rows steps">
+					{#each parts.change as s (s.file_id)}
+						<li data-testid="rename-step">
+							{#if many}<b class="name">{s.title_name}</b>{/if}
+							<div class="pair">
+								<span class="lab">Now</span><span class="mono path old">{renamePair(s)[0]}</span>
+								<span class="lab">New</span><span class="mono path new">{renamePair(s)[1]}</span>
+							</div>
+							{#each s.subtitles ?? [] as sub (sub.from)}
+								<p class="tp-sub" data-testid="rename-subtitle">
+									Subtitle {fileName(sub.from)}: {sub.to ? '→ ' + fileName(sub.to) : 'stays, ' + sub.skip}
+								</p>
+							{/each}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			{#if parts.skipped.length}
+				<details class="skipped-d" open={parts.change.length === 0}>
+					<summary>{parts.skipped.length} skipped</summary>
+					<ul class="tp-rows steps">
+						{#each parts.skipped as s (s.file_id)}
+							<li data-testid="rename-skip">
+								{#if many}<b class="name">{s.title_name}</b>{/if}
+								<span class="mono path">{fileName(s.from)}</span>
+								<span class="tp-sub">{s.skip}</span>
+							</li>
+						{/each}
+					</ul>
+				</details>
+			{/if}
+		</div>
+		{#if parts.same}<p class="tp-note">{parts.same} already right.</p>{/if}
+		{#if parts.change.length}
+			<div class="tp-foot go-foot">
+				<span></span>
+				<Button variant="primary" onclick={apply} busy={applying}>
+					{parts.change.length === 1 ? 'Rename 1 file' : `Rename ${parts.change.length} files`}
+				</Button>
+			</div>
+		{/if}
+	{/if}
+</div>
+{:else}
 <div class="rename" data-testid="rename-preview">
 	{#if !loaded}
 		<Skeleton lines={4} />
@@ -136,6 +202,7 @@
 		{/if}
 	{/if}
 </div>
+{/if}
 
 <style>
 	.steps {
@@ -176,6 +243,23 @@
 
 	.skipped {
 		margin-top: var(--s-3);
+	}
+	/* Rename files screen (page). */
+	.rename :global(.tp-rows.steps) { margin: 0; }
+	.rename :global(.tp-rows.steps > li) { display: flex; flex-direction: column; gap: 4px; }
+	.name { font: 600 14px/1.3 var(--font-ui); overflow-wrap: anywhere; }
+	.rename .pair .lab { color: var(--text-muted); font: 500 12px/1.5 var(--font-ui); }
+	.rename .pair .path { font: 400 13px/1.5 var(--font-mono); }
+	.rename .pair .old { color: var(--text-muted); }
+	.none { margin: 0; color: var(--text-muted); font: var(--t-callout); }
+	.skipped-d { border-top: 1px solid var(--line); }
+	.skipped-d:first-child { border-top: 0; }
+	.skipped-d summary { display: flex; align-items: center; min-height: 44px; padding: 0 20px; cursor: pointer; color: var(--text-muted); font: var(--t-callout); }
+	.skipped-d[open] > summary { border-bottom: 1px solid var(--line); }
+	.go-foot :global(.ui-btn) { min-height: 44px; }
+	@media (max-width: 639px) {
+		.skipped-d summary { padding: 0 16px; }
+		.go-foot { justify-content: flex-end; }
 	}
 	.go {
 		justify-content: flex-end;

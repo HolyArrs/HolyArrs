@@ -7,7 +7,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { bytes, date } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -62,78 +62,68 @@
 
 <svelte:head><title>Recently deleted · HolyArrs</title></svelte:head>
 
-<div class="page">
-<PageHeader title="Recently deleted" back={{ href: to('/library'), label: 'Library' }}>
-	{#snippet actions()}
-		<Button variant="primary" icon="refresh" onclick={restore} disabled={!picked.size} {busy} data-testid="restore-deleted">
-			Restore{picked.size ? ` ${picked.size}` : ''}
-		</Button>
+<LibraryToolPage title="Recently deleted" count={loaded && !error && files.length ? `${files.length} ${files.length === 1 ? 'file' : 'files'}` : ''}>
+	{#snippet bar()}
+		<span class="tp-gap"></span>
+		<span class="tp-cap">
+			<Button variant="primary" icon="refresh" onclick={restore} disabled={!picked.size} {busy} data-testid="restore-deleted">
+				Restore{picked.size ? ` ${picked.size}` : ''}
+			</Button>
+		</span>
 	{/snippet}
-</PageHeader>
 
 {#if error}
 	<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
 {:else}
 <PageLoader loading={!loaded} label="Loading deleted files">
 {#if files.length === 0}
-	<EmptyState icon="trash" title="Nothing deleted" text="Files you delete wait here for a while, so you can put them back." />
+	<EmptyState icon="trash" title="Nothing deleted" text="Deleted files wait here for a while, so you can put them back." />
 {:else}
-	<label class="all small muted">
-		<input type="checkbox" checked={all} onchange={() => (picked = all ? new Set() : new Set(files.map((f) => f.id)))} data-testid="deleted-pick-all" />
-		{files.length} {files.length === 1 ? 'file' : 'files'}
-	</label>
-	<ul class="rows-list">
-		{#each files as f (f.id)}
-			{@const left = daysLeft(f.expires_at)}
-			<li class="row-item" data-testid="deleted-file">
-				<input type="checkbox" checked={picked.has(f.id)} onchange={() => toggle(f.id)} aria-label="Select {fileName(f.path)}" />
-				<div class="grow">
-					{#if f.title_deleted}
-						<span class="name">{f.title}</span>
-					{:else}
-						<a class="name" href={to(`/library/${f.title_id}`)}>{f.title}</a>
-					{/if}
-					<div class="sub path">{f.path}</div>
-					<div class="sub muted">
-						{bytes(f.size)} · deleted {date(f.deleted_at)}{f.title_deleted ? ' with the title' : ''}
+	<div class="tp-sheet">
+		<label class="all">
+			<input type="checkbox" checked={all} onchange={() => (picked = all ? new Set() : new Set(files.map((f) => f.id)))} data-testid="deleted-pick-all" />
+			Select all
+		</label>
+		<ul class="tp-rows">
+			{#each files as f (f.id)}
+				{@const left = daysLeft(f.expires_at)}
+				<li class="row-item" class:picked={picked.has(f.id)} data-testid="deleted-file">
+					<label class="pick"><input type="checkbox" checked={picked.has(f.id)} onchange={() => toggle(f.id)} aria-label="Select {fileName(f.path)}" /></label>
+					<div class="grow">
+						{#if f.title_deleted}
+							<span class="name">{f.title}</span>
+						{:else}
+							<a class="name" href={to(`/library/${f.title_id}`)}>{f.title}</a>
+						{/if}
+						<span class="tp-sub path">{f.path}</span>
+						<span class="tp-sub">{bytes(f.size)} · deleted {date(f.deleted_at)}{f.title_deleted ? ' with the title' : ''}</span>
 					</div>
-				</div>
-				<span class="left" class:soon={left !== null && left <= 1} data-testid="deleted-days-left">{daysLeftWords(f.expires_at)}</span>
-			</li>
-		{/each}
-	</ul>
+					<span class="left" class:soon={left !== null && left <= 1} data-testid="deleted-days-left">{daysLeftWords(f.expires_at)}</span>
+				</li>
+			{/each}
+		</ul>
+	</div>
 {/if}
 </PageLoader>
 {/if}
-</div>
+</LibraryToolPage>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.name { font: var(--t-headline); color: var(--text); overflow-wrap: anywhere; }
-	.sub { margin-top: 2px; font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
+	.all { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 20px; color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); cursor: pointer; }
+	input[type='checkbox'] { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+	.row-item { display: flex; align-items: center; gap: 12px; }
+	.row-item.picked { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+	.pick { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 44px; min-height: 44px; margin: -12px; cursor: pointer; }
+	.name { color: var(--text); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+	a.name:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.grow { flex: 1; min-width: 0; font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.path { overflow-wrap: anywhere; }
-	.muted { color: var(--text-muted); }
-	.all { display: flex; align-items: center; gap: 8px; margin: 0 0 -8px; padding: 0 16px; font: var(--t-subhead); }
-	.rows-list {
-		margin: 0;
-		padding: 4px;
-		list-style: none;
-		border-radius: var(--r-panel);
-		background: var(--surface-1);
-		box-shadow: var(--shadow-card);
-	}
-	.row-item {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		padding: 10px 12px;
-	}
-	.row-item + .row-item { border-top: 1px solid var(--line); }
-	.grow { flex: 1; min-width: 0; }
-	.left { flex: none; font: var(--t-subhead); color: var(--ok-text); font-variant-numeric: tabular-nums; }
+	.left { flex: none; font: var(--t-footnote); color: var(--ok-text); font-variant-numeric: tabular-nums; }
 	.left.soon { color: var(--fail-text); }
-	@media (max-width: 600px) {
+	@media (max-width: 639px) {
+		.all { padding: 0 16px; }
 		.row-item { flex-wrap: wrap; align-items: flex-start; }
-		.left { flex-basis: 100%; padding-left: 28px; }
+		.left { flex-basis: 100%; padding-left: 44px; }
 	}
+	@media (pointer: coarse) { a.name { display: inline-block; padding-block: 12px; margin-block: -12px; } }
 </style>
