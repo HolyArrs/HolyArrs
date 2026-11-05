@@ -18,6 +18,7 @@
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/Icon.svelte';
+	import type { SearchView } from '#lib/types.ts';
 	import { factsLine, filterOf, fixReport, kindHint, kindIcon, listReports, noteMax, quickReplies, reopenReport, reportFilters, reportHref, searchBody, sortReports, stateCounts, titleLine, whoName, type ReportFilter, type ReportView } from '#lib/reports.ts';
 
 	// Reports (#36): the Requests page's sibling, in the same language. One toolbar
@@ -66,8 +67,41 @@
 			}),
 			live.on('resync', () => void load())
 		];
-		return () => offs.forEach((off) => off());
+		void readSearches();
+		return () => (offs.forEach((off) => off()), clearTimeout(searchTimer));
 	});
+
+	// Better copy: the card says Searching while that title's search runs (people who manage the Library
+	// read the searches list), then a toast gives that search's own outcome. Read once on opening, and
+	// again every few seconds only while a search is running.
+	let searching = $state(new Set<number>());
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	// The searches started from this page: only those get an outcome toast.
+	const mine = new Set<number>();
+	async function readSearches() {
+		clearTimeout(searchTimer);
+		if (!session.can('manage_library')) return;
+		const before = searching;
+		let recent: SearchView[] = [];
+		try {
+			const r = await api.get<{ running: SearchView[] | null; recent?: SearchView[] | null }>('/searches');
+			searching = new Set((r.running ?? []).filter((x) => x.title_id && x.kind !== 'feed_check' && (x.state === 'running' || x.state === 'queued')).map((x) => x.title_id as number));
+			recent = r.recent ?? [];
+		} catch {
+			return; // keep the last answer
+		}
+		for (const id of before) if (!searching.has(id)) searchEnded(id, recent);
+		if (searching.size) searchTimer = setTimeout(() => void readSearches(), 2500);
+	}
+	function searchEnded(titleId: number, recent: SearchView[]) {
+		if (!mine.delete(titleId)) return;
+		const job = recent.filter((x) => x.title_id === titleId).sort((x, y) => y.job_id - x.job_id)[0];
+		const name = job?.title_name ?? reports.find((r) => r.title_id === titleId)?.title_name;
+		if (!job || !name) return;
+		if (job.outcome === 'none') toasts.push(`No better copy of ${name} found yet.`, 'info');
+		else if (job.outcome === 'failed') toasts.push(`The search for ${name} failed.${job.error ? ` ${job.error}` : ''}`, 'fail');
+		else if (job.outcome === 'chosen' || job.outcome === 'held' || job.outcome === 'episodes' || job.outcome === 'album') toasts.push(`Found another copy of ${name}.`, 'ok');
+	}
 
 	// The wide art comes from each title (a report carries only its poster); a title that gives none keeps the poster,
 	// blurred for a movie or show (a tall poster) and as it is for an artist (their photo, as on Requests).
@@ -167,7 +201,11 @@
 		busy = r.id;
 		try {
 			await api.post(`/titles/${r.title_id}/search`, searchBody(r));
-			toasts.push(`Looking for a better copy of ${r.title_name}.`, 'ok');
+			// The card and the window say Searching from here on.
+			searching = new Set(searching).add(r.title_id);
+			mine.add(r.title_id);
+			clearTimeout(searchTimer);
+			searchTimer = setTimeout(() => void readSearches(), 1500);
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {
@@ -232,7 +270,11 @@
 						</div>
 						<div class="foot" class:one={!manage || !open} class:re-row={manage && !open}>
 							{#if manage && open}
-								<button type="button" class="b no" aria-label="Find a better copy of {r.title_name}" disabled={busy === r.id} onclick={() => void findBetter(r)}><Icon name="search" size={15} /><span class="bl">Better copy</span></button>
+								{#if searching.has(r.title_id)}
+									<span class="st-cap st-go" role="status" data-testid="report-searching" in:fade={{ duration: ms(200) }}><Icon name="search" size={15} /><span class="bl">Searching</span><span class="vh">for a better copy of {r.title_name}</span></span>
+								{:else}
+									<button type="button" class="b no" aria-label="Find a better copy of {r.title_name}" disabled={busy === r.id} onclick={() => void findBetter(r)}><Icon name="search" size={15} /><span class="bl">Better copy</span></button>
+								{/if}
 								<button type="button" class="b yes" aria-label="Mark fixed: {r.title_name}" onclick={() => show(r, true)}><Icon name="check" size={15} /><span class="bl">Mark fixed</span></button>
 							{:else}
 								<span class="st-chip st-{open ? 'wait' : 'ok'}">
@@ -262,7 +304,7 @@
 	{#if win}
 		<div class="rw-acts">
 			{#if win.state === 'open'}
-				<Button icon="search" disabled={busy === win.id} onclick={() => win && void findBetter(win)}>Better copy</Button>
+				<Button icon="search" busy={searching.has(win.title_id)} disabled={busy === win.id} onclick={() => win && void findBetter(win)}>{searching.has(win.title_id) ? 'Searching' : 'Better copy'}</Button>
 				<Button variant="primary" icon="check" busy={busy === win.id} onclick={() => void fix()}>Mark fixed</Button>
 			{:else}
 				<Button icon="refresh" busy={busy === win.id} onclick={() => win && void reopen(win)}>Reopen</Button>
@@ -382,7 +424,7 @@
 	.sheet-b, .top { pointer-events: none; }
 	.sheet-b button { pointer-events: auto; }
 	/* The glass panel: smoked glass, the art blurred through it. --text, --text-muted and --bg are redefined on it so the ink reads. */
-	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-h: 40px; --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; margin: 0 var(--gap) var(--gap); border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
+	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-h: 40px; --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; margin: 0 var(--gap) var(--gap); border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
 	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
 	@media (prefers-color-scheme: light) { :global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); } }
 	.body { display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 0; min-width: 0; }
@@ -412,6 +454,11 @@
 	/* The status: an icon tile, the word and its detail, built like the who row (as on Requests' Done cards). */
 	.st-wait { --st-c: var(--st-wait); --st-ink: var(--st-wait-ink); }
 	.st-ok { --st-c: var(--st-ok); --st-ink: var(--st-ok-ink); }
+	.st-go { --st-c: var(--st-go); --st-ink: var(--st-go-ink); }
+	/* Searching: a button-shaped capsule where Better copy was, a soft light passing along it (Requests' Processing capsule). */
+	.st-cap { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; height: var(--st-h); padding: 0 12px; border-radius: 12px; background: light-dark(color-mix(in srgb, var(--st-c) 14%, rgb(255 255 255 / 0.5)), color-mix(in srgb, var(--st-c) 22%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-c) 34%, transparent); color: var(--st-ink); font: var(--t-subhead); font-weight: 600; white-space: nowrap; }
+	.st-cap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent) no-repeat; background-size: 40% 100%; animation: st-shim 2.2s ease-in-out infinite; }
+	@keyframes st-shim { from { background-position: -60% 0; } to { background-position: 160% 0; } }
 	.st-chip { display: flex; align-items: center; gap: 9px; min-width: 0; height: var(--st-h); }
 	.st-sq { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 60%), color-mix(in srgb, var(--st-c) 20%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--st-c) 42%, transparent); color: var(--st-ink); }
 	.st-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
@@ -503,7 +550,8 @@
 		.foot { gap: 6px; padding: 10px; }
 		/* Better copy and Mark fixed: equal halves, icons only (each has its full name for screen readers), as on Requests. */
 		.b { padding: 0 8px; }
-		.b .bl { display: none; }
+		.b .bl, .st-cap .bl { display: none; }
+		.st-cap { padding: 0 8px; }
 		.st-chip { gap: 7px; }
 		.st-id > b { font-size: 12.5px; }
 		.rw-art { height: 128px; }
@@ -514,7 +562,7 @@
 	}
 	@media (max-width: 767px) and (pointer: coarse) { .tabs { height: 46px; padding-block: 6px; border-radius: 15px; } }
 	@media (prefers-reduced-motion: reduce) {
-		.bc.ghost, img.ban-img { animation: none; }
+		.bc.ghost, img.ban-img, .st-cap::after { animation: none; }
 		.ban-img, .back :global(svg), .b, .rw-q, .rw-go { transition: none; }
 		.b:active, .rw-q:active { transform: none; }
 	}

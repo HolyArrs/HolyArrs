@@ -24,6 +24,7 @@
 	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/requests.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { inbox, markRead, refreshInbox } from '#lib/requests.svelte.ts';
+	import { listReports } from '#lib/reports.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView, SearchView } from '#lib/types.ts';
 	import type { DownloadRow } from '#lib/downloaders.ts';
 	import { liveByTitle, liveFacts, stepFacts, type TitleLive } from '#lib/approvals/live.ts';
@@ -209,6 +210,7 @@
 	let reviewTrigger: HTMLButtonElement | undefined = $state();
 	let compactReview = $state(false);
 	let takingBack = $state<Set<number>>(new Set());
+	let myReports = $state(0);
 
 	async function selectAsk(id: number, trigger?: HTMLButtonElement) {
 		selectedId = id;
@@ -289,6 +291,8 @@
 			void tick().then(() => document.querySelector(`[data-ask-id="${a.id}"]`)?.scrollIntoView({ block: 'center' }));
 		});
 		void refreshInbox();
+		// People who do not manage the Library get a way back to the reports they sent, once they have sent one.
+		if (!session.can('manage_library')) void listReports('all', { limit: 1 }).then((r) => (myReports = r.reports.length), () => {});
 		myId = session.s.id;
 		if (session.can('manage_library')) {
 			api
@@ -664,11 +668,14 @@
 <h1 class="sr-only">Requests</h1>
 <!-- Reports (#36): approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
 {#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
-{#if session.can('ask') && !approver}
+{#if (session.can('ask') && !approver) || myReports > 0}
 	<div class="ask-actions">
+		{#if session.can('ask') && !approver}
 			<Button icon="film" variant="primary" href={to(`/search`)}><span class="ask-d">Ask for a movie</span><span class="ask-m"><span class="sr-only">Ask for a </span>Movie</span></Button>
 			<Button icon="tv" href={to(`/search?kind=show`)}><span class="ask-d">Ask for a show</span><span class="ask-m"><span class="sr-only">Ask for a </span>Show</span></Button>
 			<Button icon="music" href={to(`/search?kind=music`)}><span class="ask-d">Ask for music</span><span class="ask-m"><span class="sr-only">Ask for </span>Music</span></Button>
+		{/if}
+		{#if myReports > 0}<span class="ask-rp" data-testid="my-reports-link"><Button icon="alert" href={to('/reports')}>Your reports</Button></span>{/if}
 		</div>
 {/if}
 
@@ -1038,6 +1045,9 @@
 		.art { width: 44px; }
 		.actions > :global(*):not(.row-menu) { flex: 1 1 auto; }
 	}
+	/* Your reports (#36): after the ask buttons, at the row's far end on wide screens. */
+	.ask-rp { display: inline-flex; margin-left: auto; }
+	@media (max-width: 767px) { .ask-rp { margin-left: 0; } }
 	/* Reported problems (#95): a small link for the owner and admins. */
 	.rp-link { display: inline-flex; margin-bottom: 10px; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.rp-link:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
