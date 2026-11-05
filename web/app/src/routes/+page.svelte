@@ -11,7 +11,7 @@
 	import { proxied, sized } from '#lib/tmdb-image.ts';
 	import { askArtist, askDetails, wantDetails } from '#lib/approvals/details.svelte.ts';
 	import type { IconName } from '#lib/Icon.svelte';
-	import { arrivedHead, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { decisions } from '#lib/decisions.svelte.ts';
 	import { METADATA_DOWN, metadataOutage } from '#lib/metadata-health.svelte.ts';
 	import { agoLong, bytes, duration, percent } from '#lib/format.ts';
@@ -27,7 +27,6 @@
 	import type { Tint } from '#lib/settings.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
-	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -166,18 +165,10 @@
 	const asksLine = $derived([mineOpen ? `${n(mineOpen)} still open` : '', mineDeclined ? `${n(mineDeclined)} turned down` : ''].filter(Boolean).join(' · '));
 	const canAsk = $derived(session.can('ask') || approver);
 	const progress = $derived(home?.ask_progress ?? {});
-	// Only a card on Your asks needs the live poll; downloads of asks with no card there do not.
+	// While one of this person's own asks is downloading, Home re-reads, so it sees the title arrive.
 	const busy = $derived(mineShown.some((a) => !!a.title_id && !!progress[a.title_id]));
-	// Downloading (managers): what HolyArrs fetches now, from the downloads this page already read.
+	// Downloading (managers): what HolyArrs fetches now, from the downloads this page already read. It shows on the System side.
 	const fetchingAll = $derived(manager ? downloadingNow(downloads, Infinity) : []);
-	const fetchingShown = $derived(fetchingAll.slice(0, 20));
-	// The download rows carry no poster; the titles Home already shows lend theirs.
-	const posters = $derived.by(() => {
-		const m = new Map<number, string>();
-		for (const c of [...(home?.arrived ?? []), ...(home?.new_seasons ?? []), ...(home?.following ?? []), ...(home?.soon ?? [])]) if (c.poster) m.set(c.title_id, c.poster);
-		for (const a of asks) if (a.title_id && a.poster) m.set(a.title_id, a.poster);
-		return m;
-	});
 	// The top of Home: a greeting that shows on the first frame, and a short note beside the switch once the data has answered.
 	const kid = $derived(home?.kid ?? session.kid);
 	const greeting = $derived(homeGreeting({ name: session.s.name, now }));
@@ -821,19 +812,6 @@
 					</div>
 				{/if}
 			</div>
-		{/if}
-		{#if fetchingShown.length}
-			<Shelf title="Downloading" subtitle={stageWords(countStages(fetchingAll))} href={to('/downloads')} item="var(--poster-item)">
-				{#each fetchingShown as d (d.id)}
-					<PosterCard
-						title={d.title || d.name}
-						href={to(`/downloads?open=${d.id}`)}
-						image={d.artwork ?? (d.title_id ? posters.get(d.title_id) : undefined)}
-						subtitle={d.covers ? `${d.covers} · ${downloadLine(d)}` : downloadLine(d)}
-						progress={d.state === 'downloading' ? Math.round(Math.max(0, Math.min(1, d.progress)) * 100) : undefined}
-					/>
-				{/each}
-			</Shelf>
 		{/if}
 		{#each rows as row (row)}
 			{#if row === 'welcome'}
