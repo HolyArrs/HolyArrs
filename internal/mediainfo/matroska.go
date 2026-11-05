@@ -2,8 +2,8 @@ package mediainfo
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
+	"math"
 	"strings"
 )
 
@@ -11,13 +11,45 @@ const (
 	ebmlHeaderID      = 0x1a45dfa3
 	ebmlDocTypeID     = 0x4282
 	ebmlSegmentID     = 0x18538067
+	ebmlSeekHeadID    = 0x114d9b74
+	ebmlSeekID        = 0x4dbb
+	ebmlSeekIDID      = 0x53ab
+	ebmlSeekPosition  = 0x53ac
+	ebmlInfoID        = 0x1549a966
+	ebmlTimecodeScale = 0x2ad7b1
+	ebmlDurationID    = 0x4489
+	ebmlClusterID     = 0x1f43b675
 	ebmlTracksID      = 0x1654ae6b
 	ebmlTrackEntryID  = 0xae
+	ebmlTrackNumberID = 0xd7
 	ebmlTrackTypeID   = 0x83
 	ebmlCodecID       = 0x86
 	ebmlCodecPrivate  = 0x63a2
 	ebmlLanguageID    = 0x22b59c
 	ebmlLanguageBCP47 = 0x22b59d
+	ebmlNameID        = 0x536e
+	ebmlFlagDefault   = 0x88
+	ebmlFlagForced    = 0x55aa
+	ebmlFlagHI        = 0x55ab
+	ebmlDefaultDur    = 0x23e383
+	ebmlVideoID       = 0xe0
+	ebmlPixelWidth    = 0xb0
+	ebmlPixelHeight   = 0xba
+	ebmlColourID      = 0x55b0
+	ebmlBitsPerChan   = 0x55b2
+	ebmlMaxCLL        = 0x55bc
+	ebmlTransferID    = 0x55ba
+	ebmlMasteringID   = 0x55d0
+	ebmlAudioID       = 0xe1
+	ebmlChannelsID    = 0x9f
+	ebmlBlockAddMap   = 0x41e4
+	ebmlBlockAddType  = 0x41e7
+	ebmlBlockAddExtra = 0x41ed
+
+	// Block addition types that carry a Dolby Vision setup.
+	blockAddDVCC = 0x64766343 // dvcC
+	blockAddDVVC = 0x64767643 // dvvC
+	blockAddDVWC = 0x64767743 // dvwC
 )
 
 type ebmlElement struct {
@@ -34,185 +66,343 @@ type matroskaParser struct {
 	tracks   int
 }
 
-type matroskaTrack struct {
-	kind         uint64
-	codec        string
-	language     string
-	languageBCP  string
-	codecPrivate []byte
-}
-
-func inspectMatroska(r io.ReaderAt, size int64) (Info, error) {
+func inspectMatroska(r io.ReaderAt, size int64) (headers, error) {
 	p := matroskaParser{r: r, size: size}
 	header, next, err := p.readElement(0, size, false)
 	if err != nil {
-		return Info{}, err
+		return headers{}, err
 	}
 	if header.id != ebmlHeaderID || header.unknown {
-		return Info{}, fmt.Errorf("inspect matroska: invalid EBML header")
+		return headers{}, malformed("inspect matroska: invalid EBML header")
 	}
 	docType, err := p.readDocType(header.start, header.end, 1)
 	if err != nil {
-		return Info{}, err
+		return headers{}, err
 	}
 	if docType != "matroska" && docType != "webm" {
-		return Info{Status: "unsupported"}, nil
+		return headers{}, ErrUnsupported
 	}
 
-	info := Info{Container: docType}
-	var codecs []string
-	segmentFound := false
+	h := headers{container: docType}
 	for position := next; position < size; {
 		element, following, err := p.readElement(position, size, true)
 		if err != nil {
-			return Info{}, err
+			return headers{}, err
 		}
 		if element.id == ebmlSegmentID {
-			segmentFound = true
-			tracks, err := p.readSegment(element.start, element.end, 1)
-			if err != nil {
-				return Info{}, err
+			h.found = true
+			if err := p.readSegment(element.start, element.end, &h); err != nil {
+				return headers{}, err
 			}
-			for _, track := range tracks {
-				switch track.kind {
-				case 1:
-					codecs = append(codecs, matroskaCodec(track.codec, track.codecPrivate))
-				case 2:
-					info.AudioTracks++
-					if c := matroskaAudioCodec(track.codec); c != "" {
-						info.AudioCodecs = append(info.AudioCodecs, c)
-					}
-					value := track.languageBCP
-					if value == "" {
-						value = track.language
-					}
-					if normalized, ok := normalizeLanguage(value); ok {
-						info.AudioLanguages = append(info.AudioLanguages, normalized)
-					} else {
-						info.AudioUnknown = true
-					}
-				}
-			}
-			break
+			return h, nil
 		}
 		position = following
 	}
-	if !segmentFound {
-		return Info{}, fmt.Errorf("inspect matroska: segment missing")
-	}
-	info.VideoCodec = oneCodec(codecs)
-	return info, nil
+	return headers{}, malformed("inspect matroska: segment missing")
 }
 
 func (p *matroskaParser) readDocType(start, end int64, depth int) (string, error) {
-	if depth > maxDepth {
-		return "", fmt.Errorf("inspect matroska: nesting depth exceeded")
-	}
 	docType := ""
-	for position := start; position < end; {
-		element, next, err := p.readElement(position, end, false)
-		if err != nil {
-			return "", err
+	err := p.each(start, end, depth, func(element ebmlElement) error {
+		if element.id != ebmlDocTypeID {
+			return nil
 		}
-		if element.id == ebmlDocTypeID {
-			value, err := p.readString(element)
-			if err != nil {
-				return "", err
-			}
-			docType = value
-		}
-		position = next
+		value, err := p.readString(element)
+		docType = value
+		return err
+	})
+	if err != nil {
+		return "", err
 	}
 	if docType == "" {
-		return "", fmt.Errorf("inspect matroska: document type missing")
+		return "", malformed("inspect matroska: document type missing")
 	}
 	return docType, nil
 }
 
-func (p *matroskaParser) readSegment(start, end int64, depth int) ([]matroskaTrack, error) {
-	if depth > maxDepth {
-		return nil, fmt.Errorf("inspect matroska: nesting depth exceeded")
-	}
-	tracks := make([]matroskaTrack, 0)
-	for position := start; position < end; {
-		element, next, err := p.readElement(position, end, false)
+// readSegment reads the segment's Info and Tracks. It stops at the first
+// Cluster (media payload) unless a SeekHead says a header it still needs
+// comes later. Once the tracks are read, anything odd further on only ends
+// the reading.
+func (p *matroskaParser) readSegment(start, end int64, h *headers) error {
+	scale, duration := 1e6, 0.0
+	seekTracks, seekInfo := int64(-1), int64(-1)
+	tracksDone, infoDone := false, false
+	defer func() { h.duration = seconds(duration*scale, 1e9) }()
+	for position := start; position < end && !(tracksDone && infoDone); {
+		element, next, err := p.readElement(position, end, true)
 		if err != nil {
-			return nil, err
-		}
-		if element.id == ebmlTracksID {
-			values, err := p.readTracks(element.start, element.end, depth+1)
-			if err != nil {
-				return nil, err
+			if tracksDone {
+				return nil
 			}
-			return append(tracks, values...), nil
-		}
-		position = next
-	}
-	return tracks, nil
-}
-
-func (p *matroskaParser) readTracks(start, end int64, depth int) ([]matroskaTrack, error) {
-	if depth > maxDepth {
-		return nil, fmt.Errorf("inspect matroska: nesting depth exceeded")
-	}
-	tracks := make([]matroskaTrack, 0)
-	for position := start; position < end; {
-		element, next, err := p.readElement(position, end, false)
-		if err != nil {
-			return nil, err
-		}
-		if element.id == ebmlTrackEntryID {
-			p.tracks++
-			if p.tracks > maxTracks {
-				return nil, fmt.Errorf("inspect matroska: track budget exceeded")
-			}
-			track, err := p.readTrack(element.start, element.end, depth+1)
-			if err != nil {
-				return nil, err
-			}
-			tracks = append(tracks, track)
-		}
-		position = next
-	}
-	return tracks, nil
-}
-
-func (p *matroskaParser) readTrack(start, end int64, depth int) (matroskaTrack, error) {
-	if depth > maxDepth {
-		return matroskaTrack{}, fmt.Errorf("inspect matroska: nesting depth exceeded")
-	}
-	var track matroskaTrack
-	for position := start; position < end; {
-		element, next, err := p.readElement(position, end, false)
-		if err != nil {
-			return matroskaTrack{}, err
+			return err
 		}
 		switch element.id {
-		case ebmlTrackTypeID:
-			track.kind, err = p.readUint(element)
-		case ebmlCodecID:
-			track.codec, err = p.readString(element)
-		case ebmlLanguageID:
-			track.language, err = p.readString(element)
-		case ebmlLanguageBCP47:
-			track.languageBCP, err = p.readString(element)
-		case ebmlCodecPrivate:
-			if element.end-element.start >= 20 {
-				track.codecPrivate, err = readAt(p.r, element.start, 20)
+		case ebmlTracksID:
+			if tracksDone {
+				break
+			}
+			tracks, err := p.readTracks(element.start, element.end, 2)
+			if err != nil {
+				return err
+			}
+			h.tracks, tracksDone = tracks, true
+		case ebmlInfoID:
+			if infoDone {
+				break
+			}
+			infoDone = true
+			err = p.each(element.start, element.end, 2, func(child ebmlElement) error {
+				var err error
+				switch child.id {
+				case ebmlTimecodeScale:
+					var v uint64
+					if v, err = p.readUint(child); err == nil && v > 0 {
+						scale = float64(v)
+					}
+				case ebmlDurationID:
+					duration, err = p.readFloat(child)
+				}
+				return err
+			})
+		case ebmlSeekHeadID:
+			err = p.each(element.start, element.end, 2, func(seek ebmlElement) error {
+				if seek.id != ebmlSeekID {
+					return nil
+				}
+				var id uint64
+				at := int64(-1)
+				err := p.each(seek.start, seek.end, 3, func(child ebmlElement) error {
+					var err error
+					var v uint64
+					switch child.id {
+					case ebmlSeekIDID:
+						id, err = p.readUint(child)
+					case ebmlSeekPosition:
+						if v, err = p.readUint(child); err == nil && v < uint64(end) {
+							at = start + int64(v)
+						}
+					}
+					return err
+				})
+				switch {
+				case id == ebmlTracksID && seekTracks < 0:
+					seekTracks = at
+				case id == ebmlInfoID && seekInfo < 0:
+					seekInfo = at
+				}
+				return err
+			})
+		case ebmlClusterID:
+			// Headers come before the clusters; jump forward to one a
+			// SeekHead places later, else there is nothing more to read.
+			switch {
+			case !tracksDone && seekTracks > position:
+				next, seekTracks = seekTracks, -1
+			case !infoDone && seekInfo > position:
+				next, seekInfo = seekInfo, -1
+			default:
+				return nil
 			}
 		}
 		if err != nil {
-			return matroskaTrack{}, err
+			if tracksDone {
+				return nil
+			}
+			return err
+		}
+		if element.unknown && element.id != ebmlClusterID {
+			return nil
 		}
 		position = next
 	}
+	return nil
+}
+
+func (p *matroskaParser) readTracks(start, end int64, depth int) ([]Track, error) {
+	tracks := make([]Track, 0)
+	err := p.each(start, end, depth, func(element ebmlElement) error {
+		if element.id != ebmlTrackEntryID {
+			return nil
+		}
+		p.tracks++
+		if p.tracks > maxTracks {
+			return overLimit("inspect matroska: track budget exceeded")
+		}
+		track, err := p.readTrack(element.start, element.end, depth+1)
+		if err != nil {
+			return err
+		}
+		tracks = append(tracks, track)
+		return nil
+	})
+	return tracks, err
+}
+
+func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
+	track := Track{Default: true} // FlagDefault is 1 when not written
+	var kind uint64
+	var language, languageBCP string
+	var private []byte
+	var frameNanos uint64
+	c := colour{dvCompat: -1}
+	err := p.each(start, end, depth, func(element ebmlElement) error {
+		var err error
+		var v uint64
+		switch element.id {
+		case ebmlTrackNumberID:
+			v, err = p.readUint(element)
+			track.Number = int(v & 0x7fffffff)
+		case ebmlTrackTypeID:
+			kind, err = p.readUint(element)
+		case ebmlCodecID:
+			track.Codec, err = p.readString(element)
+		case ebmlLanguageID:
+			language, err = p.readString(element)
+		case ebmlLanguageBCP47:
+			languageBCP, err = p.readString(element)
+		case ebmlNameID:
+			track.Name, err = p.readCut(element)
+		case ebmlFlagDefault:
+			v, err = p.readUint(element)
+			track.Default = v == 1
+		case ebmlFlagForced:
+			v, err = p.readUint(element)
+			track.Forced = v == 1
+		case ebmlFlagHI:
+			v, err = p.readUint(element)
+			track.HearingImpaired = v == 1
+		case ebmlDefaultDur:
+			frameNanos, err = p.readUint(element)
+		case ebmlCodecPrivate:
+			private, err = readAt(p.r, element.start, min64(element.end-element.start, maxPrivate))
+		case ebmlVideoID:
+			err = p.readVideo(element, depth+1, &track, &c)
+		case ebmlAudioID:
+			err = p.each(element.start, element.end, depth+1, func(child ebmlElement) error {
+				if child.id != ebmlChannelsID {
+					return nil
+				}
+				v, err := p.readUint(child)
+				track.Channels = int(min(v, 255))
+				return err
+			})
+		case ebmlBlockAddMap:
+			err = p.readBlockAddition(element, depth+1, &c)
+		}
+		return err
+	})
+	if err != nil {
+		return Track{}, err
+	}
+	track.Language = language
+	if languageBCP != "" {
+		track.Language = languageBCP // BCP 47 wins over the old field
+	}
+	switch kind {
+	case 1:
+		track.Kind = "video"
+		track.Format = matroskaCodec(track.Codec, private)
+		if track.BitDepth == 0 {
+			track.BitDepth = configBitDepth(track.Format, private)
+		}
+		if c.transfer == 0 && track.Format == "hevc" {
+			c.transfer = hevcTransfer(private)
+		}
+		track.HDR = c.hdrName()
+		if frameNanos > 0 {
+			track.FrameRate = roundRate(1e9 / float64(frameNanos))
+		}
+	case 2:
+		track.Kind = "audio"
+		track.Format = matroskaAudioCodec(track.Codec)
+		if track.Channels == 0 {
+			track.Channels = 1 // the Matroska default
+		}
+	case 0x11:
+		track.Kind = "subtitle"
+	}
 	return track, nil
+}
+
+func (p *matroskaParser) readVideo(video ebmlElement, depth int, track *Track, c *colour) error {
+	return p.each(video.start, video.end, depth, func(element ebmlElement) error {
+		var err error
+		var v uint64
+		switch element.id {
+		case ebmlPixelWidth:
+			v, err = p.readUint(element)
+			track.Width = int(min(v, 1<<20))
+		case ebmlPixelHeight:
+			v, err = p.readUint(element)
+			track.Height = int(min(v, 1<<20))
+		case ebmlColourID:
+			err = p.each(element.start, element.end, depth+1, func(child ebmlElement) error {
+				var err error
+				var v uint64
+				switch child.id {
+				case ebmlBitsPerChan:
+					v, err = p.readUint(child)
+					track.BitDepth = int(min(v, 32))
+				case ebmlTransferID:
+					v, err = p.readUint(child)
+					if v != 2 {
+						c.transfer = int(min(v, 255))
+					}
+				case ebmlMasteringID:
+					c.mastering = true
+				case ebmlMaxCLL:
+					v, err = p.readUint(child)
+					c.mastering = c.mastering || v > 0
+				}
+				return err
+			})
+		}
+		return err
+	})
+}
+
+func (p *matroskaParser) readBlockAddition(mapping ebmlElement, depth int, c *colour) error {
+	var kind uint64
+	var extra []byte
+	err := p.each(mapping.start, mapping.end, depth, func(element ebmlElement) error {
+		var err error
+		switch element.id {
+		case ebmlBlockAddType:
+			kind, err = p.readUint(element)
+		case ebmlBlockAddExtra:
+			extra, err = readAt(p.r, element.start, min64(element.end-element.start, 64))
+		}
+		return err
+	})
+	if kind == blockAddDVCC || kind == blockAddDVVC || kind == blockAddDVWC {
+		c.readDolbyVision(extra)
+	}
+	return err
+}
+
+// each calls visit for every element directly inside [start, end).
+func (p *matroskaParser) each(start, end int64, depth int, visit func(ebmlElement) error) error {
+	if depth > maxDepth {
+		return overLimit("inspect matroska: nesting depth exceeded")
+	}
+	for position := start; position < end; {
+		element, next, err := p.readElement(position, end, false)
+		if err != nil {
+			return err
+		}
+		if err := visit(element); err != nil {
+			return err
+		}
+		position = next
+	}
+	return nil
 }
 
 func (p *matroskaParser) readElement(position, parentEnd int64, allowUnknown bool) (ebmlElement, int64, error) {
 	p.elements++
 	if p.elements > maxElements {
-		return ebmlElement{}, 0, fmt.Errorf("inspect matroska: element budget exceeded")
+		return ebmlElement{}, 0, overLimit("inspect matroska: element budget exceeded")
 	}
 	id, idLength, _, err := p.readVINT(position, 4, true)
 	if err != nil {
@@ -224,16 +414,18 @@ func (p *matroskaParser) readElement(position, parentEnd int64, allowUnknown boo
 	}
 	payloadStart := position + int64(idLength+sizeLength)
 	if payloadStart > parentEnd {
-		return ebmlElement{}, 0, fmt.Errorf("inspect matroska: truncated element header")
+		return ebmlElement{}, 0, malformed("inspect matroska: truncated element header")
 	}
-	if unknown {
-		if !allowUnknown || id != ebmlSegmentID {
-			return ebmlElement{}, 0, fmt.Errorf("inspect matroska: unsupported unknown element size")
-		}
+	// A Segment may run past a cut-off file, and a Cluster is never read:
+	// both end where their parent ends when their size is unknown or too big.
+	if allowUnknown && (id == ebmlSegmentID || id == ebmlClusterID) && (unknown || size > uint64(parentEnd-payloadStart)) {
 		return ebmlElement{id: id, start: payloadStart, end: parentEnd, unknown: true}, parentEnd, nil
 	}
+	if unknown {
+		return ebmlElement{}, 0, malformed("inspect matroska: unsupported unknown element size")
+	}
 	if size > uint64(parentEnd-payloadStart) {
-		return ebmlElement{}, 0, fmt.Errorf("inspect matroska: invalid element size")
+		return ebmlElement{}, 0, malformed("inspect matroska: invalid element size")
 	}
 	end := payloadStart + int64(size)
 	return ebmlElement{id: id, start: payloadStart, end: end}, end, nil
@@ -242,7 +434,7 @@ func (p *matroskaParser) readElement(position, parentEnd int64, allowUnknown boo
 func (p *matroskaParser) readVINT(position int64, maxLength int, keepMarker bool) (uint64, int, bool, error) {
 	first, err := readAt(p.r, position, 1)
 	if err != nil {
-		return 0, 0, false, fmt.Errorf("inspect matroska vint: %w", err)
+		return 0, 0, false, err
 	}
 	marker := byte(0x80)
 	length := 1
@@ -251,11 +443,11 @@ func (p *matroskaParser) readVINT(position int64, maxLength int, keepMarker bool
 		length++
 	}
 	if marker == 0 || length > maxLength {
-		return 0, 0, false, fmt.Errorf("inspect matroska: invalid vint")
+		return 0, 0, false, malformed("inspect matroska: invalid vint")
 	}
 	raw, err := readAt(p.r, position, int64(length))
 	if err != nil {
-		return 0, 0, false, fmt.Errorf("inspect matroska vint: %w", err)
+		return 0, 0, false, err
 	}
 	value := uint64(raw[0])
 	if !keepMarker {
@@ -275,7 +467,7 @@ func (p *matroskaParser) readVINT(position int64, maxLength int, keepMarker bool
 func (p *matroskaParser) readString(element ebmlElement) (string, error) {
 	length := element.end - element.start
 	if length <= 0 || length > maxString {
-		return "", fmt.Errorf("inspect matroska: invalid string length")
+		return "", malformed("inspect matroska: invalid string length")
 	}
 	value, err := readAt(p.r, element.start, length)
 	if err != nil {
@@ -284,10 +476,17 @@ func (p *matroskaParser) readString(element ebmlElement) (string, error) {
 	return string(value), nil
 }
 
+// readCut reads a free-text string (a track name), keeping at most
+// maxString bytes of it.
+func (p *matroskaParser) readCut(element ebmlElement) (string, error) {
+	value, err := readAt(p.r, element.start, min64(element.end-element.start, maxString))
+	return cut(value), err
+}
+
 func (p *matroskaParser) readUint(element ebmlElement) (uint64, error) {
 	length := element.end - element.start
 	if length <= 0 || length > 8 {
-		return 0, fmt.Errorf("inspect matroska: invalid integer length")
+		return 0, malformed("inspect matroska: invalid integer length")
 	}
 	value, err := readAt(p.r, element.start, length)
 	if err != nil {
@@ -296,6 +495,26 @@ func (p *matroskaParser) readUint(element ebmlElement) (uint64, error) {
 	var padded [8]byte
 	copy(padded[8-len(value):], value)
 	return binary.BigEndian.Uint64(padded[:]), nil
+}
+
+func (p *matroskaParser) readFloat(element ebmlElement) (float64, error) {
+	switch element.end - element.start {
+	case 0:
+		return 0, nil
+	case 4:
+		b, err := readAt(p.r, element.start, 4)
+		if err != nil {
+			return 0, err
+		}
+		return float64(math.Float32frombits(binary.BigEndian.Uint32(b))), nil
+	case 8:
+		b, err := readAt(p.r, element.start, 8)
+		if err != nil {
+			return 0, err
+		}
+		return math.Float64frombits(binary.BigEndian.Uint64(b)), nil
+	}
+	return 0, malformed("inspect matroska: invalid float length")
 }
 
 func matroskaCodec(codec string, private []byte) string {

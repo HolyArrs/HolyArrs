@@ -1,8 +1,7 @@
-// Package container lists the subtitle tracks inside a video file. It reads
-// only the track headers of Matroska/WebM and MP4/MOV files, in plain Go,
-// with hard limits on how much it reads, how deep it goes and how many
-// elements it looks at, so a hostile file can neither hang it nor make it
-// allocate much. Anything it cannot read gives an error and no tracks.
+// Package container lists the subtitle tracks inside a video. It uses the
+// one bounded header reader in internal/mediainfo (Matroska/WebM and
+// MP4/MOV), so a hostile file can neither hang it nor make it allocate
+// much. Anything it cannot read gives an error and no tracks.
 package container
 
 import (
@@ -11,6 +10,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/CoderLuii/holyarrs/internal/mediainfo"
 )
 
 // Track is one subtitle track inside a video.
@@ -25,22 +26,11 @@ type Track struct {
 	Picture         bool   `json:"picture,omitempty"` // a picture format (PGS, VobSub, DVB)
 }
 
-// Limits on what one file may make the readers do.
-const (
-	maxElements    = 20000   // elements or boxes looked at per file
-	maxDepth       = 8       // nesting
-	maxTracksBody  = 1 << 20 // bytes of a Matroska Tracks element read into memory
-	maxSmallBox    = 4096    // bytes of an MP4 hdlr, mdhd, elng or stsd read
-	maxTracks      = 256     // tracks kept
-	maxString      = 1024    // bytes of a name or codec kept
-	maxHeaderBytes = 4096    // bytes of the EBML header
-)
-
 // Errors.
 var (
-	ErrUnknownFormat = errors.New("not a Matroska or MP4 file")
-	ErrMalformed     = errors.New("malformed container")
-	ErrLimit         = errors.New("container is past a reading limit")
+	ErrUnknownFormat = mediainfo.ErrUnsupported
+	ErrMalformed     = mediainfo.ErrMalformed
+	ErrLimit         = mediainfo.ErrLimit
 )
 
 // Probe lists the subtitle tracks of the file at path. Only regular files
@@ -63,52 +53,55 @@ func Probe(path string) ([]Track, error) {
 
 // Read lists the subtitle tracks of a video of size bytes.
 func Read(r io.ReadSeeker, size int64) ([]Track, error) {
-	var head [12]byte
-	n, _ := io.ReadFull(r, head[:])
-	if _, err := r.Seek(0, io.SeekStart); err != nil {
+	ra, ok := r.(io.ReaderAt)
+	if !ok {
+		ra = seekReaderAt{r}
+	}
+	head := make([]byte, 4)
+	if n, _ := ra.ReadAt(head, 0); n < 4 {
+		return nil, ErrUnknownFormat
+	}
+	matroska := string(head) == "\x1a\x45\xdf\xa3"
+	tracks, err := mediainfo.ReadTracks(ra, size)
+	if err != nil {
 		return nil, err
 	}
-	switch {
-	case n >= 4 && head[0] == 0x1A && head[1] == 0x45 && head[2] == 0xDF && head[3] == 0xA3:
-		return readMatroska(r, size)
-	case n >= 8 && isMP4Box(string(head[4:8])):
-		return readMP4(r, size)
-	}
-	return nil, ErrUnknownFormat
-}
-
-func isMP4Box(t string) bool {
-	switch t {
-	case "ftyp", "moov", "mdat", "free", "skip", "wide", "pnot":
-		return true
-	}
-	return false
-}
-
-// cut keeps at most maxString bytes of a string read from a file, without
-// NULs and on a character boundary.
-func cut(b []byte) string {
-	s := strings.TrimRight(string(b), "\x00")
-	if i := strings.IndexByte(s, 0); i >= 0 {
-		s = s[:i]
-	}
-	if len(s) > maxString {
-		s = s[:maxString]
-		for len(s) > 0 && s[len(s)-1]&0xC0 == 0x80 {
-			s = s[:len(s)-1]
+	var out []Track
+	for _, t := range tracks {
+		if t.Kind != "subtitle" {
+			continue
 		}
+		lang := t.Language
+		if lang == "" {
+			lang = "und"
+			if matroska {
+				lang = "eng" // the Matroska default when none is written
+			}
+		}
+		out = append(out, Track{
+			Index: t.Number, Codec: t.Codec, Language: lang, Name: t.Name,
+			Forced: t.Forced, HearingImpaired: t.HearingImpaired, Default: t.Default,
+			Picture: pictureCodec(t.Codec),
+		})
 	}
-	return strings.ToValidUTF8(s, "")
+	return out, nil
 }
 
-// readBody reads n bytes, refusing more than limit.
-func readBody(r io.Reader, n int64, limit int64) ([]byte, error) {
-	if n < 0 || n > limit {
-		return nil, ErrLimit
+// seekReaderAt reads at an offset through Seek and Read.
+type seekReaderAt struct{ r io.ReadSeeker }
+
+func (s seekReaderAt) ReadAt(p []byte, off int64) (int, error) {
+	if _, err := s.r.Seek(off, io.SeekStart); err != nil {
+		return 0, err
 	}
-	b := make([]byte, n)
-	if _, err := io.ReadFull(r, b); err != nil {
-		return nil, ErrMalformed
+	n, err := io.ReadFull(s.r, p)
+	if errors.Is(err, io.ErrUnexpectedEOF) {
+		err = io.EOF
 	}
-	return b, nil
+	return n, err
+}
+
+func pictureCodec(c string) bool {
+	c = strings.ToUpper(c)
+	return strings.HasPrefix(c, "S_HDMV/PGS") || c == "S_VOBSUB" || c == "S_DVBSUB" || c == "S_IMAGE/BMP"
 }
