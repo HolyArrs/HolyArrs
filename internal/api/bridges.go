@@ -125,10 +125,10 @@ func (a *API) findBridges(w http.ResponseWriter, r *http.Request) {
 func (a *API) prowlarrSides(callback string) []bridge.Side {
 	var out []bridge.Side
 	if a.partIsOn(parts.Shows) {
-		out = append(out, bridge.Side{Kind: "Sonarr", Name: "HolyArrs (shows)", Base: callback + "/sonarr"})
+		out = append(out, bridge.Side{Kind: "Sonarr", Name: "HolyArrs TV shows", Base: callback + "/sonarr"})
 	}
 	if a.partIsOn(parts.Movies) {
-		out = append(out, bridge.Side{Kind: "Radarr", Name: "HolyArrs (movies)", Base: callback + "/radarr"})
+		out = append(out, bridge.Side{Kind: "Radarr", Name: "HolyArrs Movies", Base: callback + "/radarr"})
 	}
 	return out
 }

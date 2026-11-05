@@ -308,7 +308,7 @@ func TestProwlarrConnectAddsOrUpdatesTheApp(t *testing.T) {
 	if v, err := p.Status(ctx); err != nil || v != "2.6.5.5623" {
 		t.Fatalf("%q %v", v, err)
 	}
-	side := Side{Kind: "Sonarr", Name: "HolyArrs (shows)", Base: "http://10.0.0.5:18730/sonarr", Key: "k1"}
+	side := Side{Kind: "Sonarr", Name: "HolyArrs TV shows", Base: "http://10.0.0.5:18730/sonarr", Key: "k1"}
 	if err := p.Connect(ctx, side); err != nil {
 		t.Fatal(err)
 	}
