@@ -53,6 +53,8 @@
 	let uncheckedHealth = $state(false);
 	// The Sources and Downloaders read (GET /health) failed: their tiles say so and do not show zeros.
 	let uncheckedParts = $state(false);
+	// The asks read failed: the asks tile says so and does not claim nothing is waiting.
+	let uncheckedAsks = $state(false);
 
 	const admin = $derived(session.can('settings'));
 	const manager = $derived(session.can('manage_library'));
@@ -314,11 +316,14 @@
 		if (st === 'stalled') return `Stalled at ${Math.round(percent(d.progress))}%`;
 		return `${Math.round(percent(d.progress))}%${d.speed ? ` · ${bytes(d.speed)}/s` : ''}`;
 	}
+	// The tile lists what is moving first: downloading, then stalled, checking, importing, and waiting last.
+	const STEP_ORDER: Record<string, number> = { downloading: 0, stalled: 1, checking: 2, importing: 3, queued: 4 };
+	const dlList = $derived([...fetchingAll].sort((x, y) => (STEP_ORDER[stageOf(x)] ?? 9) - (STEP_ORDER[stageOf(y)] ?? 9)).slice(0, 3));
 	// When nothing runs, the tile shows what finished last.
 	const recentDone = $derived(
 		manager
 			? downloads
-					.filter((d) => !d.client_item && !!d.finished_at && ['done', 'seeding'].includes(stageOf(d)))
+					.filter((d) => !d.client_item && !!d.finished_at && d.phase === 'done')
 					.sort((x, y) => Date.parse(y.finished_at ?? '') - Date.parse(x.finished_at ?? ''))
 					.slice(0, 3)
 			: []
@@ -336,7 +341,9 @@
 				? 'Across your Library folders'
 				: 'A disk is running out of room'
 			: free.free <= 0
-				? 'A disk is full'
+				? free.many
+					? 'A disk is full'
+					: 'The disk is full'
 				: `${diskState === 'ok' ? '' : 'Only '}${bytes(free.free)} free${free.many ? ' on the fullest disk' : ''}`
 	);
 	const diskTint = $derived<Tint>(diskState === 'error' ? 'red' : diskState === 'warning' ? 'amber' : 'teal');
@@ -399,6 +406,7 @@
 		uncheckedDl = dl.status === 'rejected';
 		uncheckedHealth = ch.status === 'rejected';
 		uncheckedParts = he.status === 'rejected';
+		uncheckedAsks = as.status === 'rejected';
 		now = new Date();
 		loaded = true;
 		settled = true;
@@ -560,8 +568,8 @@
 							<span class="word">None added</span>
 							<span class="sm">{empty}</span>
 						{:else}
-							<span class="num" class:fail={p.on > 0 && !p.working}>{n(p.working)}<small>of {n(p.total)} working</small></span>
-							<span class="sm" class:fail={!!trouble}>{partLine(p, trouble)}</span>
+							<span class="num" class:warn={p.on > 0 && !p.working}>{n(p.working)}<small>of {n(p.total)} working</small></span>
+							<span class="sm" class:warn={!!trouble}>{partLine(p, trouble)}</span>
 							<span class="life pips" aria-hidden="true">
 								{#if p.total <= 12}
 									{#each Array(p.total) as _, i (i)}<i class:bad={i >= p.working && i < p.on} class:off={i >= p.on}></i>{/each}
@@ -599,6 +607,9 @@
 							{@render head('requests', 'orange', approving ? 'To approve' : mine.length ? 'Your asks' : 'Requests')}
 							{#if !settled}
 								{@render wait()}
+							{:else if uncheckedAsks}
+								<span class="word">Could not read</span>
+								<span class="sm">Home could not read asks right now.</span>
 							{:else if approving && waitingPics.length}
 								<span class="ask-stack" aria-hidden="true">{#each waitingPics as w (w.a.id + w.pic)}<img src={w.pic} alt="" decoding="async" use:artGone={() => artFailed(w.a, w.pic)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
 								<span class="sm">{n(waiting.length)} {waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
@@ -620,7 +631,7 @@
 						<a class="tile stat {cls}" href={to('/library')} data-testid="home-library">
 							{@render head('library', 'indigo', 'Library')}
 							<span class="num">{n(libTotal)}</span>
-							<span class="sm">{libCards.map((c) => `${n(c.big)} ${c.unit}`).join(' · ')}</span>
+							<span class="sm">{libCards.map((c) => `${n(c.big)}\u00a0${c.unit}`).join(' · ')}</span>
 						</a>
 					{:else if key === 'disk'}
 						{@render diskTile(cls)}
@@ -697,7 +708,7 @@
 								</ol>
 								{#if fetchingAll.length}
 									<ul class="dl-list">
-										{#each fetchingAll.slice(0, 3) as d (d.id)}
+										{#each dlList as d (d.id)}
 											{@const moving = ['downloading', 'stalled'].includes(stageOf(d))}
 											<li><b dir="auto">{d.title || d.name}</b><span>{dlState(d)}</span>{#if moving}<i class="pb"><i style="width: {percent(d.progress)}%"></i></i>{/if}</li>
 										{/each}
@@ -763,9 +774,9 @@
 							{#if !settled}
 								{@render wait()}
 							{:else}
-								<span class="word">{health && !uncheckedParts ? duration(health.uptime_s) : 'Could not read'}</span>
+								{#if health && !uncheckedParts}<span class="num">{duration(health.uptime_s)}</span>{:else}<span class="word">Could not read</span>{/if}
 								{#if health && !uncheckedParts}<span class="sm">Version {health.version}</span>{/if}
-								<span class="sm meta"><i class="tone" class:ok={!metadataOutage.s.down} class:fail={metadataOutage.s.down} aria-hidden="true"></i>Metadata server {metadataOutage.s.down ? 'down' : 'online'}</span>
+								<span class="sm meta"><i class="tone" class:ok={!metadataOutage.s.down} class:wait={metadataOutage.s.down} aria-hidden="true"></i>Metadata server {metadataOutage.s.down ? 'down' : 'online'}</span>
 							{/if}
 						</a>
 					</div>
@@ -951,15 +962,14 @@
 	.sk i + i + i { width: 40%; }
 
 	/* The thin line along a tile's foot, the same as the life line on a Requests card: how full the disk is, or one pip per part. */
-	.lined { padding-bottom: 28px; }
-	.life { position: absolute; left: 18px; right: 18px; bottom: 13px; display: flex; gap: 2px; height: 4px; border-radius: 4px; overflow: hidden; background: var(--track); }
+	.life { position: absolute; left: 18px; right: 18px; bottom: 6px; display: flex; gap: 2px; height: 4px; border-radius: 4px; overflow: hidden; background: var(--track); }
 	.life i { display: block; min-width: 2px; flex-basis: 0; }
 	.life .used { flex: none; border-radius: inherit; background: #1ea9be; }
 	.life .used.warning { background: var(--wait); }
 	.life .used.error { background: var(--fail); }
 	.life.pips { gap: 3px; background: none; }
 	.life.pips i { flex: 1; border-radius: 4px; background: var(--ok); }
-	.life.pips i.bad { background: var(--fail); }
+	.life.pips i.bad { background: var(--wait); }
 	.life.pips i.off { background: var(--track); }
 
 	/* Picture tiles: the picture fills the tile; a glass pill says what it is, the title sits on a dark fade at the foot (white in both themes). */
@@ -1036,8 +1046,7 @@
 		.num { font-size: 30px; }
 		.num small { font-size: 12px; margin-left: 4px; }
 		.word { font-size: 19px; }
-		.lined { padding-bottom: 22px; }
-		.life { left: 14px; right: 14px; bottom: 10px; }
+		.life { left: 14px; right: 14px; bottom: 5px; height: 3px; }
 		.pill { top: 10px; left: 10px; }
 		.pic .nm { font-size: 18px; }
 		.pic.big .nm { font-size: 26px; }
@@ -1048,11 +1057,14 @@
 		.dl .num, .dl > .word { margin-top: 10px; }
 		.flow { margin-top: 10px; }
 		.flow li { padding: 7px 10px; }
-		.dl-list li:nth-child(n + 3) { display: none; }
 		.fixes { margin-top: 6px; }
 		.fix { min-height: 44px; }
-		.act { display: none; }
 		.passed { margin-top: 8px; max-height: 130px; }
+	}
+	/* Phones: the big tiles have less room, so two downloads show and the problem rows keep only their arrow. */
+	@container home (max-width: 560px) {
+		.dl-list li:nth-child(n + 3) { display: none; }
+		.act { display: none; }
 	}
 	/* Two columns on a wide screen (a tablet, a narrow desktop window): a little taller, so pictures are not thin strips. */
 	@container home (min-width: 560px) and (max-width: 900px) {
