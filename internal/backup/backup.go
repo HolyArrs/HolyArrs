@@ -838,7 +838,7 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 	}
 	if m.CheckKey != nil {
 		if err := m.CheckKey(filepath.Join(out, store.MainFile)); err != nil {
-			return fmt.Errorf("the backup's secrets cannot be read with this master key: %w", err)
+			return fmt.Errorf("the backup's secrets cannot be read with this master key (moving to a new machine? see \"Move to a new machine\" in the Backups guide): %w", err)
 		}
 	}
 	staged := filepath.Join(m.Dir, StagedDir)
@@ -947,7 +947,9 @@ func syncMoveDirs(dir string, j journal) error {
 				continue
 			}
 			seen[d] = true
-			if err := store.SyncDir(d); err != nil {
+			// A folder already gone (restore-staged removed just before a
+			// cut-off) has nothing left to sync.
+			if err := store.SyncDir(d); err != nil && !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
 		}

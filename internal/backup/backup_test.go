@@ -309,8 +309,8 @@ func TestStageRefusesBadZips(t *testing.T) {
 		}
 	}
 	m.CheckKey = func(string) error { return errors.New("key mismatch") }
-	if err := m.Stage(ctx, bytes.NewReader(gb)); err == nil || !strings.Contains(err.Error(), "key") {
-		t.Fatalf("key check not applied: %v", err)
+	if err := m.Stage(ctx, bytes.NewReader(gb)); err == nil || !strings.Contains(err.Error(), "key") || !strings.Contains(err.Error(), "Move to a new machine") {
+		t.Fatalf("key check not applied, or no pointer to the new-machine steps: %v", err)
 	}
 	m.CheckKey = nil
 	if err := m.Stage(ctx, bytes.NewReader(gb)); err != nil {
@@ -546,4 +546,27 @@ func TestRestoreCutOffThatCannotFinishIsUndone(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantFiles(t, dir, "old-")
+}
+
+func TestRestoreCutOffAfterStagedFolderRemovedStarts(t *testing.T) {
+	dir := crashAfterFirstMove(t)
+	jb, err := os.ReadFile(filepath.Join(dir, JournalFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ApplyStaged(dir); err != nil {
+		t.Fatal(err)
+	}
+	// Cut off after restore-staged was removed but before the journal was:
+	// the next start must still open with the restored data.
+	if err := os.WriteFile(filepath.Join(dir, JournalFile), jb, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ApplyStaged(dir); err != nil {
+		t.Fatal(err)
+	}
+	wantFiles(t, dir, "new-")
+	if _, err := os.Stat(filepath.Join(dir, JournalFile)); err == nil {
+		t.Fatal("journal left behind")
+	}
 }
