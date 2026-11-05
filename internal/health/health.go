@@ -361,6 +361,8 @@ func label(kind string) string {
 		return "trailer lookups"
 	case "config_folder":
 		return "config folder"
+	case "config_disk":
+		return "free space on"
 	}
 	return kind
 }
