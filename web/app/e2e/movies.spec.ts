@@ -174,9 +174,9 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 
 	const versions = page.getByTestId('version');
 	await expect(versions).toHaveCount(2);
-	await expect(versions.nth(0)).toContainText('(main)');
+	await expect(versions.nth(0).getByTestId('version-main')).toHaveCount(1);
 	await expect(versions.nth(1)).toContainText('4K');
-	await expect(versions.nth(1)).toContainText('Pick rules: 4K');
+	await expect(versions.nth(1)).toContainText('· 4K');
 	await expect(versions.nth(1)).toContainText('[4K]');
 
 	// A third Version from the Movie page, then take it off again.

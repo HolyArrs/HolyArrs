@@ -1208,14 +1208,18 @@
 						<CopyControls title={o} onchange={() => loadOwned(o.id)} />
 						<div id="title-subtitles">{#key o.id}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} />{/key}</div>
 						<TitleSection id="h-dates" title="When HolyArrs looks">
-							<dl class="tp-about">
-								{#if o.kind !== 'show'}<dt>Release gate</dt><dd>{(o.release_gate ?? '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}{o.gate_delay_days ? ` + ${o.gate_delay_days} days` : ''}</dd>{/if}
-								{#if o.gate_opens_at}<dt>Gate opens</dt><dd>{date(o.gate_opens_at)}</dd>{/if}
-								{#if o.pick_rules_name}<dt>Pick rules</dt><dd>{o.pick_rules_name}</dd>{/if}
-								<dt>Keep up to date</dt><dd>{o.keep_up_to_date ? 'On' : 'Off'}</dd>
-								{#if o.refreshed_at}<dt>Refreshed</dt><dd>{date(o.refreshed_at)}</dd>{/if}
-							</dl>
-							{#if o.gate_reason}<p class="tp-why" data-testid="gate-reason">{o.gate_reason}</p>{/if}
+							<!-- Only what Settings beside it does not show: the release gate and when details were refreshed. -->
+							<div class="lib-rows">
+								{#if o.kind !== 'show'}
+									<div class="lib-row static">
+										<span><b>Release gate</b>{#if o.gate_reason}<small class="wrap" data-testid="gate-reason">{o.gate_reason}</small>{/if}</span>
+										<span class="lib-val">{(o.release_gate ?? '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}{o.gate_delay_days ? ` + ${o.gate_delay_days} d` : ''}{o.gate_opens_at ? ` · ${date(o.gate_opens_at)}` : ''}</span>
+									</div>
+								{:else if o.gate_reason}
+									<div class="lib-row static"><span><b>Wanted</b><small class="wrap" data-testid="gate-reason">{o.gate_reason}</small></span></div>
+								{/if}
+								{#if o.refreshed_at}<div class="lib-row static"><span><b>Details refreshed</b></span><span class="lib-val">{date(o.refreshed_at)}</span></div>{/if}
+							</div>
 						</TitleSection>
 					</div>
 				{/if}
@@ -1622,6 +1626,17 @@
 	.lib-row b { font: 600 15px/1.2 var(--font-ui); }
 	.lib-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-row :global(svg) { flex: none; color: var(--text-muted); }
+	.lib-row.static { cursor: default; }
+	.lib-row.static:hover { background: none; }
+	.lib-row small.wrap { white-space: normal; }
+	.lib-val { flex: none; color: var(--text-muted); font: 500 14px/1.3 var(--font-ui); text-align: right; font-variant-numeric: tabular-nums; }
+	/* The tools under the tabs speak the Settings group's language: same heading size, same surfaces. */
+	.lib-more :global(.tp-h2) { font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; margin-bottom: 12px; }
+	.lib-more :global(.tp-vrow) { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+	.lib-more :global(.tp-vrow > li) { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 20px; border-radius: 16px; }
+	.lib-more :global(.tp-vrow .tp-row-main b) { font: 600 15px/1.2 var(--font-ui); }
+	.lib-more :global(.tp-vrow .tp-row-end) { justify-content: flex-end; }
+	@media (max-width: 600px) { .lib-more :global(.tp-vrow > li) { flex-direction: column; padding: 12px 16px; } .lib-more :global(.tp-vrow .tp-row-end) { justify-content: flex-start; } }
 	.lib-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
 	.lib-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-switch.on { background: var(--ok); }

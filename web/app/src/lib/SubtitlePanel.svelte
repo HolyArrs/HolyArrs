@@ -268,9 +268,8 @@
 		{#if !editing}
 			<div class="wish">
 				<p class="small" data-testid="subtitle-wish">
-					<b>Languages:</b>
-					{shown ? wishLine(shown.languages, langs) : '…'}
-					{#if shown}<span class="muted"> ({fromWords(shown.from, movie)})</span>{/if}
+					<b>Languages</b>
+					<span class="wish-v">{shown ? wishLine(shown.languages, langs) : '…'}{#if shown}{' · '}<span class="muted">{fromWords(shown.from, movie)}</span>{/if}</span>
 				</p>
 				<Button variant="plain" size="sm" onclick={startWish} aria-label="Change the subtitle languages" data-testid="subtitle-wish-change">Change</Button>
 			</div>
@@ -302,7 +301,7 @@
 					<a href={to(`/library/missing-subtitles?title=${titleId}`)} data-testid="subtitle-missing-link">{missingCount} {missingCount === 1 ? 'subtitle' : 'subtitles'} missing</a>
 					<span class="muted">across its episodes.</span>
 				{:else}
-					<span class="muted">No episode is missing a subtitle. Open an episode's Subtitles to see or fix its own.</span>
+					<span class="muted">None missing. Each episode has its own Subtitles.</span>
 				{/if}
 			</p>
 		{:else}
@@ -454,13 +453,46 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: var(--s-3);
+		margin-bottom: 12px;
+	}
+	.wish p {
+		display: grid;
+		gap: 3px;
+		margin: 0;
+	}
+	.wish p b {
+		font: 600 15px/1.2 var(--font-ui);
+	}
+	.wish-v {
+		color: var(--text-muted);
+		font: 500 13px/1.3 var(--font-ui);
+	}
+	.subs .card-head .h2 {
+		font: 700 20px/1.2 var(--font-ui);
+		letter-spacing: -.01em;
+	}
+	/* Rounded rows like the Settings group: languages, then each file (or the missing line). */
+	.wish,
+	.missing-line,
+	.file {
+		margin: 0;
+		padding: 14px 20px;
+		border: 0;
+		border-radius: 16px;
+		background: var(--surface-2);
 	}
 	.wish {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: var(--s-3);
-		margin-top: var(--s-3);
+	}
+	.wish + .missing-line,
+	.wish + .file,
+	.wish-form + .missing-line,
+	.wish-form + .file,
+	.file + .file {
+		margin-top: 8px;
 	}
 	.wish-form,
 	.inline {
@@ -479,16 +511,6 @@
 		justify-content: flex-end;
 		margin-top: var(--s-4);
 		flex-wrap: wrap;
-	}
-	.missing-line {
-		margin-top: var(--s-3);
-	}
-	.file {
-		margin-top: var(--s-4);
-		padding: var(--s-3);
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		background: var(--surface-2);
 	}
 	.path {
 		overflow-wrap: anywhere;

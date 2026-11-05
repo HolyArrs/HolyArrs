@@ -9,6 +9,7 @@
 	import Badge from './ui/Badge.svelte';
 	import { shortFolder } from './ui/TitleHero.svelte';
 	import Skeleton from './ui/Skeleton.svelte';
+	import Icon from './Icon.svelte';
 	import { plainReason } from './plain.ts';
 	import type { CopyFile, LibraryFolder, PickRulesView, TitleView, VersionView } from './types.ts';
 
@@ -167,52 +168,53 @@
 	onMount(() => void load());
 </script>
 
-<section class="card" aria-labelledby="copy-controls-title" data-testid="copy-controls">
-	<div class="card-head">
-		<div>
-			<h2 id="copy-controls-title" class="h2">Copies and Version criteria</h2>
-			<p class="small muted">Edition and wanted audio describe a Version. Inspected audio below comes from the video file itself.</p>
-		</div>
-	</div>
+<!-- Copies: one rounded group per Version, rows like the Settings group beside it (file, edition, protect, add). -->
+<section class="cc" aria-labelledby="copy-controls-title" data-testid="copy-controls">
+	<h2 id="copy-controls-title" class="cc-h">Copies</h2>
 	{#if !loaded}
 		<Skeleton lines={3} />
 	{:else if error}
 		<p class="form-error" role="alert">{plainReason(error).text}</p>
 	{:else}
-		<ul class="copy-list">
+		<ul class="cc-list">
 			{#each versions as version (version.id)}
 				{@const file = fileFor(version.id)}
 				{@const criteria = versionCriteria(version)}
-				<li class="copy" data-testid="copy-version">
-					<div class="copy-head">
-						<div><b>{version.label}{version.main ? ' (main)' : ''}</b><div class="xs muted">{criteria.join(' · ')}</div></div>
-						{#if file?.Protected}<Badge label="Protected" />{/if}
+				{@const audio = file ? inspectedAudio(file) : []}
+				<li class="cc-group" data-testid="copy-version">
+					<div class="cc-row info">
+						<span><b>{version.label}{#if file?.Protected}<Badge label="Protected" />{/if}</b><small>{criteria.join(' · ')}</small></span>
 					</div>
 					{#if file}
-						<p class="mono xs path">{file.RelativePath}</p>
-						<p class="xs"><b>Inspected audio:</b> {inspectedAudio(file).join(', ') || 'Unknown'} · <b>File edition:</b> {copyEdition(file) || 'Unknown'}{file.State === 'missing' ? ' · Missing' : ''}</p>
+						<div class="cc-row info">
+							<span><small class="mono" title={file.RelativePath}>{file.RelativePath}</small><small>Audio {audio.join(', ') || 'unknown'} · Edition {copyEdition(file) || 'unknown'}{file.State === 'missing' ? ' · Missing' : ''}</small></span>
+						</div>
 						{#if staff}
-							<div class="choice-grid">
-								<div class="field compact">
-									<label for="copy-edition-{file.ID}">Checked edition</label>
-									<input id="copy-edition-{file.ID}" class="input" value={copyEdition(file)} bind:this={editionInputs[file.ID]} maxlength="80" />
-									<label class="checkline small"><input type="checkbox" bind:checked={checkedEdition[file.ID]} /> I checked this file's edition</label>
-									<Button onclick={() => saveEdition(file)} disabled={!checkedEdition[file.ID] || busy !== ''}>Save edition</Button>
-								</div>
-								<div class="protect">
-									{#if file.Protected}
-										<label class="checkline small"><input type="checkbox" bind:checked={acknowledge[file.ID]} /> I understand this removes the copy's protection</label>
-										<Button onclick={() => setProtection(file, false)} disabled={!acknowledge[file.ID] || busy !== ''}>Remove protection</Button>
-									{:else}
-										<Button onclick={() => setProtection(file, true)} disabled={busy !== ''}>Protect this copy</Button>
-									{/if}
-									<Button onclick={() => openAdd(file)} disabled={busy !== ''}>Keep this copy and add another Version</Button>
-								</div>
+							<div class="cc-row edition">
+								<label for="copy-edition-{file.ID}"><b>Checked edition</b></label>
+								<input id="copy-edition-{file.ID}" class="cc-input" value={copyEdition(file)} bind:this={editionInputs[file.ID]} maxlength="80" placeholder="Theatrical" />
+								<label class="cc-check"><input type="checkbox" bind:checked={checkedEdition[file.ID]} /><span class="sr-only">I checked this file's edition</span><span aria-hidden="true">Checked</span></label>
+								<button type="button" class="cc-btn" onclick={() => saveEdition(file)} disabled={!checkedEdition[file.ID] || busy !== ''}>Save edition</button>
 							</div>
+							{#if file.Protected}
+								<div class="cc-row">
+									<label class="cc-check"><input type="checkbox" bind:checked={acknowledge[file.ID]} /><span>I understand this removes the copy's protection</span></label>
+									<button type="button" class="cc-btn" onclick={() => setProtection(file, false)} disabled={!acknowledge[file.ID] || busy !== ''}>Remove protection</button>
+								</div>
+							{:else}
+								<button type="button" class="cc-row act" onclick={() => setProtection(file, true)} disabled={busy !== ''}>
+									<span><b>Protect this copy</b><small>Upgrades never replace it</small></span><Icon name="shield" size={16} />
+								</button>
+							{/if}
+							<button type="button" class="cc-row act" onclick={() => openAdd(file)} disabled={busy !== ''}>
+								<span><b>Keep this copy and add another Version</b><small>Like a 4K beside this one</small></span><Icon name="plus" size={16} />
+							</button>
 						{/if}
 					{:else}
-						<p class="small muted">No copy is recorded for this Version.</p>
-						{#if staff && kind === 'movie'}<Button onclick={() => openAdopt(version)}>Use an existing video in this Version folder</Button>{/if}
+						<div class="cc-row info"><span><small>No copy yet.</small></span></div>
+						{#if staff && kind === 'movie'}
+							<button type="button" class="cc-row act" onclick={() => openAdopt(version)}><span><b>Use an existing video</b><small>Already in this Version's folder</small></span><Icon name="chevronRight" size={16} /></button>
+						{/if}
 					{/if}
 				</li>
 			{/each}
@@ -222,13 +224,13 @@
 
 <Sheet bind:open={addOpen} title="Keep this copy and add another Version">
 	<form id="keep-add-form" class="sheet-form" onsubmit={keepAndAdd}>
-		<p class="small muted">The current copy becomes protected. The new Version has its own edition and audio criteria.</p>
+		
 		<div class="field"><label for="copy-new-label">Version name</label><input id="copy-new-label" class="input" bind:value={addLabel} maxlength="40" required /></div>
 		<div class="field"><label for="copy-new-rules">Pick rules</label><select id="copy-new-rules" class="input" bind:value={addRules}>{#each rules as rule (rule.id)}<option value={rule.id}>{rule.name}</option>{/each}</select></div>
 		<div class="field"><label for="copy-new-folder">Library folder</label><select id="copy-new-folder" class="input" bind:value={addFolder}>{#each folders as folder (folder.id)}<option value={folder.id}>{folder.label || folder.path} ({folder.path})</option>{/each}</select></div>
 		<div class="field"><label for="copy-new-edition">Edition wanted <span class="muted">(optional)</span></label><input id="copy-new-edition" class="input" bind:value={addEdition} maxlength="80" placeholder="Theatrical" /></div>
-		<div class="field"><label for="copy-new-audio">Audio languages wanted <span class="muted">(optional, comma-separated codes)</span></label><input id="copy-new-audio" class="input" bind:value={addAudio} placeholder="en, fr" /></div>
-		<label class="checkline"><input type="checkbox" bind:checked={addKeep} /> <span><b>Find this Version and better copies</b><br /><span class="hint">Look for this Version and better copies later.</span></span></label>
+		<div class="field"><label for="copy-new-audio">Audio wanted <span class="muted">(optional, like en, fr)</span></label><input id="copy-new-audio" class="input" bind:value={addAudio} placeholder="en, fr" /></div>
+		<label class="checkline"><input type="checkbox" bind:checked={addKeep} /> <span><b>Look for it and better copies</b></span></label>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
 	{#snippet footer()}
@@ -255,13 +257,29 @@
 <style>
 	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
-	.copy-list { list-style: none; padding: 0; margin: 0; display: grid; }
-	.copy { padding: var(--s-4) 0; min-width: 0; }
-	.copy + .copy { border-top: 1px solid var(--line); }
-	.copy-head { display: flex; align-items: start; justify-content: space-between; gap: var(--s-3); }
-	.copy-head > div { min-width: 0; overflow-wrap: anywhere; }
-	.path { overflow-wrap: anywhere; }
-	.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--s-4); margin-top: var(--s-3); }
-	.compact, .protect { align-content: start; display: grid; gap: var(--s-2); }
-	@media (max-width: 700px) { .choice-grid { grid-template-columns: 1fr; } }
+	/* The Settings group's look (TitlePage .lib-rows): a heading, then rounded groups of rows. */
+	.cc { min-width: 0; }
+	.cc-h { margin: 0 0 12px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
+	.cc-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+	.cc-group { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; min-width: 0; }
+	.cc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; width: 100%; min-width: 0; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; font: inherit; }
+	.cc-row + .cc-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.cc-row > span { display: grid; gap: 3px; min-width: 0; }
+	.cc-row b { display: inline-flex; align-items: center; gap: 8px; font: 600 15px/1.2 var(--font-ui); }
+	.cc-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.cc-row small.mono { font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); }
+	.cc-row.act { cursor: pointer; }
+	.cc-row.act:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.cc-row.act:disabled { opacity: .55; cursor: default; }
+	.cc-row :global(svg) { flex: none; color: var(--text-muted); }
+	/* Edition: one line, label, field, the checked tick and Save. */
+	.cc-row.edition { justify-content: flex-start; flex-wrap: wrap; }
+	.cc-row.edition > label:first-child { flex: none; }
+	.cc-input { flex: 1 1 160px; min-width: 0; height: 36px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--text) 14%, transparent); border-radius: 10px; background: var(--surface-1, var(--bg)); color: var(--text); font: 500 14px/1 var(--font-ui); }
+	.cc-check { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); cursor: pointer; }
+	.cc-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--text); }
+	.cc-btn { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
+	.cc-btn:disabled { opacity: .45; cursor: default; }
+	@media (pointer: coarse) { .cc-input { height: 44px; } .cc-btn { height: 44px; } .cc-check input { width: 20px; height: 20px; } }
+	@media (max-width: 600px) { .cc-row { padding: 12px 16px; } .cc-row.edition > label:first-child { flex-basis: 100%; } }
 </style>

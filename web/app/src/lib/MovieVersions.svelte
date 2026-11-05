@@ -95,9 +95,8 @@
 			{@const f = s?.file}
 			<li class="tp-row" data-testid="version" hidden={!all && v.id !== lead}>
 				<div class="tp-row-main">
-					<b>{v.label}{v.main ? ' (main)' : ''}</b>
-					<span class="xs muted">Edition: {v.edition || 'Not specified'} · Audio required: {v.audio_languages?.join(', ') || 'Any'}</span>
-					<span class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</span>
+					<b class="v-name">{v.label}{#if v.main && v.label.trim().toLowerCase() !== 'main'}<span class="v-main" data-testid="version-main">Main</span>{:else if v.main}<span class="sr-only" data-testid="version-main">, the main Version</span>{/if}</b>
+					<span class="xs muted">{v.edition || 'Any edition'} · {v.audio_languages?.length ? `audio ${v.audio_languages.join(', ')}` : 'any audio'} · {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</span>
 					{#if f}
 						<span class="xs muted">{bytes(f.Size)}{#if f.Quality?.resolution} · {f.Quality.resolution}p{f.Quality.source ? ` ${words(String(f.Quality.source))}` : ''}{/if} · Added {date(f.AddedAt)}</span>
 					{:else}
@@ -174,4 +173,6 @@
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
 	.modal::backdrop { background: var(--scrim); }
 	.modal-actions { justify-content: flex-end; margin-top: var(--s-6); }
+	.v-name { display: inline-flex; align-items: center; gap: 8px; }
+	.v-main { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); color: var(--text-muted); font: 700 11px/1 var(--font-ui); }
 </style>

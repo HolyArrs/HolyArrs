@@ -172,7 +172,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await page.getByRole('link', { name: /Quill Atlas/ }).first().click();
 	await openLibraryTab(page); // the subtitle card is on the Library tab
 	const card = page.getByTestId('subtitles');
-	await expect(card.getByTestId('subtitle-wish')).toContainText('English · Spanish (the default languages)');
+	await expect(card.getByTestId('subtitle-wish')).toContainText('English · Spanish · the default languages');
 	await expect(card.getByTestId('subtitle-row').filter({ hasText: 'Spanish' })).toContainText('From Lab subtitle site');
 	await expect(card.getByTestId('subtitle-row').filter({ hasText: 'Spanish' })).toContainText(/\d+\/100/);
 
@@ -184,7 +184,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await card.locator('select[id$="-lang-1"]').selectOption('fr');
 	await card.getByRole('button', { name: 'Save languages' }).click();
 	await expect(page.getByText('Subtitle languages saved.')).toBeVisible();
-	await expect(card.getByTestId('subtitle-wish')).toContainText('English · French (set for this movie)');
+	await expect(card.getByTestId('subtitle-wish')).toContainText('English · French · set for this movie');
 	await expect(card.getByTestId('subtitle-missing')).toContainText('French');
 
 	// Choose a subtitle by hand: every result with its score and reasons.
@@ -235,7 +235,7 @@ test('Show page: the show follows the default languages', async () => {
 	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
 	await openLibraryTab(page);
 	const showCard = page.getByTestId('subtitles');
-	await expect(showCard.getByTestId('subtitle-wish')).toContainText('English · Spanish (the default languages)');
+	await expect(showCard.getByTestId('subtitle-wish')).toContainText('English · Spanish · the default languages');
 	await expect(showCard.getByTestId('subtitle-missing-link')).toContainText('2 subtitles missing');
 });
 
@@ -253,7 +253,7 @@ test('Show page: one episode gets its own subtitle languages in its sheet', asyn
 	await sheet.getByRole('radio', { name: /Its own languages/ }).check();
 	await sheet.getByRole('button', { name: 'Take Spanish off' }).click();
 	await sheet.getByRole('button', { name: 'Save languages' }).click();
-	await expect(sheet.getByTestId('subtitle-wish')).toContainText('English (set for this episode)');
+	await expect(sheet.getByTestId('subtitle-wish')).toContainText('English · set for this episode');
 	await expect(sheet.getByTestId('subtitle-missing')).toHaveCount(1);
 	await axe(page, 'episode subtitles', '[data-testid="episode-subtitles"]');
 	await sheet.getByTestId('subtitle-search').click();
