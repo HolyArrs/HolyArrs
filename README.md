@@ -32,6 +32,19 @@ when unset) and then runs as that user. Media folders mount as optional
 The config folder must sit on a local disk. HolyArrs refuses to start its
 database on a network share.
 
+## Support Info
+
+- Follow the log: `docker logs -f holyarrs`
+- Check the setup (owners, write access, free space, hardlinks, network, clock):
+  `docker exec holyarrs /holyarrs doctor` (for a container that keeps
+  stopping, see [docs/support.md](docs/support.md#run-the-doctor))
+- Version: `docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' holyarrs`
+- Support bundle (owner and admins): `GET /api/v1/support/bundle`, a zip with the
+  masked log, the About details, the doctor report and the health checks.
+
+The image has no shell on purpose. [docs/support.md](docs/support.md) explains
+each step and how to look around with a throwaway helper container.
+
 ## First run and sign-in
 
 On first start HolyArrs writes a one-time setup code to `setup-code.txt` in the
