@@ -28,12 +28,12 @@
 	let busy = $state(false);
 	let error = $state('');
 
-	// One short line each: what the part gives you (Settings > Parts says what stops).
-	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string; gives: string }[] = [
-		{ part: 'movies', label: 'Movies', gives: 'Find and download films.' },
-		{ part: 'shows', label: 'TV shows', gives: 'Follow shows and get new episodes.' },
-		{ part: 'music', label: 'Music', gives: 'Artists and albums.' },
-		{ part: 'subtitles', label: 'Subtitles', gives: 'Fetched for everything you have.' }
+	// The labels say it; Settings > Parts has the on/off detail.
+	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string }[] = [
+		{ part: 'movies', label: 'Movies' },
+		{ part: 'shows', label: 'TV shows' },
+		{ part: 'music', label: 'Music' },
+		{ part: 'subtitles', label: 'Subtitles' }
 	];
 	const full = $derived<Record<PartName, boolean>>({ ...want, wishlist: family === 'yes' });
 	const problem = $derived(needsProblem(full));
@@ -77,7 +77,7 @@
 	async function saveFolder(e: SubmitEvent) {
 		e.preventDefault();
 		error = '';
-		if (!folderPath.trim()) return void (error = 'Type the folder path, as HolyArrs sees it (inside the container if you use Docker).');
+		if (!folderPath.trim()) return void (error = "Enter the folder path as HolyArrs sees it. On Docker, that's the path inside the container.");
 		busy = true;
 		try {
 			await api.post('/library-folders', { path: folderPath.trim(), kind: folderKind, label: folderName.trim() });
@@ -87,6 +87,12 @@
 		} finally {
 			busy = false;
 		}
+	}
+	// Back to step 1 (the parts are already saved; Continue there saves again).
+	function back() {
+		error = '';
+		step = 'parts';
+		replaceState(to('/welcome?first=1'), page.state);
 	}
 	const stepNo = $derived(step === 'parts' ? 1 : 2);
 	const stepCount = 2;
@@ -104,11 +110,11 @@
 	<header class="head">
 		{#if step === 'parts'}
 			<h1>What do you use?</h1>
-			<p>Pick what you'll use. You can change it any time.</p>
+			<p>You can change this later.</p>
 		{:else}
 			<p class="step-word">Step {stepCount} of {stepCount}</p>
 			<h1>Library folder</h1>
-			<p>Where should finished downloads go? Add one folder now, more later.</p>
+			<p>Where should finished downloads go? Add one now, more later.</p>
 		{/if}
 	</header>
 
@@ -123,8 +129,8 @@
 					{#each choices as c (c.part)}
 						<li>
 							<label class="checkline">
-								<input type="checkbox" bind:checked={want[c.part]} aria-label={c.label} aria-describedby="gives-{c.part}" />
-								<span><b>{c.label}</b><br /><span id="gives-{c.part}" class="hint">{c.gives}</span></span>
+								<input type="checkbox" bind:checked={want[c.part]} aria-label={c.label} />
+								<span><b>{c.label}</b></span>
 							</label>
 						</li>
 					{/each}
@@ -145,9 +151,6 @@
 				<Button variant="primary" size="lg" type="submit" disabled={busy || !!problem} aria-busy={busy}>Continue</Button>
 				<Button type="button" disabled={busy} onclick={() => saveParts({ movies: true, shows: false, music: false, subtitles: false, wishlist: false })}>Just movies</Button>
 			</div>
-			<p class="xs muted" data-testid="welcome-update-privacy">
-				Once a day HolyArrs checks GitHub for updates, sending only its version. Turn it off in Settings &gt; This app.
-			</p>
 		</form>
 	{:else}
 		<form class="card" onsubmit={saveFolder}>
@@ -169,6 +172,7 @@
 			</div>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 			<div class="go"><Button variant="primary" size="lg" full type="submit" disabled={busy} aria-busy={busy}>Add folder and open Home</Button></div>
+			{#if firstRun}<div class="back"><Button variant="plain" type="button" disabled={busy} onclick={back}>‹ Back</Button></div>{/if}
 		</form>
 	{/if}
 </div>
@@ -195,6 +199,7 @@
 	.choices { display: flex; flex-direction: column; gap: 4px; }
 	.acts { flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 	.go { margin-top: 20px; }
+	.back { display: flex; justify-content: center; margin-top: 8px; }
 	@media (max-width: 480px) {
 		.acts > :global(*) { flex: 1 1 100%; }
 	}
