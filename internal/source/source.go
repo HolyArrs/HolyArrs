@@ -358,6 +358,13 @@ var blocked = func() []*net.IPNet {
 	return out
 }()
 
+// MetadataServiceLocal is the address policy for a lab metadata server
+// (HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL): local networks are allowed, but
+// never cloud metadata, unspecified, multicast or broadcast addresses.
+func MetadataServiceLocal(ip net.IP) bool {
+	return ip != nil && NotMetadata(ip) && !ip.IsUnspecified() && !ip.IsMulticast() && !ip.IsInterfaceLocalMulticast() && !ip.Equal(net.IPv4bcast)
+}
+
 // PublicOnly refuses addresses on this machine or a local network: loopback,
 // private, link-local, CGNAT, unspecified, multicast, broadcast, reserved
 // and NAT64/6to4 ranges. The

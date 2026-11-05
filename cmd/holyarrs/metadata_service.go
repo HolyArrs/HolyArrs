@@ -149,6 +149,4 @@ func installationAccess(v *secrets.Vault, register func(context.Context) (string
 	}
 }
 
-func metadataServiceLocal(ip net.IP) bool {
-	return ip != nil && source.NotMetadata(ip) && !ip.IsUnspecified() && !ip.IsMulticast() && !ip.IsInterfaceLocalMulticast() && !ip.Equal(net.IPv4bcast)
-}
+func metadataServiceLocal(ip net.IP) bool { return source.MetadataServiceLocal(ip) }

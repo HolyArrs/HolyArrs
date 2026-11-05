@@ -30,7 +30,8 @@ func TestDoctorReportOnAFreshStore(t *testing.T) {
 		w.WriteHeader(204)
 	}))
 	defer srv.Close()
-	r := Run(context.Background(), Options{Version: "9.9.9", ConfigDir: dir, SavePath: dl,
+	// srv.Client: the app's own dial policy refuses this loopback test server.
+	r := Run(context.Background(), Options{Version: "9.9.9", ConfigDir: dir, SavePath: dl, HTTP: srv.Client(),
 		MetadataURL: srv.URL + "/v1/secret?apikey=SHOULD_NOT_SHOW", Now: time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)})
 	text := r.Text()
 	for _, want := range []string{"App", "version 9.9.9", "Config folder", "writable", "local disk", "Network", "answered (HTTP 204)", "Clock", "downloads " + dl, "Result:"} {
@@ -150,5 +151,45 @@ func TestOpenReadOnlyNeverCreates(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, store.MainFile)); err == nil {
 		t.Fatal("created the database")
+	}
+}
+
+func dbChecks(t *testing.T, dir string) []Check {
+	t.Helper()
+	r := Run(context.Background(), Options{ConfigDir: dir, MetadataURL: "https://meta.invalid",
+		HTTP: &http.Client{Transport: failRT{}}, NetTimeout: 100 * time.Millisecond, FolderBudget: time.Second})
+	var out []Check
+	for _, c := range r.Checks {
+		if strings.Contains(c.Text, "no database") || strings.Contains(c.Text, "open the database") {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+func TestDoctorMissingDatabaseIsAWarning(t *testing.T) {
+	got := dbChecks(t, t.TempDir())
+	if len(got) != 1 || got[0].Status != Warn || !strings.Contains(got[0].Text, "no database yet") {
+		t.Fatalf("got %+v", got)
+	}
+}
+
+func TestDoctorUnopenableDatabaseFails(t *testing.T) {
+	dir := t.TempDir()
+	// A folder where the database file should be: it exists but cannot be
+	// opened, like a database this user cannot read.
+	if err := os.Mkdir(filepath.Join(dir, store.MainFile), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got := dbChecks(t, dir)
+	if len(got) != 1 || got[0].Status != Fail || !strings.Contains(got[0].Text, "cannot open the database") || got[0].Fix == "" {
+		t.Fatalf("got %+v", got)
+	}
+}
+
+func TestDoctorClientIgnoresProxyEnv(t *testing.T) {
+	tr, ok := metadataClient().Transport.(*http.Transport)
+	if !ok || tr.Proxy != nil || tr.DialContext == nil {
+		t.Fatalf("the doctor must dial like the app: no proxy, policy dialer (%T)", metadataClient().Transport)
 	}
 }

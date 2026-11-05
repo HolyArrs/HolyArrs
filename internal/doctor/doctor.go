@@ -9,7 +9,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -23,6 +25,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/runas"
+	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -130,8 +133,13 @@ func Run(ctx context.Context, o Options) Report {
 		if d, err := store.OpenReadOnly(o.ConfigDir); err == nil {
 			defer d.Close()
 			db = d
-		} else {
+		} else if errors.Is(err, fs.ErrNotExist) {
 			r.add("Config folder", Warn, "no database yet, so no Library folders to check", "start HolyArrs once with this config folder")
+		} else {
+			// Usually permissions: the database or its -shm/-wal files
+			// cannot be opened by this user.
+			r.add("Config folder", Fail, "cannot open the database read-only, so no Library folders to check: "+err.Error(),
+				writeFix(o.ConfigDir, uid, gid, configOwner(o.ConfigDir)))
 		}
 	}
 	budget := o.FolderBudget
@@ -162,7 +170,7 @@ func Run(ctx context.Context, o Options) Report {
 	}
 	client := o.HTTP
 	if client == nil {
-		client = &http.Client{}
+		client = metadataClient()
 	}
 	networkChecks(ctx, &r, raw, timeout, client, net.DefaultResolver.LookupHost)
 	now := o.Now
@@ -171,6 +179,27 @@ func Run(ctx context.Context, o Options) Report {
 	}
 	clockChecks(&r, now, os.Getenv("TZ"))
 	return r
+}
+
+// metadataClient reaches the metadata server the way the app does: no
+// proxy from the environment, and the same address policy on every dial.
+func metadataClient() *http.Client {
+	allow := source.PublicOnly
+	if on, _ := strconv.ParseBool(os.Getenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL")); on {
+		allow = source.MetadataServiceLocal
+	}
+	return &http.Client{
+		Transport:     metadata.NewServerTransport(source.PolicyDialer(allow).DialContext),
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
+}
+
+// configOwner is the config folder's owner, or "" when unknown.
+func configOwner(dir string) string {
+	if st, err := os.Stat(dir); err == nil {
+		return ownerOf(st)
+	}
+	return ""
 }
 
 func ids(uid, gid int) string { return strconv.Itoa(uid) + ":" + strconv.Itoa(gid) }
