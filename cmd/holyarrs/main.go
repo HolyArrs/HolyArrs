@@ -1051,6 +1051,9 @@ func logFolderCheck(ctx context.Context, db store.Lister, savePath string) {
 	for _, w := range warns {
 		log.Printf("holyarrs: %s", w)
 	}
+	if w := doctor.ProxyWarning(os.Getenv); w != "" {
+		log.Printf("holyarrs: warning: %s (%s)", w, "proxies for indexers can be set on each Source")
+	}
 }
 
 // configDirArg finds -config in the arguments of the server or a command,

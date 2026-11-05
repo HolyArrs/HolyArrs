@@ -173,12 +173,39 @@ func Run(ctx context.Context, o Options) Report {
 		client = metadataClient()
 	}
 	networkChecks(ctx, &r, raw, timeout, client, net.DefaultResolver.LookupHost)
+	if w := ProxyWarning(os.Getenv); w != "" {
+		r.add("Network", Warn, w, proxyFix)
+	}
 	now := o.Now
 	if now.IsZero() {
 		now = time.Now()
 	}
 	clockChecks(&r, now, os.Getenv("TZ"))
 	return r
+}
+
+// proxyNames are the usual environment proxy settings. HolyArrs ignores them
+// on purpose: every outgoing connection checks the real address first, and an
+// environment proxy would skip that check.
+var proxyNames = []string{"HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"}
+
+const proxyFix = "proxies for indexers can be set on each Source; HolyArrs has no app-wide proxy yet"
+
+// ProxyWarning returns one line when a proxy setting is present, naming the
+// settings found (never their values, which may hold a password), or "".
+func ProxyWarning(getenv func(string) string) string {
+	var found []string
+	seen := map[string]bool{}
+	for _, n := range proxyNames {
+		if strings.TrimSpace(getenv(n)) != "" && !seen[strings.ToUpper(n)] {
+			seen[strings.ToUpper(n)] = true
+			found = append(found, n)
+		}
+	}
+	if len(found) == 0 {
+		return ""
+	}
+	return strings.Join(found, ", ") + " is set, but HolyArrs does not use it: posters, metadata and update checks connect directly and may fail"
 }
 
 // metadataClient reaches the metadata server the way the app does: no
