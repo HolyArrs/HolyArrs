@@ -249,6 +249,10 @@
 		return out;
 	});
 	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
+	// The Library is never a mixed list: every link goes to one kind. A card's own kind when the link is about a card;
+	// for the Library total, the biggest part of it.
+	const libHref = $derived([...libCards].sort((x, y) => y.big - x.big)[0]?.href ?? '/library?kind=movie');
+	const kindHref = (c?: HomeCard) => (c ? `/library?kind=${c.kind}` : libHref);
 	// An ask's picture. Its own poster first; when the ask was saved without one, or it cannot be shown, the picture
 	// the Requests page uses: the title's poster from this install's own details, or the artist's wide photo.
 	const badArt = new SvelteSet<number>();
@@ -540,7 +544,7 @@
 				{/snippet}
 				<!-- Disk: what the Library takes, how much room is left, and one thin line along the foot for how full it is (only when the free room is known). -->
 				{#snippet diskTile(cls: string)}
-					<a class="tile stat {cls}" class:lined={!!free} href={to(admin ? '/settings/library-folders' : '/library')}>
+					<a class="tile stat {cls}" class:lined={!!free} href={to(admin ? '/settings/library-folders' : '/status')}>
 						{@render head('archive', diskTint, 'On disk')}
 						{#if !settled}
 							{@render wait()}
@@ -628,7 +632,7 @@
 							{/if}
 						</a>
 					{:else if key === 'lib'}
-						<a class="tile stat {cls}" href={to('/library')} data-testid="home-library">
+						<a class="tile stat {cls}" href={to(libHref)} data-testid="home-library">
 							{@render head('library', 'indigo', 'Library')}
 							<span class="num">{n(libTotal)}</span>
 							<span class="sm">{libCards.map((c) => `${n(c.big)}\u00a0${c.unit}`).join(' · ')}</span>
@@ -648,7 +652,7 @@
 							<span class="sm">in the next 30 days</span>
 						</a>
 					{:else if key === 'new'}
-						<a class="tile stat {cls}" href={to('/library')}>
+						<a class="tile stat {cls}" href={to(kindHref(home?.arrived?.[0] ?? home?.new_seasons?.[0]))}>
 							{@render head('sparkle', 'pink', 'New for you')}
 							<span class="num">{n(recentNew)}</span>
 							<span class="sm">new in the last two weeks</span>
@@ -838,7 +842,7 @@
 					</section>
 				{/if}
 			{:else if row === 'arrived'}
-				{@render wideRow(home?.arrived ?? [], 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to('/library') })}
+				{@render wideRow(home?.arrived ?? [], 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to(kindHref(home?.arrived?.[0])) })}
 			{:else if row === 'approval' && waiting.length}
 				<!-- The asks rows use the same wide cards as the rows around them: the title's wide picture, who asked under it. -->
 				<div class="wide-row" data-testid="home_approval">
