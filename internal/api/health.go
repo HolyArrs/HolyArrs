@@ -21,6 +21,15 @@ func (a *API) healthRoutes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/settings/health", a.putHealthSettings)
 }
 
+// keyKitForOthers is the key kit warning for people who are not the owner.
+const keyKitForOthers = "The owner should download the key kit on the Backups page: backups do not hold the master key"
+
+// notOwner says whether the caller is signed in and is not the owner.
+func notOwner(r *http.Request) bool {
+	who, ok := auth.From(r.Context())
+	return ok && who.Role != auth.RoleOwner
+}
+
 // ownerWords rewords the key kit warning for people who are not the owner:
 // only the owner can download the kit.
 func ownerWords(r *http.Request, cs []domain.HealthCheck) {
@@ -29,7 +38,7 @@ func ownerWords(r *http.Request, cs []domain.HealthCheck) {
 	}
 	for i := range cs {
 		if cs[i].Key == "backups:key" && cs[i].State != health.OK {
-			cs[i].Message = "The owner should download the key kit on the Backups page: backups do not hold the master key"
+			cs[i].Message = keyKitForOthers
 		}
 	}
 }
