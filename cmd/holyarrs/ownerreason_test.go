@@ -15,9 +15,14 @@ func TestNotWritableReasonFitsANamedVolume(t *testing.T) {
 	if strings.Contains(msg, "own the folder on the host") {
 		t.Errorf("names only a host fix: %s", msg)
 	}
-	for _, want := range []string{":ro", "PUID/PGID", "by itself", "restart"} {
+	for _, want := range []string{":ro", "PUID/PGID", "already tried", "NFS", "user:"} {
 		if !strings.Contains(msg, want) {
 			t.Errorf("lacks %q: %s", want, msg)
 		}
+	}
+	// A root start already ran the owner fix before this page shows, so a
+	// plain restart repeats the same thing.
+	if strings.Contains(msg, "restart is often enough") {
+		t.Errorf("suggests a plain restart fixes it: %s", msg)
 	}
 }
