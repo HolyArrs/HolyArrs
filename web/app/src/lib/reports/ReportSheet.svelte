@@ -1,17 +1,21 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
+	import Icon from '#lib/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { api, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
 	import { seasonName } from '#lib/shows.ts';
-	import { episodeWord, hasFile, makeReport, noteMax, reportKinds, type ReportKind, type ReportView } from '#lib/reports.ts';
+	import { episodeWord, hasFile, kindHint, kindIcon, makeReport, noteMax, partWords, reportKinds, type ReportKind, type ReportView } from '#lib/reports.ts';
 
 	// Report a problem (#95) with a title in the Library: what is wrong, and
 	// for a show the season or episode, for an album the track, and the
 	// Version when there is more than one. Centred on wide screens, a bottom
-	// sheet on phones. The owner and admins see it on /reports.
+	// sheet on phones. The owner and admins see it on /reports. The five
+	// kinds are one row of tiles, each with the picture its report carries
+	// on Reports; the line under them explains the picked one in its own
+	// reserved space, so the form never jumps.
 	type Part = { id: number; episode?: number; number?: number; disc?: number; name?: string; slots?: { file?: unknown; file_id?: number; state?: string }[] };
 	let {
 		open = $bindable(false),
@@ -106,7 +110,6 @@
 				album_id: album?.id ?? null,
 				version_id: pickVersion ? Number(pickVersion) : null
 			});
-			toasts.push('Thanks, your report was sent.', 'ok');
 			onsent?.(sent);
 		} catch (e) {
 			error = message(e);
@@ -119,22 +122,24 @@
 <Sheet bind:open title={sent ? 'Report sent' : 'Report a problem'} description={sent ? undefined : what} size="sm" placement="auto">
 	{#if sent}
 		<div class="rs-done" data-testid="report-sent">
+			<span class="rs-ok" aria-hidden="true"><Icon name="check" size={26} /></span>
+			<p class="rs-what"><span class="rs-tag"><Icon name={kindIcon(sent.kind)} size={13} />{sent.kind_label}</span>{#if partWords(sent)}<span>{partWords(sent)}</span>{/if}</p>
 			<p>Thanks. The owner and admins can see your report now, and you get a message when it is fixed.</p>
-			<p class="rs-what"><b>{sent.kind_label}</b>{#if sent.where}{' · '}{sent.where}{/if}</p>
 		</div>
 	{:else}
 		<form class="rs" data-testid="report-sheet" onsubmit={(e) => { e.preventDefault(); void send(); }}>
 			<fieldset class="rs-kinds">
 				<legend>What is wrong?</legend>
-				<div class="rs-chips">
+				<div class="rs-tiles">
 					{#each reportKinds as k (k.kind)}
-						<label class="rs-chip" class:on={kind === k.kind} title={k.hint}>
+						<label class="rs-tile" class:on={kind === k.kind} title={k.hint}>
 							<input type="radio" name="{id}-kind" value={k.kind} bind:group={kind} />
+							<Icon name={kindIcon(k.kind)} size={20} />
 							<span>{k.label}</span>
 						</label>
 					{/each}
 				</div>
-				{#if kind}<p class="rs-hint">{reportKinds.find((k) => k.kind === kind)?.hint}</p>{/if}
+				<p class="rs-hint" aria-live="polite">{#key kind}<span in:fade={{ duration: 180 }}>{kind ? kindHint(kind) : 'Pick the closest one.'}</span>{/key}</p>
 			</fieldset>
 
 			{#if title.show && seasons.length}
@@ -201,13 +206,18 @@
 <style>
 	.rs { display: grid; gap: 14px; min-width: 0; }
 	.rs-kinds { margin: 0; padding: 0; border: 0; min-width: 0; }
-	.rs-kinds legend { margin-bottom: 8px; font: 600 15px/1.2 var(--font-ui); }
-	.rs-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-	.rs-chip { position: relative; display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-strong, var(--line)); background: var(--surface-2); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
-	.rs-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-	.rs-chip.on { background: var(--text); border-color: var(--text); color: var(--bg); }
-	.rs-chip:has(input:focus-visible) { box-shadow: var(--focus-ring); }
-	.rs-hint { margin: 8px 0 0; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.rs-kinds legend { margin-bottom: 8px; padding: 0; font: 600 15px/1.2 var(--font-ui); }
+	/* Five equal tiles in one row: picture over name. The picked one fills with ink. */
+	.rs-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+	.rs-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; min-height: 74px; padding: 10px 2px 9px; border-radius: 14px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-muted); font: 600 12px/1.15 var(--font-ui); text-align: center; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 200ms var(--ease-out), color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+	.rs-tile input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+	.rs-tile > span { color: var(--text); transition: color 200ms var(--ease-out); }
+	.rs-tile:hover:not(.on) { background: var(--surface-3); color: var(--text); }
+	.rs-tile:active { transform: scale(0.96); }
+	.rs-tile.on { background: var(--text); box-shadow: 0 8px 18px -10px rgb(0 0 0 / 0.5); color: var(--bg); }
+	.rs-tile.on > span { color: var(--bg); }
+	.rs-tile:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+	.rs-hint { min-height: 18px; margin: 9px 0 0; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
 	.rs-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
 	.rs-field { display: grid; gap: 6px; min-width: 0; }
 	.rs-field > span { font: 600 14px/1.2 var(--font-ui); }
@@ -217,8 +227,16 @@
 	.rs-field textarea { padding: 10px 12px; resize: vertical; min-height: 76px; }
 	.rs-count { justify-self: end; }
 	.rs-err { margin: 0; color: var(--fail-text, #e5484d); font: 500 14px/1.4 var(--font-ui); }
-	.rs-done { display: grid; gap: 10px; }
-	.rs-done p { margin: 0; font: var(--t-callout); }
-	.rs-what { color: var(--text-muted); }
-	@media (pointer: coarse) { .rs-chip { min-height: 44px; } .rs-field select { height: 44px; } }
+	/* Sent: the tick lands first, then what was sent, then what happens next. */
+	.rs-done { display: grid; justify-items: center; gap: 12px; padding: 6px 0 2px; text-align: center; }
+	.rs-done p { margin: 0; max-width: 40ch; font: var(--t-callout); }
+	.rs-ok { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--ok); color: #fff; box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--ok) 85%, transparent); animation: rs-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+	.rs-ok :global(svg) { animation: rs-tick 300ms var(--ease-out) 160ms both; }
+	@keyframes rs-pop { from { opacity: 0; transform: scale(0.6); } }
+	@keyframes rs-tick { from { opacity: 0; transform: scale(0.7); } }
+	.rs-what { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; color: var(--text-muted); }
+	.rs-tag { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 11px 0 9px; border-radius: 999px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: 600 13px/1 var(--font-ui); }
+	@media (pointer: coarse) { .rs-field select { height: 44px; } }
+	@media (max-width: 400px) { .rs-tiles { gap: 6px; } .rs-tile { font-size: 11.5px; } }
+	@media (prefers-reduced-motion: reduce) { .rs-ok, .rs-ok :global(svg) { animation: none; } .rs-tile { transition: none; } .rs-tile:active { transform: none; } }
 </style>

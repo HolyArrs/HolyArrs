@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { episodeWord, filterOf, hasFile, kindLabel, listPath, partLine, reportBody, reportHref, reportKinds, searchBody, sortReports, stateCounts, titleLine, whoName } from './reports.ts';
+import { episodeWord, factsLine, filterOf, hasFile, kindHint, kindIcon, kindLabel, partWords, quickReplies, listPath, partLine, reportBody, reportHref, reportKinds, searchBody, sortReports, stateCounts, titleLine, whoName } from './reports.ts';
 
 describe('reported problems', () => {
 	it('names the five problem kinds in order', () => {
@@ -13,6 +13,22 @@ describe('reported problems', () => {
 		expect(reportBody({ title_id: 4, kind: 'picture', note: '', season: null, item_id: 0, version_id: undefined })).toEqual({ title_id: 4, kind: 'picture' });
 		expect(reportBody({ title_id: 4, kind: 'other', season: 0, item_id: 12, album_id: 3, version_id: 2 })).toEqual({ title_id: 4, kind: 'other', season: 0, item_id: 12, album_id: 3, version_id: 2 });
 		expect((reportBody({ title_id: 1, kind: 'other', note: 'x'.repeat(600) }).note as string).length).toBe(500);
+	});
+
+	it('gives each kind its picture, hint and quick replies', () => {
+		expect(reportKinds.map((k) => kindIcon(k.kind))).toEqual(['image', 'sound', 'subtitle', 'play', 'info']);
+		expect(kindIcon('something_new')).toBe('info');
+		expect(kindHint('sound')).toMatch(/No sound/);
+		expect(kindHint('something_new')).toBe('');
+		expect(quickReplies('subtitles')[0]).toBe('Added new subtitles');
+		expect(quickReplies('other')).toHaveLength(3);
+	});
+
+	it('words the line under a title', () => {
+		expect(factsLine({ title_kind: 'show', year: 2008, where: 'Season 2' })).toBe('TV show · 2008 · Season 2');
+		expect(factsLine({ title_kind: 'movie', year: 2014, where: '(Main)' })).toBe('Movie · 2014 · Main version');
+		expect(factsLine({ title_kind: 'artist' })).toBe('Music');
+		expect(partWords({ where: 'S02E03', item_name: 'The Mill' })).toBe('S02E03 · The Mill');
 	});
 
 	it('asks the server for one filter', () => {

@@ -6,7 +6,7 @@ import { addFromSearch, noSidewaysScroll, owner, signIn } from './helpers.ts';
 
 // Reported problems (#95): a member reports a problem with a movie from a
 // phone (the sheet is a bottom sheet there), the owner finds it from
-// Requests on Reported problems and marks it fixed with a reply, and the
+// Requests on Reports and marks it fixed with a reply, and the
 // member sees it fixed, with the reply and a Fixed message. The spec makes
 // its own data: the movie, a file for it and the member.
 test.describe.configure({ mode: 'serial' });
@@ -109,7 +109,7 @@ test('a member reports a problem from a phone, in a bottom sheet', async () => {
 
 	await member.getByRole('link', { name: 'See your reports' }).click();
 	await expect(member).toHaveURL(/\/reports/);
-	await expect(member.getByRole('heading', { level: 1, name: 'Your reported problems' })).toBeVisible();
+	await expect(member.getByRole('heading', { level: 1, name: 'Your reports' })).toBeVisible();
 	const card = member.getByTestId('report').filter({ hasText: movie });
 	await expect(card).toHaveCount(1);
 	await expect(card.getByTestId('report-state')).toContainText('Open');
@@ -129,13 +129,14 @@ test('the owner finds it from Requests and marks it fixed with a reply', async (
 	await expect(own).toHaveURL(/\/reports/);
 	await expect(own.getByRole('heading', { level: 1, name: 'Reports' })).toBeVisible();
 
-	const card = own.getByTestId('report').filter({ hasText: `${memberName} reported it` });
+	const card = own.getByTestId('report').filter({ hasText: memberName });
 	await expect(card).toHaveCount(1);
 	await expect(card).toContainText(movie);
 	await expect(card.getByTestId('report-state')).toContainText('Open');
 	await card.getByRole('button', { name: 'Mark fixed' }).click();
 
-	const sheet = own.getByRole('dialog', { name: 'Mark fixed' });
+	// Mark fixed opens the report's window (named after the title), ready for a reply.
+	const sheet = own.getByRole('dialog', { name: new RegExp(movie) });
 	await expect(sheet).toBeVisible();
 	await sheet.getByLabel(new RegExp(`^Reply to ${memberName}`)).fill(reply);
 	await sheet.getByRole('button', { name: 'Mark fixed' }).click();

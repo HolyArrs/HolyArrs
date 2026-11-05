@@ -98,6 +98,35 @@ export function partLine(r: Pick<ReportView, 'where' | 'item_name' | 'album_name
 	return where ? `${where} · ${name}` : name;
 }
 
+/** kindIcon is the picture for a problem kind (the report sheet's tiles, the cards' tag, the window). */
+export function kindIcon(kind: string): 'image' | 'sound' | 'subtitle' | 'play' | 'info' {
+	return kind === 'picture' ? 'image' : kind === 'sound' ? 'sound' : kind === 'subtitles' ? 'subtitle' : kind === 'wont_play' ? 'play' : 'info';
+}
+
+/** kindHint says what a problem kind covers, or '' for a kind this app does not know. */
+export function kindHint(kind: string): string {
+	return reportKinds.find((k) => k.kind === kind)?.hint ?? '';
+}
+
+/** partWords is partLine for a card: a Version that came in brackets ("(Main)") reads "Main version". */
+export function partWords(r: Pick<ReportView, 'where' | 'item_name' | 'album_name' | 'track'>): string {
+	const part = partLine(r);
+	const m = /^\((.+)\)$/.exec(part);
+	return m ? `${m[1]} version` : part;
+}
+
+/** factsLine is the line under a report's title: what it is, its year and the part: "TV show · 2008 · Season 2". */
+export function factsLine(r: Pick<ReportView, 'title_kind' | 'year' | 'where' | 'item_name' | 'album_name' | 'track'>): string {
+	const what = r.title_kind === 'artist' ? 'Music' : r.title_kind === 'show' ? 'TV show' : 'Movie';
+	return [what, r.year, partWords(r)].filter(Boolean).join(' · ');
+}
+
+/** quickReplies are one-tap replies for Mark fixed, the kind's own first. */
+export function quickReplies(kind: string): string[] {
+	const own = kind === 'subtitles' ? ['Added new subtitles'] : kind === 'sound' ? ['Got a copy with better sound'] : kind === 'picture' ? ['Got a sharper copy'] : [];
+	return [...own, 'Swapped in a better copy', 'Try again now', "Couldn't find anything wrong"];
+}
+
 /** reportBody is what the server is sent: the note trimmed, parts that were not picked left out. */
 export function reportBody(input: ReportInput): Record<string, unknown> {
 	const out: Record<string, unknown> = { title_id: input.title_id, kind: input.kind };
