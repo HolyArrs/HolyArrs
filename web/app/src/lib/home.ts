@@ -476,9 +476,10 @@ export function downloadMoved(seen: Map<number, string>, x: unknown): boolean {
 
 /** partCount sums up Sources or Downloaders from GET /health: how many are on, and how many of those work. */
 export function partCount(parts: { state: string }[] | null | undefined): { on: number; working: number; off: number } {
+	// Sources are enabled, paused or disabled; Downloaders report ok (or working) and their trouble states. Paused counts as off.
 	const list = parts ?? [];
-	const on = list.filter((p) => p.state !== 'disabled');
-	return { on: on.length, working: on.filter((p) => p.state === 'ok' || p.state === 'working').length, off: list.length - on.length };
+	const on = list.filter((p) => p.state !== 'disabled' && p.state !== 'paused');
+	return { on: on.length, working: on.filter((p) => p.state === 'ok' || p.state === 'working' || p.state === 'enabled').length, off: list.length - on.length };
 }
 
 /** freeSpace is the free room left for the Library: folders on the same disk count once; with several disks, the fullest one. */

@@ -263,6 +263,8 @@ describe('Your Library cards', () => {
 describe('System grid numbers', () => {
 	it('counts parts that are on and working; turned-off ones apart', () => {
 		expect(partCount([{ state: 'ok' }, { state: 'disabled' }, { state: 'not_answering' }])).toEqual({ on: 2, working: 1, off: 1 });
+		// Sources: enabled works, paused and disabled are off.
+		expect(partCount([{ state: 'enabled' }, { state: 'enabled' }, { state: 'paused' }, { state: 'disabled' }])).toEqual({ on: 2, working: 2, off: 2 });
 		expect(partCount(null)).toEqual({ on: 0, working: 0, off: 0 });
 	});
 	it('counts a disk shared by folders once, and the fullest of several', () => {

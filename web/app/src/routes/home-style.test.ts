@@ -27,9 +27,9 @@ describe('Home page styles', () => {
 		expect(phone).toMatch(/\.note\s*\{[^}]*flex-basis:\s*100%/);
 	});
 	it('makes the Home | System switch a 44px tap on phones', () => {
-		expect(media('(max-width: 767px)')).toMatch(/\.bar \.ui-seg button\s*\{[^}]*min-height:\s*44px/);
+		expect(media('(max-width: 767px)')).toMatch(/.top-row .ui-seg button\s*\{[^}]*min-height:\s*44px/);
 	});
-	it('stacks the Home and System grids in one cell, so switching moves nothing below', () => {
-		expect(css).toMatch(/\.boards > \.bento\s*\{[^}]*grid-area:\s*1 \/ 1/);
+	it('lifts the hidden grid out of the flow, so the page is only as tall as the grid on screen', () => {
+		expect(css).toMatch(/\.bento\.gone\s*\{[^}]*position:\s*absolute/);
 	});
 });
