@@ -36,7 +36,7 @@ test('import: scan shows matched, unsure and unmatched; fix the unsure one; adop
 	await page.goto('/library');
 	await libraryTool(page, 'Import a library');
 	await expect(page.getByRole('heading', { level: 1, name: 'Import a library' })).toBeVisible();
-	await expect(page.getByTestId('nothing-moved')).toContainText('Nothing is moved or renamed');
+	await expect(page.getByTestId('nothing-moved')).toContainText('Files stay where they are');
 	await page.getByLabel('Library folder').selectOption({ label: `Old library (${oldLib})` });
 	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 

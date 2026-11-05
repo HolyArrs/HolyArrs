@@ -121,12 +121,17 @@ test('Search all missing searches each missing movie, then each episode, at the 
 		await pauseOthers(call, ids, paused, pauseFailed);
 		expect(pauseFailed, 'every other missing Version was paused').toEqual([]);
 
-		// The Library's Missing list holds all three.
-		await page.goto('/library');
-		await libraryStatus(page, 'missing');
-		await expect(page).toHaveURL(/show=missing/);
+		// The Library's Missing list holds all three: the movies on Movies, the show on TV shows.
 		const item = (name: string) => page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: name }).first();
-		for (const name of ['Hollow Compass', 'Brass Meadow', 'Gilded Bracken']) await expect(item(name)).toBeVisible();
+		const allThreeMissing = async () => {
+			await page.goto('/library?kind=movie');
+			await libraryStatus(page, 'missing');
+			await expect(page).toHaveURL(/show=missing/);
+			for (const name of ['Hollow Compass', 'Brass Meadow']) await expect(item(name)).toBeVisible();
+			await page.goto('/library?kind=show&show=missing');
+			await expect(item('Gilded Bracken')).toBeVisible();
+		};
+		await allThreeMissing();
 
 		// mineDone lists this test's searches once none of them is still running.
 		const mineDone = async () => {
@@ -143,7 +148,7 @@ test('Search all missing searches each missing movie, then each episode, at the 
 		const searchAll = async (label: string, said: string): Promise<number> => {
 			const button = page.getByTestId('search-all-missing');
 			await expect(button).toHaveText(label);
-			const n = Number((await page.getByText(/^\d+ titles? match$/).textContent())?.split(' ')[0]);
+			const n = Number((await page.getByText(/^\d+ of \d+ (movies|TV shows|artists)$/).textContent())?.split(' ')[0]);
 			expect(n).toBeGreaterThanOrEqual(2);
 			const dialog = page.getByRole('dialog', { name: `Search for ${n} missing titles?` });
 			await button.click();
@@ -177,25 +182,24 @@ test('Search all missing searches each missing movie, then each episode, at the 
 		}
 		expect(movieDone.filter((s) => s.title_id === showId), 'the show got no search from the movie press').toEqual([]);
 
-		// Everything: the show's episodes are searched too.
-		await page.goto('/library?show=missing');
-		const jobId = await searchAll('Search all missing', 'Searching for every missing movie, episode and album.');
+		// Shows only: the show's episodes are searched, the movies are not searched again.
+		await page.goto('/library?show=missing&kind=show');
+		const jobId = await searchAll('Search all missing shows', 'Searching for every missing episode.');
 
 		// The bulk job finishes having queued at least this test's searches:
-		// each movie, season 1 as one season search and S02E01 on its own.
+		// season 1 as one season search and S02E01 on its own.
 		// Other titles may still be missing, so totals are only lower bounds;
 		// the per-title checks below are the real evidence.
 		const job = (await (await call('GET', `/jobs/${jobId}`)).json()) as Job;
-		expect(job.Params?.kind).toBeUndefined();
-		expect(job.Result?.slots ?? 0).toBeGreaterThanOrEqual(5);
-		expect(job.Result?.queued ?? 0).toBeGreaterThanOrEqual(4);
+		expect(job.Params).toMatchObject({ which: 'missing', kind: 'show' });
+		expect(job.Result?.queued ?? 0).toBeGreaterThanOrEqual(2);
 		expect(job.Result?.seasons ?? 0).toBeGreaterThanOrEqual(1);
 
 		// Each search ran against the Source and found its Releases there.
-		// Six searches from this press: the two movies, season 1, S02E01, and then
-		// S01E01 and S01E02 one by one, since the 4K rules turned the whole season
-		// down; the movie press added two more.
-		await expect.poll(async () => (await mineDone()).filter((s) => !s.by_hand && s.state === 'done').length, { timeout: 45_000 }).toBeGreaterThanOrEqual(8);
+		// Four searches from this press: season 1, S02E01, and then S01E01 and
+		// S01E02 one by one, since the 4K rules turned the whole season down;
+		// the movie press before it made two.
+		await expect.poll(async () => (await mineDone()).filter((s) => !s.by_hand && s.state === 'done').length, { timeout: 45_000 }).toBeGreaterThanOrEqual(6);
 		const done = await mineDone();
 		for (const id of ids.slice(0, 2)) {
 			expect(done.find((s) => s.title_id === id && s.kind === 'search_slot'), `movie ${id} was searched`).toMatchObject({ state: 'done', by_hand: false, found: 3, refused: 3 });
@@ -227,9 +231,8 @@ test('Search all missing searches each missing movie, then each episode, at the 
 		await expect(sheet.getByTestId('release').filter({ hasText: 'Hollow.Compass.2015.1080p.WEB-DL' })).toBeVisible();
 		await page.keyboard.press('Escape');
 
-		// Nothing passed, so all three stay on the Missing list.
-		await page.goto('/library?show=missing');
-		for (const name of ['Hollow Compass', 'Brass Meadow', 'Gilded Bracken']) await expect(item(name)).toBeVisible();
+		// Nothing passed, so all three stay on the Missing lists.
+		await allThreeMissing();
 	} finally {
 		await restore(call, paused, restoreFailed);
 		for (const id of ids) {

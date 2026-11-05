@@ -254,8 +254,10 @@ test('Remove a movie series: grouped by series, Open series, review both movies,
 
 	// Movies grouped by series (Banners view) show the series with both movies.
 	await page.goto('/library?kind=movie');
-	await page.getByRole('main').getByRole('button', { name: /[↑↓]$/ }).click();
-	await page.getByRole('menu', { name: 'Sort titles' }).getByRole('menuitemradio', { name: 'Group by series' }).click();
+	// Group by series is a row in the Sort and filter panel.
+	await page.getByRole('main').getByRole('button', { name: /^Sort( &|)/ }).first().click();
+	await page.getByRole('region', { name: 'Sort' }).getByRole('button', { name: 'Group by series' }).click();
+	await page.keyboard.press('Escape');
 	await expect(page).toHaveURL(/group=series/);
 	await libraryView(page, 'Banners');
 	const head = page.locator('.series-head').filter({ has: page.getByRole('heading', { name: 'The Brumwick Films', exact: true }) });
