@@ -212,7 +212,10 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	var wait time.Duration
 	var marks []failMark
 	if t != nil {
-		userKey := "name:" + strings.ToLower(t.name)
+		// The first step's name key: "name:<name>" after a password, the
+		// media-server name after Jellyfin or Emby, none after Plex or single
+		// sign-on, so strangers holding the local name's wait cannot stop them.
+		userKey := t.userKey
 		// codeKey survives a correct password, so a fresh ticket brings back
 		// no free code guesses; only a right code clears it.
 		codeKey := "2fa:" + itoa(t.userID)

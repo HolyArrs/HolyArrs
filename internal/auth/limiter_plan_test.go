@@ -143,3 +143,32 @@ func TestMemberSignInDoesNotClearSharedAddress(t *testing.T) {
 		})
 	}
 }
+
+// The code step of an outside sign-in (single sign-on, Plex, Jellyfin) is
+// not held by the local password name's wait: it reads the first step's key.
+func TestOutsideTwoFactorNotHeldByLocalNameWait(t *testing.T) {
+	f := gated(t, Options{TrustedProxies: []string{"127.0.0.1/32"}})
+	own := ownerOf(t, f)
+	secret, _ := turnOnTwoFactor(t, f, own)
+	var id int64
+	if err := f.s.Read().QueryRow("SELECT id FROM users WHERE name = 'luis'").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	home := map[string]string{"X-Forwarded-For": "203.0.113.50"}
+	for _, c := range []struct{ method, userKey string }{
+		{"oidc", ""},
+		{ProviderPlex, ""},
+		{ProviderJellyfin, "name:jellyfin:luis"},
+	} {
+		f.clock.add(totpStep * time.Second)
+		tok := token(32)
+		f.a.mu.Lock()
+		f.a.tickets[sum(tok)] = &ticket{userKey: c.userKey, userID: id, name: "luis", method: c.method, expires: f.clock.t.Add(ticketLife)}
+		f.a.fails["name:luis"] = &failure{n: 31, last: f.clock.t}
+		f.a.mu.Unlock()
+		resp, out := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login/two-factor", `{"ticket":"`+tok+`","code":"`+codeNow(t, f, secret, 0)+`"}`, home)
+		if resp.StatusCode != 200 {
+			t.Errorf("%s: right code held by the local name wait: %d %s", c.method, resp.StatusCode, out)
+		}
+	}
+}
