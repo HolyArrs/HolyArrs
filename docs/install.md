@@ -428,7 +428,8 @@ start creates `/config/holyarrs.key` with mode `0600`.
 
 Backup zip files never contain this master key. Keep a protected copy apart
 from the backup zips. A restore with a different key is refused because the
-stored secrets cannot be opened.
+stored secrets cannot be opened. To move to a new machine, see
+[Backups: Move to a new machine](backups.md#move-to-a-new-machine).
 
 You may supply the key as a separate read-only file instead. The named file
 must already exist and must hold exactly 32 raw bytes, 64 hexadecimal digits,

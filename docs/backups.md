@@ -48,7 +48,7 @@ build and does not offer these controls.
 ## Restore
 
 1. Confirm that the separate master-key file is the one that belongs with the
-   backup.
+   backup. On a new machine, see [Move to a new machine](#move-to-a-new-machine).
 2. Select **Restore from a file** and choose a HolyArrs backup zip.
 3. Confirm the warning. Changes made after that backup will be lost.
 4. Let HolyArrs check the archive. It rejects an oversized or malformed zip,
@@ -61,3 +61,32 @@ under `/config/backups/before-restore-<time>`. With the recommended Docker
 restart policy, the app restart completes the restore. See
 [Install: restart and restore](install.md#restart-and-restore).
 
+
+## Move to a new machine
+
+A new install makes its own master key on its first start. That key cannot
+open the passwords and keys saved in your old backups, so the restore is
+refused. Put the old key in place first:
+
+1. Before the first start on the new machine, copy your old `holyarrs.key`
+   (or your key kit renamed to `holyarrs.key`) into the new config folder.
+   On the host, give it to your PUID and PGID and make it private:
+   `chown PUID:PGID holyarrs.key` and `chmod 600 holyarrs.key` (use your own
+   numbers). If you use `HOLYARRS_MASTER_KEY_FILE`, put the file at that path
+   instead.
+2. Restore the backup zip in one of two ways:
+   - Start HolyArrs, finish first run, then use **Restore from a file** under
+     Settings > Backups.
+   - Or restore it without starting the app: copy the zip, with its name
+     unchanged, into the `backups` folder inside the config folder, then run
+     the `holyarrs restore` command once from the same image:
+     `docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> ghcr.io/coderluii/holyarrs:<tag> restore <zip name>`
+     (with Compose: `docker compose run --rm holyarrs restore <zip name>`).
+     `restore --list` shows the names it can see.
+3. Start HolyArrs.
+
+Already started the new install without the old key, and the page says the
+master key does not match, or the restore is refused? If you set nothing up
+on the new install that you want to keep: stop HolyArrs, replace the new
+`holyarrs.key` with your old one, and restore with the command in step 2.
+Then start HolyArrs again.

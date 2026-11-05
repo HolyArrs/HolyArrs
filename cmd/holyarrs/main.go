@@ -442,20 +442,25 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			log.Printf("supervisor: a background loop did not stop in time")
 		}
 	}()
-	// A missing or wrong master key needs a person, like the refusals
-	// above: keep a plain page up instead of exiting into a restart loop.
-	keyRefused := func(err error) error {
-		if !errors.Is(err, secrets.ErrKeyMissing) && !errors.Is(err, secrets.ErrWrongKey) {
-			return err
-		}
+	// A master key that is missing, wrong or cannot be read needs a person,
+	// like the refusals above: keep a plain page up instead of exiting into
+	// a restart loop.
+	hold := func(err error) error {
 		log.Printf("holyarrs: not started: %v", err)
 		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
 		<-ctx.Done()
 		return err
 	}
+	keyRefused := func(err error) error {
+		if !errors.Is(err, secrets.ErrKeyMissing) && !errors.Is(err, secrets.ErrWrongKey) {
+			return err
+		}
+		return hold(err)
+	}
 	key, err := secrets.LoadKey(c.ConfigDir, os.Getenv(secrets.EnvKeyFile))
 	if err != nil {
-		return keyRefused(err)
+		// Every error here is about the key file, and a restart cannot fix it.
+		return hold(err)
 	}
 	vault, err := secrets.Open(ctx, s, key)
 	if err != nil {

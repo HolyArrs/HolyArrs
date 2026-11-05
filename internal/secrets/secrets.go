@@ -42,6 +42,10 @@ var (
 	// ErrKeyMissing means the key file is gone but the database holds
 	// secrets that only it can open, so no new key is made.
 	ErrKeyMissing = errors.New("master key missing")
+	// ErrKeyUnreadable means a key file is there (or named) but cannot be
+	// used: no permission to read it, a named file that is missing, or a
+	// file that holds no key.
+	ErrKeyUnreadable = errors.New("master key file cannot be read")
 )
 
 // LoadKey reads the master key. named, when set, is a key file the person
@@ -51,20 +55,20 @@ func LoadKey(dir, named string) ([]byte, error) {
 	if named != "" {
 		b, err := os.ReadFile(named)
 		if err != nil {
-			return nil, fmt.Errorf("master key file %s: %w", named, err)
+			return nil, fmt.Errorf("%w: %s (named in %s): %w", ErrKeyUnreadable, named, EnvKeyFile, err)
 		}
-		return decodeKey(b)
+		return keyIn(named, b)
 	}
 	p := filepath.Join(dir, KeyFile)
 	b, err := os.ReadFile(p)
 	if err == nil {
 		if st, err := os.Stat(p); err == nil && st.Mode().Perm()&0o077 != 0 {
-			log.Printf("secrets: %s can be read by other users; run chmod 600 on it", p)
+			log.Printf("secrets: %s can be read by other users; on the host, run chown PUID:PGID and chmod 600 on it", p)
 		}
-		return decodeKey(b)
+		return keyIn(p, b)
 	}
 	if !errors.Is(err, os.ErrNotExist) {
-		return nil, err
+		return nil, fmt.Errorf("%w: %s: %w", ErrKeyUnreadable, p, err)
 	}
 	// A database that already holds secrets belongs to a key: a new one
 	// could not open them, so the person must put the old key back.
@@ -121,6 +125,14 @@ func SavedIn(dir string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func keyIn(p string, b []byte) ([]byte, error) {
+	k, err := decodeKey(b)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s: %w", ErrKeyUnreadable, p, err)
+	}
+	return k, nil
 }
 
 // decodeKey accepts 64 hex digits, base64 of 32 bytes or 32 raw bytes.
