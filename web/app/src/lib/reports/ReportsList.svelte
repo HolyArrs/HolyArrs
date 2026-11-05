@@ -69,7 +69,8 @@
 		return () => offs.forEach((off) => off());
 	});
 
-	// The wide art comes from each title (a report carries only its poster); a title that gives none keeps the poster, blurred.
+	// The wide art comes from each title (a report carries only its poster); a title that gives none keeps the poster,
+	// blurred for a movie or show (a tall poster) and as it is for an artist (their photo, as on Requests).
 	let wides = $state<Record<number, string>>({});
 	const asked = new Set<number>();
 	$effect(() => {
@@ -191,7 +192,7 @@
 				{#each reportFilters as f (f.filter)}
 					{@const n = counts[f.filter]}
 					<div class="pw" class:on={filter === f.filter} role="presentation">
-						<button type="button" class="tab" class:zero={!n} aria-pressed={filter === f.filter} onclick={() => pick(f.filter)}>{f.label}<span class="n" class:wait={f.filter === 'open' && n > 0}>{n}</span></button>
+						<button type="button" class="tab" class:zero={!n} aria-pressed={filter === f.filter} onclick={() => pick(f.filter)}>{f.label}{#if loaded && !error}<span class="n" class:wait={f.filter === 'open' && n > 0}>{n}</span>{/if}</button>
 					</div>
 				{/each}
 			</div>
@@ -213,7 +214,7 @@
 					<button type="button" class="open" aria-label="Open the report on {titleLine(r)}" aria-haspopup="dialog" onclick={() => show(r)}></button>
 					<a class="cl-go" href={to(reportHref(r))} aria-label="Page for {r.title_name}" title="Open the title"><Icon name="arrowUpRight" size={16} /></a>
 					<div class="ban" class:noart={!wide && !r.poster}>
-						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if r.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${poster(r)}")`}></span>{/if}
+						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if r.poster}<span class="ban-img" class:soft={r.title_kind !== 'artist'} aria-hidden="true" style:background-image={`url("${poster(r)}")`}></span>{/if}
 					</div>
 					<div class="top">
 						<div class="ban-cap">
@@ -276,7 +277,7 @@
 		{@const wide = wides[win.title_id]}
 		<div class="rw" data-testid="report-window">
 			<div class="rw-art" class:noart={!wide && !win.poster}>
-				{#if wide}<img class="rw-img" src={wide} alt="" />{:else if win.poster}<span class="rw-img soft" aria-hidden="true" style:background-image={`url("${poster(win)}")`}></span>{/if}
+				{#if wide}<img class="rw-img" src={wide} alt="" />{:else if win.poster}<span class="rw-img" class:soft={win.title_kind !== 'artist'} aria-hidden="true" style:background-image={`url("${poster(win)}")`}></span>{/if}
 				<a class="rw-go" href={to(reportHref(win))} aria-label="Open {win.title_name}" title="Open the title"><Icon name="arrowUpRight" size={16} /></a>
 				<span class="rw-state" class:ok={!open}><span class="dot"></span>{win.state_label}</span>
 				<div class="rw-kind">

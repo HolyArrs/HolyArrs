@@ -274,7 +274,6 @@
 				{/if}
 			{/snippet}
 		</TitleHero>
-		{#if artist && mayReport}<ReportSheet bind:open={reportOpen} title={artist} album={{ id: album.id, name: album.name, tracks: tracks ?? [] }} />{/if}
 
 		<TitleSection id="h-tracks" title="Tracks" primary>
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
@@ -412,6 +411,8 @@
 				{/if}
 			</dialog>
 		{/if}
+		<!-- Last in the page, never right after the hero: title-page.css gives the hero's next sibling its top margin, which would pull the sheet up. -->
+		{#if artist && mayReport}<ReportSheet bind:open={reportOpen} title={artist} album={{ id: album.id, name: album.name, tracks: tracks ?? [] }} />{/if}
 	</div>
 {/if}
 </PageLoader>
