@@ -326,7 +326,7 @@
 			] as const
 		)
 			.filter(([k, , , part]) => partsNow.answer?.parts.find((p) => p.part === part)?.on !== false && !(k === 'artist' && session.kid))
-			.map(([k, label, icon]): MenuItem => ({ label, icon, checked: kind === k, href: to(`/library?kind=${k}`) }))
+			.map(([k, label]): MenuItem => ({ label, checked: kind === k, onselect: () => void goto(to(`/library?kind=${k}`)) }))
 	);
 	let findOpen = $state(false);
 	let sortOpen = $state(false);
@@ -908,11 +908,11 @@
 	<h1 class="sr-only">{kindTitle}</h1>
 	<div class="toolbar" class:stuck role="toolbar" aria-label="Library view" bind:this={toolbarEl}>
 		{#if phone && shelfItems.length > 1}
-			<span class="count shelf"><Menu label="Show Movies, TV shows or Music. Now: {kindTitle}" variant="button" text={loaded && !error ? countText : kindTitle} icon="chevronDown" items={shelfItems} width={200} align="start" /></span>
+			<span class="count shelf"><Menu label="Show Movies, TV shows or Music. Now: {kindTitle}" variant="button" icon={kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film'} text={loaded && !error ? countText : kindTitle} items={shelfItems} width={200} align="start" /></span>
 		{:else}
 			<p class="count" aria-live="polite">{#if loaded && !error}{countText}{/if}</p>
 		{/if}
-		<span class="t-view"><LibraryViewSwitch value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={view !== 'overview' && !(view === 'table' && phone) ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} /></span>
+		<span class="t-view"><LibraryViewSwitch value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={view !== 'overview' && !(view === 'table' && phone) ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone} /></span>
 		<span class="filter-btn" class:on={filtersOn > 0}>
 			{#if phone}
 				<Button size="md" icon="chevronUpDown" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
@@ -927,8 +927,8 @@
 		{/if}
 		<span class="tool-gap"></span>
 		{#if view === 'table' && kind !== 'all' && !phone}<ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} />{/if}
-		{#if canManage && filter.status === 'missing' && missingCount}<Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button>{/if}
-		{#if canManage && shown.length}<span class="t-sel"><Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button></span>{/if}
+		{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button></span>{/if}
+		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
 		{#if canManage}<span class="t-add"><Menu label="Add and Library tools" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={250} align="end" /></span>{/if}
 		{#if phone && (findOpen || q)}
 			<div class="find-box">
@@ -1243,7 +1243,9 @@
 	:global(html.bar-hidden) .toolbar.stuck { transform: translateY(calc(-1 * var(--topbar, 0px))); }
 	.count { margin: 0 8px 0 0; min-width: 0; font: var(--t-headline); font-weight: 650; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.count:empty { display: none; }
-	.count.shelf :global(button[aria-haspopup]) { flex-direction: row-reverse; padding-inline: 4px 8px; background: none; box-shadow: none; font: var(--t-headline); font-weight: 650; color: var(--text); }
+	.count.shelf { display: inline-flex; min-width: 0; }
+	.count.shelf :global(button[aria-haspopup]) { min-width: 0; max-width: 100%; padding-inline: 0 8px; background: none; box-shadow: none; font: var(--t-headline); font-weight: 650; color: var(--text); }
+	.count.shelf :global(button[aria-haspopup] span) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	/* Sort and filter: two columns on wide screens, one in the phone sheet. */
 	.sf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 4px 16px; max-height: min(70vh, 560px); overflow: auto; overscroll-behavior: contain; }
 	.sf-col { display: flex; flex-direction: column; min-width: 0; }
@@ -1425,11 +1427,13 @@
 		/* Two rows: count, search, select, add; then view and size, sort and filter. */
 		.count { order: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; }
 		.t-find { order: 1; }
-		.t-sel { order: 2; }
 		.t-add { order: 3; }
 		.tool-gap { display: block; order: 4; flex-basis: 100%; height: 0; }
 		.t-view { order: 5; }
 		.filter-btn { order: 6; }
+		.t-sel { order: 7; margin-left: auto; }
+		.t-miss { order: 8; flex-basis: 100%; }
+		.t-miss :global(button) { width: 100%; }
 		.find-box { flex-basis: 100%; max-width: none; order: 5; }
 		.sf { grid-template-columns: 1fr; max-height: none; overflow: visible; }
 		.sf-col + .sf-col { padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--line); }

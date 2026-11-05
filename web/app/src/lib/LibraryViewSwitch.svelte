@@ -9,7 +9,8 @@
 		value,
 		onchange,
 		sizeItems,
-		sizeLabel = ''
+		sizeLabel = '',
+		compact = false
 	}: {
 		options: { value: T; label: string; icon: IconName }[];
 		value: T;
@@ -17,6 +18,8 @@
 		/** The size menu for the picked view; none hides the chevron. */
 		sizeItems?: MenuItem[] | null;
 		sizeLabel?: string;
+		/** Icons only (phones), the picked one still marked. */
+		compact?: boolean;
 	} = $props();
 	let buttons: HTMLButtonElement[] = $state([]);
 	function key(e: KeyboardEvent, i: number) {
@@ -29,7 +32,7 @@
 	}
 </script>
 
-<div class="vs" role="radiogroup" aria-label="View" data-testid="library-view">
+<div class="vs" class:compact role="radiogroup" aria-label="View" data-testid="library-view">
 	{#each options as o, i (o.value)}
 		{@const on = o.value === value}
 		<div class="seg" class:on>
@@ -55,6 +58,8 @@
 	/* The name slides open on the picked view and shut on the others. */
 	.lbl { display: inline-block; max-width: 0; margin-left: 0; overflow: hidden; opacity: 0; transition: max-width var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out), margin var(--dur) var(--ease-out); }
 	.on .lbl { max-width: 96px; margin-left: 6px; opacity: 1; }
+	.compact .on .lbl { max-width: 0; margin-left: 0; opacity: 0; }
+	.compact .on button { padding-right: 10px; }
 	.size { display: inline-flex; padding-right: 2px; }
 	.size :global(.trigger.icon) { width: 26px; height: 28px; border-radius: 6px; }
 	.size :global(.trigger.icon svg) { width: 15px; height: 15px; }
