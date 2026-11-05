@@ -105,9 +105,11 @@ function builtSite(): Plugin {
 					}
 					return next();
 				}
-				res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
 				const type = types[extname(url.pathname)];
 				const file = builtFile(url.pathname);
+				// Kept for a year only when the file is there: a request that lands while a rebuild has emptied the
+				// folder must not be remembered, or that browser keeps the failed answer and the page breaks for good.
+				res.setHeader('Cache-Control', file ? 'public, max-age=31536000, immutable' : 'no-store');
 				if (!file || !type || type === 'font/woff2' || !/\bbr\b/.test(String(req.headers['accept-encoding'] ?? ''))) return next();
 				let body = brotli.get(file);
 				if (!body) {
