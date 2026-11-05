@@ -910,7 +910,9 @@ const maxTracked = 10000
 
 // protectedKey says whether a fail key is a per-name one (sign-in name or
 // second-step ticket), which is kept for as long as its wait runs.
-func protectedKey(k string) bool { return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:") }
+func protectedKey(k string) bool {
+	return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:")
+}
 
 // pruneFails frees room in a.fails; the caller holds a.mu. Records whose wait
 // is over go first. If the map is still full (a flood of fresh addresses),
