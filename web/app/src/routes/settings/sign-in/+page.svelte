@@ -24,6 +24,7 @@
 	// Networks where sign-in may be skipped, one per line.
 	let nets = $state('');
 	let seenAddress = $state('');
+	let proxyUntrusted = $state(false);
 	let gatewayNets = $state<string[]>([]);
 	let savingNets = $state(false);
 	let hostNames = $state('');
@@ -54,6 +55,7 @@
 		local_networks?: string[];
 		seen_address?: string;
 		gateway_networks?: string[];
+		proxy_untrusted?: boolean;
 		allowed_hosts?: string[];
 		require_two_factor_admins: boolean;
 		min_password_length: number;
@@ -221,6 +223,7 @@
 		nets = (r.local_networks ?? []).join('\n');
 		seenAddress = r.seen_address ?? '';
 		gatewayNets = r.gateway_networks ?? [];
+		proxyUntrusted = r.proxy_untrusted === true;
 		hostNames = (r.allowed_hosts ?? []).join('\n');
 		requireAdmins = r.require_two_factor_admins;
 		minLength = r.min_password_length ?? 12;
@@ -416,11 +419,15 @@
 				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save networks</Button>
 			</form>
 			{#if seenAddress}<p class="hint" data-testid="seen-address">HolyArrs sees this browser as <span class="mono">{seenAddress}</span>.</p>{/if}
+			{#if proxyUntrusted}<p class="hint" data-testid="proxy-untrusted">
+					A proxy in front of HolyArrs is not trusted, so sign-in is never skipped through it. Add the proxy's address to
+					<span class="mono">HOLYARRS_TRUSTED_PROXIES</span> in the container settings.
+				</p>{/if}
 			{#if gatewayNets.length}
 				<p class="notice warn" role="status" data-testid="gateway-warn">
 					<Icon name="info" size={18} /><span
 						>{gatewayNets.join(', ')} {gatewayNets.length === 1 ? 'looks' : 'look'} like a Docker or Podman gateway address. If every device shows up as that address, anyone who can reach
-						HolyArrs opens it as the owner. Check the address above from another device; if it is the same, remove this entry.</span
+						HolyArrs opens it as the owner. Check the address above from another device; if it is the same, turn off Skip sign-in, then remove this entry.</span
 					>
 				</p>
 			{/if}

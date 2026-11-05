@@ -124,7 +124,7 @@ var containerNets = func() []*net.IPNet {
 }()
 
 // gatewayLike says whether an address looks like a container gateway:
-// 172.x.0.1 or 10.88.0.1 bridges, 10.0.2.2 (rootless) or Docker Desktop's
+// 172.x.0.1, 10.88.0.1 or 10.89.x.1 bridges, 10.0.2.2 (rootless) or Docker Desktop's
 // 192.168.65.x.
 func gatewayLike(ip net.IP) bool {
 	v4 := ip.To4()
@@ -137,6 +137,8 @@ func gatewayLike(ip net.IP) bool {
 	case v4[0] == 10 && v4[1] == 0 && v4[2] == 2 && v4[3] == 2:
 		return true
 	case (v4[0] == 172 && v4[1]&0xf0 == 16 || v4[0] == 10 && v4[1] == 88) && v4[2] == 0 && v4[3] == 1:
+		return true
+	case v4[0] == 10 && v4[1] == 89 && v4[3] == 1: // Podman user networks
 		return true
 	}
 	return false
@@ -155,6 +157,14 @@ func gatewayNets(list []string, self string) []string {
 		}
 		ones, bits := n.Mask.Size()
 		hit := me != nil && gatewayLike(me) && n.Contains(me)
+		// A /16 or narrower entry that holds its own .1 gateway, like a
+		// compose network 172.18.0.0/16 or the address 172.18.0.1.
+		if v4 := n.IP.To4(); v4 != nil && ones-(bits-32) >= 16 {
+			gw := net.IPv4(v4[0], v4[1], v4[2], 1)
+			if gatewayLike(gw) && n.Contains(gw) {
+				hit = true
+			}
+		}
 		for _, c := range containerNets {
 			if cOnes, cBits := c.Mask.Size(); cBits == bits && ones >= cOnes && c.Contains(n.IP) {
 				hit = true
@@ -169,21 +179,25 @@ func gatewayNets(list []string, self string) []string {
 
 // seenAddress is the address the local-network check reads for this
 // request: the forwarded client behind a trusted proxy, otherwise the peer.
-func (a *Auth) seenAddress(r *http.Request) string {
+// When forwarding headers come from a proxy that is not trusted (or a
+// Forwarded header is sent) the skip never applies, so it returns "" and
+// untrusted true.
+func (a *Auth) seenAddress(r *http.Request) (addr string, untrusted bool) {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		host = r.RemoteAddr
 	}
+	xff, fwd, real := r.Header.Get("X-Forwarded-For"), r.Header.Get("Forwarded"), strings.TrimSpace(r.Header.Get("X-Real-IP"))
+	if xff == "" && fwd == "" && real == "" {
+		return host, false
+	}
 	peer := net.ParseIP(strings.Trim(host, "[]"))
-	if peer == nil || !a.trustedProxy(peer) || r.Header.Get("Forwarded") != "" {
-		return host
+	if peer == nil || !a.trustedProxy(peer) || fwd != "" {
+		return "", true
 	}
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+	if xff != "" {
 		parts := strings.Split(xff, ",")
-		return strings.TrimSpace(parts[len(parts)-1])
+		return strings.TrimSpace(parts[len(parts)-1]), false
 	}
-	if real := strings.TrimSpace(r.Header.Get("X-Real-IP")); real != "" {
-		return real
-	}
-	return host
+	return real, false
 }
