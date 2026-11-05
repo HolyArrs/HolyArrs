@@ -148,8 +148,11 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 	// What a tool may write: the checked total, a small margin, and never
 	// more than the disk holds beyond its floor.
 	limit := total + unpackMargin
+	whyLimit := whyTooBig // which limit an unpack that runs past it hit
 	if free := freeSpaceOf(existingDir(parent)); free >= 0 && !rules.SkipFreeSpaceCheck {
-		limit = min(limit, max(free-int64(rules.MinFreeMB)*mib, 0))
+		if room := max(free-int64(rules.MinFreeMB)*mib, 0); room < limit {
+			limit, whyLimit = room, whyNoSpace
+		}
 	}
 	tmp := filepath.Join(parent, fmt.Sprintf(".holyarrs-unpack-%d", downloadID))
 	cleanup = func() { _ = os.RemoveAll(tmp) }
@@ -185,7 +188,9 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 				return fail(whyUnsafe)
 			case errors.Is(err, unrar.ErrEncrypted):
 				return fail(whyPassword)
-			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, unrar.ErrTooBig):
+			case errors.Is(err, unrar.ErrTooBig):
+				return fail(whyLimit)
+			case errors.Is(err, unrar.ErrUnrecognised):
 				return fail(whySafely)
 			}
 			return fail(whyDamaged)
@@ -278,8 +283,11 @@ func unpackOthers(ctx context.Context, downloadID int64, root string, firsts []s
 		}
 	}
 	limit := maxUnpack
+	whyLimit := whyTooBig // which limit an unpack that runs past it hit
 	if free := freeSpaceOf(existingDir(parent)); free >= 0 && !rules.SkipFreeSpaceCheck {
-		limit = min(limit, max(free-int64(rules.MinFreeMB)*mib, 0))
+		if room := max(free-int64(rules.MinFreeMB)*mib, 0); room < limit {
+			limit, whyLimit = room, whyNoSpace
+		}
 	}
 	tmp := filepath.Join(parent, fmt.Sprintf(".holyarrs-unpack-%d", downloadID))
 	cleanup := func() { _ = os.RemoveAll(tmp) }
@@ -296,7 +304,7 @@ func unpackOthers(ctx context.Context, downloadID int64, root string, firsts []s
 		// One limit for the whole download: what earlier archives wrote counts.
 		left := limit - dirSize(tmp)
 		if left <= 0 {
-			return fail(whyTooBig)
+			return fail(whyLimit)
 		}
 		k, _ := archive.Of(first)
 		actx, cancel := context.WithTimeout(ctx, unpackTimeout)
@@ -311,7 +319,9 @@ func unpackOthers(ctx context.Context, downloadID int64, root string, firsts []s
 				return fail(whyPassword)
 			case errors.Is(err, unrar.ErrUnsafePath):
 				return fail(whyUnsafe)
-			case errors.Is(err, unrar.ErrUnrecognised), errors.Is(err, unrar.ErrTooBig):
+			case errors.Is(err, unrar.ErrTooBig):
+				return fail(whyLimit)
+			case errors.Is(err, unrar.ErrUnrecognised):
 				return fail(whySafely)
 			}
 			return fail(whyDamaged)

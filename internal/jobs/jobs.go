@@ -451,7 +451,13 @@ type Run struct {
 	q        *Queue
 	result   map[string]any
 	prepared any
+	app      context.Context // the queue's own context: done when the app stops
 }
+
+// Stopping says the Job's context ended because the app is stopping, not
+// because someone cancelled the Job: the Job stays running in the database
+// and is run again after the restart.
+func (r *Run) Stopping() bool { return r.app != nil && r.app.Err() != nil }
 
 type preparedJob struct {
 	kind    string
@@ -523,7 +529,7 @@ func (q *Queue) run(ctx context.Context, j domain.Job) {
 		cancel()
 	}()
 
-	r := &Run{Job: j, q: q, prepared: prepared}
+	r := &Run{Job: j, q: q, prepared: prepared, app: ctx}
 	var err error
 	code := "failed"
 	if h == nil {

@@ -1944,6 +1944,11 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 	rep := m.Run(ctx, mv.ID, p, false, by, func(done, total int) {
 		_ = r.Progress(ctx, float64(done)/float64(max(total, 1)), fmt.Sprintf("%d of %d moved", done, total))
 	})
+	if r.Stopping() {
+		// The app is stopping (docker stop, an update): leave the move
+		// running so it resumes after the restart, as after a hard kill.
+		return ctx.Err()
+	}
 	state := "done"
 	if ctx.Err() != nil {
 		state = "failed"

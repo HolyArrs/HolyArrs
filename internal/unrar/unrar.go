@@ -30,14 +30,14 @@ var (
 	// ErrCompressed says an entry uses RAR compression, which this package does not unpack.
 	ErrCompressed = errors.New("the RAR files use compression")
 	// ErrEncrypted says an entry or a header is password protected.
-	ErrEncrypted = errors.New("the RAR files are password protected")
+	ErrEncrypted = errors.New("the archive files are password protected")
 	// ErrUnsafePath says an entry would land outside the target folder.
-	ErrUnsafePath = errors.New("a RAR entry has an unsafe path")
+	ErrUnsafePath = errors.New("an archive entry has an unsafe path")
 	// ErrCorrupt says the set is damaged, cut short or has a volume missing.
-	ErrCorrupt = errors.New("the RAR files are damaged or incomplete")
+	ErrCorrupt = errors.New("the archive files are damaged or incomplete")
 	// ErrUnrecognised says the set holds a link, a special file or a block
 	// this package does not understand; nothing from it is unpacked.
-	ErrUnrecognised = errors.New("the RAR files hold something that is not understood")
+	ErrUnrecognised = errors.New("the archive files hold something that is not understood")
 	// ErrOldFormat says the file is a RAR from before RAR 1.5 (signature
 	// "RE~^"), which neither this package nor the decoder reads.
 	ErrOldFormat = errors.New("the RAR files use the RAR format from before RAR 1.5")
