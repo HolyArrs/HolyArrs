@@ -46,6 +46,8 @@
 	let kind = $state<Kind>('jackett');
 	let address = $state('');
 	let key = $state('');
+	// The connection being edited: the form starts filled in; a new address replaces it.
+	let editingId = $state<number | null>(null);
 	let callback = $state('');
 	// Filled from this page's address; it opens for typing only on Change, a
 	// server error on it, or when this page is on localhost (Prowlarr can't use that).
@@ -97,7 +99,17 @@
 		if (!/^(localhost|127\.|\[::1\])/.test(location.hostname)) callback = location.origin + to('/').replace(/\/$/, '');
 	});
 
+	function editBridge(b: Bridge) {
+		kind = b.kind;
+		address = b.url;
+		if (b.callback_url) callback = b.callback_url;
+		key = '';
+		startConnect();
+		editingId = b.id;
+	}
+
 	function startConnect() {
+		editingId = null;
 		open = true;
 		result = null;
 		errors = {};
@@ -147,6 +159,9 @@
 		connecting = true;
 		try {
 			const b = await api.post<Bridge & { keys?: Record<string, string> }>('/bridges', body());
+			// Edited to a new address: the old connection goes, its Sources with it.
+			if (editingId != null && b.id !== editingId) await api.del(`/bridges/${editingId}`).catch(() => {});
+			editingId = null;
 			toasts.push(b.kind === 'jackett' ? `Jackett connected: ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added.` : 'Prowlarr connected. Sources will appear shortly.', 'ok');
 			open = false;
 			key = '';
@@ -233,6 +248,7 @@
 						{#if mayEdit}
 							<div class="row-acts">
 								{#if !compact}<button type="button" class="quiet" disabled={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</button>{/if}
+								<button type="button" class="quiet" onclick={() => editBridge(b)} data-testid="bridge-edit">Edit</button>
 								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">{compact ? 'Remove' : 'Disconnect…'}</button>
 							</div>
 						{/if}
@@ -253,7 +269,7 @@
 				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include the base path, if any.' : undefined} error={errors.url}>
 					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://jackett:9117' : 'http://prowlarr:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
-				<Field id="br-key" label="API key" hint={kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
+				<Field id="br-key" label="API key" hint={editingId != null ? 'Enter it again to save.' : kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
 					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
@@ -288,9 +304,9 @@
 				{/if}
 				<div class="acts">
 					{#if result?.tag}<span class="tag" role="status" data-testid="bridge-result" title={result.text}><Icon name="check" size={12} stroke={2.5} />{result.tag}</span>{/if}
-					<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; }}>Cancel</Button>
+					<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>Cancel</Button>
 					<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
-					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">Connect</Button>
+					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : 'Connect'}</Button>
 				</div>
 			</div>
 		{/if}
