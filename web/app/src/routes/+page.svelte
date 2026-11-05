@@ -172,6 +172,13 @@
 		wantDetails(a);
 		return askDetails(a)?.poster || undefined;
 	}
+	const askKind = (a: Ask): 'movie' | 'show' | 'artist' => (a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'artist' : 'movie');
+	/** The ask's wide picture, for a wide card: the title's backdrop or the artist's wide photo (the same ones the Requests cards show). */
+	function askWide(a: Ask): string | undefined {
+		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] || undefined;
+		wantDetails(a);
+		return askDetails(a)?.backdrop || undefined;
+	}
 	function artFailed(a: Ask, pic: string) {
 		if (pic === a.poster) badArt.add(a.id);
 		else noArt.add(a.id);
@@ -610,27 +617,42 @@
 			{:else if row === 'arrived'}
 				{@render wideRow(home?.arrived ?? [], 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to('/library') })}
 			{:else if row === 'approval' && waiting.length}
-				<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Requests page" href={to('/requests')} item="var(--poster-item)">
-					{#each waiting.slice(0, 20) as a (a.id)}
-						{@const pic = askPic(a)}
-						{#key pic}<PosterCard title={a.name} href={to(`/requests?ask=${a.id}`)} image={pic} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />{/key}
-					{/each}
-				</Shelf>
+				<!-- The asks rows use the same wide cards as the rows around them: the title's wide picture, who asked under it. -->
+				<div class="wide-row" data-testid="home_approval">
+					<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Requests page" href={to('/requests')} item="var(--title-item)">
+						{#each waiting.slice(0, 20) as a (a.id)}
+							{@const wide = askWide(a)}
+							{@const pic = askPic(a)}
+							{#key `${wide}|${pic}`}
+								<WideCard cover title={a.name} kind={askKind(a)} typed href={to(`/requests?ask=${a.id}`)} image={wide} poster={pic} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
+							{/key}
+						{/each}
+					</Shelf>
+				</div>
 			{:else if row === 'asks' && mine.length}
-				<Shelf title="Your asks" subtitle="{mine.length} {mine.length === 1 ? 'request' : 'requests'} still open" href={to('/requests')} item="var(--poster-item)">
-					{#each mineShown as a (a.id)}
-						{@const p = a.title_id ? progress[a.title_id] : undefined}
-						{@const pic = askPic(a)}
-						{#key pic}<PosterCard
-							title={a.name}
-							href={a.title_id ? to(`/library/${a.title_id}`) : to(`/requests?ask=${a.id}`)}
-							image={pic}
-							subtitle={p ? askProgressLine(p).replace(/^Downloading /, '') : a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
-							progress={p && p.state === 'downloading' ? Math.round(p.progress * 100) : undefined}
-							owned={askMark(a)}
-						/>{/key}
-					{/each}
-				</Shelf>
+				<div class="wide-row" data-testid="home_asks">
+					<Shelf title="Your asks" subtitle="{mine.length} {mine.length === 1 ? 'request' : 'requests'} still open" href={to('/requests')} item="var(--title-item)">
+						{#each mineShown as a (a.id)}
+							{@const p = a.title_id ? progress[a.title_id] : undefined}
+							{@const wide = askWide(a)}
+							{@const pic = askPic(a)}
+							{#key `${wide}|${pic}`}
+								<WideCard
+									cover
+									title={a.name}
+									kind={askKind(a)}
+									typed
+									href={a.title_id ? to(`/library/${a.title_id}`) : to(`/requests?ask=${a.id}`)}
+									image={wide}
+									poster={pic}
+									subtitle={p ? askProgressLine(p).replace(/^Downloading /, '') : a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
+									progress={p && p.state === 'downloading' ? Math.round(p.progress * 100) : undefined}
+									owned={askMark(a)}
+								/>
+							{/key}
+						{/each}
+					</Shelf>
+				</div>
 			{:else if row === 'new_season'}
 				{@render wideRow(home?.new_seasons ?? [], 'home_new_season', { title: 'New season of a show you have' })}
 			{:else if row === 'following'}
