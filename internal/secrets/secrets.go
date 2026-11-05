@@ -39,6 +39,9 @@ var (
 	ErrNotFound = errors.New("no such secret")
 	// ErrWrongKey means the master key cannot open the stored secrets.
 	ErrWrongKey = errors.New("the master key does not match this database; put back the key file that belongs to it")
+	// ErrKeyMissing means the key file is gone but the database holds
+	// secrets that only it can open, so no new key is made.
+	ErrKeyMissing = errors.New("master key missing")
 )
 
 // LoadKey reads the master key. named, when set, is a key file the person
@@ -68,8 +71,8 @@ func LoadKey(dir, named string) ([]byte, error) {
 	if saved, err := SavedIn(dir); err != nil {
 		return nil, fmt.Errorf("master key: checking the database for saved secrets: %w", err)
 	} else if saved {
-		return nil, fmt.Errorf("the master key file %s is missing, but the database already holds saved secrets that only that key can open; "+
-			"put the key file (or your key kit renamed to %s) back in the config folder, or name it in %s", p, KeyFile, EnvKeyFile)
+		return nil, fmt.Errorf("%w: the master key file %s is missing, but the database already holds saved secrets that only that key can open; "+
+			"put the key file (or your key kit renamed to %s) back in the config folder, or name it in %s", ErrKeyMissing, p, KeyFile, EnvKeyFile)
 	}
 	key := make([]byte, KeySize)
 	if _, err := rand.Read(key); err != nil {
@@ -104,7 +107,7 @@ func SavedIn(dir string) (bool, error) {
 	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
 		return false, nil
 	}
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(p)+"?mode=ro")
+	db, err := store.OpenReadOnly(dir)
 	if err != nil {
 		return false, err
 	}
@@ -547,7 +550,7 @@ func plainSettings(tx *sql.Tx) ([]plainSetting, error) {
 // CheckFile reports whether key opens the secrets in a database file, such
 // as one inside a backup. A database without secrets passes.
 func CheckFile(path string, key []byte) error {
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?mode=ro")
+	db, err := sql.Open("sqlite", store.FileURI(path)+"?mode=ro")
 	if err != nil {
 		return err
 	}

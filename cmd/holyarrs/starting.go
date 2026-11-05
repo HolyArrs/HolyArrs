@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/backup"
+	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -64,6 +65,10 @@ func publicReason(err error) string {
 		return "the backup before updating failed, so nothing was changed. Check that the backups folder can be written, see the log, and restart."
 	case errors.Is(err, store.ErrMigration):
 		return "the update of the data failed and the step that failed was undone. You can run the version you had before again (change the image tag back); if it says the data is newer, its page offers to put back the data from before the update." + goBack
+	case errors.Is(err, secrets.ErrKeyMissing):
+		return "the master key file is missing. Put " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + ") back in the config folder, then restart. Nothing was changed."
+	case errors.Is(err, secrets.ErrWrongKey):
+		return "the master key does not match this database. Put back the key file that belongs to it, then restart. Nothing was changed."
 	case errors.Is(err, store.ErrCheckFailed):
 		return "the data check after updating failed. You can run the version you had before again (change the image tag back); its page offers to put back the data from before the update." + goBack
 	}

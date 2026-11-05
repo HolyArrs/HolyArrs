@@ -211,3 +211,21 @@ func TestDoctorKeyFreshInstall(t *testing.T) {
 		t.Fatalf("fresh install: key check failed %+v\n%s", c, r.Text())
 	}
 }
+
+// A key file named in HOLYARRS_MASTER_KEY_FILE that is not there stops the
+// start even on a fresh install, so the doctor must not pass it.
+func TestDoctorKeyFromEnvFileMissing(t *testing.T) {
+	dir := t.TempDir()
+	s, err := store.Open(dir, store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = s.Close()
+	named := filepath.Join(t.TempDir(), "gone.key")
+	t.Setenv(secrets.EnvKeyFile, named)
+	r := runDoctorEnv(t, dir)
+	c := worstKey(t, r)
+	if c.Status != Fail || !strings.Contains(c.Text, secrets.EnvKeyFile) || strings.Contains(c.Text, "first start") {
+		t.Fatalf("missing named key file: want Fail naming %s, got %+v\n%s", secrets.EnvKeyFile, c, r.Text())
+	}
+}

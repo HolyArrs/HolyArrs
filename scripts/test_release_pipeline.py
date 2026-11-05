@@ -110,6 +110,11 @@ class ReleaseBuild(unittest.TestCase):
         self.assertRegex(self.text, r"id:\s*betacheck")
         self.assertRegex(self.text, r"value=beta\b[^\n]*enable=\$\{\{[^}]*betacheck")
 
+    def test_runs_queue_so_beta_never_goes_back(self):
+        # Two tag runs at once would both read the old beta and the last push
+        # would win, so runs queue like promote.yml.
+        self.assertRegex(self.text, r"\nconcurrency:\s*\n\s+group:\s*release\s*\n\s+cancel-in-progress:\s*false")
+
     def test_ref_and_tag_guards(self):
         scripts = "\n".join(run_blocks(self.text))
         self.assertIn("refs/tags/", scripts, "no ref guard: the build must run from a version tag")

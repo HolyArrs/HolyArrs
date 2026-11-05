@@ -20,12 +20,20 @@ func masterKeyChecks(r *Report, dir string) {
 		return
 	}
 	p := os.Getenv(secrets.EnvKeyFile)
-	if p == "" {
+	named := p != ""
+	if !named {
 		p = filepath.Join(dir, secrets.KeyFile)
 	}
 	saved, serr := secrets.SavedIn(dir)
 	st, err := os.Stat(p)
 	if errors.Is(err, fs.ErrNotExist) {
+		// A named key file must exist: only the config folder's default is
+		// made on first start.
+		if named {
+			r.add(s, Fail, p+" (named in "+secrets.EnvKeyFile+") is missing; HolyArrs will not start without it",
+				"put the key file back at "+p+" or unset "+secrets.EnvKeyFile)
+			return
+		}
 		if saved {
 			r.add(s, Fail, p+" is missing, but the database holds saved secrets that only that key can open",
 				"put the key file (or your key kit renamed to "+secrets.KeyFile+") back at "+p+", or name it in "+secrets.EnvKeyFile)

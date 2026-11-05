@@ -132,3 +132,46 @@ func TestKeyKitFileIsAValidKeyFile(t *testing.T) {
 		t.Fatal("a file with only comment lines was taken as a key")
 	}
 }
+
+// A config folder whose name holds '#' or '?' must still be read as one
+// path: otherwise SQLite stops the path there, opens some other file read
+// and write, sees no secrets and a new key is made over the saved ones.
+func TestLoadKeyRefusesNewKeyInFolderWithHashOrQuestion(t *testing.T) {
+	for _, name := range []string{"holy#arrs", "holy%3Farrs", "holy%23arrs"} {
+		t.Run(name, func(t *testing.T) {
+			parent := t.TempDir()
+			dir := filepath.Join(parent, name)
+			s := openStore(t, dir)
+			key, err := LoadKey(dir, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			v, err := Open(context.Background(), s, key)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := v.Put(context.Background(), "source_api_key", "lab-value"); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Remove(filepath.Join(dir, KeyFile)); err != nil {
+				t.Fatal(err)
+			}
+			if got, err := LoadKey(dir, ""); err == nil {
+				t.Fatalf("made a new key (%d bytes) in %q for a database that holds secrets", len(got), name)
+			} else if !errors.Is(err, ErrKeyMissing) {
+				t.Fatalf("want ErrKeyMissing, got %v", err)
+			}
+			if err := CheckFile(filepath.Join(dir, "holyarrs.db"), make([]byte, KeySize)); !errors.Is(err, ErrWrongKey) {
+				t.Fatalf("CheckFile in %q with another key: %v", name, err)
+			}
+			ents, _ := os.ReadDir(parent)
+			if len(ents) != 1 {
+				var names []string
+				for _, e := range ents {
+					names = append(names, e.Name())
+				}
+				t.Fatalf("stray files next to the config folder: %v", names)
+			}
+		})
+	}
+}
