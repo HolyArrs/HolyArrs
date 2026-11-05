@@ -14,6 +14,7 @@
 	import { needsProblem, type PartName } from '#lib/parts.ts';
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
+	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import { emptyForm, formBody, kindWords, testVersion, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
 	import type { LibraryFolder } from '#lib/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
@@ -220,7 +221,10 @@
 
 <svelte:head><title>{titles[step].h} · HolyArrs</title></svelte:head>
 
-<div class="welcome">
+{#if firstRun}<SigninBackdrop />{/if}
+<div class="welcome" class:over-art={firstRun}>
+	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
+	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt="" width="32" height="32" /><span>HolyArrs</span></div>
 	{#if firstRun && prev && session.can('users')}
 		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label="Back" onclick={() => go(prev)} disabled={busy} /></span>
@@ -371,6 +375,7 @@
 			</div>
 		</div>
 	{/if}
+	</div>
 </div>
 
 <style>
@@ -383,7 +388,36 @@
 	}
 	.brand { display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 17px/1 var(--font-ui); color: var(--text); }
 	/* The round back button sits top-left, level with the logo. */
-	.corner { position: absolute; top: calc(clamp(28px, 7vh, 72px) - 2px); left: 0; }
+	.corner { position: absolute; top: -2px; left: 0; }
+	.sheet { position: relative; }
+	/* First run: the sign-in page's glass over its backdrop (same tint and blur). */
+	.over-art { z-index: 1; }
+	.sheet.glass {
+		--pad: clamp(22px, 4vw, 34px);
+		padding: var(--pad);
+		border-radius: 28px;
+		background: rgb(14 14 18 / 0.46);
+		-webkit-backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
+		backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
+		border: 1px solid rgb(255 255 255 / 0.07);
+		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35), 0 30px 90px rgb(0 0 0 / 0.55), 0 6px 18px rgb(0 0 0 / 0.35);
+	}
+	.sheet.glass.light {
+		background: rgb(255 253 250 / 0.66);
+		-webkit-backdrop-filter: blur(64px) saturate(1.5) brightness(1.5);
+		backdrop-filter: blur(64px) saturate(1.5) brightness(1.5);
+		border-color: rgb(255 255 255 / 0.55);
+		box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25), 0 24px 70px rgb(0 0 0 / 0.2), 0 4px 14px rgb(0 0 0 / 0.08);
+		--focus-ring: 0 0 0 2px rgb(255 255 255 / 0.9), 0 0 0 4px #1d1d1f;
+	}
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+		.sheet.glass { background: rgb(18 18 22 / 0.92); }
+		.sheet.glass.light { background: rgb(248 246 242 / 0.94); }
+	}
+	.glass .corner { top: calc(var(--pad) - 2px); left: var(--pad); }
+	.glass .head { margin-bottom: 22px; }
+	/* Inside the glass the step's card is just its content. */
+	.sheet.glass > :global(.card) { background: transparent; box-shadow: none; padding: 0; border-radius: 0; }
 	.dots { display: flex; justify-content: center; gap: 6px; margin: 22px 0 0; }
 	.dots li { width: 6px; height: 6px; border-radius: 3px; background: var(--line-strong); transition: width var(--dur) var(--ease-out), background var(--dur) var(--ease-out); }
 	.dots li.done { background: var(--text-muted); }
@@ -391,7 +425,7 @@
 	.head { margin: 18px 0 28px; text-align: center; }
 	.head h1 { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
 	.head p { margin: 8px auto 0; max-width: 44ch; color: var(--text-muted); font: var(--t-body); text-wrap: pretty; }
-	.welcome > :global(.card) {
+	.sheet > :global(.card) {
 		position: relative;
 		border: 0;
 		border-radius: 24px;
