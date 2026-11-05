@@ -6,6 +6,8 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { stageOf } from '#lib/downloads/status-tabs.ts';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { artGone, lightOnDark } from '#lib/art-check.ts';
 	import type { IconName } from '#lib/Icon.svelte';
 	import { arrivedHead, askProgressLine, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, freeSpace, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, uncheckedLine, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { decisions } from '#lib/decisions.svelte.ts';
@@ -153,7 +155,9 @@
 	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
 	const arrivedCapped = $derived((home?.arrived?.length ?? 0) >= 20);
 	const arrivedToday = $derived((home?.arrived ?? []).filter((c) => c.at && localDay(new Date(c.at)) === localDay(now)).length);
-	const waitingPics = $derived(waiting.filter((a) => a.poster).slice(0, 3));
+	// Posters that could not load drop out, and the next ask with a poster takes their place.
+	const badArt = new SvelteSet<number>();
+	const waitingPics = $derived(waiting.filter((a) => a.poster && !badArt.has(a.id)).slice(0, 3));
 	// System numbers, from what this page already read.
 	const speed = $derived(fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
 	const queued = $derived(fetchingAll.filter((d) => stageOf(d) === 'queued').length);
@@ -326,7 +330,7 @@
 				<img src={tall ? p.c.poster || p.c.backdrop : p.c.backdrop || p.c.poster} alt="" loading="lazy" decoding="async" />
 				<span class="lab">{p.label}</span>
 				{#if !tall && p.c.backdrop && p.c.logo && p.c.kind !== 'artist'}
-					<img class="logo" src={p.c.logo} alt={p.c.name} loading="lazy" decoding="async" />
+					<img class="logo" src={p.c.logo} alt={p.c.name} loading="lazy" decoding="async" use:lightOnDark />
 				{:else}
 					<span class="nm">{p.c.name}</span>
 				{/if}
@@ -368,7 +372,7 @@
 					{:else if key === 'ask' && approver && !kid && waiting.length}
 						<a class="tile stat {cls}" style="--kc: var(--wait)" href={to('/requests')}>
 							{@render head('requests', 'To approve')}
-							<span class="ask-stack" aria-hidden="true">{#each waitingPics as a (a.id)}<img src={a.poster} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
+							<span class="ask-stack" aria-hidden="true">{#each waitingPics as a (a.id)}<img src={a.poster} alt="" decoding="async" use:artGone={() => badArt.add(a.id)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
 							<span class="sm">{n(waiting.length)} {waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
 						</a>
 					{:else if key === 'ask'}
@@ -623,7 +627,7 @@
 	.tile.wide { grid-column: span 2; }
 	.tile.tall { grid-row: span 2; }
 	/* Count tiles: each has its own colour (--kc) for the icon chip, a soft wash from the top corner and the arrow. */
-	.stat { --kc: var(--text-muted); background: radial-gradient(140% 110% at 0% 0%, color-mix(in oklab, var(--kc) 17%, transparent), transparent 62%), color-mix(in oklab, var(--kc) 4%, var(--surface-1)); outline-color: color-mix(in oklab, var(--kc) 16%, var(--line)); }
+	.stat { --kc: var(--text-muted); background: radial-gradient(140% 110% at 0% 0%, color-mix(in oklab, var(--kc) 17%, transparent), transparent 62%), var(--tile-bg); --tile-bg: color-mix(in oklab, var(--kc) 4%, var(--surface-1)); outline-color: color-mix(in oklab, var(--kc) 16%, var(--line)); }
 	.head { display: flex; align-items: center; gap: 10px; min-width: 0; }
 	.kchip { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 11px; background: color-mix(in oklab, var(--kc) 18%, var(--surface-2)); color: var(--kc); }
 	.lab { flex: 1; min-width: 0; font: var(--t-callout); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -654,11 +658,15 @@
 	.pic.big .nm { font-size: 30px; letter-spacing: -0.02em; }
 	.pic .logo { width: auto; height: auto; max-width: 55%; max-height: 72px; margin: 4px 0 2px; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
 	.pic.big .logo { max-height: 104px; }
+	/* A dark wordmark (black letters made for light posters) is drawn white, its shape unchanged, like on the title page. */
+	.pic .logo:global(.dark) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
 	.pic .sm { color: rgb(255 255 255 / 84%); }
 
-	.ask-stack { margin-top: auto; display: flex; align-items: flex-end; }
-	.ask-stack img { width: 44px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-right: -12px; box-shadow: 0 0 0 2px var(--surface-1); }
-	.ask-stack b { margin-left: 20px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
+	/* Waiting asks: up to three posters overlapping left to right, each ringed in the tile's own colour, then a round +N. */
+	.ask-stack { margin-top: auto; display: flex; align-items: center; }
+	.ask-stack img { width: 46px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px; margin-left: -14px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--tile-bg), 0 4px 12px rgb(0 0 0 / 18%); }
+	.ask-stack img:first-child { margin-left: 0; }
+	.ask-stack b { min-width: 32px; height: 32px; margin-left: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: color-mix(in oklab, var(--kc) 16%, var(--surface-2)); color: var(--kc); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 	/* System tiles */
 	.dl .num { margin-top: 10px; }
@@ -706,8 +714,8 @@
 		.head { gap: 8px; }
 		.lab { font: var(--t-subhead); font-weight: 600; }
 		.go { display: none; }
-		.ask-stack img { width: 32px; margin-right: -10px; border-radius: 6px; }
-		.ask-stack b { margin-left: 16px; }
+		.ask-stack img { width: 34px; margin-left: -11px; border-radius: 6px; }
+		.ask-stack b { min-width: 28px; height: 28px; margin-left: 8px; }
 		.tile { padding: 12px 14px; border-radius: 18px; }
 		.num { font-size: 28px; }
 		.word { font-size: 20px; }
