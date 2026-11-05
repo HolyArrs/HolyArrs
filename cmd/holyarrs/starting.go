@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"errors"
 	"html"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -49,6 +50,18 @@ func startingHandler(updating *atomic.Bool) http.Handler {
 }
 
 // goBack is how to return to the data from before the update.
+const newMachine = " Moving to a new machine? See \"Move to a new machine\" in the HolyArrs docs, in docs/backups.md."
+
+// keyRecheck is how often a held key file problem is checked again.
+var keyRecheck = 10 * time.Second
+
+// keyNeedsPerson reports whether a master key error is about the key file
+// (missing, wrong, cannot be read), so the start holds a plain page instead
+// of exiting into a restart loop.
+func keyNeedsPerson(err error) bool {
+	return errors.Is(err, secrets.ErrKeyMissing) || errors.Is(err, secrets.ErrWrongKey) || errors.Is(err, secrets.ErrKeyUnreadable)
+}
+
 const goBack = " To go back on Docker, run `docker exec <container> /holyarrs restore --pre-update`, then `docker restart <container>`. Without Docker: stop HolyArrs, run holyarrs restore --pre-update, start it again."
 
 // failedHandler answers when the data could not be opened for a reason a
@@ -80,9 +93,17 @@ func publicReason(err error) string {
 	case errors.Is(err, store.ErrMigration):
 		return "the update of the data failed and the step that failed was undone. You can run the version you had before again (change the image tag back); if it says the data is newer, its page offers to put back the data from before the update." + goBack
 	case errors.Is(err, secrets.ErrKeyMissing):
-		return "the master key file is missing. Put " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + ") back in the config folder, then restart. Nothing was changed."
+		return "the master key file is missing. Put " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + ") back in the config folder, then restart. Nothing was changed." + newMachine
 	case errors.Is(err, secrets.ErrWrongKey):
-		return "the master key does not match this database. Put back the key file that belongs to it, then restart. Nothing was changed."
+		return "the master key does not match this database. Put back the key file that belongs to it, then restart. Nothing was changed." + newMachine
+	case errors.Is(err, secrets.ErrKeyIsFolder):
+		return "the master key path is a folder, not the key file. Docker makes an empty folder there when the host file it should mount did not exist. Remove that folder on the host, put the key file at that path (check the host side of the volume for typos), then restart. Nothing was changed."
+	case errors.Is(err, secrets.ErrKeyUnreadable) && errors.Is(err, fs.ErrNotExist):
+		return "the master key file named in " + secrets.EnvKeyFile + " is not there. Check that the file is mounted at that path, or remove " + secrets.EnvKeyFile + " to use " + secrets.KeyFile + " in the config folder, then restart. Nothing was changed."
+	case errors.Is(err, secrets.ErrKeyUnreadable) && errors.Is(err, fs.ErrPermission):
+		return "the master key file cannot be read by HolyArrs: its owner or mode is wrong. On the host, give it to your PUID and PGID and make it private: chown PUID:PGID " + secrets.KeyFile + " and chmod 600 " + secrets.KeyFile + " (use your own numbers and the file's real path), then restart. Nothing was changed."
+	case errors.Is(err, secrets.ErrKeyUnreadable):
+		return "the master key file cannot be read: it does not hold a key. Put back a good copy of " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + "), then restart. Nothing was changed."
 	case errors.Is(err, store.ErrCheckFailed):
 		return "the data check after updating failed. You can run the version you had before again (change the image tag back); its page offers to put back the data from before the update." + goBack
 	}

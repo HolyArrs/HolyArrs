@@ -838,7 +838,7 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 	}
 	if m.CheckKey != nil {
 		if err := m.CheckKey(filepath.Join(out, store.MainFile)); err != nil {
-			return fmt.Errorf("the backup's secrets cannot be read with this master key: %w", err)
+			return fmt.Errorf("the backup's secrets cannot be read with this master key (moving to a new machine? see \"Move to a new machine\" in the HolyArrs docs, in docs/backups.md): %w", err)
 		}
 	}
 	staged := filepath.Join(m.Dir, StagedDir)
@@ -947,7 +947,9 @@ func syncMoveDirs(dir string, j journal) error {
 				continue
 			}
 			seen[d] = true
-			if err := store.SyncDir(d); err != nil {
+			// A folder already gone (restore-staged removed just before a
+			// cut-off) has nothing left to sync.
+			if err := store.SyncDir(d); err != nil && !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
 		}
@@ -984,6 +986,16 @@ func donePrefix(dir string, j journal) int {
 	return n
 }
 
+// allMoved reports whether every move's new name is there.
+func allMoved(dir string, j journal) bool {
+	for _, m := range j.Moves {
+		if !present(filepath.Join(dir, m.To)) {
+			return false
+		}
+	}
+	return true
+}
+
 // recoverJournal finishes a restore that was cut off, or undoes it when it
 // cannot be finished, so the live files are never a mix of old and new.
 func recoverJournal(dir string) error {
@@ -998,6 +1010,12 @@ func recoverJournal(dir string) error {
 	if err := json.Unmarshal(b, &j); err != nil || len(j.Moves) == 0 {
 		// Written through a synced rename, so a bad journal was never used.
 		log.Printf("backup: ignoring an unreadable %s", JournalFile)
+		return removeJournal(dir)
+	}
+	// Cut off after restore-staged was removed: every move was done and
+	// synced, so only the journal is left to clear.
+	if !present(filepath.Join(dir, StagedDir)) && allMoved(dir, j) {
+		log.Printf("backup: a restore was cut off after it had finished; the replaced databases are in %s", filepath.Join(dir, j.Keep))
 		return removeJournal(dir)
 	}
 	done := donePrefix(dir, j)
