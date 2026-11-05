@@ -1,0 +1,105 @@
+"""Docs and messages match the bare image: image tags, restart policy,
+Podman, the health table and the words on the buttons."""
+import pathlib
+import re
+import unittest
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+DOCS = ROOT / "docs"
+
+
+def read(p: pathlib.Path) -> str:
+    return p.read_text(encoding="utf-8")
+
+
+def section(text: str, heading: str) -> str:
+    m = re.search(r"^(#+)\s+" + re.escape(heading) + r"[^\n]*\n(.*?)(?=^#{1,%d}\s|\Z)" % 6, text, re.M | re.S)
+    return m.group(2) if m else ""
+
+
+class ImageTags(unittest.TestCase):
+    def test_docs_pull_the_beta_tag(self):
+        # Before the first stable there is no :latest; every example pulls the
+        # same tag as the main compose file. Placeholders like <tag> are fine.
+        main = re.search(r"ghcr\.io/coderluii/holyarrs:([\w.-]+)", read(DOCS / "install.md")).group(1)
+        self.assertEqual(main, "beta")
+        for page in [*sorted(DOCS.glob("*.md")), ROOT / "README.md"]:
+            for tag in re.findall(r"ghcr\.io/coderluii/holyarrs:([\w.<>-]+)", read(page)):
+                with self.subTest(page=page.name, tag=tag):
+                    self.assertTrue(tag == main or tag.startswith("<"), f"{page.name} pulls :{tag}")
+
+
+class RestartPolicy(unittest.TestCase):
+    def test_nas_guide_names_auto_restart(self):
+        text = read(DOCS / "nas.md")
+        self.assertIn("unless-stopped", text)
+        self.assertRegex(text, r"(?i)auto-?restart")
+
+
+class Podman(unittest.TestCase):
+    def test_quadlet_is_complete(self):
+        s = section(read(DOCS / "install.md"), "Rootless Docker and Podman")
+        quadlet = re.search(r"```ini\n(.*?)```", s, re.S).group(1)
+        self.assertRegex(quadlet, r"(?m)^Volume=.*:/config:Z$")
+        # No shell in the image: a plain-text health command runs through /bin/sh.
+        self.assertIn('HealthCmd=["/holyarrs","-healthcheck"]', quadlet)
+        self.assertRegex(quadlet, r"(?m)^\[Service\]\nRestart=always")
+        run = s.split("podman run -d", 1)[1]
+        self.assertIn(":/config:Z", run)
+        self.assertIn("""--health-cmd '["/holyarrs","-healthcheck"]'""", run)
+        self.assertIn("--restart", run)
+
+
+class HealthDocs(unittest.TestCase):
+    def test_health_table_has_every_check(self):
+        s = section(read(DOCS / "alerts-and-health.md"), "Health checks")
+        for row in ("Config folder", "Waiting downloads", "Key kit", "Trailer reader"):
+            with self.subTest(row=row):
+                self.assertRegex(s, r"(?m)^\| " + re.escape(row))
+
+    def test_key_kit_and_new_machine_pointers(self):
+        health = read(DOCS / "alerts-and-health.md")
+        self.assertIn("backups.md#move-to-a-new-machine", health)
+        install = section(read(DOCS / "install.md"), "Keep the master key")
+        self.assertIn("Download key kit", install)
+        self.assertIn("holyarrs.key", install)
+        backups = read(DOCS / "backups.md")
+        self.assertIn("key kit", backups.lower())
+
+    def test_paused_row_names_the_share(self):
+        text = read(DOCS / "downloads-movies.md")
+        row = re.search(r"(?m)^\| Paused in the Downloader \|(.*)$", text).group(1)
+        self.assertIn("share", row)
+        self.assertIn("Check again", row)
+
+    def test_schedules_both_switches(self):
+        text = read(DOCS / "schedules.md")
+        self.assertIn("Rescan the Library", text.split("| Job |")[0])
+        self.assertIn("`rescan_library`", text)
+
+    def test_moved_path_maps(self):
+        s = section(read(DOCS / "move-from-other-apps.md"), "What moves")
+        self.assertRegex(s, r"(?i)remote path mappings")
+        self.assertIn("not visible here yet", s)
+
+    def test_unraid_exclusive_switch(self):
+        self.assertIn("Permit exclusive shares", read(DOCS / "nas.md"))
+        self.assertIn("Permit exclusive shares", read(ROOT / "internal" / "store" / "store.go"))
+
+
+class Wording(unittest.TestCase):
+    def test_button_words_match(self):
+        # The Downloads page button says "Check again"; no message may say "Recheck".
+        for p in (ROOT / "internal" / "downloader" / "manager.go", ROOT / "internal" / "health" / "health.go"):
+            with self.subTest(file=p.name):
+                self.assertNotIn("use Recheck", read(p))
+                self.assertIn("Check again", read(p))
+
+    def test_no_shell_steps_on_first_run(self):
+        page = read(ROOT / "web" / "app" / "src" / "routes" / "login" / "+page.svelte")
+        self.assertNotIn("doctor shows how", page)
+        self.assertIn("Forgot to map /config?", page)
+
+
+if __name__ == "__main__":
+    unittest.main()

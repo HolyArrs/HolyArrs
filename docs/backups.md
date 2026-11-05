@@ -17,7 +17,9 @@ Media, downloads, artwork and logs are outside these databases and are not in
 the zip. The master key is also excluded. Keep the key separately as explained
 in [Install: keep the master key](install.md#keep-the-master-key). Without the
 matching key, encrypted passwords and keys in a restored database cannot be
-read.
+read. The easiest copy is the key kit: the owner downloads it with
+**Download key kit** on this screen, and the health check warns until one is
+saved for the current key.
 
 HolyArrs also makes a backup before an update. Schedule retention removes only
 scheduled backups. Manual backups stay until they are deleted; after a newer

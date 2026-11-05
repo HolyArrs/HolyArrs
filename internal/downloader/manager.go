@@ -1267,7 +1267,7 @@ const WaitingReason = "the Downloader can't use the files"
 // WaitingHint ends that reason: mounting the share is not enough, since
 // qBittorrent, Deluge and Transmission keep the error until the files are
 // checked again.
-const WaitingHint = "is the share mounted? Once it is, recheck the download in the Downloader (or use Recheck on the Downloads page)"
+const WaitingHint = "is the share mounted? Once it is, recheck the download in the Downloader (or use Check again on the Downloads page)"
 
 // cantUseFiles reports a paused job its client paused because it lost
 // sight of the files: qBittorrent error, missingFiles or unknown, Deluge

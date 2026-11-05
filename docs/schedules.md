@@ -15,7 +15,9 @@ One row per scheduled Job: refresh of movie, show and artist details, the Librar
 
 **Change** (people who may change settings) sets how often it runs, within its bounds; the next run moves to now plus the new interval.
 
-People who may change settings can turn **Refresh movie details** off without stopping any other scheduled work. Off is kept across restarts. Any queued automatic movie-details run that has not started is cancelled; if one provider request is already in flight, that request may finish before the run stops. Movie names, dates and artwork can become stale while it is off. **Run now** and the Library's manual refresh still work with their usual permissions and provider pacing.
+People who may change settings can turn two schedules off: **Refresh movie details** and **Rescan the Library** (useful when NAS disks should sleep; files you add by hand are then found only with Run now). Turning one off does not stop any other scheduled work, and off is kept across restarts.
+
+For **Refresh movie details**, any queued automatic movie-details run that has not started is cancelled; if one provider request is already in flight, that request may finish before the run stops. Movie names, dates and artwork can become stale while it is off. **Run now** and the Library's manual refresh still work with their usual permissions and provider pacing.
 
 Turning automatic movie refresh on plans one run for the current time plus its interval. It does not replay missed runs.
 
@@ -41,4 +43,4 @@ The work that keeps running on its own (Download sync, Schedules, Backups, Relea
 |---|---|---|
 | `GET /api/v1/schedules` | run the Library (read scope) | `schedules` and `loops` as above |
 | `POST /api/v1/schedules/{kind}/run` | run the Library (write scope) | queue it now; `202 {"job_id": n, "already": false}`; 409 when its part is off or in safe mode |
-| `PUT /api/v1/schedules/{kind}` | settings (write scope) | `{"every_s": 1800}` for any listed schedule; `{"enabled": false}` or `{"enabled": true}` for `refresh_titles`; fields may be combined; 400 outside interval bounds |
+| `PUT /api/v1/schedules/{kind}` | settings (write scope) | `{"every_s": 1800}` for any listed schedule; `{"enabled": false}` or `{"enabled": true}` for `refresh_titles` and `rescan_library`; fields may be combined; 400 outside interval bounds |

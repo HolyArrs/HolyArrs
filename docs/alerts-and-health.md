@@ -74,14 +74,22 @@ HolyArrs checks itself every 5 minutes, when it starts, and straight after an im
 
 | Check | Fine | Warning | Broken |
 |---|---|---|---|
+| Config folder | `/config` is mapped to a host folder or named volume (no row shows) | | not mapped, so everything is lost when the container is removed or recreated; see [Forgot to map /config?](install.md#forgot-to-map-config) |
 | Library folder | there and writable | on another disk than the downloads (imports are copied) | gone (disk or share not mounted) or not writable |
 | Free space | room to spare | under 1 GB free (a setting) | under the free-space floor, or an import was just refused for space (until the room is back) |
 | Source | working, or paused by you | cannot be reached, or turned down its key | |
 | Downloader | working, or paused by you | does not answer, or turned down the sign-in | |
+| Waiting downloads | no download waits for its files | a download waits because its Downloader can't use the files, most often a share that mounted late | one has waited about 3 days |
 | Backups | a recent backup | no backup yet, or the newest is older than two backup periods | the last scheduled backup failed |
+| Key kit (shown as Backups) | a key kit was saved for the current master key | no key kit saved yet: the owner downloads it on the Backups page | |
+| Trailer reader (when trailers are on) | lookups work | 5 different videos failed in a row, or YouTube turned the reader away | |
 | Update | this is the newest version | a newer HolyArrs is out | |
 
 The update check only runs when **Update check link** is set (on This app). It reads that link at most every 6 hours.
+
+**Waiting downloads.** Mounting the share is often not enough: qBittorrent, Deluge and Transmission keep the error until the files are checked again. Once the share is there, use **Check again** on the download's row on the Downloads page (or recheck it in the Downloader).
+
+**Key kit.** Backups never hold the master key that opens saved passwords and keys. The key kit is that key as a file; only the owner can download it (Settings > Backups > **Download key kit**). Keep it apart from your backups. To use a backup on a new machine, see [Move to a new machine](backups.md#move-to-a-new-machine).
 
 ### Alerts for health
 

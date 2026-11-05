@@ -176,7 +176,8 @@ class PackagingTests(unittest.TestCase):
         doc = ET.fromstring(nas.render(image, config, 6262, {"/movies": "/mnt/user/media/movies", "/downloads": "/mnt/user/media/downloads"}))
         self.assertEqual(doc.findtext("Repository"), image)
         self.assertEqual(doc.findtext("Privileged"), "false")
-        self.assertIsNone(doc.find("ExtraParams"))
+        # In-app Restart, safe mode and restore exit and rely on a restart policy.
+        self.assertIn("--restart unless-stopped", doc.findtext("ExtraParams") or "")
         self.assertEqual(doc.findtext("WebUI"), "http://[IP]:[PORT:6262]/")
         configs = {c.attrib["Target"]: c for c in doc.findall("Config")}
         paths = [(c.attrib["Target"], c.text or "", c.attrib["Required"]) for c in doc.findall("Config") if c.attrib["Type"] == "Path"]
