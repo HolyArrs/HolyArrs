@@ -114,22 +114,23 @@ func fixOwner(configDir string, uid, gid int) {
 	if !ok {
 		return
 	}
-	owner := func(name string) (int, int, bool) {
+	dev := uint64(st.Dev)
+	skip := mountsInside(configDir)
+	owner := ownerOnFolder(func(name string) (int, int, uint64, bool) {
 		info, err := r.Lstat(name)
 		if err != nil {
-			return 0, 0, false
+			return 0, 0, 0, false
 		}
 		s, ok := info.Sys().(*syscall.Stat_t)
 		if !ok {
-			return 0, 0, false
+			return 0, 0, 0, false
 		}
-		return int(s.Uid), int(s.Gid), true
-	}
-	if !NeedsOwnerFix(int(st.Uid), int(st.Gid), uid, gid) && !OwnFilesNeedFix(owner, uid, gid) {
+		return int(s.Uid), int(s.Gid), uint64(s.Dev), true
+	}, dev, skip)
+	topRight := !NeedsOwnerFix(int(st.Uid), int(st.Gid), uid, gid)
+	if topRight && !OwnFilesNeedFix(owner, uid, gid) {
 		return
 	}
-	dev := st.Dev
-	skip := mountsInside(configDir)
 	log.Printf("holyarrs: giving %s to %d:%d (first start, new PUID/PGID, or files copied in by another user)", configDir, uid, gid)
 	changed, failed := 0, 0
 	var first error
@@ -166,7 +167,7 @@ func fixOwner(configDir string, uid, gid int) {
 		if !ok {
 			return nil
 		}
-		if s.Dev != dev {
+		if uint64(s.Dev) != dev {
 			// Another filesystem (a NAS share, media, downloads), also when
 			// mountinfo could not be read: never touched.
 			if d.IsDir() {
@@ -197,7 +198,7 @@ func fixOwner(configDir string, uid, gid int) {
 		uidMap, _ := os.ReadFile("/proc/self/uid_map")
 		gidMap, _ := os.ReadFile("/proc/self/gid_map")
 		attr, _ := os.ReadFile("/proc/self/attr/current")
-		log.Printf("holyarrs: warning: %s", ownerWarning(configDir, uid, gid, first, int(st.Uid), string(uidMap), string(gidMap), fsplain.SELinuxType(string(attr))))
+		log.Printf("holyarrs: warning: %s", fixWarning(configDir, uid, gid, first, int(st.Uid), topRight, string(uidMap), string(gidMap), fsplain.SELinuxType(string(attr))))
 	}
 }
 
