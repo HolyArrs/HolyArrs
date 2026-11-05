@@ -35,7 +35,9 @@
 	import Popover from '#lib/ui/Popover.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LibraryViewSwitch from '#lib/LibraryViewSwitch.svelte';
-	import { dlScope } from '#lib/search-field.svelte.ts';
+	import DlFind from '#lib/downloads/DlFind.svelte';
+	import { searchShortcut } from '#lib/downloads/keys.ts';
+	import { dlTop } from '#lib/dl-top.svelte.ts';
 	import { rememberLibraryKind } from '#lib/library-last-kind.ts';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -211,12 +213,26 @@
 		posterDetail = d;
 		savePosterDetail(myId, d);
 	}
-	const bannerW = $derived(bannerWidth(listWidth, density));
-	/** A row's banner height for its title's kind (Music rows are taller). */
-	const rowH = (k: string) => bannerHeight(bannerW, k);
+	// The banner sits inset in the sheet (8px from its edge, 6px above and below).
+	const ART_INSET = 8;
+	const ART_GAP = 12;
+	const bannerFloor: Record<Density, number> = { large: 340, comfortable: 260, compact: 180 };
+	const wantW = $derived(bannerWidth(listWidth, density));
+	const colsNeed = (cols: Column[]) => tableMinWidth(['0px', '28px', '180px', ...cols.map((c) => c.width)]) + ART_INSET;
+	// The table never needs a sideways scroll: the banner gives way first (down to its floor),
+	// then the last columns step out until the rest fits.
+	const shownCols = $derived.by(() => {
+		if (phone || kind === 'all') return chosenCols;
+		let out = chosenCols;
+		while (out.length > 0 && colsNeed(out) + Math.min(wantW, bannerFloor[density]) > listWidth) out = out.slice(0, -1);
+		return out;
+	});
+	const hiddenCols = $derived(chosenCols.length - shownCols.length);
+	const bannerW = $derived(listWidth < 640 ? wantW : Math.round(Math.max(Math.min(wantW, bannerFloor[density]), Math.min(wantW, listWidth - colsNeed(kind === 'all' ? [] : shownCols)))));
+	/** A row's height for its title's kind: the banner plus its inset (Music rows are taller). */
+	const rowH = (k: string) => bannerHeight(bannerW, k) + ART_GAP;
 	// Music's square art packs a little tighter; the All view keeps the 2:3 columns.
 	const gridMin = $derived(posterMinFor(posterSize, kind === 'artist' ? 'artist' : 'movie'));
-	const shownCols = $derived(chosenCols);
 	const colWidths = $derived([`${bannerW}px`, '28px', 'minmax(180px, 1fr)', ...(kind === 'all' ? [] : shownCols.map((c) => c.width))]);
 	const gridCols = $derived(colWidths.join(' '));
 	// One width for every row (header included), so columns line up.
@@ -283,36 +299,32 @@
 		if (filtersOn || q) return `${shown.length} of ${kindTotal} ${kindTotal === 1 ? one : many}`;
 		return `${shown.length} ${shown.length === 1 ? one : many}`;
 	});
-	// The top bar's one search field searches this kind while the Library is open (like Downloads).
+	// The Library has no top bar: its own row carries the search (as on Downloads). Ctrl K and "/" focus it.
+	const findWords = $derived(kind === 'movie' ? 'Search movies' : kind === 'show' ? 'Search TV shows' : kind === 'artist' ? 'Search music' : 'Search the Library');
+	function setQ(v: string) {
+		q = v.slice(0, 256);
+		syncUrl();
+	}
+	function findKey(e: KeyboardEvent) {
+		const t = e.target as HTMLElement | null;
+		const inField = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+		const box = '[role="dialog"], dialog, [popover]:popover-open';
+		const inDialog = !!t?.closest?.(box) || !!document.querySelector('dialog[open]');
+		if (!searchShortcut(e, inField, inDialog)) return;
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		if (phone) {
+			findOpen = true;
+			void tick().then(() => document.getElementById('find')?.focus());
+		} else {
+			const f = document.querySelector<HTMLInputElement>('.library [data-dl-search]');
+			f?.focus();
+			f?.select();
+		}
+	}
 	$effect(() => {
-		const label = kindTitle;
-		untrack(() => {
-			Object.assign(dlScope, { path: '/library', label, placeholder: `Search ${label === 'Library' ? 'the Library' : label}` });
-			dlScope.on = true;
-			dlScope.off = false;
-			dlScope.term = q;
-		});
-	});
-	$effect(() => () => {
-		// Leave the scope alone if the next page (Downloads) already took it.
-		if (dlScope.path !== '/library') return;
-		Object.assign(dlScope, { on: false, off: false, term: '', path: '/downloads', label: 'Downloads', placeholder: 'Search downloads' });
-	});
-	$effect(() => {
-		const t = dlScope.term;
-		if (dlScope.path !== '/library' || dlScope.off) return;
-		untrack(() => {
-			if (t === q) return;
-			q = t.slice(0, 256);
-			syncUrl();
-		});
-	});
-	$effect(() => {
-		// A search cleared from the chips row clears the top field too.
-		const now = q;
-		untrack(() => {
-			if (dlScope.path === '/library' && !dlScope.off && dlScope.term !== now) dlScope.term = now;
-		});
+		window.addEventListener('keydown', findKey, true);
+		return () => window.removeEventListener('keydown', findKey, true);
 	});
 	// A plain /library link opens the kind used last (+page.ts).
 	$effect(() => rememberLibraryKind(kind));
@@ -906,18 +918,23 @@
 
 <div class="library" class:selecting>
 	<h1 class="sr-only">{kindTitle}</h1>
-	<div class="toolbar" class:stuck role="toolbar" aria-label="Library view" bind:this={toolbarEl}>
-		{#if phone && shelfItems.length > 1}
-			<span class="count shelf"><Menu label="Show Movies, TV shows or Music. Now: {kindTitle}" variant="button" icon={kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film'} text={loaded && !error ? countText : kindTitle} items={shelfItems} width={200} align="start" /></span>
+	<div class="toolbar" class:stuck class:topbar={!phone} role="toolbar" aria-label="Library view" bind:this={toolbarEl}>
+		{#if phone}
+			{#if shelfItems.length > 1}
+				<span class="count shelf"><Menu label="Show Movies, TV shows or Music. Now: {kindTitle}" variant="button" icon={kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film'} text={loaded && !error ? countText : kindTitle} items={shelfItems} width={200} align="start" /></span>
+			{:else}
+				<p class="count" aria-live="polite">{#if loaded && !error}{countText}{/if}</p>
+			{/if}
 		{:else}
-			<p class="count" aria-live="polite">{#if loaded && !error}{countText}{/if}</p>
+			{#if dlTop.collapsed}<span class="cap"><IconButton icon="sidebar" label="Show sidebar" onclick={() => dlTop.toggle()} data-testid="library-side-btn" /></span>{/if}
+			<DlFind bind:term={() => q, setQ} shown={shown.length} total={kindTotal} searchKey={dlTop.searchKey} placeholder={findWords} note={loaded && !error ? countText : ''} testid="library-find" />
 		{/if}
-		<span class="t-view"><LibraryViewSwitch value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={view !== 'overview' && !(view === 'table' && phone) ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone} /></span>
-		<span class="filter-btn" class:on={filtersOn > 0}>
+		<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={view !== 'overview' && !(view === 'table' && phone) ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone} /></span>
+		<span class="filter-btn cap" class:on={filtersOn > 0}>
 			{#if phone}
 				<Button size="md" icon="chevronUpDown" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
 			{:else}
-				<Popover label="Sort and filter" variant="button" icon="chevronUpDown" text={filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'} width={560} bind:open={sortOpen}>
+				<Popover label="Sort and filter" variant="button" icon="chevronUpDown" text={filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'} width={620} bind:open={sortOpen}>
 					{#snippet children()}{@render sortFilter()}{/snippet}
 				</Popover>
 			{/if}
@@ -926,10 +943,12 @@
 			<span class="t-find"><IconButton icon="search" label="Search {kindTitle === 'Library' ? 'the Library' : kindTitle}" aria-pressed={findOpen || !!q} onclick={() => { findOpen = !findOpen || !!q; if (findOpen) void tick().then(() => document.getElementById('find')?.focus()); }} /></span>
 		{/if}
 		<span class="tool-gap"></span>
+		<span class="t-tools cap">
 		{#if view === 'table' && kind !== 'all' && !phone}<ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} />{/if}
 		{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button></span>{/if}
 		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
 		{#if canManage}<span class="t-add"><Menu label="Add and Library tools" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={250} align="end" /></span>{/if}
+		</span>
 		{#if phone && (findOpen || q)}
 			<div class="find-box">
 				<span class="find-ic" aria-hidden="true"><Icon name="search" size={16} /></span>
@@ -986,7 +1005,7 @@
 					{/each}
 				</ul>
 			{:else}
-				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px" bind:this={listEl} bind:clientWidth={listWidth}>
+				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px" bind:this={listEl} bind:clientWidth={listWidth}>
 					{#if view === 'table' && !phone}
 						<div class="row head" role="presentation">
 							<span class="h banner-h">Banner</span>
@@ -1002,6 +1021,7 @@
 									{/if}
 								{/each}
 							{/if}
+							{#if hiddenCols > 0}<span class="h more" title="{hiddenCols} more {hiddenCols === 1 ? 'column shows' : 'columns show'} when there is room">+{hiddenCols}</span>{/if}
 						</div>
 					{/if}
 					<div class="body" style:height={virtual ? `${offsets[entries.length]}px` : undefined}>
@@ -1200,70 +1220,138 @@
 	</nav>
 {/snippet}
 
-{#snippet sfList(items: MenuItem[])}
-	{#each items as it, i (i)}
-		{#if it.kind === 'heading'}<h3 class="sf-h">{it.label}</h3>
-		{:else if it.kind === 'separator'}<span class="sf-sep" aria-hidden="true"></span>
-		{:else}
-			<button type="button" class="sf-o" class:on={it.checked} aria-pressed={!!it.checked} disabled={it.disabled} onclick={() => it.onselect?.()}>
-				<span class="sf-l">{it.label}</span>{#if it.hint}<span class="sf-n">{it.hint}</span>{/if}<span class="sf-c" aria-hidden="true">{#if it.checked}<Icon name="check" size={14} />{/if}</span>
-			</button>
-		{/if}
-	{/each}
+{#snippet sfRow(label: string, on: boolean, pick: () => void, hint = '', extra = '')}
+	<button type="button" class="sf-o" class:on aria-pressed={on} onclick={pick}>
+		<span class="sf-tick" aria-hidden="true">{#if on}<Icon name="check" size={14} stroke={2.4} />{/if}</span><span class="sf-l">{label}</span>{#if extra}<span class="sf-x" aria-hidden="true">{extra}</span>{/if}{#if hint}<span class="sf-n">{hint}</span>{/if}
+	</button>
 {/snippet}
 
 {#snippet sortFilter()}
 	<div class="sf">
-		<section class="sf-col" aria-label="Sort">
+		<section class="sf-col sf-sort" aria-label="Sort">
 			<h3 class="sf-h">Sort by</h3>
-			{@render sfList(sortsFor(kind === 'all' ? 'all' : kind).map((k): MenuItem => ({ label: sortLabels[k], checked: sort.key === k, onselect: () => setSort(k, startDir(k)) })))}
+			{#each sortsFor(kind === 'all' ? 'all' : kind) as k (k)}
+				{@render sfRow(sortLabels[k], sort.key === k, () => setSort(k, sort.key === k ? (sort.dir === 'asc' ? 'desc' : 'asc') : startDir(k)), '', sort.key === k ? (sort.dir === 'asc' ? '↑' : '↓') : '')}
+			{/each}
 			<div class="sf-dir"><SegmentedControl label="Order" size="sm" value={sort.dir} options={[{ value: 'asc', label: 'Ascending' }, { value: 'desc', label: 'Descending' }]} onchange={(d) => setSort(sort.key, d)} /></div>
 			{#if kind === 'movie'}
 				<span class="sf-sep" aria-hidden="true"></span>
-				{@render sfList([{ label: 'Group by series', checked: groupSets, onselect: () => { groupSets = !groupSets; syncUrl(); } }])}
+				{@render sfRow('Group by series', groupSets, () => { groupSets = !groupSets; syncUrl(); })}
 			{/if}
 		</section>
-		<section class="sf-col" aria-label="Filter">
-			{@render sfList(filterItems)}
-			{#if filtersOn}<div class="sf-clear"><Button variant="plain" size="sm" onclick={clearFilters}>Clear filters</Button></div>{/if}
+		<section class="sf-col sf-filter" aria-label="Filter">
+			<h3 class="sf-h">Status</h3>
+			<div class="sf-chips">
+				{#each filters as [f, label] (f)}<span class="sf-chip t-{f}"><Chip {label} count={loaded ? counts.status[f] : undefined} selected={filter.status === f} onclick={() => setFilter({ status: f })} /></span>{/each}
+			</div>
+			<h3 class="sf-h">Keep up to date</h3>
+			<div class="sf-chips">
+				<Chip label="Kept up to date" icon="bellOn" count={loaded ? counts.kept.on : undefined} selected={filter.kept === 'on'} onclick={() => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' })} />
+				<Chip label="Not kept" icon="bell" count={loaded ? counts.kept.off : undefined} selected={filter.kept === 'off'} onclick={() => setFilter({ kept: filter.kept === 'off' ? 'any' : 'off' })} />
+			</div>
+			{#if askers.length || myId}
+				<h3 class="sf-h">Asked by</h3>
+				<div class="sf-chips">
+					<Chip label="Anyone" selected={filter.asker === 'anyone'} onclick={() => setFilter({ asker: 'anyone' })} />
+					{#if myId}<Chip label="Me" count={loaded ? (counts.askers.get(myId) ?? 0) : undefined} selected={filter.asker === 'me'} onclick={() => setFilter({ asker: 'me' })} />{/if}
+					{#each askers.filter((p) => p.id !== myId) as p (p.id)}<Chip label={p.name} count={loaded ? (counts.askers.get(p.id) ?? 0) : undefined} selected={filter.asker === String(p.id)} onclick={() => setFilter({ asker: String(p.id) })} />{/each}
+				</div>
+			{/if}
+			{#if (kind === 'movie' || kind === 'all') && series.length}
+				<h3 class="sf-h">Movie series</h3>
+				<div class="sf-well">
+					{@render sfRow('Every movie', !filter.series, () => setFilter({ series: 0 }))}
+					{#each series.toSorted((x, y) => x.name.localeCompare(y.name)) as sr (sr.id)}
+						{@render sfRow(sr.name, filter.series === sr.id, () => setFilter({ series: sr.id }), countHint(counts.series.get(sr.id) ?? 0))}
+					{/each}
+				</div>
+			{/if}
 		</section>
+		<footer class="sf-foot">
+			<div class="sf-saved">
+				{#each saved as sv (sv.name)}<Chip label={sv.name} icon="star" selected={sameFilter(sv.filter, filter)} onclick={() => setFilter(sv.filter)} onremove={() => forget(sv.name)} />{/each}
+				<Button variant="plain" size="sm" icon="plus" disabled={!filtersOn} onclick={() => { sortOpen = false; saveName = ''; saveDialog?.showModal(); }}>Save this filter</Button>
+			</div>
+			<Button variant="plain" size="sm" disabled={!filtersOn} onclick={clearFilters}>Clear filters</Button>
+		</footer>
 	</div>
 {/snippet}
 
 <style>
-	.library { display: flex; flex-direction: column; gap: 14px; padding-bottom: 48px; min-width: 0; }
+	.library { display: flex; flex-direction: column; gap: 14px; padding-bottom: 48px; min-width: 0;
+		/* The sheet Home's tiles and the Requests cards are made of: lit from above, a hairline, one long soft shadow. */
+		--sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f6f7fa, #17171a);
+		--edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 6%));
+		--drop: 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 18px 32px -20px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%)); }
 	.library.selecting { padding-bottom: 112px; }
 
-	/* One toolbar: count, view and size, sort and filter, columns, select, add.
-	   Pinned, it and the top bar are one solid band (as on the Calendar), so nothing shows through. */
-	.toolbar { position: sticky; top: var(--topbar, 0px); z-index: 6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px calc(-1 * var(--gutter, 0px)) 0; padding: 8px var(--gutter, 0px); background: var(--bg); border-bottom: 1px solid transparent; transition: transform var(--bar-glide, 0s), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+	/* One row, and the page has no top bar above it (as on Downloads): search, view and size, sort and filter,
+	   columns, select, add. Each group sits in the same glass capsule the Downloads row uses. Pinned, it is one solid band. */
+	.toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: calc(-1 * var(--s-6, 24px)) calc(-1 * var(--gutter, 0px)) 0; padding: 10px var(--gutter, 0px); background: var(--bg); border-bottom: 1px solid transparent; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 	.toolbar.stuck { border-bottom-color: var(--line); box-shadow: 0 10px 24px rgb(0 0 0 / .08); }
-	:global(html:has(.library .toolbar) .ui-topbar) { background-color: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
-	:global(html:has(.library .toolbar.stuck) .ui-topbar) { border-bottom-color: transparent; }
-	:global(html.bar-hidden) .toolbar.stuck { transform: translateY(calc(-1 * var(--topbar, 0px))); }
+	.toolbar.topbar .cap { display: flex; flex: none; align-items: center; gap: 2px; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
+	.toolbar.topbar .cap:empty { display: none; }
+	.toolbar.topbar .tool-gap { display: none; }
+	/* Inside a capsule every control is flat and 44px tall; the capsule is its frame. */
+	.toolbar.topbar .cap :global(.ui-btn.secondary), .toolbar.topbar .cap :global(.trigger.button) { height: 44px; min-height: 44px; padding-inline: 12px; border-radius: 10px; background: none; box-shadow: none; }
+	.toolbar.topbar .cap :global(.ui-btn.primary) { height: 44px; min-height: 44px; border-radius: 10px; }
+	.toolbar.topbar .cap :global(.ui-btn.secondary:hover), .toolbar.topbar .cap :global(.trigger.button:hover), .toolbar.topbar .cap :global(.trigger.button[aria-expanded='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); }
+	.toolbar.topbar .cap :global(.ui-ibtn) { width: 44px; height: 44px; border-radius: 10px; }
+	.toolbar.topbar .t-view { --vs-bg: transparent; }
+	.toolbar.topbar .t-view :global(.vs) { padding: 0; gap: 2px; }
+	.toolbar.topbar .t-view :global(.vs button[role='radio']) { min-height: 44px; min-width: 44px; }
+	.toolbar.topbar .t-view :global(.vs .seg) { border-radius: 10px; }
+	.toolbar.topbar .filter-btn.on :global(.trigger.button) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-text); }
+	.t-tools, .t-sel, .t-add, .t-miss { display: contents; }
+	.toolbar.topbar .t-tools { display: flex; }
+	/* A narrower page keeps the one row: Columns, Select and Add fold to their icons, and the search may shrink. */
+	.toolbar.topbar { container-type: inline-size; }
+	.toolbar.topbar :global(.dlfind) { min-width: 180px; }
+	@container (max-width: 960px) {
+		.toolbar.topbar .t-tools :global(.trigger.button > span), .toolbar.topbar .t-tools :global(.trigger.button > svg:last-child) { display: none; }
+		.toolbar.topbar .t-tools :global(.ui-btn) { font-size: 0; gap: 0; }
+		.toolbar.topbar .t-tools :global(.ui-btn), .toolbar.topbar .t-tools :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
+	}
 	.count { margin: 0 8px 0 0; min-width: 0; font: var(--t-headline); font-weight: 650; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.count:empty { display: none; }
 	.count.shelf { display: inline-flex; min-width: 0; }
 	.count.shelf :global(button[aria-haspopup]) { min-width: 0; max-width: 100%; padding-inline: 0 8px; background: none; box-shadow: none; font: var(--t-headline); font-weight: 650; color: var(--text); }
 	.count.shelf :global(button[aria-haspopup] span) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	/* Sort and filter: two columns on wide screens, one in the phone sheet. */
-	.sf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 4px 16px; max-height: min(70vh, 560px); overflow: auto; overscroll-behavior: contain; }
-	.sf-col { display: flex; flex-direction: column; min-width: 0; }
-	.sf-col + .sf-col { padding-left: 16px; border-left: 1px solid var(--line); }
-	.sf-h { margin: 8px 8px 4px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
+	/* Sort and filter: one panel in the app's own material. Sort is a ticked list (as in every menu),
+	   filters are the same chips the page shows once they are on. */
+	.sf { display: grid; grid-template-columns: 212px minmax(0, 1fr); padding: 6px; }
+	.sf-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+	.sf-sort { padding-right: 12px; }
+	.sf-filter { padding-left: 16px; border-left: 1px solid var(--line); }
+	.sf-h { margin: 10px 8px 6px; color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.sf-col > .sf-h:first-child { margin-top: 6px; }
+	.sf-filter .sf-h { margin-inline: 2px; }
 	.sf-sep { height: 1px; margin: 6px 8px; background: var(--line); }
-	.sf-o { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 8px; border-radius: 8px; color: var(--text); font: var(--t-callout); text-align: left; }
-	.sf-o:hover { background: var(--surface-2); }
+	.sf-o { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px; border-radius: 8px; color: var(--text); font: 500 13.5px/1.2 var(--font-ui); text-align: left; transition: background-color 120ms ease; }
+	.sf-o + .sf-o { margin-top: 2px; }
+	.sf-o:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.sf-o:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.sf-o.on { font-weight: 600; }
-	.sf-o:disabled { opacity: .5; }
+	.sf-o.on { font-weight: 650; }
+	.sf-tick { flex: none; display: grid; place-items: center; width: 14px; color: var(--accent-text, var(--accent)); }
 	.sf-l { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.sf-n { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.sf-c { display: grid; place-items: center; width: 16px; color: var(--accent-text, var(--accent)); }
-	.sf-dir { margin: 8px 8px 4px; }
+	.sf-x { flex: none; color: var(--accent-text, var(--accent)); font-weight: 700; }
+	.sf-n { flex: none; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.sf-dir { margin: 10px 4px 4px; }
 	.sf-dir :global(.ui-seg) { width: 100%; }
-	.sf-clear { margin: 8px 0 0; }
-	@media (pointer: coarse) { .sf-o { min-height: 44px; } }
+	.sf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+	.sf-chips :global(.ui-chip .main) { min-height: 30px; padding: 0 12px; font-size: 13px; }
+	/* A status chip carries its status colour as a dot, the same colours the rows use. */
+	.sf-chip { display: inline-flex; }
+	.sf-chip:not(.t-all) :global(.main)::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, var(--text-faint)); }
+	.sf-chip.t-missing { --dot: var(--warn, #d9822b); }
+	.sf-chip.t-not_out_yet { --dot: var(--text-muted); }
+	.sf-chip.t-better { --dot: var(--info, #409cff); }
+	.sf-chip.t-have { --dot: var(--ok, #2fa36b); }
+	/* The series list is long: it scrolls inside its own well, and takes the height the Sort column leaves. */
+	.sf-well { flex: 1 1 0; min-height: 104px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: inset 0 0 0 1px var(--line); scrollbar-width: thin; scrollbar-color: var(--line-strong, var(--text-faint)) transparent; }
+	.sf-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 8px 2px 0; border-top: 1px solid var(--line); }
+	.sf-saved { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+	@media (pointer: coarse) { .sf-o { min-height: 44px; } .sf-chips :global(.ui-chip .main) { min-height: 40px; } }
 	.find-box { position: relative; flex: 1 1 220px; max-width: 360px; min-width: 0; }
 	.find-ic { position: absolute; left: 11px; top: 50%; translate: 0 -50%; color: var(--text-muted); display: grid; pointer-events: none; }
 	.find { width: 100%; min-height: 40px; padding-left: 34px; border-radius: var(--r-btn); background: var(--surface-2); border-color: transparent; }
@@ -1279,17 +1367,18 @@
 	.group-note { margin: 0 0 12px; color: var(--text-muted); font: var(--t-footnote); }
 
 	/* Banner table */
-	.rows { min-width: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); overflow: clip; }
-	.rows.table { overflow-x: auto; }
-	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 16px; min-height: var(--row-h, 100px); padding: 0 20px 0 0; width: 100%; box-sizing: border-box; }
-	.rows.table > .row.head, .rows.table > .body { min-width: var(--table-min); }
+	.rows { position: relative; isolation: isolate; min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b) 420px); box-shadow: var(--edge), var(--drop); overflow: clip; }
+	/* A whisper of grain keeps the flat colour from looking printed (as on Home's tiles). */
+	.rows::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 16px; min-height: var(--row-h, 100px); padding: 0 20px 0 8px; width: 100%; box-sizing: border-box; }
 	/* The virtual list moves its own rows (a top spacer); the browser's scroll
 	   anchoring must not also correct for them, or the two chase each other. */
 	.body { overflow-anchor: none; }
-	.row.head { position: sticky; top: 0; z-index: 2; min-height: 38px; padding-top: 0; padding-bottom: 0; padding-left: 0; background: var(--surface-1); border-bottom: 1px solid var(--line); }
-	.h { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; text-align: left; white-space: nowrap; }
+	.row.head { position: relative; min-height: 40px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
+	.h { color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; text-align: left; white-space: nowrap; }
+	.h.more { position: absolute; right: 6px; top: 50%; translate: 0 -50%; padding: 3px 5px; border-radius: 6px; background: color-mix(in srgb, var(--text) 8%, transparent); letter-spacing: 0; cursor: help; }
 	.h.num, .c.num { text-align: right; justify-self: end; }
-	.banner-h { padding-left: 14px; }
+	.banner-h { padding-left: 8px; }
 	.sort { display: inline-flex; align-items: center; gap: 4px; padding: 6px 0; border: 0; background: none; cursor: pointer; }
 	.sort.num { justify-content: flex-end; }
 	.sort[aria-pressed='true'] { color: var(--text); }
@@ -1299,16 +1388,20 @@
 	.entry { position: relative; outline: none; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	/* Every row carries its top line, so a row's height never changes when the
 	   virtual window drops the row above it (that would nudge the list 1px). */
-	.entry { border-top: 1px solid var(--line); }
-	.entry.first { border-top-color: transparent; }
-	.entry:hover { background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+	/* The line between rows is drawn, not a border, and starts after the picture. */
+	.entry::before { content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px; background: var(--line); pointer-events: none; }
+	.rows.table .entry::before { left: calc(var(--banner-w, 0px) + 24px); }
+	.entry.first::before { display: none; }
+	.entry:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.entry:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 	.entry.selected { background: color-mix(in srgb, var(--accent) 12%, var(--surface-1)); }
 	.entry.last-opened { box-shadow: inset 3px 0 0 var(--text-muted); }
 	.state { display: grid; place-items: center; }
 	.keep { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--text-muted); }
 	.keep.on { color: var(--ok, #2fa36b); background: color-mix(in srgb, var(--ok, #2fa36b) 14%, transparent); }
-	.art { display: block; min-width: 0; align-self: stretch; --banner-r: 0; }
+	/* The banner is a picture set into the sheet: rounded, lit on its top edge, a short shadow under it. */
+	.art { position: relative; display: block; min-width: 0; align-self: center; --banner-r: 12px; border-radius: 12px; box-shadow: 0 1px 2px light-dark(rgb(20 24 40 / 12%), rgb(0 0 0 / 50%)), 0 10px 18px -12px light-dark(rgb(20 24 40 / 50%), rgb(0 0 0 / 90%)); transition: box-shadow var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
+	.art::after { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%), inset 0 0 0 1px rgb(255 255 255 / 7%); pointer-events: none; }
 	.art :global(img:not(.logo)) { transition: opacity var(--dur) var(--ease-out), filter var(--dur-fast) var(--ease-out), scale var(--dur-slow) var(--ease-out); }
 	.entry:hover .art :global(img:not(.logo)) { filter: brightness(1.12) saturate(1.05); }
 	@media (prefers-reduced-motion: no-preference) { .entry:hover .art :global(img:not(.logo)) { scale: 1.02; } }
@@ -1403,7 +1496,7 @@
 	.modal .input { width: 100%; margin-top: 6px; }
 
 	/* A to Z */
-	.rail { position: sticky; top: calc(var(--topbar, 0px) + 72px); display: flex; flex-direction: column; align-items: stretch; padding: 4px 0; border-radius: 999px; background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.rail { position: sticky; top: 84px; display: flex; flex-direction: column; align-items: stretch; padding: 4px 0; border-radius: 999px; background: var(--surface-1); box-shadow: var(--shadow-card); }
 	.rail-l { display: grid; place-items: center; min-height: 24px; /* WCAG 2.5.8: each letter is at least a 24px target. */ padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text); font: 600 11px/1 var(--font-ui); cursor: pointer; }
 	.rail-l:hover:not(:disabled) { background: var(--surface-2); color: var(--accent); }
 	.rail-l:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -1423,7 +1516,8 @@
 	
 	/* Phones: each row becomes a banner card; posters stay a grid. */
 	@media (max-width: 639px) {
-		.toolbar { position: static; margin-inline: 0; padding-inline: 0; }
+		.toolbar { position: static; margin: 0; padding: 8px 0; }
+		.t-sel, .t-add, .t-miss, .t-view, .filter-btn { display: inline-flex; }
 		/* Two rows: count, search, select, add; then view and size, sort and filter. */
 		.count { order: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; }
 		.t-find { order: 1; }
@@ -1435,15 +1529,20 @@
 		.t-miss { order: 8; flex-basis: 100%; }
 		.t-miss :global(button) { width: 100%; }
 		.find-box { flex-basis: 100%; max-width: none; order: 5; }
-		.sf { grid-template-columns: 1fr; max-height: none; overflow: visible; }
-		.sf-col + .sf-col { padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+		.sf { grid-template-columns: 1fr; padding: 0; }
+		.sf-sort { padding: 0; }
+		.sf-filter { margin-top: 10px; padding: 4px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+		.sf-well { flex: none; max-height: 232px; }
+		.sf-foot { flex-wrap: wrap; }
 		.with-rail.has-rail { grid-template-columns: minmax(0, 1fr) 20px; gap: 6px; }
 		.rail { top: 64px; padding: 2px 0; }
 		.rail-l { font-size: 10px; min-height: 24px; }
 		.rows.table { overflow: clip; }
 		.rows.table > .body { min-width: 0; }
 		.row { grid-template-columns: 1fr auto; grid-template-areas: 'art art' 'name acts'; gap: 10px 8px; min-width: 0; padding: 0 12px 12px; }
-		.row > .art { margin: 0 -12px; }
+		.row > .art { margin: 0 -12px; --banner-r: 0; border-radius: 0; box-shadow: none; }
+		.row > .art::after { display: none; }
+		.rows.table .entry::before { left: 0; right: 0; }
 		.rows.table .row { min-height: 0; }
 		.row > .state { position: absolute; right: 20px; top: 20px; z-index: 1; }
 		.row > .state .keep { background: rgb(0 0 0 / 55%); color: #fff; }

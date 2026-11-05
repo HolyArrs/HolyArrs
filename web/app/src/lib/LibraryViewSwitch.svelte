@@ -47,7 +47,7 @@
 </div>
 
 <style>
-	.vs { flex: none; display: inline-flex; align-items: stretch; gap: 2px; padding: 2px; border-radius: 10px; background: var(--surface-2); }
+	.vs { flex: none; display: inline-flex; align-items: stretch; gap: 2px; padding: 2px; border-radius: 10px; background: var(--vs-bg, var(--surface-2)); }
 	.seg { display: inline-flex; align-items: center; border-radius: 8px; transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 	.seg.on { background: var(--seg-thumb); box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); }
 	button { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 32px; padding: 0 10px; border-radius: 8px; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }

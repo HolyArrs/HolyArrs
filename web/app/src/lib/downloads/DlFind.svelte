@@ -9,8 +9,11 @@
 		term = $bindable(''),
 		shown,
 		total,
-		searchKey = 'Ctrl K'
-	}: { term?: string; shown: number; total: number; searchKey?: string } = $props();
+		searchKey = 'Ctrl K',
+		placeholder = 'Search downloads',
+		note = '',
+		testid = 'dl-find'
+	}: { term?: string; shown: number; total: number; searchKey?: string; /** The field's words (the Library uses its own). */ placeholder?: string; /** A quiet line at the right, e.g. "36 TV shows". */ note?: string; testid?: string } = $props();
 
 	let el = $state<HTMLInputElement>();
 	const has = $derived(!!term.trim());
@@ -23,12 +26,13 @@
 	}
 </script>
 
-<div class="dlfind" class:has data-testid="dl-find">
+<div class="dlfind" class:has data-testid={testid}>
 	<span class="well">
 		<span class="mag" aria-hidden="true"><Icon name="search" size={16} /></span>
-		<input bind:this={el} bind:value={term} type="text" inputmode="search" placeholder="Search downloads" aria-label="Search downloads" autocomplete="off" spellcheck="false" onkeydown={key} data-dl-search data-testid="dl-find-input" />
+		<input bind:this={el} bind:value={term} type="text" inputmode="search" {placeholder} aria-label={placeholder} autocomplete="off" spellcheck="false" onkeydown={key} data-dl-search data-testid="{testid}-input" />
+		{#if note}<span class="note" aria-live="polite">{note}</span>{/if}
 		{#if has}
-			<button type="button" class="clr" aria-label="Clear search" onclick={() => { term = ''; el?.focus(); }} data-testid="dl-find-clear"><Icon name="x" size={14} /></button>
+			<button type="button" class="clr" aria-label="Clear search" onclick={() => { term = ''; el?.focus(); }} data-testid="{testid}-clear"><Icon name="x" size={14} /></button>
 		{:else}
 			<kbd class="kb" aria-hidden="true">{searchKey}</kbd>
 		{/if}
@@ -42,6 +46,7 @@
 	.mag { display: grid; place-items: center; flex: none; color: var(--text-muted); transition: color 180ms var(--ez); }
 	input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: none; color: var(--text); font: var(--t-callout); outline: none; }
 	input::placeholder { color: var(--text-muted); }
+	.note { flex: none; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.kb { flex: none; padding: 2px 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--text-muted); font: 500 11px/1.4 var(--font-ui); white-space: nowrap; transition: opacity 160ms var(--ez); }
 	.clr { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; animation: pop 160ms var(--ez); }
 	.clr:hover { background: color-mix(in srgb, var(--text) 14%, transparent); }

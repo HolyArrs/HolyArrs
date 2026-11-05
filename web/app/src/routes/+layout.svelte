@@ -220,7 +220,7 @@
 		dlTop.searchKey = searchKey;
 		dlTop.toggle = () => void toggleSidebar();
 	});
-	const topHidden = $derived(path === '/downloads');
+	const topHidden = $derived(path === '/downloads' || path === '/library');
 	const typingIn = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 	function keys(e: KeyboardEvent) {
 		if (!ready || bare) return;
