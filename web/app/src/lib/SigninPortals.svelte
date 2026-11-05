@@ -396,8 +396,15 @@
 		-webkit-backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
 		backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
 	}
+	/* Light mode: the sign-in panel's light tinted glass. */
+	.edge.glass[data-theme='light'] {
+		background: rgb(255 252 247 / 0.45);
+		-webkit-backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
+		backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
+	}
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.edge.glass { background: rgb(18 18 22 / 0.92); }
+		.edge.glass[data-theme='light'] { background: rgb(248 246 242 / 0.94); }
 	}
 	/* Phones: full-bleed art, no frame (the portals still run in the card). */
 	@media (max-width: 600px) { .edge { display: none; } }
