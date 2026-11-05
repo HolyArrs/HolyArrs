@@ -538,10 +538,13 @@
 
 	// The Downloads search field (DlFind) filters this page while it is open.
 	$effect(() => {
+		Object.assign(dlScope, { path: '/downloads', label: 'Downloads', placeholder: 'Search downloads' });
 		dlScope.on = true;
 		dlScope.off = false;
 		dlScope.term = '';
 		return () => {
+			// Leave the scope alone if the next page (the Library) already took it.
+			if (dlScope.path !== '/downloads') return;
 			dlScope.on = false;
 			dlScope.off = false;
 			dlScope.term = '';

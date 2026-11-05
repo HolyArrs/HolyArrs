@@ -8,8 +8,9 @@ type Hooks = { submit?: () => void; blur?: () => void; exit?: () => void };
 
 export const searchField = $state({ term: '' });
 
-/** On Downloads the one search field filters that list: `on` while the page is open, `off` once the scope chip is removed. */
-export const dlScope = $state({ on: false, off: false, term: '' });
+/** On Downloads (and the Library) the one search field filters that page's list: `on` while the page is open, `off` once the scope chip is removed.
+ *  `path` is the page it belongs to, `label` the chip words, `placeholder` the empty field's words. */
+export const dlScope = $state({ on: false, off: false, term: '', path: '/downloads', label: 'Downloads', placeholder: 'Search downloads' });
 
 /** The Search page's own reactions (Enter, leaving the field); set while it is open. */
 export const searchHooks: Hooks = {};

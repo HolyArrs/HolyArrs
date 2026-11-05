@@ -22,7 +22,6 @@
 	import { artistHref } from '#lib/music/music-pages.ts';
 	import Poster from '#lib/Poster.svelte';
 	import Icon from '#lib/Icon.svelte';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import LibraryPoster from '#lib/ui/LibraryPoster.svelte';
 	import { flip } from 'svelte/animate';
 	import { barOf, detailLabels, flipFrom, loadPosterDetail, needsAttention, savePosterDetail, type PosterDetail } from '#lib/library-poster.ts';
@@ -33,6 +32,10 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Popover from '#lib/ui/Popover.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import LibraryViewSwitch from '#lib/LibraryViewSwitch.svelte';
+	import { dlScope } from '#lib/search-field.svelte.ts';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -271,6 +274,55 @@
 	const askers = $derived([...new Map(ofThisKind.flatMap((t) => linkedPeople(t)).map((p) => [p.id, p])).values()].sort((a, b) => a.name.localeCompare(b.name)));
 	const filtersOn = $derived(activeCount(filter));
 
+	// ── Toolbar: the count where the title was, the top search field, the pinned bar ──
+	const nouns: Record<string, [string, string]> = { movie: ['movie', 'movies'], show: ['TV show', 'TV shows'], artist: ['artist', 'artists'], all: ['title', 'titles'] };
+	const kindTotal = $derived(titles.filter((t) => ofKind(t, kind)).length);
+	const countText = $derived.by(() => {
+		const [one, many] = nouns[kind] ?? nouns.all;
+		if (filtersOn || q) return `${shown.length} of ${kindTotal} ${kindTotal === 1 ? one : many}`;
+		return `${shown.length} ${shown.length === 1 ? one : many}`;
+	});
+	// The top bar's one search field searches this kind while the Library is open (like Downloads).
+	$effect(() => {
+		const label = kindTitle;
+		untrack(() => {
+			Object.assign(dlScope, { path: '/library', label, placeholder: `Search ${label === 'Library' ? 'the Library' : label}` });
+			dlScope.on = true;
+			dlScope.off = false;
+			dlScope.term = q;
+		});
+	});
+	$effect(() => () => {
+		// Leave the scope alone if the next page (Downloads) already took it.
+		if (dlScope.path !== '/library') return;
+		Object.assign(dlScope, { on: false, off: false, term: '', path: '/downloads', label: 'Downloads', placeholder: 'Search downloads' });
+	});
+	$effect(() => {
+		const t = dlScope.term;
+		if (dlScope.path !== '/library' || dlScope.off) return;
+		untrack(() => {
+			if (t === q) return;
+			q = t.slice(0, 256);
+			syncUrl();
+		});
+	});
+	$effect(() => {
+		// A search cleared from the chips row clears the top field too.
+		const now = q;
+		untrack(() => {
+			if (dlScope.path === '/library' && !dlScope.off && dlScope.term !== now) dlScope.term = now;
+		});
+	});
+	let findOpen = $state(false);
+	let sortOpen = $state(false);
+	let toolbarEl = $state<HTMLElement>();
+	let stuck = $state(false);
+	function checkStuck() {
+		if (!toolbarEl) return;
+		const bar = parseFloat(getComputedStyle(toolbarEl).top) || 0;
+		stuck = window.scrollY > 0 && getComputedStyle(toolbarEl).position === 'sticky' && toolbarEl.getBoundingClientRect().top <= bar + 0.5;
+	}
+
 	function setFilter(patch: Partial<FilterState>) {
 		filter = { ...filter, ...patch };
 		syncUrl();
@@ -331,13 +383,6 @@
 		if (saved.length) items.push({ label: 'Forget saved filters', icon: 'trash', onselect: () => { for (const s of saved) forget(s.name); } });
 		return items;
 	});
-	const sortItems = $derived<MenuItem[]>([
-		...sortsFor(kind === 'all' ? 'all' : kind).map((k): MenuItem => ({ label: sortLabels[k], checked: sort.key === k, onselect: () => setSort(k, startDir(k)) })),
-		{ kind: 'separator' },
-		{ label: 'Ascending', icon: 'chevronUpDown', checked: sort.dir === 'asc', onselect: () => setSort(sort.key, 'asc') },
-		{ label: 'Descending', icon: 'chevronUpDown', checked: sort.dir === 'desc', onselect: () => setSort(sort.key, 'desc') },
-		...(kind === 'movie' ? ([{ kind: 'separator' }, { label: 'Group by series', icon: 'grid', checked: groupSets, onselect: () => { groupSets = !groupSets; syncUrl(); } }] as MenuItem[]) : [])
-	]);
 	const addItems = $derived<MenuItem[]>([
 		...(partOn('movies') ? ([{ label: 'Add a movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
 		...(partOn('shows') ? ([{ label: 'Add a show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
@@ -842,32 +887,41 @@
 </script>
 
 <svelte:head><title>{kindTitle} · HolyArrs</title></svelte:head>
-<svelte:window onkeydown={selectKey} bind:scrollY />
+<svelte:window onkeydown={selectKey} bind:scrollY onscroll={checkStuck} onresize={checkStuck} />
 
 <div class="library" class:selecting>
-	<PageHeader title={kindTitle} subtitle={loaded && !error ? `${shown.length} ${shown.length === 1 ? 'title' : 'titles'}${filtersOn || q ? ' match' : ''}` : undefined}>
-		{#snippet actions()}
-			{#if canManage}<Menu label="Add and Library tools" variant="button" text="Add" icon="plus" items={addItems} width={250} />{/if}
-		{/snippet}
-	</PageHeader>
-
-	<div class="toolbar" role="toolbar" aria-label="Library view">
-		<SegmentedControl label="View" value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} />
-		{#if view !== 'overview' && !(view === 'table' && phone)}<Menu label="Art size" variant="button" text={view === 'posters' ? posterLabels[posterSize].replace(' posters', '') : densityLabels[density]} icon="chevronDown" items={sizeItems} width={200} align="start" />{/if}
-		<Menu label="Sort titles" variant="button" text="{sortLabels[sort.key]} {sort.dir === 'asc' ? '↑' : '↓'}" icon="chevronUpDown" items={sortItems} width={220} align="start" />
+	<h1 class="sr-only">{kindTitle}</h1>
+	<div class="toolbar" class:stuck role="toolbar" aria-label="Library view" bind:this={toolbarEl}>
+		<p class="count" aria-live="polite">{#if loaded && !error}{countText}{/if}</p>
+		<span class="t-view"><LibraryViewSwitch value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={view !== 'overview' && !(view === 'table' && phone) ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} /></span>
 		<span class="filter-btn" class:on={filtersOn > 0}>
-			<Menu label="Filter" variant="button" text={filtersOn ? `Filter · ${filtersOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={280} align="start" />
+			{#if phone}
+				<Button size="md" icon="chevronUpDown" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
+			{:else}
+				<Popover label="Sort and filter" variant="button" icon="chevronUpDown" text={filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'} width={560} bind:open={sortOpen}>
+					{#snippet children()}{@render sortFilter()}{/snippet}
+				</Popover>
+			{/if}
 		</span>
-		<div class="find-box">
-			<span class="find-ic" aria-hidden="true"><Icon name="search" size={16} /></span>
-			<label class="sr-only" for="find">Find in the Library</label>
-			<input id="find" class="input find" type="search" bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncUrl(); }} placeholder="Search {kindTitle === 'Library' ? 'the Library' : kindTitle}" autocomplete="off" maxlength="256" />
-		</div>
+		{#if phone}
+			<span class="t-find"><IconButton icon="search" label="Search {kindTitle === 'Library' ? 'the Library' : kindTitle}" aria-pressed={findOpen || !!q} onclick={() => { findOpen = !findOpen || !!q; if (findOpen) void tick().then(() => document.getElementById('find')?.focus()); }} /></span>
+		{/if}
 		<span class="tool-gap"></span>
 		{#if view === 'table' && kind !== 'all' && !phone}<ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} />{/if}
 		{#if canManage && filter.status === 'missing' && missingCount}<Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button>{/if}
-		{#if canManage && shown.length}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}
+		{#if canManage && shown.length}<span class="t-sel"><Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button></span>{/if}
+		{#if canManage}<span class="t-add"><Menu label="Add and Library tools" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={250} align="end" /></span>{/if}
+		{#if phone && (findOpen || q)}
+			<div class="find-box">
+				<span class="find-ic" aria-hidden="true"><Icon name="search" size={16} /></span>
+				<label class="sr-only" for="find">Find in the Library</label>
+				<input id="find" class="input find" type="search" bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncUrl(); }} onblur={() => { if (!q) findOpen = false; }} placeholder="Search {kindTitle === 'Library' ? 'the Library' : kindTitle}" autocomplete="off" maxlength="256" />
+			</div>
+		{/if}
 	</div>
+	{#if phone}
+		<Sheet bind:open={sortOpen} title="Sort and filter" placement="bottom">{@render sortFilter()}</Sheet>
+	{/if}
 
 	{#if filtersOn || q}
 		<div class="chips" role="group" aria-label="Active filters">
@@ -1127,12 +1181,67 @@
 	</nav>
 {/snippet}
 
+{#snippet sfList(items: MenuItem[])}
+	{#each items as it, i (i)}
+		{#if it.kind === 'heading'}<h3 class="sf-h">{it.label}</h3>
+		{:else if it.kind === 'separator'}<span class="sf-sep" aria-hidden="true"></span>
+		{:else}
+			<button type="button" class="sf-o" class:on={it.checked} aria-pressed={!!it.checked} disabled={it.disabled} onclick={() => it.onselect?.()}>
+				<span class="sf-l">{it.label}</span>{#if it.hint}<span class="sf-n">{it.hint}</span>{/if}<span class="sf-c" aria-hidden="true">{#if it.checked}<Icon name="check" size={14} />{/if}</span>
+			</button>
+		{/if}
+	{/each}
+{/snippet}
+
+{#snippet sortFilter()}
+	<div class="sf">
+		<section class="sf-col" aria-label="Sort">
+			<h3 class="sf-h">Sort by</h3>
+			{@render sfList(sortsFor(kind === 'all' ? 'all' : kind).map((k): MenuItem => ({ label: sortLabels[k], checked: sort.key === k, onselect: () => setSort(k, startDir(k)) })))}
+			<div class="sf-dir"><SegmentedControl label="Order" size="sm" value={sort.dir} options={[{ value: 'asc', label: 'Ascending' }, { value: 'desc', label: 'Descending' }]} onchange={(d) => setSort(sort.key, d)} /></div>
+			{#if kind === 'movie'}
+				<span class="sf-sep" aria-hidden="true"></span>
+				{@render sfList([{ label: 'Group by series', checked: groupSets, onselect: () => { groupSets = !groupSets; syncUrl(); } }])}
+			{/if}
+		</section>
+		<section class="sf-col" aria-label="Filter">
+			{@render sfList(filterItems)}
+			{#if filtersOn}<div class="sf-clear"><Button variant="plain" size="sm" onclick={clearFilters}>Clear filters</Button></div>{/if}
+		</section>
+	</div>
+{/snippet}
+
 <style>
 	.library { display: flex; flex-direction: column; gap: 14px; padding-bottom: 48px; min-width: 0; }
 	.library.selecting { padding-bottom: 112px; }
 
-	/* One toolbar: view, sort, filter, search, columns, select. */
-	.toolbar { position: sticky; top: var(--topbar, 0px); z-index: 6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0; background: var(--bg); }
+	/* One toolbar: count, view and size, sort and filter, columns, select, add.
+	   Pinned, it and the top bar are one solid band (as on the Calendar), so nothing shows through. */
+	.toolbar { position: sticky; top: var(--topbar, 0px); z-index: 6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px calc(-1 * var(--gutter, 0px)) 0; padding: 8px var(--gutter, 0px); background: var(--bg); border-bottom: 1px solid transparent; transition: transform var(--bar-glide, 0s), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+	.toolbar.stuck { border-bottom-color: var(--line); box-shadow: 0 10px 24px rgb(0 0 0 / .08); }
+	:global(html:has(.library .toolbar) .ui-topbar) { background-color: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+	:global(html:has(.library .toolbar.stuck) .ui-topbar) { border-bottom-color: transparent; }
+	:global(html.bar-hidden) .toolbar.stuck { transform: translateY(calc(-1 * var(--topbar, 0px))); }
+	.count { margin: 0 8px 0 0; min-width: 0; font: var(--t-headline); font-weight: 650; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.count:empty { display: none; }
+	/* Sort and filter: two columns on wide screens, one in the phone sheet. */
+	.sf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 4px 16px; max-height: min(70vh, 560px); overflow: auto; overscroll-behavior: contain; }
+	.sf-col { display: flex; flex-direction: column; min-width: 0; }
+	.sf-col + .sf-col { padding-left: 16px; border-left: 1px solid var(--line); }
+	.sf-h { margin: 8px 8px 4px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
+	.sf-sep { height: 1px; margin: 6px 8px; background: var(--line); }
+	.sf-o { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 8px; border-radius: 8px; color: var(--text); font: var(--t-callout); text-align: left; }
+	.sf-o:hover { background: var(--surface-2); }
+	.sf-o:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.sf-o.on { font-weight: 600; }
+	.sf-o:disabled { opacity: .5; }
+	.sf-l { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sf-n { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.sf-c { display: grid; place-items: center; width: 16px; color: var(--accent-text, var(--accent)); }
+	.sf-dir { margin: 8px 8px 4px; }
+	.sf-dir :global(.ui-seg) { width: 100%; }
+	.sf-clear { margin: 8px 0 0; }
+	@media (pointer: coarse) { .sf-o { min-height: 44px; } }
 	.find-box { position: relative; flex: 1 1 220px; max-width: 360px; min-width: 0; }
 	.find-ic { position: absolute; left: 11px; top: 50%; translate: 0 -50%; color: var(--text-muted); display: grid; pointer-events: none; }
 	.find { width: 100%; min-height: 40px; padding-left: 34px; border-radius: var(--r-btn); background: var(--surface-2); border-color: transparent; }
@@ -1292,9 +1401,18 @@
 	
 	/* Phones: each row becomes a banner card; posters stay a grid. */
 	@media (max-width: 639px) {
-		.toolbar { position: static; }
+		.toolbar { position: static; margin-inline: 0; padding-inline: 0; }
+		/* Two rows: count, search, select, add; then view and size, sort and filter. */
+		.count { order: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; }
+		.t-find { order: 1; }
+		.t-sel { order: 2; }
+		.t-add { order: 3; }
+		.tool-gap { display: block; order: 4; flex-basis: 100%; height: 0; }
+		.t-view { order: 5; }
+		.filter-btn { order: 6; }
 		.find-box { flex-basis: 100%; max-width: none; order: 5; }
-		.tool-gap { display: none; }
+		.sf { grid-template-columns: 1fr; max-height: none; overflow: visible; }
+		.sf-col + .sf-col { padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 		.with-rail.has-rail { grid-template-columns: minmax(0, 1fr) 20px; gap: 6px; }
 		.rail { top: 64px; padding: 2px 0; }
 		.rail-l { font-size: 10px; min-height: 24px; }

@@ -17,8 +17,9 @@
 	let el = $state<HTMLInputElement>();
 	$effect(() => (el ? registerField(el) : undefined));
 	const onSearch = () => appPath(page.url.pathname).startsWith('/search');
-	// On Downloads the field searches that list (a chip says so); removing the chip searches all of HolyArrs again.
-	const scoped = $derived(dlScope.on && !dlScope.off && appPath(page.url.pathname).startsWith('/downloads'));
+	// On Downloads and the Library the field searches that list (a chip says so); removing the chip searches all of HolyArrs again.
+	const scoped = $derived(dlScope.on && !dlScope.off && appPath(page.url.pathname).startsWith(dlScope.path));
+	let chipW = $state(0);
 	const shown = $derived(scoped ? dlScope.term : searchField.term);
 	function leaveScope() {
 		searchField.term = dlScope.term;
@@ -136,8 +137,8 @@
 	<span class="glow" aria-hidden="true"></span>
 	<span class="ic" aria-hidden="true"><Icon name="search" size={18} /></span>
 	<label class="sr-only" for={id}>Search for a title, an artist or a person</label>
-	<input {id} class:scoped bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) dlScope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder={scoped ? 'Search downloads' : 'Shows, movies and people'} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
-	{#if scoped}<span class="scope" data-testid="dl-scope-chip">Downloads<button type="button" aria-label="Search all of HolyArrs instead" title="Search all of HolyArrs" onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
+	<input {id} class:scoped bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) dlScope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} style:padding-left={scoped && chipW ? `${48 + chipW}px` : undefined} placeholder={scoped ? dlScope.placeholder : 'Shows, movies and people'} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
+	{#if scoped}<span class="scope" bind:offsetWidth={chipW} data-testid="dl-scope-chip">{dlScope.label}<button type="button" aria-label="Search all of HolyArrs instead" title="Search all of HolyArrs" onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
 	{#if shown && !one}
 		<button type="button" class="clear" aria-label="Clear the search" onclick={() => { if (scoped) dlScope.term = ''; else searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
 	{:else if !here}
