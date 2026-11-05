@@ -284,8 +284,11 @@ func (t transmissionTorrent) job(category string) Job {
 	case 1, 2, 3:
 		state = StateQueued
 	}
-	if t.Error != 0 {
-		state = StateFailed
+	// Error 3 is a local error (files gone, often a share mounted late):
+	// wait as paused. Errors 1 and 2 are tracker warnings and errors and
+	// keep the torrent's own state.
+	if t.Error == 3 {
+		state = StatePaused
 	} else if (t.Status == 0 || t.Status == 5 || t.Status == 6) && t.Progress >= 1 && t.Left == 0 && t.Metadata >= 1 && !(t.Recheck > 0 && t.Recheck < 1) && t.Dir != "" {
 		state = StateFinished
 	}

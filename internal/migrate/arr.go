@@ -119,6 +119,7 @@ func (r arrReader) sets() []arrSet {
 		{name: "naming", api: []string{"/config/naming", "/settings/naming"}, table: "NamingConfig"},
 		{name: "indexers", api: []string{"/indexer"}, table: "Indexers"},
 		{name: "clients", api: []string{"/downloadclient"}, table: "DownloadClients"},
+		{name: "remotepaths", api: []string{"/remotepathmapping"}, table: "RemotePathMappings"},
 		{name: "lists", api: []string{"/importlist"}, table: "ImportLists"},
 		{name: "notifications", api: []string{"/notification", "/connection"}, table: "Notifications"},
 		{name: "metadata", api: []string{"/metadata"}, table: "Metadata"},
@@ -533,6 +534,10 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 	s.Indexers = linkSafe(prov(in.sets["indexers"]), false)
 	s.DownloadClients = prov(in.sets["clients"])
 	s.ImportLists = prov(in.sets["lists"])
+	for _, m := range in.sets["remotepaths"] {
+		s.RemotePathMappings = append(s.RemotePathMappings, RemotePathMapping{Host: clip(str(m["host"]), 200),
+			RemotePath: clip(str(m["remotepath"]), 1000), LocalPath: clip(str(m["localpath"]), 1000)})
+	}
 	s.Notifications = linkSafe(prov(in.sets["notifications"]), true)
 	s.Metadata = prov(in.sets["metadata"])
 	s.AppLinks = prov(in.sets["applinks"])

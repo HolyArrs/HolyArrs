@@ -212,7 +212,7 @@ func qbitHarness(t *testing.T) conformance {
 		adds:   func() int { f.mu.Lock(); defer f.mu.Unlock(); return len(f.added) },
 		states: func(w string) { f.set(hash, map[string]any{"state": w}) },
 		words: map[string]string{"queuedDL": StateQueued, "downloading": StateDownloading, "pausedDL": StatePaused, "stoppedDL": StatePaused,
-			"uploading": StateFinished, "stalledUP": StateFinished, "error": StateFailed, "missingFiles": StateFailed, "brand-new-word": StateDownloading},
+			"uploading": StateFinished, "stalledUP": StateFinished, "error": StatePaused, "missingFiles": StatePaused, "brand-new-word": StateDownloading},
 	}
 }
 

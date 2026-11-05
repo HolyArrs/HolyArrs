@@ -440,7 +440,8 @@ func downloadView(d domain.Download) DownloadView {
 	case "finished":
 		v.Text = "Done; HolyArrs puts it in the library."
 	}
-	if d.StateReason != nil && *d.StateReason != "" && (d.State == "stalled" || d.State == "failed" || d.State == "vanished") {
+	if d.StateReason != nil && *d.StateReason != "" && (d.State == "stalled" || d.State == "failed" || d.State == "vanished" ||
+		d.State == "paused" && strings.HasPrefix(*d.StateReason, downloader.WaitingReason)) {
 		r, n := utf8.DecodeRuneInString(*d.StateReason)
 		v.Text = string(unicode.ToUpper(r)) + (*d.StateReason)[n:] + "."
 	}

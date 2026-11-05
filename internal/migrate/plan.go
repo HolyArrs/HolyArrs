@@ -15,6 +15,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/lists"
 )
 
@@ -269,6 +270,8 @@ type DownloaderPlan struct {
 	Category   string `json:"category,omitempty"`
 	Priority   int    `json:"priority"`
 	NeedsInput bool   `json:"needs_input"`
+	// PathMap is the old apps' path rewrites for this client's host.
+	PathMap []domain.PathMap `json:"path_map,omitempty"`
 }
 
 // SubtitlePlan is the default subtitle languages or one Subtitle site.
@@ -384,6 +387,7 @@ type builder struct {
 	listNames map[string]bool // Outside list names planned (lower case)
 	app       Kind
 	snapID    int64
+	paths     []pathRow // usable path rewrites from every app, placed by pathMaps
 }
 
 // waitFrom is one app's untagged default wait rule as Pick rules waits.
@@ -532,6 +536,7 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 		b.snapshot(x.Snap)
 	}
 	b.waitItems()
+	b.pathMaps()
 	p.NeedsInput = noteList(p.NeedsInput)
 	p.Notes = noteList(p.Notes)
 	p.Paths = noteList(p.Paths)
@@ -601,6 +606,7 @@ func (b *builder) snapshot(s *Snapshot) {
 	b.exclusions(s)
 	b.indexers(s)
 	b.downloaders(s)
+	b.pathMappings(s)
 	b.naming(s)
 	b.subtitles(s)
 	b.people(s)
