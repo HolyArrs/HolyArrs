@@ -86,7 +86,7 @@ for (const width of [1280, 390]) {
 	});
 }
 
-test('status: a member gets neither Status nor the support bundle', async ({ browser }) => {
+test('status: a member never gets the support bundle, even with Status open', async ({ browser }) => {
 	const own = await (await browser.newContext()).newPage();
 	await signIn(own, owner());
 	await own.goto('/settings/users');
@@ -103,6 +103,15 @@ test('status: a member gets neither Status nor the support bundle', async ({ bro
 	await expect(uma).toHaveURL(/\/$/);
 	await uma.goto('/status?tab=about');
 	await expect(uma).not.toHaveURL(/\/status/);
+	expect((await uma.request.get('/api/v1/support/bundle')).status()).toBe(403);
+	// Run the Library opens Status, but the bundle stays with the owner and admins.
+	await own.goto('/settings/users');
+	await own.getByRole('button', { name: 'Change uma' }).click();
+	await own.getByRole('dialog').getByLabel('Run the Library').check();
+	await own.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
+	await expect(own.getByText('uma saved.')).toBeVisible();
+	await open(uma, '/status?tab=about');
+	await expect(uma.locator('#st-panel-about')).toBeVisible();
 	await expect(uma.getByTestId('status-support-bundle')).toHaveCount(0);
 	expect((await uma.request.get('/api/v1/support/bundle')).status()).toBe(403);
 	await uma.context().close();
