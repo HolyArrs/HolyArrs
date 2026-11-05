@@ -12,7 +12,7 @@
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import SigninPortals from '#lib/SigninPortals.svelte';
 	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
-	import { forgetPerson, recentPeople, rememberPerson, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
+	import { forgetPerson, recentPeople, rememberPerson, setPersonPic, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
@@ -46,6 +46,23 @@
 		chosen = 'choose';
 		pw = '';
 		error = '';
+	}
+	// Signed in now, so the picture loads: keep a 96 px copy for the sign-in page.
+	async function keepPic(n: string, src: string | null) {
+		if (!src) return setPersonPic(n, null);
+		try {
+			const img = new Image();
+			img.src = src;
+			await img.decode();
+			const c = document.createElement('canvas');
+			c.width = c.height = 96;
+			const g = c.getContext('2d');
+			if (!g) return;
+			g.drawImage(img, 0, 0, 96, 96);
+			setPersonPic(n, c.toDataURL('image/jpeg', 0.82));
+		} catch {
+			// No copy: the row keeps the letter.
+		}
 	}
 	function dropPerson(n: string) {
 		forgetPerson(n);
@@ -116,6 +133,13 @@
 			pw = '';
 			error = '';
 		});
+	});
+	// The round back button in the panel's corner, when there is somewhere to go back to.
+	const backTo = $derived.by(() => {
+		if (mode !== 'login' || !shown.length) return null;
+		if (acctView === 'list' && shown.length === 1) return { label: `Back to ${shown[0].name}`, go: () => openPerson(0) };
+		if ((acctView === 'person' && shown.length > 1) || acct === 'new') return { label: 'All accounts', go: showList };
+		return null;
 	});
 	// One key per step: the panel's content rises in when it changes.
 	const step = $derived(plexWaiting ? 'plex' : `${mode}-${via}-${acctView}-${person?.name ?? ''}`);
@@ -225,7 +249,10 @@
 				: !tileWay && name.trim() && (via === 'password' || via === 'jellyfin' || via === 'emby')
 					? via
 					: '';
-		if (way) rememberPerson(session.s.name, way, way === 'jellyfin' || way === 'emby' ? name.trim() : undefined);
+		if (way) {
+			rememberPerson(session.s.name, way, way === 'jellyfin' || way === 'emby' ? name.trim() : undefined);
+			void keepPic(session.s.name, session.s.avatar);
+		}
 		// Success, one continuous move: the Orbit grows out of the Sign in
 		// button and glides to the centre while the panel and the art dissolve
 		// under a veil in the app colour; the app opens under the same Orbit,
@@ -414,6 +441,7 @@
 {#snippet face(p: RecentPerson, size: number)}
 	<span class="face" style="--s: {size}px; --h: {hue(p.name)}" aria-hidden="true">
 		{p.name.slice(0, 1).toUpperCase()}
+		{#if p.pic}<img src={p.pic} alt="" />{/if}
 		{#if p.way !== 'password'}
 			<span class="badge">
 				{#if p.way === 'plex'}
@@ -462,6 +490,9 @@
 			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
 			<span>HolyArrs</span>
 		</div>
+		{#if backTo && session.s.state !== 'unknown' && !ssoFinishing && !plexWaiting}
+			<span class="corner"><IconButton icon="chevronLeft" variant="glass" label={backTo.label} onclick={backTo.go} /></span>
+		{/if}
 
 		{#if session.s.state === 'unknown' || ssoFinishing}
 			<!-- As tall as the usual sign-in form, so the card does not jump when the session answers. -->
@@ -483,7 +514,6 @@
 					{:else if acctView !== 'none'}
 						<h1 class="title">{acctView === 'list' ? "Who's signing in?" : 'Sign in'}</h1>
 						{#if acctView === 'list'}
-							{#if shown.length === 1}<button class="link back" type="button" onclick={() => openPerson(0)}>‹ Back to {shown[0].name}</button>{/if}
 							<div class="accts" class:editing role="list" aria-label="People who signed in on this device" data-testid="recent-people">
 								{#each shown as p, i (p.name)}
 									<div class="acct" role="listitem">
@@ -504,7 +534,6 @@
 							</div>
 							<button class="link" type="button" onclick={() => (editing = !editing)}>{editing ? 'Done' : 'Edit list'}</button>
 						{:else if person}
-							{#if shown.length > 1}<button class="link back" type="button" onclick={showList}>‹ All accounts</button>{/if}
 							<div class="who" data-testid="signin-person">
 								{@render face(person, 36)}
 								<span class="who-n">{person.name}</span>
@@ -571,7 +600,6 @@
 								<button class="link" type="button" onclick={restart}>Start again</button>
 							</form>
 						{:else}
-							{#if mode === 'login' && acct === 'new' && shown.length}<button class="link back" type="button" onclick={showList}>‹ All accounts</button>{/if}
 							{#if mode === 'login' && (via === 'password' || via === 'choose') && tiles.length}
 								<div class="provs" data-n={tiles.length} data-testid="signin-ways">
 									{#each tiles as t (t.way)}
@@ -827,8 +855,9 @@
 	.title + .who { margin-top: 30px; }
 	.who-n { color: #fff; font: 600 15px/1.2 var(--font-ui); min-width: 0; }
 	.who .acct-way { margin-left: auto; }
-	.back { margin: 0 auto 14px; }
-	.title + .back { margin-top: 22px; }
+	/* Back to the list: a round button in the panel's top-left corner, level with the logo. */
+	.corner { position: absolute; top: 32px; left: 26px; z-index: 1; }
+	.face img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 	.note { margin-top: 10px; text-align: center; color: rgb(255 255 255 / 0.55); font: var(--t-footnote); }
 	/* Touch phones: 44px tap targets; desktop stays as it is. */
 	@media (max-width: 767px) and (pointer: coarse) {
@@ -936,8 +965,7 @@
 		.title + :not(.lead) { margin-top: 16px; }
 		.title + .who { margin-top: 22px; }
 		.who { margin-bottom: 14px; }
-		.title + .back { margin-top: 16px; }
-		.back { margin-bottom: 10px; }
+		.corner { top: 6px; left: 12px; }
 		.acct-pick { min-height: 60px; }
 		.panel :global(.field) { gap: 2px; }
 		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }

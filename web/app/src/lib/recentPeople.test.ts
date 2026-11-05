@@ -6,7 +6,7 @@ const store = new Map<string, string>();
 	clear: () => store.clear()
 };
 
-import { forgetPerson, recentPeople, rememberPerson } from './recentPeople.ts';
+import { forgetPerson, recentPeople, rememberPerson, setPersonPic } from './recentPeople.ts';
 
 describe('recent people', () => {
 	beforeEach(() => localStorage.clear());
@@ -22,6 +22,17 @@ describe('recent people', () => {
 			{ name: 'ana', way: 'password' },
 			{ name: 'bo', way: 'jellyfin', login: 'bo-jf' }
 		]);
+	});
+	it('keeps a picture copy across sign-ins, and drops it on null', () => {
+		const pic = 'data:image/jpeg;base64,AAAA';
+		rememberPerson('ana');
+		setPersonPic('ana', pic);
+		rememberPerson('ana', 'plex');
+		expect(recentPeople()).toEqual([{ name: 'ana', way: 'plex', pic }]);
+		setPersonPic('ana', null);
+		expect(recentPeople()).toEqual([{ name: 'ana', way: 'plex' }]);
+		localStorage.setItem('holyarrs.recent-people', JSON.stringify([{ name: 'bo', pic: 'https://elsewhere/x.png' }]));
+		expect(recentPeople()).toEqual([{ name: 'bo', way: 'password' }]);
 	});
 	it('reads older lists of plain names as password people', () => {
 		localStorage.setItem('holyarrs.recent-people', JSON.stringify(['ana', '', 'bo', { name: 'cy', way: 'odd' }]));
