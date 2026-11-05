@@ -883,7 +883,19 @@
 	/* The appearance switch: inside the frame's top-right corner, above the art. */
 	.mode { position: absolute; z-index: 3; top: calc(var(--fr) + 14px); right: calc(var(--fr) + 14px); }
 	.wrap.leaving .mode { display: none; }
-	.mode[data-theme='light'] :global(.ui-ibtn.glass),
+	/* Barely there, like a watermark: a faint icon with no fill until hover or focus. */
+	.mode :global(.ui-ibtn.glass) {
+		color: rgb(255 255 255 / 0.5);
+		background: transparent;
+		border-color: transparent;
+		box-shadow: none;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+		transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+	}
+	.mode :global(.ui-ibtn.glass:hover),
+	.mode :global(.ui-ibtn.glass:focus-visible) { color: rgb(255 255 255 / 0.9); background: rgb(255 255 255 / 0.1); }
 	.light .corner :global(.ui-ibtn.glass) {
 		color: #1d1d1f;
 		background: rgb(255 255 255 / 0.55);
