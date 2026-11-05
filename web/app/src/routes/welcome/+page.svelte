@@ -132,8 +132,14 @@
 	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge'];
 	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112' };
 	let dl = $state<DownloaderForm>(emptyForm());
-	let dlSaved = $state<DownloaderView | null>(null);
-	let dlTest = $state<{ ok: boolean; text: string } | null>(null);
+	// Every connected downloader, each with its last test answer; the form shows
+	// when there is none yet or the owner adds another.
+	let dlList = $state<DownloaderView[]>([]);
+	let dlTests = $state<Record<number, { ok: boolean; text: string }>>({});
+	let dlAdding = $state(false);
+	const dlForm = $derived(dlList.length === 0 || dlAdding);
+	// The test answer names the version ("... v5.1.2"); the row shows just that.
+	const versionOf = (s: string) => s.match(/v?\d+(?:\.\d+)+/)?.[0]?.replace(/^(?!v)/, 'v') ?? '';
 	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget');
 	function pickDl(k: DownloaderForm['kind']) {
 		const url = dl.url;
@@ -142,26 +148,32 @@
 	async function loadDownloader() {
 		try {
 			const r = await api.get<{ downloaders: DownloaderView[] }>('/downloaders');
-			dlSaved = r.downloaders?.[0] ?? null;
+			dlList = r.downloaders ?? [];
 		} catch {
-			dlSaved = null;
+			dlList = [];
+		}
+		// Each one is tested again, so the row shows its version or that it is down.
+		await Promise.all(dlList.map((d) => testDl(d.id)));
+	}
+	async function testDl(id: number) {
+		try {
+			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${id}/test`);
+			dlTests = { ...dlTests, [id]: { ok: t.ok, text: t.text } };
+		} catch (err) {
+			dlTests = { ...dlTests, [id]: { ok: false, text: message(err) } };
 		}
 	}
 	async function saveDownloader(e: SubmitEvent) {
 		e.preventDefault();
-		if (dlSaved) return go('source');
+		if (!dlForm) return go('source');
 		error = '';
-		dlTest = null;
 		busy = true;
 		try {
 			const v = await api.post<DownloaderView>('/downloaders', formBody(dl));
-			dlSaved = v;
-			try {
-				const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${v.id}/test`);
-				dlTest = { ok: t.ok, text: t.text };
-			} catch (err) {
-				dlTest = { ok: false, text: message(err) };
-			}
+			dlList = [...dlList, v];
+			dlAdding = false;
+			dl = emptyForm();
+			await testDl(v.id);
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -189,7 +201,7 @@
 	const titles: Record<Step, { h: string; p: string }> = {
 		parts: { h: 'What do you use?', p: 'You can change this later.' },
 		folders: { h: 'Library folders', p: 'Where should finished downloads go?' },
-		downloader: { h: 'Downloader', p: 'The app that downloads for HolyArrs.' },
+		downloader: { h: 'Downloader', p: 'Where HolyArrs sends downloads.' },
 		source: { h: 'Source', p: 'Where HolyArrs finds releases.' },
 		import: { h: 'Bring your setup', p: 'Coming from Sonarr, Radarr or Overseerr?' }
 	};
@@ -265,13 +277,28 @@
 		</form>
 	{:else if step === 'downloader'}
 		<form class="card" onsubmit={saveDownloader} data-testid="welcome-downloader">
-			{#if dlSaved}
-				<div class="done-line">
-					<span class="ficon ok" aria-hidden="true"><Icon name="check" size={20} stroke={2.5} /></span>
-					<div><b>{dlSaved.name}</b><span class="hint">{dlSaved.url}</span></div>
-				</div>
-				{#if dlTest}<p class:ok-note={dlTest.ok} class:form-error={!dlTest.ok} role="status">{dlTest.text}</p>{/if}
-			{:else}
+			{#if dlList.length}
+				<ul class="conn" aria-label="Connected downloaders">
+					{#each dlList as d (d.id)}
+						{@const test = dlTests[d.id]}
+						<li>
+							<div class="conn-row">
+							<div class="conn-text"><b>{d.name}</b><span class="addr mono">{d.url}</span></div>
+							{#if test && !test.ok}
+								<span class="tag bad">Not connected</span>
+							{:else if test && versionOf(test.text)}
+								<span class="tag mono">{versionOf(test.text)}</span>
+							{/if}
+							</div>
+							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
+						</li>
+					{/each}
+				</ul>
+				{#if !dlForm}
+					<button class="add-row" type="button" disabled={busy} onclick={() => { error = ''; dlAdding = true; }}><Icon name="plus" size={16} />Add another</button>
+				{/if}
+			{/if}
+			{#if dlForm}
 				<div class="tiles five" role="radiogroup" aria-label="Downloader app">
 					{#each dlKinds as k (k)}
 						<label class="tile small" class:on={dl.kind === k}>
@@ -298,15 +325,19 @@
 				</div>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlSaved ? 'Continue' : 'Connect'}</Button>
-			{#if !dlSaved}<button class="alt" type="button" disabled={busy} onclick={() => go('source')}>Skip for now</button>{/if}
+			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlForm ? 'Connect' : 'Continue'}</Button>
+			{#if dlForm && dlList.length}
+				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlAdding = false; dl = emptyForm(); }}>Cancel</button>
+			{:else}
+				<button class="alt" type="button" disabled={busy} onclick={() => go('source')}>Skip for now</button>
+			{/if}
 		</form>
 	{:else if step === 'source'}
 		<div class="card source" data-testid="welcome-source">
 			{#if sources > 0}
-				<div class="done-line">
-					<span class="ficon ok" aria-hidden="true"><Icon name="check" size={20} stroke={2.5} /></span>
-					<div><b>{sources} {sources === 1 ? 'source' : 'sources'} connected</b></div>
+				<div class="conn-row">
+					<div class="conn-text"><b>{sources} {sources === 1 ? 'source' : 'sources'}</b></div>
+					<span class="tag">Connected</span>
 				</div>
 			{/if}
 			<ConnectBridge onchange={loadSources} />
@@ -452,22 +483,28 @@
 	.frow { display: flex; align-items: flex-start; gap: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); }
 	.frow.done { background: color-mix(in srgb, var(--ok, #30d158) 7%, var(--surface-1)); }
 	.ficon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-1); color: var(--text-muted); box-shadow: 0 0 0 1px var(--line); }
-	.ficon.ok { color: var(--ok, #30d158); }
 	.fbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 	.fname { font: 600 15px/1.2 var(--font-ui); color: var(--text); padding-top: 2px; }
 	.fsaved { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 13px; overflow-wrap: anywhere; }
 	.fsaved :global(svg) { color: var(--ok, #30d158); flex: none; }
 	.frow .form-error { margin-top: 0; }
 
-	/* A connected downloader or source: one quiet confirmation line. */
-	.done-line { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--ok, #30d158) 7%, var(--surface-1)); border: 1px solid var(--line); }
-	.done-line b { display: block; font: 600 15px/1.3 var(--font-ui); color: var(--text); }
-	.done-line .hint { margin-top: 2px; overflow-wrap: anywhere; }
-	.ok-note { margin-top: 10px; color: var(--ok-text, var(--text-muted)); font: var(--t-footnote); }
+	/* A connected downloader or source: a plain row, its version as a small tag. */
+	.conn { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+	.conn-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+	.conn-text { flex: 1; min-width: 0; }
+	.conn-text b { display: block; font: 600 15px/1.3 var(--font-ui); color: var(--text); }
+	.conn-text .addr { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); overflow-wrap: anywhere; }
+	.tag { flex: none; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
+	.tag.mono { font-family: var(--font-mono); }
+	.tag.bad { color: var(--danger-text, #ff6961); border-color: color-mix(in srgb, var(--danger-text, #ff6961) 40%, transparent); }
+	.add-row { width: 100%; margin-top: 10px; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
+	.add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.source .conn-row { margin-bottom: 14px; }
 	.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; align-items: start; }
 	.two > :global(.field) { margin: 0; }
 	.source :global(.settings-card), .source :global(section) { box-shadow: none; }
-	.source .done-line { margin-bottom: 14px; }
 
 	@media (max-width: 520px) {
 		.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
