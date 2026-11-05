@@ -74,6 +74,42 @@ type Manager struct {
 	rr               map[string]int           // round robin turn per protocol and priority
 	hosts            map[string]chan struct{} // one send at a time per host (a slot of one)
 	lastSend         map[string]time.Time
+	missed           map[int64]missCount // downloads missing from their Downloader, by id
+}
+
+// missCount is how many syncs in a row a download was missing, and the
+// snapshot time of the last one counted (a reused snapshot counts once).
+type missCount struct {
+	n  int
+	at time.Time
+}
+
+// vanishAfterMisses is how many syncs in a row a download must be missing
+// from its Downloader before it counts as vanished: an empty list while a
+// share mounts or the client restarts is not a removal (late-mounts-8).
+const vanishAfterMisses = 3
+
+// missedOnce counts one more missed sync for a download and reports the
+// count; seen starts the count over.
+func (m *Manager) missedOnce(id int64, readAt time.Time) int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.missed == nil {
+		m.missed = map[int64]missCount{}
+	}
+	c := m.missed[id]
+	if readAt.IsZero() || !readAt.Equal(c.at) {
+		c.n++
+		c.at = readAt
+	}
+	m.missed[id] = c
+	return c.n
+}
+
+func (m *Manager) seen(id int64) {
+	m.mu.Lock()
+	delete(m.missed, id)
+	m.mu.Unlock()
 }
 
 func (m *Manager) now() time.Time {
@@ -898,6 +934,13 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 				active++
 				continue
 			}
+			if ok {
+				m.seen(d.ID)
+			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && m.missedOnce(d.ID, readAt) < vanishAfterMisses {
+				// Missing once or twice is not vanished yet (late-mounts-8).
+				active++
+				continue
+			}
 			if ok && j.State == StateFinished {
 				if full, err := e.Get(ctx, d.ExternalID); err == nil {
 					j = full
@@ -924,16 +967,14 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Download, j Job, found bool, st settings) bool {
 	now := m.now()
 	next := d
-	last := d.UpdatedAt
-	if d.ProgressAt != nil {
-		last = *d.ProgressAt
-	}
+	last := lastMoved(d)
 	failReason := ""
 	switch {
 	case !found && d.State == "sent" && now.Sub(last) < m.vanishGrace():
 		// Added by URL: the Downloader is still fetching the file.
 		return true
 	case !found:
+		m.seen(d.ID)
 		next.State = "vanished"
 		next.StateReason = strPtr("removed outside HolyArrs: the Downloader no longer has it")
 	case st.failDangerous && j.State != StateFailed && len(fakeFiles(j.Files, dr.Protocol)) > 0:
@@ -948,7 +989,7 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		next.Speed, next.UpSpeed, next.ETA = 0, 0, nil
 	case j.State == StateFailed:
 		next.State = "failed"
-		failReason = "the Downloader says " + j.Detail
+		failReason = clientSaysPrefix + j.Detail
 		next.StateReason = &failReason
 	default:
 		next.Progress, next.Speed = min(max(j.Progress, 0), 1), j.Speed
@@ -972,6 +1013,11 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 			next.State = "queued"
 		case j.State == StatePaused:
 			next.State = "paused"
+			if cantUseFiles(j) {
+				next.StateReason = strPtr(waitingReason + " (" + j.Detail + "): is the share mounted?")
+			} else if d.StateReason != nil && strings.HasPrefix(*d.StateReason, waitingReason) {
+				next.StateReason = nil
+			}
 		case next.Progress >= 1:
 			// Repairing or unpacking at full progress is never stalled.
 			next.State = "downloading"
@@ -1018,7 +1064,7 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		}
 	}
 	changed := next.State != d.State || next.Progress != d.Progress || next.Speed != d.Speed || next.UpSpeed != d.UpSpeed || next.Seeds != d.Seeds || next.Peers != d.Peers || !eqTime(next.ProgressAt, d.ProgressAt) ||
-		!eqPtr(next.ETA, d.ETA) || next.SavePath != d.SavePath || len(next.FilesSeen) != len(d.FilesSeen)
+		!eqPtr(next.ETA, d.ETA) || !eqStr(next.StateReason, d.StateReason) || next.SavePath != d.SavePath || len(next.FilesSeen) != len(d.FilesSeen)
 	if !changed {
 		return isActive(next.State)
 	}
@@ -1180,6 +1226,43 @@ func eqPtr(a, b *int64) bool {
 		return a == b
 	}
 	return *a == *b
+}
+
+func eqStr(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
+}
+
+// lastMoved is when a Download last made progress, or its row last changed.
+func lastMoved(d domain.Download) time.Time {
+	if d.ProgressAt != nil {
+		return *d.ProgressAt
+	}
+	return d.UpdatedAt
+}
+
+// clientSaysPrefix starts the reason of a failure the Downloader reports
+// itself; such a failure never deletes the files (late-mounts-3).
+const clientSaysPrefix = "the Downloader says "
+
+// waitingReason starts the reason of a download whose Downloader can't use
+// its files, most often a share mounted late (late-mounts-3).
+const waitingReason = "the Downloader can't use the files"
+
+// cantUseFiles reports a paused job its client paused because it lost
+// sight of the files: qBittorrent error, missingFiles or unknown, Deluge
+// Error, Transmission local error 3.
+func cantUseFiles(j Job) bool {
+	if j.State != StatePaused {
+		return false
+	}
+	switch j.Detail {
+	case "error", "missingFiles", "unknown", "Error":
+		return true
+	}
+	return strings.Contains(j.Detail, "; error 3")
 }
 
 func eqTime(a, b *time.Time) bool {

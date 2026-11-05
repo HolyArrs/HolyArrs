@@ -51,6 +51,10 @@ type Snapshot struct {
 	IndexerProxies []Provider `json:"indexer_proxies,omitempty"`
 	// Downloader is qBittorrent's or SABnzbd's own connection details.
 	Downloader *Downloader `json:"downloader,omitempty"`
+	// RemotePathMappings are Sonarr's, Radarr's and Lidarr's path rewrites
+	// for a download client: the folder as the client on host reports it,
+	// and the same folder as the app sees it.
+	RemotePathMappings []RemotePathMapping `json:"remote_path_mappings,omitempty"`
 
 	// Seerr and Overseerr.
 	Users    []User    `json:"users,omitempty"`
@@ -64,6 +68,13 @@ type Snapshot struct {
 	NeedsReentry []string `json:"needs_reentry,omitempty"`
 	// Notes are things the reader skipped or could not tell.
 	Notes []string `json:"notes,omitempty"`
+}
+
+// RemotePathMapping is one path rewrite for the download client on Host.
+type RemotePathMapping struct {
+	Host       string `json:"host"`
+	RemotePath string `json:"remote_path"`
+	LocalPath  string `json:"local_path"`
 }
 
 // Title is one movie, show or artist.

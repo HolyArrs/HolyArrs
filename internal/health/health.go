@@ -170,7 +170,7 @@ func (e *Engine) intSetting(ctx context.Context, key string, def, lo, hi int) in
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -193,7 +193,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers} {
+	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -340,6 +340,8 @@ func label(kind string) string {
 		return "Source"
 	case "downloader":
 		return "Downloader"
+	case "waiting_downloads":
+		return "downloads waiting for their files"
 	case "backups":
 		return "backups"
 	case "update":
@@ -547,6 +549,42 @@ func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
 		out = append(out, r)
 	}
 	return out, nil
+}
+
+// waitingFor is how long downloads may wait for their files (a share not
+// mounted yet) before the check turns from a warning to an error.
+const waitingFor = 3 * 24 * time.Hour
+
+// waiting counts the downloads that wait because their Downloader can't
+// use the files, most often a share mounted late (late-mounts-3): a
+// warning at first, an error once one has waited about 3 days. A download
+// paused by a person has no reason and is not counted.
+func (e *Engine) waiting(ctx context.Context) ([]Result, error) {
+	ds, err := store.Select[domain.Download](ctx, e.Store.Read(), "downloads",
+		"state = 'paused' AND state_reason LIKE 'the Downloader can''t use the files%'")
+	if err != nil {
+		return nil, err
+	}
+	r := Result{Key: "waiting_downloads", Kind: "waiting_downloads", Subject: "Downloads", State: OK}
+	if len(ds) == 0 {
+		return []Result{r}, nil
+	}
+	oldest := ds[0].UpdatedAt
+	for _, d := range ds[1:] {
+		if d.UpdatedAt.Before(oldest) {
+			oldest = d.UpdatedAt
+		}
+	}
+	r.State = Warning
+	if e.now().Sub(oldest) > waitingFor {
+		r.State = Error
+	}
+	if len(ds) == 1 {
+		r.Message = "1 download waits because its Downloader can't use the files: is the share mounted?"
+	} else {
+		r.Message = strconv.Itoa(len(ds)) + " downloads wait because their Downloader can't use the files: is the share mounted?"
+	}
+	return []Result{r}, nil
 }
 
 // backups warns when the newest backup is older than two backup periods

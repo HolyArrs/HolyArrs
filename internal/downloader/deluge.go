@@ -465,7 +465,8 @@ func (t delugeTorrent) job(id string) Job {
 func delugeState(state string, finished bool) string {
 	switch strings.ToLower(state) {
 	case "error":
-		return StateFailed
+		// Files missing or unreadable: wait as paused (late-mounts-3).
+		return StatePaused
 	case "checking", "moving":
 		return StateQueued
 	}

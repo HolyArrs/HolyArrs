@@ -35,6 +35,8 @@ func fullSnapshots() []Input {
 		},
 		DownloadClients: []Provider{prov("qBit", "QBittorrent", map[string]any{"host": "qbit", "port": int64(8080), "username": "admin", "movieCategory": "radarr"}, "password"),
 			prov("Deluge", "Deluge", map[string]any{"host": "deluge"})},
+		RemotePathMappings: []RemotePathMapping{{Host: "qbit", RemotePath: "/downloads/", LocalPath: "/data/downloads/"},
+			{Host: "elsewhere", RemotePath: "/dl", LocalPath: "/data/dl"}, {Host: "qbit", RemotePath: "relative", LocalPath: "/data/x"}},
 		ImportLists:   []Provider{prov("Trakt", "TraktListImport", nil, "accessToken")},
 		Notifications: []Provider{prov("Discord", "Discord", nil, "webHookUrl"), prov("Mail", "Email", map[string]any{"server": "smtp.example", "port": int64(465), "useEncryption": "1", "from": "a@example.org", "to": []any{"b@example.org"}}, "password"), prov("Push", "Pushover", nil)},
 		Metadata:      []Provider{prov("Kodi", "XbmcMetadata", nil)},
