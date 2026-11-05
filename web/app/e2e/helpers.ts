@@ -60,11 +60,12 @@ export async function signIn(page: Page, o: Owner) {
 	await expect(page).toHaveURL(/\/$/);
 }
 
-/** libraryStatus picks a Library status from the toolbar's Filter menu (all, missing, not_out_yet, better, have). */
+/** libraryStatus picks a Library status in the toolbar's Sort and filter panel (all, missing, not_out_yet, better, have). */
 export async function libraryStatus(scope: Page | Locator, value: 'all' | 'missing' | 'not_out_yet' | 'better' | 'have') {
-	const names = { all: /^All/, missing: /^Missing/, not_out_yet: /^Not out yet/, better: /^Better copy wanted/, have: /^In library/ };
-	await scope.getByRole('button', { name: /^Filter/ }).click();
-	await scope.getByRole('menu', { name: 'Filter' }).getByRole('menuitemradio', { name: names[value] }).click();
+	const names = { all: /^All/, missing: /^Missing/, not_out_yet: /^Upcoming/, better: /^Better copy/, have: /^In library/ };
+	await scope.getByRole('button', { name: /^Sort( &|)/ }).first().click();
+	await scope.getByRole('region', { name: 'Filter' }).getByRole('button', { name: names[value] }).first().click();
+	await ('keyboard' in scope ? scope : scope.page()).keyboard.press('Escape');
 }
 
 /** libraryView switches the Library between Banners, Posters and Overview. */
@@ -96,10 +97,11 @@ export async function openLibraryTab(page: Page): Promise<Locator> {
 	return page.getByTestId('own-pane');
 }
 
-/** libraryTool opens a Library tool from the Library page's Add menu. */
+/** libraryTool opens a Library tool from the Library page's Tools panel. */
 export async function libraryTool(page: Page, name: string) {
-	await page.getByRole('main').getByRole('button', { name: 'Add', exact: true }).click();
-	await page.getByRole('menu', { name: 'Add and Library tools' }).getByRole('menuitem', { name }).click();
+	await page.getByRole('main').getByRole('button', { name: /^(Tools|Library tools)$/ }).click();
+	const tiles: Record<string, string> = { 'Import a library': 'A whole library', 'Import files by hand': 'Files by hand', 'Turned down releases': 'Turned down' };
+	await page.getByRole('link', { name: tiles[name] ?? name }).first().click();
 }
 
 // A show's seasons and episodes live on its Library tab: one row per season

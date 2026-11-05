@@ -278,7 +278,7 @@ test('Library search debounces the indexed query and ignores stale results', asy
 		return route.fulfill({ json: { titles } });
 	});
 
-	const find = page.getByLabel('Find in the Library');
+	const find = page.getByTestId('library-find-input');
 	await libraryView(page, 'Posters');
 	const cards = page.getByTestId('library-card');
 	await find.fill('alias café');

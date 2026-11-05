@@ -203,6 +203,8 @@ async function signedInCommunity(page: Page) {
 
 async function verifyPage(page: Page, testInfo: TestInfo, name: string) {
 	await noSidewaysScroll(page);
+	// Let fades finish (a button turning back on fades in), so contrast is read on the settled page.
+	await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity));
 	const result = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	expect(result.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`)).toEqual([]);
 	const artifactDir = join(process.cwd(), 'e2e', '.tmp', 'community-artifacts');
@@ -271,8 +273,8 @@ for (const viewport of viewports) {
 			await page.goto('/library/copies');
 			await expect(page.getByText('1–2 of 51')).toBeVisible();
 			await page.getByTestId('copies-find-input').fill('star');
-			await page.getByLabel('Codec').selectOption('h264');
-			await page.getByLabel('Sort').selectOption('codec');
+			await page.getByLabel('Codec', { exact: true }).selectOption('h264');
+			await page.getByLabel('Sort', { exact: true }).selectOption('codec');
 			await expect.poll(() => mocked.copyQueries.some((url) => url.searchParams.get('q') === 'star' && url.searchParams.get('codec') === 'h264' && url.searchParams.get('sort') === 'codec')).toBe(true);
 			await page.getByLabel('Select Alpha, 1080p').check();
 			await expect(page.getByLabel('Select Protected Beta, 1080p')).toBeDisabled();

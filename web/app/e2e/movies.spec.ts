@@ -79,9 +79,9 @@ test('Library filters, find by name, posters and list', async () => {
 	await expect(grid).toHaveCount(0);
 
 	await libraryStatus(page, 'all');
-	await page.getByLabel('Find in the Library').fill('harbour');
+	await page.getByTestId('library-find-input').fill('harbour');
 	await expect(grid).toHaveCount(1);
-	await page.getByLabel('Find in the Library').fill('');
+	await page.getByTestId('library-find-input').fill('');
 
 	await libraryView(page, 'Banners');
 	await expect(rows).toHaveCount(4);
