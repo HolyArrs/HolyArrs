@@ -26,9 +26,9 @@ describe('recent people', () => {
 	it('keeps a picture copy across sign-ins, and drops it on null', () => {
 		const pic = 'data:image/jpeg;base64,AAAA';
 		rememberPerson('ana');
-		setPersonPic('ana', pic);
+		setPersonPic('ana', pic, '/api/v1/users/2/avatar?v=a');
 		rememberPerson('ana', 'plex');
-		expect(recentPeople()).toEqual([{ name: 'ana', way: 'plex', pic }]);
+		expect(recentPeople()).toEqual([{ name: 'ana', way: 'plex', pic, picFrom: '/api/v1/users/2/avatar?v=a' }]);
 		setPersonPic('ana', null);
 		expect(recentPeople()).toEqual([{ name: 'ana', way: 'plex' }]);
 		localStorage.setItem('holyarrs.recent-people', JSON.stringify([{ name: 'bo', pic: 'https://elsewhere/x.png' }]));

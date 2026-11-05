@@ -12,7 +12,7 @@
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import SigninPortals from '#lib/SigninPortals.svelte';
 	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
-	import { forgetPerson, recentPeople, rememberPerson, setPersonPic, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
+	import { forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
@@ -46,23 +46,6 @@
 		chosen = 'choose';
 		pw = '';
 		error = '';
-	}
-	// Signed in now, so the picture loads: keep a 96 px copy for the sign-in page.
-	async function keepPic(n: string, src: string | null) {
-		if (!src) return setPersonPic(n, null);
-		try {
-			const img = new Image();
-			img.src = src;
-			await img.decode();
-			const c = document.createElement('canvas');
-			c.width = c.height = 96;
-			const g = c.getContext('2d');
-			if (!g) return;
-			g.drawImage(img, 0, 0, 96, 96);
-			setPersonPic(n, c.toDataURL('image/jpeg', 0.82));
-		} catch {
-			// No copy: the row keeps the letter.
-		}
 	}
 	function dropPerson(n: string) {
 		forgetPerson(n);
@@ -251,7 +234,7 @@
 					: '';
 		if (way) {
 			rememberPerson(session.s.name, way, way === 'jellyfin' || way === 'emby' ? name.trim() : undefined);
-			void keepPic(session.s.name, session.s.avatar);
+			void keepPersonPic(session.s.name, session.s.avatar);
 		}
 		// Success, one continuous move: the Orbit grows out of the Sign in
 		// button and glides to the centre while the panel and the art dissolve

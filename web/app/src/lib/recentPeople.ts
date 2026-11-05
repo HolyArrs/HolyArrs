@@ -7,8 +7,9 @@ const MAX = 6;
 
 export type RecentWay = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc';
 // `login` is the name typed for a Jellyfin or Emby account, when it differs;
-// `pic` a small JPEG of their profile picture, as a data: address.
-export type RecentPerson = { name: string; way: RecentWay; login?: string; pic?: string };
+// `pic` a small JPEG of their profile picture, as a data: address, and `picFrom`
+// the picture address it was copied from (it changes with the picture).
+export type RecentPerson = { name: string; way: RecentWay; login?: string; pic?: string; picFrom?: string };
 
 const WAYS: readonly string[] = ['password', 'plex', 'jellyfin', 'emby', 'oidc'];
 
@@ -21,7 +22,10 @@ function read(v: unknown): RecentPerson | null {
 	const way = typeof o.way === 'string' && WAYS.includes(o.way) ? (o.way as RecentWay) : 'password';
 	const p: RecentPerson = { name: o.name, way };
 	if (typeof o.login === 'string' && o.login && o.login !== o.name) p.login = o.login;
-	if (typeof o.pic === 'string' && o.pic.startsWith('data:image/jpeg;base64,') && o.pic.length < 40_000) p.pic = o.pic;
+	if (typeof o.pic === 'string' && o.pic.startsWith('data:image/jpeg;base64,') && o.pic.length < 40_000) {
+		p.pic = o.pic;
+		if (typeof o.picFrom === 'string') p.picFrom = o.picFrom;
+	}
 	return p;
 }
 
@@ -53,8 +57,11 @@ export function rememberPerson(name: string, way: RecentWay = 'password', login?
 	const all = recentPeople();
 	const p: RecentPerson = { name, way };
 	if (login && login !== name) p.login = login;
-	const pic = all.find((o) => o.name === name)?.pic;
-	if (pic) p.pic = pic;
+	const old = all.find((o) => o.name === name);
+	if (old?.pic) {
+		p.pic = old.pic;
+		if (old.picFrom) p.picFrom = old.picFrom;
+	}
 	save([p, ...all.filter((o) => o.name !== name)]);
 }
 
@@ -63,6 +70,41 @@ export function forgetPerson(name: string) {
 }
 
 /** setPersonPic keeps (or, with null, drops) the small copy of a remembered person's picture. */
-export function setPersonPic(name: string, pic: string | null) {
-	save(recentPeople().map((o) => (o.name !== name ? o : pic ? { ...o, pic } : { name: o.name, way: o.way, ...(o.login ? { login: o.login } : {}) })));
+export function setPersonPic(name: string, pic: string | null, from?: string) {
+	save(
+		recentPeople().map((o) => {
+			if (o.name !== name) return o;
+			const { pic: _p, picFrom: _f, ...rest } = o;
+			return pic ? { ...rest, pic, ...(from ? { picFrom: from } : {}) } : rest;
+		})
+	);
+}
+
+/**
+ * keepPersonPic copies a signed-in person's picture (src, their picture
+ * address) into the device list as a 96 px JPEG, so the sign-in page can show
+ * it. It does nothing for someone not remembered here, or when the copy is
+ * already of this picture; a null src drops the copy.
+ */
+export async function keepPersonPic(name: string, src: string | null) {
+	const p = recentPeople().find((o) => o.name === name);
+	if (!p) return;
+	if (!src) {
+		if (p.pic) setPersonPic(name, null);
+		return;
+	}
+	if (p.pic && p.picFrom === src) return;
+	try {
+		const img = new Image();
+		img.src = src;
+		await img.decode();
+		const c = document.createElement('canvas');
+		c.width = c.height = 96;
+		const g = c.getContext('2d');
+		if (!g) return;
+		g.drawImage(img, 0, 0, 96, 96);
+		setPersonPic(name, c.toDataURL('image/jpeg', 0.82), src);
+	} catch {
+		// No copy: the row keeps the letter.
+	}
 }

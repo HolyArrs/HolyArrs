@@ -14,6 +14,7 @@
 	import Theater from '#lib/ui/Theater.svelte';
 	import { theater } from '#lib/theater.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { keepPersonPic } from '#lib/recentPeople.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { dlPush } from '#lib/downloads/push.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
@@ -184,6 +185,10 @@
 	onMount(installMusicPrefetch);
 	$effect(() => {
 		if (session.s.state !== 'signed_in') forgetMusicPrefetch();
+	});
+	// Keep the sign-in page's copy of my picture current (only if this device remembers me).
+	$effect(() => {
+		if (session.s.state === 'signed_in') void keepPersonPic(session.s.name, session.s.avatar);
 	});
 	onMount(installArtistVideoPrefetch);
 	onMount(() => installHeroPrefetch(preloadHero));
