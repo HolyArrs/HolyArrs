@@ -264,6 +264,34 @@
 		return out;
 	});
 	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
+	// Coming up: one list in place of the New season, Coming soon and Waiting for approval rows (each repeated a tile
+	// above). What airs next, one line each with its date; a new season that is already out leads, two at most.
+	// Nothing under the tiles repeats a tile: a title a picture tile already shows is left out of the row and the list
+	// below. When a tile shows something else (or there are no tiles), nothing is skipped.
+	const onTiles = $derived(new Set(showOverview ? places.flatMap((pl) => (pl.pic ? [pl.pic.c.title_id] : [])) : []));
+	const below = (cards: HomeCard[] | undefined) => (cards ?? []).filter((c) => !onTiles.has(c.title_id));
+	type UpLine = { key: string; c: HomeCard; sub: string; when: string; now: boolean };
+	const comingUp = $derived.by((): UpLine[] => {
+		const today = localDay(now);
+		const seen = new Set<number>(onTiles);
+		const out: UpLine[] = [];
+		const add = (c: HomeCard, max: number) => {
+			if (seen.has(c.title_id) || out.length >= max) return;
+			seen.add(c.title_id);
+			const [sub, tail] = (c.line ?? '').split(' · ');
+			const outNow = /out now/i.test(tail ?? '');
+			const isToday = c.at?.slice(0, 10) === today;
+			out.push({ key: c.key, c, sub: sub ?? '', when: outNow ? 'Out now' : isToday ? 'Today' : (tail ?? ''), now: outNow || isToday });
+		};
+		for (const c of (home?.new_seasons ?? []).filter((x) => /out now/i.test(x.line ?? ''))) add(c, 2);
+		for (const c of home?.soon ?? []) add(c, 6);
+		for (const c of home?.new_seasons ?? []) add(c, 6);
+		return out;
+	});
+	// The list sits where the first of the two rows it replaces was.
+	const upAt = $derived(rows.find((r) => r === 'new_season' || r === 'soon'));
+	const badThumb = new SvelteSet<string>();
+	const kindIcon = (k: string): IconName => (k === 'movie' ? 'film' : k === 'artist' ? 'music' : 'tv');
 	// The Library is never a mixed list: every link goes to one kind. A card's own kind when the link is about a card;
 	// for the Library total, the biggest part of it.
 	const libHref = $derived([...libCards].sort((x, y) => y.big - x.big)[0]?.href ?? '/library?kind=movie');
@@ -865,20 +893,28 @@
 					</section>
 				{/if}
 			{:else if row === 'arrived'}
-				{@render wideRow(home?.arrived ?? [], 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to(kindHref(home?.arrived?.[0])) })}
-			{:else if row === 'approval' && waiting.length}
-				<!-- The asks rows use the same wide cards as the rows around them: the title's wide picture, who asked under it. -->
-				<div class="wide-row" data-testid="home_approval">
-					<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Requests page" href={to('/requests')} item="var(--title-item)">
-						{#each waiting.slice(0, 20) as a (a.id)}
-							{@const wide = askWide(a)}
-							{@const pic = askPic(a)}
-							{#key `${wide}|${pic}`}
-								<WideCard cover title={a.name} kind={askKind(a)} typed href={to(`/requests?ask=${a.id}`)} image={wide} poster={pic} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
-							{/key}
+				{@render wideRow(below(home?.arrived), 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to(kindHref(home?.arrived?.[0])) })}
+			{:else if row === upAt && comingUp.length}
+				<section class="up" aria-labelledby="h-up" data-testid="home_coming_up">
+					<header class="up-head">
+						<h2 id="h-up">Coming up</h2>
+						{#if owner}<a class="up-more" href={to('/calendar')}>Calendar<Icon name="chevronRight" size={14} /></a>{/if}
+					</header>
+					<ul class="up-list">
+						{#each comingUp as u (u.key)}
+							{@const art = u.c.backdrop || u.c.poster}
+							<li>
+								<a class="up-line" href={to(u.c.href)}>
+									<span class="up-th" aria-hidden="true">
+										{#if art && !badThumb.has(u.key)}<img src={sized(art, 'backdrop', 130)} alt="" loading="lazy" decoding="async" use:artGone={() => badThumb.add(u.key)} />{:else}<Icon name={kindIcon(u.c.kind)} size={16} />{/if}
+									</span>
+									<span class="up-t"><b dir="auto">{u.c.name}</b><span>{u.sub}</span></span>
+									<span class="up-when" class:now={u.now}>{u.when}</span>
+								</a>
+							</li>
 						{/each}
-					</Shelf>
-				</div>
+					</ul>
+				</section>
 			{:else if row === 'asks' && mine.length}
 				<div class="wide-row" data-testid="home_asks">
 					<Shelf title="Your asks" subtitle={asksLine} href={to('/requests')} item="var(--title-item)">
@@ -903,12 +939,8 @@
 						{/each}
 					</Shelf>
 				</div>
-			{:else if row === 'new_season'}
-				{@render wideRow(home?.new_seasons ?? [], 'home_new_season', { title: 'New season of a show you have' })}
 			{:else if row === 'following'}
-				{@render wideRow(home?.following ?? [], 'home_following', { title: 'Following', subtitle: 'Shows and artists you follow' })}
-			{:else if row === 'soon'}
-				{@render wideRow(home?.soon ?? [], 'home_soon', { title: 'Coming soon', subtitle: 'The next 30 days', href: owner ? to('/calendar') : undefined })}
+				{@render wideRow(below(home?.following), 'home_following', { title: 'Following', subtitle: 'Shows and artists you follow' })}
 			{/if}
 		{/each}
 		</PageLoader>
@@ -1122,6 +1154,36 @@
 		.go { display: none; }
 	}
 
+	/* Coming up: a heading like the rows', then one sheet with a line per title: a small picture, the name over its episode, the date at the right. */
+	.up { display: flex; flex-direction: column; gap: 12px; }
+	.up-head { display: flex; align-items: baseline; gap: 12px; }
+	.up-head h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
+	.up-more { position: relative; margin-left: auto; display: inline-flex; align-items: center; gap: 2px; min-height: 32px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; border-radius: 8px; }
+	.up-more::after { content: ''; position: absolute; inset: -6px 0; }
+	.up-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.up-list { list-style: none; margin: 0; padding: 6px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 6px; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop); }
+	.up-list li { min-width: 0; }
+	.up-list li:nth-child(n + 3) { box-shadow: inset 0 1px 0 var(--line); }
+	/* An odd last line takes the whole width, so the sheet has no empty half. */
+	.up-list li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+	.up-line { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 0 10px; border-radius: 14px; color: inherit; transition: background var(--dur-fast) var(--ease-out); }
+	.up-line:hover { background: var(--well); }
+	.up-line:focus-visible, .up-more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.up-th { flex: none; width: 68px; aspect-ratio: 16 / 9; display: grid; place-items: center; border-radius: 8px; overflow: hidden; background: var(--surface-3); color: var(--text-faint); box-shadow: 0 0 0 1px var(--line); }
+	.up-th img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+	.up-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+	.up-t b { font: 600 14px / 1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.up-t span { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.up-when { flex: none; font: 600 12px / 1.2 var(--font-ui); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.up-when.now { color: var(--accent-text); }
+	/* A narrow window or a phone: one column, four lines. */
+	@container home (max-width: 700px) {
+		.up-list { grid-template-columns: minmax(0, 1fr); border-radius: 18px; }
+		.up-list li:nth-child(n + 2) { box-shadow: inset 0 1px 0 var(--line); }
+		.up-list li:nth-child(n + 5) { display: none; }
+		.up-th { width: 60px; }
+	}
+
 	/* The Welcome card and the first-ask prompt are the same sheet as the tiles. */
 	.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop); overflow: hidden; }
 	.setup-main { padding: clamp(20px, 3vw, 32px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -1156,7 +1218,7 @@
 	   focus gets a system outline, and the small coloured marks (dots, pips, the foot line, the count) keep their colours. */
 	@media (forced-colors: active) {
 		.home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; }
-		.tile, .setup, .prompt, .flow, .passed li { border: 1px solid CanvasText; }
+		.tile, .setup, .prompt, .flow, .passed li, .up-list { border: 1px solid CanvasText; }
 		.life, .pb, .tone, .note .dot, .count, .ask-stack b { forced-color-adjust: none; }
 		.life:not(.pips), .pb, .life.pips i.off { outline: 1px solid CanvasText; outline-offset: -1px; }
 	}
