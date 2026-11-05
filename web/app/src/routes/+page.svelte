@@ -5,16 +5,17 @@
 	import { afterHandoff } from '#lib/loader.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { arrivedHead, askProgressLine, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, uncheckedLine, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { arrivedHead, askProgressLine, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, freeSpace, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, uncheckedLine, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { decisions } from '#lib/decisions.svelte.ts';
 	import { METADATA_DOWN, metadataOutage } from '#lib/metadata-health.svelte.ts';
-	import { bytes } from '#lib/format.ts';
-	import { homeFacts, homeLine } from '#lib/home-line.ts';
+	import { bytes, duration, percent } from '#lib/format.ts';
+	import { homeFacts, homeGreeting, homeNews, localDay } from '#lib/home-line.ts';
 	import { personName } from '#lib/plain.ts';
 	import type { Fresh } from '#lib/fresh.ts';
 	import type { DownloadRow } from '#lib/downloaders.ts';
 	import type { Ask, Health, HealthChecks, LibraryFolder } from '#lib/types.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -73,18 +74,12 @@
 	const unchecked = $derived(owner && (uncheckedDl || uncheckedHealth));
 	// Items that share a cause are one row ("2 downloads failed"); six rows show, the rest link to the page that holds most of them.
 	const fixRows = $derived(groupAttention(fixes));
-	const fixShown = $derived(fixRows.slice(0, 6));
-	const fixHidden = $derived(moreLink(fixRows.slice(6), admin));
-	let fixOpen = $state<Record<string, boolean>>({});
-	/** The plain note and, for admins, the raw text: what the Details link shows. */
-	function fixMore(i: Attention): string[] {
-		return [i.note, admin ? i.detail : undefined].filter((t): t is string => !!t && t !== i.title);
-	}
+	// The Needs attention tile opens where the problems are: the one cause's own page, or the page that holds most of them.
+	const fixHref = $derived(fixRows.length === 1 ? fixRows[0].href : (moreLink(fixRows, admin)?.href ?? (admin ? '/settings/health' : '/status')));
 	// Your Library: one card per kind that is on, and for owners what it all takes on disk.
 	const libCards = $derived(libraryCards(home?.library, manager ? '/downloads' : undefined));
 	const diskTotal = $derived(libCards.reduce((t, c) => t + c.size, 0));
 	const showDisk = $derived(owner && libCards.length > 0);
-	const showOverview = $derived(!rows.includes('welcome') && (libCards.length > 0 || owner));
 	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
 	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available'));
 	const mineShown = $derived(mine.slice(0, 20));
@@ -101,14 +96,52 @@
 		for (const a of asks) if (a.title_id && a.poster) m.set(a.title_id, a.poster);
 		return m;
 	});
-	// The line under Home: your name, the time and day, and what is going on, from what this page already loaded.
-	const line = $derived(
-		homeLine({
-			name: session.s.name,
-			now,
-			kid: home?.kid ?? session.kid,
-			facts: homeFacts({ home, asks, downloads, approver, manager, kid: home?.kid ?? session.kid, now })
-		})
+	// The top of Home: a greeting that shows on the first frame, and a short note beside the switch once the data has answered.
+	const kid = $derived(home?.kid ?? session.kid);
+	const greeting = $derived(homeGreeting({ name: session.s.name, now }));
+	const news = $derived(settled ? homeNews({ now, kid, facts: homeFacts({ home, asks, downloads, approver, manager, kid, now }) }) : '');
+
+	// Bento: the Home grid (pictures and counts) and, for people who manage the Library, a System grid of the same size.
+	let board = $state<'home' | 'system'>('home');
+	const showSystem = $derived(manager);
+	const shown = $derived(showSystem ? board : 'home');
+	// Pictures for the big, tall and wide tiles: new seasons, arrivals, coming soon and follows, taken in turn, each title once.
+	const pics = $derived.by(() => {
+		const lists: [HomeCard[], string][] = [
+			[home?.new_seasons ?? [], 'New season'],
+			[home?.arrived ?? [], 'Just arrived'],
+			[home?.soon ?? [], 'Coming soon'],
+			[home?.following ?? [], 'Following']
+		];
+		const seen = new Set<number>();
+		const out: { c: HomeCard; label: string }[] = [];
+		for (let i = 0; out.length < 3 && lists.some(([l]) => i < l.length); i++) {
+			for (const [l, label] of lists) {
+				const c = l[i];
+				if (c && (c.backdrop || c.poster) && !seen.has(c.title_id) && out.length < 3) {
+					seen.add(c.title_id);
+					out.push({ c, label });
+				}
+			}
+		}
+		return out;
+	});
+	const showOverview = $derived(!rows.includes('welcome') && (libCards.length > 0 || owner || pics.length > 0));
+	// On two columns an odd number of small tiles leaves a hole: the last one spans the row instead.
+	const smallTiles = $derived([owner ? 'att' : '', (approver && waiting.length) || mine.length ? 'ask' : '', pics[1] ? 'tall' : '', libCards.length ? 'lib' : '', showDisk ? 'disk' : ''].filter(Boolean));
+	const lastFill = $derived(smallTiles.length % 2 ? smallTiles[smallTiles.length - 1] : '');
+	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
+	const arrivedToday = $derived((home?.arrived ?? []).filter((c) => c.at && localDay(new Date(c.at)) === localDay(now)).length);
+	const waitingPics = $derived(waiting.filter((a) => a.poster).slice(0, 4));
+	// System numbers, from what this page already read.
+	const speed = $derived(fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
+	const queued = $derived(manager ? downloads.filter((d) => !d.client_item && d.active && d.state === 'queued').length : 0);
+	const srcs = $derived(partCount(health?.sources));
+	const dls = $derived(partCount(health?.downloaders));
+	const free = $derived(freeSpace(folders));
+	const sysOk = $derived(settled && !fixes.length && !unchecked);
+	const sysNote = $derived(
+		!settled ? '' : (unchecked && !fixes.length ? 'Could not check everything' : fixes.length ? `${n(fixes.length)} ${fixes.length === 1 ? 'thing needs' : 'things need'} a look` : 'All good') + (fetchingAll.length ? ` · ${n(fetchingAll.length)} downloading${speed ? ` at ${bytes(speed)}/s` : ''}` : '')
 	);
 
 	/** The ask's one round status mark: live progress first. */
@@ -229,12 +262,22 @@
 <svelte:head><title>Home · HolyArrs</title></svelte:head>
 
 <div class="home">
-	<PageHeader title="Home" subtitle={settled ? line : '\u00a0'}>
-		{#snippet actions()}
-			<Button variant="secondary" icon="search" href={to('/search')}>Search</Button>
-			<Button variant="secondary" icon="compass" href={to('/explore')}>Explore</Button>
-		{/snippet}
-	</PageHeader>
+	<h1 class="sr-only">Home</h1>
+	<header class="top">
+		<p class="greet">{greeting}</p>
+		<div class="bar">
+			{#if showSystem}
+				<SegmentedControl options={[{ value: 'home', label: 'Home', icon: 'home' }, { value: 'system', label: 'System', icon: 'gauge' }]} bind:value={board} label="Show on Home" testid="home-switch" announce={(l) => `Showing ${l}`} />
+			{/if}
+			<p class="note">
+				{#if shown === 'system'}{#if sysNote}<span class="dot" class:ok={sysOk} class:warn={settled && !sysOk} aria-hidden="true"></span>{sysNote}{/if}{:else}{news}{/if}
+			</p>
+			<div class="acts">
+				<span class="wide-only"><Button variant="secondary" icon="search" href={to('/search')}>Search</Button><Button variant="secondary" icon="compass" href={to('/explore')}>Explore</Button></span>
+				<span class="phone-only"><IconButton icon="search" label="Search" variant="tinted" size="lg" href={to('/search')} tooltip={false} /><IconButton icon="compass" label="Explore" variant="tinted" size="lg" href={to('/explore')} tooltip={false} /></span>
+			</div>
+		</div>
+	</header>
 
 	{#if failed && !home && loaded}
 		<LoadError hasData={false} message="Could not load Home." onretry={retry} busy={retrying} />
@@ -255,134 +298,140 @@
 			{/if}
 		{/snippet}
 
+		<!-- One picture tile: the big and wide ones use the wide picture (with the title logo), the tall one the poster. -->
+		{#snippet picTile(p: { c: HomeCard; label: string }, cls: string, tall: boolean)}
+			<a class="tile pic {cls}" href={to(p.c.href)}>
+				<img src={tall ? p.c.poster || p.c.backdrop : p.c.backdrop || p.c.poster} alt="" loading="lazy" decoding="async" />
+				<span class="lab">{p.label}</span>
+				{#if !tall && p.c.backdrop && p.c.logo && p.c.kind !== 'artist'}
+					<img class="logo" src={p.c.logo} alt={p.c.name} loading="lazy" decoding="async" />
+				{:else}
+					<span class="nm">{p.c.name}</span>
+				{/if}
+				{#if p.c.line}<span class="sm">{p.c.line}</span>{/if}
+			</a>
+		{/snippet}
+
 		<PageLoader loading={!loaded} label="Loading Home" onretry={retry}>
 		{#if showOverview}
-			<div class="overview" class:solo={!owner} data-testid="home-overview">
-				{#if libCards.length}
-					<section class="library" aria-labelledby="h-lib" data-testid="home-library">
-						<header class="col-head">
-							<h2 id="h-lib">Your Library</h2>
-							<a class="col-link" href={to('/library')}>See all<span class="sr-only"> Your Library</span><Icon name="chevronRight" size={14} /></a>
-						</header>
-						<ul class="lib-grid">
-							{#each libCards as c, i (c.kind)}
-								<li class="lib-card k-{c.kind}" style="--i: {i}">
-									<div class="lib-top">
-										<span class="lib-icon" aria-hidden="true"><Icon name={c.icon} size={20} /></span>
-										<h3><a class="stretch" href={to(c.href)}>{c.label}</a></h3>
-										<span class="lib-go" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>
-									</div>
-									<p class="lib-big"><span class="num">{n(c.big)}</span> <span class="unit">{c.unit}</span></p>
-									{#if c.detail}<p class="lib-detail">{c.detail}</p>{/if}
-									<div class="bar" role="img" aria-label={c.segments.map((s) => `${n(s.count)} ${s.label}`).join(', ')}>
-										{#each c.segments as s (s.key)}{#if s.count}<i class="seg {s.key}" style="flex-grow: {s.share}"></i>{/if}{/each}
-										<i class="rest" style="flex-grow: {Math.max(0, 1 - c.segments.reduce((t, s) => t + s.share, 0))}"></i>
-									</div>
-									<ul class="legend">
-										{#each c.segments as s (s.key)}
-											{#if s.count || s.key === 'on_disk'}
-												<li>
-													{#if s.href}
-														<a class="leg {s.key}" href={to(s.href)}><i aria-hidden="true"></i><strong>{n(s.count)}</strong> {s.label}<span class="sr-only"> ({c.label})</span></a>
-													{:else}
-														<span class="leg {s.key}"><i aria-hidden="true"></i><strong>{n(s.count)}</strong> {s.label}</span>
-													{/if}
-												</li>
-											{/if}
-										{/each}
-									</ul>
-								</li>
-							{/each}
-							{#if showDisk}
-								<li class="lib-card k-disk" class:wide={libCards.length % 2 === 0} style="--i: {libCards.length}">
-									<div class="lib-top">
-										<span class="lib-icon" aria-hidden="true"><Icon name="archive" size={20} /></span>
-										<h3>On disk</h3>
-									</div>
-									<p class="lib-big"><span class="num">{bytes(diskTotal)}</span></p>
-									<p class="lib-detail">Across your Library folders</p>
-									<div class="bar" role="img" aria-label={libCards.map((c) => `${c.label} ${bytes(c.size)}`).join(', ')}>
-										{#each libCards as c (c.kind)}{#if c.size}<i class="seg k-{c.kind}" style="flex-grow: {c.size / Math.max(diskTotal, 1)}"></i>{/if}{/each}
-										{#if !diskTotal}<i class="rest" style="flex-grow: 1"></i>{/if}
-									</div>
-									<ul class="legend">
-										{#each libCards as c (c.kind)}
-											<li><span class="leg k-{c.kind}"><i aria-hidden="true"></i><strong>{bytes(c.size)}</strong> {c.label}</span></li>
-										{/each}
-									</ul>
-								</li>
-							{/if}
-						</ul>
-					</section>
-				{/if}
-				{#if owner}
-					<section class="attention" aria-labelledby="h-fix" data-testid="home-attention">
-						<header class="col-head">
-							<h2 id="h-fix">Needs attention</h2>
-						</header>
-						<div class="att-card" class:calm={settled && !fixes.length && !unchecked}>
+			<div class="boards" data-testid="home-overview">
+				<div class="bento" class:gone={shown !== 'home'} inert={shown !== 'home'} data-testid="home-board">
+					{#if pics[0]}{@render picTile(pics[0], 'big', false)}{/if}
+					{#if owner}
+						<a class="tile stat" class:fill={lastFill === 'att'} class:calm={sysOk} class:hot={settled && fixes.length > 0} href={to(fixHref)} data-testid="home-attention">
+							<span class="lab">Needs attention</span>
 							{#if !settled}
-								<div class="att-wait" aria-hidden="true"><i></i><i></i><i></i></div>
-								<span class="sr-only">Checking</span>
-							{:else if !fixes.length && unchecked}
-								<div class="all-good" role="status">
-									<span class="att-icon" aria-hidden="true"><Icon name="alert" size={20} /></span>
-									<p class="good-title">Could not check</p>
-									<p class="good-line">{uncheckedLine(uncheckedDl, uncheckedHealth)}</p>
-									<Button size="sm" variant="secondary" busy={retrying} onclick={retry}>Try again</Button>
-								</div>
-							{:else if !fixes.length}
-								<div class="all-good">
-									<span class="good-mark" aria-hidden="true"><Icon name="check" size={22} /></span>
-									<p class="good-title">All good</p>
-									<p class="good-line">Downloads, imports and checks are running fine.</p>
-								</div>
+								<span class="wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Checking</span>
+							{:else if fixes.length}
+								<span class="big num fail">{n(fixes.length)}</span>
+								<span class="sm">{fixRows[0].title}</span>
+							{:else if unchecked}
+								<span class="big word">Could not check</span>
+								<span class="sm">{uncheckedLine(uncheckedDl, uncheckedHealth)}</span>
 							{:else}
-								<div class="att-sum">
-									<span class="att-icon" aria-hidden="true"><Icon name="alert" size={20} /></span>
-									<p class="lib-big"><span class="num">{n(fixes.length)}</span> <span class="unit">{fixes.length === 1 ? 'thing needs a look' : 'things need a look'}</span></p>
-								</div>
-								<ul class="list">
-									{#each fixShown as g (g.key)}
-										{@const many = g.items.length > 1}
-										{@const more = many ? [] : fixMore(g.items[0])}
-										<li class="fix">
-											<span class="tone {g.tone}" aria-hidden="true"></span>
-											<div class="body">
-												{#if many}
-													<button class="lead" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>
-														<span class="ltxt"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">{g.reason}</span></span>
-														<span class="caret" class:up={fixOpen[g.key]}><Icon name="chevronDown" size={14} /></span>
-													</button>
-												{:else}
-													<span class="lead"><span class="ltxt"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">{g.reason}</span></span></span>
-												{/if}
-												<span class="acts">
-													{#if more.length}<button class="link" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>Details<span class="sr-only"> for {g.title}</span></button>{/if}
-													<a class="go link" href={to(g.href)} aria-label="{g.action} ({g.title})">{g.action}<Icon name="chevronRight" size={13} /></a>
-												</span>
-												{#if many && fixOpen[g.key]}
-													<ul class="members" id="fix-{g.key}">
-														{#each g.items as it (it.key)}
-															{@const sub = fixMore(it)}
-															<li>
-																<span class="mt">{it.title}</span>
-																{#if sub.length}<button class="link" type="button" aria-expanded={!!fixOpen[it.key]} aria-controls="fix-{it.key}" onclick={() => (fixOpen[it.key] = !fixOpen[it.key])}>Details<span class="sr-only"> for {it.title}</span></button>{/if}
-																{#if sub.length && fixOpen[it.key]}<p class="raw" id="fix-{it.key}">{sub.join(' ')}</p>{/if}
-															</li>
-														{/each}
-													</ul>
-												{:else if more.length && fixOpen[g.key]}
-													<p class="raw" id="fix-{g.key}">{more.join(' ')}</p>
-												{/if}
-											</div>
-										</li>
+								<span class="big word ok"><Icon name="check" size={24} />All good</span>
+								<span class="sm">Downloads, imports and checks</span>
+							{/if}
+						</a>
+					{/if}
+					{#if approver && waiting.length}
+						<a class="tile stat" class:fill={lastFill === 'ask'} href={to('/requests')}>
+							<span class="lab">Waiting for approval</span>
+							<span class="stack" aria-hidden="true">{#each waitingPics as a (a.id)}<img src={a.poster} alt="" loading="lazy" />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
+							<span class="sm">{n(waiting.length)} {waiting.length === 1 ? 'ask' : 'asks'}</span>
+						</a>
+					{:else if mine.length}
+						<a class="tile stat" class:fill={lastFill === 'ask'} href={to('/requests')}>
+							<span class="lab">Your asks</span>
+							<span class="big num">{n(mine.length)}</span>
+							<span class="sm">still open</span>
+						</a>
+					{/if}
+					{#if pics[1]}{@render picTile(pics[1], lastFill === 'tall' ? 'tall fill' : 'tall', true)}{/if}
+					{#if libCards.length}
+						<a class="tile stat" class:fill={lastFill === 'lib'} href={to('/library')} data-testid="home-library">
+							<span class="lab">Library</span>
+							<span class="big num">{n(libTotal)}</span>
+							<span class="sm">{libCards.map((c) => `${n(c.big)} ${c.unit}`).join(' · ')}</span>
+						</a>
+					{/if}
+					{#if pics[2]}{@render picTile(pics[2], 'wide', false)}{/if}
+					{#if showDisk}
+						<div class="tile stat calm" class:fill={lastFill === 'disk'}>
+							<span class="lab">On disk</span>
+							<span class="big num">{bytes(diskTotal)}</span>
+							<span class="sm">{free ? `${bytes(free.free)} free${free.many ? ' on the fullest disk' : ''}` : 'Across your Library folders'}</span>
+						</div>
+					{/if}
+				</div>
+				{#if showSystem}
+					<div class="bento" class:gone={shown !== 'system'} inert={shown !== 'system'} data-testid="home-system">
+						<a class="tile big dl" href={to('/downloads')}>
+							<span class="lab">Downloading</span>
+							{#if speed}
+								<span class="big num">{bytes(speed).split(' ')[0]}<small>{bytes(speed).split(' ')[1]}/s</small></span>
+							{:else}
+								<span class="big num">{n(fetchingAll.length)}<small>{fetchingAll.length === 1 ? 'download' : 'downloads'}</small></span>
+							{/if}
+							<span class="sm">{n(fetchingAll.length)} running · {n(queued)} waiting</span>
+							{#if fetchingAll.length}
+								<ul class="dl-list">
+									{#each fetchingAll.slice(0, 4) as d (d.id)}
+										<li><b>{d.title || d.name}</b><span>{Math.round(percent(d.progress))}%{d.speed ? ` · ${bytes(d.speed)}/s` : ''}</span><i class="pb"><i style="width: {percent(d.progress)}%"></i></i></li>
 									{/each}
 								</ul>
-								{#if fixHidden}<a class="more" href={to(fixHidden.href)}>{fixHidden.text}<Icon name="chevronRight" size={13} /></a>{/if}
+							{:else}
+								<span class="quiet">Nothing is downloading right now.</span>
 							{/if}
+						</a>
+						<div class="tile wide stat">
+							<span class="lab">Disk{#if free}<em>{bytes(free.free)} free</em>{/if}</span>
+							<span class="big num">{bytes(diskTotal)}<small>used by your Library</small></span>
+							<span class="split" aria-hidden="true">
+								{#each libCards as c (c.kind)}{#if c.size}<i class="k-{c.kind}" style="flex-grow: {c.size}"></i>{/if}{/each}
+								<i class="rest" style="flex-grow: {free?.free ?? 0}"></i>
+							</span>
+							<span class="legend">{#each libCards as c (c.kind)}<span><i class="k-{c.kind}"></i>{c.label} {bytes(c.size)}</span>{/each}</span>
 						</div>
-					</section>
+						<a class="tile stat" href={to(admin ? '/settings/sources' : '/status')}>
+							<span class="lab">Sources</span>
+							<span class="big num">{n(srcs.working)}<small>of {n(srcs.on)} working</small></span>
+							<span class="pips" aria-hidden="true">{#each Array(srcs.on) as _, i (i)}<i class:off={i >= srcs.working}></i>{/each}</span>
+							{#if srcs.off}<span class="sm">{n(srcs.off)} turned off</span>{/if}
+						</a>
+						<a class="tile stat" href={to(admin ? '/settings/downloaders' : '/status')}>
+							<span class="lab">Downloaders</span>
+							<span class="big num">{n(dls.working)}<small>of {n(dls.on)} working</small></span>
+							<span class="pips" aria-hidden="true">{#each Array(dls.on) as _, i (i)}<i class:off={i >= dls.working}></i>{/each}</span>
+						</a>
+						<a class="tile stat" class:calm={sysOk} class:hot={settled && fixes.length > 0} href={to(fixHref)}>
+							<span class="lab">Checks</span>
+							{#if !settled}
+								<span class="wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Checking</span>
+							{:else if fixes.length}
+								<span class="big num fail">{n(fixes.length)}</span><span class="sm">{fixes.length === 1 ? 'thing needs' : 'things need'} a look</span>
+							{:else if unchecked}
+								<span class="big word">Could not check</span>
+							{:else}
+								<span class="big word ok">All good</span><span class="sm">Nothing needs you</span>
+							{/if}
+						</a>
+						<a class="tile stat" href={to('/status')}>
+							<span class="lab">Metadata server</span>
+							<span class="big word" class:fail={metadataOutage.s.down}>{metadataOutage.s.down ? 'Down' : 'Online'}</span>
+							<span class="sm">{metadataOutage.s.down ? 'New details wait until it is back' : 'Pictures and details come in'}</span>
+						</a>
+						<a class="tile stat" href={to('/library')}>
+							<span class="lab">Arrived today</span>
+							<span class="big num">{n(arrivedToday)}</span>
+							<span class="sm">{arrivedToday === 1 ? 'title' : 'titles'} in the Library</span>
+						</a>
+						<a class="tile stat" href={to('/status')}>
+							<span class="lab">Running for</span>
+							<span class="big word">{health ? duration(health.uptime_s) : '—'}</span>
+							<span class="sm">{health ? `Version ${health.version}` : 'Could not read'}</span>
+						</a>
+					</div>
 				{/if}
 			</div>
 		{/if}
@@ -473,14 +522,114 @@
 <style>
 	/* The same sizes as Explore: 279px wide cards at a 1536px window (Netflix), 5px gaps on wide rows, one 32px rhythm between blocks. */
 	.home { container: home / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); --poster-item: 168px; --home-gap: 32px; display: flex; flex-direction: column; gap: var(--home-gap); padding-bottom: 48px; }
-	.home > :global(.ui-head) { margin-bottom: -8px; }
-	/* Phones: Search and Explore sit on their own row from the first frame, so the header does not jump when the greeting arrives. */
-	@media (max-width: 767px) { .home > :global(.ui-head .actions) { flex-basis: 100%; } }
 	/* High Contrast (forced colors) drops the box-shadow focus rings: draw a system outline instead. */
 	@media (forced-colors: active) { .home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; } }
 	.banner { margin-bottom: -16px; }
 	.wide-row { display: contents; }
 	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; } }
+
+	/* The top: the greeting, then one line with the Home | System switch, the note beside it, and Search and Explore. */
+	.top { display: flex; flex-direction: column; gap: 14px; margin-bottom: -8px; }
+	.greet { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
+	.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 44px; }
+	.bar :global(.ui-seg button) { padding: 0 16px; }
+	.note { min-width: 0; flex: 1 1 240px; display: flex; align-items: center; gap: 8px; color: var(--text-muted); font: var(--t-callout); }
+	.note .dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--text-faint); }
+	.note .dot.ok { background: var(--ok); }
+	.note .dot.warn { background: var(--fail); }
+	.acts { margin-left: auto; display: flex; }
+	.wide-only { display: flex; gap: 8px; }
+	.phone-only { display: none; gap: 8px; }
+
+	/* Bento: one grid of tiles. Home: the big picture, Needs attention, approvals, a tall picture, Library, a wide picture, disk.
+	   System: the same frame filled with how HolyArrs is running. Both grids fill the same rows, so switching moves nothing below. */
+	.boards { display: grid; }
+	.boards > .bento { grid-area: 1 / 1; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
+	.bento.gone { opacity: 0; translate: 0 6px; visibility: hidden; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out), visibility 0s linear var(--dur); }
+	.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 150px; grid-auto-flow: row dense; gap: 14px; }
+	.tile { position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border-radius: 22px; overflow: hidden; color: var(--text); background: var(--surface-1); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%); outline: 1px solid var(--line); outline-offset: -1px; transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+	a.tile:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift), inset 0 1px 0 rgb(255 255 255 / 6%); }
+	a.tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.tile.big { grid-column: span 2; grid-row: span 2; }
+	.tile.wide { grid-column: span 2; }
+	.tile.tall { grid-row: span 2; }
+	.lab { display: flex; align-items: baseline; gap: 6px; font: var(--t-subhead); font-weight: 600; color: var(--text-muted); }
+	.lab em { margin-left: auto; font-style: normal; font-weight: 500; color: var(--text-faint); white-space: nowrap; }
+	.tile .big, .tile .num { margin-top: auto; }
+	.num { font: 700 36px / 1.05 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+	.num small { margin-left: 4px; font: var(--t-subhead); font-weight: 500; letter-spacing: 0; color: var(--text-muted); }
+	.word { display: inline-flex; align-items: center; gap: 6px; font: 700 26px / 1.1 var(--font-display); letter-spacing: -0.02em; }
+	.fail { color: var(--fail); }
+	.ok { color: var(--ok); }
+	.sm { margin-top: 2px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.calm { background: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--ok) 14%, transparent), transparent 60%), var(--surface-1); }
+	.hot { background: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--fail) 14%, transparent), transparent 60%), var(--surface-1); }
+	.wait { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+	.wait i { display: block; height: 12px; border-radius: 6px; background: var(--sk-base); }
+	.wait i + i { width: 60%; }
+
+	/* Picture tiles: the picture fills the tile, the words sit on a dark fade at the bottom (white in both themes). */
+	.pic { justify-content: flex-end; color: #fff; background: var(--surface-3); outline: 0; }
+	.pic > img:first-child { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+	.pic::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(0 0 0 / 76%), transparent 58%); }
+	.pic .lab { color: rgb(255 255 255 / 84%); }
+	.pic .nm { font: 700 22px / 1.15 var(--font-display); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pic.big .nm { font-size: 30px; letter-spacing: -0.02em; }
+	.pic .logo { width: auto; height: auto; max-width: 55%; max-height: 72px; margin: 4px 0 2px; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
+	.pic.big .logo { max-height: 104px; }
+	.pic .sm { color: rgb(255 255 255 / 84%); }
+
+	.stack { margin-top: auto; display: flex; align-items: flex-end; }
+	.stack img { width: 44px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-right: -12px; box-shadow: 0 0 0 2px var(--surface-1); }
+	.stack b { margin-left: 20px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
+
+	/* System tiles */
+	.dl .num { margin-top: 10px; }
+	.dl-list { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+	.dl-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font: var(--t-footnote); }
+	.dl-list b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.dl-list span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.pb { grid-column: 1 / -1; display: block; height: 4px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+	.pb i { display: block; height: 100%; border-radius: inherit; background: var(--info); }
+	.quiet { margin-top: auto; font: var(--t-callout); color: var(--text-muted); }
+	.split { display: flex; gap: 2px; height: 8px; margin-top: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-3); }
+	.split i { display: block; min-width: 3px; flex-basis: 0; }
+	.split .rest { min-width: 0; background: transparent; }
+	.legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 8px; font: var(--t-footnote); color: var(--text-muted); }
+	.legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+	.legend i { width: 7px; height: 7px; border-radius: 50%; }
+	.k-movie { background: var(--accent); }
+	.k-show { background: var(--info); }
+	.k-artist { background: var(--mark-dl); }
+	.pips { display: flex; gap: 4px; margin-top: 8px; }
+	.pips i { flex: 1; height: 6px; border-radius: 999px; background: var(--ok); }
+	.pips i.off { background: var(--fail); }
+
+	/* Narrow: two columns; the big tiles keep their two-by-two, the tall one becomes one row. */
+	@container home (max-width: 900px) {
+		.bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 10px; }
+		.tile.tall { grid-row: span 1; }
+		.tile.fill { grid-column: span 2; }
+	}
+	/* Phones: Search and Explore become two round buttons beside the switch; the note goes under them. */
+	@media (max-width: 767px) {
+		.home { --home-gap: 26px; --poster-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); }
+		.greet { font-size: 28px; }
+		.wide-only { display: none; }
+		.phone-only { display: flex; }
+		.bar :global(.ui-seg) { flex: 1; }
+		.bar :global(.ui-seg button) { min-height: 44px; }
+		.note { order: 3; flex-basis: 100%; font: var(--t-subhead); }
+		.note:empty { display: none; }
+		.tile { padding: 12px 14px; border-radius: 18px; }
+		.num { font-size: 28px; }
+		.word { font-size: 20px; }
+		.pic .nm { font-size: 18px; }
+		.pic.big .nm { font-size: 24px; }
+		.pic.big .logo { max-height: 72px; }
+		.lab em { display: none; }
+		.sm { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
+	}
 
 	.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); outline: 1px solid var(--line); overflow: hidden; }
 	.setup-main { padding: clamp(20px, 3vw, 32px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -497,159 +646,15 @@
 	.steps a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.steps a > :global(.icon) { color: var(--text-muted); }
 	.steps .done a { color: var(--text-muted); }
-	.dot { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); outline: 1px solid var(--line-strong); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.done .dot { background: var(--ok); color: var(--on-art); outline: none; }
+	.steps .dot { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); outline: 1px solid var(--line-strong); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.steps .done .dot { background: var(--ok); color: var(--on-art); outline: none; }
 	.grow { flex: 1; min-width: 0; }
-
-	/* The top of Home, Apple TV style: Your Library on the left, Needs attention on the right. Soft lifted
-	   surfaces, a big number per card, quiet labels; no hard borders (dark mode keeps the token hairline). */
-	.overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: stretch; }
-	.overview > section { display: flex; flex-direction: column; min-width: 0; }
-	.overview.solo { grid-template-columns: minmax(0, 1fr); }
-	.col-head { display: flex; align-items: center; gap: 10px; min-height: 32px; margin-bottom: 14px; }
-	.col-head h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
-	.col-link { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0 4px 0 8px; border-radius: var(--r-sm); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
-	.col-link:hover { background: var(--accent-soft); }
-	.col-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-
-	/* Each kind has its own hue: Movies the app's red, TV shows blue, Music indigo, On disk neutral. */
-	.k-movie { --kc: var(--accent); }
-	.k-show { --kc: var(--info); }
-	.k-artist { --kc: var(--mark-dl); }
-	.k-disk { --kc: var(--text-muted); }
-	.lib-grid { flex: 1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 14px; }
-	.solo .lib-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
-	.lib-card {
-		--glow: color-mix(in oklab, var(--kc) 16%, transparent);
-		position: relative; isolation: isolate; display: flex; flex-direction: column; min-width: 0; padding: 18px 20px 18px;
-		border-radius: 22px; overflow: hidden;
-		background: radial-gradient(120% 90% at 0% 0%, var(--glow), transparent 62%), var(--surface-1);
-		box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%);
-		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
-		animation: lib-in var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger) * 2);
-	}
-	.lib-card.wide { grid-column: 1 / -1; }
-	.lib-card:has(.stretch):hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift), inset 0 1px 0 rgb(255 255 255 / 6%); }
-	.lib-card:has(.stretch:focus-visible) { box-shadow: var(--focus-ring); }
-	@keyframes lib-in { from { opacity: 0; transform: translateY(var(--rise)); } }
-	.lib-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-	.lib-icon { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; background: color-mix(in oklab, var(--kc) 16%, var(--surface-2)); color: var(--kc); }
-	.lib-top h3 { flex: 1; min-width: 0; font: var(--t-headline); color: var(--text); }
-	.stretch { color: inherit; outline: none; }
-	.stretch::after { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
-	.lib-go { color: var(--text-faint); display: inline-grid; transition: transform var(--dur) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.lib-card:hover .lib-go { color: var(--text-muted); transform: translateX(2px); }
-	.lib-big { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; font-variant-numeric: tabular-nums; }
-	.lib-big .num { font: 700 44px / 1 var(--font-display); letter-spacing: -0.035em; color: var(--text); }
-	.lib-big .unit { font: var(--t-callout); color: var(--text-muted); }
-	.lib-detail { margin-top: 6px; font: var(--t-subhead); color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.bar { display: flex; gap: 2px; height: 6px; margin-top: 16px; border-radius: 999px; overflow: hidden; background: var(--surface-3); }
-	.bar i { display: block; min-width: 3px; flex-basis: 0; }
-	.bar .rest { min-width: 0; background: transparent; }
-	.seg.on_disk, .leg.on_disk i { background: var(--ok); }
-	.seg.downloading, .leg.downloading i { background: var(--info); }
-	.seg.missing, .leg.missing i { background: var(--wait); }
-	.seg.k-movie, .seg.k-show, .seg.k-artist, .leg.k-movie i, .leg.k-show i, .leg.k-artist i { background: var(--kc); }
-	.legend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; }
-	.leg { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.leg strong { color: var(--text); font-weight: 600; }
-	.leg i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-	a.leg { border-radius: var(--r-sm); margin: 0 -4px; padding: 0 4px; }
-	a.leg:hover { color: var(--text); background: var(--surface-2); }
-	a.leg:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-
-	/* Needs attention: one lifted card; each cause is one row, title over reason, the action at the right edge. */
-	.att-card { flex: 1; display: flex; flex-direction: column; border-radius: 22px; background: var(--surface-1); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%); padding: 6px; animation: lib-in var(--dur-slow) var(--ease-out) both; }
-	.att-card.calm { flex: 1; background: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--ok) 14%, transparent), transparent 60%), var(--surface-1); }
-	.att-wait { display: flex; flex-direction: column; gap: 10px; padding: 18px 16px; }
-	.att-wait i { display: block; height: 14px; border-radius: 7px; background: var(--sk-base); }
-	.att-wait i:nth-child(2) { width: 72%; }
-	.att-wait i:nth-child(3) { width: 48%; }
-	.all-good { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 22px 20px 24px; }
-	.att-sum { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 14px; }
-	.att-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: color-mix(in oklab, var(--fail) 16%, var(--surface-2)); color: var(--fail); }
-	.att-card .list { box-shadow: inset 0 1px 0 var(--line); margin: 0 6px; }
-	.att-card .fix { padding-left: 6px; padding-right: 4px; }
-	.good-mark { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 50%; background: color-mix(in oklab, var(--ok) 18%, var(--surface-2)); color: var(--ok); }
-	.good-title { font: var(--t-title3); letter-spacing: var(--t-title3-track); color: var(--text); }
-	.good-line { font: var(--t-callout); color: var(--text-muted); max-width: 34ch; }
-	.list { list-style: none; margin: 0; padding: 0; }
-	.fix { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; border-radius: 14px; }
-	.fix + .fix { box-shadow: inset 0 1px 0 var(--line); border-radius: 0; }
-	.tone { flex: none; width: 8px; height: 8px; margin-top: 8px; border-radius: 50%; background: var(--text-faint); }
-	.tone.fail { background: var(--fail); box-shadow: 0 0 0 4px color-mix(in oklab, var(--fail) 18%, transparent); }
-	.tone.wait { background: var(--wait); box-shadow: 0 0 0 4px color-mix(in oklab, var(--wait) 18%, transparent); }
-	/* The title and its reason stack; the action sits right of them and wraps under on a narrow column. */
-	.body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; }
-	.lead { flex: 1 1 210px; min-width: 0; display: flex; align-items: center; gap: 4px; min-height: 40px; padding: 0; border: 0; background: none; color: var(--text); font: var(--t-callout); text-align: left; }
-	.ltxt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-	.tt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-	.why { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
-	button.lead { cursor: pointer; border-radius: 8px; }
-	button.lead:hover .why { color: var(--text); }
-	.caret { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--text-muted); transition: rotate var(--dur-fast) var(--ease-out); }
-	.caret.up { rotate: 180deg; }
-	.acts { flex: none; margin-left: auto; display: flex; align-items: center; gap: 2px; }
-	.link { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: var(--t-subhead); cursor: pointer; }
-	.link:hover { color: var(--text); background: var(--surface-2); }
-	.go { color: var(--accent-text); font-weight: 600; }
-	.go:hover { color: var(--accent-text); background: var(--accent-soft); }
-	.lead:focus-visible, .link:focus-visible, .more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.raw { flex-basis: 100%; margin: 0 0 8px; color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
-	.members { flex-basis: 100%; list-style: none; margin: 2px 0 6px; padding: 0; }
-	.members li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 32px; font: var(--t-callout); }
-	.members .mt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.members .link { min-height: 28px; }
-	.more { display: flex; align-items: center; gap: 2px; min-height: 44px; margin: 0 6px; padding: 0 6px; box-shadow: inset 0 1px 0 var(--line); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
-	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-	/* Narrow: the columns stack, Library first. */
-	@container home (max-width: 900px) {
-		.overview { grid-template-columns: minmax(0, 1fr); gap: 26px; }
-	}
-	/* Phones: Library cards as a two-column mini grid, a size that fits two numbers side by side. */
-	@media (max-width: 599px) {
-		.lib-grid, .solo .lib-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-		.lib-card { padding: 14px 14px 12px; border-radius: 18px; }
-		.lib-top { margin-bottom: 10px; gap: 8px; }
-		.lib-icon { width: 30px; height: 30px; border-radius: 9px; }
-		.lib-top h3 { font: var(--t-subhead); font-weight: 600; }
-		.lib-go { display: none; }
-		.lib-big { flex-direction: column; align-items: flex-start; }
-		.lib-big .num { font-size: 32px; }
-		.lib-big .unit { font: var(--t-footnote); }
-		.lib-detail { font: var(--t-footnote); margin-top: 4px; }
-		.bar { margin-top: 12px; height: 5px; }
-		.legend { flex-direction: column; gap: 0; margin-top: 6px; }
-		/* Plain rows stay compact; the legend links are full phone taps above the card's own link. */
-		.leg { min-height: 24px; }
-		a.leg { min-height: 36px; }
-		.att-card { border-radius: 18px; }
-		.att-sum { flex-direction: row; align-items: center; gap: 12px; padding: 10px 10px 12px; }
-		.att-icon { width: 30px; height: 30px; border-radius: 9px; }
-		.att-sum .lib-big { flex-direction: row; align-items: baseline; }
-		.acts { margin-left: -8px; }
-		.link, .members .link { min-height: 36px; }
-		.members li { min-height: 36px; }
-	}
-	/* Touch phones: every Home control is at least a 44px tap. See all keeps its 32px pill and grows only its hit area;
-	   stacked rows grow for real, so their taps never overlap the row next to them. */
-	@media (max-width: 767px) and (pointer: coarse) {
-		.col-link { position: relative; }
-		.col-link::after { content: ''; position: absolute; inset: -6px 0; }
-		a.leg { min-height: 44px; }
-		.lead { min-height: 44px; }
-		.acts .link, .members .link { min-height: 44px; }
-		.members li { min-height: 44px; }
-	}
 
 	.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(16px, 3vw, 24px); border-radius: var(--r-panel); background: var(--surface-2); }
 	.prompt h2 { font: var(--t-title3); }
 	.prompt p { color: var(--text-muted); max-width: 56ch; margin-top: 4px; }
 
-
 	.welcome-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 
 	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
-	@media (max-width: 767px) { .home { --home-gap: 26px; --poster-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); } }
 </style>

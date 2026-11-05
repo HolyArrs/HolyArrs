@@ -208,3 +208,26 @@ export function homeLine(i: HomeLineInput): string {
 	const pool = [...(kid && bucket === 'late' ? KID_LATE : TIME[bucket]), ...(DAYS[i.now.getDay()] ?? [])];
 	return fill(pickOf(pool, 'quiet'), name);
 }
+
+/**
+ * homeGreeting is the big line at the top of Home: the time of day and your
+ * name ("Good morning, Luis"). It never waits for data, so it shows on the first frame.
+ */
+export function homeGreeting(i: { name?: string | null; displayName?: string | null; now: Date }): string {
+	const name = greetingName(i.displayName, i.name);
+	const bucket = timeBucket(i.now.getHours());
+	const word = bucket === 'early' || bucket === 'morning' ? 'Good morning' : bucket === 'afternoon' ? 'Good afternoon' : 'Good evening';
+	return name ? `${word}, ${name}` : word;
+}
+
+/**
+ * homeNews is the short note beside Home's switch: what is going on, without a
+ * name or a time-of-day greeting (the greeting above already says those).
+ * Empty when nothing is going on.
+ */
+export function homeNews(i: { now: Date; kid?: boolean; facts?: Partial<HomeFacts> }): string {
+	const f: HomeFacts = { ...noFacts, ...i.facts };
+	const kid = !!i.kid;
+	const busy = f.askedArrived.length > 0 || (f.waiting > 0 && !kid) || f.newToday.count > 0 || f.finishing.mine > 0 || (f.finishing.all > 0 && !kid);
+	return busy ? homeLine({ name: '', now: i.now, kid, facts: f }) : '';
+}

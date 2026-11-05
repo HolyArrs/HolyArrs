@@ -20,18 +20,16 @@ describe('Home page styles', () => {
 	it('draws a system outline for focus in forced colors', () => {
 		expect(media('(forced-colors: active)')).toMatch(/:focus-visible\s*\{[^}]*outline:\s*2px solid Highlight !important/);
 	});
-	it('keeps the header buttons on their own row on phones', () => {
-		expect(media('(max-width: 767px)')).toMatch(/\.ui-head \.actions\s*\{[^}]*flex-basis:\s*100%/);
+	it('puts Search and Explore as round buttons beside the switch on phones, the note under them', () => {
+		const phone = media('(max-width: 767px)');
+		expect(phone).toMatch(/\.wide-only\s*\{[^}]*display:\s*none/);
+		expect(phone).toMatch(/\.phone-only\s*\{[^}]*display:\s*flex/);
+		expect(phone).toMatch(/\.note\s*\{[^}]*flex-basis:\s*100%/);
 	});
-	it('gives phone taps on the legend links and member Details their full size', () => {
-		const phone = media('(max-width: 599px)');
-		expect(phone).toMatch(/a\.leg\s*\{[^}]*min-height:\s*36px/);
-		// As specific as the desktop .members .link rule, so the phone size wins.
-		expect(phone).toMatch(/\.members \.link\s*\{[^}]*min-height:\s*36px/);
+	it('makes the Home | System switch a 44px tap on phones', () => {
+		expect(media('(max-width: 767px)')).toMatch(/\.bar \.ui-seg button\s*\{[^}]*min-height:\s*44px/);
 	});
-	it('makes every control a 44px tap on touch phones only', () => {
-		const touch = media('(max-width: 767px) and (pointer: coarse)');
-		expect(touch).toMatch(/\.col-link::after\s*\{[^}]*inset:\s*-6px 0/);
-		for (const sel of ['a\\.leg', '\\.lead', '\\.acts \\.link', '\\.members li']) expect(touch).toMatch(new RegExp(`${sel}[^{]*\\{[^}]*min-height:\\s*44px`));
+	it('stacks the Home and System grids in one cell, so switching moves nothing below', () => {
+		expect(css).toMatch(/\.boards > \.bento\s*\{[^}]*grid-area:\s*1 \/ 1/);
 	});
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { capitalise, greetingName, hash, homeFacts, homeLine, homeLineTemplates, localDay, nearlyDone, noFacts, timeBucket, type HomeFacts } from './home-line.ts';
+import { capitalise, greetingName, hash, homeFacts, homeGreeting, homeLine, homeNews, homeLineTemplates, localDay, nearlyDone, noFacts, timeBucket, type HomeFacts } from './home-line.ts';
 
 // 2026-10-27 is a Tuesday: no day-of-week lines, only the time of day.
 const at = (month: number, day: number, hour = 10, minute = 0) => new Date(2026, month - 1, day, hour, minute);
@@ -225,5 +225,21 @@ describe('facts from what Home already loaded', () => {
 		expect(homeFacts({ ...base, home, downloads, manager: false }).finishing).toEqual({ mine: 1, all: 0 });
 		expect(nearlyDone({ state: 'downloading', progress: 0.1 })).toBe(false);
 		expect(nearlyDone({ state: 'stalled', progress: 0.99 })).toBe(false);
+	});
+});
+
+describe('greeting and news beside the switch', () => {
+	const at = (h: number) => new Date(2026, 10, 5, h, 0);
+	it('greets by the time of day and the name', () => {
+		expect(homeGreeting({ name: 'luis', now: at(7) })).toBe('Good morning, Luis');
+		expect(homeGreeting({ name: 'luis', now: at(14) })).toBe('Good afternoon, Luis');
+		expect(homeGreeting({ name: 'luis', now: at(23) })).toBe('Good evening, Luis');
+		expect(homeGreeting({ name: '', now: at(10) })).toBe('Good morning');
+	});
+	it('says what is going on without a name, and nothing when it is quiet', () => {
+		expect(homeNews({ now: at(10), facts: { waiting: 2 } })).toMatch(/2 asks/);
+		expect(homeNews({ now: at(10), facts: { waiting: 2 } })).not.toMatch(/,\s*\./);
+		expect(homeNews({ now: at(10), facts: noFacts })).toBe('');
+		expect(homeNews({ now: at(10), kid: true, facts: { waiting: 3 } })).toBe('');
 	});
 });

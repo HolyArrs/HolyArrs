@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine, freeSpace, partCount } from './home.ts';
 import type { HealthCheck } from './types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -257,5 +257,17 @@ describe('Your Library cards', () => {
 		expect(items.map((i) => i.href)).toEqual(['/downloads?show=problems.failed', '/downloads?show=problems.failed', '/downloads?show=problems.failed&open=7']);
 		const group = groupAttention(items)[0];
 		expect(new Set(group.items.map((i) => i.key)).size).toBe(3);
+	});
+});
+
+describe('System grid numbers', () => {
+	it('counts parts that are on and working; turned-off ones apart', () => {
+		expect(partCount([{ state: 'ok' }, { state: 'disabled' }, { state: 'not_answering' }])).toEqual({ on: 2, working: 1, off: 1 });
+		expect(partCount(null)).toEqual({ on: 0, working: 0, off: 0 });
+	});
+	it('counts a disk shared by folders once, and the fullest of several', () => {
+		expect(freeSpace([{ free_space: 100 }, { free_space: 100 }])).toEqual({ free: 100, many: false });
+		expect(freeSpace([{ free_space: 100 }, { free_space: 40 }])).toEqual({ free: 40, many: true });
+		expect(freeSpace([])).toBeNull();
 	});
 });

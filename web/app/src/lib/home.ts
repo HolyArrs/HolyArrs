@@ -471,3 +471,19 @@ export function downloadMoved(seen: Map<number, string>, x: unknown): boolean {
 	seen.set(id, state);
 	return true;
 }
+
+// ---- Home's System grid ----
+
+/** partCount sums up Sources or Downloaders from GET /health: how many are on, and how many of those work. */
+export function partCount(parts: { state: string }[] | null | undefined): { on: number; working: number; off: number } {
+	const list = parts ?? [];
+	const on = list.filter((p) => p.state !== 'disabled');
+	return { on: on.length, working: on.filter((p) => p.state === 'ok' || p.state === 'working').length, off: list.length - on.length };
+}
+
+/** freeSpace is the free room left for the Library: folders on the same disk count once; with several disks, the fullest one. */
+export function freeSpace(folders: { free_space: number }[]): { free: number; many: boolean } | null {
+	const sizes = [...new Set(folders.map((f) => f.free_space).filter((s) => s > 0))];
+	if (!sizes.length) return null;
+	return { free: Math.min(...sizes), many: sizes.length > 1 };
+}
