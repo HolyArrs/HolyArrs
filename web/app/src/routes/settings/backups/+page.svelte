@@ -76,7 +76,10 @@
 		}
 		gettingKit = true;
 		try {
-			const res = await fetch(to('/api/v1/system/key-kit'), { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-Token': api.csrf() } });
+			const headers: Record<string, string> = {};
+			const csrf = api.csrf();
+			if (csrf) headers['X-CSRF-Token'] = csrf;
+			const res = await fetch(to('/api/v1/system/key-kit'), { method: 'POST', credentials: 'same-origin', headers });
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
 				if (res.status === 403 && data.code === 'reauth') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
