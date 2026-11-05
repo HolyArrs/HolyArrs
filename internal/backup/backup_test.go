@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -562,10 +563,18 @@ func TestRestoreCutOffAfterStagedFolderRemovedStarts(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, JournalFile), jb, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ApplyStaged(dir); err != nil {
+	var logs bytes.Buffer
+	log.SetOutput(&logs)
+	_, err = ApplyStaged(dir)
+	log.SetOutput(os.Stderr)
+	if err != nil {
 		t.Fatal(err)
 	}
 	wantFiles(t, dir, "new-")
+	// The restored data is live, so the log must not claim it was undone.
+	if l := logs.String(); strings.Contains(l, "undo") || !strings.Contains(l, "finished") {
+		t.Fatalf("log after a finished cut-off restore: %q", l)
+	}
 	if _, err := os.Stat(filepath.Join(dir, JournalFile)); err == nil {
 		t.Fatal("journal left behind")
 	}
