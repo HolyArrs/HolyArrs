@@ -32,9 +32,14 @@
 		if (q.get('frame') === 'solid') frame = 'solid';
 		const panelMat = q.get('panel') === 'blur' ? 'blur' : 'glass';
 		document.querySelector<HTMLElement>('[data-signin-panel]')?.setAttribute('data-mat', panelMat);
-		const mo = new MutationObserver(readTheme);
+		// A theme change repaints the symbols in that theme's ink (remake runs after setup).
+		const onTheme = () => {
+			readTheme();
+			remake();
+		};
+		const mo = new MutationObserver(onTheme);
 		mo.observe(html, { attributes: true, attributeFilter: ['data-theme'] });
-		sys.addEventListener('change', readTheme);
+		sys.addEventListener('change', onTheme);
 		const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 		const cv = canvas!;
 		const ctx = cv.getContext('2d');
@@ -53,9 +58,11 @@
 			const g = c.getContext('2d')!;
 			g.scale(dpr, dpr);
 			if (blur) g.filter = `blur(${blur}px)`;
-			g.shadowColor = 'rgb(0 0 0 / 0.55)';
+			// Light glass: dark ink with a soft white glow, not white with a black shadow.
+			const light = theme === 'light';
+			g.shadowColor = light ? 'rgb(255 255 255 / 0.7)' : 'rgb(0 0 0 / 0.55)';
 			g.shadowBlur = 4;
-			g.fillStyle = '#f5f5f7';
+			g.fillStyle = light ? 'rgb(29 29 31 / 0.72)' : '#f5f5f7';
 			for (let r = 0; r < 8; r++) for (let col = 0; col < 8; col++) if (mask[r][col] === '1') g.fillRect(pad + col * PX, pad + r * PX, PX, PX);
 			return c;
 		}
@@ -70,6 +77,9 @@
 			measurePanel();
 			shapeEdge();
 			PX = Math.max(1, Math.round((box.band * 0.6) / 8));
+			remake();
+		}
+		function remake() {
 			sprites = MASKS.map((m) => sprite(m));
 			soft = MASKS.map((m) => sprite(m, 2.5));
 		}
@@ -371,7 +381,7 @@
 			vv?.removeEventListener('scroll', track);
 			edgeObs.disconnect();
 			mo.disconnect();
-			sys.removeEventListener('change', readTheme);
+			sys.removeEventListener('change', onTheme);
 			clearTimeout(rt);
 			document.removeEventListener('visibilitychange', onVisible);
 			document.removeEventListener('keydown', onKey, true);

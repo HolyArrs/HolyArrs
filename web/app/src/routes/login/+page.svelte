@@ -14,7 +14,7 @@
 	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
 	import { forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
-	import { theme } from '#lib/theme.svelte.ts';
+	import { setTheme, theme } from '#lib/theme.svelte.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 
@@ -535,7 +535,9 @@
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
 	<div class="panel" class:intro class:gl-wait={glWait} class:light={theme.value === 'light'} data-theme={theme.value} bind:this={panelEl} data-signin-panel>
 		<div class="brand">
-			<img src={to(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
+			<!-- Both marks load up front, so switching the appearance never shows a blank logo. -->
+			<img class="mark-dark" src={to('/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
+			<img class="mark-light" src={to('/brand/mark-color.svg')} alt="" width="36" height="36" />
 			<span>HolyArrs</span>
 		</div>
 		{#if backTo && session.s.state !== 'unknown' && !ssoFinishing && !plexWaiting}
@@ -560,7 +562,8 @@
 							<button class="link" type="button" onclick={cancelPlex}>Cancel</button>
 						</div>
 					{:else if acctView !== 'none'}
-						<h1 class="title">{acctView === 'list' ? "Who's signing in?" : 'Sign in'}</h1>
+						<!-- One person: their face and name lead; the heading stays for screen readers. -->
+						<h1 class="title" class:sr-only={acctView === 'person'}>{acctView === 'list' ? "Who's signing in?" : 'Sign in'}</h1>
 						{#if acctView === 'list'}
 							<div class="accts" class:editing role="list" aria-label="People who signed in on this device" data-testid="recent-people">
 								{#each shown as p, i (p.name)}
@@ -583,7 +586,7 @@
 							<button class="link" type="button" onclick={() => (editing = !editing)}>{editing ? 'Done' : 'Edit list'}</button>
 						{:else if person}
 							<div class="who" data-testid="signin-person">
-								{@render face(person, 36)}
+								{@render face(person, 84)}
 								<span class="who-n">{person.name}</span>
 								<!-- The password box below already says it; the list keeps the label. -->
 								{#if person.way !== 'password'}<span class="acct-way">{wayName(person.way)}</span>{/if}
@@ -744,6 +747,16 @@
 		{/if}
 	</div>
 	<SigninPortals />
+	<!-- Light or dark, quietly in the top-right corner; it changes this device's appearance. -->
+	<span class="mode" data-theme={theme.value}>
+		<IconButton
+			icon={theme.value === 'light' ? 'moon' : 'sun'}
+			variant="glass"
+			tipSide="below-end"
+			label={theme.value === 'light' ? 'Dark appearance' : 'Light appearance'}
+			onclick={() => setTheme(theme.value === 'light' ? 'dark' : 'light')}
+		/>
+	</span>
 </main>
 
 <style>
@@ -827,10 +840,13 @@
 		background: rgb(255 252 247 / 0.45);
 		-webkit-backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
 		backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
-		border-color: rgb(255 255 255 / 0.5);
-		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1), 0 30px 90px rgb(0 0 0 / 0.4), 0 6px 18px rgb(0 0 0 / 0.2);
+		border-color: rgb(255 255 255 / 0.55);
+		/* A light rim and a soft lift: dark shadows make the light glass look dirty. */
+		box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25), 0 24px 70px rgb(0 0 0 / 0.2), 0 4px 14px rgb(0 0 0 / 0.08);
 	}
 	.wrap.leaving .panel.light { background: rgb(250 250 250 / 0.92); }
+	.mark-light, .light .mark-dark { display: none; }
+	.light .mark-light { display: block; }
 	.light .brand, .light .title, .light .who-n { color: #111; }
 	.light .lead, .light .note, .light .acct-way, .light .help { color: rgb(0 0 0 / 0.64); }
 	.light .help .note { color: rgb(0 0 0 / 0.56); }
@@ -845,7 +861,7 @@
 		text-decoration-color: rgb(0 0 0 / 0.25);
 	}
 	.light .form-error { background: rgb(255 241 240 / 0.88); border-color: rgb(215 0 21 / 0.35); color: #9b0010; }
-	.light .who { background: rgb(255 255 255 / 0.4); border-color: rgb(255 255 255 / 0.6); }
+	.light .who .face { box-shadow: 0 0 0 3px rgb(255 255 255 / 0.85), 0 10px 28px rgb(0 0 0 / 0.18); }
 	.light .accts { border-color: rgb(0 0 0 / 0.08); }
 	.light .acct + .acct { border-top-color: rgb(0 0 0 / 0.07); }
 	.light .acct-pick { background: rgb(255 255 255 / 0.3); color: #111; }
@@ -863,6 +879,17 @@
 	.light .cp { border-color: rgb(0 0 0 / 0.15); color: #111; }
 	.light .help .ans + .ans { border-top-color: rgb(0 0 0 / 0.1); }
 	.light .orbit { border-color: rgb(0 0 0 / 0.14); border-top-color: #e5a00d; }
+
+	/* The appearance switch: inside the frame's top-right corner, above the art. */
+	.mode { position: absolute; z-index: 3; top: calc(var(--fr) + 14px); right: calc(var(--fr) + 14px); }
+	.wrap.leaving .mode { display: none; }
+	.mode[data-theme='light'] :global(.ui-ibtn.glass),
+	.light .corner :global(.ui-ibtn.glass) {
+		color: #1d1d1f;
+		background: rgb(255 255 255 / 0.55);
+		border-color: rgb(255 255 255 / 0.6);
+		box-shadow: 0 2px 10px rgb(0 0 0 / 0.12);
+	}
 
 	/* Two-factor: six digit boxes, a dash after the third. */
 	.digits { display: flex; justify-content: center; gap: 8px; }
@@ -990,24 +1017,18 @@
 		border-radius: 50%;
 		background: hsl(var(--h, 0) 45% 32%);
 		color: #fff;
-		font: 600 15px/1 var(--font-ui);
+		font: 600 calc(var(--s, 36px) * 0.42)/1 var(--font-ui);
 	}
 	.face.plus { background: rgb(255 255 255 / 0.08); border: 1px dashed rgb(255 255 255 / 0.3); color: rgb(255 255 255 / 0.75); }
 	.badge { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: #111; box-shadow: 0 0 0 2px #111; }
 	.badge svg { width: 14px; height: 14px; }
-	.who {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		margin-bottom: 22px;
-		padding: 10px 20px 10px 10px;
-		border-radius: 999px;
-		background: rgb(255 255 255 / 0.06);
-		border: 1px solid rgb(255 255 255 / 0.1);
-	}
-	.title + .who { margin-top: 30px; }
-	.who-n { color: #fff; font: 600 15px/1.2 var(--font-ui); min-width: 0; }
-	.who .acct-way { margin-left: auto; }
+	/* One remembered person: a big face in a soft ring, their name under it. */
+	.who { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 4px 0 24px; }
+	.title.sr-only + .who { margin-top: 4px; }
+	.who .face { box-shadow: 0 0 0 3px rgb(255 255 255 / 0.22), 0 10px 28px rgb(0 0 0 / 0.35); }
+	.who .badge { right: 0; bottom: 0; width: 26px; height: 26px; }
+	.who .badge svg { width: 18px; height: 18px; }
+	.who-n { max-width: 100%; color: #fff; font: 600 20px/1.2 var(--font-ui); letter-spacing: -0.01em; }
 	/* Back to the list: a round button in the panel's top-left corner, level with the logo. */
 	.corner { position: absolute; top: 32px; left: 26px; z-index: 1; }
 	.face img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
@@ -1116,9 +1137,11 @@
 		.title { font-size: 20px; line-height: 1.15; }
 		.lead { margin: 4px 0 10px; }
 		.title + :not(.lead) { margin-top: 16px; }
-		.title + .who { margin-top: 22px; }
-		.who { margin-bottom: 14px; }
+		.who { gap: 10px; margin-bottom: 16px; }
+		.who .face { width: 72px; height: 72px; font-size: 30px; }
+		.who-n { font-size: 18px; }
 		.corner { top: 6px; left: 12px; }
+		.mode { top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); }
 		.digits { gap: 6px; }
 		.digit { width: 40px; height: 50px; }
 		.acct-pick { min-height: 60px; }
