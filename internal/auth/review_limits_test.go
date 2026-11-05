@@ -295,7 +295,7 @@ func TestDisagreeingHeadersCountBothKeys(t *testing.T) {
 	if sure || k1 == "" || k2 == "" || k1 == k2 {
 		t.Fatalf("keys %q %q sure %v", k1, k2, sure)
 	}
-	if k1 != "ip:192.0.2.99" || k2 != "xff:203.0.113.50" {
+	if k1 != "xri:192.0.2.99" || k2 != "xff:203.0.113.50" {
 		t.Fatalf("keys %q %q", k1, k2)
 	}
 	r.Header.Set("X-Real-IP", "203.0.113.50")

@@ -704,7 +704,18 @@ func (a *Auth) ClientKey(r *http.Request) string {
 // for a known place (false when the proxy headers disagree).
 func (a *Auth) clientKeySure(r *http.Request) (string, bool) {
 	addr, _, unsure := a.clientAddrUnsure(r)
-	return "ip:" + limitAddr(addr), !unsure
+	return addrKey(addr, unsure), !unsure
+}
+
+// addrKey is the limit key of a client address. When the proxy headers
+// disagree, the X-Real-IP address goes under its own "xri:" namespace: the
+// visitor may have written it, so it must never read or charge the "ip:"
+// count of a real visitor at that address.
+func addrKey(addr string, unsure bool) string {
+	if unsure {
+		return "xri:" + limitAddr(addr)
+	}
+	return "ip:" + limitAddr(addr)
 }
 
 // clientKeys is clientKeySure plus altKey: when the proxy headers disagree,
@@ -718,7 +729,7 @@ func (a *Auth) clientKeys(r *http.Request) (ipKey, altKey string, sure bool) {
 	if other != "" {
 		altKey = "xff:" + limitAddr(other)
 	}
-	return "ip:" + limitAddr(addr), altKey, !unsure
+	return addrKey(addr, unsure), altKey, !unsure
 }
 
 // altWait is the address wait for altKey, if there is one; the caller holds a.mu.
