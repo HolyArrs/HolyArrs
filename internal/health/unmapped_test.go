@@ -25,6 +25,9 @@ func TestUnmappedConfigIsAnError(t *testing.T) {
 		if found == nil || found.State != Error || !strings.Contains(found.Message, "/config") {
 			t.Fatalf("%s: want an error about /config, got %+v", kind, found)
 		}
+		if i, j := strings.Index(strings.ToLower(found.Message), "stop"), strings.Index(found.Message, "docker cp"); i < 0 || i > j {
+			t.Errorf("%s: should say to stop the container before docker cp: %s", kind, found.Message)
+		}
 	}
 	w.e.ConfigUnmapped = ""
 	rs, err := w.e.Check(context.Background())

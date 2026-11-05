@@ -336,15 +336,20 @@ settings, the Library) is lost when the container is removed or recreated.
 HolyArrs still starts, but warns in the log, in doctor, in the health banner
 and on the first-run page.
 
-To keep what is there, copy it out before you remove the container, then map
-`/config` and copy it back in:
+To keep what is there, stop HolyArrs first (a copy taken while it runs can
+catch the database half-written), copy the data out before you remove the
+container, then map `/config` and copy it back in. `docker cp` works on a
+stopped container:
 
 ```sh
+docker stop holyarrs
 docker cp holyarrs:/config ./holyarrs-config
 ```
 
 Then add `- ./holyarrs-config:/config` (or a named volume) to the container
-and recreate it. Lost an earlier setup? An old anonymous volume may still hold
+and recreate it. On Docker Desktop (Windows and Mac), use a named volume, not
+a host folder: HolyArrs refuses a Docker Desktop folder share. Copy the data
+into the volume as shown in the Docker Desktop section above. Lost an earlier setup? An old anonymous volume may still hold
 it: list them with `docker volume ls` (long random names), look inside with
 `docker create --name hx -v <volume>:/config ghcr.io/coderluii/holyarrs:latest`
 and `docker cp hx:/config ./old-config`, then `docker rm hx`.
@@ -527,6 +532,7 @@ image instead, with the same `PUID`, `PGID` and `TZ` and the tag you run:
 | Config folder is on a shared or network folder | On Docker Desktop, put `/config` on a named volume (`holyarrs-config:/config`, see [Docker Desktop](#docker-desktop-windows-and-mac)). On a NAS, use a local disk (on Unraid `/mnt/<pool>/appdata/holyarrs`). Keep only the media folders on the share. |
 | Config folder is in memory | Put `/config` on a disk (see [Config folder in memory](#config-folder-in-memory)). |
 | Config folder cannot be written | Remove `:ro` from the `/config` volume and check that `PUID`/`PGID` own the folder on the host. |
+| Disk that holds the config folder is full or over its quota | Free some space on that disk (on Unraid, check the pool), then restart. |
 | `/config` is not mapped | See [Forgot to map /config?](#forgot-to-map-config). |
 | Cannot switch user | Add back the `CHOWN`, `DAC_OVERRIDE`, `SETUID` and `SETGID` capabilities, or start the container with `user: "<uid>:<gid>"`. |
 | PUID/PGID does not exist inside this container | See [Rootless Docker and Podman](#rootless-docker-and-podman). |

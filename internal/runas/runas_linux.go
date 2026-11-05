@@ -180,8 +180,9 @@ func fixOwner(configDir string, uid, gid int) {
 	}
 	if failed > 0 {
 		uidMap, _ := os.ReadFile("/proc/self/uid_map")
+		gidMap, _ := os.ReadFile("/proc/self/gid_map")
 		attr, _ := os.ReadFile("/proc/self/attr/current")
-		log.Printf("holyarrs: warning: %s", ownerWarning(configDir, uid, gid, first, string(uidMap), fsplain.SELinuxType(string(attr))))
+		log.Printf("holyarrs: warning: %s", ownerWarning(configDir, uid, gid, first, int(st.Uid), string(uidMap), string(gidMap), fsplain.SELinuxType(string(attr))))
 	}
 }
 

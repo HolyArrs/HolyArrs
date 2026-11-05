@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -39,6 +40,18 @@ var ErrInMemory = errors.New("config folder is in memory, so everything in it is
 // ErrNotWritable is returned when nothing can be written in the config
 // folder.
 var ErrNotWritable = errors.New("config folder cannot be written")
+
+// NotWritable wraps err, from writing in the config folder dir, as
+// ErrNotWritable when the reason is a plain one a person fixes (read-only,
+// no permission, disk full or over quota), keeping the cause; nil for any
+// other error.
+func NotWritable(dir string, err error) error {
+	why := fsplain.Why(err)
+	if why == "" || errors.Is(err, syscall.EINVAL) {
+		return nil
+	}
+	return fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
+}
 
 // Overrides for the refusals above. Each lifts only its own kind.
 const (
@@ -138,7 +151,7 @@ func checkFolder(dir string, check func(string) (bool, string, error), real bool
 		if why == "" {
 			why = "the write test failed"
 		}
-		return fmt.Errorf("%w: %s: %s (%v)", ErrNotWritable, dir, why, err)
+		return fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
 	}
 	_ = f.Close()
 	_ = os.Remove(f.Name())

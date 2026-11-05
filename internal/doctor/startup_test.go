@@ -134,6 +134,11 @@ func TestUnmappedConfigInDoctor(t *testing.T) {
 		if !strings.Contains(c.Fix, "docker cp") || !strings.Contains(c.Text+c.Fix, "/config") {
 			t.Errorf("%s: fix should carry the docker cp rescue: %+v", kind, c)
 		}
+		// A live copy can catch the database and its -wal at different
+		// moments: stop first.
+		if i, j := strings.Index(c.Fix, "docker stop"), strings.Index(c.Fix, "docker cp"); i < 0 || i > j {
+			t.Errorf("%s: fix should stop the container before docker cp: %s", kind, c.Fix)
+		}
 	}
 	var r Report
 	unmappedChecks(&r, "/config", "")

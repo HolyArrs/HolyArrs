@@ -320,6 +320,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// logs) is masked the same way.
 	applogs, err := applog.Open(filepath.Join(c.ConfigDir, "logs"))
 	if err != nil {
+		if nw := store.NotWritable(c.ConfigDir, err); nw != nil {
+			return refuseEarly(ctx, c, nw)
+		}
 		return fmt.Errorf("log folder: %w", err)
 	}
 	defer applogs.Close()
@@ -354,6 +357,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// that HolyArrs runs here; the system drops it when the process ends.
 	unlock, err := store.LockDir(c.ConfigDir)
 	if err != nil {
+		if nw := store.NotWritable(c.ConfigDir, err); nw != nil {
+			return refuseEarly(ctx, c, nw)
+		}
 		return fmt.Errorf("config folder %s: %w", c.ConfigDir, err)
 	}
 	defer unlock()

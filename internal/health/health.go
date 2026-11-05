@@ -567,7 +567,7 @@ func (e *Engine) configFolder(context.Context) ([]Result, error) {
 		where = "the container itself"
 	}
 	return []Result{{Key: "config_folder", Kind: "config_folder", Subject: "Config folder", State: Error,
-		Message: "/config is not mapped to a folder or named volume, so it lives in " + where + " and everything is lost when the container is removed or recreated. Copy it out with docker cp, then map /config and copy it back in"}}, nil
+		Message: "/config is not mapped to a folder or named volume, so it lives in " + where + " and everything is lost when the container is removed or recreated. Stop the container, copy it out with docker cp, then map /config and copy it back in"}}, nil
 }
 
 func (e *Engine) backups(ctx context.Context) ([]Result, error) {

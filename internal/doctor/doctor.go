@@ -451,7 +451,7 @@ func UnmappedText(dir, kind string) string {
 
 // UnmappedFix is how to map it without losing what is there.
 func UnmappedFix(dir string) string {
-	return "copy the data out first with docker cp <container>:" + dir + " ./holyarrs-config, then map " + dir + " to a host folder or a named volume (-v holyarrs-config:" + dir + ") and copy it back in"
+	return "stop the container first (docker stop <container>), then copy the data out with docker cp <container>:" + dir + " ./holyarrs-config (this works on a stopped container), then map " + dir + " to a host folder or a named volume (-v holyarrs-config:" + dir + ") and copy it back in"
 }
 
 // UnmappedConfig tells whether dir, inside a container, is not mapped to

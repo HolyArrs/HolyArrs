@@ -56,6 +56,10 @@ class ForgotToMapConfig(unittest.TestCase):
         self.assertTrue(s, "no 'Forgot to map /config?' section in install.md")
         self.assertIn("docker cp", s)
         self.assertIn("docker volume ls", s)
+        # a live copy can be torn: stop first
+        stop = s.find("docker stop holyarrs")
+        self.assertTrue(0 <= stop < s.find("docker cp holyarrs:/config"), "stop before docker cp")
+        self.assertIn("Docker Desktop", s)
 
 
 class Unraid(unittest.TestCase):

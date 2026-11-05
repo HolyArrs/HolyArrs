@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -47,6 +48,9 @@ func TestOpenNamesAReadOnlyConfigFolder(t *testing.T) {
 	_, err := Open(dir, Options{NetworkShare: noShare})
 	if !errors.Is(err, ErrNotWritable) {
 		t.Fatalf("got %v, want ErrNotWritable", err)
+	}
+	if !errors.Is(err, syscall.EACCES) {
+		t.Errorf("the cause is lost: %v", err)
 	}
 	if strings.Contains(err.Error(), "readonly database") {
 		t.Fatalf("SQLite's words leaked: %v", err)

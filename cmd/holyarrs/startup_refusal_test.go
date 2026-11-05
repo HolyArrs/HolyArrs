@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -80,6 +81,21 @@ func TestPublicReasonForMemoryAndReadOnly(t *testing.T) {
 				t.Errorf("should not say %q: %s", bad, msg)
 			}
 		}
+	}
+}
+
+// A full disk or quota is not a permission problem: no :ro or PUID advice
+// that could lead someone to chown a healthy folder.
+func TestPublicReasonForAFullConfigDisk(t *testing.T) {
+	for _, no := range []syscall.Errno{syscall.ENOSPC, syscall.EDQUOT} {
+		msg := publicReason(fmt.Errorf("%w: %s: %s (%w)", store.ErrNotWritable, secretDir, "full", no))
+		if !strings.Contains(msg, "full") || strings.Contains(msg, "PUID") || strings.Contains(msg, ":ro") {
+			t.Errorf("%v: %s", no, msg)
+		}
+	}
+	ro := publicReason(fmt.Errorf("%w: %s: %s (%w)", store.ErrNotWritable, secretDir, "ro", syscall.EROFS))
+	if !strings.Contains(ro, ":ro") {
+		t.Errorf("read-only: %s", ro)
 	}
 }
 

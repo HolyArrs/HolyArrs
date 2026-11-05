@@ -1,21 +1,25 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"errors"
 	"html"
 	"log"
+	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/backup"
 	"github.com/CoderLuii/holyarrs/internal/doctor"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/urlbase"
 )
 
 // swapHandler lets the listener answer before the app is ready: a small
@@ -64,6 +68,8 @@ func publicReason(err error) string {
 		return "the config folder is on a shared or network folder (" + ns.Kind + "). " + store.ShareFix(ns.Kind)
 	case errors.Is(err, store.ErrInMemory):
 		return "the config folder is in memory (tmpfs or ramfs), so everything in it would be lost at the next restart. Put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set " + store.EnvConfigInMemory + "=yes to keep it in memory anyway, then restart."
+	case errors.Is(err, store.ErrNotWritable) && (errors.Is(err, syscall.ENOSPC) || errors.Is(err, syscall.EDQUOT)):
+		return "the disk that holds the config folder is full or over its quota. Free some space and restart. Nothing was changed."
 	case errors.Is(err, store.ErrNotWritable):
 		return "the config folder cannot be written. Check that the /config volume is not mounted read-only (:ro) and that PUID/PGID own the folder on the host, then restart. Nothing was changed."
 	case errors.Is(err, store.ErrNoSpace):
@@ -92,6 +98,22 @@ func holdingPage(healthCode int, health, page string) http.Handler {
 		_, _ = w.Write([]byte(page))
 	})
 	return m
+}
+
+// refuseEarly shows the refusal page for a config folder that cannot be
+// written, found before the store opens (the log folder, the lock file),
+// until ctx ends. Exiting would only restart into the same refusal.
+func refuseEarly(ctx context.Context, c config, err error) error {
+	log.Printf("holyarrs: not started: %v", err)
+	ln, lerr := net.Listen("tcp", c.Addr)
+	if lerr != nil {
+		return err
+	}
+	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+	go func() { _ = srv.Serve(ln) }()
+	<-ctx.Done()
+	_ = srv.Close()
+	return err
 }
 
 // needsPerson reports whether a store.Open error is one the app should

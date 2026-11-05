@@ -70,6 +70,24 @@ func isTmpfs(dir string) bool {
 	return syscall.Statfs(dir, &st) == nil && int64(st.Type)&0xffffffff == 0x01021994
 }
 
+// A /config that cannot be written (:ro, or not owned by PUID/PGID) shows
+// the page instead of exiting into a restart loop: the log folder and the
+// lock file come before the store's own check.
+func TestReadOnlyConfigShowsAPage(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root writes anyway")
+	}
+	dir := filepath.Join(t.TempDir(), "config")
+	if err := os.Mkdir(dir, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
+	code, page := startRefused(t, dir)
+	if code != http.StatusServiceUnavailable || !strings.Contains(page, "cannot be written") || strings.Contains(page, dir) {
+		t.Fatalf("healthz %d, page %q", code, page)
+	}
+}
+
 // Unraid with a pool path that does not exist: /config lands in RAM.
 func TestConfigInMemoryShowsAPage(t *testing.T) {
 	if !isTmpfs("/dev/shm") {
