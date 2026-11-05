@@ -141,9 +141,9 @@ type Auth struct {
 
 	mu           sync.Mutex
 	fails        map[string]*failure
-	known        map[string]time.Time // "name|address" -> last good sign-in (signInWait)
-	setupFails   map[string]*failure  // wrong setup codes (hosts.go)
-	refusedHosts map[string]bool      // refused names already logged (hosts.go)
+	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
+	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
+	refusedHosts map[string]bool                 // refused names already logged (hosts.go)
 	setupCode    string
 	// codes are AI app sign-ins waiting for their key (aioauth.go).
 	codes aiCodes
@@ -691,11 +691,45 @@ func (a *Auth) clientKey(r *http.Request) string { return a.ClientKey(r) }
 // client a trusted proxy forwards, by the shared rule in clientAddr.
 // Forwarding headers from any other peer are ignored.
 func (a *Auth) ClientKey(r *http.Request) string {
+	k, _ := a.clientKeySure(r)
+	return k
+}
+
+// clientKeySure is ClientKey plus whether the address is sure enough to stand
+// for a known place (false when the proxy headers disagree).
+func (a *Auth) clientKeySure(r *http.Request) (string, bool) {
+	addr, _, unsure := a.clientAddrUnsure(r)
+	return "ip:" + limitAddr(addr), !unsure
+}
+
+// place is where a sign-in came from, for known places.
+type place struct {
+	ipKey, userKey string
+	sure           bool
+}
+
+// limitAddr is the address as limits count it: IPv4 as is (an IPv4-mapped
+// IPv6 address as its IPv4 form), IPv6 as its /64, since one network owns a
+// whole /64 and could otherwise bring unlimited fresh addresses. The
+// local-network skip reads the exact address, not this.
+func limitAddr(addr string) string {
+	ip := net.ParseIP(addr)
+	if ip == nil {
+		return addr
+	}
+	if v4 := ip.To4(); v4 != nil {
+		return v4.String()
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
+}
+
+// eventAddr is the exact caller address, for the Events log.
+func (a *Auth) eventAddr(r *http.Request) string {
 	addr, _ := a.clientAddr(r)
 	if ip := net.ParseIP(addr); ip != nil {
-		addr = ip.String()
+		return ip.String()
 	}
-	return "ip:" + addr
+	return addr
 }
 
 // waitFor returns how long the key must still wait, or 0.
@@ -719,39 +753,72 @@ func (a *Auth) waitFor(key string, free int) time.Duration {
 // address except one that signed in as that name in the last 30 days, so
 // strangers spreading guesses over many addresses stay slowed, yet cannot
 // keep the owner out of a place they used before (home, their phone's line).
-func (a *Auth) signInWait(ipKey, userKey string) time.Duration {
+func (a *Auth) signInWait(ipKey, userKey string, sure bool) time.Duration {
 	wait := a.waitFor(ipKey, freeTries)
-	if t, ok := a.known[userKey+"|"+ipKey]; ok && a.now().Sub(t) < knownPlaceFor {
-		return wait
+	if sure {
+		if t, ok := a.known[userKey][ipKey]; ok && a.now().Sub(t) < knownPlaceFor {
+			return wait
+		}
 	}
 	return max(wait, a.waitFor(userKey, freeUserTries))
 }
 
-// noteKnown remembers a good sign-in for signInWait; the caller holds a.mu.
-// Kept in memory only, so after a restart a place counts again from its
-// next good sign-in.
-func (a *Auth) noteKnown(ipKey, userKey string) {
+const (
+	knownPerName = 20   // places kept for one name
+	knownNames   = 2000 // names kept at all
+)
+
+// noteKnown remembers a finished sign-in for signInWait; the caller holds
+// a.mu. Places are kept per name, so other names and addresses can never push
+// a name's places out; only that name's own least recent place goes. Kept in
+// memory only, so after a restart a place counts again from its next sign-in.
+// An address that is not sure is never recorded.
+func (a *Auth) noteKnown(p place) {
+	if !p.sure || p.userKey == "" {
+		return
+	}
 	now := a.now()
-	if a.known == nil || len(a.known) > 10000 {
-		old := a.known
-		a.known = map[string]time.Time{}
-		for k, t := range old {
-			if now.Sub(t) < knownPlaceFor && len(a.known) < 5000 {
-				a.known[k] = t
+	if a.known == nil {
+		a.known = map[string]map[string]time.Time{}
+	}
+	set := a.known[p.userKey]
+	if set == nil {
+		if len(a.known) >= knownNames {
+			var oldest string
+			var oldestAt time.Time
+			for n, s := range a.known {
+				var last time.Time
+				for _, t := range s {
+					if t.After(last) {
+						last = t
+					}
+				}
+				if oldest == "" || last.Before(oldestAt) {
+					oldest, oldestAt = n, last
+				}
+			}
+			delete(a.known, oldest)
+		}
+		set = map[string]time.Time{}
+		a.known[p.userKey] = set
+	}
+	if _, ok := set[p.ipKey]; !ok && len(set) >= knownPerName {
+		var oldest string
+		var oldestAt time.Time
+		for k, t := range set {
+			if oldest == "" || t.Before(oldestAt) {
+				oldest, oldestAt = k, t
 			}
 		}
+		delete(set, oldest)
 	}
-	a.known[userKey+"|"+ipKey] = now
+	set[p.ipKey] = now
 }
 
 func (a *Auth) noteFail(keys ...string) {
 	now := a.now()
-	if len(a.fails) > 10000 {
-		for k, f := range a.fails {
-			if now.Sub(f.last) > MaxBackoff {
-				delete(a.fails, k)
-			}
-		}
+	if len(a.fails) >= maxTracked {
+		a.pruneFails(now)
 	}
 	for _, k := range keys {
 		f := a.fails[k]
@@ -761,6 +828,49 @@ func (a *Auth) noteFail(keys ...string) {
 		}
 		f.n++
 		f.last = now
+	}
+}
+
+// maxTracked bounds the failure and known-place maps.
+const maxTracked = 10000
+
+// pruneFails frees room in a.fails; the caller holds a.mu. Records whose wait
+// is over go first. If the map is still full (a flood of fresh addresses),
+// the oldest address records go, never the per-name ones: there are few
+// names, and flushing them would end the wait that protects an account. Only
+// when even those fill four times the cap do the oldest, least-failed name
+// records go too, so memory stays bounded.
+func (a *Auth) pruneFails(now time.Time) {
+	for k, f := range a.fails {
+		if now.Sub(f.last) > MaxBackoff {
+			delete(a.fails, k)
+		}
+	}
+	if len(a.fails) < maxTracked {
+		return
+	}
+	protected := func(k string) bool { return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:") }
+	type kf struct {
+		k    string
+		last time.Time
+	}
+	var addrs, names []kf
+	for k, f := range a.fails {
+		if protected(k) {
+			names = append(names, kf{k, f.last})
+		} else {
+			addrs = append(addrs, kf{k, f.last})
+		}
+	}
+	oldest := func(l []kf, n int) {
+		slices.SortFunc(l, func(x, y kf) int { return x.last.Compare(y.last) })
+		for _, e := range l[:min(n, len(l))] {
+			delete(a.fails, e.k)
+		}
+	}
+	oldest(addrs, len(addrs)/5+1)
+	if len(a.fails) >= 4*maxTracked {
+		oldest(names, len(names)/5+1)
 	}
 }
 
@@ -814,11 +924,12 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
-	ipKey, userKey := a.clientKey(r), "name:"+strings.ToLower(c.Name)
+	ipKey, sure := a.clientKeySure(r)
+	userKey := "name:" + strings.ToLower(c.Name)
 	// Check and reserve in one locked step: the attempt counts as failed up
 	// front and is cleared on success, so parallel attempts cannot slip past.
 	a.mu.Lock()
-	wait := a.signInWait(ipKey, userKey)
+	wait := a.signInWait(ipKey, userKey, sure)
 	if wait == 0 {
 		a.noteFail(ipKey, userKey)
 	}
@@ -870,9 +981,8 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
 	delete(a.fails, ipKey)
 	delete(a.fails, userKey)
-	a.noteKnown(ipKey, userKey)
 	a.mu.Unlock()
-	a.passed(w, r, id, name)
+	a.passedPlace(w, r, id, name, AuthMethodLocalPassword, place{ipKey, userKey, sure})
 }
 
 func (a *Auth) setCookie(w http.ResponseWriter, r *http.Request, value string, maxAge int) {
@@ -1227,7 +1337,7 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 // event writes a sign-in or API key Event with the caller's address. It
 // never holds a password or a key.
 func (a *Auth) event(r *http.Request, by domain.Actor, kind, summary string, data map[string]any) {
-	data["ip"] = strings.TrimPrefix(a.ClientKey(r), "ip:")
+	data["ip"] = a.eventAddr(r)
 	_ = a.s.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: by, Kind: kind, Summary: summary, Data: data})
 }
 
@@ -1262,7 +1372,7 @@ func failedSummary(name, how string) string {
 // same address for the same name and way within 10 minutes of the first add
 // to that row's count and last_at instead of making new rows.
 func (a *Auth) failedEvent(r *http.Request, name, how string) {
-	ip := strings.TrimPrefix(a.ClientKey(r), "ip:")
+	ip := a.eventAddr(r)
 	now := a.now().UTC()
 	ctx := context.WithoutCancel(r.Context())
 	var n int64

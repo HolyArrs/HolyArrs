@@ -213,6 +213,14 @@ func (a *Auth) seenAddress(r *http.Request) (addr string, untrusted bool) {
 // The returned address is always usable as a limit key; ok says whether it
 // may be used for the local-network skip.
 func (a *Auth) clientAddr(r *http.Request) (addr string, ok bool) {
+	addr, ok, _ = a.clientAddrUnsure(r)
+	return addr, ok
+}
+
+// clientAddrUnsure is clientAddr plus unsure: true when the two proxy headers
+// disagree, so the address is one of them and may be written by the visitor.
+// It stays a fine per-visitor limit key but must never stand for a known place.
+func (a *Auth) clientAddrUnsure(r *http.Request) (addr string, ok, unsure bool) {
 	peer, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		peer = r.RemoteAddr
@@ -222,11 +230,11 @@ func (a *Auth) clientAddr(r *http.Request) (addr string, ok bool) {
 	real := strings.TrimSpace(r.Header.Get("X-Real-IP"))
 	fwd := r.Header.Get("Forwarded")
 	if len(xffs) == 0 && real == "" && fwd == "" {
-		return peer, true
+		return peer, true, false
 	}
 	pip := net.ParseIP(peer)
 	if pip == nil || !a.trustedProxy(pip) {
-		return peer, false
+		return peer, false, false
 	}
 	ok = fwd == ""
 	fromXFF := ""
@@ -241,7 +249,7 @@ func (a *Auth) clientAddr(r *http.Request) (addr string, ok bool) {
 	for i := len(entries) - 1; i >= 0; i-- {
 		ip := parseHostIP(entries[i])
 		if ip == nil {
-			return peer, false
+			return peer, false, false
 		}
 		fromXFF = ip.String()
 		if !a.trustedProxy(ip) {
@@ -259,13 +267,13 @@ func (a *Auth) clientAddr(r *http.Request) (addr string, ok bool) {
 	}
 	switch {
 	case fromXFF == "" && fromReal == "":
-		return peer, false
+		return peer, false, false
 	case fromXFF == "":
-		return fromReal, ok
+		return fromReal, ok, false
 	case fromReal == "" || fromReal == fromXFF:
-		return fromXFF, ok
+		return fromXFF, ok, false
 	default:
-		return fromXFF, false
+		return fromXFF, false, true
 	}
 }
 

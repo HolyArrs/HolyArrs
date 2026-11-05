@@ -1,6 +1,9 @@
 package auth
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+)
 
 // nameProblem says what is wrong with a new account name, or "". Names with
 // hidden characters (zero-width, direction marks, control characters, odd
@@ -12,8 +15,15 @@ func nameProblem(name string) string {
 		return "pick a name of 1 to 64 characters"
 	}
 	rs := []rune(name)
+	if rs[0] == ' ' || rs[len(rs)-1] == ' ' || strings.Contains(name, "  ") {
+		return "names can't start or end with a space or have two spaces in a row"
+	}
 	for i, c := range rs {
-		if c == ' ' || !unicode.In(c, unicode.Cc, unicode.Cf, unicode.Co, unicode.Zs, unicode.Zl, unicode.Zp) {
+		// Variation selectors only follow a symbol (an emoji such as a heart).
+		if c >= 0xfe00 && c <= 0xfe0f && i > 0 && unicode.IsSymbol(rs[i-1]) {
+			continue
+		}
+		if c == ' ' || (!ignorable(c) && !unicode.In(c, unicode.Cc, unicode.Cf, unicode.Co, unicode.Zs, unicode.Zl, unicode.Zp)) {
 			continue
 		}
 		// Zero-width joiner and non-joiner are part of how Persian, Indic and
@@ -29,4 +39,19 @@ func nameProblem(name string) string {
 
 func joins(c rune) bool {
 	return c > 0x7f && (unicode.IsLetter(c) || unicode.IsMark(c) || unicode.IsSymbol(c))
+}
+
+// ignorable says whether c is a default-ignorable code point outside the
+// format class (which is already refused): it draws nothing, so it could hide
+// in a name.
+func ignorable(c rune) bool {
+	switch {
+	case c >= 0xfe00 && c <= 0xfe0f, c >= 0xe0100 && c <= 0xe01ef, c >= 0x180b && c <= 0x180f, c >= 0x17b4 && c <= 0x17b5:
+		return true
+	}
+	switch c {
+	case 0x034f, 0x115f, 0x1160, 0x3164, 0xffa0, 0x2800:
+		return true
+	}
+	return false
 }

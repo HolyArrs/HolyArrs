@@ -70,7 +70,18 @@ func TestTwoFactorStepNotHeldByNameWait(t *testing.T) {
 	secret, _ := turnOnTwoFactor(t, f, own)
 	home := map[string]string{"X-Forwarded-For": "203.0.113.50"}
 	c := client(t)
+	f.clock.add(totpStep * time.Second)
+	// Home becomes a known place only once the whole sign-in, code included, is done.
 	resp, out := call(t, c, "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"luis","password":"`+pw+`"}`, home)
+	var first struct {
+		Ticket string `json:"ticket"`
+	}
+	_ = json.Unmarshal([]byte(out), &first)
+	if resp, out = call(t, c, "POST", f.srv.URL+"/api/v1/auth/login/two-factor", `{"ticket":"`+first.Ticket+`","code":"`+codeNow(t, f, secret, 0)+`"}`, home); resp.StatusCode != 200 {
+		t.Fatalf("first sign-in: %d %s", resp.StatusCode, out)
+	}
+	f.clock.add(totpStep * time.Second)
+	resp, out = call(t, c, "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"luis","password":"`+pw+`"}`, home)
 	var v struct {
 		Ticket string `json:"ticket"`
 	}
