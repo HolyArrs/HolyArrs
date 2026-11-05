@@ -210,6 +210,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		t = nil
 	}
 	var wait time.Duration
+	var marks []failMark
 	if t != nil {
 		userKey := "name:" + strings.ToLower(t.name)
 		// codeKey survives a correct password, so a fresh ticket brings back
@@ -218,6 +219,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		wait = max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey), a.waitFor(codeKey, freeTries))
 		if wait == 0 {
 			t.tries++
+			marks = a.markFails(ipKey, altKey)
 			a.noteFail(ipKey, altKey, userKey, codeKey)
 		}
 	}
@@ -249,7 +251,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	delete(a.tickets, h)
-	delete(a.fails, ipKey)
+	a.undoFailLocked(marks) // only this attempt's address count
 	delete(a.fails, "name:"+strings.ToLower(t.name))
 	delete(a.fails, "2fa:"+itoa(t.userID))
 	a.noteKnown(place{ipKey, t.userKey, sure})

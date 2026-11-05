@@ -87,3 +87,59 @@ func TestForgedRealIPRotationPaysRealKey(t *testing.T) {
 		}
 	}
 }
+
+// Someone else signing in at a shared address takes back only their own
+// reservation: the strangers' count there stays, so a member's sign-in never
+// hands out fresh owner guesses.
+func TestMemberSignInDoesNotClearSharedAddress(t *testing.T) {
+	for _, way := range []string{"password", "jellyfin"} {
+		t.Run(way, func(t *testing.T) {
+			var logouts atomic.Int32
+			ms := fakeMediaServer(t, &logouts)
+			f := gated(t, Options{})
+			own := ownerOf(t, f)
+			right := `{"name":"luis","password":"` + pw + `"}`
+			wrong := `{"name":"luis","password":"wrong password"}`
+			if resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", right, nil); resp.StatusCode != 200 {
+				t.Fatalf("owner sign-in: %d", resp.StatusCode)
+			}
+			member := func() int { t.Fatal("no member way"); return 0 }
+			switch way {
+			case "password":
+				join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
+				member = func() int {
+					resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"ana","password":"`+pw+`"}`, nil)
+					return resp.StatusCode
+				}
+			case "jellyfin":
+				own.do(t, f, "PUT", "/api/v1/auth/settings", `{"jellyfin":{"on":true,"url":"`+ms.URL+`/","join":"everyone"},"confirm_everyone":true}`)
+				member = func() int {
+					resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/media-server/jellyfin", `{"name":"mum","password":"right"}`, nil)
+					return resp.StatusCode
+				}
+			}
+			if code := member(); code != 200 {
+				t.Fatalf("member first sign-in: %d", code)
+			}
+			checked := 0
+			for round := 0; round < 50; round++ {
+				held := false
+				for i := 0; i < 4; i++ {
+					resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", wrong, nil)
+					if resp.StatusCode == http.StatusTooManyRequests {
+						held = true
+					} else {
+						checked++
+					}
+				}
+				if round >= 1 && !held {
+					t.Fatalf("round %d: no wait for owner guesses", round+1)
+				}
+				member()
+			}
+			if checked > 6 {
+				t.Fatalf("%d owner guesses checked, want at most 6", checked)
+			}
+		})
+	}
+}

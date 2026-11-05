@@ -1016,6 +1016,13 @@ func (a *Auth) markFails(keys ...string) []failMark {
 func (a *Auth) undoFail(marks []failMark) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	a.undoFailLocked(marks)
+}
+
+// undoFailLocked is undoFail for a caller that holds a.mu. A good sign-in
+// uses it to take back only its own reservation on a shared address, so it
+// never clears the count other people's failures left there.
+func (a *Auth) undoFailLocked(marks []failMark) {
 	for _, m := range marks {
 		f := a.fails[m.key]
 		if f == nil {
@@ -1042,9 +1049,11 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	userKey := "name:" + strings.ToLower(c.Name)
 	// Check and reserve in one locked step: the attempt counts as failed up
 	// front and is cleared on success, so parallel attempts cannot slip past.
+	var marks []failMark
 	a.mu.Lock()
 	wait := max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey))
 	if wait == 0 {
+		marks = a.markFails(ipKey, altKey)
 		a.noteFail(ipKey, altKey, userKey)
 	}
 	a.mu.Unlock()
@@ -1093,7 +1102,7 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.mu.Lock()
-	delete(a.fails, ipKey)
+	a.undoFailLocked(marks) // only this attempt's address count; others' failures there stay
 	delete(a.fails, userKey)
 	a.mu.Unlock()
 	a.passedPlace(w, r, id, name, AuthMethodLocalPassword, place{ipKey, userKey, sure})

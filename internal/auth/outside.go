@@ -805,7 +805,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.mu.Lock()
-	delete(a.fails, ipKey)
+	a.undoFailLocked(marks[:2]) // this attempt's address counts only (ipKey, altKey)
 	delete(a.fails, userKey)
 	a.mu.Unlock()
 	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)
