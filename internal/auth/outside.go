@@ -734,7 +734,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	ipKey, userKey := a.clientKey(r), "name:"+kind+":"+strings.ToLower(c.Name)
 	var marks []failMark
 	a.mu.Lock()
-	wait := max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries))
+	wait := a.signInWait(ipKey, userKey)
 	if wait == 0 {
 		marks = a.markFails(ipKey, userKey)
 		a.noteFail(ipKey, userKey)

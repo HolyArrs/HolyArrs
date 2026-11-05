@@ -27,11 +27,15 @@ Proxy host for your domain, then Custom locations > Add location:
 
 ```
 proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_buffering off;
 proxy_read_timeout 1h;
 ```
 
 Do not add a trailing slash to the forward address (that would strip the path).
+
+Keep both address lines. With only `X-Real-IP`, nginx passes on whatever `X-Forwarded-For` the visitor sent; HolyArrs then sees two different addresses, cannot tell which one is real, and treats the visitor as outside your network.
 
 ## Traefik (Docker labels)
 

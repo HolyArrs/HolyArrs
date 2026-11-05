@@ -52,7 +52,10 @@ const (
 const (
 	freeTries     = 5  // per client address
 	freeUserTries = 20 // per name, so one address cannot lock the owner out quickly
-	MaxBackoff    = 15 * time.Minute
+	// cleanAddressAfter: an address with no failure for this long skips the
+	// per-name wait (see signInWait).
+	cleanAddressAfter = 24 * time.Hour
+	MaxBackoff        = 15 * time.Minute
 )
 
 const settingSkipLocal = "skip_login_local_network"
@@ -365,28 +368,11 @@ func (a *Auth) trustedProxy(ip net.IP) bool {
 	return false
 }
 
-// localPeer says whether the request comes from a listed local network. When a
-// forwarding header is present the peer must be a trusted proxy, and then the
-// address it forwards is the one checked.
+// localPeer says whether the request comes from a listed local network,
+// reading the caller's address by the shared rule in clientAddr.
 func (a *Auth) localPeer(r *http.Request) bool {
-	xff, fwd, real := r.Header.Get("X-Forwarded-For"), r.Header.Get("Forwarded"), r.Header.Get("X-Real-IP")
-	if xff == "" && fwd == "" && real == "" {
-		return a.isLocal(r.RemoteAddr)
-	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	peer := net.ParseIP(host)
-	if peer == nil || !a.trustedProxy(peer) || fwd != "" {
-		return false
-	}
-	client := real
-	if xff != "" {
-		parts := strings.Split(xff, ",")
-		client = strings.TrimSpace(parts[len(parts)-1])
-	}
-	return a.isLocal(client)
+	addr, ok := a.clientAddr(r)
+	return ok && a.isLocal(addr)
 }
 
 // Strong reports whether the request uses a browser session or an API key.
@@ -607,8 +593,8 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if c.Name == "" || len(c.Name) > 64 {
-		fail(w, http.StatusBadRequest, "pick a name of 1 to 64 characters")
+	if msg := nameProblem(c.Name); msg != "" {
+		fail(w, http.StatusBadRequest, msg)
 		return
 	}
 	if msg := passwordProblem(c.Password, MinPasswordLength(r.Context(), a.s.Read())); msg != "" {
@@ -701,24 +687,14 @@ var errNoLocalSignIn = errors.New("signs in only through an outside account")
 func (a *Auth) clientKey(r *http.Request) string { return a.ClientKey(r) }
 
 // ClientKey names the caller for rate limits: the peer address, or the
-// address a trusted proxy forwards (the last X-Forwarded-For entry, else
-// X-Real-IP). Forwarding headers from any other peer are ignored.
+// client a trusted proxy forwards, by the shared rule in clientAddr.
+// Forwarding headers from any other peer are ignored.
 func (a *Auth) ClientKey(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
+	addr, _ := a.clientAddr(r)
+	if ip := net.ParseIP(addr); ip != nil {
+		addr = ip.String()
 	}
-	if peer := net.ParseIP(host); peer != nil && a.trustedProxy(peer) {
-		client := strings.TrimSpace(r.Header.Get("X-Real-IP"))
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			parts := strings.Split(xff, ",")
-			client = strings.TrimSpace(parts[len(parts)-1])
-		}
-		if ip := net.ParseIP(client); ip != nil {
-			host = ip.String()
-		}
-	}
-	return "ip:" + host
+	return "ip:" + addr
 }
 
 // waitFor returns how long the key must still wait, or 0.
@@ -735,6 +711,19 @@ func (a *Auth) waitFor(key string, free int) time.Duration {
 		return left
 	}
 	return 0
+}
+
+// signInWait is how long a password sign-in must wait; the caller holds a.mu.
+// The per-address wait always counts. The per-name wait counts only for an
+// address that failed in the last day: strangers spreading wrong guesses over
+// many addresses cannot keep the owner out, yet each new address gets a
+// single check before the name's wait holds it too.
+func (a *Auth) signInWait(ipKey, userKey string) time.Duration {
+	wait := a.waitFor(ipKey, freeTries)
+	if f := a.fails[ipKey]; f != nil && a.now().Sub(f.last) < cleanAddressAfter {
+		wait = max(wait, a.waitFor(userKey, freeUserTries))
+	}
+	return wait
 }
 
 func (a *Auth) noteFail(keys ...string) {
@@ -811,7 +800,7 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	// Check and reserve in one locked step: the attempt counts as failed up
 	// front and is cleared on success, so parallel attempts cannot slip past.
 	a.mu.Lock()
-	wait := max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries))
+	wait := a.signInWait(ipKey, userKey)
 	if wait == 0 {
 		a.noteFail(ipKey, userKey)
 	}

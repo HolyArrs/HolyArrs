@@ -528,6 +528,16 @@ addresses and the Secure cookie need it. This matters when you enable the
 optional local-network sign-in skip: an untrusted request cannot claim a
 different source address.
 
+Behind a trusted proxy HolyArrs reads the last address in `X-Forwarded-For`
+that is not one of your trusted proxies, and checks it against `X-Real-IP`
+when both are sent. If they disagree, the visitor is treated as outside your
+network. With nginx, set both headers:
+
+```
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+```
+
 To serve HolyArrs below a path, set `HOLYARRS_URL_BASE=/holyarrs`. The proxy
 must pass that path unchanged, keep the `Host` header and leave the live
 stream unbuffered. See [Running under a path](url-base.md) for nginx-proxy-

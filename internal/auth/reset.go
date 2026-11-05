@@ -43,8 +43,8 @@ func ReadNewOwner(r io.Reader) (name, password string, err error) {
 	if name == "" && password == "" && len(bare) == 2 {
 		name, password = bare[0], bare[1]
 	}
-	if name == "" || len(name) > 64 {
-		return "", "", errors.New("pick a name of 1 to 64 characters")
+	if msg := nameProblem(name); msg != "" {
+		return "", "", errors.New(msg)
 	}
 	if msg := passwordProblem(password, MinPassword); msg != "" {
 		return "", "", errors.New(msg)
