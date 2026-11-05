@@ -211,3 +211,109 @@ func TestNameFloodKeepsOwnerWait(t *testing.T) {
 		t.Fatal("address attempt not counted while the name table was full")
 	}
 }
+
+// When the name table is full, a name with no record must not go free:
+// spread-out guesses share one wait, a known place still gets in, and the
+// wait ends once the flood has stopped for a while.
+func TestSaturatedNameTableFailsClosed(t *testing.T) {
+	f := setup(t, Options{})
+	a := f.a
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for i := 0; i < 4*maxTracked; i++ {
+		a.noteFail("ip:"+strconv.Itoa(i%300), "name:made-up-"+strconv.Itoa(i))
+	}
+	if a.fails["name:luis"] != nil {
+		t.Fatal("test needs luis untracked")
+	}
+	a.noteKnown(place{"ip:203.0.113.50", "name:luis", true})
+	f.clock.add(2 * time.Second)
+
+	// (a) fresh addresses guessing a real name with no record share a wait.
+	if w := a.signInWait("ip:192.0.2.1", "name:luis", true); w != 0 {
+		t.Fatalf("first guess waited %v", w)
+	}
+	a.noteFail("ip:192.0.2.1", "name:luis")
+	for _, name := range []string{"name:luis", "name:never-seen"} {
+		if a.signInWait("ip:192.0.2.2", name, true) == 0 {
+			t.Fatalf("%s from a fresh address went free while the table was full", name)
+		}
+	}
+	if a.signInWait("ip:192.0.2.3", "name:luis", false) == 0 {
+		t.Fatal("unsure address went free")
+	}
+	if a.satWait("2fa:7") == 0 {
+		t.Fatal("untracked two-factor key went free")
+	}
+	// (b) the owner from a known place still signs in.
+	if w := a.signInWait("ip:203.0.113.50", "name:luis", true); w != 0 {
+		t.Fatalf("known place waited %v", w)
+	}
+	if len(a.fails) > 4*maxTracked {
+		t.Fatalf("fail map grew to %d", len(a.fails))
+	}
+	// (c) with no flood for the window, untracked names are free again.
+	f.clock.add(MaxBackoff + time.Second)
+	if w := a.signInWait("ip:192.0.2.4", "name:luis", false); w != 0 {
+		t.Fatalf("still waiting %v after the flood stopped", w)
+	}
+}
+
+// After a flood the prune schedule must not stay stuck: once every record has
+// expired, a new name gets a real record again and saturation ends.
+func TestSaturationEndsAfterFlood(t *testing.T) {
+	f := setup(t, Options{})
+	a := f.a
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for i := 0; i < 5*maxTracked; i++ {
+		a.noteFail("ip:"+strconv.Itoa(i), "name:made-up-"+strconv.Itoa(i))
+	}
+	f.clock.add(MaxBackoff + time.Minute)
+	a.noteFail("ip:198.51.100.7", "name:fresh")
+	if a.fails["name:fresh"] == nil {
+		t.Fatal("new name got no record after the flood expired")
+	}
+	if len(a.fails) > maxTracked {
+		t.Fatalf("expired records kept: %d", len(a.fails))
+	}
+	if a.satWait("name:other") != 0 {
+		t.Fatal("still saturated after the flood expired")
+	}
+}
+
+// Disagreeing proxy headers: either one may be written by the visitor, so a
+// failure counts under both keys and the larger wait stands.
+func TestDisagreeingHeadersCountBothKeys(t *testing.T) {
+	f := setup(t, Options{TrustedProxies: []string{"127.0.0.1/32"}})
+	r, _ := http.NewRequest("POST", "/", nil)
+	r.RemoteAddr = "127.0.0.1:5000"
+	r.Header.Set("X-Forwarded-For", "203.0.113.50")
+	r.Header.Set("X-Real-IP", "192.0.2.99")
+	k1, k2, sure := f.a.clientKeys(r)
+	if sure || k1 == "" || k2 == "" || k1 == k2 {
+		t.Fatalf("keys %q %q sure %v", k1, k2, sure)
+	}
+	if k1 != "ip:192.0.2.99" || k2 != "ip:203.0.113.50" {
+		t.Fatalf("keys %q %q", k1, k2)
+	}
+	r.Header.Set("X-Real-IP", "203.0.113.50")
+	k1, k2, sure = f.a.clientKeys(r)
+	if !sure || k2 != "" || k1 != "ip:203.0.113.50" {
+		t.Fatalf("agreeing headers: %q %q %v", k1, k2, sure)
+	}
+
+	// Guesses with a changing X-Real-IP but one fixed X-Forwarded-For hit the wait.
+	g := setup(t, Options{TrustedProxies: []string{"127.0.0.1/32"}})
+	setupOwner(t, g, client(t))
+	wrong := `{"name":"nobody","password":"wrong password"}`
+	got := 0
+	for i := 0; i < freeTries+2; i++ {
+		resp, _ := call(t, client(t), "POST", g.srv.URL+"/api/v1/auth/login", wrong,
+			map[string]string{"X-Forwarded-For": "203.0.113.50", "X-Real-IP": "192.0.2." + strconv.Itoa(i+1)})
+		got = resp.StatusCode
+	}
+	if got != http.StatusTooManyRequests {
+		t.Fatalf("rotating X-Real-IP dodged the limit: %d", got)
+	}
+}
