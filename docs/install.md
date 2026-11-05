@@ -373,6 +373,11 @@ On a Synology, QNAP, TrueNAS or Unraid box, see [Install on a NAS](nas.md).
 
 ## If startup fails
 
+Run `docker exec holyarrs /holyarrs doctor` first: it checks the config,
+Library and download folders, the network and the clock, and says how to fix
+each problem. [Support info](support.md) covers the doctor, the log and the
+support bundle.
+
 | Message or symptom | Check |
 | --- | --- |
 | Config folder is on a network share | Move `/config` to a local disk. Keep only the media folders on the share. |

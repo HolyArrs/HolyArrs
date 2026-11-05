@@ -62,6 +62,7 @@ in square brackets.
 
 - [Import keys and passwords from one file](import-secrets.md)
 - [Connect Seerr or Overseerr](old-app-api.md): HolyArrs answers them, and Bazarr, Unpackerr and Homepage, in place of Sonarr and Radarr
+- [Support info](support.md): the log, the doctor check, the support bundle, the version, and why the image has no shell
 - [Update check](updates.md)
 - [Running under a path behind a reverse proxy](url-base.md)
 - [Word check for contributors](word-check.md)
