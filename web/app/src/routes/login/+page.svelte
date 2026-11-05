@@ -837,9 +837,10 @@
 	   keeps its colour; text is dark ink, links are dark and underlined (red on
 	   tinted glass reads poorly), and red stays on the main button. */
 	.panel.light {
-		background: rgb(255 252 247 / 0.45);
-		-webkit-backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
-		backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
+		/* Thick enough that the poster's dark patches read as tint, never as smudges behind the text. */
+		background: rgb(255 253 250 / 0.66);
+		-webkit-backdrop-filter: blur(64px) saturate(1.5) brightness(1.5);
+		backdrop-filter: blur(64px) saturate(1.5) brightness(1.5);
 		border-color: rgb(255 255 255 / 0.55);
 		/* A light rim and a soft lift: dark shadows make the light glass look dirty. */
 		box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25), 0 24px 70px rgb(0 0 0 / 0.2), 0 4px 14px rgb(0 0 0 / 0.08);

@@ -408,9 +408,9 @@
 	}
 	/* Light mode: the sign-in panel's light tinted glass. */
 	.edge.glass[data-theme='light'] {
-		background: rgb(255 252 247 / 0.45);
-		-webkit-backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
-		backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
+		background: rgb(255 253 250 / 0.66);
+		-webkit-backdrop-filter: blur(64px) saturate(1.5) brightness(1.5);
+		backdrop-filter: blur(64px) saturate(1.5) brightness(1.5);
 	}
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.edge.glass { background: rgb(18 18 22 / 0.92); }
