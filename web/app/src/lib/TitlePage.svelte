@@ -1175,11 +1175,17 @@
 								<span><b>Keep up to date</b><small>Grab it when it comes out and upgrade when a better copy shows up</small></span>
 								<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
 							</button>
+							{#if (!o.gate_open || !o.keep_up_to_date) && o.gate_reason}
+								<div class="lib-row static">
+									<span><b>Not looking yet</b><small class="wrap" data-testid="gate-reason">{o.gate_reason}</small></span>
+									{#if o.gate_opens_at && !o.gate_open}<span class="lib-val">{date(o.gate_opens_at)}</span>{/if}
+								</div>
+							{/if}
 							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Pick rules</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></button>
 								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, quality, episode order, tags, folder' : 'Quality, tags and folder'}</small></span><Icon name="tools" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
-							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures</small></span><Icon name="refresh" size={16} /></button>
+							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures{o.refreshed_at ? ` · refreshed ${date(o.refreshed_at)}` : ''}</small></span><Icon name="refresh" size={16} /></button>
 						</div>
 						<div class="lib-rows danger">
 							<button type="button" class="lib-row" onclick={() => (deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
@@ -1188,7 +1194,7 @@
 					</aside>
 				</div>
 				{#if manage}
-					<!-- The rest of the Library tools: active downloads, Versions, copies, subtitles and when HolyArrs looks. -->
+					<!-- The rest of the Library tools: active downloads, Versions, copies and subtitles. -->
 					<div class="lib-more" data-testid="lib-tools">
 						{#if activeDownloads.length}
 							<TitleSection id="h-downloads" title="Downloading">
@@ -1207,20 +1213,6 @@
 						{:else}<MovieVersions bind:this={movieVersions} title={o} onchange={() => loadOwned(o.id)} />{/if}
 						<CopyControls title={o} onchange={() => loadOwned(o.id)} />
 						<div id="title-subtitles">{#key o.id}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} />{/key}</div>
-						<TitleSection id="h-dates" title="When HolyArrs looks">
-							<!-- Only what Settings beside it does not show: the release gate and when details were refreshed. -->
-							<div class="lib-rows">
-								{#if o.kind !== 'show'}
-									<div class="lib-row static">
-										<span><b>Release gate</b>{#if o.gate_reason}<small class="wrap" data-testid="gate-reason">{o.gate_reason}</small>{/if}</span>
-										<span class="lib-val">{(o.release_gate ?? '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}{o.gate_delay_days ? ` + ${o.gate_delay_days} d` : ''}{o.gate_opens_at ? ` · ${date(o.gate_opens_at)}` : ''}</span>
-									</div>
-								{:else if o.gate_reason}
-									<div class="lib-row static"><span><b>Wanted</b><small class="wrap" data-testid="gate-reason">{o.gate_reason}</small></span></div>
-								{/if}
-								{#if o.refreshed_at}<div class="lib-row static"><span><b>Details refreshed</b></span><span class="lib-val">{date(o.refreshed_at)}</span></div>{/if}
-							</div>
-						</TitleSection>
 					</div>
 				{/if}
 			{/if}

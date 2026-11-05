@@ -88,7 +88,7 @@ export async function titleAction(page: Page, _menu: 'Library' | 'More actions',
 }
 
 /** openLibraryTab opens an owned title's Library tab: status, seasons or files,
- *  history and settings, then downloads, Versions, copies, subtitles and When HolyArrs looks. */
+ *  history and settings, then downloads, Versions, copies and subtitles. */
 export async function openLibraryTab(page: Page): Promise<Locator> {
 	const tab = page.getByTestId('own-tabs').getByRole('tab', { name: /^Library/ });
 	await tab.click();

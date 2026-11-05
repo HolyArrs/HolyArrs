@@ -26,8 +26,6 @@
 	let error = $state('');
 	let formError = $state('');
 	let busy = $state('');
-	let editionInputs: Record<number, HTMLInputElement> = {};
-	let checkedEdition = $state<Record<number, boolean>>({});
 	let acknowledge = $state<Record<number, boolean>>({});
 
 	let addOpen = $state(false);
@@ -42,8 +40,6 @@
 	let adoptOpen = $state(false);
 	let adoptVersion = $state<VersionView | null>(null);
 	let adoptPath = $state('');
-	let adoptEdition = $state('');
-	let adoptChecked = $state(false);
 
 	const fileFor = (versionId: number) => files.find((file) => file.VersionID === versionId);
 
@@ -74,19 +70,6 @@
 				acknowledge_protection: !protectedValue && acknowledge[file.ID] === true
 			});
 			await changed(protectedValue ? 'This copy is protected.' : 'Protection is removed from this copy.');
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-		} finally {
-			busy = '';
-		}
-	}
-
-	async function saveEdition(file: CopyFile) {
-		busy = `edition-${file.ID}`;
-		try {
-			await api.put(`/titles/${titleId}/files/${file.ID}/choices`, { edition: (editionInputs[file.ID]?.value ?? '').trim() });
-			checkedEdition[file.ID] = false;
-			await changed('The checked edition is saved for this copy.');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {
@@ -142,8 +125,6 @@
 		adoptVersion = version;
 		formError = '';
 		adoptPath = '';
-		adoptEdition = version.edition ?? '';
-		adoptChecked = false;
 		adoptOpen = true;
 	}
 
@@ -153,8 +134,7 @@
 		busy = 'adopt';
 		try {
 			await api.post(`/titles/${titleId}/versions/${adoptVersion.id}/adopt`, {
-				relative_path: adoptPath.trim(),
-				...(adoptChecked && adoptEdition.trim() ? { confirmed_edition: adoptEdition.trim() } : {})
+				relative_path: adoptPath.trim()
 			});
 			adoptOpen = false;
 			await changed(`The existing file now belongs to the ${adoptVersion.label} Version.`);
@@ -187,15 +167,9 @@
 					</div>
 					{#if file}
 						<div class="cc-row info">
-							<span><small class="mono" title={file.RelativePath}>{file.RelativePath}</small><small>Audio {audio.join(', ') || 'unknown'} · Edition {copyEdition(file) || 'unknown'}{file.State === 'missing' ? ' · Missing' : ''}</small></span>
+							<span><small class="mono" title={file.RelativePath}>{file.RelativePath}</small><small>Audio {audio.join(', ') || 'unknown'}{copyEdition(file) ? ` · ${copyEdition(file)}` : ''}{file.State === 'missing' ? ' · Missing' : ''}</small></span>
 						</div>
 						{#if staff}
-							<div class="cc-row edition">
-								<label for="copy-edition-{file.ID}"><b>Checked edition</b></label>
-								<input id="copy-edition-{file.ID}" class="cc-input" value={copyEdition(file)} bind:this={editionInputs[file.ID]} maxlength="80" placeholder="Theatrical" />
-								<label class="cc-check"><input type="checkbox" bind:checked={checkedEdition[file.ID]} /><span class="sr-only">I checked this file's edition</span><span aria-hidden="true">Checked</span></label>
-								<button type="button" class="cc-btn" onclick={() => saveEdition(file)} disabled={!checkedEdition[file.ID] || busy !== ''}>Save edition</button>
-							</div>
 							{#if file.Protected}
 								<div class="cc-row">
 									<label class="cc-check"><input type="checkbox" bind:checked={acknowledge[file.ID]} /><span>I understand this removes the copy's protection</span></label>
@@ -244,8 +218,7 @@
 		<p class="small muted">The file must already be inside the <span class="mono">{shortFolder(adoptVersion?.folder_path)}</span> folder of the Version. HolyArrs checks its actual audio and edition, then records it without moving or rewriting it.</p>
 		{#if session.can('manage_library')}<details class="small muted"><summary>Details</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
 		<div class="field"><label for="adopt-path">Path relative to the Library folder</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
-		<div class="field"><label for="adopt-edition">Checked edition <span class="muted">(only when the filename needs correction)</span></label><input id="adopt-edition" class="input" bind:value={adoptEdition} maxlength="80" /></div>
-		<label class="checkline small"><input type="checkbox" bind:checked={adoptChecked} /> I checked the file and want to use this edition correction</label>
+		
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
 	{#snippet footer()}
@@ -272,14 +245,10 @@
 	.cc-row.act:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.cc-row.act:disabled { opacity: .55; cursor: default; }
 	.cc-row :global(svg) { flex: none; color: var(--text-muted); }
-	/* Edition: one line, label, field, the checked tick and Save. */
-	.cc-row.edition { justify-content: flex-start; flex-wrap: wrap; }
-	.cc-row.edition > label:first-child { flex: none; }
-	.cc-input { flex: 1 1 160px; min-width: 0; height: 36px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--text) 14%, transparent); border-radius: 10px; background: var(--surface-1, var(--bg)); color: var(--text); font: 500 14px/1 var(--font-ui); }
 	.cc-check { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); cursor: pointer; }
 	.cc-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--text); }
 	.cc-btn { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
 	.cc-btn:disabled { opacity: .45; cursor: default; }
-	@media (pointer: coarse) { .cc-input { height: 44px; } .cc-btn { height: 44px; } .cc-check input { width: 20px; height: 20px; } }
-	@media (max-width: 600px) { .cc-row { padding: 12px 16px; } .cc-row.edition > label:first-child { flex-basis: 100%; } }
+	@media (pointer: coarse) { .cc-btn { height: 44px; } .cc-check input { width: 20px; height: 20px; } }
+	@media (max-width: 600px) { .cc-row { padding: 12px 16px; } }
 </style>

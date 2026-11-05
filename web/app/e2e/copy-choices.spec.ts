@@ -87,7 +87,7 @@ test('copy controls show inspected facts and require explicit choices', async ({
 	await page.route('**/api/v1/titles/*/versions/*/adopt', async (route) => {
 		const body = route.request().postDataJSON() as Record<string, unknown>;
 		calls.push({ path: new URL(route.request().url()).pathname, body });
-		files = [...files, { ID: 702, VersionID: 502, RelativePath: String(body.relative_path), Size: 99, AddedAt: '2026-10-15T12:00:00Z', State: 'present', Protected: false, MediaInfo: { audio_languages: ['en', 'fr'], edition: String(body.confirmed_edition), video_codec: 'hevc' } }];
+		files = [...files, { ID: 702, VersionID: 502, RelativePath: String(body.relative_path), Size: 99, AddedAt: '2026-10-15T12:00:00Z', State: 'present', Protected: false, MediaInfo: { audio_languages: ['en', 'fr'], edition: '', video_codec: 'hevc' } }];
 		await route.fulfill({ status: 201, json: files.at(-1) });
 	});
 
@@ -96,7 +96,7 @@ test('copy controls show inspected facts and require explicit choices', async ({
 	await expect(page.getByTestId('lib-pane')).toBeVisible();
 	const controls = page.getByTestId('copy-controls');
 	await expect(controls).toContainText('Required audio: en');
-	await expect(controls).toContainText('Inspected audio: fr, en');
+	await expect(controls).toContainText('Audio fr, en');
 	await expect(controls).not.toContainText('subtitle');
 
 	await controls.getByRole('button', { name: 'Protect this copy' }).click();
@@ -106,30 +106,23 @@ test('copy controls show inspected facts and require explicit choices', async ({
 	await controls.getByRole('button', { name: 'Remove protection' }).click();
 	expect(calls.at(-1)?.body).toEqual({ protected: false, acknowledge_protection: true });
 
-	const checkedEdition = controls.getByLabel('Checked edition');
-	await checkedEdition.fill('Director cut');
-	await expect(checkedEdition).toHaveValue('Director cut');
-	await expect(controls.getByRole('button', { name: 'Save edition' })).toBeDisabled();
-	await controls.getByLabel("I checked this file's edition").check();
-	await controls.getByRole('button', { name: 'Save edition' }).click();
-	expect(calls.at(-1)?.body).toEqual({ edition: 'Director cut' });
+	// Correcting a copy's edition by hand is out of the app for now (docs/audio-versions.md).
+	await expect(controls.getByLabel('Checked edition')).toHaveCount(0);
 
 	await controls.getByRole('button', { name: 'Keep this copy and add another Version' }).click();
 	const add = page.getByRole('dialog', { name: 'Keep this copy and add another Version' });
 	await add.getByLabel('Version name').fill('Archive');
 	await add.getByLabel(/Edition wanted/).fill('Theatrical');
-	await add.getByLabel(/Audio languages wanted/).fill('EN, fr, en');
+	await add.getByLabel(/Audio wanted/).fill('EN, fr, en');
 	await add.getByRole('button', { name: 'Protect and add Version' }).click();
 	expect(calls.at(-1)?.body.audio_languages).toEqual(['en', 'fr']);
 	await expect(controls).toContainText('Archive');
 
-	await controls.getByRole('button', { name: 'Use an existing video in this Version folder' }).first().click();
+	await controls.getByRole('button', { name: /^Use an existing video/ }).first().click();
 	const adopt = page.getByRole('dialog', { name: /Use an existing video/ });
 	await adopt.getByLabel('Path relative to the Library folder').fill('Paper Harbour (2023) [4K]/Paper Harbour.mkv');
-	await adopt.getByLabel(/Checked edition/).fill('Director cut');
-	await adopt.getByLabel(/I checked the file/).check();
 	await adopt.getByRole('button', { name: 'Check and use file' }).click();
-	expect(calls.at(-1)?.body).toEqual({ relative_path: 'Paper Harbour (2023) [4K]/Paper Harbour.mkv', confirmed_edition: 'Director cut' });
+	expect(calls.at(-1)?.body).toEqual({ relative_path: 'Paper Harbour (2023) [4K]/Paper Harbour.mkv' });
 	await expect(controls).toContainText('Paper Harbour.mkv');
 
 	await page.setViewportSize({ width: 412, height: 915 });

@@ -88,19 +88,14 @@ test("Movie editions: a Director's Cut checked on the Library tab renames the fi
 	expect(made.status(), await made.text()).toBe(201);
 	const serverId = ((await made.json()) as { id: number }).id;
 
-	// The Library tab: check the copy's edition and save it.
+	// The copy's edition, checked by hand. Its box is out of the app for now (docs/audio-versions.md),
+	// so the check goes through the API the box used; the Library tab then shows it.
+	const saved = await call('PUT', `/titles/${id}/files/${copies.files[0].ID}/choices`, { edition });
+	expect(saved.ok(), await saved.text()).toBe(true);
 	await page.goto(`/library/${id}`);
 	await openLibraryTab(page);
-	const controls = page.getByTestId('copy-controls');
-	const copy = controls.getByTestId('copy-version').filter({ hasText: basename(before) });
-	await expect(copy).toContainText('File edition: Unknown');
-	await copy.getByLabel('Checked edition').fill(edition);
-	const save = copy.getByRole('button', { name: 'Save edition' });
-	await expect(save).toBeDisabled();
-	await copy.getByLabel("I checked this file's edition").check();
-	await save.click();
-	await expect(page.getByText('The checked edition is saved for this copy.')).toBeVisible();
-	await expect(copy).toContainText(`File edition: ${edition}`);
+	const copy = page.getByTestId('copy-controls').getByTestId('copy-version').filter({ hasText: basename(before) });
+	await expect(copy).toContainText(edition);
 	copies = (await (await call('GET', `/titles/${id}/copies`)).json()) as Copies;
 	expect(copies.files[0].MediaInfo).toMatchObject({ edition, edition_source: 'confirmed' });
 	// Saving the edition alone moves nothing.

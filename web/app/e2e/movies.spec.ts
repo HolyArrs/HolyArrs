@@ -98,11 +98,10 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 	await page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Paper Harbour' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Paper Harbour');
 	await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
-	// The Library tab holds the file, the Versions and when HolyArrs looks.
+	// The Library tab holds the file and the Versions.
 	const lib = await openLibraryTab(page);
-	await expect(page.getByTestId('gate-reason')).toContainText('open since 2023-07-01');
-	await expect(lib.getByRole('heading', { name: 'When HolyArrs looks' })).toBeVisible();
-	await expect(lib.getByText('Released', { exact: true })).toBeVisible();
+	// Out and kept up to date: HolyArrs is looking, so no gate line (it shows only while HolyArrs waits).
+	await expect(page.getByTestId('gate-reason')).toHaveCount(0);
 	await expect(lib.getByRole('heading', { name: 'File', exact: true })).toBeVisible();
 	await expect(lib.getByRole('heading', { name: 'Versions', exact: true })).toBeVisible();
 	await expect(lib.getByText('No file yet.').first()).toBeVisible();
