@@ -387,29 +387,6 @@
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
-	const filterItems = $derived.by<MenuItem[]>(() => {
-		const items: MenuItem[] = [{ kind: 'heading', label: 'Status' }];
-		for (const [f, label] of filters) items.push({ label, hint: countHint(counts.status[f]), checked: filter.status === f, onselect: () => setFilter({ status: f }) });
-		items.push({ kind: 'separator' }, { kind: 'heading', label: 'Keep up to date' });
-		items.push({ label: 'Kept up to date', hint: countHint(counts.kept.on), checked: filter.kept === 'on', onselect: () => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' }) });
-		items.push({ label: 'Not kept up to date', hint: countHint(counts.kept.off), checked: filter.kept === 'off', onselect: () => setFilter({ kept: filter.kept === 'off' ? 'any' : 'off' }) });
-		if (askers.length || myId) {
-			items.push({ kind: 'separator' }, { kind: 'heading', label: 'Asked by' });
-			items.push({ label: 'Anyone', checked: filter.asker === 'anyone', onselect: () => setFilter({ asker: 'anyone' }) });
-			if (myId) items.push({ label: 'Me', hint: countHint(counts.askers.get(myId) ?? 0), checked: filter.asker === 'me', onselect: () => setFilter({ asker: 'me' }) });
-			for (const p of askers) if (p.id !== myId) items.push({ label: p.name, hint: countHint(counts.askers.get(p.id) ?? 0), checked: filter.asker === String(p.id), onselect: () => setFilter({ asker: String(p.id) }) });
-		}
-		if ((kind === 'movie' || kind === 'all') && series.length) {
-			items.push({ kind: 'separator' }, { kind: 'heading', label: 'Movie series' });
-			items.push({ label: 'Every movie', checked: !filter.series, onselect: () => setFilter({ series: 0 }) });
-			for (const s of series.toSorted((a, b) => a.name.localeCompare(b.name))) items.push({ label: s.name, hint: countHint(counts.series.get(s.id) ?? 0), checked: filter.series === s.id, onselect: () => setFilter({ series: s.id }) });
-		}
-		items.push({ kind: 'separator' }, { kind: 'heading', label: 'Saved filters' });
-		for (const s of saved) items.push({ label: s.name, icon: 'star', checked: sameFilter(s.filter, filter), onselect: () => setFilter(s.filter) });
-		items.push({ label: 'Save this filter…', icon: 'plus', disabled: !filtersOn, onselect: () => { saveName = ''; saveDialog?.showModal(); } });
-		if (saved.length) items.push({ label: 'Forget saved filters', icon: 'trash', onselect: () => { for (const s of saved) forget(s.name); } });
-		return items;
-	});
 	const addItems = $derived<MenuItem[]>([
 		...(partOn('movies') ? ([{ label: 'Add a movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
 		...(partOn('shows') ? ([{ label: 'Add a show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
@@ -964,7 +941,7 @@
 	{#if filtersOn || q}
 		<div class="chips" role="group" aria-label="Active filters">
 			{#if filter.status !== 'all'}<Chip label={filters.find(([f]) => f === filter.status)?.[1] ?? ''} selected onclick={() => setFilter({ status: 'all' })} onremove={() => setFilter({ status: 'all' })} />{/if}
-			{#if filter.kept !== 'any'}<Chip label={filter.kept === 'on' ? 'Kept up to date' : 'Not kept up to date'} selected onclick={() => setFilter({ kept: 'any' })} onremove={() => setFilter({ kept: 'any' })} />{/if}
+			{#if filter.kept !== 'any'}<Chip label={filter.kept === 'on' ? 'Kept' : 'Not kept'} selected onclick={() => setFilter({ kept: 'any' })} onremove={() => setFilter({ kept: 'any' })} />{/if}
 			{#if filter.asker !== 'anyone'}<Chip label="Asked by {filter.asker === 'me' ? 'me' : (askers.find((p) => String(p.id) === filter.asker)?.name ?? 'someone')}" selected onclick={() => setFilter({ asker: 'anyone' })} onremove={() => setFilter({ asker: 'anyone' })} />{/if}
 			{#if filter.series}<Chip label="Movie series: {seriesName(filter.series)}" selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
 			{#if q}<Chip label="Search: {q}" selected onclick={() => { q = ''; syncUrl(); }} onremove={() => { q = ''; syncUrl(); }} />{/if}
@@ -1000,7 +977,7 @@
 							{#if selecting}
 								<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 							{/if}
-							{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
+							{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">Last opened</span>{/if}
 						</li>
 					{/each}
 				</ul>
@@ -1149,10 +1126,10 @@
 												{/if}
 											</div>
 										{/if}
-										{#if lastOpenedId === t.id || requester}
+										{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">Last opened</span>{/if}
+										{#if requester}
 											<p class="row-notes">
-												{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
-												{#if requester}<span class="requester" data-testid="requested-by">Asked by {requester}</span>{/if}
+												<span class="requester" data-testid="requested-by">Asked by {requester}</span>
 											</p>
 										{/if}
 									</div>
@@ -1249,7 +1226,7 @@
 			</div>
 			<h3 class="sf-h">Keep up to date</h3>
 			<div class="sf-chips">
-				<Chip label="Kept up to date" icon="bellOn" count={loaded ? counts.kept.on : undefined} selected={filter.kept === 'on'} onclick={() => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' })} />
+				<Chip label="Kept" icon="bellOn" count={loaded ? counts.kept.on : undefined} selected={filter.kept === 'on'} onclick={() => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' })} />
 				<Chip label="Not kept" icon="bell" count={loaded ? counts.kept.off : undefined} selected={filter.kept === 'off'} onclick={() => setFilter({ kept: filter.kept === 'off' ? 'any' : 'off' })} />
 			</div>
 			{#if askers.length || myId}
@@ -1398,7 +1375,10 @@
 	.entry:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.entry:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 	.entry.selected { background: color-mix(in srgb, var(--accent) 12%, var(--surface-1)); }
-	.entry.last-opened { box-shadow: inset 3px 0 0 var(--text-muted); }
+	/* Coming back from a title, the one you opened is marked by a thin line that fades away by itself. */
+	.entry.last-opened { animation: last-row 2.6s var(--ease-out) both; }
+	@keyframes last-row { 0%, 65% { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--text-muted) 70%, transparent); } 100% { box-shadow: inset 2px 0 0 transparent; } }
+	@keyframes last-ring { 0%, 65% { outline-color: color-mix(in srgb, var(--text-muted) 60%, transparent); } 100% { outline-color: transparent; } }
 	.state { display: grid; place-items: center; }
 	.keep { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--text-muted); }
 	.keep.on { color: var(--ok, #2fa36b); background: color-mix(in srgb, var(--ok, #2fa36b) 14%, transparent); }
@@ -1479,7 +1459,7 @@
 	/* Posters: no paint containment here, so the lift, tilt and shadow are never clipped. */
 	.grid > li { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 4px; scroll-margin-top: 120px; }
 	.grid > li:hover, .grid > li:focus-within { z-index: 2; }
-	.grid > li.last-opened { outline: 2px solid var(--text-muted); outline-offset: 4px; border-radius: var(--r-card); }
+	.grid > li.last-opened { outline: 1px solid transparent; outline-offset: 4px; border-radius: var(--r-card); animation: last-ring 2.6s var(--ease-out) both; }
 	.grid > li.selected { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--r-card); }
 	.pick { position: absolute; inset: 0 0 auto 0; aspect-ratio: var(--poster-ratio, 2 / 3); z-index: 3; display: block; padding: 0; border: 0; border-radius: var(--r-card); background: transparent; cursor: pointer; }
 	.pick[aria-pressed='true'] { background: rgb(0 0 0 / 30%); box-shadow: inset 0 0 0 3px var(--accent); }
@@ -1492,7 +1472,6 @@
 	@media (prefers-reduced-motion: reduce) { .pick[aria-pressed='true'] .pick-dot, .grid .pick { animation: none; } }
 	.pick-box { width: 18px; height: 18px; accent-color: var(--accent); }
 	.requester { color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
-	.last-opened-label { font: var(--t-footnote); font-weight: 600; color: var(--text); }
 	.row-notes { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: -6px 0 0; padding: 0 12px 10px 54px; }
 
 	/* Bulk bar */

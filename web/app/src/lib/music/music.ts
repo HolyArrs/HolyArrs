@@ -83,7 +83,7 @@ const albumStates: Record<string, [string, string]> = {
 	no_tracks: ['No tracks yet', ''],
 	complete: ['In library', 'ok'],
 	not_out_yet: ['Not out yet', ''],
-	not_kept: ['Not kept up to date', ''],
+	not_kept: ['Not kept', ''],
 	partial: ['Some tracks in', 'wait'],
 	missing: ['Missing', 'wait']
 };

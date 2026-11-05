@@ -10,8 +10,8 @@ export type Filter = 'all' | 'missing' | 'not_out_yet' | 'better' | 'have';
 export const filters: [Filter, string][] = [
 	['all', 'All'],
 	['missing', 'Missing'],
-	['not_out_yet', 'Not out yet'],
-	['better', 'Better copy wanted'],
+	['not_out_yet', 'Upcoming'],
+	['better', 'Better copy'],
 	['have', 'In library']
 ];
 
@@ -192,7 +192,7 @@ const viewDefault: Record<Filter, StatusKind[]> = {
 /**
  * exceptionChip keeps a poster's status only when it says something the view
  * does not already say: "In your Library" is dropped in the All and In library
- * views, but "Missing · 3 episodes" (a count) and any other status stay.
+ * views, but "Missing · 3" (a count) and any other status stay.
  */
 export function exceptionChip<T extends { kind: StatusKind; label: string }>(f: Filter, chip: T | null): T | null {
 	if (!chip) return null;
@@ -202,8 +202,7 @@ export function exceptionChip<T extends { kind: StatusKind; label: string }>(f: 
 /**
  * posterStatus is the one status a Library poster or row shows: for staff
  * the Library state, for members the shared words of title-status.ts. A show or an artist with missing
- * episodes or tracks puts the count on the shared word ("Missing · 3
- * episodes"); null when nothing is kept yet.
+ * episodes or tracks puts the count on the shared word ("Missing · 3"); null when nothing is kept yet.
  */
 export function posterStatus(t: TitleView, who: Audience): TitleStatus | null {
 	// Staff see the Library state (library-state.ts), the same words as the Status column.
@@ -218,6 +217,7 @@ export function posterStatus(t: TitleView, who: Audience): TitleStatus | null {
 	if (!s) return null;
 	if (s.missing > 0) {
 		const st = audienceStatus('missing', who, { tracked: true, ask: facts.ask });
+		// Members keep the unit ("Requested · 3 episodes"): their word does not say what is counted.
 		const unit = t.kind === 'show' ? 'episode' : 'track';
 		return { kind: st.kind, label: `${st.label} · ${s.missing} ${unit}${s.missing === 1 ? '' : 's'}` };
 	}
