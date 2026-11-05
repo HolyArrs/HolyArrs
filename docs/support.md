@@ -10,8 +10,11 @@ shell for. The examples use the container name `holyarrs` from the
     docker logs -f holyarrs
 
 This follows the program's output live. Secrets are masked in it the same way
-as in the log file (see [Logs and storage](logs.md#secrets-are-never-shown)).
-Press Ctrl+C to stop following; the container keeps running.
+as in the log file (see [Logs and storage](logs.md#secrets-are-never-shown)),
+with one exception: the first-run setup code stays readable there, because
+that is where the owner finds it. On a fresh install, cut the setup code out
+before you paste this output anywhere. Press Ctrl+C to stop following; the
+container keeps running.
 
 At start, after HolyArrs opens its folders, it writes one summary line such as
 `folders: 4 ok, 1 not writable`, then one warning line per folder with a
@@ -21,13 +24,28 @@ instead of being waited on.
 
 ## Run the doctor
 
+When the container is running:
+
     docker exec holyarrs /holyarrs doctor
 
+`docker exec` only works on a running container. When HolyArrs keeps stopping
+or restarting, run the doctor once in a new container from the same image,
+with the same folders and the same `PUID`, `PGID` and `TZ`:
+
+    docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> -e TZ=<tz> ghcr.io/coderluii/holyarrs:<tag> doctor
+
+`--volumes-from` also works when `holyarrs` is stopped. Use the same image tag
+you run. With Compose, `docker compose run --rm holyarrs doctor` does the same
+with the settings from your compose file.
+
 The doctor checks the setup from inside the container, as the same user the
-app runs as (it switches to `PUID:PGID` first, like `reset-owner`), so what it
-finds is what the app itself meets. It only reads: it works while the server
-is running and changes nothing, apart from a small test file it makes and
-removes again to check that a folder can be written.
+app runs as, so what it finds is what the app itself meets. It switches to
+`PUID:PGID` the same way start-up and `reset-owner` do: when it starts as root
+and the config folder's owner differs from `PUID:PGID`, it first gives the
+config folder and everything in it to `PUID:PGID`, as start-up would. Apart
+from that it only reads: it works while the server is running, and the only
+other thing it writes is a small test file it makes and removes again to check
+that a folder can be written.
 
 It prints a short plain-text report in sections:
 
@@ -50,6 +68,8 @@ says `FAIL`, so a script can use it too.
 Options:
 
 - `-config <dir>`: check another config folder than the default `/config`.
+  Started as root, the doctor gives that folder to `PUID:PGID` first, as
+  described above, so point it only at a HolyArrs config folder.
 - `-json`: print the report as JSON instead of plain text.
 
 ## Download a support bundle
@@ -74,7 +94,8 @@ It needs sign-in (or an API key with the same rights as the log download, see
 | `health.json` | The current health check results. |
 
 Secrets are masked, but the bundle can still hold folder paths and host names.
-Look through the files before you share them anywhere public.
+Look through the files, and any `docker logs` output, before you share them
+anywhere public.
 
 ## Find the version
 

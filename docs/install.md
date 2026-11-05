@@ -373,10 +373,14 @@ On a Synology, QNAP, TrueNAS or Unraid box, see [Install on a NAS](nas.md).
 
 ## If startup fails
 
-Run `docker exec holyarrs /holyarrs doctor` first: it checks the config,
-Library and download folders, the network and the clock, and says how to fix
-each problem. [Support info](support.md) covers the doctor, the log and the
-support bundle.
+Run the doctor first: it checks the config, Library and download folders, the
+network and the clock, and says how to fix each problem. If the container is
+running, use `docker exec holyarrs /holyarrs doctor`. If it keeps stopping or
+restarting, `docker exec` cannot reach it; run the doctor once from the same
+image instead, with the same `PUID`, `PGID` and `TZ` and the tag you run:
+`docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> -e TZ=<tz> ghcr.io/coderluii/holyarrs:<tag> doctor`
+(with Compose: `docker compose run --rm holyarrs doctor`).
+[Support info](support.md) covers the doctor, the log and the support bundle.
 
 | Message or symptom | Check |
 | --- | --- |

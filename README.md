@@ -36,7 +36,8 @@ database on a network share.
 
 - Follow the log: `docker logs -f holyarrs`
 - Check the setup (owners, write access, free space, hardlinks, network, clock):
-  `docker exec holyarrs /holyarrs doctor`
+  `docker exec holyarrs /holyarrs doctor` (for a container that keeps
+  stopping, see [docs/support.md](docs/support.md#run-the-doctor))
 - Version: `docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' holyarrs`
 - Support bundle (owner and admins): `GET /api/v1/support/bundle`, a zip with the
   masked log, the About details, the doctor report and the health checks.
