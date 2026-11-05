@@ -20,6 +20,9 @@ type Folder struct {
 	Free  int64  // bytes, -1 when unknown
 	// Reason is library.CheckFolder's reason, when it gave one.
 	Reason string
+	// Budget is the time limit of the run that marked the folder slow
+	// (3 seconds at start-up, 20 in holyarrs doctor); 0 when unknown.
+	Budget time.Duration
 }
 
 // label is the summary word for each state.
@@ -29,7 +32,7 @@ var label = map[string]string{
 	"read_only":   "not writable",
 	"no_hardlink": "without hardlinks",
 	"low_space":   "low on space",
-	"slow":        "too slow (skipped)",
+	"slow":        "not checked (slow to answer)",
 }
 
 // Check turns the outcome into a report line with its fix.
@@ -71,8 +74,15 @@ func (f Folder) Check(uid, gid int) Check {
 		c.Status = Warn
 		c.Fix = "free up space on the disk that holds " + f.Path
 	case "slow":
-		c.Status, c.Text = Warn, f.Role+" "+f.Path+": did not answer in time, skipped (often a sleeping disk or a slow network share)"
-		c.Fix = "run holyarrs doctor to check it without the start-up time limit"
+		limit := "in time"
+		if f.Budget > 0 {
+			limit = fmt.Sprintf("within %d seconds", int(f.Budget.Round(time.Second)/time.Second))
+		}
+		c.Status, c.Text = Warn, f.Role+" "+f.Path+": did not answer "+limit+" and was skipped (often a disk waking from sleep or a slow network share)"
+		c.Fix = "wake the disk or check the share, then run holyarrs doctor again"
+		if f.Budget > 0 && f.Budget < doctorFolderBudget {
+			c.Fix = "run holyarrs doctor to check it without the start-up time limit"
+		}
 	}
 	return c
 }
@@ -141,7 +151,7 @@ func CheckFolders(ctx context.Context, db store.Lister, savePath string, budget 
 	}
 	for i := range out {
 		if !got[i] {
-			out[i].State, out[i].Free = "slow", -1
+			out[i].State, out[i].Free, out[i].Budget = "slow", -1, budget
 		}
 	}
 	return out, nil

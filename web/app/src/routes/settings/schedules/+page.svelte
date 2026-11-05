@@ -201,6 +201,9 @@
 										Automatic movie detail updates are off, so names, dates and artwork can become stale. A request already in flight may finish. Manual Library refresh remains available.
 									</p>
 								{/if}
+								{#if s.kind === 'rescan_library' && !s.enabled}
+									<p class="stale-note" data-testid="rescan-off-note">Files added, changed or removed by hand are found only when you press Run now on this row.</p>
+								{/if}
 
 								{#if editing === s.kind}
 									<form class="editor" id="ed-{s.kind}" aria-label="How often {s.label} runs" onsubmit={(e) => save(e, s)}>
@@ -219,6 +222,14 @@
 													<span class="hint">{s.enabled ? 'On. Movie details are read again on this timer.' : 'Off. Movie details stay as they are until you refresh by hand.'}</span>
 												</div>
 												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? 'Turn off automatic refresh' : 'Turn on automatic refresh'}</Button>
+											</div>
+										{:else if s.kind === 'rescan_library'}
+											<div class="ed-row">
+												<div class="ed-copy">
+													<b>Automatic rescan</b>
+													<span class="hint">{s.enabled ? 'On. Library folders are listed again on this timer.' : 'Off. Files added, changed or removed by hand are found only when you press Run now on this row.'}</span>
+												</div>
+												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? 'Turn off automatic rescan' : 'Turn on automatic rescan'}</Button>
 											</div>
 										{/if}
 										{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}

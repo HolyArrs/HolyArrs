@@ -184,7 +184,7 @@ func TestSlowFolderWording(t *testing.T) {
 
 // --- doctor-race: doctor run while the server still sets up the data ---
 
-func runDoctor(t *testing.T, dir string) Report {
+func runDoctorStartup(t *testing.T, dir string) Report {
 	t.Helper()
 	return Run(context.Background(), Options{ConfigDir: dir, MetadataURL: "https://meta.invalid",
 		HTTP: &http.Client{Transport: failRT{}}, NetTimeout: 100 * time.Millisecond, FolderBudget: time.Second})
@@ -244,20 +244,20 @@ func assertSetupWarn(t *testing.T, r Report) {
 func TestDoctorDuringMigrationIsOneWarning(t *testing.T) {
 	dir := migratedStore(t)
 	rawExec(t, dir, "DELETE FROM schema_migrations WHERE version > 10")
-	assertSetupWarn(t, runDoctor(t, dir))
+	assertSetupWarn(t, runDoctorStartup(t, dir))
 }
 
 func TestDoctorOnAnEmptyDatabaseIsOneWarning(t *testing.T) {
 	dir := t.TempDir()
 	rawExec(t, dir, "PRAGMA user_version = 0") // creates an empty database file
-	assertSetupWarn(t, runDoctor(t, dir))
+	assertSetupWarn(t, runDoctorStartup(t, dir))
 }
 
 func TestDoctorOnNewerDataSaysSo(t *testing.T) {
 	dir := migratedStore(t)
 	know, _ := store.SchemaVersions()
 	rawExec(t, dir, "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, 'future.sql', 't')", know+1)
-	r := runDoctor(t, dir)
+	r := runDoctorStartup(t, dir)
 	if dataFailed(r) {
 		t.Fatalf("newer data is a WARN:\n%s", r.Text())
 	}
@@ -271,7 +271,7 @@ func TestDoctorOnNewerDataSaysSo(t *testing.T) {
 }
 
 func TestDoctorOnAMigratedStoreAddsNoSetupLine(t *testing.T) {
-	r := runDoctor(t, migratedStore(t))
+	r := runDoctorStartup(t, migratedStore(t))
 	text := r.Text()
 	if strings.Contains(text, "still being set up") || strings.Contains(text, "newer HolyArrs") {
 		t.Fatalf("fully migrated store:\n%s", text)

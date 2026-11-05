@@ -102,7 +102,7 @@ func TestFolderChecksWordsAndSlow(t *testing.T) {
 	if c := (Folder{Role: "downloads", Path: "/d", State: "slow"}).Check(1, 1); c.Status != Warn || !strings.Contains(c.Text, "skipped") {
 		t.Fatalf("%+v", c)
 	}
-	if got := Summary([]Folder{{State: "ok"}, {State: "ok"}, {State: "read_only"}, {State: "slow"}}); got != "folders: 2 ok, 1 not writable, 1 too slow (skipped)" {
+	if got := Summary([]Folder{{State: "ok"}, {State: "ok"}, {State: "read_only"}, {State: "slow"}}); got != "folders: 2 ok, 1 not writable, 1 not checked (slow to answer)" {
 		t.Fatal(got)
 	}
 }

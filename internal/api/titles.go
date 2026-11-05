@@ -435,7 +435,7 @@ func (a *API) checkFolder(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	lf, _, err := library.RecheckFolder(r.Context(), a.s.Store, id, a.downloadPaths(r), actor(r))
+	lf, _, err := library.RecheckFolder(r.Context(), a.s.Store, id, a.downloadPaths(r), actor(r), false)
 	if err != nil {
 		libraryError(w, err)
 		return

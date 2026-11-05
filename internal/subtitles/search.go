@@ -104,7 +104,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	v := fc.videoFacts()
 	q := sites.Query{Kind: fc.item.Kind, Title: v.Title, Year: v.Year, Season: v.Season, Episode: v.Episode, ReleaseName: v.ReleaseName,
 		IMDb: fc.title.SourceIDs["imdb"], TMDB: fc.title.SourceIDs["tmdb"], TVDB: fc.title.SourceIDs["tvdb"]}
-	if h, err := sites.FileHash(fc.video()); err == nil {
+	if h, err := s.videoHash(ctx, fc, set); err == nil && h != "" {
 		q.Hash = h // sites that match by file hash use it; others ignore it
 	}
 	seenLang := map[string]bool{}

@@ -230,7 +230,7 @@ func TestFolderChecksAndCRUD(t *testing.T) {
 	gone := t.TempDir()
 	g, _ := AddFolder(ctx, s, FolderInput{Path: gone, Kind: "music"}, nil, domain.System)
 	_ = os.Remove(gone)
-	got, changed, err := RecheckFolder(ctx, s, g.ID, nil, domain.System)
+	got, changed, err := RecheckFolder(ctx, s, g.ID, nil, domain.System, false)
 	if err != nil || !changed || got.Health != "missing" {
 		t.Fatalf("recheck %+v %v %v", got, changed, err)
 	}

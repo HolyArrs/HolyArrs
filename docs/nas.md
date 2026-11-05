@@ -64,6 +64,36 @@ under the advanced view.
   disk or pool path. Do not use `/mnt/user` paths for that: hardlinks across
   them can fail.
 
+## Disks that sleep
+
+Many NAS boxes spin their disks down when nothing reads them. These are the
+things HolyArrs does on its own that reach the media disks, with their usual
+times (all can be changed on the Schedules page):
+
+- **Rescan the Library**, once a day: lists every Library folder to find files
+  added, changed or removed by hand. This is the one that wakes disks most.
+- **Check Library folders**, every 6 hours: reads each folder's details and
+  free space only. The write and hardlink test runs at start-up, on Run now
+  and when the download folders change.
+- **Look for missing subtitles** (every 6 hours) and **better subtitles**
+  (every 12 hours): list the folder beside each video. A video is read again
+  only when its size or time changed.
+- Imports, adds and deletes touch the disk they work on, when they happen.
+
+To let disks sleep longer:
+
+- Put `/config` and the download folder on an SSD or a cache pool, not on the
+  media disks. On Unraid, use a pool path for `/config` and the downloads
+  share.
+- On Unraid, the Cache Directories plugin keeps folder listings in memory, so
+  the rescan and folder checks can be answered without waking a disk.
+- Turn the rescan off on the Schedules page, or set it to 7 days. Files you add
+  by hand are then found only when you press Run now on Rescan the Library in
+  Settings > Schedules.
+- A torrent that is still seeding reads from its file. When that file is a
+  hardlink into the Library, it sits on the media disk, so that disk stays
+  awake until seeding stops.
+
 ## Ports and updates
 
 Map port `6262` only to your home network. Updates follow the Docker guide:

@@ -317,11 +317,21 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 	}
 	st.Wish = wish
 	set := ReadSettings(ctx, s.Store.Read())
+	// An unchanged video (same size, modified time and built-in settings
+	// as the last look) is not read again: its recorded tracks stand.
+	stamp, stampOK := stampOf(fc.video(), set)
+	was, _, wasOK := storedStamp(ctx, s.Store.Read(), fc.file.ID)
+	same := stampOK && wasOK && was == stamp
 	var inside []Have
-	if set.UseBuiltIn {
+	if same {
+		if inside, err = storedBuiltIn(ctx, s.Store.Read(), fc.file.ID); err != nil {
+			return st, err
+		}
+	} else if set.UseBuiltIn {
 		inside, err = builtIn(fc.video(), set.IgnorePictureTracks)
 		if err != nil {
 			inside = nil // an unreadable video has no built-in subtitles we can trust
+			stampOK = false
 		}
 	}
 	beside, err := besideFiles(fc)
@@ -332,14 +342,16 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 	st.Missing = Missing(wish.Wants, st.Haves)
 	wishJSON, _ := json.Marshal(wish.Wants)
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.ExecContext(ctx, "DELETE FROM subtitles WHERE file_id = ? AND place = 'built_in'", fc.file.ID); err != nil {
-			return err
-		}
-		for _, h := range inside {
-			idx, codec := h.Track, h.Codec
-			if _, err := store.Insert(tx, "subtitles", &Subtitle{FileID: fc.file.ID, Language: h.Language, Forced: h.Forced, HearingImpaired: h.HearingImpaired,
-				Place: "built_in", TrackIndex: &idx, Codec: &codec, Origin: "found", State: "present", Sync: map[string]any{}}, by); err != nil {
+		if !same { // else the recorded built-in rows stand
+			if _, err := tx.ExecContext(ctx, "DELETE FROM subtitles WHERE file_id = ? AND place = 'built_in'", fc.file.ID); err != nil {
 				return err
+			}
+			for _, h := range inside {
+				idx, codec := h.Track, h.Codec
+				if _, err := store.Insert(tx, "subtitles", &Subtitle{FileID: fc.file.ID, Language: h.Language, Forced: h.Forced, HearingImpaired: h.HearingImpaired,
+					Place: "built_in", TrackIndex: &idx, Codec: &codec, Origin: "found", State: "present", Sync: map[string]any{}}, by); err != nil {
+					return err
+				}
 			}
 		}
 		// Beside files: new ones are found; recorded ones no longer there are gone.
@@ -395,8 +407,16 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 				return err
 			}
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO subtitle_looks (file_id, looked_at, wish) VALUES (?, ?, ?)
-			ON CONFLICT (file_id) DO UPDATE SET looked_at = excluded.looked_at, wish = excluded.wish`, fc.file.ID, store.FormatTime(now()), string(wishJSON))
+		// The video's stamp; a changed video drops its stored hash.
+		var size, mod, read any
+		if stampOK {
+			size, mod, read = stamp.Size, stamp.Modified, stamp.Read
+		}
+		_, err = tx.ExecContext(ctx, `INSERT INTO subtitle_looks (file_id, looked_at, wish, video_size, video_modified, video_read) VALUES (?, ?, ?, ?, ?, ?)
+			ON CONFLICT (file_id) DO UPDATE SET looked_at = excluded.looked_at, wish = excluded.wish,
+				video_hash = CASE WHEN video_size IS excluded.video_size AND video_modified IS excluded.video_modified THEN video_hash END,
+				video_size = excluded.video_size, video_modified = excluded.video_modified, video_read = excluded.video_read`,
+			fc.file.ID, store.FormatTime(now()), string(wishJSON), size, mod, read)
 		return err
 	})
 	sort.SliceStable(st.Haves, func(i, j int) bool { return st.Haves[i].Language < st.Haves[j].Language })

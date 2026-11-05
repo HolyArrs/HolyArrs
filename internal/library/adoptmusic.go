@@ -146,7 +146,7 @@ func listAudio(lib, folder string, limit int) []AdoptVideo {
 		}
 		rel, _ := filepath.Rel(root, p)
 		if e.IsDir() {
-			if p != root && (strings.HasPrefix(e.Name(), ".") || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
+			if p != root && (strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -380,7 +380,7 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 		}
 	}
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || e.Name() == importer.HoldingDir || (after != "" && e.Name() <= after) {
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || e.Name() == importer.HoldingDir || (after != "" && e.Name() <= after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {
