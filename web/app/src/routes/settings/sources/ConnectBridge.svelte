@@ -214,8 +214,8 @@
 
 <SettingsCard
 	id="connect-bridge"
-	title="Connect Jackett or Prowlarr"
-	description="Sites without a feed of their own reach HolyArrs through Jackett or Prowlarr. Connect one, and the sites you set up there become Sources in one step."
+	title="Jackett or Prowlarr"
+	description="The sites you set up there become Sources here."
 >
 	{#if loadError && !bridges}
 		<LoadError hasData={false} message={loadError} onretry={load} />
@@ -256,8 +256,8 @@
 		{#if open}
 			<div class="form" data-testid="bridge-form">
 				<div class="find">
-					<Button type="button" busy={finding} onclick={look} data-testid="bridge-find">Look for them</Button>
-					<span class="hint">Looks on this machine and the usual Docker names, nowhere else.</span>
+					<Button type="button" busy={finding} onclick={look} data-testid="bridge-find">Find it</Button>
+					<span class="hint">Checks this machine and common Docker names.</span>
 				</div>
 				{#if findError}
 					<p class="small bad-text" role="alert" data-testid="bridge-find-error">Could not look: {findError}</p>
@@ -270,21 +270,21 @@
 							{/each}
 						</ul>
 					{:else}
-						<p class="hint" data-testid="bridge-found-none">None found in the usual places. Type its address below.</p>
+						<p class="hint" data-testid="bridge-found-none">None found. Type the address.</p>
 					{/if}
 				{/if}
 				<div class="field">
-					<span class="label" id="br-kind-label">Which one</span>
-					<SegmentedControl options={kindChoices} bind:value={kind} label="Which one" testid="br-kind" />
+					<span class="label" id="br-kind-label">App</span>
+					<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
 				</div>
-				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Such as http://jackett:9117, with its base path if it has one.' : 'Such as http://prowlarr:9696.'} error={errors.url}>
-					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://jackett:9117' : 'http://prowlarr:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : 'br-url-hint'} />
+				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include its base path, if it has one.' : undefined} error={errors.url}>
+					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://jackett:9117' : 'http://prowlarr:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
-				<Field id="br-key" label="Key" hint={kind === 'jackett' ? 'The API key at the top of Jackett’s page. Kept encrypted.' : 'The API key in Prowlarr’s Settings > General. Kept encrypted.'} error={errors.key}>
+				<Field id="br-key" label="Key" hint={kind === 'jackett' ? 'Top of Jackett’s page.' : 'Prowlarr › Settings › General.'} error={errors.key}>
 					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
-					<Field id="br-callback" label="HolyArrs's address for Prowlarr" hint="Prowlarr sends its sites to HolyArrs here. Use an address Prowlarr can reach, such as this machine's network address." error={errors.callback_url}>
+					<Field id="br-callback" label="HolyArrs's address for Prowlarr" hint="An address Prowlarr can reach, like this machine's IP." error={errors.callback_url}>
 						<input id="br-callback" class="input mono" type="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
 					</Field>
 					{#if keysNeeded.length}
