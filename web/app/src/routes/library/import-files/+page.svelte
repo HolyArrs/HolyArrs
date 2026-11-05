@@ -199,7 +199,7 @@
 				<EmptyState compact icon="folder" title="No video or music files here" text="Pick the folder that holds the files, or one file." />
 			{:else}
 				<p class="small muted">
-					{files.length} file{files.length === 1 ? '' : 's'} in <span class="mono path">{scan.path}</span>. Sure matches are ticked for you; fix the others with Change.
+					{files.length} file{files.length === 1 ? '' : 's'} in <span class="mono path">{scan.path}</span>. Sure matches are ticked. Fix the rest with Change.
 				</p>
 				{#if scan.more}<p class="notice">Only the first {files.length} files are listed. Pick a smaller folder for the rest.</p>{/if}
 				<ul class="list">
