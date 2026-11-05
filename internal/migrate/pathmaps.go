@@ -3,6 +3,7 @@ package migrate
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -61,6 +62,11 @@ func (b *builder) pathMappings(s *Snapshot) {
 		if host == "" || theirs == "" || ours == "" {
 			b.not(GroupDownloaders, from, what, "a folder map needs a host and two full paths without ..")
 			continue
+		}
+		// The app's side is the old app's own view; the owner's path rules
+		// turn it into HolyArrs's view, as for library folders.
+		if np, ok := MapPath(b.rules, ours); ok && np != "" {
+			ours = np
 		}
 		b.paths = append(b.paths, pathRow{host: host, theirs: theirs, ours: ours, from: from})
 	}
@@ -160,6 +166,19 @@ func safeMaps(maps []domain.PathMap, dir string) (keep []domain.PathMap, dropped
 		keep = append(keep, m)
 	}
 	return keep, dropped
+}
+
+// unseenMaps lists the folder maps whose HolyArrs folder is not there (or
+// is not a folder) on this server: often a mount the old apps had and
+// HolyArrs does not have yet. They are still written.
+func unseenMaps(maps []domain.PathMap) string {
+	var out []string
+	for _, m := range maps {
+		if fi, err := os.Stat(filepath.FromSlash(m.Ours)); err != nil || !fi.IsDir() {
+			out = append(out, m.Ours)
+		}
+	}
+	return clip(strings.Join(out, ", "), 500)
 }
 
 // mapList says folder maps in a few words for a report line.

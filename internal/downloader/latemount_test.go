@@ -19,6 +19,11 @@ import (
 // its Downloader before it counts as vanished.
 const missedSyncs = 3
 
+// missWindow is a step of the test clock long enough that missedSyncs
+// syncs, one step apart, span the vanish grace: a download must be missing
+// for both a count of syncs and a stretch of time (late-mounts-8).
+const missWindow = 10 * time.Minute
+
 // waitingPrefix starts the reason of a download the client can't use the
 // files of (a share not mounted yet).
 const waitingPrefix = "the Downloader can't use the files"
@@ -87,7 +92,7 @@ func TestMissingFilesWaitsAndKeepsData(t *testing.T) {
 		t.Fatalf("a waiting download must stay active, active %d", n)
 	}
 	d := w.download(t, id)
-	if d.State != "paused" || d.StateReason == nil || !strings.HasPrefix(*d.StateReason, waitingPrefix) || !strings.Contains(*d.StateReason, "is the share mounted?") {
+	if d.State != "paused" || d.StateReason == nil || !strings.HasPrefix(*d.StateReason, waitingPrefix) || !strings.Contains(*d.StateReason, "is the share mounted?") || !strings.Contains(*d.StateReason, "recheck") {
 		t.Fatalf("download %s %v, want paused with %q", d.State, d.StateReason, waitingPrefix)
 	}
 	if r := w.release(t); r.State == "turned_down" {
@@ -159,6 +164,7 @@ func TestVanishedOnlyAfterThreeMissedSyncs(t *testing.T) {
 	id := grabbed(t, w, m)
 	w.fake.drop(hash)
 	for i := 1; i < missedSyncs; i++ {
+		w.advance(missWindow)
 		if n, _ := m.SyncOnce(ctx); n != 1 {
 			t.Fatalf("missed sync %d: active %d", i, n)
 		}
@@ -169,9 +175,38 @@ func TestVanishedOnlyAfterThreeMissedSyncs(t *testing.T) {
 	if w.release(t).State == "turned_down" || len(w.failedSlots) != 0 {
 		t.Fatalf("release %s searched %v before it vanished", w.release(t).State, w.failedSlots)
 	}
+	w.advance(missWindow)
 	_, _ = m.SyncOnce(ctx)
 	if d := w.download(t, id); d.State != "vanished" {
 		t.Fatalf("want vanished after %d missed syncs, got %s", missedSyncs, d.State)
+	}
+}
+
+// Missed syncs come every few seconds while a download is active, so a
+// client that restarts or waits for its share lists nothing for a minute
+// or more: many quick misses are still not vanished. Only once it has
+// been missing for the grace time as well does it count as removed.
+func TestQuickMissesInsideGraceStayActive(t *testing.T) {
+	w, m := setup(t)
+	ctx := context.Background()
+	id := grabbed(t, w, m)
+	w.fake.drop(hash)
+	for i := range missedSyncs * 3 {
+		w.advance(2 * time.Second)
+		if n, _ := m.SyncOnce(ctx); n != 1 {
+			t.Fatalf("quick miss %d: active %d", i+1, n)
+		}
+	}
+	if d := w.download(t, id); d.State == "vanished" {
+		t.Fatalf("vanished after %d quick misses inside the grace", missedSyncs*3)
+	}
+	if len(w.failedSlots) != 0 || w.release(t).State == "turned_down" {
+		t.Fatalf("searched %v release %s while still inside the grace", w.failedSlots, w.release(t).State)
+	}
+	w.advance(missWindow)
+	_, _ = m.SyncOnce(ctx)
+	if d := w.download(t, id); d.State != "vanished" {
+		t.Fatalf("want vanished once missing past the grace, got %s", d.State)
 	}
 }
 
@@ -183,6 +218,7 @@ func TestVanishCountStartsOverWhenSeenAgain(t *testing.T) {
 	miss := func(n int) {
 		w.fake.drop(hash)
 		for range n {
+			w.advance(missWindow)
 			_, _ = m.SyncOnce(ctx)
 		}
 	}

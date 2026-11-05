@@ -346,3 +346,49 @@ func TestMoveNotesPathMappingsWhenDownloaderAlreadyHere(t *testing.T) {
 		t.Fatalf("an existing Downloader was changed: %+v", maps)
 	}
 }
+
+// The app's side of a rewrite is the old app's own view of the folder. It
+// goes through the owner's path rules like the library folders do, so the
+// Downloader gets the folder as HolyArrs sees it.
+func TestPlanPathMappingsFollowPathRules(t *testing.T) {
+	s := arrWithClient(t, Sonarr, rpm{Host: "qbit", Remote: "/downloads", Local: "/downloads"})
+	p := BuildPlan([]Input{{1, s}}, Choices{PathRules: []PathRule{{From: "/downloads", To: "/data/downloads"}}})
+	if maps := qbitMaps(t, p); !hasMap(maps, "/downloads", "/data/downloads") {
+		t.Fatalf("maps %+v, want /downloads -> /data/downloads through the path rule", maps)
+	}
+}
+
+// A folder map whose folder HolyArrs can't see is still written, and the
+// line says so, so the owner checks the mounts before imports fail. The
+// same note goes on a Downloader that is already here.
+func TestMoveNotesFolderMapsNotVisible(t *testing.T) {
+	for _, already := range []bool{false, true} {
+		l := newMoveLab(t)
+		if already {
+			if err := l.st.Write(context.Background(), func(tx *sql.Tx) error {
+				_, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: "My qBit", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://qbit:8080",
+					Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}, domain.System)
+				return err
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		seen := filepath.ToSlash(t.TempDir())
+		gone := filepath.ToSlash(filepath.Join(t.TempDir(), "not-mounted"))
+		l.addSonarr(t, rpm{Host: "qbit", Remote: "/downloads", Local: seen}, rpm{Host: "qbit", Remote: "/seed", Local: gone})
+		mv := l.move(t, Choices{})
+		if mv.State != "done" || mv.Report == nil {
+			t.Fatalf("move %+v", mv)
+		}
+		got := lineOf(t, mv.Report, qbitKey)
+		at := strings.Index(got.Detail, "not visible here yet")
+		if at < 0 || !strings.Contains(got.Detail[at:], gone) || strings.Contains(got.Detail[at:], seen) {
+			t.Fatalf("already %v: line %+v, want a note naming only %s", already, got, gone)
+		}
+		if !already {
+			if maps := l.downloaderMaps(t); !hasMap(maps, "/seed", gone) {
+				t.Fatalf("the map to a folder not visible yet must still be written: %+v", maps)
+			}
+		}
+	}
+}

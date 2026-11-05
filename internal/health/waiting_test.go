@@ -54,7 +54,7 @@ func TestWaitingDownloadsCheck(t *testing.T) {
 	}
 	id := w.addWaitingDownload(t, w.now.Add(-time.Hour))
 	c, ok := waiting(w.run(t))
-	if !ok || c.State != Warning || !strings.Contains(c.Message, "1 download") {
+	if !ok || c.State != Warning || !strings.Contains(c.Message, "1 download") || !strings.Contains(c.Message, "recheck") {
 		t.Fatalf("one waiting download: %+v (found %v)", c, ok)
 	}
 	w.exec(t, "UPDATE downloads SET updated_at = ? WHERE id = ?", store.FormatTime(w.now.Add(-4*24*time.Hour)), id)

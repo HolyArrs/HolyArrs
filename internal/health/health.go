@@ -580,9 +580,9 @@ func (e *Engine) waiting(ctx context.Context) ([]Result, error) {
 		r.State = Error
 	}
 	if len(ds) == 1 {
-		r.Message = "1 download waits because its Downloader can't use the files: is the share mounted?"
+		r.Message = "1 download waits because its Downloader can't use the files: is the share mounted? Once it is, recheck them in the Downloader (or use Recheck on the Downloads page)."
 	} else {
-		r.Message = strconv.Itoa(len(ds)) + " downloads wait because their Downloader can't use the files: is the share mounted?"
+		r.Message = strconv.Itoa(len(ds)) + " downloads wait because their Downloader can't use the files: is the share mounted? Once it is, recheck the download in the Downloader (or use Recheck on the Downloads page)."
 	}
 	return []Result{r}, nil
 }

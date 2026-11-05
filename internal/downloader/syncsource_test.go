@@ -123,6 +123,7 @@ func TestStoreUnknownBeforeNewerSnapshot(t *testing.T) {
 		t.Fatalf("state %q from a snapshot older than the grab, want sent (unknown)", got)
 	}
 	for i := range missedSyncs {
+		w.advance(missWindow)
 		src.set(SyncView{Items: map[string]Job{}, Complete: true, Fresh: true, ReadAt: time.Now().Add(time.Duration(i+1) * time.Second)})
 		if _, err := m.SyncOnce(ctx); err != nil {
 			t.Fatal(err)

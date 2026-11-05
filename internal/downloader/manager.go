@@ -77,11 +77,13 @@ type Manager struct {
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
 }
 
-// missCount is how many syncs in a row a download was missing, and the
-// snapshot time of the last one counted (a reused snapshot counts once).
+// missCount is how many syncs in a row a download was missing, the
+// snapshot time of the last one counted (a reused snapshot counts once),
+// and when the first one was counted.
 type missCount struct {
-	n  int
-	at time.Time
+	n     int
+	at    time.Time
+	first time.Time
 }
 
 // vanishAfterMisses is how many syncs in a row a download must be missing
@@ -89,9 +91,17 @@ type missCount struct {
 // share mounts or the client restarts is not a removal (late-mounts-8).
 const vanishAfterMisses = 3
 
-// missedOnce counts one more missed sync for a download and reports the
-// count; seen starts the count over.
-func (m *Manager) missedOnce(id int64, readAt time.Time) int {
+// vanishMissingFor is how long a download must also have been missing:
+// syncs come every few seconds while something downloads, and a client
+// that restarts, or waits for a NAS share after a boot, can list nothing
+// for minutes (late-mounts-8).
+const vanishMissingFor = 10 * time.Minute
+
+// missedLongEnough counts one more missed sync for a download and reports
+// whether it has now been missing for vanishAfterMisses syncs in a row and
+// for vanishMissingFor; seen starts over.
+func (m *Manager) missedLongEnough(id int64, readAt time.Time) bool {
+	now := m.now()
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.missed == nil {
@@ -101,9 +111,12 @@ func (m *Manager) missedOnce(id int64, readAt time.Time) int {
 	if readAt.IsZero() || !readAt.Equal(c.at) {
 		c.n++
 		c.at = readAt
+		if c.n == 1 {
+			c.first = now
+		}
 	}
 	m.missed[id] = c
-	return c.n
+	return c.n >= vanishAfterMisses && now.Sub(c.first) >= vanishMissingFor
 }
 
 func (m *Manager) seen(id int64) {
@@ -936,8 +949,8 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 			}
 			if ok {
 				m.seen(d.ID)
-			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && m.missedOnce(d.ID, readAt) < vanishAfterMisses {
-				// Missing once or twice is not vanished yet (late-mounts-8).
+			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && !m.missedLongEnough(d.ID, readAt) {
+				// Missing for a short while is not vanished yet (late-mounts-8).
 				active++
 				continue
 			}
@@ -1014,8 +1027,8 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		case j.State == StatePaused:
 			next.State = "paused"
 			if cantUseFiles(j) {
-				next.StateReason = strPtr(waitingReason + " (" + j.Detail + "): is the share mounted?")
-			} else if d.StateReason != nil && strings.HasPrefix(*d.StateReason, waitingReason) {
+				next.StateReason = strPtr(WaitingReason + " (" + j.Detail + "): " + WaitingHint)
+			} else if d.StateReason != nil && strings.HasPrefix(*d.StateReason, WaitingReason) {
 				next.StateReason = nil
 			}
 		case next.Progress >= 1:
@@ -1247,9 +1260,14 @@ func lastMoved(d domain.Download) time.Time {
 // itself; such a failure never deletes the files (late-mounts-3).
 const clientSaysPrefix = "the Downloader says "
 
-// waitingReason starts the reason of a download whose Downloader can't use
+// WaitingReason starts the reason of a download whose Downloader can't use
 // its files, most often a share mounted late (late-mounts-3).
-const waitingReason = "the Downloader can't use the files"
+const WaitingReason = "the Downloader can't use the files"
+
+// WaitingHint ends that reason: mounting the share is not enough, since
+// qBittorrent, Deluge and Transmission keep the error until the files are
+// checked again.
+const WaitingHint = "is the share mounted? Once it is, recheck the download in the Downloader (or use Recheck on the Downloads page)"
 
 // cantUseFiles reports a paused job its client paused because it lost
 // sight of the files: qBittorrent error, missingFiles or unknown, Deluge

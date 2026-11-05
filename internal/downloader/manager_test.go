@@ -234,6 +234,7 @@ func TestVanishedAndFailed(t *testing.T) {
 	_, _ = m.SyncOnce(ctx)
 	w.fake.drop(hash)
 	for range missedSyncs {
+		w.advance(missWindow)
 		_, _ = m.SyncOnce(ctx)
 	}
 	if d := w.download(t, id); d.State != "vanished" {
@@ -276,6 +277,7 @@ func TestNotVanishedRightAfterSending(t *testing.T) {
 	}
 	w.clock = w.clock.Add(3 * time.Minute)
 	for range missedSyncs {
+		w.advance(missWindow)
 		_, _ = m.SyncOnce(ctx)
 	}
 	if d := w.download(t, id); d.State != "vanished" {

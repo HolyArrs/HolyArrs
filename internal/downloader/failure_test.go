@@ -265,6 +265,7 @@ func TestVanishedIsReplaced(t *testing.T) {
 	id := grabbed(t, w, m)
 	w.fake.drop(hash)
 	for range missedSyncs {
+		w.advance(missWindow)
 		_, _ = m.SyncOnce(context.Background())
 	}
 	d := w.download(t, id)
@@ -282,6 +283,7 @@ func TestVanishedNeedsADecisionWhenSettingOff(t *testing.T) {
 	id := grabbed(t, w, m)
 	w.fake.drop(hash)
 	for range missedSyncs {
+		w.advance(missWindow)
 		_, _ = m.SyncOnce(context.Background())
 	}
 	if d := w.download(t, id); d.State != "vanished" {
