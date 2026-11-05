@@ -35,6 +35,9 @@ const (
 	ebmlVideoID       = 0xe0
 	ebmlPixelWidth    = 0xb0
 	ebmlPixelHeight   = 0xba
+	ebmlDisplayWidth  = 0x54b0
+	ebmlDisplayHeight = 0x54ba
+	ebmlDisplayUnit   = 0x54b2
 	ebmlColourID      = 0x55b0
 	ebmlBitsPerChan   = 0x55b2
 	ebmlMaxCLL        = 0x55bc
@@ -262,7 +265,7 @@ func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
 		case ebmlLanguageBCP47:
 			languageBCP, err = p.readString(element)
 		case ebmlNameID:
-			track.Name, err = p.readCut(element)
+			track.Name, err = p.readString(element)
 		case ebmlFlagDefault:
 			v, err = p.readUint(element)
 			track.Default = v == 1
@@ -306,8 +309,8 @@ func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
 		if track.BitDepth == 0 {
 			track.BitDepth = configBitDepth(track.Format, private)
 		}
-		if c.transfer == 0 && track.Format == "hevc" {
-			c.transfer = hevcTransfer(private)
+		if c.transfer == 0 {
+			c.transfer = configTransfer(track.Format, private)
 		}
 		track.HDR = c.hdrName()
 		if frameNanos > 0 {
@@ -326,10 +329,17 @@ func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
 }
 
 func (p *matroskaParser) readVideo(video ebmlElement, depth int, track *Track, c *colour) error {
-	return p.each(video.start, video.end, depth, func(element ebmlElement) error {
+	var dw, dh, unit uint64
+	err := p.each(video.start, video.end, depth, func(element ebmlElement) error {
 		var err error
 		var v uint64
 		switch element.id {
+		case ebmlDisplayWidth:
+			dw, err = p.readUint(element)
+		case ebmlDisplayHeight:
+			dh, err = p.readUint(element)
+		case ebmlDisplayUnit:
+			unit, err = p.readUint(element)
 		case ebmlPixelWidth:
 			v, err = p.readUint(element)
 			track.Width = int(min(v, 1<<20))
@@ -360,6 +370,15 @@ func (p *matroskaParser) readVideo(video ebmlElement, depth int, track *Track, c
 		}
 		return err
 	})
+	// The display size defaults to the pixel size; it is in pixels (unit
+	// 0) or only an aspect ratio (unit 3), which reads the same way here.
+	if dh == 0 {
+		dh = uint64(max(track.Height, 0))
+	}
+	if unit == 0 || unit == 3 {
+		track.DisplayWidth = displayWidth(track.Width, track.Height, dw, dh)
+	}
+	return err
 }
 
 func (p *matroskaParser) readBlockAddition(mapping ebmlElement, depth int, c *colour) error {
@@ -464,28 +483,24 @@ func (p *matroskaParser) readVINT(position int64, maxLength int, keepMarker bool
 	return value, length, unknown, nil
 }
 
+// readString reads a string element, keeping at most maxString bytes and
+// stopping at the first NUL: EBML lets strings be padded with zero bytes,
+// and an empty one is just "".
 func (p *matroskaParser) readString(element ebmlElement) (string, error) {
-	length := element.end - element.start
-	if length <= 0 || length > maxString {
-		return "", malformed("inspect matroska: invalid string length")
+	length := min64(element.end-element.start, maxString)
+	if length <= 0 {
+		return "", nil
 	}
 	value, err := readAt(p.r, element.start, length)
-	if err != nil {
-		return "", err
-	}
-	return string(value), nil
-}
-
-// readCut reads a free-text string (a track name), keeping at most
-// maxString bytes of it.
-func (p *matroskaParser) readCut(element ebmlElement) (string, error) {
-	value, err := readAt(p.r, element.start, min64(element.end-element.start, maxString))
 	return cut(value), err
 }
 
 func (p *matroskaParser) readUint(element ebmlElement) (uint64, error) {
 	length := element.end - element.start
-	if length <= 0 || length > 8 {
+	if length == 0 {
+		return 0, nil // EBML: an empty integer is its default, 0
+	}
+	if length < 0 || length > 8 {
 		return 0, malformed("inspect matroska: invalid integer length")
 	}
 	value, err := readAt(p.r, element.start, length)

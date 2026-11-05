@@ -166,6 +166,20 @@ func TestHostileMatroska(t *testing.T) {
 	if err != nil || len(got) != 1 || got[0].Language != "eng" || !got[0].Picture {
 		t.Fatalf("pgs: %+v %v", got, err)
 	}
+	// EBML lets strings be empty or padded with zero bytes and integers be
+	// empty (their default): the tracks are still listed, the padding cut.
+	padded := ebml(idTrackEntry, bytes.Join([][]byte{
+		ebml(idTrackNumber, []byte{4}), ebml(idTrackType, []byte{0x11}),
+		ebml(idCodecID, []byte("S_TEXT/UTF8\x00")), ebml(idLanguage, []byte("eng\x00\x00")), ebml(0x88, nil),
+	}, nil))
+	empty := ebml(idTrackEntry, bytes.Join([][]byte{
+		ebml(idTrackNumber, []byte{5}), ebml(idTrackType, []byte{0x11}), ebml(idLanguage, nil),
+	}, nil))
+	f = append(header(), ebml(idSegment, ebml(idTracks, append(padded, empty...)))...)
+	got, err = Read(bytes.NewReader(f), int64(len(f)))
+	if err != nil || len(got) != 2 || got[0].Language != "eng" || got[0].Codec != "S_TEXT/UTF8" || got[0].Index != 4 || got[1].Index != 5 {
+		t.Fatalf("padded: %+v %v", got, err)
+	}
 }
 
 func mp4box(typ string, body []byte) []byte {

@@ -447,7 +447,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				minutes = -1 // one length unknown: the floor for an unknown length
 			}
 		}
-		if !music && sampleByLength(inspected[plan[i].SourceFile], max(minutes, 0)) {
+		if !music && sampleByLength(inspected[plan[i].SourceFile], fakes.lengthMinutes(max(minutes, 0))) {
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
 			plan[i].Why = append(plan[i].Why, "a sample, not the full video (it plays "+lengthWords(factInt(inspected[plan[i].SourceFile], "runtime_seconds"))+")")
 			delete(olds, i)

@@ -63,7 +63,7 @@ const FactsVersion = 2
 
 // HeaderFactKeys are the facts factsOf may leave out; a fresh read
 // replaces them all.
-var HeaderFactKeys = []string{"resolution", "width", "height", "runtime_seconds", "audio_channels", "audio_codec",
+var HeaderFactKeys = []string{"resolution", "width", "height", "display_width", "runtime_seconds", "audio_channels", "audio_codec",
 	"hdr", "bit_depth", "frame_rate", "bitrate"}
 
 // factsOf turns header facts into the stored map. A fact the headers did
@@ -75,6 +75,9 @@ func factsOf(i mediainfo.Info) map[string]any {
 	if r := i.Resolution(); r > 0 {
 		facts["resolution"] = strconv.Itoa(r) + "p"
 		facts["width"], facts["height"] = i.Width, i.Height
+		if i.DisplayWidth > 0 {
+			facts["display_width"] = i.DisplayWidth
+		}
 	}
 	if i.Duration > 0 {
 		facts["runtime_seconds"] = int(i.Duration.Round(time.Second) / time.Second)

@@ -31,9 +31,11 @@ type mp4TrackState struct {
 	duration  uint64
 	entry     []byte // the first sample entry, at most maxPrivate bytes
 	entryKind string
-	frameTick uint32 // the most common sample duration (stts)
-	tkWidth   int
-	tkHeight  int
+	// frames and ticks are the samples counted at the start of the
+	// time-to-sample table (stts) and how long they play.
+	frames, ticks uint64
+	tkWidth       int
+	tkHeight      int
 }
 
 func looksLikeMP4(prefix []byte) bool {
@@ -293,22 +295,47 @@ func (p *mp4Parser) readSTSD(box mp4BoxHeader, track *mp4TrackState) error {
 	return nil
 }
 
-// readSTTS finds the most common sample duration among the first entries
-// of the time-to-sample table; a steady frame rate has one entry.
+// readSTTS adds up the first entries of the time-to-sample table: a steady
+// frame rate has one entry, and a file remuxed from Matroska alternates
+// durations rounded to the millisecond (672 and 656 ticks at 16000 a
+// second for 23.976). The last sample's duration is often a guess, so it
+// is left out when the whole table was read.
 func (p *mp4Parser) readSTTS(box mp4BoxHeader, track *mp4TrackState) error {
-	b, err := p.readSmall(box, 8+64*8)
+	b, err := p.readSmall(box, 8+256*8)
 	if err != nil || len(b) < 8 {
 		return err
 	}
-	n := min(int(binary.BigEndian.Uint32(b[4:8])), (len(b)-8)/8)
-	var most uint32
+	all := int(binary.BigEndian.Uint32(b[4:8]))
+	n := min(all, (len(b)-8)/8)
 	for i := range n {
-		count := binary.BigEndian.Uint32(b[8+i*8:])
-		if count > most {
-			most, track.frameTick = count, binary.BigEndian.Uint32(b[12+i*8:])
+		count := uint64(binary.BigEndian.Uint32(b[8+i*8:]))
+		delta := uint64(binary.BigEndian.Uint32(b[12+i*8:]))
+		if i == all-1 && count > 0 && (track.frames > 0 || count > 1) {
+			count--
 		}
+		track.frames += count
+		track.ticks += count * delta
 	}
 	return nil
+}
+
+// commonRates are the frame rates video is made at; a rate read from
+// rounded timestamps that lands within 0.2% of one is that one.
+var commonRates = []float64{24000.0 / 1001, 24, 25, 30000.0 / 1001, 30, 48000.0 / 1001, 48, 50, 60000.0 / 1001, 60, 100, 120000.0 / 1001, 120}
+
+// averageRate gives frames a second from frames playing ticks at
+// timescale ticks a second, snapped to a common rate when close.
+func averageRate(frames, ticks uint64, timescale uint32) float64 {
+	if frames == 0 || ticks == 0 || timescale == 0 {
+		return 0
+	}
+	fps := float64(frames) * float64(timescale) / float64(ticks)
+	for _, r := range commonRates {
+		if fps > r*0.998 && fps < r*1.002 {
+			return roundRate(r)
+		}
+	}
+	return roundRate(fps)
 }
 
 // finish turns what was read into the track's facts.
@@ -324,10 +351,12 @@ func (t *mp4TrackState) finish() Track {
 		if out.Width == 0 {
 			out.Width, out.Height = t.tkWidth, t.tkHeight
 		}
-		out.HDR = c.hdrName()
-		if t.frameTick > 0 && t.timescale > 0 {
-			out.FrameRate = roundRate(float64(t.timescale) / float64(t.frameTick))
+		if out.DisplayWidth == 0 && t.tkHeight == out.Height && t.tkWidth > out.Width {
+			// The track header holds the presentation size, aspect applied.
+			out.DisplayWidth = t.tkWidth
 		}
+		out.HDR = c.hdrName()
+		out.FrameRate = averageRate(t.frames, t.ticks, t.timescale)
 	case t.handler == "soun":
 		out.Kind = "audio"
 		t.readAudioEntry(&out)
@@ -378,16 +407,22 @@ func (t *mp4TrackState) readVisualEntry(out *Track, c *colour) {
 			c.mastering = true
 		case "dvcC", "dvvC", "dvwC":
 			c.readDolbyVision(b)
+		case "pasp": // pixel aspect: horizontal and vertical spacing
+			if len(b) >= 8 {
+				h, v := binary.BigEndian.Uint32(b[:4]), binary.BigEndian.Uint32(b[4:8])
+				out.DisplayWidth = displayWidth(out.Width, out.Height, uint64(out.Width)*uint64(h), uint64(out.Height)*uint64(v))
+			}
 		}
 	})
 	out.BitDepth = configBitDepth(out.Format, config)
-	if c.transfer == 0 && out.Format == "hevc" {
-		c.transfer = hevcTransfer(config)
+	if c.transfer == 0 {
+		c.transfer = configTransfer(out.Format, config)
 	}
 }
 
 // readAudioEntry reads the channel count of an audio sample entry
-// (QuickTime versions 0 to 2), and the real count from a dac3 or dec3 box.
+// (QuickTime versions 0 to 2), and the real count from a dac3, dec3 or
+// esds (AAC) box.
 func (t *mp4TrackState) readAudioEntry(out *Track) {
 	e := t.entry
 	if len(e) < 36 {
@@ -409,7 +444,11 @@ func (t *mp4TrackState) readAudioEntry(out *Track) {
 		return
 	}
 	childBoxes(e[children:], func(kind string, b []byte) {
-		if n := ac3Channels(kind, b); n > 0 {
+		n := ac3Channels(kind, b)
+		if kind == "esds" {
+			n = aacChannels(b)
+		}
+		if n > 0 {
 			out.Channels = n
 		}
 	})

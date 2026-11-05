@@ -69,6 +69,22 @@ func TestSampleByLength(t *testing.T) {
 	}
 }
 
+// With the size floors off the runtime-based length floor is off too (a
+// 4-minute special listed at 45 minutes is placed); under 15 seconds is
+// still a sample.
+func TestLengthFloorFollowsSizeFloors(t *testing.T) {
+	special := map[string]any{"runtime_seconds": 240}
+	if !sampleByLength(special, fakeRules{floors: true}.lengthMinutes(45)) {
+		t.Error("floors on: 4 minutes for 45 should be a sample")
+	}
+	if sampleByLength(special, fakeRules{}.lengthMinutes(45)) {
+		t.Error("floors off: refused by length")
+	}
+	if !sampleByLength(map[string]any{"runtime_seconds": 10}, fakeRules{}.lengthMinutes(45)) {
+		t.Error("floors off: 10 seconds should still be a sample")
+	}
+}
+
 func TestLieOfUsesRealPictureSize(t *testing.T) {
 	rules := domain.PickRulesBody{}
 	name := "Harbor.of.Glass.2018.1080p.BluRay.x264-GRP"
@@ -88,6 +104,15 @@ func TestLieOfUsesRealPictureSize(t *testing.T) {
 	// under a 1080p Release is fine.
 	if why := lieOf("Harbor.of.Glass.2018.720p.BluRay", name, false, "", rules, map[string]any{"width": 1920, "height": 1080}); why != "" {
 		t.Fatal(why)
+	}
+	// A cropped anamorphic PAL DVD (720x436 pixels, 1018 wide on screen)
+	// named 576p is 576p.
+	dvd := "Harbor.of.Glass.2018.576p.DVDRip.x264-GRP"
+	if why := lieOf(dvd, dvd, false, "", rules, map[string]any{"width": 720, "height": 436, "display_width": 1018}); why != "" {
+		t.Fatal(why)
+	}
+	if f := factsOf(mediainfo.Info{Width: 720, Height: 436, DisplayWidth: 1018}); f["display_width"] != 1018 || f["resolution"] != "576p" {
+		t.Errorf("anamorphic facts %#v", f)
 	}
 	// Unknown size keeps the name check.
 	if why := lieOf("Harbor.of.Glass.2018.720p.BluRay", name, false, "", rules, nil); !strings.Contains(why, "file is 720p, name said 1080p") {

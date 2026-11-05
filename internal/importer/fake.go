@@ -55,6 +55,16 @@ func (im *Importer) refuseFakes(ctx context.Context, db *sql.DB) fakeRules {
 	return r
 }
 
+// lengthMinutes is the expected runtime the sample length check may use:
+// none when the size floors are off (the user's runtimes may be wrong), so
+// only the under-15-seconds rule is left.
+func (fr fakeRules) lengthMinutes(minutes int) int {
+	if !fr.floors {
+		return 0
+	}
+	return minutes
+}
+
 // fakeFileOf says why a file to be placed is a fake: far too small for a
 // video of minutes length (0: unknown) or a track, or a video in an old
 // container under an HD Release name. "" means it may be placed. A file

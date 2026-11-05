@@ -702,7 +702,8 @@ const backfillPerRescan = 300
 // inspectLibraryVideo reads a regular movie/show file only when its real path
 // remains inside the Library folder. Existing non-inspection facts, including a
 // confirmed edition, are retained. An unchanged file is read again only when
-// backfill is set.
+// backfill is set, and a failed read of it (a network share timing out)
+// keeps the old facts so a later rescan tries again.
 func inspectLibraryVideo(root, relative string, old map[string]any, backfill bool) (map[string]any, bool) {
 	rel := filepath.FromSlash(relative)
 	if !filepath.IsLocal(rel) {
@@ -713,8 +714,13 @@ func inspectLibraryVideo(root, relative string, old map[string]any, backfill boo
 	if err != nil || !fi.Mode().IsRegular() || !importer.InsideReal(root, full) {
 		return nil, false
 	}
-	if size, ok := inspectionSize(old["inspection_size"]); !backfill && ok && size == fi.Size() &&
-		fmt.Sprint(old["inspection_modified"]) == strconv.FormatInt(fi.ModTime().UnixNano(), 10) {
+	size, ok := inspectionSize(old["inspection_size"])
+	unchanged := ok && size == fi.Size() && fmt.Sprint(old["inspection_modified"]) == strconv.FormatInt(fi.ModTime().UnixNano(), 10)
+	if unchanged && !backfill {
+		return old, false
+	}
+	fresh := importer.InspectFacts(full)
+	if unchanged && fresh["inspection_status"] == "error" {
 		return old, false
 	}
 	merged := make(map[string]any, len(old)+10)
@@ -725,7 +731,7 @@ func inspectLibraryVideo(root, relative string, old map[string]any, backfill boo
 	for _, k := range importer.HeaderFactKeys {
 		delete(merged, k)
 	}
-	for k, v := range importer.InspectFacts(full) {
+	for k, v := range fresh {
 		merged[k] = v
 	}
 	if _, set := merged["edition"]; !set {

@@ -34,4 +34,20 @@ func TestInspectLibraryVideoBackfill(t *testing.T) {
 	if _, stale := info["resolution"]; stale || info["edition"] != "Director's Cut" {
 		t.Fatalf("facts after backfill %+v", info)
 	}
+	// A read that fails on an unchanged file (a share timing out) keeps
+	// the old facts and leaves the file for a later rescan.
+	bad := filepath.Join(root, "Movie (2020)", "Bad.mkv")
+	if err := os.WriteFile(bad, []byte{0x1a, 0x45, 0xdf, 0xa3, 0x00}, 0o666); err != nil {
+		t.Fatal(err)
+	}
+	fi, _ = os.Stat(bad)
+	old["inspection_size"], old["inspection_modified"] = float64(fi.Size()), strconv.FormatInt(fi.ModTime().UnixNano(), 10)
+	if info, changed := inspectLibraryVideo(root, "Movie (2020)/Bad.mkv", old, true); changed || info["resolution"] != "2160p" {
+		t.Fatalf("failed backfill replaced facts: %v %+v", changed, info)
+	}
+	// A changed file is still read, and its failure stored.
+	old["inspection_size"] = float64(1)
+	if info, changed := inspectLibraryVideo(root, "Movie (2020)/Bad.mkv", old, false); !changed || info["inspection_status"] != "error" {
+		t.Fatalf("changed file: %v %+v", changed, info)
+	}
 }

@@ -366,6 +366,34 @@ func TestResolution(t *testing.T) {
 	}
 }
 
+// TestAnamorphicSize: a cropped anamorphic PAL DVD is 720x436 pixels but
+// about 1018x436 on screen, which is 576, not 480.
+func TestAnamorphicSize(t *testing.T) {
+	video := func(parts ...[]byte) []byte {
+		return mkvMovie(mkvEl(ebmlTracksID, mkvEntry(1, 1, "V_MPEG2", mkvEl(ebmlVideoID,
+			append([][]byte{mkvUint(ebmlPixelWidth, 720), mkvUint(ebmlPixelHeight, 436)}, parts...)...))))
+	}
+	for name, c := range map[string]struct {
+		data       []byte
+		display    int
+		resolution int
+	}{
+		"mkv pixels":  {video(mkvUint(ebmlDisplayWidth, 1018), mkvUint(ebmlDisplayHeight, 436)), 1018, 576},
+		"mkv aspect":  {video(mkvUint(ebmlDisplayWidth, 7), mkvUint(ebmlDisplayHeight, 3), mkvUint(ebmlDisplayUnit, 3)), 1017, 576},
+		"mkv no unit": {video(mkvUint(ebmlDisplayWidth, 1018)), 1018, 576},
+		"mkv cm":      {video(mkvUint(ebmlDisplayWidth, 10), mkvUint(ebmlDisplayUnit, 1)), 0, 480},
+		"mkv square":  {video(), 0, 480},
+		"mp4 pasp": {mp4File(trak(tkhd(1, true, 0, 0), 25, "vide", "und", "", visualEntry("avc1", 720, 436,
+			bx("pasp", u32(64), u32(45))))), 1024, 576},
+		"mp4 tkhd": {mp4File(trak(tkhd(1, true, 1018, 436), 25, "vide", "und", "", visualEntry("avc1", 720, 436))), 1018, 576},
+	} {
+		got := inspectBytes(t, c.data)
+		if got.DisplayWidth != c.display || got.Resolution() != c.resolution {
+			t.Errorf("%s: display %d res %d, want %d %d", name, got.DisplayWidth, got.Resolution(), c.display, c.resolution)
+		}
+	}
+}
+
 func TestReadTracksErrors(t *testing.T) {
 	if _, err := ReadTracks(bytes.NewReader([]byte("RIFF....AVI ")), 12); !errors.Is(err, ErrUnsupported) {
 		t.Errorf("avi: %v", err)
@@ -413,6 +441,8 @@ func FuzzInspectMatroska(f *testing.F) {
 	sub := mkvEntry(0x11, 3, "S_TEXT/UTF8", mkvUint(ebmlFlagForced, 1))
 	fuzzInspect(f,
 		mkvMovie(mkvInfo(1000000, 5000), mkvEl(ebmlTracksID, video, audio, sub)),
+		mkvMovie(mkvEl(ebmlTracksID, mkvEntry(1, 1, "V_AV1", mkvEl(ebmlCodecPrivate, mustHex(av1cSVT)),
+			mkvEl(ebmlVideoID, mkvUint(ebmlPixelWidth, 720), mkvUint(ebmlPixelHeight, 436), mkvUint(ebmlDisplayWidth, 1018))))),
 		matroskaFixture("webm", mkvTrack(1, "V_VP9", "", "", nil), mkvTrack(2, "A_OPUS", "ger", "de-DE", nil)),
 	)
 }
@@ -422,5 +452,195 @@ func FuzzInspectMP4(f *testing.F) {
 		bx("hvcC", hvcc(spsHLG)), bx("colr", []byte("nclx"), u16(9), u16(16), u16(9), []byte{0}), bx("dvcC", dovi(8, 1))), stts(10, 1001))
 	audio := trak(tkhd(2, true, 0, 0), 48000, "soun", "eng", "", audioEntry("ec-3", 2, bx("dec3", []byte{1, 0, 0x20, 0x0f, 0x02, 0x80})))
 	sub := trak(tkhd(3, true, 0, 0), 1000, "sbtl", "fre", "", bx("tx3g", make([]byte, 30)))
-	fuzzInspect(f, mp4File(mvhd(1000, 5000), video, audio, sub))
+	aac := trak(tkhd(4, true, 0, 0), 48000, "soun", "eng", "", audioEntry("mp4a", 2, bx("esds", esds([]byte{0x11, 0xb0}, true))))
+	av1 := trak(tkhd(5, true, 0, 0), 16000, "vide", "und", "", visualEntry("av01", 720, 436,
+		bx("av1C", mustHex(av1cAOM)), bx("pasp", u32(64), u32(45))), stts(1, 672, 1, 656, 1, 672))
+	fuzzInspect(f, mp4File(mvhd(1000, 5000), video, audio, sub), mp4File(av1, aac))
+}
+
+// bitWriter builds small bit streams for the SPS walker tests.
+type bitWriter struct {
+	b []byte
+	n int
+}
+
+func (w *bitWriter) put(bits int, v uint64) {
+	for i := bits - 1; i >= 0; i-- {
+		if w.n%8 == 0 {
+			w.b = append(w.b, 0)
+		}
+		w.b[len(w.b)-1] |= byte(v>>i&1) << (7 - w.n%8)
+		w.n++
+	}
+}
+
+// ue writes an Exp-Golomb number the plain way.
+func (w *bitWriter) ue(v uint64) {
+	zeros := 0
+	for (v+1)>>(zeros+1) != 0 {
+		zeros++
+	}
+	w.put(zeros, 0)
+	w.put(zeros+1, v+1)
+}
+
+// spsHead writes an SPS up to the short-term reference picture sets, with
+// the given pic order count bits field.
+func spsHead(pocMinus4 uint64) *bitWriter {
+	w := &bitWriter{}
+	w.put(8, 0x01) // vps id 0, no sub layers, temporal nesting
+	w.put(96, 0)   // profile_tier_level
+	w.ue(0)        // sps id
+	w.ue(1)        // 4:2:0
+	w.ue(64)
+	w.ue(48)
+	w.put(1, 0) // no conformance window
+	w.ue(0)
+	w.ue(0)
+	w.ue(pocMinus4)
+	w.put(1, 1) // ordering info for every layer
+	w.ue(0)
+	w.ue(0)
+	w.ue(0)
+	for range 6 {
+		w.ue(0)
+	}
+	w.put(1, 0) // no scaling lists
+	w.put(2, 0) // amp, sao
+	w.put(1, 0) // no pcm
+	return w
+}
+
+// TestSPSOverflowInputs feeds the SPS walker numbers that wrap a 32-bit int
+// (the 386 and arm CI runs cover that case): it must give 0, not panic.
+func TestSPSOverflowInputs(t *testing.T) {
+	// 31 leading zeros, a 1, then 31 ones: wraps to -2 on 32-bit ints.
+	r := &bitReader{b: []byte{0, 0, 0, 1, 0xff, 0xff, 0xff, 0xff}}
+	if v := r.ue(); v < 0 || !r.bad {
+		t.Errorf("31-zero ue = %d bad %v", v, r.bad)
+	}
+	w := spsHead(0)
+	w.put(31, 0)
+	w.put(1, 1)
+	w.put(31, 1<<31-1)
+	w.put(64, 0)
+	if n := spsTransfer(w.b); n != 0 {
+		t.Errorf("huge set count gave %d", n)
+	}
+	// Long-term pictures with a pic order count field near 2^30 bits.
+	w = spsHead(1<<30 - 2)
+	w.ue(0)     // no short-term sets
+	w.put(1, 1) // long-term pictures present
+	w.ue(3)
+	w.put(64, 0)
+	if n := spsTransfer(w.b); n != 0 {
+		t.Errorf("huge long-term skip gave %d", n)
+	}
+	r = &bitReader{b: []byte{0xff}}
+	r.skip(-9)
+	if !r.bad || r.pos != 0 {
+		t.Errorf("negative skip: pos %d bad %v", r.pos, r.bad)
+	}
+}
+
+// esds builds an esds box payload around an AAC AudioSpecificConfig, with
+// either one-byte or four-byte descriptor sizes.
+func esds(asc []byte, long bool) []byte {
+	desc := func(tag byte, body []byte) []byte {
+		if long {
+			n := len(body)
+			return append([]byte{tag, 0x80 | byte(n>>21&0x7f), 0x80 | byte(n>>14&0x7f), 0x80 | byte(n>>7&0x7f), byte(n & 0x7f)}, body...)
+		}
+		return append([]byte{tag, byte(len(body))}, body...)
+	}
+	config := desc(0x04, append(append([]byte{0x40, 0x15}, make([]byte, 11)...), desc(0x05, asc)...))
+	es := desc(0x03, append([]byte{0, 1, 0x80, 0, 2}, config...)) // ES_ID, flags (depends-on id), the id
+	return append(make([]byte, 4), es...)
+}
+
+func TestAACChannelsFromESDS(t *testing.T) {
+	for _, c := range []struct {
+		asc  []byte
+		long bool
+		want int
+	}{
+		{[]byte{0x11, 0xb0}, false, 6},             // AAC-LC 48 kHz 5.1
+		{[]byte{0x11, 0xb0}, true, 6},              // the same, four-byte sizes
+		{[]byte{0x11, 0x90}, false, 2},             // stereo
+		{[]byte{0x12, 0x38}, true, 8},              // 7.1 (config 7)
+		{[]byte{0x17, 0x80, 0, 0, 0x30}, false, 6}, // explicit 24-bit rate, then 6
+		{[]byte{0x11, 0x80}, false, 0},             // config 0: set elsewhere
+		{nil, false, 0},
+	} {
+		if got := aacChannels(esds(c.asc, c.long)); got != c.want {
+			t.Errorf("%x long %v = %d, want %d", c.asc, c.long, got, c.want)
+		}
+	}
+	for _, cut := range []int{0, 3, 6, 12, 20} {
+		b := esds([]byte{0x11, 0xb0}, false)
+		if got := aacChannels(b[:min(cut, len(b))]); got != 0 {
+			t.Errorf("cut %d gave %d", cut, got)
+		}
+	}
+	aac := trak(tkhd(1, true, 0, 0), 48000, "soun", "eng", "", audioEntry("mp4a", 2, bx("esds", esds([]byte{0x11, 0xb0}, true))))
+	if got := inspectBytes(t, mp4File(aac)); len(got.AudioChannels) != 1 || got.AudioChannels[0] != 6 {
+		t.Errorf("mp4a 5.1 channels %v", got.AudioChannels)
+	}
+}
+
+// av1C records written by ffmpeg (libsvtav1, and libaom with timing info)
+// around 10-bit test patterns whose only PQ mark is the sequence header.
+const (
+	av1cSVT = "81004c000a0e000000043cfecc02f85091009040"
+	av1cAOM = "81004c000a17040000000400000067400000bc3cfeccdaf95091009040"
+)
+
+func TestAV1SequenceHeaderTransfer(t *testing.T) {
+	for name, rec := range map[string]string{"svt": av1cSVT, "aom timing info": av1cAOM} {
+		if got := av1Transfer(mustHex(rec)); got != 16 {
+			t.Errorf("%s: transfer %d", name, got)
+		}
+		b := mustHex(rec)
+		for n := range len(b) { // cut short: no panic, no answer
+			if got := av1Transfer(b[:n]); got != 0 {
+				t.Errorf("%s cut at %d gave %d", name, n, got)
+			}
+		}
+	}
+	// No colour box in the container: the sequence header says HDR10.
+	mkv := mkvMovie(mkvEl(ebmlTracksID, mkvEntry(1, 1, "V_AV1", mkvEl(ebmlCodecPrivate, mustHex(av1cSVT)),
+		mkvEl(ebmlVideoID, mkvUint(ebmlPixelWidth, 3840), mkvUint(ebmlPixelHeight, 2160)))))
+	mp4 := mp4File(trak(tkhd(1, true, 0, 0), 24000, "vide", "und", "", visualEntry("av01", 1920, 1080, bx("av1C", mustHex(av1cAOM)))))
+	for name, data := range map[string][]byte{"mkv": mkv, "mp4": mp4} {
+		if got := inspectBytes(t, data); got.HDR != "HDR10" || got.BitDepth != 10 {
+			t.Errorf("%s: hdr %q depth %d", name, got.HDR, got.BitDepth)
+		}
+	}
+}
+
+// TestMP4RemuxFrameRate: a Matroska file copied into MP4 keeps its
+// millisecond timestamps (672 and 656 ticks at 16000 a second); the rate
+// is the average, snapped to 23.976, not the most common duration.
+func TestMP4RemuxFrameRate(t *testing.T) {
+	var entries []uint32
+	for i := range 48 {
+		ms := func(n int) int { return int(math.Round(float64(n) * 1001 / 24)) }
+		entries = append(entries, 1, uint32(16*(ms(i+1)-ms(i))))
+	}
+	entries[len(entries)-1] = 2000 // a guessed last duration is left out
+	for name, c := range map[string]struct {
+		scale   uint32
+		entries []uint32
+		want    float64
+	}{
+		"remux":  {16000, entries, 23.976},
+		"steady": {24000, []uint32{100, 1001}, 23.976},
+		"25":     {25, []uint32{5, 1, 245, 1}, 25},
+		"odd":    {1000, []uint32{10, 77}, 12.987},
+	} {
+		got := inspectBytes(t, mp4File(trak(tkhd(1, true, 0, 0), c.scale, "vide", "und", "", visualEntry("avc1", 640, 360), stts(c.entries...))))
+		if got.FrameRate != c.want {
+			t.Errorf("%s: %v, want %v", name, got.FrameRate, c.want)
+		}
+	}
 }

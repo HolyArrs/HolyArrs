@@ -51,9 +51,13 @@ type Track struct {
 
 	// Video.
 	Width, Height int
-	FrameRate     float64 // frames per second, 0 when not written
-	BitDepth      int
-	HDR           string // "", "HDR10", "HLG", "DV" or "DV+HDR10"
+	// DisplayWidth is the on-screen width at the coded height when the
+	// pixels are not square (an anamorphic DVD); 0 when they are or the
+	// headers do not say.
+	DisplayWidth int
+	FrameRate    float64 // frames per second, 0 when not written
+	BitDepth     int
+	HDR          string // "", "HDR10", "HLG", "DV" or "DV+HDR10"
 
 	// Audio.
 	Channels int
@@ -83,9 +87,10 @@ type Info struct {
 	// the headers do not say.
 	AudioChannels []int
 
-	// Width, Height, FrameRate, BitDepth and HDR describe the first video
-	// track.
+	// Width, Height, DisplayWidth, FrameRate, BitDepth and HDR describe
+	// the first video track.
 	Width, Height int
+	DisplayWidth  int
 	FrameRate     float64
 	BitDepth      int
 	HDR           string
@@ -143,8 +148,10 @@ func (i Info) Lossless() (lossless, known bool) {
 // 1080, 720, 576 or 480, or 0 when no size was read. Files are often
 // cropped (a 1920x800 film is still 1080), so a track counts as a class when
 // either its width or its height comes close to that class's full frame.
+// The width is the on-screen one when the pixels are not square: a cropped
+// anamorphic PAL DVD (720x436 shown as 1018x436) is still 576.
 func (i Info) Resolution() int {
-	w, h := i.Width, i.Height
+	w, h := max(i.Width, i.DisplayWidth), i.Height
 	switch {
 	case w <= 0 && h <= 0:
 		return 0
@@ -236,6 +243,7 @@ func buildInfo(h headers, size int64) Info {
 			if firstVideo {
 				firstVideo = false
 				info.Width, info.Height, info.FrameRate, info.BitDepth, info.HDR = t.Width, t.Height, t.FrameRate, t.BitDepth, t.HDR
+				info.DisplayWidth = t.DisplayWidth
 			}
 		case "audio":
 			info.AudioTracks++
@@ -357,6 +365,19 @@ func readAt(r io.ReaderAt, offset, length int64) ([]byte, error) {
 		return nil, fmt.Errorf("%w: %w", ErrMalformed, io.ErrUnexpectedEOF)
 	}
 	return b, nil
+}
+
+// displayWidth gives the on-screen width of a w x h picture shown at the
+// aspect dw:dh, or 0 when that is the same as w or not known.
+func displayWidth(w, h int, dw, dh uint64) int {
+	if w <= 0 || h <= 0 || h > 1<<20 || dw == 0 || dh == 0 || dw > 1<<40 || dh > 1<<40 {
+		return 0
+	}
+	d := uint64(h) * dw / dh
+	if d == uint64(w) || d > 1<<20 {
+		return 0
+	}
+	return int(d)
 }
 
 func min64(a, b int64) int64 {

@@ -79,7 +79,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 		}
 		facts := InspectFacts(plan[i].SourceFile)
 		u.facts[plan[i].SourceFile] = facts
-		if sampleByLength(facts, minutes) {
+		if sampleByLength(facts, fakes.lengthMinutes(minutes)) {
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
 			plan[i].Why = append(plan[i].Why, "a sample, not the full video (it plays "+lengthWords(factInt(facts, "runtime_seconds"))+")")
 			continue
@@ -134,7 +134,8 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickRulesBody, facts map[string]any) string {
 	fStep, fIdx := judge.StepOf(name, rules)
 	fp := parse.Parse(name, parse.Hints{}).Resolution
-	if real := (mediainfo.Info{Width: factInt(facts, "width"), Height: factInt(facts, "height")}).Resolution(); real > 0 {
+	shown := mediainfo.Info{Width: factInt(facts, "width"), Height: factInt(facts, "height"), DisplayWidth: factInt(facts, "display_width")}
+	if real := shown.Resolution(); real > 0 {
 		// The picture size read from the file beats any name: a 720p file
 		// named 1080p is caught. The Release name's claim counts first,
 		// else the file's own name.

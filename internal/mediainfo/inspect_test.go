@@ -262,9 +262,11 @@ func TestInspectReaderAtRejectsTrackAndStringBudgets(t *testing.T) {
 		t.Fatalf("track budget error = %v", err)
 	}
 
+	// A string over the cap is cut, not refused.
 	longCodec := matroskaFixture("matroska", mkvTrack(1, strings.Repeat("x", maxString+1), "", "", nil))
-	if _, err := InspectReaderAt(bytes.NewReader(longCodec), int64(len(longCodec))); err == nil || !strings.Contains(err.Error(), "string length") {
-		t.Fatalf("string length error = %v", err)
+	got, err := InspectReaderAt(bytes.NewReader(longCodec), int64(len(longCodec)))
+	if err != nil || len(got.Tracks) != 1 || len(got.Tracks[0].Codec) != maxString {
+		t.Fatalf("long string: %v %+v", err, got.Tracks)
 	}
 }
 

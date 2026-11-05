@@ -146,6 +146,218 @@ func ac3Channels(kind string, b []byte) int {
 	return 0
 }
 
+// aacChannels reads the channel count from an esds box (MPEG-4 Systems
+// descriptors) holding an AAC AudioSpecificConfig; 0 when it cannot tell.
+// The mp4a sample entry often just says 2 whatever the real count is.
+func aacChannels(b []byte) int {
+	if len(b) < 4 {
+		return 0
+	}
+	b = b[4:] // version and flags
+	// descriptor reads one tag and its 1-4 byte size (7 bits per byte).
+	descriptor := func() (byte, []byte) {
+		if len(b) < 2 {
+			return 0, nil
+		}
+		tag, size, i := b[0], 0, 1
+		for more := true; more; i++ {
+			if i > 4 || i >= len(b) {
+				return 0, nil
+			}
+			size = size<<7 | int(b[i]&0x7f)
+			more = b[i]&0x80 != 0
+		}
+		if size > len(b)-i {
+			return 0, nil
+		}
+		body := b[i : i+size]
+		b = b[i+size:]
+		return tag, body
+	}
+	tag, body := descriptor()
+	if tag != 0x03 || len(body) < 3 {
+		return 0
+	}
+	flags := body[2]
+	skip := 3
+	if flags&0x80 != 0 {
+		skip += 2
+	}
+	if flags&0x40 != 0 && len(body) > skip {
+		skip += 1 + int(body[skip])
+	}
+	if flags&0x20 != 0 {
+		skip += 2
+	}
+	if skip > len(body) {
+		return 0
+	}
+	b = body[skip:]
+	if tag, body = descriptor(); tag != 0x04 || len(body) < 13 {
+		return 0
+	}
+	b = body[13:]
+	if tag, body = descriptor(); tag != 0x05 {
+		return 0
+	}
+	r := &bitReader{b: body}
+	if r.u(5) == 31 {
+		r.skip(6)
+	}
+	if r.u(4) == 15 {
+		r.skip(24)
+	}
+	config := r.u(4)
+	if r.bad {
+		return 0
+	}
+	switch {
+	case config >= 1 && config <= 6:
+		return config
+	case config == 7, config == 12:
+		return 8
+	case config == 11:
+		return 7
+	}
+	return 0
+}
+
+// configTransfer reads the colour transfer from the codec setup (an hvcC
+// SPS or an av1C sequence header), for files whose container does not
+// repeat it; 0 when it cannot tell.
+func configTransfer(format string, b []byte) int {
+	switch format {
+	case "hevc":
+		return hevcTransfer(b)
+	case "av1":
+		return av1Transfer(b)
+	}
+	return 0
+}
+
+// av1Transfer reads the colour transfer from the sequence header OBU that
+// follows the 4-byte av1C record (AV1 spec 5.5).
+func av1Transfer(b []byte) int {
+	if len(b) < 4 || b[0]&0x7f != 1 {
+		return 0
+	}
+	b = b[4:]
+	for len(b) > 0 {
+		head := b[0]
+		kind, pos := head>>3&0xf, 1
+		if head&4 != 0 { // extension byte
+			pos++
+		}
+		size := len(b) - pos
+		if head&2 != 0 { // leb128 size
+			size = 0
+			for i := 0; ; i++ {
+				if i == 8 || pos >= len(b) {
+					return 0
+				}
+				size |= int(b[pos]&0x7f) << (7 * i)
+				pos++
+				if b[pos-1]&0x80 == 0 {
+					break
+				}
+			}
+		}
+		if pos > len(b) || size < 0 || size > len(b)-pos {
+			return 0
+		}
+		if kind == 1 {
+			return av1SequenceTransfer(b[pos : pos+size])
+		}
+		b = b[pos+size:]
+	}
+	return 0
+}
+
+// av1SequenceTransfer walks a sequence header to its colour description.
+func av1SequenceTransfer(b []byte) int {
+	r := &bitReader{b: b}
+	profile := r.u(3)
+	r.skip(1) // still picture
+	reduced := r.flag()
+	orderHint := false
+	if reduced {
+		r.skip(5)
+	} else {
+		delayBits := 0
+		decoderModel := false
+		if r.flag() { // timing info
+			r.skip(64)
+			if r.flag() { // equal picture interval: uvlc
+				zeros := 0
+				for !r.bad && r.u(1) == 0 {
+					zeros++
+				}
+				if zeros < 32 {
+					r.skip(zeros)
+				}
+			}
+			if decoderModel = r.flag(); decoderModel {
+				delayBits = r.u(5) + 1
+				r.skip(32 + 5 + 5)
+			}
+		}
+		displayDelay := r.flag()
+		for range r.u(5) + 1 {
+			if r.bad {
+				return 0
+			}
+			r.skip(12)
+			if r.u(5) > 7 {
+				r.skip(1)
+			}
+			if decoderModel && r.flag() {
+				r.skip(2*delayBits + 1)
+			}
+			if displayDelay && r.flag() {
+				r.skip(4)
+			}
+		}
+	}
+	widthBits, heightBits := r.u(4)+1, r.u(4)+1
+	r.skip(widthBits + heightBits)
+	if !reduced && r.flag() { // frame id numbers
+		r.skip(7)
+	}
+	r.skip(3) // 128x128, filter intra, intra edge
+	if !reduced {
+		r.skip(4) // interintra, masked, warped, dual filter
+		if orderHint = r.flag(); orderHint {
+			r.skip(2)
+		}
+		screen := 2
+		if !r.flag() {
+			screen = r.u(1)
+		}
+		if screen > 0 && !r.flag() {
+			r.skip(1)
+		}
+		if orderHint {
+			r.skip(3)
+		}
+	}
+	r.skip(3)                     // superres, cdef, restoration
+	if r.flag() && profile == 2 { // high bit depth, then twelve bit
+		r.skip(1)
+	}
+	if profile != 1 {
+		r.skip(1) // mono chrome
+	}
+	if !r.flag() { // no colour description
+		return 0
+	}
+	r.skip(8)
+	t := r.u(8)
+	if r.bad || t == 2 {
+		return 0
+	}
+	return t
+}
+
 // hevcTransfer reads the colour transfer from the first sequence parameter
 // set in an hvcC record, for files whose container does not repeat it. It
 // walks the SPS with a small own bit reader up to the VUI colour fields and
@@ -208,7 +420,7 @@ type bitReader struct {
 func (r *bitReader) u(n int) int {
 	v := 0
 	for range n {
-		if r.pos >= len(r.b)*8 {
+		if r.pos < 0 || r.pos >= len(r.b)*8 {
 			r.bad = true
 			return 0
 		}
@@ -220,12 +432,13 @@ func (r *bitReader) u(n int) int {
 
 func (r *bitReader) flag() bool { return r.u(1) == 1 }
 
-// ue reads an Exp-Golomb number.
+// ue reads an Exp-Golomb number. It stops at 30 leading zeros so the result
+// always fits a 32-bit int and is never negative.
 func (r *bitReader) ue() int {
 	zeros := 0
 	for !r.bad && r.u(1) == 0 {
 		zeros++
-		if zeros > 31 {
+		if zeros > 30 {
 			r.bad = true
 			return 0
 		}
@@ -233,7 +446,13 @@ func (r *bitReader) ue() int {
 	return (1 << zeros) - 1 + r.u(zeros)
 }
 
-func (r *bitReader) skip(n int) { r.pos += n }
+func (r *bitReader) skip(n int) {
+	if n < 0 || r.pos > len(r.b)*8-n {
+		r.bad = true
+		return
+	}
+	r.pos += n
+}
 
 // spsTransfer walks an HEVC SPS (ITU-T H.265 7.3.2.2) to the VUI colour
 // description.
@@ -315,7 +534,7 @@ func spsTransfer(b []byte) int {
 		r.skip(1)
 	}
 	sets := r.ue()
-	if sets > 64 || r.bad {
+	if sets < 0 || sets > 64 || r.bad {
 		return 0
 	}
 	deltas := make([]int, sets)
@@ -333,7 +552,7 @@ func spsTransfer(b []byte) int {
 			deltas[i] = n
 		} else {
 			neg, pos := r.ue(), r.ue()
-			if neg > 16 || pos > 16 {
+			if neg < 0 || pos < 0 || neg > 16 || pos > 16 {
 				return 0
 			}
 			for range neg + pos {
@@ -348,7 +567,7 @@ func spsTransfer(b []byte) int {
 	}
 	if r.flag() {
 		n := r.ue()
-		if n > 32 {
+		if n < 0 || n > 32 || pocBits < 4 || pocBits > 36 {
 			return 0
 		}
 		r.skip(n * (pocBits + 1))
