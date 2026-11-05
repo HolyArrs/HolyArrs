@@ -53,7 +53,7 @@ test('the sign-in page says how to reset the owner', async ({ browser }) => {
 	await p.goto('/login');
 	const useAccount = p.getByRole('button', { name: 'Use a HolyArrs account' });
 	if (await useAccount.isVisible()) await useAccount.click();
-	await p.getByText('Forgot password?').click();
+	await p.getByText("Can't sign in?").click();
 	await expect(p.getByTestId('reset-owner-help')).toContainText('reset-owner');
 	await p.context().close();
 });

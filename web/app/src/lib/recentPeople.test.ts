@@ -12,7 +12,24 @@ describe('recent people', () => {
 	beforeEach(() => localStorage.clear());
 	it('keeps the newest first, once each, at most six', () => {
 		for (const n of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'b']) rememberPerson(n);
-		expect(recentPeople()).toEqual(['b', 'g', 'f', 'e', 'd', 'c']);
+		expect(recentPeople().map((p) => p.name)).toEqual(['b', 'g', 'f', 'e', 'd', 'c']);
+	});
+	it('keeps the way each person used, and the latest way wins', () => {
+		rememberPerson('ana', 'plex');
+		rememberPerson('bo', 'jellyfin', 'bo-jf');
+		rememberPerson('ana', 'password');
+		expect(recentPeople()).toEqual([
+			{ name: 'ana', way: 'password' },
+			{ name: 'bo', way: 'jellyfin', login: 'bo-jf' }
+		]);
+	});
+	it('reads older lists of plain names as password people', () => {
+		localStorage.setItem('holyarrs.recent-people', JSON.stringify(['ana', '', 'bo', { name: 'cy', way: 'odd' }]));
+		expect(recentPeople()).toEqual([
+			{ name: 'ana', way: 'password' },
+			{ name: 'bo', way: 'password' },
+			{ name: 'cy', way: 'password' }
+		]);
 	});
 	it('forgets a name and survives bad storage', () => {
 		rememberPerson('ana');

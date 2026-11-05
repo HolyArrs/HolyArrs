@@ -172,7 +172,8 @@ test('the owner sets a forgotten password, and ana switches account on a shared 
 	await expect(own.getByText('New password set for ana.')).toBeVisible();
 	await ana.goto('/library');
 	await expect(ana).toHaveURL(/\/login/);
-	await ana.getByLabel('Name').fill('ana');
+	// ana signed in here before: the page opens on her own step, password only.
+	await expect(ana.getByTestId('signin-person')).toContainText('ana');
 	await ana.getByLabel('Password', { exact: true }).fill(newPw);
 	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
 	await ana.getByLabel('Code').fill(backup[1]);
@@ -184,11 +185,14 @@ test('the owner sets a forgotten password, and ana switches account on a shared 
 	await ana.getByRole('button', { name: 'Account and appearance' }).click();
 	await ana.getByRole('menuitem', { name: 'Switch account' }).click();
 	await expect(ana).toHaveURL(/\/login/);
+	await expect(ana.getByTestId('signin-person')).toContainText('ana');
+	await ana.getByRole('button', { name: 'Switch account' }).click();
 	const people = ana.getByTestId('recent-people');
-	await people.getByRole('button', { name: 'ana', exact: true }).click();
-	await expect(ana.getByLabel('Name')).toHaveValue('ana');
+	await expect(people.getByRole('button', { name: /^ana/ })).toBeVisible();
+	await ana.getByRole('button', { name: 'Edit list' }).click();
 	await people.getByRole('button', { name: 'Forget ana on this device' }).click();
 	await expect(people).toHaveCount(0);
+	await expect(ana.getByLabel('Name')).toBeVisible();
 });
 
 test('sign in with Jellyfin makes a member', async ({ browser }) => {

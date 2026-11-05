@@ -250,9 +250,10 @@ select.input {
 .input:hover {
 	border-color: var(--line-strong);
 }
+/* Keyboard focus on a field: the red border plus a soft glow, not a second ring. */
 .input:focus-visible {
 	border-color: var(--accent);
-	box-shadow: var(--focus-ring);
+	box-shadow: 0 0 0 3px var(--accent-soft);
 }
 /* A clicked text field gets a quiet tint, not the keyboard ring (lib/focus.ts). */
 :root:not([data-input='keyboard']) :is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='button'], [type='submit']), textarea):focus-visible {

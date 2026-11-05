@@ -2,7 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/loader.ts';
 	import { page } from '$app/state';
@@ -12,21 +12,62 @@
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import SigninPortals from '#lib/SigninPortals.svelte';
 	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
-	import { forgetPerson, recentPeople, rememberPerson } from '#lib/recentPeople.ts';
+	import { forgetPerson, recentPeople, rememberPerson, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 
 	let name = $state('');
-	// People who signed in on this device: tap one to switch to them.
-	let recent = $state<string[]>([]);
-	function pickPerson(n: string) {
-		name = n;
+	// People who signed in on this device, with the way each one used.
+	let recent = $state<RecentPerson[]>([]);
+	// Which account view: 'auto' (one person: their step; more: the list),
+	// the list, another account (the usual form), or one person by index.
+	let acct = $state<'auto' | 'list' | 'new' | number>('auto');
+	let editing = $state(false);
+	// The way's name for people: Password, Plex, Jellyfin, Emby, Single sign-on.
+	const wayName = (w: RecentWay) => (w === 'oidc' ? 'Single sign-on' : w.slice(0, 1).toUpperCase() + w.slice(1));
+	const hue = (n: string) => [...n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
+	function focusPw() {
 		void tick().then(() => panelEl?.querySelector<HTMLInputElement>('#password')?.focus());
+	}
+	function openPerson(i: number) {
+		editing = false;
+		acct = i;
+		focusPw();
+	}
+	function showList() {
+		editing = false;
+		acct = 'list';
+	}
+	function another() {
+		editing = false;
+		acct = 'new';
+		name = '';
+		chosen = 'choose';
+		pw = '';
+		error = '';
 	}
 	function dropPerson(n: string) {
 		forgetPerson(n);
 		recent = recentPeople();
+	}
+	const RESET_CMD = 'docker exec -i holyarrs /holyarrs reset-owner';
+	let copied = $state(false);
+	let cmdEl = $state<HTMLElement>();
+	async function copyCmd() {
+		try {
+			await navigator.clipboard.writeText(RESET_CMD);
+			copied = true;
+			setTimeout(() => (copied = false), 1500);
+		} catch {
+			// Plain http has no clipboard: select the command so Ctrl+C copies it.
+			const sel = window.getSelection();
+			if (!cmdEl || !sel) return;
+			const r = document.createRange();
+			r.selectNodeContents(cmdEl);
+			sel.removeAllRanges();
+			sel.addRange(r);
+		}
 	}
 	let pw = $state('');
 	let pwAgain = $state('');
@@ -59,8 +100,25 @@
 	const formOn = $derived(session.s.ways.includes('password'));
 	// The password form shows under the tiles when the HolyArrs password is on.
 	const via = $derived(chosen === 'choose' && (formOn || !outside.length) ? 'password' : chosen);
+	// Remembered people whose way is on now.
+	const shown = $derived(recent.filter((p) => session.s.ways.includes(p.way)));
+	const acctView = $derived(
+		mode !== 'login' || !shown.length || acct === 'new' ? 'none' : acct === 'list' || (acct === 'auto' && shown.length > 1) ? 'list' : 'person'
+	);
+	const person = $derived(acctView === 'person' ? (shown[typeof acct === 'number' ? acct : 0] ?? shown[0]) : null);
+	// A chosen person fills the name and way the form signs in with.
+	$effect(() => {
+		const p = person;
+		if (!p) return;
+		untrack(() => {
+			name = p.login ?? p.name;
+			chosen = p.way === 'jellyfin' || p.way === 'emby' ? p.way : 'choose';
+			pw = '';
+			error = '';
+		});
+	});
 	// One key per step: the panel's content rises in when it changes.
-	const step = $derived(plexWaiting ? 'plex' : `${mode}-${via}`);
+	const step = $derived(plexWaiting ? 'plex' : `${mode}-${via}-${acctView}-${person?.name ?? ''}`);
 	let calm = $state(false);
 	// The first step is there on the first frame; only later step changes rise in.
 	let firstStep = '';
@@ -104,7 +162,7 @@
 	let focusedOnce = false;
 	$effect(() => {
 		if (focusedOnce || session.s.state === 'unknown' || !panelEl) return;
-		const field = panelEl.querySelector<HTMLInputElement>('#name');
+		const field = panelEl.querySelector<HTMLInputElement>('#name') ?? panelEl.querySelector<HTMLInputElement>('#password');
 		if (!field) return;
 		focusedOnce = true;
 		if (!document.activeElement || document.activeElement === document.body) field.focus({ preventScroll: true });
@@ -142,6 +200,7 @@
 	});
 
 	async function finishOIDC() {
+		lastWay = 'oidc';
 		error = '';
 		ssoFinishing = true;
 		try {
@@ -159,7 +218,14 @@
 		if (session.s.state !== 'signed_in') return;
 		if (left) return;
 		left = true;
-		if (via === 'password' && !tileWay && name.trim()) rememberPerson(session.s.name);
+		// Remember who signed in here, and how (the trusted proxy signs in by itself).
+		const way: RecentWay | '' =
+			lastWay === 'plex' || lastWay === 'oidc'
+				? lastWay
+				: !tileWay && name.trim() && (via === 'password' || via === 'jellyfin' || via === 'emby')
+					? via
+					: '';
+		if (way) rememberPerson(session.s.name, way, way === 'jellyfin' || way === 'emby' ? name.trim() : undefined);
 		// Success, one continuous move: the Orbit grows out of the Sign in
 		// button and glides to the centre while the panel and the art dissolve
 		// under a veil in the app colour; the app opens under the same Orbit,
@@ -345,6 +411,45 @@
 	let showPw = $state(false);
 </script>
 
+{#snippet face(p: RecentPerson, size: number)}
+	<span class="face" style="--s: {size}px; --h: {hue(p.name)}" aria-hidden="true">
+		{p.name.slice(0, 1).toUpperCase()}
+		{#if p.way !== 'password'}
+			<span class="badge">
+				{#if p.way === 'plex'}
+					<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
+				{:else if p.way === 'jellyfin'}
+					<svg viewBox="0 0 24 24"><defs><linearGradient id="jg-face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#AA5CC3" /><stop offset="1" stop-color="#00A4DC" /></linearGradient></defs><path d="M12 3c-2 0-9 12.4-8 14.4S20 19.4 21 17.4 14 3 12 3zm0 6c1 0 4.4 6 4 7s-7.6 1-8 0S11 9 12 9z" fill="url(#jg-face)" /></svg>
+				{:else if p.way === 'emby'}
+					<svg viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="#52B54B" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
+				{:else}
+					<svg viewBox="0 0 24 24" fill="none" stroke="#f5f5f7" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="12" r="4" /><path d="M12 12h9M18 12v3M21 12v2" /></svg>
+				{/if}
+			</span>
+		{/if}
+	</span>
+{/snippet}
+
+{#snippet help()}
+	<details class="help">
+		<summary>Can't sign in?</summary>
+		<div class="ans">
+			<b>You use this server</b>
+			<p>Ask the owner. They can give you a new password in Settings › Users.</p>
+		</div>
+		<div class="ans" data-testid="reset-owner-help">
+			<b>You run this server</b>
+			<p>Run this where HolyArrs runs:</p>
+			<div class="cmd">
+				<code bind:this={cmdEl}>{RESET_CMD}</code>
+				<button type="button" class="cp" onclick={copyCmd}>{copied ? 'Copied' : 'Copy'}</button>
+			</div>
+			<p>Type your name, press Enter, type a new password, then press Ctrl+D.</p>
+			<p class="note">Everyone gets signed out and two-factor turns off.</p>
+		</div>
+	</details>
+{/snippet}
+
 <svelte:head>
 	<title>{mode === 'setup' ? 'Set up HolyArrs' : 'Sign in'} · HolyArrs</title>
 </svelte:head>
@@ -375,6 +480,68 @@
 							<p class="lead">Finish signing in on the Plex window that opened, then come back here.</p>
 							<button class="link" type="button" onclick={cancelPlex}>Cancel</button>
 						</div>
+					{:else if acctView !== 'none'}
+						<h1 class="title">{acctView === 'list' ? "Who's signing in?" : 'Sign in'}</h1>
+						{#if acctView === 'list'}
+							{#if shown.length === 1}<button class="link back" type="button" onclick={() => openPerson(0)}>‹ Back to {shown[0].name}</button>{/if}
+							<div class="accts" class:editing role="list" aria-label="People who signed in on this device" data-testid="recent-people">
+								{#each shown as p, i (p.name)}
+									<div class="acct" role="listitem">
+										<button type="button" class="acct-pick" aria-label={editing ? `Forget ${p.name} on this device` : undefined} onclick={() => (editing ? dropPerson(p.name) : openPerson(i))}>
+											{@render face(p, 36)}
+											<span class="acct-name"><span class="acct-n">{p.name}</span><span class="acct-way">{wayName(p.way)}</span></span>
+											<span class="acct-end" aria-hidden="true">{editing ? 'Forget' : '›'}</span>
+										</button>
+									</div>
+								{/each}
+								<div class="acct" role="listitem">
+									<button type="button" class="acct-pick" onclick={another}>
+										<span class="face plus" aria-hidden="true">+</span>
+										<span class="acct-name"><span class="acct-n">Use another account</span></span>
+										<span class="acct-end" aria-hidden="true">›</span>
+									</button>
+								</div>
+							</div>
+							<button class="link" type="button" onclick={() => (editing = !editing)}>{editing ? 'Done' : 'Edit list'}</button>
+						{:else if person}
+							{#if shown.length > 1}<button class="link back" type="button" onclick={showList}>‹ All accounts</button>{/if}
+							<div class="who" data-testid="signin-person">
+								{@render face(person, 36)}
+								<span class="who-n">{person.name}</span>
+								<span class="acct-way">{wayName(person.way)}</span>
+							</div>
+							{#if person.way === 'plex' || person.way === 'oidc'}
+								{@const w = person.way}
+								<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && lastWay === w, fail: lastWay === w ? failN : 0 }}>
+									<Button variant="primary" size="lg" full type="button" {busy} onclick={() => press(w)}>
+										{w === 'plex' ? 'Continue with Plex' : 'Continue with single sign-on'}
+									</Button>
+								</div>
+								<p class="note">{w === 'plex' ? 'Opens Plex to confirm it is you.' : 'Opens your sign-in page.'}</p>
+								{#if error}<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>{/if}
+							{:else}
+								<form onsubmit={submit} novalidate>
+									<input type="text" name="username" autocomplete="username" value={name} hidden readonly />
+									<div class="field">
+										<label for="password">{person.way === 'password' ? 'Password' : `${wayName(person.way)} password`}</label>
+										<div class="pw">
+											<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" required />
+											<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+										</div>
+									</div>
+									{#if error}
+										<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
+									{/if}
+									<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}>
+										<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
+											{person.way === 'password' ? 'Sign in' : `Sign in with ${wayName(person.way)}`}
+										</Button>
+									</div>
+								</form>
+							{/if}
+							{#if shown.length === 1}<button class="link" type="button" onclick={showList}>Switch account</button>{/if}
+						{/if}
+						{#if formOn}{@render help()}{/if}
 					{:else}
 						<h1 class="title">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-factor sign-in' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}</h1>
 						{#if mode === 'setup'}
@@ -403,6 +570,7 @@
 								<button class="link" type="button" onclick={restart}>Start again</button>
 							</form>
 						{:else}
+							{#if mode === 'login' && acct === 'new' && shown.length}<button class="link back" type="button" onclick={showList}>‹ All accounts</button>{/if}
 							{#if mode === 'login' && (via === 'password' || via === 'choose') && tiles.length}
 								<div class="provs" data-n={tiles.length} data-testid="signin-ways">
 									{#each tiles as t (t.way)}
@@ -432,16 +600,6 @@
 											<label for="code">Setup code</label>
 											<input id="code" class="input mono" bind:value={code} autocomplete="one-time-code" spellcheck="false" required />
 											<span class="hint">Printed in the HolyArrs log at start, and saved in <code>setup-code.txt</code> in the config folder.</span>
-										</div>
-									{/if}
-									{#if mode === 'login' && via === 'password' && recent.length}
-										<div class="people" role="group" aria-label="Who is signing in?" data-testid="recent-people">
-											{#each recent as n (n)}
-												<span class="person" class:on={name === n}>
-													<button type="button" class="pick" onclick={() => pickPerson(n)}>{n}</button>
-													<button type="button" class="drop" aria-label="Forget {n} on this device" onclick={() => dropPerson(n)}>×</button>
-												</span>
-											{/each}
 										</div>
 									{/if}
 									<div class="field">
@@ -482,19 +640,7 @@
 								<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
 							{/if}
 
-							{#if mode === 'login' && via === 'password'}
-								<details class="help">
-									<summary>Forgot password?</summary>
-									<p>
-										Ask the owner. The owner runs <code>holyarrs reset-owner</code> on the machine that runs HolyArrs. It asks for a new name and
-										password, turns off two-factor sign-in, and signs out every device and API key.
-									</p>
-									<p data-testid="reset-owner-help">
-										In Docker: <code>docker exec -i holyarrs /holyarrs reset-owner</code>, then type the name on one line and the new password on the
-										next, and press Ctrl+D. It works while HolyArrs runs; nothing else changes.
-									</p>
-								</details>
-							{/if}
+							{#if mode === 'login' && via === 'password'}{@render help()}{/if}
 						{/if}
 					{/if}
 				</div>
@@ -627,16 +773,65 @@
 	.prov:active:not(:disabled) { transform: scale(0.97); }
 	.prov:disabled { opacity: 0.5; cursor: default; }
 	.prov:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.people { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-	.person { display: inline-flex; align-items: center; border-radius: 999px; background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.12); }
-	.person.on { background: rgb(255 255 255 / 0.18); border-color: rgb(255 255 255 / 0.32); }
-	.person button { background: none; border: 0; color: #f5f5f7; font: var(--t-footnote); cursor: pointer; min-height: 36px; }
-	.person .pick { padding: 0 4px 0 14px; max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.person .drop { padding: 0 12px 0 6px; color: rgb(255 255 255 / 0.5); }
+	/* People who signed in here: a list of rows, or one person's step. */
+	.accts { display: flex; flex-direction: column; border: 1px solid rgb(255 255 255 / 0.1); border-radius: 16px; overflow: hidden; }
+	.acct + .acct { border-top: 1px solid rgb(255 255 255 / 0.08); }
+	.acct-pick {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		width: 100%;
+		min-height: 64px;
+		padding: 12px 18px 12px 14px;
+		border: 0;
+		background: rgb(255 255 255 / 0.03);
+		color: #f5f5f7;
+		font: 500 15px/1.2 var(--font-ui);
+		text-align: left;
+		cursor: pointer;
+		transition: background-color var(--dur-fast) var(--ease-out);
+	}
+	.acct-pick:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
+	@media (hover: hover) { .acct-pick:hover { background: rgb(255 255 255 / 0.08); } }
+	.acct-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+	.acct-n, .who-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.acct-way { font: 400 12px/1.2 var(--font-ui); color: rgb(255 255 255 / 0.55); white-space: nowrap; }
+	.acct-end { margin-left: auto; flex: none; color: rgb(255 255 255 / 0.4); font-size: 18px; }
+	.accts.editing .acct-end { color: var(--accent-text); font: 500 13px/1 var(--font-ui); }
+	.face {
+		position: relative;
+		flex: none;
+		display: inline-grid;
+		place-items: center;
+		width: var(--s, 36px);
+		height: var(--s, 36px);
+		border-radius: 50%;
+		background: hsl(var(--h, 0) 45% 32%);
+		color: #fff;
+		font: 600 15px/1 var(--font-ui);
+	}
+	.face.plus { background: rgb(255 255 255 / 0.08); border: 1px dashed rgb(255 255 255 / 0.3); color: rgb(255 255 255 / 0.75); }
+	.badge { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: #111; box-shadow: 0 0 0 2px #111; }
+	.badge svg { width: 14px; height: 14px; }
+	.who {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		margin-bottom: 22px;
+		padding: 10px 20px 10px 10px;
+		border-radius: 999px;
+		background: rgb(255 255 255 / 0.06);
+		border: 1px solid rgb(255 255 255 / 0.1);
+	}
+	.title + .who { margin-top: 30px; }
+	.who-n { color: #fff; font: 600 15px/1.2 var(--font-ui); min-width: 0; }
+	.who .acct-way { margin-left: auto; }
+	.back { margin: 0 auto 14px; }
+	.title + .back { margin-top: 22px; }
+	.note { margin-top: 10px; text-align: center; color: rgb(255 255 255 / 0.55); font: var(--t-footnote); }
 	/* Touch phones: 44px tap targets; desktop stays as it is. */
 	@media (max-width: 767px) and (pointer: coarse) {
-		.person button { min-height: 44px; }
-		.person .drop { min-width: 44px; padding: 0 14px 0 8px; }
+		.cp { min-height: 44px; min-width: 64px; }
 	}
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
@@ -675,7 +870,15 @@
 	.help summary::-webkit-details-marker { display: none; }
 	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (max-width: 767px) and (pointer: coarse) { .help summary { min-height: 44px; } }
-	.help p { margin-top: 8px; }
+	.help p { margin-top: 6px; }
+	.help .ans { padding: 12px 0; text-align: left; }
+	.help .ans + .ans { border-top: 1px solid rgb(255 255 255 / 0.08); }
+	.help .ans b { display: block; color: var(--text); font-weight: 600; }
+	.help .note { margin-top: 10px; text-align: left; font-size: 12px; }
+	.cmd { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 6px 6px 12px; border-radius: 10px; background: rgb(255 255 255 / 0.06); border: 1px solid rgb(255 255 255 / 0.08); }
+	.cmd code { flex: 1; min-width: 0; font-size: 12px; line-height: 1.45; }
+	.cp { flex: none; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid rgb(255 255 255 / 0.14); background: transparent; color: var(--text); font: 500 12px/1 var(--font-ui); cursor: pointer; }
+	.cp:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* The waiting step: the provider's mark inside a turning ring. */
 	.wait { text-align: center; }
@@ -730,6 +933,11 @@
 		.title { font-size: 20px; line-height: 1.15; }
 		.lead { margin: 4px 0 10px; }
 		.title + :not(.lead) { margin-top: 16px; }
+		.title + .who { margin-top: 22px; }
+		.who { margin-bottom: 14px; }
+		.title + .back { margin-top: 16px; }
+		.back { margin-bottom: 10px; }
+		.acct-pick { min-height: 60px; }
 		.panel :global(.field) { gap: 2px; }
 		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }
 		.panel :global(.field + .field) { margin-top: 4px; }

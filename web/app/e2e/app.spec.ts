@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { moviesDir, newOwner, owner, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
+import { moviesDir, newOwner, owner, plainForm, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -87,6 +87,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 test('sign out, wrong password, then sign in', async () => {
 	await signOut(page);
 	await expect(page).toHaveURL(/\/login/);
+	await plainForm(page);
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('wrong password');
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();

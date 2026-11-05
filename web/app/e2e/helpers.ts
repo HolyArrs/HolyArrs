@@ -27,12 +27,23 @@ export function owner(): Owner {
 	return JSON.parse(readFileSync(ownerFile, 'utf8'));
 }
 
-export async function signIn(page: Page, o: Owner) {
-	await page.goto('/login');
-	await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+/** plainForm leaves the remembered people (one person's step, or the list) for the name-and-password form. */
+export async function plainForm(page: Page) {
+	await expect(page.getByRole('heading', { name: /^(Sign in|Who's signing in\?)$/ })).toBeVisible();
+	const other = page.getByRole('button', { name: 'Use another account' });
+	const sw = page.getByRole('button', { name: 'Switch account' });
+	if (await sw.isVisible()) {
+		await sw.click();
+		await other.click();
+	} else if (await other.isVisible()) await other.click();
 	// With other ways on, the card lists buttons first.
 	const local = page.getByRole('button', { name: 'Use a HolyArrs account' });
 	if (await local.isVisible()) await local.click();
+}
+
+export async function signIn(page: Page, o: Owner) {
+	await page.goto('/login');
+	await plainForm(page);
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
