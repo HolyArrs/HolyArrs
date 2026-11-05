@@ -122,16 +122,16 @@ func (w *writer) entry(raw string, mode fs.FileMode) (string, error) {
 	return name, nil
 }
 
-func (w *writer) dir(name string) error { return w.root.MkdirAll(name, 0o755) }
+func (w *writer) dir(name string) error { return w.root.MkdirAll(name, 0o777) }
 
 // file writes one file from r; more than what is left is ErrTooBig.
 func (w *writer) file(name string, r io.Reader) error {
 	if dir := path.Dir(name); dir != "." {
-		if err := w.root.MkdirAll(dir, 0o755); err != nil {
+		if err := w.root.MkdirAll(dir, 0o777); err != nil {
 			return err
 		}
 	}
-	f, err := w.root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	f, err := w.root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o666)
 	if err != nil {
 		return err
 	}

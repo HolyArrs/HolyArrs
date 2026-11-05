@@ -359,7 +359,7 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 			replace = append(replace, mine[0])
 		}
 	}
-	tmp, err := os.CreateTemp(dir, ".holyarrs-sub-*")
+	tmp, err := importer.CreateTemp(dir, ".holyarrs-sub-", "")
 	if err != nil {
 		return "", err
 	}
@@ -443,7 +443,7 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 		}
 	}
 	for i, h := range held {
-		err := os.MkdirAll(filepath.Dir(h.To), 0o755)
+		err := os.MkdirAll(filepath.Dir(h.To), 0o777)
 		if err != nil {
 			putBack()
 			forget()

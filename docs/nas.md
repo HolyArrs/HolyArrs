@@ -7,45 +7,57 @@ go on each box.
 The same three rules hold on every NAS:
 
 - `/config` sits on a local volume of the NAS, never on a network share.
-- One shared folder holds downloads and every Library folder, mounted into
-  the container once as `/data`, so files can be hardlinked instead of copied.
-- The container runs as `1000:1000`. Give that user and group read and write
-  on both folders through the NAS permissions screen.
+- Set `PUID` and `PGID` to the NAS user and group that own your media (find
+  them with `id <user>` over SSH). HolyArrs gives the config folder to that
+  user itself; give the same user read and write on the media folders
+  through the NAS permissions screen.
+- For hardlinks instead of copies, keep downloads and every Library folder in
+  one shared folder and mount it once (see
+  [Media folders](install.md#media-folders)). Separate `/movies`, `/tv`,
+  `/music` and `/downloads` mounts work too, but imports are then copied.
 
 ## Synology (Container Manager)
 
 1. In File Station, make `docker/holyarrs/config` and one shared folder for
-   media, for example `media` with `downloads` and `library` inside.
+   media, for example `media` with `downloads`, `movies`, `tv` and `music`
+   inside.
 2. Build or load the `holyarrs:local` image, then in Container Manager open
    Project, Create, and paste the Compose file from the Docker guide.
 3. Use `/volume1/docker/holyarrs/config:/config` and
-   `/volume1/media:/data` as the two volumes.
-4. Give user id 1000 read and write on both folders (Control Panel, Shared
-   Folder, Edit, Permissions, or `chown -R 1000:1000` over SSH).
+   `/volume1/media:/data` as the volumes, and pick `/data/movies` and the
+   others as Library folders in the app.
+4. Set `PUID` and `PGID` to your user (often `1026` and `100`) and give that
+   user read and write on the media folder (Control Panel, Shared Folder,
+   Edit, Permissions).
 
 ## QNAP (Container Station)
 
 1. Make `Container/holyarrs/config` and one `media` share.
 2. In Container Station, Applications, Create, paste the Compose file.
 3. Use `/share/Container/holyarrs/config:/config` and `/share/media:/data`.
-4. Set the owner of both folders to 1000:1000.
+4. Set `PUID` and `PGID` to the user and group that own the `media` share.
 
 ## TrueNAS SCALE (custom app)
 
-1. Make two datasets: `apps/holyarrs-config` and `media`. Put `downloads`
-   and `library` inside `media`, so both are on one dataset.
+1. Make two datasets: `apps/holyarrs-config` and `media`. Put `downloads`,
+   `movies`, `tv` and `music` inside `media`, so all are on one dataset.
 2. In Apps, add a custom app (or install it from YAML) with the Compose file.
 3. Use `/mnt/<pool>/apps/holyarrs-config:/config` and
    `/mnt/<pool>/media:/data`.
-4. Give user and group 1000 write access in the dataset ACL.
+4. Set `PUID` and `PGID` to the dataset's owner (TrueNAS apps often use
+   `568`) and give that user write access in the dataset ACL.
 
 ## Unraid
 
-A template is being prepared; see [NAS packages](nas-packages.md).
+A template is being prepared; see [NAS packages](nas-packages.md). It sets
+`PUID=99` and `PGID=100` (Unraid's `nobody:users`) and `UMASK=022`, shown
+under the advanced view.
 
 - Put `/config` on a pool path such as `/mnt/cache/appdata/holyarrs`.
-- Use one share for `/data`, mounted from a disk or pool path. Do not use
-  `/mnt/user` paths: hardlinks across them can fail.
+- The template offers optional `/movies`, `/tv`, `/music` and `/downloads`
+  paths. For hardlinks, map one share holding all of them instead, from a
+  disk or pool path. Do not use `/mnt/user` paths for that: hardlinks across
+  them can fail.
 
 ## Ports and updates
 

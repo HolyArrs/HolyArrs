@@ -1,61 +1,36 @@
 # Install HolyArrs with Docker
 
-HolyArrs v1 is Docker-only. The image is not published yet, so the commands
-on this page build `holyarrs:local` from the current checkout. There is no
-public registry tag or signed release to pull yet.
+HolyArrs v1 is Docker-only. The image is not published yet:
+`ghcr.io/coderluii/holyarrs:latest` in the examples below is a placeholder for
+the future registry name. Until it exists, build `holyarrs:local` from the
+current checkout (see [Build the local image](#build-the-local-image)) and use
+that tag in its place.
 
 Development [portable candidates](portable.md) and an unpublished
 [NAS template](nas-packages.md) can be prepared separately. Their build and
 native acceptance receipts do not establish NAS platform support.
 
-## Plan the two host locations
-
-Keep the config folder on a local disk. HolyArrs uses SQLite in WAL mode and
-refuses to start when `/config` is on a network share.
-
-Give HolyArrs and every Downloader one shared data tree, mounted once at
-`/data` in every container. A practical host layout is:
-
-```text
-/srv/holyarrs/config
-/srv/media-stack/downloads
-/srv/media-stack/library/movies
-/srv/media-stack/library/shows
-/srv/media-stack/library/music
-```
-
-The first path becomes `/config`. The whole `/srv/media-stack` tree becomes
-`/data`, so the paths inside HolyArrs are:
-
-```text
-/data/downloads
-/data/library/movies
-/data/library/shows
-/data/library/music
-```
-
-Do not mount the download and Library subfolders separately. Docker may then
-present them as different mounts even when they are on the same host disk.
-HolyArrs tries a hardlink first and falls back to a copy, so a split mount
-uses space twice while a torrent seeds.
-
-One `/data` mount is not enough when its subfolders are separate filesystems,
-datasets or NAS shares. Hardlinks require the source and destination to be on
-the same filesystem and the filesystem must support hardlinks. Settings >
-Library folders reports a warning when HolyArrs has to copy instead.
-
 ## The image
 
 The image is an empty base with only HolyArrs in it: the program, CA
-certificates, the licences, `/config` and a writable `/tmp`. It runs as
-`1000:1000` and has no shell and no other programs, so `docker exec` into it
-to look around does not work. Read its log instead: `docker logs holyarrs`, or
-`logs/holyarrs.log` in the config folder (see [Logs](logs.md)). HolyArrs' own
-commands still work through `docker exec`, because they need no shell:
-`docker exec -i holyarrs /holyarrs reset-owner`, `docker exec holyarrs /holyarrs
-restore --pre-update` and `docker exec holyarrs /holyarrs import-secrets ...`. HolyArrs carries its own
-time zone database (set `TZ` as usual), healthcheck, unpacker and
-[trailer reader](trailers.md). Keep `/config` on a volume.
+certificates, the licences, `/config` and a writable `/tmp`. It has no shell
+and no other programs, so `docker exec` into it to look around does not work.
+Read its log instead: `docker logs holyarrs`, or `logs/holyarrs.log` in the
+config folder (see [Logs](logs.md)).
+
+The container starts as root only long enough to set itself up: it fixes the
+owner of `/config` when needed, then switches to the user and group from
+`PUID` and `PGID` (1000 and 1000 when you leave them out) and runs as that
+user from then on. Its first log line shows the user, group and umask it ended
+up with. See [User / Group identifiers](#user--group-identifiers).
+
+HolyArrs' own commands still work through `docker exec`, because they need no
+shell: `docker exec -i holyarrs /holyarrs reset-owner`,
+`docker exec holyarrs /holyarrs restore --pre-update` and
+`docker exec holyarrs /holyarrs import-secrets ...`. They switch to the same
+user first, so running them as root does not leave root-owned files behind.
+HolyArrs carries its own time zone database (set `TZ` as usual), healthcheck,
+unpacker and [trailer reader](trailers.md).
 
 ### ARM machines
 
@@ -64,27 +39,6 @@ Release images are built for 64-bit ARM (`linux/arm64`) and 32-bit ARM
 2.5 GiB of memory or less, HolyArrs turns on its
 [low-memory mode](parts-and-safe-mode.md#low-memory-mode) by itself; its first
 log line says so.
-
-## Set permissions
-
-The image runs as numeric user and group `1000:1000` by default. There are no
-`PUID` or `PGID` environment variables. Create the folders so that this user
-can write the config, download and Library paths:
-
-```sh
-sudo install -d -m 0750 -o 1000 -g 1000 /srv/holyarrs/config
-sudo install -d -m 0775 -o 1000 -g 1000 /srv/media-stack/downloads
-sudo install -d -m 0775 -o 1000 -g 1000 /srv/media-stack/library/movies
-sudo install -d -m 0775 -o 1000 -g 1000 /srv/media-stack/library/shows
-sudo install -d -m 0775 -o 1000 -g 1000 /srv/media-stack/library/music
-```
-
-If the Downloader uses another numeric user, give both containers a shared
-group with write access, then set `user:` in the Compose file to the numeric
-user and group HolyArrs should use. On a NAS, set the share ACLs to match
-those numeric ids. Read access alone is not enough: HolyArrs creates folders,
-hardlinks or copies files, and keeps short-lived probe files while checking a
-Library folder.
 
 ## Build the local image
 
@@ -96,71 +50,222 @@ docker build --tag holyarrs:local .
 
 This tag is local to your Docker host. Rebuild it after updating the checkout.
 
-## Make the Compose file
+## Usage
 
-Save this as `compose.yaml` beside a directory where you keep your Docker
-configuration. Replace the two host paths when your layout differs.
+Keep the config folder on a local disk. HolyArrs uses SQLite in WAL mode and
+refuses to start when `/config` is on a network share.
+
+### Docker Compose (recommended)
 
 ```yaml
 services:
   holyarrs:
-    image: holyarrs:local
+    image: ghcr.io/coderluii/holyarrs:latest
     container_name: holyarrs
-    user: "1000:1000"
-    ports:
-      - "6262:6262"
     environment:
-      HOLYARRS_SAVE_PATH: /data/downloads
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
     volumes:
-      - /srv/holyarrs/config:/config
-      - /srv/media-stack:/data
+      - /path/to/holyarrs/config:/config
+      - /path/to/movies:/movies #optional
+      - /path/to/tv:/tv #optional
+      - /path/to/music:/music #optional
+      - /path/to/downloads:/downloads #optional
+    ports:
+      - 6262:6262
     restart: unless-stopped
 ```
 
-`HOLYARRS_SAVE_PATH` is the path where HolyArrs sees completed downloads. Set
-the Downloader's save path to `/data/downloads` too. When the Downloader is in
-another Compose project, give it the same host bind and the same container
-path:
+### Docker CLI
+
+```sh
+docker run -d \
+  --name=holyarrs \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -e TZ=Etc/UTC \
+  -p 6262:6262 \
+  -v /path/to/holyarrs/config:/config \
+  -v /path/to/movies:/movies `#optional` \
+  -v /path/to/tv:/tv `#optional` \
+  -v /path/to/music:/music `#optional` \
+  -v /path/to/downloads:/downloads `#optional` \
+  --restart unless-stopped \
+  ghcr.io/coderluii/holyarrs:latest
+```
+
+Start it with `docker compose up -d` and check it with `docker compose ps`.
+The container becomes healthy after `GET /healthz` answers successfully.
+
+## Parameters
+
+| Parameter | What it does |
+| --- | --- |
+| `-p 6262:6262` | The web app. |
+| `-e PUID=1000` | User id HolyArrs runs as. See [User / Group identifiers](#user--group-identifiers). |
+| `-e PGID=1000` | Group id HolyArrs runs as. |
+| `-e TZ=Etc/UTC` | Time zone, for example `Europe/Amsterdam`. |
+| `-e UMASK=022` | Optional. Which permission bits new files and folders leave out. See [Umask](#umask). |
+| `-e HOLYARRS_SAVE_PATH=/downloads` | Optional. Where HolyArrs sees the Downloader's finished downloads. See [Media folders](#media-folders). |
+| `-v /config` | Databases, settings, master key, backups and logs. Local disk only. |
+| `-v /movies` | Optional. A movie Library folder. |
+| `-v /tv` | Optional. A shows Library folder. |
+| `-v /music` | Optional. A music Library folder. |
+| `-v /downloads` | Optional. The Downloader's download folder. |
+| `--read-only=true` | Optional. Run with a read-only root filesystem. See [Read-only operation](#read-only-operation). |
+| `--user=1000:1000` | Optional. Start as this user instead of root. See [Non-root operation](#non-root-operation). |
+
+## Environment variables from files (FILE__)
+
+Any setting can come from a file instead of the Compose file. Put `FILE__` in
+front of the variable name and give the path of the file as its value.
+HolyArrs reads the file and uses its contents as the value of the variable
+without the prefix. One newline at the end of the file is dropped, so a file
+written with `echo` works.
+
+```yaml
+environment:
+  - FILE__HOLYARRS_ALLOWED_HOSTS=/run/secrets/holyarrs_hosts
+```
+
+This happens before anything else at start, so it works for `PUID`, `PGID`,
+`UMASK` and `TZ` too. When the file is missing or cannot be read, HolyArrs
+stops and names the variable in the log. It never prints the value.
+
+The master key has its own file setting, `HOLYARRS_MASTER_KEY_FILE`; see
+[Keep the master key](#keep-the-master-key).
+
+## Umask
+
+`UMASK` decides which permission bits new files and folders leave out. Leave
+it out to keep the container's own umask, which is `022` under Docker: you can
+write, everyone else can read. Set `UMASK=002` when other containers or people
+share files with HolyArrs through a group and must be able to write them too.
+Write it as an octal number, such as `022` or `002`.
+
+`UMASK` only changes new files. It does not change files that already exist.
+
+## User / Group identifiers
+
+HolyArrs runs as the user and group you give in `PUID` and `PGID`. Use the
+same ids that own your media and download folders on the host, so files
+HolyArrs makes are yours and not root's. Find them with `id`:
+
+```sh
+id youruser
+# uid=1000(youruser) gid=1000(youruser) groups=1000(youruser)
+```
+
+Use the `uid` as `PUID` and the `gid` as `PGID`. On Unraid that is usually
+`99` and `100`; on Synology the first user is often `1026` and group `100`.
+
+At start, HolyArrs checks who owns the top of the config folder. When it is
+not `PUID:PGID` yet, for example on the first start or after you change the
+ids, HolyArrs walks the config folder once and gives it to that user. When the
+top is already right it does nothing, so normal starts stay fast. It never
+changes the owner of your library or download folders: give the `PUID` user
+write access to those yourself. Read access alone is not enough, because
+HolyArrs creates folders, hardlinks or copies files, and keeps short-lived
+probe files while checking a Library folder.
+
+On some storage the owner cannot be changed (NFS with root squash, SMB, a
+read-only mount, Docker Desktop folders). HolyArrs then logs a warning and
+carries on; make sure the config folder is writable by `PUID:PGID` by hand.
+
+Extra groups given with `group_add:` in Compose (or `--group-add`) are kept
+when HolyArrs switches user.
+
+HolyArrs needs the `CHOWN`, `DAC_OVERRIDE`, `SETUID` and `SETGID`
+capabilities to switch user (`DAC_OVERRIDE` lets it enter config folders
+that only their owner can open). Docker gives them by default. If you drop them (for example
+`cap_drop: ALL`), HolyArrs stops with a message instead of running as root.
+Add those four back, or use [Non-root operation](#non-root-operation).
+To really run as root, set both `PUID=0` and `PGID=0`; HolyArrs warns about
+it once.
+
+## Read-only operation
+
+HolyArrs can run with a read-only root filesystem. Only `/config` and `/tmp`
+need to be writable. Give `/tmp` a tmpfs:
+
+```yaml
+services:
+  holyarrs:
+    read_only: true
+    tmpfs:
+      - /tmp
+```
+
+or `--read-only=true --tmpfs /tmp` with `docker run`. `PUID`, `PGID` and
+`UMASK` still work, because switching user does not write anything inside the
+image.
+
+## Non-root operation
+
+You can start the container as a fixed user instead of root:
+
+```yaml
+services:
+  holyarrs:
+    user: "1000:1000"
+```
+
+or `--user=1000:1000` with `docker run`. The same applies to rootless Docker
+and to Kubernetes `runAsUser`. HolyArrs then runs as that user and changes no
+owners at all, so the config folder must already be writable by it.
+`PUID` and `PGID` are ignored; when they are set, HolyArrs logs one line
+saying so. `UMASK` still works.
+
+## Media folders
+
+Each folder you mount separately (`/movies`, `/tv`, `/music`, `/downloads`) is
+its own mount inside the container, even when the folders sit on the same
+disk on the host. A file cannot be hardlinked from one mount to another, so
+moving a finished download into the Library is a full copy, and a torrent
+that keeps seeding uses its space twice.
+
+To get hardlinks, mount one shared parent folder instead, with the downloads
+and the Library folders inside it, and pick the Library folders inside it in
+the app. For example, a host folder `/srv/media` with `downloads`, `movies`,
+`tv` and `music` in it:
 
 ```yaml
 volumes:
-  - /srv/media-stack:/data
+  - /path/to/holyarrs/config:/config
+  - /srv/media:/data
 ```
 
-If an existing Downloader already sees this tree under another path, add a
-path rule under Settings > Downloaders. Keeping `/data` identical in both
-containers is simpler and makes hardlink problems easier to spot.
+Then use `/data/movies`, `/data/tv` and `/data/music` as Library folders and
+`/data/downloads` as the download folder. Give the Downloader the same mount
+at the same path, so both containers name every file the same way. Hardlinks
+also need the shared folder to be one filesystem: separate datasets or NAS
+shares under it still copy. Settings > Library folders warns when HolyArrs has
+to copy.
 
-**Library > Import files by hand** reads only inside the Library folders, the
-Downloader folders and the extra import folders. Without `HOLYARRS_SAVE_PATH`
-(and without a path rule) the download folder is not one of them; add it under
+`HOLYARRS_SAVE_PATH` is the path where HolyArrs sees completed downloads, for
+example `/downloads` or `/data/downloads`. **Library > Import files by hand**
+reads only inside the Library folders, the Downloader folders and the extra
+import folders. Without `HOLYARRS_SAVE_PATH` (and without a path rule under
+Settings > Downloaders) the download folder is not one of them; add it under
 Settings > Library folders > Extra import folders if you leave the variable
 unset.
-
-Start HolyArrs:
-
-```sh
-docker compose up -d
-docker compose ps
-```
-
-The container becomes healthy after `GET /healthz` answers successfully.
 
 ## Finish the first run
 
 Open port `6262` at the Docker host's network address. There are no default
 credentials.
 
-On the first start, HolyArrs writes a one-time code to
-`/srv/holyarrs/config/setup-code.txt` and prints the same code in the container
-log. Enter it on the setup page, then choose the owner name and password. The
-code file is mode `0600` and is deleted after the owner is made.
+On the first start, HolyArrs writes a one-time code to `setup-code.txt` in
+the config folder and prints the same code in the container log. Enter it on
+the setup page, then choose the owner name and password. The code file is
+mode `0600` and is deleted after the owner is made.
 
 The first-run screens then ask for:
 
 1. The parts you use: Movies, Shows, Music, Subtitles and Requests.
-2. One Library folder. Use a path inside the shared mount, such as
-   `/data/library/movies`, `/data/library/shows` or `/data/library/music`.
+2. One Library folder, as HolyArrs sees it inside the container, such as
+   `/movies`, `/tv` or `/music`.
 
 Add the other Library folders later under Settings > Library folders. Add
 Sources and Downloaders only after their addresses, keys and paths are ready.
@@ -182,12 +287,12 @@ or base64 for 32 bytes. For example:
 services:
   holyarrs:
     environment:
-      HOLYARRS_MASTER_KEY_FILE: /keys/holyarrs.key
+      - HOLYARRS_MASTER_KEY_FILE=/keys/holyarrs.key
     volumes:
-      - /srv/holyarrs/keys:/keys:ro
+      - /path/to/holyarrs/keys:/keys:ro
 ```
 
-The container user must be able to read the file. To move an existing install
+The `PUID` user must be able to read the file. To move an existing install
 to an external key file, stop HolyArrs, copy the existing `holyarrs.key` to the
 new protected location, set the environment variable, and start HolyArrs.
 Keep the original until the app starts and the stored linked-app secrets work.
@@ -222,7 +327,7 @@ name people use as a comma-separated value when starting the container:
 
 ```yaml
 environment:
-  HOLYARRS_ALLOWED_HOSTS: holyarrs.home.example
+  - HOLYARRS_ALLOWED_HOSTS=holyarrs.home.example
 ```
 
 When a reverse proxy adds `X-Forwarded-For`, add only the proxy address or
@@ -238,10 +343,11 @@ your private network.
 
 ## NAS checks
 
-- Keep `/config` on local storage even when `/data` is on a NAS.
-- Put downloads and every Library folder that should hardlink in one dataset
-  or filesystem, exported and mounted once.
-- Give the HolyArrs numeric user write permission through the NAS ACL.
+- Keep `/config` on local storage even when the media folders are on a NAS.
+- Set `PUID` and `PGID` to the NAS user and group that own the media, and give
+  them write access through the NAS ACL.
+- For hardlinks, put downloads and every Library folder in one dataset or
+  filesystem and mount it once (see [Media folders](#media-folders)).
 - Check Settings > Library folders after adding each folder. A hardlink
   warning means imports work by copying and use extra space.
 - Do not point two independent HolyArrs containers at the same config folder.
@@ -265,10 +371,12 @@ On a Synology, QNAP, TrueNAS or Unraid box, see [Install on a NAS](nas.md).
 
 | Message or symptom | Check |
 | --- | --- |
-| Config folder is on a network share | Move `/config` to a local disk. Keep only `/data` on the share. |
-| Permission denied | Check the numeric `user:` and write permissions on both mounts. |
+| Config folder is on a network share | Move `/config` to a local disk. Keep only the media folders on the share. |
+| Cannot switch user | Add back the `CHOWN`, `DAC_OVERRIDE`, `SETUID` and `SETGID` capabilities, or start the container with `user: "<uid>:<gid>"`. |
+| A `FILE__` variable cannot be read | Check the path in that variable and that the file is mounted. |
+| Permission denied | Check `PUID`, `PGID` and write permissions on the config, library and download folders. |
 | Unknown host name | Add the exact DNS name to `HOLYARRS_ALLOWED_HOSTS`. |
-| Imports are copied | Put downloads and the Library folder on one filesystem and one `/data` mount. |
+| Imports are copied | Mount downloads and the Library folders as one shared folder on one filesystem (see [Media folders](#media-folders)). |
 | Master key does not match | Restore the key that belongs to those databases. Do not make a new key for an old backup. |
 | Restore stages but the app stays down | Start the container and add a restart policy. |
 

@@ -104,7 +104,7 @@ func (s *Service) TurnDown(ctx context.Context, id int64, reason string, by doma
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(to), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(to), 0o777); err != nil {
 		return err
 	}
 	if err := os.Rename(filepath.Join(fc.lib, filepath.FromSlash(*row.RelativePath)), to); err != nil && !errors.Is(err, os.ErrNotExist) {

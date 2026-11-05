@@ -259,7 +259,7 @@ func HoldPath(libPath, rel string, now time.Time) (string, error) { return holdP
 // moveFile renames from to to; when that fails (another disk) it copies
 // and then removes the original.
 func moveFile(from, to string) error {
-	if err := os.MkdirAll(filepath.Dir(to), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(to), 0o777); err != nil {
 		return err
 	}
 	err := renameFile(from, to)

@@ -159,22 +159,40 @@ class PackagingTests(unittest.TestCase):
                 with self.subTest(linked=linked), patch.object(Path, "is_symlink", lambda p: p == linked), self.assertRaises(ValueError):
                     package.web_notices(root, modules)
 
-    def test_nas_requires_immutable_image_local_config_and_separate_data(self):
+    def test_nas_requires_immutable_image_local_config_and_separate_media(self):
         image = "ghcr.io/coderluii/holyarrs@sha256:" + "a" * 64
+        config = "/mnt/cache/appdata/holyarrs"
         for bad in ("holyarrs:latest", "https://host/image", "owner:password@host/image"):
             with self.assertRaises(ValueError):
-                nas.render(bad, "/mnt/cache/appdata/holyarrs", "/mnt/user/media", 18730)
+                nas.render(bad, config, 6262)
         for bad in ("/mnt/user/appdata/holyarrs", "/mnt/user0/appdata/holyarrs", "/mnt/remotes/appdata/holyarrs", "/mnt/cache/../appdata/holyarrs", "/mnt/cache"):
             with self.assertRaises(ValueError):
-                nas.render(image, bad, "/mnt/user/media", 18730)
+                nas.render(image, bad, 6262)
+        for media in ({"/movies": "/mnt/cache/appdata"}, {"/tv": "/mnt/user/../etc"}, {"/data": "/mnt/user/media"}, {"/music": "relative"}):
+            with self.subTest(media=media), self.assertRaises(ValueError):
+                nas.render(image, config, 6262, media)
         with self.assertRaises(ValueError):
-            nas.render(image, "/mnt/cache/appdata/holyarrs", "/mnt/cache/appdata", 18730)
-        doc = ET.fromstring(nas.render(image, "/mnt/cache/appdata/holyarrs", "/mnt/user/media", 18744))
+            nas.render(image, config, 80)
+        doc = ET.fromstring(nas.render(image, config, 6262, {"/movies": "/mnt/user/media/movies", "/downloads": "/mnt/user/media/downloads"}))
         self.assertEqual(doc.findtext("Repository"), image)
         self.assertEqual(doc.findtext("Privileged"), "false")
-        self.assertEqual(doc.findtext("ExtraParams"), "--user=1000:1000")
-        self.assertEqual([(c.attrib["Target"], c.text) for c in doc.findall("Config") if c.attrib["Type"] == "Path"],
-                         [("/config", "/mnt/cache/appdata/holyarrs"), ("/data", "/mnt/user/media")])
+        self.assertIsNone(doc.find("ExtraParams"))
+        self.assertEqual(doc.findtext("WebUI"), "http://[IP]:[PORT:6262]/")
+        configs = {c.attrib["Target"]: c for c in doc.findall("Config")}
+        paths = [(c.attrib["Target"], c.text or "", c.attrib["Required"]) for c in doc.findall("Config") if c.attrib["Type"] == "Path"]
+        self.assertEqual(paths, [("/config", config, "true"), ("/movies", "/mnt/user/media/movies", "false"),
+                                 ("/tv", "", "false"), ("/music", "", "false"),
+                                 ("/downloads", "/mnt/user/media/downloads", "false")])
+        self.assertNotIn("/data", configs)
+        self.assertEqual(configs["6262"].attrib["Type"], "Port")
+        for target, default in (("PUID", "99"), ("PGID", "100"), ("UMASK", "022")):
+            with self.subTest(target=target):
+                self.assertEqual(configs[target].attrib["Type"], "Variable")
+                self.assertEqual(configs[target].attrib["Default"], default)
+                self.assertEqual(configs[target].text, default)
+                self.assertEqual(configs[target].attrib["Display"], "advanced")
+        self.assertNotIn("PAGID", configs)
+        self.assertIn("PUID:PGID", doc.findtext("Overview"))
 
 
 if __name__ == "__main__":

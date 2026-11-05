@@ -30,3 +30,22 @@ func TestParseFlagsRejectsExtra(t *testing.T) {
 		t.Fatal("expected an error for stray arguments")
 	}
 }
+
+func TestConfigDirArg(t *testing.T) {
+	for _, c := range []struct {
+		args []string
+		want string
+	}{
+		{nil, "/config"},
+		{[]string{"-addr", ":6262"}, "/config"},
+		{[]string{"-config", "/data", "-addr", ":1"}, "/data"},
+		{[]string{"reset-owner", "--config", "/d2"}, "/d2"},
+		{[]string{"restore", "-config=/d3", "--list"}, "/d3"},
+		{[]string{"import-secrets", "--config=/d4"}, "/d4"},
+		{[]string{"-config"}, "/config"},
+	} {
+		if got := configDirArg(c.args); got != c.want {
+			t.Errorf("configDirArg(%q) = %q, want %q", c.args, got, c.want)
+		}
+	}
+}

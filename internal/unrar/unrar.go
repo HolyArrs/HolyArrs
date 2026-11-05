@@ -194,10 +194,10 @@ func run(first, dest string) (entries []Entry, err error) {
 			cur = &current{e: Entry{Name: name, Link: p.link}, declared: p.unpacked, skip: p.dir || p.link, whole: crc32.NewIEEE()}
 			if dest != "" && !cur.skip && !p.compressed && !p.encrypted {
 				target := filepath.Join(dest, filepath.FromSlash(name))
-				if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+				if err := os.MkdirAll(filepath.Dir(target), 0o777); err != nil {
 					return err
 				}
-				if cur.out, err = os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644); err != nil {
+				if cur.out, err = os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o666); err != nil {
 					return err
 				}
 			}

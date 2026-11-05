@@ -13,7 +13,7 @@ digest. Do not invent a public tag or use a digest from another source build.
 The renderer does not pull, install or publish anything:
 
 ```sh
-python scripts/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<verified-manifest-digest>' --config /mnt/cache/appdata/holyarrs-candidate --data /mnt/user/holyarrs-test-data --port 6262 --output holyarrs-candidate.xml
+python scripts/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<verified-manifest-digest>' --config /mnt/cache/appdata/holyarrs-candidate --movies /mnt/user/holyarrs-test-data/movies --downloads /mnt/user/holyarrs-test-data/downloads --port 6262 --output holyarrs-candidate.xml
 ```
 
 Replace `cache` with your actual local pool name and the digest placeholder
@@ -32,15 +32,23 @@ That manual install does not publish a Community Applications catalog entry.
 Config uses a **direct local pool path** such as
 `/mnt/cache/appdata/holyarrs-candidate`. Do not use
 `/mnt/user/appdata/holyarrs`: that is a FUSE path, which HolyArrs refuses for
-SQLite WAL. `/mnt/user0`, remote mounts and overlapping config/data paths are
-also refused by the renderer. Path spelling alone does not prove the
-filesystem is local; check the target's actual mount before starting.
+SQLite WAL. `/mnt/user0`, remote mounts and config paths that overlap a
+media path are also refused by the renderer. Path spelling alone does not
+prove the filesystem is local; check the target's actual mount before
+starting.
 
-The container runs as numeric user/group `1000:1000`, without privilege or
-a Docker socket. Give that account write access to the isolated config and
-test data. No `PUID`/`PGID` support is implied. The template mounts one data
-tree at `/data`; downloads and Library folders must share a filesystem for
-hardlinks. Never run two instances against one config directory.
+`--movies`, `--tv`, `--music` and `--downloads` are optional; each one left
+out becomes an empty optional path in the template. Separate media paths are
+separate mounts, so imports between them are copied; see
+[Media folders](install.md#media-folders) for the one-share layout that
+hardlinks.
+
+The container starts without privilege or a Docker socket and switches to
+`PUID`/`PGID`, which the template sets to `99`/`100` (Unraid's
+`nobody:users`), with `UMASK=022`. All three are under the advanced view.
+HolyArrs gives the config folder to that user itself; give the same account
+write access to the isolated test media. Never run two instances against one
+config directory.
 
 ## Required actual-target checks
 

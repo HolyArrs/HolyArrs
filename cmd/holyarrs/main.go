@@ -45,6 +45,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/migrate"
 	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/runas"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -991,6 +992,13 @@ func main() {
 		base, _ := urlbase.Clean(os.Getenv(urlbase.Env))
 		os.Exit(healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort+base)))
 	}
+	// FILE__, UMASK and PUID/PGID come first, for the server and for every
+	// command that opens the database, so a root docker exec never leaves
+	// root-owned files. Started as root on Linux this restarts as PUID:PGID.
+	if err := runas.Start(configDirArg(os.Args[1:])); err != nil {
+		log.Printf("holyarrs: %v", err)
+		os.Exit(1)
+	}
 	if len(os.Args) > 1 && os.Args[1] == "reset-owner" {
 		os.Exit(resetOwner(os.Args[2:]))
 	}
@@ -1014,6 +1022,28 @@ func main() {
 	} else if err != nil {
 		log.Fatalf("holyarrs: %v", err)
 	}
+}
+
+// configDirArg finds -config in the arguments of the server or a command,
+// before the flags are parsed, so start-up knows which folder to give to
+// PUID:PGID.
+func configDirArg(args []string) string {
+	dir := "/config"
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--" {
+			break
+		}
+		if v, ok := strings.CutPrefix(a, "-config="); ok {
+			dir = v
+		} else if v, ok := strings.CutPrefix(a, "--config="); ok {
+			dir = v
+		} else if (a == "-config" || a == "--config") && i+1 < len(args) {
+			dir = args[i+1]
+			i++
+		}
+	}
+	return dir
 }
 
 // resetOwner sets the owner's name and password from stdin ("name: ..." and

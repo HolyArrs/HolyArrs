@@ -39,8 +39,8 @@ in square brackets.
 | Alerts | `/settings/alerts` | [Alerts, health checks and media servers](alerts-and-health.md). |
 | Backups | `/settings/backups` | [Backups](backups.md), including schedules, the master key and restore. |
 | Move from other apps | `/settings/move` | [Move from other apps](move-from-other-apps.md), [reading their setup](move-reading.md), and [import secrets](import-secrets.md). |
-| Downloaders | `/settings/downloaders` | [Downloaders](downloaders.md) and the shared `/data` layout in [Install](install.md#plan-the-two-host-locations). |
-| Library folders | `/settings/library-folders` | [Library folders](library-folders.md) and the shared `/data` layout in [Install](install.md). |
+| Downloaders | `/settings/downloaders` | [Downloaders](downloaders.md) and the shared folder layout in [Install](install.md#media-folders). |
+| Library folders | `/settings/library-folders` | [Library folders](library-folders.md) and the shared folder layout in [Install](install.md#media-folders). |
 | Media servers | `/settings/media-servers` | [Alerts, health checks and media servers](alerts-and-health.md#media-servers). |
 | Parts and controls | `/settings/parts` | [Parts, safe mode, controls and API keys](parts-and-safe-mode.md). |
 | Sign-in | `/settings/sign-in` | [Sign-in and passwords](sign-in.md), [signed-in devices](sessions.md), and safe sign-in behavior in [Parts and safe mode](parts-and-safe-mode.md). |

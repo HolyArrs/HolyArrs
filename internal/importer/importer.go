@@ -14,6 +14,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -296,7 +297,7 @@ func copyFile(src, dst string) (err error) {
 		return err
 	}
 	defer in.Close()
-	out, err := os.CreateTemp(filepath.Dir(dst), ".holyarrs-*.part")
+	out, err := CreateTemp(filepath.Dir(dst), ".holyarrs-", ".part")
 	if err != nil {
 		return err
 	}
@@ -313,9 +314,6 @@ func copyFile(src, dst string) (err error) {
 		return err
 	}
 	if err = out.Close(); err != nil {
-		return err
-	}
-	if err = os.Chmod(tmp, 0o644); err != nil {
 		return err
 	}
 	if _, err = os.Lstat(dst); err == nil {
@@ -340,6 +338,21 @@ func copyFile(src, dst string) (err error) {
 	return nil
 }
 
+// CreateTemp makes a new empty file named prefix, a random number and
+// suffix in dir. It asks for mode 0666 where os.CreateTemp always uses 0600,
+// so the process umask decides who may read media HolyArrs writes (022 gives
+// 0644, 002 gives 0664), the same as for the folders it makes with 0777.
+func CreateTemp(dir, prefix, suffix string) (*os.File, error) {
+	for range 10000 {
+		name := filepath.Join(dir, prefix+strconv.FormatUint(uint64(rand.Uint32()), 10)+suffix)
+		f, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o666)
+		if !errors.Is(err, fs.ErrExist) {
+			return f, err
+		}
+	}
+	return nil, &fs.PathError{Op: "createtemp", Path: filepath.Join(dir, prefix+"*"+suffix), Err: fs.ErrExist}
+}
+
 // linkHook lets tests replace the final link of copyFile.
 var linkHook func(oldname, newname string) error
 
@@ -351,7 +364,7 @@ func copyDirect(src, dst string) (err error) {
 		return err
 	}
 	defer in.Close()
-	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o666)
 	if err != nil {
 		return err
 	}
@@ -458,7 +471,7 @@ func place(s domain.PlanStep, ops Ops, resumeFrom time.Time) domain.PlaceResult 
 		r.Outcome, r.Error = "refused", "a file HolyArrs did not place is already at the target"
 		return r
 	}
-	if err := os.MkdirAll(filepath.Dir(s.TargetPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.TargetPath), 0o777); err != nil {
 		r.Outcome, r.Error = "failed", err.Error()
 		return r
 	}

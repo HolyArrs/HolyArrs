@@ -327,7 +327,7 @@ func (s *Service) holdWithVideo(ctx context.Context, oldFileID, newFileID int64,
 		}
 		to, err := importer.HoldPath(lib, *r.RelativePath, now())
 		if err == nil {
-			if err = os.MkdirAll(filepath.Dir(to), 0o755); err == nil {
+			if err = os.MkdirAll(filepath.Dir(to), 0o777); err == nil {
 				err = os.Rename(filepath.Join(lib, filepath.FromSlash(*r.RelativePath)), to)
 			}
 		}

@@ -114,11 +114,11 @@ With HolyArrs stopped, run a one-off container on the same config volume. It sav
 
 ```
 docker stop holyarrs
-docker run --rm -v holyarrs-config:/config -v /srv/holyarrs/holyarrs-secrets.yaml:/run/secrets/holyarrs.yaml:ro holyarrs-image import-secrets -file /run/secrets/holyarrs.yaml
+docker run --rm -e PUID=1000 -e PGID=1000 -v holyarrs-config:/config -v /srv/holyarrs/holyarrs-secrets.yaml:/run/secrets/holyarrs.yaml:ro holyarrs-image import-secrets -file /run/secrets/holyarrs.yaml
 docker start holyarrs
 ```
 
-The container runs as user 1000, so the file must be readable by user 1000 (`chown 1000 holyarrs-secrets.yaml; chmod 600 holyarrs-secrets.yaml`). If your master key lives in its own file (`HOLYARRS_MASTER_KEY_FILE`), give the one-off container the same variable and mount.
+Give the one-off container the same `PUID` and `PGID` as the app (or the same `--env-file`); otherwise it uses 1000:1000 and hands the whole config folder to that user. The command runs as the `PUID` user (1000 unless you set `PUID`), so that user must be able to read the file (for example `chown <PUID> holyarrs-secrets.yaml; chmod 600 holyarrs-secrets.yaml`). If your master key lives in its own file (`HOLYARRS_MASTER_KEY_FILE`), give the one-off container the same variable and mount.
 
 ## Deleting the file
 

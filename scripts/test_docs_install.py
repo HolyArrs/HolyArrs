@@ -30,6 +30,66 @@ class InstallGuides(unittest.TestCase):
                 with self.subTest(guide=g.name, link=link):
                     self.assertTrue((g.parent / link).exists())
 
+    def test_anchors_resolve(self):
+        def slugs(text):
+            return {re.sub(r"[^a-z0-9 _-]", "", h.strip().lower()).replace(" ", "-")
+                    for h in re.findall(r"^#+\s+(.+)$", text, re.M)}
+        install = GUIDES[0]
+        for g in [*GUIDES, *sorted((ROOT / "docs").glob("*.md")), ROOT / "README.md"]:
+            text = g.read_text(encoding="utf-8")
+            for target, anchor in re.findall(r"\]\(([^)#:]*)#([^)]+)\)", text):
+                page = (g.parent / target) if target else g
+                if g not in GUIDES and page.resolve() != install:
+                    continue  # other pages: only links into install.md are checked here
+                with self.subTest(guide=g.name, anchor=anchor):
+                    self.assertIn(anchor, slugs(page.read_text(encoding="utf-8")))
+
+    def test_image_switches_user(self):
+        # The docs describe the start-as-root switch; the image and the code must have it.
+        src = go_source()
+        for name in ("PUID", "PGID", "UMASK", "FILE__"):
+            with self.subTest(name=name):
+                self.assertIn(name, src)
+        self.assertNotRegex((ROOT / "Dockerfile").read_text(encoding="utf-8"), r"(?m)^USER\s")
+
+    def test_linuxserver_style_setup(self):
+        text = (ROOT / "docs" / "install.md").read_text(encoding="utf-8")
+        for old in ("There are no\n`PUID`", "no `PUID`", 'user: "1000:1000"\n    ports', "PAGID"):
+            self.assertFalse(old in text, old)
+        compose = re.search(r"```yaml\n(services:\n  holyarrs:\n    image: .*?)```", text, re.S).group(1)
+        cli = re.search(r"```sh\n(docker run -d .*?)```", text, re.S).group(1)
+        for block in (compose, cli):
+            for want in ("ghcr.io/coderluii/holyarrs:latest", "holyarrs", "PUID=1000", "PGID=1000", "TZ=Etc/UTC",
+                         ":/config", "6262:6262", "unless-stopped"):
+                with self.subTest(want=want):
+                    self.assertIn(want, block)
+            for folder in ("/movies", "/tv", "/music", "/downloads"):
+                with self.subTest(folder=folder):
+                    self.assertRegex(block, re.escape(":" + folder) + r"`? *`?#optional")
+            self.assertNotIn(":/data", block)
+        headings = re.findall(r"^## (.+)$", text, re.M)
+        order = ["Parameters", "Environment variables from files (FILE__)", "Umask",
+                 "User / Group identifiers", "Read-only operation", "Non-root operation", "Media folders"]
+        self.assertEqual([h for h in headings if h in order], order)
+        self.assertLess(text.index("### Docker Compose"), text.index("## Parameters"))
+        for row in ("PUID", "PGID", "UMASK", "TZ", "/config", "/movies", "/tv", "/music", "/downloads"):
+            with self.subTest(row=row):
+                self.assertRegex(text, r"\n\| `-[evp] " + re.escape(row))
+        for phrase in ("022", "002", "id youruser", "--read-only", "tmpfs", "--user", "hardlink"):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
+    def test_nas_guides_match(self):
+        for name in ("nas.md", "nas-packages.md"):
+            text = (ROOT / "docs" / name).read_text(encoding="utf-8")
+            with self.subTest(guide=name):
+                self.assertIn("PUID", text)
+                self.assertNotIn("runs as `1000:1000`", text)
+                self.assertNotIn("No `PUID`", text)
+        packages = (ROOT / "docs" / "nas-packages.md").read_text(encoding="utf-8")
+        self.assertNotIn("--data ", packages)
+        self.assertIn("--movies", packages)
+
 
 if __name__ == "__main__":
     unittest.main()

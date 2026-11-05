@@ -66,17 +66,17 @@ func ExtractCompressed(ctx context.Context, first, dest string, limit int64) err
 			return fmt.Errorf("%w: %q is a link or a special file", ErrUnrecognised, h.Name)
 		}
 		if h.IsDir {
-			if err := root.MkdirAll(name, 0o755); err != nil {
+			if err := root.MkdirAll(name, 0o777); err != nil {
 				return err
 			}
 			continue
 		}
 		if dir := path.Dir(name); dir != "." {
-			if err := root.MkdirAll(dir, 0o755); err != nil {
+			if err := root.MkdirAll(dir, 0o777); err != nil {
 				return err
 			}
 		}
-		f, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+		f, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o666)
 		if err != nil {
 			return err
 		}

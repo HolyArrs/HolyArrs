@@ -160,7 +160,7 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 	_ = os.RemoveAll(tmp) // left by a run that was cut off
 	for i, s := range sets {
 		dest := filepath.Join(tmp, fmt.Sprintf("set%d", i))
-		if err := os.MkdirAll(dest, 0o755); err != nil {
+		if err := os.MkdirAll(dest, 0o777); err != nil {
 			return fail(whyDamaged)
 		}
 		var err error
@@ -290,7 +290,7 @@ func unpackOthers(ctx context.Context, downloadID int64, root string, firsts []s
 	_ = os.RemoveAll(tmp)
 	for i, first := range firsts {
 		dest := filepath.Join(tmp, fmt.Sprintf("set%d", i))
-		if err := os.MkdirAll(dest, 0o755); err != nil {
+		if err := os.MkdirAll(dest, 0o777); err != nil {
 			return fail(whyDamaged)
 		}
 		// One limit for the whole download: what earlier archives wrote counts.

@@ -21,7 +21,13 @@ Local v1 pre-release build. The image is not published yet.
 Or with Docker:
 
     make docker
-    docker run -p 6262:6262 -v ./config:/config holyarrs:dev
+    docker run -p 6262:6262 -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC -v ./config:/config holyarrs:dev
+
+The container starts as root, gives the config folder to `PUID:PGID` (1000:1000
+when unset) and then runs as that user. Media folders mount as optional
+`/movies`, `/tv`, `/music` and `/downloads`; see
+[docs/install.md](docs/install.md) for the full Compose example, `UMASK`,
+`FILE__` variables and hardlinks.
 
 The config folder must sit on a local disk. HolyArrs refuses to start its
 database on a network share.

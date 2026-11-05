@@ -306,7 +306,7 @@ func moveFileDistinctWithProof(from, to, proof string) error {
 	if !src.Mode().IsRegular() {
 		return fmt.Errorf("%s is not a plain file", from)
 	}
-	if err := os.MkdirAll(filepath.Dir(to), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(to), 0o777); err != nil {
 		return err
 	}
 	if dst, err := os.Lstat(to); err == nil {
