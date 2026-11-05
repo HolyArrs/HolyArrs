@@ -508,7 +508,8 @@
 							<div class="who" data-testid="signin-person">
 								{@render face(person, 36)}
 								<span class="who-n">{person.name}</span>
-								<span class="acct-way">{wayName(person.way)}</span>
+								<!-- The password box below already says it; the list keeps the label. -->
+								{#if person.way !== 'password'}<span class="acct-way">{wayName(person.way)}</span>{/if}
 							</div>
 							{#if person.way === 'plex' || person.way === 'oidc'}
 								{@const w = person.way}
