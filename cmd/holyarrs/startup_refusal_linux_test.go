@@ -20,6 +20,9 @@ import (
 // (the container stays up, unhealthy) instead of exiting into a restart loop.
 func startRefused(t *testing.T, dir string) (int, string) {
 	t.Helper()
+	// If the refusal is missing the app starts for real: keep it off the
+	// real metadata server.
+	t.Setenv("HOLYARRS_METADATA_URL", "https://meta.invalid")
 	l, _ := net.Listen("tcp", "127.0.0.1:0")
 	addr := l.Addr().String()
 	_ = l.Close()
@@ -79,6 +82,9 @@ func TestConfigInMemoryShowsAPage(t *testing.T) {
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 	code, page := startRefused(t, dir)
 	if code != http.StatusServiceUnavailable || !strings.Contains(page, "memory") || strings.Contains(page, dir) {
+		if len(page) > 300 {
+			page = page[:300] + "..."
+		}
 		t.Fatalf("healthz %d, page %q", code, page)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "holyarrs.db")); err == nil {

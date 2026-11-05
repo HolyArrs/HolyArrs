@@ -208,10 +208,21 @@ func migratedStore(t *testing.T) string {
 	return dir
 }
 
+// dataFailed reports a FAIL outside the Network section (the tests point
+// the metadata check at an address that never answers).
+func dataFailed(r Report) bool {
+	for _, c := range r.Checks {
+		if c.Status == Fail && c.Section != "Network" {
+			return true
+		}
+	}
+	return false
+}
+
 func assertSetupWarn(t *testing.T, r Report) {
 	t.Helper()
 	text := r.Text()
-	if r.Failed() {
+	if dataFailed(r) {
 		t.Fatalf("mid-setup must not FAIL:\n%s", text)
 	}
 	c := lastCheck(t, r, "still being set up")
@@ -242,7 +253,7 @@ func TestDoctorOnNewerDataSaysSo(t *testing.T) {
 	know, _ := store.SchemaVersions()
 	rawExec(t, dir, "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, 'future.sql', 't')", know+1)
 	r := runDoctor(t, dir)
-	if r.Failed() {
+	if dataFailed(r) {
 		t.Fatalf("newer data is a WARN:\n%s", r.Text())
 	}
 	c := lastCheck(t, r, "newer HolyArrs")
