@@ -42,6 +42,7 @@ func TestConfigDirArg(t *testing.T) {
 		{[]string{"reset-owner", "--config", "/d2"}, "/d2"},
 		{[]string{"restore", "-config=/d3", "--list"}, "/d3"},
 		{[]string{"import-secrets", "--config=/d4"}, "/d4"},
+		{[]string{"doctor", "-json", "-config", "/d5"}, "/d5"},
 		{[]string{"-config"}, "/config"},
 	} {
 		if got := configDirArg(c.args); got != c.want {

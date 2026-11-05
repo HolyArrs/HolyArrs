@@ -33,6 +33,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/bridge"
 	"github.com/CoderLuii/holyarrs/internal/compress"
 	"github.com/CoderLuii/holyarrs/internal/dlsync"
+	"github.com/CoderLuii/holyarrs/internal/doctor"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 	"github.com/CoderLuii/holyarrs/internal/health"
@@ -401,6 +402,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 	}
 	defer s.Close()
+	logFolderCheck(ctx, s.Read(), c.SavePath)
 	pc.Store = s
 	if err := pc.Load(ctx); err != nil {
 		return fmt.Errorf("part switches: %w", err)
@@ -1019,6 +1021,9 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "import-secrets" {
 		os.Exit(importSecrets(os.Args[2:], os.Stdout, os.Stderr))
 	}
+	if len(os.Args) > 1 && os.Args[1] == "doctor" {
+		os.Exit(doctorCmd(os.Args[2:], os.Stdout, os.Stderr))
+	}
 	c, err := parseFlags(os.Args[1:], os.Stderr)
 	if err != nil {
 		os.Exit(2)
@@ -1032,6 +1037,17 @@ func main() {
 		os.Exit(ex.code)
 	} else if err != nil {
 		log.Fatalf("holyarrs: %v", err)
+	}
+}
+
+// logFolderCheck logs one line on the Library and download folders, and a
+// WARN line with the fix for each problem folder. It takes a few seconds at
+// most: a folder that is slower (a hung network share) is skipped with a note.
+func logFolderCheck(ctx context.Context, db store.Lister, savePath string) {
+	sum, warns := doctor.Startup(ctx, db, savePath, 3*time.Second)
+	log.Printf("holyarrs: %s", sum)
+	for _, w := range warns {
+		log.Printf("holyarrs: %s", w)
 	}
 }
 

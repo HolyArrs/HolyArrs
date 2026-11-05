@@ -586,6 +586,8 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/app/about":     PermSettings,
 	"GET /api/v1/logs":          needUsers,
 	"GET /api/v1/logs/download": needUsers,
+	// The support bundle holds the same log, so the same people.
+	"GET /api/v1/support/bundle": needUsers,
 
 	// Schedules (3.5.8): staff who run the Library see them and run one
 	// now (the Job's part must be on); the intervals are settings.
@@ -768,6 +770,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/app/storage":                         ScopeAdmin,
 	"GET /api/v1/logs":                                ScopeAdmin,
 	"GET /api/v1/logs/download":                       ScopeAdmin,
+	"GET /api/v1/support/bundle":                      ScopeAdmin,
 	"GET /api/v1/users/{id}/sessions":                 ScopeAdmin,
 	"GET /api/v1/ask-limits":                          ScopeAdmin,
 	"GET /api/v1/auth/state":                          ScopeAdmin, // public; a key never needs it

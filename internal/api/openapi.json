@@ -26255,6 +26255,32 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/support/bundle": {
+      "get": {
+        "description": "A zip to attach to a bug report: log.txt (the newest log, masked like the download and then masked again for keys, tokens, passwords and Authorization headers), about.json (the About view), doctor.txt (the same report as holyarrs doctor) and health.json (the health data). Owner and admins only.",
+        "operationId": "downloadSupportBundle",
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The zip, as an attachment named holyarrs-support-<UTC time>.zip."
+          }
+        },
+        "summary": "Download a support bundle",
+        "tags": [
+          "This app"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/tags": {
       "get": {
         "description": "Every tag in use on titles, Downloaders and Sources, with how many of each have it. A title's tags send its grabs to the Downloaders that share one (else to the untagged ones) and its searches to the untagged Sources and those that share one.",

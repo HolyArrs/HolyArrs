@@ -354,6 +354,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/app/about":                  Core,
 	"GET /api/v1/logs":                       Core,
 	"GET /api/v1/logs/download":              Core,
+	"GET /api/v1/support/bundle":             Core,
 	"GET /api/v1/schedules":                  Core,
 	"GET /api/v1/app/update":                 Core,
 	"GET /api/v1/settings/ui":                Core,

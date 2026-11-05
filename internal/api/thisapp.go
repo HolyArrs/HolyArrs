@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,6 +25,7 @@ func (a *API) thisAppRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/app/about", a.about)
 	m.HandleFunc("GET /api/v1/logs", a.readLogs)
 	m.HandleFunc("GET /api/v1/logs/download", a.downloadLogs)
+	m.HandleFunc("GET /api/v1/support/bundle", a.supportBundle)
 	m.HandleFunc("GET /api/v1/app/update", a.getUpdate)
 	m.HandleFunc("POST /api/v1/app/update/check", a.checkUpdate)
 }
@@ -215,6 +217,10 @@ type AboutView struct {
 }
 
 func (a *API) about(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, a.aboutView(r.Context()))
+}
+
+func (a *API) aboutView(ctx context.Context) AboutView {
 	v := AboutView{
 		Version: a.s.Version, Go: runtime.Version(), OS: runtime.GOOS + "/" + runtime.GOARCH,
 		ConfigDir: a.configDir(), UptimeS: int64(time.Since(a.s.Started).Seconds()), Started: a.s.Started.UTC().Format(time.RFC3339),
@@ -225,7 +231,7 @@ func (a *API) about(w http.ResponseWriter, r *http.Request) {
 	if exe, err := os.Executable(); err == nil {
 		v.StartDir = filepath.Dir(exe)
 	}
-	_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT sqlite_version()").Scan(&v.SQLite)
+	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT sqlite_version()").Scan(&v.SQLite)
 	v.Migration, _ = a.s.Store.Version()
-	writeJSON(w, http.StatusOK, v)
+	return v
 }

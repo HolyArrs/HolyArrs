@@ -1228,7 +1228,11 @@ func (a *API) listJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) health(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	writeJSON(w, http.StatusOK, a.healthView(r.Context()))
+}
+
+// healthView is what GET /api/v1/health answers.
+func (a *API) healthView(ctx context.Context) map[string]any {
 	db := a.s.Store.Read()
 	ver, err := a.s.Store.Version()
 	ok := err == nil
@@ -1260,12 +1264,12 @@ func (a *API) health(w http.ResponseWriter, r *http.Request) {
 	if a.s.Live != nil {
 		clients = a.s.Live.Clients()
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	return map[string]any{
 		"ok": ok, "version": a.s.Version, "schema": ver, "uptime_s": int(time.Since(a.s.Started).Seconds()),
 		"write_wait_p95_ms": float64(p95.Microseconds()) / 1000, "write_wait_samples": n, "writes": a.s.Store.WriteCount(),
 		"sources": srcs, "downloaders": dls, "live_clients": clients, "url_base": a.s.URLBase,
 		"music_covers": a.tplPreloadStatus(),
-	})
+	}
 }
 
 func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
