@@ -79,7 +79,7 @@ test('the Turned down list names the artist and the album', async () => {
 	await expect(row.getByTestId('listed-for')).toHaveText('Tin Lanterns – Harbour Songs');
 	await expect(row).toContainText('too small');
 	await axe(page, 'turned down with albums');
-	await row.getByRole('button', { name: /Take off the list/ }).click();
+	await row.getByRole('button', { name: /^Take off/ }).click();
 	await expect(row).toHaveCount(0);
 });
 

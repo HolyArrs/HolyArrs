@@ -77,7 +77,7 @@
 {:else}
 <PageLoader loading={!loaded} label="Loading deleted files">
 {#if files.length === 0}
-	<EmptyState icon="trash" title="Nothing deleted" text="Deleted files wait here for a while, so you can put them back." />
+	<EmptyState icon="trash" title="Nothing deleted." />
 {:else}
 	<div class="tp-sheet">
 		<label class="all">

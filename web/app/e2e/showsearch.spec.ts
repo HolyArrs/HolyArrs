@@ -137,7 +137,7 @@ test('a Release turned down for an episode is never picked again for it; Search 
 	const row = page.getByTestId('listed-release').filter({ hasText: 'Harbour.Lights.S02E01.1080p' });
 	await expect(row.getByTestId('listed-for')).toHaveText('Harbour Lights S02E01');
 	await axe(page, 'turned down with episodes');
-	await row.getByRole('button', { name: /Take off the list/ }).click();
+	await row.getByRole('button', { name: /^Take off/ }).click();
 	await expect(row).toHaveCount(0);
 });
 

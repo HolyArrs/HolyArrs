@@ -208,7 +208,7 @@
 <LibraryToolPage title="Import a library">
 
 <p class="tp-msg good" data-testid="nothing-moved">
-	<Icon name="shield" size={18} /><span><b>Nothing is moved or renamed.</b> Files stay exactly where they are.</span>
+	<Icon name="shield" size={18} /><span>Files stay where they are.</span>
 </p>
 
 <PageLoader loading={!loaded} label="Loading folders">
@@ -226,7 +226,7 @@
 						>{/each}
 				</select>
 			</div>
-			<Button variant="primary" icon="search" onclick={() => scan()} disabled={adopting || !folderId} busy={scanning}>Scan (nothing is moved)</Button>
+			<Button variant="primary" icon="search" onclick={() => scan()} disabled={adopting || !folderId} busy={scanning}>Scan</Button>
 		</div>
 		{#if running}
 			<div aria-live="polite">
@@ -272,10 +272,10 @@
 				ticked for you.
 			</p>
 			{#if plan.warning}<p class="notice bad" role="alert" data-testid="scan-warning">{plan.warning}</p>{/if}
-			{#if !plan.folders.length}<p class="notice">This folder has no {word} folders in it.</p>{/if}
+			{#if !plan.folders.length}<p class="notice">No {word} folders here.</p>{/if}
 			{#if plan.more}
 				<div class="notice" data-testid="scan-more">
-					{#if plan.partial}<p class="small">The scan was stopped after <span class="mono">{plan.next}</span>; the folders it finished are below.</p>{:else}<p class="small">This scan read the first {plan.limit} folders, up to <span class="mono">{plan.next}</span>. Adopt these first, then read the next part.</p>{/if}
+					{#if plan.partial}<p class="small">Stopped after <span class="mono">{plan.next}</span>.</p>{:else}<p class="small">First {plan.limit} folders, up to <span class="mono">{plan.next}</span>.</p>{/if}
 					<Button onclick={() => scan(plan?.next ?? '')} disabled={scanning || adopting}>Scan the rest</Button>
 				</div>
 			{/if}

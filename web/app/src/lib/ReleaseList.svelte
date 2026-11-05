@@ -19,7 +19,7 @@
 	let { list, from = 'library' }: { list: 'held' | 'turned-down'; from?: 'library' | 'downloads' } = $props();
 	const held = $derived(list === 'held');
 	const dl = $derived(from === 'downloads');
-	const undoWord = $derived(held ? 'Stop holding' : dl ? 'Undo' : 'Take off the list');
+	const undoWord = $derived(held ? 'Stop holding' : dl ? 'Undo' : 'Take off');
 
 	let rows = $state<ReleaseView[]>([]);
 	let total = $state(0);
@@ -115,9 +115,9 @@
 {:else if total === 0}
 	<EmptyState
 		icon={held ? 'clock' : 'shield'}
-		title={held ? 'Nothing is held' : 'Nothing is turned down'}
+		title={held ? 'Nothing held.' : 'Nothing turned down.'}
 		text={held
-			? 'Releases wait here when Pick rules ask for a wait.'
+			? 'Waiting out a Pick rule delay.'
 			: 'Turn a Release down from its movie or show page. Wrong downloads land here too.'}
 	/>
 {:else}

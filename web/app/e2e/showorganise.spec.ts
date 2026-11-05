@@ -43,7 +43,7 @@ test('Import a library scans the show folder, lists each file with its episodes,
 	await page.goto('/library/import');
 	const lf = page.getByLabel('Library folder');
 	await lf.selectOption((await lf.locator('option', { hasText: 'Shows: ' }).first().getAttribute('value')) ?? '');
-	await page.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
 	const quarry = plan.getByTestId('group-matched').locator('li.folder').filter({ hasText: 'Quarry Bells (2021)' });

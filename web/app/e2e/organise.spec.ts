@@ -38,7 +38,7 @@ test('import: scan shows matched, unsure and unmatched; fix the unsure one; adop
 	await expect(page.getByRole('heading', { level: 1, name: 'Import a library' })).toBeVisible();
 	await expect(page.getByTestId('nothing-moved')).toContainText('Nothing is moved or renamed');
 	await page.getByLabel('Library folder').selectOption({ label: `Old library (${oldLib})` });
-	await page.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
@@ -203,10 +203,10 @@ test('the new screens fit a phone and pass the accessibility scan', async ({ bro
 	// The scan plan and both dialogs at phone width.
 	await ph.goto('/library/import');
 	await ph.getByLabel('Library folder').selectOption({ label: `Old library (${oldLib})` });
-	await ph.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await ph.getByRole('button', { name: 'Scan', exact: true }).click();
 	await expect(ph.getByTestId('adopt-plan')).toBeVisible({ timeout: 30_000 });
 	await noSidewaysScroll(ph);
-	await expect(ph.getByRole('button', { name: 'Scan (nothing is moved)' })).toBeEnabled();
+	await expect(ph.getByRole('button', { name: 'Scan', exact: true })).toBeEnabled();
 	await ph.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined))));
 	const a = await new AxeBuilder({ page: ph }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	const bad = a.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');

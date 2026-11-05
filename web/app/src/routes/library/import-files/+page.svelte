@@ -5,6 +5,7 @@
 	import { bytes } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
 	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
+	import { session } from '#lib/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
@@ -174,6 +175,9 @@
 <svelte:head><title>Import files by hand · HolyArrs</title></svelte:head>
 
 <LibraryToolPage title="Import files by hand">
+{#if !session.can('settings')}
+	<EmptyState icon="shield" title="Owner only." />
+{:else}
 
 	<section class="tp-sheet tp-pad" aria-labelledby="h-path">
 		<h2 id="h-path" class="h2">1. Pick a folder</h2>
@@ -182,9 +186,9 @@
 				<label for="mi-path">Folder or file on the server</label>
 				<input id="mi-path" class="input mono" bind:value={path} placeholder="/downloads/complete/Some.Show.S01" autocomplete="off" spellcheck="false" aria-describedby="mi-where" />
 			</div>
-			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || !path.trim()}>Scan (nothing is moved)</Button>
+			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || !path.trim()}>Scan</Button>
 		</form>
-		<p class="xs muted where" id="mi-where">Inside a Library folder, a Downloader folder or an <a href={to('/settings/library-folders#import-folders')}>extra import folder</a>.</p>
+		<p class="xs muted where" id="mi-where">A Library, Downloader or <a href={to('/settings/library-folders#import-folders')}>extra import</a> folder.</p>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</section>
 
@@ -282,8 +286,8 @@
 				<div class="row end">
 					<fieldset class="modes">
 						<legend class="xs muted">How</legend>
-						<label class="checkline"><input type="radio" bind:group={mode} value="copy" /> <span><b>Copy</b><br /><span class="hint">Keep the original. A link on the same disk, so no extra space.</span></span></label>
-						<label class="checkline"><input type="radio" bind:group={mode} value="move" /> <span><b>Move</b><br /><span class="hint">The original is gone afterwards.</span></span></label>
+						<label class="checkline"><input type="radio" bind:group={mode} value="copy" /> <span><b>Copy</b><br /><span class="hint">Original kept. Same disk, no extra space.</span></span></label>
+						<label class="checkline"><input type="radio" bind:group={mode} value="move" /> <span><b>Move</b><br /><span class="hint">Original gone.</span></span></label>
 					</fieldset>
 					<span class="small muted">{items.length} ticked</span>
 					<Button variant="primary" icon="download" onclick={doImport} disabled={!items.length} busy={importing}>
@@ -293,8 +297,9 @@
 			{/if}
 		</section>
 	{:else if !scanning}
-		<p class="tp-msg good"><Icon name="shield" size={18} /><span>Nothing is moved until you press Import.</span></p>
+		<p class="tp-msg good"><Icon name="shield" size={18} /><span>Nothing moves until you press Import.</span></p>
 	{/if}
+{/if}
 </LibraryToolPage>
 
 <style>

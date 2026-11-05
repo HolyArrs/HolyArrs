@@ -113,7 +113,7 @@ test('Import a library scans the music folder, matches albums and tracks, and ad
 	await page.goto('/library/import');
 	const lf = page.getByLabel('Library folder');
 	await lf.selectOption((await lf.locator('option', { hasText: 'Music: ' }).first().getAttribute('value')) ?? '');
-	await page.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
 	await expect(plan.getByTestId('group-in_library')).toContainText('Tin Lanterns');

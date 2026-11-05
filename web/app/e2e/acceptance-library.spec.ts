@@ -41,7 +41,7 @@ async function adopt(folderText: string, name: string, button: string, doneText:
 	const folders = page.getByLabel('Library folder');
 	const option = folders.locator('option', { hasText: folderText }).first();
 	await folders.selectOption((await option.getAttribute('value')) ?? '');
-	await page.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
 	await expect(plan.getByRole('checkbox', { name: `Adopt ${name}` })).toBeChecked();

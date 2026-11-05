@@ -42,7 +42,7 @@ async function adopt(folderLabel: string, name: string, button: string, doneText
 	await page.goto('/library/import');
 	const lf = page.getByLabel('Library folder');
 	await lf.selectOption((await lf.locator('option', { hasText: folderLabel }).first().getAttribute('value')) ?? '');
-	await page.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
 	await expect(plan.getByRole('checkbox', { name: `Adopt ${name}` })).toBeChecked();

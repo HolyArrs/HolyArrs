@@ -82,7 +82,7 @@ async function scanFolder(page: Page, folder: string) {
 	await page.goto('/library');
 	await libraryTool(page, 'Import files by hand');
 	await page.getByLabel('Folder or file on the server').fill(folder);
-	await page.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	await expect(page.getByTestId('import-files')).toBeVisible();
 }
 

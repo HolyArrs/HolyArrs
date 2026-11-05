@@ -6,15 +6,9 @@ import { libraryTool, libraryView, noSidewaysScroll, owner, signIn, titleAction 
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 
-// Library tools added in November 2026: Movie series (Movies grouped by
-// series), Recently deleted and Import files by hand open from the Add menu,
-// and fit a phone.
-test('Library tools open from the Add menu', async ({ page }) => {
+// Library tools open from the Tools panel and land on their own page.
+test('Library tools open from the Tools panel', async ({ page }) => {
 	await signIn(page, owner());
-	// Movie series opens Movies grouped by series; each series opens its own page.
-	await page.goto('/library');
-	await libraryTool(page, 'Movie series');
-	await expect(page).toHaveURL(/kind=movie.*group=series|group=series.*kind=movie/);
 	for (const tool of ['Recently deleted', 'Import files by hand']) {
 		await page.goto('/library');
 		await libraryTool(page, tool);
@@ -134,7 +128,7 @@ test('Import files by hand: the scan guesses the movie, Copy imports it and its 
 	await page.goto('/library');
 	await libraryTool(page, 'Import files by hand');
 	await page.getByLabel('Folder or file on the server').fill(dirname(file));
-	await page.getByRole('button', { name: 'Scan (nothing is moved)' }).click();
+	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const row = page.getByTestId('import-file').filter({ hasText: basename(file) });
 	await expect(row).toContainText('Northern Kettle (2018)');
 	await expect(row.getByRole('checkbox', { name: `Import ${basename(file)}` })).toBeChecked();
