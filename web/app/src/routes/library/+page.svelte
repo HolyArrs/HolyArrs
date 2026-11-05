@@ -8,7 +8,7 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { page } from '$app/state';
 	import { beforeNavigate, goto } from '$app/navigation';
-	import { bytes, date } from '#lib/format.ts';
+	import { ago, bytes, date } from '#lib/format.ts';
 	import { exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import {
 		activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabels, sortTitles, sortsFor, startDir, columnsFor, defaultSort,
@@ -60,7 +60,7 @@
 	import { deleteBody, splitSteps, type RenameStep } from '#lib/organise.ts';
 	import { bannerHeight, bannerRatio, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMinFor, posterRatio, posterSrc, saveDensity, savePosterSize, squarePhoneMin, type Density, type PosterSize } from '#lib/library-art.ts';
 
-	type View = 'table' | 'posters' | 'overview';
+	type View = 'rows' | 'table' | 'posters' | 'overview';
 
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
@@ -141,14 +141,16 @@
 	// ── View: remembered per library; ?layout= from older links still works ──
 	function readView(k: Kind, fromUrl = false): View {
 		const asked = fromUrl ? page.url.searchParams.get('layout') : null;
-		if (asked === 'list' || asked === 'table') return 'table';
+		if (asked === 'rows') return 'rows';
+		if (asked === 'list' || asked === 'table' || asked === 'banners') return 'table';
 		if (asked === 'grid' || asked === 'posters') return 'posters';
 		if (asked === 'overview') return 'overview';
+		// Rows is the view everyone starts on (Luis's pick, 2026-11-05); a view picked before that day is not carried over.
 		try {
-			const v = localStorage.getItem(`holyarrs.library-layout.${k}`);
-			return v === 'posters' || v === 'overview' ? v : 'table';
+			const v = localStorage.getItem(`holyarrs.library-view.${k}`);
+			return v === 'posters' || v === 'overview' || v === 'table' ? v : 'rows';
 		} catch {
-			return 'table';
+			return 'rows';
 		}
 	}
 	let view = $state<View>(untrack(() => readView(kind, true)));
@@ -162,7 +164,7 @@
 	function setView(v: View) {
 		view = v;
 		try {
-			localStorage.setItem(`holyarrs.library-layout.${kind}`, v);
+			localStorage.setItem(`holyarrs.library-view.${kind}`, v);
 		} catch { /* Not remembered in a private window. */ }
 	}
 
@@ -235,6 +237,15 @@
 		return out;
 	});
 	const hiddenCols = $derived(chosenCols.length - shownCols.length);
+	// As many facts as the list is wide enough for: three on a wide screen, down to one.
+	const rowCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept').slice(0, listWidth >= 980 ? 3 : listWidth >= 760 ? 2 : 1));
+	/** rowCell is a fact for the Rows view: counts for progress columns, "14 d ago" for dates that are recent by nature. */
+	function rowCell(t: TitleView, c: Column, p: { have: number; total: number }): string {
+		if (isProgressCol(c)) return p.total ? `${p.have}/${p.total}` : '';
+		if (c.id === 'added') return ago(t.added_at);
+		if (c.id === 'activity') return ago(t.last_activity);
+		return cell(t, c);
+	}
 	const bannerW = $derived(listWidth < 640 ? wantW : Math.round(Math.max(Math.min(wantW, bannerFloor[density]), Math.min(wantW, listWidth - colsNeed(kind === 'all' ? [] : shownCols)))));
 	/** A row's height for its title's kind: the banner plus its inset (Music rows are taller). */
 	const rowH = (k: string) => bannerHeight(bannerW, k) + ART_GAP;
@@ -478,7 +489,7 @@
 	const heights = new SvelteMap<string, number>();
 	const phone = $derived(listWidth < 640);
 	/** Height guess for a row not yet measured, from its kind's banner shape. */
-	const guessFor = (k: string) => (view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) / bannerRatio(k)) + 92 : rowH(k));
+	const guessFor = (k: string) => (view === 'rows' ? (phone ? 60 : 54) : view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) / bannerRatio(k)) + 92 : rowH(k));
 	const offsets = $derived.by(() => {
 		const out = new Array<number>(entries.length + 1);
 		out[0] = 0;
@@ -949,7 +960,14 @@
 			{#if dlTop.collapsed}<span class="cap"><IconButton icon="sidebar" label="Show sidebar" onclick={() => dlTop.toggle()} data-testid="library-side-btn" /></span>{/if}
 			<DlFind bind:term={() => q, setQ} shown={shown.length} total={kindTotal} searchKey={dlTop.searchKey} placeholder={findWords} note={loaded && !error ? countText : ''} testid="library-find" />
 		{/if}
-		<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={!phone && view !== 'overview' ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone || listWidth < 760} /></span>
+		<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'rows', label: 'Rows', icon: 'menu' }, { value: 'table', label: 'Banners', icon: 'image' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={!phone && (view === 'table' || view === 'posters') ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone || listWidth < 1100} /></span>
+		<span class="t-tabs cap">
+			<div class="tabs" role="tablist" aria-label="Status">
+				{#each filters as [f, label] (f)}
+					<button type="button" role="tab" aria-selected={filter.status === f} class:on={filter.status === f} onclick={() => setFilter({ status: f })} data-testid="library-tab-{f}">{label}{#if loaded && counts.status[f] !== undefined}<b>{counts.status[f]}</b>{/if}</button>
+				{/each}
+			</div>
+		</span>
 		<span class="filter-btn cap" class:on={filtersOn > 0}>
 			{#if phone}
 				<Button size="md" icon="chevronUpDown" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
@@ -964,7 +982,7 @@
 		{/if}
 		<span class="tool-gap"></span>
 		<span class="t-tools cap">
-		{#if view === 'table' && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
+		{#if (view === 'table' || view === 'rows') && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
 		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
 		{#if canManage}
 			<span class="t-tool">
@@ -1038,6 +1056,22 @@
 				</ul>
 			{:else}
 				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs}px" bind:this={listEl} bind:clientWidth={listWidth}>
+					{#if view === 'rows' && !phone}
+						<div class="lh" role="presentation" style="--ln: {rowCols.length}">
+							<span></span>
+							<button type="button" class="h sort" aria-label="Sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+							<span class="h">Status</span>
+							{#each rowCols as c (c.id)}
+								{@const sk = columnSort[c.id]}
+								{#if sk && sortsFor(libKind).includes(sk)}
+									<button type="button" class="h sort" class:num={c.numeric} aria-label="Sort by {c.label}" aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+								{:else}
+									<span class="h" class:num={c.numeric}>{c.label}</span>
+								{/if}
+							{/each}
+							<span></span>
+						</div>
+					{/if}
 					{#if view === 'table' && !phone}
 						<div class="row head" role="presentation">
 							<span class="h banner-h">Banner</span>
@@ -1091,7 +1125,33 @@
 										onfocus={() => (active = ri)}
 										onclick={(ev) => rowClick(ev, t)}
 									>
-										{#if view === 'table'}
+										{#if view === 'rows'}
+											<div class="lr" class:ph={phone} style="--ln: {rowCols.length}; --row-h: {phone ? 60 : 54}px">
+												<span class="lp" style:--poster-ratio={posterRatio(t.kind)} class:round={t.kind === 'artist'}>
+													{#if selecting}<input type="checkbox" class="pick-box lpick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />
+													{:else}<Poster src={t.artwork[0]} name={t.name} />{/if}
+												</span>
+												<span class="lt">
+													<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
+													{#if !phone && t.year}<small>{t.year}</small>{/if}
+													{#if phone}<span class="lsub">{[ls?.label, rowCols[0] ? rowCell(t, rowCols[0], p) : ''].filter(Boolean).join(' · ')}</span>{/if}
+												</span>
+												{#if !phone}
+													<span class="ls {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
+													{#each rowCols as c (c.id)}<span class="lc" class:num={c.numeric} title={c.id === 'path' ? cell(t, c) : undefined}>{rowCell(t, c, p) || '—'}</span>{/each}
+													<span class="acts">
+														{#if canManage && !selecting}
+															<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" onclick={() => searchTitles([t.id])} />
+															<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" onclick={() => refreshTitle(t)} />
+															<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" href={titleLink(t.id)} />
+														{/if}
+													</span>
+												{:else}
+													<small class="lyr">{t.year ?? ''}</small>
+												{/if}
+												<span class="sr-only">{progressText(t)}</span>
+											</div>
+										{:else if view === 'table'}
 											<div class="row" style:--row-h="{rowH(t.kind)}px">
 												<span class="art"><BannerArt title={t} width={phone ? listWidth : bannerW} /></span>
 												<span class="state" title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}>
@@ -1370,7 +1430,7 @@
 	   A folded name is only hidden from the eye, so the button keeps its name for screen readers. */
 	.toolbar.topbar { container-type: inline-size; }
 	.toolbar.topbar :global(.dlfind) { flex-basis: 200px; min-width: 180px; }
-	@container (max-width: 1200px) {
+	@container (max-width: 1500px) {
 		.toolbar.topbar .t-cols :global(.trigger.button > span), .toolbar.topbar .t-cols :global(.trigger.button > svg:last-child) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 		.toolbar.topbar .t-sel :global(.ui-btn) { font-size: 0; gap: 0; }
 		.toolbar.topbar .t-sel :global(.ui-btn), .toolbar.topbar .t-cols :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
@@ -1379,7 +1439,7 @@
 		.toolbar.topbar :global(.dlfind) { flex-basis: 150px; min-width: 150px; }
 		.toolbar.topbar :global(.dlfind .kb) { display: none; }
 	}
-	@container (max-width: 960px) {
+	@container (max-width: 1500px) {
 		.toolbar.topbar .t-tools :global(.trigger.button > span), .toolbar.topbar .t-tools :global(.trigger.button > svg:last-child), .toolbar.topbar .filter-btn :global(.trigger.button > span), .toolbar.topbar .filter-btn :global(.trigger.button > svg:last-child) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 		.toolbar.topbar .t-tools :global(.trigger.button), .toolbar.topbar .filter-btn :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
 	}
@@ -1449,6 +1509,49 @@
 	.with-rail { min-width: 0; }
 	.with-rail.has-rail { display: grid; grid-template-columns: minmax(0, 1fr) 26px; gap: 12px; align-items: start; }
 	.group-note { margin: 0 0 12px; color: var(--text-muted); font: var(--t-footnote); }
+
+	/* Status tabs: the same pill track as the view switch, one tab per status with its count. */
+	.t-tabs { display: contents; }
+	.toolbar.topbar .t-tabs { display: flex; min-width: 0; }
+	.tabs { display: inline-flex; gap: 2px; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+	.tabs::-webkit-scrollbar { display: none; }
+	.tabs button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 10px; border-radius: 10px; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); white-space: nowrap; transition: background-color 120ms ease, color 120ms ease; }
+	.tabs button b { font-weight: 600; font-variant-numeric: tabular-nums; }
+	.tabs button:hover { color: var(--text); }
+	.tabs button.on { background: var(--seg-thumb, var(--surface-1)); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); }
+	.tabs button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.toolbar.topbar .t-tabs { order: 1; }
+	.toolbar.topbar .t-view { order: 2; }
+	.toolbar.topbar .filter-btn { order: 3; }
+	.toolbar.topbar .tool-gap { order: 4; }
+	.toolbar.topbar .t-tools { order: 5; }
+	@container (max-width: 1500px) { .toolbar.topbar .tabs button b { display: none; } .toolbar.topbar .tabs button { padding: 0 9px; } }
+	/* A narrower page gives the tabs their own line under the controls. */
+	@container (max-width: 1000px) { .toolbar.topbar .t-tabs { order: 6; flex-basis: 100%; } .toolbar.topbar .t-tabs .tabs { width: 100%; } }
+
+	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
+	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px repeat(var(--ln, 3), 150px) 96px; align-items: center; gap: 0 12px; }
+	.lh { position: relative; height: 40px; padding-right: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
+	.lr { height: var(--row-h, 54px); padding-right: 10px; }
+	.rows.rows .entry::before { left: 0; right: 0; }
+	.lp { position: relative; display: block; width: 32px; margin-left: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+	.lp.round { border-radius: 50%; }
+	.lpick { display: block; margin: 0 auto; }
+	.lt { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+	.lt a { color: var(--text); font: 600 14px/1.25 var(--font-ui); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lt a:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.lt small { flex: none; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); }
+	.ls { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--text); font: var(--t-callout); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ls .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+	.ls.ok .dot { background: var(--ok); }
+	.ls.info .dot { background: var(--info); }
+	.ls.wait .dot { background: var(--wait); }
+	.ls.fail .dot { background: var(--fail); }
+	.ls.fail { color: var(--fail-text); }
+	.ls.idle { color: var(--text-muted); }
+	.lc { min-width: 0; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lc.num, .lh .h.num { text-align: right; justify-self: end; }
+	.lr .acts { top: 50%; }
 
 	/* Banner table */
 	.rows { position: relative; isolation: isolate; min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b) 420px); box-shadow: var(--edge), var(--drop); overflow: clip; }
@@ -1625,6 +1728,17 @@
 		.t-view { order: 5; }
 		.filter-btn { order: 6; }
 		.t-sel { order: 7; margin-left: auto; }
+		.t-tabs { order: 4; display: flex; flex-basis: 100%; min-width: 0; margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+		.t-tabs::-webkit-scrollbar { display: none; }
+		.t-tabs .tabs { overflow: visible; padding: 2px; border-radius: 12px; background: var(--surface-2); }
+		.t-tabs .tabs button { height: 36px; padding: 0 10px; }
+		/* Phone rows: 60 px, the poster, the name over "status · fact", the year at the right. */
+		.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-right: 12px; }
+		.lr.ph .lp { width: 36px; margin-left: 8px; }
+		.lr.ph .lt { flex-direction: column; align-items: flex-start; gap: 3px; }
+		.lr.ph .lt a { max-width: 100%; }
+		.lsub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+		.lyr { color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 		.chips .t-miss { flex-basis: 100%; }
 		.chips .t-miss :global(button) { width: 100%; }
 		.find-box { flex-basis: 100%; max-width: none; order: 5; }
