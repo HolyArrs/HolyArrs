@@ -127,7 +127,8 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		key: `h${c.key}`,
 		tone,
 		word,
-		text: healthSentence(c),
+		// The shown state, so the sentence matches the title and reason while the flap guard holds it.
+		text: healthSentence({ ...c, state: level }),
 		title: w?.one ?? 'HolyArrs',
 		reason: w ? w[level][0] : level === 'error' ? 'not working' : 'needs a look',
 		cause: `health:${kind}:${level}`,

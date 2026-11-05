@@ -28,9 +28,12 @@ const sentences: Record<HealthCheck['kind'], [error: string, warning: string]> =
 };
 
 /** healthSentence says a health problem in a plain sentence; the raw text goes in a details part. */
-export function healthSentence(c: Pick<HealthCheck, 'kind' | 'state'> & { key?: string }): string {
-	// The key kit check shares the backups kind but is its own problem.
-	if (c.key === 'backups:key' && c.state !== 'ok') return 'No key kit is saved: backups do not hold the master key.';
+export function healthSentence(c: Pick<HealthCheck, 'kind' | 'state'> & { key?: string; message?: string }): string {
+	// The key kit check shares the backups kind but is its own problem. Only the
+	// owner can save the kit; the server rewords the message for everyone else.
+	if (c.key === 'backups:key') {
+		return /^the owner/i.test(c.message ?? '') ? 'The owner should save the key kit: backups do not hold the master key.' : 'No key kit is saved: backups do not hold the master key.';
+	}
 	const pair = sentences[c.kind];
 	if (!pair) return c.state === 'error' ? 'Something in HolyArrs is not working.' : 'Something in HolyArrs needs a look.';
 	return c.state === 'error' ? pair[0] : pair[1];

@@ -60,7 +60,7 @@ describe('status rows', () => {
 
 	it('lists free space on the config disk, so a member sent here from Home sees it', () => {
 		const rows = buildRows({ checks: [{ key: 'config_disk', kind: 'config_disk', subject: 'Config folder', state: 'error', message: 'Only 100 MB are free' } as never] });
-		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason])).toEqual([['Config folder', 'library', 'fail', 'Only 100 MB are free']]);
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason])).toEqual([['Config folder space', 'library', 'fail', 'Only 100 MB are free']]);
 	});
 
 	it('shows the /config mapping error and waiting downloads, and counts them', () => {
@@ -71,9 +71,10 @@ describe('status rows', () => {
 			]
 		});
 		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason])).toEqual([
-			['Config folder', 'library', 'fail', '/config is not mapped'],
+			['Config folder mapping', 'library', 'fail', 'Make a backup first and download it. Then map /config to a folder in your container settings, start HolyArrs and restore the backup.'],
 			['Downloads waiting for files', 'library', 'wait', '2 downloads wait']
 		]);
+		expect(rows[0].fix).toBe('/settings/backups');
 		expect(rows[1].fix).toBe('/downloads?show=waiting.paused');
 		expect(headline(rows)).toBe('2 checks need attention');
 	});

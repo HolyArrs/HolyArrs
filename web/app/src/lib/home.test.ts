@@ -87,6 +87,18 @@ describe('home', () => {
 		expect(groupAttention(items).map((r) => r.title)).toEqual(['Backups', 'Master key']);
 	});
 
+	it('keeps the key kit sentence while the flap guard still holds the warning', () => {
+		const held = { ...check('backups:key', 'ok', 'backups'), confirmed: 'warning' as const };
+		const [item] = attention({ failed: [], decisions: [], health: [held] });
+		expect(item).toMatchObject({ title: 'Master key', text: 'No key kit is saved: backups do not hold the master key.' });
+	});
+
+	it('tells people who are not the owner that the owner saves the key kit', () => {
+		const kit = { ...check('backups:key', 'warning', 'backups'), message: 'The owner should download the key kit on the Backups page: backups do not hold the master key' };
+		const [item] = attention({ failed: [], decisions: [], health: [kit] });
+		expect(item.text).toBe('The owner should save the key kit: backups do not hold the master key.');
+	});
+
 	it('names the /config error and waiting downloads, linked to where they are fixed', () => {
 		const items = attention({ failed: [], decisions: [], health: [check('config_folder', 'error', 'config_folder'), check('waiting_downloads', 'warning', 'waiting_downloads')] });
 		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Config folder · lost if the container is recreated', 'Downloads · waiting for their files']);
