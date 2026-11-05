@@ -83,7 +83,8 @@ To let disks sleep longer:
 - On Unraid, the Cache Directories plugin keeps folder listings in memory, so
   the rescan and folder checks can be answered without waking a disk.
 - Turn the rescan off on the Schedules page, or set it to 7 days. Files you add
-  by hand are then found only when you press Rescan.
+  by hand are then found only when you press Run now on Rescan the Library in
+  Settings > Schedules.
 - A torrent that is still seeding reads from its file. When that file is a
   hardlink into the Library, it sits on the media disk, so that disk stays
   awake until seeding stops.

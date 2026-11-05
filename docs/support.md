@@ -21,8 +21,8 @@ At start, after HolyArrs opens its folders, it writes one summary line such as
 problem and a short fix. These checks have a time limit of 3 seconds in
 total, so start-up never hangs. A folder that does not answer in time is
 skipped and counted as `not checked (slow to answer)`. This is most often a
-disk waking from sleep or a slow network share. It is checked again later, or
-run the doctor below to check it without the time limit.
+disk waking from sleep or a slow network share. Run the doctor below to check
+it without the start-up time limit.
 
 ## Run the doctor
 

@@ -42,6 +42,10 @@ const (
 // built after it, so an earlier date means the clock is wrong.
 const MinYear = 2026
 
+// doctorFolderBudget is the default time limit for the folder checks in
+// holyarrs doctor, longer than the 3 seconds at start-up.
+const doctorFolderBudget = 20 * time.Second
+
 // Check is one line of the report.
 type Check struct {
 	Section string `json:"section"`
@@ -112,7 +116,8 @@ type Options struct {
 	// MetadataURL is the metadata server; empty means HOLYARRS_METADATA_URL
 	// or the default server.
 	MetadataURL string
-	// FolderBudget caps the folder checks together (default 20s).
+	// FolderBudget caps the folder checks together (default
+	// doctorFolderBudget).
 	FolderBudget time.Duration
 	// NetTimeout caps the DNS lookup and the request (default 5s each).
 	NetTimeout time.Duration
@@ -144,7 +149,7 @@ func Run(ctx context.Context, o Options) Report {
 	}
 	budget := o.FolderBudget
 	if budget <= 0 {
-		budget = 20 * time.Second
+		budget = doctorFolderBudget
 	}
 	folders, err := CheckFolders(ctx, db, o.SavePath, budget)
 	if err != nil {
