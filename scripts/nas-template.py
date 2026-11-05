@@ -52,7 +52,9 @@ def render(image: str, config: str, port: int, media: dict | None = None) -> byt
     entries += [(name, target, media.get(target, ""), "Path", "rw", description, "always", "false")
                 for name, target, description in MEDIA]
     entries += [
-        ("Completed downloads", "HOLYARRS_SAVE_PATH", "/downloads", "Variable", "", "Where HolyArrs sees finished downloads; match the Downloader.", "always", "false"),
+        ("Completed downloads", "HOLYARRS_SAVE_PATH", "", "Variable", "",
+         "The Downloader's save folder as the Downloader sees it; HolyArrs sends it with every download. "
+         "Leave empty to keep the Downloader's own setting.", "always", "false"),
         ("PUID", "PUID", "99", "Variable", "", "User id HolyArrs runs as.", "advanced", "false"),
         ("PGID", "PGID", "100", "Variable", "", "Group id HolyArrs runs as.", "advanced", "false"),
         ("UMASK", "UMASK", "022", "Variable", "", "Permission bits new files leave out; 002 lets the group write.", "advanced", "false"),

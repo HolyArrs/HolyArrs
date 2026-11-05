@@ -4,7 +4,8 @@
 //
 // Started as root on Linux, HolyArrs fixes the owner of its config folder,
 // switches to PUID:PGID (default 1000:1000) and starts itself again as that
-// user. Started as any other user (Docker's user: setting, rootless, Kubernetes
+// user. Outside a container root only switches when PUID or PGID is set.
+// Started as any other user (Docker's user: setting, rootless, Kubernetes
 // runAsUser) it keeps that user. On other systems only FILE__ is applied.
 package runas
 
@@ -12,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -107,9 +109,24 @@ type Plan struct {
 	Note string
 }
 
+// NotInContainer is the start-up error for root outside a container without
+// PUID/PGID, where switching to 1000:1000 could hand the folder to a stranger.
+const NotInContainer = "started as root outside a container: set PUID and PGID, or run HolyArrs as its own service user"
+
+// InContainer reports whether HolyArrs runs in a container: /.dockerenv
+// (Docker), /run/.containerenv (Podman) or a non-empty container variable
+// (Podman, systemd-nspawn, LXC).
+func InContainer(exists func(string) bool, getenv func(string) string) bool {
+	if getenv("container") != "" {
+		return true
+	}
+	return exists("/.dockerenv") || exists("/run/.containerenv")
+}
+
 // Decide works out the plan from the effective user and group and the
 // environment. switched is true in the process started after the switch.
-func Decide(euid, egid int, lookup func(string) (string, bool), switched bool) (Plan, error) {
+// Outside a container root only switches when PUID or PGID is set.
+func Decide(euid, egid int, lookup func(string) (string, bool), switched, inContainer bool) (Plan, error) {
 	p := Plan{UID: defaultID, GID: defaultID, Umask: -1}
 	if v, ok := lookup("UMASK"); ok && strings.TrimSpace(v) != "" {
 		m, err := ParseUmask(v)
@@ -150,6 +167,9 @@ func Decide(euid, egid int, lookup func(string) (string, bool), switched bool) (
 	}
 	if switched {
 		return p, fmt.Errorf("still root after switching to %d:%d; HolyArrs will not run as root", p.UID, p.GID)
+	}
+	if !inContainer && !uidSet && !gidSet {
+		return p, errors.New(NotInContainer)
 	}
 	p.Action = Switch
 	return p, nil
@@ -192,10 +212,55 @@ func Groups(gid int, current []int) []int {
 	return out
 }
 
+// MountsUnder lists the mount points in mountinfo (the text of
+// /proc/self/mountinfo) that lie strictly inside dir, as paths relative to
+// dir. dir must be absolute and free of symlinks. Mount points equal to dir or
+// outside it are left out.
+func MountsUnder(mountinfo, dir string) map[string]bool {
+	dir = path.Clean(dir)
+	prefix := dir
+	if prefix != "/" {
+		prefix += "/"
+	}
+	out := map[string]bool{}
+	for _, line := range strings.Split(mountinfo, "\n") {
+		f := strings.Fields(line)
+		if len(f) < 5 {
+			continue
+		}
+		mp := path.Clean(unescapeMount(f[4]))
+		if mp == dir || !strings.HasPrefix(mp, prefix) {
+			continue
+		}
+		out[mp[len(prefix):]] = true
+	}
+	return out
+}
+
+// unescapeMount turns the octal escapes mountinfo uses (\040 for a space,
+// \011 tab, \012 newline, \134 backslash) back into characters.
+func unescapeMount(s string) string {
+	if !strings.Contains(s, `\`) {
+		return s
+	}
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\\' && i+4 <= len(s) {
+			if n, err := strconv.ParseUint(s[i+1:i+4], 8, 8); err == nil {
+				b.WriteByte(byte(n))
+				i += 3
+				continue
+			}
+		}
+		b.WriteByte(s[i])
+	}
+	return b.String()
+}
+
 // SwitchFailed is the start-up error when root cannot switch user.
 func SwitchFailed(uid, gid int, err error) error {
 	return fmt.Errorf("started as root but could not switch to %d:%d (%v). "+
-		"Add back the SETUID, SETGID and CHOWN capabilities if the container drops them (cap_drop: ALL), "+
+		"Add back the CHOWN, DAC_OVERRIDE, SETUID and SETGID capabilities if the container drops them (cap_drop: ALL), "+
 		"or run the container as that user with user: \"%d:%d\". HolyArrs will not run as root",
 		uid, gid, err, uid, gid)
 }

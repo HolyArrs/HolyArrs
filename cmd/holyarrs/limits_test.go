@@ -4,6 +4,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -44,6 +46,32 @@ func TestHealthcheck(t *testing.T) {
 	defer bad.Close()
 	if healthcheck(ok.URL) != 0 || healthcheck(bad.URL) != 1 || healthcheck("http://127.0.0.1:1") != 1 {
 		t.Fatal("healthcheck wrong")
+	}
+}
+
+// The health check reads FILE__ variables, so a URL given by file is used.
+func TestHealthcheckCmdFileEnv(t *testing.T) {
+	ok := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/base/healthz" {
+			w.WriteHeader(404)
+			return
+		}
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	}))
+	defer ok.Close()
+	f := filepath.Join(t.TempDir(), "health_url")
+	if err := os.WriteFile(f, []byte(ok.URL+"/base\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOLYARRS_HEALTH_URL", "http://127.0.0.1:1")
+	t.Setenv("FILE__HOLYARRS_HEALTH_URL", f)
+	if got := healthcheckCmd(); got != 0 {
+		t.Fatalf("health check with FILE__HOLYARRS_HEALTH_URL = %d, want 0", got)
+	}
+	t.Setenv("FILE__HOLYARRS_HEALTH_URL", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("HOLYARRS_HEALTH_URL", ok.URL+"/base")
+	if got := healthcheckCmd(); got != 1 {
+		t.Fatalf("health check with an unreadable FILE__ = %d, want 1", got)
 	}
 }
 

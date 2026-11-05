@@ -192,6 +192,8 @@ class PackagingTests(unittest.TestCase):
                 self.assertEqual(configs[target].text, default)
                 self.assertEqual(configs[target].attrib["Display"], "advanced")
         self.assertNotIn("PAGID", configs)
+        self.assertEqual(configs["HOLYARRS_SAVE_PATH"].attrib["Default"], "")
+        self.assertIn("Downloader's own setting", configs["HOLYARRS_SAVE_PATH"].attrib["Description"])
         self.assertIn("PUID:PGID", doc.findtext("Overview"))
 
 

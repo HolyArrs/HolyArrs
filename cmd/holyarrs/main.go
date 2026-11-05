@@ -986,11 +986,22 @@ func healthcheck(base string) int {
 	return 0
 }
 
+// healthcheckCmd runs -healthcheck. It applies FILE__ only, so
+// FILE__HOLYARRS_URL_BASE and FILE__HOLYARRS_HEALTH_URL work; it never
+// switches user or sets UMASK.
+func healthcheckCmd() int {
+	if err := runas.LoadFileEnv(os.Environ(), os.ReadFile, os.Setenv); err != nil {
+		log.Printf("holyarrs: %v", err)
+		return 1
+	}
+	// Under a URL base the health check lives under it too.
+	base, _ := urlbase.Clean(os.Getenv(urlbase.Env))
+	return healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort+base))
+}
+
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-healthcheck" {
-		// Under a URL base the health check lives under it too.
-		base, _ := urlbase.Clean(os.Getenv(urlbase.Env))
-		os.Exit(healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort+base)))
+		os.Exit(healthcheckCmd())
 	}
 	// FILE__, UMASK and PUID/PGID come first, for the server and for every
 	// command that opens the database, so a root docker exec never leaves

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -23,7 +24,8 @@ func Start(configDir string) error {
 			return err
 		}
 	}
-	p, err := Decide(os.Geteuid(), os.Getegid(), os.LookupEnv, switched)
+	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
+	p, err := Decide(os.Geteuid(), os.Getegid(), os.LookupEnv, switched, InContainer(exists, os.Getenv))
 	if err != nil {
 		return err
 	}
@@ -78,8 +80,10 @@ func switchUser(uid, gid int) error {
 // through os.Root, so no path can step out of the folder, even if a folder in
 // it is swapped for a symlink during the walk. Other mounts inside the folder
 // are left alone, like find -xdev. The folder itself is changed last, so an
-// interrupted pass runs again on the next start. Failures (NFS root_squash,
-// SMB, read-only mounts) are a warning only.
+// interrupted pass runs again on the next start. Mount points listed in
+// /proc/self/mountinfo are skipped too, so a bind mount from the same
+// filesystem is not changed. Failures (NFS root_squash, SMB, read-only
+// mounts) are a warning only.
 func fixOwner(configDir string, uid, gid int) {
 	warn := func(err error) { log.Printf("holyarrs: warning: config folder %s: %v", configDir, err) }
 	if err := os.MkdirAll(configDir, 0o755); err != nil {
@@ -108,6 +112,7 @@ func fixOwner(configDir string, uid, gid int) {
 		return
 	}
 	dev := st.Dev
+	skip := mountsInside(configDir)
 	log.Printf("holyarrs: giving %s to %d:%d (first start or new PUID/PGID)", configDir, uid, gid)
 	changed, failed := 0, 0
 	var first error
@@ -128,6 +133,14 @@ func fixOwner(configDir string, uid, gid int) {
 		if p == "." {
 			return nil
 		}
+		if skip[p] {
+			// A mount inside the folder, even a bind mount from the same
+			// filesystem (-v /srv/media:/config/media): never touched.
+			if d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
 		info, err := r.Lstat(p)
 		if err != nil {
 			return nil
@@ -137,7 +150,8 @@ func fixOwner(configDir string, uid, gid int) {
 			return nil
 		}
 		if s.Dev != dev {
-			// Another mount (a NAS share, media, downloads): never touched.
+			// Another filesystem (a NAS share, media, downloads), also when
+			// mountinfo could not be read: never touched.
 			if d.IsDir() {
 				return fs.SkipDir
 			}
@@ -167,4 +181,22 @@ func fixOwner(configDir string, uid, gid int) {
 			"This is normal on NFS with root_squash, SMB and read-only mounts; if HolyArrs cannot write there, "+
 			"set PUID/PGID to the folder's owner or fix the owner on the host", configDir, uid, gid, first)
 	}
+}
+
+// mountsInside reads /proc/self/mountinfo once and returns the mount points
+// inside configDir, relative to it. When the folder or mountinfo cannot be
+// read it returns nothing, and the walk falls back to the device check.
+func mountsInside(configDir string) map[string]bool {
+	dir, err := filepath.EvalSymlinks(configDir)
+	if err != nil {
+		return nil
+	}
+	if dir, err = filepath.Abs(dir); err != nil {
+		return nil
+	}
+	b, err := os.ReadFile("/proc/self/mountinfo")
+	if err != nil {
+		return nil
+	}
+	return MountsUnder(string(b), dir)
 }

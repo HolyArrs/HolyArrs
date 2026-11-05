@@ -77,6 +77,12 @@ account with write access only to config and the intended data tree. On
 Windows use an NTFS ACL restricted to that account; Unix file modes do not
 prove Windows ACL protection.
 
+Do not start the program as root. Outside a container, root without `PUID`
+and `PGID` stops with "started as root outside a container"; it does not
+change any owner or switch to the container default 1000:1000. Run it as its
+own service user, or set `PUID` and `PGID` to that user so HolyArrs gives it
+the config folder and switches to it.
+
 Without `GOMEMLIMIT` the program uses a 384 MiB memory target, the same
 as in the Docker image; set `GOMEMLIMIT` to change it (about 80 percent
 of the memory you give HolyArrs). This is a Go memory target, not a hard

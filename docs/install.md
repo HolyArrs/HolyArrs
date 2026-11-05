@@ -107,7 +107,7 @@ The container becomes healthy after `GET /healthz` answers successfully.
 | `-e PGID=1000` | Group id HolyArrs runs as. |
 | `-e TZ=Etc/UTC` | Time zone, for example `Europe/Amsterdam`. |
 | `-e UMASK=022` | Optional. Which permission bits new files and folders leave out. See [Umask](#umask). |
-| `-e HOLYARRS_SAVE_PATH=/downloads` | Optional. Where HolyArrs sees the Downloader's finished downloads. See [Media folders](#media-folders). |
+| `-e HOLYARRS_SAVE_PATH=/downloads` | Optional. The Downloader's save folder as the Downloader sees it; HolyArrs sends it with every download. Leave it out to keep the Downloader's own setting. See [Media folders](#media-folders). |
 | `-v /config` | Databases, settings, master key, backups and logs. Local disk only. |
 | `-v /movies` | Optional. A movie Library folder. |
 | `-v /tv` | Optional. A shows Library folder. |
@@ -243,13 +243,17 @@ also need the shared folder to be one filesystem: separate datasets or NAS
 shares under it still copy. Settings > Library folders warns when HolyArrs has
 to copy.
 
-`HOLYARRS_SAVE_PATH` is the path where HolyArrs sees completed downloads, for
-example `/downloads` or `/data/downloads`. **Library > Import files by hand**
-reads only inside the Library folders, the Downloader folders and the extra
-import folders. Without `HOLYARRS_SAVE_PATH` (and without a path rule under
-Settings > Downloaders) the download folder is not one of them; add it under
-Settings > Library folders > Extra import folders if you leave the variable
-unset.
+`HOLYARRS_SAVE_PATH` is the Downloader's save folder as the Downloader sees
+it, for example `/downloads` or `/data/downloads`. HolyArrs sends it to the
+Downloader with every download, so it also changes where the Downloader saves;
+leave it unset to keep the Downloader's own setting. HolyArrs reads finished
+downloads from the same path, so the path must be the same in both
+containers, or add a path rule under Settings > Downloaders.
+**Library > Import files by hand** reads only inside the Library folders, the
+Downloader folders and the extra import folders. Without `HOLYARRS_SAVE_PATH`
+(and without a path rule under Settings > Downloaders) the download folder is
+not one of them; add it under Settings > Library folders > Extra import
+folders if you leave the variable unset.
 
 ## Finish the first run
 

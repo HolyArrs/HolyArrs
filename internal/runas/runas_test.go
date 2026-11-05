@@ -113,7 +113,7 @@ func TestDecide(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got, err := Decide(c.euid, c.euid, envOf(c.env), c.switched)
+			got, err := Decide(c.euid, c.euid, envOf(c.env), c.switched, true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -135,12 +135,12 @@ func TestDecideErrors(t *testing.T) {
 		"neg PGID":  {"PGID": "-5"},
 		"bad UMASK": {"UMASK": "999"},
 	} {
-		if _, err := Decide(0, 0, envOf(env), false); err == nil {
+		if _, err := Decide(0, 0, envOf(env), false, true); err == nil {
 			t.Errorf("%s: expected an error", name)
 		}
 	}
 	// Still root after the switch: never carry on as root.
-	if _, err := Decide(0, 0, envOf(nil), true); err == nil || !strings.Contains(err.Error(), "will not run as root") {
+	if _, err := Decide(0, 0, envOf(nil), true, true); err == nil || !strings.Contains(err.Error(), "will not run as root") {
 		t.Fatalf("root after switch should stop: %v", err)
 	}
 }
@@ -148,19 +148,80 @@ func TestDecideErrors(t *testing.T) {
 // The egid differs from the euid here, so a GID copied from the current group
 // would show.
 func TestDecidePUIDZero(t *testing.T) {
-	got, err := Decide(0, 5, envOf(map[string]string{"PUID": "0", "PGID": "0"}), false)
+	got, err := Decide(0, 5, envOf(map[string]string{"PUID": "0", "PGID": "0"}), false, true)
 	if err != nil || got.Action != StayRoot || got.UID != 0 || got.GID != 0 || !strings.Contains(got.Note, "PGID=0") {
 		t.Fatalf("PUID=0 PGID=0: got %+v, %v", got, err)
 	}
 	for _, env := range []map[string]string{{"PUID": "0"}, {"PUID": "0", "PGID": "100"}, {"PUID": "0", "PGID": " "}} {
-		if _, err := Decide(0, 5, envOf(env), false); err == nil || !strings.Contains(err.Error(), "PUID=0 needs PGID=0") {
+		if _, err := Decide(0, 5, envOf(env), false, true); err == nil || !strings.Contains(err.Error(), "PUID=0 needs PGID=0") {
 			t.Errorf("%v: want the PUID=0 needs PGID=0 error, got %v", env, err)
 		}
 	}
 	// PGID=0 with a normal PUID is an ordinary switch.
-	got, err = Decide(0, 5, envOf(map[string]string{"PUID": "1000", "PGID": "0"}), false)
+	got, err = Decide(0, 5, envOf(map[string]string{"PUID": "1000", "PGID": "0"}), false, true)
 	if err != nil || got.Action != Switch || got.UID != 1000 || got.GID != 0 {
 		t.Fatalf("PUID=1000 PGID=0: got %+v, %v", got, err)
+	}
+}
+
+func TestDecideOutsideContainer(t *testing.T) {
+	// Root without PUID/PGID: stop, never switch to the 1000:1000 default.
+	for _, env := range []map[string]string{nil, {"PUID": "", "PGID": " "}, {"UMASK": "002"}} {
+		got, err := Decide(0, 0, envOf(env), false, false)
+		if err == nil || err.Error() != NotInContainer || got.Action == Switch {
+			t.Errorf("%v: want the outside-a-container error, got %+v, %v", env, got, err)
+		}
+	}
+	// PUID or PGID set by hand: switching is fine.
+	for _, env := range []map[string]string{{"PUID": "1001", "PGID": "1001"}, {"PUID": "1001"}, {"PGID": "1001"}} {
+		got, err := Decide(0, 0, envOf(env), false, false)
+		if err != nil || got.Action != Switch {
+			t.Errorf("%v: want a switch, got %+v, %v", env, got, err)
+		}
+	}
+	// PUID=0 PGID=0 still means root, and a non-root start keeps its user.
+	if got, err := Decide(0, 0, envOf(map[string]string{"PUID": "0", "PGID": "0"}), false, false); err != nil || got.Action != StayRoot {
+		t.Errorf("PUID=0 PGID=0 outside a container: got %+v, %v", got, err)
+	}
+	if got, err := Decide(1000, 1000, envOf(nil), false, false); err != nil || got.Action != Keep {
+		t.Errorf("non-root outside a container: got %+v, %v", got, err)
+	}
+}
+
+func TestInContainer(t *testing.T) {
+	files := func(have ...string) func(string) bool {
+		return func(p string) bool {
+			for _, h := range have {
+				if h == p {
+					return true
+				}
+			}
+			return false
+		}
+	}
+	env := func(v string) func(string) string {
+		return func(k string) string {
+			if k == "container" {
+				return v
+			}
+			return ""
+		}
+	}
+	cases := []struct {
+		name   string
+		exists func(string) bool
+		getenv func(string) string
+		want   bool
+	}{
+		{"docker", files("/.dockerenv"), env(""), true},
+		{"podman file", files("/run/.containerenv"), env(""), true},
+		{"container variable", files(), env("podman"), true},
+		{"plain host", files("/etc/passwd"), env(""), false},
+	}
+	for _, c := range cases {
+		if got := InContainer(c.exists, c.getenv); got != c.want {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
 	}
 }
 
@@ -206,9 +267,50 @@ func TestGroups(t *testing.T) {
 
 func TestSwitchFailedMessage(t *testing.T) {
 	msg := SwitchFailed(99, 100, errors.New("operation not permitted")).Error()
-	for _, want := range []string{"99:100", "operation not permitted", "SETUID", "SETGID", "CHOWN", `user: "99:100"`, "will not run as root"} {
+	for _, want := range []string{"99:100", "operation not permitted", "CHOWN", "DAC_OVERRIDE", "SETUID", "SETGID", `user: "99:100"`, "will not run as root"} {
 		if !strings.Contains(msg, want) {
 			t.Errorf("message missing %q: %s", want, msg)
+		}
+	}
+}
+
+func TestMountsUnder(t *testing.T) {
+	info := strings.Join([]string{
+		"22 1 8:1 / / rw,relatime shared:1 - ext4 /dev/sda1 rw",
+		"30 22 8:1 /var/lib/docker/config /config rw,relatime - ext4 /dev/sda1 rw",
+		"31 30 8:1 /srv/media /config/media rw,relatime - ext4 /dev/sda1 rw",
+		`32 30 8:1 /srv/my\040films /config/my\040films rw - ext4 /dev/sda1 rw`,
+		"33 30 0:50 / /config/cache/tmp rw - tmpfs tmpfs rw",
+		"34 30 8:1 /etc/hosts.txt /config/hosts.txt ro - ext4 /dev/sda1 rw",
+		"35 22 8:1 /srv/configx /configx rw - ext4 /dev/sda1 rw",
+		"36 22 8:1 /srv/downloads /downloads rw - ext4 /dev/sda1 rw",
+		"",
+		"short line",
+	}, "\n")
+	got := MountsUnder(info, "/config/")
+	want := map[string]bool{"media": true, "my films": true, "cache/tmp": true, "hosts.txt": true}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("MountsUnder = %v, want %v", got, want)
+	}
+	if got := MountsUnder(info, "/srv"); len(got) != 0 {
+		t.Fatalf("no mounts under /srv, got %v", got)
+	}
+	if got := MountsUnder(info, "/"); !got["config"] || !got["config/media"] || got[""] {
+		t.Fatalf("mounts under / wrong: %v", got)
+	}
+}
+
+func TestUnescapeMount(t *testing.T) {
+	for in, want := range map[string]string{
+		`/a\040b`:  "/a b",
+		`/t\011ab`: "/t\tab",
+		`/b\134s`:  `/b\s`,
+		`/plain`:   "/plain",
+		`/odd\04`:  `/odd\04`,
+		`/bad\9xy`: `/bad\9xy`,
+	} {
+		if got := unescapeMount(in); got != want {
+			t.Errorf("unescapeMount(%q) = %q, want %q", in, got, want)
 		}
 	}
 }
