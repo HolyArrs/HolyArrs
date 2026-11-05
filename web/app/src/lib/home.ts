@@ -65,6 +65,8 @@ export interface Attention {
 	note?: string;
 	/** Raw text for admins, shown inside a Details disclosure. */
 	detail?: string;
+	/** The part a health row is about (a Source's or Downloader's name), so a grouped row can name them. */
+	subject?: string;
 	href: string;
 	action: string;
 }
@@ -139,6 +141,7 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		reason: w ? (c.subject && NAMED.has(c.kind) ? `${c.subject} ${w[level][0]}` : c.subject && PLACED.has(c.kind) ? `${w[level][0]}: ${c.subject}` : w[level][0]) : level === 'error' ? 'not working' : 'needs a look',
 		cause: `health:${kind}:${level}`,
 		detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined,
+		subject: NAMED.has(c.kind) ? c.subject || undefined : undefined,
 		// Settings is only for people who may change it; everyone else sees the check on Status.
 		href,
 		action: href === '/status' ? 'Look' : href.startsWith('/downloads') ? 'Downloads' : action
@@ -222,7 +225,8 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
 		const kind = cause.startsWith('health:') ? (cause.split(':')[1] as keyof typeof healthWords) : undefined;
 		const w = kind ? healthWords[kind] : undefined;
 		const level = cause.endsWith(':error') ? 'error' : 'warning';
-		if (w) out.push({ ...base, key: `g${cause}`, title: `${n} ${w.many}`, reason: w[level][1] });
+		const names = list.map((i) => i.subject).filter(Boolean);
+		if (w) out.push({ ...base, key: `g${cause}`, title: `${n} ${w.many}`, reason: names.length === n ? `${names.join(', ')} ${w[level][1]}` : w[level][1] });
 		else if (cause === 'decision') out.push({ ...base, key: `g${cause}`, title: `${n} need a decision`, reason: list.map((i) => i.title).join(', ') });
 		else out.push({ ...base, key: `g${cause}`, title: `${n} downloads failed`, reason: list.map((i) => i.title).join(', ') });
 	}
@@ -483,16 +487,24 @@ export function downloadMoved(seen: Map<number, string>, x: unknown): boolean {
 /**
  * partCount sums up Sources or Downloaders from GET /health. Only "disabled" is turned off; a part that is on
  * works when its state says so (enabled, ok). A failing Source is paused by the server and a failing Downloader is
- * unreachable or auth_failed, and each has a failing health check: `failingChecks` is how many of those there are,
- * so a part whose state still looks fine is not counted as working. A removed Downloader (kept for its history
+ * unreachable or auth_failed, and each has a failing health check: `failing` is the names those checks are about
+ * (or just how many), so a part whose state still looks fine is not counted as working. A removed Downloader (kept for its history
  * under "<name> (removed <id>)") is left out.
  */
-export function partCount(parts: { name?: string; state: string }[] | null | undefined, failingChecks = 0): { total: number; on: number; working: number; off: number; failing: number } {
+export function partCount(parts: { name?: string; state: string }[] | null | undefined, failing: number | string[] = 0): { total: number; on: number; working: number; off: number; failing: number } {
 	const list = (parts ?? []).filter((p) => !/ \(removed \d+\)$/.test(p.name ?? ''));
 	const off = list.filter((p) => p.state === 'disabled').length;
 	const on = list.length - off;
-	const good = list.filter((p) => p.state === 'ok' || p.state === 'working' || p.state === 'enabled').length;
-	const working = Math.max(0, Math.min(good, on - failingChecks));
+	const good = list.filter((p) => p.state === 'ok' || p.state === 'working' || p.state === 'enabled');
+	let bad: number;
+	if (typeof failing === 'number') bad = Math.max(0, failing - (on - good.length));
+	else {
+		// By name: a check for a part that is off (the flap guard holds it a little) or already counted as failing changes nothing;
+		// a check that names no part we know still counts, so the tile never says more works than the rows do.
+		const known = new Set(list.map((p) => p.name));
+		bad = good.filter((p) => p.name && failing.includes(p.name)).length + failing.filter((name) => !known.has(name)).length;
+	}
+	const working = Math.max(0, good.length - bad);
 	return { total: list.length, on, working, off, failing: on - working };
 }
 

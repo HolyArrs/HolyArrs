@@ -56,6 +56,8 @@
 	let uncheckedParts = $state(false);
 	// The asks read failed: the asks tile says so and does not claim nothing is waiting.
 	let uncheckedAsks = $state(false);
+	// The Library folders read failed: the disk tile says it could not read the free room.
+	let uncheckedFolders = $state(false);
 
 	const admin = $derived(session.can('settings'));
 	const manager = $derived(session.can('manage_library'));
@@ -66,8 +68,8 @@
 	// Sources and Downloaders, from GET /health and the health checks. A failing Source is paused by the server and its
 	// check warns; a Downloader carries its own state. Only "disabled" is turned off.
 	const failingChecks = (kind: string) => (checks?.checks ?? []).filter((c) => c.kind === kind && shownState(c) !== 'ok');
-	const srcs = $derived(partCount(health?.sources, failingChecks('source').length));
-	const dls = $derived(partCount(health?.downloaders, failingChecks('downloader').length));
+	const srcs = $derived(partCount(health?.sources, failingChecks('source').map((c) => c.subject)));
+	const dls = $derived(partCount(health?.downloaders, failingChecks('downloader').map((c) => c.subject)));
 	const partsRead = $derived(settled && !!health && !uncheckedParts);
 	const steps = $derived([
 		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders' },
@@ -126,9 +128,20 @@
 	// Items that share a cause are one row ("2 downloads failed").
 	const fixRows = $derived(groupAttention(fixes));
 	/** One row in a few words: "6 downloads failed", "2 Sources have a problem", "Downloader: SABnzbd not answering". */
-	const rowLine = (g: AttentionGroup) => (g.items.length > 1 ? (/^(health|setup):/.test(g.items[0].cause) ? `${g.title} ${g.reason}` : g.title) : `${g.title}: ${g.reason}`);
+	const rowLine = (g: AttentionGroup) => {
+		const cause = g.items[0].cause;
+		if (g.items.length > 1) {
+			if (!/^(health|setup):/.test(cause)) return g.title;
+			// The System row names the parts; the tile keeps "2 Sources have a problem".
+			const names = g.items.map((i) => i.subject).filter(Boolean).join(', ');
+			return `${g.title} ${names && g.reason.startsWith(`${names} `) ? g.reason.slice(names.length + 1) : g.reason}`;
+		}
+		// A folder's path is on the System row; the tile keeps the words.
+		return `${g.title}: ${/^health:(library_folder|disk_space):/.test(cause) ? g.reason.split(': ')[0] : g.reason}`;
+	};
 	// The Home tile names the worst row and says how many more things there are, so the number adds up.
-	const fixLine = $derived(fixRows.length ? rowLine(fixRows[0]) + (fixes.length > fixRows[0].items.length ? ` and ${n(fixes.length - fixRows[0].items.length)} more` : '') : '');
+	const fixLine = $derived(fixRows.length ? rowLine(fixRows[0]) : '');
+	const fixMore = $derived(fixRows.length ? fixes.length - fixRows[0].items.length : 0);
 	// The Needs attention tile opens the page of the row it names (the worst one).
 	const fixHref = $derived(fixRows[0]?.href ?? (admin ? '/settings/health' : '/status'));
 	// System lists each cause as a row; four fit, the rest link to the page that holds most of them.
@@ -204,7 +217,8 @@
 	// The count tiles, in order. The first four are always there for the person they are for (Needs attention, asks,
 	// Library, disk), so they never change places while the page loads; the rest fill the picture places that have
 	// no picture. Explore, New & Popular and Search always can, so the grid never has a hole.
-	const recentNew = $derived((home?.arrived ?? []).filter((c) => c.at && now.getTime() - Date.parse(c.at) < 14 * 86400000).length + (home?.new_seasons?.length ?? 0));
+	const recentArrived = $derived((home?.arrived ?? []).filter((c) => c.at && now.getTime() - Date.parse(c.at) < 14 * 86400000));
+	const recentNew = $derived(recentArrived.length + (home?.new_seasons?.length ?? 0));
 	const statPool = $derived(
 		[
 			owner ? 'att' : '',
@@ -342,7 +356,9 @@
 	const free = $derived(freeSpace(folders, diskState !== 'ok'));
 	const diskLine = $derived(
 		!free
-			? diskState === 'ok'
+			? uncheckedFolders
+				? 'Could not read the free room'
+				: diskState === 'ok'
 				? 'Across your Library folders'
 				: 'A disk is running out of room'
 			: free.free <= 0
@@ -412,6 +428,7 @@
 		uncheckedHealth = ch.status === 'rejected';
 		uncheckedParts = he.status === 'rejected';
 		uncheckedAsks = as.status === 'rejected';
+		uncheckedFolders = fo.status === 'rejected';
 		now = new Date();
 		loaded = true;
 		settled = true;
@@ -601,7 +618,11 @@
 								{@render wait()}
 							{:else if fixes.length}
 								<span class="num" class:fail={worst === 'fail'} class:warn={worst === 'wait'}>{n(fixes.length)}</span>
-								<span class="sm">{fixLine}</span>
+								{#if fixMore}
+									<span class="sm two"><span>{fixLine}</span><span>and {n(fixMore)} more</span></span>
+								{:else}
+									<span class="sm">{fixLine}</span>
+								{/if}
 							{:else}
 								<span class="word">All good</span>
 								<span class="sm">Downloads, imports and checks</span>
@@ -637,7 +658,7 @@
 						<a class="tile stat {cls}" href={to(libHref)} data-testid="home-library">
 							{@render head('library', 'indigo', 'Library')}
 							<span class="num">{n(libTotal)}</span>
-							<span class="sm">{libCards.map((c) => `${n(c.big)}\u00a0${c.unit}`).join(' · ')}</span>
+							<span class="sm">{libCards.length === 1 ? libCards[0].detail || `${libCards[0].unit} in your Library` : libCards.map((c) => `${n(c.big)}\u00a0${c.unit}`).join(' · ')}</span>
 						</a>
 					{:else if key === 'disk'}
 						{@render diskTile(cls)}
@@ -654,10 +675,10 @@
 							<span class="sm">in the next 30 days</span>
 						</a>
 					{:else if key === 'new'}
-						<a class="tile stat {cls}" href={to(kindHref(home?.arrived?.[0] ?? home?.new_seasons?.[0]))}>
+						<a class="tile stat {cls}" href={to(kindHref(recentArrived[0] ?? home?.new_seasons?.[0]))}>
 							{@render head('sparkle', 'pink', 'New for you')}
 							<span class="num">{n(recentNew)}</span>
-							<span class="sm">new in the last two weeks</span>
+							<span class="sm">{recentArrived.length && home?.new_seasons?.length ? 'arrivals and new seasons' : recentArrived.length ? 'arrived in the last two weeks' : home?.new_seasons?.length === 1 ? 'new season of a show you have' : 'new seasons of shows you have'}</span>
 						</a>
 					{:else if key === 'explore'}
 						<a class="tile stat {cls}" href={to('/explore')}>
@@ -960,6 +981,9 @@
 	.word { font: 700 24px / 1.1 var(--font-display); letter-spacing: -0.025em; }
 	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.stat > .num + .sm:not(:has(+ .sm)), .stat > .word + .sm:not(:has(+ .sm)) { min-height: 2.6em; }
+	/* Two lines that must both show: the row (cut with an ellipsis if long) and "and N more". */
+	.sm.two { display: block; }
+	.sm.two > span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.fail, .sm.fail { color: var(--fail); }
 	.warn, .sm.warn { color: var(--wait); }
 	.sk { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
@@ -1016,7 +1040,8 @@
 	.quiet { margin-top: auto; font: var(--t-callout); color: var(--text-muted); }
 
 	/* System: Needs attention. Each cause is one row that opens where it can be fixed; when all is well, what was checked. */
-	.count { flex: none; min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--fail); color: #fff; font: 700 12px / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	/* Dark theme's red and amber are light colours: the digits go dark there, so they can be read. */
+	.count { flex: none; min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--fail); color: light-dark(#fff, #17171b); font: 700 12px / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.count.wait { background: var(--wait); }
 	.fixes { list-style: none; margin: 10px -8px 0; padding: 0; display: flex; flex-direction: column; min-height: 0; }
 	.fixes li + li { box-shadow: inset 0 1px 0 var(--line); }
@@ -1038,7 +1063,7 @@
 	.passed li { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); font: var(--t-footnote); color: var(--text-muted); white-space: nowrap; }
 	.passed li :global(.icon) { color: var(--ok); }
 	.again { margin-top: 12px; }
-	.meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+	.meta { display: flex; align-items: center; gap: 6px; margin-top: 0; }
 
 	/* Two columns (a narrow window, a tablet, a phone): the big tiles keep their two-by-two, the tall one becomes one row,
 	   an odd last tile spans the row, and everything inside a tile takes its compact size (the rows are 132px here). */
@@ -1133,6 +1158,6 @@
 		.home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; }
 		.tile, .setup, .prompt, .flow, .passed li { border: 1px solid CanvasText; }
 		.life, .pb, .tone, .note .dot, .count, .ask-stack b { forced-color-adjust: none; }
-		.life:not(.pips), .pb { outline: 1px solid CanvasText; }
+		.life:not(.pips), .pb, .life.pips i.off { outline: 1px solid CanvasText; outline-offset: -1px; }
 	}
 </style>

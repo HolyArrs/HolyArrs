@@ -51,7 +51,7 @@ describe('home', () => {
 			health: [check('s1', 'error', 'source'), check('s2', 'error', 'source'), check('d', 'error', 'downloader'), check('w', 'warning', 'source')]
 		});
 		const rows = groupAttention(items);
-		expect(rows.map((r) => `${r.title} · ${r.reason}`)).toEqual(['2 Sources · not answering', 'Downloader · S not answering', '2 downloads failed · Gladiator, Everything Everywhere All at Once', 'Source · S has a problem']);
+		expect(rows.map((r) => `${r.title} · ${r.reason}`)).toEqual(['2 Sources · S, S not answering', 'Downloader · S not answering', '2 downloads failed · Gladiator, Everything Everywhere All at Once', 'Source · S has a problem']);
 		expect(rows.map((r) => r.items.length)).toEqual([2, 1, 2, 1]);
 		expect(rows[2]).toMatchObject({ tone: 'fail', word: 'Failed', href: '/downloads?show=problems.failed', action: 'Downloads' });
 		expect(rows.reduce((n, r) => n + r.items.length, 0)).toBe(items.length);
@@ -281,6 +281,14 @@ describe('System grid numbers', () => {
 		expect(partCount([{ state: 'enabled' }, { state: 'paused' }, { state: 'paused' }, { state: 'disabled' }], 2)).toEqual({ total: 4, on: 3, working: 1, off: 1, failing: 2 });
 		// A failing check on a part whose state still says enabled also takes it out of working.
 		expect(partCount([{ state: 'enabled' }, { state: 'enabled' }], 1)).toMatchObject({ on: 2, working: 1, failing: 1 });
+	});
+	it('matches failing checks to parts by name', () => {
+		// A lingering check for a part that is now off changes nothing.
+		expect(partCount([{ name: 'A', state: 'enabled' }, { name: 'B', state: 'disabled' }], ['B'])).toMatchObject({ on: 1, working: 1, failing: 0 });
+		// A paused part with its check is counted once.
+		expect(partCount([{ name: 'A', state: 'enabled' }, { name: 'B', state: 'paused' }], ['B'])).toMatchObject({ on: 2, working: 1, failing: 1 });
+		// A check on a part whose state still says enabled takes it out of working.
+		expect(partCount([{ name: 'A', state: 'enabled' }, { name: 'B', state: 'enabled' }], ['B'])).toMatchObject({ working: 1, failing: 1 });
 	});
 	it('leaves out a removed Downloader kept for its history', () => {
 		expect(partCount([{ name: 'SABnzbd', state: 'ok' }, { name: 'qBittorrent (removed 3)', state: 'disabled' }])).toEqual({ total: 1, on: 1, working: 1, off: 0, failing: 0 });
