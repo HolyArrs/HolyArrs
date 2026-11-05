@@ -31,7 +31,7 @@ def render(image: str, config: str, port: int, media: dict | None = None) -> byt
             raise ValueError("paths must be absolute /mnt paths without traversal")
     pool = PurePosixPath(config).parts[2]
     if pool in {"user", "user0", "remotes", "disks"} or len(PurePosixPath(config).parts) < 5:
-        raise ValueError("config needs a direct local pool path, for example /mnt/cache/appdata/holyarrs")
+        raise ValueError("config needs a direct local pool path, for example /mnt/<pool>/appdata/holyarrs")
     if any(v and _overlap(config, v) for v in media.values()):
         raise ValueError("config and media paths must not overlap")
     if not 1024 <= port <= 65535:

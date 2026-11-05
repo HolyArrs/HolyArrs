@@ -53,7 +53,12 @@ A template is being prepared; see [NAS packages](nas-packages.md). It sets
 `PUID=99` and `PGID=100` (Unraid's `nobody:users`) and `UMASK=022`, shown
 under the advanced view.
 
-- Put `/config` on a pool path such as `/mnt/cache/appdata/holyarrs`.
+- Put `/config` on a pool path such as `/mnt/<pool>/appdata/holyarrs`
+  (`<pool>` is your pool's name), or set the appdata share to Exclusive
+  access (Shares > appdata > Primary storage on one pool, Secondary storage
+  none; Unraid then shows it as an Exclusive share). HolyArrs refuses
+  `/mnt/user/appdata`, which is a FUSE path, and a pool path that does not
+  exist (it lands in memory).
 - The template offers optional `/movies`, `/tv`, `/music` and `/downloads`
   paths. For hardlinks, map one share holding all of them instead, from a
   disk or pool path. Do not use `/mnt/user` paths for that: hardlinks across

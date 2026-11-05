@@ -68,6 +68,8 @@ export function createSession(client: Client = defaultClient) {
 		ways: Way[];
 		/** The server started in safe mode: only the core runs. */
 		safeMode: boolean;
+		/** /config is not mapped to the host (first-run note). */
+		configUnmapped: boolean;
 		/** The shortest password the owner allows (a setting; 4 at least). */
 		minPassword: number;
 	}>({
@@ -87,6 +89,7 @@ export function createSession(client: Client = defaultClient) {
 		maxRating: '',
 		ways: ['password'],
 		safeMode: false,
+		configUnmapped: false,
 		minPassword: 12
 	});
 
@@ -95,11 +98,13 @@ export function createSession(client: Client = defaultClient) {
 		ways?: Way[];
 		safe_mode?: boolean;
 		min_password_length?: number;
+		config_unmapped?: boolean;
 	}
 	function tookState(st: AuthState) {
 		s.minPassword = Math.max(4, st.min_password_length ?? 12);
 		if (st.ways) s.ways = st.ways;
 		if (st.safe_mode !== undefined) s.safeMode = !!st.safe_mode;
+		s.configUnmapped = !!st.config_unmapped;
 	}
 
 	/** loadMinPassword reads the owner's shortest-password setting again. */

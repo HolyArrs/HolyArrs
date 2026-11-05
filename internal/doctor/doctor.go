@@ -16,11 +16,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/fsplain"
 	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -128,34 +131,44 @@ func Run(ctx context.Context, o Options) Report {
 	uid, gid := os.Geteuid(), os.Getegid()
 	appChecks(&r, o.Version, uid, gid)
 	configChecks(&r, o.ConfigDir, uid, gid, store.NetworkShare)
+	if o.ConfigDir != "" {
+		if lockProbe != nil {
+			lockChecks(&r, o.ConfigDir, lockProbe)
+		}
+		unmappedChecks(&r, o.ConfigDir, UnmappedConfig(o.ConfigDir))
+	}
 	db := o.DB
+	skipFolders := false
 	if db == nil && o.ConfigDir != "" {
 		if d, err := store.OpenReadOnly(o.ConfigDir); err == nil {
 			defer d.Close()
 			db = d
+			skipFolders = schemaChecks(&r, d)
 		} else if errors.Is(err, fs.ErrNotExist) {
 			r.add("Config folder", Warn, "no database yet, so no Library folders to check", "start HolyArrs once with this config folder")
 		} else {
 			// Usually permissions: the database or its -shm/-wal files
 			// cannot be opened by this user.
 			r.add("Config folder", Fail, "cannot open the database read-only, so no Library folders to check: "+err.Error(),
-				writeFix(o.ConfigDir, uid, gid, configOwner(o.ConfigDir)))
+				writeFix(o.ConfigDir, uid, gid, configOwner(o.ConfigDir), err))
 		}
 	}
 	budget := o.FolderBudget
 	if budget <= 0 {
 		budget = 20 * time.Second
 	}
-	folders, err := CheckFolders(ctx, db, o.SavePath, budget)
-	if err != nil {
-		r.add("Library and download folders", Warn, "could not read the folders from the database: "+err.Error(), "")
-	}
-	if len(folders) == 0 && err == nil {
-		r.add("Library and download folders", Warn, "no Library or download folders set yet", "add a Library folder in Settings")
-	}
-	for _, f := range folders {
-		c := f.Check(uid, gid)
-		r.add("Library and download folders", c.Status, c.Text, c.Fix)
+	if !skipFolders {
+		folders, err := CheckFolders(ctx, db, o.SavePath, budget)
+		if err != nil {
+			r.add("Library and download folders", Warn, "could not read the folders from the database: "+err.Error(), "")
+		}
+		if len(folders) == 0 && err == nil {
+			r.add("Library and download folders", Warn, "no Library or download folders set yet", "add a Library folder in Settings")
+		}
+		for _, f := range folders {
+			c := f.Check(uid, gid)
+			r.add("Library and download folders", c.Status, c.Text, c.Fix)
+		}
 	}
 	raw := o.MetadataURL
 	if raw == "" {
@@ -182,6 +195,29 @@ func Run(ctx context.Context, o Options) Report {
 	}
 	clockChecks(&r, now, os.Getenv("TZ"))
 	return r
+}
+
+// schemaChecks compares the database's schema with this build's. While the
+// server still sets up or updates the data (or the data is from a newer
+// HolyArrs) the folders cannot be read yet: it says so in one WARN and
+// returns true, so the folder checks are skipped.
+func schemaChecks(r *Report, db *sql.DB) bool {
+	know, _ := store.SchemaVersions()
+	have, err := store.SchemaVersion(db)
+	if err != nil {
+		have = 0 // no schema_migrations table yet: setup has barely started
+	}
+	switch {
+	case have < know:
+		r.add("Config folder", Warn, "the database is still being set up or updated, so Library folders were not checked",
+			"if HolyArrs is starting, run doctor again in a few seconds; if it is stopped, start it so the update can finish")
+		return true
+	case have > know:
+		r.add("Config folder", Warn, (&store.NewerDataError{Have: have, Know: know}).Error(),
+			"run the newer HolyArrs again, or restore a backup made by this version")
+		return true
+	}
+	return false
 }
 
 // proxyNames are the usual environment proxy settings. HolyArrs ignores them
@@ -250,12 +286,24 @@ func appChecks(r *Report, version string, uid, gid int) {
 		}
 		st, fix := OK, ""
 		if uid == 0 {
-			st, fix = Warn, "running as root: set PUID and PGID to the owner of your media folders"
+			st, fix = Warn, "running as root: set PUID and PGID to the owner of your media folders (in rootless Docker or Podman, root in the container is your own user on the host, so this is expected there)"
 		}
 		r.add(s, st, "running as "+ids(uid, gid)+", groups "+groups+", umask "+umask(), fix)
 	}
 	inside := runas.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	r.add(s, OK, "in a container: "+yesNo(inside), "")
+	if t := selinuxType(); t != "" {
+		r.add(s, OK, "SELinux: on ("+t+")", "")
+	}
+}
+
+// selinuxType is this process's SELinux type ("container_t"), or "".
+func selinuxType() string {
+	b, err := os.ReadFile("/proc/self/attr/current")
+	if err != nil {
+		return ""
+	}
+	return fsplain.SELinuxType(string(b))
 }
 
 func yesNo(b bool) string {
@@ -283,14 +331,30 @@ func parseUmask(status string) string {
 	return "unknown"
 }
 
-// writeFix is the plain fix for a folder this user cannot write to.
-func writeFix(path string, uid, gid int, owner string) string {
+// writeFix is the plain fix for a folder this user cannot write to. err is
+// why the write failed (nil when unknown): a read-only mount or a folder
+// whose owner is already right does not get chown advice.
+func writeFix(path string, uid, gid int, owner string, err error) string {
 	if uid < 0 {
 		return "give the current user write access to " + path
+	}
+	se := selinuxType() != ""
+	switch {
+	case errors.Is(err, syscall.EROFS):
+		return "mounted read-only: remove :ro from the volume for " + path + " if HolyArrs should write there (changing the owner or PUID/PGID can't help a read-only mount)"
+	case owner == ids(uid, gid) && (errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM)):
+		fix := "the owner of " + path + " is already " + owner + ", so something else blocks writes: a security label (SELinux), an ACL, or the NAS's share permissions"
+		if se {
+			fix += "; with SELinux add :Z to the /config volume and :z to shared folders (never on system or home folders, and never turn SELinux off)"
+		}
+		return fix
 	}
 	fix := fmt.Sprintf("not writable by %s: run chown -R %s on the host folder mounted at %s, or set PUID/PGID to the folder's owner", ids(uid, gid), ids(uid, gid), path)
 	if owner != "" {
 		fix += " (" + owner + ")"
+	}
+	if se {
+		fix += " (or SELinux labels: :Z on /config, :z on shared folders)"
 	}
 	return fix
 }
@@ -308,10 +372,14 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 		text += ", owner " + owner
 	}
 	r.add(s, OK, text, "")
-	if writable(dir) {
+	if err := writable(dir); err == nil {
 		r.add(s, OK, "writable", "")
 	} else {
-		r.add(s, Fail, "not writable", writeFix(dir, uid, gid, owner))
+		text := "not writable"
+		if why := fsplain.Why(err); why != "" {
+			text += ": " + why
+		}
+		r.add(s, Fail, text, writeFix(dir, uid, gid, owner, err))
 	}
 	if free := importer.FreeSpace(dir); free >= 0 {
 		if free < library.MinFreeSpace {
@@ -320,25 +388,102 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 			r.add(s, OK, "free space "+Size(free), "")
 		}
 	}
-	if on, kind, err := share(dir); err != nil {
+	on, kind, err := share(dir)
+	switch {
+	case err != nil:
 		r.add(s, Warn, "could not tell whether it is a local disk: "+err.Error(), "")
-	} else if on {
-		r.add(s, Fail, "on a network share ("+kind+"); the database must be on a local disk",
-			"move the config folder to a local disk (for example appdata on a cache drive), not NFS or SMB")
-	} else {
-		r.add(s, OK, "on a local disk (the database must be local)", "")
+	case !on:
+		text := "on a local disk (the database must be local)"
+		if fs := store.MountType(dir); fs != "" {
+			text += ", mount type " + fs // for support: names the filesystem
+		}
+		r.add(s, OK, text, "")
+	case store.InMemory(kind):
+		if store.ConfigInMemoryAllowed() {
+			r.add(s, Warn, "in memory ("+kind+"), kept there because "+store.EnvConfigInMemory+" is set; everything in it is lost at the next restart", "put /config on a disk and remove "+store.EnvConfigInMemory)
+		} else {
+			r.add(s, Fail, "in memory ("+kind+"); everything in it is lost at the next restart, so HolyArrs will not start",
+				"put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists)")
+		}
+	case kind == "fakeowner" && store.DesktopFolderAllowed():
+		r.add(s, Warn, "a Docker Desktop folder share, used because "+store.EnvAllowDesktopFolder+" is set; file locks there may not work", store.ShareFix(kind))
+	default:
+		text := "on a shared or network folder (" + kind + "); the database must be on a local disk"
+		if fs := store.MountType(dir); fs != "" {
+			if label, _ := fsplain.Family(fs); label != "" {
+				text = "on " + label + " (" + fs + "); the database must be on a local disk"
+			}
+		}
+		r.add(s, Fail, text, store.ShareFix(kind))
 	}
 }
 
+// lockChecks reports whether file locks work in the config folder. It only
+// reports: start-up never refuses on it.
+func lockChecks(r *Report, dir string, probe func(string) error) {
+	const s = "Config folder"
+	if err := probe(dir); err != nil {
+		r.add(s, Warn, "file locks do not work in the config folder ("+err.Error()+"), so the database could be damaged",
+			"use a named volume for /config (-v holyarrs-config:/config), or a local disk")
+		return
+	}
+	r.add(s, OK, "file locks work", "")
+}
+
+// unmappedChecks reports a /config that is not mapped to a folder on the
+// host: kind is "anonymous" or "none" (UnmappedConfig); "" adds nothing.
+func unmappedChecks(r *Report, dir, kind string) {
+	if kind == "" {
+		return
+	}
+	r.add("Config folder", Fail, UnmappedText(dir, kind), UnmappedFix(dir))
+}
+
+// UnmappedText says in one line that dir is not mapped, for doctor, the log
+// and the health check.
+func UnmappedText(dir, kind string) string {
+	where := "an anonymous volume"
+	if kind == "none" {
+		where = "the container itself"
+	}
+	return dir + " is not mapped to a folder or named volume, so it lives in " + where + " and everything is lost when the container is removed or recreated"
+}
+
+// UnmappedFix is how to map it without losing what is there.
+func UnmappedFix(dir string) string {
+	return "stop the container first (docker stop <container>), then copy the data out with docker cp <container>:" + dir + " ./holyarrs-config (this works on a stopped container), then map " + dir + " to a host folder or a named volume (-v holyarrs-config:" + dir + ") and copy it back in"
+}
+
+// UnmappedConfig tells whether dir, inside a container, is not mapped to
+// the host: "anonymous", "none", or "" (mapped, not in a container, or
+// unsure).
+func UnmappedConfig(dir string) string {
+	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
+	if !runas.InContainer(exists, os.Getenv) {
+		return ""
+	}
+	b, err := os.ReadFile("/proc/self/mountinfo")
+	if err != nil {
+		return ""
+	}
+	if abs, err := filepath.Abs(dir); err == nil {
+		dir = abs
+		if r, err := filepath.EvalSymlinks(abs); err == nil {
+			dir = r
+		}
+	}
+	return fsplain.Unmapped(string(b), filepath.ToSlash(dir))
+}
+
 // writable creates and removes a temporary file in dir.
-func writable(dir string) bool {
+func writable(dir string) error {
 	f, err := os.CreateTemp(dir, ".holyarrs-doctor-*")
 	if err != nil {
-		return false
+		return err
 	}
 	_ = f.Close()
 	_ = os.Remove(f.Name())
-	return true
+	return nil
 }
 
 // Size is a byte count in plain units.

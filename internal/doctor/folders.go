@@ -62,7 +62,7 @@ func (f Folder) Check(uid, gid int) Check {
 		if f.Owner != "" {
 			c.Text += " (owner " + f.Owner + ")"
 		}
-		c.Fix = writeFix(f.Path, uid, gid, f.Owner)
+		c.Fix = writeFix(f.Path, uid, gid, f.Owner, nil)
 	case "no_hardlink":
 		c.Status = Warn
 		c.Text += "; no hardlinks from downloads, files will be copied"
@@ -71,7 +71,7 @@ func (f Folder) Check(uid, gid int) Check {
 		c.Status = Warn
 		c.Fix = "free up space on the disk that holds " + f.Path
 	case "slow":
-		c.Status, c.Text = Warn, f.Role+" "+f.Path+": did not answer in time, skipped (often a slow network share)"
+		c.Status, c.Text = Warn, f.Role+" "+f.Path+": did not answer in time, skipped (often a sleeping disk or a slow network share)"
 		c.Fix = "run holyarrs doctor to check it without the start-up time limit"
 	}
 	return c
