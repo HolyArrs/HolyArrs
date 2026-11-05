@@ -85,6 +85,10 @@ To let disks sleep longer:
 - Put `/config` and the download folder on an SSD or a cache pool, not on the
   media disks. On Unraid, use a pool path for `/config` and the downloads
   share.
+- If `/config` shares a pool with the downloads, keep at least 1 GB free on it.
+  HolyArrs shows a health warning when that disk drops under 1 GB, and skips
+  a backup that would not fit, because once the disk is full it cannot save
+  anything.
 - On Unraid, the Cache Directories plugin keeps folder listings in memory, so
   the rescan and folder checks can be answered without waking a disk.
 - Turn the rescan off on the Schedules page, or set it to 7 days. Files you add
