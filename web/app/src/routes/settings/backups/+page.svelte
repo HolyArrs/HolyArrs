@@ -189,14 +189,21 @@
 		<SettingsCard id="backup-key" title="Master key" description="Backups do not hold the key that opens saved passwords and API keys. Keep a copy of it.">
 			{#if keyKit.needed}
 				<p class="notice warn" role="status">
-					<Icon name="info" size={18} /><span>No key kit saved for this key yet. Without it, a backup's saved passwords cannot be opened on a new machine.</span>
+					<Icon name="info" size={18} /><span
+						>No key kit saved for this key yet. Without it, a backup's saved passwords cannot be opened on a new machine.{#if session.s.role !== 'owner'}
+							Only the owner can download it; ask them to.{/if}</span
+					>
 				</p>
 			{/if}
 			<div class="keyrow">
 				<span class="xs muted">Key fingerprint <span class="mono">{keyKit.fingerprint}</span></span>
-				<Button icon="key" type="button" onclick={downloadKeyKit} disabled={gettingKit} aria-busy={gettingKit}>Download key kit</Button>
+				{#if session.s.role === 'owner'}
+					<Button icon="key" type="button" onclick={downloadKeyKit} disabled={gettingKit} aria-busy={gettingKit}>Download key kit</Button>
+				{/if}
 			</div>
-			<p class="xs muted keynote">To put it back, rename the file to holyarrs.key and place it in the config folder.</p>
+			{#if session.s.role === 'owner'}
+				<p class="xs muted keynote">To put it back, rename the file to holyarrs.key and place it in the config folder.</p>
+			{/if}
 		</SettingsCard>
 	{/if}
 

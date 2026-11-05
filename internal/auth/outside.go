@@ -132,6 +132,10 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 		ProviderEmby:       a.way(ctx, ProviderEmby),
 		"plex_owner":       a.plexOwner(ctx),
 		keyAllowedHosts:    a.savedHostList(),
+		// For the skip card: the address this browser shows up as, and
+		// listed networks that look like a container gateway.
+		"seen_address":     a.seenAddress(r),
+		"gateway_networks": gatewayNets(nets, a.seenAddress(r)),
 	})
 }
 

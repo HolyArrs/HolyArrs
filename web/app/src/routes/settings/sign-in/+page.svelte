@@ -23,6 +23,8 @@
 	let savingSkip = $state(false);
 	// Networks where sign-in may be skipped, one per line.
 	let nets = $state('');
+	let seenAddress = $state('');
+	let gatewayNets = $state<string[]>([]);
 	let savingNets = $state(false);
 	let hostNames = $state('');
 	let savingHosts = $state(false);
@@ -50,6 +52,8 @@
 	interface SignInSettings {
 		skip_login_local_network: boolean;
 		local_networks?: string[];
+		seen_address?: string;
+		gateway_networks?: string[];
 		allowed_hosts?: string[];
 		require_two_factor_admins: boolean;
 		min_password_length: number;
@@ -215,6 +219,8 @@
 	function took(r: SignInSettings) {
 		skipLocal = r.skip_login_local_network;
 		nets = (r.local_networks ?? []).join('\n');
+		seenAddress = r.seen_address ?? '';
+		gatewayNets = r.gateway_networks ?? [];
 		hostNames = (r.allowed_hosts ?? []).join('\n');
 		requireAdmins = r.require_two_factor_admins;
 		minLength = r.min_password_length ?? 12;
@@ -409,6 +415,15 @@
 				</Field>
 				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save networks</Button>
 			</form>
+			{#if seenAddress}<p class="hint" data-testid="seen-address">HolyArrs sees this browser as <span class="mono">{seenAddress}</span>.</p>{/if}
+			{#if gatewayNets.length}
+				<p class="notice warn" role="status" data-testid="gateway-warn">
+					<Icon name="info" size={18} /><span
+						>{gatewayNets.join(', ')} {gatewayNets.length === 1 ? 'looks' : 'look'} like a Docker or Podman gateway address. If every device shows up as that address, anyone who can reach
+						HolyArrs opens it as the owner. Check the address above from another device; if it is the same, remove this entry.</span
+					>
+				</p>
+			{/if}
 	</SettingsCard>
 
 	<SettingsCard id="twofactor-card" title="Two-factor sign-in">

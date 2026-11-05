@@ -21,10 +21,11 @@ Settings > Sign-in > Local network lets devices on your own networks open HolyAr
 - It works only for the networks listed under the switch, one per line: a range like `192.168.1.0/24` or `fd00::/8`, or one address like `192.168.1.20`. Up to 32. Anything else answers 400 naming the entry.
 - It cannot be turned on with an empty list, and the list cannot be emptied while it is on.
 - Behind a reverse proxy, the address checked is the one the proxy forwards, and only when the proxy is in `HOLYARRS_TRUSTED_PROXIES`.
+- The card shows the address HolyArrs sees for your browser. Some setups (Docker Desktop, rootless Docker or Podman, Kubernetes NodePort) make every device show up as one gateway address such as `172.17.0.1`, `10.88.0.1`, `10.0.2.2` or `192.168.65.x`. Listing that address lets anyone who can reach HolyArrs in as the owner, so the card warns when a listed entry looks like one. Open the page from a second device: if it shows the same address, leave this off.
 - Making API keys, changing sign-in settings, reading or replacing secrets and restoring backups still need a password sign-in.
 - Installs that had it on before the list existed were given the ranges it trusted then (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`, loopback and link-local), so nothing broke on the upgrade. Narrow the list to your own network.
 
-API: `GET /api/v1/auth/settings` shows `skip_login_local_network` and `local_networks`; `PUT /api/v1/auth/settings` with `{"skip_login_local_network": true, "local_networks": ["192.168.1.0/24"]}` changes them (owner only).
+API: `GET /api/v1/auth/settings` shows `skip_login_local_network`, `local_networks`, `seen_address` and `gateway_networks`; `PUT /api/v1/auth/settings` with `{"skip_login_local_network": true, "local_networks": ["192.168.1.0/24"]}` changes them (owner only).
 
 ## Single sign-on and trusted proxy sign-in
 

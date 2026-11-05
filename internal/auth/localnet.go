@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"strings"
 )
 
@@ -109,4 +110,80 @@ func (a *Auth) isLocal(remote string) bool {
 		}
 	}
 	return false
+}
+
+// containerNets are networks Docker, Podman and Docker Desktop hand out by
+// default. Behind them every browser can show up as one gateway address.
+var containerNets = func() []*net.IPNet {
+	var out []*net.IPNet
+	for _, s := range []string{"172.17.0.0/16", "10.88.0.0/16", "10.0.2.0/24", "192.168.65.0/24"} {
+		_, n, _ := net.ParseCIDR(s)
+		out = append(out, n)
+	}
+	return out
+}()
+
+// gatewayLike says whether an address looks like a container gateway:
+// 172.x.0.1 or 10.88.0.1 bridges, 10.0.2.2 (rootless) or Docker Desktop's
+// 192.168.65.x.
+func gatewayLike(ip net.IP) bool {
+	v4 := ip.To4()
+	if v4 == nil {
+		return false
+	}
+	switch {
+	case v4[0] == 192 && v4[1] == 168 && v4[2] == 65:
+		return true
+	case v4[0] == 10 && v4[1] == 0 && v4[2] == 2 && v4[3] == 2:
+		return true
+	case (v4[0] == 172 && v4[1]&0xf0 == 16 || v4[0] == 10 && v4[1] == 88) && v4[2] == 0 && v4[3] == 1:
+		return true
+	}
+	return false
+}
+
+// gatewayNets lists the entries that look like a container network, or
+// that hold self (the address this browser shows up as) when self looks
+// like a gateway. It only feeds a warning; nothing is refused.
+func gatewayNets(list []string, self string) []string {
+	out := []string{}
+	me := net.ParseIP(strings.Trim(self, "[]"))
+	for _, e := range list {
+		n, err := parseNet(e)
+		if err != nil {
+			continue
+		}
+		ones, bits := n.Mask.Size()
+		hit := me != nil && gatewayLike(me) && n.Contains(me)
+		for _, c := range containerNets {
+			if cOnes, cBits := c.Mask.Size(); cBits == bits && ones >= cOnes && c.Contains(n.IP) {
+				hit = true
+			}
+		}
+		if hit {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// seenAddress is the address the local-network check reads for this
+// request: the forwarded client behind a trusted proxy, otherwise the peer.
+func (a *Auth) seenAddress(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	peer := net.ParseIP(strings.Trim(host, "[]"))
+	if peer == nil || !a.trustedProxy(peer) || r.Header.Get("Forwarded") != "" {
+		return host
+	}
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		return strings.TrimSpace(parts[len(parts)-1])
+	}
+	if real := strings.TrimSpace(r.Header.Get("X-Real-IP")); real != "" {
+		return real
+	}
+	return host
 }
