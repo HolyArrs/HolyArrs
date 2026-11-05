@@ -955,17 +955,38 @@ func protectedKey(k string) bool {
 	return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:")
 }
 
+// accountKeep is how long a real account's count is kept after its last
+// failure, so a quiet spell between guessing rounds does not hand back free
+// guesses. Its wait still ends after MaxBackoff; only the level is kept.
+const accountKeep = 24 * time.Hour
+
+// accountPrefixes are fail keys that name a user id, so their number is
+// bounded by the users.
+var accountPrefixes = []string{"2fa:", "reauth:", "pw:", "code:", "sso-proof:", "sso-test:"}
+
+// accountKey says whether a fail record belongs to a real account; the caller
+// holds a.mu.
+func (a *Auth) accountKey(k string, now time.Time) bool {
+	for _, p := range accountPrefixes {
+		if strings.HasPrefix(k, p) {
+			return true
+		}
+	}
+	return strings.HasPrefix(k, "name:") && a.isRealName(k, now)
+}
+
 // pruneFails frees room in a.fails; the caller holds a.mu. Records whose wait
-// is over go first. If the map is still full (a flood of fresh addresses),
-// the oldest address records go. Per-name records with failures inside their
-// window are never evicted: there are few real names, and flushing them would
-// end the wait that protects an account. When names fill their share,
-// noteFail stops adding new ones instead, so memory stays bounded and a flood
-// of made-up names cannot remove the owner's wait.
+// is over go first; a real account's record only after accountKeep. If the
+// map is still full (a flood of fresh addresses), the oldest address records
+// go. Per-name and account records are never evicted that way: there are few
+// real names, and flushing them would end the wait that protects an account.
+// When names fill their share, noteFail stops adding new ones instead, so
+// memory stays bounded and a flood of made-up names cannot remove the
+// owner's wait.
 func (a *Auth) pruneFails(now time.Time) {
 	a.lastPruneAt = now
 	for k, f := range a.fails {
-		if now.Sub(f.last) > MaxBackoff {
+		if idle := now.Sub(f.last); idle > MaxBackoff && (idle > accountKeep || !a.accountKey(k, now)) {
 			delete(a.fails, k)
 		}
 	}
@@ -978,7 +999,7 @@ func (a *Auth) pruneFails(now time.Time) {
 	}
 	var addrs []kf
 	for k, f := range a.fails {
-		if !protectedKey(k) {
+		if !protectedKey(k) && !a.accountKey(k, now) {
 			addrs = append(addrs, kf{k, f.last})
 		}
 	}

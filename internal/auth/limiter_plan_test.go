@@ -172,3 +172,90 @@ func TestOutsideTwoFactorNotHeldByLocalNameWait(t *testing.T) {
 		}
 	}
 }
+
+// flood notes n failures, each from a fresh /64 under a made-up name; the
+// caller holds a.mu.
+func flood(a *Auth, tag string, n int, step time.Duration, clock *fakeClock) {
+	for i := 0; i < n; i++ {
+		if step > 0 {
+			clock.add(step)
+		}
+		a.noteFail("ip:2001:db8:"+strconv.FormatInt(int64(i/65536), 16)+":"+strconv.FormatInt(int64(i%65536), 16)+"::/64", "name:made-up-"+tag+"-"+strconv.Itoa(i))
+	}
+}
+
+// A real account's name count survives quiet periods and floods of made-up
+// names, so each cycle of guessing does not start again from free guesses.
+func TestPruneKeepsAccountCounts(t *testing.T) {
+	f := setup(t, Options{})
+	setupOwner(t, f, client(t))
+	a := f.a
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for cycle := 0; cycle < 4; cycle++ {
+		free := 0
+		for g := 0; g < 25; g++ {
+			if w := a.waitFor("name:luis", freeUserTries); w > 0 {
+				f.clock.add(w)
+			}
+			if f := a.fails["name:luis"]; f == nil || f.n < freeUserTries {
+				free++
+			}
+			a.noteFail("ip:198.51.100."+strconv.Itoa(g+1), "name:luis")
+		}
+		if cycle > 0 && free > 0 {
+			t.Errorf("cycle %d: %d free guesses again", cycle+1, free)
+		}
+		f.clock.add(16 * time.Minute)
+		flood(a, strconv.Itoa(cycle), 5100, 0, f.clock)
+		if r := a.fails["name:luis"]; r == nil || r.n < 25 {
+			t.Fatalf("cycle %d: owner's name count wiped by the flood: %+v", cycle+1, r)
+		}
+	}
+}
+
+// Per-account confirm, password-change and code counts survive floods.
+func TestFloodKeepsReauthAndCodeCounts(t *testing.T) {
+	f := setup(t, Options{})
+	setupOwner(t, f, client(t))
+	a := f.a
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	keys := []string{"reauth:1", "pw:1", "code:1"}
+	for i := 0; i < 20; i++ {
+		a.noteFail(keys...)
+	}
+	f.clock.add(time.Minute)
+	flood(a, "a", 5000, 10*time.Millisecond, f.clock)
+	flood(a, "b", 3000, 10*time.Millisecond, f.clock)
+	for _, k := range keys {
+		if a.fails[k] == nil || a.waitFor(k, freeTries) == 0 {
+			t.Errorf("%s: count lost to the flood", k)
+		}
+	}
+}
+
+// Made-up names still go after their wait, and a big flood stays bounded.
+func TestMadeUpNamesStillPruned(t *testing.T) {
+	f := setup(t, Options{})
+	setupOwner(t, f, client(t))
+	a := f.a
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for i := 0; i < 100; i++ {
+		a.noteFail("name:nobody-" + strconv.Itoa(i))
+	}
+	f.clock.add(16 * time.Minute)
+	a.pruneFails(f.clock.t)
+	for i := 0; i < 100; i++ {
+		if a.fails["name:nobody-"+strconv.Itoa(i)] != nil {
+			t.Fatal("made-up name kept after its wait")
+		}
+	}
+	for i := 0; i < 50000; i++ {
+		a.noteFail("ip:2001:db8:"+strconv.FormatInt(int64(i/65536), 16)+":"+strconv.FormatInt(int64(i%65536), 16)+"::/64", "name:big-"+strconv.Itoa(i))
+		if len(a.fails) > 4*maxTracked {
+			t.Fatalf("table grew to %d", len(a.fails))
+		}
+	}
+}
