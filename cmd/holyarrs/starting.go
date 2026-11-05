@@ -72,7 +72,7 @@ func publicReason(err error) string {
 	case errors.Is(err, store.ErrNotWritable) && (errors.Is(err, syscall.ENOSPC) || errors.Is(err, syscall.EDQUOT)):
 		return "the disk that holds the config folder is full or over its quota. Free some space and restart. Nothing was changed."
 	case errors.Is(err, store.ErrNotWritable):
-		return "the config folder cannot be written. Check that the /config volume is not mounted read-only (:ro) and that PUID/PGID own the folder on the host, then restart. Nothing was changed."
+		return "the config folder cannot be written. Check that the /config volume is not mounted read-only (:ro) and that its files belong to PUID/PGID. When the container starts as root (the default, with no user: setting), HolyArrs gives the files to PUID/PGID by itself, so a restart is often enough; a folder on the host can also be fixed with chown -R. Then restart. Nothing was changed."
 	case errors.Is(err, store.ErrNoSpace):
 		return "not enough free disk space to update safely. Free some space and restart (or set " + store.SkipSpaceCheckEnv + "=yes to skip this check). Nothing was changed."
 	case errors.Is(err, store.ErrBackup):

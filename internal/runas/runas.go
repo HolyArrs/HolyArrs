@@ -310,3 +310,25 @@ func SwitchFailed(uid, gid int, err error) error {
 		"or run the container as that user with user: \"%d:%d\". HolyArrs will not run as root",
 		uid, gid, err, uid, gid)
 }
+
+// ownFiles are HolyArrs's own files in the config folder (the databases with
+// their -wal and -shm, the master key, the logs). Files copied in by root
+// (docker cp into a named volume, sudo cp, a root backup tool) keep root as
+// owner while the folder itself is right, so these are checked too.
+var ownFiles = []string{
+	"holyarrs.db", "holyarrs.db-wal", "holyarrs.db-shm",
+	"holyarrs-events.db", "holyarrs-events.db-wal", "holyarrs-events.db-shm",
+	"holyarrs.key", "logs", "logs/holyarrs.log",
+}
+
+// OwnFilesNeedFix reports whether any of HolyArrs's own files that exists is
+// not owned by uid:gid. owner returns ok false for a file that is not there.
+// A normal start costs a few stats.
+func OwnFilesNeedFix(owner func(name string) (uid, gid int, ok bool), uid, gid int) bool {
+	for _, name := range ownFiles {
+		if u, g, ok := owner(name); ok && NeedsOwnerFix(u, g, uid, gid) {
+			return true
+		}
+	}
+	return false
+}
