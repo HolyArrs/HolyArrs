@@ -70,9 +70,10 @@ const checkFix: Record<string, string> = {
 	library_folder: '/settings/library-folders',
 	disk_space: '/settings/library-folders',
 	backups: '/settings/backups',
-	update: '/settings/this-app'
+	update: '/settings/this-app',
+	config_disk: '/settings/this-app'
 };
-const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update' };
+const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update', config_disk: 'Config folder' };
 
 /** checkTitle names a health check row without saying the same word twice ("Backups", not "Backups Backups"). */
 function checkTitle(c: Pick<HealthCheck, 'kind' | 'subject'>): string {

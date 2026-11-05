@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -111,6 +112,9 @@ type Manager struct {
 	// KeyFromEnv says the key is a named file (HOLYARRS_MASTER_KEY_FILE)
 	// the person looks after, so the card does not ask for a key kit.
 	KeyFromEnv bool
+	// FreeSpace reads free bytes on a disk (nil means importer.FreeSpace;
+	// -1 unknown).
+	FreeSpace func(dir string) int64
 
 	mu      sync.Mutex
 	lastErr string // the last scheduled backup's error, "" after a good one
@@ -462,12 +466,40 @@ func (m *Manager) Tick(ctx context.Context) error {
 	if !m.due(p) {
 		return nil
 	}
+	if err := m.roomFor(); err != nil {
+		return err
+	}
 	b, err := m.Create(ctx, KindScheduled)
 	if err != nil {
 		return err
 	}
 	log.Printf("backup: made %s (%d bytes)", b.Name, b.Size)
 	return m.Prune(p)
+}
+
+// roomFor refuses a scheduled backup that clearly would not fit: it needs a
+// copy of the databases and the zip, so about twice their size. Unknown free
+// space never refuses.
+func (m *Manager) roomFor() error {
+	free := m.FreeSpace
+	if free == nil {
+		free = importer.FreeSpace
+	}
+	n := free(m.Dir)
+	if n < 0 {
+		return nil
+	}
+	var need int64
+	for _, f := range []string{store.MainFile, store.MainFile + "-wal", store.EventsFile, store.EventsFile + "-wal"} {
+		if st, err := os.Stat(filepath.Join(m.Dir, f)); err == nil {
+			need += st.Size()
+		}
+	}
+	need *= 2
+	if n >= need {
+		return nil
+	}
+	return fmt.Errorf("Not enough free space: it needs about %d MB but only %d MB are free on the disk that holds the config folder. Free some space there; HolyArrs tries again in ten minutes", (need>>20)+1, n>>20)
 }
 
 // Pass checks once whether a backup is due (the supervisor runs it every

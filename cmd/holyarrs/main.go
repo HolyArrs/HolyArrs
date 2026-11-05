@@ -694,7 +694,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
 	ol.Register(q)
 	q.ProbeSchedule(lists.KindSync, ol.ProbeSync)
-	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, Publish: func(topic string, data any) { hub.Publish(topic, data) },
+	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)
 			return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed(),

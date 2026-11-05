@@ -7,7 +7,8 @@ const kinds: Record<HealthCheck['kind'], string> = {
 	source: 'Source',
 	downloader: 'Downloader',
 	backups: 'Backups',
-	update: 'Update'
+	update: 'Update',
+	config_disk: 'Config folder space'
 };
 
 /** checkLabel names what a check looks at. */

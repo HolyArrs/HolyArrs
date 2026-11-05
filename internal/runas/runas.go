@@ -310,3 +310,57 @@ func SwitchFailed(uid, gid int, err error) error {
 		"or run the container as that user with user: \"%d:%d\". HolyArrs will not run as root",
 		uid, gid, err, uid, gid)
 }
+
+// ownFiles are HolyArrs's own files in the config folder (the databases with
+// their -wal and -shm, the master key, the logs). Files copied in by root
+// (docker cp into a named volume, sudo cp, a root backup tool) keep root as
+// owner while the folder itself is right, so these are checked too.
+var ownFiles = []string{
+	"holyarrs.db", "holyarrs.db-wal", "holyarrs.db-shm",
+	"holyarrs-events.db", "holyarrs-events.db-wal", "holyarrs-events.db-shm",
+	"holyarrs.key", "logs", "logs/holyarrs.log",
+}
+
+// OwnFilesNeedFix reports whether any of HolyArrs's own files that exists is
+// not owned by uid:gid. owner returns ok false for a file that is not there.
+// A normal start costs a few stats.
+func OwnFilesNeedFix(owner func(name string) (uid, gid int, ok bool), uid, gid int) bool {
+	for _, name := range ownFiles {
+		if u, g, ok := owner(name); ok && NeedsOwnerFix(u, g, uid, gid) {
+			return true
+		}
+	}
+	return false
+}
+
+// ownerOnFolder is the owner lookup for OwnFilesNeedFix. Like the walk, it
+// leaves out mount points inside the folder (skip) and files on another
+// filesystem than the folder (dev): the walk never changes those, so they
+// must not start it either, or every start would walk all of /config.
+func ownerOnFolder(stat func(name string) (uid, gid int, dev uint64, ok bool), dev uint64, skip map[string]bool) func(string) (int, int, bool) {
+	return func(name string) (int, int, bool) {
+		if skip[name] {
+			return 0, 0, false
+		}
+		u, g, d, ok := stat(name)
+		if !ok || d != dev {
+			return 0, 0, false
+		}
+		return u, g, true
+	}
+}
+
+// fixWarning is the warning after a failed owner fix. When the folder itself
+// already belonged to uid:gid (topRight), only some of HolyArrs's own files
+// were wrong, so the advice names those files, not the folder's owner.
+func fixWarning(dir string, uid, gid int, err error, owner int, topRight bool, uidMap, gidMap, selinux string) string {
+	if !topRight || errors.Is(err, syscall.EROFS) {
+		return ownerWarning(dir, uid, gid, err, owner, uidMap, gidMap, selinux)
+	}
+	msg := fmt.Sprintf("some of HolyArrs's files in %s belong to another user and could not be given to %d:%d (%v). "+
+		"If HolyArrs cannot write them, fix their owner on the NAS or host (a share with root_squash or SMB refuses it from here)", dir, uid, gid, err)
+	if selinux != "" {
+		msg += "; with SELinux on, add :Z to the /config volume"
+	}
+	return msg
+}

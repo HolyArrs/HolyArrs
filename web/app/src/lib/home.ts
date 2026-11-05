@@ -95,6 +95,7 @@ const healthWords: Record<HealthCheck['kind'] | 'trailers', { one: string; many:
 	downloader: { one: 'Downloader', many: 'Downloaders', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
 	backups: { one: 'Backups', many: 'Backups', error: ['not being made', 'not being made'], warning: ['getting old', 'getting old'] },
 	update: { one: 'HolyArrs update', many: 'HolyArrs updates', error: ['check failed', 'check failed'], warning: ['waiting', 'waiting'] },
+	config_disk: { one: 'Config folder', many: 'Config folder', error: ['almost out of space', 'almost out of space'], warning: ['running low on space', 'running low on space'] },
 	trailers: { one: 'Trailers', many: 'Trailers', error: ['not loading', 'not loading'], warning: ['lookups failing', 'lookups failing'] }
 };
 

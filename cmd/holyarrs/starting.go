@@ -85,7 +85,7 @@ func publicReason(err error) string {
 	case errors.Is(err, store.ErrNotWritable) && (errors.Is(err, syscall.ENOSPC) || errors.Is(err, syscall.EDQUOT)):
 		return "the disk that holds the config folder is full or over its quota. Free some space and restart. Nothing was changed."
 	case errors.Is(err, store.ErrNotWritable):
-		return "the config folder cannot be written. Check that the /config volume is not mounted read-only (:ro) and that PUID/PGID own the folder on the host, then restart. Nothing was changed."
+		return "the config folder cannot be written. Check that the /config volume is not mounted read-only (:ro) and that its files belong to PUID/PGID. When the container starts as root (the default), HolyArrs already tried to give them to PUID/PGID before this page showed, so a plain restart will not help: on a NAS share (NFS or SMB) fix the owner or the share's permissions on the NAS, or set PUID/PGID to the user that owns the folder there; a folder on the host can be fixed with chown -R. With a user: setting HolyArrs does not change owners; remove it to let HolyArrs fix them at the next start. Then restart. Nothing was changed."
 	case errors.Is(err, store.ErrNoSpace):
 		return "not enough free disk space to update safely. Free some space and restart (or set " + store.SkipSpaceCheckEnv + "=yes to skip this check). Nothing was changed."
 	case errors.Is(err, store.ErrBackup):

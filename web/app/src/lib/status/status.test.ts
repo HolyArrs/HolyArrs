@@ -58,6 +58,11 @@ describe('status rows', () => {
 		expect(groupRows(rows).map((g) => g.label)).toEqual(['Storage', 'Updates']);
 	});
 
+	it('lists free space on the config disk, so a member sent here from Home sees it', () => {
+		const rows = buildRows({ checks: [{ key: 'config_disk', kind: 'config_disk', subject: 'Config folder', state: 'error', message: 'Only 100 MB are free' } as never] });
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason])).toEqual([['Config folder', 'library', 'fail', 'Only 100 MB are free']]);
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});
