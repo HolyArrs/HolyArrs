@@ -208,6 +208,14 @@ test('make a backup and see it listed', async () => {
 	await expect(page.getByText('Backups: Careful.')).toBeVisible();
 });
 
+test('download the key kit from Backups', async () => {
+	await page.goto('/settings/backups');
+	const got = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Download key kit' }).click();
+	expect((await got).suggestedFilename()).toMatch(/\.key$/);
+	await expect(page.getByText('Key kit downloaded.')).toBeVisible();
+});
+
 test('search, add a movie, and the Library updates live', async ({ browser }) => {
 	// A second tab watches the Library while the first adds a movie.
 	const watcher = await browser.newPage();
