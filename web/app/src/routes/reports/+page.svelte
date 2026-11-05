@@ -1,5 +1,7 @@
 <script lang="ts">
 	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import { to } from '#lib/paths.ts';
 	import ReportsList from '#lib/reports/ReportsList.svelte';
 	import { session } from '#lib/session.svelte.ts';
 
@@ -11,6 +13,8 @@
 <svelte:head><title>Reports · HolyArrs</title></svelte:head>
 
 <div class="page">
+	<!-- A way back at every width: Reports opens from the Requests toolbar, and the top bar has no back on one-level pages. -->
+	{#if manage}<div class="back"><Button variant="plain" size="sm" icon="chevronLeft" href={to('/requests')}>Requests</Button></div>{/if}
 	<PageHeader
 		title={manage ? 'Reports' : 'Your reports'}
 		subtitle={manage
@@ -21,5 +25,6 @@
 </div>
 
 <style>
+	.back { margin: 0 0 -4px -8px; }
 	.page { display: flex; flex-direction: column; gap: 8px; padding-bottom: 48px; min-width: 0; }
 </style>
