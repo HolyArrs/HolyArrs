@@ -8,6 +8,8 @@
 	import { bytes, date, dateTime } from '#lib/format.ts';
 	import { facts, keyReasons, listedName, pager } from '#lib/releases.ts';
 	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
+	import Poster from '#lib/Poster.svelte';
+	import { titleArt } from '#lib/title-art.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -47,8 +49,11 @@
 		}
 	}
 
+	// Posters for the rows, from one brief read of the Library.
+	let art = $state<Map<number, string>>(new Map());
 	onMount(() => {
 		void load();
+		if (from === 'library') void titleArt().then((m) => (art = m));
 		const offs = [live.on('releases', load), live.on('slot', load), live.on('resync', load)];
 		return () => offs.forEach((off) => off());
 	});
@@ -126,6 +131,7 @@
 			{@const key = keyReasons(r.reasons)}
 			<li class="rel" data-testid="listed-release">
 				<div class="rel-top">
+					{#if from === 'library' && r.title_id}<span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(r.title_id)} name={listedName(r)} /></span>{/if}
 					<div class="grow">
 						{#if r.title_id}
 							<a class="for" href={to(`/library/${r.title_id}`)} data-testid="listed-for">{listedName(r)}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</a>

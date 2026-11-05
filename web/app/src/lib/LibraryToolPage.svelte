@@ -65,6 +65,10 @@
 	.tp :global(.tp-table tbody tr:hover) { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.tp :global(.tp-table a) { color: var(--text); text-decoration: none; font-weight: 600; }
 	.tp :global(.tp-table a:hover) { text-decoration: underline; text-underline-offset: 3px; }
+	/* A row's poster: a small 2:3 slot, the same frame as everywhere else. */
+	.tp :global(.tp-art) { flex: none; width: 36px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+	.tp :global(.tp-who) { display: flex; align-items: center; gap: 12px; min-width: 0; }
+	.tp :global(.tp-who > .tp-tx) { min-width: 0; }
 	.tp :global(.tp-sub) { display: block; margin-top: 2px; color: var(--text-muted); font: var(--t-footnote); }
 
 	/* A plain list on the sheet. */

@@ -3,6 +3,8 @@
 	import { to } from '#lib/paths.ts';
 	// Missing subtitles: every movie and episode missing a wished subtitle.
 	import { onMount } from 'svelte';
+	import Poster from '#lib/Poster.svelte';
+	import { titleArt } from '#lib/title-art.ts';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
@@ -78,8 +80,11 @@
 		}
 	}
 
+	// Posters for the rows, from one brief read of the Library.
+	let art = $state<Map<number, string>>(new Map());
 	onMount(() => {
 		void load();
+		void titleArt().then((m) => (art = m));
 		api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages), () => {});
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		const soon = () => {
@@ -196,7 +201,7 @@
 				<tbody>
 					{#each rows as r (r.file_id + r.language + String(r.forced))}
 						<tr data-testid="missing-subtitle">
-							<td><a href={to(`/library/${r.title_id}`)}>{missingName(r)}</a></td>
+							<td><span class="tp-who"><span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(r.title_id)} name={missingName(r)} /></span><a href={to(`/library/${r.title_id}`)}>{missingName(r)}</a></span></td>
 							<td data-testid="missing-language">{wantLabel({ language: r.language, hearing_impaired: r.hearing_impaired ? 'hi' : 'normal', forced: r.forced }, langs)}</td>
 							<td class="status">{missingWords(r, dateTime)}</td>
 							<td class="act">
@@ -234,5 +239,5 @@
 		.missing th:nth-child(3), .missing td:nth-child(3) { display: none; }
 	}
 	/* The title link is the 44px tap target on touch phones. */
-	@media (pointer: coarse) { .missing td > a { display: inline-block; padding-block: 13px; } }
+	@media (pointer: coarse) { .missing .tp-who > a { display: inline-block; padding-block: 13px; } }
 </style>

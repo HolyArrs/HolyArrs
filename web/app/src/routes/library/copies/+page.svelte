@@ -6,12 +6,14 @@
 	import { to } from '#lib/paths.ts';
 	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import DlFind from '#lib/downloads/DlFind.svelte';
+	import Poster from '#lib/Poster.svelte';
+	import { titleArt } from '#lib/title-art.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { plainReason } from '#lib/plain.ts';
-	import { codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/library-copies.ts';
+	import { codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/library-copies.ts';
 
 	const pageSize = 50;
 	let page = $state<LibraryCopyPage>({ copies: [], total: 0, limit: pageSize, offset: 0, codecs: {} });
@@ -54,6 +56,11 @@
 		typing = setTimeout(applyFilters, 250);
 	}
 	const sortWords: Record<string, string> = { title: 'Title', codec: 'Codec', added: 'Added' };
+	// The second lines say only what is worth a word: the container by its usual name, and a read that is not complete.
+	const containerWords: Record<string, string> = { matroska: 'MKV', 'matroska,webm': 'MKV', mp4: 'MP4', 'mov,mp4,m4a,3gp,3g2,mj2': 'MP4', avi: 'AVI', mpegts: 'TS' };
+	const names = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['en'], { type: 'language' }) : null;
+	const langName = (code: string) => { try { return names?.of(code) ?? code; } catch { return code; } };
+	const codecLine = (c: LibraryCopy) => [containerWords[c.container] ?? (c.container ? c.container.toUpperCase() : ''), c.inspection_status && c.inspection_status !== 'complete' ? c.inspection_status : ''].filter(Boolean).join(' · ') || 'Not read yet';
 
 	function toggle(copy: CopySelection) {
 		selected = toggleCopy(selected, copy);
@@ -95,7 +102,9 @@
 		void load();
 	}
 
-	onMount(() => { load(); return () => clearTimeout(typing); });
+	// Posters for the rows, from one brief read of the Library.
+	let art = $state<Map<number, string>>(new Map());
+	onMount(() => { load(); void titleArt().then((m) => (art = m)); return () => clearTimeout(typing); });
 </script>
 
 <svelte:head><title>Video codecs · HolyArrs</title></svelte:head>
@@ -150,9 +159,9 @@
 					{#each page.copies as copy (copyKey(copy))}
 						<tr class:picked={selectedKeys.has(copyKey(copy))}>
 							<td class="pick"><label><input type="checkbox" aria-label={`Select ${copy.title}, ${copy.version}`} checked={selectedKeys.has(copyKey(copy))} disabled={copy.protected} onchange={() => toggle(copy)} /></label></td>
-							<td><a href={to(`/library/${copy.title_id}`)}>{copy.title}{#if copy.year} <span class="yr">{copy.year}</span>{/if}</a><span class="tp-sub">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</td>
-							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="tp-sub">{[copy.container, copy.inspection_status].filter(Boolean).join(' · ') || 'Not read yet'}</span></td>
-							<td>{copy.audio_languages.length ? copy.audio_languages.join(', ') : '—'}<span class="tp-sub">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
+							<td><span class="tp-who"><span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(copy.title_id)} name={copy.title} /></span><span class="tp-tx"><a href={to(`/library/${copy.title_id}`)}>{copy.title}{#if copy.year} <span class="yr">{copy.year}</span>{/if}</a><span class="tp-sub">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</span></span></td>
+							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="tp-sub">{codecLine(copy)}</span></td>
+							<td>{copy.audio_languages.length ? copy.audio_languages.map(langName).join(', ') : '—'}<span class="tp-sub">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
 							<td class="path">{copy.relative_path}</td>
 						</tr>
 					{/each}
@@ -179,13 +188,13 @@
 	.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 	.table-wrap { overflow-x: auto; }
 	.copies input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); }
-	.copies td { vertical-align: top; }
+	.copies td { vertical-align: middle; }
 	.copies tr.picked { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 	.pick { width: 1%; }
 	/* On touch phones the label around the box is the 44px tap target; the drawn box and the row stay the same. */
 	.pick label { display: inline-flex; }
 	/* The title link keeps its place in the line; on touch phones its box is 44px tall (inline padding moves nothing). */
-	@media (max-width: 767px) and (pointer: coarse) { td > a { padding-block: 13px; } }
+	@media (max-width: 767px) and (pointer: coarse) { .tp-tx > a { display: inline-block; padding-block: 13px; } }
 	@media (max-width: 767px) and (pointer: coarse) { .pick label { align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -12px; } }
 	.yr { margin-left: 4px; color: var(--text-muted); font-weight: 400; }
 	.codec { font-weight: 650; }

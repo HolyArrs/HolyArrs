@@ -4,6 +4,8 @@
 	// Recently deleted: files waiting in the holding folder. Pick some and
 	// Restore puts them back where they were; a deleted title comes back too.
 	import { onMount } from 'svelte';
+	import Poster from '#lib/Poster.svelte';
+	import { titleArt } from '#lib/title-art.ts';
 	import { api, message } from '#lib/api.ts';
 	import { bytes, date } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -33,7 +35,12 @@
 			loaded = true;
 		}
 	}
-	onMount(() => void load());
+	// Posters for the rows, from one brief read of the Library.
+	let art = $state<Map<number, string>>(new Map());
+	onMount(() => {
+		void load();
+		void titleArt().then((m) => (art = m));
+	});
 
 	function toggle(id: number) {
 		const next = new Set(picked);
@@ -89,6 +96,7 @@
 				{@const left = daysLeft(f.expires_at)}
 				<li class="row-item" class:picked={picked.has(f.id)} data-testid="deleted-file">
 					<label class="pick"><input type="checkbox" checked={picked.has(f.id)} onchange={() => toggle(f.id)} aria-label="Select {fileName(f.path)}" /></label>
+					<span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(f.title_id)} name={f.title} /></span>
 					<div class="grow">
 						{#if f.title_deleted}
 							<span class="name">{f.title}</span>

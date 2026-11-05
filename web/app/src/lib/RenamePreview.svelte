@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Poster from '#lib/Poster.svelte';
+	import { titleArt } from '#lib/title-art.ts';
 	// The rename preview for one title (titleId), one album of an artist
 	// (albumId too) or the whole Library: the old and new names, files that
 	// are skipped and why, and Apply. The preview and the rename use the same
@@ -15,6 +17,11 @@
 	// season narrows a show's preview to that season's files (read from the SxxEyy in their names).
 	// page: the Library's Rename files screen (its own look and shorter words); changeCount reports how many files get a new name there.
 	let { titleId, albumId, season, onDone, page = false, changeCount = $bindable(0) }: { titleId?: number; albumId?: number; season?: number; onDone?: () => void; page?: boolean; changeCount?: number } = $props();
+	// Posters for the rows, from one brief read of the Library.
+	let art = $state<Map<number, string>>(new Map());
+	$effect(() => {
+		if (page) void titleArt().then((m) => (art = m));
+	});
 
 	let steps = $state<RenameStep[]>([]);
 	// The hash of what this preview shows: the rename does only that, and
@@ -99,7 +106,9 @@
 				<h2 class="sr-only">{parts.change.length === 1 ? '1 file gets a new name' : `${parts.change.length} files get a new name`}</h2>
 				<ul class="tp-rows steps">
 					{#each parts.change as s (s.file_id)}
-						<li data-testid="rename-step">
+						<li data-testid="rename-step" class:with-art={page}>
+							{#if page}<span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(s.title_id)} name={s.title_name} /></span>{/if}
+							<div class="body">
 							{#if many}<b class="name">{s.title_name}</b>{/if}
 							<div class="pair">
 								<span class="lab">Now</span><span class="mono path old">{renamePair(s)[0]}</span>
@@ -110,6 +119,7 @@
 									Subtitle {fileName(sub.from)}: {sub.to ? '→ ' + fileName(sub.to) : 'stays, ' + sub.skip}
 								</p>
 							{/each}
+							</div>
 						</li>
 					{/each}
 				</ul>
@@ -216,6 +226,8 @@
 		gap: 2px;
 		padding: var(--s-3) 0;
 	}
+	.steps li.with-art { display: flex; align-items: flex-start; gap: 12px; }
+	.steps li.with-art > .body { min-width: 0; flex: 1; }
 	.steps li + li {
 		border-top: 1px solid var(--line);
 	}
