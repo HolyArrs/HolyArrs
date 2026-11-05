@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { moviesDir, newOwner, owner, plainForm, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
+import { finishFirstRun, moviesDir, newOwner, owner, plainForm, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -60,19 +60,18 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
 
-	// First run stays outside the app frame until one folder saves; metadata
-	// needs no key, so there is no key step.
-	await expect(page).toHaveURL(/\/welcome\?first=1&step=folder$/);
-	await expect(page.getByRole('heading', { name: 'Library folder', level: 1 })).toBeVisible();
-	// A reload stays on the folder step.
+	// First run stays outside the app frame: folders (one row per picked
+	// part), Downloader, Source, then the import choice. Metadata needs no key.
+	await expect(page).toHaveURL(/\/welcome\?first=1&step=folders$/);
+	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible();
+	await expect(page.getByLabel('Music folder')).toBeVisible();
+	// A reload stays on the folders step.
 	await page.reload();
-	await expect(page.getByRole('heading', { name: 'Library folder', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible();
 	await expect(page.getByText(/TMDB|read access token/)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
 	await scanFirstRun();
-	await page.getByLabel('Folder path').fill(moviesDir);
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, moviesDir);
 
 	await expect(page).toHaveURL(/\/$/);
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();

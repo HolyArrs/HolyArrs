@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { finishFirstRun } from './helpers.ts';
 
 // Every page at 360 and 390 wide: no sideways scroll, the bottom menu shows,
 // its tabs are big enough to tap, and the Manage sheet fits.
@@ -60,9 +61,7 @@ test('phone audit: every page at 360 and 390', async ({ page }) => {
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Folder path').fill(join(tmp, 'movies'));
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, join(tmp, 'movies'));
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 
 	const report: Record<string, unknown> = {};

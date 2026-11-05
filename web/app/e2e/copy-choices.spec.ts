@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn, addFromSearch } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn, addFromSearch, finishFirstRun } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -22,9 +22,7 @@ async function enterApp(page: import('@playwright/test').Page) {
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Folder path').fill(moviesDir);
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, moviesDir);
 }
 
 async function paperHarbour(page: import('@playwright/test').Page): Promise<string> {

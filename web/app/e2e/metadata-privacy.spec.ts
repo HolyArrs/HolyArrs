@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, setupCode } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, setupCode, finishFirstRun } from './helpers.ts';
 
 // #94: Settings > Metadata says what the metadata server gets and links to
 // the Count this install switch, at desktop and phone width.
@@ -14,9 +14,7 @@ test('Settings > Metadata shows what the metadata server gets', async ({ page })
 	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Folder path').fill(moviesDir);
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, moviesDir);
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 
 	for (const width of [1280, 390]) {

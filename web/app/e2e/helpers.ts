@@ -27,6 +27,19 @@ export function owner(): Owner {
 	return JSON.parse(readFileSync(ownerFile, 'utf8'));
 }
 
+/** finishFirstRun walks first-run steps 2-5: one movies folder, skips Downloader and Source, then Start fresh (Home). */
+export async function finishFirstRun(page: Page, moviesPath: string) {
+	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible();
+	await page.getByLabel('Movies folder').fill(moviesPath);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	for (const h of ['Downloader', 'Source']) {
+		await expect(page.getByRole('heading', { name: h, level: 1 })).toBeVisible();
+		await page.getByRole('button', { name: 'Skip for now' }).click();
+	}
+	await expect(page.getByRole('heading', { name: 'Bring your setup', level: 1 })).toBeVisible();
+	await page.getByRole('button', { name: 'Start fresh' }).click();
+}
+
 /** plainForm leaves the remembered people (one person's step, or the list) for the name-and-password form. */
 export async function plainForm(page: Page) {
 	await expect(page.getByRole('heading', { name: /^(Sign in|Who's signing in\?)$/ })).toBeVisible();

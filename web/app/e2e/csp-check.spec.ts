@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, setupCode } from './helpers.ts';
+import { moviesDir, newOwner, setupCode, finishFirstRun } from './helpers.ts';
 
 const tiny = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 
@@ -20,9 +20,7 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Folder path').fill(moviesDir);
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, moviesDir);
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 
 	await page.route('**/api/v1/artwork/tmdb/**', (r) => r.fulfill({ body: tiny, contentType: 'image/png' }));

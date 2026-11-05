@@ -2,7 +2,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openLibraryTab, openSeasonNamed } from './helpers.ts';
+import { openLibraryTab, openSeasonNamed, finishFirstRun } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -70,9 +70,7 @@ test.beforeAll(async ({ browser }) => {
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Folder path').fill(moviesDir);
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, moviesDir);
 	await expect(page).toHaveURL(/\/$/);
 
 	await addLibraryFolder('music', musicDir, 'Music');

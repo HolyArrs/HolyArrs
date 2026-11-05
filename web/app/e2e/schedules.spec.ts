@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn, finishFirstRun } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -23,9 +23,7 @@ async function enterFreshApp(page: import('@playwright/test').Page) {
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Folder path').fill(moviesDir);
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, moviesDir);
 }
 
 test('movie detail refresh can be turned off, survives reload, and can be run by hand', async ({ page }) => {

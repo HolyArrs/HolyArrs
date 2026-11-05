@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { noSidewaysScroll, signIn } from './helpers.ts';
+import { noSidewaysScroll, signIn, finishFirstRun } from './helpers.ts';
 
 // Status (#71, #78): every tab at desktop width and at
 // 390, the tabs work from the keyboard, and the Jobs table keeps its labels
@@ -30,9 +30,7 @@ test.beforeAll(async ({ browser }) => {
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Folder path').fill(join(tmp, 'movies'));
-	await page.getByLabel(/^Name/).fill('Movies');
-	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+	await finishFirstRun(page, join(tmp, 'movies'));
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 	await page.context().close();
 });
