@@ -190,7 +190,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await max.locator('nav.tabbar').getByRole('link', { name: 'Requests' }).click();
 	const ask = max.getByTestId('ask').filter({ hasText: 'Lantern Street' });
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
-	await expect(ask.getByTestId('ask-kind')).toHaveText('Show');
+	await expect(ask.getByTestId('ask-kind')).toHaveText('TV show');
 	await expect(ask.getByTestId('ask-seasons')).toHaveText('Asked for seasons 1 and 2');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);
 	await noSidewaysScroll(max);

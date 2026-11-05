@@ -8,13 +8,11 @@
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { api, ApiError, message } from '#lib/api.ts';
-	import Chip from '#lib/ui/Chip.svelte';
-	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Poster from '#lib/Poster.svelte';
 	import { ago, dateTime } from '#lib/format.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -32,7 +30,7 @@
 	import { albumWords } from '#lib/music/music.ts';
 	import { titleStatus } from '#lib/title-status.ts';
 	import { askHref, type ApprovalsCtx, type DecideOptions, type Member } from '#lib/approvals/approvals.ts';
-	import { askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
+	import { artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
 	import { askedByOne, askers } from '#lib/approvals/inbox.ts';
 	import { kidLabel } from '#lib/kid.ts';
 	import { watchlistLine } from '#lib/account/watchlist.ts';
@@ -204,35 +202,8 @@
 		}, 80);
 	}
 	let selectedId = $state(0);
-	const selected = $derived(shown.find((a) => a.id === selectedId) ?? shown[0] ?? null);
-	let reviewHeading: HTMLHeadingElement | undefined = $state();
-	let reviewOpen = $state(false);
-	let reviewTrigger: HTMLButtonElement | undefined = $state();
-	let compactReview = $state(false);
 	let takingBack = $state<Set<number>>(new Set());
 	let myReports = $state(0);
-
-	async function selectAsk(id: number, trigger?: HTMLButtonElement) {
-		selectedId = id;
-		reviewTrigger = trigger;
-		reviewOpen = true;
-		await tick();
-		if (!reviewHeading) return;
-		reviewHeading.focus({ preventScroll: true });
-		if (window.matchMedia('(max-width: 980px)').matches) {
-			const rect = reviewHeading.getBoundingClientRect();
-			if (rect.top < 72 || rect.bottom > window.innerHeight) {
-				const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-				reviewHeading.scrollIntoView({ behavior, block: 'start' });
-			}
-		}
-	}
-
-	async function closeReview() {
-		reviewOpen = false;
-		await tick();
-		reviewTrigger?.focus();
-	}
 
 	// Approve and turn down dialogs.
 	let decideOpen = $state(false);
@@ -281,7 +252,7 @@
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
 			tab = approver ? 'waiting' : firstTab(asks);
-			// ?ask=<id> (History's "Go to Requests"): a member's list opens on that ask, picked and scrolled to.
+			// ?ask=<id> (History's "Go to Requests"): a member's cards open on that ask, ringed and scrolled to.
 			// Approvers get its window from the Cards (lib/approvals/ApprovalsDesktop.svelte).
 			const want = Number(new URLSearchParams(location.search).get('ask')) || 0;
 			const a = !approver && want ? asks.find((x) => x.id === want) : undefined;
@@ -311,10 +282,6 @@
 				.then((r) => (askSettings = r))
 				.catch(() => {});
 		}
-		const compactQuery = window.matchMedia('(max-width: 600px)');
-		const syncCompactReview = () => (compactReview = compactQuery.matches);
-		syncCompactReview();
-		compactQuery.addEventListener('change', syncCompactReview);
 		void loadLive();
 		const offs = [
 			live.on('ask', () => void load()),
@@ -331,10 +298,7 @@
 			// Members get their own downloads as dl patches (#139): read again when one changes.
 			live.on('dl', onDlPatch)
 		];
-		return () => {
-			compactQuery.removeEventListener('change', syncCompactReview);
-			offs.forEach((off) => off());
-		};
+		return () => offs.forEach((off) => off());
 	});
 
 	// A dl patch with rows in it means a download moved; one read for a burst of them.
@@ -488,6 +452,25 @@
 			.catch(() => {})
 			.finally(() => (reading = false));
 	});
+
+	// The member cards (people who cannot approve) speak the approvers' card language: the title's wide art
+	// (its backdrop, an artist's photo, else the poster blurred), then a glass panel with the status and its lines.
+	$effect(() => {
+		if (!approver) for (const a of shown.slice(0, 16)) wantDetails(a);
+	});
+	const wideOf = (a: Ask): string => {
+		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] ?? '';
+		const d = askDetails(a);
+		return d?.backdrop ? to(d.backdrop) : '';
+	};
+	const cardTone = (a: Ask) => (whyFailed(a) ? 'bad' : a.state === 'asked' ? 'wait' : a.state === 'approved' ? 'go' : a.state === 'turned_down' ? 'soft' : 'ok');
+	const cardIcon = (a: Ask): IconName => (whyFailed(a) ? 'alert' : a.state === 'asked' ? 'clock' : a.state === 'turned_down' ? 'x' : a.state === 'available' ? 'library' : 'check');
+	const kinds = [
+		{ k: 'all', label: 'Everything' },
+		{ k: 'movie', label: 'Movies' },
+		{ k: 'show', label: 'TV shows' },
+		{ k: 'artist', label: 'Music' }
+	] as const;
 
 	// One status vocabulary (title-status.ts): approvers get the staff words.
 	const askPill = (a: Ask) => titleStatus({ ask: a.state, titleKind: a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie' }, approver ? 'staff' : 'member');
@@ -664,18 +647,20 @@
 
 <svelte:head><title>Requests · HolyArrs</title></svelte:head>
 
-<div class="ap-top" class:compact={approver}>
+<div class="ap-top" class:mem={!approver}>
 <h1 class="sr-only">Requests</h1>
 <!-- Reports (#36): approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
 {#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
 {#if (session.can('ask') && !approver) || myReports > 0}
 	<div class="ask-actions">
 		{#if session.can('ask') && !approver}
-			<Button icon="film" variant="primary" href={to(`/search`)}><span class="ask-d">Ask for a movie</span><span class="ask-m"><span class="sr-only">Ask for a </span>Movie</span></Button>
-			<Button icon="tv" href={to(`/search?kind=show`)}><span class="ask-d">Ask for a show</span><span class="ask-m"><span class="sr-only">Ask for a </span>Show</span></Button>
-			<Button icon="music" href={to(`/search?kind=music`)}><span class="ask-d">Ask for music</span><span class="ask-m"><span class="sr-only">Ask for </span>Music</span></Button>
+			<!-- Wide screens: one button per kind. Phones: one button to Search, where the kinds are a tap away. -->
+			<a class="tb ink ask-k" href={to(`/search`)}><Icon name="film" size={16} />Ask for a movie</a>
+			<a class="tb ask-k" href={to(`/search?kind=show`)}><Icon name="tv" size={16} />Ask for a show</a>
+			<a class="tb ask-k" href={to(`/search?kind=music`)}><Icon name="music" size={16} />Ask for music</a>
+			<a class="tb ink ask-one" href={to(`/search`)}><Icon name="plus" size={16} />Ask for something</a>
 		{/if}
-		{#if myReports > 0}<span class="ask-rp" data-testid="my-reports-link"><Button icon="alert" href={to('/reports')}>Your reports</Button></span>{/if}
+		{#if myReports > 0}<a class="tb ask-rp" href={to('/reports')} data-testid="my-reports-link"><Icon name="alert" size={16} />Your reports</a>{/if}
 		</div>
 {/if}
 
@@ -688,21 +673,22 @@
 {#if (bothKinds || asks.length) && !approver}
 	<div class="toolbar">
 		{#if asks.length}
-			<div class="chips tabs" role="group" aria-label="Show" data-testid="ask-tabs">
+			<div class="tabs" role="group" aria-label="Show" data-testid="ask-tabs">
 				{#each tabs as t (t.tab)}
-					<Chip label={t.label} count={t.tab === 'waiting' && counts.waiting ? counts.waiting : undefined} selected={tab === t.tab} onclick={() => ((tab = t.tab), (chosen = new Set()))} />
+					{@const n = counts[t.tab] ?? 0}
+					<div class="pw" class:on={tab === t.tab} role="presentation">
+						<button type="button" class="tab" class:zero={!n} aria-pressed={tab === t.tab} onclick={() => ((tab = t.tab), (chosen = new Set()))}>{t.label}{#if n}<span class="n" class:wait={t.tab === 'waiting'}>{n}</span>{/if}</button>
+					</div>
 				{/each}
 			</div>
 		{/if}
 		{#if bothKinds}
-			<div class="chips" role="group" aria-label="Kind">
-				<Chip label="Everything" selected={kind === 'all'} onclick={() => (kind = 'all')} />
-				<Chip label="Movies" selected={kind === 'movie'} onclick={() => (kind = 'movie')} />
-				<Chip label="TV shows" selected={kind === 'show'} onclick={() => (kind = 'show')} />
-				<Chip label="Music" selected={kind === 'artist'} onclick={() => (kind = 'artist')} />
+			<div class="tabs kinds" role="group" aria-label="Kind">
+				{#each kinds as k (k.k)}
+					<div class="pw" class:on={kind === k.k} role="presentation"><button type="button" class="tab" aria-pressed={kind === k.k} onclick={() => (kind = k.k)}>{k.label}</button></div>
+				{/each}
 			</div>
 		{/if}
-		{#if asks.length}<p class="count">{shown.length} {shown.length === 1 ? 'request' : 'requests'}</p>{/if}
 	</div>
 {/if}
 </div>
@@ -728,49 +714,59 @@
 {/snippet}
 
 {#if !approver}
-<div class="workspace">
-	<div class="main-col">
-		{#if error && !asks.length}
-			<LoadError hasData={false} message="Couldn’t load your requests. {error}" onretry={load} />
-		{:else}
-		<PageLoader loading={!loaded} label="Loading your requests…">
-		{#if asks.length === 0}
-			<EmptyState
-				icon="wish"
-				title="Nothing on the Requests page yet"
-				text={session.can('ask')
-					? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
-					: "Your account can't ask for titles yet. Check with the owner."}
-				action={{ label: 'Search', href: to('/search') }}
-			/>
-		{:else if shown.length === 0}
-			<EmptyState
-				compact
-				icon="check"
-				title={tab === 'waiting' ? 'You’re all caught up.' : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
-			/>
-		{:else}
-			{@render bulkBar()}
-			<ul class="asks" aria-label="Requests">
-				{#each shown as a, i (a.id)}
-					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask" data-ask-id={a.id}>
-						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></div>{/if}
-						{#if choosable}
-							<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={chosen.has(a.id)} onchange={() => toggleChosen(a.id)} />
-						{/if}
-						<div class="art"><Poster src={a.poster} name={a.name} /></div>
-						<div class="body">
-							<div class="top">
-								<h2 class="name">
-									{#if a.title_id}<a href={to(`/library/${a.title_id}`)}>{a.name}<span class="muted">{year(a)}</span></a>
-									{:else}{a.name}<span class="muted">{year(a)}</span>{/if}
-								</h2>
-								<StatusPill kind={askPill(a).kind} label={askPill(a).label} testid="ask-state" />
-								{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">New</span>{/if}
-								{#if a.kind === 'show'}<span class="kind" data-testid="ask-kind">Show</span>{/if}
-								{#if a.kind === 'artist'}<span class="kind" data-testid="ask-kind">Music</span>{/if}
-							</div>
-							{#if what(a)}<p class="line" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>Asked for {what(a)}</p>{/if}
+<div class="member">
+	{#if error && !asks.length}
+		<LoadError hasData={false} message="Couldn’t load your requests. {error}" onretry={load} />
+	{:else}
+	<PageLoader loading={!loaded} label="Loading your requests…">
+	{#if asks.length === 0}
+		<EmptyState
+			icon="wish"
+			title="Nothing on the Requests page yet"
+			text={session.can('ask')
+				? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
+				: "Your account can't ask for titles yet. Check with the owner."}
+			action={{ label: 'Search', href: to('/search') }}
+		/>
+	{:else if shown.length === 0}
+		<EmptyState
+			compact
+			icon="check"
+			title={tab === 'waiting' ? 'You’re all caught up.' : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
+		/>
+	{:else}
+		{@render bulkBar()}
+		<ul class="cards" aria-label="Requests">
+			{#each shown as a, i (a.id)}
+				{@const wide = proxied(wideOf(a)) || null}
+				{@const photo = a.kind === 'artist' ? proxied(artistPhoto(a)) || null : null}
+				<li class="mc rise" animate:glide class:hl={selectedId === a.id} class:waiting={!!pending[a.id]} class:answered={a.state === 'turned_down'} style="--i: {i}" data-testid="ask" data-ask-id={a.id}>
+					<div class="ban" class:noart={!wide && !photo && !a.poster}>
+						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></span>{/if}
+					</div>
+					<div class="top">
+						<div class="ban-cap">
+							{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">New</span>{/if}
+							<h2 class="ban-t">{#if a.title_id}<a href={to(`/library/${a.title_id}`)}>{a.name}</a>{:else}{a.name}{/if}</h2>
+							<span class="ban-f">{#if a.kind === 'show'}<span data-testid="ask-kind">TV show</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">Music</span>{:else}Movie{/if}{#if a.year}{' · '}{a.year}{/if}</span>
+						</div>
+					</div>
+					<div class="sheet-b">
+						<div class="st-row">
+							<span class="st-chip st-{cardTone(a)}"><span class="st-sq"><Icon name={cardIcon(a)} size={15} /></span><b data-testid="ask-state">{askPill(a).label}</b></span>
+							{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
+							{#if a.mine && a.state === 'asked'}
+								<span class="row-menu" data-testid="ask-menu">
+									<Menu
+										label="More for {a.name}"
+										width={220}
+										items={[{ label: 'Take back', icon: 'trash', destructive: true, disabled: takingBack.has(a.id), onselect: () => askTakeBack(a) }]}
+									/>
+								</span>
+							{/if}
+						</div>
+						<div class="lines">
+							{#if what(a)}<p class="line what" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>Asked for {what(a)}</p>{/if}
 							<p class="line muted" data-testid="asked-by">
 								{askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
 							</p>
@@ -788,65 +784,14 @@
 									{#if stepLine(a)}<p class="line rq-step" data-testid="ask-step">{stepLine(a)}</p>{/if}
 									{#if a.title_id && a.title_id > 0 && !a.step}<SearchOutcomeLine titleId={a.title_id} />{/if}{/if}
 							{/if}
-							<div class="actions">
-								{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
-								<button
-									class="inspect"
-									class:on={selected?.id === a.id}
-									type="button"
-									aria-label="Review {a.name}"
-									aria-pressed={selected?.id === a.id}
-									aria-expanded={compactReview ? reviewOpen && selected?.id === a.id : undefined}
-									aria-controls="requests-review"
-									onclick={(event) => void selectAsk(a.id, event.currentTarget)}>Review</button
-								>
-								{#if a.mine && a.state === 'asked'}
-									<span class="row-menu" data-testid="ask-menu">
-										<Menu
-											label="More for {a.name}"
-											width={220}
-											items={[{ label: 'Take back', icon: 'trash', destructive: true, disabled: takingBack.has(a.id), onselect: () => askTakeBack(a) }]}
-										/>
-									</span>
-								{/if}
-							</div>
 						</div>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-		</PageLoader>
-		{/if}
-	</div>
-
-	<div class="side-col">
-		{#if loaded && !error && selected}
-			<aside id="requests-review" class="review" class:mobile-open={reviewOpen} aria-label="Ask details">
-				<div class="review-close"><Button variant="plain" size="sm" icon="x" type="button" aria-label="Close review" onclick={() => void closeReview()}>Close</Button></div>
-				<div class="review-head">
-					<div class="review-art"><Poster src={selected.poster} name={selected.name} /></div>
-					<div>
-						<h2 class="review-title" bind:this={reviewHeading} tabindex="-1">{selected.name}<span class="muted">{year(selected)}</span></h2>
-						<StatusPill kind={askPill(selected).kind} label={askPill(selected).label} />
 					</div>
-				</div>
-				<dl class="review-facts">
-					<dt>Asked by</dt><dd>{askedBy(selected).replace(/^Asked by /, '')}</dd>
-					<dt>Asked</dt><dd>{ago(selected.asked_at)}</dd>
-					{#if watchlistLine(selected.people, session.s.id)}<dt>From</dt><dd>{watchlistLine(selected.people, session.s.id).replace(/^From /, '')}</dd>{/if}
-					{#if what(selected)}<dt>For</dt><dd>{what(selected)}</dd>{/if}
-					{#if decided(selected)}<dt>Decision</dt><dd>{decided(selected)}</dd>{/if}
-				</dl>
-				{#if selected.note}<p class="review-note">“{selected.note}”</p>{/if}
-				{#if selected.state === 'approved'}
-					{@const why = whyFailed(selected)}
-					{#if why}<p class="line rq-fail rq-gap">{why}</p>
-					{:else}<p class="line muted">{approvedLine(selected)}</p>{#if selected.title_id && selected.title_id > 0}<SearchOutcomeLine titleId={selected.title_id} />{/if}{/if}
-				{/if}
-			</aside>
-		{/if}
-
-	</div>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+	</PageLoader>
+	{/if}
 </div>
 {:else}
 	<div class="variant">
@@ -959,57 +904,13 @@
 </Sheet>
 
 <style>
-	.ask-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 	.limit { margin: 0 0 16px; padding: 12px 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text-muted); font: var(--t-callout); }
-	.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
-	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-	.count { margin-left: auto; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); gap: 24px; align-items: start; }
-	.main-col, .side-col { min-width: 0; }
-	.side-col { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; gap: 16px; }
-	.asks { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
-	.ask { position: relative; isolation: isolate; display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
-	.strip { position: absolute; inset: 0; z-index: -1; background-size: cover; background-position: center 30%; filter: blur(18px) saturate(1.2); opacity: 0.22; mask-image: linear-gradient(90deg, #000 0%, transparent 70%); pointer-events: none; }
-	.ask.chosen { background: var(--accent-soft); }
-	.ask.waiting { opacity: 0.7; }
-	.tick, .tick-all input { width: 18px; height: 18px; margin-top: 4px; flex: none; accent-color: var(--accent-fill); }
+	.tick-all input { width: 18px; height: 18px; margin-top: 4px; flex: none; accent-color: var(--accent-fill); }
 	.bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 10px; padding: 6px 12px; border-radius: 999px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	.bulk.on { background: var(--surface-2); }
 	.tick-all { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; font: var(--t-subhead); color: var(--text-muted); }
 	.tick-all input { margin-top: 0; }
 	.pending { font: var(--t-footnote); }
-	.ask + .ask { border-top: 1px solid var(--line); }
-	.ask.selected { background: var(--surface-2); }
-	.art { width: 52px; flex: none; border-radius: 8px; overflow: hidden; align-self: flex-start; }
-	.body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-	.top { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
-	.name { font: var(--t-headline); overflow-wrap: anywhere; }
-	.name a:hover { text-decoration: underline; text-underline-offset: 3px; }
-	.name .muted, .review-title .muted { margin-left: 4px; font-weight: 400; }
-	.kind { padding: 2px 8px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-muted); font: var(--t-footnote); }
-	.line { font: var(--t-callout); overflow-wrap: anywhere; }
-	.muted { color: var(--text-muted); }
-	.note { color: var(--text); }
-	.rq-fail { color: var(--fail-text); }
-	.rq-step { color: var(--text); font-weight: 600; }
-	.rq-gap { margin-top: 12px; }
-	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
-	.inspect { min-height: 30px; padding: 0 12px; border-radius: 8px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; transition: background var(--dur-fast) var(--ease-out); }
-	.row-menu { margin-left: auto; }
-	.inspect:hover { background: var(--accent-soft); }
-	.inspect.on { background: var(--surface-3); color: var(--text); }
-	.inspect:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.review { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); padding: 16px 18px; }
-	.review-close { display: none; }
-	.review-head { display: flex; gap: 14px; align-items: flex-start; }
-	.review-art { width: 72px; flex: none; border-radius: 8px; overflow: hidden; }
-	.review-title { font: var(--t-title3); margin-bottom: 6px; overflow-wrap: anywhere; scroll-margin-top: calc(var(--topbar) + 16px); }
-	.review-title:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
-	.review-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font: var(--t-callout); }
-	.review-facts dt { color: var(--text-muted); }
-	.review-facts dd { text-align: right; overflow-wrap: anywhere; }
-	.review-note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font: var(--t-callout); overflow-wrap: anywhere; }
-	.new-mark { padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: var(--t-footnote); font-weight: 600; }
 	.decide { display: flex; flex-direction: column; gap: 14px; }
 	.decide .field + .field { margin-top: 0; }
 	textarea.input { height: auto; padding-top: 10px; resize: vertical; }
@@ -1019,38 +920,103 @@
 	.why-chip[aria-pressed='true'] { background: var(--text); border-color: var(--text); color: var(--bg); }
 	.why-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.decide-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-	@media (pointer: coarse) { .inspect, summary { min-height: 44px; } }
 	.variant { min-width: 0; }
-	.ask-m { display: none; }
-	/* The layouts' phone design: one row of Ask buttons and sideways chip rows. */
-	@media (max-width: 767px) {
-		.compact .ask-d { display: none; }
-		.compact .ask-m { display: inline; }
-		.compact :global(.ui-head .actions) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
-		.compact :global(.ui-head .actions .ui-btn) { min-width: 0; padding: 0 10px; }
-		.compact .toolbar { gap: 8px; }
-		.compact .chips { flex-wrap: nowrap; width: calc(100% + 2 * var(--gutter)); margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; }
-		.compact .chips::-webkit-scrollbar { display: none; }
-		.compact .chips > :global(*) { flex: none; }
-	}
-	@media (max-width: 1023px) {
-		.workspace { grid-template-columns: minmax(0, 1fr); }
-		.side-col { position: static; }
-	}
-	@media (max-width: 600px) {
-		.review:not(.mobile-open) { display: none; }
-		.review-close { display: flex; justify-content: flex-end; margin: -6px -8px 6px 0; }
-		.count { order: -1; width: 100%; margin-left: 0; }
-		.ask { padding: 12px; gap: 12px; }
-		.art { width: 44px; }
-		.actions > :global(*):not(.row-menu) { flex: 1 1 auto; }
-	}
-	/* Your reports (#36): after the ask buttons, at the row's far end on wide screens. */
-	.ask-rp { display: inline-flex; margin-left: auto; }
-	@media (max-width: 767px) { .ask-rp { margin-left: 0; } }
 	/* Reported problems (#95): a small link for the owner and admins. */
 	.rp-link { display: inline-flex; margin-bottom: 10px; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.rp-link:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
 	.rp-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (max-width: 767px) and (pointer: coarse) { .rp-link { min-height: 44px; } }
+	/* People who cannot approve: the approvers' card language (lib/approvals/ApprovalsDesktop.svelte) around their own lines. */
+	.ap-top.mem { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+	.ask-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+	.tb { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); white-space: nowrap; text-decoration: none; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
+	.tb:hover { background: var(--surface-2); }
+	.tb:active { transform: scale(0.97); }
+	.tb:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.tb.ink { border-color: transparent; background: var(--text); color: var(--bg); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -8px rgb(0 0 0 / 0.6); }
+	.tb.ink:hover { background: color-mix(in srgb, var(--text) 88%, var(--bg)); }
+	.ask-rp { margin-left: auto; font-weight: 500; }
+	.tb.ask-one { display: none; }
+	.limit { margin: 0; }
+	.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+	.tabs { position: relative; display: flex; align-items: center; gap: 2px; height: 40px; max-width: 100%; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
+	.tabs::-webkit-scrollbar { display: none; }
+	.pw { position: relative; display: flex; align-items: center; flex: none; height: 32px; }
+	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
+	.tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 0; border-radius: 9px; background: none; color: color-mix(in srgb, var(--text) 88%, var(--bg)); font: 500 13.5px/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color 200ms var(--ease-out), background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+	.tab:hover, .tab[aria-pressed='true'] { color: var(--text); }
+	.tab:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 6%, transparent); }
+	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
+	.tab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.n { font-weight: 600; font-variant-numeric: tabular-nums; }
+	.n.wait { color: var(--wait-text, var(--wait)); }
+	:global(:root[data-theme='dark']) .pw.on .n.wait { color: #ffd08a; }
+	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .pw.on .n.wait { color: #ffd08a; } }
+	@media (pointer: coarse) { .tab::after { content: ''; position: absolute; inset: -6px 0; } .tb { height: 44px; } }
+
+	.member { min-width: 0; }
+	.cards { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+	.mc { --top: 170px; --gap: 10px; position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; background: #17181d; box-shadow: 0 0 0 1px var(--line), 0 12px 32px -16px rgb(0 0 0 / 0.6); transition: opacity var(--dur-fast) var(--ease-out), box-shadow 300ms var(--ease-out); }
+	.mc.waiting { opacity: 0.7; }
+	/* Opened from History's "Go to Requests": the card wears a ring. */
+	.mc.hl { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
+	.ban { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; background: #17181d; }
+	.ban.noart { background: radial-gradient(120% 90% at 15% 0%, #3b4263 0%, transparent 60%), radial-gradient(90% 80% at 100% 100%, #583a58 0%, transparent 58%), #17181d; }
+	.ban-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; background-size: cover; background-position: center 28%; transform: scale(1.02); transition: transform 400ms cubic-bezier(0.32, 0.72, 0, 1), filter 500ms var(--ease-out); }
+	img.ban-img { animation: ban-in 600ms var(--ease-out) both; }
+	@keyframes ban-in { from { opacity: 0; } }
+	.ban-img.soft { filter: blur(18px) saturate(1.3); transform: scale(1.3); opacity: 0.8; }
+	.ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 0.22), transparent calc(var(--top) * 0.22), rgb(0 0 0 / 0.6) calc(var(--top) * 0.6), rgb(0 0 0 / 0.8) var(--top), rgb(0 0 0 / 0.4)); }
+	/* A declined ask steps back: its art loses some colour. */
+	.answered .ban-img:not(.soft) { filter: saturate(0.6); }
+	.top { flex: none; height: var(--top); display: flex; align-items: flex-end; box-sizing: border-box; padding: 0 14px 10px; }
+	.ban-cap { min-width: 0; display: flex; flex-direction: column; gap: 3px; color: #fff; }
+	.new-mark { align-self: flex-start; margin-bottom: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/16px var(--font-ui); }
+	.ban-t { margin: 0; font: 800 22px/1.05 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.ban-t a { color: inherit; text-decoration: none; }
+	/* The whole art opens the title's page once it is in the Library. */
+	.ban-t a::after { content: ''; position: absolute; inset: 0 0 auto; height: var(--top); }
+	.ban-t a:focus-visible { outline: none; }
+	.mc:has(.ban-t a:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
+	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* The glass panel: smoked glass, the art blurred through it; --text, --text-muted and --bg are redefined on it so the ink reads. */
+	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#5e0e06, #ffb3ae); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; flex: 1; margin: 0 var(--gap) var(--gap); padding: 12px; border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
+	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
+	@media (prefers-color-scheme: light) { :global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); } }
+	/* The status: an icon tile and the word, as on the approvers' Done cards; the row's menu (Take back) at its end. */
+	.st-row { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 32px; }
+	.st-wait { --st-c: var(--st-wait); --st-ink: var(--st-wait-ink); }
+	.st-ok { --st-c: var(--st-ok); --st-ink: var(--st-ok-ink); }
+	.st-go { --st-c: var(--st-go); --st-ink: var(--st-go-ink); }
+	.st-bad { --st-c: var(--st-bad); --st-ink: var(--st-bad-ink); }
+	.st-soft { --st-c: var(--st-soft); --st-ink: var(--st-soft-ink); }
+	.st-chip { display: flex; align-items: center; gap: 9px; min-width: 0; }
+	.st-sq { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 60%), color-mix(in srgb, var(--st-c) 20%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--st-c) 42%, transparent); color: var(--st-ink); }
+	.st-chip > b { color: var(--st-ink); font: 700 14px/1.3 var(--font-ui); }
+	.row-menu { margin-left: auto; }
+	.lines { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+	.line { margin: 0; font: 500 13px/1.38 var(--font-ui); overflow-wrap: anywhere; }
+	.line.what { font-weight: 600; }
+	.muted { color: var(--text-muted); }
+	.note { color: var(--text); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+	.rq-fail { color: var(--gl-fail); font-weight: 600; }
+	.rq-step { color: var(--text); font-weight: 600; }
+	.lines :global(.outcome) { font-size: 13px; }
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.mc:hover .ban-img:not(.soft) { transform: scale(1.0608); transition: transform 5s cubic-bezier(0.42, 0, 0.3, 1), filter 500ms var(--ease-out); }
+	}
+	/* Phones: one Ask button beside Your reports, the tabs swipe, one card per row so the lines stay readable. */
+	@media (max-width: 767px) {
+		.member { padding-bottom: calc(var(--tabbar, 64px) + 16px + env(safe-area-inset-bottom, 0px)); }
+		.tb.ask-k { display: none; }
+		.tb.ask-one { display: inline-flex; flex: 1; }
+		.ask-actions { flex-wrap: nowrap; gap: 8px; }
+		.ask-rp { flex: none; margin-left: 0; }
+		.toolbar { flex-direction: column; align-items: stretch; }
+		.cards { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+		.mc { --top: 132px; }
+	}
+	@media (min-width: 560px) and (max-width: 767px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	@media (max-width: 767px) and (pointer: coarse) { .tabs { height: 46px; padding-block: 6px; border-radius: 15px; } }
+	@media (prefers-reduced-motion: reduce) { img.ban-img { animation: none; } .ban-img, .tb, .mc { transition: none; } .tb:active { transform: none; } }
 </style>

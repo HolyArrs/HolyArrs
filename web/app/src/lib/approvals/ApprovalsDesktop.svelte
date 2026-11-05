@@ -413,7 +413,7 @@
 				<a class="rp-btn" href={to('/reports')} data-testid="reports-link" aria-label="Reports{ctx.reports ? `, ${ctx.reports} open` : ''}"><Icon name="alert" size={16} /><span class="rp-v">Reports</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports}</span>{/if}</a>
 			{/if}
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />Approve all<span class="aa-n">&nbsp;{toApprove.length}</span></button>
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />Approve all<span class="aa-n">{toApprove.length}</span></button>
 			{/if}
 			<div class="sf-anchor">
 					<button type="button" class="sf-btn" bind:this={sfBtn} aria-haspopup={phone ? 'dialog' : 'menu'} aria-expanded={sfMenu} aria-label="Filter{filterCount ? `, ${filterCount} on` : ''}" onclick={sfToggle}>
@@ -582,6 +582,7 @@
 	@media (max-width: 379px) { .right .approve-all :global(svg), .right .rp-btn :global(svg), .right .sf-btn .sf-funnel { display: none; } }
 	.new-mark { align-self: flex-start; margin-bottom: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/16px var(--font-ui); }
 	.approve-all:active { transform: scale(0.96); }
+	.aa-n { margin-left: -2px; font-variant-numeric: tabular-nums; }
 
 	/* The Filter button and its menu (Status for this tab, then Type). Tones: failed red, live steps blue, ready green, waiting amber, the rest muted. */
 	.sf-t-fail { --sc: var(--fail, #ff6961); --st: var(--fail-text, var(--fail, #ff6961)); }

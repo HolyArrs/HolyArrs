@@ -358,7 +358,7 @@ test('two members ask for different seasons of a show: one ask, both askers on i
 		const row = p.getByTestId('ask').filter({ hasText: show });
 		await expect(row).toHaveCount(1);
 		await expect(row.getByTestId('ask-state')).toHaveText('Requested');
-		await expect(row.getByTestId('ask-kind')).toHaveText('Show');
+		await expect(row.getByTestId('ask-kind')).toHaveText('TV show');
 		await expect(row.getByTestId('ask-seasons')).toHaveText('Asked for seasons 1 and 2');
 		await expect(row.getByTestId('asked-by')).toContainText('Asked by rosa and teo');
 		await noSidewaysScroll(p);
