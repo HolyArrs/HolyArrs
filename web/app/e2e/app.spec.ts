@@ -38,7 +38,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);
 	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
-	await expect(page.getByRole('alert')).toContainText('wrong setup code');
+	await expect(page.getByRole('alert')).toContainText(/wrong setup code/i);
 
 	await page.getByLabel('Setup code').fill(setupCode());
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
@@ -91,7 +91,7 @@ test('sign out, wrong password, then sign in', async () => {
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('wrong password');
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-	await expect(page.getByRole('alert')).toContainText('wrong name or password');
+	await expect(page.getByRole('alert')).toContainText(/wrong name or password/i);
 	await signIn(page, owner());
 });
 

@@ -270,7 +270,8 @@
 			now = Date.now();
 			error = 'Too many failed sign-ins. Wait a little and try again.';
 		} else {
-			error = message(err);
+			const m = message(err);
+			error = m.slice(0, 1).toUpperCase() + m.slice(1);
 		}
 	}
 
@@ -758,6 +759,28 @@
 	.pw > :global(*:last-child) { position: absolute; right: 4px; }
 	.otp { text-align: center; font-size: 22px; letter-spacing: 0.3em; }
 	.submit { margin-top: 20px; }
+	/* Errors: a soft red note centred under the fields, with a small warning mark. */
+	.form-error {
+		margin-top: 14px;
+		padding: 10px 14px;
+		border-radius: 12px;
+		background: rgb(255 69 58 / 0.12);
+		border: 1px solid rgb(255 69 58 / 0.26);
+		color: #ffb3ad;
+		font: 500 13px/1.45 var(--font-ui);
+		text-align: center;
+	}
+	.form-error::before {
+		content: '';
+		display: inline-block;
+		width: 15px;
+		height: 15px;
+		margin: 0 7px 0 0;
+		vertical-align: -3px;
+		background: currentColor;
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm0 9h2v2h-2z'/%3E%3C/svg%3E") center / contain no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm0 9h2v2h-2z'/%3E%3C/svg%3E") center / contain no-repeat;
+	}
 	code { font-family: var(--font-mono); color: var(--text); overflow-wrap: anywhere; }
 
 	/* Provider tiles: one row, mark over name; a lone tile is a wide button. */

@@ -134,7 +134,7 @@ test('a member turns on two-factor sign-in and needs a code to sign in', async (
 	await expect(ana.getByRole('heading', { name: 'Two-factor sign-in' })).toBeVisible();
 	await ana.getByLabel('Code').fill('000000');
 	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
-	await expect(ana.getByRole('alert')).toContainText('wrong code');
+	await expect(ana.getByRole('alert')).toContainText(/wrong code/i);
 	// The app code was just used to turn it on, so sign in with a backup code.
 	await ana.getByLabel('Code').fill(backup[0]);
 	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -212,7 +212,7 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await mum.getByLabel('Name').fill(mediaUser.name);
 	await mum.getByLabel('Password', { exact: true }).fill('not it');
 	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
-	await expect(mum.getByRole('alert')).toContainText('wrong name or password');
+	await expect(mum.getByRole('alert')).toContainText(/wrong name or password/i);
 	await mum.getByLabel('Password', { exact: true }).fill(mediaUser.password);
 	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
 	await expect(mum).toHaveURL(/\/$/);
@@ -254,7 +254,7 @@ test('sign in with Emby makes a member, next to Jellyfin', async ({ browser }) =
 	// Mum's Jellyfin password is not an Emby password.
 	await gran.getByLabel('Password', { exact: true }).fill(mediaUser.password);
 	await gran.getByRole('button', { name: 'Sign in with Emby' }).click();
-	await expect(gran.getByRole('alert')).toContainText('wrong name or password');
+	await expect(gran.getByRole('alert')).toContainText(/wrong name or password/i);
 	await gran.getByLabel('Password', { exact: true }).fill(embyUser.password);
 	await gran.getByRole('button', { name: 'Sign in with Emby' }).click();
 	await expect(gran).toHaveURL(/\/$/);
