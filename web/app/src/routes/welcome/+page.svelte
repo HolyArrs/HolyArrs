@@ -114,7 +114,8 @@
 			if (r.saved || !r.path.trim()) continue;
 			r.error = '';
 			try {
-				const f = await api.post<LibraryFolder>('/library-folders', { path: r.path.trim(), kind: r.kind, label: '' });
+				// Named after its part ("Movies"), not the last bit of the path.
+				const f = await api.post<LibraryFolder>('/library-folders', { path: r.path.trim(), kind: r.kind, label: r.label });
 				r.saved = f.path;
 			} catch (err) {
 				r.error = message(err);
