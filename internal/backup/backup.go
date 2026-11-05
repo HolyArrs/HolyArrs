@@ -838,7 +838,7 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 	}
 	if m.CheckKey != nil {
 		if err := m.CheckKey(filepath.Join(out, store.MainFile)); err != nil {
-			return fmt.Errorf("the backup's secrets cannot be read with this master key (moving to a new machine? see \"Move to a new machine\" in the Backups guide): %w", err)
+			return fmt.Errorf("the backup's secrets cannot be read with this master key (moving to a new machine? see \"Move to a new machine\" in the HolyArrs docs, in docs/backups.md): %w", err)
 		}
 	}
 	staged := filepath.Join(m.Dir, StagedDir)

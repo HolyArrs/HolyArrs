@@ -46,3 +46,22 @@ func TestLoadKeyNoPermissionIsMarked(t *testing.T) {
 		t.Fatalf("unreadable key: %v", err)
 	}
 }
+
+// A key path that is a folder (Docker makes one when the mounted host file
+// did not exist) is told apart from a damaged key.
+func TestLoadKeyFolderIsMarked(t *testing.T) {
+	dir := t.TempDir()
+	named := filepath.Join(dir, "named.key")
+	if err := os.Mkdir(named, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadKey(dir, named); !errors.Is(err, ErrKeyUnreadable) || !errors.Is(err, ErrKeyIsFolder) {
+		t.Fatalf("named key folder: %v", err)
+	}
+	if err := os.Mkdir(filepath.Join(dir, KeyFile), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadKey(dir, ""); !errors.Is(err, ErrKeyUnreadable) || !errors.Is(err, ErrKeyIsFolder) {
+		t.Fatalf("key folder in the config folder: %v", err)
+	}
+}

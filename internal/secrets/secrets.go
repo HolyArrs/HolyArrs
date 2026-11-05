@@ -46,6 +46,9 @@ var (
 	// used: no permission to read it, a named file that is missing, or a
 	// file that holds no key.
 	ErrKeyUnreadable = errors.New("master key file cannot be read")
+	// ErrKeyIsFolder means the key path is a folder, often made by Docker
+	// when a mounted host file did not exist.
+	ErrKeyIsFolder = errors.New("the path is a folder, not a key file")
 )
 
 // LoadKey reads the master key. named, when set, is a key file the person
@@ -55,7 +58,7 @@ func LoadKey(dir, named string) ([]byte, error) {
 	if named != "" {
 		b, err := os.ReadFile(named)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s (named in %s): %w", ErrKeyUnreadable, named, EnvKeyFile, err)
+			return nil, fmt.Errorf("%w: %s (named in %s): %w", ErrKeyUnreadable, named, EnvKeyFile, folderErr(named, err))
 		}
 		return keyIn(named, b)
 	}
@@ -68,7 +71,7 @@ func LoadKey(dir, named string) ([]byte, error) {
 		return keyIn(p, b)
 	}
 	if !errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("%w: %s: %w", ErrKeyUnreadable, p, err)
+		return nil, fmt.Errorf("%w: %s: %w", ErrKeyUnreadable, p, folderErr(p, err))
 	}
 	// A database that already holds secrets belongs to a key: a new one
 	// could not open them, so the person must put the old key back.
@@ -125,6 +128,14 @@ func SavedIn(dir string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// folderErr marks a read error on a path that is a folder.
+func folderErr(p string, err error) error {
+	if st, serr := os.Stat(p); serr == nil && st.IsDir() {
+		return fmt.Errorf("%w: %w", ErrKeyIsFolder, err)
+	}
+	return err
 }
 
 func keyIn(p string, b []byte) ([]byte, error) {

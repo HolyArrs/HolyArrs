@@ -46,9 +46,15 @@ func masterKeyChecks(r *Report, dir string) {
 		r.add(s, Fail, p+": cannot read the key file: "+err.Error(), "on the host, check the file's owner and mode: chown PUID:PGID and chmod 600 on it")
 		return
 	}
+	if st.IsDir() {
+		// Docker makes an empty folder when the mounted host file is missing.
+		r.add(s, Fail, p+" is a folder, not the key file",
+			"remove that folder on the host and put the key file at that path; check the host side of the volume for typos")
+		return
+	}
 	key, err := secrets.LoadKey("", p)
 	var pe *fs.PathError
-	if errors.As(err, &pe) {
+	if errors.As(err, &pe) && errors.Is(err, fs.ErrPermission) {
 		// A good key the app's user may not open is not damaged: the owner
 		// or mode is wrong, often after a copy as root on the host.
 		owner := ownerOf(st)
@@ -57,6 +63,10 @@ func masterKeyChecks(r *Report, dir string) {
 		}
 		r.add(s, Fail, p+" cannot be read by HolyArrs (owner "+owner+", mode "+st.Mode().Perm().String()+"): "+pe.Err.Error(),
 			"on the host, give the key file to your PUID and PGID and make it private: chown PUID:PGID "+filepath.Base(p)+" and chmod 600 "+filepath.Base(p)+" (use your own numbers and the file's real path)")
+		return
+	}
+	if errors.As(err, &pe) {
+		r.add(s, Fail, p+": cannot read the key file: "+pe.Err.Error(), "check the disk or share that holds it, then run this again")
 		return
 	}
 	if err != nil {

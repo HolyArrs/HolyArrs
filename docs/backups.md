@@ -66,27 +66,34 @@ restart policy, the app restart completes the restore. See
 
 A new install makes its own master key on its first start. That key cannot
 open the passwords and keys saved in your old backups, so the restore is
-refused. Put the old key in place first:
+refused. Put the old key in place first.
 
-1. Before the first start on the new machine, copy your old `holyarrs.key`
-   (or your key kit renamed to `holyarrs.key`) into the new config folder.
-   On the host, give it to your PUID and PGID and make it private:
-   `chown PUID:PGID holyarrs.key` and `chmod 600 holyarrs.key` (use your own
-   numbers). If you use `HOLYARRS_MASTER_KEY_FILE`, put the file at that path
-   instead.
-2. Restore the backup zip in one of two ways:
+1. Before the first start on the new machine, make the container without
+   starting it: `docker compose create`, or your usual `docker run` line with
+   `docker create` in place of `docker run -d`. This guide calls the container
+   `holyarrs`; use your own name.
+2. Copy your old `holyarrs.key` (or your key kit renamed to `holyarrs.key`)
+   into it: `docker cp holyarrs.key holyarrs:/config/`. This works for a
+   named volume and a host folder alike, and needs no shell. HolyArrs gives
+   the files in `/config` to your `PUID` and `PGID` when it starts.
+   If you use `HOLYARRS_MASTER_KEY_FILE`, put the key file at that path on the
+   host instead, readable by your `PUID` and `PGID`.
+3. Restore the backup zip in one of two ways:
    - Start HolyArrs, finish first run, then use **Restore from a file** under
      Settings > Backups.
-   - Or restore it without starting the app: copy the zip, with its name
-     unchanged, into the `backups` folder inside the config folder, then run
-     the `holyarrs restore` command once from the same image:
-     `docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> ghcr.io/coderluii/holyarrs:<tag> restore <zip name>`
-     (with Compose: `docker compose run --rm holyarrs restore <zip name>`).
+   - Or restore it before the first start. Put the zip, with its name
+     unchanged, in a folder named `backups`, then copy that folder in:
+     `docker cp backups holyarrs:/config/`. Run the restore once from the same
+     image. With Compose: `docker compose run --rm holyarrs restore <zip name>`.
+     With the Docker command line:
+     `docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> ghcr.io/coderluii/holyarrs:<tag> restore <zip name>`.
+     If you use a named key file, add `-e HOLYARRS_MASTER_KEY_FILE=<its path>`
+     to that line, so the restore checks the backup against your key.
      `restore --list` shows the names it can see.
-3. Start HolyArrs.
+4. Start HolyArrs.
 
 Already started the new install without the old key, and the page says the
 master key does not match, or the restore is refused? If you set nothing up
-on the new install that you want to keep: stop HolyArrs, replace the new
-`holyarrs.key` with your old one, and restore with the command in step 2.
-Then start HolyArrs again.
+on the new install that you want to keep: stop HolyArrs, copy your old key
+over the new one with `docker cp holyarrs.key holyarrs:/config/`, and restore
+with the command in step 3. Then start HolyArrs again.

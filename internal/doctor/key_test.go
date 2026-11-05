@@ -247,3 +247,19 @@ func TestDoctorKeyNoPermission(t *testing.T) {
 		t.Fatalf("unreadable key: got %+v\n%s", c, r.Text())
 	}
 }
+
+// A key path that is a folder (Docker makes one when the mounted host file
+// did not exist) says so, instead of an owner or mode fix that cannot help.
+func TestDoctorKeyPathIsFolder(t *testing.T) {
+	dir, _ := keyedConfig(t)
+	named := filepath.Join(t.TempDir(), "holyarrs.key")
+	if err := os.Mkdir(named, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(secrets.EnvKeyFile, named)
+	r := runDoctorEnv(t, dir)
+	c := worstKey(t, r)
+	if c.Status != Fail || !strings.Contains(c.Text, "folder") || strings.Contains(c.Fix, "chmod") {
+		t.Fatalf("key path is a folder: want FAIL naming the folder without a chmod fix, got %+v\n%s", c, r.Text())
+	}
+}

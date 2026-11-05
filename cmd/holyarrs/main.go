@@ -442,9 +442,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			log.Printf("supervisor: a background loop did not stop in time")
 		}
 	}()
-	// A master key that is missing, wrong or cannot be read needs a person,
-	// like the refusals above: keep a plain page up instead of exiting into
-	// a restart loop.
+	// A master key that does not match needs a person, like the refusals
+	// above: keep a plain page up instead of exiting into a restart loop.
 	hold := func(err error) error {
 		log.Printf("holyarrs: not started: %v", err)
 		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
@@ -452,15 +451,41 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}
 	keyRefused := func(err error) error {
-		if !errors.Is(err, secrets.ErrKeyMissing) && !errors.Is(err, secrets.ErrWrongKey) {
+		if !keyNeedsPerson(err) {
 			return err
 		}
 		return hold(err)
 	}
-	key, err := secrets.LoadKey(c.ConfigDir, os.Getenv(secrets.EnvKeyFile))
+	named := os.Getenv(secrets.EnvKeyFile)
+	key, err := secrets.LoadKey(c.ConfigDir, named)
 	if err != nil {
-		// Every error here is about the key file, and a restart cannot fix it.
-		return hold(err)
+		// Other errors (the database check, making a new key) may pass:
+		// exit as before, so the restart policy tries again.
+		if !keyNeedsPerson(err) {
+			return err
+		}
+		// Hold the page until the key file can be read (a late share
+		// mount, an owner fixed on the host), then exit so the restart
+		// policy starts the app with it.
+		log.Printf("holyarrs: not started: %v", err)
+		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+		p := named
+		if p == "" {
+			p = filepath.Join(c.ConfigDir, secrets.KeyFile)
+		}
+		t := time.NewTicker(keyRecheck)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return err
+			case <-t.C:
+				if _, rerr := secrets.LoadKey("", p); rerr == nil {
+					log.Printf("holyarrs: the master key file %s can be read now; exiting so the app starts again with it", p)
+					return err
+				}
+			}
+		}
 	}
 	vault, err := secrets.Open(ctx, s, key)
 	if err != nil {
