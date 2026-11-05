@@ -1,6 +1,5 @@
 <script lang="ts">
-	// Connect Jackett or Prowlarr (#96): HolyArrs looks in the usual places,
-	// takes the address and key, tests them, and brings the sites in as
+	// Connect Jackett or Prowlarr (#96): HolyArrs takes the address and key, tests them, and brings the sites in as
 	// Sources in one step. Jackett's sites stay in step on their own;
 	// Prowlarr writes its sites in through the old-app API.
 	import { onMount } from 'svelte';
@@ -13,6 +12,7 @@
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Icon from '#lib/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 
@@ -45,12 +45,10 @@
 	let address = $state('');
 	let key = $state('');
 	let callback = $state('');
-	let finding = $state(false);
-	let found = $state<{ kind: Kind; url: string }[] | null>(null);
-	let findError = $state('');
 	let testing = $state(false);
 	let connecting = $state(false);
-	let result = $state<{ ok: boolean; text: string } | null>(null);
+	// A test or connect answer; a good test shows as a short tag ("Prowlarr v2.0.5 · 12 sites").
+	let result = $state<{ ok: boolean; text: string; tag?: string } | null>(null);
 	let errors = $state<Record<string, string>>({});
 	let keysNeeded = $state<string[]>([]);
 	let newKeys = $state(false);
@@ -87,27 +85,6 @@
 		keysNeeded = [];
 	}
 
-	async function look() {
-		finding = true;
-		findError = '';
-		try {
-			found = (await api.post<{ found: { kind: Kind; url: string }[] }>('/bridges/find', {})).found;
-		} catch (e) {
-			// Not "none found": the look itself failed.
-			found = null;
-			findError = message(e);
-		} finally {
-			finding = false;
-		}
-	}
-
-	function pick(f: { kind: Kind; url: string }) {
-		kind = f.kind;
-		address = f.url;
-		result = null;
-		document.getElementById('br-key')?.focus();
-	}
-
 	function body() {
 		const keys: Record<string, string> = {};
 		for (const [side, k] of Object.entries(typedKeys)) if (k.trim()) keys[side] = k.trim();
@@ -131,9 +108,11 @@
 			const r = await api.post<{ text: string; sites?: string[]; keys?: Record<string, string> }>('/bridges/test', body());
 			let text = r.text;
 			if (r.sites?.length) text += ` ${r.sites.slice(0, 8).join(', ')}${r.sites.length > 8 ? '…' : ''}.`;
+			const ver = r.text.match(/\d+(?:\.\d+){1,2}/)?.[0];
+			const tag = [`${names[kind]}${ver ? ` v${ver}` : ''}`, r.sites?.length ? `${r.sites.length} ${r.sites.length === 1 ? 'site' : 'sites'}` : ''].filter(Boolean).join(' · ');
 			const have = Object.entries(r.keys ?? {}).filter(([, v]) => v === 'have').map(([k]) => k);
 			keysNeeded = have;
-			result = { ok: true, text };
+			result = { ok: true, text, tag };
 		} catch (e) {
 			if (!fieldError(e)) result = { ok: false, text: message(e) };
 		} finally {
@@ -209,13 +188,13 @@
 	const stateLine = (b: Bridge) =>
 		b.kind === 'jackett'
 			? `${b.sites} ${b.sites === 1 ? 'site' : 'sites'}, ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`
-			: `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} written by Prowlarr`;
+			: `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`;
 </script>
 
 <SettingsCard
 	id="connect-bridge"
 	title="Jackett or Prowlarr"
-	description="The sites you set up there become Sources here."
+	description="Its sites become your Sources."
 >
 	{#if loadError && !bridges}
 		<LoadError hasData={false} message={loadError} onretry={load} />
@@ -237,8 +216,8 @@
 							<b>{names[b.kind]}</b> <span class="mono xs muted">{b.url}</span>
 							<div class="small">{stateLine(b)}{#if b.last_check} · checked {ago(b.last_check)}{/if}</div>
 							{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
-							{#if b.local}<div class="small muted" data-testid="bridge-local">These Sources may reach your home network, because Jackett runs there.</div>{/if}
-							{#if b.kind === 'jackett'}<div class="small muted">A Source you remove stays away. Connect this Jackett again to bring every site back.</div>{/if}
+							{#if b.local}<div class="small muted" data-testid="bridge-local">Can reach your home network</div>{/if}
+							{#if b.kind === 'jackett'}<div class="small muted">Removed Sources stay removed until you connect it again</div>{/if}
 						</div>
 						{#if mayEdit}
 							<div class="acts">
@@ -255,36 +234,15 @@
 		{/if}
 		{#if open}
 			<div class="form" data-testid="bridge-form">
-				<div class="find">
-					<Button type="button" busy={finding} onclick={look} data-testid="bridge-find">Find it</Button>
-					<span class="hint">Checks this machine and common Docker names.</span>
-				</div>
-				{#if findError}
-					<p class="small bad-text" role="alert" data-testid="bridge-find-error">Could not look: {findError}</p>
-				{/if}
-				{#if found}
-					{#if found.length}
-						<ul class="found" data-testid="bridge-found">
-							{#each found as f (f.kind + f.url)}
-								<li><Button type="button" variant="plain" onclick={() => pick(f)}>{names[f.kind]} at {f.url}</Button></li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="hint" data-testid="bridge-found-none">None found. Type the address.</p>
-					{/if}
-				{/if}
-				<div class="field">
-					<span class="label" id="br-kind-label">App</span>
-					<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
-				</div>
-				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include its base path, if it has one.' : undefined} error={errors.url}>
+				<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
+				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Add its base path, if it has one.' : undefined} error={errors.url}>
 					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://jackett:9117' : 'http://prowlarr:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
-				<Field id="br-key" label="Key" hint={kind === 'jackett' ? 'Top of Jackett’s page.' : 'Prowlarr › Settings › General.'} error={errors.key}>
+				<Field id="br-key" label="Key" hint={kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
 					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
-					<Field id="br-callback" label="HolyArrs's address for Prowlarr" hint="An address Prowlarr can reach, like this machine's IP." error={errors.callback_url}>
+					<Field id="br-callback" label="HolyArrs address" hint="Prowlarr must be able to reach it." error={errors.callback_url}>
 						<input id="br-callback" class="input mono" type="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
 					</Field>
 					{#if keysNeeded.length}
@@ -301,8 +259,9 @@
 						</div>
 					{/if}
 				{/if}
-				{#if result}<p class="small" class:bad-text={!result.ok} class:ok-text={result.ok} role="status" data-testid="bridge-result">{result.text}</p>{/if}
+				{#if result && !result.tag}<p class="small" class:bad-text={!result.ok} class:ok-text={result.ok} role="status" data-testid="bridge-result">{result.text}</p>{/if}
 				<div class="acts">
+					{#if result?.tag}<span class="tag" role="status" data-testid="bridge-result" title={result.text}><Icon name="check" size={12} stroke={2.5} />{result.tag}</span>{/if}
 					<Button type="button" variant="plain" onclick={() => (open = false)}>Cancel</Button>
 					<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
 					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">Connect</Button>
@@ -334,9 +293,8 @@
 	.bridges { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 	.bridges > li { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
 	.grow { flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; }
-	.acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-	.find { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-	.found { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+	.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }
+	.tag { margin-right: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-ui); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
 	.keys { display: flex; flex-direction: column; gap: 12px; }
 	.made { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; background: var(--surface-2); overflow-wrap: anywhere; }
 	.check { display: flex; gap: 8px; align-items: flex-start; font: var(--t-callout); }

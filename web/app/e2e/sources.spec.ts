@@ -85,28 +85,19 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		await page.goto('/settings/sources');
 		const card = page.locator('#connect-bridge');
 		await card.getByTestId('bridge-start').click();
-		// A look that fails says so instead of "none found".
-		await page.route('**/api/v1/bridges/find', (r) => r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"server trouble"}' }));
-		await card.getByTestId('bridge-find').click();
-		await expect(card.getByTestId('bridge-find-error')).toContainText('server trouble');
-		await expect(card.getByTestId('bridge-found-none')).toHaveCount(0);
-		await page.unroute('**/api/v1/bridges/find');
-		await card.getByTestId('bridge-find').click();
-		await expect(card.getByTestId('bridge-found-none').or(card.getByTestId('bridge-found'))).toBeVisible();
-		await expect(card.getByTestId('bridge-find-error')).toHaveCount(0);
 		await card.getByLabel('Address').fill(`${base}/jackett`);
 		await card.getByLabel('Key').fill('not-the-key');
 		await card.getByTestId('bridge-test').click();
 		await expect(card.getByTestId('bridge-result')).toContainText('Jackett turned down the key');
 		await card.getByLabel('Key').fill(indexerKey);
 		await card.getByTestId('bridge-test').click();
-		await expect(card.getByTestId('bridge-result')).toContainText('Jackett answered with 1 site. Lab Jackett Site.');
+		await expect(card.getByTestId('bridge-result')).toContainText('Jackett · 1 site');
 		await card.getByTestId('bridge-connect').click();
 		await expect(page.getByText('Jackett connected: 1 Source added.')).toBeVisible();
 		const row = card.getByTestId('bridge');
 		await expect(row).toContainText('1 site, 1 Source');
 		// The fake Jackett runs on this machine: its Sources may reach the local network, and the card says so.
-		await expect(row.getByTestId('bridge-local')).toContainText('may reach your home network');
+		await expect(row.getByTestId('bridge-local')).toContainText('Can reach your home network');
 		const src = page.getByTestId('source').filter({ hasText: 'Lab Jackett Site' });
 		await expect(src).toContainText('/jackett/api/v2.0/indexers/labsite/results/torznab/');
 		await expect(src).toContainText('may reach the local network');
@@ -140,7 +131,7 @@ test('the Connect card fits a phone and passes the accessibility check', async (
 	await card.getByTestId('bridge-start').click();
 	await card.getByText('Prowlarr', { exact: true }).click();
 	// Opened at this machine's own address, which Prowlarr can't reach: the field starts empty.
-	await expect(card.getByLabel("HolyArrs's address for Prowlarr")).toHaveValue('');
+	await expect(card.getByLabel('HolyArrs address')).toHaveValue('');
 	const AxeBuilder = (await import('@axe-core/playwright')).default;
 	expect((await new AxeBuilder({ page }).include('#connect-bridge').analyze()).violations).toEqual([]);
 	await page.setViewportSize({ width: 360, height: 760 });
