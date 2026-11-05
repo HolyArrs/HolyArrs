@@ -33,14 +33,11 @@ class InstallGuides(unittest.TestCase):
     def test_anchors_resolve(self):
         def slugs(text):
             return {re.sub(r"[^a-z0-9 _-]", "", h.strip().lower()).replace(" ", "-")
-                    for h in re.findall(r"^#+\s+(.+)$", text, re.M)}
-        install = GUIDES[0]
+                    for h in re.findall(r"^#+\s+(.+)$", text, re.M)} | set(re.findall(r'<a id="([^"]+)"', text))
         for g in [*GUIDES, *sorted((ROOT / "docs").glob("*.md")), ROOT / "README.md"]:
             text = g.read_text(encoding="utf-8")
             for target, anchor in re.findall(r"\]\(([^)#:]*)#([^)]+)\)", text):
                 page = (g.parent / target) if target else g
-                if g not in GUIDES and page.resolve() != install:
-                    continue  # other pages: only links into install.md are checked here
                 with self.subTest(guide=g.name, anchor=anchor):
                     self.assertIn(anchor, slugs(page.read_text(encoding="utf-8")))
 

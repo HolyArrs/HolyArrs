@@ -82,7 +82,7 @@ func ShareFix(kind string) string {
 	case "fakeowner":
 		return "This folder is shared from the Mac by Docker Desktop, where file locks do not work, so the database is not safe there. Put /config on a named volume (holyarrs-config:/config). Media folders can stay where they are."
 	case "fuse":
-		return "This is a FUSE filesystem (for example an Unraid user share under /mnt/user, mergerfs or rclone), where the database is not safe. On Unraid, use /mnt/<pool>/appdata/holyarrs, or set the appdata share to Exclusive access. On a Mac, use a named volume (holyarrs-config:/config). Otherwise put /config on a local disk."
+		return "This is a FUSE filesystem (for example an Unraid user share under /mnt/user, mergerfs or rclone), where the database is not safe. On Unraid, use /mnt/<pool>/appdata/holyarrs, or set the appdata share to Exclusive access (turn on Permit exclusive shares in Settings > Global Share Settings first). On a Mac, use a named volume (holyarrs-config:/config). Otherwise put /config on a local disk."
 	}
 	return "The database needs a local disk: put /config on a local disk of the machine that runs HolyArrs. Media folders can stay on the share."
 }

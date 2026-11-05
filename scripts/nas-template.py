@@ -40,8 +40,9 @@ def render(image: str, config: str, port: int, media: dict | None = None, allowe
     if not 1024 <= port <= 65535:
         raise ValueError("host port must be between 1024 and 65535")
     root = ET.Element("Container", version="2")
+    # In-app Restart, safe mode and restore exit and count on the restart policy.
     for name, text in {"Name": "holyarrs-candidate", "Repository": image, "Network": "bridge",
-                       "Privileged": "false",
+                       "Privileged": "false", "ExtraParams": "--restart unless-stopped",
                        "WebUI": "http://[IP]:[PORT:6262]/", "Category": "MediaApp:Other:",
                        "Overview": "Unpublished candidate. NAS installation remains unverified. Keep config on a direct local pool. "
                                    "HolyArrs runs as PUID:PGID (99:100 here) and gives the config folder to that user; "

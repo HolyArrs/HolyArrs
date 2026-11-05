@@ -14,6 +14,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/health"
 	"github.com/CoderLuii/holyarrs/internal/importer"
+	"github.com/CoderLuii/holyarrs/internal/runas"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -225,9 +226,8 @@ func (a *API) aboutView(ctx context.Context) AboutView {
 		Version: a.s.Version, Go: runtime.Version(), OS: runtime.GOOS + "/" + runtime.GOARCH,
 		ConfigDir: a.configDir(), UptimeS: int64(time.Since(a.s.Started).Seconds()), Started: a.s.Started.UTC().Format(time.RFC3339),
 	}
-	if _, err := os.Stat("/.dockerenv"); err == nil {
-		v.Docker = true
-	}
+	// Docker, Podman, Kubernetes and the rest: the update steps are the same.
+	v.Docker = runas.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	if exe, err := os.Executable(); err == nil {
 		v.StartDir = filepath.Dir(exe)
 	}
