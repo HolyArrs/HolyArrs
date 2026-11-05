@@ -47,7 +47,20 @@ class Podman(unittest.TestCase):
         run = s.split("podman run -d", 1)[1]
         self.assertIn(":/config:Z", run)
         self.assertIn("""--health-cmd '["/holyarrs","-healthcheck"]'""", run)
-        self.assertIn("--restart", run)
+        # podman-restart.service (Podman 4.x) only starts "always" containers.
+        self.assertIn("--restart always", run)
+        self.assertNotIn("unless-stopped", s)
+        # Rootless: the user units only start at boot with lingering on.
+        self.assertIn("loginctl enable-linger", s)
+        self.assertIn("systemctl --user enable podman-restart.service", s)
+
+    def test_selinux_media_uses_shared_label(self):
+        s = section(read(DOCS / "install.md"), "Rootless Docker and Podman")
+        note = s[s.index("`:Z`"):].split("\n- ", 1)[0]
+        # Media is shared with the Downloader and is often a network share.
+        self.assertNotIn("Add it to media folders too", note)
+        self.assertIn("`:z`", note)
+        self.assertRegex(note, r"(?i)network")
 
 
 class HealthDocs(unittest.TestCase):
@@ -59,12 +72,24 @@ class HealthDocs(unittest.TestCase):
 
     def test_key_kit_and_new_machine_pointers(self):
         health = read(DOCS / "alerts-and-health.md")
-        self.assertIn("backups.md#move-to-a-new-machine", health)
+        self.assertIn("](backups.md", health)
         install = section(read(DOCS / "install.md"), "Keep the master key")
         self.assertIn("Download key kit", install)
         self.assertIn("holyarrs.key", install)
+        # A named volume has no host folder: point at the docker cp steps.
+        self.assertIn("docker cp", install)
+        self.assertIn("#docker-desktop-windows-and-mac", install)
         backups = read(DOCS / "backups.md")
         self.assertIn("key kit", backups.lower())
+
+    def test_trailer_row_warns_only_at_the_limit(self):
+        s = section(read(DOCS / "alerts-and-health.md"), "Health checks")
+        row = re.search(r"(?m)^\| Trailer reader[^\n]*", s).group(0)
+        warn = row.split("|")[3]
+        # health.go: Warning only once TrailerFailLimit lookups failed; a refusal
+        # below that only adds a message to the row.
+        self.assertNotIn("turned", warn)
+        self.assertIn("5 different videos failed in a row", warn)
 
     def test_paused_row_names_the_share(self):
         text = read(DOCS / "downloads-movies.md")

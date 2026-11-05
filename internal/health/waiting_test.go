@@ -61,6 +61,16 @@ func TestWaitingDownloadsCheck(t *testing.T) {
 	if c, ok := waiting(w.run(t)); !ok || c.State != Error {
 		t.Fatalf("waiting 4 days: %+v (found %v), want error", c, ok)
 	}
+	// One download is "it", more are "them".
+	if !strings.Contains(c.Message, "recheck it in") {
+		t.Fatalf("one waiting download should read \"recheck it\": %q", c.Message)
+	}
+	w.exec(t, `INSERT INTO downloads (created_at, created_by, updated_at, updated_by, downloader_id, slot_ids, external_id, state, state_reason, files_seen, started_by)
+		VALUES ('2026-10-01T00:00:00Z', '{}', ?, '{}', 1, '[]', 'bbbb', 'paused', 'the Downloader can''t use the files of this download: is the share mounted?', '[]', '{}')`, store.FormatTime(w.now.Add(-time.Hour)))
+	if c, ok := waiting(w.run(t)); !ok || !strings.Contains(c.Message, "2 downloads") || !strings.Contains(c.Message, "recheck them in") {
+		t.Fatalf("two waiting downloads should read \"recheck them\": %+v (found %v)", c, ok)
+	}
+	w.exec(t, "DELETE FROM downloads WHERE external_id = 'bbbb'")
 	// The files came back.
 	w.exec(t, "UPDATE downloads SET state = 'downloading', state_reason = NULL WHERE id = ?", id)
 	if c, ok := waiting(w.run(t)); ok && c.State != OK {

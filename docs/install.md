@@ -273,19 +273,24 @@ WantedBy=default.target
 or as one command:
 
 ```sh
-podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)"   -v ~/holyarrs/config:/config:Z -p 6262:6262   --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s   --restart unless-stopped ghcr.io/coderluii/holyarrs:beta
+podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)"   -v ~/holyarrs/config:/config:Z -p 6262:6262   --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s   --restart always ghcr.io/coderluii/holyarrs:beta
 ```
 
-- `:Z` lets the container use the folder on Fedora, RHEL and other SELinux
-  systems. Add it to media folders too, or use `:z` for a folder other
-  containers share.
+- `:Z` lets the container use the config folder on Fedora, RHEL and other
+  SELinux systems. For media and download folders, which the Downloader uses
+  too, add `:z` instead. Leave both off for a network share (NFS or SMB): it
+  cannot be relabelled and the container would not start.
 - The image has no shell, so the health check is given as a list, as above.
   Written as plain text, Podman would look for a shell and the check would
   always fail.
 - HolyArrs restarts itself through this restart policy (Restart in the app,
   safe mode, restore). With `podman run`, the policy starts it again while
-  Podman runs; to start it after a reboot, use the Quadlet file or turn on
-  `podman-restart.service`.
+  Podman runs. Keep it `always`: Podman's start-after-reboot service only
+  starts `always` containers.
+- To start it after a reboot without anyone signing in, turn on lingering
+  once: `loginctl enable-linger $USER`. Then use the Quadlet file, or for
+  `podman run` turn on the service as the same user:
+  `systemctl --user enable podman-restart.service`.
 
 **If the folder already belongs to a sub-uid**, give it back from the host
 (stop the container first):
@@ -456,7 +461,9 @@ stored secrets cannot be opened.
 The simplest copy is the key kit: as the owner, open Settings > Backups and
 choose **Download key kit**. No shell is needed. To put it back, rename the
 file to `holyarrs.key` and place it in the config folder while HolyArrs is
-stopped. Moving to a new machine or a fresh container? Put the key back
+stopped. With a named volume there is no folder to open: copy it in with
+`docker cp holyarrs.key hx:/config/` as in
+[Docker Desktop](#docker-desktop-windows-and-mac). Moving to a new machine or a fresh container? Put the key back
 first, then restore the backup; see Move to a new machine in
 [Backups](backups.md).
 
