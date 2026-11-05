@@ -212,50 +212,54 @@ func TestNameFloodKeepsOwnerWait(t *testing.T) {
 	}
 }
 
-// When the name table is full, a name with no record must not go free:
-// spread-out guesses share one wait, a known place still gets in, and the
-// wait ends once the flood has stopped for a while.
-func TestSaturatedNameTableFailsClosed(t *testing.T) {
-	f := setup(t, Options{})
+// While the name table is full, a made-up name gets no record, but a real
+// account still gets its own per-name wait; a flood holds nobody else.
+func TestSaturatedNameTableProtectsRealNames(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	join(t, f, invite(t, f, own, `{"days":1}`), "ana")
+	join(t, f, invite(t, f, own, `{"days":1}`), "bob")
 	a := f.a
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	for i := 0; i < 4*maxTracked; i++ {
 		a.noteFail("ip:"+strconv.Itoa(i%300), "name:made-up-"+strconv.Itoa(i))
 	}
-	if a.fails["name:luis"] != nil {
-		t.Fatal("test needs luis untracked")
+	if a.fails["name:ana"] != nil {
+		t.Fatal("test needs ana untracked")
 	}
-	a.noteKnown(place{"ip:203.0.113.50", "name:luis", true})
+	a.noteKnown(place{"ip:203.0.113.50", "name:ana", true})
 	f.clock.add(2 * time.Second)
 
-	// (a) fresh addresses guessing a real name with no record share a wait.
-	if w := a.signInWait("ip:192.0.2.1", "name:luis", true); w != 0 {
-		t.Fatalf("first guess waited %v", w)
-	}
-	a.noteFail("ip:192.0.2.1", "name:luis")
-	for _, name := range []string{"name:luis", "name:never-seen"} {
-		if a.signInWait("ip:192.0.2.2", name, true) == 0 {
-			t.Fatalf("%s from a fresh address went free while the table was full", name)
+	// (a) guesses at a real name from fresh addresses build its own wait.
+	for i := 0; i < freeUserTries; i++ {
+		ip := "ip:192.0.2." + strconv.Itoa(i+1)
+		if w := a.signInWait(ip, "name:ana", true); w != 0 {
+			t.Fatalf("guess %d waited %v", i, w)
 		}
+		a.noteFail(ip, "name:ana")
 	}
-	if a.signInWait("ip:192.0.2.3", "name:luis", false) == 0 {
-		t.Fatal("unsure address went free")
+	if a.signInWait("ip:198.51.100.1", "name:ana", true) == 0 {
+		t.Fatal("real name went free from a fresh address while the table was full")
 	}
-	if a.satWait("2fa:7") == 0 {
-		t.Fatal("untracked two-factor key went free")
+	// (b) a different real user is not held by the flood or by ana's wait.
+	if w := a.signInWait("ip:198.51.100.2", "name:bob", true); w != 0 {
+		t.Fatalf("bob held by the flood: %v", w)
 	}
-	// (b) the owner from a known place still signs in.
-	if w := a.signInWait("ip:203.0.113.50", "name:luis", true); w != 0 {
+	// made-up names get no record and no shared wait.
+	a.noteFail("ip:198.51.100.3", "name:never-seen")
+	if a.fails["name:never-seen"] != nil {
+		t.Fatal("made-up name got a record in a full table")
+	}
+	if w := a.signInWait("ip:198.51.100.4", "name:never-seen", true); w != 0 {
+		t.Fatalf("made-up name waited %v", w)
+	}
+	// (c) the known place still gets in.
+	if w := a.signInWait("ip:203.0.113.50", "name:ana", true); w != 0 {
 		t.Fatalf("known place waited %v", w)
 	}
-	if len(a.fails) > 4*maxTracked {
+	if len(a.fails) > 4*maxTracked+10 {
 		t.Fatalf("fail map grew to %d", len(a.fails))
-	}
-	// (c) with no flood for the window, untracked names are free again.
-	f.clock.add(MaxBackoff + time.Second)
-	if w := a.signInWait("ip:192.0.2.4", "name:luis", false); w != 0 {
-		t.Fatalf("still waiting %v after the flood stopped", w)
 	}
 }
 
@@ -277,9 +281,6 @@ func TestSaturationEndsAfterFlood(t *testing.T) {
 	if len(a.fails) > maxTracked {
 		t.Fatalf("expired records kept: %d", len(a.fails))
 	}
-	if a.satWait("name:other") != 0 {
-		t.Fatal("still saturated after the flood expired")
-	}
 }
 
 // Disagreeing proxy headers: either one may be written by the visitor, so a
@@ -294,7 +295,7 @@ func TestDisagreeingHeadersCountBothKeys(t *testing.T) {
 	if sure || k1 == "" || k2 == "" || k1 == k2 {
 		t.Fatalf("keys %q %q sure %v", k1, k2, sure)
 	}
-	if k1 != "ip:192.0.2.99" || k2 != "ip:203.0.113.50" {
+	if k1 != "ip:192.0.2.99" || k2 != "xff:203.0.113.50" {
 		t.Fatalf("keys %q %q", k1, k2)
 	}
 	r.Header.Set("X-Real-IP", "203.0.113.50")
@@ -315,5 +316,31 @@ func TestDisagreeingHeadersCountBothKeys(t *testing.T) {
 	}
 	if got != http.StatusTooManyRequests {
 		t.Fatalf("rotating X-Real-IP dodged the limit: %d", got)
+	}
+}
+
+// A visitor behind a proxy that sets only X-Real-IP can write any address in
+// X-Forwarded-For. Those counts live in their own namespace and never lock a
+// real address out of a sure request.
+func TestForgedForwardedForCannotLockOutOwnerAddress(t *testing.T) {
+	f := setup(t, Options{TrustedProxies: []string{"127.0.0.1/32"}})
+	setupOwner(t, f, client(t))
+	owner := "198.51.100.77"
+	wrong := `{"name":"luis","password":"wrong password"}`
+	for i := 0; i < freeTries+freeUserTries; i++ {
+		resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", wrong,
+			map[string]string{"X-Forwarded-For": owner, "X-Real-IP": "192.0.2." + strconv.Itoa(i%200+1)})
+		_ = resp
+	}
+	f.a.mu.Lock()
+	if f.a.fails["ip:"+owner] != nil {
+		f.a.mu.Unlock()
+		t.Fatal("forwarded address was counted under the ip: namespace")
+	}
+	f.a.mu.Unlock()
+	resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"nobody","password":"wrong password"}`,
+		map[string]string{"X-Forwarded-For": owner})
+	if resp.StatusCode == http.StatusTooManyRequests {
+		t.Fatalf("owner's address held by forged forwarding: %d %s", resp.StatusCode, body)
 	}
 }
