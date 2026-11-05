@@ -115,6 +115,9 @@ type Manager struct {
 	// FreeSpace reads free bytes on a disk (nil means importer.FreeSpace;
 	// -1 unknown).
 	FreeSpace func(dir string) int64
+	// Stop, when set, ends with HolyArrs (shutdown). A manual backup stops
+	// only then, never because the browser or a proxy dropped the request.
+	Stop context.Context
 
 	mu      sync.Mutex
 	lastErr string // the last scheduled backup's error, "" after a good one

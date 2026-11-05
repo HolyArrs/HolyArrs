@@ -519,7 +519,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	loop(supervisor.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
 	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
-		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != ""}
+		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != "", Stop: ctx}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
 		log.Printf("backup: %v", err)
 	}

@@ -48,7 +48,14 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			fail(w, http.StatusInsufficientStorage, err.Error()+" and try again.")
 			return
 		}
-		b, err := m.Create(r.Context(), KindManual)
+		// A dropped request (closed tab, proxy timeout) must not cut the
+		// backup off; only a stop of HolyArrs does.
+		ctx, cancel := context.WithCancel(context.WithoutCancel(r.Context()))
+		defer cancel()
+		if m.Stop != nil {
+			defer context.AfterFunc(m.Stop, cancel)()
+		}
+		b, err := m.Create(ctx, KindManual)
 		if err != nil {
 			log.Printf("backup: %v", err)
 			if diskFull(err) {

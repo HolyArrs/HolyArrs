@@ -231,3 +231,38 @@ func TestCutOffRestoreUndoneWhenItCannotFinish(t *testing.T) {
 		t.Errorf("staged main not put back: %q", got)
 	}
 }
+
+// A manual backup keeps going when the browser or a proxy drops the request;
+// only a stop of HolyArrs cuts it off.
+func TestManualBackupFinishesWhenTheClientLeaves(t *testing.T) {
+	m, _, _, _ := setup(t)
+	mux := http.NewServeMux()
+	m.Routes(mux, nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // the client is already gone
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("POST", "/api/v1/backups", nil).WithContext(ctx))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("%d %s", rec.Code, rec.Body.String())
+	}
+	if all, _ := m.List(); len(all) != 1 {
+		t.Fatalf("want one backup, got %v", all)
+	}
+}
+
+func TestManualBackupStopsOnShutdown(t *testing.T) {
+	m, _, _, _ := setup(t)
+	stop, cancel := context.WithCancel(context.Background())
+	cancel()
+	m.Stop = stop
+	mux := http.NewServeMux()
+	m.Routes(mux, nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("POST", "/api/v1/backups", nil))
+	if rec.Code == http.StatusCreated {
+		t.Fatalf("backup should stop on shutdown")
+	}
+	if all, _ := m.List(); len(all) != 0 {
+		t.Fatalf("no backup should be made: %v", all)
+	}
+}
