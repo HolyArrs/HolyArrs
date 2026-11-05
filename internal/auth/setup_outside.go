@@ -444,6 +444,11 @@ func (a *Auth) discover() []foundServer {
 			c.Close()
 			continue
 		}
+		// A broadcast packet can be lost; ask once more a moment later.
+		go func(msg string) {
+			time.Sleep(wait / 6)
+			_, _ = c.WriteToUDP([]byte(msg), dst)
+		}(k.msg)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
