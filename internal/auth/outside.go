@@ -803,6 +803,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
 	delete(a.fails, ipKey)
 	delete(a.fails, userKey)
+	a.noteKnown(ipKey, userKey)
 	a.mu.Unlock()
 	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)
 	a.outsideDone(w, r, kind, id, name, err)

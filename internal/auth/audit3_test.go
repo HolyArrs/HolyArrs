@@ -40,14 +40,14 @@ func TestForwardedClientCannotBeSpoofed(t *testing.T) {
 	}{
 		// nginx with only "X-Real-IP $remote_addr": the visitor's own
 		// X-Forwarded-For comes through untouched.
-		{"nginx real-ip only, spoofed xff", [][2]string{{"X-Real-IP", "203.0.113.9"}, {"X-Forwarded-For", "192.168.1.5"}}, "", "ip:172.18.0.1"},
+		{"nginx real-ip only, spoofed xff", [][2]string{{"X-Real-IP", "203.0.113.9"}, {"X-Forwarded-For", "192.168.1.5"}}, "", "ip:192.168.1.5"},
 		{"nginx real-ip only", [][2]string{{"X-Real-IP", "203.0.113.9"}}, "203.0.113.9", "ip:203.0.113.9"},
 		// nginx with both lines: the visitor's entry is on the left.
 		{"nginx both lines, spoofed xff", [][2]string{{"X-Real-IP", "203.0.113.9"}, {"X-Forwarded-For", "192.168.1.5, 203.0.113.9"}}, "203.0.113.9", "ip:203.0.113.9"},
 		// HAProxy "option forwardfor" adds its own second line.
 		{"haproxy two lines", [][2]string{{"X-Forwarded-For", "192.168.1.5"}, {"X-Forwarded-For", "203.0.113.9"}}, "203.0.113.9", "ip:203.0.113.9"},
 		// A proxy that passes the visitor's X-Real-IP through.
-		{"spoofed real-ip, proxy xff", [][2]string{{"X-Real-IP", "192.168.1.5"}, {"X-Forwarded-For", "203.0.113.9"}}, "", "ip:172.18.0.1"},
+		{"spoofed real-ip, proxy xff", [][2]string{{"X-Real-IP", "192.168.1.5"}, {"X-Forwarded-For", "203.0.113.9"}}, "", "ip:203.0.113.9"},
 		// Trusted hops on the right are skipped.
 		{"chain of trusted proxies", [][2]string{{"X-Forwarded-For", "192.168.1.5, 203.0.113.9, 172.18.0.7"}}, "203.0.113.9", "ip:203.0.113.9"},
 		{"local visitor", [][2]string{{"X-Forwarded-For", "192.168.1.5"}, {"X-Real-IP", "192.168.1.5"}}, "192.168.1.5", "ip:192.168.1.5"},
@@ -102,9 +102,8 @@ func TestLocalPeerUsesSharedRule(t *testing.T) {
 	}
 }
 
-// Strangers cannot keep the owner out: once the per-name wait is on, the
-// right password from an address with no failures still gets in, while
-// wrong guesses from such an address keep being slowed.
+// Strangers cannot keep the owner out of a place they signed in from
+// before; anywhere else the name's wait holds, the right password included.
 func TestNameBackOffDoesNotLockOwnerOut(t *testing.T) {
 	f := setup(t, Options{TrustedProxies: []string{"127.0.0.1/32"}})
 	setupOwner(t, f, client(t))
@@ -114,21 +113,17 @@ func TestNameBackOffDoesNotLockOwnerOut(t *testing.T) {
 		resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", body, map[string]string{"X-Forwarded-For": from})
 		return resp.StatusCode
 	}
-	// Many strangers, each a few wrong tries: the name's wait turns on.
+	if got := login("203.0.113.50", right); got != http.StatusOK {
+		t.Fatalf("first sign-in: %d", got)
+	}
 	for i := 0; i < freeUserTries+2; i++ {
 		login("198.51.100."+strconv.Itoa(i+1), wrong)
 	}
-	if got := login("198.51.100.200", wrong); got != http.StatusUnauthorized {
-		t.Fatalf("first wrong try from a fresh address: %d, want 401 (checked, then counted)", got)
-	}
-	if got := login("198.51.100.200", wrong); got != http.StatusTooManyRequests {
-		t.Fatalf("second wrong try from that address: %d, want 429", got)
-	}
 	if got := login("198.51.100.1", right); got != http.StatusTooManyRequests {
-		t.Fatalf("right password from an address that failed: %d, want 429", got)
+		t.Fatalf("right password from an address that never signed in: %d, want 429", got)
 	}
 	if got := login("203.0.113.50", right); got != http.StatusOK {
-		t.Fatalf("owner from a clean address: %d, want 200", got)
+		t.Fatalf("owner from a place used before: %d, want 200", got)
 	}
 }
 

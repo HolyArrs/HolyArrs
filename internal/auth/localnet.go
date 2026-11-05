@@ -203,8 +203,10 @@ func (a *Auth) seenAddress(r *http.Request) (addr string, untrusted bool) {
 //   - If both headers give a client and they differ, one was written by the
 //     visitor and we cannot tell which (nginx with only X-Real-IP passes the
 //     visitor's X-Forwarded-For through; other proxies pass the visitor's
-//     X-Real-IP through). Then the peer address is used and it is not trusted
-//     for the skip.
+//     X-Real-IP through; Cloudflare in front of such an nginx makes them
+//     differ on every request). Then the X-Forwarded-For client is the limit
+//     key, so visitors do not share one key, and it is not trusted for the
+//     skip.
 //   - A Forwarded header, or an entry that is not an address, makes the
 //     result not trusted for the skip.
 //
@@ -263,7 +265,7 @@ func (a *Auth) clientAddr(r *http.Request) (addr string, ok bool) {
 	case fromReal == "" || fromReal == fromXFF:
 		return fromXFF, ok
 	default:
-		return peer, false
+		return fromXFF, false
 	}
 }
 

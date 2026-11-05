@@ -52,10 +52,10 @@ const (
 const (
 	freeTries     = 5  // per client address
 	freeUserTries = 20 // per name, so one address cannot lock the owner out quickly
-	// cleanAddressAfter: an address with no failure for this long skips the
-	// per-name wait (see signInWait).
-	cleanAddressAfter = 24 * time.Hour
-	MaxBackoff        = 15 * time.Minute
+	// knownPlaceFor: an address that signed in as a name skips that name's
+	// wait for this long (see signInWait).
+	knownPlaceFor = 30 * 24 * time.Hour
+	MaxBackoff    = 15 * time.Minute
 )
 
 const settingSkipLocal = "skip_login_local_network"
@@ -141,8 +141,9 @@ type Auth struct {
 
 	mu           sync.Mutex
 	fails        map[string]*failure
-	setupFails   map[string]*failure // wrong setup codes (hosts.go)
-	refusedHosts map[string]bool     // refused names already logged (hosts.go)
+	known        map[string]time.Time // "name|address" -> last good sign-in (signInWait)
+	setupFails   map[string]*failure  // wrong setup codes (hosts.go)
+	refusedHosts map[string]bool      // refused names already logged (hosts.go)
 	setupCode    string
 	// codes are AI app sign-ins waiting for their key (aioauth.go).
 	codes aiCodes
@@ -714,16 +715,33 @@ func (a *Auth) waitFor(key string, free int) time.Duration {
 }
 
 // signInWait is how long a password sign-in must wait; the caller holds a.mu.
-// The per-address wait always counts. The per-name wait counts only for an
-// address that failed in the last day: strangers spreading wrong guesses over
-// many addresses cannot keep the owner out, yet each new address gets a
-// single check before the name's wait holds it too.
+// The per-address wait always counts. The per-name wait counts for every
+// address except one that signed in as that name in the last 30 days, so
+// strangers spreading guesses over many addresses stay slowed, yet cannot
+// keep the owner out of a place they used before (home, their phone's line).
 func (a *Auth) signInWait(ipKey, userKey string) time.Duration {
 	wait := a.waitFor(ipKey, freeTries)
-	if f := a.fails[ipKey]; f != nil && a.now().Sub(f.last) < cleanAddressAfter {
-		wait = max(wait, a.waitFor(userKey, freeUserTries))
+	if t, ok := a.known[userKey+"|"+ipKey]; ok && a.now().Sub(t) < knownPlaceFor {
+		return wait
 	}
-	return wait
+	return max(wait, a.waitFor(userKey, freeUserTries))
+}
+
+// noteKnown remembers a good sign-in for signInWait; the caller holds a.mu.
+// Kept in memory only, so after a restart a place counts again from its
+// next good sign-in.
+func (a *Auth) noteKnown(ipKey, userKey string) {
+	now := a.now()
+	if a.known == nil || len(a.known) > 10000 {
+		old := a.known
+		a.known = map[string]time.Time{}
+		for k, t := range old {
+			if now.Sub(t) < knownPlaceFor && len(a.known) < 5000 {
+				a.known[k] = t
+			}
+		}
+	}
+	a.known[userKey+"|"+ipKey] = now
 }
 
 func (a *Auth) noteFail(keys ...string) {
@@ -852,6 +870,7 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
 	delete(a.fails, ipKey)
 	delete(a.fails, userKey)
+	a.noteKnown(ipKey, userKey)
 	a.mu.Unlock()
 	a.passed(w, r, id, name)
 }

@@ -20,8 +20,12 @@ import (
 func ReadNewOwner(r io.Reader) (name, password string, err error) {
 	var bare []string
 	sc := bufio.NewScanner(io.LimitReader(r, 64<<10))
+	first := true
 	for sc.Scan() {
 		line := strings.TrimRight(sc.Text(), "\r")
+		if first { // a byte order mark some Windows editors add
+			line, first = strings.TrimPrefix(line, string(rune(0xfeff))), false
+		}
 		if strings.TrimSpace(line) == "" {
 			continue
 		}

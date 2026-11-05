@@ -205,7 +205,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		// codeKey survives a correct password, so a fresh ticket brings back
 		// no free code guesses; only a right code clears it.
 		codeKey := "2fa:" + itoa(t.userID)
-		wait = max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries), a.waitFor(codeKey, freeTries))
+		wait = max(a.signInWait(ipKey, userKey), a.waitFor(codeKey, freeTries))
 		if wait == 0 {
 			t.tries++
 			a.noteFail(ipKey, userKey, codeKey)
