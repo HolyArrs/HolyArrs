@@ -968,7 +968,9 @@ func (a *Auth) noteFail(keys ...string) {
 				// table can an attacker tell real names from made-up ones, by
 				// whether a name wait appears; fine for a self-hosted app with a
 				// few users.
-				if !protectedKey(k) || !a.isRealName(k, now) || len(a.fails) >= limit+fullExtra {
+				// The ceiling sits above the address share, so address records
+				// from the flood cannot use up the room real names get.
+				if !protectedKey(k) || !a.isRealName(k, now) || len(a.fails) >= 4*maxTracked+fullExtra {
 					if protectedKey(k) {
 						a.noteSkipped(now)
 					}
@@ -977,6 +979,13 @@ func (a *Auth) noteFail(keys ...string) {
 			}
 			f = &failure{}
 			a.fails[k] = f
+		}
+		// An address count whose wait ended long ago starts over, so one
+		// typo now and then at home never builds up to a lockout (pruning
+		// does the same, but only once the table is big). A real account
+		// keeps its count for accountKeep.
+		if idle := now.Sub(f.last); f.n > 0 && idle > MaxBackoff && (idle > accountKeep || !a.accountKey(k, now)) {
+			f.n = 0
 		}
 		f.n++
 		f.last = now
@@ -1003,7 +1012,10 @@ func (a *Auth) isRealName(k string, now time.Time) bool {
 		names := map[string]bool{}
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		if rows, err := a.s.Read().QueryContext(ctx, "SELECT name FROM users"); err == nil {
+		// A Jellyfin or Emby account linked to a member under another name
+		// (taken, or renamed since) counts as real too, as "<kind>:<name>".
+		if rows, err := a.s.Read().QueryContext(ctx, `SELECT name FROM users UNION
+			SELECT provider || ':' || external_name FROM user_links WHERE provider IN ('jellyfin', 'emby') AND external_name != ''`); err == nil {
 			for rows.Next() {
 				var n string
 				if rows.Scan(&n) == nil {
