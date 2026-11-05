@@ -45,6 +45,9 @@
 	let address = $state('');
 	let key = $state('');
 	let callback = $state('');
+	// Filled from this page's address; it opens for typing only on Change, a
+	// server error on it, or when this page is on localhost (Prowlarr can't use that).
+	let callbackOpen = $state(false);
 	let testing = $state(false);
 	let connecting = $state(false);
 	// A test or connect answer; a good test shows as a short tag ("Prowlarr v2.0.5 · 12 sites").
@@ -242,9 +245,13 @@
 					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
-					<Field id="br-callback" label="HolyArrs address" hint="Prowlarr must be able to reach it." error={errors.callback_url}>
-						<input id="br-callback" class="input mono" type="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
-					</Field>
+					{#if callback && !callbackOpen && !errors.callback_url}
+						<p class="small muted callback-line">Prowlarr sends sites to <span class="mono">{callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>Change</button></p>
+					{:else}
+						<Field id="br-callback" label="HolyArrs address" hint="Prowlarr must be able to reach it." error={errors.callback_url}>
+							<input id="br-callback" class="input mono" type="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
+						</Field>
+					{/if}
 					{#if keysNeeded.length}
 						<div class="keys" data-testid="bridge-keys">
 							<label class="check"><input type="checkbox" bind:checked={newKeys} data-testid="bridge-new-keys" /> <span>Make new old-app keys. An app using the old ones, such as Seerr, must get the new ones too.</span></label>
@@ -294,6 +301,10 @@
 	.bridges > li { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
 	.grow { flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; }
 	.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }
+	.callback-line { margin: 0; overflow-wrap: anywhere; }
+	.link { border: 0; padding: 0 0 0 4px; background: none; color: var(--accent-text, var(--accent)); font: inherit; cursor: pointer; }
+	.link:hover { text-decoration: underline; }
+	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 	.tag { margin-right: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-ui); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
 	.keys { display: flex; flex-direction: column; gap: 12px; }
 	.made { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; background: var(--surface-2); overflow-wrap: anywhere; }
