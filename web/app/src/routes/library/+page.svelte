@@ -238,7 +238,10 @@
 	});
 	const hiddenCols = $derived(chosenCols.length - shownCols.length);
 	// As many facts as the list is wide enough for: three on a wide screen, down to one.
-	const rowCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept').slice(0, listWidth >= 980 ? 3 : listWidth >= 760 ? 2 : 1));
+	// The Rows grid: poster 52, title >= 120, status 168, each fact 150, actions (wider on touch screens), 12 px gaps.
+	const actsW = $derived(96 + (touchActs ? 48 : 0));
+	const factRoom = $derived(Math.floor((listWidth - 10 - 52 - 120 - 168 - actsW - 12 * 3) / 162));
+	const rowCols = $derived(kind === 'all' ? [] : chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept').slice(0, Math.max(1, Math.min(3, factRoom))));
 	/** rowCell is a fact for the Rows view: counts for progress columns, "14 d ago" for dates that are recent by nature. */
 	function rowCell(t: TitleView, c: Column, p: { have: number; total: number }): string {
 		if (isProgressCol(c)) return p.total ? `${p.have}/${p.total}` : '';
@@ -487,6 +490,14 @@
 	let viewH = $state(900);
 	let listTop = $state(0);
 	const heights = new SvelteMap<string, number>();
+	// A row's height belongs to the view it was measured in: start over when the view changes.
+	let heightsView = untrack(() => view);
+	$effect(() => {
+		if (view !== heightsView) {
+			heightsView = view;
+			untrack(() => heights.clear());
+		}
+	});
 	const phone = $derived(listWidth < 640);
 	/** Height guess for a row not yet measured, from its kind's banner shape. */
 	const guessFor = (k: string) => (view === 'rows' ? (phone ? 60 : 54) : view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) / bannerRatio(k)) + 92 : rowH(k));
@@ -962,9 +973,9 @@
 		{/if}
 		<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'rows', label: 'Rows', icon: 'menu' }, { value: 'table', label: 'Banners', icon: 'image' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={!phone && (view === 'table' || view === 'posters') ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone || listWidth < 1100} /></span>
 		<span class="t-tabs cap">
-			<div class="tabs" role="tablist" aria-label="Status">
+			<div class="tabs" role="group" aria-label="Status">
 				{#each filters as [f, label] (f)}
-					<button type="button" role="tab" aria-selected={filter.status === f} class:on={filter.status === f} onclick={() => setFilter({ status: f })} data-testid="library-tab-{f}">{label}{#if loaded && counts.status[f] !== undefined}<b>{counts.status[f]}</b>{/if}</button>
+					<button type="button" aria-pressed={filter.status === f} class:on={filter.status === f} onclick={() => setFilter({ status: f })} data-testid="library-tab-{f}">{label}{#if loaded && counts.status[f] !== undefined}<b>{counts.status[f]}</b>{/if}</button>
 				{/each}
 			</div>
 		</span>
@@ -1055,15 +1066,15 @@
 					{/each}
 				</ul>
 			{:else}
-				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs}px" bind:this={listEl} bind:clientWidth={listWidth}>
+				<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs}px" bind:this={listEl} bind:clientWidth={listWidth}>
 					{#if view === 'rows' && !phone}
 						<div class="lh" role="presentation" style="--ln: {rowCols.length}">
 							<span></span>
-							<button type="button" class="h sort" aria-label="Sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+							<button type="button" class="h sort" aria-label="Title, sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 							<span class="h">Status</span>
 							{#each rowCols as c (c.id)}
 								{@const sk = columnSort[c.id]}
-								{#if sk && sortsFor(libKind).includes(sk)}
+								{#if sk && sortsFor(kind === 'all' ? 'all' : libKind).includes(sk)}
 									<button type="button" class="h sort" class:num={c.numeric} aria-label="Sort by {c.label}" aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 								{:else}
 									<span class="h" class:num={c.numeric}>{c.label}</span>
@@ -1076,7 +1087,7 @@
 						<div class="row head" role="presentation">
 							<span class="h banner-h">Banner</span>
 							<span></span>
-							<button type="button" class="h sort" aria-label="Sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+							<button type="button" class="h sort" aria-label="Title, sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 							{#if kind !== 'all'}
 								{#each shownCols as c (c.id)}
 									{@const sk = columnSort[c.id]}
@@ -1527,13 +1538,13 @@
 	.toolbar.topbar .t-tools { order: 5; }
 	@container (max-width: 1500px) { .toolbar.topbar .tabs button b { display: none; } .toolbar.topbar .tabs button { padding: 0 9px; } }
 	/* A narrower page gives the tabs their own line under the controls. */
-	@container (max-width: 1000px) { .toolbar.topbar .t-tabs { order: 6; flex-basis: 100%; } .toolbar.topbar .t-tabs .tabs { width: 100%; } }
+	@container (max-width: 1040px) { .toolbar.topbar .t-tabs { order: 6; flex-basis: 100%; } .toolbar.topbar .t-tabs .tabs { width: 100%; } }
 
 	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
-	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px repeat(var(--ln, 3), 150px) 96px; align-items: center; gap: 0 12px; }
+	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px repeat(var(--ln, 3), 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
 	.lh { position: relative; height: 40px; padding-right: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
 	.lr { height: var(--row-h, 54px); padding-right: 10px; }
-	.rows.rows .entry::before { left: 0; right: 0; }
+	.rows.v-rows .entry::before { left: 0; right: 0; }
 	.lp { position: relative; display: block; width: 32px; margin-left: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
 	.lp.round { border-radius: 50%; }
 	.lpick { display: block; margin: 0 auto; }
@@ -1552,6 +1563,14 @@
 	.lc { min-width: 0; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lc.num, .lh .h.num { text-align: right; justify-self: end; }
 	.lr .acts { top: 50%; }
+	/* Phone rows (chosen by the list's own width): the poster, the name over "status · fact", the year at the right. */
+	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-right: 12px; }
+	.lr.ph .lp { width: 36px; margin-left: 8px; }
+	.lr.ph .lt { flex-direction: column; align-items: flex-start; gap: 3px; }
+	.lr.ph .lt a { max-width: 100%; }
+	.lsub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+	.lyr { color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
+
 
 	/* Banner table */
 	.rows { position: relative; isolation: isolate; min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b) 420px); box-shadow: var(--edge), var(--drop); overflow: clip; }
@@ -1732,13 +1751,8 @@
 		.t-tabs::-webkit-scrollbar { display: none; }
 		.t-tabs .tabs { overflow: visible; padding: 2px; border-radius: 12px; background: var(--surface-2); }
 		.t-tabs .tabs button { height: 36px; padding: 0 10px; }
+		@media (pointer: coarse) { .t-tabs .tabs button { height: 44px; } }
 		/* Phone rows: 60 px, the poster, the name over "status · fact", the year at the right. */
-		.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-right: 12px; }
-		.lr.ph .lp { width: 36px; margin-left: 8px; }
-		.lr.ph .lt { flex-direction: column; align-items: flex-start; gap: 3px; }
-		.lr.ph .lt a { max-width: 100%; }
-		.lsub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-		.lyr { color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 		.chips .t-miss { flex-basis: 100%; }
 		.chips .t-miss :global(button) { width: 100%; }
 		.find-box { flex-basis: 100%; max-width: none; order: 5; }
