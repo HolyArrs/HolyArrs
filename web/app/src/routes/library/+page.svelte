@@ -36,6 +36,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LibraryViewSwitch from '#lib/LibraryViewSwitch.svelte';
 	import { dlScope } from '#lib/search-field.svelte.ts';
+	import { rememberLibraryKind } from '#lib/library-last-kind.ts';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -313,6 +314,20 @@
 			if (dlScope.path === '/library' && !dlScope.off && dlScope.term !== now) dlScope.term = now;
 		});
 	});
+	// A plain /library link opens the kind used last (+page.ts).
+	$effect(() => rememberLibraryKind(kind));
+	// Phones have no side menu: the count is also the Movies / TV shows / Music switch.
+	const shelfItems = $derived<MenuItem[]>(
+		(
+			[
+				['movie', 'Movies', 'film', 'movies'],
+				['show', 'TV shows', 'tv', 'shows'],
+				['artist', 'Music', 'music', 'music']
+			] as const
+		)
+			.filter(([k, , , part]) => partsNow.answer?.parts.find((p) => p.part === part)?.on !== false && !(k === 'artist' && session.kid))
+			.map(([k, label, icon]): MenuItem => ({ label, icon, checked: kind === k, href: to(`/library?kind=${k}`) }))
+	);
 	let findOpen = $state(false);
 	let sortOpen = $state(false);
 	let toolbarEl = $state<HTMLElement>();
@@ -892,7 +907,11 @@
 <div class="library" class:selecting>
 	<h1 class="sr-only">{kindTitle}</h1>
 	<div class="toolbar" class:stuck role="toolbar" aria-label="Library view" bind:this={toolbarEl}>
-		<p class="count" aria-live="polite">{#if loaded && !error}{countText}{/if}</p>
+		{#if phone && shelfItems.length > 1}
+			<span class="count shelf"><Menu label="Show Movies, TV shows or Music. Now: {kindTitle}" variant="button" text={loaded && !error ? countText : kindTitle} icon="chevronDown" items={shelfItems} width={200} align="start" /></span>
+		{:else}
+			<p class="count" aria-live="polite">{#if loaded && !error}{countText}{/if}</p>
+		{/if}
 		<span class="t-view"><LibraryViewSwitch value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={view !== 'overview' && !(view === 'table' && phone) ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} /></span>
 		<span class="filter-btn" class:on={filtersOn > 0}>
 			{#if phone}
@@ -1224,6 +1243,7 @@
 	:global(html.bar-hidden) .toolbar.stuck { transform: translateY(calc(-1 * var(--topbar, 0px))); }
 	.count { margin: 0 8px 0 0; min-width: 0; font: var(--t-headline); font-weight: 650; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.count:empty { display: none; }
+	.count.shelf :global(button[aria-haspopup]) { flex-direction: row-reverse; padding-inline: 4px 8px; background: none; box-shadow: none; font: var(--t-headline); font-weight: 650; color: var(--text); }
 	/* Sort and filter: two columns on wide screens, one in the phone sheet. */
 	.sf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 4px 16px; max-height: min(70vh, 560px); overflow: auto; overscroll-behavior: contain; }
 	.sf-col { display: flex; flex-direction: column; min-width: 0; }
