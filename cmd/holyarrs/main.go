@@ -402,7 +402,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 	}
 	defer s.Close()
-	logFolderCheck(ctx, s.Read(), c.SavePath)
 	pc.Store = s
 	if err := pc.Load(ctx); err != nil {
 		return fmt.Errorf("part switches: %w", err)
@@ -472,6 +471,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := ensure(ctx, s, c); err != nil {
 		return fmt.Errorf("setup: %w", err)
 	}
+	// After ensure, so folders added from the environment on a first start
+	// are checked too.
+	logFolderCheck(ctx, s.Read(), c.SavePath)
 	hub := live.NewHub(live.Options{Merge: dlsync.MergePatch})
 	pools := jobs.DefaultPools
 	if c.SafeMode {
