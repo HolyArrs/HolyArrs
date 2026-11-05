@@ -85,7 +85,8 @@
 
 	// ---- 2. Library folders: one row per picked part that keeps files ----
 	type Kind = 'movie' | 'show' | 'music';
-	type Row = { kind: Kind; label: string; icon: IconName; path: string; saved: string; error: string };
+	// saved/id: the folder already made; editing reopens it to type a new path.
+	type Row = { kind: Kind; label: string; icon: IconName; path: string; saved: string; id: number | null; editing: boolean; error: string };
 	const kindRows: { part: PartName; kind: Kind; label: string; icon: IconName }[] = [
 		{ part: 'movies', kind: 'movie', label: 'Movies', icon: 'film' },
 		{ part: 'shows', kind: 'show', label: 'TV shows', icon: 'tv' },
@@ -103,7 +104,10 @@
 		}
 		rows = kindRows
 			.filter((k) => on(k.part))
-			.map((k) => ({ kind: k.kind, label: k.label, icon: k.icon, path: '', saved: have.find((f) => f.kind === k.kind)?.path ?? '', error: '' }));
+			.map((k) => {
+				const f = have.find((x) => x.kind === k.kind);
+				return { kind: k.kind, label: k.label, icon: k.icon, path: '', saved: f?.path ?? '', id: f?.id ?? null, editing: false, error: '' };
+			});
 	}
 	async function saveFolders(e: SubmitEvent) {
 		e.preventDefault();
@@ -111,12 +115,21 @@
 		busy = true;
 		let failed = false;
 		for (const r of rows) {
-			if (r.saved || !r.path.trim()) continue;
+			if (r.editing && r.path.trim() === r.saved) r.editing = false;
+			if ((r.saved && !r.editing) || !r.path.trim()) continue;
 			r.error = '';
 			try {
+				// A changed folder is replaced: on first run it holds nothing yet.
+				if (r.editing && r.id != null) {
+					await api.del(`/library-folders/${r.id}`);
+					r.saved = '';
+					r.id = null;
+				}
 				// Named after its part ("Movies"), not the last bit of the path.
 				const f = await api.post<LibraryFolder>('/library-folders', { path: r.path.trim(), kind: r.kind, label: r.label });
 				r.saved = f.path;
+				r.id = f.id;
+				r.editing = false;
 			} catch (err) {
 				r.error = message(err);
 				failed = true;
@@ -255,21 +268,24 @@
 		<form class="card" onsubmit={saveFolders} data-testid="welcome-folders">
 			<ul class="rows">
 				{#each rows as r (r.kind)}
-					<li class="frow" class:done={!!r.saved}>
+					<li class="frow">
 						<span class="ficon" aria-hidden="true"><Icon name={r.icon} size={22} /></span>
 						<div class="fbody">
 							<span class="fname">{r.label}</span>
-							{#if r.saved}
-								<span class="fsaved mono"><Icon name="check" size={14} stroke={2.5} />{r.saved}</span>
+							{#if r.saved && !r.editing}
+								<span class="fsaved mono">{r.saved}</span>
 							{:else}
 								<input class="input mono" bind:value={r.path} aria-label="{r.label} folder" placeholder={r.kind === 'show' ? '/shows' : r.kind === 'music' ? '/music' : '/movies'} autocomplete="off" spellcheck="false" />
 								{#if r.error}<p class="form-error" role="alert">{r.error}</p>{/if}
 							{/if}
 						</div>
+						{#if r.saved && !r.editing}
+							<button type="button" class="quiet" disabled={busy} onclick={() => { r.path = r.saved; r.editing = true; }} aria-label="Change {r.label} folder">Change</button>
+						{/if}
 					</li>
 				{/each}
 			</ul>
-			{#if rows.some((r) => !r.saved)}<p class="hint">On Docker, use the path inside the container. Leave a row empty to add it later.</p>{/if}
+			{#if rows.some((r) => !r.saved || r.editing)}<p class="hint">On Docker, use the path inside the container. Leave a row empty to add it later.</p>{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>Continue</Button>
 		</form>
@@ -332,7 +348,7 @@
 		</form>
 	{:else if step === 'source'}
 		<div class="card source" data-testid="welcome-source">
-			<ConnectBridge onchange={loadSources} />
+			<ConnectBridge onchange={loadSources} compact />
 			{#if sources > 0}
 				<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('import')}>Continue</Button>
 			{:else}
@@ -473,7 +489,6 @@
 	/* Folders: one row per part, its icon, its name, its path. */
 	.rows { display: flex; flex-direction: column; gap: 10px; }
 	.frow { display: flex; align-items: flex-start; gap: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); }
-	.frow.done { background: color-mix(in srgb, var(--ok, #30d158) 7%, var(--surface-1)); }
 	.ficon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-1); color: var(--text-muted); box-shadow: 0 0 0 1px var(--line); }
 	.fbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 	.fname { font: 600 15px/1.2 var(--font-ui); color: var(--text); padding-top: 2px; }
@@ -491,6 +506,9 @@
 	.tag.mono { font-family: var(--font-mono); }
 	.tag.ok { color: var(--ok-text, #30d158); border-color: color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
 	.tag.bad { color: var(--danger-text, #ff6961); border-color: color-mix(in srgb, var(--danger-text, #ff6961) 40%, transparent); }
+	.quiet { flex: none; align-self: center; border: 0; padding: 4px 2px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
+	.quiet:hover:not(:disabled) { color: var(--text); }
+	.quiet:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
 	.add-row { width: 100%; margin-top: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s; }
 	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
 	.add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); }

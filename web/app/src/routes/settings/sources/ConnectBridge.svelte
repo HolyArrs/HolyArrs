@@ -29,7 +29,8 @@
 		local?: boolean;
 	}
 
-	let { onchange }: { onchange?: () => void } = $props();
+	// compact: the first-run step; a connected row shows no Sync/Disconnect there.
+	let { onchange, compact = false }: { onchange?: () => void; compact?: boolean } = $props();
 
 	const mayEdit = $derived(session.can('settings'));
 	const names: Record<Kind, string> = { jackett: 'Jackett', prowlarr: 'Prowlarr' };
@@ -221,10 +222,10 @@
 							<span class="ctag" class:bad={!!b.last_error}>{b.last_error ? 'Not connected' : countTag(b)}</span>
 						</div>
 						{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
-						{#if mayEdit}
-							<div class="acts">
-								<Button type="button" variant="plain" busy={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</Button>
-								<Button type="button" variant="plain" onclick={() => askRemove(b)} data-testid="bridge-remove">Disconnect…</Button>
+						{#if mayEdit && !compact}
+							<div class="row-acts">
+								<button type="button" class="quiet" disabled={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</button>
+								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">Disconnect…</button>
 							</div>
 						{/if}
 					</li>
@@ -232,7 +233,11 @@
 			</ul>
 		{/if}
 		{#if mayEdit && !open}
-			<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">{bridges.length ? 'Add another' : 'Connect'}</Button></div>
+			{#if bridges.length}
+				<button type="button" class="add-row" onclick={startConnect} data-testid="bridge-start"><Icon name="plus" size={16} />Add another</button>
+			{:else}
+				<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">Connect</Button></div>
+			{/if}
 		{/if}
 		{#if open}
 			<div class="form" data-testid="bridge-form">
@@ -303,7 +308,14 @@
 	.addr { display: block; margin-top: 2px; }
 	.ctag { flex: none; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-ui); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
 	.ctag.bad { color: var(--danger-text, #ff6961); border-color: color-mix(in srgb, var(--danger-text, #ff6961) 40%, transparent); }
-	.bridges .acts { justify-content: flex-start; margin: 0 -8px -6px; }
+	.row-acts { display: flex; gap: 16px; }
+	.quiet { border: 0; padding: 4px 0; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
+	.quiet:hover:not(:disabled) { color: var(--text); }
+	.quiet.danger:hover { color: var(--danger-text, #ff6961); }
+	.quiet:disabled { opacity: 0.5; cursor: default; }
+	.quiet:focus-visible, .add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
+	.add-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+	.add-row:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
 	.grow { flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; }
 	.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }
 	.callback-line { margin: 0; overflow-wrap: anywhere; }
