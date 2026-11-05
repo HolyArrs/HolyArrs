@@ -162,7 +162,7 @@
 							<td><span class="tp-who"><span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(copy.title_id)} name={copy.title} /></span><span class="tp-tx"><a href={to(`/library/${copy.title_id}`)}>{copy.title}{#if copy.year} <span class="yr">{copy.year}</span>{/if}</a><span class="tp-sub">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</span></span></td>
 							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="tp-sub">{codecLine(copy)}</span></td>
 							<td>{copy.audio_languages.length ? copy.audio_languages.map(langName).join(', ') : '—'}<span class="tp-sub">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
-							<td class="path">{copy.relative_path}</td>
+							<td class="path" title={copy.relative_path}>{copy.relative_path.split('/').pop()}</td>
 						</tr>
 					{/each}
 				</tbody>

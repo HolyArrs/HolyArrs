@@ -103,7 +103,7 @@
 						{:else}
 							<a class="name" href={to(`/library/${f.title_id}`)}>{f.title}</a>
 						{/if}
-						<span class="tp-sub path">{f.path}</span>
+						<span class="tp-sub path" title={f.path}>{fileName(f.path)}</span>
 						<span class="tp-sub">{bytes(f.size)} · deleted {date(f.deleted_at)}{f.title_deleted ? ' with the title' : ''}</span>
 					</div>
 					<span class="left" class:soon={left !== null && left <= 1} data-testid="deleted-days-left">{daysLeftWords(f.expires_at)}</span>
