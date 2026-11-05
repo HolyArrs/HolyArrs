@@ -43,9 +43,18 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			"key_kit": m.keyKitState(r.Context())})
 	})
 	mux.HandleFunc("POST /api/v1/backups", func(w http.ResponseWriter, r *http.Request) {
+		if err := m.roomFor(); err != nil {
+			log.Printf("backup: %v", err)
+			fail(w, http.StatusInsufficientStorage, err.Error()+" and try again.")
+			return
+		}
 		b, err := m.Create(r.Context(), KindManual)
 		if err != nil {
 			log.Printf("backup: %v", err)
+			if diskFull(err) {
+				fail(w, http.StatusInsufficientStorage, noSpace+" and try again.")
+				return
+			}
 			fail(w, http.StatusInternalServerError, "the backup failed; see the log")
 			return
 		}
