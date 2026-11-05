@@ -7,7 +7,7 @@
 	import MoveFlow from '../settings/move/+page.svelte';
 	import { page } from '$app/state';
 	import { goto, replaceState } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
 	import { api, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
@@ -228,6 +228,8 @@
 
 	// ---- 5. Import: the Settings move flow, right here in the panel ----
 	const IMPORT_QUERY = 'first=1&step=import&import=1';
+	// Downloaders and Jackett/Prowlarr were set up in the steps before: Import doesn't offer them again.
+	setContext('move-hide-apps', ['prowlarr', 'qbittorrent', 'sabnzbd']);
 	let importing = $state(page.url.searchParams.get('import') === '1');
 	let moveStep = $state('read');
 	function openImport(open: boolean) {
