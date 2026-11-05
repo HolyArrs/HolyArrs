@@ -731,14 +731,14 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "give your "+kind+" name and password")
 		return
 	}
-	ipKey, sure := a.clientKeySure(r)
+	ipKey, altKey, sure := a.clientKeys(r)
 	userKey := "name:" + kind + ":" + strings.ToLower(c.Name)
 	var marks []failMark
 	a.mu.Lock()
-	wait := a.signInWait(ipKey, userKey, sure)
+	wait := max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey))
 	if wait == 0 {
-		marks = a.markFails(ipKey, userKey)
-		a.noteFail(ipKey, userKey)
+		marks = a.markFails(ipKey, altKey, userKey)
+		a.noteFail(ipKey, altKey, userKey)
 	}
 	a.mu.Unlock()
 	// Only an attempt the server could not check is taken back: no answer

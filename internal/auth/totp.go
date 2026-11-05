@@ -198,7 +198,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h := sum(b.Ticket)
-	ipKey, sure := a.clientKeySure(r)
+	ipKey, altKey, sure := a.clientKeys(r)
 	// A ticket from single sign-on or the trusted proxy finishes like those
 	// sign-ins: a settings change or an unlink waits for it, or ends it first.
 	a.ssoMu.RLock()
@@ -215,10 +215,13 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		// codeKey survives a correct password, so a fresh ticket brings back
 		// no free code guesses; only a right code clears it.
 		codeKey := "2fa:" + itoa(t.userID)
-		wait = max(a.signInWait(ipKey, userKey, sure), a.waitFor(codeKey, freeTries))
+		wait = max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey), a.waitFor(codeKey, freeTries))
+		if !a.knownPlace(ipKey, userKey, sure) {
+			wait = max(wait, a.satWait(codeKey))
+		}
 		if wait == 0 {
 			t.tries++
-			a.noteFail(ipKey, userKey, codeKey)
+			a.noteFail(ipKey, altKey, userKey, codeKey)
 		}
 	}
 	a.mu.Unlock()

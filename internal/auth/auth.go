@@ -142,6 +142,9 @@ type Auth struct {
 	mu           sync.Mutex
 	fails        map[string]*failure
 	pruneAt      int // fails size at which pruneFails runs again
+	lastPruneAt  time.Time
+	saturatedAt  time.Time // last time a name record was refused for lack of room
+	satLogged    time.Time
 	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
 	refusedHosts map[string]bool                 // refused names already logged (hosts.go)
@@ -703,6 +706,25 @@ func (a *Auth) clientKeySure(r *http.Request) (string, bool) {
 	return "ip:" + limitAddr(addr), !unsure
 }
 
+// clientKeys is clientKeySure plus altKey: when the proxy headers disagree,
+// the key of the other header's address ("" otherwise). A failure counts under
+// both and the larger wait stands.
+func (a *Auth) clientKeys(r *http.Request) (ipKey, altKey string, sure bool) {
+	addr, other, _, unsure := a.clientAddrBoth(r)
+	if other != "" {
+		altKey = "ip:" + limitAddr(other)
+	}
+	return "ip:" + limitAddr(addr), altKey, !unsure
+}
+
+// altWait is the address wait for altKey, if there is one; the caller holds a.mu.
+func (a *Auth) altWait(altKey string) time.Duration {
+	if altKey == "" {
+		return 0
+	}
+	return a.waitFor(altKey, freeTries)
+}
+
 // place is where a sign-in came from, for known places.
 type place struct {
 	ipKey, userKey string
@@ -756,12 +778,30 @@ func (a *Auth) waitFor(key string, free int) time.Duration {
 // keep the owner out of a place they used before (home, their phone's line).
 func (a *Auth) signInWait(ipKey, userKey string, sure bool) time.Duration {
 	wait := a.waitFor(ipKey, freeTries)
-	if sure {
-		if t, ok := a.known[userKey][ipKey]; ok && a.now().Sub(t) < knownPlaceFor {
-			return wait
-		}
+	if a.knownPlace(ipKey, userKey, sure) {
+		return wait
 	}
-	return max(wait, a.waitFor(userKey, freeUserTries))
+	return max(wait, a.waitFor(userKey, freeUserTries), a.satWait(userKey))
+}
+
+// knownPlace says whether ipKey signed in as userKey in the last 30 days.
+func (a *Auth) knownPlace(ipKey, userKey string, sure bool) bool {
+	if !sure {
+		return false
+	}
+	t, ok := a.known[userKey][ipKey]
+	return ok && a.now().Sub(t) < knownPlaceFor
+}
+
+// satWait is the shared wait for a name or second-step key that has no record
+// while the table has been full (within MaxBackoff): as if it had used its
+// free tries, so one attempt a second at most for all such keys together.
+// Existing and made-up names get the same wait; the caller holds a.mu.
+func (a *Auth) satWait(key string) time.Duration {
+	if a.fails[key] != nil || a.saturatedAt.IsZero() || a.now().Sub(a.saturatedAt) > MaxBackoff {
+		return 0
+	}
+	return max(a.saturatedAt.Add(time.Second).Sub(a.now()), 0)
 }
 
 const (
@@ -818,13 +858,16 @@ func (a *Auth) noteKnown(p place) {
 
 func (a *Auth) noteFail(keys ...string) {
 	now := a.now()
-	if len(a.fails) >= maxTracked && len(a.fails) >= a.pruneAt {
+	if len(a.fails) >= maxTracked && (len(a.fails) >= a.pruneAt || now.Sub(a.lastPruneAt) > MaxBackoff) {
 		a.pruneFails(now)
 		// Scan again only after the map has grown a little, so a flood that
 		// leaves nothing to free does not cost a full scan per attempt.
 		a.pruneAt = len(a.fails) + maxTracked/10
 	}
 	for _, k := range keys {
+		if k == "" {
+			continue
+		}
 		f := a.fails[k]
 		if f == nil {
 			// A name record is only added while the map has room for it, so
@@ -835,7 +878,13 @@ func (a *Auth) noteFail(keys ...string) {
 			if protectedKey(k) {
 				limit = 3 * maxTracked
 			}
+			if len(a.fails) >= limit && protectedKey(k) && now.Sub(a.lastPruneAt) >= time.Minute {
+				a.pruneFails(now) // free expired records before refusing
+			}
 			if len(a.fails) >= limit {
+				if protectedKey(k) {
+					a.noteSaturated(now)
+				}
 				continue
 			}
 			f = &failure{}
@@ -843,6 +892,16 @@ func (a *Auth) noteFail(keys ...string) {
 		}
 		f.n++
 		f.last = now
+	}
+}
+
+// noteSaturated marks the name table full: untracked names then wait (satWait)
+// until the flood has stopped for MaxBackoff. Logs once per window.
+func (a *Auth) noteSaturated(now time.Time) {
+	a.saturatedAt = now
+	if now.Sub(a.satLogged) > MaxBackoff {
+		a.satLogged = now
+		log.Printf("auth: sign-in limits are full; new names wait until the flood stops")
 	}
 }
 
@@ -861,6 +920,7 @@ func protectedKey(k string) bool { return strings.HasPrefix(k, "name:") || strin
 // noteFail stops adding new ones instead, so memory stays bounded and a flood
 // of made-up names cannot remove the owner's wait.
 func (a *Auth) pruneFails(now time.Time) {
+	a.lastPruneAt = now
 	for k, f := range a.fails {
 		if now.Sub(f.last) > MaxBackoff {
 			delete(a.fails, k)
@@ -935,14 +995,14 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, "wrong name or password")
 		return
 	}
-	ipKey, sure := a.clientKeySure(r)
+	ipKey, altKey, sure := a.clientKeys(r)
 	userKey := "name:" + strings.ToLower(c.Name)
 	// Check and reserve in one locked step: the attempt counts as failed up
 	// front and is cleared on success, so parallel attempts cannot slip past.
 	a.mu.Lock()
-	wait := a.signInWait(ipKey, userKey, sure)
+	wait := max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey))
 	if wait == 0 {
-		a.noteFail(ipKey, userKey)
+		a.noteFail(ipKey, altKey, userKey)
 	}
 	a.mu.Unlock()
 	if wait > 0 {

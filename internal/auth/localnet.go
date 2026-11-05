@@ -222,6 +222,14 @@ func (a *Auth) clientAddr(r *http.Request) (addr string, ok bool) {
 // disagree, so the address is one of them and may be written by the visitor.
 // It stays a fine per-visitor limit key but must never stand for a known place.
 func (a *Auth) clientAddrUnsure(r *http.Request) (addr string, ok, unsure bool) {
+	addr, _, ok, unsure = a.clientAddrBoth(r)
+	return addr, ok, unsure
+}
+
+// clientAddrBoth is clientAddrUnsure plus other: when the two proxy headers
+// disagree, the X-Forwarded-For address too. Either may be the visitor's, so
+// limits count a failure under both.
+func (a *Auth) clientAddrBoth(r *http.Request) (addr, other string, ok, unsure bool) {
 	peer, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		peer = r.RemoteAddr
@@ -231,11 +239,11 @@ func (a *Auth) clientAddrUnsure(r *http.Request) (addr string, ok, unsure bool) 
 	real := strings.TrimSpace(r.Header.Get("X-Real-IP"))
 	fwd := r.Header.Get("Forwarded")
 	if len(xffs) == 0 && real == "" && fwd == "" {
-		return peer, true, false
+		return peer, "", true, false
 	}
 	pip := net.ParseIP(peer)
 	if pip == nil || !a.trustedProxy(pip) {
-		return peer, false, false
+		return peer, "", false, false
 	}
 	ok = fwd == ""
 	fromXFF := ""
@@ -250,7 +258,7 @@ func (a *Auth) clientAddrUnsure(r *http.Request) (addr string, ok, unsure bool) 
 	for i := len(entries) - 1; i >= 0; i-- {
 		ip := parseHostIP(entries[i])
 		if ip == nil {
-			return peer, false, false
+			return peer, "", false, false
 		}
 		fromXFF = ip.String()
 		if !a.trustedProxy(ip) {
@@ -268,13 +276,13 @@ func (a *Auth) clientAddrUnsure(r *http.Request) (addr string, ok, unsure bool) 
 	}
 	switch {
 	case fromXFF == "" && fromReal == "":
-		return peer, false, false
+		return peer, "", false, false
 	case fromXFF == "":
-		return fromReal, ok, false
+		return fromReal, "", ok, false
 	case fromReal == "" || fromReal == fromXFF:
-		return fromXFF, ok, false
+		return fromXFF, "", ok, false
 	default:
-		return fromReal, false, true
+		return fromReal, fromXFF, false, true
 	}
 }
 
