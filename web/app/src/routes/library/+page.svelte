@@ -1109,19 +1109,22 @@
 											<div class="ov" class:music={t.kind === 'artist'}>
 												<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 												<div class="ov-main">
-													<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h2>
+													<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
 													{#if t.kind === 'artist'}
 														{#if t.artist?.bio}<p class="ov-text ov-bio">{t.artist.bio}</p>{/if}
 													{:else}
 														<p class="ov-text">{t.overview || 'No description yet.'}</p>
 													{/if}
-													<span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
+													<span class="ov-prog">
+														<span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
+														{#if p.total && t.kind !== 'movie'}<span class="ov-count" aria-hidden="true">{p.have}/{p.total}</span>{/if}
+													</span>
 													<span class="sr-only">{progressText(t)}</span>
 												</div>
+												<!-- The status leads on its own line (never cut short); under it only facts that say something. -->
 												<dl class="ov-facts">
-													<dt>Kept up to date</dt><dd>{t.keep_up_to_date ? 'Yes' : 'No'}</dd>
-													{#each shownCols.filter((c) => !isProgressCol(c) && !(st && c.id === 'status')).slice(0, 4) as c (c.id)}{#if cell(t, c)}<dt>{c.label}</dt><dd>{cell(t, c)}</dd>{/if}{/each}
-													{#if st}<dt>Status</dt><dd><StatusPill kind={st.kind} label={st.label} /></dd>{/if}
+													{#if st}<dt class="sr-only">Status</dt><dd class="ov-state"><StatusPill kind={st.kind} label={st.label} /></dd>{/if}
+													{#each chosenCols.filter((c) => !isProgressCol(c) && c.id !== 'status' && c.id !== 'kept').slice(0, 4) as c (c.id)}{#if cell(t, c)}<dt>{c.label}</dt><dd title={cell(t, c)}>{cell(t, c)}</dd>{/if}{/each}
 												</dl>
 												{#if selecting}<input type="checkbox" class="pick-box ov-pick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
 											</div>
@@ -1448,17 +1451,23 @@
 	.series-head a { margin-left: auto; color: var(--accent-text); font: var(--t-footnote); font-weight: 600; }
 
 	/* Overview list */
-	.ov { display: grid; grid-template-columns: 92px minmax(0, 1fr) 240px; gap: 18px; padding: 14px 16px; }
+	.ov { display: grid; grid-template-columns: 92px minmax(0, 1fr) minmax(200px, 264px); gap: 18px 24px; padding: 14px 20px 14px 16px; }
 	.ov-poster { display: block; border-radius: 8px; overflow: hidden; }
 	.ov-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.ov h2 { margin: 0; font: var(--t-title3); display: flex; align-items: baseline; gap: 10px; }
 	.ov h2 a { color: var(--text); text-decoration: none; }
 	.yr { color: var(--text-muted); font: var(--t-callout); }
 	.ov-text { margin: 0; color: var(--text-muted); font: var(--t-callout); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-	.ov .meter { max-width: 280px; margin-top: auto; }
+	/* A description reads best at a book's line length; the rest of the row is the facts'. */
+	.ov-text { max-width: 68ch; }
+	.ov-prog { display: flex; align-items: center; gap: 10px; margin-top: auto; }
+	.ov .meter { flex: 0 1 280px; }
+	.ov-count { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.ov-keep { flex: none; align-self: center; width: 24px; height: 24px; }
 	.ov-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin: 0; align-content: start; font: var(--t-footnote); }
 	.ov-facts dt { color: var(--text-muted); }
 	.ov-facts dd { margin: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ov-facts dd.ov-state { grid-column: 1 / -1; justify-self: end; max-width: 100%; margin-bottom: 4px; overflow: visible; }
 	.ov-pick { position: absolute; right: 14px; top: 14px; }
 	/* Music: a square photo that keeps its shape, and two or three lines of bio. */
 	.ov.music .ov-poster { align-self: start; }
@@ -1553,6 +1562,7 @@
 		.row > .c { display: none; }
 		.ov { grid-template-columns: 72px minmax(0, 1fr); }
 		.ov-facts { grid-column: 1 / -1; }
+		.ov-facts dd.ov-state { justify-self: start; }
 		.ov-bio { -webkit-line-clamp: 2; line-clamp: 2; }
 		.grid { grid-template-columns: repeat(auto-fill, minmax(var(--poster-min-phone, calc(var(--poster-min, 172px) * 0.66)), 1fr)); gap: 18px 12px; }
 		.fold, .row-notes { padding-left: 12px; }
