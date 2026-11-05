@@ -60,7 +60,6 @@
 	let typedKeys = $state<Record<string, string>>({ sonarr: '', radarr: '' });
 	let checking = $state<number | null>(null);
 	// Old-app keys a Prowlarr connect made, shown once (an app that used a replaced one, such as Seerr, needs it).
-	let madeKeys = $state<Record<string, string> | null>(null);
 	// Making old-app keys wants a fresh password: the server answers "reauth".
 	// Ask inline instead of showing that answer, then run the step again.
 	let reauthFor = $state<'test' | 'connect' | null>(null);
@@ -148,7 +147,6 @@
 		connecting = true;
 		try {
 			const b = await api.post<Bridge & { keys?: Record<string, string> }>('/bridges', body());
-			madeKeys = b.keys && Object.keys(b.keys).length ? b.keys : null;
 			toasts.push(b.kind === 'jackett' ? `Jackett connected: ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added.` : 'Prowlarr connected. Sources will appear shortly.', 'ok');
 			open = false;
 			key = '';
@@ -221,15 +219,6 @@
 		<LoadError hasData={false} message={loadError} onretry={load} />
 	{:else if bridges}
 		{#if bridges.length}
-			{#if madeKeys}
-				<div class="made" role="status" data-testid="bridge-made-keys">
-					<p class="small"><b>New old-app keys. Copy them now.</b> Prowlarr already has them. Paste them into any other app that used the old ones, like Seerr:</p>
-					{#each Object.entries(madeKeys) as [side, k] (side)}
-						<p class="small">{side === 'sonarr' ? 'TV shows (Sonarr side)' : 'Movies (Radarr side)'}: <code class="mono">{k}</code></p>
-					{/each}
-					<div><Button type="button" variant="plain" onclick={() => (madeKeys = null)}>Done</Button></div>
-				</div>
-			{/if}
 			<ul class="bridges" data-testid="bridges">
 				{#each bridges as b (b.id)}
 					<li data-testid="bridge">
@@ -350,7 +339,6 @@
 	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 	.tag { margin-right: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-ui); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
 	.keys { display: flex; flex-direction: column; gap: 12px; }
-	.made { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; background: var(--surface-2); overflow-wrap: anywhere; }
 	.check { display: flex; gap: 8px; align-items: flex-start; font: var(--t-callout); }
 	.check input { margin-top: 3px; flex: none; }
 </style>

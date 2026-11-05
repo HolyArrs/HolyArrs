@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -173,6 +174,10 @@ func (p *Prowlarr) Connect(ctx context.Context, s Side) error {
 		}
 		delete(entry, "id")
 		method, path = http.MethodPost, "/api/v1/applications"
+		// Prowlarr wants unique names. An entry with ours that points
+		// elsewhere (another HolyArrs) is left alone; this one gets its
+		// address in the name.
+		s.Name = uniqueName(have, s.Name, s.Base)
 	} else {
 		path = fmt.Sprintf("/api/v1/applications/%v", entry["id"])
 	}
@@ -231,4 +236,29 @@ func (p *Prowlarr) Disconnect(ctx context.Context, bases []string) error {
 		}
 	}
 	return nil
+}
+
+// uniqueName returns name, or name with the address's host added (and a
+// number after that) when an app in Prowlarr already uses it.
+func uniqueName(have []app, name, base string) string {
+	taken := func(n string) bool {
+		for _, a := range have {
+			if got, _ := a["name"].(string); strings.EqualFold(strings.TrimSpace(got), n) {
+				return true
+			}
+		}
+		return false
+	}
+	if !taken(name) {
+		return name
+	}
+	host := base
+	if u, err := url.Parse(base); err == nil && u.Host != "" {
+		host = u.Host
+	}
+	n := name + " " + host
+	for i := 2; taken(n) && i < 100; i++ {
+		n = fmt.Sprintf("%s %s %d", name, host, i)
+	}
+	return n
 }

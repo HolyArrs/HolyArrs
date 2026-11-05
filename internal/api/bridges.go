@@ -321,8 +321,11 @@ func (a *API) addBridge(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sides[i].Key = k
-		made[side] = k
-		if !have[side] {
+		// Shown once only when it replaced a key another app may hold
+		// (such as Seerr); a first key goes straight into Prowlarr.
+		if have[side] {
+			made[side] = k
+		} else {
 			fresh = append(fresh, side)
 		}
 	}
