@@ -218,7 +218,7 @@ func TestSetupDiscover(t *testing.T) {
 				_, _ = l.WriteToUDP([]byte(`{"Address":"http://192.168.1.20:8096","Id":"j","Name":"Den","EndpointAddress":null}`), from)
 				_, _ = l.WriteToUDP([]byte(`not json`), from)
 			case "who is embyserver?":
-				_, _ = l.WriteToUDP([]byte(`{"Address":"http://192.168.1.30:8096/","Id":"e","Name":"Attic"}`), from)
+				_, _ = l.WriteToUDP([]byte(`{"Address":"http://192.168.1.30:8097/","Id":"e","Name":"Attic"}`), from)
 			}
 		}
 	}()
@@ -228,7 +228,8 @@ func TestSetupDiscover(t *testing.T) {
 		Servers []foundServer `json:"servers"`
 	}
 	jsonOf(t, out, &got)
-	want := []foundServer{{"emby", "Attic", "http://192.168.1.30:8096"}, {"jellyfin", "Den", "http://192.168.1.20:8096"}}
+	// Each address takes the IP the answer came from, not the one it claims.
+	want := []foundServer{{"emby", "Attic", "http://127.0.0.1:8097"}, {"jellyfin", "Den", "http://127.0.0.1:8096"}}
 	if resp.StatusCode != 200 || len(got.Servers) != 2 || got.Servers[0] != want[0] || got.Servers[1] != want[1] {
 		t.Fatalf("discover: %d %s", resp.StatusCode, out)
 	}

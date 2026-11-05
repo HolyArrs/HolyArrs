@@ -308,7 +308,9 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 		} `json:"User"`
 		AccessToken string `json:"AccessToken"`
 	}
-	code, err := a.serverFetch(ctx, http.MethodPost, addr+"/Users/AuthenticateByName", hdr, map[string]string{"Username": body.Name, "Pw": body.Password}, &got)
+	// The address is typed before any owner exists, so the call goes through the
+	// address-test client, which refuses link-local and metadata addresses.
+	code, err := a.call(ctx, a.tester, http.MethodPost, addr+"/Users/AuthenticateByName", hdr, map[string]string{"Username": body.Name, "Pw": body.Password}, &got)
 	notServer := "that address did not answer like a " + word + " server; check it and try again"
 	switch {
 	case err != nil && code == 0:
@@ -330,7 +332,7 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 	if got.AccessToken != "" {
 		// HolyArrs does not keep the server's token: end that session now.
 		lh := map[string]string{"Authorization": fmt.Sprintf("%s, Token=%q", authz, got.AccessToken), "X-Emby-Token": got.AccessToken}
-		_, _ = a.serverFetch(context.WithoutCancel(ctx), http.MethodPost, addr+"/Sessions/Logout", lh, nil, nil)
+		_, _ = a.call(context.WithoutCancel(ctx), a.tester, http.MethodPost, addr+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
 		fail(w, http.StatusForbidden, "this account is turned off on the "+word+" server")
@@ -386,8 +388,18 @@ func (a *Auth) setupDiscover(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "not found")
 		return
 	}
+	if _, ok := a.setupHost(w, r); !ok {
+		return
+	}
 	out := []foundServer{}
-	// One search at a time; a second caller meanwhile gets an empty list.
+	// Each search counts towards the first-run limit; one runs at a time and
+	// a second caller meanwhile gets an empty list.
+	key := "find:" + a.clientKey(r)
+	if a.setupLimited(key) {
+		writeJSON(w, http.StatusOK, map[string]any{"servers": out})
+		return
+	}
+	a.setupFail(key)
 	if a.discovering.CompareAndSwap(false, true) {
 		out = a.discover()
 		a.discovering.Store(false)
@@ -413,6 +425,7 @@ func (a *Auth) discover() []foundServer {
 	}
 	type answer struct {
 		kind string
+		from net.IP
 		b    []byte
 	}
 	ch := make(chan answer, 64)
@@ -437,12 +450,12 @@ func (a *Auth) discover() []foundServer {
 			defer c.Close()
 			buf := make([]byte, 8<<10)
 			for range 32 {
-				n, _, err := c.ReadFromUDP(buf)
+				n, from, err := c.ReadFromUDP(buf)
 				if err != nil {
 					return
 				}
 				select {
-				case ch <- answer{k.kind, append([]byte(nil), buf[:n]...)}:
+				case ch <- answer{k.kind, from.IP, append([]byte(nil), buf[:n]...)}:
 				default:
 				}
 			}
@@ -458,7 +471,9 @@ func (a *Auth) discover() []foundServer {
 		if json.Unmarshal(ans.b, &v) != nil {
 			continue
 		}
-		addr, ok := serverAddress(v.Address)
+		// The address is built from the IP the answer came from, with the port
+		// it gave, so an answer can only point at the machine that sent it.
+		addr, ok := fromAnswer(v.Address, ans.from)
 		if !ok || seen[strings.ToLower(addr)] || len(out) >= discoverMax {
 			continue
 		}
@@ -476,4 +491,26 @@ func (a *Auth) discover() []foundServer {
 		return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name)
 	})
 	return out
+}
+
+// fromAnswer keeps the scheme and port of a discovery answer's address and
+// puts the sender's IP in place of its host.
+func fromAnswer(advertised string, from net.IP) (string, bool) {
+	addr, ok := serverAddress(advertised)
+	if !ok || from == nil {
+		return "", false
+	}
+	u, err := url.Parse(addr)
+	if err != nil {
+		return "", false
+	}
+	port := u.Port()
+	if port == "" {
+		port = "8096"
+		if u.Scheme == "https" {
+			port = "8920"
+		}
+	}
+	u.Host = net.JoinHostPort(from.String(), port)
+	return strings.TrimRight(u.String(), "/"), true
 }
