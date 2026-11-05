@@ -232,6 +232,7 @@ func New(s *store.Store, opt Options) *Auth {
 		a.skipLocal.Store(v == "true")
 	}
 	a.localNets.Store(a.loadLocalNets(context.Background()))
+	a.loadKnown(context.Background())
 	a.loadSavedHosts(context.Background())
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
 	a.initSSO(opt.SSO)
@@ -814,19 +815,35 @@ const (
 )
 
 // noteKnown remembers a finished sign-in for signInWait; the caller holds
-// a.mu. Places are kept per name, so other names and addresses can never push
-// a name's places out; only that name's own least recent place goes. Kept in
-// memory only, so after a restart a place counts again from its next sign-in.
-// An address that is not sure is never recorded.
-func (a *Auth) noteKnown(p place) {
+// a.mu and passes the result to saveKnown once a.mu is unlocked, so the place
+// still counts after a restart. Places are kept per name, so other names and
+// addresses can never push a name's places out; only that name's own least
+// recent place goes. An address that is not sure is never recorded.
+func (a *Auth) noteKnown(p place) *knownChange {
 	if !p.sure || p.userKey == "" {
-		return
+		return nil
 	}
-	now := a.now()
+	ch := &knownChange{put: p, at: a.now()}
+	ch.gone = a.rememberKnown(p.userKey, p.ipKey, ch.at)
+	return ch
+}
+
+// knownChange is one noteKnown for saveKnown: the place to store, and the
+// places it pushed out (an empty ip key: every place of that name).
+type knownChange struct {
+	put  place
+	at   time.Time
+	gone [][2]string
+}
+
+// rememberKnown records userKey signing in from ipKey at the given time and
+// returns the places pushed out to stay within the limits; the caller holds
+// a.mu.
+func (a *Auth) rememberKnown(userKey, ipKey string, at time.Time) (gone [][2]string) {
 	if a.known == nil {
 		a.known = map[string]map[string]time.Time{}
 	}
-	set := a.known[p.userKey]
+	set := a.known[userKey]
 	if set == nil {
 		if len(a.known) >= knownNames {
 			var oldest string
@@ -843,11 +860,12 @@ func (a *Auth) noteKnown(p place) {
 				}
 			}
 			delete(a.known, oldest)
+			gone = append(gone, [2]string{oldest, ""})
 		}
 		set = map[string]time.Time{}
-		a.known[p.userKey] = set
+		a.known[userKey] = set
 	}
-	if _, ok := set[p.ipKey]; !ok && len(set) >= knownPerName {
+	if _, ok := set[ipKey]; !ok && len(set) >= knownPerName {
 		var oldest string
 		var oldestAt time.Time
 		for k, t := range set {
@@ -856,8 +874,64 @@ func (a *Auth) noteKnown(p place) {
 			}
 		}
 		delete(set, oldest)
+		gone = append(gone, [2]string{userKey, oldest})
 	}
-	set[p.ipKey] = now
+	set[ipKey] = at
+	return gone
+}
+
+// saveKnown stores a noteKnown change, and drops that name's places older
+// than knownPlaceFor. Best effort: a failed write is logged and never fails
+// the sign-in; the place still counts until the next restart.
+func (a *Auth) saveKnown(ch *knownChange) {
+	if ch == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+		for _, g := range ch.gone {
+			q, args := "DELETE FROM known_places WHERE user_key = ? AND ip_key = ?", []any{g[0], g[1]}
+			if g[1] == "" {
+				q, args = "DELETE FROM known_places WHERE user_key = ?", []any{g[0]}
+			}
+			if _, err := tx.Exec(q, args...); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec("DELETE FROM known_places WHERE user_key = ? AND last_at < ?",
+			ch.put.userKey, store.FormatTime(ch.at.Add(-knownPlaceFor))); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`INSERT INTO known_places(user_key, ip_key, last_at) VALUES (?, ?, ?)
+			ON CONFLICT(user_key, ip_key) DO UPDATE SET last_at = excluded.last_at`, ch.put.userKey, ch.put.ipKey, store.FormatTime(ch.at))
+		return err
+	})
+	if err != nil {
+		log.Printf("auth: could not save a known sign-in place: %v", err)
+	}
+}
+
+// loadKnown reads the known places of the last 30 days at start, oldest
+// first, under the same limits as noteKnown.
+func (a *Auth) loadKnown(ctx context.Context) {
+	rows, err := a.s.Read().QueryContext(ctx, "SELECT user_key, ip_key, last_at FROM known_places WHERE last_at >= ? ORDER BY last_at",
+		store.FormatTime(a.now().Add(-knownPlaceFor)))
+	if err != nil {
+		log.Printf("auth: could not read known sign-in places: %v", err)
+		return
+	}
+	defer rows.Close()
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for rows.Next() {
+		var u, ip, at string
+		if rows.Scan(&u, &ip, &at) == nil {
+			if t := parseTime(at); !t.IsZero() {
+				a.rememberKnown(u, ip, t)
+			}
+		}
+	}
 }
 
 func (a *Auth) noteFail(keys ...string) {

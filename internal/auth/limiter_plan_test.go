@@ -259,3 +259,37 @@ func TestMadeUpNamesStillPruned(t *testing.T) {
 		}
 	}
 }
+
+// Known places are kept in the database, so home still counts after a
+// restart while strangers hold the name's wait.
+func TestKnownPlaceSurvivesRestart(t *testing.T) {
+	opt := Options{TrustedProxies: []string{"127.0.0.1/32"}}
+	f := setup(t, opt)
+	setupOwner(t, f, client(t))
+	right := `{"name":"luis","password":"` + pw + `"}`
+	wrong := `{"name":"luis","password":"wrong password"}`
+	if resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", right, map[string]string{"X-Forwarded-For": "203.0.113.50"}); resp.StatusCode != 200 {
+		t.Fatalf("first sign-in: %d", resp.StatusCode)
+	}
+	// A restart: a new Auth on the same database.
+	opt.Now, opt.fastHash = f.clock.now, true
+	a := New(f.s, opt)
+	t.Cleanup(a.Close)
+	m := http.NewServeMux()
+	a.Routes(m)
+	srv := httptest.NewServer(a.Middleware(m))
+	t.Cleanup(srv.Close)
+	login := func(from, body string) int {
+		resp, _ := call(t, client(t), "POST", srv.URL+"/api/v1/auth/login", body, map[string]string{"X-Forwarded-For": from})
+		return resp.StatusCode
+	}
+	for i := 0; i < 30; i++ {
+		login("198.51.100."+strconv.Itoa(i%6+1), wrong)
+	}
+	if got := login("192.0.2.77", right); got != http.StatusTooManyRequests {
+		t.Fatalf("owner from a never-used address: %d, want 429", got)
+	}
+	if got := login("203.0.113.50", right); got != http.StatusOK {
+		t.Fatalf("owner from home after a restart: %d, want 200", got)
+	}
+}

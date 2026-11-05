@@ -103,8 +103,9 @@ func (a *Auth) passedPlace(w http.ResponseWriter, r *http.Request, userID int64,
 	}
 	if !on {
 		a.mu.Lock()
-		a.noteKnown(pl)
+		known := a.noteKnown(pl)
 		a.mu.Unlock()
+		a.saveKnown(known)
 		a.startSessionAs(w, r, userID, name, http.StatusOK, method)
 		return
 	}
@@ -257,8 +258,9 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	a.undoFailLocked(marks) // only this attempt's address count
 	delete(a.fails, "name:"+strings.ToLower(t.name))
 	delete(a.fails, "2fa:"+itoa(t.userID))
-	a.noteKnown(place{ipKey, t.userKey, sure})
+	known := a.noteKnown(place{ipKey, t.userKey, sure})
 	a.mu.Unlock()
+	a.saveKnown(known)
 	a.startSessionAs(w, r, t.userID, t.name, http.StatusOK, t.method)
 }
 
