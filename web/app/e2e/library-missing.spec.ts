@@ -148,9 +148,9 @@ test('Search all missing searches each missing movie, then each episode, at the 
 		const searchAll = async (label: string, said: string): Promise<number> => {
 			const button = page.getByTestId('search-all-missing');
 			await expect(button).toHaveText(label);
-			const n = Number((await page.getByText(/^\d+ of \d+ (movies|TV shows|artists)$/).textContent())?.split(' ')[0]);
-			expect(n).toBeGreaterThanOrEqual(2);
-			const dialog = page.getByRole('dialog', { name: `Search for ${n} missing titles?` });
+			const n = Number((await page.getByText(/^\d+ of \d+ (movies?|TV shows?|artists?)$/).textContent())?.split(' ')[0]);
+			expect(n).toBeGreaterThanOrEqual(1);
+			const dialog = page.getByRole('dialog', { name: `Search for ${n} missing ${n === 1 ? 'title' : 'titles'}?` });
 			await button.click();
 			await expect(dialog).toBeVisible();
 			await dialog.getByRole('button', { name: 'Cancel' }).click();
