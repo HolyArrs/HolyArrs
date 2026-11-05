@@ -397,17 +397,17 @@
 		...(partOn('shows') ? ([{ label: 'TV show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
 		...(partOn('music') ? ([{ label: 'Artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : [])
 	]);
-	type Tool = { label: string; hint: string; icon: IconName; tint: Tint; href: string };
+	type Tool = { label: string; hint: string; icon: IconName; tint: Tint; href: string; /** Which count the tile carries, and whether it calls for action (red) or only tells (grey). */ count?: 'rename' | 'subs' | 'turned' | 'deleted'; hot?: boolean };
 	const toolGroups = $derived<{ name: string; tools: Tool[] }[]>(
 		[
 			{
 				name: 'Look after',
 				tools: [
-					{ label: 'Rename files', hint: 'Names off your pattern', icon: 'refresh', tint: 'blue', href: to('/library/rename') },
-					...(partOn('subtitles') ? ([{ label: 'Missing subtitles', hint: 'Languages still wanted', icon: 'subtitle', tint: 'indigo', href: to('/library/missing-subtitles') }] as Tool[]) : []),
+					{ label: 'Rename files', hint: 'Names off your pattern', icon: 'refresh', tint: 'blue', href: to('/library/rename'), count: 'rename', hot: true },
+					...(partOn('subtitles') ? ([{ label: 'Missing subtitles', hint: 'Languages still wanted', icon: 'subtitle', tint: 'indigo', href: to('/library/missing-subtitles'), count: 'subs', hot: true }] as Tool[]) : []),
 					{ label: 'Video codecs', hint: 'What your files use', icon: 'copy', tint: 'teal', href: to('/library/copies') },
-					{ label: 'Turned down', hint: 'Releases you said no to', icon: 'declined', tint: 'gray', href: to('/library/turned-down') },
-					...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', hint: 'Bring back or clear', icon: 'trash', tint: 'red', href: to('/library/deleted') }] as Tool[]) : [])
+					{ label: 'Turned down', hint: 'Releases you said no to', icon: 'declined', tint: 'gray', href: to('/library/turned-down'), count: 'turned' },
+					...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', hint: 'Bring back or clear', icon: 'trash', tint: 'red', href: to('/library/deleted'), count: 'deleted' }] as Tool[]) : [])
 				] as Tool[]
 			},
 			{
@@ -420,6 +420,22 @@
 		].filter((g) => g.tools.length)
 	);
 	let toolsOpen = $state(false);
+	// The tiles' counts are read when Tools opens (at most once a minute), from the lists the tool pages
+	// themselves read; a list that cannot be read simply shows no count.
+	let toolCounts = $state<Partial<Record<NonNullable<Tool['count']>, number>>>({});
+	let toolCountsAt = 0;
+	function loadToolCounts() {
+		if (Date.now() - toolCountsAt < 60_000) return;
+		toolCountsAt = Date.now();
+		const set = (k: NonNullable<Tool['count']>, n: number) => (toolCounts = { ...toolCounts, [k]: n });
+		void api.get<{ steps: unknown[] }>('/rename').then((r) => set('rename', r.steps?.length ?? 0), () => {});
+		if (partOn('subtitles')) void api.get<{ total: number }>('/subtitles/missing?limit=1').then((r) => set('subs', r.total ?? 0), () => {});
+		void api.get<{ total: number }>('/turned-down?limit=1').then((r) => set('turned', r.total ?? 0), () => {});
+		void api.get<{ files: unknown[] }>('/holding').then((r) => set('deleted', r.files?.length ?? 0), () => {});
+	}
+	$effect(() => {
+		if (toolsOpen) untrack(loadToolCounts);
+	});
 	function partOn(name: string) {
 		return partsNow.answer?.parts.find((part) => part.part === name)?.on !== false;
 	}
@@ -1241,9 +1257,10 @@
 			<h3 class="sf-h">{g.name}</h3>
 			<div class="tt-grid">
 				{#each g.tools as tool (tool.href)}
+					{@const n = tool.count ? (toolCounts[tool.count] ?? 0) : 0}
 					<a class="tt-tile" href={tool.href} onclick={() => (toolsOpen = false)}>
-						<SettingsTile icon={tool.icon} tint={tool.tint} />
-						<span class="tt-tx"><b>{tool.label}</b><small>{tool.hint}</small></span>
+						<span class="tt-ic"><SettingsTile icon={tool.icon} tint={tool.tint} />{#if n > 0}<i class="tt-pin" class:hot={tool.hot} aria-hidden="true" data-testid="tool-count">{n > 999 ? '999+' : n}</i>{/if}</span>
+						<span class="tt-tx"><b>{tool.label}{#if n > 0}<span class="sr-only">, {n}</span>{/if}</b><small>{tool.hint}</small></span>
 					</a>
 				{/each}
 			</div>
@@ -1385,6 +1402,10 @@
 	.tt-tile { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 52px; padding: 8px 10px; border-radius: 10px; color: var(--text); text-decoration: none; transition: background-color 120ms ease; }
 	.tt-tile:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
 	.tt-tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.tt-ic { position: relative; flex: none; display: grid; }
+	/* A count sits on the icon's corner, so every tile keeps the same shape: red when it calls for action, grey when it only tells. */
+	.tt-pin { position: absolute; right: -8px; top: -7px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--text-muted); color: var(--bg); font: 700 10.5px/17px var(--font-ui); font-style: normal; font-variant-numeric: tabular-nums; text-align: center; box-shadow: 0 0 0 2px var(--surface-1); }
+	.tt-pin.hot { background: var(--accent-fill, var(--accent)); color: #fff; }
 	.tt-tx { display: grid; min-width: 0; }
 	.tt-tx b { font: 600 13.5px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tt-tx small { color: var(--text-muted); font: 400 12px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
