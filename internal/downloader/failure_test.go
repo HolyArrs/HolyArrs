@@ -70,15 +70,20 @@ func wantFailedPath(t *testing.T, w *world, id int64, reason string, removed boo
 	}
 }
 
+// A Download the client itself reports as failed still turns the Release
+// down and searches again, but it is taken out of the client without its
+// files: a failure caused by the client never deletes data (late-mounts-3).
 func TestDownloaderFailureTurnsDownRemovesAndSearches(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	clientSaysFailed(m)
 	id := grabbed(t, w, m)
-	w.fake.set(hash, map[string]any{"state": "error"})
 	if n, _ := m.SyncOnce(context.Background()); n != 0 {
 		t.Fatalf("still active: %d", n)
 	}
-	wantFailedPath(t, w, id, "the Downloader says error", true)
+	wantFailedPath(t, w, id, "the Downloader says", false)
+	if len(w.fake.deleted) != 1 || w.fake.deleted[0] != hash+"|false" {
+		t.Fatalf("a client-caused failure must leave the files: deleted %v", w.fake.deleted)
+	}
 	// A second sync does nothing more.
 	_, _ = m.SyncOnce(context.Background())
 	if len(w.failedSlots) != 1 {
@@ -90,9 +95,12 @@ func TestFailedKeptInTheDownloaderWhenSettingOff(t *testing.T) {
 	w, m := setup(t)
 	w.setting(t, SettingRemoveFailed, "false")
 	id := grabbed(t, w, m)
-	w.fake.set(hash, map[string]any{"state": "missingFiles"})
+	clientSaysFailed(m)
 	_, _ = m.SyncOnce(context.Background())
-	wantFailedPath(t, w, id, "missingFiles", false)
+	wantFailedPath(t, w, id, "the Downloader says", false)
+	if len(w.fake.deleted) != 0 {
+		t.Fatalf("kept in the Downloader with the setting off: deleted %v", w.fake.deleted)
+	}
 }
 
 func TestDangerousFilesFailTheDownload(t *testing.T) {
@@ -256,7 +264,9 @@ func TestVanishedIsReplaced(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
 	w.fake.drop(hash)
-	_, _ = m.SyncOnce(context.Background())
+	for range missedSyncs {
+		_, _ = m.SyncOnce(context.Background())
+	}
 	d := w.download(t, id)
 	if d.State != "vanished" || !strings.Contains(*d.StateReason, "removed outside HolyArrs") {
 		t.Fatalf("download %s %v", d.State, d.StateReason)
@@ -271,7 +281,9 @@ func TestVanishedNeedsADecisionWhenSettingOff(t *testing.T) {
 	w.setting(t, SettingReplaceVanished, "false")
 	id := grabbed(t, w, m)
 	w.fake.drop(hash)
-	_, _ = m.SyncOnce(context.Background())
+	for range missedSyncs {
+		_, _ = m.SyncOnce(context.Background())
+	}
 	if d := w.download(t, id); d.State != "vanished" {
 		t.Fatalf("download %s", d.State)
 	}

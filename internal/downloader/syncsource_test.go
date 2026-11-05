@@ -122,9 +122,11 @@ func TestStoreUnknownBeforeNewerSnapshot(t *testing.T) {
 	if got := w.download(t, id).State; got != "sent" {
 		t.Fatalf("state %q from a snapshot older than the grab, want sent (unknown)", got)
 	}
-	src.set(SyncView{Items: map[string]Job{}, Complete: true, Fresh: true, ReadAt: time.Now().Add(time.Second)})
-	if _, err := m.SyncOnce(ctx); err != nil {
-		t.Fatal(err)
+	for i := range missedSyncs {
+		src.set(SyncView{Items: map[string]Job{}, Complete: true, Fresh: true, ReadAt: time.Now().Add(time.Duration(i+1) * time.Second)})
+		if _, err := m.SyncOnce(ctx); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if got := w.download(t, id).State; got != "vanished" {
 		t.Fatalf("state %q after a newer complete snapshot past grace, want vanished", got)

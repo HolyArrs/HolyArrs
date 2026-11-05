@@ -233,7 +233,9 @@ func TestVanishedAndFailed(t *testing.T) {
 	w.fake.set(hash, map[string]any{"name": "x", "category": "holyarrs", "progress": 0.1, "state": "downloading"})
 	_, _ = m.SyncOnce(ctx)
 	w.fake.drop(hash)
-	_, _ = m.SyncOnce(ctx)
+	for range missedSyncs {
+		_, _ = m.SyncOnce(ctx)
+	}
 	if d := w.download(t, id); d.State != "vanished" {
 		t.Fatalf("want vanished, got %s", d.State)
 	}
@@ -273,7 +275,9 @@ func TestNotVanishedRightAfterSending(t *testing.T) {
 		t.Fatalf("want sent during the grace time, got %s", d.State)
 	}
 	w.clock = w.clock.Add(3 * time.Minute)
-	_, _ = m.SyncOnce(ctx)
+	for range missedSyncs {
+		_, _ = m.SyncOnce(ctx)
+	}
 	if d := w.download(t, id); d.State != "vanished" {
 		t.Fatalf("want vanished after the grace time, got %s", d.State)
 	}
