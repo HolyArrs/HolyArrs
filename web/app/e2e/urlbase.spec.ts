@@ -32,7 +32,7 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('base-test-password');
 	await page.getByLabel('Password again').fill('base-test-password');
-	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
+	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page).toHaveURL(`${root}/welcome?first=1`);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	const movies = join(here, '.tmp-base', 'movies');

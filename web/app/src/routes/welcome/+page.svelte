@@ -223,7 +223,7 @@
 	</header>
 
 	{#if !session.can('users') || (step !== 'parts' && !session.can('settings'))}
-		<p class="notice warn">Only the owner, or an admin who can change settings, can finish setup.</p>
+		<p class="notice warn">Only the owner or an admin with Settings access can finish setup.</p>
 	{:else if step === 'parts'}
 		<form class="card" onsubmit={submitParts} data-testid="welcome">
 			<!-- Big tiles, each a real checkbox (it covers the tile, so a tap anywhere toggles it). -->
@@ -244,7 +244,7 @@
 					<label class:on={family === 'no'}><input type="radio" name="family" value="no" bind:group={family} />No, just me</label>
 					<label class:on={family === 'yes'}><input type="radio" name="family" value="yes" bind:group={family} />Yes</label>
 				</div>
-				<p class="hint">Yes adds a Requests page. They ask, you approve.</p>
+				<p class="hint">Yes adds a Requests page.</p>
 			</fieldset>
 
 			{#if error || problem}<p class="form-error" role="alert">{error || problem}</p>{/if}
@@ -269,7 +269,7 @@
 					</li>
 				{/each}
 			</ul>
-			{#if rows.some((r) => !r.saved)}<p class="hint">The path as HolyArrs sees it. On Docker, the path inside the container. Leave one empty to add it later.</p>{/if}
+			{#if rows.some((r) => !r.saved)}<p class="hint">On Docker, use the path inside the container. Leave a row empty to add it later.</p>{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>Continue</Button>
 		</form>
@@ -344,7 +344,7 @@
 			<div class="tiles two-up">
 				<a class="tile big" href={to('/settings/move')}>
 					<Icon name="download" size={26} />
-					<span class="tile-label">Bring my setup</span>
+					<span class="tile-label">Import</span>
 					<span class="tile-sub">Library, sources, downloaders and people.</span>
 				</a>
 				<button class="tile big" type="button" disabled={busy} onclick={home}>

@@ -64,7 +64,7 @@ test.beforeAll(async ({ browser }) => {
 	await page.getByLabel('Name').fill(owner.name);
 	await page.getByLabel('Password', { exact: true }).fill(owner.password);
 	await page.getByLabel('Password again').fill(owner.password);
-	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
+	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Subtitles', { exact: true }).check();

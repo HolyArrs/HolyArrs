@@ -17,7 +17,7 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
+	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await finishFirstRun(page, moviesDir);

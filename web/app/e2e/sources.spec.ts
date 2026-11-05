@@ -86,22 +86,22 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		const card = page.locator('#connect-bridge');
 		await card.getByTestId('bridge-start').click();
 		await card.getByLabel('Address').fill(`${base}/jackett`);
-		await card.getByLabel('Key').fill('not-the-key');
+		await card.getByLabel('API key').fill('not-the-key');
 		await card.getByTestId('bridge-test').click();
 		await expect(card.getByTestId('bridge-result')).toContainText('Jackett turned down the key');
-		await card.getByLabel('Key').fill(indexerKey);
+		await card.getByLabel('API key').fill(indexerKey);
 		await card.getByTestId('bridge-test').click();
-		await expect(card.getByTestId('bridge-result')).toContainText('Jackett · 1 site');
+		await expect(card.getByTestId('bridge-result')).toContainText('Jackett · 1 indexer');
 		await card.getByTestId('bridge-connect').click();
 		await expect(page.getByText('Jackett connected: 1 Source added.')).toBeVisible();
 		const row = card.getByTestId('bridge');
-		await expect(row).toContainText('1 site');
+		await expect(row).toContainText('1 indexer');
 		// The fake Jackett runs on this machine: its Sources may reach the local network, and each Source says so.
 		const src = page.getByTestId('source').filter({ hasText: 'Lab Jackett Site' });
 		await expect(src).toContainText('/jackett/api/v2.0/indexers/labsite/results/torznab/');
 		await expect(src).toContainText('may reach the local network');
 		await row.getByTestId('bridge-check').click();
-		await expect(page.getByText('Already in step.')).toBeVisible();
+		await expect(page.getByText('Already up to date.')).toBeVisible();
 
 		// A site behind a bot check says so, and points here.
 		await addSource('Lab Guarded', 'torznab', `${base}/guarded/api`, indexerKey);

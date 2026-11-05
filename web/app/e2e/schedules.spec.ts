@@ -18,7 +18,7 @@ async function enterFreshApp(page: import('@playwright/test').Page) {
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
+	await page.getByRole('button', { name: 'Create account' }).click();
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();

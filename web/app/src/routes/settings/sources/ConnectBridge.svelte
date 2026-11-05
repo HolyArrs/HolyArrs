@@ -112,7 +112,7 @@
 			let text = r.text;
 			if (r.sites?.length) text += ` ${r.sites.slice(0, 8).join(', ')}${r.sites.length > 8 ? '…' : ''}.`;
 			const ver = r.text.match(/\d+(?:\.\d+){1,2}/)?.[0];
-			const tag = [`${names[kind]}${ver ? ` v${ver}` : ''}`, r.sites?.length ? `${r.sites.length} ${r.sites.length === 1 ? 'site' : 'sites'}` : ''].filter(Boolean).join(' · ');
+			const tag = [`${names[kind]}${ver ? ` v${ver}` : ''}`, r.sites?.length ? `${r.sites.length} ${r.sites.length === 1 ? 'indexer' : 'indexers'}` : ''].filter(Boolean).join(' · ');
 			const have = Object.entries(r.keys ?? {}).filter(([, v]) => v === 'have').map(([k]) => k);
 			keysNeeded = have;
 			result = { ok: true, text, tag };
@@ -130,7 +130,7 @@
 		try {
 			const b = await api.post<Bridge & { keys?: Record<string, string> }>('/bridges', body());
 			madeKeys = b.keys && Object.keys(b.keys).length ? b.keys : null;
-			toasts.push(b.kind === 'jackett' ? `Jackett connected: ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added.` : 'Prowlarr connected. It sends its sites in now.', 'ok');
+			toasts.push(b.kind === 'jackett' ? `Jackett connected: ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added.` : 'Prowlarr connected. Sources will appear shortly.', 'ok');
 			open = false;
 			key = '';
 			typedKeys = { sonarr: '', radarr: '' };
@@ -153,7 +153,7 @@
 		try {
 			const r = await api.post<{ bridge: Bridge; result?: { added: number; removed: number; updated: number } }>(`/bridges/${b.id}/check`, {});
 			const res = r.result;
-			toasts.push(res ? (res.added + res.removed + res.updated ? `In step: ${res.added} added, ${res.removed} removed, ${res.updated} changed.` : 'Already in step.') : 'Prowlarr is sending its sites again.', 'ok');
+			toasts.push(res ? (res.added + res.removed + res.updated ? `Synced: ${res.added} added, ${res.removed} removed, ${res.updated} changed.` : 'Already up to date.') : 'Prowlarr is syncing again.', 'ok');
 			onchange?.();
 		} catch (e) {
 			toasts.push(message(e), 'fail');
@@ -189,13 +189,13 @@
 	}
 
 	const countTag = (b: Bridge) =>
-		b.kind === 'jackett' ? `${b.sites} ${b.sites === 1 ? 'site' : 'sites'}` : `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`;
+		b.kind === 'jackett' ? `${b.sites} ${b.sites === 1 ? 'indexer' : 'indexers'}` : `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`;
 </script>
 
 <SettingsCard
 	id="connect-bridge"
 	title="Jackett or Prowlarr"
-	description={bridges?.length ? undefined : 'Its sites become your Sources.'}
+	description={bridges?.length ? undefined : 'Use the indexers you already set up there.'}
 >
 	{#if loadError && !bridges}
 		<LoadError hasData={false} message={loadError} onretry={load} />
@@ -203,7 +203,7 @@
 		{#if bridges.length}
 			{#if madeKeys}
 				<div class="made" role="status" data-testid="bridge-made-keys">
-					<p class="small"><b>New old-app keys, shown only now.</b> Prowlarr has them already. An app that used an old one, such as Seerr, needs the new one:</p>
+					<p class="small"><b>New old-app keys. Copy them now.</b> Prowlarr already has them. Paste them into any other app that used the old ones, like Seerr:</p>
 					{#each Object.entries(madeKeys) as [side, k] (side)}
 						<p class="small">{side === 'sonarr' ? 'TV shows (Sonarr side)' : 'Movies (Radarr side)'}: <code class="mono">{k}</code></p>
 					{/each}
@@ -223,7 +223,7 @@
 						{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
 						{#if mayEdit}
 							<div class="acts">
-								<Button type="button" variant="plain" busy={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Check</Button>
+								<Button type="button" variant="plain" busy={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</Button>
 								<Button type="button" variant="plain" onclick={() => askRemove(b)} data-testid="bridge-remove">Disconnect…</Button>
 							</div>
 						{/if}
@@ -232,20 +232,20 @@
 			</ul>
 		{/if}
 		{#if mayEdit && !open}
-			<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">{bridges.length ? 'Add another' : 'Connect Jackett or Prowlarr'}</Button></div>
+			<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">{bridges.length ? 'Add another' : 'Connect'}</Button></div>
 		{/if}
 		{#if open}
 			<div class="form" data-testid="bridge-form">
 				<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
-				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Add its base path, if it has one.' : undefined} error={errors.url}>
+				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include the base path, if any.' : undefined} error={errors.url}>
 					<input id="br-url" class="input mono" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder={kind === 'jackett' ? 'http://jackett:9117' : 'http://prowlarr:9696'} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
-				<Field id="br-key" label="Key" hint={kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
+				<Field id="br-key" label="API key" hint={kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
 					<input id="br-key" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
 					{#if callback && !callbackOpen && !errors.callback_url}
-						<p class="small muted callback-line">Prowlarr sends sites to <span class="mono">{callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>Change</button></p>
+						<p class="small muted callback-line">Prowlarr reaches HolyArrs at <span class="mono">{callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>Change</button></p>
 					{:else}
 						<Field id="br-callback" label="HolyArrs address" hint="Prowlarr must be able to reach it." error={errors.callback_url}>
 							<input id="br-callback" class="input mono" type="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
@@ -253,9 +253,9 @@
 					{/if}
 					{#if keysNeeded.length}
 						<div class="keys" data-testid="bridge-keys">
-							<label class="check"><input type="checkbox" bind:checked={newKeys} data-testid="bridge-new-keys" /> <span>Make new old-app keys. An app using the old ones, such as Seerr, must get the new ones too.</span></label>
+							<label class="check"><input type="checkbox" bind:checked={newKeys} data-testid="bridge-new-keys" /> <span>Make new old-app keys. Update any app that uses the old ones, like Seerr.</span></label>
 							{#if !newKeys}
-								<p class="hint">Or type the key you have:</p>
+								<p class="hint">Or enter your current {keysNeeded.length === 1 ? 'key' : 'keys'}:</p>
 								{#each keysNeeded as side (side)}
 									<Field id="br-key-{side}" label={side === 'sonarr' ? 'TV shows key (Sonarr side)' : 'Movies key (Radarr side)'}>
 										<input id="br-key-{side}" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={typedKeys[side]} />
@@ -281,10 +281,10 @@
 	<form id="remove-bridge" class="form" onsubmit={remove}>
 		{#if removing?.kind === 'jackett'}
 			<label class="check"><input type="radio" name="keep" checked={!keepSources} onchange={() => (keepSources = false)} /> <span>Remove its {removing.sources} {removing.sources === 1 ? 'Source' : 'Sources'}</span></label>
-			<label class="check"><input type="radio" name="keep" checked={keepSources} onchange={() => (keepSources = true)} /> <span>Keep them as ordinary Sources (they no longer follow Jackett)</span></label>
+			<label class="check"><input type="radio" name="keep" checked={keepSources} onchange={() => (keepSources = true)} /> <span>Keep them, but stop syncing with Jackett</span></label>
 		{:else if removing}
-			<p class="small">HolyArrs leaves Prowlarr's apps and removes the {removing.sources} {removing.sources === 1 ? 'Source' : 'Sources'} Prowlarr wrote.</p>
-			<label class="check"><input type="checkbox" bind:checked={keepSources} /> <span>Only forget it here: HolyArrs stays in Prowlarr's apps and keeps its Sources</span></label>
+			<p class="small">Removes HolyArrs from Prowlarr and deletes the {removing.sources} {removing.sources === 1 ? 'Source' : 'Sources'} it added.</p>
+			<label class="check"><input type="checkbox" bind:checked={keepSources} /> <span>Disconnect here only. HolyArrs stays in Prowlarr and keeps the Sources.</span></label>
 		{/if}
 		{#if removeError}<p class="form-error" role="alert">{removeError}</p>{/if}
 	</form>

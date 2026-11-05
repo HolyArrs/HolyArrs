@@ -56,7 +56,7 @@ test('phone audit: every page at 360 and 390', async ({ page }) => {
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('phone-audit-pw');
 	await page.getByLabel('Password again').fill('phone-audit-pw');
-	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
+	await page.getByRole('button', { name: 'Create account' }).click();
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();

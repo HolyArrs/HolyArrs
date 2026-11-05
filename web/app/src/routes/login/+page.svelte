@@ -375,11 +375,11 @@
 		error = '';
 		if (mode === 'setup') {
 			if (pw.length < MIN_LENGTH) {
-				error = `The password needs at least ${MIN_LENGTH} characters.`;
+				error = `Use at least ${MIN_LENGTH} characters.`;
 				return;
 			}
 			if (pw !== pwAgain) {
-				error = 'The two passwords are not the same.';
+				error = "Passwords don't match.";
 				return;
 			}
 		}
@@ -485,11 +485,11 @@
 		const kind = setupServer;
 		if (!kind) return;
 		if (!address.trim()) {
-			error = `Give the ${wayWord[kind]} address.`;
+			error = `Enter the ${wayWord[kind]} address.`;
 			return;
 		}
 		if (!name.trim()) {
-			error = `Give your ${wayWord[kind]} name.`;
+			error = `Enter your ${wayWord[kind]} name.`;
 			return;
 		}
 		busy = true;
@@ -545,7 +545,7 @@
 				if (Date.now() - started > 9 * 60 * 1000) {
 					clearInterval(plexTimer);
 					plexWaiting = false;
-					error = 'The Plex sign-in took too long. Try again.';
+					error = 'Plex sign-in timed out. Try again.';
 					return;
 				}
 				try {
@@ -670,7 +670,7 @@
 								<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
 							</div>
 							<h1 class="title">Waiting for Plex</h1>
-							<p class="lead">Finish signing in on the Plex window that opened, then come back here.</p>
+							<p class="lead">Finish in the Plex window.</p>
 							<button class="link" type="button" onclick={cancelPlex}>Cancel</button>
 						</div>
 					{:else if acctView !== 'none'}
@@ -741,9 +741,9 @@
 					{:else}
 						<h1 class="title">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-step check' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}</h1>
 						{#if mode === 'setup'}
-							<p class="lead">{setupServer ? `Sign in with an admin account on your ${wayWord[setupServer]} server.` : 'First start. Make the owner account: the one person who runs this HolyArrs.'}</p>
+							<p class="lead">{setupServer ? `Use an admin account on your ${wayWord[setupServer]} server.` : 'Create the owner account.'}</p>
 							{#if session.s.configUnmapped}
-								<p class="form-error" role="status">/config is not mapped to a host folder or named volume, so everything set up here is lost when the container is recreated. Map /config first: see "Forgot to map /config?" in the install guide. Lost an earlier setup? Look for it with docker volume ls.</p>
+								<p class="form-error" role="status">/config isn't mapped, so this setup will be lost when the container is recreated. See "Forgot to map /config?" in the install guide.</p>
 							{/if}
 						{:else if mode === 'code'}
 							<p class="lead">{useBackup ? 'Enter one of your saved backup codes.' : 'Enter the 6-digit code from your authenticator app to finish signing in.'}</p>
@@ -895,7 +895,7 @@
 									{/if}
 									<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}>
 										<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
-											{mode === 'setup' ? 'Make the owner and sign in' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}
+											{mode === 'setup' ? 'Create account' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}
 										</Button>
 									</div>
 									{#if mode === 'login' && (via === 'jellyfin' || via === 'emby')}

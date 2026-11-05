@@ -39,7 +39,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
+	await page.getByRole('button', { name: 'Create account' }).click();
 
 	// The first-run step: Movies and Shows ticked, Music not; the browser
 	// tests use every part, so Music and Requests go on too.
@@ -50,7 +50,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
 	await expect(page.getByLabel('No, just me')).toBeChecked();
 	await scanFirstRun();
-	await expect(page.getByTestId('welcome')).toContainText('They ask, you approve.');
+	await expect(page.getByTestId('welcome')).toContainText('Yes adds a Requests page.');
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
