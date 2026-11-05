@@ -37,7 +37,7 @@ describe('home', () => {
 			decisions: [{ slot_id: 7, title: 'Harbour Lights', reason: 'Ran out.', episode: { label: 'S02E01' } }],
 			health: [check('s', 'error', 'source'), check('b', 'warning', 'backups')]
 		});
-		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Source · not answering', 'Gladiator · download failed', 'Alien · download failed', 'Harbour Lights S02E01 · needs a decision', 'Backups · getting old']);
+		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Source · S not answering', 'Gladiator · download failed', 'Alien · download failed', 'Harbour Lights S02E01 · needs a decision', 'Backups · getting old']);
 		// What the Downloader said stays one tap away; an empty reason adds nothing.
 		expect(items[1].note).toBe('The Downloader says error.');
 		expect(items[2].note).toBeUndefined();
@@ -51,7 +51,7 @@ describe('home', () => {
 			health: [check('s1', 'error', 'source'), check('s2', 'error', 'source'), check('d', 'error', 'downloader'), check('w', 'warning', 'source')]
 		});
 		const rows = groupAttention(items);
-		expect(rows.map((r) => `${r.title} · ${r.reason}`)).toEqual(['2 Sources · not answering', 'Downloader · not answering', '2 downloads failed · Gladiator, Everything Everywhere All at Once', 'Source · answered with a problem']);
+		expect(rows.map((r) => `${r.title} · ${r.reason}`)).toEqual(['2 Sources · not answering', 'Downloader · S not answering', '2 downloads failed · Gladiator, Everything Everywhere All at Once', 'Source · S has a problem']);
 		expect(rows.map((r) => r.items.length)).toEqual([2, 1, 2, 1]);
 		expect(rows[2]).toMatchObject({ tone: 'fail', word: 'Failed', href: '/downloads?show=problems.failed', action: 'Downloads' });
 		expect(rows.reduce((n, r) => n + r.items.length, 0)).toBe(items.length);
@@ -70,7 +70,7 @@ describe('home', () => {
 
 	it('keeps the metadata outage while it lasts, and sends people without Settings to Status', () => {
 		const items = attention({ failed: [], decisions: [], health: [check('e', 'error', 'downloader'), check('w', 'warning', 'trailers' as HealthCheck['kind'])], metadata: 'Search pauses.', admin: false });
-		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Downloader · not answering', "HolyArrs metadata · can't be reached", 'Trailers · lookups failing']);
+		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Downloader · S not answering', "HolyArrs metadata · can't be reached", 'Trailers · lookups failing']);
 		expect(items.map((i) => [i.href, i.action])).toEqual([['/status', 'Look'], ['/status', 'Look'], ['/status', 'Look']]);
 		expect(items[1].note).toBe('Search pauses.');
 		const own = attention({ failed: [], decisions: [], health: [check('e', 'error', 'downloader')], metadata: 'x' });
@@ -116,7 +116,7 @@ describe('home', () => {
 		expect(shownState(check('x', 'error'))).toBe('error');
 		expect(shownState({ state: 'error', confirmed: '' })).toBe('error');
 		const items = attention({ failed: [], decisions: [], health: [flaky, held] });
-		expect(items.map((i) => `${i.word} ${i.title} · ${i.reason}`)).toEqual(['Warning Source · answered with a problem']);
+		expect(items.map((i) => `${i.word} ${i.title} · ${i.reason}`)).toEqual(['Warning Source · S has a problem']);
 	});
 
 	it('links the rows that do not fit to the page that holds them, counting rows', () => {
@@ -260,6 +260,18 @@ describe('Your Library cards', () => {
 	});
 });
 
+describe('downloads that are being imported', () => {
+	it('stay in the Downloading list although the server no longer calls them active', () => {
+		const rows = [
+			{ id: 1, phase: 'importing', state: 'finished', progress: 1, active: false, client_item: false },
+			{ id: 2, phase: 'waiting_to_import', state: 'finished', progress: 1, active: false, client_item: false },
+			{ id: 3, phase: 'done', state: 'done', progress: 1, active: false, client_item: false },
+			{ id: 4, phase: 'downloading', state: 'downloading', progress: 0.4, active: true, client_item: false }
+		];
+		expect(downloadingNow(rows).map((d) => d.id).sort()).toEqual([1, 2, 4]);
+	});
+});
+
 describe('System grid numbers', () => {
 	it('counts parts that are on and working; only disabled is off', () => {
 		expect(partCount([{ state: 'ok' }, { state: 'disabled' }, { state: 'unreachable' }])).toEqual({ total: 3, on: 2, working: 1, off: 1, failing: 1 });
@@ -276,6 +288,8 @@ describe('System grid numbers', () => {
 	it('counts folders on one disk once, even when their readings differ a little; several disks give the fullest', () => {
 		expect(freeSpace([{ free_space: 100e9 }, { free_space: 100e9 + 4096 }, { free_space: 100e9 + 900e3 }])).toEqual({ free: 100e9, many: false });
 		expect(freeSpace([{ free_space: 100e9 }, { free_space: 40e9 }])).toEqual({ free: 40e9, many: true });
+		// The showcase's own readings: five folders on one disk, one read 1.9 GB apart.
+		expect(freeSpace([78929354752, 78929354752, 78929289216, 78929231872, 77035409408].map((free_space) => ({ free_space })))).toEqual({ free: 77035409408, many: false });
 		expect(freeSpace([])).toBeNull();
 	});
 	it('reads 0 as unknown, or as a full disk when the disk check is failing', () => {

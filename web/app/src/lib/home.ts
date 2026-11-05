@@ -37,12 +37,13 @@ const fetching = new Set(['checking', 'queued', 'downloading', 'stalled', 'impor
 
 /**
  * downloadingNow is Home's Downloading row: what HolyArrs is fetching now,
- * furthest along first, at most `cap`. Torrents only the Downloader knows,
+ * furthest along first, at most `cap`. A download being imported counts: the
+ * server no longer calls it active (its state is finished), but it is not in the Library yet. Torrents only the Downloader knows,
  * seeding, finished and failed rows stay on Downloads.
  */
 export function downloadingNow<T extends StageBits & Pick<DownloadRow, 'id' | 'active' | 'client_item'>>(rows: T[], cap = 20): T[] {
 	return rows
-		.filter((d) => !d.client_item && isActive(d) && fetching.has(stageOf(d)))
+		.filter((d) => !d.client_item && fetching.has(stageOf(d)) && (isActive(d) || stageOf(d) === 'importing'))
 		.sort((a, b) => (b.progress || 0) - (a.progress || 0) || b.id - a.id)
 		.slice(0, cap);
 }
@@ -96,8 +97,8 @@ export function healthFix(kind: HealthCheck['kind']): string {
 const healthWords: Record<HealthCheck['kind'] | 'trailers' | 'key_kit', { one: string; many: string; error: [string, string]; warning: [string, string] }> = {
 	library_folder: { one: 'Library folder', many: 'Library folders', error: ["can't be reached", "can't be reached"], warning: ['needs a look', 'need a look'] },
 	disk_space: { one: 'Library folder', many: 'Library folders', error: ['out of space', 'out of space'], warning: ['running low on space', 'running low on space'] },
-	source: { one: 'Source', many: 'Sources', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
-	downloader: { one: 'Downloader', many: 'Downloaders', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
+	source: { one: 'Source', many: 'Sources', error: ['not answering', 'not answering'], warning: ['has a problem', 'have a problem'] },
+	downloader: { one: 'Downloader', many: 'Downloaders', error: ['not answering', 'not answering'], warning: ['has a problem', 'have a problem'] },
 	backups: { one: 'Backups', many: 'Backups', error: ['not being made', 'not being made'], warning: ['getting old', 'getting old'] },
 	update: { one: 'HolyArrs update', many: 'HolyArrs updates', error: ['check failed', 'check failed'], warning: ['waiting', 'waiting'] },
 	config_disk: { one: 'Config folder', many: 'Config folder', error: ['almost out of space', 'almost out of space'], warning: ['running low on space', 'running low on space'] },
@@ -118,6 +119,8 @@ export function shownState(c: Pick<HealthCheck, 'state'> & { confirmed?: string 
 	return s === 'error' || s === 'warning' ? s : 'ok';
 }
 
+const NAMED = new Set<string>(['source', 'downloader', 'library_folder', 'disk_space']);
+
 function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action: string, admin: boolean): Attention {
 	const kind = c.key === 'backups:key' ? 'key_kit' : c.kind;
 	const w = healthWords[kind];
@@ -130,7 +133,8 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		// The shown state, so the sentence matches the title and reason while the flap guard holds it.
 		text: healthSentence({ ...c, state: level }),
 		title: w?.one ?? 'HolyArrs',
-		reason: w ? w[level][0] : level === 'error' ? 'not working' : 'needs a look',
+		// A Source, Downloader or folder row says which one it is.
+		reason: w ? (NAMED.has(c.kind) && c.subject ? `${c.subject} ${w[level][0]}` : w[level][0]) : level === 'error' ? 'not working' : 'needs a look',
 		cause: `health:${kind}:${level}`,
 		detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined,
 		// Settings is only for people who may change it; everyone else sees the check on Status.
@@ -229,7 +233,7 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
  */
 export function moreLink(hidden: Pick<AttentionGroup, 'items'>[], admin = true): { href: string; text: string } | null {
 	if (!hidden.length) return null;
-	const health = hidden.filter((g) => /^(health:|metadata$)/.test(g.items[0]?.cause ?? '')).length;
+	const health = hidden.filter((g) => /^(health:|setup:|metadata$)/.test(g.items[0]?.cause ?? '')).length;
 	if (health * 2 > hidden.length) return admin ? { href: '/settings/health', text: `${hidden.length} more on Health` } : { href: '/status', text: `${hidden.length} more on Status` };
 	return { href: '/downloads', text: `${hidden.length} more in Downloads` };
 }
@@ -492,13 +496,13 @@ export function partCount(parts: { name?: string; state: string }[] | null | und
 
 /**
  * freeSpace is the free room left for the Library. Folders on one disk are read a moment apart, so their numbers
- * differ a little: readings within 2% (or 256 MB) of each other are the same disk. With several disks it is the
+ * differ (a download can land in between): readings within 5% (or 4 GB) of each other are the same disk. With several disks it is the
  * fullest one. A reading of 0 means "not known" unless `zeroIsFull` (the disk space check is failing): then it is a full disk.
  */
 export function freeSpace(folders: { free_space: number }[], zeroIsFull = false): { free: number; many: boolean } | null {
 	const sizes = folders.map((f) => f.free_space).filter((s) => s > 0 || (zeroIsFull && s === 0)).sort((x, y) => x - y);
 	if (!sizes.length) return null;
 	let disks = 1;
-	for (let i = 1; i < sizes.length; i++) if (sizes[i] - sizes[i - 1] > Math.max(sizes[i] * 0.02, 256 * 1024 * 1024)) disks++;
+	for (let i = 1; i < sizes.length; i++) if (sizes[i] - sizes[i - 1] > Math.max(sizes[i] * 0.05, 4 * 1024 ** 3)) disks++;
 	return { free: sizes[0], many: disks > 1 };
 }

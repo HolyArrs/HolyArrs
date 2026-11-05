@@ -59,15 +59,6 @@
 	const approver = $derived(session.can('approve'));
 	const owner = $derived(home ? home.owner : manager);
 
-	const steps = $derived([
-		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders' },
-		{ done: (health?.sources?.length ?? 0) > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources' },
-		{ done: (health?.downloaders?.length ?? 0) > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders' },
-		{ done: false, text: 'Add your first title', detail: 'Search for a new movie, show or artist to fetch, or import the folders you already have on disk.', href: '/search' }
-	]);
-	const doneCount = $derived(steps.filter((s) => s.done).length);
-	const nextStep = $derived(steps.find((s) => !s.done) ?? steps[3]);
-
 	const rows = $derived<HomeRow[]>(home?.rows ?? (loaded ? fallbackRows(owner) : []));
 	// Sources and Downloaders, from GET /health and the health checks. A failing Source is paused by the server and its
 	// check warns; a Downloader carries its own state. Only "disabled" is turned off.
@@ -75,6 +66,15 @@
 	const srcs = $derived(partCount(health?.sources, failingChecks('source').length));
 	const dls = $derived(partCount(health?.downloaders, failingChecks('downloader').length));
 	const partsRead = $derived(settled && !!health && !uncheckedParts);
+	const steps = $derived([
+		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders' },
+		{ done: srcs.total > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources' },
+		{ done: dls.total > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders' },
+		{ done: false, text: 'Add your first title', detail: 'Search for a new movie, show or artist to fetch, or import the folders you already have on disk.', href: '/search' }
+	]);
+	const doneCount = $derived(steps.filter((s) => s.done).length);
+	const nextStep = $derived(steps.find((s) => !s.done) ?? steps[3]);
+
 	/** Which parts have a problem, in one short line: the name when it is one ("SABnzbd has a problem"), else how many. Needs attention names them all. */
 	function troubled(kind: 'source' | 'downloader', parts: { name: string; state: string }[] | null | undefined): string {
 		const names = new Set<string>();
@@ -95,6 +95,9 @@
 		else if (!srcs.on) out.push(gap('sources-off', 'Sources', 'all turned off', '/settings/sources', 'Fix'));
 		if (!dls.total) out.push(gap('no-downloaders', 'Downloaders', 'none added yet', '/settings/downloaders', 'Add'));
 		else if (!dls.on) out.push(gap('downloaders-off', 'Downloaders', 'all turned off', '/settings/downloaders', 'Fix'));
+		// The health checks run every few minutes; /health is read now. A part it already reports as failing gets its row at once.
+		if (srcs.failing && !failingChecks('source').length) out.push(gap('sources-trouble', srcs.failing === 1 ? 'Source' : `${n(srcs.failing)} Sources`, srcs.failing === 1 ? 'has a problem' : 'have a problem', '/settings/sources', 'Fix'));
+		if (dls.failing && !failingChecks('downloader').length) out.push(gap('downloaders-trouble', dls.failing === 1 ? 'Downloader' : `${n(dls.failing)} Downloaders`, dls.failing === 1 ? 'has a problem' : 'have a problem', '/settings/downloaders', 'Fix'));
 		return out;
 	});
 	// Needs attention is what needs you: failed downloads or imports (the same rule as Downloads), decisions,
@@ -119,17 +122,18 @@
 	const attTint = $derived<Tint>(!settled ? 'gray' : worst === 'fail' ? 'red' : worst === 'wait' ? 'amber' : 'green');
 	// Items that share a cause are one row ("2 downloads failed").
 	const fixRows = $derived(groupAttention(fixes));
-	/** One row in a few words: "6 downloads failed", "Downloader: not answering". */
-	const rowLine = (g: AttentionGroup) => (g.items.length > 1 ? g.title : `${g.title}: ${g.reason}`);
+	/** One row in a few words: "6 downloads failed", "2 Sources have a problem", "Downloader: SABnzbd not answering". */
+	const rowLine = (g: AttentionGroup) => (g.items.length > 1 ? (/^(health|setup):/.test(g.items[0].cause) ? `${g.title} ${g.reason}` : g.title) : `${g.title}: ${g.reason}`);
 	// The Home tile names the worst row and says how many more things there are, so the number adds up.
 	const fixLine = $derived(fixRows.length ? rowLine(fixRows[0]) + (fixes.length > fixRows[0].items.length ? ` and ${n(fixes.length - fixRows[0].items.length)} more` : '') : '');
-	// The Needs attention tile opens where the problems are: the one cause's own page, or the page that holds most of them.
-	const fixHref = $derived(fixRows.length === 1 ? fixRows[0].href : (moreLink(fixRows, admin)?.href ?? (admin ? '/settings/health' : '/status')));
+	// The Needs attention tile opens the page of the row it names (the worst one).
+	const fixHref = $derived(fixRows[0]?.href ?? (admin ? '/settings/health' : '/status'));
 	// System lists each cause as a row; four fit, the rest link to the page that holds most of them.
 	const fixShown = $derived(fixRows.slice(0, 4));
 	const fixHidden = $derived(moreLink(fixRows.slice(4), admin));
 	// What passed, for the all-good state: each kind of check that has no problem, once.
 	const CHECK_WORDS: Record<string, string> = { library_folder: 'Library folders', disk_space: 'Disk space', source: 'Sources', downloader: 'Downloaders', backups: 'Backups', update: 'Updates', config_disk: 'Config folder', config_folder: 'Config folder', waiting_downloads: 'Downloads', trailers: 'Trailers' };
+	const passedCount = $derived((checks?.checks ?? []).filter((c) => shownState(c) === 'ok').length);
 	const passed = $derived.by(() => {
 		const bad = new Set((checks?.checks ?? []).filter((c) => shownState(c) !== 'ok').map((c) => CHECK_WORDS[c.kind]));
 		return [...new Set((checks?.checks ?? []).map((c) => CHECK_WORDS[c.kind]).filter((w) => w && !bad.has(w)))];
@@ -283,12 +287,13 @@
 			.filter((x): x is { a: Ask; pic: string } => !!x.pic)
 			.slice(0, 3)
 	);
-	// Downloads, counted once and used everywhere: waiting (queued or paused), downloading (bytes coming in, stalled
-	// and checking included) and importing. The tile, the note beside the switch and the row all read these.
+	// Downloads, counted once and used everywhere: waiting (queued), downloading (bytes coming in, stalled and checking
+	// included), importing, and paused apart (a paused download is not in the list or the row). The tile, the note
+	// beside the switch and the row all read these.
 	const speed = $derived(fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
 	const pausedCount = $derived(manager ? downloads.filter((d) => !d.client_item && stageOf(d) === 'paused').length : 0);
 	function countStages(rows: DownloadRow[], paused = 0) {
-		const c = { waiting: paused, down: 0, imp: 0 };
+		const c = { waiting: 0, down: 0, imp: 0, paused };
 		for (const d of rows) {
 			const st = stageOf(d);
 			if (st === 'queued') c.waiting++;
@@ -298,7 +303,8 @@
 		return c;
 	}
 	const dlCount = $derived(countStages(fetchingAll, pausedCount));
-	const stageWords = (c: { waiting: number; down: number; imp: number }) => [c.down ? `${n(c.down)} downloading` : '', c.imp ? `${n(c.imp)} importing` : '', c.waiting ? `${n(c.waiting)} waiting` : ''].filter(Boolean).join(' · ');
+	const stageWords = (c: { waiting: number; down: number; imp: number; paused: number }) =>
+		[c.down ? `${n(c.down)} downloading` : '', c.imp ? `${n(c.imp)} importing` : '', c.waiting ? `${n(c.waiting)} waiting` : '', c.paused ? `${n(c.paused)} paused` : ''].filter(Boolean).join(' · ');
 	/** One running download in a few words: its percent and speed, or the step it is in. */
 	function dlState(d: DownloadRow): string {
 		const st = stageOf(d);
@@ -340,7 +346,7 @@
 		!settled
 			? ''
 			: (fixes.length ? `${n(fixes.length)} ${fixes.length === 1 ? 'thing needs' : 'things need'} a look` : unchecked ? 'Could not check everything' : 'All good') +
-					(uncheckedDl ? '' : dlCount.down ? ` · ${n(dlCount.down)} downloading${speed ? ` at ${bytes(speed)}/s` : ''}` : dlCount.imp || dlCount.waiting ? ` · ${stageWords(dlCount)}` : '')
+					(uncheckedDl ? '' : dlCount.down ? ` · ${n(dlCount.down)} downloading${speed ? ` at ${bytes(speed)}/s` : ''}` : dlCount.imp || dlCount.waiting || dlCount.paused ? ` · ${stageWords(dlCount)}` : '')
 	);
 
 	/** The ask's one round status mark: live progress first. */
@@ -507,7 +513,7 @@
 				{#if !tall && p.c.backdrop && p.c.logo && p.c.kind !== 'artist' && !badLogo.has(p.c.title_id)}
 					<img class="logo" src={p.c.logo} alt={p.c.name} decoding="async" use:lightOnDark use:artGone={() => badLogo.add(p.c.title_id)} />
 				{:else}
-					<span class="nm">{p.c.name}</span>
+					<span class="nm" dir="auto">{p.c.name}</span>
 				{/if}
 				{#if p.c.line}<span class="sm">{p.c.line}</span>{/if}
 			</a>
@@ -569,7 +575,7 @@
 				<!-- One count tile. -->
 				{#snippet stat(key: string, cls: string)}
 					{#if key === 'att' && settled && unchecked && !fixes.length}
-						<button type="button" class="tile stat {cls}" class:busy={retrying} onclick={retry} aria-busy={retrying || undefined} data-testid="home-attention">
+						<button type="button" class="tile stat {cls}" class:busy={retrying} disabled={retrying} onclick={retry} aria-busy={retrying || undefined} data-testid="home-attention">
 							{@render head('refresh', 'amber', 'Needs attention', false)}
 							<span class="word">Could not check</span>
 							<span class="sm">Tap to try again</span>
@@ -620,9 +626,9 @@
 						{@render diskTile(cls)}
 					{:else if key === 'dl'}
 						<a class="tile stat {cls}" href={to('/downloads')}>
-							{@render head('download', 'blue', 'Downloading')}
+							{@render head('download', 'blue', 'Downloads')}
 							<span class="num">{n(fetchingAll.length)}</span>
-							<span class="sm">{speed ? `${bytes(speed)}/s right now` : stageWords(countStages(fetchingAll))}</span>
+							<span class="sm">{stageWords(countStages(fetchingAll))}</span>
 						</a>
 					{:else if key === 'soon'}
 						<a class="tile stat {cls}" href={to('/calendar')}>
@@ -693,17 +699,17 @@
 									<ul class="dl-list">
 										{#each fetchingAll.slice(0, 3) as d (d.id)}
 											{@const moving = ['downloading', 'stalled'].includes(stageOf(d))}
-											<li><b>{d.title || d.name}</b><span>{dlState(d)}</span>{#if moving}<i class="pb"><i style="width: {percent(d.progress)}%"></i></i>{/if}</li>
+											<li><b dir="auto">{d.title || d.name}</b><span>{dlState(d)}</span>{#if moving}<i class="pb"><i style="width: {percent(d.progress)}%"></i></i>{/if}</li>
 										{/each}
 									</ul>
 								{:else if recentDone.length}
 									<ul class="dl-list done">
 										{#each recentDone as d (d.id)}
-											<li><b>{d.title || d.name}</b><span>Finished {agoLong(d.finished_at, now.getTime())}</span></li>
+											<li><b dir="auto">{d.title || d.name}</b><span>Finished {agoLong(d.finished_at, now.getTime())}</span></li>
 										{/each}
 									</ul>
 								{:else}
-									<span class="quiet">{pausedCount ? `Nothing is downloading. ${n(pausedCount)} paused.` : 'Nothing is downloading right now.'}</span>
+									<span class="quiet">Nothing is downloading right now.{pausedCount ? ` ${n(pausedCount)} paused.` : ''}</span>
 								{/if}
 							{/if}
 						</a>
@@ -721,7 +727,7 @@
 										<li>
 											<a class="fix" href={to(g.href)}>
 												<i class="tone {g.tone}" aria-hidden="true"></i>
-												<span class="ft"><span class="sr-only">{g.word}: </span><b>{g.title}</b><span>{g.reason}</span></span>
+												<span class="ft"><span class="sr-only">{g.word}: </span><b dir="auto">{g.title}</b><span dir="auto">{g.reason}</span></span>
 												<span class="fa"><span class="act">{g.action}</span><Icon name="chevronRight" size={14} /></span>
 											</a>
 										</li>
@@ -731,8 +737,8 @@
 									<a class="more" href={to(fixHidden.href)}>{fixHidden.text}<Icon name="chevronRight" size={13} /></a>
 								{:else if unchecked}
 									<span class="rest-ok">Some checks could not be read right now.</span>
-								{:else if fixShown.length <= 2 && passed.length}
-									<span class="rest-ok"><i class="tone ok" aria-hidden="true"></i>Everything else is fine: {passed.slice(0, 4).join(', ').toLowerCase()}{passed.length > 4 ? ' and more' : ''}.</span>
+								{:else if fixShown.length <= 2 && passedCount}
+									<span class="rest-ok"><i class="tone ok" aria-hidden="true"></i>{n(passedCount)} other {passedCount === 1 ? 'check' : 'checks'} passed.</span>
 								{/if}
 							{:else if unchecked}
 								<span class="word">Could not check</span>
@@ -882,12 +888,6 @@
 		--well: light-dark(rgb(20 24 40 / 4%), rgb(255 255 255 / 5%));
 		--track: light-dark(rgb(20 24 40 / 9%), rgb(255 255 255 / 12%));
 	}
-	/* High Contrast (forced colors) drops the box-shadow edges and focus rings: draw system borders and outlines instead. */
-	@media (forced-colors: active) {
-		.home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; }
-		.tile, .setup, .prompt { border: 1px solid CanvasText; }
-		.life, .pb { border: 1px solid CanvasText; }
-	}
 	.banner { margin-bottom: -16px; }
 	.wide-row { display: contents; }
 	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; } }
@@ -898,8 +898,8 @@
 	.greet { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; overflow-wrap: anywhere; }
 	.top-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 44px; }
 	.top-row :global(.ui-seg button) { padding: 0 16px; }
-	.note { min-width: 0; flex: 1 1 240px; display: flex; align-items: center; gap: 8px; color: var(--text-muted); font: var(--t-callout); }
-	.note .dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--text-faint); }
+	.note { min-width: 0; flex: 1 1 120px; color: var(--text-muted); font: var(--t-callout); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+	.note .dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; vertical-align: 1px; border-radius: 50%; background: var(--text-faint); }
 	.note .dot.ok { background: var(--ok); }
 	.note .dot.wait { background: var(--wait); }
 	.note .dot.fail { background: var(--fail); }
@@ -941,7 +941,8 @@
 	.num { font: 800 40px / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.num small { margin-left: 5px; font: 500 13px / 1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); }
 	.word { font: 700 24px / 1.1 var(--font-display); letter-spacing: -0.025em; }
-	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+	.stat > .num + .sm:not(:has(+ .sm)), .stat > .word + .sm:not(:has(+ .sm)) { min-height: 2.6em; }
 	.fail, .sm.fail { color: var(--fail); }
 	.warn, .sm.warn { color: var(--wait); }
 	.sk { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
@@ -951,8 +952,6 @@
 
 	/* The thin line along a tile's foot, the same as the life line on a Requests card: how full the disk is, or one pip per part. */
 	.lined { padding-bottom: 28px; }
-	/* One line under the number in these tiles, so the numbers of neighbouring tiles sit on one line. */
-	.lined .sm { -webkit-line-clamp: 1; line-clamp: 1; }
 	.life { position: absolute; left: 18px; right: 18px; bottom: 13px; display: flex; gap: 2px; height: 4px; border-radius: 4px; overflow: hidden; background: var(--track); }
 	.life i { display: block; min-width: 2px; flex-basis: 0; }
 	.life .used { flex: none; border-radius: inherit; background: #1ea9be; }
@@ -965,14 +964,14 @@
 
 	/* Picture tiles: the picture fills the tile; a glass pill says what it is, the title sits on a dark fade at the foot (white in both themes). */
 	.pic { justify-content: flex-end; color: #fff; background: #17181d; box-shadow: var(--drop); }
-	.pic > img:first-child { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
+	.pic > img:first-child { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; transition: transform var(--dur-slow) var(--ease-out); }
 	a.pic:hover > img:first-child { transform: scale(1.03); }
 	.pic::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(0 0 0 / 80%), rgb(0 0 0 / 30%) 38%, transparent 62%); }
 	/* The bright edge sits over the picture. */
 	.pic::before { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none; box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), inset 0 0 0 1px rgb(255 255 255 / 10%); }
 	.pill { position: absolute; top: 12px; left: 12px; display: flex; }
-	.pic .nm { font: 800 22px / 1.1 var(--font-display); letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.pic.big .nm { font-size: 32px; letter-spacing: -0.03em; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+	.pic .nm { font: 800 22px / 1.1 var(--font-display); letter-spacing: -0.02em; overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+	.pic.big .nm { font-size: 32px; letter-spacing: -0.03em; }
 	.pic .logo { width: auto; height: auto; max-width: 55%; max-height: 72px; margin: 4px 0 2px; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
 	.pic.big .logo { max-height: 104px; }
 	/* A dark wordmark (black letters made for light posters) is drawn white, its shape unchanged, like on the title page. */
@@ -1053,7 +1052,11 @@
 		.fixes { margin-top: 6px; }
 		.fix { min-height: 44px; }
 		.act { display: none; }
-		.passed { margin-top: 8px; max-height: 62px; }
+		.passed { margin-top: 8px; max-height: 130px; }
+	}
+	/* Two columns on a wide screen (a tablet, a narrow desktop window): a little taller, so pictures are not thin strips. */
+	@container home (min-width: 560px) and (max-width: 900px) {
+		.bento { grid-auto-rows: 150px; }
 	}
 	/* A small phone (360): the tile names still fit. */
 	@container home (max-width: 340px) {
@@ -1105,4 +1108,13 @@
 	.welcome-acts.hide { visibility: hidden; }
 
 	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } .steps { box-shadow: inset 0 1px 0 var(--line); } }
+
+	/* High Contrast (forced colors) drops shadows and fills: tiles, the steps box and the ticks get a system border,
+	   focus gets a system outline, and the small coloured marks (dots, pips, the foot line, the count) keep their colours. */
+	@media (forced-colors: active) {
+		.home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; }
+		.tile, .setup, .prompt, .flow, .passed li { border: 1px solid CanvasText; }
+		.life, .pb, .tone, .note .dot, .count, .ask-stack b { forced-color-adjust: none; }
+		.life:not(.pips), .pb { outline: 1px solid CanvasText; }
+	}
 </style>
