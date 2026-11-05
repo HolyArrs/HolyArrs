@@ -143,7 +143,8 @@ type Auth struct {
 	fails        map[string]*failure
 	pruneAt      int // fails size at which pruneFails runs again
 	lastPruneAt  time.Time
-	saturatedAt  time.Time // last time a name record was refused for lack of room
+	realNames    map[string]bool // lower-case user names, for the full-table rule (isRealName)
+	realNamesAt  time.Time
 	satLogged    time.Time
 	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
@@ -708,11 +709,14 @@ func (a *Auth) clientKeySure(r *http.Request) (string, bool) {
 
 // clientKeys is clientKeySure plus altKey: when the proxy headers disagree,
 // the key of the other header's address ("" otherwise). A failure counts under
-// both and the larger wait stands.
+// both and the larger wait stands. altKey has its own "xff:" namespace, read
+// and charged only by requests whose headers disagree: a visitor can write any
+// address in the header their proxy does not set, so that address's "ip:"
+// count (a real visitor's) must never be touched by it.
 func (a *Auth) clientKeys(r *http.Request) (ipKey, altKey string, sure bool) {
 	addr, other, _, unsure := a.clientAddrBoth(r)
 	if other != "" {
-		altKey = "ip:" + limitAddr(other)
+		altKey = "xff:" + limitAddr(other)
 	}
 	return "ip:" + limitAddr(addr), altKey, !unsure
 }
@@ -781,7 +785,7 @@ func (a *Auth) signInWait(ipKey, userKey string, sure bool) time.Duration {
 	if a.knownPlace(ipKey, userKey, sure) {
 		return wait
 	}
-	return max(wait, a.waitFor(userKey, freeUserTries), a.satWait(userKey))
+	return max(wait, a.waitFor(userKey, freeUserTries))
 }
 
 // knownPlace says whether ipKey signed in as userKey in the last 30 days.
@@ -791,17 +795,6 @@ func (a *Auth) knownPlace(ipKey, userKey string, sure bool) bool {
 	}
 	t, ok := a.known[userKey][ipKey]
 	return ok && a.now().Sub(t) < knownPlaceFor
-}
-
-// satWait is the shared wait for a name or second-step key that has no record
-// while the table has been full (within MaxBackoff): as if it had used its
-// free tries, so one attempt a second at most for all such keys together.
-// Existing and made-up names get the same wait; the caller holds a.mu.
-func (a *Auth) satWait(key string) time.Duration {
-	if a.fails[key] != nil || a.saturatedAt.IsZero() || a.now().Sub(a.saturatedAt) > MaxBackoff {
-		return 0
-	}
-	return max(a.saturatedAt.Add(time.Second).Sub(a.now()), 0)
 }
 
 const (
@@ -882,10 +875,19 @@ func (a *Auth) noteFail(keys ...string) {
 				a.pruneFails(now) // free expired records before refusing
 			}
 			if len(a.fails) >= limit {
-				if protectedKey(k) {
-					a.noteSaturated(now)
+				// A table full of names: made-up names get no record (no account
+				// to protect); a real account still gets one, so a flood cannot
+				// strip its wait. Real names are few (one per user), so this
+				// stays bounded. Trade-off: only while a flood has filled the
+				// table can an attacker tell real names from made-up ones, by
+				// whether a name wait appears; fine for a self-hosted app with a
+				// few users.
+				if !protectedKey(k) || !a.isRealName(k, now) {
+					if protectedKey(k) {
+						a.noteSkipped(now)
+					}
+					continue
 				}
-				continue
 			}
 			f = &failure{}
 			a.fails[k] = f
@@ -895,14 +897,42 @@ func (a *Auth) noteFail(keys ...string) {
 	}
 }
 
-// noteSaturated marks the name table full: untracked names then wait (satWait)
-// until the flood has stopped for MaxBackoff. Logs once per window.
-func (a *Auth) noteSaturated(now time.Time) {
-	a.saturatedAt = now
+// noteSkipped logs once per window that made-up names get no record.
+func (a *Auth) noteSkipped(now time.Time) {
 	if now.Sub(a.satLogged) > MaxBackoff {
 		a.satLogged = now
-		log.Printf("auth: sign-in limits are full; new names wait until the flood stops")
+		log.Printf("auth: sign-in limits are full; names with no account are no longer tracked until the flood stops")
 	}
+}
+
+// isRealName says whether a name:/2fa: key is for an account (a second-step
+// key only exists for a ticket, so always). The user names are read once a
+// minute, and only while the table is full; the caller holds a.mu.
+func (a *Auth) isRealName(k string, now time.Time) bool {
+	rest, ok := strings.CutPrefix(k, "name:")
+	if !ok {
+		return true
+	}
+	if a.realNames == nil || now.Sub(a.realNamesAt) >= time.Minute {
+		names := map[string]bool{}
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if rows, err := a.s.Read().QueryContext(ctx, "SELECT name FROM users"); err == nil {
+			for rows.Next() {
+				var n string
+				if rows.Scan(&n) == nil {
+					names[strings.ToLower(n)] = true
+				}
+			}
+			_ = rows.Close()
+		}
+		a.realNames, a.realNamesAt = names, now
+	}
+	if a.realNames[rest] {
+		return true
+	}
+	_, after, ok := strings.Cut(rest, ":") // name:<kind>:<name> for a media server sign-in
+	return ok && a.realNames[after]
 }
 
 // maxTracked bounds the failure and known-place maps.

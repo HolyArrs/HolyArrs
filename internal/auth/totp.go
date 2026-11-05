@@ -216,9 +216,6 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		// no free code guesses; only a right code clears it.
 		codeKey := "2fa:" + itoa(t.userID)
 		wait = max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey), a.waitFor(codeKey, freeTries))
-		if !a.knownPlace(ipKey, userKey, sure) {
-			wait = max(wait, a.satWait(codeKey))
-		}
 		if wait == 0 {
 			t.tries++
 			a.noteFail(ipKey, altKey, userKey, codeKey)
