@@ -325,3 +325,32 @@ func TestUntrustedProxyHeadersWarnOnce(t *testing.T) {
 		t.Fatalf("warning for a public peer: %s", buf.String())
 	}
 }
+
+// A typed name shaped like a media-server key ("x1:luis") is not a real
+// account, and a saturated table takes only a bounded number of real-name
+// records, so such a flood cannot grow the map without end.
+func TestFakeKindNamesStayBounded(t *testing.T) {
+	f := setup(t, Options{})
+	setupOwner(t, f, client(t))
+	a := f.a
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for i := 0; i < 3*maxTracked; i++ {
+		a.noteFail("name:filler-" + strconv.Itoa(i))
+	}
+	base := len(a.fails)
+	for i := 0; i < 5000; i++ {
+		a.noteFail("name:x" + strconv.Itoa(i) + ":luis")
+	}
+	if grew := len(a.fails) - base; grew > fullExtra {
+		t.Fatalf("saturated table grew by %d records", grew)
+	}
+	if a.isRealName("name:x1:luis", f.clock.t) {
+		t.Error("made-up kind counted as a real account")
+	}
+	for _, k := range []string{"name:luis", "name:jellyfin:luis", "name:emby:luis"} {
+		if !a.isRealName(k, f.clock.t) {
+			t.Errorf("%s not counted as real", k)
+		}
+	}
+}

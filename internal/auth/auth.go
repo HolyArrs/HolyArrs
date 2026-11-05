@@ -968,7 +968,7 @@ func (a *Auth) noteFail(keys ...string) {
 				// table can an attacker tell real names from made-up ones, by
 				// whether a name wait appears; fine for a self-hosted app with a
 				// few users.
-				if !protectedKey(k) || !a.isRealName(k, now) {
+				if !protectedKey(k) || !a.isRealName(k, now) || len(a.fails) >= limit+fullExtra {
 					if protectedKey(k) {
 						a.noteSkipped(now)
 					}
@@ -1017,12 +1017,18 @@ func (a *Auth) isRealName(k string, now time.Time) bool {
 	if a.realNames[rest] {
 		return true
 	}
-	_, after, ok := strings.Cut(rest, ":") // name:<kind>:<name> for a media server sign-in
-	return ok && a.realNames[after]
+	// name:<kind>:<name> for a Jellyfin or Emby sign-in; only those kinds,
+	// so a typed name like "x1:ana" is not taken for the account ana.
+	kind, after, ok := strings.Cut(rest, ":")
+	return ok && (kind == ProviderJellyfin || kind == ProviderEmby) && a.realNames[after]
 }
 
 // maxTracked bounds the failure and known-place maps.
 const maxTracked = 10000
+
+// fullExtra caps the real-account records noteFail adds once the table is
+// full, a hard ceiling in case names that look real are made up.
+const fullExtra = 1000
 
 // protectedKey says whether a fail key is a per-name one (sign-in name or
 // second-step ticket), which is kept for as long as its wait runs.
