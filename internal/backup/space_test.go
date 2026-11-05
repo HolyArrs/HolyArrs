@@ -16,10 +16,15 @@ func TestScheduledBackupSkippedWhenTheDiskIsFull(t *testing.T) {
 		t.Fatal("want the backup skipped")
 	}
 	_, _, last, _ := m.State(context.Background())
-	for _, want := range []string{"skipped", "free"} {
+	for _, want := range []string{"Not enough free space", "MB"} {
 		if !strings.Contains(last, want) {
 			t.Errorf("message lacks %q: %s", want, last)
 		}
+	}
+	// Health puts "The last scheduled backup failed: " before it, so it must
+	// not repeat "skipped the scheduled backup".
+	if strings.Contains(last, "skipped") {
+		t.Errorf("repeats words after the health prefix: %s", last)
 	}
 	if all, _ := m.List(); len(all) != 0 {
 		t.Fatalf("no backup should be made: %v", all)

@@ -499,7 +499,7 @@ func (m *Manager) roomFor() error {
 	if n >= need {
 		return nil
 	}
-	return fmt.Errorf("skipped the scheduled backup: it needs about %d MB but only %d MB are free on the disk that holds the config folder. Free some space there; HolyArrs tries again in ten minutes", (need>>20)+1, n>>20)
+	return fmt.Errorf("Not enough free space: it needs about %d MB but only %d MB are free on the disk that holds the config folder. Free some space there; HolyArrs tries again in ten minutes", (need>>20)+1, n>>20)
 }
 
 // Pass checks once whether a backup is due (the supervisor runs it every
