@@ -524,9 +524,11 @@ environment:
 When a reverse proxy adds `X-Forwarded-For`, add only the proxy address or
 network to `HOLYARRS_TRUSTED_PROXIES`. Sign-in works behind an HTTPS proxy,
 a tunnel or tailscale serve without it, but single sign-on, real client
-addresses and the Secure cookie need it. This matters when you enable the
-optional local-network sign-in skip: an untrusted request cannot claim a
-different source address.
+addresses and the Secure cookie need it. Without it, everyone behind the
+proxy shares one sign-in limit, so one stranger guessing passwords can slow
+everyone's password sign-in; the log names the proxy address to add. This
+also matters when you enable the optional local-network sign-in skip: an
+untrusted request cannot claim a different source address.
 
 Behind a trusted proxy HolyArrs reads the last address in `X-Forwarded-For`
 that is not one of your trusted proxies, and checks it against `X-Real-IP`

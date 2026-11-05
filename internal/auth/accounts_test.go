@@ -705,8 +705,10 @@ func TestMediaServerSignIn(t *testing.T) {
 			if _, code := login("mum", "right"); code != 200 {
 				t.Fatalf("after the outage: %d", code)
 			}
-			// Any other odd answer still counts, so guessing stays limited.
-			for i := 0; i < freeTries; i++ {
+			// Any other odd answer still counts, so guessing stays limited. The
+			// wrong password and the turned-off account above still count at
+			// this address: a good sign-in takes back only its own try.
+			for i := 0; i < freeTries-2; i++ {
 				if _, code := login("boom", "x"); code != 502 {
 					t.Fatalf("odd answer try %d: %d", i, code)
 				}

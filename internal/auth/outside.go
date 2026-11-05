@@ -48,7 +48,7 @@ const (
 
 const (
 	pinLife    = 10 * time.Minute
-	maxPins    = 200
+	maxPins    = 1000
 	pinsPerIP  = 5
 	outsideMax = 1 << 20 // bytes read from an outside answer
 	product    = "HolyArrs"
@@ -514,6 +514,9 @@ func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr m
 // pin is a Plex sign-in in progress.
 type pin struct {
 	ip string
+	// alt is the other header's key when the proxy headers disagreed, so
+	// rotating a forged header still counts toward the same caller.
+	alt string
 	// secret is also in a cookie on the browser that started the pin, so
 	// another visitor behind the same address cannot finish it.
 	secret  string
@@ -551,14 +554,14 @@ func (a *Auth) plexStart(w http.ResponseWriter, r *http.Request) {
 // startPin asks Plex for a PIN and answers with the page to confirm it on.
 func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, purpose string) {
 	ctx := r.Context()
-	ip := a.clientKey(r)
+	ip, alt, _ := a.clientKeys(r)
 	now := a.now()
 	a.mu.Lock()
 	mine := 0
 	for id, p := range a.pins {
 		if now.After(p.expires) {
 			delete(a.pins, id)
-		} else if p.ip == ip {
+		} else if p.ip == ip || (alt != "" && p.alt == alt) {
 			mine++
 		}
 	}
@@ -580,7 +583,7 @@ func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, purpose string) 
 	}
 	secret := token(24)
 	a.mu.Lock()
-	p := &pin{ip: ip, secret: secret, expires: now.Add(pinLife), purpose: purpose}
+	p := &pin{ip: ip, alt: alt, secret: secret, expires: now.Add(pinLife), purpose: purpose}
 	if purpose == pinMine {
 		p.userID = Actor(ctx).ID
 	}
@@ -802,7 +805,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.mu.Lock()
-	delete(a.fails, ipKey)
+	a.undoFailLocked(marks[:2]) // this attempt's address counts only (ipKey, altKey)
 	delete(a.fails, userKey)
 	a.mu.Unlock()
 	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)

@@ -146,6 +146,7 @@ type Auth struct {
 	realNames    map[string]bool // lower-case user names, for the full-table rule (isRealName)
 	realNamesAt  time.Time
 	satLogged    time.Time
+	proxyWarned  atomic.Int64                    // unix nanoseconds of the last untrusted-proxy warning (localnet.go)
 	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
 	refusedHosts map[string]bool                 // refused names already logged (hosts.go)
@@ -232,6 +233,7 @@ func New(s *store.Store, opt Options) *Auth {
 		a.skipLocal.Store(v == "true")
 	}
 	a.localNets.Store(a.loadLocalNets(context.Background()))
+	a.loadKnown(context.Background())
 	a.loadSavedHosts(context.Background())
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
 	a.initSSO(opt.SSO)
@@ -704,7 +706,18 @@ func (a *Auth) ClientKey(r *http.Request) string {
 // for a known place (false when the proxy headers disagree).
 func (a *Auth) clientKeySure(r *http.Request) (string, bool) {
 	addr, _, unsure := a.clientAddrUnsure(r)
-	return "ip:" + limitAddr(addr), !unsure
+	return addrKey(addr, unsure), !unsure
+}
+
+// addrKey is the limit key of a client address. When the proxy headers
+// disagree, the X-Real-IP address goes under its own "xri:" namespace: the
+// visitor may have written it, so it must never read or charge the "ip:"
+// count of a real visitor at that address.
+func addrKey(addr string, unsure bool) string {
+	if unsure {
+		return "xri:" + limitAddr(addr)
+	}
+	return "ip:" + limitAddr(addr)
 }
 
 // clientKeys is clientKeySure plus altKey: when the proxy headers disagree,
@@ -718,7 +731,7 @@ func (a *Auth) clientKeys(r *http.Request) (ipKey, altKey string, sure bool) {
 	if other != "" {
 		altKey = "xff:" + limitAddr(other)
 	}
-	return "ip:" + limitAddr(addr), altKey, !unsure
+	return addrKey(addr, unsure), altKey, !unsure
 }
 
 // altWait is the address wait for altKey, if there is one; the caller holds a.mu.
@@ -803,19 +816,35 @@ const (
 )
 
 // noteKnown remembers a finished sign-in for signInWait; the caller holds
-// a.mu. Places are kept per name, so other names and addresses can never push
-// a name's places out; only that name's own least recent place goes. Kept in
-// memory only, so after a restart a place counts again from its next sign-in.
-// An address that is not sure is never recorded.
-func (a *Auth) noteKnown(p place) {
+// a.mu and passes the result to saveKnown once a.mu is unlocked, so the place
+// still counts after a restart. Places are kept per name, so other names and
+// addresses can never push a name's places out; only that name's own least
+// recent place goes. An address that is not sure is never recorded.
+func (a *Auth) noteKnown(p place) *knownChange {
 	if !p.sure || p.userKey == "" {
-		return
+		return nil
 	}
-	now := a.now()
+	ch := &knownChange{put: p, at: a.now()}
+	ch.gone = a.rememberKnown(p.userKey, p.ipKey, ch.at)
+	return ch
+}
+
+// knownChange is one noteKnown for saveKnown: the place to store, and the
+// places it pushed out (an empty ip key: every place of that name).
+type knownChange struct {
+	put  place
+	at   time.Time
+	gone [][2]string
+}
+
+// rememberKnown records userKey signing in from ipKey at the given time and
+// returns the places pushed out to stay within the limits; the caller holds
+// a.mu.
+func (a *Auth) rememberKnown(userKey, ipKey string, at time.Time) (gone [][2]string) {
 	if a.known == nil {
 		a.known = map[string]map[string]time.Time{}
 	}
-	set := a.known[p.userKey]
+	set := a.known[userKey]
 	if set == nil {
 		if len(a.known) >= knownNames {
 			var oldest string
@@ -832,11 +861,12 @@ func (a *Auth) noteKnown(p place) {
 				}
 			}
 			delete(a.known, oldest)
+			gone = append(gone, [2]string{oldest, ""})
 		}
 		set = map[string]time.Time{}
-		a.known[p.userKey] = set
+		a.known[userKey] = set
 	}
-	if _, ok := set[p.ipKey]; !ok && len(set) >= knownPerName {
+	if _, ok := set[ipKey]; !ok && len(set) >= knownPerName {
 		var oldest string
 		var oldestAt time.Time
 		for k, t := range set {
@@ -845,8 +875,64 @@ func (a *Auth) noteKnown(p place) {
 			}
 		}
 		delete(set, oldest)
+		gone = append(gone, [2]string{userKey, oldest})
 	}
-	set[p.ipKey] = now
+	set[ipKey] = at
+	return gone
+}
+
+// saveKnown stores a noteKnown change, and drops that name's places older
+// than knownPlaceFor. Best effort: a failed write is logged and never fails
+// the sign-in; the place still counts until the next restart.
+func (a *Auth) saveKnown(ch *knownChange) {
+	if ch == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+		for _, g := range ch.gone {
+			q, args := "DELETE FROM known_places WHERE user_key = ? AND ip_key = ?", []any{g[0], g[1]}
+			if g[1] == "" {
+				q, args = "DELETE FROM known_places WHERE user_key = ?", []any{g[0]}
+			}
+			if _, err := tx.Exec(q, args...); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec("DELETE FROM known_places WHERE user_key = ? AND last_at < ?",
+			ch.put.userKey, store.FormatTime(ch.at.Add(-knownPlaceFor))); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`INSERT INTO known_places(user_key, ip_key, last_at) VALUES (?, ?, ?)
+			ON CONFLICT(user_key, ip_key) DO UPDATE SET last_at = excluded.last_at`, ch.put.userKey, ch.put.ipKey, store.FormatTime(ch.at))
+		return err
+	})
+	if err != nil {
+		log.Printf("auth: could not save a known sign-in place: %v", err)
+	}
+}
+
+// loadKnown reads the known places of the last 30 days at start, oldest
+// first, under the same limits as noteKnown.
+func (a *Auth) loadKnown(ctx context.Context) {
+	rows, err := a.s.Read().QueryContext(ctx, "SELECT user_key, ip_key, last_at FROM known_places WHERE last_at >= ? ORDER BY last_at",
+		store.FormatTime(a.now().Add(-knownPlaceFor)))
+	if err != nil {
+		log.Printf("auth: could not read known sign-in places: %v", err)
+		return
+	}
+	defer rows.Close()
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for rows.Next() {
+		var u, ip, at string
+		if rows.Scan(&u, &ip, &at) == nil {
+			if t := parseTime(at); !t.IsZero() {
+				a.rememberKnown(u, ip, t)
+			}
+		}
+	}
 }
 
 func (a *Auth) noteFail(keys ...string) {
@@ -882,7 +968,9 @@ func (a *Auth) noteFail(keys ...string) {
 				// table can an attacker tell real names from made-up ones, by
 				// whether a name wait appears; fine for a self-hosted app with a
 				// few users.
-				if !protectedKey(k) || !a.isRealName(k, now) {
+				// The ceiling sits above the address share, so address records
+				// from the flood cannot use up the room real names get.
+				if !protectedKey(k) || !a.isRealName(k, now) || len(a.fails) >= 4*maxTracked+fullExtra {
 					if protectedKey(k) {
 						a.noteSkipped(now)
 					}
@@ -891,6 +979,13 @@ func (a *Auth) noteFail(keys ...string) {
 			}
 			f = &failure{}
 			a.fails[k] = f
+		}
+		// An address count whose wait ended long ago starts over, so one
+		// typo now and then at home never builds up to a lockout (pruning
+		// does the same, but only once the table is big). A real account
+		// keeps its count for accountKeep.
+		if idle := now.Sub(f.last); f.n > 0 && idle > MaxBackoff && (idle > accountKeep || !a.accountKey(k, now)) {
+			f.n = 0
 		}
 		f.n++
 		f.last = now
@@ -917,7 +1012,10 @@ func (a *Auth) isRealName(k string, now time.Time) bool {
 		names := map[string]bool{}
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		if rows, err := a.s.Read().QueryContext(ctx, "SELECT name FROM users"); err == nil {
+		// A Jellyfin or Emby account linked to a member under another name
+		// (taken, or renamed since) counts as real too, as "<kind>:<name>".
+		if rows, err := a.s.Read().QueryContext(ctx, `SELECT name FROM users UNION
+			SELECT provider || ':' || external_name FROM user_links WHERE provider IN ('jellyfin', 'emby') AND external_name != ''`); err == nil {
 			for rows.Next() {
 				var n string
 				if rows.Scan(&n) == nil {
@@ -931,12 +1029,18 @@ func (a *Auth) isRealName(k string, now time.Time) bool {
 	if a.realNames[rest] {
 		return true
 	}
-	_, after, ok := strings.Cut(rest, ":") // name:<kind>:<name> for a media server sign-in
-	return ok && a.realNames[after]
+	// name:<kind>:<name> for a Jellyfin or Emby sign-in; only those kinds,
+	// so a typed name like "x1:ana" is not taken for the account ana.
+	kind, after, ok := strings.Cut(rest, ":")
+	return ok && (kind == ProviderJellyfin || kind == ProviderEmby) && a.realNames[after]
 }
 
 // maxTracked bounds the failure and known-place maps.
 const maxTracked = 10000
+
+// fullExtra caps the real-account records noteFail adds once the table is
+// full, a hard ceiling in case names that look real are made up.
+const fullExtra = 1000
 
 // protectedKey says whether a fail key is a per-name one (sign-in name or
 // second-step ticket), which is kept for as long as its wait runs.
@@ -944,17 +1048,38 @@ func protectedKey(k string) bool {
 	return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:")
 }
 
+// accountKeep is how long a real account's count is kept after its last
+// failure, so a quiet spell between guessing rounds does not hand back free
+// guesses. Its wait still ends after MaxBackoff; only the level is kept.
+const accountKeep = 24 * time.Hour
+
+// accountPrefixes are fail keys that name a user id, so their number is
+// bounded by the users.
+var accountPrefixes = []string{"2fa:", "reauth:", "pw:", "code:", "sso-proof:", "sso-test:"}
+
+// accountKey says whether a fail record belongs to a real account; the caller
+// holds a.mu.
+func (a *Auth) accountKey(k string, now time.Time) bool {
+	for _, p := range accountPrefixes {
+		if strings.HasPrefix(k, p) {
+			return true
+		}
+	}
+	return strings.HasPrefix(k, "name:") && a.isRealName(k, now)
+}
+
 // pruneFails frees room in a.fails; the caller holds a.mu. Records whose wait
-// is over go first. If the map is still full (a flood of fresh addresses),
-// the oldest address records go. Per-name records with failures inside their
-// window are never evicted: there are few real names, and flushing them would
-// end the wait that protects an account. When names fill their share,
-// noteFail stops adding new ones instead, so memory stays bounded and a flood
-// of made-up names cannot remove the owner's wait.
+// is over go first; a real account's record only after accountKeep. If the
+// map is still full (a flood of fresh addresses), the oldest address records
+// go. Per-name and account records are never evicted that way: there are few
+// real names, and flushing them would end the wait that protects an account.
+// When names fill their share, noteFail stops adding new ones instead, so
+// memory stays bounded and a flood of made-up names cannot remove the
+// owner's wait.
 func (a *Auth) pruneFails(now time.Time) {
 	a.lastPruneAt = now
 	for k, f := range a.fails {
-		if now.Sub(f.last) > MaxBackoff {
+		if idle := now.Sub(f.last); idle > MaxBackoff && (idle > accountKeep || !a.accountKey(k, now)) {
 			delete(a.fails, k)
 		}
 	}
@@ -967,7 +1092,7 @@ func (a *Auth) pruneFails(now time.Time) {
 	}
 	var addrs []kf
 	for k, f := range a.fails {
-		if !protectedKey(k) {
+		if !protectedKey(k) && !a.accountKey(k, now) {
 			addrs = append(addrs, kf{k, f.last})
 		}
 	}
@@ -1005,6 +1130,13 @@ func (a *Auth) markFails(keys ...string) []failMark {
 func (a *Auth) undoFail(marks []failMark) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	a.undoFailLocked(marks)
+}
+
+// undoFailLocked is undoFail for a caller that holds a.mu. A good sign-in
+// uses it to take back only its own reservation on a shared address, so it
+// never clears the count other people's failures left there.
+func (a *Auth) undoFailLocked(marks []failMark) {
 	for _, m := range marks {
 		f := a.fails[m.key]
 		if f == nil {
@@ -1031,9 +1163,11 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 	userKey := "name:" + strings.ToLower(c.Name)
 	// Check and reserve in one locked step: the attempt counts as failed up
 	// front and is cleared on success, so parallel attempts cannot slip past.
+	var marks []failMark
 	a.mu.Lock()
 	wait := max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey))
 	if wait == 0 {
+		marks = a.markFails(ipKey, altKey)
 		a.noteFail(ipKey, altKey, userKey)
 	}
 	a.mu.Unlock()
@@ -1082,7 +1216,7 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.mu.Lock()
-	delete(a.fails, ipKey)
+	a.undoFailLocked(marks) // only this attempt's address count; others' failures there stay
 	delete(a.fails, userKey)
 	a.mu.Unlock()
 	a.passedPlace(w, r, id, name, AuthMethodLocalPassword, place{ipKey, userKey, sure})

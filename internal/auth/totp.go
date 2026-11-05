@@ -103,8 +103,9 @@ func (a *Auth) passedPlace(w http.ResponseWriter, r *http.Request, userID int64,
 	}
 	if !on {
 		a.mu.Lock()
-		a.noteKnown(pl)
+		known := a.noteKnown(pl)
 		a.mu.Unlock()
+		a.saveKnown(known)
 		a.startSessionAs(w, r, userID, name, http.StatusOK, method)
 		return
 	}
@@ -210,14 +211,19 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		t = nil
 	}
 	var wait time.Duration
+	var marks []failMark
 	if t != nil {
-		userKey := "name:" + strings.ToLower(t.name)
+		// The first step's name key: "name:<name>" after a password, the
+		// media-server name after Jellyfin or Emby, none after Plex or single
+		// sign-on, so strangers holding the local name's wait cannot stop them.
+		userKey := t.userKey
 		// codeKey survives a correct password, so a fresh ticket brings back
 		// no free code guesses; only a right code clears it.
 		codeKey := "2fa:" + itoa(t.userID)
 		wait = max(a.signInWait(ipKey, userKey, sure), a.altWait(altKey), a.waitFor(codeKey, freeTries))
 		if wait == 0 {
 			t.tries++
+			marks = a.markFails(ipKey, altKey)
 			a.noteFail(ipKey, altKey, userKey, codeKey)
 		}
 	}
@@ -249,11 +255,12 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	delete(a.tickets, h)
-	delete(a.fails, ipKey)
+	a.undoFailLocked(marks) // only this attempt's address count
 	delete(a.fails, "name:"+strings.ToLower(t.name))
 	delete(a.fails, "2fa:"+itoa(t.userID))
-	a.noteKnown(place{ipKey, t.userKey, sure})
+	known := a.noteKnown(place{ipKey, t.userKey, sure})
 	a.mu.Unlock()
+	a.saveKnown(known)
 	a.startSessionAs(w, r, t.userID, t.name, http.StatusOK, t.method)
 }
 

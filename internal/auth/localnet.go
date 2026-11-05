@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // keyLocalNets holds the networks where sign-in may be skipped, as a JSON
@@ -243,6 +244,7 @@ func (a *Auth) clientAddrBoth(r *http.Request) (addr, other string, ok, unsure b
 	}
 	pip := net.ParseIP(peer)
 	if pip == nil || !a.trustedProxy(pip) {
+		a.warnUntrustedProxy(pip)
 		return peer, "", false, false
 	}
 	ok = fwd == ""
@@ -284,6 +286,24 @@ func (a *Auth) clientAddrBoth(r *http.Request) (addr, other string, ok, unsure b
 	default:
 		return fromReal, fromXFF, false, true
 	}
+}
+
+// warnUntrustedProxy logs, at most once per MaxBackoff, that forwarding
+// headers from a loopback or private peer were ignored: most likely a reverse
+// proxy that is not set as trusted, so every visitor shares its sign-in limit.
+func (a *Auth) warnUntrustedProxy(peer net.IP) {
+	if peer == nil || !peer.IsLoopback() && !peer.IsPrivate() {
+		return
+	}
+	now := time.Now()
+	if a.now != nil {
+		now = a.now()
+	}
+	last := a.proxyWarned.Load()
+	if last != 0 && now.Sub(time.Unix(0, last)) < MaxBackoff || !a.proxyWarned.CompareAndSwap(last, now.UnixNano()) {
+		return
+	}
+	log.Printf("auth: X-Forwarded-For from %s ignored; every visitor shares one sign-in limit. Set %s=%s", peer, EnvTrustedProxies, peer)
 }
 
 // parseHostIP reads an address that may carry a port or brackets.

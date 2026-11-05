@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ForwardAuthOptions trusts only direct proxy peers, independently of forwarded-IP settings.
@@ -90,11 +91,14 @@ func (a *Auth) forwardIdentity(r *http.Request, fwd *forwardRuntime) (string, st
 }
 
 func (a *Auth) ssoAttempt(w http.ResponseWriter, r *http.Request) bool {
-	key := "sso:" + a.clientKey(r)
+	keys := a.ssoKeys(r)
 	a.mu.Lock()
-	wait := a.waitFor(key, freeTries)
+	var wait time.Duration
+	for _, k := range keys {
+		wait = max(wait, a.waitFor(k, freeTries))
+	}
 	if wait == 0 {
-		a.noteFail(key)
+		a.noteFail(keys...)
 	}
 	a.mu.Unlock()
 	if wait > 0 {
@@ -105,9 +109,22 @@ func (a *Auth) ssoAttempt(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
+// ssoKeys are the single sign-on limit keys: the caller's, plus the other
+// header's address when the proxy headers disagree, so rotating a forged
+// header buys no fresh budget.
+func (a *Auth) ssoKeys(r *http.Request) []string {
+	ipKey, altKey, _ := a.clientKeys(r)
+	if altKey == "" {
+		return []string{"sso:" + ipKey}
+	}
+	return []string{"sso:" + ipKey, "sso:" + altKey}
+}
+
 func (a *Auth) ssoPassed(r *http.Request) {
 	a.mu.Lock()
-	delete(a.fails, "sso:"+a.clientKey(r))
+	for _, k := range a.ssoKeys(r) {
+		delete(a.fails, k)
+	}
 	a.mu.Unlock()
 }
 

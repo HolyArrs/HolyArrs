@@ -107,7 +107,7 @@ func TestTwoFactorStepNotHeldByNameWait(t *testing.T) {
 func TestDisagreeingHeadersKeepPerClientKey(t *testing.T) {
 	a := proxyAuth(t, "172.18.0.0/16")
 	r := reqFrom("172.18.0.1:4000", [][2]string{{"X-Forwarded-For", "198.51.100.7"}, {"X-Real-IP", "104.16.0.1"}})
-	if got := a.ClientKey(r); got != "ip:104.16.0.1" {
+	if got := a.ClientKey(r); got != "xri:104.16.0.1" {
 		t.Errorf("key %q, want the X-Real-IP client", got)
 	}
 	if _, bad := a.seenAddress(r); !bad {
