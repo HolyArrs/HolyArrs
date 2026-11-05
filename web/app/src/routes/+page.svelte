@@ -11,12 +11,11 @@
 	import { proxied, sized } from '#lib/tmdb-image.ts';
 	import { askArtist, askDetails, wantDetails } from '#lib/approvals/details.svelte.ts';
 	import type { IconName } from '#lib/Icon.svelte';
-	import { arrivedHead, askProgressLine, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { arrivedHead, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { decisions } from '#lib/decisions.svelte.ts';
 	import { METADATA_DOWN, metadataOutage } from '#lib/metadata-health.svelte.ts';
 	import { agoLong, bytes, duration, percent } from '#lib/format.ts';
 	import { homeFacts, homeGreeting, homeNews, localDay } from '#lib/home-line.ts';
-	import { personName } from '#lib/plain.ts';
 	import type { Fresh } from '#lib/fresh.ts';
 	import type { DownloadRow } from '#lib/downloaders.ts';
 	import type { Ask, Health, HealthChecks, LibraryFolder } from '#lib/types.ts';
@@ -264,8 +263,9 @@
 		return out;
 	});
 	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
-	// Coming up: one list in place of the New season, Coming soon and Waiting for approval rows (each repeated a tile
-	// above). What airs next, one line each with its date; a new season that is already out leads, two at most.
+	// Under the tiles Home has one picture row (Recently added) and one list, Coming up. The other rows went: New season,
+	// Coming soon and Waiting for approval repeated a tile above; Your asks is the asks tile and the Requests page; what
+	// you follow shows up in the row and the list when something new happens. What airs next, one line each with its date; a new season that is already out leads, two at most.
 	// Nothing under the tiles repeats a tile: a title a picture tile already shows is left out of the row and the list
 	// below. When a tile shows something else (or there are no tiles), nothing is skipped.
 	const onTiles = $derived(new Set(showOverview ? places.flatMap((pl) => (pl.pic ? [pl.pic.c.title_id] : [])) : []));
@@ -307,13 +307,6 @@
 		wantDetails(a);
 		return askDetails(a)?.poster || undefined;
 	}
-	const askKind = (a: Ask): 'movie' | 'show' | 'artist' => (a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'artist' : 'movie');
-	/** The ask's wide picture, for a wide card: the title's backdrop or the artist's wide photo (the same ones the Requests cards show). */
-	function askWide(a: Ask): string | undefined {
-		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] || undefined;
-		wantDetails(a);
-		return askDetails(a)?.backdrop || undefined;
-	}
 	function artFailed(a: Ask, pic: string) {
 		if (pic === a.poster) badArt.add(a.id);
 		else noArt.add(a.id);
@@ -321,7 +314,7 @@
 	// An artist's own photo can be an empty file: it is tried once here, so the row can fall back before it shows a gap.
 	const tried = new Set<number>();
 	$effect(() => {
-		for (const a of [...waiting.slice(0, 20), ...mineShown]) {
+		for (const a of waiting.slice(0, 20)) {
 			if (a.kind !== 'artist' || !a.poster || tried.has(a.id)) continue;
 			tried.add(a.id);
 			const probe = new Image();
@@ -404,15 +397,6 @@
 			: (fixes.length ? `${n(fixes.length)} ${fixes.length === 1 ? 'thing needs' : 'things need'} a look` : unchecked ? 'Could not check everything' : 'All good') +
 					(uncheckedDl ? '' : dlCount.down ? ` · ${n(dlCount.down)} downloading${speed ? ` at ${bytes(speed)}/s` : ''}` : dlCount.imp || dlCount.waiting || dlCount.paused ? ` · ${stageWords(dlCount)}` : '')
 	);
-
-	/** The ask's one round status mark: live progress first. */
-	function askMark(a: Ask): { state: 'available' | 'requested' | 'declined' | 'downloading'; label: string } | null {
-		const p = a.title_id ? progress[a.title_id] : undefined;
-		if (p) return { state: 'downloading', label: askProgressLine(p) };
-		if (a.state === 'available') return { state: 'available', label: 'In your library' };
-		if (a.state === 'turned_down') return { state: 'declined', label: 'Turned down' };
-		return { state: 'requested', label: a.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
-	}
 
 	/** A server-filled row's strip: what is new on the card, in the row's own kind. */
 	function strip(c: HomeCard, type: string): Fresh | null {
@@ -915,32 +899,6 @@
 						{/each}
 					</ul>
 				</section>
-			{:else if row === 'asks' && mine.length}
-				<div class="wide-row" data-testid="home_asks">
-					<Shelf title="Your asks" subtitle={asksLine} href={to('/requests')} item="var(--title-item)">
-						{#each mineShown as a (a.id)}
-							{@const p = a.title_id ? progress[a.title_id] : undefined}
-							{@const wide = askWide(a)}
-							{@const pic = askPic(a)}
-							{#key `${wide}|${pic}`}
-								<WideCard
-									cover
-									title={a.name}
-									kind={askKind(a)}
-									typed
-									href={a.title_id ? to(`/library/${a.title_id}`) : to(`/requests?ask=${a.id}`)}
-									image={wide}
-									poster={pic}
-									subtitle={p ? askProgressLine(p).replace(/^Downloading /, '') : a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
-									progress={p && p.state === 'downloading' ? Math.round(p.progress * 100) : undefined}
-									owned={askMark(a)}
-								/>
-							{/key}
-						{/each}
-					</Shelf>
-				</div>
-			{:else if row === 'following'}
-				{@render wideRow(below(home?.following), 'home_following', { title: 'Following', subtitle: 'Shows and artists you follow' })}
 			{/if}
 		{/each}
 		</PageLoader>
