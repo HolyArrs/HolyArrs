@@ -90,6 +90,10 @@ export function runtimeLine(min: number | undefined): string {
 
 /** What every variant gets from the page: the asks, the real handlers and the shared words. */
 export interface ApprovalsCtx {
+	/** Unread news about this ask came in for this visit (the card shows New). */
+	isNew(id: number): boolean;
+	/** Open reported problems for the Reports button; -1 hides it (no Library rights). */
+	readonly reports: number;
 	/** The asks in the chosen tab, kind and Mine filter. */
 	readonly shown: Ask[];
 	/** What the pipeline is doing for an approved ask right now (searching, downloading, importing, failed); {} when nothing. */

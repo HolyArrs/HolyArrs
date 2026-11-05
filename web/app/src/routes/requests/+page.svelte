@@ -5,11 +5,11 @@
 	import { glide } from '#lib/ui/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
-	import { onDestroy, onMount, tick } from 'svelte';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { api, ApiError, message } from '#lib/api.ts';
 	import Chip from '#lib/ui/Chip.svelte';
-	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -208,7 +208,6 @@
 	let reviewOpen = $state(false);
 	let reviewTrigger: HTMLButtonElement | undefined = $state();
 	let compactReview = $state(false);
-	let markingRead = $state(false);
 	let takingBack = $state<Set<number>>(new Set());
 
 	async function selectAsk(id: number, trigger?: HTMLButtonElement) {
@@ -465,21 +464,29 @@
 		if (f) setTimeout(f, 0);
 	}
 
-	async function readAllMessages() {
-		if (markingRead) return;
-		markingRead = true;
-		try {
-			await markRead();
-		} catch (err) {
-			toasts.push(message(err), 'fail');
-		} finally {
-			markingRead = false;
+	// Requests news (#92): no inbox card. Unread news about an ask marks its card New
+	// for this visit; other news (a fixed report, new albums, a followed title ready)
+	// shows once as a toast. Opening the page reads it all, so the badge clears.
+	let fresh = $state(new Set<number>());
+	const toasted = new Set<number>();
+	let reading = false;
+	$effect(() => {
+		if (!inbox.unread || reading) return;
+		const unread = inbox.messages.filter((m) => !m.read_at);
+		if (!unread.length) return;
+		reading = true;
+		untrack(() => (fresh = new Set([...fresh, ...unread.flatMap((m) => (m.ask_id ? [m.ask_id] : []))])));
+		for (const m of unread.filter((m) => !m.ask_id && !toasted.has(m.id)).slice(0, 3)) {
+			toasted.add(m.id);
+			toasts.push(plain(m.text), 'ok');
 		}
-	}
+		void markRead()
+			.catch(() => {})
+			.finally(() => (reading = false));
+	});
 
 	// One status vocabulary (title-status.ts): approvers get the staff words.
 	const askPill = (a: Ask) => titleStatus({ ask: a.state, titleKind: a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie' }, approver ? 'staff' : 'member');
-	const msgKind = (k: string): StatusKind => (k === 'ready' || k === 'fixed' ? 'in_library' : k === 'turned_down' ? 'turned_down' : 'approved');
 
 	// Id-like account names read as a person, never a raw id.
 	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? 'someone in your household' : w));
@@ -645,7 +652,9 @@
 		get person() { return person; },
 		setPerson: (id) => ((person = id), (chosen = new Set())),
 		get people() { return people; },
-		get me() { return myId; }
+		get me() { return myId; },
+		isNew: (id) => fresh.has(id),
+		get reports() { return session.can('manage_library') ? inbox.reports : -1; }
 	};
 </script>
 
@@ -653,7 +662,8 @@
 
 <div class="ap-top" class:compact={approver}>
 <h1 class="sr-only">Requests</h1>
-{#if session.can('manage_library')}<a class="rp-link" href={to('/reports')} data-testid="reports-link">Problems{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> reported by people</span></a>{/if}
+<!-- Reports (#36): approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
+{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
 {#if session.can('ask') && !approver}
 	<div class="ask-actions">
 			<Button icon="film" variant="primary" href={to(`/search`)}><span class="ask-d">Ask for a movie</span><span class="ask-m"><span class="sr-only">Ask for a </span>Movie</span></Button>
@@ -749,6 +759,7 @@
 									{:else}{a.name}<span class="muted">{year(a)}</span>{/if}
 								</h2>
 								<StatusPill kind={askPill(a).kind} label={askPill(a).label} testid="ask-state" />
+								{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">New</span>{/if}
 								{#if a.kind === 'show'}<span class="kind" data-testid="ask-kind">Show</span>{/if}
 								{#if a.kind === 'artist'}<span class="kind" data-testid="ask-kind">Music</span>{/if}
 							</div>
@@ -828,7 +839,6 @@
 			</aside>
 		{/if}
 
-		{@render messages()}
 	</div>
 </div>
 {:else}
@@ -852,33 +862,9 @@
 				{/if}
 			</PageLoader>
 		{/if}
-		<!-- The approver's own asks get the same messages as a member's. -->
-		{#if inbox.messages.length}<div class="rq-mine">{@render messages('Your messages')}</div>{/if}
 			</div>
 {/if}
 
-{#snippet messages(heading = 'Messages')}
-		{#if inbox.messages.length}
-			<section class="messages" aria-labelledby="h-msg">
-				<div class="msg-head">
-					<h2 id="h-msg">{heading}{#if inbox.unread}{' '}<span class="badge">{inbox.unread} new</span>{/if}</h2>
-					{#if inbox.unread}<Button variant="plain" size="sm" type="button" disabled={markingRead} aria-busy={markingRead} onclick={() => void readAllMessages()}>Mark all read</Button>{/if}
-				</div>
-				<details>
-					<summary>Show the latest {Math.min(inbox.messages.length, 5)}</summary>
-					<ul class="msg-list">
-						{#each inbox.messages.slice(0, 5) as m (m.id)}
-							<li class:unread={!m.read_at} data-testid="message">
-								<StatusPill kind={msgKind(m.kind)} label={m.kind === 'fixed' ? 'Fixed' : m.kind === 'ready' ? 'Ready' : m.kind === 'turned_down' ? 'Declined' : 'Approved'} />
-								<span class="msg-text">{plain(m.text)}</span>
-								<time class="muted" datetime={m.created_at} title={dateTime(m.created_at)}>{ago(m.created_at)}</time>
-							</li>
-						{/each}
-					</ul>
-				</details>
-			</section>
-		{/if}
-{/snippet}
 
 
 <Sheet
@@ -1000,14 +986,13 @@
 	.rq-fail { color: var(--fail-text); }
 	.rq-step { color: var(--text); font-weight: 600; }
 	.rq-gap { margin-top: 12px; }
-	.rq-mine { max-width: 560px; margin-top: 24px; }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 	.inspect { min-height: 30px; padding: 0 12px; border-radius: 8px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; transition: background var(--dur-fast) var(--ease-out); }
 	.row-menu { margin-left: auto; }
 	.inspect:hover { background: var(--accent-soft); }
 	.inspect.on { background: var(--surface-3); color: var(--text); }
 	.inspect:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.review, .messages { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); padding: 16px 18px; }
+	.review { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); padding: 16px 18px; }
 	.review-close { display: none; }
 	.review-head { display: flex; gap: 14px; align-items: flex-start; }
 	.review-art { width: 72px; flex: none; border-radius: 8px; overflow: hidden; }
@@ -1017,15 +1002,7 @@
 	.review-facts dt { color: var(--text-muted); }
 	.review-facts dd { text-align: right; overflow-wrap: anywhere; }
 	.review-note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font: var(--t-callout); overflow-wrap: anywhere; }
-	.msg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-	.msg-head h2 { font: var(--t-headline); white-space: nowrap; display: flex; align-items: center; gap: 8px; }
-	.badge { padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: var(--t-footnote); font-weight: 600; }
-	summary { min-height: 36px; display: flex; align-items: center; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; cursor: pointer; border-radius: 6px; }
-	summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.msg-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
-	.msg-text { grid-column: 1 / -1; font: var(--t-callout); color: var(--text-muted); overflow-wrap: anywhere; }
-	.unread .msg-text { color: var(--text); font-weight: 500; }
-	.msg-list time { grid-column: 2; grid-row: 1; font: var(--t-footnote); white-space: nowrap; }
+	.new-mark { padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: var(--t-footnote); font-weight: 600; }
 	.decide { display: flex; flex-direction: column; gap: 14px; }
 	.decide .field + .field { margin-top: 0; }
 	textarea.input { height: auto; padding-top: 10px; resize: vertical; }

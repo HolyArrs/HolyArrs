@@ -8,11 +8,11 @@
 	const manage = $derived(session.can('manage_library'));
 </script>
 
-<svelte:head><title>Reported problems · HolyArrs</title></svelte:head>
+<svelte:head><title>Reports · HolyArrs</title></svelte:head>
 
 <div class="page">
 	<PageHeader
-		title={manage ? 'Reported problems' : 'Your reported problems'}
+		title={manage ? 'Reports' : 'Your reports'}
 		subtitle={manage
 			? 'Problems people found with titles in the Library. Mark one fixed to let them know.'
 			: 'Problems you reported with titles in the Library, and what was done about them.'}

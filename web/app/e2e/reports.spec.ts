@@ -123,10 +123,11 @@ test('a member reports a problem from a phone, in a bottom sheet', async () => {
 test('the owner finds it from Requests and marks it fixed with a reply', async () => {
 	await own.goto('/requests');
 	const link = own.getByTestId('reports-link');
-	await expect(link).toContainText(/Problems \(\d+\)/);
+	await expect(link).toContainText(/Reports/);
+	await expect(link).toContainText(/\d+/);
 	await link.click();
 	await expect(own).toHaveURL(/\/reports/);
-	await expect(own.getByRole('heading', { level: 1, name: 'Reported problems' })).toBeVisible();
+	await expect(own.getByRole('heading', { level: 1, name: 'Reports' })).toBeVisible();
 
 	const card = own.getByTestId('report').filter({ hasText: `${memberName} reported it` });
 	await expect(card).toHaveCount(1);
@@ -156,10 +157,9 @@ test('the member sees it fixed, with the reply and a Fixed message', async () =>
 	await expect(card.getByTestId('report-reply')).toHaveText(reply);
 	await noSidewaysScroll(member);
 
+	// The Fixed news shows once as a toast when they next open Requests.
 	await member.goto('/requests');
-	const msg = member.getByTestId('message').filter({ hasText: movie }).first();
-	await expect(msg).toContainText('Fixed');
-	await expect(msg).toContainText('was fixed by');
+	await expect(member.getByRole('status').filter({ hasText: movie })).toContainText('was fixed by');
 	await noSidewaysScroll(member);
 });
 

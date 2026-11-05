@@ -193,12 +193,16 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	expect(events.filter((e) => /took back the ask for Copper Lighthouse/.test(e))).toHaveLength(1);
 	expect(events.filter((e) => /Copper Lighthouse.*: approved by luis/.test(e))).toHaveLength(1);
 
+	// No inbox card (#92): the news marks kim's card New for this visit, and opening Requests reads it.
+	expect(((await (await kim.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Copper Lighthouse (2017) was approved by an admin'));
 	await kim.goto('/requests');
-	await kim.getByText(/^Show the latest/).click();
-	await expect(kim.getByTestId('message').first()).toContainText('Copper Lighthouse (2017) was approved by an admin');
-	await expect(kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' }).getByTestId('ask-state')).toHaveText('Approved');
-	await kim.getByRole('button', { name: 'Mark all read' }).click();
-	await expect(kim.getByRole('button', { name: 'Mark all read' })).toHaveCount(0);
+	const copper = kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
+	await expect(copper.getByTestId('ask-state')).toHaveText('Approved');
+	await expect(copper.getByTestId('ask-new')).toBeVisible();
+	await expect.poll(async () => ((await (await kim.request.get('/api/v1/messages')).json()) as { unread: number }).unread).toBe(0);
+	await kim.reload();
+	await expect(copper.getByTestId('ask-state')).toHaveText('Approved');
+	await expect(copper.getByTestId('ask-new')).toHaveCount(0);
 });
 
 test('turned down with a note; over the weekly limit kim is told when to try again', async () => {
@@ -570,7 +574,7 @@ test('an approved ask whose download failed tells the member why', async ({ brow
 	}
 });
 
-test('the owner reads the messages about their own asks on Requests', async () => {
+test('the owner is told about their own asks', async () => {
 	// Owners ask through the API (the title page offers them Add); the owner may
 	// auto-approve, else they approve it themselves. Either way a message is left.
 	const call = await api(own);
@@ -581,11 +585,8 @@ test('the owner reads the messages about their own asks on Requests', async () =
 		const yes = await call('POST', `/asks/${ask.id}/approve`, {});
 		expect(yes.ok(), await yes.text()).toBe(true);
 	}
+	expect(((await (await own.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text).filter((t) => t.includes('Thistle Almanac'))).toContainEqual(expect.stringContaining('was approved'));
 	await own.goto('/requests');
-	const mine = own.getByRole('region', { name: /^Your messages/ });
-	await expect(mine).toBeVisible();
-	await mine.getByText(/^Show the latest/).click();
-	await expect(mine.getByTestId('message').filter({ hasText: 'Thistle Almanac' })).toContainText('was approved');
 	await noSidewaysScroll(own);
 });
 
@@ -624,9 +625,9 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	// Its file comes in: the next ready check (every 30 s, and after each import) tells dot.
 	await giveFile(ownCall, cobalt, 'Cobalt Orrery', 2016);
 	await expect.poll(told, slow).toBe(true);
+	// News that is not about an ask shows once as a toast on Requests.
 	await dot.goto('/requests');
-	await dot.getByText(/^Show the latest/).click();
-	await expect(dot.getByTestId('message').filter({ hasText: 'Cobalt Orrery is in the Library' })).toBeVisible();
+	await expect(dot.getByRole('status').filter({ hasText: 'Cobalt Orrery is in the Library' })).toBeVisible();
 	// The follow moved onto the Library title.
 	await openFromSearch(dot, 'cobalt', 'Cobalt Orrery');
 	await expect(dot).toHaveURL(/\/library\/\d+/);
@@ -645,8 +646,7 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await giveFile(ownCall, heron, 'Heron Clockwork', 2015);
 	await expect.poll(heronTold, slow).toBe(1);
 	await dot.goto('/requests');
-	await dot.getByText(/^Show the latest/).click();
-	await expect(dot.getByTestId('message').filter({ hasText: 'Heron Clockwork is in the Library and ready to watch' })).toBeVisible();
+	await expect(dot.getByRole('status').filter({ hasText: 'Heron Clockwork is in the Library and ready to watch' })).toBeVisible();
 
 	// An album not out yet, on its artist's page: the bell says you will hear when it is out.
 	// Following a Library artist is its own test below (it needs a music folder).

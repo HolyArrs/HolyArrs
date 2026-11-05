@@ -409,8 +409,11 @@
 		</div>
 		</div>
 		<div class="right">
+			{#if ctx.reports >= 0}
+				<a class="rp-btn" href={to('/reports')} data-testid="reports-link" aria-label="Reports{ctx.reports ? `, ${ctx.reports} open` : ''}"><Icon name="alert" size={16} /><span class="rp-v">Reports</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports}</span>{/if}</a>
+			{/if}
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />Approve all {toApprove.length}</button>
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />Approve all<span class="aa-n">&nbsp;{toApprove.length}</span></button>
 			{/if}
 			<div class="sf-anchor">
 					<button type="button" class="sf-btn" bind:this={sfBtn} aria-haspopup={phone ? 'dialog' : 'menu'} aria-expanded={sfMenu} aria-label="Filter{filterCount ? `, ${filterCount} on` : ''}" onclick={sfToggle}>
@@ -472,7 +475,7 @@
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></span>{/if}
 					</div>
 					<div class="top">
-						<div class="ban-cap"><h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title="Asked for a 4K copy, approved on its own">4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
+						<div class="ban-cap">{#if ctx.isNew(a.id)}<span class="new-mark" data-testid="ask-new">New</span>{/if}<h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title="Asked for a 4K copy, approved on its own">4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
 					</div>
 					<div class="sheet-b">
 					<div class="body">
@@ -546,7 +549,7 @@
 	.pw .tab { height: 32px; }
 	.pw.on .tab { background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
 	/* Coarse pointers keep a 44px target without fattening the bar. */
-	@media (pointer: coarse) { .tab::after { content: ''; position: absolute; inset: -6px 0; } .right .approve-all, .right .sf-btn { height: 44px; } }
+	@media (pointer: coarse) { .tab::after { content: ''; position: absolute; inset: -6px 0; } .right .approve-all, .right .sf-btn, .right .rp-btn { height: 44px; } }
 	/* Phones: the tab track grows so each tab's hit area (::after, inset -6px 0) reaches 44px. */
 	@media (max-width: 767px) and (pointer: coarse) { .toolbar .tabs { height: 46px; padding-block: 6px; border-radius: 15px; } }
 	.dd { width: 6px; height: 6px; border-radius: 50%; }
@@ -570,6 +573,14 @@
 	.tab .fail-dot { width: 6px; height: 6px; margin-left: -2px; border-radius: 50%; background: var(--fail, #e5484d); }
 	.approve-all { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
 	.approve-all:hover { background: var(--surface-2); }
+	/* Reports (#36): reported problems, a toolbar button like Filter with a red count when open. */
+	.rp-btn { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; text-decoration: none; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
+	.rp-btn:hover { background: var(--surface-2); }
+	.rp-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.rp-n { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/18px var(--font-ui); text-align: center; font-variant-numeric: tabular-nums; }
+	/* Narrow phones: the three toolbar buttons drop their icons together so each word fits. */
+	@media (max-width: 379px) { .right .approve-all :global(svg), .right .rp-btn :global(svg), .right .sf-btn .sf-funnel { display: none; } }
+	.new-mark { align-self: flex-start; margin-bottom: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/16px var(--font-ui); }
 	.approve-all:active { transform: scale(0.96); }
 
 	/* The Filter button and its menu (Status for this tab, then Type). Tones: failed red, live steps blue, ready green, waiting amber, the rest muted. */
@@ -726,7 +737,11 @@
 		.tab { flex: none; padding: 0 12px; }
 		/* Approve all and Filter share one row, equal halves, so the art starts sooner. */
 		.right { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin-left: 0; }
-		.approve-all { justify-content: center; }
+		.approve-all, .rp-btn { justify-content: center; }
+		/* Three buttons share the phone row: the count is on the Pending tab already. */
+		.approve-all { white-space: nowrap; }
+		.aa-n { display: none; }
+		.approve-all, .rp-btn, .sf-btn { padding-inline: 10px; gap: 5px; }
 		.right .sf-anchor, .right .sf-anchor :global(.sf-btn) { width: 100%; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 		.bc { --top: 124px; --gap: 8px; }

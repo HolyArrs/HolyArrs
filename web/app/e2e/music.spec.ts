@@ -314,10 +314,9 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: /Asked\s*·\s*ivy/ }).first()).toBeVisible();
 	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: /Approved\s*·\s*luis/ }).first()).toBeVisible();
 
-	// ivy reads the message; members see no switches on the artist page.
+	// ivy is told (no inbox card on Requests; the news is on her card); members see no switches on the artist page.
+	expect(((await (await ivy.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Moss Choir, Fern Hymns was approved by an admin'));
 	await ivy.goto('/requests');
-	await ivy.getByText(/^Show the latest/).click();
-	await expect(ivy.getByTestId('message').first()).toContainText('Moss Choir, Fern Hymns was approved by an admin');
 	const mine = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });
 	await expect(mine.getByTestId('ask-state')).toHaveText('Approved');
 	// Members read who decided by display name only; luis set none (#136).

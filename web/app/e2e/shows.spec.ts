@@ -227,8 +227,8 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await expect(lantern.filter({ hasText: 'Approved' }).filter({ hasText: 'luis' }).first()).toBeVisible();
 
 	// max reads the message; members see no switches on the show page.
+	expect(((await (await max.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Lantern Street (2023), seasons 1 and 2 was approved by an admin'));
 	await max.goto('/requests');
-	await expect(max.getByTestId('message').first()).toContainText('Lantern Street (2023), seasons 1 and 2 was approved by an admin');
 	await max.getByTestId('ask').filter({ hasText: 'Lantern Street' }).getByRole('link', { name: /Lantern Street/ }).click();
 	expect(await seasonCount(max)).toBe(3);
 	await expect(max.getByRole('checkbox')).toHaveCount(0);
