@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -14,7 +14,6 @@ async function enterFreshApp(page: import('@playwright/test').Page) {
 		return;
 	}
 	const o = newOwner();
-	await page.getByLabel('Setup code').fill(setupCode());
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

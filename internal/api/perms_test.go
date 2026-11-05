@@ -104,9 +104,8 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		_ = json.Unmarshal([]byte(body), &v)
 		return v.CSRF + v.Path
 	}
-	code, _ := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
 	own := newClient()
-	st, body := signed("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`, own, "")
+	st, body := signed("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`, own, "")
 	if st != 201 {
 		t.Fatalf("setup %d %s", st, body)
 	}

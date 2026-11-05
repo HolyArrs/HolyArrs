@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -146,7 +144,6 @@ func TestEventsNameTheMember(t *testing.T) {
 // on the audit trail like any other settings page, and names no list item.
 func TestSignInSettingsAreAudited(t *testing.T) {
 	f := newCtl(t, true)
-	code, _ := os.ReadFile(filepath.Join(f.s.Dir(), auth.SetupCodeFile))
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{Jar: jar}
 	csrf := ""
@@ -164,7 +161,7 @@ func TestSignInSettingsAreAudited(t *testing.T) {
 		b, _ := io.ReadAll(resp.Body)
 		return resp.StatusCode, string(b)
 	}
-	st, body := call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`)
+	st, body := call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`)
 	if st != 201 {
 		t.Fatalf("setup %d %s", st, body)
 	}

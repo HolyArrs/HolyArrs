@@ -20,7 +20,7 @@ Settings > Logs (owner and admins) reads the app log in the browser:
 - **Newer** and **Older** page through 100 lines at a time, newest first.
 - **Download the log** (also on This app) saves the newest lines, at most 2 MB, as a text file.
 
-The log lives in the config folder: `logs/holyarrs.log`, moved to `logs/holyarrs.log.1` at 5 MB, so it never takes more than about 10 MB. The program's own output (`docker logs holyarrs`) is masked the same way, with one exception: the first-run setup code stays readable there, because that is where the owner finds it. Control characters in logged values (line breaks, carriage returns, terminal colour codes) are shown escaped, as `
+The log lives in the config folder: `logs/holyarrs.log`, moved to `logs/holyarrs.log.1` at 5 MB, so it never takes more than about 10 MB. The program's own output (`docker logs holyarrs`) is masked the same way. Control characters in logged values (line breaks, carriage returns, terminal colour codes) are shown escaped, as `
 `, `` or ``, in the file and in the output, so a value cannot make a fake line.
 
 ## Secrets are never shown

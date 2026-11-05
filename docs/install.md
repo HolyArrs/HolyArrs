@@ -435,19 +435,21 @@ folders if you leave the variable unset.
 Open port `6262` at the Docker host's network address. There are no default
 credentials.
 
-On the first start, HolyArrs writes a one-time code to `setup-code.txt` in
-the config folder and prints the same code in the container log. Enter it on
-the setup page, then choose the owner name and password. The code file is
-mode `0600` and is deleted after the owner is made.
+On the first start, open the page and choose the owner name and password.
+There is no setup code: whoever opens a fresh HolyArrs first becomes the
+owner, so do this right after the first start. If someone else got there
+first, `holyarrs reset-owner` takes it back.
 
 The first-run screens then ask for:
 
 1. The parts you use: Movies, Shows, Music, Subtitles and Requests.
-2. One Library folder, as HolyArrs sees it inside the container, such as
-   `/movies`, `/tv` or `/music`.
+2. A Library folder for each part, as HolyArrs sees it inside the container,
+   such as `/movies`, `/tv` or `/music`. Leave one empty to add it later.
+3. A Downloader (qBittorrent, SABnzbd, Transmission, NZBGet or Deluge).
+4. A Source, through Jackett or Prowlarr.
+5. Whether to bring your setup over from other apps, or start fresh.
 
-Add the other Library folders later under Settings > Library folders. Add
-Sources and Downloaders only after their addresses, keys and paths are ready.
+Steps 3 to 5 can be skipped and done later in Settings.
 
 ## Keep the master key
 
@@ -566,8 +568,8 @@ your private network.
 - Do not forward port `6262` on your router. Reach HolyArrs from outside
   through a VPN such as Tailscale, or through a reverse proxy with HTTPS
   (see [Host names and reverse proxies](#host-names-and-reverse-proxies)).
-- Treat `setup-code.txt` like a password until the owner is made; it is
-  deleted afterwards.
+- Make the owner right after the first start: until then, whoever opens
+  HolyArrs first becomes the owner.
 - Back up the master key away from the config folder
   ([Keep the master key](#keep-the-master-key)).
 - Keep the image up to date ([updates](updates.md)).

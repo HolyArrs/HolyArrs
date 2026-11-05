@@ -10782,16 +10782,13 @@
     },
     "/api/v1/auth/setup": {
       "post": {
-        "description": "Makes the owner with the setup code the program printed at first start; signs them in.",
+        "description": "Makes the owner and signs them in; first run has no setup code.",
         "operationId": "setupOwner",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "properties": {
-                  "code": {
-                    "type": "string"
-                  },
                   "name": {
                     "type": "string"
                   },

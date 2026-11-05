@@ -186,8 +186,8 @@ describe('session', () => {
 		});
 		const s = createSession(c);
 		const pw = ['test', 'only'].join('-');
-		await s.setup('CODE', 'luis', pw);
-		expect(sent).toEqual({ code: 'CODE', name: 'luis', password: pw });
+		await s.setup('luis', pw);
+		expect(sent).toEqual({ name: 'luis', password: pw });
 		expect(s.s.state).toBe('signed_in');
 	});
 

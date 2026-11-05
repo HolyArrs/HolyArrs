@@ -300,12 +300,8 @@ func newMetadataAppRig(t *testing.T, service *metadata.Service, directMusic ...m
 		}
 		return v.CSRF, v.Path
 	}
-	code, err := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
-	if err != nil {
-		t.Fatal(err)
-	}
 	owner := browser()
-	owner.csrf, _ = read(owner.call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`, http.StatusCreated))
+	owner.csrf, _ = read(owner.call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`, http.StatusCreated))
 	var me struct {
 		ID int64 `json:"id"`
 	}

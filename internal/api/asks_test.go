@@ -9,8 +9,6 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -102,9 +100,8 @@ func newAskRig(t *testing.T) *askRig {
 		_ = json.Unmarshal(b, &x)
 		return x.CSRF, x.Path
 	}
-	code, _ := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
 	r.owner = browser()
-	r.owner.csrf, _ = read(r.owner.call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`, 201))
+	r.owner.csrf, _ = read(r.owner.call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`, 201))
 	join := func(name string) *signedIn {
 		_, link := read(r.owner.call("POST", "/api/v1/users/invites", `{}`, 201))
 		b := browser()

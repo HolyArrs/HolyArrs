@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun } from './helpers.ts';
 
 // A cover or photo no source has shows the one shared placeholder art (no
 // broken picture), on desktop and at phone widths 390 and 360. The fake
@@ -19,7 +19,6 @@ test.beforeAll(async ({ browser }) => {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
 	const o = newOwner();
-	await page.getByLabel('Setup code').fill(setupCode());
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

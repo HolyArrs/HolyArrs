@@ -87,7 +87,6 @@
 	}
 	let pw = $state('');
 	let pwAgain = $state('');
-	let code = $state('');
 	let error = $state('');
 	let busy = $state(false);
 	// Counts failed sign-ins; each new one shakes and flickers the pressed button.
@@ -371,7 +370,7 @@
 		try {
 			if (mode === 'setup') {
 				firstRun = true;
-				await session.setup(code.trim(), name.trim(), pw);
+				await session.setup(name.trim(), pw);
 			}
 			else if (via === 'password') took(await session.login(name.trim(), pw));
 			else if (via !== 'choose') took(await session.mediaServer(via, name.trim(), pw));
@@ -728,13 +727,6 @@
 
 							{#if via !== 'choose' || mode === 'setup'}
 								<form onsubmit={submit} novalidate>
-									{#if mode === 'setup'}
-										<div class="field">
-											<label for="code">Setup code</label>
-											<input id="code" class="input mono" bind:value={code} autocomplete="one-time-code" spellcheck="false" required />
-											<span class="hint">Printed in the HolyArrs log at start, and saved in <code>setup-code.txt</code> in the config folder.</span>
-										</div>
-									{/if}
 									<div class="field">
 										<label for="name">Name</label>
 										<input id="name" class="input" bind:value={name} autocomplete="username" autocapitalize="none" spellcheck="false" maxlength={via === 'password' ? 64 : 128} required />

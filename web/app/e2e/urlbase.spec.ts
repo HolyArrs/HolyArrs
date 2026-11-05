@@ -28,8 +28,6 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await expect.poll(async () => (await page.request.get(`${root}/readyz`)).status(), { timeout: 120_000 }).toBe(200);
 	await page.goto(root);
 	await expect(page).toHaveURL(/\/holyarrs\/login/);
-	const code = readFileSync(join(here, '.tmp-base', 'config', 'setup-code.txt'), 'utf8').trim();
-	await page.getByLabel('Setup code').fill(code);
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('base-test-password');
 	await page.getByLabel('Password again').fill('base-test-password');

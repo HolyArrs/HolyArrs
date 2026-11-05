@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -91,11 +89,7 @@ func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
 		body, _ := io.ReadAll(resp.Body)
 		return resp.StatusCode, string(body)
 	}
-	code, err := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
-	if err != nil {
-		t.Fatal(err)
-	}
-	setupBody := `{"name":"luis","password":"a long test passphrase","code":"` + strings.TrimSpace(string(code)) + `"}`
+	setupBody := `{"name":"luis","password":"a long test passphrase"}`
 	req, _ := http.NewRequest(http.MethodPost, srv.URL+"/api/v1/auth/setup", strings.NewReader(setupBody))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)

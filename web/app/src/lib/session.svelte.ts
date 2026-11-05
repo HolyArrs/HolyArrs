@@ -256,8 +256,9 @@ export function createSession(client: Client = defaultClient) {
 		return finish(await client.post<SignInAnswer>(`/auth/invites/${encodeURIComponent(token)}`, { name, password }));
 	}
 
-	async function setup(code: string, name: string, password: string) {
-		await finish(await client.post<SignInAnswer>('/auth/setup', { code, name, password }));
+	// First run has no setup code (decisions/0009-no-setup-code.md, intentional).
+	async function setup(name: string, password: string) {
+		await finish(await client.post<SignInAnswer>('/auth/setup', { name, password }));
 	}
 
 	async function logout() {

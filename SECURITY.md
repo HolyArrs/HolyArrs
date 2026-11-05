@@ -19,10 +19,10 @@ minor release does.
 ## How HolyArrs protects your setup
 
 - **Sign-in on every page and API route**, except `/healthz` and `/login`.
-  The first run needs a one-time setup code from the server log or
-  `setup-code.txt` in the config folder (mode 0600); there is no default
-  password. Because the code is printed to the log, finish the first-run
-  setup before you send logs anywhere else (a log service, a bug report).
+  There is no default password. The first run has no setup code, on
+  purpose: whoever opens a fresh HolyArrs first makes the owner, so finish
+  setup right after the first start, and `holyarrs reset-owner` takes it
+  back if someone else got there first.
 - **Passwords** are hashed with argon2id. Sessions use HttpOnly, SameSite=Lax
   cookies (Secure behind https; X-Forwarded-Proto counts only from a trusted
   proxy), rotate their id, and end after 7 idle days or

@@ -12,10 +12,6 @@ export interface Owner {
 	password: string;
 }
 
-export function setupCode(): string {
-	return readFileSync(join(tmp, 'config', 'setup-code.txt'), 'utf8').trim();
-}
-
 export function newOwner(): Owner {
 	const o = { name: 'luis', password: `e2e-${Math.random().toString(36).slice(2)}-pw` };
 	writeFileSync(ownerFile, JSON.stringify(o));
@@ -29,7 +25,8 @@ export function owner(): Owner {
 
 /** finishFirstRun walks first-run steps 2-5: one movies folder, skips Downloader and Source, then Start fresh (Home). */
 export async function finishFirstRun(page: Page, moviesPath: string) {
-	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible();
+	// Saving the parts restarts them, which can take a while on a slow or loaded machine.
+	await expect(page.getByRole('heading', { name: 'Library folders', level: 1 })).toBeVisible({ timeout: 20_000 });
 	await page.getByLabel('Movies folder').fill(moviesPath);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	for (const h of ['Downloader', 'Source']) {

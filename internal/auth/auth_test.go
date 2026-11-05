@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -91,7 +90,7 @@ const pw = "a long test passphrase"
 
 func setupOwner(t *testing.T, f *fixture, c *http.Client) string {
 	t.Helper()
-	resp, body := call(t, c, "POST", f.srv.URL+"/api/v1/auth/setup", `{"name":"luis","password":"`+pw+`","code":"`+code(t, f)+`"}`, nil)
+	resp, body := call(t, c, "POST", f.srv.URL+"/api/v1/auth/setup", `{"name":"luis","password":"`+pw+`"}`, nil)
 	if resp.StatusCode != 201 {
 		t.Fatalf("setup: %d %s", resp.StatusCode, body)
 	}
@@ -131,7 +130,7 @@ func TestFirstRunCreatesOneOwnerOnly(t *testing.T) {
 	if !strings.Contains(body, `"needs_setup":true`) {
 		t.Fatalf("state: %s", body)
 	}
-	resp, _ := call(t, c, "POST", f.srv.URL+"/api/v1/auth/setup", `{"name":"luis","password":"abc","code":"`+code(t, f)+`"}`, nil)
+	resp, _ := call(t, c, "POST", f.srv.URL+"/api/v1/auth/setup", `{"name":"luis","password":"abc"}`, nil)
 	if resp.StatusCode != 400 {
 		t.Fatalf("short password accepted: %d", resp.StatusCode)
 	}
@@ -416,33 +415,30 @@ func TestCleanupDropsExpired(t *testing.T) {
 
 func mustURL(s string) *url.URL { u, _ := url.Parse(s); return u }
 
-func code(t *testing.T, f *fixture) string {
-	t.Helper()
-	b, err := os.ReadFile(filepath.Join(f.s.Dir(), SetupCodeFile))
+// First run has no setup code (decisions/0009): a leftover code file from
+// an older version is removed at start, and a "code" field is ignored.
+func TestSetupNeedsNoCode(t *testing.T) {
+	s, err := store.Open(t.TempDir(), store.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return strings.TrimSpace(string(b))
-}
-
-func TestSetupNeedsOneTimeCode(t *testing.T) {
-	f := setup(t, Options{})
-	p := filepath.Join(f.s.Dir(), SetupCodeFile)
-	st, err := os.Stat(p)
-	if err != nil {
+	t.Cleanup(func() { _ = s.Close() })
+	p := filepath.Join(s.Dir(), SetupCodeFile)
+	if err := os.WriteFile(p, []byte("old-code\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
-		t.Fatalf("mode %v", st.Mode().Perm())
-	}
-	for _, body := range []string{`{"name":"luis","password":"` + pw + `"}`, `{"name":"luis","password":"` + pw + `","code":"wrong"}`} {
-		if resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", body, nil); resp.StatusCode != 403 {
-			t.Fatalf("setup without the right code: %d", resp.StatusCode)
-		}
-	}
-	setupOwner(t, f, client(t))
+	a := New(s, Options{fastHash: true})
+	t.Cleanup(a.Close)
 	if _, err := os.Stat(p); !os.IsNotExist(err) {
-		t.Fatal("setup code file not removed after use")
+		t.Fatalf("old setup code file not removed at start: %v", err)
+	}
+	f := setup(t, Options{})
+	body := `{"name":"luis","password":"` + pw + `","code":"anything"}`
+	if resp, out := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", body, nil); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("setup with an ignored code: %d %s", resp.StatusCode, out)
+	}
+	if _, err := os.Stat(filepath.Join(f.s.Dir(), SetupCodeFile)); !os.IsNotExist(err) {
+		t.Fatalf("a setup code file was written: %v", err)
 	}
 }
 
@@ -491,7 +487,7 @@ func TestForeignHostRefused(t *testing.T) {
 
 func TestSetupRefusesForeignHost(t *testing.T) {
 	f := setup(t, Options{})
-	body := `{"name":"luis","password":"` + pw + `","code":"` + code(t, f) + `"}`
+	body := `{"name":"luis","password":"` + pw + `"}`
 	if got := hostCall(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", "rebind.evil.example", body, nil); got != 403 {
 		t.Fatalf("setup with foreign host: %d", got)
 	}

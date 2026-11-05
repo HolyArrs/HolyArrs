@@ -156,7 +156,7 @@ func TestNameProblemInvisibleCharacters(t *testing.T) {
 
 func TestSetupRefusesInvisibleName(t *testing.T) {
 	f := setup(t, Options{})
-	resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", `{"name":"lu​is","password":"`+pw+`","code":"`+code(t, f)+`"}`, nil)
+	resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", `{"name":"lu​is","password":"`+pw+`"}`, nil)
 	if resp.StatusCode != http.StatusBadRequest || !strings.Contains(body, "hidden") {
 		t.Fatalf("setup with a hidden character: %d %s", resp.StatusCode, body)
 	}

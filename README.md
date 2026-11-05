@@ -47,10 +47,10 @@ each step and how to look around with a throwaway helper container.
 
 ## First run and sign-in
 
-On first start HolyArrs writes a one-time setup code to `setup-code.txt` in the
-config folder and to the log. Open the page, enter the code, and pick the
-owner name and password (there is no default password). The code file is
-deleted once the owner exists. Every page and API route needs sign-in except
+On first start, open the page and pick the owner name and password (there
+is no default password). Whoever opens a fresh HolyArrs first becomes the
+owner, so finish this right after the first start; `holyarrs reset-owner`
+takes it back if someone else got there first. Every page and API route needs sign-in except
 `/healthz` and `/login`. Scripts use an API key in the `X-Api-Key` header.
 Each key holds scopes (read, write, admin, control, or all), and how long a
 route stays after it is marked to go is in

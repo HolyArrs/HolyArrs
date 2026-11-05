@@ -40,11 +40,10 @@ test.beforeAll(async ({ browser }) => {
 		if (u.pathname === '/api/v1/live/interest') interests.push(Date.now());
 	});
 	await page.goto('/login');
-	const code = readFileSync(join(here, '.tmp-live', 'config', 'setup-code.txt'), 'utf8').trim();
 	// A throwaway owner for this test's own fresh HolyArrs.
 	// Made up per run, like the e2e fakes' stand-in keys.
 	const pw = ['push', 'test', randomUUID()].join('-');
-	const owner = await call('POST', '/api/v1/auth/setup', { name: 'pushtest', password: pw, code });
+	const owner = await call('POST', '/api/v1/auth/setup', { name: 'pushtest', password: pw });
 	csrf = owner.csrf;
 	await call('POST', '/api/v1/downloaders', { name: 'Fake qBit', kind: 'qbittorrent', url: qbit, username: 'fake', secret: fakeClientKey, category: 'holyarrs', allow_local_network: true });
 	await setSync('on');

@@ -22,7 +22,6 @@ test.beforeAll(async ({ browser }) => {
 		await page.goto('/');
 		await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible({ timeout: 2_000 });
 	}).toPass({ timeout: 120_000 });
-	await page.getByLabel('Setup code').fill(readFileSync(join(tmp, 'config', 'setup-code.txt'), 'utf8').trim());
 	await page.getByLabel('Name').fill(owner().name);
 	await page.getByLabel('Password', { exact: true }).fill(owner().password);
 	await page.getByLabel('Password again').fill(owner().password);

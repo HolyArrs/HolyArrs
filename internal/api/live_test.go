@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -97,9 +95,8 @@ func setupLive(t *testing.T) liveSetup {
 		_ = json.Unmarshal([]byte(b), &r)
 		u.id = r.ID
 	}
-	code, _ := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
 	x.own = newUser()
-	st, body := x.call(t, x.own, "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`, false)
+	st, body := x.call(t, x.own, "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`, false)
 	if st != 201 {
 		t.Fatalf("setup %d %s", st, body)
 	}

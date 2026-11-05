@@ -10,7 +10,6 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -53,12 +52,8 @@ func startFaultApp(t *testing.T, o runOpts) *faultApp {
 	o.parts = func(c *parts.Control) { pc = c }
 	reg, addr := startApp(t, config{ConfigDir: dir}, o)
 	a := &faultApp{t: t, base: "http://" + addr, dir: dir, pc: pc, reg: reg}
-	code, err := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
-	if err != nil {
-		t.Fatal(err)
-	}
 	c := newClient()
-	if st, body, _ := a.call(c, "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`); st != 201 {
+	if st, body, _ := a.call(c, "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`); st != 201 {
 		t.Fatalf("setup %d %s", st, body)
 	}
 	return a

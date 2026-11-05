@@ -356,7 +356,6 @@ func TestHealthStatesListParts(t *testing.T) {
 // make a key with a scope it does not hold.
 func TestControlsNeedRoleAndScope(t *testing.T) {
 	f := newCtl(t, true)
-	code, _ := os.ReadFile(filepath.Join(f.s.Dir(), auth.SetupCodeFile))
 	call := func(c *http.Client, csrf, key, method, path, body string) (int, string) {
 		req, _ := http.NewRequest(method, f.srv.URL+path, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
@@ -382,7 +381,7 @@ func TestControlsNeedRoleAndScope(t *testing.T) {
 		return s
 	}
 	own := client()
-	st, body := call(own, "", "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`)
+	st, body := call(own, "", "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`)
 	if st != 201 {
 		t.Fatalf("setup %d %s", st, body)
 	}

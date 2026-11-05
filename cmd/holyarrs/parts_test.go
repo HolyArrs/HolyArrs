@@ -162,11 +162,7 @@ func TestRestartInSafeModeFromTheControls(t *testing.T) {
 		_ = json.Unmarshal(b, &v)
 		return resp.StatusCode, v
 	}
-	code, err := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
-	if err != nil {
-		t.Fatal(err)
-	}
-	st, v := post("/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`, "")
+	st, v := post("/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`, "")
 	if st != 201 {
 		t.Fatalf("setup %d %v", st, v)
 	}

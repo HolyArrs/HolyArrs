@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -262,9 +260,8 @@ func newKidRig(t *testing.T, off ...parts.Part) *kidRig {
 		_ = json.Unmarshal(b, &x)
 		return x.CSRF, x.Path
 	}
-	code, _ := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
 	k.owner = browser()
-	k.owner.csrf, _ = read(k.owner.call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`, 201))
+	k.owner.csrf, _ = read(k.owner.call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`, 201))
 	join := func(name, invite string) *signedIn {
 		_, link := read(k.owner.call("POST", "/api/v1/users/invites", invite, 201))
 		b := browser()

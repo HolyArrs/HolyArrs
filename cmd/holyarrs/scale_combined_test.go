@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/parts"
@@ -406,12 +405,8 @@ func TestCombinedScaleFixtureAndAuthenticatedRescan(t *testing.T) {
 	var control *parts.Control
 	reg, addr := startApp(t, config{ConfigDir: dir}, runOpts{parts: func(c *parts.Control) { control = c }})
 	app := &faultApp{t: t, base: "http://" + addr, dir: dir, pc: control}
-	code, err := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
-	if err != nil {
-		t.Fatal(err)
-	}
 	client := newClient()
-	status, body, _ := app.call(client, "", http.MethodPost, "/api/v1/auth/setup", `{"name":"scale","password":"a long generated passphrase","code":"`+strings.TrimSpace(string(code))+`"}`)
+	status, body, _ := app.call(client, "", http.MethodPost, "/api/v1/auth/setup", `{"name":"scale","password":"a long generated passphrase"}`)
 	if status != http.StatusCreated {
 		t.Fatalf("setup: %d %s", status, body)
 	}

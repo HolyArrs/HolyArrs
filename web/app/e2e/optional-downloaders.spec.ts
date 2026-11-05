@@ -48,8 +48,6 @@ async function signIn(page: Page) {
 async function bootstrap(page: Page) {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
-	const setupCode = readFileSync(join(configDir!, 'setup-code.txt'), 'utf8').trim();
-	await page.getByLabel('Setup code').fill(setupCode);
 	await page.getByLabel('Name').fill(owner.name);
 	await page.getByLabel('Password', { exact: true }).fill(owner.password);
 	await page.getByLabel('Password again').fill(owner.password);

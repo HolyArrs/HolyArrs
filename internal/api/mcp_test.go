@@ -7,8 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/cookiejar"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -60,10 +58,9 @@ func aiField(body, name string) string {
 func newAIFix(t *testing.T) *aiFix {
 	t.Helper()
 	f := &aiFix{ctlFix: newCtl(t, true), t: t}
-	code, _ := os.ReadFile(filepath.Join(f.s.Dir(), auth.SetupCodeFile))
 	client := func() *http.Client { jar, _ := cookiejar.New(nil); return &http.Client{Jar: jar} }
 	f.own, f.mem = client(), client()
-	st, body := f.call(f.own, "", "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`)
+	st, body := f.call(f.own, "", "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`)
 	if st != 201 {
 		t.Fatalf("setup %d %s", st, body)
 	}

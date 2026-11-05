@@ -1,13 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, setupCode, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, finishFirstRun } from './helpers.ts';
 
 // #94: Settings > Metadata says what the metadata server gets and links to
 // the Count this install switch, at desktop and phone width.
 test('Settings > Metadata shows what the metadata server gets', async ({ page }) => {
 	await page.goto('/');
 	const o = newOwner();
-	await page.getByLabel('Setup code').fill(setupCode());
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

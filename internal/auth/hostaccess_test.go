@@ -43,14 +43,13 @@ func hostDo(t *testing.T, c *http.Client, method, rawURL, host, body string, hdr
 	return resp, string(b)
 }
 
-func setupBody(code string) string {
-	return `{"name":"luis","password":"` + pw + `","code":"` + code + `"}`
-}
+// First run has no setup code (decisions/0009).
+const setupBody = `{"name":"luis","password":"` + pw + `"}`
 
 // setupOn runs first-run setup with the Host header set to host.
 func setupOn(t *testing.T, f *fixture, c *http.Client, host string, hdr map[string]string) (*http.Response, string) {
 	t.Helper()
-	return hostDo(t, c, "POST", f.srv.URL+"/api/v1/auth/setup", host, setupBody(code(t, f)), hdr)
+	return hostDo(t, c, "POST", f.srv.URL+"/api/v1/auth/setup", host, setupBody, hdr)
 }
 
 func csrfOf(t *testing.T, body string) string {
@@ -253,9 +252,9 @@ func TestAllowedHostEntriesDropSchemeAndPort(t *testing.T) {
 // ---- Decisions 13 and 14: home names at first-run setup ----
 
 // First-run setup accepts a home name (.local, .home.arpa, .internal,
-// .localhost or no dot) when the setup code is right, and remembers it:
-// sign-in and writes on that name work afterwards, also after a restart.
-func TestSetupOnHomeNameIsRememberedAfterTheCode(t *testing.T) {
+// .localhost or no dot) with no proxy in between, and remembers it: sign-in
+// and writes on that name work afterwards, also after a restart.
+func TestSetupOnHomeNameIsRemembered(t *testing.T) {
 	for _, host := range []string{"tower.local", "nas", "media.home.arpa", "box.internal", "dev.localhost", "Tower.Local.", "tower.local:6262"} {
 		t.Run(host, func(t *testing.T) {
 			f := gated(t, Options{})
@@ -312,14 +311,14 @@ func TestSetupRefusesOtherNames(t *testing.T) {
 	}
 }
 
-// A wrong code on a home name says wrong code and remembers nothing.
-func TestSetupWrongCodeOnHomeNameRemembersNothing(t *testing.T) {
+// A home name refused at setup through a proxy is not remembered.
+func TestSetupThroughProxyOnHomeNameRemembersNothing(t *testing.T) {
 	f := gated(t, Options{})
-	resp, body := hostDo(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", "tower.local", setupBody("wrong-code-wrong"), nil)
-	if msg := errorOf(body); resp.StatusCode != 403 || !strings.Contains(msg, "setup code") {
-		t.Fatalf("wrong code on tower.local: %d %q, want 403 about the setup code", resp.StatusCode, msg)
+	resp, body := setupOn(t, f, client(t), "tower.local", map[string]string{"X-Forwarded-For": "203.0.113.9"})
+	if resp.StatusCode != 403 {
+		t.Fatalf("setup on tower.local through a proxy: %d %s, want 403", resp.StatusCode, body)
 	}
-	// Setup by IP; tower.local was never confirmed by the code.
+	// Setup by IP; tower.local was never saved.
 	ownerOf(t, f)
 	resp, body = loginOn(t, f, client(t), "tower.local", nil)
 	if msg := errorOf(body); resp.StatusCode != 403 || !strings.Contains(msg, "tower.local") || !strings.Contains(msg, EnvAllowedHosts) {
@@ -357,55 +356,9 @@ func TestHomeNameExceptionIsSetupOnly(t *testing.T) {
 	if msg := errorOf(body); resp.StatusCode != 403 || !strings.Contains(msg, "tower.local") {
 		t.Fatalf("sign-in on tower.local before setup: %d %q", resp.StatusCode, msg)
 	}
-	resp, body = hostDo(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup/", "tower.local", setupBody(code(t, f)), nil)
+	resp, body = hostDo(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup/", "tower.local", setupBody, nil)
 	if resp.StatusCode == http.StatusCreated {
 		t.Fatalf("a near-miss setup path made the owner: %s", body)
-	}
-}
-
-// Wrong setup codes are limited per client (about 10 a minute), after the
-// owner check and before the code compare: once limited, even the right
-// code waits. A minute later it works.
-func TestSetupWrongCodeLimiter(t *testing.T) {
-	f := gated(t, Options{})
-	for i := 0; i < 10; i++ {
-		resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody(fmt.Sprintf("wrong-%02d-xxxxxxxx", i)), nil)
-		if resp.StatusCode != 403 {
-			t.Fatalf("wrong code %d: %d %s", i, resp.StatusCode, body)
-		}
-	}
-	resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody(code(t, f)), nil)
-	if resp.StatusCode != http.StatusTooManyRequests {
-		t.Fatalf("right code after 10 wrong ones: %d %s, want 429", resp.StatusCode, body)
-	}
-	f.clock.add(2 * time.Minute)
-	resp, body = call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody(code(t, f)), nil)
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("right code after the wait: %d %s", resp.StatusCode, body)
-	}
-	// Once the owner exists, setup says so (409), never the limiter.
-	for i := 0; i < 12; i++ {
-		if resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody("wrong"), nil); resp.StatusCode != http.StatusConflict {
-			t.Fatalf("setup after the owner, try %d: %d, want 409", i, resp.StatusCode)
-		}
-	}
-}
-
-// Wrong codes from other clients never block the owner: the code is too
-// long to guess, so there is no cap for all clients together, only the
-// per-client one. After many wrong codes from many forwarded clients, the
-// right code from the server itself still works.
-func TestSetupWrongCodesFromOthersNeverBlockTheOwner(t *testing.T) {
-	f := gated(t, Options{TrustedProxies: []string{"127.0.0.1"}})
-	for i := 0; i < 100; i++ {
-		hdr := map[string]string{"X-Forwarded-For": fmt.Sprintf("10.1.%d.%d", i/250, i%250+1)}
-		if resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody("wrong-wrong-wrong"), hdr); resp.StatusCode != 403 {
-			t.Fatalf("wrong code %d from its own client: %d %s, want 403", i, resp.StatusCode, body)
-		}
-	}
-	resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody(code(t, f)), nil)
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("right code from 127.0.0.1 after 100 wrong ones from others: %d %s, want 201", resp.StatusCode, body)
 	}
 }
 

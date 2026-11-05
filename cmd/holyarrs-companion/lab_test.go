@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -65,15 +66,14 @@ func TestCompanionContainerLab(t *testing.T) {
 		}
 		return answer
 	}
-	setup, err := os.ReadFile(filepath.Join(st.Dir(), auth.SetupCodeFile))
-	if err != nil {
-		t.Fatal("owned setup code file missing")
+	if _, err := os.Stat(filepath.Join(st.Dir(), auth.SetupCodeFile)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("a setup code file was written; first run has no setup code")
 	}
 	var session struct {
 		CSRF string `json:"csrf"`
 	}
 	if err := json.Unmarshal(request(owner, "POST", "/api/v1/auth/setup", map[string]string{
-		"name": "synthetic companion owner", "password": rand.Text(), "code": strings.TrimSpace(string(setup)),
+		"name": "synthetic companion owner", "password": rand.Text(),
 	}, nil, http.StatusCreated), &session); err != nil || session.CSRF == "" {
 		t.Fatal("owned owner setup did not return a session")
 	}

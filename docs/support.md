@@ -10,10 +10,7 @@ shell for. The examples use the container name `holyarrs` from the
     docker logs -f holyarrs
 
 This follows the program's output live. Secrets are masked in it the same way
-as in the log file (see [Logs and storage](logs.md#secrets-are-never-shown)),
-with one exception: the first-run setup code stays readable there, because
-that is where the owner finds it. On a fresh install, cut the setup code out
-before you paste this output anywhere. Press Ctrl+C to stop following; the
+as in the log file (see [Logs and storage](logs.md#secrets-are-never-shown)). Press Ctrl+C to stop following; the
 container keeps running.
 
 At start, after HolyArrs opens its folders, it writes one summary line such as

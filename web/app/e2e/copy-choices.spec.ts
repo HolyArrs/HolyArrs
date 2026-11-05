@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn, addFromSearch, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, addFromSearch, finishFirstRun } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -13,7 +13,6 @@ async function enterApp(page: import('@playwright/test').Page) {
 		return;
 	}
 	const o = newOwner();
-	await page.getByLabel('Setup code').fill(setupCode());
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

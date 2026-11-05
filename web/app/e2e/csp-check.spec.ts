@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, setupCode, finishFirstRun } from './helpers.ts';
+import { moviesDir, newOwner, finishFirstRun } from './helpers.ts';
 
 const tiny = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 
@@ -13,7 +13,6 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	const res = await page.goto('/');
 	expect(res?.headers()['content-security-policy']).toContain("frame-src https://www.youtube-nocookie.com");
 	const o = newOwner();
-	await page.getByLabel('Setup code').fill(setupCode());
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

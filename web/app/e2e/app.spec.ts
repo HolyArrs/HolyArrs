@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { finishFirstRun, moviesDir, newOwner, owner, plainForm, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
+import { finishFirstRun, moviesDir, newOwner, owner, plainForm, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -32,15 +32,10 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page).toHaveURL(/\/login/);
 	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
 
+	// No setup code (decisions/0009): whoever opens a fresh HolyArrs first makes the owner.
 	const o = newOwner();
-	await page.getByLabel('Setup code').fill('not-the-code');
+	await expect(page.getByLabel('Setup code')).toHaveCount(0);
 	await page.getByLabel('Name').fill(o.name);
-	await page.getByLabel('Password', { exact: true }).fill(o.password);
-	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
-	await expect(page.getByRole('alert')).toContainText(/wrong setup code/i);
-
-	await page.getByLabel('Setup code').fill(setupCode());
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);
 	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();

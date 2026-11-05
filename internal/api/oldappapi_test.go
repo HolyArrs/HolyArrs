@@ -10,8 +10,6 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -134,8 +132,7 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	f.srv = srv
 	jar, _ := cookiejar.New(nil)
 	f.own = &http.Client{Jar: jar}
-	code, _ := os.ReadFile(filepath.Join(dir, auth.SetupCodeFile))
-	st, _, body := f.call(f.own, "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase","code":"`+strings.TrimSpace(string(code))+`"}`)
+	st, _, body := f.call(f.own, "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`)
 	if st != 201 {
 		t.Fatalf("setup %d %s", st, body)
 	}

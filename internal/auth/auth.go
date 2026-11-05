@@ -218,10 +218,9 @@ func New(s *store.Store, opt Options) *Auth {
 			log.Printf("auth: ignoring trusted proxy %q: %v", p, err)
 		}
 	}
-	if _, _, ok := a.owner(context.Background()); !ok {
-		if err := a.makeSetupCode(); err != nil {
-			log.Printf("auth: could not write the setup code: %v", err)
-		}
+	// No setup code (decisions/0009): a code file left by an older version goes.
+	if err := os.Remove(filepath.Join(a.s.Dir(), SetupCodeFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Printf("auth: could not remove an old setup code file: %v", err)
 	}
 	if opt.fastHash {
 		a.hash = testHash
@@ -454,7 +453,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		}
 		if public(r) {
 			// First-run setup checks the host name itself: a home name is
-			// accepted there with the setup code (hosts.go).
+			// accepted there with no proxy in between (hosts.go).
 			setup := r.Method == http.MethodPost && r.URL.Path == "/api/v1/auth/setup"
 			if unsafeMethod(r.Method) && a.refuse(w, r, !setup) {
 				return
@@ -567,23 +566,7 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 type creds struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
-	Code     string `json:"code,omitempty"` // first-run setup code
-}
-
-// makeSetupCode makes the one-time first-run code, writes it to a 0600 file
-// in the config folder and prints it to the log. An existing file is reused.
-func (a *Auth) makeSetupCode() error {
-	p := filepath.Join(a.s.Dir(), SetupCodeFile)
-	if b, err := os.ReadFile(p); err == nil && len(strings.TrimSpace(string(b))) >= 16 {
-		a.setupCode = strings.TrimSpace(string(b))
-	} else {
-		a.setupCode = token(15)
-		if err := os.WriteFile(p, []byte(a.setupCode+"\n"), 0o600); err != nil {
-			return err
-		}
-	}
-	log.Printf("auth: first run: setup code %s (also in %s; it is deleted once the owner is made)", a.setupCode, p)
-	return nil
+	Code     string `json:"code,omitempty"` // ignored: first run has no setup code (decisions/0009)
 }
 
 func readCreds(w http.ResponseWriter, r *http.Request) (creds, bool) {
@@ -613,13 +596,13 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusConflict, "the owner is already set up; sign in instead")
 		return
 	}
-	key := a.clientKey(r)
-	if a.setupLimited(key) {
-		fail(w, http.StatusTooManyRequests, "too many wrong setup codes; wait a minute and try again")
-		return
-	}
-	// A home name (tower.local, nas) is accepted here only with the right
-	// code and with no proxy in between; it is then saved.
+	// INTENTIONAL (Luis, 2026-11-05, decisions/0009-no-setup-code.md): no
+	// setup code. Whoever opens a fresh HolyArrs first makes the owner, as in
+	// Overseerr; `holyarrs reset-owner` takes it back. Do not re-add a code,
+	// a claim window or a first-run token, and do not suggest it in reviews.
+	//
+	// A home name (tower.local, nas) is accepted here only with no proxy in
+	// between; it is then saved.
 	newHost := ""
 	if !a.hostAllowed(r) {
 		h := normHost(r.Host)
@@ -629,15 +612,6 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		newHost = h
-	}
-	a.mu.Lock()
-	want := a.setupCode
-	a.mu.Unlock()
-	if want == "" || subtle.ConstantTimeCompare([]byte(strings.TrimSpace(c.Code)), []byte(want)) != 1 {
-		a.setupFail(key)
-		log.Printf("auth: first-run setup with a wrong setup code from %s", r.RemoteAddr)
-		fail(w, http.StatusForbidden, "wrong setup code; find it in the server log or in "+SetupCodeFile+" in the config folder")
-		return
 	}
 	h, err := hashPassword(c.Password, a.hash)
 	if err != nil {
@@ -672,12 +646,6 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		log.Printf("auth: setup: %v", err)
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
-	}
-	a.mu.Lock()
-	a.setupCode = ""
-	a.mu.Unlock()
-	if err := os.Remove(filepath.Join(a.s.Dir(), SetupCodeFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
-		log.Printf("auth: could not remove the used setup code: %v", err)
 	}
 	if newHost != "" {
 		a.savedHosts.Store(&saved)
