@@ -35,7 +35,7 @@ const (
 	// MaxMinPassword. DefaultMinPassword applies until the owner picks one.
 	// MaxPassword is the longest password taken.
 	MinPassword        = 4
-	DefaultMinPassword = 12
+	DefaultMinPassword = 8
 	MaxMinPassword     = 64
 	MaxPassword        = 1024
 	// keyMinLength is the sign-in setting with the owner's minimum length.

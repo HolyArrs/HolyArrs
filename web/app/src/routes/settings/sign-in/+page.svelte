@@ -226,7 +226,7 @@
 		proxyUntrusted = r.proxy_untrusted === true;
 		hostNames = (r.allowed_hosts ?? []).join('\n');
 		requireAdmins = r.require_two_factor_admins;
-		minLength = r.min_password_length ?? 12;
+		minLength = r.min_password_length ?? 8;
 		ways = { plex: { ...blank(), ...r.plex }, jellyfin: { ...blank(), ...r.jellyfin }, emby: { ...blank(), ...r.emby } };
 		savedJoin = { plex: ways.plex.join, jellyfin: ways.jellyfin.join, emby: ways.emby.join };
 		if (r.plex_owner) plexOwner = r.plex_owner;
@@ -449,13 +449,13 @@
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
 				<Field id="min-pw" label="Shortest password allowed">
-					<input id="min-pw" class="input" style="max-width: 120px" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby={Number(minLength) < 12 ? 'min-pw-hint min-pw-warn' : 'min-pw-hint'} />
+					<input id="min-pw" class="input" style="max-width: 120px" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby={Number(minLength) < 8 ? 'min-pw-hint min-pw-warn' : 'min-pw-hint'} />
 					<span id="min-pw-hint" class="hint">4 to 64 characters. It counts for new passwords: first setup, invites, password changes and reset-owner. Passwords people already have keep working.</span>
 				</Field>
-				{#if Number(minLength) < 12}
+				{#if Number(minLength) < 8}
 					<p id="min-pw-warn" class="notice warn">
 						Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins, which helps, but it does not make a short
-						password safe. If HolyArrs can be reached from outside your home, use 12 or more.
+						password safe. If HolyArrs can be reached from outside your home, use 8 or more.
 					</p>
 				{/if}
 				{#if isOwner}

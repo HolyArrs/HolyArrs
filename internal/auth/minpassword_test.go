@@ -7,18 +7,18 @@ import (
 	"testing"
 )
 
-// The shortest password is an owner setting: 12 by default, 4..64 allowed,
+// The shortest password is an owner setting: 8 by default, 4..64 allowed,
 // and every place that takes a new password reads it.
 func TestMinPasswordLengthSetting(t *testing.T) {
 	f := gated(t, Options{})
-	// Before the owner exists the state shows the default of 12.
+	// Before the owner exists the state shows the default of 8.
 	_, body := call(t, client(t), "GET", f.srv.URL+"/api/v1/auth/state", "", nil)
-	if !strings.Contains(body, `"min_password_length":12`) {
+	if !strings.Contains(body, `"min_password_length":8`) {
 		t.Fatalf("state: %s", body)
 	}
 	own := ownerOf(t, f)
-	// By default an 11-character password is refused; the owner can lower the rule to 4.
-	if resp, out := own.do(t, f, "POST", "/api/v1/auth/password", `{"current":"`+pw+`","new":"elevenchars"}`); resp.StatusCode != 400 || !strings.Contains(out, "at least 12") {
+	// By default a 7-character password is refused; the owner can lower the rule to 4.
+	if resp, out := own.do(t, f, "POST", "/api/v1/auth/password", `{"current":"`+pw+`","new":"sevench"}`); resp.StatusCode != 400 || !strings.Contains(out, "at least 8") {
 		t.Fatalf("default short change: %d %s", resp.StatusCode, out)
 	}
 	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"min_password_length":4}`); resp.StatusCode != 200 {

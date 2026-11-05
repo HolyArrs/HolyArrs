@@ -90,7 +90,7 @@ export function createSession(client: Client = defaultClient) {
 		ways: ['password'],
 		safeMode: false,
 		configUnmapped: false,
-		minPassword: 12
+		minPassword: 8
 	});
 
 	interface AuthState {
@@ -101,7 +101,7 @@ export function createSession(client: Client = defaultClient) {
 		config_unmapped?: boolean;
 	}
 	function tookState(st: AuthState) {
-		s.minPassword = Math.max(4, st.min_password_length ?? 12);
+		s.minPassword = Math.max(4, st.min_password_length ?? 8);
 		if (st.ways) s.ways = st.ways;
 		if (st.safe_mode !== undefined) s.safeMode = !!st.safe_mode;
 		s.configUnmapped = !!st.config_unmapped;
