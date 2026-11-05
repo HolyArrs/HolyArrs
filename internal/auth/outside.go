@@ -122,6 +122,7 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 	if l := a.localNets.Load(); l != nil {
 		nets = l.list
 	}
+	seen, untrusted := a.seenAddress(r)
 	writeJSON(w, http.StatusOK, map[string]any{
 		settingSkipLocal:   a.skipLocal.Load(),
 		keyLocalNets:       nets,
@@ -132,6 +133,12 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 		ProviderEmby:       a.way(ctx, ProviderEmby),
 		"plex_owner":       a.plexOwner(ctx),
 		keyAllowedHosts:    a.savedHostList(),
+		// For the skip card: the address this browser shows up as, listed
+		// networks that look like a container gateway, and whether a proxy
+		// in front is not trusted (then the skip never applies).
+		"seen_address":     seen,
+		"gateway_networks": gatewayNets(nets, seen),
+		"proxy_untrusted":  untrusted,
 	})
 }
 
