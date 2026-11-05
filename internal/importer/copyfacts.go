@@ -1,10 +1,13 @@
 package importer
 
 import (
+	"encoding/json"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -45,13 +48,100 @@ func InspectFacts(file string) map[string]any {
 	if i.AudioLanguages == nil {
 		i.AudioLanguages = []string{}
 	}
-	facts := map[string]any{"inspection_status": i.Status, "container": i.Container, "video_codec": i.VideoCodec,
-		"audio_languages": i.AudioLanguages, "audio_tracks": i.AudioTracks, "audio_unknown": i.AudioUnknown}
+	facts := factsOf(i)
 	if fi, err := os.Stat(file); err == nil {
 		facts["inspection_size"] = fi.Size()
 		facts["inspection_modified"] = strconv.FormatInt(fi.ModTime().UnixNano(), 10)
 	}
 	return facts
+}
+
+// FactsVersion marks facts read by the full header reader (picture size,
+// length, channels, subtitles...). Files whose facts are older are read
+// again by the Library rescan, a few at a time.
+const FactsVersion = 2
+
+// HeaderFactKeys are the facts factsOf may leave out; a fresh read
+// replaces them all.
+var HeaderFactKeys = []string{"resolution", "width", "height", "runtime_seconds", "audio_channels", "audio_codec",
+	"hdr", "bit_depth", "frame_rate", "bitrate"}
+
+// factsOf turns header facts into the stored map. A fact the headers did
+// not give is left out rather than stored as zero.
+func factsOf(i mediainfo.Info) map[string]any {
+	facts := map[string]any{"inspection_status": i.Status, "container": i.Container, "video_codec": i.VideoCodec,
+		"audio_languages": i.AudioLanguages, "audio_tracks": i.AudioTracks, "audio_unknown": i.AudioUnknown,
+		"facts_version": FactsVersion}
+	if r := i.Resolution(); r > 0 {
+		facts["resolution"] = strconv.Itoa(r) + "p"
+		facts["width"], facts["height"] = i.Width, i.Height
+	}
+	if i.Duration > 0 {
+		facts["runtime_seconds"] = int(i.Duration.Round(time.Second) / time.Second)
+	}
+	if len(i.AudioChannels) > 0 && i.AudioChannels[0] > 0 {
+		facts["audio_channels"] = channelWords(i.AudioChannels[0])
+	}
+	if len(i.AudioCodecs) > 0 {
+		facts["audio_codec"] = i.AudioCodecs[0]
+	}
+	subs := []string{}
+	seen := map[string]bool{}
+	for _, t := range i.SubtitleTracks {
+		if t.Language != "" && !seen[t.Language] {
+			seen[t.Language] = true
+			subs = append(subs, t.Language)
+		}
+	}
+	facts["subtitle_languages"] = subs
+	if i.HDR != "" {
+		facts["hdr"] = i.HDR
+	}
+	if i.BitDepth > 0 {
+		facts["bit_depth"] = i.BitDepth
+	}
+	if i.FrameRate > 0 {
+		facts["frame_rate"] = math.Round(i.FrameRate*1000) / 1000
+	}
+	if i.Bitrate > 0 {
+		facts["bitrate"] = i.Bitrate
+	}
+	return facts
+}
+
+// channelWords names a channel count the way people say it: 6 is "5.1".
+func channelWords(n int) string {
+	switch n {
+	case 6:
+		return "5.1"
+	case 7:
+		return "6.1"
+	case 8:
+		return "7.1"
+	}
+	return strconv.Itoa(n) + ".0"
+}
+
+// factInt reads a whole number from stored facts, which hold int when
+// fresh and float64 or json.Number once read back from the database.
+func factInt(facts map[string]any, key string) int {
+	switch n := facts[key].(type) {
+	case int:
+		return n
+	case int64:
+		return int(n)
+	case float64:
+		return int(n)
+	case json.Number:
+		v, _ := n.Int64()
+		return int(v)
+	}
+	return 0
+}
+
+// NeedsFacts says whether stored facts predate the full header reader.
+func NeedsFacts(facts map[string]any) bool {
+	return factInt(facts, "facts_version") < FactsVersion
 }
 
 // EditionKey compares explicit edition labels without punctuation differences.

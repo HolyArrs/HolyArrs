@@ -591,6 +591,7 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 	unlock := s.Store.LockFiles()
 	defer unlock()
 	var res RescanResult
+	backfillLeft := backfillPerRescan
 	db := s.Store.Read()
 	lfs, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind IN ('movie', 'show', 'music') ORDER BY id")
 	if err != nil {
@@ -621,9 +622,13 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 			knownPaths[strings.ToLower(f.RelativePath)] = true
 			_, statErr := os.Stat(filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)))
 			if lf.Kind != "music" && f.Role == "main" && statErr == nil {
-				if info, changed := inspectLibraryVideo(lf.Path, f.RelativePath, f.MediaInfo); changed {
+				backfill := backfillLeft > 0 && importer.NeedsFacts(f.MediaInfo)
+				if info, changed := inspectLibraryVideo(lf.Path, f.RelativePath, f.MediaInfo, backfill); changed {
 					if err := s.updateFileInspection(ctx, f.ID, info, by); err != nil {
 						return res, err
+					}
+					if backfill {
+						backfillLeft--
 					}
 				}
 			}
@@ -688,10 +693,17 @@ func inspectionSize(v any) (int64, bool) {
 	return 0, false
 }
 
+// backfillPerRescan is how many unchanged files one rescan reads again
+// because their stored facts predate the full header reader. Only headers
+// are read; the cap keeps a large Library's first rescans light, and the
+// rest follow on later rescans.
+const backfillPerRescan = 300
+
 // inspectLibraryVideo reads a regular movie/show file only when its real path
 // remains inside the Library folder. Existing non-inspection facts, including a
-// confirmed edition, are retained.
-func inspectLibraryVideo(root, relative string, old map[string]any) (map[string]any, bool) {
+// confirmed edition, are retained. An unchanged file is read again only when
+// backfill is set.
+func inspectLibraryVideo(root, relative string, old map[string]any, backfill bool) (map[string]any, bool) {
 	rel := filepath.FromSlash(relative)
 	if !filepath.IsLocal(rel) {
 		return nil, false
@@ -701,13 +713,17 @@ func inspectLibraryVideo(root, relative string, old map[string]any) (map[string]
 	if err != nil || !fi.Mode().IsRegular() || !importer.InsideReal(root, full) {
 		return nil, false
 	}
-	if size, ok := inspectionSize(old["inspection_size"]); ok && size == fi.Size() &&
+	if size, ok := inspectionSize(old["inspection_size"]); !backfill && ok && size == fi.Size() &&
 		fmt.Sprint(old["inspection_modified"]) == strconv.FormatInt(fi.ModTime().UnixNano(), 10) {
 		return old, false
 	}
 	merged := make(map[string]any, len(old)+10)
 	for k, v := range old {
 		merged[k] = v
+	}
+	// Header facts a new read may not give again must not linger.
+	for _, k := range importer.HeaderFactKeys {
+		delete(merged, k)
 	}
 	for k, v := range importer.InspectFacts(full) {
 		merged[k] = v
@@ -842,7 +858,7 @@ func (s *Service) recordFound(ctx context.Context, lf domain.LibraryFolder, know
 				continue
 			}
 			release := strings.TrimSuffix(path.Base(vid.Path), path.Ext(vid.Path))
-			info, _ := inspectLibraryVideo(lf.Path, vid.Path, nil)
+			info, _ := inspectLibraryVideo(lf.Path, vid.Path, nil, false)
 			if info == nil {
 				info = map[string]any{}
 			}

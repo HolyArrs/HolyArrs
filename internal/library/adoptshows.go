@@ -341,7 +341,7 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		release := strings.TrimSuffix(path.Base(af.Path), ext)
 		p := parse.Parse(release, parse.Hints{Size: af.Size, Show: true})
 		info := map[string]any{"step": judge.StepFor(p)}
-		if inspected, ok := inspectLibraryVideo(a.LibraryPath, af.Path, info); ok {
+		if inspected, ok := inspectLibraryVideo(a.LibraryPath, af.Path, info, false); ok {
 			info = inspected
 		}
 		f := &domain.File{SlotIDs: slotIDs, VersionID: versionID, RelativePath: af.Path, Size: af.Size, AddedAt: now,
@@ -467,7 +467,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf domain.LibraryFold
 			}
 		}
 		release := strings.TrimSuffix(path.Base(af.Path), path.Ext(af.Path))
-		info, _ := inspectLibraryVideo(lf.Path, af.Path, nil)
+		info, _ := inspectLibraryVideo(lf.Path, af.Path, nil, false)
 		if info == nil {
 			info = map[string]any{}
 		}
