@@ -8,7 +8,9 @@ const kinds: Record<HealthCheck['kind'], string> = {
 	downloader: 'Downloader',
 	backups: 'Backups',
 	update: 'Update',
-	config_disk: 'Config folder space'
+	config_disk: 'Config folder space',
+	config_folder: 'Config folder',
+	waiting_downloads: 'Downloads waiting for files'
 };
 
 /** checkLabel names what a check looks at. */

@@ -22,11 +22,15 @@ const sentences: Record<HealthCheck['kind'], [error: string, warning: string]> =
 	downloader: ['A Downloader is not answering.', 'A Downloader answered with a problem.'],
 	backups: ['Backups are not being made.', 'The last backup is getting old.'],
 	update: ['HolyArrs could not check for an update.', 'An update for HolyArrs is waiting.'],
-	config_disk: ['The disk that holds the config folder is almost full.', 'The disk that holds the config folder is running low on space.']
+	config_disk: ['The disk that holds the config folder is almost full.', 'The disk that holds the config folder is running low on space.'],
+	config_folder: ['/config is not mapped to a folder, so HolyArrs data is lost when the container is recreated.', '/config is not mapped to a folder, so HolyArrs data is lost when the container is recreated.'],
+	waiting_downloads: ["Downloads are waiting because their Downloader can't use the files.", "Downloads are waiting because their Downloader can't use the files."]
 };
 
 /** healthSentence says a health problem in a plain sentence; the raw text goes in a details part. */
-export function healthSentence(c: Pick<HealthCheck, 'kind' | 'state'>): string {
+export function healthSentence(c: Pick<HealthCheck, 'kind' | 'state'> & { key?: string }): string {
+	// The key kit check shares the backups kind but is its own problem.
+	if (c.key === 'backups:key' && c.state !== 'ok') return 'No key kit is saved: backups do not hold the master key.';
 	const pair = sentences[c.kind];
 	if (!pair) return c.state === 'error' ? 'Something in HolyArrs is not working.' : 'Something in HolyArrs needs a look.';
 	return c.state === 'error' ? pair[0] : pair[1];

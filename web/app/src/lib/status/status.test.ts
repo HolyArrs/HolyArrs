@@ -63,6 +63,21 @@ describe('status rows', () => {
 		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason])).toEqual([['Config folder', 'library', 'fail', 'Only 100 MB are free']]);
 	});
 
+	it('shows the /config mapping error and waiting downloads, and counts them', () => {
+		const rows = buildRows({
+			checks: [
+				{ key: 'config_folder', kind: 'config_folder', subject: 'Config folder', state: 'error', message: '/config is not mapped' } as never,
+				{ key: 'waiting_downloads', kind: 'waiting_downloads', subject: 'Downloads', state: 'warning', message: '2 downloads wait' } as never
+			]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason])).toEqual([
+			['Config folder', 'library', 'fail', '/config is not mapped'],
+			['Downloads waiting for files', 'library', 'wait', '2 downloads wait']
+		]);
+		expect(rows[1].fix).toBe('/downloads?show=waiting.paused');
+		expect(headline(rows)).toBe('2 checks need attention');
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});

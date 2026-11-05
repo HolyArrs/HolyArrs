@@ -71,14 +71,17 @@ const checkFix: Record<string, string> = {
 	disk_space: '/settings/library-folders',
 	backups: '/settings/backups',
 	update: '/settings/this-app',
-	config_disk: '/settings/this-app'
+	config_disk: '/settings/this-app',
+	// Nothing in the app fixes an unmapped /config: the row's reason says the steps.
+	config_folder: '',
+	waiting_downloads: '/downloads?show=waiting.paused'
 };
-const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update', config_disk: 'Config folder' };
+const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update', config_disk: 'Config folder', config_folder: 'Config folder', waiting_downloads: 'Downloads waiting for files' };
 
 /** checkTitle names a health check row without saying the same word twice ("Backups", not "Backups Backups"). */
 function checkTitle(c: Pick<HealthCheck, 'kind' | 'subject'>): string {
 	const n = checkName[c.kind];
-	if (!c.subject || c.subject === n) return n;
+	if (!c.subject || c.subject === n || c.kind === 'waiting_downloads') return n;
 	return c.kind === 'update' ? c.subject : `${n} ${c.subject}`;
 }
 
@@ -139,7 +142,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		rows.push({ group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: s.reason, at: realTime(s.since), fix: m.fix, check });
 	}
 	for (const c of i.checks ?? []) {
-		if (!checkFix[c.kind]) continue; // sources and downloaders come from their linked state
+		if (typeof checkFix[c.kind] !== 'string') continue; // sources and downloaders come from their linked state
 		const tone: Tone = c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail';
 		rows.push({
 			group: c.kind === 'update' ? 'app' : 'library',
@@ -149,7 +152,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 			word: tone === 'ok' ? 'Working' : tone === 'wait' ? 'Warning' : 'Broken',
 			reason: c.message,
 			at: c.checked_at || c.since,
-			fix: checkFix[c.kind],
+			fix: checkFix[c.kind] || undefined,
 			check: { kind: 'checks' }
 		});
 	}

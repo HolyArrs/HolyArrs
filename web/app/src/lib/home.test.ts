@@ -78,6 +78,24 @@ describe('home', () => {
 		expect(attention({ failed: [], decisions: [], health: [] })).toEqual([]);
 	});
 
+	it('names the missing key kit apart from old backups', () => {
+		const kit = { ...check('backups:key', 'warning', 'backups'), subject: 'Backups' };
+		const items = attention({ failed: [], decisions: [], health: [check('backups', 'warning', 'backups'), kit] });
+		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Backups · getting old', 'Master key · no key kit saved']);
+		expect(items[1]).toMatchObject({ href: '/settings/backups', text: 'No key kit is saved: backups do not hold the master key.' });
+		// Two different problems stay two rows.
+		expect(groupAttention(items).map((r) => r.title)).toEqual(['Backups', 'Master key']);
+	});
+
+	it('names the /config error and waiting downloads, linked to where they are fixed', () => {
+		const items = attention({ failed: [], decisions: [], health: [check('config_folder', 'error', 'config_folder'), check('waiting_downloads', 'warning', 'waiting_downloads')] });
+		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Config folder · lost if the container is recreated', 'Downloads · waiting for their files']);
+		expect(items.map((i) => [i.href, i.action])).toEqual([['/status', 'Look'], ['/downloads?show=waiting.paused', 'Downloads']]);
+		expect(items[0].text).toBe('/config is not mapped to a folder, so HolyArrs data is lost when the container is recreated.');
+		const member = attention({ failed: [], decisions: [], health: [check('config_folder', 'error', 'config_folder'), check('waiting_downloads', 'error', 'waiting_downloads')], admin: false });
+		expect(member.map((i) => i.href)).toEqual(['/status', '/status']);
+	});
+
 	it('follows the flap guard when the server sends the confirmed state', () => {
 		const flaky = { ...check('d', 'error', 'downloader'), confirmed: 'ok' as const };
 		const held = { ...check('s', 'ok', 'source'), confirmed: 'warning' as const };

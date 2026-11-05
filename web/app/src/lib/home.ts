@@ -80,6 +80,11 @@ export function healthFix(kind: HealthCheck['kind']): string {
 			return '/settings/downloaders';
 		case 'backups':
 			return '/settings/backups';
+		case 'waiting_downloads':
+			return '/downloads?show=waiting.paused';
+		case 'config_folder':
+			// No setting fixes it: Status shows the steps.
+			return '/status';
 		default:
 			// Updates, trailers and anything new live on This app.
 			return '/settings/this-app';
@@ -88,7 +93,7 @@ export function healthFix(kind: HealthCheck['kind']): string {
 
 // A health problem in a few words: what it is about (one, many) and why (one, many), by state.
 // Trailers comes from the server but is not in the HealthCheck type yet, so it is named here too.
-const healthWords: Record<HealthCheck['kind'] | 'trailers', { one: string; many: string; error: [string, string]; warning: [string, string] }> = {
+const healthWords: Record<HealthCheck['kind'] | 'trailers' | 'key_kit', { one: string; many: string; error: [string, string]; warning: [string, string] }> = {
 	library_folder: { one: 'Library folder', many: 'Library folders', error: ["can't be reached", "can't be reached"], warning: ['needs a look', 'need a look'] },
 	disk_space: { one: 'Library folder', many: 'Library folders', error: ['out of space', 'out of space'], warning: ['running low on space', 'running low on space'] },
 	source: { one: 'Source', many: 'Sources', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
@@ -96,6 +101,10 @@ const healthWords: Record<HealthCheck['kind'] | 'trailers', { one: string; many:
 	backups: { one: 'Backups', many: 'Backups', error: ['not being made', 'not being made'], warning: ['getting old', 'getting old'] },
 	update: { one: 'HolyArrs update', many: 'HolyArrs updates', error: ['check failed', 'check failed'], warning: ['waiting', 'waiting'] },
 	config_disk: { one: 'Config folder', many: 'Config folder', error: ['almost out of space', 'almost out of space'], warning: ['running low on space', 'running low on space'] },
+	config_folder: { one: 'Config folder', many: 'Config folder', error: ['lost if the container is recreated', 'lost if the container is recreated'], warning: ['needs a look', 'needs a look'] },
+	waiting_downloads: { one: 'Downloads', many: 'Downloads', error: ['waiting for their files', 'waiting for their files'], warning: ['waiting for their files', 'waiting for their files'] },
+	// The backups:key check: no key kit saved for the current master key.
+	key_kit: { one: 'Master key', many: 'Master key', error: ['no key kit saved', 'no key kit saved'], warning: ['no key kit saved', 'no key kit saved'] },
 	trailers: { one: 'Trailers', many: 'Trailers', error: ['not loading', 'not loading'], warning: ['lookups failing', 'lookups failing'] }
 };
 
@@ -110,8 +119,10 @@ export function shownState(c: Pick<HealthCheck, 'state'> & { confirmed?: string 
 }
 
 function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action: string, admin: boolean): Attention {
-	const w = healthWords[c.kind];
+	const kind = c.key === 'backups:key' ? 'key_kit' : c.kind;
+	const w = healthWords[kind];
 	const level = tone === 'fail' ? 'error' : 'warning';
+	const href = admin ? healthFix(c.kind) : '/status';
 	return {
 		key: `h${c.key}`,
 		tone,
@@ -119,11 +130,11 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		text: healthSentence(c),
 		title: w?.one ?? 'HolyArrs',
 		reason: w ? w[level][0] : level === 'error' ? 'not working' : 'needs a look',
-		cause: `health:${c.kind}:${level}`,
+		cause: `health:${kind}:${level}`,
 		detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined,
 		// Settings is only for people who may change it; everyone else sees the check on Status.
-		href: admin ? healthFix(c.kind) : '/status',
-		action: admin ? action : 'Look'
+		href,
+		action: href === '/status' ? 'Look' : href.startsWith('/downloads') ? 'Downloads' : action
 	};
 }
 
@@ -201,7 +212,7 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
 			out.push({ ...base, key: first.key, title: first.title, reason: first.reason });
 			continue;
 		}
-		const kind = cause.startsWith('health:') ? (cause.split(':')[1] as HealthCheck['kind']) : undefined;
+		const kind = cause.startsWith('health:') ? (cause.split(':')[1] as keyof typeof healthWords) : undefined;
 		const w = kind ? healthWords[kind] : undefined;
 		const level = cause.endsWith(':error') ? 'error' : 'warning';
 		if (w) out.push({ ...base, key: `g${cause}`, title: `${n} ${w.many}`, reason: w[level][1] });
