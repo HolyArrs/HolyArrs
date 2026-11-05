@@ -187,7 +187,7 @@ func PlanShowAdoptFrom(ctx context.Context, db reader, shows metadata.ShowSource
 	}
 	p.Warning = mountWarning(ctx, db, lf, len(ents))
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || (after != "" && e.Name() <= after) {
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || (after != "" && e.Name() <= after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {

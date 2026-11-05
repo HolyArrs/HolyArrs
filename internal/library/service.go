@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -57,6 +58,12 @@ type Service struct {
 	AnimeNames func(ctx context.Context, kind, tmdbID, name string) []string
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
+
+	// checkedPaths is the Downloader folder list of the last full folder
+	// check; a timed check with another list runs the full test again.
+	checkedMu    sync.Mutex
+	checkedOnce  bool
+	checkedPaths string
 }
 
 // animeAliases are the anime's other titles, or an empty list.
@@ -229,6 +236,9 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 		} else if st, err := os.Stat(dir); err == nil && st.IsDir() {
 			res["exists"] = true
 			_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
+				if err == nil && d.IsDir() && p != dir && nasSystemDir(d.Name()) {
+					return filepath.SkipDir
+				}
 				if err == nil && !d.IsDir() && videoExt[strings.ToLower(filepath.Ext(p))] {
 					rel, _ := filepath.Rel(dir, p)
 					videos = append(videos, filepath.ToSlash(rel))
@@ -265,10 +275,19 @@ func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
 		return err
 	}
 	paths := s.downloadPaths(ctx)
+	// A timed run only reads, so disks that sleep are not woken by probe
+	// writes. Run now, and a changed Downloader folder list, run the full
+	// write and hardlink test.
+	scheduled, _ := r.Job.Params["scheduled"].(bool)
+	byHand, _ := r.Job.Params["by_hand"].(bool)
+	key := strings.Join(paths, "|")
+	s.checkedMu.Lock()
+	quick := scheduled && !byHand && s.checkedOnce && s.checkedPaths == key
+	s.checkedMu.Unlock()
 	bad := 0
 	for i, f := range fs {
 		_ = r.Progress(ctx, float64(i)/float64(len(fs)), "checking "+f.Label)
-		lf, changed, err := RecheckFolder(ctx, s.Store, f.ID, paths, jobActor(r))
+		lf, changed, err := RecheckFolder(ctx, s.Store, f.ID, paths, jobActor(r), quick)
 		if err != nil {
 			return err
 		}
@@ -281,6 +300,11 @@ func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
 				Data:    map[string]any{"library_folder_id": lf.ID, "health": lf.Health, "reason": lf.HealthReason, "was": f.Health}})
 			s.publish("library_folder", lf)
 		}
+	}
+	if !quick {
+		s.checkedMu.Lock()
+		s.checkedPaths, s.checkedOnce = key, true
+		s.checkedMu.Unlock()
 	}
 	r.SetResult(map[string]any{"checked": len(fs), "not_ok": bad})
 	return nil

@@ -101,6 +101,10 @@ func (s seekReaderAt) ReadAt(p []byte, off int64) (int, error) {
 	return n, err
 }
 
+// PictureCodec reports whether a track codec is a picture subtitle
+// (PGS, VobSub, DVB, BMP), not text.
+func PictureCodec(c string) bool { return pictureCodec(c) }
+
 func pictureCodec(c string) bool {
 	c = strings.ToUpper(c)
 	return strings.HasPrefix(c, "S_HDMV/PGS") || c == "S_VOBSUB" || c == "S_DVBSUB" || c == "S_IMAGE/BMP"

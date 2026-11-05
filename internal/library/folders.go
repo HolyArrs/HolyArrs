@@ -61,7 +61,7 @@ func CheckFolder(path string, downloadPaths []string) Health {
 	}
 	h.FreeSpace = importer.FreeSpace(path)
 	if h.FreeSpace >= 0 && h.FreeSpace < MinFreeSpace {
-		reasons = append(reasons, "under 100 MB free")
+		reasons = append(reasons, lowSpaceNote)
 	}
 	h.Reason = strings.Join(reasons, "; ")
 	return h
@@ -283,10 +283,29 @@ func DeleteFolder(ctx context.Context, s *store.Store, id int64) error {
 }
 
 // RecheckFolder checks one Library folder and stores the outcome. changed is
-// true when its health or reason moved.
-func RecheckFolder(ctx context.Context, s *store.Store, id int64, downloadPaths []string, by domain.Actor) (lf domain.LibraryFolder, changed bool, err error) {
+// true when its health or reason moved. quick only reads: a folder last
+// found ok or without hardlinks keeps that health and its "last checked"
+// time, and only its free space is read again (no probe files, so a
+// sleeping disk is not written to). A folder never checked, or last found
+// missing or not writable, gets the full test anyway.
+func RecheckFolder(ctx context.Context, s *store.Store, id int64, downloadPaths []string, by domain.Actor, quick bool) (lf domain.LibraryFolder, changed bool, err error) {
 	if err := store.Get(ctx, s.Read(), "library_folders", id, &lf); err != nil {
 		return lf, false, err
+	}
+	if quick && lf.HealthCheckedAt != nil && (lf.Health == "ok" || lf.Health == "no_hardlink") {
+		if st, serr := os.Stat(lf.Path); serr == nil && st.IsDir() {
+			free := importer.FreeSpace(lf.Path)
+			reason := freeSpaceReason(lf.HealthReason, free)
+			changed = reason != lf.HealthReason
+			now := time.Now().UTC()
+			err = s.Write(ctx, func(tx *sql.Tx) error {
+				_, err := tx.Exec(`UPDATE library_folders SET health_reason = ?, free_space = ?, updated_at = ?, updated_by = ? WHERE id = ?`,
+					reason, max(free, 0), store.FormatTime(now), actorText(by), id)
+				return err
+			})
+			lf.HealthReason, lf.FreeSpace = reason, max(free, 0)
+			return lf, changed, err
+		}
 	}
 	h := CheckFolder(lf.Path, downloadPaths)
 	changed = h.State != lf.Health || h.Reason != lf.HealthReason
@@ -299,6 +318,24 @@ func RecheckFolder(ctx context.Context, s *store.Store, id int64, downloadPaths 
 	})
 	lf.Health, lf.HealthReason, lf.FreeSpace, lf.HealthCheckedAt = h.State, h.Reason, max(h.FreeSpace, 0), &now
 	return lf, changed, err
+}
+
+// lowSpaceNote is the reason part CheckFolder adds under MinFreeSpace.
+const lowSpaceNote = "under 100 MB free"
+
+// freeSpaceReason is reason with the low-space part added or taken out for
+// free bytes (-1: unknown, left out).
+func freeSpaceReason(reason string, free int64) string {
+	var parts []string
+	for _, p := range strings.Split(reason, "; ") {
+		if p != "" && p != lowSpaceNote {
+			parts = append(parts, p)
+		}
+	}
+	if free >= 0 && free < MinFreeSpace {
+		parts = append(parts, lowSpaceNote)
+	}
+	return strings.Join(parts, "; ")
 }
 
 func actorText(a domain.Actor) string {

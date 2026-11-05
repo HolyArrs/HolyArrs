@@ -29,7 +29,7 @@ var label = map[string]string{
 	"read_only":   "not writable",
 	"no_hardlink": "without hardlinks",
 	"low_space":   "low on space",
-	"slow":        "too slow (skipped)",
+	"slow":        "not checked (slow to answer)",
 }
 
 // Check turns the outcome into a report line with its fix.
@@ -71,7 +71,7 @@ func (f Folder) Check(uid, gid int) Check {
 		c.Status = Warn
 		c.Fix = "free up space on the disk that holds " + f.Path
 	case "slow":
-		c.Status, c.Text = Warn, f.Role+" "+f.Path+": did not answer in time, skipped (often a slow network share)"
+		c.Status, c.Text = Warn, f.Role+" "+f.Path+": did not answer within 3 seconds, skipped (often a disk waking from sleep or a slow network share); it is checked again later, or run holyarrs doctor"
 		c.Fix = "run holyarrs doctor to check it without the start-up time limit"
 	}
 	return c
