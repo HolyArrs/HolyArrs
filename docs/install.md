@@ -538,6 +538,10 @@ proxy_set_header X-Real-IP $remote_addr;
 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 ```
 
+If another proxy sits in front of yours (Cloudflare, for example), add that
+proxy's address ranges to `HOLYARRS_TRUSTED_PROXIES` too, so each visitor gets
+their own sign-in limit instead of sharing one.
+
 To serve HolyArrs below a path, set `HOLYARRS_URL_BASE=/holyarrs`. The proxy
 must pass that path unchanged, keep the `Host` header and leave the live
 stream unbuffered. See [Running under a path](url-base.md) for nginx-proxy-

@@ -141,6 +141,7 @@ type Auth struct {
 
 	mu           sync.Mutex
 	fails        map[string]*failure
+	pruneAt      int // fails size at which pruneFails runs again
 	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
 	refusedHosts map[string]bool                 // refused names already logged (hosts.go)
@@ -817,12 +818,26 @@ func (a *Auth) noteKnown(p place) {
 
 func (a *Auth) noteFail(keys ...string) {
 	now := a.now()
-	if len(a.fails) >= maxTracked {
+	if len(a.fails) >= maxTracked && len(a.fails) >= a.pruneAt {
 		a.pruneFails(now)
+		// Scan again only after the map has grown a little, so a flood that
+		// leaves nothing to free does not cost a full scan per attempt.
+		a.pruneAt = len(a.fails) + maxTracked/10
 	}
 	for _, k := range keys {
 		f := a.fails[k]
 		if f == nil {
+			// A name record is only added while the map has room for it, so
+			// a flood of made-up names never pushes out a record that still
+			// holds a wait. The address key still counts. Names use at most
+			// three quarters of the room, leaving the rest for addresses.
+			limit := 4 * maxTracked
+			if protectedKey(k) {
+				limit = 3 * maxTracked
+			}
+			if len(a.fails) >= limit {
+				continue
+			}
 			f = &failure{}
 			a.fails[k] = f
 		}
@@ -834,12 +849,17 @@ func (a *Auth) noteFail(keys ...string) {
 // maxTracked bounds the failure and known-place maps.
 const maxTracked = 10000
 
+// protectedKey says whether a fail key is a per-name one (sign-in name or
+// second-step ticket), which is kept for as long as its wait runs.
+func protectedKey(k string) bool { return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:") }
+
 // pruneFails frees room in a.fails; the caller holds a.mu. Records whose wait
 // is over go first. If the map is still full (a flood of fresh addresses),
-// the oldest address records go, never the per-name ones: there are few
-// names, and flushing them would end the wait that protects an account. Only
-// when even those fill four times the cap do the oldest, least-failed name
-// records go too, so memory stays bounded.
+// the oldest address records go. Per-name records with failures inside their
+// window are never evicted: there are few real names, and flushing them would
+// end the wait that protects an account. When names fill their share,
+// noteFail stops adding new ones instead, so memory stays bounded and a flood
+// of made-up names cannot remove the owner's wait.
 func (a *Auth) pruneFails(now time.Time) {
 	for k, f := range a.fails {
 		if now.Sub(f.last) > MaxBackoff {
@@ -849,28 +869,19 @@ func (a *Auth) pruneFails(now time.Time) {
 	if len(a.fails) < maxTracked {
 		return
 	}
-	protected := func(k string) bool { return strings.HasPrefix(k, "name:") || strings.HasPrefix(k, "2fa:") }
 	type kf struct {
 		k    string
 		last time.Time
 	}
-	var addrs, names []kf
+	var addrs []kf
 	for k, f := range a.fails {
-		if protected(k) {
-			names = append(names, kf{k, f.last})
-		} else {
+		if !protectedKey(k) {
 			addrs = append(addrs, kf{k, f.last})
 		}
 	}
-	oldest := func(l []kf, n int) {
-		slices.SortFunc(l, func(x, y kf) int { return x.last.Compare(y.last) })
-		for _, e := range l[:min(n, len(l))] {
-			delete(a.fails, e.k)
-		}
-	}
-	oldest(addrs, len(addrs)/5+1)
-	if len(a.fails) >= 4*maxTracked {
-		oldest(names, len(names)/5+1)
+	slices.SortFunc(addrs, func(x, y kf) int { return x.last.Compare(y.last) })
+	for _, e := range addrs[:min(len(addrs)/5+1, len(addrs))] {
+		delete(a.fails, e.k)
 	}
 }
 

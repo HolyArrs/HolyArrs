@@ -204,9 +204,10 @@ func (a *Auth) seenAddress(r *http.Request) (addr string, untrusted bool) {
 //     visitor and we cannot tell which (nginx with only X-Real-IP passes the
 //     visitor's X-Forwarded-For through; other proxies pass the visitor's
 //     X-Real-IP through; Cloudflare in front of such an nginx makes them
-//     differ on every request). Then the X-Forwarded-For client is the limit
-//     key, so visitors do not share one key, and it is not trusted for the
-//     skip.
+//     differ on every request). Then the X-Real-IP client is the limit key:
+//     the trusted proxy sets it, while the visitor can pick X-Forwarded-For
+//     in that setup, so keying on it would let one visitor dodge the limit.
+//     It is not trusted for the skip.
 //   - A Forwarded header, or an entry that is not an address, makes the
 //     result not trusted for the skip.
 //
@@ -273,7 +274,7 @@ func (a *Auth) clientAddrUnsure(r *http.Request) (addr string, ok, unsure bool) 
 	case fromReal == "" || fromReal == fromXFF:
 		return fromXFF, ok, false
 	default:
-		return fromXFF, false, true
+		return fromReal, false, true
 	}
 }
 

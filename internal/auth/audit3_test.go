@@ -40,14 +40,15 @@ func TestForwardedClientCannotBeSpoofed(t *testing.T) {
 	}{
 		// nginx with only "X-Real-IP $remote_addr": the visitor's own
 		// X-Forwarded-For comes through untouched.
-		{"nginx real-ip only, spoofed xff", [][2]string{{"X-Real-IP", "203.0.113.9"}, {"X-Forwarded-For", "192.168.1.5"}}, "", "ip:192.168.1.5"},
+		{"nginx real-ip only, spoofed xff", [][2]string{{"X-Real-IP", "203.0.113.9"}, {"X-Forwarded-For", "192.168.1.5"}}, "", "ip:203.0.113.9"},
 		{"nginx real-ip only", [][2]string{{"X-Real-IP", "203.0.113.9"}}, "203.0.113.9", "ip:203.0.113.9"},
 		// nginx with both lines: the visitor's entry is on the left.
 		{"nginx both lines, spoofed xff", [][2]string{{"X-Real-IP", "203.0.113.9"}, {"X-Forwarded-For", "192.168.1.5, 203.0.113.9"}}, "203.0.113.9", "ip:203.0.113.9"},
 		// HAProxy "option forwardfor" adds its own second line.
 		{"haproxy two lines", [][2]string{{"X-Forwarded-For", "192.168.1.5"}, {"X-Forwarded-For", "203.0.113.9"}}, "203.0.113.9", "ip:203.0.113.9"},
-		// A proxy that passes the visitor's X-Real-IP through.
-		{"spoofed real-ip, proxy xff", [][2]string{{"X-Real-IP", "192.168.1.5"}, {"X-Forwarded-For", "203.0.113.9"}}, "", "ip:203.0.113.9"},
+		// A proxy that passes the visitor's X-Real-IP through: the headers differ,
+		// so the limit key is X-Real-IP (the one nginx sets) and the skip is off.
+		{"spoofed real-ip, proxy xff", [][2]string{{"X-Real-IP", "192.168.1.5"}, {"X-Forwarded-For", "203.0.113.9"}}, "", "ip:192.168.1.5"},
 		// Trusted hops on the right are skipped.
 		{"chain of trusted proxies", [][2]string{{"X-Forwarded-For", "192.168.1.5, 203.0.113.9, 172.18.0.7"}}, "203.0.113.9", "ip:203.0.113.9"},
 		{"local visitor", [][2]string{{"X-Forwarded-For", "192.168.1.5"}, {"X-Real-IP", "192.168.1.5"}}, "192.168.1.5", "ip:192.168.1.5"},

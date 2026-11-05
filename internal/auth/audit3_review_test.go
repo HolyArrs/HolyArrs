@@ -102,12 +102,13 @@ func TestTwoFactorStepNotHeldByNameWait(t *testing.T) {
 
 // Cloudflare (or another proxy that adds X-Forwarded-For) in front of an
 // nginx that sets only X-Real-IP: the headers differ on every request. Each
-// visitor keeps their own limit key instead of sharing the proxy's.
+// visitor keeps their own limit key (the X-Real-IP the trusted proxy set) instead
+// of sharing the proxy's.
 func TestDisagreeingHeadersKeepPerClientKey(t *testing.T) {
 	a := proxyAuth(t, "172.18.0.0/16")
 	r := reqFrom("172.18.0.1:4000", [][2]string{{"X-Forwarded-For", "198.51.100.7"}, {"X-Real-IP", "104.16.0.1"}})
-	if got := a.ClientKey(r); got != "ip:198.51.100.7" {
-		t.Errorf("key %q, want the forwarded client", got)
+	if got := a.ClientKey(r); got != "ip:104.16.0.1" {
+		t.Errorf("key %q, want the X-Real-IP client", got)
 	}
 	if _, bad := a.seenAddress(r); !bad {
 		t.Error("local skip allowed on disagreeing headers")
