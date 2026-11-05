@@ -1022,7 +1022,7 @@
 				</div>
 			{/if}
 			{#if titleId && manage && artistTab === 'library'}
-				<ArtistLibraryTab {titleId} {manage} stamp={lib?.stamp} ondeleted={() => (lib ? void goto(to('/library')) : location.reload())} />
+				<ArtistLibraryTab {titleId} {manage} stamp={lib?.stamp} ondeleted={() => (lib ? void goto(to('/library?kind=artist')) : location.reload())} />
 			{:else}
 				{@render sections()}
 			{/if}

@@ -151,7 +151,7 @@
 
 	async function deleted(p: { scope?: string }) {
 		if (!p.scope || p.scope === 'title') {
-			await goto(to('/library'));
+			await goto(to(crumbFor('show').path));
 			return;
 		}
 		episodes = {};

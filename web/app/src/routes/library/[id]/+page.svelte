@@ -51,7 +51,9 @@
 	const libraryBack = $derived.by(() => {
 		const target = page.url.searchParams.get('returnTo');
 		const library = to('/library');
-		return target && (target === library || target.startsWith(`${library}?`)) ? target : library;
+		// With no way back given: the Library of this title's kind; a title that never loaded has none, so the kind used last.
+		const own = title ? to(crumbFor(title.kind).path) : library;
+		return target && (target === library || target.startsWith(`${library}?`)) ? target : own;
 	});
 	let title = $state<TitleView | null>(null);
 	// A movie or show with a TMDB id opens the one title page (lib/TitlePage.svelte), the same page
@@ -351,7 +353,7 @@
 				p.held.length ? `${p.name} is deleted. Its files are in the holding folder${p.holding_days ? ` for ${p.holding_days} days` : ''}.` : `${p.name} is deleted. Its files stay on disk.`,
 				'ok'
 			);
-			await goto(to('/library'));
+			await goto(to(crumbFor(title?.kind ?? 'movie').path));
 		} catch (e) {
 			delError = message(e);
 			if (e instanceof ApiError && e.body.plan) delPlan = e.body.plan as RemovePlan;
