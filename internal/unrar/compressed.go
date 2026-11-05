@@ -14,7 +14,7 @@ import (
 
 // ErrTooBig says a set wrote more than the caller allowed; what was written
 // is left for the caller to remove.
-var ErrTooBig = errors.New("the RAR files unpack to more than was allowed")
+var ErrTooBig = errors.New("the archive files unpack to more than was allowed")
 
 // maxDictionary caps the decode window a set may ask for (RAR 5 allows up to
 // 4 GB); WinRAR's usual 32 MB and the larger sizes scene groups use fit well

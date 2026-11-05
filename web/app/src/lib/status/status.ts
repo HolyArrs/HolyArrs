@@ -71,14 +71,19 @@ const checkFix: Record<string, string> = {
 	disk_space: '/settings/library-folders',
 	backups: '/settings/backups',
 	update: '/settings/this-app',
-	config_disk: '/settings/this-app'
+	config_disk: '/settings/this-app',
+	// An unmapped /config is fixed outside the app; the first step is a backup.
+	config_folder: '/settings/backups',
+	waiting_downloads: '/downloads?show=waiting.paused'
 };
-const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update', config_disk: 'Config folder' };
+const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update', config_disk: 'Config folder space', config_folder: 'Config folder mapping', waiting_downloads: 'Downloads waiting for files' };
+
+const configSteps = 'Make a backup first and download it. Then map /config to a folder in your container settings, start HolyArrs and restore the backup.';
 
 /** checkTitle names a health check row without saying the same word twice ("Backups", not "Backups Backups"). */
 function checkTitle(c: Pick<HealthCheck, 'kind' | 'subject'>): string {
 	const n = checkName[c.kind];
-	if (!c.subject || c.subject === n) return n;
+	if (!c.subject || c.subject === n || c.kind === 'waiting_downloads' || c.kind.startsWith('config_')) return n;
 	return c.kind === 'update' ? c.subject : `${n} ${c.subject}`;
 }
 
@@ -139,7 +144,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		rows.push({ group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: s.reason, at: realTime(s.since), fix: m.fix, check });
 	}
 	for (const c of i.checks ?? []) {
-		if (!checkFix[c.kind]) continue; // sources and downloaders come from their linked state
+		if (typeof checkFix[c.kind] !== 'string') continue; // sources and downloaders come from their linked state
 		const tone: Tone = c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail';
 		rows.push({
 			group: c.kind === 'update' ? 'app' : 'library',
@@ -147,9 +152,10 @@ export function buildRows(i: StatusInput): StatusRow[] {
 			name: checkTitle(c),
 			tone,
 			word: tone === 'ok' ? 'Working' : tone === 'wait' ? 'Warning' : 'Broken',
-			reason: c.message,
+			// The server's steps for /config need a shell; say ones a container screen can do.
+			reason: c.kind === 'config_folder' && c.state !== 'ok' ? configSteps : c.message,
 			at: c.checked_at || c.since,
-			fix: checkFix[c.kind],
+			fix: checkFix[c.kind] || undefined,
 			check: { kind: 'checks' }
 		});
 	}

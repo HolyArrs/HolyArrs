@@ -382,6 +382,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		defer cancel()
 		_ = srv.Shutdown(sh)
 	}()
+	// A backup or restore upload cut off by a stop or kill left copies of
+	// the databases behind; none is valid after a restart.
+	if n, err := backup.CleanLeftovers(c.ConfigDir); err != nil {
+		log.Printf("backup: could not remove all of an unfinished backup: %v", err)
+	} else if n > 0 {
+		log.Printf("backup: removed what an unfinished backup or restore left behind, %d MB freed", (n+1<<20-1)>>20)
+	}
 	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
@@ -512,7 +519,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	loop(supervisor.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
 	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
-		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != ""}
+		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != "", Stop: ctx}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
 		log.Printf("backup: %v", err)
 	}

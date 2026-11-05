@@ -451,6 +451,25 @@ type Run struct {
 	q        *Queue
 	result   map[string]any
 	prepared any
+	app      context.Context // the queue's own context: done when the app stops
+	ctx      context.Context // this attempt's context
+}
+
+// errCancelled is the cause a person's cancel gives the Job's context, so a
+// stop that lands later still reads as a cancel.
+var errCancelled = errors.New("job cancelled")
+
+// cancelledByUser says someone cancelled the Job before anything else
+// ended its context.
+func (r *Run) cancelledByUser() bool {
+	return r.ctx != nil && errors.Is(context.Cause(r.ctx), errCancelled)
+}
+
+// Stopping says the Job's context ended because the app is stopping, not
+// because someone cancelled the Job: the Job stays running in the database
+// and is run again after the restart.
+func (r *Run) Stopping() bool {
+	return r.app != nil && r.app.Err() != nil && !r.cancelledByUser()
 }
 
 type preparedJob struct {
@@ -511,8 +530,8 @@ func (q *Queue) run(ctx context.Context, j domain.Job) {
 		prepared = nil
 	}
 	delete(q.prepared, j.ID)
-	runCtx, cancel := context.WithCancel(ctx)
-	q.live[j.ID] = cancel
+	runCtx, cancel := context.WithCancelCause(ctx)
+	q.live[j.ID] = func() { cancel(errCancelled) }
 	q.running[j.ID] = j
 	q.mu.Unlock()
 	defer func() {
@@ -520,10 +539,10 @@ func (q *Queue) run(ctx context.Context, j domain.Job) {
 		delete(q.live, j.ID)
 		delete(q.running, j.ID)
 		q.mu.Unlock()
-		cancel()
+		cancel(nil)
 	}()
 
-	r := &Run{Job: j, q: q, prepared: prepared}
+	r := &Run{Job: j, q: q, prepared: prepared, app: ctx, ctx: runCtx}
 	var err error
 	code := "failed"
 	if h == nil {
@@ -535,7 +554,7 @@ func (q *Queue) run(ctx context.Context, j domain.Job) {
 			code = c.Code()
 		}
 	}
-	if ctx.Err() != nil {
+	if ctx.Err() != nil && !r.cancelledByUser() {
 		return // stopping: leave it running, Start recovers it
 	}
 	cancelled := runCtx.Err() != nil && err != nil

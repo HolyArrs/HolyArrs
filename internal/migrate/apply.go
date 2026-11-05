@@ -1933,6 +1933,9 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 		err = ErrPlanChanged
 	}
 	if err != nil {
+		if r.Stopping() {
+			return ctx.Err() // a stop while reading the plan: resume after the restart
+		}
 		_ = m.setState(context.WithoutCancel(ctx), mv.ID, "failed", &Report{Move: mv.ID, Lines: []Line{}, Counts: map[string]int{},
 			Next: []string{"The move could not start from its approved preview: " + err.Error() + ". Preview it again and start a new move."}})
 		return err
@@ -1944,6 +1947,11 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 	rep := m.Run(ctx, mv.ID, p, false, by, func(done, total int) {
 		_ = r.Progress(ctx, float64(done)/float64(max(total, 1)), fmt.Sprintf("%d of %d moved", done, total))
 	})
+	if r.Stopping() {
+		// The app is stopping (docker stop, an update): leave the move
+		// running so it resumes after the restart, as after a hard kill.
+		return ctx.Err()
+	}
 	state := "done"
 	if ctx.Err() != nil {
 		state = "failed"

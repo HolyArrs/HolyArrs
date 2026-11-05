@@ -696,8 +696,8 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if c.Name == "" || len(c.Name) > 64 {
-		fail(w, http.StatusBadRequest, "pick a name of 1 to 64 characters")
+	if msg := nameProblem(c.Name); msg != "" {
+		fail(w, http.StatusBadRequest, msg)
 		return
 	}
 	if msg := passwordProblem(c.Password, MinPasswordLength(r.Context(), a.s.Read())); msg != "" {

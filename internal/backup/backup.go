@@ -115,6 +115,9 @@ type Manager struct {
 	// FreeSpace reads free bytes on a disk (nil means importer.FreeSpace;
 	// -1 unknown).
 	FreeSpace func(dir string) int64
+	// Stop, when set, ends with HolyArrs (shutdown). A manual backup stops
+	// only then, never because the browser or a proxy dropped the request.
+	Stop context.Context
 
 	mu      sync.Mutex
 	lastErr string // the last scheduled backup's error, "" after a good one
@@ -243,8 +246,12 @@ func readMeta(path string) (Meta, bool) {
 	return Meta{}, false
 }
 
-// Create makes a backup of the running databases.
-func (m *Manager) Create(_ context.Context, kind string) (Info, error) {
+// Create makes a backup of the running databases. A stop (ctx ends) cuts it
+// off and removes what it made so far.
+func (m *Manager) Create(ctx context.Context, kind string) (Info, error) {
+	if err := ctx.Err(); err != nil {
+		return Info{}, err
+	}
 	tmp, err := os.MkdirTemp(m.Dir, ".backup-")
 	if err != nil {
 		return Info{}, err
@@ -254,12 +261,75 @@ func (m *Manager) Create(_ context.Context, kind string) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	return m.write(kind, map[string]string{store.MainFile: mainCopy, store.EventsFile: evCopy}, nil)
+	return m.write(ctx, kind, map[string]string{store.MainFile: mainCopy, store.EventsFile: evCopy}, nil)
+}
+
+// ctxReader stops a copy once ctx ends.
+type ctxReader struct {
+	ctx context.Context
+	r   io.Reader
+}
+
+func (c ctxReader) Read(p []byte) (int, error) {
+	if err := c.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return c.r.Read(p)
+}
+
+// CleanLeftovers removes what a backup or a restore upload cut off by a stop
+// or a kill left in the config folder: its .backup-* and .restore-* working
+// folders and backups/*.zip.part. None of them is valid after a restart.
+// Call it before the store opens. It returns the bytes freed; a file it
+// cannot remove is skipped.
+func CleanLeftovers(dir string) (int64, error) {
+	var freed int64
+	var errs []error
+	drop := func(p string) {
+		n := sizeOf(p)
+		if err := os.RemoveAll(p); err != nil {
+			errs = append(errs, err)
+			return
+		}
+		freed += n
+	}
+	es, err := os.ReadDir(dir)
+	if err != nil {
+		return 0, err
+	}
+	for _, e := range es {
+		if e.IsDir() && (strings.HasPrefix(e.Name(), ".backup-") || strings.HasPrefix(e.Name(), ".restore-")) {
+			drop(filepath.Join(dir, e.Name()))
+		}
+	}
+	bs, err := os.ReadDir(filepath.Join(dir, "backups"))
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		errs = append(errs, err)
+	}
+	for _, e := range bs {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".zip.part") {
+			drop(filepath.Join(dir, "backups", e.Name()))
+		}
+	}
+	return freed, errors.Join(errs...)
+}
+
+func sizeOf(p string) int64 {
+	var n int64
+	_ = filepath.WalkDir(p, func(_ string, d os.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			if fi, err := d.Info(); err == nil {
+				n += fi.Size()
+			}
+		}
+		return nil
+	})
+	return n
 }
 
 // write zips the files with a backup.json into the backups folder.
 // edit, when set, changes the backup.json before it is written.
-func (m *Manager) write(kind string, files map[string]string, edit func(*Meta)) (Info, error) {
+func (m *Manager) write(ctx context.Context, kind string, files map[string]string, edit func(*Meta)) (Info, error) {
 	if err := os.MkdirAll(m.backupDir(), 0o750); err != nil {
 		return Info{}, err
 	}
@@ -305,7 +375,7 @@ func (m *Manager) write(kind string, files map[string]string, edit func(*Meta)) 
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		if err := addFile(zw, k, files[k]); err != nil {
+		if err := addFile(ctx, zw, k, files[k]); err != nil {
 			return Info{}, err
 		}
 	}
@@ -326,7 +396,7 @@ func (m *Manager) write(kind string, files map[string]string, edit func(*Meta)) 
 	return Info{Name: name, Kind: kind, CreatedAt: at, Size: fi.Size(), Detail: meta.Detail, Path: final}, nil
 }
 
-func addFile(zw *zip.Writer, name, path string) error {
+func addFile(ctx context.Context, zw *zip.Writer, name, path string) error {
 	src, err := os.Open(path)
 	if err != nil {
 		return err
@@ -336,7 +406,7 @@ func addFile(zw *zip.Writer, name, path string) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(w, src)
+	_, err = io.Copy(w, ctxReader{ctx, src})
 	return err
 }
 
@@ -467,7 +537,7 @@ func (m *Manager) Tick(ctx context.Context) error {
 		return nil
 	}
 	if err := m.roomFor(); err != nil {
-		return err
+		return fmt.Errorf("%w; HolyArrs tries again in ten minutes", err)
 	}
 	b, err := m.Create(ctx, KindScheduled)
 	if err != nil {
@@ -477,7 +547,7 @@ func (m *Manager) Tick(ctx context.Context) error {
 	return m.Prune(p)
 }
 
-// roomFor refuses a scheduled backup that clearly would not fit: it needs a
+// roomFor refuses a backup that clearly would not fit: it needs a
 // copy of the databases and the zip, so about twice their size. Unknown free
 // space never refuses.
 func (m *Manager) roomFor() error {
@@ -499,7 +569,26 @@ func (m *Manager) roomFor() error {
 	if n >= need {
 		return nil
 	}
-	return fmt.Errorf("Not enough free space: it needs about %d MB but only %d MB are free on the disk that holds the config folder. Free some space there; HolyArrs tries again in ten minutes", (need>>20)+1, n>>20)
+	return fmt.Errorf("Not enough free space: it needs about %d MB but only %d MB are free on the disk that holds the config folder. Free some space there", (need>>20)+1, n>>20)
+}
+
+// noSpace is said when the disk filled up during a backup.
+const noSpace = "Not enough free space on the disk that holds the config folder. Free some space there"
+
+// diskFull reports an error from a full disk (SQLite or the system).
+func diskFull(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, syscall.ENOSPC) {
+		return true
+	}
+	var en syscall.Errno
+	if runtime.GOOS == "windows" && errors.As(err, &en) && (en == 39 || en == 112) { // handle / disk full
+		return true
+	}
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "disk is full") || strings.Contains(s, "no space left")
 }
 
 // Pass checks once whether a backup is due (the supervisor runs it every
@@ -624,7 +713,7 @@ func (m *Manager) AdoptMigrationCopies() (int, error) {
 				meta.Detail = "before updating the data (" + strings.Join(parts, ", ") + ")"
 			}
 		}
-		if _, err := m.write(KindPreUpdate, files, edit); err != nil {
+		if _, err := m.write(context.Background(), KindPreUpdate, files, edit); err != nil {
 			return n, err
 		}
 		for _, c := range g {
@@ -1005,17 +1094,43 @@ func undoMoves(dir string, done []journalMove) error {
 	return errors.Join(errs...)
 }
 
-// donePrefix counts the moves done before a stop. Moves run in order, so
-// the done ones are the leading ones whose file is at the new name only.
+// donePrefix counts the moves done before a stop. Moves run in order, and a
+// later move can fill a name an earlier one emptied (the restored database
+// takes the old one's name), so each count is played through from the start
+// and the one that best fits the files on disk wins (the first on a tie).
 func donePrefix(dir string, j journal) int {
-	n := 0
+	// A name is there at the start when its first use is as a move's source.
+	start := map[string]bool{}
 	for _, m := range j.Moves {
-		if present(filepath.Join(dir, m.From)) || !present(filepath.Join(dir, m.To)) {
-			break
+		if _, seen := start[m.From]; !seen {
+			start[m.From] = true
 		}
-		n++
+		if _, seen := start[m.To]; !seen {
+			start[m.To] = false
+		}
 	}
-	return n
+	real := map[string]bool{}
+	state := map[string]bool{}
+	for name, v := range start {
+		real[name] = present(filepath.Join(dir, name))
+		state[name] = v
+	}
+	best, bestOff := 0, -1
+	for k := 0; k <= len(j.Moves); k++ {
+		if k > 0 {
+			state[j.Moves[k-1].From], state[j.Moves[k-1].To] = false, true
+		}
+		off := 0
+		for name, want := range state {
+			if real[name] != want {
+				off++
+			}
+		}
+		if bestOff < 0 || off < bestOff {
+			best, bestOff = k, off
+		}
+	}
+	return best
 }
 
 // allMoved reports whether every move's new name is there.
@@ -1073,6 +1188,9 @@ func recoverJournal(dir string) error {
 			return err
 		}
 		log.Printf("backup: the cut-off restore was undone; the data from before it is back in place")
+		if j.Keep != "" {
+			_ = os.Remove(filepath.Join(dir, j.Keep)) // only when empty
+		}
 		return removeJournal(dir)
 	}
 	if err := syncMoveDirs(dir, j); err != nil {

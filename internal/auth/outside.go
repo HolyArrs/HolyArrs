@@ -445,7 +445,7 @@ func outsideName(name string) string {
 }
 
 // outsideDone answers after an outside account checked out.
-func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider string, id int64, name string, err error) {
+func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider string, id int64, name string, err error, pl place) {
 	switch {
 	case errors.Is(err, errNotAllowed):
 		log.Printf("auth: %s account not allowed to join, from %s", provider, r.RemoteAddr)
@@ -460,7 +460,7 @@ func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider stri
 	case err != nil:
 		serverError(w, provider+" sign-in", err)
 	default:
-		a.passedAs(w, r, id, name, provider)
+		a.passedPlace(w, r, id, name, provider, pl)
 	}
 }
 
@@ -648,7 +648,7 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		a.keepPlexToken(ctx, id, extID, tok) // for their Plex watchlist (#102)
 	}
-	a.outsideDone(w, r, ProviderPlex, id, name, err)
+	a.outsideDone(w, r, ProviderPlex, id, name, err, place{})
 }
 
 // checkPin asks Plex whether the person confirmed the PIN. It returns the
@@ -731,10 +731,11 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "give your "+kind+" name and password")
 		return
 	}
-	ipKey, userKey := a.clientKey(r), "name:"+kind+":"+strings.ToLower(c.Name)
+	ipKey, sure := a.clientKeySure(r)
+	userKey := "name:" + kind + ":" + strings.ToLower(c.Name)
 	var marks []failMark
 	a.mu.Lock()
-	wait := max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries))
+	wait := a.signInWait(ipKey, userKey, sure)
 	if wait == 0 {
 		marks = a.markFails(ipKey, userKey)
 		a.noteFail(ipKey, userKey)
@@ -805,5 +806,5 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	delete(a.fails, userKey)
 	a.mu.Unlock()
 	id, name, err := a.linkedUser(ctx, kind, got.User.ID, got.User.Name, allowed(v, got.User.Name), got.User.Policy.MaxParentalRating != nil)
-	a.outsideDone(w, r, kind, id, name, err)
+	a.outsideDone(w, r, kind, id, name, err, place{ipKey, userKey, sure})
 }

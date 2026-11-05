@@ -72,6 +72,7 @@ func normBackup(c string) string {
 // ticket is the half-way point of a sign-in: the password (or outside
 // account) was right and a two-factor code is still needed.
 type ticket struct {
+	userKey string // the limit key of the first step, for known places
 	userID  int64
 	name    string
 	method  string
@@ -82,12 +83,18 @@ type ticket struct {
 // passed finishes a sign-in whose first step was right: straight to a
 // session, or a ticket when two-factor sign-in is on.
 func (a *Auth) passed(w http.ResponseWriter, r *http.Request, userID int64, name string) {
-	a.passedAs(w, r, userID, name, AuthMethodLocalPassword)
+	a.passedPlace(w, r, userID, name, AuthMethodLocalPassword, place{})
 }
 
 // passedAs finishes a sign-in while preserving how its first factor was
 // checked across an optional two-factor ticket.
 func (a *Auth) passedAs(w http.ResponseWriter, r *http.Request, userID int64, name, method string) {
+	a.passedPlace(w, r, userID, name, method, place{})
+}
+
+// passedPlace is passedAs that also records the place as known once the
+// sign-in is complete: now when there is no second step, else after it.
+func (a *Auth) passedPlace(w http.ResponseWriter, r *http.Request, userID int64, name, method string, pl place) {
 	var on bool
 	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT totp_secret_id IS NOT NULL FROM users WHERE id = ?", userID).Scan(&on); err != nil {
 		log.Printf("auth: sign-in: %v", err)
@@ -95,6 +102,9 @@ func (a *Auth) passedAs(w http.ResponseWriter, r *http.Request, userID int64, na
 		return
 	}
 	if !on {
+		a.mu.Lock()
+		a.noteKnown(pl)
+		a.mu.Unlock()
 		a.startSessionAs(w, r, userID, name, http.StatusOK, method)
 		return
 	}
@@ -106,7 +116,7 @@ func (a *Auth) passedAs(w http.ResponseWriter, r *http.Request, userID int64, na
 			delete(a.tickets, k)
 		}
 	}
-	a.tickets[sum(t)] = &ticket{userID: userID, name: name, method: method, expires: now.Add(ticketLife)}
+	a.tickets[sum(t)] = &ticket{userKey: pl.userKey, userID: userID, name: name, method: method, expires: now.Add(ticketLife)}
 	a.mu.Unlock()
 	writeJSON(w, http.StatusOK, map[string]any{"two_factor": true, "ticket": t})
 }
@@ -188,7 +198,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h := sum(b.Ticket)
-	ipKey := a.clientKey(r)
+	ipKey, sure := a.clientKeySure(r)
 	// A ticket from single sign-on or the trusted proxy finishes like those
 	// sign-ins: a settings change or an unlink waits for it, or ends it first.
 	a.ssoMu.RLock()
@@ -205,7 +215,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 		// codeKey survives a correct password, so a fresh ticket brings back
 		// no free code guesses; only a right code clears it.
 		codeKey := "2fa:" + itoa(t.userID)
-		wait = max(a.waitFor(ipKey, freeTries), a.waitFor(userKey, freeUserTries), a.waitFor(codeKey, freeTries))
+		wait = max(a.signInWait(ipKey, userKey, sure), a.waitFor(codeKey, freeTries))
 		if wait == 0 {
 			t.tries++
 			a.noteFail(ipKey, userKey, codeKey)
@@ -242,6 +252,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	delete(a.fails, ipKey)
 	delete(a.fails, "name:"+strings.ToLower(t.name))
 	delete(a.fails, "2fa:"+itoa(t.userID))
+	a.noteKnown(place{ipKey, t.userKey, sure})
 	a.mu.Unlock()
 	a.startSessionAs(w, r, t.userID, t.name, http.StatusOK, t.method)
 }

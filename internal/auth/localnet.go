@@ -179,25 +179,108 @@ func gatewayNets(list []string, self string) []string {
 
 // seenAddress is the address the local-network check reads for this
 // request: the forwarded client behind a trusted proxy, otherwise the peer.
-// When forwarding headers come from a proxy that is not trusted (or a
-// Forwarded header is sent) the skip never applies, so it returns "" and
-// untrusted true.
+// When the forwarded address cannot be trusted (see clientAddr) the skip
+// never applies, so it returns "" and untrusted true.
 func (a *Auth) seenAddress(r *http.Request) (addr string, untrusted bool) {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	xff, fwd, real := r.Header.Get("X-Forwarded-For"), r.Header.Get("Forwarded"), strings.TrimSpace(r.Header.Get("X-Real-IP"))
-	if xff == "" && fwd == "" && real == "" {
-		return host, false
-	}
-	peer := net.ParseIP(strings.Trim(host, "[]"))
-	if peer == nil || !a.trustedProxy(peer) || fwd != "" {
+	addr, ok := a.clientAddr(r)
+	if !ok {
 		return "", true
 	}
-	if xff != "" {
-		parts := strings.Split(xff, ",")
-		return strings.TrimSpace(parts[len(parts)-1]), false
+	return addr, false
+}
+
+// clientAddr is the one place that decides who the caller is. It is used for
+// the local-network skip and for every sign-in limit key.
+//
+// The rule, so that a header the visitor wrote can never pick the address:
+//   - No forwarding header: the peer address, trusted.
+//   - Headers from a peer that is not a trusted proxy: ignored; the peer
+//     address, not trusted for the skip.
+//   - From a trusted proxy: every X-Forwarded-For line is read (HAProxy may
+//     add its own line after the visitor's), and the entries are walked from
+//     the right, skipping trusted proxies; the first other address is the
+//     client. X-Real-IP is read too, unless it names a trusted proxy.
+//   - If both headers give a client and they differ, one was written by the
+//     visitor and we cannot tell which (nginx with only X-Real-IP passes the
+//     visitor's X-Forwarded-For through; other proxies pass the visitor's
+//     X-Real-IP through; Cloudflare in front of such an nginx makes them
+//     differ on every request). Then the X-Forwarded-For client is the limit
+//     key, so visitors do not share one key, and it is not trusted for the
+//     skip.
+//   - A Forwarded header, or an entry that is not an address, makes the
+//     result not trusted for the skip.
+//
+// The returned address is always usable as a limit key; ok says whether it
+// may be used for the local-network skip.
+func (a *Auth) clientAddr(r *http.Request) (addr string, ok bool) {
+	addr, ok, _ = a.clientAddrUnsure(r)
+	return addr, ok
+}
+
+// clientAddrUnsure is clientAddr plus unsure: true when the two proxy headers
+// disagree, so the address is one of them and may be written by the visitor.
+// It stays a fine per-visitor limit key but must never stand for a known place.
+func (a *Auth) clientAddrUnsure(r *http.Request) (addr string, ok, unsure bool) {
+	peer, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		peer = r.RemoteAddr
 	}
-	return real, false
+	peer = strings.Trim(peer, "[]")
+	xffs := r.Header.Values("X-Forwarded-For")
+	real := strings.TrimSpace(r.Header.Get("X-Real-IP"))
+	fwd := r.Header.Get("Forwarded")
+	if len(xffs) == 0 && real == "" && fwd == "" {
+		return peer, true, false
+	}
+	pip := net.ParseIP(peer)
+	if pip == nil || !a.trustedProxy(pip) {
+		return peer, false, false
+	}
+	ok = fwd == ""
+	fromXFF := ""
+	var entries []string
+	for _, line := range xffs {
+		for _, e := range strings.Split(line, ",") {
+			if e = strings.TrimSpace(e); e != "" {
+				entries = append(entries, e)
+			}
+		}
+	}
+	for i := len(entries) - 1; i >= 0; i-- {
+		ip := parseHostIP(entries[i])
+		if ip == nil {
+			return peer, false, false
+		}
+		fromXFF = ip.String()
+		if !a.trustedProxy(ip) {
+			break
+		}
+		// Every entry so far is a trusted proxy: the left-most one stands.
+	}
+	fromReal := ""
+	if real != "" {
+		if ip := parseHostIP(real); ip == nil {
+			ok = false
+		} else if !a.trustedProxy(ip) || fromXFF == "" {
+			fromReal = ip.String()
+		}
+	}
+	switch {
+	case fromXFF == "" && fromReal == "":
+		return peer, false, false
+	case fromXFF == "":
+		return fromReal, ok, false
+	case fromReal == "" || fromReal == fromXFF:
+		return fromXFF, ok, false
+	default:
+		return fromXFF, false, true
+	}
+}
+
+// parseHostIP reads an address that may carry a port or brackets.
+func parseHostIP(s string) net.IP {
+	if h, _, err := net.SplitHostPort(s); err == nil {
+		s = h
+	}
+	return net.ParseIP(strings.Trim(s, "[]"))
 }

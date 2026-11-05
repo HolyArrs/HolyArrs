@@ -1,0 +1,62 @@
+package importer
+
+import (
+	"context"
+	"testing"
+
+	"github.com/CoderLuii/holyarrs/internal/archive"
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/unrar"
+)
+
+// An unpack stopped by its size limit says which limit stopped it: the
+// disk's free space (whyNoSpace) or the size cap (whyTooBig).
+
+func importOnDisk(t *testing.T, free int64, files map[string][]byte) (*domain.Import, world, map[string]string) {
+	t.Helper()
+	fakeDisk(t, free)
+	w := packedWorld(t, files)
+	before := snapshot(w.dl)
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return imp, w, before
+}
+
+func stubOtherTooBig(t *testing.T) {
+	old := extractOther
+	t.Cleanup(func() { extractOther = old })
+	extractOther = func(context.Context, string, archive.Kind, string, int64) error { return unrar.ErrTooBig }
+}
+
+func TestZipPastFreeSpaceSaysNoSpace(t *testing.T) {
+	stubOtherTooBig(t)
+	zip := append([]byte("PK\x03\x04"), make([]byte, 4000)...)
+	imp, w, before := importOnDisk(t, 10<<30, map[string][]byte{"Rel/" + relName + ".zip": zip})
+	refusedClearly(t, w, imp, whyNoSpace, before)
+}
+
+func TestZipPastSizeCapSaysTooBig(t *testing.T) {
+	stubOtherTooBig(t)
+	zip := append([]byte("PK\x03\x04"), make([]byte, 4000)...)
+	imp, w, before := importOnDisk(t, 1<<50, map[string][]byte{"Rel/" + relName + ".zip": zip})
+	refusedClearly(t, w, imp, whyTooBig, before)
+}
+
+func TestRARPastFreeSpaceSaysNoSpace(t *testing.T) {
+	old := extractCompressed
+	t.Cleanup(func() { extractCompressed = old })
+	extractCompressed = func(context.Context, string, string, int64) error { return unrar.ErrTooBig }
+	// Room for the set, but less than its size plus the unpack margin.
+	imp, w, before := importOnDisk(t, MinFreeSpace+2<<20, rar5Parts(t))
+	refusedClearly(t, w, imp, whyNoSpace, before)
+}
+
+func TestRARPastItsOwnSizeSaysTooBig(t *testing.T) {
+	old := extractCompressed
+	t.Cleanup(func() { extractCompressed = old })
+	extractCompressed = func(context.Context, string, string, int64) error { return unrar.ErrTooBig }
+	imp, w, before := importOnDisk(t, 10<<30, rar5Parts(t))
+	refusedClearly(t, w, imp, whyTooBig, before)
+}

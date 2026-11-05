@@ -43,9 +43,25 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			"key_kit": m.keyKitState(r.Context())})
 	})
 	mux.HandleFunc("POST /api/v1/backups", func(w http.ResponseWriter, r *http.Request) {
-		b, err := m.Create(r.Context(), KindManual)
+		if err := m.roomFor(); err != nil {
+			log.Printf("backup: %v", err)
+			fail(w, http.StatusInsufficientStorage, err.Error()+" and try again.")
+			return
+		}
+		// A dropped request (closed tab, proxy timeout) must not cut the
+		// backup off; only a stop of HolyArrs does.
+		ctx, cancel := context.WithCancel(context.WithoutCancel(r.Context()))
+		defer cancel()
+		if m.Stop != nil {
+			defer context.AfterFunc(m.Stop, cancel)()
+		}
+		b, err := m.Create(ctx, KindManual)
 		if err != nil {
 			log.Printf("backup: %v", err)
+			if diskFull(err) {
+				fail(w, http.StatusInsufficientStorage, noSpace+" and try again.")
+				return
+			}
 			fail(w, http.StatusInternalServerError, "the backup failed; see the log")
 			return
 		}
