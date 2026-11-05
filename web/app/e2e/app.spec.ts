@@ -104,11 +104,14 @@ test('the desktop menu reaches every destination and Back works', async () => {
 		['Settings', /\/settings$/, 'Settings'],
 		['Home', /\/$/, 'Home']
 	];
+	// A menu link may carry a status ("Settings, needs attention": a fresh
+	// install has no key kit yet), so match the label up to the comma.
+	const link = (label: string) => nav.getByRole('link', { name: new RegExp(`^${label}(,|$)`) });
 	for (const [label, url, heading] of places) {
-		await nav.getByRole('link', { name: label, exact: true }).click();
+		await link(label).click();
 		await expect(page).toHaveURL(url);
 		await expect(page.getByRole('heading', { level: 1 })).toContainText(heading);
-		await expect(nav.getByRole('link', { name: label, exact: true })).toHaveAttribute('aria-current', 'page');
+		await expect(link(label)).toHaveAttribute('aria-current', 'page');
 		await expect(page.locator('.ui-sidebar a[aria-current="page"]')).toHaveCount(1);
 	}
 	// Search lives in the top bar; the rest are one level down.
@@ -120,7 +123,7 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await page.goto('/downloads/decide');
 	await expect(page).toHaveURL(/\/downloads\?show=problems\.decide$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Downloads');
-	await nav.getByRole('link', { name: 'Settings', exact: true }).click();
+	await link('Settings').click();
 	// The side menu folds: open the Notifications group first.
 	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Notifications' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Alerts' }).click();
