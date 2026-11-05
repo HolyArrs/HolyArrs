@@ -12,7 +12,7 @@ func TestUniqueName(t *testing.T) {
 	if got := uniqueName(have, "HolyArrs TV shows", "http://10.0.0.5:6262/sonarr"); got != "HolyArrs TV shows 10.0.0.5:6262" {
 		t.Fatalf("taken name: %q", got)
 	}
-	have = append(have, app{"name": "holyarrs (shows) 10.0.0.5:6262"})
+	have = append(have, app{"name": "holyarrs tv shows 10.0.0.5:6262"})
 	if got := uniqueName(have, "HolyArrs TV shows", "http://10.0.0.5:6262/sonarr"); got != "HolyArrs TV shows 10.0.0.5:6262 2" {
 		t.Fatalf("taken twice: %q", got)
 	}
