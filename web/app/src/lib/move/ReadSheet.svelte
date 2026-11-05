@@ -21,7 +21,7 @@
 	import { api, ApiError, message } from '../api.ts';
 	import { toasts } from '../toasts.svelte.ts';
 	import { getContext } from 'svelte';
-	import { apps, appLabel, appName, placeholderFor, type AppKind } from '../move.ts';
+	import { apps, appName, placeholderFor, type AppKind } from '../move.ts';
 	// The first-run wizard hides the apps it already set up (Prowlarr, downloaders).
 	const hidden = getContext<AppKind[] | undefined>('move-hide-apps') ?? [];
 	const shown = apps.filter((a) => !hidden.includes(a.kind));
@@ -169,7 +169,7 @@
 			<div class="txt"><label for="move-app">App</label></div>
 			<div class="ctl">
 				<select id="move-app" class="input" bind:value={kind} onchange={changed} disabled={busy}>
-					{#each shown as a (a.kind)}<option value={a.kind}>{appLabel(a.kind)}</option>{/each}
+					{#each shown as a (a.kind)}<option value={a.kind}>{a.name}</option>{/each}
 				</select>
 			</div>
 		</div>
