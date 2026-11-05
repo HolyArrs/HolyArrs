@@ -176,7 +176,7 @@ func newTransmissionHarness(t *testing.T, modern bool) (conformance, *fakeTransm
 				f.items[hash]["error"] = 3
 			}
 		},
-		words: map[string]string{"0": StatePaused, "1": StateQueued, "2": StateQueued, "3": StateQueued, "4": StateDownloading, "99": StateDownloading, "error": StateFailed},
+		words: map[string]string{"0": StatePaused, "1": StateQueued, "2": StateQueued, "3": StateQueued, "4": StateDownloading, "99": StateDownloading, "error": StatePaused},
 	}
 	return c, f
 }
@@ -298,7 +298,7 @@ func TestTransmissionCompletionAndLabels(t *testing.T) {
 		f.items[id][key] = "disk full\n" + strings.Repeat("x", 300)
 		f.mu.Unlock()
 		j, err := e.Get(context.Background(), id)
-		if err != nil || j.State != StateFailed || !strings.Contains(j.Detail, "error 3: disk full") || strings.Contains(j.Detail, "\n") || len(j.Detail) > 200 {
+		if err != nil || j.State != StatePaused || !strings.Contains(j.Detail, "error 3: disk full") || strings.Contains(j.Detail, "\n") || len(j.Detail) > 200 {
 			t.Fatalf("error detail = %+v, %v", j, err)
 		}
 		f.mu.Lock()

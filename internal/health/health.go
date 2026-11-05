@@ -64,6 +64,11 @@ type Backups struct {
 	// Started says the first scheduled pass since start has finished (a
 	// fresh install has no backup until then, which is not a problem).
 	Started bool
+	// KeyPrint is the current master key's fingerprint; "" when the key
+	// is a named file (HOLYARRS_MASTER_KEY_FILE) the person looks after.
+	KeyPrint string
+	// KeyKitPrint is the fingerprint of the last key kit downloaded.
+	KeyKitPrint string
 }
 
 // Engine runs the checks.
@@ -98,6 +103,9 @@ type Engine struct {
 	Publish func(topic string, data any)
 	// Trailers reports the trailer lookups (nil skips the check).
 	Trailers func(ctx context.Context) Trailers
+	// ConfigUnmapped is "anonymous" or "none" when /config is not mapped to
+	// the host (an Error until it is); "" adds no check.
+	ConfigUnmapped string
 
 	mu  sync.Mutex
 	low map[string]int64 // folder -> bytes an import needed but could not get
@@ -170,7 +178,7 @@ func (e *Engine) intSetting(ctx context.Context, key string, def, lo, hi int) in
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -193,7 +201,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -340,12 +348,16 @@ func label(kind string) string {
 		return "Source"
 	case "downloader":
 		return "Downloader"
+	case "waiting_downloads":
+		return "downloads waiting for their files"
 	case "backups":
 		return "backups"
 	case "update":
 		return "update check"
 	case "trailers":
 		return "trailer lookups"
+	case "config_folder":
+		return "config folder"
 	}
 	return kind
 }
@@ -549,6 +561,56 @@ func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
 	return out, nil
 }
 
+// waitingFor is how long downloads may wait for their files (a share not
+// mounted yet) before the check turns from a warning to an error.
+const waitingFor = 3 * 24 * time.Hour
+
+// waiting counts the downloads that wait because their Downloader can't
+// use the files, most often a share mounted late (late-mounts-3): a
+// warning at first, an error once one has waited about 3 days. A download
+// paused by a person has no reason and is not counted.
+func (e *Engine) waiting(ctx context.Context) ([]Result, error) {
+	ds, err := store.Select[domain.Download](ctx, e.Store.Read(), "downloads",
+		"state = 'paused' AND state_reason LIKE 'the Downloader can''t use the files%'")
+	if err != nil {
+		return nil, err
+	}
+	r := Result{Key: "waiting_downloads", Kind: "waiting_downloads", Subject: "Downloads", State: OK}
+	if len(ds) == 0 {
+		return []Result{r}, nil
+	}
+	oldest := ds[0].UpdatedAt
+	for _, d := range ds[1:] {
+		if d.UpdatedAt.Before(oldest) {
+			oldest = d.UpdatedAt
+		}
+	}
+	r.State = Warning
+	if e.now().Sub(oldest) > waitingFor {
+		r.State = Error
+	}
+	if len(ds) == 1 {
+		r.Message = "1 download waits because its Downloader can't use the files: is the share mounted? Once it is, recheck them in the Downloader (or use Recheck on the Downloads page)."
+	} else {
+		r.Message = strconv.Itoa(len(ds)) + " downloads wait because their Downloader can't use the files: is the share mounted? Once it is, recheck the download in the Downloader (or use Recheck on the Downloads page)."
+	}
+	return []Result{r}, nil
+}
+
+// configFolder is an Error while /config is not mapped to the host, since
+// everything in it goes when the container is removed.
+func (e *Engine) configFolder(context.Context) ([]Result, error) {
+	if e.ConfigUnmapped == "" {
+		return nil, nil
+	}
+	where := "an anonymous volume"
+	if e.ConfigUnmapped == "none" {
+		where = "the container itself"
+	}
+	return []Result{{Key: "config_folder", Kind: "config_folder", Subject: "Config folder", State: Error,
+		Message: "/config is not mapped to a folder or named volume, so it lives in " + where + " and everything is lost when the container is removed or recreated. Stop the container, copy it out with docker cp, then map /config and copy it back in"}}, nil
+}
+
 // backups warns when the newest backup is older than two backup periods
 // (and a day), or the last scheduled backup failed.
 func (e *Engine) backups(ctx context.Context) ([]Result, error) {
@@ -569,7 +631,13 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	case b.Every > 0 && e.now().Sub(b.Newest) > 2*b.Every+24*time.Hour:
 		r.State, r.Message = Warning, "The newest backup is from "+b.Newest.UTC().Format("2006-01-02")
 	}
-	return []Result{r}, nil
+	// Backups do not hold the master key: without a copy of it, the saved
+	// passwords in a backup cannot be opened on a new machine.
+	k := Result{Key: "backups:key", Kind: "backups", Subject: "Backups", State: OK}
+	if err == nil && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
+		k.State, k.Message = Warning, "Download the key kit on the Backups page: backups do not hold the master key"
+	}
+	return []Result{r, k}, nil
 }
 
 // Newer says whether version a is newer than b (v1.2.3 style; anything

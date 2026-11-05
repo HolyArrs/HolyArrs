@@ -69,3 +69,49 @@ func TestHandler(t *testing.T) {
 		t.Fatal("no base should not wrap")
 	}
 }
+
+// The health check always calls the root, so /healthz and /readyz answer
+// there too when a base is set (by flag, env or Settings). Only exact GET
+// and HEAD of those two paths; everything else outside the base stays 404.
+func TestHandlerHealthAtRootUnderBase(t *testing.T) {
+	inner := http.NewServeMux()
+	inner.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ok " + r.URL.Path)) })
+	inner.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ready " + r.URL.Path)) })
+	inner.HandleFunc("POST /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("posted")) })
+	inner.HandleFunc("GET /healthz/", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("slash")) })
+	h := Handler("/holyarrs", inner)
+	do := func(method, p string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, httptest.NewRequest(method, p, nil))
+		return w
+	}
+	for _, c := range []struct{ method, path string }{
+		{"GET", "/healthz"}, {"HEAD", "/healthz"}, {"GET", "/readyz"}, {"HEAD", "/readyz"},
+		{"GET", "/holyarrs/healthz"}, {"GET", "/holyarrs/readyz"},
+	} {
+		if w := do(c.method, c.path); w.Code != 200 {
+			t.Errorf("%s %s under a base: %d, want 200", c.method, c.path, w.Code)
+		}
+	}
+	if w := do("GET", "/healthz"); w.Body.String() != "ok /healthz" {
+		t.Errorf("root healthz served %q", w.Body.String())
+	}
+	if w := do("GET", "/readyz"); w.Body.String() != "ready /readyz" {
+		t.Errorf("root readyz served %q", w.Body.String())
+	}
+	// Each phase keeps its own answer: a failing health stays failing at the root.
+	failing := Handler("/holyarrs", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(503) }))
+	w := httptest.NewRecorder()
+	failing.ServeHTTP(w, httptest.NewRequest("GET", "/healthz", nil))
+	if w.Code != 503 {
+		t.Errorf("a failing phase answered %d at the root, want its own 503", w.Code)
+	}
+	for _, c := range []struct{ method, path string }{
+		{"POST", "/healthz"}, {"PUT", "/readyz"}, {"GET", "/healthz/"}, {"GET", "/healthzx"},
+		{"GET", "/readyzx"}, {"GET", "/healthz/.."}, {"GET", "/x/../healthz"}, {"GET", "/api/healthz"},
+	} {
+		if w := do(c.method, c.path); w.Code != 404 {
+			t.Errorf("%s %s outside the base: %d, want 404", c.method, c.path, w.Code)
+		}
+	}
+}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"slices"
@@ -130,6 +131,7 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 		ProviderJellyfin:   a.way(ctx, ProviderJellyfin),
 		ProviderEmby:       a.way(ctx, ProviderEmby),
 		"plex_owner":       a.plexOwner(ctx),
+		keyAllowedHosts:    a.savedHostList(),
 	})
 }
 
@@ -145,12 +147,15 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		Plex         *WayView `json:"plex"`
 		Jellyfin     *WayView `json:"jellyfin"`
 		Emby         *WayView `json:"emby"`
+		// AllowedHosts are the host names saved in Settings; names from
+		// HOLYARRS_ALLOWED_HOSTS are not listed and stay.
+		AllowedHosts *[]string `json:"allowed_hosts"`
 		// ConfirmEveryone must be true to open a way to everyone the
 		// server lets in, when it was not open to everyone already.
 		ConfirmEveryone bool `json:"confirm_everyone"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil ||
-		(body.SkipLocal == nil && body.LocalNets == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil) {
+		(body.SkipLocal == nil && body.LocalNets == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil && body.AllowedHosts == nil) {
 		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "local_networks": ["192.168.1.0/24"], "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
 		return
 	}
@@ -270,6 +275,27 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 			set[g+"_url"] = truncate(v.URL, 500)
 		}
 	}
+	var hosts []string
+	if body.AllowedHosts != nil {
+		// A browser session with a recent password only (Gate asks for the
+		// password again); never an API key.
+		if who, ok := From(r.Context()); ok && who.Via != "session" {
+			fail(w, http.StatusForbidden, "change Allowed host names in the browser, signed in with your password")
+			return
+		}
+		var err error
+		if hosts, err = cleanHostList(*body.AllowedHosts); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		// Removing the name this browser uses would lock it out.
+		if h := normHost(r.Host); h != "" && net.ParseIP(h) == nil && !a.hosts[h] && !slices.Contains(hosts, h) {
+			fail(w, http.StatusConflict, "you opened HolyArrs as "+echoHost(r.Host)+"; keep that name in the list, or change the list from the IP address")
+			return
+		}
+		v, _ := json.Marshal(hosts)
+		set[settingsGroup+"/"+signInPrefix+keyAllowedHosts] = string(v)
+	}
 	by := Actor(r.Context())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		for k, v := range set {
@@ -294,6 +320,10 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.RequireAdmin != nil {
 		a.requireAdmin2FA.Store(*body.RequireAdmin)
+	}
+	if body.AllowedHosts != nil {
+		a.savedHosts.Store(&hosts)
+		log.Printf("auth: allowed host names set to %s", strings.Join(hosts, ", "))
 	}
 	log.Printf("auth: sign-in settings changed by user %d", by.ID)
 	a.getSettings(w, r)

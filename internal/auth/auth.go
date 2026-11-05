@@ -16,7 +16,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -81,7 +80,10 @@ type Options struct {
 	// show a banner.
 	SafeMode bool
 	SSO      SSOOptions
-	fastHash bool
+	// ConfigUnmapped tells the setup page that /config is not mapped to the
+	// host, so it can show a note before the owner is made.
+	ConfigUnmapped bool
+	fastHash       bool
 }
 
 // EnvAllowedHosts and EnvTrustedProxies add comma-separated entries.
@@ -111,7 +113,8 @@ type Auth struct {
 	skipLocal       atomic.Bool
 	localNets       atomic.Pointer[localNets]
 	dummy           string
-	hosts           map[string]bool
+	hosts           map[string]bool          // localhost and names from Options and the environment; fixed
+	savedHosts      atomic.Pointer[[]string] // names saved in Settings (hosts.go)
 	requireAdmin2FA atomic.Bool
 	vault           *secrets.Vault
 	http            *http.Client
@@ -125,6 +128,7 @@ type Auth struct {
 	proxies         []*net.IPNet
 	checks          chan struct{}
 	safeMode        bool
+	configUnmapped  bool
 	sso             atomic.Pointer[ssoState] // swapped whole when single sign-on settings change; read with ssoNow
 	ssoOpt          SSOOptions               // as started: who owns single sign-on, and the address rules
 	// ssoMu fences sign-ins against changes: a single sign-on or trusted proxy
@@ -132,9 +136,11 @@ type Auth struct {
 	// settings change or an unlink holds it to write, so it ends what those made.
 	ssoMu sync.RWMutex
 
-	mu        sync.Mutex
-	fails     map[string]*failure
-	setupCode string
+	mu           sync.Mutex
+	fails        map[string]*failure
+	setupFails   map[string]*failure // wrong setup codes (hosts.go)
+	refusedHosts map[string]bool     // refused names already logged (hosts.go)
+	setupCode    string
 	// codes are AI app sign-ins waiting for their key (aioauth.go).
 	codes aiCodes
 	// cimd reads AI apps' client ID metadata documents (aicimd.go).
@@ -153,7 +159,7 @@ func New(s *store.Store, opt Options) *Auth {
 	if a.now == nil {
 		a.now = time.Now
 	}
-	a.vault, a.http, a.plexURL, a.plexApp, a.safeMode = opt.Vault, opt.HTTP, opt.PlexURL, opt.PlexAppURL, opt.SafeMode
+	a.vault, a.http, a.plexURL, a.plexApp, a.safeMode, a.configUnmapped = opt.Vault, opt.HTTP, opt.PlexURL, opt.PlexAppURL, opt.SafeMode, opt.ConfigUnmapped
 	a.tester = testClient()
 	if a.http == nil {
 		a.http = &http.Client{Timeout: 15 * time.Second}
@@ -184,7 +190,9 @@ func New(s *store.Store, opt Options) *Auth {
 		return out
 	}
 	for _, h := range append(opt.AllowedHosts, split(os.Getenv(EnvAllowedHosts))...) {
-		a.hosts[strings.ToLower(strings.TrimSuffix(h, "."))] = true
+		if h = normHost(h); h != "" {
+			a.hosts[h] = true
+		}
 	}
 	for _, p := range append(opt.TrustedProxies, split(os.Getenv(EnvTrustedProxies))...) {
 		if !strings.Contains(p, "/") {
@@ -215,6 +223,7 @@ func New(s *store.Store, opt Options) *Auth {
 		a.skipLocal.Store(v == "true")
 	}
 	a.localNets.Store(a.loadLocalNets(context.Background()))
+	a.loadSavedHosts(context.Background())
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
 	a.initSSO(opt.SSO)
 	a.ssoOpt = opt.SSO
@@ -347,77 +356,6 @@ func unsafeMethod(m string) bool {
 	return m != http.MethodGet && m != http.MethodHead && m != http.MethodOptions
 }
 
-// sameOrigin refuses a request a browser sent from another site. Requests
-// without Origin and Sec-Fetch-Site come from scripts, not browsers.
-func (a *Auth) sameOrigin(r *http.Request) bool {
-	if sfs := r.Header.Get("Sec-Fetch-Site"); sfs != "" && sfs != "same-origin" && sfs != "none" {
-		return false
-	}
-	o := r.Header.Get("Origin")
-	if o == "" {
-		return true
-	}
-	u, err := url.Parse(o)
-	if err != nil || u.User != nil || u.Host == "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
-		return false
-	}
-	scheme := "http"
-	if a.behindHTTPS(r) {
-		scheme = "https"
-	}
-	if !strings.EqualFold(u.Scheme, scheme) {
-		return false
-	}
-	originHost, ok := canonicalHostPort(u.Host, scheme)
-	if !ok {
-		return false
-	}
-	requestHost, ok := canonicalHostPort(r.Host, scheme)
-	return ok && originHost == requestHost
-}
-
-func canonicalHostPort(authority, scheme string) (string, bool) {
-	u, err := url.Parse("//" + authority)
-	if err != nil || u.User != nil || u.Host == "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
-		return "", false
-	}
-	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
-	if host == "" {
-		return "", false
-	}
-	port := u.Port()
-	if port == "" {
-		switch scheme {
-		case "http":
-			port = "80"
-		case "https":
-			port = "443"
-		default:
-			return "", false
-		}
-	}
-	n, err := strconv.Atoi(port)
-	if err != nil || n < 1 || n > 65535 {
-		return "", false
-	}
-	return net.JoinHostPort(host, strconv.Itoa(n)), true
-}
-
-// hostAllowed checks the Host header: IP literals, localhost and the
-// configured names pass. A rebinding page always carries its own domain name
-// in Host, so it fails here.
-func (a *Auth) hostAllowed(r *http.Request) bool {
-	h := r.Host
-	if hh, _, err := net.SplitHostPort(h); err == nil {
-		h = hh
-	}
-	h = strings.ToLower(strings.TrimSuffix(strings.Trim(h, "[]"), "."))
-	return h != "" && (net.ParseIP(h) != nil || a.hosts[h])
-}
-
-// guarded is what every state-changing browser request must pass.
-func (a *Auth) guarded(r *http.Request) bool { return a.hostAllowed(r) && a.sameOrigin(r) }
-
 func (a *Auth) trustedProxy(ip net.IP) bool {
 	for _, n := range a.proxies {
 		if n.Contains(ip) {
@@ -521,8 +459,10 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if public(r) {
-			if unsafeMethod(r.Method) && !a.guarded(r) {
-				fail(w, http.StatusForbidden, "request from another site or host name refused")
+			// First-run setup checks the host name itself: a home name is
+			// accepted there with the setup code (hosts.go).
+			setup := r.Method == http.MethodPost && r.URL.Path == "/api/v1/auth/setup"
+			if unsafeMethod(r.Method) && a.refuse(w, r, !setup) {
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -555,18 +495,21 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if who, ok := a.session(w, r); ok {
-			if unsafeMethod(r.Method) && (!a.guarded(r) ||
-				subtle.ConstantTimeCompare([]byte(r.Header.Get(CSRFHeader)), []byte(who.CSRF)) != 1) {
-				fail(w, http.StatusForbidden, "missing or wrong CSRF token")
-				return
+			if unsafeMethod(r.Method) {
+				if a.refuse(w, r, true) {
+					return
+				}
+				if subtle.ConstantTimeCompare([]byte(r.Header.Get(CSRFHeader)), []byte(who.CSRF)) != 1 {
+					fail(w, http.StatusForbidden, "missing or wrong CSRF token")
+					return
+				}
 			}
 			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, who)))
 			return
 		}
 		if a.skipLocal.Load() && a.hostAllowed(r) && a.localPeer(r) {
 			if id, name, ok := a.owner(r.Context()); ok {
-				if unsafeMethod(r.Method) && !a.guarded(r) {
-					fail(w, http.StatusForbidden, "request from another site refused")
+				if unsafeMethod(r.Method) && a.refuse(w, r, true) {
 					return
 				}
 				who := Who{UserID: id, Name: name, Via: "local_network", Role: RoleOwner, Perms: DefaultPerms(RoleOwner)}
@@ -619,8 +562,12 @@ func (a *Auth) Routes(m *http.ServeMux) {
 
 func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 	_, _, ok := a.owner(r.Context())
-	writeJSON(w, http.StatusOK, map[string]any{"needs_setup": !ok, "ways": a.ways(r.Context()), "safe_mode": a.safeMode,
-		"min_password_length": MinPasswordLength(r.Context(), a.s.Read())})
+	out := map[string]any{"needs_setup": !ok, "ways": a.ways(r.Context()), "safe_mode": a.safeMode,
+		"min_password_length": MinPasswordLength(r.Context(), a.s.Read())}
+	if a.configUnmapped {
+		out["config_unmapped"] = true
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 type creds struct {
@@ -672,14 +619,28 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusConflict, "the owner is already set up; sign in instead")
 		return
 	}
-	if !a.hostAllowed(r) {
-		fail(w, http.StatusForbidden, "unknown host name; add it to "+EnvAllowedHosts)
+	key := a.clientKey(r)
+	if a.setupLimited(key) {
+		fail(w, http.StatusTooManyRequests, "too many wrong setup codes; wait a minute and try again")
 		return
+	}
+	// A home name (tower.local, nas) is accepted here only with the right
+	// code and with no proxy in between; it is then saved.
+	newHost := ""
+	if !a.hostAllowed(r) {
+		h := normHost(r.Host)
+		if !homeName(h) || len(a.proxies) > 0 || forwarded(r) {
+			a.logRefusedHost(r.Host)
+			fail(w, http.StatusForbidden, hostRefusedMsg(r.Host))
+			return
+		}
+		newHost = h
 	}
 	a.mu.Lock()
 	want := a.setupCode
 	a.mu.Unlock()
 	if want == "" || subtle.ConstantTimeCompare([]byte(strings.TrimSpace(c.Code)), []byte(want)) != 1 {
+		a.setupFail(key)
 		log.Printf("auth: first-run setup with a wrong setup code from %s", r.RemoteAddr)
 		fail(w, http.StatusForbidden, "wrong setup code; find it in the server log or in "+SetupCodeFile+" in the config folder")
 		return
@@ -691,6 +652,7 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var id int64
+	var saved []string
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		var n int
 		if err := tx.QueryRow("SELECT count(*) FROM users WHERE role = 'owner'").Scan(&n); err != nil {
@@ -701,7 +663,12 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		}
 		var err error
 		id, err = store.Insert(tx, "users", &domain.User{Name: c.Name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
-		return err
+		if err != nil || newHost == "" {
+			return err
+		}
+		saved = append(slices.Clone(a.savedHostList()), newHost)
+		v, _ := json.Marshal(saved)
+		return putSetting(tx, settingsGroup, signInPrefix+keyAllowedHosts, string(v), domain.System, a.now())
 	})
 	if errors.Is(err, errOwnerExists) {
 		fail(w, http.StatusConflict, "the owner is already set up; sign in instead")
@@ -717,6 +684,10 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 	a.mu.Unlock()
 	if err := os.Remove(filepath.Join(a.s.Dir(), SetupCodeFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Printf("auth: could not remove the used setup code: %v", err)
+	}
+	if newHost != "" {
+		a.savedHosts.Store(&saved)
+		log.Printf("auth: first-run setup on %s; the name is saved under Allowed host names", newHost)
 	}
 	log.Printf("auth: first-run setup made the owner %q from %s", c.Name, r.RemoteAddr)
 	a.startSession(w, r, id, c.Name, http.StatusCreated)

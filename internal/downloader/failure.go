@@ -241,7 +241,10 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 	m.event(ctx, &next, kind, "Download failed: "+reason)
 	if next.State == "failed" && st.removeFailed {
 		if e, err := m.engine(ctx, dr); err == nil {
-			if err := e.Remove(ctx, next.ExternalID, true); err != nil && !errors.Is(err, ErrNotFound) {
+			// A failure the Downloader reports itself leaves the files:
+			// they may be on a share that is only late (late-mounts-3).
+			deleteFiles := !strings.HasPrefix(reason, clientSaysPrefix)
+			if err := e.Remove(ctx, next.ExternalID, deleteFiles); err != nil && !errors.Is(err, ErrNotFound) {
 				m.event(ctx, &next, "download_not_removed", fmt.Sprintf("Could not remove the failed download from %s: %v", dr.Name, firstLine(err.Error())))
 			}
 		}

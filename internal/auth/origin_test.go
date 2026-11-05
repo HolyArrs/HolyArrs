@@ -30,41 +30,67 @@ func originRequest(target, origin string) *http.Request {
 	return r
 }
 
-func TestGuardedBindsOriginToEffectiveScheme(t *testing.T) {
-	a := originGuardAuth(t, false)
+// passes runs a public write through Middleware: true when it reaches the
+// handler.
+func passes(a *Auth, r *http.Request) bool {
+	reached := false
+	a.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { reached = true })).ServeHTTP(httptest.NewRecorder(), r)
+	return reached
+}
 
-	if a.guarded(originRequest("https://holyarrs.example/api", "http://holyarrs.example")) {
-		t.Fatal("HTTP origin accepted for direct HTTPS request")
+// The origin check compares the browser's Origin host and port with the
+// Host header (Go's cross-origin protection). The scheme is not guessed:
+// behind an HTTPS proxy, tunnel or tailscale serve the server sees plain
+// HTTP while the browser says https, and that is the same site.
+func TestGuardedComparesOriginHostNotGuessedScheme(t *testing.T) {
+	a := originGuardAuth(t, false)
+	const login = "/api/v1/auth/login"
+	if !passes(a, originRequest("http://holyarrs.example"+login, "https://holyarrs.example")) {
+		t.Fatal("HTTPS origin refused for a plain HTTP request (HTTPS proxy without trusted proxies)")
 	}
-	if !a.guarded(originRequest("https://holyarrs.example/api", "https://holyarrs.example:443")) {
-		t.Fatal("HTTPS origin with the default port was refused")
+	if !passes(a, originRequest("https://holyarrs.example"+login, "https://holyarrs.example")) {
+		t.Fatal("HTTPS origin refused for a direct HTTPS request")
 	}
-	if a.guarded(originRequest("https://holyarrs.example/api", "https://holyarrs.example:444")) {
-		t.Fatal("HTTPS origin with a different port was accepted")
+	if !passes(a, originRequest("http://holyarrs.example"+login, "http://holyarrs.example")) {
+		t.Fatal("HTTP origin refused for a plain HTTP request")
 	}
-	if a.guarded(originRequest("http://holyarrs.example/api", "https://holyarrs.example")) {
-		t.Fatal("HTTPS origin accepted for direct HTTP request")
+	if passes(a, originRequest("http://holyarrs.example"+login, "https://holyarrs.example:444")) {
+		t.Fatal("origin with a different port was accepted")
 	}
-	if !a.guarded(originRequest("http://holyarrs.example/api", "http://holyarrs.example:80")) {
-		t.Fatal("HTTP origin with the default port was refused")
+	if passes(a, originRequest("http://holyarrs.example"+login, "https://evil.example")) {
+		t.Fatal("origin from another host was accepted")
 	}
-	if !a.guarded(originRequest("http://holyarrs.example/api", "")) {
+	if passes(a, originRequest("http://holyarrs.example"+login, "null")) {
+		t.Fatal("null origin was accepted")
+	}
+	if !passes(a, originRequest("http://holyarrs.example"+login, "")) {
 		t.Fatal("missing Origin no longer keeps the script-client baseline")
+	}
+	r := originRequest("http://holyarrs.example"+login, "https://holyarrs.example")
+	r.Header.Set("Sec-Fetch-Site", "cross-site")
+	if passes(a, r) {
+		t.Fatal("Sec-Fetch-Site cross-site was accepted")
+	}
+	r = originRequest("http://holyarrs.example"+login, "")
+	r.Header.Set("Sec-Fetch-Site", "same-site")
+	if passes(a, r) {
+		t.Fatal("Sec-Fetch-Site same-site was accepted")
 	}
 }
 
-func TestGuardedTrustsForwardedHTTPSOnlyFromConfiguredProxy(t *testing.T) {
-	trusted := originGuardAuth(t, true)
-	r := originRequest("http://holyarrs.example/api", "https://holyarrs.example")
-	r.Header.Set("X-Forwarded-Proto", "https")
-	if !trusted.guarded(r) {
-		t.Fatal("HTTPS origin behind a trusted HTTPS proxy was refused")
-	}
-
-	untrusted := originGuardAuth(t, false)
-	r = originRequest("http://holyarrs.example/api", "https://holyarrs.example")
-	r.Header.Set("X-Forwarded-Proto", "https")
-	if untrusted.guarded(r) {
-		t.Fatal("untrusted X-Forwarded-Proto changed the effective request scheme")
+// A forwarded scheme changes nothing in the origin check, trusted or not.
+func TestGuardedIgnoresForwardedProto(t *testing.T) {
+	for _, trusted := range []bool{true, false} {
+		a := originGuardAuth(t, trusted)
+		r := originRequest("http://holyarrs.example/api/v1/auth/login", "https://holyarrs.example")
+		r.Header.Set("X-Forwarded-Proto", "https")
+		if !passes(a, r) {
+			t.Fatalf("trusted=%v: HTTPS origin behind an HTTPS proxy was refused", trusted)
+		}
+		r = originRequest("http://holyarrs.example/api/v1/auth/login", "https://evil.example")
+		r.Header.Set("X-Forwarded-Proto", "https")
+		if passes(a, r) {
+			t.Fatalf("trusted=%v: another site was accepted with X-Forwarded-Proto", trusted)
+		}
 	}
 }

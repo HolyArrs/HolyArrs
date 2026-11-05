@@ -39,6 +39,9 @@ var (
 	ErrNotFound = errors.New("no such secret")
 	// ErrWrongKey means the master key cannot open the stored secrets.
 	ErrWrongKey = errors.New("the master key does not match this database; put back the key file that belongs to it")
+	// ErrKeyMissing means the key file is gone but the database holds
+	// secrets that only it can open, so no new key is made.
+	ErrKeyMissing = errors.New("master key missing")
 )
 
 // LoadKey reads the master key. named, when set, is a key file the person
@@ -63,6 +66,14 @@ func LoadKey(dir, named string) ([]byte, error) {
 	if !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
+	// A database that already holds secrets belongs to a key: a new one
+	// could not open them, so the person must put the old key back.
+	if saved, err := SavedIn(dir); err != nil {
+		return nil, fmt.Errorf("master key: checking the database for saved secrets: %w", err)
+	} else if saved {
+		return nil, fmt.Errorf("%w: the master key file %s is missing, but the database already holds saved secrets that only that key can open; "+
+			"put the key file (or your key kit renamed to %s) back in the config folder, or name it in %s", ErrKeyMissing, p, KeyFile, EnvKeyFile)
+	}
 	key := make([]byte, KeySize)
 	if _, err := rand.Read(key); err != nil {
 		return nil, err
@@ -82,9 +93,49 @@ func LoadKey(dir, named string) ([]byte, error) {
 	return key, nil
 }
 
+// Fingerprint is a short, safe label for a key: the first 8 hex digits of
+// SHA-256 over its bytes. It cannot be turned back into the key.
+func Fingerprint(key []byte) string {
+	s := sha256.Sum256(key)
+	return hex.EncodeToString(s[:])[:8]
+}
+
+// SavedIn reports whether the database in the config folder dir holds any
+// secret, the check value included. A missing database holds none.
+func SavedIn(dir string) (bool, error) {
+	p := filepath.Join(dir, store.MainFile)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	db, err := store.OpenReadOnly(dir)
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+	var one int
+	err = db.QueryRow("SELECT 1 FROM secrets LIMIT 1").Scan(&one)
+	switch {
+	case errors.Is(err, sql.ErrNoRows), err != nil && strings.Contains(err.Error(), "no such table"):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return true, nil
+}
+
 // decodeKey accepts 64 hex digits, base64 of 32 bytes or 32 raw bytes.
+// Blank lines and lines starting with '#' are skipped, so a key kit with
+// notes in it is a key file too.
 func decodeKey(b []byte) ([]byte, error) {
-	s := strings.TrimSpace(string(b))
+	var keep []string
+	for _, ln := range strings.Split(string(b), "\n") {
+		ln = strings.TrimSpace(ln)
+		if ln == "" || strings.HasPrefix(ln, "#") {
+			continue
+		}
+		keep = append(keep, ln)
+	}
+	s := strings.Join(keep, "")
 	if k, err := hex.DecodeString(s); err == nil && len(k) == KeySize {
 		return k, nil
 	}
@@ -499,7 +550,7 @@ func plainSettings(tx *sql.Tx) ([]plainSetting, error) {
 // CheckFile reports whether key opens the secrets in a database file, such
 // as one inside a backup. A database without secrets passes.
 func CheckFile(path string, key []byte) error {
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?mode=ro")
+	db, err := sql.Open("sqlite", store.FileURI(path)+"?mode=ro")
 	if err != nil {
 		return err
 	}

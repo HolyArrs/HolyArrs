@@ -451,7 +451,9 @@ func (t qbitTorrent) limits() *ShareLimits {
 func qbitState(s string) string {
 	switch s {
 	case "error", "missingFiles", "unknown":
-		return StateFailed
+		// The client can't use the files (often a share mounted late):
+		// wait as paused, never fail and never delete (late-mounts-3).
+		return StatePaused
 	case "uploading", "stalledUP", "pausedUP", "stoppedUP", "queuedUP", "checkingUP", "forcedUP":
 		return StateFinished
 	case "pausedDL", "stoppedDL":

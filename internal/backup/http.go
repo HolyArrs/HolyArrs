@@ -28,6 +28,7 @@ func fail(w http.ResponseWriter, code int, msg string) {
 // Routes adds the backup routes. restart, when set, is called after a
 // restore is staged so the swap happens right away.
 func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
+	m.keyKitRoute(mux)
 	mux.HandleFunc("GET /api/v1/backups", func(w http.ResponseWriter, r *http.Request) {
 		list, err := m.List()
 		if err != nil {
@@ -38,7 +39,8 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			list = []Info{}
 		}
 		p, _ := m.Preset(r.Context())
-		writeJSON(w, http.StatusOK, map[string]any{"backups": list, "preset": p, "restore_waiting": Staged(m.Dir), "key_note": KeyNote})
+		writeJSON(w, http.StatusOK, map[string]any{"backups": list, "preset": p, "restore_waiting": Staged(m.Dir), "key_note": KeyNote,
+			"key_kit": m.keyKitState(r.Context())})
 	})
 	mux.HandleFunc("POST /api/v1/backups", func(w http.ResponseWriter, r *http.Request) {
 		b, err := m.Create(r.Context(), KindManual)

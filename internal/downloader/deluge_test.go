@@ -266,7 +266,7 @@ func delugeHarness(t *testing.T) conformance {
 		},
 		words: map[string]string{
 			"Queued": StateQueued, "Checking": StateQueued, "Downloading": StateDownloading,
-			"Paused": StatePaused, "Seeding": StateFinished, "Error": StateFailed,
+			"Paused": StatePaused, "Seeding": StateFinished, "Error": StatePaused,
 			"brand-new-word": StateDownloading,
 		},
 	}
@@ -793,7 +793,7 @@ func TestDelugeFinishedQueuedOrPausedIsFinished(t *testing.T) {
 	if got := delugeState("Checking", true); got != StateQueued {
 		t.Fatalf("checking+finished = %s", got)
 	}
-	if got := delugeState("Error", true); got != StateFailed {
+	if got := delugeState("Error", true); got != StatePaused {
 		t.Fatalf("error+finished = %s", got)
 	}
 }

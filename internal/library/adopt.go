@@ -112,6 +112,17 @@ const (
 
 // listVideos finds the video files in one movie folder, samples left out,
 // biggest first. Symlinks are never followed.
+// nasSystemDir reports whether name is a folder a NAS or OS keeps for
+// itself (thumbnails, recycle bins, snapshots). Folder walks skip them:
+// they hold no media of the person's, and reading them wakes disks.
+func nasSystemDir(name string) bool {
+	switch strings.ToLower(name) {
+	case "@eadir", "#recycle", "@recycle", "#snapshot", "lost+found", "$recycle.bin", "system volume information":
+		return true
+	}
+	return false
+}
+
 func listVideos(lib, folder string) []AdoptVideo { return listVideosN(lib, folder, maxScanVideos) }
 
 // listVideosN is listVideos reading at most limit videos.
@@ -125,7 +136,7 @@ func listVideosN(lib, folder string, limit int) []AdoptVideo {
 		rel, _ := filepath.Rel(root, p)
 		if e.IsDir() {
 			lower := strings.ToLower(e.Name())
-			if p != root && (strings.HasPrefix(e.Name(), ".") || lower == "sample" || lower == "samples" || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
+			if p != root && (strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || lower == "sample" || lower == "samples" || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -278,7 +289,7 @@ func PlanAdoptFrom(ctx context.Context, db reader, md metadata.Provider, folderI
 	}
 	p.Warning = mountWarning(ctx, db, lf, len(ents))
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || (after != "" && e.Name() <= after) {
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || (after != "" && e.Name() <= after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {

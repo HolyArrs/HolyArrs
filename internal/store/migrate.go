@@ -73,6 +73,10 @@ func stripComments(s string) string {
 	return strings.Join(lines, "\n")
 }
 
+// SchemaVersion is the newest migration applied to db, read the way the
+// migrator reads it (doctor uses it to tell a database still being set up).
+func SchemaVersion(db *sql.DB) (int, error) { return version(db) }
+
 func version(db *sql.DB) (int, error) {
 	var v sql.NullInt64
 	if err := db.QueryRow("SELECT max(version) FROM schema_migrations").Scan(&v); err != nil {

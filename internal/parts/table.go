@@ -216,6 +216,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/backups/{name}":           Core,
 	"DELETE /api/v1/backups/{name}":        Core,
 	"POST /api/v1/backups/restore":         Core,
+	"POST /api/v1/system/key-kit":          Core,
 	"GET /api/v1/health":                   Core,
 	"GET /api/v1/health/checks":            Core,
 	"GET /api/v1/health/disks":             Core,

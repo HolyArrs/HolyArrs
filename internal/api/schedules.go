@@ -37,7 +37,7 @@ var scheduleInfos = map[string]scheduleInfo{
 	"refresh_shows":         {"Refresh show details", "Reads seasons, episodes and air dates of every show again.", 6 * schHour, 7 * schDay, schHour, ""},
 	"refresh_artists":       {"Refresh artist details", "Reads albums and Pressings of every artist again from MusicBrainz.", 6 * schHour, 7 * schDay, schHour, ""},
 	"artist_pictures":       {"Find artist pictures", "Fills missing artist photos, wide backgrounds and logos from the HolyArrs metadata server.", schHour, 7 * schDay, schHour, ""},
-	"check_library_folders": {"Check Library folders", "Checks that every Library folder can be read and written.", schHour, schDay, schHour, ""},
+	"check_library_folders": {"Check Library folders", "Checks that every Library folder is there and has free space. The write and hardlink test runs at start-up, on Run now and when folders change.", schHour, schDay, schHour, ""},
 	"sync_outside_lists":    {"Read Outside lists", "Adds what TMDB and Trakt lists hold now.", 15 * schMinute, schDay, 5 * schMinute, ""},
 	"check_bridges":         {"Check Jackett", "Keeps the Sources from a connected Jackett in step with its sites.", 6 * schHour, 7 * schDay, schHour, "/settings/sources"},
 	"sync_plex_watchlists":  {"Read Plex watchlists", "Asks for what is new on the Plex watchlists of people who turned it on.", 3 * schMinute, schHour, schMinute, "/settings/wishlist"},
@@ -283,8 +283,8 @@ func (a *API) putSchedule(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusConflict, "this schedule's interval cannot be changed here")
 		return
 	}
-	if in.Enabled != nil && sc.Kind != "refresh_titles" {
-		fail(w, http.StatusConflict, "only scheduled movie details refresh can be turned off here")
+	if in.Enabled != nil && sc.Kind != "refresh_titles" && sc.Kind != "rescan_library" {
+		fail(w, http.StatusConflict, "only scheduled movie details refresh and the Library rescan can be turned off here")
 		return
 	}
 	if in.EverySeconds != nil && (*in.EverySeconds < info.Min || *in.EverySeconds > info.Max || *in.EverySeconds%info.Step != 0) {

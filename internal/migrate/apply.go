@@ -1337,7 +1337,17 @@ func (r *run) source(it Item) (string, string) {
 
 func (r *run) downloader(it Item) (string, string) {
 	d := it.Downloader
+	maps, dropped := safeMaps(d.PathMap, r.m.Store.Dir())
+	// Checked here, not in the plan, so the plan stays the same.
+	unseen := ""
+	if u := unseenMaps(maps); u != "" {
+		unseen = "; not visible here yet (check your mounts): " + u
+	}
 	if r.id("SELECT id FROM downloaders WHERE url = ? AND removed = 0", d.URL) != 0 {
+		if len(maps) > 0 {
+			// Nothing is changed on a Downloader that is already here.
+			return ResAlready, "a Downloader at this address is here; add these folder maps to it yourself if it needs them: " + mapList(maps) + unseen
+		}
 		return ResAlready, "a Downloader at this address is here"
 	}
 	name := it.Name
@@ -1345,6 +1355,13 @@ func (r *run) downloader(it Item) (string, string) {
 		name = clip(name+" (moved)", 80)
 	}
 	what := d.Adapter + " at " + d.URL + ", paused until you check and resume it; it downloads into its own holyarrs category"
+	if len(maps) > 0 {
+		what += "; folder maps: " + mapList(maps)
+	}
+	if len(dropped) > 0 {
+		what += "; not moved (they lead into the HolyArrs config folder): " + clip(strings.Join(dropped, ", "), 500)
+	}
+	what += unseen
 	if r.dry {
 		return ResCreate, what
 	}
@@ -1353,7 +1370,7 @@ func (r *run) downloader(it Item) (string, string) {
 		proto = "usenet"
 	}
 	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
-		PathMap: []domain.PathMap{}, AfterImport: "leave", State: "disabled", Username: d.Username, AllowLocal: false, ClearFinished: true}
+		PathMap: maps, AfterImport: "leave", State: "disabled", Username: d.Username, AllowLocal: false, ClearFinished: true}
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		id, err := store.Insert(tx, "downloaders", &row, r.by)
 		if err != nil {

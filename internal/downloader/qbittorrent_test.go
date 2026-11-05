@@ -235,7 +235,7 @@ func TestQbitStates(t *testing.T) {
 		"queuedDL": StateQueued, "checkingDL": StateQueued, "allocating": StateQueued,
 		"uploading": StateFinished, "stalledUP": StateFinished, "pausedUP": StateFinished, "stoppedUP": StateFinished, "queuedUP": StateFinished,
 		"pausedDL": StatePaused, "stoppedDL": StatePaused,
-		"error": StateFailed, "missingFiles": StateFailed,
+		"error": StatePaused, "missingFiles": StatePaused, "unknown": StatePaused,
 	}
 	for in, want := range cases {
 		if got := qbitState(in); got != want {
