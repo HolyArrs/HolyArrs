@@ -1,6 +1,7 @@
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { fewerChunks } from './build-chunks.ts';
+import { buildVersion } from './build-version.ts';
 import { bundledPackages } from './bundled-packages.ts';
 import { defineConfig } from 'vitest/config';
 
@@ -15,7 +16,8 @@ export default defineConfig({
 			paths: { relative: false },
 			// Each page loads only its own code (plus the shared shell) instead of one bundle for every page.
 			output: { bundleStrategy: 'split' },
-			version: { name: 'holyarrs' }
+			// A new name per build, checked every minute: an open tab reloads on its next move after an update (build-version.ts).
+			version: { name: buildVersion(), pollInterval: 60_000 }
 		}),
 		// A few bigger shared script files instead of 120+ small ones (build-chunks.ts).
 		fewerChunks(),

@@ -1,6 +1,7 @@
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { fewerChunks } from './build-chunks.ts';
+import { buildVersion } from './build-version.ts';
 import { defineConfig } from 'vite';
 
 // The built showcase app for 18729 (vite.showcase-preview.config.ts serves it).
@@ -17,7 +18,8 @@ export default defineConfig({
 			outDir: '.svelte-kit/showcase',
 			paths: { relative: false },
 			output: { bundleStrategy: 'split' },
-			version: { name: 'holyarrs' }
+			// A new name per build, checked every minute: an open tab reloads on its next move after an update (build-version.ts).
+			version: { name: buildVersion(), pollInterval: 60_000 }
 		}),
 		// The same script files as the real build (build-chunks.ts).
 		fewerChunks(),

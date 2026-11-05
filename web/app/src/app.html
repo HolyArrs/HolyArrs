@@ -84,6 +84,26 @@
 			})();
 		</script>
 		<script>
+			// A tab opened before an update asks for script files the new build replaced. Instead of an error
+			// page, open where the person was going (or this page) fresh, once: never twice within 10 s.
+			(function () {
+				var going = '', at = 0;
+				document.addEventListener('click', function (e) {
+					var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+					if (a && a.origin === location.origin) { going = a.href; at = Date.now(); }
+				}, true);
+				window.addEventListener('vite:preloadError', function (e) {
+					try {
+						var last = Number(sessionStorage.getItem('holyarrs-stale-reload')) || 0;
+						if (Date.now() - last < 10000) return;
+						sessionStorage.setItem('holyarrs-stale-reload', String(Date.now()));
+					} catch (x) {}
+					e.preventDefault();
+					location.assign(going && Date.now() - at < 5000 ? going : location.href);
+				});
+			})();
+		</script>
+		<script>
 			try {
 				var requested = new URLSearchParams(location.search).get('theme');
 				var t = requested === 'light' || requested === 'dark' ? requested : localStorage.getItem('holyarrs-theme');
