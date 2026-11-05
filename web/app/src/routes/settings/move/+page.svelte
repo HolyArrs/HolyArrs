@@ -51,6 +51,16 @@
 	// one move), so Back and a reload land on the same step.
 	type MoveAnswer = { move: Move; progress: number; progress_note: string };
 
+	// The first-run wizard shows this same flow inside its panel. There the
+	// address keeps the wizard's own query (query) and the step goes in
+	// mstep, since the wizard uses step; Done becomes Continue (ondone).
+	let {
+		embedded
+	}: {
+		embedded?: { query: string; ondone?: () => void; onstep?: (s: Step) => void };
+	} = $props();
+	const stepKey = embedded ? 'mstep' : 'step';
+
 	// What the page knows.
 	let loaded = $state(false);
 	let loadError = $state('');
@@ -264,15 +274,15 @@
 	let applied = '';
 	function urlFor(s: Step, moveId?: number): string {
 		// Plain commas between read ids, so the address stays readable.
-		if (moveId) return `?move=${moveId}`;
-		if (s === 'read') return '';
-		return `?step=${s}` + (picked.length ? `&read=${picked.join(',')}` : '');
+		const own = moveId ? `move=${moveId}` : s === 'read' ? '' : `${stepKey}=${s}` + (picked.length ? `&read=${picked.join(',')}` : '');
+		const all = [embedded?.query ?? '', own].filter(Boolean).join('&');
+		return all ? `?${all}` : '';
 	}
 	function setUrl(s: Step, moveId?: number, replace = false) {
 		const search = urlFor(s, moveId);
 		if (search === page.url.search) return;
 		applied = search;
-		void goto(to('/settings/move') + search, { replace, reset: false });
+		void goto((embedded ? page.url.pathname : to('/settings/move')) + search, { replace, reset: false });
 	}
 	$effect(() => {
 		const search = page.url.search;
@@ -288,7 +298,7 @@
 	async function arrive(q: { get(name: string): string | null }) {
 		const mv = Number(q.get('move'));
 		if (mv > 0) return openMove(mv, false);
-		const s = asStep(q.get('step')) ?? 'read';
+		const s = asStep(q.get(stepKey)) ?? 'read';
 		const ids = (q.get('read') ?? '')
 			.split(',')
 			.map(Number)
@@ -651,13 +661,17 @@
 		}
 	}
 
+	$effect(() => embedded?.onstep?.(step));
+
 	const railBusy = $derived(step === 'choose' && planning ? 'Updating…' : step === 'try' && trying ? 'Updating…' : '');
 	const railFill = $derived(step === 'move' && moveRunning ? progress : 0.5);
 </script>
 
-<svelte:head><title>Move from other apps · HolyArrs</title></svelte:head>
+<svelte:head>{#if !embedded}<title>Move from other apps · HolyArrs</title>{/if}</svelte:head>
 
-<PageHeader title="Move from other apps" subtitle="Bring your movies, shows, music, Sources, Downloaders and people over from the apps you use now. Nothing changes in those apps." />
+{#if !embedded}
+	<PageHeader title="Move from other apps" subtitle="Bring your movies, shows, music, Sources, Downloaders and people over from the apps you use now. Nothing changes in those apps." />
+{/if}
 
 {#if !loaded}
 	<div class="sk-rail" aria-hidden="true">{#each [1, 2, 3, 4, 5] as n (n)}<span class="sk"></span>{/each}</div>
@@ -743,9 +757,9 @@
 		{@const canUndo = !busyNow && (m.state === 'done' || m.state === 'failed') && m.undo_state !== 'failed'}
 		{@const retry = !busyNow && m.undo_state === 'failed' && m.state !== 'undone'}
 		<StepFoot
-			label={busyNow ? undefined : retry ? 'Try the undo again' : 'Done'}
+			label={busyNow ? undefined : retry ? 'Try the undo again' : embedded?.ondone ? 'Continue' : 'Done'}
 			variant={retry ? 'destructive' : 'primary'}
-			onclick={retry ? () => (confirmUndo = true) : done}
+			onclick={retry ? () => (confirmUndo = true) : (embedded?.ondone ?? done)}
 			disabled={(safeMode || undoing) && retry}
 			busy={undoing && retry}
 		>
@@ -774,7 +788,7 @@
 
 <Sheet bind:open={confirmMove} title="Move {plural(total, 'item')}?" size="sm">
 	<form id="move-confirm-form" onsubmit={startMove}>
-		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Anything marked paused stays paused. You can undo this move later from Earlier moves on this page.</p>
+		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Anything marked paused stays paused. You can undo this move later from Earlier moves {embedded ? 'in Settings, Move from other apps' : 'on this page'}.</p>
 	</form>
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (confirmMove = false)}>Cancel</Button>

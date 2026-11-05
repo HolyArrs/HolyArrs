@@ -2,7 +2,9 @@
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon, { type IconName } from '#lib/Icon.svelte';
+	import Confirm from '#lib/account/Confirm.svelte';
 	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
+	import MoveFlow from '../settings/move/+page.svelte';
 	import { page } from '$app/state';
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -224,12 +226,39 @@
 		}
 	}
 
+	// ---- 5. Import: the Settings move flow, right here in the panel ----
+	const IMPORT_QUERY = 'first=1&step=import&import=1';
+	let importing = $state(page.url.searchParams.get('import') === '1');
+	let moveStep = $state('read');
+	function openImport(open: boolean) {
+		importing = open;
+		moveStep = 'read';
+		replaceState(to(`/welcome?${open ? IMPORT_QUERY : 'first=1&step=import'}`), page.state);
+	}
+	function back() {
+		if (importing) openImport(false);
+		else if (prev) go(prev);
+	}
+
 	async function enter(s: Step) {
 		if (s === 'folders') await loadFolders();
 		if (s === 'downloader') await loadDownloader();
 		if (s === 'source') await loadSources();
 	}
 	onMount(() => void enter(step));
+	// Moving asks for a recent password check (past the first setup hour): the
+	// move flow only signals it, so the wizard shows the confirm box itself.
+	let importCheck = $state(false);
+	onMount(() => {
+		const onReauth = () => {
+			if (importing) importCheck = true;
+		};
+		window.addEventListener('holyarrs:reauth', onReauth);
+		return () => window.removeEventListener('holyarrs:reauth', onReauth);
+	});
+	$effect(() => {
+		if (importCheck && session.s.localRecent) importCheck = false;
+	});
 
 	const titles: Record<Step, { h: string; p: string }> = {
 		parts: { h: 'What do you use?', p: 'You can change this later.' },
@@ -238,17 +267,18 @@
 		source: { h: 'Source', p: 'Where HolyArrs finds releases.' },
 		import: { h: 'Bring your setup', p: 'Coming from Sonarr, Radarr or Overseerr?' }
 	};
+	const head = $derived(step === 'import' && importing ? { h: 'Import', p: 'Bring your library and settings over from the apps you use now.' } : titles[step]);
 </script>
 
-<svelte:head><title>{titles[step].h} · HolyArrs</title></svelte:head>
+<svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
 
 {#if firstRun}<SigninBackdrop />{/if}
-<div class="welcome" class:over-art={firstRun}>
+<div class="welcome" class:over-art={firstRun} class:wide={step === 'import' && importing}>
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt="" width="32" height="32" /><span>HolyArrs</span></div>
-	{#if firstRun && prev && session.can('users')}
-		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label="Back" onclick={() => go(prev)} disabled={busy} /></span>
+	{#if firstRun && prev && session.can('users') && (!importing || moveStep === 'read')}
+		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label="Back" onclick={back} disabled={busy} /></span>
 	{/if}
 	{#if firstRun}
 		<ol class="dots" aria-label="Step {stepNo} of {stepCount}">
@@ -256,8 +286,8 @@
 		</ol>
 	{/if}
 	<header class="head">
-		<h1>{titles[step].h}</h1>
-		<p>{titles[step].p}</p>
+		<h1>{head.h}</h1>
+		<p>{head.p}</p>
 	</header>
 
 	{#if !session.can('users') || (step !== 'parts' && !session.can('settings'))}
@@ -386,14 +416,26 @@
 				<button class="alt" type="button" disabled={busy} onclick={() => go('import')}>Skip for now</button>
 			{/if}
 		</div>
+	{:else if importing}
+		<div class="card move" data-testid="welcome-move">
+			{#if importCheck && !session.s.hasPassword}
+				<p class="form-error" role="alert">Set a HolyArrs password to move your setup. <a href={to('/account')}>Set a password</a></p>
+			{:else if importCheck}
+				<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
+			{/if}
+			<MoveFlow embedded={{ query: IMPORT_QUERY, ondone: home, onstep: (s) => (moveStep = s) }} />
+			{#if moveStep === 'read'}
+				<button class="alt" type="button" disabled={busy} onclick={home}>Skip for now</button>
+			{/if}
+		</div>
 	{:else}
 		<div class="card" data-testid="welcome-import">
 			<div class="tiles two-up">
-				<a class="tile big" href={to('/settings/move')}>
+				<button class="tile big" type="button" disabled={busy} onclick={() => openImport(true)}>
 					<Icon name="download" size={26} />
 					<span class="tile-label">Import</span>
 					<span class="tile-sub">Library, sources, downloaders and people.</span>
-				</a>
+				</button>
 				<button class="tile big" type="button" disabled={busy} onclick={home}>
 					<Icon name="home" size={26} />
 					<span class="tile-label">Start fresh</span>
@@ -413,6 +455,8 @@
 		margin: 0 auto;
 		padding: clamp(28px, 7vh, 72px) 0 48px;
 	}
+	/* The move flow's five steps and its rows need more room than a form. */
+	.welcome.wide { width: min(820px, calc(100% - 32px)); }
 	.brand { display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 17px/1 var(--font-ui); color: var(--text); }
 	/* The round back button sits top-left, level with the logo. */
 	.corner { position: absolute; top: -2px; left: 0; }
@@ -582,6 +626,11 @@
 	.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; align-items: start; }
 	.two > :global(.field) { margin: 0; }
 	.source :global(.settings-card), .source :global(section) { box-shadow: none; }
+	/* Import: the move flow's cards stack inside the glass with plain gaps. */
+	.move { display: flex; flex-direction: column; gap: 18px; }
+	.move .alt { margin-top: 0; }
+	/* No tab bar here, so the phone footer sits on the bottom edge. */
+	.move :global(.step-foot) { --tabbar: 0px; }
 
 	@media (max-width: 520px) {
 		.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
