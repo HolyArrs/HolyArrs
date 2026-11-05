@@ -285,7 +285,7 @@
 							{#if test && !test.ok}
 								<span class="tag bad">Not connected</span>
 							{:else if test && testVersion(test.text)}
-								<span class="tag mono">{testVersion(test.text)}</span>
+								<span class="tag ok mono"><Icon name="check" size={12} stroke={2.5} />{testVersion(test.text)}</span>
 							{/if}
 							</div>
 							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
@@ -488,15 +488,16 @@
 	.frow .form-error { margin-top: 0; }
 
 	/* A connected downloader or source: a plain row, its version as a small tag. */
-	.conn { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+	.conn { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
 	.conn-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
 	.conn-text { flex: 1; min-width: 0; }
 	.conn-text b { display: block; font: 600 15px/1.3 var(--font-ui); color: var(--text); }
 	.conn-text .addr { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); overflow-wrap: anywhere; }
-	.tag { flex: none; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
+	.tag { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
 	.tag.mono { font-family: var(--font-mono); }
+	.tag.ok { color: var(--ok-text, #30d158); border-color: color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
 	.tag.bad { color: var(--danger-text, #ff6961); border-color: color-mix(in srgb, var(--danger-text, #ff6961) 40%, transparent); }
-	.add-row { width: 100%; margin-top: 10px; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+	.add-row { width: 100%; margin-top: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s; }
 	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
 	.add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.source .conn-row { margin-bottom: 14px; }
