@@ -140,7 +140,7 @@ func Run(ctx context.Context, o Options) Report {
 		if lockProbe != nil {
 			lockChecks(&r, o.ConfigDir, lockProbe)
 		}
-		unmappedChecks(&r, o.ConfigDir, UnmappedConfig(o.ConfigDir))
+		unmappedChecks(&r, o.ConfigDir, unmappedConfig(o.ConfigDir))
 	}
 	masterKeyChecks(&r, o.ConfigDir)
 	db := o.DB
@@ -459,6 +459,10 @@ func UnmappedText(dir, kind string) string {
 func UnmappedFix(dir string) string {
 	return "stop the container first (docker stop <container>), then copy the data out with docker cp <container>:" + dir + " ./holyarrs-config (this works on a stopped container), then map " + dir + " to a host folder or a named volume (-v holyarrs-config:" + dir + ") and copy it back in"
 }
+
+// unmappedConfig is UnmappedConfig; tests swap it so a test run inside a
+// container does not see its own temp folder as an unmapped /config.
+var unmappedConfig = UnmappedConfig
 
 // UnmappedConfig tells whether dir, inside a container, is not mapped to
 // the host: "anonymous", "none", or "" (mapped, not in a container, or
