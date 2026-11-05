@@ -61,7 +61,7 @@ func (c *ArtworkCache) Smaller(name string, px int) (string, string, error) {
 	if cfg.Width <= px && cfg.Height <= px {
 		return name, src, nil
 	}
-	if cfg.Width*cfg.Height > smallerMax {
+	if int64(cfg.Width)*int64(cfg.Height) > smallerMax {
 		return "", "", errors.New("picture: too large to make smaller")
 	}
 	if _, err := f.Seek(0, 0); err != nil {

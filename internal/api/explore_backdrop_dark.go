@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"image"
 	_ "image/jpeg"
 	"io"
@@ -78,12 +80,35 @@ func sampleBackdrop(ctx context.Context, cl *http.Client, b string) float64 {
 	if resp.StatusCode != http.StatusOK {
 		return -1
 	}
-	// A backdrop is small; a huge or endless answer must not fill memory.
-	img, _, err := image.Decode(io.LimitReader(resp.Body, 2<<20))
+	img, err := decodeBackdrop(resp.Body)
 	if err != nil {
 		return -1
 	}
 	return averageLuma(img)
+}
+
+// backdropMaxPixels caps the decoded size: a small file can claim a huge
+// picture, so the header is checked before the pixels are read.
+const backdropMaxPixels = 4096 * 4096
+
+var errBackdropTooLarge = errors.New("backdrop: picture too large")
+
+// decodeBackdrop reads at most 2 MiB (a huge or endless answer must not
+// fill memory) and refuses pictures over backdropMaxPixels.
+func decodeBackdrop(r io.Reader) (image.Image, error) {
+	raw, err := io.ReadAll(io.LimitReader(r, 2<<20))
+	if err != nil {
+		return nil, err
+	}
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Width <= 0 || cfg.Height <= 0 || int64(cfg.Width)*int64(cfg.Height) > backdropMaxPixels {
+		return nil, errBackdropTooLarge
+	}
+	img, _, err := image.Decode(bytes.NewReader(raw))
+	return img, err
 }
 
 // startBackdropDark makes the Browse pickers skip too-dark backdrops. The
