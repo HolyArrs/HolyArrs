@@ -21,6 +21,7 @@
 		formFrom,
 		healthTone,
 		kindWords,
+		testVersion,
 		pendingAttempts,
 		type DownloaderAttempt,
 		type DownloaderForm,
@@ -375,7 +376,7 @@
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
 				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">Test connection</Button>{/if}
-				{#if !isNew && editing && results[editing.id]}<span class="small" class:muted={results[editing.id].ok} class:bad-text={!results[editing.id].ok} role="status">{results[editing.id].text}</span>{/if}
+				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<span class="small" class:muted={r.ok} class:bad-text={!r.ok} role="status">{r.ok ? ['Connected', testVersion(r.text)].filter(Boolean).join(' · ') : r.text}</span>{/if}
 			</div>
 		</SettingsCard>
 	</form>
@@ -398,6 +399,7 @@
 						<h2 class="h3">{d.name}</h2>
 						<div class="mono xs muted ellipsis">{d.url}</div>
 					</div>
+					{#if results[d.id]?.ok && testVersion(results[d.id].text)}<span class="chip mono" data-testid="downloader-version">{testVersion(results[d.id].text)}</span>{/if}
 					<span class="chip {healthTone(d.health.state)}" data-testid="downloader-state">{d.health.label}</span>
 				</div>
 				<p class="small" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>
@@ -410,8 +412,8 @@
 					· {d.active_downloads} active {d.active_downloads === 1 ? 'download' : 'downloads'}
 					{#if d.checked_at} · checked {ago(d.checked_at)}{/if}
 				</p>
-				{#if results[d.id]}
-					<p class="small" class:bad-text={!results[d.id].ok} class:ok-text={results[d.id].ok} role="status" data-testid="downloader-test">{results[d.id].text}</p>
+				{#if results[d.id] && !results[d.id].ok}
+					<p class="small bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label="Uncertain sends" data-testid="downloader-attempts">

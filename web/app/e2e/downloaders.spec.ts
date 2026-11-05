@@ -38,7 +38,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 
 	await addDownloader('SABnzbd', 'Lab SABnzbd', `http://127.0.0.1:${sabPort}`, sabKey, 'movies');
 	const r = row('Lab SABnzbd');
-	await expect(r.getByTestId('downloader-test')).toHaveText('It answered: sabnzbd 5.1.3.');
+	await expect(r.getByTestId('downloader-version')).toHaveText('v5.1.3');
 	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
 	await expect(r).toContainText('Usenet');
 	await expect(r).not.toContainText(sabKey);
@@ -92,7 +92,7 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	await page.goto('/settings/downloaders');
 	// A new qBittorrent needs its API key; the fake one accepts any.
 	await addDownloader('qBittorrent', 'Lab qBittorrent', qbit, 'e2e-any-key');
-	await expect(row('Lab qBittorrent').getByTestId('downloader-test')).toHaveText('It answered: qbittorrent v5.2.4.');
+	await expect(row('Lab qBittorrent').getByTestId('downloader-version')).toHaveText('v5.2.4');
 
 	// Add a movie and let it search now.
 	const dialog = await addFromSearch(page, 'iron lullaby', 'Iron Lullaby');

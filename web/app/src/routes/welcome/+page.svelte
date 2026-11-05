@@ -14,7 +14,7 @@
 	import { needsProblem, type PartName } from '#lib/parts.ts';
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
-	import { emptyForm, formBody, kindWords, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
+	import { emptyForm, formBody, kindWords, testVersion, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
 	import type { LibraryFolder } from '#lib/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
@@ -138,8 +138,6 @@
 	let dlTests = $state<Record<number, { ok: boolean; text: string }>>({});
 	let dlAdding = $state(false);
 	const dlForm = $derived(dlList.length === 0 || dlAdding);
-	// The test answer names the version ("... v5.1.2"); the row shows just that.
-	const versionOf = (s: string) => s.match(/v?\d+(?:\.\d+)+/)?.[0]?.replace(/^(?!v)/, 'v') ?? '';
 	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget');
 	function pickDl(k: DownloaderForm['kind']) {
 		const url = dl.url;
@@ -286,8 +284,8 @@
 							<div class="conn-text"><b>{d.name}</b><span class="addr mono">{d.url}</span></div>
 							{#if test && !test.ok}
 								<span class="tag bad">Not connected</span>
-							{:else if test && versionOf(test.text)}
-								<span class="tag mono">{versionOf(test.text)}</span>
+							{:else if test && testVersion(test.text)}
+								<span class="tag mono">{testVersion(test.text)}</span>
 							{/if}
 							</div>
 							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
