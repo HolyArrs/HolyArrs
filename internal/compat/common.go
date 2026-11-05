@@ -9,18 +9,19 @@ import (
 	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/runas"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // status answers the server test. Seerr reads urlBase (and uses it as the
 // base path from then on) and, on the Sonarr side, the version.
 func (h *handler) status(w http.ResponseWriter, r *http.Request) {
-	_, err := os.Stat("/.dockerenv")
+	docker := runas.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"appName": AppName, "instanceName": AppName, "version": h.version, "urlBase": h.base(r.Context()),
 		"isDebug": false, "isProduction": true, "isAdmin": false, "isUserInteractive": false,
 		"osName": runtime.GOOS, "isLinux": runtime.GOOS == "linux", "isOsx": runtime.GOOS == "darwin", "isWindows": runtime.GOOS == "windows",
-		"isDocker": err == nil, "mode": "console", "branch": "main", "databaseType": "sqLite", "runtimeName": "go",
+		"isDocker": docker, "mode": "console", "branch": "main", "databaseType": "sqLite", "runtimeName": "go",
 	})
 }
 

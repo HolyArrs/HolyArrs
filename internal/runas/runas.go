@@ -118,9 +118,10 @@ const NotInContainer = "started as root outside a container: set PUID and PGID, 
 
 // InContainer reports whether HolyArrs runs in a container: /.dockerenv
 // (Docker), /run/.containerenv (Podman) or a non-empty container variable
-// (Podman, systemd-nspawn, LXC).
+// (Podman, systemd-nspawn, LXC, and this image on every runtime), or a
+// Kubernetes pod.
 func InContainer(exists func(string) bool, getenv func(string) string) bool {
-	if getenv("container") != "" {
+	if getenv("container") != "" || getenv("KUBERNETES_SERVICE_HOST") != "" {
 		return true
 	}
 	return exists("/.dockerenv") || exists("/run/.containerenv")
