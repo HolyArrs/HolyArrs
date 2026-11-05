@@ -8,6 +8,7 @@
 	import { stageOf } from '#lib/downloads/status-tabs.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { artGone, lightOnDark } from '#lib/art-check.ts';
+	import { askArtist, askDetails, wantDetails } from '#lib/approvals/details.svelte.ts';
 	import type { IconName } from '#lib/Icon.svelte';
 	import { arrivedHead, askProgressLine, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, freeSpace, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, uncheckedLine, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
 	import { decisions } from '#lib/decisions.svelte.ts';
@@ -160,9 +161,39 @@
 		return { s, tall: pics[1] ? undefined : pool.shift(), wide: pics[2] ? undefined : pool.shift(), big: pics[0] ? undefined : pool.shift() };
 	});
 	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
-	// Posters that could not load drop out, and the next ask with a poster takes their place.
+	// An ask's picture. Its own poster first; when the ask was saved without one, or it cannot be shown, the picture
+	// the Requests page uses: the title's poster from this install's own details, or the artist's wide photo.
 	const badArt = new SvelteSet<number>();
-	const waitingPics = $derived(waiting.filter((a) => a.poster && !badArt.has(a.id)).slice(0, 3));
+	const noArt = new SvelteSet<number>();
+	function askPic(a: Ask): string | undefined {
+		if (noArt.has(a.id)) return undefined;
+		if (a.poster && !badArt.has(a.id)) return a.poster;
+		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] || undefined;
+		wantDetails(a);
+		return askDetails(a)?.poster || undefined;
+	}
+	function artFailed(a: Ask, pic: string) {
+		if (pic === a.poster) badArt.add(a.id);
+		else noArt.add(a.id);
+	}
+	// An artist's own photo can be an empty file: it is tried once here, so the row can fall back before it shows a gap.
+	const tried = new Set<number>();
+	$effect(() => {
+		for (const a of [...waiting.slice(0, 20), ...mineShown]) {
+			if (a.kind !== 'artist' || !a.poster || tried.has(a.id)) continue;
+			tried.add(a.id);
+			const probe = new Image();
+			probe.onerror = () => badArt.add(a.id);
+			probe.src = a.poster;
+		}
+	});
+	const waitingPics = $derived(
+		waiting
+			.slice(0, 20)
+			.map((a) => ({ a, pic: askPic(a) }))
+			.filter((x): x is { a: Ask; pic: string } => !!x.pic)
+			.slice(0, 3)
+	);
 	// System numbers, from what this page already read.
 	const speed = $derived(fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
 	const queued = $derived(fetchingAll.filter((d) => stageOf(d) === 'queued').length);
@@ -389,7 +420,7 @@
 					{:else if key === 'ask' && approver && !kid && waiting.length}
 						<a class="tile stat {cls}" href={to('/requests')}>
 							{@render head('requests', 'orange', 'To approve')}
-							<span class="ask-stack" aria-hidden="true">{#each waitingPics as a (a.id)}<img src={a.poster} alt="" decoding="async" use:artGone={() => badArt.add(a.id)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
+							<span class="ask-stack" aria-hidden="true">{#each waitingPics as w (w.a.id + w.pic)}<img src={w.pic} alt="" decoding="async" use:artGone={() => artFailed(w.a, w.pic)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
 							<span class="sm">{n(waiting.length)} {waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
 						</a>
 					{:else if key === 'ask'}
@@ -581,21 +612,23 @@
 			{:else if row === 'approval' && waiting.length}
 				<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Requests page" href={to('/requests')} item="var(--poster-item)">
 					{#each waiting.slice(0, 20) as a (a.id)}
-						<PosterCard title={a.name} href={to(`/requests?ask=${a.id}`)} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
+						{@const pic = askPic(a)}
+						{#key pic}<PosterCard title={a.name} href={to(`/requests?ask=${a.id}`)} image={pic} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />{/key}
 					{/each}
 				</Shelf>
 			{:else if row === 'asks' && mine.length}
 				<Shelf title="Your asks" subtitle="{mine.length} {mine.length === 1 ? 'request' : 'requests'} still open" href={to('/requests')} item="var(--poster-item)">
 					{#each mineShown as a (a.id)}
 						{@const p = a.title_id ? progress[a.title_id] : undefined}
-						<PosterCard
+						{@const pic = askPic(a)}
+						{#key pic}<PosterCard
 							title={a.name}
 							href={a.title_id ? to(`/library/${a.title_id}`) : to(`/requests?ask=${a.id}`)}
-							image={a.poster}
+							image={pic}
 							subtitle={p ? askProgressLine(p).replace(/^Downloading /, '') : a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
 							progress={p && p.state === 'downloading' ? Math.round(p.progress * 100) : undefined}
 							owned={askMark(a)}
-						/>
+						/>{/key}
 					{/each}
 				</Shelf>
 			{:else if row === 'new_season'}
