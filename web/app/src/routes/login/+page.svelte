@@ -14,6 +14,7 @@
 	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
 	import { forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay } from '#lib/recentPeople.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
+	import { theme } from '#lib/theme.svelte.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 
@@ -119,6 +120,7 @@
 	});
 	// The round back button in the panel's corner, when there is somewhere to go back to.
 	const backTo = $derived.by(() => {
+		if (mode === 'code') return { label: 'Back to sign in', go: restart };
 		if (mode !== 'login' || !shown.length) return null;
 		if (acctView === 'list' && shown.length === 1) return { label: `Back to ${shown[0].name}`, go: () => openPerson(0) };
 		if ((acctView === 'person' && shown.length > 1) || acct === 'new') return { label: 'All accounts', go: showList };
@@ -260,7 +262,66 @@
 		if (!r.done) {
 			ticket = r.ticket;
 			otp = '';
+			useBackup = false;
+			clearDigits();
 		}
+	}
+
+	// Two-factor: six digit boxes (typing moves on, a pasted or autofilled code
+	// fills them all and sends), or one box for a backup code.
+	let useBackup = $state(false);
+	let digits = $state(['', '', '', '', '', '']);
+	let digitsEl = $state<HTMLDivElement>();
+	const digitInputs = () => [...(digitsEl?.querySelectorAll<HTMLInputElement>('input') ?? [])];
+	function clearDigits() {
+		digits = ['', '', '', '', '', ''];
+		otp = '';
+		void tick().then(() => (useBackup ? panelEl?.querySelector<HTMLInputElement>('#otp') : digitInputs()[0])?.focus());
+	}
+	function fillDigits(from: number, text: string): boolean {
+		const ds = text.replace(/\D/g, '').slice(0, 6 - from).split('');
+		if (!ds.length) return false;
+		ds.forEach((d, k) => (digits[from + k] = d));
+		otp = digits.join('');
+		const ins = digitInputs();
+		ds.forEach((d, k) => ins[from + k] && (ins[from + k].value = d));
+		ins[Math.min(from + ds.length, 5)]?.focus();
+		if (otp.length === 6 && !busy) digitsEl?.closest('form')?.requestSubmit();
+		return true;
+	}
+	function typeDigit(i: number, e: Event) {
+		const el = e.currentTarget as HTMLInputElement;
+		if (fillDigits(i, el.value)) return;
+		digits[i] = '';
+		otp = digits.join('');
+		el.value = '';
+	}
+	function digitKey(i: number, e: KeyboardEvent) {
+		const ins = digitInputs();
+		if (e.key === 'Backspace' && !digits[i] && i > 0) {
+			e.preventDefault();
+			digits[i - 1] = '';
+			otp = digits.join('');
+			ins[i - 1].value = '';
+			ins[i - 1].focus();
+		} else if (e.key === 'ArrowLeft' && i > 0) {
+			e.preventDefault();
+			ins[i - 1].focus();
+		} else if (e.key === 'ArrowRight' && i < 5) {
+			e.preventDefault();
+			ins[i + 1].focus();
+		}
+	}
+	function pasteDigits(i: number, e: ClipboardEvent) {
+		const t = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '');
+		if (!t) return;
+		e.preventDefault();
+		fillDigits(t.length >= 6 ? 0 : i, t);
+	}
+	function toggleBackup() {
+		useBackup = !useBackup;
+		error = '';
+		clearDigits();
 	}
 
 	function failed(err: unknown) {
@@ -324,7 +385,7 @@
 				pw = '';
 			}
 			failed(err);
-			otp = '';
+			clearDigits();
 		} finally {
 			busy = false;
 		}
@@ -334,6 +395,9 @@
 		ticket = '';
 		error = '';
 		pw = '';
+		useBackup = false;
+		digits = ['', '', '', '', '', ''];
+		otp = '';
 	}
 
 	function pick(w: 'choose' | 'password' | 'jellyfin' | 'emby') {
@@ -469,9 +533,9 @@
 <main class="wrap" class:leaving data-theme="dark">
 	<SigninBackdrop />
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
-	<div class="panel" class:intro class:gl-wait={glWait} bind:this={panelEl} data-signin-panel>
+	<div class="panel" class:intro class:gl-wait={glWait} class:light={theme.value === 'light'} data-theme={theme.value} bind:this={panelEl} data-signin-panel>
 		<div class="brand">
-			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
+			<img src={to(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
 			<span>HolyArrs</span>
 		</div>
 		{#if backTo && session.s.state !== 'unknown' && !ssoFinishing && !plexWaiting}
@@ -557,14 +621,14 @@
 						{/if}
 						{#if formOn}{@render help()}{/if}
 					{:else}
-						<h1 class="title">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-factor sign-in' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}</h1>
+						<h1 class="title">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-step check' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}</h1>
 						{#if mode === 'setup'}
 							<p class="lead">First start. Make the owner account: the one person who runs this HolyArrs.</p>
 							{#if session.s.configUnmapped}
 								<p class="form-error" role="status">/config is not mapped to a host folder or named volume, so everything set up here is lost when the container is recreated. Map /config first: see "Forgot to map /config?" in the install guide. Lost an earlier setup? Look for it with docker volume ls.</p>
 							{/if}
 						{:else if mode === 'code'}
-							<p class="lead">Type the six-digit code from your authenticator app, or one of your backup codes.</p>
+							<p class="lead">{useBackup ? 'Enter one of your saved backup codes.' : 'Enter the 6-digit code from your authenticator app to finish signing in.'}</p>
 						{:else if via === 'jellyfin' || via === 'emby'}
 							<p class="lead">Use your {wayWord[via]} name and password.</p>
 						{:else if via === 'choose'}
@@ -573,15 +637,34 @@
 
 						{#if mode === 'code'}
 							<form onsubmit={submitCode} novalidate>
-								<div class="field">
-									<label for="otp">Code</label>
-									<input id="otp" class="input mono otp" inputmode="text" bind:value={otp} autocomplete="one-time-code" maxlength="11" required />
-								</div>
+								{#if useBackup}
+									<div class="field">
+										<label for="otp">Backup code</label>
+										<input id="otp" class="input mono otp" inputmode="text" bind:value={otp} autocomplete="off" spellcheck="false" maxlength="11" required />
+									</div>
+								{:else}
+									<div class="digits" role="group" aria-label="6-digit code" bind:this={digitsEl}>
+										{#each digits as d, i (i)}
+											{#if i === 3}<span class="dash" aria-hidden="true">–</span>{/if}
+											<input
+												class="digit"
+												value={d}
+												inputmode="numeric"
+												autocomplete={i === 0 ? 'one-time-code' : 'off'}
+												aria-label="Digit {i + 1}"
+												onfocus={(e) => e.currentTarget.select()}
+												oninput={(e) => typeDigit(i, e)}
+												onkeydown={(e) => digitKey(i, e)}
+												onpaste={(e) => pasteDigits(i, e)}
+											/>
+										{/each}
+									</div>
+								{/if}
 								{#if error}
 									<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
 								{/if}
-								<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim()} {busy}>Sign in</Button></div>
-								<button class="link" type="button" onclick={restart}>Start again</button>
+								<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim() || (!useBackup && otp.length < 6)} {busy}>Sign in</Button></div>
+								<button class="link" type="button" onclick={toggleBackup}>{useBackup ? 'Use the 6-digit code' : 'Use a backup code'}</button>
 							</form>
 						{:else}
 							{#if mode === 'login' && (via === 'password' || via === 'choose') && tiles.length}
@@ -734,7 +817,71 @@
 	.wrap.leaving .panel { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(18 18 22 / 0.92); }
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.panel { background: rgb(18 18 22 / 0.92); }
+		.panel.light { background: rgb(248 246 242 / 0.94); }
 	}
+
+	/* Light mode: tinted glass. The blur lifts the poster under the panel and
+	   keeps its colour; text is dark ink, links are dark and underlined (red on
+	   tinted glass reads poorly), and red stays on the main button. */
+	.panel.light {
+		background: rgb(255 252 247 / 0.45);
+		-webkit-backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
+		backdrop-filter: blur(50px) saturate(1.9) brightness(1.4);
+		border-color: rgb(255 255 255 / 0.5);
+		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1), 0 30px 90px rgb(0 0 0 / 0.4), 0 6px 18px rgb(0 0 0 / 0.2);
+	}
+	.wrap.leaving .panel.light { background: rgb(250 250 250 / 0.92); }
+	.light .brand, .light .title, .light .who-n { color: #111; }
+	.light .lead, .light .note, .light .acct-way, .light .help { color: rgb(0 0 0 / 0.64); }
+	.light .help .note { color: rgb(0 0 0 / 0.56); }
+	.light .or { color: rgb(0 0 0 / 0.5); }
+	.light .or::before, .light .or::after { background: rgb(0 0 0 / 0.14); }
+	.light :global(.input) { background: rgb(255 255 255 / 0.6); border-color: rgb(255 255 255 / 0.75); color: #111; }
+	.light .link, .light .help summary {
+		color: #1d1d1f;
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+		text-decoration-color: rgb(0 0 0 / 0.25);
+	}
+	.light .form-error { background: rgb(255 241 240 / 0.88); border-color: rgb(215 0 21 / 0.35); color: #9b0010; }
+	.light .who { background: rgb(255 255 255 / 0.4); border-color: rgb(255 255 255 / 0.6); }
+	.light .accts { border-color: rgb(0 0 0 / 0.08); }
+	.light .acct + .acct { border-top-color: rgb(0 0 0 / 0.07); }
+	.light .acct-pick { background: rgb(255 255 255 / 0.3); color: #111; }
+	@media (hover: hover) { .light .acct-pick:hover { background: rgb(255 255 255 / 0.55); } }
+	.light .acct-end { color: rgb(0 0 0 / 0.35); }
+	.light .accts.editing .acct-end { color: #1d1d1f; }
+	.light .face.plus { background: rgb(0 0 0 / 0.05); border-color: rgb(0 0 0 / 0.25); color: rgb(0 0 0 / 0.6); }
+	.light .prov { background: rgb(255 255 255 / 0.45); border-color: rgb(255 255 255 / 0.6); color: #1d1d1f; }
+	.light .provs[data-n='1'] .prov { color: #111; }
+	.light .prov svg[stroke='#f5f5f7'] { stroke: #1d1d1f; }
+	@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+		.light .prov:not(:disabled):hover { background: rgb(255 255 255 / 0.65); color: #111; }
+	}
+	.light .cmd { background: rgb(255 255 255 / 0.5); border-color: rgb(0 0 0 / 0.08); }
+	.light .cp { border-color: rgb(0 0 0 / 0.15); color: #111; }
+	.light .help .ans + .ans { border-top-color: rgb(0 0 0 / 0.1); }
+	.light .orbit { border-color: rgb(0 0 0 / 0.14); border-top-color: #e5a00d; }
+
+	/* Two-factor: six digit boxes, a dash after the third. */
+	.digits { display: flex; justify-content: center; gap: 8px; }
+	.digit {
+		width: 44px;
+		height: 54px;
+		padding: 0;
+		text-align: center;
+		border-radius: 12px;
+		border: 1px solid var(--line);
+		background: var(--surface-2);
+		color: var(--text);
+		font: 600 22px/1 var(--font-mono);
+		caret-color: var(--accent);
+	}
+	.digit:focus { outline: none; border-color: var(--accent) !important; }
+	.dash { align-self: center; color: rgb(255 255 255 / 0.4); }
+	.light .digit { background: rgb(255 255 255 / 0.6); border-color: rgb(255 255 255 / 0.75); color: #111; }
+	.light .dash { color: rgb(0 0 0 / 0.35); }
 	.brand {
 		display: flex;
 		align-items: center;
@@ -972,6 +1119,8 @@
 		.title + .who { margin-top: 22px; }
 		.who { margin-bottom: 14px; }
 		.corner { top: 6px; left: 12px; }
+		.digits { gap: 6px; }
+		.digit { width: 40px; height: 50px; }
 		.acct-pick { min-height: 60px; }
 		.panel :global(.field) { gap: 2px; }
 		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }

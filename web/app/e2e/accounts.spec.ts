@@ -131,12 +131,13 @@ test('a member turns on two-factor sign-in and needs a code to sign in', async (
 	await ana.getByLabel('Name').fill('ana');
 	await ana.getByLabel('Password', { exact: true }).fill(memberPw);
 	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
-	await expect(ana.getByRole('heading', { name: 'Two-factor sign-in' })).toBeVisible();
-	await ana.getByLabel('Code').fill('000000');
-	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(ana.getByRole('heading', { name: 'Two-step check' })).toBeVisible();
+	// Six digits in the first box spread over all six and send at once.
+	await ana.getByLabel('Digit 1').fill('000000');
 	await expect(ana.getByRole('alert')).toContainText(/wrong code/i);
 	// The app code was just used to turn it on, so sign in with a backup code.
-	await ana.getByLabel('Code').fill(backup[0]);
+	await ana.getByRole('button', { name: 'Use a backup code' }).click();
+	await ana.getByLabel('Backup code').fill(backup[0]);
 	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
 	await expect(ana).toHaveURL(/\/account$/); // back where they were
 });
@@ -176,9 +177,10 @@ test('the owner sets a forgotten password, and ana switches account on a shared 
 	await expect(ana.getByTestId('signin-person')).toContainText('ana');
 	await ana.getByLabel('Password', { exact: true }).fill(newPw);
 	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
-	await ana.getByLabel('Code').fill(backup[1]);
+	await ana.getByRole('button', { name: 'Use a backup code' }).click();
+	await ana.getByLabel('Backup code').fill(backup[1]);
 	await ana.getByRole('button', { name: 'Sign in', exact: true }).click();
-	await expect(ana.getByRole('heading', { name: 'Two-factor sign-in' })).toHaveCount(0);
+	await expect(ana.getByRole('heading', { name: 'Two-step check' })).toHaveCount(0);
 	await expect(ana).not.toHaveURL(/\/login/);
 
 	// Switch account: signs out, and ana is one tap away on this device.
