@@ -261,15 +261,26 @@ describe('Your Library cards', () => {
 });
 
 describe('System grid numbers', () => {
-	it('counts parts that are on and working; turned-off ones apart', () => {
-		expect(partCount([{ state: 'ok' }, { state: 'disabled' }, { state: 'not_answering' }])).toEqual({ on: 2, working: 1, off: 1 });
-		// Sources: enabled works, paused and disabled are off.
-		expect(partCount([{ state: 'enabled' }, { state: 'enabled' }, { state: 'paused' }, { state: 'disabled' }])).toEqual({ on: 2, working: 2, off: 2 });
-		expect(partCount(null)).toEqual({ on: 0, working: 0, off: 0 });
+	it('counts parts that are on and working; only disabled is off', () => {
+		expect(partCount([{ state: 'ok' }, { state: 'disabled' }, { state: 'unreachable' }])).toEqual({ total: 3, on: 2, working: 1, off: 1, failing: 1 });
+		expect(partCount(null)).toEqual({ total: 0, on: 0, working: 0, off: 0, failing: 0 });
 	});
-	it('counts a disk shared by folders once, and the fullest of several', () => {
-		expect(freeSpace([{ free_space: 100 }, { free_space: 100 }])).toEqual({ free: 100, many: false });
-		expect(freeSpace([{ free_space: 100 }, { free_space: 40 }])).toEqual({ free: 40, many: true });
+	it('counts a failing Source as on but not working, the way the server reports it (paused, with a failing check)', () => {
+		expect(partCount([{ state: 'enabled' }, { state: 'paused' }, { state: 'paused' }, { state: 'disabled' }], 2)).toEqual({ total: 4, on: 3, working: 1, off: 1, failing: 2 });
+		// A failing check on a part whose state still says enabled also takes it out of working.
+		expect(partCount([{ state: 'enabled' }, { state: 'enabled' }], 1)).toMatchObject({ on: 2, working: 1, failing: 1 });
+	});
+	it('leaves out a removed Downloader kept for its history', () => {
+		expect(partCount([{ name: 'SABnzbd', state: 'ok' }, { name: 'qBittorrent (removed 3)', state: 'disabled' }])).toEqual({ total: 1, on: 1, working: 1, off: 0, failing: 0 });
+	});
+	it('counts folders on one disk once, even when their readings differ a little; several disks give the fullest', () => {
+		expect(freeSpace([{ free_space: 100e9 }, { free_space: 100e9 + 4096 }, { free_space: 100e9 + 900e3 }])).toEqual({ free: 100e9, many: false });
+		expect(freeSpace([{ free_space: 100e9 }, { free_space: 40e9 }])).toEqual({ free: 40e9, many: true });
 		expect(freeSpace([])).toBeNull();
+	});
+	it('reads 0 as unknown, or as a full disk when the disk check is failing', () => {
+		expect(freeSpace([{ free_space: 0 }, { free_space: 0 }])).toBeNull();
+		expect(freeSpace([{ free_space: 0 }, { free_space: 7e12 }])).toEqual({ free: 7e12, many: false });
+		expect(freeSpace([{ free_space: 0 }, { free_space: 7e12 }], true)).toEqual({ free: 0, many: true });
 	});
 });

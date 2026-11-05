@@ -223,9 +223,10 @@
 			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} class:tall alt="" loading="lazy" decoding="async" use:whenLoaded={(e) => { tall = !!e && e.naturalHeight > e.naturalWidth; loaded = true; }} onerror={artError} />{/key}{/if}
 			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
-				<span class="name" class:lifted={!!strip} aria-hidden="true">
+				<!-- An inset cover (Home: an album on the artist's picture) sits where the name would: the caption under the card carries the name. -->
+				{#if !inset}<span class="name" class:lifted={!!strip} aria-hidden="true">
 					{#if coverLogo}<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
-				</span>
+				</span>{/if}
 			{/if}
 			{#if badges.length || status}
 				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && !!owned} class:lifted={badgesAt === 'bottom' && !!strip}>

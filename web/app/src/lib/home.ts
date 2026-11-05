@@ -474,17 +474,31 @@ export function downloadMoved(seen: Map<number, string>, x: unknown): boolean {
 
 // ---- Home's System grid ----
 
-/** partCount sums up Sources or Downloaders from GET /health: how many are on, and how many of those work. */
-export function partCount(parts: { state: string }[] | null | undefined): { on: number; working: number; off: number } {
-	// Sources are enabled, paused or disabled; Downloaders report ok (or working) and their trouble states. Paused counts as off.
-	const list = parts ?? [];
-	const on = list.filter((p) => p.state !== 'disabled' && p.state !== 'paused');
-	return { on: on.length, working: on.filter((p) => p.state === 'ok' || p.state === 'working' || p.state === 'enabled').length, off: list.length - on.length };
+/**
+ * partCount sums up Sources or Downloaders from GET /health. Only "disabled" is turned off; a part that is on
+ * works when its state says so (enabled, ok). A failing Source is paused by the server and a failing Downloader is
+ * unreachable or auth_failed, and each has a failing health check: `failingChecks` is how many of those there are,
+ * so a part whose state still looks fine is not counted as working. A removed Downloader (kept for its history
+ * under "<name> (removed <id>)") is left out.
+ */
+export function partCount(parts: { name?: string; state: string }[] | null | undefined, failingChecks = 0): { total: number; on: number; working: number; off: number; failing: number } {
+	const list = (parts ?? []).filter((p) => !/ \(removed \d+\)$/.test(p.name ?? ''));
+	const off = list.filter((p) => p.state === 'disabled').length;
+	const on = list.length - off;
+	const good = list.filter((p) => p.state === 'ok' || p.state === 'working' || p.state === 'enabled').length;
+	const working = Math.max(0, Math.min(good, on - failingChecks));
+	return { total: list.length, on, working, off, failing: on - working };
 }
 
-/** freeSpace is the free room left for the Library: folders on the same disk count once; with several disks, the fullest one. */
-export function freeSpace(folders: { free_space: number }[]): { free: number; many: boolean } | null {
-	const sizes = [...new Set(folders.map((f) => f.free_space).filter((s) => s > 0))];
+/**
+ * freeSpace is the free room left for the Library. Folders on one disk are read a moment apart, so their numbers
+ * differ a little: readings within 2% (or 256 MB) of each other are the same disk. With several disks it is the
+ * fullest one. A reading of 0 means "not known" unless `zeroIsFull` (the disk space check is failing): then it is a full disk.
+ */
+export function freeSpace(folders: { free_space: number }[], zeroIsFull = false): { free: number; many: boolean } | null {
+	const sizes = folders.map((f) => f.free_space).filter((s) => s > 0 || (zeroIsFull && s === 0)).sort((x, y) => x - y);
 	if (!sizes.length) return null;
-	return { free: Math.min(...sizes), many: sizes.length > 1 };
+	let disks = 1;
+	for (let i = 1; i < sizes.length; i++) if (sizes[i] - sizes[i - 1] > Math.max(sizes[i] * 0.02, 256 * 1024 * 1024)) disks++;
+	return { free: sizes[0], many: disks > 1 };
 }
