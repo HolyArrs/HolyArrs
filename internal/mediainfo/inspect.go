@@ -1,13 +1,19 @@
 // Package mediainfo reads a bounded subset of media container headers.
+//
+// One reader serves Matroska/WebM and MP4/MOV. It reads only headers (never
+// samples), and hard limits on elements, nesting, tracks and bytes per read
+// keep a hostile file from hanging it or making it allocate much.
 package mediainfo
 
 import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"golang.org/x/text/language"
 )
@@ -17,7 +23,54 @@ const (
 	maxDepth    = 12
 	maxTracks   = 128
 	maxString   = 256
+	// maxPrivate is the most bytes of one codec setup (Matroska
+	// CodecPrivate, an MP4 sample entry) read into memory.
+	maxPrivate = 8192
 )
+
+// Errors. Every reading error wraps ErrMalformed or ErrLimit, except plain
+// I/O errors from the reader itself.
+var (
+	ErrUnsupported = errors.New("not a Matroska or MP4 file")
+	ErrMalformed   = errors.New("malformed container")
+	ErrLimit       = errors.New("container is past a reading limit")
+)
+
+// Track is one track as the container headers describe it.
+type Track struct {
+	Kind     string // "video", "audio", "subtitle"; "" for any other kind
+	Number   int    // the container's own track number
+	Codec    string // codec id as the file writes it: V_MPEGH/ISO/HEVC, hvc1, A_AAC, S_TEXT/UTF8, tx3g
+	Format   string // short codec name (hevc, h264, aac, flac ...); "" when not known
+	Language string // as the file writes it (eng, en-US); "" when the file names none
+	Name     string
+
+	Default         bool
+	Forced          bool
+	HearingImpaired bool
+
+	// Video.
+	Width, Height int
+	// DisplayWidth is the on-screen width at the coded height when the
+	// pixels are not square (an anamorphic DVD); 0 when they are or the
+	// headers do not say.
+	DisplayWidth int
+	FrameRate    float64 // frames per second, 0 when not written
+	BitDepth     int
+	HDR          string // "", "HDR10", "HLG", "DV" or "DV+HDR10"
+
+	// Audio.
+	Channels int
+}
+
+// SubtitleTrack is one subtitle track inside a video.
+type SubtitleTrack struct {
+	Codec           string // as the file writes it: S_TEXT/UTF8, S_HDMV/PGS, tx3g ...
+	Language        string // ISO 639-1 base ("en"); "" when unknown
+	Forced          bool
+	Default         bool
+	HearingImpaired bool
+}
 
 // Info contains facts read from media container headers.
 type Info struct {
@@ -30,6 +83,34 @@ type Info struct {
 	// AudioCodecs are the audio tracks' codecs ("alac", "flac", "aac",
 	// "mp3", ...); a track whose codec is not known adds nothing.
 	AudioCodecs []string
+	// AudioChannels has one entry per audio track, in file order; 0 when
+	// the headers do not say.
+	AudioChannels []int
+
+	// Width, Height, DisplayWidth, FrameRate, BitDepth and HDR describe
+	// the first video track.
+	Width, Height int
+	DisplayWidth  int
+	FrameRate     float64
+	BitDepth      int
+	HDR           string
+
+	Duration time.Duration
+	// Bitrate is the whole file's average in bits per second (file size
+	// over duration); 0 when the duration is not known.
+	Bitrate int64
+
+	SubtitleTracks []SubtitleTrack
+	// Tracks are every track the headers list, in file order.
+	Tracks []Track
+}
+
+// headers is what one container reader found.
+type headers struct {
+	container string
+	tracks    []Track
+	duration  time.Duration
+	found     bool // the movie header (Segment, moov) was there
 }
 
 // losslessCodecs are the audio codecs that keep every sample.
@@ -63,6 +144,30 @@ func (i Info) Lossless() (lossless, known bool) {
 	return true, true
 }
 
+// Resolution names the picture height class of the first video track: 2160,
+// 1080, 720, 576 or 480, or 0 when no size was read. Files are often
+// cropped (a 1920x800 film is still 1080), so a track counts as a class when
+// either its width or its height comes close to that class's full frame.
+// The width is the on-screen one when the pixels are not square: a cropped
+// anamorphic PAL DVD (720x436 shown as 1018x436) is still 576.
+func (i Info) Resolution() int {
+	w, h := max(i.Width, i.DisplayWidth), i.Height
+	switch {
+	case w <= 0 && h <= 0:
+		return 0
+	case w >= 3200 || h >= 2100:
+		return 2160
+	case w >= 1800 || h >= 1000:
+		return 1080
+	case w >= 1200 || h >= 700:
+		return 720
+	case w >= 1000 || h >= 550:
+		return 576
+	default:
+		return 480
+	}
+}
+
 // Inspect reads media headers from a regular file. It does not decode samples.
 func Inspect(path string) (Info, error) {
 	f, err := os.Open(path)
@@ -83,44 +188,115 @@ func Inspect(path string) (Info, error) {
 
 // InspectReaderAt reads media headers from r within the declared size.
 func InspectReaderAt(r io.ReaderAt, size int64) (Info, error) {
-	if r == nil || size < 0 {
-		return Info{}, fmt.Errorf("inspect media: invalid input size")
-	}
-	if size < 4 {
-		return Info{Status: "unsupported"}, nil
-	}
-
-	prefix, err := readAt(r, 0, min64(size, 8))
-	if err != nil {
-		return Info{}, fmt.Errorf("inspect media header: %w", err)
-	}
-	var info Info
-	switch {
-	case len(prefix) >= 4 && string(prefix[:4]) == "\x1a\x45\xdf\xa3":
-		info, err = inspectMatroska(r, size)
-	case looksLikeMP4(prefix):
-		info, err = inspectMP4(r, size)
-	default:
+	h, err := readHeaders(r, size)
+	if errors.Is(err, ErrUnsupported) {
 		return Info{Status: "unsupported"}, nil
 	}
 	if err != nil {
 		return Info{}, err
 	}
-	finishInfo(&info)
-	return info, nil
+	return buildInfo(h, size), nil
 }
 
-func finishInfo(info *Info) {
+// ReadTracks lists every track of a Matroska/WebM or MP4/MOV file of size
+// bytes. It returns ErrUnsupported for other files and ErrMalformed when the
+// movie header is missing.
+func ReadTracks(r io.ReaderAt, size int64) ([]Track, error) {
+	h, err := readHeaders(r, size)
+	if err != nil {
+		return nil, err
+	}
+	if !h.found {
+		return nil, malformed("inspect %s: movie header missing", h.container)
+	}
+	return h.tracks, nil
+}
+
+func readHeaders(r io.ReaderAt, size int64) (headers, error) {
+	if r == nil || size < 0 {
+		return headers{}, fmt.Errorf("inspect media: invalid input size")
+	}
+	if size < 4 {
+		return headers{}, ErrUnsupported
+	}
+	prefix, err := readAt(r, 0, min64(size, 8))
+	if err != nil {
+		return headers{}, fmt.Errorf("inspect media header: %w", err)
+	}
+	switch {
+	case len(prefix) >= 4 && string(prefix[:4]) == "\x1a\x45\xdf\xa3":
+		return inspectMatroska(r, size)
+	case looksLikeMP4(prefix):
+		return inspectMP4(r, size)
+	}
+	return headers{}, ErrUnsupported
+}
+
+func buildInfo(h headers, size int64) Info {
+	info := Info{Container: h.container, Duration: h.duration, Tracks: h.tracks}
+	var videoCodecs []string
+	firstVideo := true
+	for _, t := range h.tracks {
+		switch t.Kind {
+		case "video":
+			videoCodecs = append(videoCodecs, t.Format)
+			if firstVideo {
+				firstVideo = false
+				info.Width, info.Height, info.FrameRate, info.BitDepth, info.HDR = t.Width, t.Height, t.FrameRate, t.BitDepth, t.HDR
+				info.DisplayWidth = t.DisplayWidth
+			}
+		case "audio":
+			info.AudioTracks++
+			info.AudioChannels = append(info.AudioChannels, t.Channels)
+			if t.Format != "" {
+				info.AudioCodecs = append(info.AudioCodecs, t.Format)
+			}
+			if normalized, ok := normalizeLanguage(t.Language); ok {
+				info.AudioLanguages = append(info.AudioLanguages, normalized)
+			} else {
+				info.AudioUnknown = true
+			}
+		case "subtitle":
+			lang, _ := normalizeLanguage(t.Language)
+			info.SubtitleTracks = append(info.SubtitleTracks, SubtitleTrack{
+				Codec: t.Codec, Language: lang, Forced: t.Forced, Default: t.Default, HearingImpaired: t.HearingImpaired,
+			})
+		}
+	}
+	info.VideoCodec = oneCodec(videoCodecs)
+	if seconds := info.Duration.Seconds(); seconds >= 1 {
+		info.Bitrate = int64(float64(size) * 8 / seconds)
+	}
 	sort.Strings(info.AudioLanguages)
 	info.AudioLanguages = compactStrings(info.AudioLanguages)
-	if info.Status == "unsupported" {
-		return
-	}
 	if info.VideoCodec == "" || info.AudioUnknown {
 		info.Status = "partial"
 	} else {
 		info.Status = "complete"
 	}
+	return info
+}
+
+// seconds turns a count of ticks at scale ticks per second into a duration;
+// 0 when either is missing or the result is past any real file (a year).
+func seconds(ticks float64, scale float64) time.Duration {
+	if scale <= 0 || ticks <= 0 || math.IsNaN(ticks) || math.IsInf(ticks, 0) {
+		return 0
+	}
+	s := ticks / scale
+	if s > 365*24*3600 {
+		return 0
+	}
+	return time.Duration(s * float64(time.Second))
+}
+
+// roundRate keeps three decimals of a frame rate (23.976); 0 for rates no
+// video has.
+func roundRate(fps float64) float64 {
+	if fps <= 0 || fps > 1000 || math.IsNaN(fps) {
+		return 0
+	}
+	return math.Round(fps*1000) / 1000
 }
 
 func normalizeLanguage(value string) (string, bool) {
@@ -152,9 +328,30 @@ func compactStrings(values []string) []string {
 	return out
 }
 
+// cut keeps at most maxString bytes of a string read from a file, without
+// NULs and on a character boundary.
+func cut(b []byte) string {
+	s := string(b)
+	if i := strings.IndexByte(s, 0); i >= 0 {
+		s = s[:i]
+	}
+	if len(s) > maxString {
+		s = s[:maxString]
+	}
+	return strings.ToValidUTF8(s, "")
+}
+
+func malformed(format string, a ...any) error {
+	return fmt.Errorf("%s: %w", fmt.Sprintf(format, a...), ErrMalformed)
+}
+
+func overLimit(format string, a ...any) error {
+	return fmt.Errorf("%s: %w", fmt.Sprintf(format, a...), ErrLimit)
+}
+
 func readAt(r io.ReaderAt, offset, length int64) ([]byte, error) {
 	if offset < 0 || length < 0 || length > int64(^uint(0)>>1) {
-		return nil, errors.New("invalid read range")
+		return nil, malformed("invalid read range")
 	}
 	b := make([]byte, int(length))
 	if length == 0 {
@@ -165,9 +362,22 @@ func readAt(r io.ReaderAt, offset, length int64) ([]byte, error) {
 		return nil, err
 	}
 	if n != len(b) {
-		return nil, io.ErrUnexpectedEOF
+		return nil, fmt.Errorf("%w: %w", ErrMalformed, io.ErrUnexpectedEOF)
 	}
 	return b, nil
+}
+
+// displayWidth gives the on-screen width of a w x h picture shown at the
+// aspect dw:dh, or 0 when that is the same as w or not known.
+func displayWidth(w, h int, dw, dh uint64) int {
+	if w <= 0 || h <= 0 || h > 1<<20 || dw == 0 || dh == 0 || dw > 1<<40 || dh > 1<<40 {
+		return 0
+	}
+	d := uint64(h) * dw / dh
+	if d == uint64(w) || d > 1<<20 {
+		return 0
+	}
+	return int(d)
 }
 
 func min64(a, b int64) int64 {

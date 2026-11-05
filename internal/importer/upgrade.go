@@ -79,6 +79,11 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 		}
 		facts := InspectFacts(plan[i].SourceFile)
 		u.facts[plan[i].SourceFile] = facts
+		if sampleByLength(facts, fakes.lengthMinutes(minutes)) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, "a sample, not the full video (it plays "+lengthWords(factInt(facts, "runtime_seconds"))+")")
+			continue
+		}
 		why := copyRefusal(ver, filepath.Base(plan[i].SourceFile), u.relName, d.ConfirmedEdition, facts)
 		if why == "" && u.old != nil {
 			if edition, _ := u.old.MediaInfo["edition"].(string); edition != "" && EditionKey(edition) != EditionKey(fmt.Sprint(facts["edition"])) {
@@ -108,7 +113,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 			continue
 		}
 		name := strings.TrimSuffix(filepath.Base(plan[i].SourceFile), filepath.Ext(plan[i].SourceFile))
-		why = lieOf(name, u.relName, u.old != nil, u.oldName, u.rules)
+		why = lieOf(name, u.relName, u.old != nil, u.oldName, u.rules, facts)
 		if why != "" {
 			u.lie = why
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
@@ -126,11 +131,26 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 // lieOf says why a file is refused: its own name parses to a lower
 // resolution than the Release name said, or to a lower step than the copy
 // in place (oldName, when hasOld). "" means it may be placed.
-func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickRulesBody) string {
+func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickRulesBody, facts map[string]any) string {
 	fStep, fIdx := judge.StepOf(name, rules)
-	// The resolution in the file's own name against the Release name's.
-	if relName != "" {
-		fp, rp := parse.Parse(name, parse.Hints{}).Resolution, parse.Parse(relName, parse.Hints{}).Resolution
+	fp := parse.Parse(name, parse.Hints{}).Resolution
+	shown := mediainfo.Info{Width: factInt(facts, "width"), Height: factInt(facts, "height"), DisplayWidth: factInt(facts, "display_width")}
+	if real := shown.Resolution(); real > 0 {
+		// The picture size read from the file beats any name: a 720p file
+		// named 1080p is caught. The Release name's claim counts first,
+		// else the file's own name.
+		claim := fp
+		if relName != "" {
+			if rp := parse.Parse(relName, parse.Hints{}).Resolution; rp.Conf == parse.Sure && rp.Value > 0 {
+				claim = rp
+			}
+		}
+		if claim.Conf == parse.Sure && claim.Value > real {
+			return fmt.Sprintf("file is %dp, name said %dp", real, claim.Value)
+		}
+	} else if relName != "" {
+		// The resolution in the file's own name against the Release name's.
+		rp := parse.Parse(relName, parse.Hints{}).Resolution
 		fr, rr := fp.Value, rp.Value
 		if fp.Conf == parse.Sure && rp.Conf == parse.Sure && fr > 0 && rr > fr {
 			return fmt.Sprintf("file is %dp, name said %dp", fr, rr)

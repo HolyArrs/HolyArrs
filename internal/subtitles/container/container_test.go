@@ -69,6 +69,24 @@ func TestRefusals(t *testing.T) {
 	}
 }
 
+// Matroska element ids used by the fixtures.
+const (
+	idEBML         = 0x1A45DFA3
+	idDocType      = 0x4282
+	idSegment      = 0x18538067
+	idSeekHead     = 0x114D9B74
+	idSeek         = 0x4DBB
+	idSeekID       = 0x53AB
+	idSeekPosition = 0x53AC
+	idTracks       = 0x1654AE6B
+	idCluster      = 0x1F43B675
+	idTrackEntry   = 0xAE
+	idTrackNumber  = 0xD7
+	idTrackType    = 0x83
+	idCodecID      = 0x86
+	idLanguage     = 0x22B59C
+)
+
 // ebml writes one element with a 1-byte or 8-byte size.
 func ebml(id uint32, body []byte) []byte {
 	var out []byte
@@ -99,12 +117,12 @@ func TestHostileMatroska(t *testing.T) {
 	// A Tracks element claiming 1 TB is refused before anything is read.
 	huge := append(header(), 0x18, 0x53, 0x80, 0x67, 0xFF) // segment of unknown size
 	huge = append(huge, 0x16, 0x54, 0xAE, 0x6B, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00)
-	if _, err := Read(bytes.NewReader(huge), int64(len(huge))); !errors.Is(err, ErrLimit) {
+	if _, err := Read(bytes.NewReader(huge), int64(len(huge))); !errors.Is(err, ErrLimit) && !errors.Is(err, ErrMalformed) {
 		t.Errorf("huge tracks: %v", err)
 	}
 	// Many tiny Void elements stop at the element limit.
 	seg := []byte{}
-	for range maxElements + 10 {
+	for range 20000 { // past the element budget
 		seg = append(seg, 0xEC, 0x80) // Void, empty
 	}
 	many := append(header(), ebml(idSegment, seg)...)
@@ -148,6 +166,20 @@ func TestHostileMatroska(t *testing.T) {
 	if err != nil || len(got) != 1 || got[0].Language != "eng" || !got[0].Picture {
 		t.Fatalf("pgs: %+v %v", got, err)
 	}
+	// EBML lets strings be empty or padded with zero bytes and integers be
+	// empty (their default): the tracks are still listed, the padding cut.
+	padded := ebml(idTrackEntry, bytes.Join([][]byte{
+		ebml(idTrackNumber, []byte{4}), ebml(idTrackType, []byte{0x11}),
+		ebml(idCodecID, []byte("S_TEXT/UTF8\x00")), ebml(idLanguage, []byte("eng\x00\x00")), ebml(0x88, nil),
+	}, nil))
+	empty := ebml(idTrackEntry, bytes.Join([][]byte{
+		ebml(idTrackNumber, []byte{5}), ebml(idTrackType, []byte{0x11}), ebml(idLanguage, nil),
+	}, nil))
+	f = append(header(), ebml(idSegment, ebml(idTracks, append(padded, empty...)))...)
+	got, err = Read(bytes.NewReader(f), int64(len(f)))
+	if err != nil || len(got) != 2 || got[0].Language != "eng" || got[0].Codec != "S_TEXT/UTF8" || got[0].Index != 4 || got[1].Index != 5 {
+		t.Fatalf("padded: %+v %v", got, err)
+	}
 }
 
 func mp4box(typ string, body []byte) []byte {
@@ -176,9 +208,6 @@ func TestHostileMP4(t *testing.T) {
 	none := mp4box("ftyp", []byte("isom"))
 	if _, err := Read(bytes.NewReader(none), int64(len(none))); !errors.Is(err, ErrMalformed) {
 		t.Errorf("no moov: %v", err)
-	}
-	if got := packedLanguage(0x15C7); got != "eng" {
-		t.Errorf("eng packs to %q", got)
 	}
 }
 

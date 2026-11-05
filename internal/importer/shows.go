@@ -447,6 +447,12 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				minutes = -1 // one length unknown: the floor for an unknown length
 			}
 		}
+		if !music && sampleByLength(inspected[plan[i].SourceFile], fakes.lengthMinutes(max(minutes, 0))) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, "a sample, not the full video (it plays "+lengthWords(factInt(inspected[plan[i].SourceFile], "runtime_seconds"))+")")
+			delete(olds, i)
+			continue
+		}
 		why, err := fakes.fakeFileOf(plan[i].SourceFile, music, max(minutes, 0), relName)
 		if err != nil {
 			// Not the Release's fault: these Slots wait for a person.
@@ -470,7 +476,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if len(olds[i]) > 0 {
 			oldName = fileName(olds[i][0])
 		}
-		why = lieOf(name, relName, len(olds[i]) > 0, oldName, pr.Body)
+		why = lieOf(name, relName, len(olds[i]) > 0, oldName, pr.Body, inspected[plan[i].SourceFile])
 		if why == "" && music && len(olds[i]) > 0 {
 			why = lossyOverLossless(plan[i].SourceFile, relName, olds[i][0], filepath.Join(lf.Path, filepath.FromSlash(olds[i][0].RelativePath)), pr.Body)
 		}

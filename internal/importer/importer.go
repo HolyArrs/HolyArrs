@@ -150,6 +150,44 @@ func isSample(path string, p parse.Result) bool {
 	return false
 }
 
+// sampleByLength says whether a video is a sample by how long it plays,
+// read from its headers (facts). A file under 15 seconds is always a
+// sample. Otherwise, when the expected runtime (minutes) is known, the file
+// must play at least a set least length: 15 seconds for a clip of up to 3
+// minutes, 90 seconds up to 10 minutes, 5 minutes up to half an hour and
+// 10 minutes for anything longer. An unknown length is never a sample here;
+// the name check (isSample) still applies.
+func sampleByLength(facts map[string]any, minutes int) bool {
+	secs := factInt(facts, "runtime_seconds")
+	if secs <= 0 {
+		return false
+	}
+	if secs < 15 {
+		return true
+	}
+	if minutes <= 0 {
+		return false
+	}
+	least := 15
+	switch {
+	case minutes > 30:
+		least = 10 * 60
+	case minutes > 10:
+		least = 5 * 60
+	case minutes > 3:
+		least = 90
+	}
+	return secs < least
+}
+
+// lengthWords says a play length in plain words: "40 seconds", "3 minutes".
+func lengthWords(secs int) string {
+	if secs < 120 {
+		return strconv.Itoa(secs) + " seconds"
+	}
+	return strconv.Itoa(secs/60) + " minutes"
+}
+
 func confidence(c parse.Conf) float64 {
 	switch c {
 	case parse.Sure:
