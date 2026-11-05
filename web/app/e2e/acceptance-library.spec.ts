@@ -60,6 +60,7 @@ test.beforeAll(async ({ browser }) => {
 	page = await context.newPage();
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
 	await page.getByLabel('Name').fill(owner.name);
 	await page.getByLabel('Password', { exact: true }).fill(owner.password);
 	await page.getByLabel('Password again').fill(owner.password);

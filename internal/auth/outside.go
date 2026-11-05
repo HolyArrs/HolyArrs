@@ -96,6 +96,7 @@ func (a *Auth) outsideRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/plex/start", a.plexStart)
 	m.HandleFunc("POST /api/v1/auth/plex/finish", a.plexFinish)
 	m.HandleFunc("POST /api/v1/auth/media-server/{kind}", a.mediaServerLogin)
+	a.setupOutsideRoutes(m)
 }
 
 // ways lists the sign-in ways the sign-in page offers.

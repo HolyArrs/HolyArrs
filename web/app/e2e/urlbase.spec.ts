@@ -28,6 +28,7 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await expect.poll(async () => (await page.request.get(`${root}/readyz`)).status(), { timeout: 120_000 }).toBe(200);
 	await page.goto(root);
 	await expect(page).toHaveURL(/\/holyarrs\/login/);
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('base-test-password');
 	await page.getByLabel('Password again').fill('base-test-password');

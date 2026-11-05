@@ -35,6 +35,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	// No setup code (decisions/0009): whoever opens a fresh HolyArrs first makes the owner.
 	const o = newOwner();
 	await expect(page.getByLabel('Setup code')).toHaveCount(0);
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

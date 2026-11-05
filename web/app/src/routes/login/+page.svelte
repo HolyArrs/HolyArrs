@@ -7,7 +7,7 @@
 	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/loader.ts';
 	import { page } from '$app/state';
 	import { ApiError, message } from '#lib/api.ts';
-	import { session, type SignInResult } from '#lib/session.svelte.ts';
+	import { session, type FoundServer, type SignInResult } from '#lib/session.svelte.ts';
 	import { safeNext } from '#lib/next.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import SigninPortals from '#lib/SigninPortals.svelte';
@@ -34,7 +34,7 @@
 	function focusStep() {
 		if (!matchMedia('(pointer: fine)').matches && document.documentElement.dataset.input !== 'keyboard') return;
 		void tick().then(() => {
-			for (const s of ['.digit', '#otp', '#name', '#password', '.acct-pick', '.step button']) {
+			for (const s of ['.digit', '#otp', '#addr', '#name', '#password', '.acct-pick', '.step button']) {
 				const el = panelEl?.querySelector<HTMLElement>(s);
 				if (el) return el.focus({ preventScroll: true });
 			}
@@ -108,6 +108,21 @@
 	let plexTimer: ReturnType<typeof setInterval> | undefined;
 
 	const mode = $derived(session.s.state === 'needs_setup' ? 'setup' : ticket ? 'code' : 'login');
+	// First run: which way makes the owner. 'choose' shows them all; Plex
+	// signs in from its tile, the others open their form.
+	type SetupWay = 'password' | 'plex' | 'jellyfin' | 'emby';
+	let setupWay = $state<'choose' | 'password' | 'jellyfin' | 'emby'>('choose');
+	const setupName = (w: SetupWay) => w.charAt(0).toUpperCase() + w.slice(1);
+	const setupTiles = $derived((['password', 'plex', 'jellyfin', 'emby'] as const).filter((w) => session.s.setupWays.includes(w)));
+	const setupServer = $derived(setupWay === 'jellyfin' || setupWay === 'emby' ? setupWay : null);
+	// The Jellyfin or Emby server's address, and the servers that answered on the network.
+	let address = $state('');
+	let found = $state<FoundServer[]>([]);
+	let looking = $state(false);
+	let looked = false;
+	const foundHere = $derived(found.filter((f) => f.kind === setupServer));
+	// How the owner was made, for remembering them on this device.
+	let firstRunWay: RecentWay | '' = '';
 	const waiting = $derived(Math.max(0, Math.ceil((waitUntil - now) / 1000)));
 	const wayWord = { jellyfin: 'Jellyfin', emby: 'Emby' } as const;
 	const outside = $derived(session.s.ways.filter((w) => w !== 'password'));
@@ -135,13 +150,14 @@
 	// The round back button in the panel's corner, when there is somewhere to go back to.
 	const backTo = $derived.by(() => {
 		if (mode === 'code') return { label: 'Back to sign in', go: restart };
+		if (mode === 'setup') return setupWay !== 'choose' ? { label: 'Other ways', go: () => setupPick('choose') } : null;
 		if (mode !== 'login' || !shown.length) return null;
 		if (acctView === 'list' && shown.length === 1) return { label: `Back to ${shown[0].name}`, go: () => openPerson(0) };
 		if ((acctView === 'person' && shown.length > 1) || acct === 'new') return { label: 'All accounts', go: showList };
 		return null;
 	});
 	// One key per step: the panel's content rises in when it changes.
-	const step = $derived(plexWaiting ? 'plex' : `${mode}-${via}-${acctView}-${person?.name ?? ''}`);
+	const step = $derived(plexWaiting ? 'plex' : `${mode}-${mode === 'setup' ? setupWay : via}-${acctView}-${person?.name ?? ''}`);
 	let calm = $state(false);
 	// The first step is there on the first frame; only later step changes rise in.
 	let firstStep = '';
@@ -245,11 +261,12 @@
 		left = true;
 		// Remember who signed in here, and how (the trusted proxy signs in by itself).
 		const way: RecentWay | '' =
-			lastWay === 'plex' || lastWay === 'oidc'
+			firstRunWay ||
+			(lastWay === 'plex' || lastWay === 'oidc'
 				? lastWay
 				: !tileWay && name.trim() && (via === 'password' || via === 'jellyfin' || via === 'emby')
 					? via
-					: '';
+					: '');
 		if (way) {
 			rememberPerson(session.s.name, way, way === 'jellyfin' || way === 'emby' ? name.trim() : undefined);
 			void keepPersonPic(session.s.name, session.s.avatar);
@@ -434,6 +451,66 @@
 		pw = '';
 	}
 
+	function setupPick(w: 'choose' | 'password' | 'jellyfin' | 'emby') {
+		setupWay = w;
+		error = '';
+		pw = '';
+		pwAgain = '';
+		if (w === 'jellyfin' || w === 'emby') void lookForServers(w);
+		focusStep();
+	}
+
+	function setupPress(w: SetupWay) {
+		lastWay = w === 'plex' ? 'plex' : '';
+		if (w === 'plex') void plex();
+		else setupPick(w);
+	}
+
+	// Asks the network once; a single server of the chosen kind fills the address.
+	async function lookForServers(kind: 'jellyfin' | 'emby') {
+		if (!looked) {
+			looked = true;
+			looking = true;
+			found = await session.setupFindServers();
+			looking = false;
+		}
+		const mine = found.filter((f) => f.kind === kind);
+		if (!address.trim() && mine.length === 1 && setupWay === kind) address = mine[0].address;
+	}
+
+	async function submitServer(e: SubmitEvent) {
+		e.preventDefault();
+		lastWay = '';
+		error = '';
+		const kind = setupServer;
+		if (!kind) return;
+		if (!address.trim()) {
+			error = `Give the ${wayWord[kind]} address.`;
+			return;
+		}
+		if (!name.trim()) {
+			error = `Give your ${wayWord[kind]} name.`;
+			return;
+		}
+		busy = true;
+		try {
+			firstRun = true;
+			firstRunWay = kind;
+			await session.setupMediaServer(kind, address.trim(), name.trim(), pw);
+		} catch (err) {
+			firstRunWay = '';
+			if (err instanceof ApiError && err.status === 409) {
+				error = 'The owner is already set up. Sign in instead.';
+				await session.load();
+			} else {
+				failed(err);
+			}
+			pw = '';
+		} finally {
+			busy = false;
+		}
+	}
+
 	function press(w: Way) {
 		lastWay = w;
 		if (w === 'plex') void plex();
@@ -449,10 +526,13 @@
 
 	async function plex() {
 		error = '';
+		// First run: the Plex account becomes the owner.
+		const setup = mode === 'setup';
+		if (setup) firstRun = true;
 		// Open the window while the click still counts, then point it at Plex.
 		const win = window.open('', 'plex-sign-in', 'width=600,height=720');
 		try {
-			const p = await session.plexStart();
+			const p = await (setup ? session.setupPlexStart() : session.plexStart());
 			if (win) {
 				win.opener = null; // the Plex page cannot reach back into HolyArrs
 				win.location.href = p.auth_url;
@@ -469,7 +549,7 @@
 					return;
 				}
 				try {
-					const r = await session.plexFinish(p.id);
+					const r = await (setup ? session.setupPlexFinish(p.id) : session.plexFinish(p.id));
 					if (r === 'waiting') return;
 					clearInterval(plexTimer);
 					plexWaiting = false;
@@ -479,11 +559,13 @@
 					clearInterval(plexTimer);
 					plexWaiting = false;
 					win?.close();
+					if (setup && err instanceof ApiError && err.status === 409) void session.load();
 					failed(err);
 				}
 			}, 2000);
 		} catch (err) {
 			win?.close();
+			if (setup && err instanceof ApiError && err.status === 409) void session.load();
 			failed(err);
 		}
 	}
@@ -659,7 +741,7 @@
 					{:else}
 						<h1 class="title">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-step check' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}</h1>
 						{#if mode === 'setup'}
-							<p class="lead">First start. Make the owner account: the one person who runs this HolyArrs.</p>
+							<p class="lead">{setupServer ? `Sign in with an admin account on your ${wayWord[setupServer]} server.` : 'First start. Make the owner account: the one person who runs this HolyArrs.'}</p>
 							{#if session.s.configUnmapped}
 								<p class="form-error" role="status">/config is not mapped to a host folder or named volume, so everything set up here is lost when the container is recreated. Map /config first: see "Forgot to map /config?" in the install guide. Lost an earlier setup? Look for it with docker volume ls.</p>
 							{/if}
@@ -671,7 +753,66 @@
 							<p class="lead">Choose how to sign in.</p>
 						{/if}
 
-						{#if mode === 'code'}
+						{#if mode === 'setup' && setupWay === 'choose'}
+							<div class="provs" data-n={setupTiles.length} data-testid="setup-ways">
+								{#each setupTiles as w (w)}
+									<button class="prov" type="button" use:pixelTrail={{ busy: false, fail: lastWay === w ? failN : 0 }} data-way={w} disabled={busy} onclick={() => setupPress(w)}>
+										{#if w === 'password'}
+											<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#f5f5f7" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" /><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7" stroke-linecap="round" /></svg>
+										{:else if w === 'plex'}
+											<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
+										{:else if w === 'jellyfin'}
+											<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="jg-setup" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#AA5CC3" /><stop offset="1" stop-color="#00A4DC" /></linearGradient></defs><path d="M12 3c-2 0-9 12.4-8 14.4S20 19.4 21 17.4 14 3 12 3zm0 6c1 0 4.4 6 4 7s-7.6 1-8 0S11 9 12 9z" fill="url(#jg-setup)" /></svg>
+										{:else}
+											<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="#52B54B" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
+										{/if}
+										<span>{setupName(w)}</span>
+									</button>
+								{/each}
+							</div>
+							{#if error}
+								<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
+							{/if}
+						{:else if mode === 'setup' && setupServer}
+							{@const kind = setupServer}
+							<form onsubmit={submitServer} novalidate>
+								<div class="field">
+									<label for="addr">Address</label>
+									<input id="addr" class="input mono" bind:value={address} placeholder="http://192.168.1.10:8096" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" maxlength="500" required />
+									{#if foundHere.length}
+										<div class="accts found" role="group" aria-label="Found on your network" data-testid="setup-found">
+											{#each foundHere as f (f.address)}
+												<div class="acct">
+													<button type="button" class="acct-pick" aria-pressed={address === f.address} onclick={() => { address = f.address; focusStep(); }}>
+														<span class="acct-name"><span class="acct-n">{f.name}</span><span class="acct-way mono">{f.address}</span></span>
+														<span class="acct-end" aria-hidden="true">{address === f.address ? '✓' : '›'}</span>
+													</button>
+												</div>
+											{/each}
+										</div>
+									{:else if looking}
+										<p class="note looking" role="status">Looking on your network…</p>
+									{/if}
+								</div>
+								<div class="field">
+									<label for="name">Name</label>
+									<input id="name" class="input" bind:value={name} autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="128" required />
+								</div>
+								<div class="field">
+									<label for="password">Password</label>
+									<div class="pw">
+										<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" />
+										<IconButton icon={showPw ? 'eyeOff' : 'eye'} label="Show password" aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+									</div>
+								</div>
+								{#if error}
+									<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
+								{/if}
+								<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy, fail: failN }}>
+									<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>Sign in with {wayWord[kind]}</Button>
+								</div>
+							</form>
+						{:else if mode === 'code'}
 							<form onsubmit={submitCode} novalidate>
 								{#if useBackup}
 									<div class="field">
@@ -1128,6 +1269,13 @@
 	.corner { position: absolute; top: 34px; left: 34px; z-index: 1; }
 	.face img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 	.note { margin-top: 10px; text-align: center; color: rgb(255 255 255 / 0.55); font: var(--t-footnote); }
+	/* First run: servers found on the network sit above the address field. */
+	.found { margin-top: 8px; }
+	.found .acct-pick { min-height: 56px; }
+	.found .acct-pick[aria-pressed='true'] .acct-end { color: var(--accent-text); }
+	.light .found .acct-pick[aria-pressed='true'] .acct-end { color: #1d1d1f; }
+	.found .acct-way { overflow: hidden; text-overflow: ellipsis; }
+	.looking { margin: 6px 0 0; }
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
 

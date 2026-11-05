@@ -155,6 +155,11 @@ type Auth struct {
 	codes aiCodes
 	// cimd reads AI apps' client ID metadata documents (aicimd.go).
 	cimd aiCIMD
+	// The first-run search for Jellyfin and Emby (setup_outside.go): where
+	// it is sent and how long it waits (defaults when empty), one at a time.
+	discoverTo   string
+	discoverWait time.Duration
+	discovering  atomic.Bool
 }
 
 type failure struct {
@@ -343,7 +348,10 @@ func public(r *http.Request) bool {
 		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
 		"POST /api/v1/auth/forward/login", "GET /api/v1/public/signin-art",
 		"POST /api/v1/auth/plex/start", "POST /api/v1/auth/plex/finish",
-		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby":
+		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby",
+		"POST /api/v1/auth/setup/plex/start", "POST /api/v1/auth/setup/plex/finish",
+		"POST /api/v1/auth/setup/media-server/jellyfin", "POST /api/v1/auth/setup/media-server/emby",
+		"GET /api/v1/auth/setup/discover":
 		return true
 	}
 	// The sign-in page's pictures (the handler serves only its own art).
@@ -454,7 +462,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		if public(r) {
 			// First-run setup checks the host name itself: a home name is
 			// accepted there with no proxy in between (hosts.go).
-			setup := r.Method == http.MethodPost && r.URL.Path == "/api/v1/auth/setup"
+			setup := r.Method == http.MethodPost && r.URL.Path == "/api/v1/auth/setup" || setupOutsidePath(r)
 			if unsafeMethod(r.Method) && a.refuse(w, r, !setup) {
 				return
 			}
@@ -559,6 +567,9 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 		"min_password_length": MinPasswordLength(r.Context(), a.s.Read())}
 	if a.configUnmapped {
 		out["config_unmapped"] = true
+	}
+	if !ok {
+		out["setup_ways"] = setupWays
 	}
 	writeJSON(w, http.StatusOK, out)
 }

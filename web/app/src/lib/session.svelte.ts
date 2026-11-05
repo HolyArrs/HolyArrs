@@ -32,6 +32,13 @@ export interface Me {
 	rating_country?: string;
 }
 
+/** A Jellyfin or Emby server found on the local network at first run. */
+export interface FoundServer {
+	kind: 'jellyfin' | 'emby';
+	name: string;
+	address: string;
+}
+
 /** A sign-in step answers with a session, or asks for a two-factor code. */
 export type SignInResult = { done: true } | { done: false; ticket: string };
 
@@ -66,6 +73,8 @@ export function createSession(client: Client = defaultClient) {
 		/** Age-rating limit; '' means none. A Kid has one. */
 		maxRating: string;
 		ways: Way[];
+		/** Ways the first-run screen offers to make the owner. */
+		setupWays: Way[];
 		/** The server started in safe mode: only the core runs. */
 		safeMode: boolean;
 		/** /config is not mapped to the host (first-run note). */
@@ -88,6 +97,7 @@ export function createSession(client: Client = defaultClient) {
 		avatar: null,
 		maxRating: '',
 		ways: ['password'],
+		setupWays: ['password'],
 		safeMode: false,
 		configUnmapped: false,
 		minPassword: 8
@@ -96,6 +106,7 @@ export function createSession(client: Client = defaultClient) {
 	interface AuthState {
 		needs_setup: boolean;
 		ways?: Way[];
+		setup_ways?: Way[];
 		safe_mode?: boolean;
 		min_password_length?: number;
 		config_unmapped?: boolean;
@@ -103,6 +114,7 @@ export function createSession(client: Client = defaultClient) {
 	function tookState(st: AuthState) {
 		s.minPassword = Math.max(4, st.min_password_length ?? 8);
 		if (st.ways) s.ways = st.ways;
+		s.setupWays = st.setup_ways?.length ? st.setup_ways : ['password'];
 		if (st.safe_mode !== undefined) s.safeMode = !!st.safe_mode;
 		s.configUnmapped = !!st.config_unmapped;
 	}
@@ -261,6 +273,31 @@ export function createSession(client: Client = defaultClient) {
 		await finish(await client.post<SignInAnswer>('/auth/setup', { name, password }));
 	}
 
+	/** First run: make the owner from a Plex account (a PIN, like plexStart). */
+	async function setupPlexStart(): Promise<{ id: number; auth_url: string }> {
+		return client.post('/auth/setup/plex/start');
+	}
+
+	async function setupPlexFinish(id: number): Promise<SignInResult | 'waiting'> {
+		const r = await client.post<SignInAnswer & { waiting?: boolean }>('/auth/setup/plex/finish', { id });
+		if (r?.waiting) return 'waiting';
+		return finish(r);
+	}
+
+	/** First run: make the owner from an admin account on a Jellyfin or Emby server. */
+	async function setupMediaServer(kind: 'jellyfin' | 'emby', url: string, name: string, password: string): Promise<SignInResult> {
+		return finish(await client.post<SignInAnswer>(`/auth/setup/media-server/${kind}`, { url, name, password }));
+	}
+
+	/** First run: Jellyfin and Emby servers that answered on the local network. */
+	async function setupFindServers(): Promise<FoundServer[]> {
+		try {
+			return (await client.get<{ servers?: FoundServer[] }>('/auth/setup/discover')).servers ?? [];
+		} catch {
+			return [];
+		}
+	}
+
 	async function logout() {
 		const expected = ++generation;
 		try {
@@ -301,6 +338,10 @@ export function createSession(client: Client = defaultClient) {
 		plexFinish,
 		acceptInvite,
 		setup,
+		setupPlexStart,
+		setupPlexFinish,
+		setupMediaServer,
+		setupFindServers,
 		logout,
 		lost,
 		can,

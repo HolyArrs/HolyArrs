@@ -22,6 +22,7 @@ test.beforeAll(async ({ browser }) => {
 		await page.goto('/');
 		await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible({ timeout: 2_000 });
 	}).toPass({ timeout: 120_000 });
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
 	await page.getByLabel('Name').fill(owner().name);
 	await page.getByLabel('Password', { exact: true }).fill(owner().password);
 	await page.getByLabel('Password again').fill(owner().password);

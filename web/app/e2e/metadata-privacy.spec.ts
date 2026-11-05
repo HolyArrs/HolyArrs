@@ -7,6 +7,7 @@ import { moviesDir, newOwner, noSidewaysScroll, finishFirstRun } from './helpers
 test('Settings > Metadata shows what the metadata server gets', async ({ page }) => {
 	await page.goto('/');
 	const o = newOwner();
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

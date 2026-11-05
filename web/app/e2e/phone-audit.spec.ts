@@ -52,6 +52,7 @@ test('phone audit: every page at 360 and 390', async ({ page }) => {
 		await page.goto('/');
 		await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible({ timeout: 2_000 });
 	}).toPass({ timeout: 120_000 });
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('phone-audit-pw');
 	await page.getByLabel('Password again').fill('phone-audit-pw');

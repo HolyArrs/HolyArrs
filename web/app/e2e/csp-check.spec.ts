@@ -13,6 +13,7 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	const res = await page.goto('/');
 	expect(res?.headers()['content-security-policy']).toContain("frame-src https://www.youtube-nocookie.com");
 	const o = newOwner();
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByLabel('Password again').fill(o.password);

@@ -30,6 +30,8 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 		"GET /healthz": true, "GET /readyz": true, "GET /api/v1/auth/state": true, "POST /api/v1/auth/setup": true, "POST /api/v1/auth/login": true,
 		"POST /api/v1/auth/login/two-factor": true, "POST /api/v1/auth/plex/start": true, "POST /api/v1/auth/plex/finish": true,
 		"POST /api/v1/auth/media-server/{kind}": true, "GET /api/v1/auth/invites/{token}": true, "POST /api/v1/auth/invites/{token}": true,
+		"POST /api/v1/auth/setup/plex/start": true, "POST /api/v1/auth/setup/plex/finish": true,
+		"POST /api/v1/auth/setup/media-server/{kind}": true, "GET /api/v1/auth/setup/discover": true,
 	}
 	seen := 0
 	for _, dir := range []string{".", "../auth", "../backup"} {

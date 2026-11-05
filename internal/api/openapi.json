@@ -10854,6 +10854,271 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/setup/discover": {
+      "get": {
+        "description": "Asks the local network for Jellyfin and Emby servers for about a second and a half; answers servers with kind, name and address (empty when none answer). Only while there is no owner.",
+        "operationId": "setupDiscover",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not found."
+          }
+        },
+        "security": [],
+        "summary": "Find Jellyfin and Emby servers (first run)",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/setup/media-server/{kind}": {
+      "post": {
+        "description": "Checks the name and password on the server at url; the account must be an admin there. It becomes the owner, that way is turned on with that address and the owner is signed in. Only while there is no owner.",
+        "operationId": "setupMediaServer",
+        "parameters": [
+          {
+            "description": "jellyfin or emby.",
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "jellyfin",
+                "emby"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong name or password."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not allowed."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many tries."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The server could not be reached."
+          }
+        },
+        "security": [],
+        "summary": "Make the owner with Jellyfin or Emby (first run)",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/setup/plex/finish": {
+      "post": {
+        "description": "Checks the PIN; 202 while it waits. Once confirmed, the Plex account becomes the owner, its link and token are kept, Plex sign-in is turned on and the owner is signed in.",
+        "operationId": "setupPlexFinish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          }
+        },
+        "security": [],
+        "summary": "Make the owner with Plex (first run)",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/setup/plex/start": {
+      "post": {
+        "description": "Starts a plex.tv PIN to make the owner from a Plex account; only while there is no owner.",
+        "operationId": "setupPlexStart",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not allowed."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          }
+        },
+        "security": [],
+        "summary": "Start making the owner with Plex (first run)",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/sso": {
       "get": {
         "description": "The single sign-on setup as Settings shows it: where it comes from (Settings or the environment), the issuer, client id, callback address, whether a secret is saved (never the secret), how many people are linked, and trusted proxy sign-in read-only. The owner only, with a recent local password.",

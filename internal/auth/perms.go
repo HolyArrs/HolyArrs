@@ -776,6 +776,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/ask-limits":                          ScopeAdmin,
 	"GET /api/v1/auth/state":                          ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/auth/invites/{token}":                ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/auth/setup/discover":                 ScopeAdmin, // public, first run only; a key never needs it
 	"GET /api/v1/auth/oidc/callback":                  ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/public/signin-art":                   ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/public/signin-pic/t/p/{size}/{file}": ScopeAdmin, // public; a key never needs it

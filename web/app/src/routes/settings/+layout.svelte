@@ -8,6 +8,7 @@
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Confirm from '#lib/account/Confirm.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { filterSections, grouped, sectionFor, sections as all, visible } from '#lib/settings.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
@@ -168,7 +169,11 @@
 			</div>
 		{/if}
 		<div class="settings-content">
-			{#if reauth}
+			{#if reauth && !session.s.hasPassword}
+				<SettingsCard id="settings-reauth" title="Set a password first" description="This touches keys, passwords, people or backups, so HolyArrs asks for your HolyArrs password. You sign in another way and have none yet." icon="shield">
+					<div><Button variant="primary" href={to('/account')}>Set a password</Button></div>
+				</SettingsCard>
+			{:else if reauth}
 				<SettingsCard id="settings-reauth" title="Confirm your password" description="This touches keys, passwords, people or backups, so HolyArrs asks for your password again. It then won't ask for 10 minutes." icon="shield">
 					<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 				</SettingsCard>

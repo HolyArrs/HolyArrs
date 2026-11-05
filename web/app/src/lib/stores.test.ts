@@ -153,6 +153,42 @@ describe('session', () => {
 		const c = server({ 'GET /auth/me': json(401, { error: 'sign in first' }), 'GET /auth/state': json(200, { needs_setup: true }) });
 		const s = createSession(c);
 		expect(await s.load()).toBe('needs_setup');
+		expect(s.s.setupWays).toEqual(['password']);
+	});
+
+	it('reads the first-run ways and makes the owner from a media server', async () => {
+		let sent: unknown;
+		let meOK = false;
+		const c = createClient(async (url: string, init?: RequestInit) => {
+			if (url.endsWith('/auth/state')) {
+				return new Response(JSON.stringify({ needs_setup: true, ways: ['password'], setup_ways: ['password', 'plex', 'jellyfin', 'emby'] }));
+			}
+			if (url.endsWith('/auth/setup/discover')) {
+				return new Response(JSON.stringify({ servers: [{ kind: 'jellyfin', name: 'Den', address: 'http://192.168.1.20:8096' }] }));
+			}
+			if (url.endsWith('/auth/setup/media-server/jellyfin')) {
+				sent = JSON.parse(String(init?.body));
+				meOK = true;
+				return new Response(JSON.stringify({ name: 'Boss', csrf: 'temporary' }), { status: 201 });
+			}
+			if (url.endsWith('/auth/me') && meOK) {
+				return new Response(JSON.stringify({ name: 'Boss', via: 'session', csrf: 'c3', role: 'owner', perms: [], auth_method: 'jellyfin' }));
+			}
+			return new Response(JSON.stringify({ error: 'sign in first' }), { status: 401 });
+		});
+		const s = createSession(c);
+		expect(await s.load()).toBe('needs_setup');
+		expect(s.s.setupWays).toEqual(['password', 'plex', 'jellyfin', 'emby']);
+		expect(await s.setupFindServers()).toEqual([{ kind: 'jellyfin', name: 'Den', address: 'http://192.168.1.20:8096' }]);
+		await s.setupMediaServer('jellyfin', 'http://192.168.1.20:8096', 'boss', 'pw');
+		expect(sent).toEqual({ url: 'http://192.168.1.20:8096', name: 'boss', password: 'pw' });
+		expect(s.s.state).toBe('signed_in');
+		expect(s.s.role).toBe('owner');
+	});
+
+	it('finds no servers when the search fails', async () => {
+		const c = createClient(async () => new Response(JSON.stringify({ error: 'not found' }), { status: 404 }));
+		expect(await createSession(c).setupFindServers()).toEqual([]);
 	});
 
 	it('signs in, then out', async () => {
