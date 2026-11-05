@@ -75,7 +75,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 
 	await expect(page).toHaveURL(/\/$/);
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
-	await expect(page.locator('header.ui-head')).toContainText(/luis/i);
+	await expect(page.getByTestId('home-greeting')).toContainText(/luis/i);
 	const gettingStarted = page.getByRole('region', { name: 'Welcome to HolyArrs' });
 	await expect(gettingStarted.getByText('1 of 4 done', { exact: true })).toBeVisible();
 	await expect(gettingStarted.getByText(/TMDB/)).toHaveCount(0);

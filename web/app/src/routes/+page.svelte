@@ -18,6 +18,7 @@
 	import type { Fresh } from '#lib/fresh.ts';
 	import type { DownloadRow } from '#lib/downloaders.ts';
 	import type { Ask, Health, HealthChecks, LibraryFolder } from '#lib/types.ts';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
@@ -294,9 +295,10 @@
 <svelte:head><title>Home · HolyArrs</title></svelte:head>
 
 <div class="home">
-	<h1 class="sr-only">Home</h1>
-	<header class="top">
-		<p class="greet">{greeting}</p>
+	<div class="top">
+		<p class="greet" data-testid="home-greeting">{greeting}</p>
+		<!-- The page's own heading, for screen readers and for the small title bar phones show once the greeting has scrolled away. -->
+		<PageHeader title="Home" />
 		<div class="top-row">
 			{#if showSystem && showOverview && loaded}
 				<SegmentedControl options={[{ value: 'home', label: 'Home', icon: 'home' }, { value: 'system', label: 'System', icon: 'gauge' }]} bind:value={board} label="Show on Home" testid="home-switch" announce={(l) => `Showing ${l}`} />
@@ -309,7 +311,7 @@
 				<span class="phone-only"><IconButton icon="search" label="Search" variant="tinted" size="lg" href={to('/search')} tooltip={false} /><IconButton icon="compass" label="Explore" variant="tinted" size="lg" href={to('/explore')} tooltip={false} /></span>
 			</div>
 		</div>
-	</header>
+	</div>
 
 	{#if failed && !home && loaded}
 		<LoadError hasData={false} message="Could not load Home." onretry={retry} busy={retrying} />
@@ -619,6 +621,7 @@
 
 	/* The top: the greeting, then one line with the Home | System switch, the note beside it, and Search and Explore. */
 	.top { display: flex; flex-direction: column; gap: 14px; margin-bottom: -8px; }
+	.top :global(.ui-head) { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 	.greet { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
 	.top-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 44px; }
 	.top-row :global(.ui-seg button) { padding: 0 16px; }
