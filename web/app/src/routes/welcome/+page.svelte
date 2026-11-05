@@ -7,7 +7,7 @@
 	import { to } from '#lib/paths.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { refreshParts } from '#lib/parts.svelte.ts';
-	import { needsProblem, partStops, type PartName } from '#lib/parts.ts';
+	import { needsProblem, type PartName } from '#lib/parts.ts';
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
@@ -28,11 +28,12 @@
 	let busy = $state(false);
 	let error = $state('');
 
-	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string }[] = [
-		{ part: 'movies', label: 'Movies' },
-		{ part: 'shows', label: 'TV shows' },
-		{ part: 'music', label: 'Music' },
-		{ part: 'subtitles', label: 'Subtitles' }
+	// One short line each: what the part gives you (Settings > Parts says what stops).
+	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string; gives: string }[] = [
+		{ part: 'movies', label: 'Movies', gives: 'Find and download films.' },
+		{ part: 'shows', label: 'TV shows', gives: 'Follow shows and get new episodes.' },
+		{ part: 'music', label: 'Music', gives: 'Artists and albums.' },
+		{ part: 'subtitles', label: 'Subtitles', gives: 'Fetched for everything you have.' }
 	];
 	const full = $derived<Record<PartName, boolean>>({ ...want, wishlist: family === 'yes' });
 	const problem = $derived(needsProblem(full));
@@ -103,16 +104,16 @@
 	<header class="head">
 		{#if step === 'parts'}
 			<h1>What do you use?</h1>
-			<p>Pick the parts of HolyArrs you want. Parts you leave out stay off and use nothing; change this any time in Settings &gt; Parts and controls.</p>
+			<p>Pick what you'll use. You can change it any time.</p>
 		{:else}
 			<p class="step-word">Step {stepCount} of {stepCount}</p>
 			<h1>Library folder</h1>
-			<p>Add one folder where finished movies, shows or music should live. You can add more later in Settings.</p>
+			<p>Where should finished downloads go? Add one folder now, more later.</p>
 		{/if}
 	</header>
 
 	{#if !session.can('users')}
-		<p class="notice warn">Only the owner and admins finish first-run setup.</p>
+		<p class="notice warn">Only the owner or an admin can finish setup.</p>
 	{:else if step === 'parts'}
 		<form class="card" onsubmit={submitParts} data-testid="welcome">
 			{#if firstRun}<p class="step-word">Step 1 of {stepCount}</p>{/if}
@@ -122,8 +123,8 @@
 					{#each choices as c (c.part)}
 						<li>
 							<label class="checkline">
-								<input type="checkbox" bind:checked={want[c.part]} aria-label={c.label} aria-describedby="stop-{c.part}" />
-								<span><b>{c.label}</b><br /><span id="stop-{c.part}" class="hint">Off: {partStops[c.part]}</span></span>
+								<input type="checkbox" bind:checked={want[c.part]} aria-label={c.label} aria-describedby="gives-{c.part}" />
+								<span><b>{c.label}</b><br /><span id="gives-{c.part}" class="hint">{c.gives}</span></span>
 							</label>
 						</li>
 					{/each}
@@ -132,7 +133,7 @@
 
 			<fieldset>
 				<legend>Will family or friends ask for titles?</legend>
-				<p class="hint" id="family-hint">Yes turns on the Requests page: people you invite ask, and you approve. Off: {partStops.wishlist}</p>
+				<p class="hint" id="family-hint">Yes adds a Requests page. They ask, you approve.</p>
 				<div class="row" role="radiogroup" aria-describedby="family-hint">
 					<label class="checkline"><input type="radio" name="family" value="no" bind:group={family} /> No, just me</label>
 					<label class="checkline"><input type="radio" name="family" value="yes" bind:group={family} /> Yes</label>
@@ -144,10 +145,8 @@
 				<Button variant="primary" size="lg" type="submit" disabled={busy || !!problem} aria-busy={busy}>Continue</Button>
 				<Button type="button" disabled={busy} onclick={() => saveParts({ movies: true, shows: false, music: false, subtitles: false, wishlist: false })}>Just movies</Button>
 			</div>
-			<p class="xs muted">Change it later in Settings &gt; Parts and controls. Turning a part off keeps its data.</p>
 			<p class="xs muted" data-testid="welcome-update-privacy">
-				Update check (on; turn it off in Settings &gt; This app): once a day HolyArrs asks api.github.com for the newest release, sending only the header User-Agent:
-				HolyArrs/(its version). Nothing else is sent.
+				Once a day HolyArrs checks GitHub for updates, sending only its version. Turn it off in Settings &gt; This app.
 			</p>
 		</form>
 	{:else}

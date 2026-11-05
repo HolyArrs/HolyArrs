@@ -54,7 +54,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
 	await expect(page.getByLabel('No, just me')).toBeChecked();
 	await scanFirstRun();
-	await expect(page.getByTestId('welcome')).toContainText('Off: Family and friends can no longer ask');
+	await expect(page.getByTestId('welcome')).toContainText('They ask, you approve.');
 	await page.getByLabel('Music', { exact: true }).check();
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
