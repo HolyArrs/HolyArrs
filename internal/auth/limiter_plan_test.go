@@ -1,10 +1,14 @@
 package auth
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -291,5 +295,33 @@ func TestKnownPlaceSurvivesRestart(t *testing.T) {
 	}
 	if got := login("203.0.113.50", right); got != http.StatusOK {
 		t.Fatalf("owner from home after a restart: %d, want 200", got)
+	}
+}
+
+// Forwarding headers from a private peer that is not trusted are ignored,
+// and the log says so (once per 15 minutes) with the fix.
+func TestUntrustedProxyHeadersWarnOnce(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	clock := newClock()
+	a := &Auth{now: clock.now}
+	lines := func() int { return strings.Count(buf.String(), "HOLYARRS_TRUSTED_PROXIES=172.18.0.2") }
+	for i := 0; i < 3; i++ {
+		a.ClientKey(reqFrom("172.18.0.2:4000", [][2]string{{"X-Forwarded-For", "203.0.113.9"}}))
+	}
+	if n := lines(); n != 1 {
+		t.Fatalf("%d warnings, want 1: %s", n, buf.String())
+	}
+	clock.add(16 * time.Minute)
+	a.ClientKey(reqFrom("172.18.0.2:4000", [][2]string{{"X-Forwarded-For", "203.0.113.9"}}))
+	if n := lines(); n != 2 {
+		t.Fatalf("%d warnings after 16 minutes, want 2", n)
+	}
+	buf.Reset()
+	clock.add(16 * time.Minute)
+	a.ClientKey(reqFrom("198.51.100.4:4000", [][2]string{{"X-Forwarded-For", "203.0.113.9"}}))
+	if buf.Len() != 0 {
+		t.Fatalf("warning for a public peer: %s", buf.String())
 	}
 }

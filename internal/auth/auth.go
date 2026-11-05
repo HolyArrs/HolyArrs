@@ -146,6 +146,7 @@ type Auth struct {
 	realNames    map[string]bool // lower-case user names, for the full-table rule (isRealName)
 	realNamesAt  time.Time
 	satLogged    time.Time
+	proxyWarned  atomic.Int64                    // unix nanoseconds of the last untrusted-proxy warning (localnet.go)
 	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
 	refusedHosts map[string]bool                 // refused names already logged (hosts.go)
