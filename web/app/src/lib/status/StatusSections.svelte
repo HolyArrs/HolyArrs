@@ -9,6 +9,8 @@
 	import { ago, bytes, dateTime } from '../format.ts';
 	import { nextRun, until } from '../schedules.ts';
 	import { to } from '../paths.ts';
+	import { session } from '../session.svelte.ts';
+	import AdminLinkButton from '../ui/AdminLinkButton.svelte';
 	import Button from '../ui/Button.svelte';
 	import Skeleton from '../ui/Skeleton.svelte';
 	import PartsRail from './PartsRail.svelte';
@@ -300,6 +302,14 @@
 			</dl>
 		</section>
 
+		{#if session.can('users')}
+			<section class="st-plate" aria-labelledby="s-help">
+				<h2 id="s-help">Asking for help</h2>
+				<p class="help-text">A zip with the log (passwords and keys removed), the version and a folder and permission check. Attach it when you ask for help.</p>
+				<AdminLinkButton href={to('/api/v1/support/bundle')} download data-testid="status-support-bundle">Download support bundle</AdminLinkButton>
+			</section>
+		{/if}
+
 		<section class="st-plate" aria-labelledby="s-story">
 			<h2 id="s-story">Why HolyArrs</h2>
 			<div class="story">
@@ -393,6 +403,7 @@
 	.kv dt { font-weight: 600; color: var(--text-muted); }
 	.kv dd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--text); min-width: 0; overflow-wrap: anywhere; }
 	.muted { color: var(--text-muted); }
+	.help-text { margin: 0 0 12px; max-width: 760px; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
 	.story { max-width: 760px; }
 	.story p { margin: 0 0 12px; font-size: 15px; line-height: 1.65; color: var(--text); }
 	.story p:last-child { margin-bottom: 0; }
