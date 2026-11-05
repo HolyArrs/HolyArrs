@@ -70,10 +70,10 @@
 	const dls = $derived(partCount(health?.downloaders, failingChecks('downloader').map((c) => c.subject)));
 	const partsRead = $derived(settled && !!health && !uncheckedParts);
 	const steps = $derived([
-		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders' },
-		{ done: srcs.total > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources' },
-		{ done: dls.total > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders' },
-		{ done: false, text: 'Add your first title', detail: 'Search for a new movie, show or artist to fetch, or import the folders you already have on disk.', href: '/search' }
+		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders', cta: 'Choose a folder' },
+		{ done: srcs.total > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources', cta: 'Add a Source' },
+		{ done: dls.total > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders', cta: 'Add a Downloader' },
+		{ done: false, text: 'Add your first title', detail: 'Search for a new movie, show or artist to fetch, or import the folders you already have on disk.', href: '/search', cta: 'Find a title' }
 	]);
 	const doneCount = $derived(steps.filter((s) => s.done).length);
 	const nextStep = $derived(steps.find((s) => !s.done) ?? steps[3]);
@@ -828,7 +828,7 @@
 								<span class="sk setup-wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Loading</span>
 							{/if}
 							<div class="welcome-acts" class:hide={!settled}>
-								<Button variant="primary" size="lg" href={to(nextStep.href)} iconAfter="chevronRight">Continue setup</Button>
+								<Button variant="primary" size="lg" href={to(nextStep.href)} iconAfter="chevronRight">{nextStep.cta}</Button>
 								<Button variant="secondary" size="lg" href={to('/library/import')}>Import what you have</Button>
 							</div>
 						</div>
