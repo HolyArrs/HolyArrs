@@ -187,11 +187,13 @@ func fixOwner(configDir string, uid, gid int) {
 // inside configDir, relative to it. When the folder or mountinfo cannot be
 // read it returns nothing, and the walk falls back to the device check.
 func mountsInside(configDir string) map[string]bool {
-	dir, err := filepath.EvalSymlinks(configDir)
+	// Abs first, then EvalSymlinks: a relative -config under a symlinked
+	// working folder must still resolve to the path mountinfo lists.
+	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil
 	}
-	if dir, err = filepath.Abs(dir); err != nil {
+	if dir, err = filepath.EvalSymlinks(dir); err != nil {
 		return nil
 	}
 	b, err := os.ReadFile("/proc/self/mountinfo")

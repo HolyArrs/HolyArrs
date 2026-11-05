@@ -62,6 +62,10 @@ COPY docs/third-party-notices.md /docs/third-party-notices.md
 # No USER line: the image starts as root, gives /config to PUID:PGID (default
 # 1000:1000) when its owner differs, then restarts itself as that user and
 # never keeps running as root. Run with user: "<uid>:<gid>" to skip the switch.
+# container=oci marks this as a container on every runtime: Docker and Podman
+# leave marker files, but containerd (Kubernetes, k3s, nerdctl) does not, and
+# outside a container a root start without PUID/PGID is refused.
+ENV container=oci
 EXPOSE 6262
 VOLUME ["/config"]
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 CMD ["/holyarrs", "-healthcheck"]
