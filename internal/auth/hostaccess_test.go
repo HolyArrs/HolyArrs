@@ -391,17 +391,21 @@ func TestSetupWrongCodeLimiter(t *testing.T) {
 	}
 }
 
-// A global cap stops guessing spread over many clients.
-func TestSetupWrongCodeGlobalCap(t *testing.T) {
+// Wrong codes from other clients never block the owner: the code is too
+// long to guess, so there is no cap for all clients together, only the
+// per-client one. After many wrong codes from many forwarded clients, the
+// right code from the server itself still works.
+func TestSetupWrongCodesFromOthersNeverBlockTheOwner(t *testing.T) {
 	f := gated(t, Options{TrustedProxies: []string{"127.0.0.1"}})
-	limited := false
-	for i := 0; i < 100 && !limited; i++ {
+	for i := 0; i < 100; i++ {
 		hdr := map[string]string{"X-Forwarded-For": fmt.Sprintf("10.1.%d.%d", i/250, i%250+1)}
-		resp, _ := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody("wrong-wrong-wrong"), hdr)
-		limited = resp.StatusCode == http.StatusTooManyRequests
+		if resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody("wrong-wrong-wrong"), hdr); resp.StatusCode != 403 {
+			t.Fatalf("wrong code %d from its own client: %d %s, want 403", i, resp.StatusCode, body)
+		}
 	}
-	if !limited {
-		t.Fatal("100 wrong setup codes from 100 clients in a minute were never limited")
+	resp, body := call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/setup", setupBody(code(t, f)), nil)
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("right code from 127.0.0.1 after 100 wrong ones from others: %d %s, want 201", resp.StatusCode, body)
 	}
 }
 

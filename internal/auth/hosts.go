@@ -210,25 +210,20 @@ func (a *Auth) savedHostList() []string {
 	return []string{}
 }
 
-// Wrong setup codes: about 10 a minute per client, and a cap for all
-// clients together, so the code cannot be guessed by spreading tries.
+// Wrong setup codes: about 10 a minute per client. There is no cap for all
+// clients together: the code is about 120 bits, so spreading tries cannot
+// find it, and a shared cap would let anyone who reaches the port block
+// the owner's setup.
 const (
-	setupTries    = 10
-	setupAllTries = 50
-	setupWindow   = time.Minute
-	setupAllKey   = "all"
+	setupTries  = 10
+	setupWindow = time.Minute
 )
 
 func (a *Auth) setupLimited(key string) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	now := a.now()
-	for k, limit := range map[string]int{key: setupTries, setupAllKey: setupAllTries} {
-		if f := a.setupFails[k]; f != nil && now.Sub(f.last) < setupWindow && f.n >= limit {
-			return true
-		}
-	}
-	return false
+	f := a.setupFails[key]
+	return f != nil && a.now().Sub(f.last) < setupWindow && f.n >= setupTries
 }
 
 func (a *Auth) setupFail(key string) {
@@ -238,12 +233,10 @@ func (a *Auth) setupFail(key string) {
 	if a.setupFails == nil || len(a.setupFails) > 10000 {
 		a.setupFails = map[string]*failure{}
 	}
-	for _, k := range []string{key, setupAllKey} {
-		f := a.setupFails[k]
-		if f == nil || now.Sub(f.last) >= setupWindow {
-			f = &failure{last: now}
-			a.setupFails[k] = f
-		}
-		f.n++
+	f := a.setupFails[key]
+	if f == nil || now.Sub(f.last) >= setupWindow {
+		f = &failure{last: now}
+		a.setupFails[key] = f
 	}
+	f.n++
 }
