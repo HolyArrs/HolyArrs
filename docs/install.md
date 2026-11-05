@@ -326,8 +326,10 @@ master key, backups and logs.
 
 ## Host names and reverse proxies
 
-IP addresses and `localhost` work without an allow-list entry. Add every DNS
-name people use as a comma-separated value when starting the container:
+IP addresses and `localhost` work without an allow-list entry. A home name
+such as `tower.local` or `nas` that you use for first-run setup is saved for
+you. Add other names under Allowed host names in Settings > Sign-in, or as a
+comma-separated value when starting the container:
 
 ```yaml
 environment:
@@ -335,7 +337,9 @@ environment:
 ```
 
 When a reverse proxy adds `X-Forwarded-For`, add only the proxy address or
-network to `HOLYARRS_TRUSTED_PROXIES`. This matters when you enable the
+network to `HOLYARRS_TRUSTED_PROXIES`. Sign-in works behind an HTTPS proxy,
+a tunnel or tailscale serve without it, but single sign-on, real client
+addresses and the Secure cookie need it. This matters when you enable the
 optional local-network sign-in skip: an untrusted request cannot claim a
 different source address.
 
@@ -388,7 +392,7 @@ image instead, with the same `PUID`, `PGID` and `TZ` and the tag you run:
 | Cannot switch user | Add back the `CHOWN`, `DAC_OVERRIDE`, `SETUID` and `SETGID` capabilities, or start the container with `user: "<uid>:<gid>"`. |
 | A `FILE__` variable cannot be read | Check the path in that variable and that the file is mounted. |
 | Permission denied | Check `PUID`, `PGID` and write permissions on the config, library and download folders. |
-| Unknown host name | Add the exact DNS name to `HOLYARRS_ALLOWED_HOSTS`. |
+| Unknown host name | The message names the host. Add it under Allowed host names in Settings (open HolyArrs by its IP address) or to `HOLYARRS_ALLOWED_HOSTS`. |
 | Imports are copied | Mount downloads and the Library folders as one shared folder on one filesystem (see [Media folders](#media-folders)). |
 | Master key does not match | Restore the key that belongs to those databases. Do not make a new key for an old backup. |
 | Restore stages but the app stays down | Start the container and add a restart policy. |

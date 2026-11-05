@@ -24,6 +24,8 @@
 	// Networks where sign-in may be skipped, one per line.
 	let nets = $state('');
 	let savingNets = $state(false);
+	let hostNames = $state('');
+	let savingHosts = $state(false);
 	const netList = () => nets.split(/[\s,]+/).filter(Boolean);
 	let savingRequire = $state(false);
 
@@ -48,6 +50,7 @@
 	interface SignInSettings {
 		skip_login_local_network: boolean;
 		local_networks?: string[];
+		allowed_hosts?: string[];
 		require_two_factor_admins: boolean;
 		min_password_length: number;
 		plex: Way;
@@ -212,6 +215,7 @@
 	function took(r: SignInSettings) {
 		skipLocal = r.skip_login_local_network;
 		nets = (r.local_networks ?? []).join('\n');
+		hostNames = (r.allowed_hosts ?? []).join('\n');
 		requireAdmins = r.require_two_factor_admins;
 		minLength = r.min_password_length ?? 12;
 		ways = { plex: { ...blank(), ...r.plex }, jellyfin: { ...blank(), ...r.jellyfin }, emby: { ...blank(), ...r.emby } };
@@ -323,6 +327,20 @@
 			toasts.push(strongNote(err), 'fail');
 		} finally {
 			savingNets = false;
+		}
+	}
+
+	async function saveHosts(e: SubmitEvent) {
+		e.preventDefault();
+		savingHosts = true;
+		try {
+			const allowed_hosts = hostNames.split(/[\s,]+/).filter(Boolean);
+			took(await api.put<SignInSettings>('/auth/settings', { allowed_hosts }));
+			toasts.push('Host names saved.', 'ok');
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			savingHosts = false;
 		}
 	}
 
@@ -509,6 +527,21 @@
 		</SettingsCard>
 	{/each}
 	{#if isOwner}<SsoCard id="sso-card" />{/if}
+	{/if}
+
+	{#if settingsOk}
+	<SettingsCard id="hosts-card" title="Allowed host names">
+		<p class="hint">
+			Names you open HolyArrs by besides its IP address, like tower.local or media.example.com. The name you used at first-run
+			setup is already here. Names in <code>HOLYARRS_ALLOWED_HOSTS</code> always work and are not listed.
+		</p>
+		<form class="nets" onsubmit={saveHosts}>
+			<Field id="allowed-hosts" label="Host names, one per line">
+				<textarea id="allowed-hosts" class="input" rows="3" bind:value={hostNames} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+			</Field>
+			<Button type="submit" disabled={savingHosts} aria-busy={savingHosts}>Save host names</Button>
+		</form>
+	</SettingsCard>
 	{/if}
 
 	<SettingsCard id="proxy-card" title="Trusted proxies">
