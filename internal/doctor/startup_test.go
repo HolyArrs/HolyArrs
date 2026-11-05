@@ -177,7 +177,7 @@ func TestWriteFixBranchesOnTheError(t *testing.T) {
 
 func TestSlowFolderWording(t *testing.T) {
 	c := (Folder{Role: "downloads", Path: "/d", State: "slow"}).Check(1, 1)
-	if !strings.Contains(c.Text, "a sleeping disk or a slow network share") {
+	if !strings.Contains(c.Text, "waking from sleep or a slow network share") {
 		t.Fatalf("slow text: %q", c.Text)
 	}
 }
