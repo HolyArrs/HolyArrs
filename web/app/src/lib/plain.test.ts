@@ -26,6 +26,7 @@ describe('plain words', () => {
 	it('says health problems without raw text', () => {
 		expect(healthSentence({ kind: 'library_folder', state: 'error' })).toBe('HolyArrs cannot reach a Library folder.');
 		expect(healthSentence({ kind: 'disk_space', state: 'warning' })).toBe('A Library folder is running low on space.');
+		expect(healthSentence({ kind: 'config_disk', state: 'error' })).toBe('The disk that holds the config folder is almost full.');
 		expect(healthSentence({ kind: 'nope' as never, state: 'error' })).toBe('Something in HolyArrs is not working.');
 	});
 });

@@ -21,7 +21,8 @@ const sentences: Record<HealthCheck['kind'], [error: string, warning: string]> =
 	source: ['A Source is not answering.', 'A Source answered with a problem.'],
 	downloader: ['A Downloader is not answering.', 'A Downloader answered with a problem.'],
 	backups: ['Backups are not being made.', 'The last backup is getting old.'],
-	update: ['HolyArrs could not check for an update.', 'An update for HolyArrs is waiting.']
+	update: ['HolyArrs could not check for an update.', 'An update for HolyArrs is waiting.'],
+	config_disk: ['The disk that holds the config folder is almost full.', 'The disk that holds the config folder is running low on space.']
 };
 
 /** healthSentence says a health problem in a plain sentence; the raw text goes in a details part. */
