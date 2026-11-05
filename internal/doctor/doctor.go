@@ -137,6 +137,7 @@ func Run(ctx context.Context, o Options) Report {
 		}
 		unmappedChecks(&r, o.ConfigDir, UnmappedConfig(o.ConfigDir))
 	}
+	masterKeyChecks(&r, o.ConfigDir)
 	db := o.DB
 	skipFolders := false
 	if db == nil && o.ConfigDir != "" {

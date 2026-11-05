@@ -4,3 +4,14 @@ updates:
     directory: /
     schedule:
       interval: weekly
+  # Go modules: one grouped pull request a week, so a fixed security hole in
+  # a library (such as golang.org/x/image) shows up without waiting for a
+  # hand check.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      go-modules:
+        patterns:
+          - "*"

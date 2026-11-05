@@ -442,13 +442,24 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			log.Printf("supervisor: a background loop did not stop in time")
 		}
 	}()
+	// A missing or wrong master key needs a person, like the refusals
+	// above: keep a plain page up instead of exiting into a restart loop.
+	keyRefused := func(err error) error {
+		if !errors.Is(err, secrets.ErrKeyMissing) && !errors.Is(err, secrets.ErrWrongKey) {
+			return err
+		}
+		log.Printf("holyarrs: not started: %v", err)
+		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+		<-ctx.Done()
+		return err
+	}
 	key, err := secrets.LoadKey(c.ConfigDir, os.Getenv(secrets.EnvKeyFile))
 	if err != nil {
-		return err
+		return keyRefused(err)
 	}
 	vault, err := secrets.Open(ctx, s, key)
 	if err != nil {
-		return err
+		return keyRefused(err)
 	}
 	if n, err := vault.MigratePlaintext(ctx); err != nil {
 		return fmt.Errorf("encrypting stored secrets: %w", err)
@@ -470,7 +481,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return fmt.Errorf("log masking: %w", err)
 	}
 	loop(supervisor.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
-	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) }}
+	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
+		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != ""}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
 		log.Printf("backup: %v", err)
 	}
@@ -655,7 +667,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)
-			return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed()}, err
+			return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed(),
+				KeyPrint: bm.KeyPrint(), KeyKitPrint: bm.KeyKitPrint(ctx)}, err
 		}}
 	// The update check: once a day from the release feed, through the
 	// network policy (public only unless the setting allows the local

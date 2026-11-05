@@ -156,7 +156,7 @@ func TestGateAsksStaleBrowserSessionOnlyOnRiskyRoutes(t *testing.T) {
 		"POST /api/v1/auth/plex/link/finish", "POST /api/v1/auth/plex/link/start", "POST /api/v1/auth/plex/my-link/finish", "POST /api/v1/auth/plex/my-link/start",
 		"POST /api/v1/auth/sso/test", "POST /api/v1/auth/sso/unlink",
 		"POST /api/v1/auth/two-factor/backup-codes", "POST /api/v1/auth/two-factor/disable", "POST /api/v1/auth/two-factor/enable", "POST /api/v1/auth/two-factor/setup",
-		"POST /api/v1/backups/restore", "POST /api/v1/migrate/moves", "POST /api/v1/settings/old-app-api/keys/{side}", "POST /api/v1/users/invites",
+		"POST /api/v1/backups/restore", "POST /api/v1/migrate/moves", "POST /api/v1/settings/old-app-api/keys/{side}", "POST /api/v1/system/key-kit", "POST /api/v1/users/invites",
 		"POST /api/v1/users/{id}/password", "POST /api/v1/users/{id}/sso/unlink", "POST /api/v1/users/{id}/two-factor/reset",
 		"PUT /api/v1/auth/settings", "PUT /api/v1/auth/sso", "PUT /api/v1/users/{id}",
 	}; !slices.Equal(all, want) {

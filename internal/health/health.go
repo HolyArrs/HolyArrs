@@ -64,6 +64,11 @@ type Backups struct {
 	// Started says the first scheduled pass since start has finished (a
 	// fresh install has no backup until then, which is not a problem).
 	Started bool
+	// KeyPrint is the current master key's fingerprint; "" when the key
+	// is a named file (HOLYARRS_MASTER_KEY_FILE) the person looks after.
+	KeyPrint string
+	// KeyKitPrint is the fingerprint of the last key kit downloaded.
+	KeyKitPrint string
 }
 
 // Engine runs the checks.
@@ -626,7 +631,13 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	case b.Every > 0 && e.now().Sub(b.Newest) > 2*b.Every+24*time.Hour:
 		r.State, r.Message = Warning, "The newest backup is from "+b.Newest.UTC().Format("2006-01-02")
 	}
-	return []Result{r}, nil
+	// Backups do not hold the master key: without a copy of it, the saved
+	// passwords in a backup cannot be opened on a new machine.
+	k := Result{Key: "backups:key", Kind: "backups", Subject: "Backups", State: OK}
+	if err == nil && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
+		k.State, k.Message = Warning, "Download the key kit on the Backups page: backups do not hold the master key"
+	}
+	return []Result{r, k}, nil
 }
 
 // Newer says whether version a is newer than b (v1.2.3 style; anything

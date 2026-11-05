@@ -106,6 +106,11 @@ type Manager struct {
 	// CheckKey, when set, is asked whether a database file can be read with
 	// the current master key, before a restore is staged.
 	CheckKey func(dbPath string) error
+	// Key is the master key, for the key kit download and the Backups card.
+	Key []byte
+	// KeyFromEnv says the key is a named file (HOLYARRS_MASTER_KEY_FILE)
+	// the person looks after, so the card does not ask for a key kit.
+	KeyFromEnv bool
 
 	mu      sync.Mutex
 	lastErr string // the last scheduled backup's error, "" after a good one

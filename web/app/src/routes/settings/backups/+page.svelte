@@ -27,6 +27,8 @@
 	let preset = $state<Preset>('balanced');
 	let waiting = $state(false);
 	let keyNote = $state('');
+	let keyKit = $state<{ needed: boolean; fingerprint: string } | null>(null);
+	let gettingKit = $state(false);
 	let loaded = $state(false);
 	let missing = $state(false);
 	let error = $state('');
@@ -38,11 +40,12 @@
 
 	async function load() {
 		try {
-			const r = await api.get<{ backups: BackupInfo[]; preset: Preset; restore_waiting: boolean; key_note: string }>('/backups');
+			const r = await api.get<{ backups: BackupInfo[]; preset: Preset; restore_waiting: boolean; key_note: string; key_kit?: { needed: boolean; fingerprint: string } }>('/backups');
 			backups = r.backups;
 			preset = r.preset;
 			waiting = r.restore_waiting;
 			keyNote = r.key_note;
+			keyKit = r.key_kit ?? null;
 			hasData = true;
 			error = '';
 		} catch (e) {
@@ -61,6 +64,37 @@
 		if (session.s.via !== 'session' || session.s.localRecent) return;
 		e.preventDefault();
 		window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
+	}
+
+	// The key kit is the master key as a file (owner only, fresh password).
+	// It is a POST, so it is fetched and handed to the browser as a download.
+	async function downloadKeyKit() {
+		if (gettingKit) return;
+		if (session.s.via === 'session' && !session.s.localRecent) {
+			window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
+			return;
+		}
+		gettingKit = true;
+		try {
+			const res = await fetch(to('/api/v1/system/key-kit'), { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-Token': api.csrf() } });
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				if (res.status === 403 && data.code === 'reauth') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
+				throw new Error(data.error || `Request failed (${res.status})`);
+			}
+			const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'holyarrs-key-kit.key';
+			const a = document.createElement('a');
+			a.href = URL.createObjectURL(await res.blob());
+			a.download = name;
+			a.click();
+			setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+			if (keyKit) keyKit = { ...keyKit, needed: false };
+			toasts.push('Key kit downloaded. Keep it somewhere safe, apart from your backups.', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			gettingKit = false;
+		}
 	}
 
 	async function choose(p: Preset) {
@@ -146,6 +180,21 @@
 		<p class="notice warn" role="status" style="margin-bottom: var(--s-4)">
 			<Icon name="info" size={18} /><span>A restore is checked and waiting. HolyArrs puts it in place the next time it starts.</span>
 		</p>
+	{/if}
+
+	{#if keyKit?.fingerprint}
+		<SettingsCard id="backup-key" title="Master key" description="Backups do not hold the key that opens saved passwords and API keys. Keep a copy of it.">
+			{#if keyKit.needed}
+				<p class="notice warn" role="status">
+					<Icon name="info" size={18} /><span>No key kit saved for this key yet. Without it, a backup's saved passwords cannot be opened on a new machine.</span>
+				</p>
+			{/if}
+			<div class="keyrow">
+				<span class="xs muted">Key fingerprint <span class="mono">{keyKit.fingerprint}</span></span>
+				<Button icon="key" type="button" onclick={downloadKeyKit} disabled={gettingKit} aria-busy={gettingKit}>Download key kit</Button>
+			</div>
+			<p class="xs muted keynote">To put it back, rename the file to holyarrs.key and place it in the config folder.</p>
+		</SettingsCard>
 	{/if}
 
 	<SettingsCard id="backup-often" title="How often">
@@ -239,6 +288,14 @@
 		font-weight: var(--weight-semibold);
 	}
 	.keynote {
+		margin-top: var(--s-4);
+	}
+	.keyrow {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
 	@media (max-width: 700px) {

@@ -1,8 +1,10 @@
 # Install HolyArrs with Docker
 
 HolyArrs v1 is Docker-only. The image is not published yet:
-`ghcr.io/coderluii/holyarrs:latest` in the examples below is a placeholder for
-the future registry name. Until it exists, build `holyarrs:local` from the
+`ghcr.io/coderluii/holyarrs:beta` in the examples below is a placeholder for
+the future registry name. Until the first stable version, new versions land on
+`:beta`; `:latest` and `:stable` only move once a version has been tried for a
+while. Until the image exists, build `holyarrs:local` from the
 current checkout (see [Build the local image](#build-the-local-image)) and use
 that tag in its place.
 
@@ -64,7 +66,7 @@ starting. On Docker Desktop, use a named volume for `/config`
 ```yaml
 services:
   holyarrs:
-    image: ghcr.io/coderluii/holyarrs:latest
+    image: ghcr.io/coderluii/holyarrs:beta
     container_name: holyarrs
     environment:
       - PUID=1000
@@ -96,7 +98,7 @@ docker run -d \
   -v /path/to/music:/music `#optional` \
   -v /path/to/downloads:/downloads `#optional` \
   --restart unless-stopped \
-  ghcr.io/coderluii/holyarrs:latest
+  ghcr.io/coderluii/holyarrs:beta
 ```
 
 Start it with `docker compose up -d` and check it with `docker compose ps`.

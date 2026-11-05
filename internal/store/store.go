@@ -438,3 +438,7 @@ func SchemaVersions() (mainV, eventsV int) {
 func fileURI(path string) string {
 	return "file:" + strings.NewReplacer("%", "%25", "?", "%3F", "#", "%23").Replace(filepath.ToSlash(path))
 }
+
+// FileURI is fileURI for other packages that open a database file by
+// hand, so a '#' or '?' in a folder name cannot point SQLite elsewhere.
+func FileURI(path string) string { return fileURI(path) }

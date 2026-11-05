@@ -26281,6 +26281,42 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/system/key-kit": {
+      "post": {
+        "description": "The master key as a key file with notes on how to put it back: rename it to holyarrs.key. Owner only, from a browser session with a fresh password; API keys are refused. Never cached, and on the audit trail without the key.",
+        "operationId": "downloadKeyKit",
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The key kit file."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not a browser session."
+          }
+        },
+        "summary": "Download the master key kit",
+        "tags": [
+          "Backups"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/tags": {
       "get": {
         "description": "Every tag in use on titles, Downloaders and Sources, with how many of each have it. A title's tags send its grabs to the Downloaders that share one (else to the untagged ones) and its searches to the untagged Sources and those that share one.",
