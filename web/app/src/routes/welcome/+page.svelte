@@ -418,6 +418,10 @@
 	.glass .head { margin-bottom: 22px; }
 	/* Inside the glass the step's card is just its content. */
 	.sheet.glass > :global(.card) { background: transparent; box-shadow: none; padding: 0; border-radius: 0; }
+	/* The Jackett/Prowlarr card on the Source step joins the glass too: no second box, edges lined up. */
+	.sheet.glass :global(.ui-settings) { background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+	.sheet.glass :global(.ui-settings > header), .sheet.glass :global(.ui-settings > .body) { padding-left: 0; padding-right: 0; }
+	.sheet.glass :global(.ui-settings > header) { padding-top: 0; }
 	.dots { display: flex; justify-content: center; gap: 6px; margin: 22px 0 0; }
 	.dots li { width: 6px; height: 6px; border-radius: 3px; background: var(--line-strong); transition: width var(--dur) var(--ease-out), background var(--dur) var(--ease-out); }
 	.dots li.done { background: var(--text-muted); }
