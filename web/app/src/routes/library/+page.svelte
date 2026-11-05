@@ -36,6 +36,9 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LibraryViewSwitch from '#lib/LibraryViewSwitch.svelte';
 	import DlFind from '#lib/downloads/DlFind.svelte';
+	import SettingsTile from '#lib/ui/SettingsTile.svelte';
+	import type { Tint } from '#lib/settings.ts';
+	import type { IconName } from '#lib/Icon.svelte';
 	import { searchShortcut } from '#lib/downloads/keys.ts';
 	import { dlTop } from '#lib/dl-top.svelte.ts';
 	import { rememberLibraryKind } from '#lib/library-last-kind.ts';
@@ -387,23 +390,36 @@
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
+	// Add only adds. Everything that looks after the Library is in Tools (people are found by the search,
+	// movie series by Group by series, and held files are on Downloads).
 	const addItems = $derived<MenuItem[]>([
-		...(partOn('movies') ? ([{ label: 'Add a movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
-		...(partOn('shows') ? ([{ label: 'Add a show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
-		...(partOn('music') ? ([{ label: 'Add an artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
-		{ kind: 'separator' },
-		{ kind: 'heading', label: 'Library tools' },
-		{ label: 'People', href: to('/people') },
-		{ label: 'Held files', href: to('/library/held') },
-		...(partOn('movies') ? ([{ label: 'Movie series', href: to('/library/collections') }] as MenuItem[]) : []),
-		...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', href: to('/library/deleted') }] as MenuItem[]) : []),
-		{ label: 'Turned down releases', href: to('/library/turned-down') },
-		...(partOn('subtitles') ? ([{ label: 'Missing subtitles', href: to('/library/missing-subtitles') }] as MenuItem[]) : []),
-		{ label: 'Video codecs', href: to('/library/copies') },
-		{ label: 'Rename files', href: to('/library/rename') },
-		{ label: 'Import a library', href: to('/library/import') },
-		...(session.can('settings') ? ([{ label: 'Import files by hand', href: to('/library/import-files') }] as MenuItem[]) : [])
+		...(partOn('movies') ? ([{ label: 'Movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
+		...(partOn('shows') ? ([{ label: 'TV show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
+		...(partOn('music') ? ([{ label: 'Artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : [])
 	]);
+	type Tool = { label: string; hint: string; icon: IconName; tint: Tint; href: string };
+	const toolGroups = $derived<{ name: string; tools: Tool[] }[]>(
+		[
+			{
+				name: 'Look after',
+				tools: [
+					{ label: 'Rename files', hint: 'Names off your pattern', icon: 'refresh', tint: 'blue', href: to('/library/rename') },
+					...(partOn('subtitles') ? ([{ label: 'Missing subtitles', hint: 'Languages still wanted', icon: 'subtitle', tint: 'indigo', href: to('/library/missing-subtitles') }] as Tool[]) : []),
+					{ label: 'Video codecs', hint: 'What your files use', icon: 'copy', tint: 'teal', href: to('/library/copies') },
+					{ label: 'Turned down', hint: 'Releases you said no to', icon: 'declined', tint: 'gray', href: to('/library/turned-down') },
+					...(partOn('movies') || partOn('shows') || partOn('music') ? ([{ label: 'Recently deleted', hint: 'Bring back or clear', icon: 'trash', tint: 'red', href: to('/library/deleted') }] as Tool[]) : [])
+				] as Tool[]
+			},
+			{
+				name: 'Import',
+				tools: [
+					{ label: 'A whole library', hint: 'Folders you already have', icon: 'folder', tint: 'orange', href: to('/library/import') },
+					...(session.can('settings') ? ([{ label: 'Files by hand', hint: 'Match loose files', icon: 'upload', tint: 'green', href: to('/library/import-files') }] as Tool[]) : [])
+				] as Tool[]
+			}
+		].filter((g) => g.tools.length)
+	);
+	let toolsOpen = $state(false);
 	function partOn(name: string) {
 		return partsNow.answer?.parts.find((part) => part.part === name)?.on !== false;
 	}
@@ -921,10 +937,21 @@
 		{/if}
 		<span class="tool-gap"></span>
 		<span class="t-tools cap">
-		{#if view === 'table' && kind !== 'all' && !phone}<ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} />{/if}
+		{#if view === 'table' && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
 		{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button></span>{/if}
 		{#if canManage && shown.length}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
-		{#if canManage}<span class="t-add"><Menu label="Add and Library tools" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={250} align="end" /></span>{/if}
+		{#if canManage}
+			<span class="t-tool">
+				{#if phone}
+					<IconButton icon="tools" label="Library tools" aria-haspopup="dialog" onclick={() => (toolsOpen = true)} data-testid="library-tools" />
+				{:else}
+					<Popover label="Library tools" variant="button" icon="tools" text="Tools" width={440} align="end" bind:open={toolsOpen}>
+						{#snippet children()}{@render toolTiles()}{/snippet}
+					</Popover>
+				{/if}
+			</span>
+			<span class="t-add"><Menu label="Add to the Library" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={190} align="end" /></span>
+		{/if}
 		</span>
 		{#if phone && (findOpen || q)}
 			<div class="find-box">
@@ -936,6 +963,7 @@
 	</div>
 	{#if phone}
 		<Sheet bind:open={sortOpen} title="Sort and filter" placement="bottom">{@render sortFilter()}</Sheet>
+		<Sheet bind:open={toolsOpen} title="Library tools" placement="bottom">{@render toolTiles()}</Sheet>
 	{/if}
 
 	{#if filtersOn || q}
@@ -1206,6 +1234,23 @@
 	</button>
 {/snippet}
 
+{#snippet toolTiles()}
+	<div class="tt" data-testid="library-tools-panel">
+		{#each toolGroups as g, gi (g.name)}
+			{#if gi}<span class="sf-sep" aria-hidden="true"></span>{/if}
+			<h3 class="sf-h">{g.name}</h3>
+			<div class="tt-grid">
+				{#each g.tools as tool (tool.href)}
+					<a class="tt-tile" href={tool.href} onclick={() => (toolsOpen = false)}>
+						<SettingsTile icon={tool.icon} tint={tool.tint} />
+						<span class="tt-tx"><b>{tool.label}</b><small>{tool.hint}</small></span>
+					</a>
+				{/each}
+			</div>
+		{/each}
+	</div>
+{/snippet}
+
 {#snippet sortFilter()}
 	<div class="sf">
 		<section class="sf-col sf-sort" aria-label="Sort">
@@ -1282,15 +1327,20 @@
 	.toolbar.topbar .t-view :global(.vs button[role='radio']) { min-height: 44px; min-width: 44px; }
 	.toolbar.topbar .t-view :global(.vs .seg) { border-radius: 10px; }
 	.toolbar.topbar .filter-btn.on :global(.trigger.button) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-text); }
-	.t-tools, .t-sel, .t-add, .t-miss { display: contents; }
-	.toolbar.topbar .t-tools { display: flex; }
-	/* A narrower page keeps the one row: Columns, Select and Add fold to their icons, and the search may shrink. */
+	.t-tools, .t-sel, .t-add, .t-miss, .t-tool, .t-cols { display: contents; }
+	.toolbar.topbar .t-tools { display: flex; margin-left: auto; }
+	/* A narrower page keeps the one row: first Columns and Select fold to their icons, then Tools and Add too.
+	   A folded name is only hidden from the eye, so the button keeps its name for screen readers. */
 	.toolbar.topbar { container-type: inline-size; }
-	.toolbar.topbar :global(.dlfind) { min-width: 180px; }
+	.toolbar.topbar :global(.dlfind) { flex-basis: 200px; min-width: 180px; }
+	@container (max-width: 1200px) {
+		.toolbar.topbar .t-cols :global(.trigger.button > span), .toolbar.topbar .t-cols :global(.trigger.button > svg:last-child) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+		.toolbar.topbar .t-sel :global(.ui-btn) { font-size: 0; gap: 0; }
+		.toolbar.topbar .t-sel :global(.ui-btn), .toolbar.topbar .t-cols :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
+	}
 	@container (max-width: 960px) {
-		.toolbar.topbar .t-tools :global(.trigger.button > span), .toolbar.topbar .t-tools :global(.trigger.button > svg:last-child) { display: none; }
-		.toolbar.topbar .t-tools :global(.ui-btn) { font-size: 0; gap: 0; }
-		.toolbar.topbar .t-tools :global(.ui-btn), .toolbar.topbar .t-tools :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
+		.toolbar.topbar .t-tools :global(.trigger.button > span), .toolbar.topbar .t-tools :global(.trigger.button > svg:last-child), .toolbar.topbar .filter-btn :global(.trigger.button > span), .toolbar.topbar .filter-btn :global(.trigger.button > svg:last-child) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+		.toolbar.topbar .t-tools :global(.trigger.button), .toolbar.topbar .filter-btn :global(.trigger.button) { width: 44px; padding-inline: 0; justify-content: center; }
 	}
 	.count { margin: 0 8px 0 0; min-width: 0; font: var(--t-headline); font-weight: 650; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.count:empty { display: none; }
@@ -1329,6 +1379,15 @@
 	.sf-chip.t-have { --dot: var(--ok, #2fa36b); }
 	/* The series list is long: it scrolls inside its own well, and takes the height the Sort column leaves. */
 	.sf-well { flex: 1 1 0; min-height: 104px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: inset 0 0 0 1px var(--line); scrollbar-width: thin; scrollbar-color: var(--line-strong, var(--text-faint)) transparent; }
+	/* Tools: tiles with the Settings pages' glossy icons, two across (one on phones). */
+	.tt { padding: 4px; }
+	.tt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; }
+	.tt-tile { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 52px; padding: 8px 10px; border-radius: 10px; color: var(--text); text-decoration: none; transition: background-color 120ms ease; }
+	.tt-tile:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+	.tt-tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.tt-tx { display: grid; min-width: 0; }
+	.tt-tx b { font: 600 13.5px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.tt-tx small { color: var(--text-muted); font: 400 12px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sf-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 8px 2px 0; border-top: 1px solid var(--line); }
 	.sf-saved { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
 	@media (pointer: coarse) { .sf-o { min-height: 44px; } .sf-chips :global(.ui-chip .main) { min-height: 40px; } }
@@ -1505,7 +1564,9 @@
 	/* Phones: each row becomes a banner card; posters stay a grid. */
 	@media (max-width: 639px) {
 		.toolbar { position: static; margin: 0; padding: 8px 0; }
-		.t-sel, .t-add, .t-miss, .t-view, .filter-btn { display: inline-flex; }
+		.t-sel, .t-add, .t-miss, .t-view, .filter-btn, .t-tool { display: inline-flex; }
+		.t-tool { order: 2; }
+		.tt-grid { grid-template-columns: 1fr; }
 		/* Two rows: count, search, select, add; then view and size, sort and filter. */
 		.count { order: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; }
 		.t-find { order: 1; }

@@ -10,7 +10,7 @@
 	import { mergeDetail } from './detail-merge.ts';
 	import { page } from '$app/state';
 	import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, quality, ratioText, shortAge, sortRows, swarmNum, toggle as toggleCol, visible, type ColId, type Layout, type SwarmFacet } from './columns.ts';
-	import { replaceState } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
 	import Icon from '../Icon.svelte';
@@ -622,7 +622,7 @@
 	// The phone selection bar: the few actions that fit a thumb.
 	const PHONE_BULK: { action: BulkAction; label: string; icon: 'play' | 'pause' | 'refresh' }[] = [{ action: 'start', label: 'Start', icon: 'play' }, { action: 'pause', label: 'Pause', icon: 'pause' }, { action: 'recheck', label: 'Check again', icon: 'refresh' }];
 	// The phone bar's "All downloads" menu, through the same handlers as the toolbar's menus.
-	const allItems = $derived(watch ? [] : [{ label: 'Select', onselect: () => (selecting = true) }, { label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }]);
+	const allItems = $derived(watch ? [] : [{ label: 'Select', onselect: () => (selecting = true) }, { label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }, { label: 'Held files', onselect: () => void goto(to('/library/held')) }]);
 	// The desktop selection bar: what the toolbar's Start, Pause and Remove do not cover.
 	const BULK: { action: BulkAction; label: string }[] = [
 		{ action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
