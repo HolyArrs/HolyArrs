@@ -20,6 +20,9 @@
 	import type { Ask, Health, HealthChecks, LibraryFolder } from '#lib/types.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import SettingsTile from '#lib/ui/SettingsTile.svelte';
+	import ArtPill from '#lib/ui/ArtPill.svelte';
+	import type { Tint } from '#lib/settings.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -80,6 +83,9 @@
 	const fixRows = $derived(groupAttention(fixes));
 	// The Needs attention tile opens where the problems are: the one cause's own page, or the page that holds most of them.
 	const fixHref = $derived(fixRows.length === 1 ? fixRows[0].href : (moreLink(fixRows, admin)?.href ?? (admin ? '/settings/health' : '/status')));
+	// System lists each cause as a row; four fit, the rest link to the page that holds most of them.
+	const fixShown = $derived(fixRows.slice(0, 4));
+	const fixHidden = $derived(moreLink(fixRows.slice(4), admin));
 	// Your Library: one card per kind that is on, and for owners what it all takes on disk.
 	const libCards = $derived(libraryCards(home?.library, manager ? '/downloads' : undefined));
 	const diskTotal = $derived(libCards.reduce((t, c) => t + c.size, 0));
@@ -153,8 +159,6 @@
 		return { s, tall: pics[1] ? undefined : pool.shift(), wide: pics[2] ? undefined : pool.shift(), big: pics[0] ? undefined : pool.shift() };
 	});
 	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
-	const arrivedCapped = $derived((home?.arrived?.length ?? 0) >= 20);
-	const arrivedToday = $derived((home?.arrived ?? []).filter((c) => c.at && localDay(new Date(c.at)) === localDay(now)).length);
 	// Posters that could not load drop out, and the next ask with a poster takes their place.
 	const badArt = new SvelteSet<number>();
 	const waitingPics = $derived(waiting.filter((a) => a.poster && !badArt.has(a.id)).slice(0, 3));
@@ -162,6 +166,8 @@
 	const speed = $derived(fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
 	const queued = $derived(fetchingAll.filter((d) => stageOf(d) === 'queued').length);
 	const running = $derived(fetchingAll.length - queued);
+	const importing = $derived(fetchingAll.filter((d) => stageOf(d) === 'importing').length);
+	const pillIcon: Record<string, IconName> = { 'New season': 'sparkle', 'Just arrived': 'check', 'Coming soon': 'calendar', Following: 'bell' };
 	const srcs = $derived(partCount(health?.sources));
 	const dls = $derived(partCount(health?.downloaders));
 	const free = $derived(freeSpace(folders));
@@ -328,7 +334,7 @@
 		{#snippet picTile(p: { c: HomeCard; label: string }, cls: string, tall: boolean)}
 			<a class="tile pic {cls}" href={to(p.c.href)}>
 				<img src={tall ? p.c.poster || p.c.backdrop : p.c.backdrop || p.c.poster} alt="" loading="lazy" decoding="async" />
-				<span class="lab">{p.label}</span>
+				<span class="pill"><ArtPill text={p.label} icon={pillIcon[p.label]} /></span>
 				{#if !tall && p.c.backdrop && p.c.logo && p.c.kind !== 'artist'}
 					<img class="logo" src={p.c.logo} alt={p.c.name} loading="lazy" decoding="async" use:lightOnDark />
 				{:else}
@@ -341,86 +347,90 @@
 		<PageLoader loading={!loaded} label="Loading Home" onretry={retry}>
 		{#if showOverview}
 			<div class="boards" data-testid="home-overview">
-				<!-- A tile's head: its coloured icon chip, its name, and an arrow when it opens a page. -->
-				{#snippet head(icon: IconName, label: string, go = true, extra = '')}
-					<span class="head"><span class="kchip" aria-hidden="true"><Icon name={icon} size={18} /></span><span class="lab">{label}</span>{#if extra}<em>{extra}</em>{/if}{#if go}<span class="go" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>{/if}</span>
+				<!-- A tile's head: the same glossy icon square as the Settings pages, its name, and an arrow when it opens a page. -->
+				{#snippet head(icon: IconName, tint: Tint, label: string, go = true)}
+					<span class="head"><SettingsTile {icon} {tint} /><span class="lab">{label}</span>{#if go}<span class="go" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>{/if}</span>
 				{/snippet}
-				<!-- One count tile. Home always fills every slot: a slot whose own tile has nothing to show takes the next one from the list. -->
+				<!-- Disk: what the Library takes, and one thin line along the foot split by kind, the rest of the disk left empty. -->
+				{#snippet diskTile(cls: string)}
+					<a class="tile stat lined {cls}" href={to(admin ? '/settings/library-folders' : '/library')}>
+						{@render head('archive', 'teal', 'On disk')}
+						<span class="num">{bytes(diskTotal).split(' ')[0]}<small>{bytes(diskTotal).split(' ')[1]}</small></span>
+						<span class="sm">{free ? `${bytes(free.free)} free${free.many ? ' on the fullest disk' : ''}` : 'Across your Library folders'}</span>
+						<span class="life" role="img" aria-label={libCards.map((c) => `${c.label} ${bytes(c.size)}`).join(', ')}>
+							{#each libCards as c (c.kind)}{#if c.size}<i class="k-{c.kind}" style="flex-grow: {c.size}"></i>{/if}{/each}
+							<i class="rest" style="flex-grow: {free?.free ?? (diskTotal ? 0 : 1)}"></i>
+						</span>
+					</a>
+				{/snippet}
+				<!-- One count tile. Home always fills every place: a place whose own tile has nothing to show takes the next one from the list. -->
 				{#snippet stat(key: string, cls: string)}
 					{#if key === 'att' && settled && unchecked && !fixes.length}
-						<button type="button" class="tile stat {cls}" style="--kc: var(--wait)" onclick={retry} aria-busy={retrying || undefined} data-testid="home-attention">
-							{@render head('refresh', 'Needs attention', false)}
+						<button type="button" class="tile stat {cls}" onclick={retry} aria-busy={retrying || undefined} data-testid="home-attention">
+							{@render head('refresh', 'amber', 'Needs attention', false)}
 							<span class="word">Could not check</span>
 							<span class="sm">{uncheckedLine(uncheckedDl, uncheckedHealth)} Tap to try again.</span>
 						</button>
 					{:else if key === 'att'}
-						<a class="tile stat {cls}" style="--kc: var({sysOk ? '--ok' : '--fail'})" href={to(fixHref)} data-testid="home-attention">
-							{@render head(sysOk ? 'check' : 'alert', 'Needs attention')}
+						<a class="tile stat {cls}" href={to(fixHref)} data-testid="home-attention">
+							{@render head(sysOk ? 'check' : 'alert', !settled ? 'gray' : sysOk ? 'green' : 'red', 'Needs attention')}
 							{#if !settled}
-								<span class="wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Checking</span>
+								<span class="sk" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Checking</span>
 							{:else if fixes.length}
 								<span class="num fail">{n(fixes.length)}</span>
 								<span class="sm">{fixRows[0].title}</span>
-							{:else if unchecked}
-								<span class="word">Could not check</span>
-								<span class="sm">{uncheckedLine(uncheckedDl, uncheckedHealth)}</span>
 							{:else}
-								<span class="word ok">All good</span>
+								<span class="word">All good</span>
 								<span class="sm">Downloads, imports and checks</span>
 							{/if}
 						</a>
 					{:else if key === 'ask' && approver && !kid && waiting.length}
-						<a class="tile stat {cls}" style="--kc: var(--wait)" href={to('/requests')}>
-							{@render head('requests', 'To approve')}
+						<a class="tile stat {cls}" href={to('/requests')}>
+							{@render head('requests', 'orange', 'To approve')}
 							<span class="ask-stack" aria-hidden="true">{#each waitingPics as a (a.id)}<img src={a.poster} alt="" decoding="async" use:artGone={() => badArt.add(a.id)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
 							<span class="sm">{n(waiting.length)} {waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
 						</a>
 					{:else if key === 'ask'}
-						<a class="tile stat {cls}" style="--kc: var(--wait)" href={to('/requests')}>
-							{@render head('requests', 'Your asks')}
+						<a class="tile stat {cls}" href={to('/requests')}>
+							{@render head('requests', 'orange', 'Your asks')}
 							<span class="num">{n(mine.length)}</span>
 							<span class="sm">still open</span>
 						</a>
 					{:else if key === 'lib'}
-						<a class="tile stat {cls}" style="--kc: var(--accent)" href={to('/library')} data-testid="home-library">
-							{@render head('library', 'Library')}
+						<a class="tile stat {cls}" href={to('/library')} data-testid="home-library">
+							{@render head('library', 'indigo', 'Library')}
 							<span class="num">{n(libTotal)}</span>
 							<span class="sm">{libCards.map((c) => `${n(c.big)} ${c.unit}`).join(' · ')}</span>
 						</a>
 					{:else if key === 'disk'}
-						<a class="tile stat {cls}" style="--kc: var(--ok)" href={to(admin ? '/settings/library-folders' : '/library')}>
-							{@render head('archive', 'On disk')}
-							<span class="num">{bytes(diskTotal)}</span>
-							<span class="sm">{free ? `${bytes(free.free)} free${free.many ? ' on the fullest disk' : ''}` : 'Across your Library folders'}</span>
-							{#if free}<span class="meter" aria-hidden="true"><i style="width: {Math.max(2, (diskTotal / Math.max(1, diskTotal + free.free)) * 100)}%"></i></span>{/if}
-						</a>
+						{@render diskTile(cls)}
 					{:else if key === 'dl'}
-						<a class="tile stat {cls}" style="--kc: var(--info)" href={to('/downloads')}>
-							{@render head('download', 'Downloading')}
+						<a class="tile stat {cls}" href={to('/downloads')}>
+							{@render head('download', 'blue', 'Downloading')}
 							<span class="num">{n(fetchingAll.length)}</span>
 							<span class="sm">{speed ? `${bytes(speed)}/s right now` : 'in progress'}</span>
 						</a>
 					{:else if key === 'soon'}
-						<a class="tile stat {cls}" style="--kc: var(--info)" href={to('/calendar')}>
-							{@render head('calendar', 'Coming soon')}
+						<a class="tile stat {cls}" href={to('/calendar')}>
+							{@render head('calendar', 'purple', 'Coming soon')}
 							<span class="num">{n(home?.soon?.length ?? 0)}</span>
 							<span class="sm">in the next 30 days</span>
 						</a>
 					{:else if key === 'new'}
-						<a class="tile stat {cls}" style="--kc: var(--mark-dl)" href={to('/library')}>
-							{@render head('sparkle', 'New for you')}
+						<a class="tile stat {cls}" href={to('/library')}>
+							{@render head('sparkle', 'pink', 'New for you')}
 							<span class="num">{n(newCount)}</span>
 							<span class="sm">arrivals and new seasons</span>
 						</a>
 					{:else if key === 'explore'}
-						<a class="tile stat {cls}" style="--kc: var(--mark-dl)" href={to('/explore')}>
-							{@render head('compass', 'Explore')}
+						<a class="tile stat {cls}" href={to('/explore')}>
+							{@render head('compass', 'green', 'Explore')}
 							<span class="word">Find something new</span>
 							<span class="sm">Movies, shows and music to ask for</span>
 						</a>
 					{:else}
-						<a class="tile stat {cls}" style="--kc: var(--text-muted)" href={to('/search')}>
-							{@render head('search', 'Search')}
+						<a class="tile stat {cls}" href={to('/search')}>
+							{@render head('search', 'graphite', 'Search')}
 							<span class="word">Look anything up</span>
 							<span class="sm">Any movie, show or artist</span>
 						</a>
@@ -438,71 +448,77 @@
 				</div>
 				{#if showSystem}
 					<div class="bento" class:gone={shown !== 'system'} inert={shown !== 'system'} data-testid="home-system">
-						<a class="tile stat big dl" style="--kc: var(--info)" href={to('/downloads')}>
-							{@render head('download', 'Downloading')}
+						<a class="tile stat big dl" href={to('/downloads')}>
+							{@render head('download', 'blue', 'Downloading')}
 							{#if speed}
 								<span class="num">{bytes(speed).split(' ')[0]}<small>{bytes(speed).split(' ')[1]}/s</small></span>
 							{:else}
-								<span class="num">{n(fetchingAll.length)}<small>{fetchingAll.length === 1 ? 'download' : 'downloads'}</small></span>
+								<span class="num">{n(running)}<small>{running === 1 ? 'download running' : 'downloads running'}</small></span>
 							{/if}
-							<span class="sm">{n(running)} running · {n(queued)} waiting</span>
+							<!-- The three steps a download goes through, in order. -->
+							<ol class="flow" aria-label="Downloads by step">
+								<li><b>{n(queued)}</b><span>Waiting</span></li>
+								<li><b>{n(running - importing)}</b><span>Downloading</span></li>
+								<li><b>{n(importing)}</b><span>Importing</span></li>
+							</ol>
 							{#if fetchingAll.length}
 								<ul class="dl-list">
-									{#each fetchingAll.slice(0, 4) as d (d.id)}
+									{#each fetchingAll.slice(0, 3) as d (d.id)}
 										<li><b>{d.title || d.name}</b><span>{Math.round(percent(d.progress))}%{d.speed ? ` · ${bytes(d.speed)}/s` : ''}</span><i class="pb"><i style="width: {percent(d.progress)}%"></i></i></li>
 									{/each}
 								</ul>
 							{:else}
-								<span class="quiet"><span class="kchip" aria-hidden="true"><Icon name="download" size={26} /></span>Nothing is downloading right now.</span>
+								<span class="quiet">Nothing is downloading right now.</span>
 							{/if}
 						</a>
-						<a class="tile stat wide" style="--kc: var(--ok)" href={to(admin ? '/settings/library-folders' : '/library')}>
-							{@render head('archive', 'Disk', true, free ? `${bytes(free.free)} free` : '')}
-							<span class="num">{bytes(diskTotal)}<small>used by your Library</small></span>
-							<span class="split" aria-hidden="true">
-								{#each libCards as c (c.kind)}{#if c.size}<i class="k-{c.kind}" style="flex-grow: {c.size}"></i>{/if}{/each}
-								<i class="rest" style="flex-grow: {free?.free ?? 0}"></i>
-							</span>
-							<span class="legend">{#each libCards as c (c.kind)}<span><i class="k-{c.kind}"></i>{c.label} {bytes(c.size)}</span>{/each}</span>
-						</a>
-						<a class="tile stat" style="--kc: var({srcs.on && srcs.working < srcs.on ? '--fail' : '--ok'})" href={to(admin ? '/settings/sources' : '/status')}>
-							{@render head('source', 'Sources')}
-							<span class="num">{n(srcs.working)}<small>of {n(srcs.on)} working</small></span>
-							<span class="sm">{srcs.off ? `${n(srcs.off)} turned off` : srcs.on ? 'All turned on' : 'None added yet'}</span>
-							<span class="pips" aria-hidden="true">{#each Array(Math.max(1, srcs.on)) as _, i (i)}<i class:off={i >= srcs.working} class:none={!srcs.on}></i>{/each}</span>
-						</a>
-						<a class="tile stat" style="--kc: var({dls.on && dls.working < dls.on ? '--fail' : '--ok'})" href={to(admin ? '/settings/downloaders' : '/status')}>
-							{@render head('downloader', 'Downloaders')}
-							<span class="num">{n(dls.working)}<small>of {n(dls.on)} working</small></span>
-							<span class="sm">{(health?.downloaders ?? []).map((d) => d.name).join(' · ') || 'None added yet'}</span>
-							<span class="pips" aria-hidden="true">{#each Array(Math.max(1, dls.on)) as _, i (i)}<i class:off={i >= dls.working} class:none={!dls.on}></i>{/each}</span>
-						</a>
-						<a class="tile stat" style="--kc: var({sysOk ? '--ok' : '--fail'})" href={to(fixHref)}>
-							{@render head(sysOk ? 'check' : 'alert', 'Checks')}
+						<section class="tile stat big att" aria-labelledby="h-fix" data-testid="home-problems">
+							<header class="head">
+								<SettingsTile icon={sysOk ? 'check' : 'alert'} tint={!settled ? 'gray' : sysOk ? 'green' : unchecked && !fixes.length ? 'amber' : 'red'} />
+								<h2 class="lab" id="h-fix">Needs attention</h2>
+								{#if fixes.length}<b class="count">{n(fixes.length)}</b>{/if}
+							</header>
 							{#if !settled}
-								<span class="wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Checking</span>
+								<span class="sk" aria-hidden="true"><i></i><i></i><i></i></span><span class="sr-only">Checking</span>
 							{:else if fixes.length}
-								<span class="num fail">{n(fixes.length)}</span><span class="sm">{fixes.length === 1 ? 'thing needs' : 'things need'} a look</span>
+								<ul class="fixes">
+									{#each fixShown as g (g.key)}
+										<li>
+											<a class="fix" href={to(g.href)}>
+												<i class="tone {g.tone}" aria-hidden="true"></i>
+												<span class="ft"><span class="sr-only">{g.word}: </span><b>{g.title}</b><span>{g.reason}</span></span>
+												<span class="fa"><span class="act">{g.action}</span><Icon name="chevronRight" size={14} /></span>
+											</a>
+										</li>
+									{/each}
+								</ul>
+								{#if fixHidden}<a class="more" href={to(fixHidden.href)}>{fixHidden.text}<Icon name="chevronRight" size={13} /></a>{/if}
 							{:else if unchecked}
 								<span class="word">Could not check</span>
+								<span class="sm">{uncheckedLine(uncheckedDl, uncheckedHealth)}</span>
+								<span class="again"><Button size="sm" variant="secondary" busy={retrying} onclick={retry}>Try again</Button></span>
 							{:else}
-								<span class="word ok">All good</span><span class="sm">Nothing needs you</span>
+								<span class="word">All good</span>
+								<span class="sm">Downloads, imports and checks are running fine.</span>
 							{/if}
+						</section>
+						{@render diskTile('')}
+						<a class="tile stat lined" href={to(admin ? '/settings/sources' : '/status')}>
+							{@render head('source', 'purple', 'Sources')}
+							<span class="num">{n(srcs.working)}<small>of {n(srcs.on)} working</small></span>
+							<span class="sm">{srcs.off ? `${n(srcs.off)} turned off` : srcs.on ? 'All turned on' : 'None added yet'}</span>
+							<span class="life pips" aria-hidden="true">{#each Array(Math.max(1, srcs.on)) as _, i (i)}<i class:off={i >= srcs.working} class:none={!srcs.on}></i>{/each}</span>
 						</a>
-						<a class="tile stat" style="--kc: var({metadataOutage.s.down ? '--fail' : '--mark-dl'})" href={to('/status')}>
-							{@render head('cloudOff', 'Metadata server')}
-							<span class="word" class:fail={metadataOutage.s.down}>{metadataOutage.s.down ? 'Down' : 'Online'}</span>
-							<span class="sm">{metadataOutage.s.down ? 'New details wait until it is back' : 'Pictures and details come in'}</span>
+						<a class="tile stat lined" href={to(admin ? '/settings/downloaders' : '/status')}>
+							{@render head('downloader', 'indigo', 'Downloaders')}
+							<span class="num">{n(dls.working)}<small>of {n(dls.on)} working</small></span>
+							<span class="sm">{(health?.downloaders ?? []).map((d) => d.name).join(' · ') || 'None added yet'}</span>
+							<span class="life pips" aria-hidden="true">{#each Array(Math.max(1, dls.on)) as _, i (i)}<i class:off={i >= dls.working} class:none={!dls.on}></i>{/each}</span>
 						</a>
-						<a class="tile stat" style="--kc: var(--accent)" href={to('/library')}>
-							{@render head('sparkle', 'Arrived today')}
-							<span class="num">{n(arrivedToday)}{arrivedCapped && arrivedToday >= 20 ? '+' : ''}</span>
-							<span class="sm">{arrivedToday === 1 ? 'title' : 'titles'} in the Library</span>
-						</a>
-						<a class="tile stat" style="--kc: var(--info)" href={to('/status')}>
-							{@render head('clock', 'Running for')}
+						<a class="tile stat" href={to('/status')}>
+							{@render head('clock', 'graphite', 'Running for')}
 							<span class="word">{health ? duration(health.uptime_s) : '—'}</span>
 							<span class="sm">{health ? `Version ${health.version}` : 'Could not read'}</span>
+							<span class="sm meta"><i class="tone" class:ok={!metadataOutage.s.down} class:fail={metadataOutage.s.down} aria-hidden="true"></i>Metadata server {metadataOutage.s.down ? 'down' : 'online'}</span>
 						</a>
 					</div>
 				{/if}
@@ -615,85 +631,119 @@
 	.phone-only { display: none; gap: 8px; }
 
 	/* Bento: one grid of tiles. Home: the big picture, Needs attention, approvals, a tall picture, Library, a wide picture, disk.
-	   System: the same frame filled with how HolyArrs is running. Both grids fill the same rows, so switching moves nothing below. */
+	   System: the same frame filled with how HolyArrs is running. The hidden grid is lifted out of the flow. */
 	.boards { position: relative; }
 	.boards > .bento { transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
 	.bento.gone { position: absolute; inset: 0 0 auto; opacity: 0; translate: 0 6px; visibility: hidden; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out), visibility 0s linear var(--dur); }
-	.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 150px; grid-auto-flow: row dense; gap: 14px; }
-	.tile { position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border-radius: 22px; overflow: hidden; color: var(--text); background: var(--surface-1); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%); outline: 1px solid var(--line); outline-offset: -1px; transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
-	a.tile:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift), inset 0 1px 0 rgb(255 255 255 / 6%); }
-	a.tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 150px; grid-auto-flow: row dense; gap: 16px; }
+
+	/* The tile is the Requests card's sheet, on its own: lit from above (a paler top, a bright top edge), a hairline,
+	   and one long soft shadow that sits it on the page. A whisper of grain keeps the flat colour from looking printed. */
+	.tile {
+		--sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f4f5f8, #151518);
+		--edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 6%));
+		--drop: 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 18px 32px -20px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%));
+		--well: light-dark(rgb(20 24 40 / 4%), rgb(255 255 255 / 5%));
+		position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border: 0; border-radius: 20px; overflow: hidden;
+		color: var(--text); text-align: left; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
+		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+	}
+	.stat::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+	a.tile, button.tile { cursor: pointer; }
+	a.tile:hover, button.tile:hover { transform: translateY(var(--lift)); box-shadow: var(--edge), 0 2px 4px light-dark(rgb(20 24 40 / 6%), rgb(0 0 0 / 40%)), 0 26px 40px -22px light-dark(rgb(20 24 40 / 38%), rgb(0 0 0 / 90%)); }
+	a.tile:focus-visible, button.tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tile.big { grid-column: span 2; grid-row: span 2; }
 	.tile.wide { grid-column: span 2; }
 	.tile.tall { grid-row: span 2; }
-	/* Count tiles: each has its own colour (--kc) for the icon chip, a soft wash from the top corner and the arrow. */
-	.stat { --kc: var(--text-muted); background: radial-gradient(140% 110% at 0% 0%, color-mix(in oklab, var(--kc) 17%, transparent), transparent 62%), var(--tile-bg); --tile-bg: color-mix(in oklab, var(--kc) 4%, var(--surface-1)); outline-color: color-mix(in oklab, var(--kc) 16%, var(--line)); }
-	.head { display: flex; align-items: center; gap: 10px; min-width: 0; }
-	.kchip { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 11px; background: color-mix(in oklab, var(--kc) 18%, var(--surface-2)); color: var(--kc); }
-	.lab { flex: 1; min-width: 0; font: var(--t-callout); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.head em { font-style: normal; font: var(--t-footnote); color: var(--text-muted); white-space: nowrap; }
-	.go { flex: none; display: inline-grid; color: var(--text-faint); transition: transform var(--dur) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	a.tile:hover .go { color: var(--kc); transform: translateX(2px); }
-	.meter { display: block; height: 6px; margin-top: 10px; border-radius: 999px; background: color-mix(in oklab, var(--kc) 14%, var(--surface-3)); overflow: hidden; }
-	.meter i { display: block; height: 100%; border-radius: inherit; background: var(--kc); }
-	.tile .big, .tile .num, .tile .word { margin-top: auto; }
-	.num { font: 700 36px / 1.05 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-	.num small { margin-left: 4px; font: var(--t-subhead); font-weight: 500; letter-spacing: 0; color: var(--text-muted); }
-	.word { display: inline-flex; align-items: center; gap: 6px; font: 700 26px / 1.1 var(--font-display); letter-spacing: -0.02em; }
-	.fail { color: var(--fail); }
-	.ok { color: var(--ok); }
-	.sm { margin-top: 2px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.calm { background: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--ok) 14%, transparent), transparent 60%), var(--surface-1); }
-	.hot { background: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--fail) 14%, transparent), transparent 60%), var(--surface-1); }
-	.wait { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
-	.wait i { display: block; height: 12px; border-radius: 6px; background: var(--sk-base); }
-	.wait i + i { width: 60%; }
 
-	/* Picture tiles: the picture fills the tile, the words sit on a dark fade at the bottom (white in both themes). */
-	.pic { justify-content: flex-end; color: #fff; background: var(--surface-3); outline: 0; }
-	.pic > img:first-child { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
-	.pic::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(0 0 0 / 76%), transparent 58%); }
-	.pic .lab { flex: none; font: var(--t-subhead); font-weight: 600; color: rgb(255 255 255 / 84%); }
-	.pic .nm { font: 700 22px / 1.15 var(--font-display); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.pic.big .nm { font-size: 30px; letter-spacing: -0.02em; }
+	/* A count tile: the icon square and name on top, the number low on the left, one quiet line under it. */
+	.head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+	.lab { flex: 1; min-width: 0; margin: 0; font: 600 14px / 1.3 var(--font-ui); letter-spacing: -0.005em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.go { flex: none; display: inline-grid; color: var(--text-faint); transition: transform var(--dur) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	a.tile:hover .go { color: var(--text); transform: translateX(2px); }
+	.num, .word { margin-top: auto; }
+	.num { font: 800 40px / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+	.num small { margin-left: 5px; font: 500 13px / 1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); }
+	.word { font: 700 24px / 1.1 var(--font-display); letter-spacing: -0.025em; }
+	.fail { color: var(--fail); }
+	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sk { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+	.sk i { display: block; height: 12px; border-radius: 6px; background: var(--sk-base); }
+	.sk i + i { width: 60%; }
+	.sk i + i + i { width: 40%; }
+
+	/* The thin line along a tile's foot, the same as the life line on a Requests card: disk split by kind, or one pip per part. */
+	.lined { padding-bottom: 28px; }
+	.life { position: absolute; left: 18px; right: 18px; bottom: 13px; display: flex; gap: 2px; height: 4px; border-radius: 4px; overflow: hidden; background: light-dark(rgb(20 24 40 / 9%), rgb(255 255 255 / 12%)); }
+	.life i { display: block; min-width: 3px; flex-basis: 0; }
+	.life .rest { min-width: 0; background: transparent; }
+	.life.pips { gap: 3px; background: none; }
+	.life.pips i { flex: 1; border-radius: 4px; background: var(--ok); }
+	.life.pips i.off { background: var(--fail); }
+	.life.pips i.none { background: light-dark(rgb(20 24 40 / 9%), rgb(255 255 255 / 12%)); }
+	.k-movie { background: var(--accent); }
+	.k-show { background: var(--info); }
+	.k-artist { background: var(--mark-dl); }
+
+	/* Picture tiles: the picture fills the tile; a glass pill says what it is, the title sits on a dark fade at the foot (white in both themes). */
+	.pic { justify-content: flex-end; color: #fff; background: #17181d; box-shadow: var(--drop); }
+	.pic > img:first-child { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
+	a.pic:hover > img:first-child { transform: scale(1.03); }
+	.pic::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(0 0 0 / 80%), rgb(0 0 0 / 30%) 38%, transparent 62%); }
+	/* The bright edge sits over the picture. */
+	.pic::before { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none; box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), inset 0 0 0 1px rgb(255 255 255 / 10%); }
+	.pill { position: absolute; top: 12px; left: 12px; display: flex; }
+	.pic .nm { font: 800 22px / 1.1 var(--font-display); letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pic.big .nm { font-size: 32px; letter-spacing: -0.03em; }
 	.pic .logo { width: auto; height: auto; max-width: 55%; max-height: 72px; margin: 4px 0 2px; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
 	.pic.big .logo { max-height: 104px; }
 	/* A dark wordmark (black letters made for light posters) is drawn white, its shape unchanged, like on the title page. */
 	.pic .logo:global(.dark) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
-	.pic .sm { color: rgb(255 255 255 / 84%); }
+	.pic .sm { color: rgb(255 255 255 / 86%); font: 600 12px / 1.3 var(--font-ui); }
 
-	/* Waiting asks: up to three posters overlapping left to right, each ringed in the tile's own colour, then a round +N. */
+	/* Waiting asks: up to three posters overlapping left to right, each ringed in the sheet's own colour, then a round +N. */
 	.ask-stack { margin-top: auto; display: flex; align-items: center; }
-	.ask-stack img { width: 46px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px; margin-left: -14px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--tile-bg), 0 4px 12px rgb(0 0 0 / 18%); }
+	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-left: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
 	.ask-stack img:first-child { margin-left: 0; }
-	.ask-stack b { min-width: 32px; height: 32px; margin-left: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: color-mix(in oklab, var(--kc) 16%, var(--surface-2)); color: var(--kc); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
+	.ask-stack b { min-width: 30px; height: 30px; margin-left: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
 
-	/* System tiles */
-	.dl .num { margin-top: 10px; }
+	/* System: downloads. The number, the three steps a download goes through, then what is running. */
+	.dl .num { margin-top: 14px; }
+	.flow { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); }
+	.flow li { position: relative; min-width: 0; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
+	.flow li + li::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 1px; background: var(--line); }
+	.flow b { font: 700 18px / 1.1 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+	.flow span { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.dl-list { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-	.dl-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font: var(--t-footnote); }
+	.dl-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; font: var(--t-footnote); }
 	.dl-list b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.dl-list span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.pb { grid-column: 1 / -1; display: block; height: 4px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+	.pb { grid-column: 1 / -1; display: block; height: 4px; border-radius: 4px; background: light-dark(rgb(20 24 40 / 9%), rgb(255 255 255 / 12%)); overflow: hidden; }
 	.pb i { display: block; height: 100%; border-radius: inherit; background: var(--info); }
-	.quiet { margin: auto 0; align-self: center; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; font: var(--t-callout); color: var(--text-muted); }
-	.quiet .kchip { width: 56px; height: 56px; border-radius: 18px; }
-	.split { display: flex; gap: 2px; height: 8px; margin-top: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-3); }
-	.split i { display: block; min-width: 3px; flex-basis: 0; }
-	.split .rest { min-width: 0; background: transparent; }
-	.legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 8px; font: var(--t-footnote); color: var(--text-muted); }
-	.legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-	.legend i { width: 7px; height: 7px; border-radius: 50%; }
-	.k-movie { background: var(--accent); }
-	.k-show { background: var(--info); }
-	.k-artist { background: var(--mark-dl); }
-	.pips { display: flex; gap: 4px; margin-top: 8px; }
-	.pips i { flex: 1; height: 6px; border-radius: 999px; background: var(--ok); }
-	.stat .pips { margin-top: 10px; }
-	.pips i.off { background: var(--fail); }
-	.pips i.none { background: var(--surface-3); }
+	.quiet { margin-top: auto; font: var(--t-callout); color: var(--text-muted); }
 
-	/* Narrow: two columns; the big tiles keep their two-by-two, the tall one becomes one row. */
+	/* System: Needs attention. Each cause is one row that opens where it can be fixed. */
+	.count { flex: none; min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--fail); color: #fff; font: 700 12px / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.fixes { list-style: none; margin: 10px -8px 0; padding: 0; display: flex; flex-direction: column; min-height: 0; }
+	.fixes li + li { box-shadow: inset 0 1px 0 var(--line); }
+	.fix { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 8px; border-radius: 10px; color: inherit; transition: background var(--dur-fast) var(--ease-out); }
+	.fix:hover { background: var(--well); }
+	.fix:focus-visible, .more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.tone { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fail); }
+	.tone.wait { background: var(--wait); }
+	.tone.ok { background: var(--ok); }
+	.ft { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+	.ft b { font: 600 14px / 1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ft > span:last-child { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.fa { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); white-space: nowrap; }
+	.more { position: relative; margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; min-height: 28px; border-radius: 8px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); }
+	.more::after { content: ''; position: absolute; inset: -8px 0; }
+	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.again { margin-top: 12px; }
+	.att .word { margin-top: auto; }
+	.meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+
+	/* Narrow: two columns; the big tiles keep their two-by-two, the tall one becomes one row, an odd last tile spans the row. */
 	@container home (max-width: 900px) {
 		.bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 10px; }
 		.tile.tall { grid-row: span 1; }
@@ -710,20 +760,31 @@
 		.note { order: 3; flex-basis: 100%; font: var(--t-subhead); }
 		.note:empty:not(.pending) { display: none; }
 		.note.pending { min-height: 1.3em; }
-		.kchip { width: 30px; height: 30px; border-radius: 9px; }
-		.head { gap: 8px; }
-		.lab { font: var(--t-subhead); font-weight: 600; }
-		.go { display: none; }
-		.ask-stack img { width: 34px; margin-left: -11px; border-radius: 6px; }
-		.ask-stack b { min-width: 28px; height: 28px; margin-left: 8px; }
 		.tile { padding: 12px 14px; border-radius: 18px; }
-		.num { font-size: 28px; }
-		.word { font-size: 20px; }
+		.head { gap: 8px; }
+		.lab { font-size: 13px; }
+		.go { display: none; }
+		.num { font-size: 30px; }
+		.num small { font-size: 12px; margin-left: 4px; }
+		.word { font-size: 19px; }
+		.lined { padding-bottom: 22px; }
+		.lined .sm { -webkit-line-clamp: 1; line-clamp: 1; }
+		.life { left: 14px; right: 14px; bottom: 10px; }
+		.pill { top: 10px; left: 10px; }
 		.pic .nm { font-size: 18px; }
-		.pic.big .nm { font-size: 24px; }
+		.pic.big .nm { font-size: 26px; }
 		.pic.big .logo { max-height: 72px; }
-		.lab em { display: none; }
 		.sm { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
+		.meta { display: flex; }
+		.ask-stack img { width: 32px; margin-left: -10px; border-radius: 6px; }
+		.ask-stack b { min-width: 26px; height: 26px; margin-left: 8px; }
+		.dl .num { margin-top: 10px; }
+		.flow { margin-top: 10px; }
+		.flow li { padding: 7px 10px; }
+		.dl-list li:nth-child(n + 3) { display: none; }
+		.fixes { margin-top: 6px; }
+		.fix { min-height: 44px; }
+		.act { display: none; }
 	}
 
 	.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); outline: 1px solid var(--line); overflow: hidden; }
