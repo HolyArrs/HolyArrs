@@ -28,17 +28,27 @@
 	// The way's name for people: Password, Plex, Jellyfin, Emby, Single sign-on.
 	const wayName = (w: RecentWay) => (w === 'oidc' ? 'Single sign-on' : w.slice(0, 1).toUpperCase() + w.slice(1));
 	const hue = (n: string) => [...n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
-	function focusPw() {
-		void tick().then(() => panelEl?.querySelector<HTMLInputElement>('#password')?.focus());
+	// After a view change the pressed button is gone, so focus would drop to the
+	// page: move it to the new step's first control. Touch screens are left alone
+	// (focusing a field there pops the keyboard).
+	function focusStep() {
+		if (!matchMedia('(pointer: fine)').matches && document.documentElement.dataset.input !== 'keyboard') return;
+		void tick().then(() => {
+			for (const s of ['.digit', '#otp', '#name', '#password', '.acct-pick', '.step button']) {
+				const el = panelEl?.querySelector<HTMLElement>(s);
+				if (el) return el.focus({ preventScroll: true });
+			}
+		});
 	}
 	function openPerson(i: number) {
 		editing = false;
 		acct = i;
-		focusPw();
+		focusStep();
 	}
 	function showList() {
 		editing = false;
 		acct = 'list';
+		focusStep();
 	}
 	function another() {
 		editing = false;
@@ -47,13 +57,16 @@
 		chosen = 'choose';
 		pw = '';
 		error = '';
+		focusStep();
 	}
 	function dropPerson(n: string) {
 		forgetPerson(n);
 		recent = recentPeople();
+		focusStep();
 	}
 	const RESET_CMD = 'docker exec -i holyarrs /holyarrs reset-owner';
 	let copied = $state(false);
+	let copyNote = $state('');
 	let cmdEl = $state<HTMLElement>();
 	async function copyCmd() {
 		try {
@@ -68,6 +81,8 @@
 			r.selectNodeContents(cmdEl);
 			sel.removeAllRanges();
 			sel.addRange(r);
+			copyNote = 'Selected. Press Ctrl+C to copy.';
+			setTimeout(() => (copyNote = ''), 3000);
 		}
 	}
 	let pw = $state('');
@@ -174,6 +189,8 @@
 		const field = panelEl.querySelector<HTMLInputElement>('#name') ?? panelEl.querySelector<HTMLInputElement>('#password');
 		if (!field) return;
 		focusedOnce = true;
+		// Phones: no focus on load, so the keyboard does not cover the art and the card.
+		if (!matchMedia('(pointer: fine)').matches) return;
 		if (!document.activeElement || document.activeElement === document.body) field.focus({ preventScroll: true });
 	});
 	onMount(() => {
@@ -376,6 +393,17 @@
 		lastWay = '';
 		e.preventDefault();
 		error = '';
+		// The button stays on; a short code gets a plain note instead of a dead button.
+		if (!useBackup && otp.length < 6) {
+			error = 'Enter all 6 digits.';
+			digitInputs()[Math.max(0, digits.findIndex((d) => !d))]?.focus();
+			return;
+		}
+		if (useBackup && !otp.trim()) {
+			error = 'Enter a backup code.';
+			panelEl?.querySelector<HTMLInputElement>('#otp')?.focus();
+			return;
+		}
 		busy = true;
 		try {
 			await session.loginCode(ticket, otp.trim());
@@ -398,6 +426,7 @@
 		useBackup = false;
 		digits = ['', '', '', '', '', ''];
 		otp = '';
+		focusStep();
 	}
 
 	function pick(w: 'choose' | 'password' | 'jellyfin' | 'emby') {
@@ -507,7 +536,8 @@
 {/snippet}
 
 {#snippet help()}
-	<details class="help">
+	<!-- Opening brings the answers into view (the frame would otherwise hide the last lines). -->
+	<details class="help" ontoggle={(e) => { const d = e.currentTarget; if (d.open) d.scrollIntoView({ block: 'nearest', behavior: calm ? 'auto' : 'smooth' }); }}>
 		<summary>Can't sign in?</summary>
 		<div class="ans">
 			<b>You use this server</b>
@@ -518,6 +548,7 @@
 			<p>Run this where HolyArrs runs:</p>
 			<div class="cmd">
 				<code bind:this={cmdEl}>{RESET_CMD}</code>
+				<span class="sr-only" role="status">{copied ? 'Copied' : copyNote}</span>
 				<button type="button" class="cp" onclick={copyCmd}>{copied ? 'Copied' : 'Copy'}</button>
 			</div>
 			<p>Type your name, press Enter, type a new password, then press Ctrl+D.</p>
@@ -546,7 +577,7 @@
 
 		{#if session.s.state === 'unknown' || ssoFinishing}
 			<!-- As tall as the usual sign-in form, so the card does not jump when the session answers. -->
-			<div class="sk" style="border-radius: var(--r-card)"></div>
+			<div class="sk" class:tall={recent.length > 1} style="border-radius: var(--r-card)"></div>
 			{#if ssoFinishing}<p class="small muted" role="status">Finishing your sign-in…</p>{/if}
 		{:else}
 			{#key step}
@@ -575,15 +606,18 @@
 										</button>
 									</div>
 								{/each}
-								<div class="acct" role="listitem">
-									<button type="button" class="acct-pick" onclick={another}>
-										<span class="face plus" aria-hidden="true">+</span>
-										<span class="acct-name"><span class="acct-n">Use another account</span></span>
-										<span class="acct-end" aria-hidden="true">›</span>
-									</button>
-								</div>
+								<!-- While editing, every row forgets; the add row steps aside. -->
+								{#if !editing}
+									<div class="acct" role="listitem">
+										<button type="button" class="acct-pick" onclick={another}>
+											<span class="face plus" aria-hidden="true">+</span>
+											<span class="acct-name"><span class="acct-n">Use another account</span></span>
+											<span class="acct-end" aria-hidden="true">›</span>
+										</button>
+									</div>
+								{/if}
 							</div>
-							<button class="link" type="button" onclick={() => (editing = !editing)}>{editing ? 'Done' : 'Edit list'}</button>
+							<button class="link" type="button" aria-pressed={editing} onclick={() => (editing = !editing)}>{editing ? 'Done' : 'Edit list'}</button>
 						{:else if person}
 							<div class="who" data-testid="signin-person">
 								{@render face(person, 84)}
@@ -599,7 +633,7 @@
 									</Button>
 								</div>
 								<p class="note">{w === 'plex' ? 'Opens Plex to confirm it is you.' : 'Opens your sign-in page.'}</p>
-								{#if error}<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>{/if}
+								{#if error}<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>{/if}
 							{:else}
 								<form onsubmit={submit} novalidate>
 									<input type="text" name="username" autocomplete="username" value={name} hidden readonly />
@@ -607,11 +641,11 @@
 										<label for="password">{person.way === 'password' ? 'Password' : `${wayName(person.way)} password`}</label>
 										<div class="pw">
 											<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" required />
-											<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+											<IconButton icon={showPw ? 'eyeOff' : 'eye'} label="Show password" aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 										</div>
 									</div>
 									{#if error}
-										<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
+										<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 									{/if}
 									<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}>
 										<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
@@ -664,9 +698,9 @@
 									</div>
 								{/if}
 								{#if error}
-									<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
+									<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 								{/if}
-								<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim() || (!useBackup && otp.length < 6)} {busy}>Sign in</Button></div>
+								<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>Sign in</Button></div>
 								<button class="link" type="button" onclick={toggleBackup}>{useBackup ? 'Use the 6-digit code' : 'Use a backup code'}</button>
 							</form>
 						{:else}
@@ -703,7 +737,7 @@
 									{/if}
 									<div class="field">
 										<label for="name">Name</label>
-										<input id="name" class="input" bind:value={name} autocomplete="username" maxlength={via === 'password' ? 64 : 128} required />
+										<input id="name" class="input" bind:value={name} autocomplete="username" autocapitalize="none" spellcheck="false" maxlength={via === 'password' ? 64 : 128} required />
 									</div>
 									<div class="field">
 										<label for="password">Password</label>
@@ -713,7 +747,7 @@
 											{:else}
 												<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" required />
 											{/if}
-											<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+											<IconButton icon={showPw ? 'eyeOff' : 'eye'} label="Show password" aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 										</div>
 										{#if mode === 'setup'}<span class="hint">At least {MIN_LENGTH} characters.</span>{/if}
 									</div>
@@ -724,7 +758,7 @@
 										</div>
 									{/if}
 									{#if error}
-										<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
+										<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 									{/if}
 									<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}>
 										<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
@@ -736,7 +770,7 @@
 									{/if}
 								</form>
 							{:else if error}
-								<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
+								<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 							{/if}
 
 							{#if mode === 'login' && via === 'password'}{@render help()}{/if}
@@ -754,7 +788,12 @@
 			variant="glass"
 			tipSide="below-end"
 			label={theme.value === 'light' ? 'Dark appearance' : 'Light appearance'}
-			onclick={() => setTheme(theme.value === 'light' ? 'dark' : 'light')}
+			onclick={() => {
+				// Switch in one frame: no 150 ms fades on rows and fields while the glass changes at once.
+				panelEl?.classList.add('swap');
+				setTheme(theme.value === 'light' ? 'dark' : 'light');
+				requestAnimationFrame(() => requestAnimationFrame(() => panelEl?.classList.remove('swap')));
+			}}
 		/>
 	</span>
 </main>
@@ -766,10 +805,15 @@
 		position: relative;
 		min-height: 100dvh;
 		display: grid;
-		place-items: center;
+		/* The card's top stays put: a step change, an error note or the open help
+		   grows it downward (and the page scrolls) instead of re-centring it. The
+		   top offset centres a usual-height card. */
+		justify-items: center;
+		align-items: start;
 		/* --fr mirrors the edge frame's thickness (SigninPortals), so the panel clears it. */
 		--fr: 14px;
-		padding: calc(clamp(16px, 5vh, 48px) + var(--fr)) calc(clamp(16px, 5vw, 96px) + var(--fr));
+		/* Centres a usual (~560 px) card, but never so low that the tallest (~640 px) would not fit. */
+		padding: calc(var(--fr) + max(clamp(16px, 5vh, 48px), (100dvh - 640px) / 2, min((100dvh - 560px) / 2, 100dvh - 640px - 2 * var(--fr) - clamp(16px, 5vh, 48px)))) calc(clamp(16px, 5vw, 96px) + var(--fr)) calc(clamp(16px, 5vh, 48px) + var(--fr));
 		background: #050507;
 		color: var(--text);
 		isolation: isolate;
@@ -844,6 +888,8 @@
 		border-color: rgb(255 255 255 / 0.55);
 		/* A light rim and a soft lift: dark shadows make the light glass look dirty. */
 		box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25), 0 24px 70px rgb(0 0 0 / 0.2), 0 4px 14px rgb(0 0 0 / 0.08);
+		/* Focus rings in dark ink: the red ring is about 2:1 on the light glass. */
+		--focus-ring: 0 0 0 2px rgb(255 255 255 / 0.9), 0 0 0 4px #1d1d1f;
 	}
 	.wrap.leaving .panel.light { background: rgb(250 250 250 / 0.92); }
 	.mark-light, .light .mark-dark { display: none; }
@@ -851,9 +897,13 @@
 	.light .brand, .light .title, .light .who-n { color: #111; }
 	.light .lead, .light .note, .light .acct-way, .light .help { color: rgb(0 0 0 / 0.64); }
 	.light .help .note { color: rgb(0 0 0 / 0.56); }
-	.light .or { color: rgb(0 0 0 / 0.5); }
+	.light .or { color: rgb(0 0 0 / 0.62); }
 	.light .or::before, .light .or::after { background: rgb(0 0 0 / 0.14); }
 	.light :global(.input) { background: rgb(255 255 255 / 0.6); border-color: rgb(255 255 255 / 0.75); color: #111; }
+	/* The resting light field above outranks app.css's hover, focus and error borders: give them back. */
+	.light :global(.input:hover) { border-color: rgb(0 0 0 / 0.16); }
+	.light :global(.input:focus-visible) { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(229 53 43 / 0.22); }
+	.light :global(.input[aria-invalid='true']) { border-color: var(--fail); }
 	.light .link, .light .help summary {
 		color: #1d1d1f;
 		font-weight: 600;
@@ -867,17 +917,25 @@
 	.light .acct + .acct { border-top-color: rgb(0 0 0 / 0.07); }
 	.light .acct-pick { background: rgb(255 255 255 / 0.3); color: #111; }
 	@media (hover: hover) { .light .acct-pick:hover { background: rgb(255 255 255 / 0.55); } }
+	.light .acct-pick:active { background: rgb(255 255 255 / 0.7); }
+	.light .acct-pick:focus-visible { outline-color: #1d1d1f; }
 	.light .acct-end { color: rgb(0 0 0 / 0.35); }
 	.light .accts.editing .acct-end { color: #1d1d1f; }
 	.light .face.plus { background: rgb(0 0 0 / 0.05); border-color: rgb(0 0 0 / 0.25); color: rgb(0 0 0 / 0.6); }
 	.light .prov { background: rgb(255 255 255 / 0.45); border-color: rgb(255 255 255 / 0.6); color: #1d1d1f; }
 	.light .provs[data-n='1'] .prov { color: #111; }
 	.light .prov svg[stroke='#f5f5f7'] { stroke: #1d1d1f; }
+	@media (hover: hover) { .light .prov:not(:disabled):hover { background: rgb(255 255 255 / 0.65); color: #111; } }
 	@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-		.light .prov:not(:disabled):hover { background: rgb(255 255 255 / 0.65); color: #111; }
+		/* A soft lift on light glass; the dark mode's deep shadow looks like a smudge here. */
+		.light .prov:not(:disabled):hover,
+		.light .submit :global(.ui-btn:not(:disabled):hover) { box-shadow: 0 4px 14px rgb(0 0 0 / 0.1), 0 1px 3px rgb(0 0 0 / 0.06); }
 	}
 	.light .cmd { background: rgb(255 255 255 / 0.5); border-color: rgb(0 0 0 / 0.08); }
 	.light .cp { border-color: rgb(0 0 0 / 0.15); color: #111; }
+	/* Light badges: a white disc, not a heavy black one. */
+	.light .badge { background: #fff; box-shadow: 0 0 0 2px #fff; }
+	.light .badge svg[stroke='#f5f5f7'] { stroke: #1d1d1f; }
 	.light .help .ans + .ans { border-top-color: rgb(0 0 0 / 0.1); }
 	.light .orbit { border-color: rgb(0 0 0 / 0.14); border-top-color: #e5a00d; }
 
@@ -895,19 +953,28 @@
 		filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
 		transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 	}
-	.mode :global(.ui-ibtn.glass:hover),
 	.mode :global(.ui-ibtn.glass:focus-visible) { color: rgb(255 255 255 / 0.9); background: rgb(255 255 255 / 0.1); }
+	/* Hover: a soft dark disc and a full-white icon, readable over bright art too. */
+	@media (hover: hover) { .mode :global(.ui-ibtn.glass:hover) { color: #fff; background: rgb(0 0 0 / 0.3); } }
+	.mode :global(.ui-ibtn.glass:focus-visible) { outline: none; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85); }
 	.light .corner :global(.ui-ibtn.glass) {
 		color: #1d1d1f;
 		background: rgb(255 255 255 / 0.55);
 		border-color: rgb(255 255 255 / 0.6);
 		box-shadow: 0 2px 10px rgb(0 0 0 / 0.12);
 	}
+	@media (hover: hover) { .light .corner :global(.ui-ibtn.glass:hover) { background: rgb(255 255 255 / 0.85); } }
+	.light .corner :global(.ui-ibtn.glass:focus-visible) { outline: none; box-shadow: var(--focus-ring); }
 
 	/* Two-factor: six digit boxes, a dash after the third. */
 	.digits { display: flex; justify-content: center; gap: 8px; }
+	/* The boxes share the row, up to 44 px each, so six always fit (360 px phones too). */
 	.digit {
-		width: 44px;
+		flex: 1 1 0;
+		/* width 0: an empty input's own width must not widen the row (and the card) on 360 px phones. */
+		width: 0;
+		min-width: 0;
+		max-width: 44px;
 		height: 54px;
 		padding: 0;
 		text-align: center;
@@ -932,10 +999,14 @@
 		letter-spacing: -0.015em;
 		color: #fff;
 	}
-	.panel > .sk { height: 311px; }
+	.panel > .sk { height: 311px; background: rgb(255 255 255 / 0.06); }
+	.panel.light > .sk { background: rgb(0 0 0 / 0.05); }
+	/* Two or more remembered people open on the taller list. */
+	.panel > .sk.tall { height: 415px; }
+	.panel:global(.swap), .panel:global(.swap) :global(*) { transition: none !important; }
 	@media (max-width: 600px) { .panel > .sk { height: 289px; } }
-	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; }
-	.lead { margin: 8px 0 20px; color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; }
+	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; text-wrap: balance; }
+	.lead { margin: 8px 0 20px; color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; text-wrap: pretty; }
 	.title + :not(.lead) { margin-top: 26px; }
 	.panel :global(.field + .field) { margin-top: 12px; }
 	/* Labels, hints and errors centre like the title and button; typing stays left. */
@@ -943,9 +1014,13 @@
 	.panel :global(.field .input) { text-align: left; }
 	.pw { position: relative; display: flex; align-items: center; }
 	.pw .input { padding-right: 52px; }
+	/* Edge draws its own eye in password fields; ours is the only one. */
+	.pw .input::-ms-reveal { display: none; }
 	.pw > :global(*:last-child) { position: absolute; right: 4px; }
 	.otp { text-align: center; font-size: 22px; letter-spacing: 0.3em; }
 	.submit { margin-top: 20px; }
+	/* Busy keeps the button's full colour (only the spinner says it is working); disabled stays dimmed. */
+	.submit :global(.ui-btn[aria-busy='true']:disabled) { opacity: 1; }
 	/* Errors: a soft red note centred under the fields, with a small warning mark. */
 	.form-error {
 		margin-top: 14px;
@@ -972,16 +1047,19 @@
 
 	/* Provider tiles: one row, mark over name; a lone tile is a wide button. */
 	.provs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+	/* Marks sit on one line across the row: a two-line label ("Single sign-on")
+	   grows downward instead of pushing its mark up. */
 	.prov {
 		position: relative;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-start;
 		gap: 6px;
 		min-height: 76px;
-		padding: 0 6px;
+		padding: 15px 6px 10px;
+		text-align: center;
 		border: 1px solid rgb(255 255 255 / 0.08);
 		border-radius: 16px;
 		background: rgb(118 118 128 / 0.22);
@@ -991,7 +1069,9 @@
 		transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 	}
 	.prov svg { width: 26px; height: 26px; flex: none; }
-	.provs[data-n='1'] .prov { flex-direction: row; min-height: 50px; gap: 10px; font-size: 16px; color: #fff; }
+	/* "Single / sign-on", never "Single sign- / on". */
+	.prov span { text-wrap: balance; }
+	.provs[data-n='1'] .prov { flex-direction: row; justify-content: center; padding: 0 6px; min-height: 50px; gap: 10px; font-size: 16px; color: #fff; }
 	.prov:active:not(:disabled) { transform: scale(0.97); }
 	.prov:disabled { opacity: 0.5; cursor: default; }
 	.prov:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -1013,8 +1093,10 @@
 		cursor: pointer;
 		transition: background-color var(--dur-fast) var(--ease-out);
 	}
-	.acct-pick:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
+	/* One ring, inside the row (the global ring would bleed onto the next row). */
+	.acct-pick:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; box-shadow: none; }
 	@media (hover: hover) { .acct-pick:hover { background: rgb(255 255 255 / 0.08); } }
+	.acct-pick:active { background: rgb(255 255 255 / 0.12); }
 	.acct-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.acct-n, .who-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.acct-way { font: 400 12px/1.2 var(--font-ui); color: rgb(255 255 255 / 0.55); white-space: nowrap; }
@@ -1042,14 +1124,12 @@
 	.who .badge { right: 0; bottom: 0; width: 26px; height: 26px; }
 	.who .badge svg { width: 18px; height: 18px; }
 	.who-n { max-width: 100%; color: #fff; font: 600 20px/1.2 var(--font-ui); letter-spacing: -0.01em; }
+	/* The way sits close under the name, as in the list rows. */
+	.who .acct-way { margin-top: -8px; }
 	/* Back to the list: a round button in the panel's top-left corner, level with the logo. */
-	.corner { position: absolute; top: 32px; left: 26px; z-index: 1; }
+	.corner { position: absolute; top: 34px; left: 34px; z-index: 1; }
 	.face img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 	.note { margin-top: 10px; text-align: center; color: rgb(255 255 255 / 0.55); font: var(--t-footnote); }
-	/* Touch phones: 44px tap targets; desktop stays as it is. */
-	@media (max-width: 767px) and (pointer: coarse) {
-		.cp { min-height: 44px; min-width: 64px; }
-	}
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
 
@@ -1060,13 +1140,17 @@
 	.prov { isolation: isolate; }
 	.prov > :global(:not(canvas)),
 	.submit :global(.ui-btn > :not(canvas)) { position: relative; z-index: 1; }
+	/* Colour on hover for everyone; the lift only when motion is welcome. */
+	@media (hover: hover) { .prov:not(:disabled):hover { background: rgb(118 118 128 / 0.34); color: #fff; } }
 	@media (hover: hover) and (prefers-reduced-motion: no-preference) {
 		.prov:not(:disabled):hover,
 		.submit :global(.ui-btn:not(:disabled):hover) {
 			transform: translateY(-1px);
 			box-shadow: 0 6px 22px rgb(0 0 0 / 0.35), 0 0 18px rgb(255 255 255 / 0.08);
 		}
-		.prov:not(:disabled):hover { background: rgb(118 118 128 / 0.34); color: #fff; }
+		/* Pressed: settle back down, so a click reads as a press. */
+		.prov:not(:disabled):active,
+		.submit :global(.ui-btn:not(:disabled):active) { transform: translateY(0) scale(0.98); box-shadow: none; }
 	}
 
 	.link {
@@ -1082,8 +1166,9 @@
 		cursor: pointer;
 	}
 	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.help { margin-top: 12px; color: var(--text-muted); font: var(--t-footnote); }
-	.help summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font: 500 14px/1 var(--font-ui); list-style: none; }
+	.help { margin-top: 12px; color: var(--text-muted); font: var(--t-footnote); scroll-margin-bottom: calc(var(--fr, 0px) + 16px); }
+	/* Sized to its words, like the other text links (not the whole panel width). */
+	.help summary { cursor: pointer; width: fit-content; margin: 0 auto; padding: 0 10px; min-height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font: 500 14px/1 var(--font-ui); list-style: none; }
 	.help summary::-webkit-details-marker { display: none; }
 	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (max-width: 767px) and (pointer: coarse) { .help summary { min-height: 44px; } }
@@ -1094,8 +1179,15 @@
 	.help .note { margin-top: 10px; text-align: left; font-size: 12px; }
 	.cmd { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 6px 6px 12px; border-radius: 10px; background: rgb(255 255 255 / 0.06); border: 1px solid rgb(255 255 255 / 0.08); }
 	.cmd code { flex: 1; min-width: 0; font-size: 12px; line-height: 1.45; }
-	.cp { flex: none; min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid rgb(255 255 255 / 0.14); background: transparent; color: var(--text); font: 500 12px/1 var(--font-ui); cursor: pointer; }
+	.cp { flex: none; min-height: 32px; min-width: 64px; padding: 0 12px; border-radius: 8px; border: 1px solid rgb(255 255 255 / 0.14); background: transparent; color: var(--text); font: 500 12px/1 var(--font-ui); cursor: pointer; }
 	.cp:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Text links, the help summary and Copy: a faint wash on hover, a firmer one on press. */
+	@media (hover: hover) {
+		.link:hover, .help summary:hover, .cp:hover { background: rgb(255 255 255 / 0.08); }
+		.light .link:hover, .light .help summary:hover, .light .cp:hover { background: rgb(0 0 0 / 0.05); }
+	}
+	.link:active, .help summary:active, .cp:active { background: rgb(255 255 255 / 0.14); }
+	.light .link:active, .light .help summary:active, .light .cp:active { background: rgb(0 0 0 / 0.09); }
 
 	/* The waiting step: the provider's mark inside a turning ring. */
 	.wait { text-align: center; }
@@ -1153,10 +1245,10 @@
 		.who { gap: 10px; margin-bottom: 16px; }
 		.who .face { width: 72px; height: 72px; font-size: 30px; }
 		.who-n { font-size: 18px; }
-		.corner { top: 6px; left: 12px; }
+		.corner { top: 6px; left: 16px; }
 		.mode { top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); }
 		.digits { gap: 6px; }
-		.digit { width: 40px; height: 50px; }
+		.digit { max-width: 40px; height: 50px; }
 		.acct-pick { min-height: 60px; }
 		.panel :global(.field) { gap: 2px; }
 		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }
@@ -1164,9 +1256,22 @@
 		.panel :global(.input), .submit :global(.ui-btn), .prov { min-height: 48px; }
 		.submit { margin-top: 8px; }
 		.submit :global(.ui-btn) { width: 100%; }
-		.prov { min-height: 64px; }
+		.prov { min-height: 64px; padding-top: 11px; }
+		.provs[data-n='5'] { gap: 6px; }
+		.provs[data-n='5'] .prov { padding-inline: 2px; font-size: 11px; }
+		.panel > .sk.tall { height: 375px; }
+		/* Views that do not end on a 44 px link still get room at the bottom edge. */
+		.step > :is(.provs, .note, .form-error):last-child { margin-bottom: 12px; }
 		.or { margin: 10px 0; }
 		.link { min-height: 40px; margin-bottom: 0; margin-top: 0; }
 		.help { margin-top: 2px; }
+	}
+	/* Touch screens: 44 px tap targets for the small controls (after the phone block, so it wins). */
+	@media (pointer: coarse) {
+		.link, .help summary, .cp { min-height: 44px; }
+	}
+	/* Reduced motion: no keyboard-lift slide on phones either. */
+	@media (prefers-reduced-motion: reduce) and (max-width: 600px) {
+		.panel { transition: none; }
 	}
 </style>
