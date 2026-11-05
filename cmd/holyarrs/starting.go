@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/backup"
+	"github.com/CoderLuii/holyarrs/internal/doctor"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -55,9 +56,16 @@ func failedHandler(msg string) http.Handler {
 // the page is open to anyone; the log keeps the full error.
 func publicReason(err error) string {
 	var nd *store.NewerDataError
+	var ns *store.NetShareError
 	switch {
 	case errors.As(err, &nd):
 		return "this data is from a newer HolyArrs. Run that version again, or restore a backup." + goBack
+	case errors.As(err, &ns):
+		return "the config folder is on a shared or network folder (" + ns.Kind + "). " + store.ShareFix(ns.Kind)
+	case errors.Is(err, store.ErrInMemory):
+		return "the config folder is in memory (tmpfs or ramfs), so everything in it would be lost at the next restart. Put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set " + store.EnvConfigInMemory + "=yes to keep it in memory anyway, then restart."
+	case errors.Is(err, store.ErrNotWritable):
+		return "the config folder cannot be written. Check that the /config volume is not mounted read-only (:ro) and that PUID/PGID own the folder on the host, then restart. Nothing was changed."
 	case errors.Is(err, store.ErrNoSpace):
 		return "not enough free disk space to update safely. Free some space and restart (or set " + store.SkipSpaceCheckEnv + "=yes to skip this check). Nothing was changed."
 	case errors.Is(err, store.ErrBackup):
@@ -87,11 +95,24 @@ func holdingPage(healthCode int, health, page string) http.Handler {
 }
 
 // needsPerson reports whether a store.Open error is one the app should
-// keep showing (newer data, no space, no backup, failed check) instead of
-// exiting into a restart loop.
+// keep showing (newer data, no space, no backup, failed check, a config
+// folder on a share, in memory or not writable) instead of exiting into a
+// restart loop.
 func needsPerson(err error) bool {
 	var nd *store.NewerDataError
-	return errors.As(err, &nd) || errors.Is(err, store.ErrNoSpace) || errors.Is(err, store.ErrBackup) || errors.Is(err, store.ErrCheckFailed) || errors.Is(err, store.ErrMigration)
+	return errors.As(err, &nd) || errors.Is(err, store.ErrNoSpace) || errors.Is(err, store.ErrBackup) || errors.Is(err, store.ErrCheckFailed) || errors.Is(err, store.ErrMigration) ||
+		errors.Is(err, store.ErrNetworkShare) || errors.Is(err, store.ErrInMemory) || errors.Is(err, store.ErrNotWritable)
+}
+
+// unmappedConfigWarning is the boxed start-up warning when /config is not
+// mapped to the host (kind from doctor.UnmappedConfig), or "" when it is.
+// Start-up never refuses for it.
+func unmappedConfigWarning(dir, kind string) string {
+	if kind == "" {
+		return ""
+	}
+	line := strings.Repeat("=", 72)
+	return line + "\nWARNING: " + doctor.UnmappedText(dir, kind) + ".\nFix: " + doctor.UnmappedFix(dir) + ".\n" + line
 }
 
 // maxCodeTries is how many wrong codes the go-back form takes before it

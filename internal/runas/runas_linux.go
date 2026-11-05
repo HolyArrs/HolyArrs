@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"github.com/CoderLuii/holyarrs/internal/fsplain"
 )
 
 // Start applies FILE__, UMASK and PUID/PGID. Started as root it fixes the
@@ -177,9 +179,9 @@ func fixOwner(configDir string, uid, gid int) {
 		}
 	}
 	if failed > 0 {
-		log.Printf("holyarrs: warning: could not give everything in %s to %d:%d (%v). "+
-			"This is normal on NFS with root_squash, SMB and read-only mounts; if HolyArrs cannot write there, "+
-			"set PUID/PGID to the folder's owner or fix the owner on the host", configDir, uid, gid, first)
+		uidMap, _ := os.ReadFile("/proc/self/uid_map")
+		attr, _ := os.ReadFile("/proc/self/attr/current")
+		log.Printf("holyarrs: warning: %s", ownerWarning(configDir, uid, gid, first, string(uidMap), fsplain.SELinuxType(string(attr))))
 	}
 }
 

@@ -81,7 +81,10 @@ type Options struct {
 	// show a banner.
 	SafeMode bool
 	SSO      SSOOptions
-	fastHash bool
+	// ConfigUnmapped tells the setup page that /config is not mapped to the
+	// host, so it can show a note before the owner is made.
+	ConfigUnmapped bool
+	fastHash       bool
 }
 
 // EnvAllowedHosts and EnvTrustedProxies add comma-separated entries.
@@ -125,6 +128,7 @@ type Auth struct {
 	proxies         []*net.IPNet
 	checks          chan struct{}
 	safeMode        bool
+	configUnmapped  bool
 	sso             atomic.Pointer[ssoState] // swapped whole when single sign-on settings change; read with ssoNow
 	ssoOpt          SSOOptions               // as started: who owns single sign-on, and the address rules
 	// ssoMu fences sign-ins against changes: a single sign-on or trusted proxy
@@ -153,7 +157,7 @@ func New(s *store.Store, opt Options) *Auth {
 	if a.now == nil {
 		a.now = time.Now
 	}
-	a.vault, a.http, a.plexURL, a.plexApp, a.safeMode = opt.Vault, opt.HTTP, opt.PlexURL, opt.PlexAppURL, opt.SafeMode
+	a.vault, a.http, a.plexURL, a.plexApp, a.safeMode, a.configUnmapped = opt.Vault, opt.HTTP, opt.PlexURL, opt.PlexAppURL, opt.SafeMode, opt.ConfigUnmapped
 	a.tester = testClient()
 	if a.http == nil {
 		a.http = &http.Client{Timeout: 15 * time.Second}
@@ -619,8 +623,12 @@ func (a *Auth) Routes(m *http.ServeMux) {
 
 func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 	_, _, ok := a.owner(r.Context())
-	writeJSON(w, http.StatusOK, map[string]any{"needs_setup": !ok, "ways": a.ways(r.Context()), "safe_mode": a.safeMode,
-		"min_password_length": MinPasswordLength(r.Context(), a.s.Read())})
+	out := map[string]any{"needs_setup": !ok, "ways": a.ways(r.Context()), "safe_mode": a.safeMode,
+		"min_password_length": MinPasswordLength(r.Context(), a.s.Read())}
+	if a.configUnmapped {
+		out["config_unmapped"] = true
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 type creds struct {

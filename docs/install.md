@@ -52,8 +52,12 @@ This tag is local to your Docker host. Rebuild it after updating the checkout.
 
 ## Usage
 
-Keep the config folder on a local disk. HolyArrs uses SQLite in WAL mode and
-refuses to start when `/config` is on a network share.
+Keep the config folder on a local disk or a named volume. HolyArrs uses SQLite
+in WAL mode and refuses to start when `/config` is on a network share, a folder
+shared from the host by Docker Desktop, a FUSE filesystem (such as an Unraid
+user share) or in memory. It then shows the reason on port 6262 instead of
+starting. On Docker Desktop, use a named volume for `/config`
+(see [Docker Desktop](#docker-desktop-windows-and-mac)).
 
 ### Docker Compose (recommended)
 
@@ -216,6 +220,142 @@ and to Kubernetes `runAsUser`. HolyArrs then runs as that user and changes no
 owners at all, so the config folder must already be writable by it.
 `PUID` and `PGID` are ignored; when they are set, HolyArrs logs one line
 saying so. `UMASK` still works.
+
+## Rootless Docker and Podman
+
+In rootless Docker or rootless Podman, root inside the container is your own
+user on the host, and every other ID inside (such as `1000`) maps to a high
+"sub-uid" on the host (such as `100999`). With the usual `PUID=1000`,
+HolyArrs gives `/config` to that sub-uid, and the folder then looks owned by a
+stranger on the host.
+
+Which one am I?
+
+| You run | `docker info` or `podman info` shows | Use |
+| --- | --- | --- |
+| Normal Docker (rootful) | no `rootless` | `PUID`/`PGID` as usual |
+| Rootless Docker | `rootless` under Security Options | recipe 1 |
+| Rootless Podman | `rootless: true` | recipe 1 or recipe 2 |
+
+**Recipe 1: run as container root.** Set `PUID=0` and `PGID=0`. This is safe
+only in rootless mode, where container root is your own user. Never use it
+with normal Docker or on a NAS: there it runs HolyArrs as the real root.
+
+```yaml
+    environment:
+      - PUID=0
+      - PGID=0
+```
+
+**Recipe 2: Podman with keep-id.** Podman maps your own user into the container
+under the same number, so files keep your owner on the host. As a Quadlet
+(`~/.config/containers/systemd/holyarrs.container`):
+
+```ini
+[Container]
+Image=ghcr.io/coderluii/holyarrs:latest
+UserNS=keep-id
+User=%U:%G
+Volume=%h/holyarrs/config:/config
+PublishPort=6262:6262
+```
+
+or `podman run --userns=keep-id --user "$(id -u):$(id -g)" ...`.
+
+**If the folder already belongs to a sub-uid**, give it back from the host
+(stop the container first):
+
+- Rootless Podman: `podman unshare chown -R 0:0 ~/holyarrs/config` (with
+  recipe 1), or `podman unshare chown -R 1000:1000 ~/holyarrs/config` to keep
+  `PUID=1000`.
+- Rootless Docker: `rootlesskit chown -R 0:0 ~/holyarrs/config`, run through
+  `nsenter` into the rootless daemon (`nsenter -U --preserve-credentials -n -m -t $(cat $XDG_RUNTIME_DIR/docker.pid)`).
+
+If the log says `PUID/PGID ... does not exist inside this container`, the IDs
+are outside the range the container maps (common in unprivileged LXC too):
+pick IDs inside that range, or use recipe 1.
+
+## Docker Desktop (Windows and Mac)
+
+Docker Desktop shares host folders (`C:\...` on Windows, your Mac folders)
+through a layer where SQLite's file locks are not safe, so HolyArrs refuses a
+`/config` there and shows the fix on port 6262. Put `/config` on a named
+volume instead; media folders can stay as host folders.
+
+```yaml
+services:
+  holyarrs:
+    image: ghcr.io/coderluii/holyarrs:latest
+    container_name: holyarrs
+    environment:
+      - TZ=Etc/UTC
+    volumes:
+      - holyarrs-config:/config
+      - C:/Media/movies:/movies #optional
+      - C:/Media/tv:/tv #optional
+      - C:/Media/downloads:/downloads #optional
+    ports:
+      - 6262:6262
+    restart: unless-stopped
+
+volumes:
+  holyarrs-config:
+```
+
+On a Mac, use your own folders for media (`/Users/you/Media/movies:/movies`).
+
+**Move an existing config folder into the volume** (the image has no shell, so
+use `docker cp`; stop HolyArrs first):
+
+```sh
+docker create --name hx -v holyarrs-config:/config ghcr.io/coderluii/holyarrs:latest
+docker cp C:\old\config\. hx:/config/
+docker rm hx
+```
+
+HolyArrs gives the files to `PUID`/`PGID` on the next start.
+
+**Copy the backups out** to the current folder on the host:
+`docker cp holyarrs:/config/backups .`
+
+On Windows, a folder inside the WSL distribution (`\\wsl$\Ubuntu\home\you\holyarrs`)
+should work too, but it has not been tested yet; the named volume is the safe
+choice.
+
+On a Mac, Docker Desktop 4.74 and later report these folders as `fakeowner`.
+If you have checked that file locks work in your folder, set
+`HOLYARRS_ALLOW_DESKTOP_FOLDER=1` to start on it anyway; HolyArrs logs a
+warning on every start and doctor shows a WARN. It lifts only this refusal,
+never the one for network shares or FUSE.
+
+## Forgot to map /config?
+
+When `/config` is not mapped to a host folder or a named volume, it lives in
+an anonymous volume or in the container itself, and everything (accounts,
+settings, the Library) is lost when the container is removed or recreated.
+HolyArrs still starts, but warns in the log, in doctor, in the health banner
+and on the first-run page.
+
+To keep what is there, copy it out before you remove the container, then map
+`/config` and copy it back in:
+
+```sh
+docker cp holyarrs:/config ./holyarrs-config
+```
+
+Then add `- ./holyarrs-config:/config` (or a named volume) to the container
+and recreate it. Lost an earlier setup? An old anonymous volume may still hold
+it: list them with `docker volume ls` (long random names), look inside with
+`docker create --name hx -v <volume>:/config ghcr.io/coderluii/holyarrs:latest`
+and `docker cp hx:/config ./old-config`, then `docker rm hx`.
+
+## Config folder in memory
+
+When `/config` is in memory (tmpfs or ramfs), everything in it is gone at the
+next restart, so HolyArrs refuses it and shows the fix on port 6262. On Unraid
+this happens when the pool path in the template does not exist: check that
+`/mnt/<pool>/appdata` is on a real pool. To keep it in memory anyway (a test
+box), set `HOLYARRS_CONFIG_IN_MEMORY=yes`.
 
 ## Media folders
 
@@ -384,8 +524,12 @@ image instead, with the same `PUID`, `PGID` and `TZ` and the tag you run:
 
 | Message or symptom | Check |
 | --- | --- |
-| Config folder is on a network share | Move `/config` to a local disk. Keep only the media folders on the share. |
+| Config folder is on a shared or network folder | On Docker Desktop, put `/config` on a named volume (`holyarrs-config:/config`, see [Docker Desktop](#docker-desktop-windows-and-mac)). On a NAS, use a local disk (on Unraid `/mnt/<pool>/appdata/holyarrs`). Keep only the media folders on the share. |
+| Config folder is in memory | Put `/config` on a disk (see [Config folder in memory](#config-folder-in-memory)). |
+| Config folder cannot be written | Remove `:ro` from the `/config` volume and check that `PUID`/`PGID` own the folder on the host. |
+| `/config` is not mapped | See [Forgot to map /config?](#forgot-to-map-config). |
 | Cannot switch user | Add back the `CHOWN`, `DAC_OVERRIDE`, `SETUID` and `SETGID` capabilities, or start the container with `user: "<uid>:<gid>"`. |
+| PUID/PGID does not exist inside this container | See [Rootless Docker and Podman](#rootless-docker-and-podman). |
 | A `FILE__` variable cannot be read | Check the path in that variable and that the file is mounted. |
 | Permission denied | Check `PUID`, `PGID` and write permissions on the config, library and download folders. |
 | Unknown host name | Add the exact DNS name to `HOLYARRS_ALLOWED_HOSTS`. |

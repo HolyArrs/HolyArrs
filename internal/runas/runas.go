@@ -16,6 +16,9 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"syscall"
+
+	"github.com/CoderLuii/holyarrs/internal/fsplain"
 )
 
 // Marker is set in the environment of the process started after the switch,
@@ -237,6 +240,30 @@ func MountsUnder(mountinfo, dir string) map[string]bool {
 	return out
 }
 
+// ownerWarning is the log line when the config folder could not be given
+// to uid:gid. err is the first failure, uidMap this process's uid_map and
+// selinux its SELinux type ("" when off).
+func ownerWarning(dir string, uid, gid int, err error, uidMap, selinux string) string {
+	switch {
+	case errors.Is(err, syscall.EROFS):
+		return fmt.Sprintf("config folder %s is mounted read-only (%v); remove :ro from the /config volume, HolyArrs needs to write there", dir, err)
+	case errors.Is(err, syscall.EINVAL):
+		msg := fmt.Sprintf("could not give %s to %d:%d (%v): its files belong to a host user this container can't see (rootless Docker/Podman or unprivileged LXC). ", dir, uid, gid, err)
+		hu, ok1 := fsplain.HostID(uidMap, uid)
+		hg, ok2 := fsplain.HostID(uidMap, gid)
+		if ok1 && ok2 {
+			return msg + fmt.Sprintf("On the host, run chown -R %d:%d on the folder mounted at %s", hu, hg, dir)
+		}
+		return msg + "On the host, give the folder to the host user this container's ID maps to (see the Rootless Docker and Podman section of the install guide)"
+	}
+	msg := fmt.Sprintf("could not give everything in %s to %d:%d (%v). If HolyArrs cannot write there, set PUID/PGID to the folder's owner "+
+		"or fix the owner on the host (with rootless Podman: podman unshare chown -R %d:%d on the host folder)", dir, uid, gid, err, uid, gid)
+	if selinux != "" {
+		msg += "; with SELinux on, add :Z to the /config volume"
+	}
+	return msg
+}
+
 // unescapeMount turns the octal escapes mountinfo uses (\040 for a space,
 // \011 tab, \012 newline, \134 backslash) back into characters.
 func unescapeMount(s string) string {
@@ -257,8 +284,17 @@ func unescapeMount(s string) string {
 	return b.String()
 }
 
-// SwitchFailed is the start-up error when root cannot switch user.
+// SwitchFailed is the start-up error when root cannot switch user. EINVAL
+// means the ID does not exist in this user namespace (unprivileged LXC,
+// rootless Docker/Podman); anything else is most likely missing
+// capabilities.
 func SwitchFailed(uid, gid int, err error) error {
+	if errors.Is(err, syscall.EINVAL) {
+		return fmt.Errorf("started as root but could not switch to %d:%d (%v): PUID/PGID %d:%d does not exist inside this container "+
+			"(most likely unprivileged LXC or rootless Docker/Podman). Pick IDs this container maps, "+
+			"or see the Rootless Docker and Podman section of the install guide. HolyArrs will not run as root",
+			uid, gid, err, uid, gid)
+	}
 	return fmt.Errorf("started as root but could not switch to %d:%d (%v). "+
 		"Add back the CHOWN, DAC_OVERRIDE, SETUID and SETGID capabilities if the container drops them (cap_drop: ALL), "+
 		"or run the container as that user with user: \"%d:%d\". HolyArrs will not run as root",

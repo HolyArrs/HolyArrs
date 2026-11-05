@@ -98,6 +98,9 @@ type Engine struct {
 	Publish func(topic string, data any)
 	// Trailers reports the trailer lookups (nil skips the check).
 	Trailers func(ctx context.Context) Trailers
+	// ConfigUnmapped is "anonymous" or "none" when /config is not mapped to
+	// the host (an Error until it is); "" adds no check.
+	ConfigUnmapped string
 
 	mu  sync.Mutex
 	low map[string]int64 // folder -> bytes an import needed but could not get
@@ -170,7 +173,7 @@ func (e *Engine) intSetting(ctx context.Context, key string, def, lo, hi int) in
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -193,7 +196,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.backups, e.trailers} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -346,6 +349,8 @@ func label(kind string) string {
 		return "update check"
 	case "trailers":
 		return "trailer lookups"
+	case "config_folder":
+		return "config folder"
 	}
 	return kind
 }
@@ -551,6 +556,20 @@ func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
 
 // backups warns when the newest backup is older than two backup periods
 // (and a day), or the last scheduled backup failed.
+// configFolder is an Error while /config is not mapped to the host, since
+// everything in it goes when the container is removed.
+func (e *Engine) configFolder(context.Context) ([]Result, error) {
+	if e.ConfigUnmapped == "" {
+		return nil, nil
+	}
+	where := "an anonymous volume"
+	if e.ConfigUnmapped == "none" {
+		where = "the container itself"
+	}
+	return []Result{{Key: "config_folder", Kind: "config_folder", Subject: "Config folder", State: Error,
+		Message: "/config is not mapped to a folder or named volume, so it lives in " + where + " and everything is lost when the container is removed or recreated. Copy it out with docker cp, then map /config and copy it back in"}}, nil
+}
+
 func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	if e.Backups == nil {
 		return nil, nil

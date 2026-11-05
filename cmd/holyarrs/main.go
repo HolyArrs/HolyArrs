@@ -403,6 +403,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	defer s.Close()
 	pc.Store = s
+	unmapped := doctor.UnmappedConfig(c.ConfigDir)
+	if w := unmappedConfigWarning(c.ConfigDir, unmapped); w != "" {
+		log.Printf("holyarrs: %s", w)
+	}
 	if err := pc.Load(ctx); err != nil {
 		return fmt.Errorf("part switches: %w", err)
 	}
@@ -642,7 +646,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
 	ol.Register(q)
 	q.ProbeSchedule(lists.KindSync, ol.ProbeSync)
-	he := &health.Engine{Store: s, Version: version, Publish: func(topic string, data any) { hub.Publish(topic, data) },
+	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)
 			return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed()}, err
@@ -748,7 +752,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err != nil {
 		return err
 	}
-	au := auth.New(s, auth.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso})
+	au := auth.New(s, auth.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
 	defer au.Close()
 	loop(supervisor.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool

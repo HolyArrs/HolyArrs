@@ -13,10 +13,10 @@ digest. Do not invent a public tag or use a digest from another source build.
 The renderer does not pull, install or publish anything:
 
 ```sh
-python scripts/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<verified-manifest-digest>' --config /mnt/cache/appdata/holyarrs-candidate --movies /mnt/user/holyarrs-test-data/movies --downloads /mnt/user/holyarrs-test-data/downloads --port 6262 --output holyarrs-candidate.xml
+python scripts/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<verified-manifest-digest>' --config '/mnt/<pool>/appdata/holyarrs-candidate' --movies /mnt/user/holyarrs-test-data/movies --downloads /mnt/user/holyarrs-test-data/downloads --port 6262 --output holyarrs-candidate.xml
 ```
 
-Replace `cache` with your actual local pool name and the digest placeholder
+Replace `<pool>` with your actual local pool name and the digest placeholder
 with 64 hexadecimal digits. The output must not already exist. The image
 must be available to the target; private registry access is a separate
 requirement. The template is for local testing, not a Community Applications
@@ -30,7 +30,7 @@ Docker > Add Container > Template > User templates. See Unraid's
 That manual install does not publish a Community Applications catalog entry.
 
 Config uses a **direct local pool path** such as
-`/mnt/cache/appdata/holyarrs-candidate`. Do not use
+`/mnt/<pool>/appdata/holyarrs-candidate`. Do not use
 `/mnt/user/appdata/holyarrs`: that is a FUSE path, which HolyArrs refuses for
 SQLite WAL. `/mnt/user0`, remote mounts and config paths that overlap a
 media path are also refused by the renderer. Path spelling alone does not
