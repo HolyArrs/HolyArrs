@@ -915,9 +915,10 @@
 	.light .who .face { box-shadow: 0 0 0 3px rgb(255 255 255 / 0.85), 0 10px 28px rgb(0 0 0 / 0.18); }
 	.light .accts { border-color: rgb(0 0 0 / 0.08); }
 	.light .acct + .acct { border-top-color: rgb(0 0 0 / 0.07); }
-	.light .acct-pick { background: rgb(255 255 255 / 0.3); color: #111; }
-	@media (hover: hover) { .light .acct-pick:hover { background: rgb(255 255 255 / 0.55); } }
-	.light .acct-pick:active { background: rgb(255 255 255 / 0.7); }
+	/* Rest faint, hover clearly lit: a small step reads as the wrong row when the poster's tint shifts under the glass. */
+	.light .acct-pick { background: rgb(255 255 255 / 0.22); color: #111; }
+	@media (hover: hover) { .light .acct-pick:hover { background: rgb(255 255 255 / 0.8); } }
+	.light .acct-pick:active { background: rgb(255 255 255 / 0.92); }
 	.light .acct-pick:focus-visible { outline-color: #1d1d1f; }
 	.light .acct-end { color: rgb(0 0 0 / 0.35); }
 	.light .accts.editing .acct-end { color: #1d1d1f; }
@@ -1095,8 +1096,13 @@
 	}
 	/* One ring, inside the row (the global ring would bleed onto the next row). */
 	.acct-pick:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; box-shadow: none; }
-	@media (hover: hover) { .acct-pick:hover { background: rgb(255 255 255 / 0.08); } }
-	.acct-pick:active { background: rgb(255 255 255 / 0.12); }
+	@media (hover: hover) {
+		.acct-pick:hover { background: rgb(255 255 255 / 0.12); }
+		/* The arrow of the row under the pointer steps forward and darkens/brightens. */
+		.acct-pick:hover .acct-end { color: currentColor; transform: translateX(2px); }
+	}
+	.acct-pick:active { background: rgb(255 255 255 / 0.16); }
+	.acct-end { transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 	.acct-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.acct-n, .who-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.acct-way { font: 400 12px/1.2 var(--font-ui); color: rgb(255 255 255 / 0.55); white-space: nowrap; }
