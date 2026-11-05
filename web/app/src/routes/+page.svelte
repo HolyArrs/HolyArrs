@@ -8,6 +8,7 @@
 	import { stageOf } from '#lib/downloads/status-tabs.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { artGone, lightOnDark } from '#lib/art-check.ts';
+	import { proxied, sized } from '#lib/tmdb-image.ts';
 	import { askArtist, askDetails, wantDetails } from '#lib/approvals/details.svelte.ts';
 	import type { IconName } from '#lib/Icon.svelte';
 	import { arrivedHead, askProgressLine, attention, downloadLine, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
@@ -520,10 +521,11 @@
 		<!-- One picture tile: the big and wide ones use the wide picture (with the title logo), the tall one the poster. -->
 		{#snippet picTile(p: { c: HomeCard; label: string }, cls: string, tall: boolean)}
 			<a class="tile pic {cls}" href={to(p.c.href)}>
-				<img src={tall ? p.c.poster || p.c.backdrop : p.c.backdrop || p.c.poster} alt="" decoding="async" use:artGone={() => badPic.add(p.c.title_id)} />
+				<!-- Through HolyArrs' own artwork cache, like every other card: the browser never calls the picture site itself. -->
+				<img src={tall ? sized(p.c.poster || p.c.backdrop, 'poster', 400) : sized(p.c.backdrop || p.c.poster, cls === 'big' ? 'large' : 'backdrop')} alt="" decoding="async" use:artGone={() => badPic.add(p.c.title_id)} />
 				<span class="pill"><ArtPill text={p.label} icon={pillIcon[p.label]} /></span>
 				{#if !tall && p.c.backdrop && p.c.logo && p.c.kind !== 'artist' && !badLogo.has(p.c.title_id)}
-					<img class="logo" src={p.c.logo} alt={p.c.name} decoding="async" use:lightOnDark use:artGone={() => badLogo.add(p.c.title_id)} />
+					<img class="logo" src={proxied(p.c.logo)} alt={p.c.name} decoding="async" use:lightOnDark use:artGone={() => badLogo.add(p.c.title_id)} />
 				{:else}
 					<span class="nm" dir="auto">{p.c.name}</span>
 				{/if}
@@ -615,7 +617,7 @@
 								<span class="word">Could not read</span>
 								<span class="sm">Home could not read asks right now.</span>
 							{:else if approving && waitingPics.length}
-								<span class="ask-stack" aria-hidden="true">{#each waitingPics as w (w.a.id + w.pic)}<img src={w.pic} alt="" decoding="async" use:artGone={() => artFailed(w.a, w.pic)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
+								<span class="ask-stack" aria-hidden="true">{#each waitingPics as w (w.a.id + w.pic)}<img src={sized(w.pic, 'poster', 80)} alt="" decoding="async" use:artGone={() => artFailed(w.a, w.pic)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
 								<span class="sm">{n(waiting.length)} {waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
 							{:else if approving}
 								<span class="num">{n(waiting.length)}</span>
