@@ -1327,7 +1327,6 @@
 					{#if owned}
 						<article class="atv-card" data-testid="own-file-card">
 							<h3>{ownState.label}</h3>
-							<p class="atv-cap">In your library</p>
 							<dl class="atv-rows">
 								{#if ownBadges.length}<div><dt>Quality</dt><dd>{ownBadges.join(' · ')}</dd></div>{/if}
 								{#if owned.size_bytes}<div><dt>Size</dt><dd>{bytes(owned.size_bytes)}</dd></div>{/if}
@@ -1346,14 +1345,12 @@
 						<!-- Every score as one row: colored mark and name left, the score out of 10 right. -->
 						<article class="atv-card">
 							<h3 id="ratings">Ratings</h3>
-							<p class="atv-cap">Out of 10</p>
 							<div class="atv-scores" ><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing={view.missing} /></div>
 						</article>
 					{/if}
 					{#if awards.length}
 						<article class="atv-card">
 							<h3>{awardBadges[0] ?? `${awardWins} wins`}</h3>
-							<p class="atv-cap">Awards</p>
 							{#if cardLook === 'two'}
 								<!-- The awards it won, by name (major ones first), then the count of the rest. -->
 								<ul class="atv-awards">
@@ -1669,7 +1666,7 @@
 	/* Cards keep a third of the width each, however many there are (never one stretched card). */
 	.atv-awards { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
 	.atv-more { margin: 6px 0 0; color: var(--text-muted); font: 400 13px/16px var(--font-ui); }
-	.atv-card h3 { margin: 0; padding-bottom: 5px; color: var(--text); font: 700 17px/21px var(--font-ui); }
+	.atv-card h3 { margin: 0; padding-bottom: 8px; color: var(--text); font: 700 17px/21px var(--font-ui); }
 	.atv-cap { margin: 0; padding-bottom: 5px; color: var(--text-muted); font: 400 11px/14px var(--font-ui); text-transform: uppercase; }
 	.atv-text { margin: 0; color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
 	.atv-text.clamp { display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1686,7 +1683,7 @@
 	/* Touch phones: a 44px-tall hit area over the 16px link line. */
 	@media (max-width: 767px) and (pointer: coarse) { .atv-links a { position: relative; } .atv-links a::after { content: ''; position: absolute; inset: -14px 0; } }
 	.atv-links a:hover { color: var(--text); }
-	@media (max-width: 899px) { .atv-cards, .atv-grid { grid-template-columns: minmax(0, 1fr); } }
+	@media (max-width: 899px) { .atv-cards { grid-template-columns: minmax(0, 1fr); } .atv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; } }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }

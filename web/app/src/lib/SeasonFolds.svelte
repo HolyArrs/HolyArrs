@@ -117,7 +117,7 @@
 	.line { margin: 10px 0 2px; }
 	/* The pills name the row, so its own heading is for screen readers only. */
 	.seasons :global(.ui-shelf header) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-	.ep { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+	.ep { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-self: start; }
 	.still { position: relative; display: block; aspect-ratio: 16 / 9; margin-bottom: 6px; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
 	.still img { position: relative; width: 100%; height: 100%; object-fit: cover; }
 	.ep-name { font: 600 15px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
