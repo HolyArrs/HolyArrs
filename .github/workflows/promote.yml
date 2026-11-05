@@ -1,0 +1,161 @@
+name: promote
+# Moves the stable tags (stable, latest, X and X.Y) on GHCR and Docker Hub to
+# an image release.yml already pushed, by its digest, after the beta has been
+# tried. Started by hand only, and a dry run unless dry_run is switched off.
+# Like release.yml it stays inert until Luis authorizes a release: its only
+# job is permanently skipped.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to make stable, X.Y.Z"
+        required: true
+        type: string
+      digest:
+        description: "Image digest from the release run summary, sha256 and 64 hex digits"
+        required: true
+        type: string
+      dry_run:
+        description: "Only check and show what would move"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: ${{ false }}
+    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    timeout-minutes: 30
+    # Luis approves each run in the release environment.
+    environment: release
+    permissions:
+      contents: read
+      # Switching the job on also grants packages: write (GHCR tags).
+    env:
+      IMAGE: ghcr.io/coderluii/holyarrs
+      HUB_IMAGE: docker.io/coderluii/holyarrs
+      # Inputs reach the scripts only as environment values, never pasted
+      # into a script.
+      VERSION: ${{ inputs.version }}
+      DIGEST: ${{ inputs.digest }}
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - name: Check the inputs
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "version must be X.Y.Z: only finished versions become stable."
+            exit 1
+          fi
+          if ! [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "digest must be sha256: followed by 64 hex digits."
+            exit 1
+          fi
+          case "$DRY_RUN" in true|false) ;; *) echo "dry_run must be true or false."; exit 1 ;; esac
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # A bot collaborator that can reach only coderluii/holyarrs on Docker Hub.
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: The version tag is this digest on both registries, signed by the release workflow
+        run: |
+          set -euo pipefail
+          for img in "$IMAGE" "$HUB_IMAGE"; do
+            got="$(docker buildx imagetools inspect "$img:$VERSION" --format '{{ .Manifest.Digest }}')"
+            if [ "$got" != "$DIGEST" ]; then
+              echo "$img:$VERSION is $got, not $DIGEST."
+              exit 1
+            fi
+            cosign verify "$img@$DIGEST" \
+              --certificate-identity-regexp '^https://github\.com/[Cc]oder[Ll]uii/holyarrs/\.github/workflows/release\.yml@refs/tags/v' \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com >/dev/null
+            echo "$img@$DIGEST: signature checked."
+          done
+
+      # A stable tag never moves back: a database a newer version migrated
+      # may not open in an older one.
+      - name: Never move stable back to an older version
+        run: |
+          set -euo pipefail
+          label() { # the version label of image $1 for platform $2
+            docker buildx imagetools inspect "$1" --format "{{ json (index .Image \"$2\") }}" \
+              | jq -r '.config.Labels["org.opencontainers.image.version"] // ""'
+          }
+          for p in linux/amd64 linux/arm64 linux/arm/v7; do
+            got="$(label "$IMAGE@$DIGEST" "$p")"
+            if [ "${got#v}" != "$VERSION" ]; then
+              echo "The $p image at $DIGEST says version '$got', not $VERSION."
+              exit 1
+            fi
+          done
+          for img in "$IMAGE" "$HUB_IMAGE"; do
+            if ! docker buildx imagetools inspect "$img:stable" >/dev/null 2>&1; then
+              echo "$img:stable does not exist yet: this is the first stable move."
+              continue
+            fi
+            for p in linux/amd64 linux/arm64 linux/arm/v7; do
+              cur="$(label "$img:stable" "$p")"
+              cur="${cur#v}"
+              if [ -n "$cur" ] && [ "${cur%%-*}" != "$VERSION" ] && \
+                 [ "$(printf '%s\n%s\n' "${cur%%-*}" "$VERSION" | sort -V | tail -n1)" = "${cur%%-*}" ]; then
+                echo "$img:stable ($p) is $cur, newer than $VERSION: refusing to move it back."
+                exit 1
+              fi
+            done
+          done
+
+      - name: Move stable, latest, X and X.Y by digest
+        run: |
+          set -euo pipefail
+          major="${VERSION%%.*}"
+          minor="${VERSION%.*}"
+          for img in "$IMAGE" "$HUB_IMAGE"; do
+            args=(-t "$img:stable" -t "$img:latest" -t "$img:$major" -t "$img:$minor")
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "dry run: would run docker buildx imagetools create ${args[*]} $img@$DIGEST"
+            else
+              docker buildx imagetools create "${args[@]}" "$img@$DIGEST"
+            fi
+          done
+
+      - name: Read every tag back
+        run: |
+          set -euo pipefail
+          major="${VERSION%%.*}"
+          minor="${VERSION%.*}"
+          {
+            echo "### Promote $VERSION"
+            echo
+            echo "- digest: \`$DIGEST\`"
+            [ "$DRY_RUN" = "true" ] && echo "- dry run: nothing moved"
+          } >> "$GITHUB_STEP_SUMMARY"
+          bad=0
+          for img in "$IMAGE" "$HUB_IMAGE"; do
+            for tag in stable latest "$major" "$minor"; do
+              got="$(docker buildx imagetools inspect "$img:$tag" --format '{{ .Manifest.Digest }}' 2>/dev/null || echo none)"
+              echo "- \`$img:$tag\` is \`$got\`" >> "$GITHUB_STEP_SUMMARY"
+              if [ "$DRY_RUN" != "true" ] && [ "$got" != "$DIGEST" ]; then
+                echo "$img:$tag is $got after the move, not $DIGEST."
+                bad=1
+              fi
+            done
+          done
+          exit "$bad"

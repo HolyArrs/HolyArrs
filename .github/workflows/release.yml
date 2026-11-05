@@ -2,6 +2,12 @@ name: release
 # Release publishing is withheld until Luis separately authorizes a release.
 # This manual workflow remains inert: its only job is permanently skipped and
 # receives no package-write or OIDC permission.
+#
+# When switched on, a run from a version tag (v1.2.3 or v1.2.3-rc.1) pushes
+# the same image to GHCR (the main name) and Docker Hub with only two tags:
+# the version, and beta when this version is newer than the current beta.
+# latest, stable, X and X.Y never move here: promote.yml moves them by
+# digest after the beta has been tried.
 on:
   workflow_dispatch:
 
@@ -12,11 +18,32 @@ jobs:
   image:
     if: ${{ false }}
     runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    # Luis approves each run in the release environment.
+    environment: release
     permissions:
       contents: read
+      # Switching the job on also grants, here and only here:
+      #   packages: write  (push to GHCR)
+      #   id-token: write  (keyless cosign signing)
     env:
       IMAGE: ghcr.io/coderluii/holyarrs
+      HUB_IMAGE: docker.io/coderluii/holyarrs
     steps:
+      - name: Run only from a version tag
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          case "$REF" in
+            refs/tags/v*) ;;
+            *) echo "A release runs only from a version tag (refs/tags/vX.Y.Z), not $REF."; exit 1 ;;
+          esac
+          if ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+            echo "The tag $REF_NAME is not vX.Y.Z or vX.Y.Z-rc.N."
+            exit 1
+          fi
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
@@ -42,13 +69,74 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # A bot collaborator that can reach only coderluii/holyarrs on Docker Hub.
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # beta only moves forward: an older version or a re-run of an older
+      # tag never takes it back.
+      - name: Move beta only to a newer version
+        id: betacheck
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          newer() { # is $1 newer than $2? (1.0.0-rc.2 < 1.0.0-rc.10 < 1.0.0)
+            [ "$1" = "$2" ] && return 1
+            a="${1%%-*}"; b="${2%%-*}"
+            if [ "$a" != "$b" ]; then
+              [ "$(printf '%s\n%s\n' "$a" "$b" | sort -V | tail -n1)" = "$a" ]
+              return
+            fi
+            case "$1" in *-*) ;; *) return 0 ;; esac
+            case "$2" in *-*) ;; *) return 1 ;; esac
+            [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+          }
+          new="${REF_NAME#v}"
+          cur=""
+          if docker buildx imagetools inspect "$IMAGE:beta" >/dev/null 2>&1; then
+            cur="$(docker buildx imagetools inspect "$IMAGE:beta" --format '{{ json (index .Image "linux/amd64") }}' \
+              | jq -r '.config.Labels["org.opencontainers.image.version"] // ""')"
+            cur="${cur#v}"
+          fi
+          if [ -z "$cur" ] || newer "$new" "$cur"; then
+            echo "move=true" >> "$GITHUB_OUTPUT"
+            echo "beta moves to $new (was ${cur:-none})."
+          else
+            echo "move=false" >> "$GITHUB_OUTPUT"
+            echo "beta stays on $cur: $new is not newer."
+          fi
+
       - id: meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
-          images: ${{ env.IMAGE }}
+          images: |
+            ${{ env.IMAGE }}
+            ${{ env.HUB_IMAGE }}
+          flavor: |
+            latest=false
           tags: |
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=beta,enable=${{ steps.betacheck.outputs.move == 'true' }}
+
+      - name: Push only the version tag and beta
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r ref; do
+            [ -z "$ref" ] && continue
+            tag="${ref##*:}"
+            case "$tag" in
+              latest|stable) echo "Refusing to push $ref: latest and stable move only through promote.yml."; exit 1 ;;
+            esac
+            if [[ "$tag" =~ ^v?[0-9]+(\.[0-9]+)?$ ]]; then
+              echo "Refusing to push $ref: X and X.Y tags move only through promote.yml."
+              exit 1
+            fi
+          done <<< "$TAGS"
 
       - id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
@@ -62,10 +150,29 @@ jobs:
           sbom: true
           provenance: mode=max
 
+      - name: Same image on both registries
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "Unexpected digest $DIGEST."; exit 1; }
+          for img in "$IMAGE" "$HUB_IMAGE"; do
+            got="$(docker buildx imagetools inspect "$img:$VERSION" --format '{{ .Manifest.Digest }}')"
+            [ "$got" = "$DIGEST" ] || { echo "$img:$VERSION is $got, not $DIGEST."; exit 1; }
+            plats="$(docker buildx imagetools inspect "$img@$DIGEST" --raw \
+              | jq -r '.manifests[].platform | "\(.os)/\(.architecture)\(if .variant then "/" + .variant else "" end)"')"
+            for p in linux/amd64 linux/arm64 linux/arm/v7; do
+              grep -qx "$p" <<< "$plats" || { echo "$img@$DIGEST has no $p image."; exit 1; }
+            done
+          done
+
       - name: Sign the image
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
-        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+          cosign sign --yes "${HUB_IMAGE}@${DIGEST}"
 
       - name: Make the SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
@@ -77,9 +184,28 @@ jobs:
       - name: Attest the SBOM
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
-        run: cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${IMAGE}@${DIGEST}"
+        run: |
+          cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${IMAGE}@${DIGEST}"
+          cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${HUB_IMAGE}@${DIGEST}"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: sbom
           path: sbom.spdx.json
+
+      # promote.yml takes this digest to move the stable tags.
+      - name: Digest in the run summary
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          BETA: ${{ steps.betacheck.outputs.move }}
+        run: |
+          {
+            echo "### Image $VERSION"
+            echo
+            echo "- digest: \`$DIGEST\`"
+            echo "- pushed: \`$IMAGE:$VERSION\`, \`$HUB_IMAGE:$VERSION\`"
+            if [ "$BETA" = "true" ]; then echo "- beta moved to $VERSION"; else echo "- beta not moved"; fi
+            echo
+            echo "To make it stable after the beta soak, start promote.yml with version $VERSION and this digest."
+          } >> "$GITHUB_STEP_SUMMARY"

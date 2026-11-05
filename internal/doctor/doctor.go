@@ -128,6 +128,7 @@ func Run(ctx context.Context, o Options) Report {
 	uid, gid := os.Geteuid(), os.Getegid()
 	appChecks(&r, o.Version, uid, gid)
 	configChecks(&r, o.ConfigDir, uid, gid, store.NetworkShare)
+	masterKeyChecks(&r, o.ConfigDir)
 	db := o.DB
 	if db == nil && o.ConfigDir != "" {
 		if d, err := store.OpenReadOnly(o.ConfigDir); err == nil {

@@ -55,7 +55,7 @@ Every open-source part HolyArrs ships: the Go modules in the program, the packag
 | github.com/ulikunitz/xz | v0.5.15 | BSD-3-Clause | the holyarrs program |
 | go4.org | v0.0.0-20260112195520-a5071408f32f | Apache-2.0 | the holyarrs program |
 | golang.org/x/crypto | v0.58.0 | BSD-3-Clause | the holyarrs program |
-| golang.org/x/image | v0.43.0 | BSD-3-Clause | the holyarrs program |
+| golang.org/x/image | v0.47.0 | BSD-3-Clause | the holyarrs program |
 | golang.org/x/oauth2 | v0.37.0 | BSD-3-Clause | the holyarrs program |
 | golang.org/x/sys | v0.49.0 | BSD-3-Clause | the holyarrs program |
 | golang.org/x/text | v0.43.0 | BSD-3-Clause | the holyarrs program |

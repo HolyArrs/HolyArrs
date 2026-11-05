@@ -11,7 +11,7 @@ require (
 	github.com/therootcompany/xz v1.0.1
 	github.com/ulikunitz/xz v0.5.15
 	golang.org/x/crypto v0.58.0
-	golang.org/x/image v0.43.0
+	golang.org/x/image v0.47.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/text v0.43.0

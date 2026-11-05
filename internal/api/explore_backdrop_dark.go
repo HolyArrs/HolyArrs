@@ -4,6 +4,7 @@ import (
 	"context"
 	"image"
 	_ "image/jpeg"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -77,7 +78,8 @@ func sampleBackdrop(ctx context.Context, cl *http.Client, b string) float64 {
 	if resp.StatusCode != http.StatusOK {
 		return -1
 	}
-	img, _, err := image.Decode(resp.Body)
+	// A backdrop is small; a huge or endless answer must not fill memory.
+	img, _, err := image.Decode(io.LimitReader(resp.Body, 2<<20))
 	if err != nil {
 		return -1
 	}

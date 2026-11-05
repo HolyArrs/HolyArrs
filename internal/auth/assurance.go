@@ -58,6 +58,7 @@ var riskyRoutes = map[string]bool{
 	"GET /api/v1/backups/{name}":    true,
 	"DELETE /api/v1/backups/{name}": true,
 	"POST /api/v1/backups/restore":  true,
+	"POST /api/v1/system/key-kit":   true, // the master key itself
 	// Single sign-on, trusted proxy and Plex links.
 	"GET /api/v1/auth/sso":                  true,
 	"PUT /api/v1/auth/sso":                  true,
