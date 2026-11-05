@@ -197,5 +197,31 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("PUID:PGID", doc.findtext("Overview"))
 
 
+    def test_nas_offers_an_empty_allowed_host_names_field(self):
+        image = "ghcr.io/coderluii/holyarrs@sha256:" + "a" * 64
+        config = "/mnt/cache/appdata/holyarrs"
+        doc = ET.fromstring(nas.render(image, config, 6262))
+        configs = {c.attrib["Target"]: c for c in doc.findall("Config")}
+        hosts = configs.get("HOLYARRS_ALLOWED_HOSTS")
+        self.assertIsNotNone(hosts, "the template has no HOLYARRS_ALLOWED_HOSTS field")
+        self.assertEqual(hosts.attrib["Type"], "Variable")
+        self.assertEqual(hosts.attrib["Default"], "")
+        self.assertEqual(hosts.text or "", "")
+        self.assertEqual(hosts.attrib["Required"], "false")
+        self.assertIn("tower.local", hosts.attrib["Description"])
+        # Never a trusted proxy preset.
+        self.assertNotIn("HOLYARRS_TRUSTED_PROXIES", configs)
+
+    def test_nas_allowed_host_names_are_checked(self):
+        image = "ghcr.io/coderluii/holyarrs@sha256:" + "a" * 64
+        config = "/mnt/cache/appdata/holyarrs"
+        doc = ET.fromstring(nas.render(image, config, 6262, allowed_hosts="tower.local,nas"))
+        configs = {c.attrib["Target"]: c for c in doc.findall("Config")}
+        self.assertEqual(configs["HOLYARRS_ALLOWED_HOSTS"].attrib["Default"], "tower.local,nas")
+        for bad in ("tower.local/x", "a b", "*.example", "user@host", "tower.local;rm", "<b>"):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                nas.render(image, config, 6262, allowed_hosts=bad)
+
+
 if __name__ == "__main__":
     unittest.main()

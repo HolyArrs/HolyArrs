@@ -56,7 +56,8 @@ Each key holds scopes (read, write, admin, control, or all), and how long a
 route stays after it is marked to go is in
 [docs/parts-and-safe-mode.md](docs/parts-and-safe-mode.md#api-keys-and-scopes).
 
-Host names other than IP addresses and `localhost` must be listed in
+Host names other than IP addresses and `localhost` must be listed under
+Allowed host names in Settings or in
 `HOLYARRS_ALLOWED_HOSTS` (comma-separated), for example
 `HOLYARRS_ALLOWED_HOSTS=holyarrs.home.lan`. Behind a reverse proxy, list the
 proxy in `HOLYARRS_TRUSTED_PROXIES` if you turn on "skip sign-in on the local

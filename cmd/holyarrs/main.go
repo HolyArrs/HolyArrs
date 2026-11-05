@@ -1008,9 +1008,9 @@ func healthcheckCmd() int {
 		log.Printf("holyarrs: %v", err)
 		return 1
 	}
-	// Under a URL base the health check lives under it too.
-	base, _ := urlbase.Clean(os.Getenv(urlbase.Env))
-	return healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort+base))
+	// The root /healthz answers under any URL base, also one set by flag or
+	// in Settings, which the probe cannot see.
+	return healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort))
 }
 
 func main() {

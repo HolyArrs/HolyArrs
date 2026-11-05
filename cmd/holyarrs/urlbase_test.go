@@ -8,7 +8,8 @@ import (
 )
 
 // The whole app under /holyarrs: pages, files, the API, sign-in redirects
-// and the health check live under the base; nothing answers outside it.
+// and the health check live under the base; outside it only the root
+// /healthz and /readyz answer.
 func TestServesUnderURLBase(t *testing.T) {
 	c, err := parseFlags([]string{"-config", t.TempDir(), "-url-base", "holyarrs/"}, io.Discard)
 	if err != nil || c.URLBase != "/holyarrs" {
@@ -33,7 +34,14 @@ func TestServesUnderURLBase(t *testing.T) {
 	if r, _ := get("/holyarrs/healthz"); r.StatusCode != 200 {
 		t.Fatalf("healthz %d", r.StatusCode)
 	}
-	for _, p := range []string{"/healthz", "/login", "/api/v1/auth/state"} {
+	// The health check always calls the root, so /healthz and /readyz also
+	// answer there under a base set by flag; nothing else does.
+	for _, p := range []string{"/healthz", "/readyz"} {
+		if r, _ := get(p); r.StatusCode != 200 {
+			t.Errorf("%s at the root under a base: %d, want 200", p, r.StatusCode)
+		}
+	}
+	for _, p := range []string{"/login", "/api/v1/auth/state", "/healthzx", "/healthz/"} {
 		if r, _ := get(p); r.StatusCode != 404 {
 			t.Errorf("%s outside the base: %d", p, r.StatusCode)
 		}

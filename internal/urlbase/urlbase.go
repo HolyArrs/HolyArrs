@@ -61,7 +61,8 @@ func With(ctx context.Context, base string) context.Context {
 
 // Handler serves h under base. Without a base it only records "" on the
 // context. With one: base itself redirects to base/, a path under base is
-// served with base taken off, any other path is 404.
+// served with base taken off, the root /healthz and /readyz are served as
+// they are, any other path is 404.
 func Handler(base string, h http.Handler) http.Handler {
 	if base == "" {
 		return h
@@ -70,6 +71,13 @@ func Handler(base string, h http.Handler) http.Handler {
 		p := r.URL.Path
 		if p == base {
 			http.Redirect(w, r, base+"/", http.StatusMovedPermanently)
+			return
+		}
+		// The container health check always calls the root, which cannot
+		// know a base set by flag or in Settings: exact GET and HEAD of
+		// /healthz and /readyz answer there too.
+		if (p == "/healthz" || p == "/readyz") && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+			h.ServeHTTP(w, r.WithContext(With(r.Context(), base)))
 			return
 		}
 		rest, ok := strings.CutPrefix(p, base+"/")
