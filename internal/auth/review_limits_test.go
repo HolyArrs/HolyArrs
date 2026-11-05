@@ -184,3 +184,30 @@ func TestNameHiddenFillersAndSpaces(t *testing.T) {
 		}
 	}
 }
+
+// Flooding made-up names must not evict the owner's active name wait, and the
+// map stays bounded. Wait behaviour must not depend on the name existing.
+func TestNameFloodKeepsOwnerWait(t *testing.T) {
+	f := setup(t, Options{})
+	a := f.a
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for i := 0; i < freeUserTries+3; i++ {
+		a.noteFail("ip:198.51.100.1", "name:luis")
+	}
+	f.clock.add(time.Second) // the owner's record is now the oldest
+	for i := 0; i < 50000; i++ {
+		a.noteFail("ip:"+strconv.Itoa(i%300), "name:made-up-"+strconv.Itoa(i))
+	}
+	if a.waitFor("name:luis", freeUserTries) == 0 {
+		t.Fatal("owner name wait evicted by a flood of made-up names")
+	}
+	if len(a.fails) > 4*maxTracked {
+		t.Fatalf("fail map grew to %d", len(a.fails))
+	}
+	// The address key still counts when a name record is not added.
+	a.noteFail("ip:203.0.113.9", "name:one-more")
+	if a.fails["ip:203.0.113.9"] == nil {
+		t.Fatal("address attempt not counted while the name table was full")
+	}
+}
