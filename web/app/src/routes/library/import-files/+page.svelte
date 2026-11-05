@@ -311,6 +311,8 @@
 	.pick { align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; padding: var(--s-3); border-radius: var(--r-btn); background: var(--surface-2); }
 	.grow { flex: 1 1 260px; margin-bottom: 0; min-width: 0; }
 	.where { margin: var(--s-2) 0 0; overflow-wrap: anywhere; }
+	/* On touch phones the link in the sentence gets a 44px tall box (inline padding moves nothing). */
+	@media (max-width: 767px) and (pointer: coarse) { .where a { padding-block: 14px; } }
 	.list, .found { list-style: none; padding: 0; margin: var(--s-2) 0 0; }
 	.list { border: 1px solid var(--line); border-radius: var(--r-btn); overflow: hidden; }
 	.list > li { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-3) var(--s-4); }

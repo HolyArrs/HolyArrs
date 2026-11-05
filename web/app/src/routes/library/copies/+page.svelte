@@ -180,6 +180,8 @@
 	.copies input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); }
 	/* On touch phones the label around the box is the 44px tap target; the drawn box and the row stay the same. */
 	.pick label { display: inline-flex; }
+	/* The title link keeps its place in the line; on touch phones its box is 44px tall (inline padding moves nothing). */
+	@media (max-width: 767px) and (pointer: coarse) { td > a { padding-block: 13px; } }
 	@media (max-width: 767px) and (pointer: coarse) { .pick label { align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -12px; } }
 	.copies a { color: var(--text); }
 	.copies td { padding: var(--s-3); vertical-align: top; }

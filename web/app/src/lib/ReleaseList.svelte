@@ -186,6 +186,8 @@
 	.rel-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 4px; }
 	.grow { min-width: 0; flex: 1; }
 	.for { font: var(--t-headline); color: var(--text); }
+	/* On touch phones the title link's box is 44px tall (inline padding moves nothing). */
+	@media (max-width: 767px) and (pointer: coarse) { .for { padding-block: 12px; } }
 	.rel-name { margin-top: 2px; color: var(--text-muted); font: var(--t-callout); overflow-wrap: anywhere; }
 	.facts { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.reasons { margin: 8px 0 0; padding: 0; list-style: none; font: var(--t-footnote); color: var(--text-muted); }
