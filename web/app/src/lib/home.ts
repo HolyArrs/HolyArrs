@@ -119,7 +119,9 @@ export function shownState(c: Pick<HealthCheck, 'state'> & { confirmed?: string 
 	return s === 'error' || s === 'warning' ? s : 'ok';
 }
 
-const NAMED = new Set<string>(['source', 'downloader', 'library_folder', 'disk_space']);
+// A Source or Downloader goes by its name ("SABnzbd not answering"); a folder's path comes last, so a long one is what gets cut ("out of space: /data/media").
+const NAMED = new Set<string>(['source', 'downloader']);
+const PLACED = new Set<string>(['library_folder', 'disk_space']);
 
 function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action: string, admin: boolean): Attention {
 	const kind = c.key === 'backups:key' ? 'key_kit' : c.kind;
@@ -134,7 +136,7 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		text: healthSentence({ ...c, state: level }),
 		title: w?.one ?? 'HolyArrs',
 		// A Source, Downloader or folder row says which one it is.
-		reason: w ? (NAMED.has(c.kind) && c.subject ? `${c.subject} ${w[level][0]}` : w[level][0]) : level === 'error' ? 'not working' : 'needs a look',
+		reason: w ? (c.subject && NAMED.has(c.kind) ? `${c.subject} ${w[level][0]}` : c.subject && PLACED.has(c.kind) ? `${w[level][0]}: ${c.subject}` : w[level][0]) : level === 'error' ? 'not working' : 'needs a look',
 		cause: `health:${kind}:${level}`,
 		detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined,
 		// Settings is only for people who may change it; everyone else sees the check on Status.
