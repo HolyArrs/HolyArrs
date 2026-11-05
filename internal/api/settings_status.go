@@ -282,7 +282,18 @@ func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
 		ans := settingsStatus(in)
 		c.answer, c.at = &ans, now
 	}
-	writeJSON(w, http.StatusOK, c.answer)
+	out := *c.answer
+	if notOwner(r) {
+		// The answer is shared; reword the key kit warning on a copy:
+		// only the owner can download the kit.
+		out.Items = slices.Clone(out.Items)
+		for i := range out.Items {
+			if strings.Contains(out.Items[i].Text, "Download the key kit") {
+				out.Items[i].Text = "Backups: " + keyKitForOthers
+			}
+		}
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // statusInput gathers what the rules look at, including whether the

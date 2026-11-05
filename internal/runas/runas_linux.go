@@ -78,7 +78,8 @@ func switchUser(uid, gid int) error {
 }
 
 // fixOwner gives configDir and everything in it to uid:gid when the folder's
-// own owner differs; when it already matches nothing is walked. The walk goes
+// own owner differs, or one of HolyArrs's own files in it (OwnFilesNeedFix);
+// when all match nothing is walked. The walk goes
 // through os.Root, so no path can step out of the folder, even if a folder in
 // it is swapped for a symlink during the walk. Other mounts inside the folder
 // are left alone, like find -xdev. The folder itself is changed last, so an
@@ -110,12 +111,27 @@ func fixOwner(configDir string, uid, gid int) {
 		return
 	}
 	st, ok := fi.Sys().(*syscall.Stat_t)
-	if !ok || !NeedsOwnerFix(int(st.Uid), int(st.Gid), uid, gid) {
+	if !ok {
 		return
 	}
-	dev := st.Dev
+	dev := uint64(st.Dev)
 	skip := mountsInside(configDir)
-	log.Printf("holyarrs: giving %s to %d:%d (first start or new PUID/PGID)", configDir, uid, gid)
+	owner := ownerOnFolder(func(name string) (int, int, uint64, bool) {
+		info, err := r.Lstat(name)
+		if err != nil {
+			return 0, 0, 0, false
+		}
+		s, ok := info.Sys().(*syscall.Stat_t)
+		if !ok {
+			return 0, 0, 0, false
+		}
+		return int(s.Uid), int(s.Gid), uint64(s.Dev), true
+	}, dev, skip)
+	topRight := !NeedsOwnerFix(int(st.Uid), int(st.Gid), uid, gid)
+	if topRight && !OwnFilesNeedFix(owner, uid, gid) {
+		return
+	}
+	log.Printf("holyarrs: giving %s to %d:%d (first start, new PUID/PGID, or files copied in by another user)", configDir, uid, gid)
 	changed, failed := 0, 0
 	var first error
 	fail := func(err error) {
@@ -151,7 +167,7 @@ func fixOwner(configDir string, uid, gid int) {
 		if !ok {
 			return nil
 		}
-		if s.Dev != dev {
+		if uint64(s.Dev) != dev {
 			// Another filesystem (a NAS share, media, downloads), also when
 			// mountinfo could not be read: never touched.
 			if d.IsDir() {
@@ -182,7 +198,7 @@ func fixOwner(configDir string, uid, gid int) {
 		uidMap, _ := os.ReadFile("/proc/self/uid_map")
 		gidMap, _ := os.ReadFile("/proc/self/gid_map")
 		attr, _ := os.ReadFile("/proc/self/attr/current")
-		log.Printf("holyarrs: warning: %s", ownerWarning(configDir, uid, gid, first, int(st.Uid), string(uidMap), string(gidMap), fsplain.SELinuxType(string(attr))))
+		log.Printf("holyarrs: warning: %s", fixWarning(configDir, uid, gid, first, int(st.Uid), topRight, string(uidMap), string(gidMap), fsplain.SELinuxType(string(attr))))
 	}
 }
 

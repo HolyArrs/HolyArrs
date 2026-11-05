@@ -255,14 +255,42 @@ under the same number, so files keep your owner on the host. As a Quadlet
 
 ```ini
 [Container]
-Image=ghcr.io/coderluii/holyarrs:latest
+Image=ghcr.io/coderluii/holyarrs:beta
 UserNS=keep-id
 User=%U:%G
-Volume=%h/holyarrs/config:/config
+Volume=%h/holyarrs/config:/config:Z
 PublishPort=6262:6262
+HealthCmd=["/holyarrs","-healthcheck"]
+HealthInterval=30s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
 ```
 
-or `podman run --userns=keep-id --user "$(id -u):$(id -g)" ...`.
+or as one command:
+
+```sh
+podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)"   -v ~/holyarrs/config:/config:Z -p 6262:6262   --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s   --restart always ghcr.io/coderluii/holyarrs:beta
+```
+
+- `:Z` lets the container use the config folder on Fedora, RHEL and other
+  SELinux systems. For media and download folders, which the Downloader uses
+  too, add `:z` instead. Leave both off for a network share (NFS or SMB): it
+  cannot be relabelled and the container would not start.
+- The image has no shell, so the health check is given as a list, as above.
+  Written as plain text, Podman would look for a shell and the check would
+  always fail.
+- HolyArrs restarts itself through this restart policy (Restart in the app,
+  safe mode, restore). With `podman run`, the policy starts it again while
+  Podman runs. Keep it `always`: Podman's start-after-reboot service only
+  starts `always` containers.
+- To start it after a reboot without anyone signing in, turn on lingering
+  once: `loginctl enable-linger $USER`. Then use the Quadlet file, or for
+  `podman run` turn on the service as the same user:
+  `systemctl --user enable podman-restart.service`.
 
 **If the folder already belongs to a sub-uid**, give it back from the host
 (stop the container first):
@@ -287,7 +315,7 @@ volume instead; media folders can stay as host folders.
 ```yaml
 services:
   holyarrs:
-    image: ghcr.io/coderluii/holyarrs:latest
+    image: ghcr.io/coderluii/holyarrs:beta
     container_name: holyarrs
     environment:
       - TZ=Etc/UTC
@@ -310,7 +338,7 @@ On a Mac, use your own folders for media (`/Users/you/Media/movies:/movies`).
 use `docker cp`; stop HolyArrs first):
 
 ```sh
-docker create --name hx -v holyarrs-config:/config ghcr.io/coderluii/holyarrs:latest
+docker create --name hx -v holyarrs-config:/config ghcr.io/coderluii/holyarrs:beta
 docker cp C:\old\config\. hx:/config/
 docker rm hx
 ```
@@ -353,7 +381,7 @@ and recreate it. On Docker Desktop (Windows and Mac), use a named volume, not
 a host folder: HolyArrs refuses a Docker Desktop folder share. Copy the data
 into the volume as shown in the Docker Desktop section above. Lost an earlier setup? An old anonymous volume may still hold
 it: list them with `docker volume ls` (long random names), look inside with
-`docker create --name hx -v <volume>:/config ghcr.io/coderluii/holyarrs:latest`
+`docker create --name hx -v <volume>:/config ghcr.io/coderluii/holyarrs:beta`
 and `docker cp hx:/config ./old-config`, then `docker rm hx`.
 
 ## Config folder in memory
@@ -428,7 +456,17 @@ start creates `/config/holyarrs.key` with mode `0600`.
 
 Backup zip files never contain this master key. Keep a protected copy apart
 from the backup zips. A restore with a different key is refused because the
-stored secrets cannot be opened.
+stored secrets cannot be opened. To move to a new machine, see
+[Backups: Move to a new machine](backups.md#move-to-a-new-machine).
+
+The simplest copy is the key kit: as the owner, open Settings > Backups and
+choose **Download key kit**. No shell is needed. To put it back, rename the
+file to `holyarrs.key` and place it in the config folder while HolyArrs is
+stopped. With a named volume there is no folder to open: copy it in with
+`docker cp holyarrs.key hx:/config/` as in
+[Docker Desktop](#docker-desktop-windows-and-mac). Moving to a new machine or a fresh container? Put the key back
+first, then restore the backup; see Move to a new machine in
+[Backups](backups.md).
 
 You may supply the key as a separate read-only file instead. The named file
 must already exist and must hold exactly 32 raw bytes, 64 hexadecimal digits,

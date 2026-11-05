@@ -229,3 +229,37 @@ func TestDoctorKeyFromEnvFileMissing(t *testing.T) {
 		t.Fatalf("missing named key file: want Fail naming %s, got %+v\n%s", secrets.EnvKeyFile, c, r.Text())
 	}
 }
+
+// A good key the app's user cannot open is "cannot be read", with the owner
+// and the host fix, not "damaged".
+func TestDoctorKeyNoPermission(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("needs Unix modes and a non-root user")
+	}
+	dir, _ := keyedConfig(t)
+	if err := os.Chmod(filepath.Join(dir, secrets.KeyFile), 0); err != nil {
+		t.Fatal(err)
+	}
+	r := runDoctor(t, dir)
+	c := worstKey(t, r)
+	if c.Status != Fail || !strings.Contains(c.Text, "cannot be read") || strings.Contains(c.Text, "damaged") ||
+		!strings.Contains(c.Text, "owner") || !strings.Contains(c.Fix, "chown PUID:PGID") || !strings.Contains(c.Fix, "chmod 600") {
+		t.Fatalf("unreadable key: got %+v\n%s", c, r.Text())
+	}
+}
+
+// A key path that is a folder (Docker makes one when the mounted host file
+// did not exist) says so, instead of an owner or mode fix that cannot help.
+func TestDoctorKeyPathIsFolder(t *testing.T) {
+	dir, _ := keyedConfig(t)
+	named := filepath.Join(t.TempDir(), "holyarrs.key")
+	if err := os.Mkdir(named, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(secrets.EnvKeyFile, named)
+	r := runDoctorEnv(t, dir)
+	c := worstKey(t, r)
+	if c.Status != Fail || !strings.Contains(c.Text, "folder") || strings.Contains(c.Fix, "chmod") {
+		t.Fatalf("key path is a folder: want FAIL naming the folder without a chmod fix, got %+v\n%s", c, r.Text())
+	}
+}

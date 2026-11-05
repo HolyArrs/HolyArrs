@@ -106,6 +106,9 @@ type Engine struct {
 	// ConfigUnmapped is "anonymous" or "none" when /config is not mapped to
 	// the host (an Error until it is); "" adds no check.
 	ConfigUnmapped string
+	// ConfigDir is the config folder; its disk is checked for free space
+	// ("" adds no check).
+	ConfigDir string
 
 	mu  sync.Mutex
 	low map[string]int64 // folder -> bytes an import needed but could not get
@@ -358,6 +361,8 @@ func label(kind string) string {
 		return "trailer lookups"
 	case "config_folder":
 		return "config folder"
+	case "config_disk":
+		return "free space on"
 	}
 	return kind
 }
@@ -590,25 +595,56 @@ func (e *Engine) waiting(ctx context.Context) ([]Result, error) {
 		r.State = Error
 	}
 	if len(ds) == 1 {
-		r.Message = "1 download waits because its Downloader can't use the files: is the share mounted? Once it is, recheck them in the Downloader (or use Recheck on the Downloads page)."
+		r.Message = "1 download waits because its Downloader can't use the files: is the share mounted? Once it is, recheck it in the Downloader (or use Check again on the Downloads page)."
 	} else {
-		r.Message = strconv.Itoa(len(ds)) + " downloads wait because their Downloader can't use the files: is the share mounted? Once it is, recheck the download in the Downloader (or use Recheck on the Downloads page)."
+		r.Message = strconv.Itoa(len(ds)) + " downloads wait because their Downloader can't use the files: is the share mounted? Once it is, recheck them in the Downloader (or use Check again on the Downloads page)."
 	}
 	return []Result{r}, nil
+}
+
+// Free space on the config disk: a Warning under configLowWarn, an Error
+// under configLowError. Once it is full every database write fails.
+const (
+	configLowWarn  = 1 << 30
+	configLowError = 256 << 20
+)
+
+// configDisk checks the free space on the disk that holds the config folder
+// (one statfs).
+func (e *Engine) configDisk() []Result {
+	if e.ConfigDir == "" {
+		return nil
+	}
+	free := e.FreeSpace
+	if free == nil {
+		free = importer.FreeSpace
+	}
+	r := Result{Key: "config_disk", Kind: "config_disk", Subject: "Config folder", State: OK}
+	n := free(e.ConfigDir)
+	switch {
+	case n < 0:
+		// unknown free space never warns
+	case n < configLowError:
+		r.State, r.Message = Error, fmt.Sprintf("Only %s are free on the disk that holds the config folder. When it is full HolyArrs cannot save anything. Free some space on that disk, or move the config folder to a bigger one", mb(n))
+	case n < configLowWarn:
+		r.State, r.Message = Warning, fmt.Sprintf("Only %s are free on the disk that holds the config folder. Keep at least 1 GB free there so HolyArrs can save its data and backups", mb(n))
+	}
+	return []Result{r}
 }
 
 // configFolder is an Error while /config is not mapped to the host, since
 // everything in it goes when the container is removed.
 func (e *Engine) configFolder(context.Context) ([]Result, error) {
+	disk := e.configDisk()
 	if e.ConfigUnmapped == "" {
-		return nil, nil
+		return disk, nil
 	}
 	where := "an anonymous volume"
 	if e.ConfigUnmapped == "none" {
 		where = "the container itself"
 	}
-	return []Result{{Key: "config_folder", Kind: "config_folder", Subject: "Config folder", State: Error,
-		Message: "/config is not mapped to a folder or named volume, so it lives in " + where + " and everything is lost when the container is removed or recreated. Stop the container, copy it out with docker cp, then map /config and copy it back in"}}, nil
+	return append([]Result{{Key: "config_folder", Kind: "config_folder", Subject: "Config folder", State: Error,
+		Message: "/config is not mapped to a folder or named volume, so it lives in " + where + " and everything is lost when the container is removed or recreated. Stop the container, copy it out with docker cp, then map /config and copy it back in"}}, disk...), nil
 }
 
 // backups warns when the newest backup is older than two backup periods

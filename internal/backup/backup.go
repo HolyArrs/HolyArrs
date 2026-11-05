@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -111,6 +112,9 @@ type Manager struct {
 	// KeyFromEnv says the key is a named file (HOLYARRS_MASTER_KEY_FILE)
 	// the person looks after, so the card does not ask for a key kit.
 	KeyFromEnv bool
+	// FreeSpace reads free bytes on a disk (nil means importer.FreeSpace;
+	// -1 unknown).
+	FreeSpace func(dir string) int64
 
 	mu      sync.Mutex
 	lastErr string // the last scheduled backup's error, "" after a good one
@@ -462,12 +466,40 @@ func (m *Manager) Tick(ctx context.Context) error {
 	if !m.due(p) {
 		return nil
 	}
+	if err := m.roomFor(); err != nil {
+		return err
+	}
 	b, err := m.Create(ctx, KindScheduled)
 	if err != nil {
 		return err
 	}
 	log.Printf("backup: made %s (%d bytes)", b.Name, b.Size)
 	return m.Prune(p)
+}
+
+// roomFor refuses a scheduled backup that clearly would not fit: it needs a
+// copy of the databases and the zip, so about twice their size. Unknown free
+// space never refuses.
+func (m *Manager) roomFor() error {
+	free := m.FreeSpace
+	if free == nil {
+		free = importer.FreeSpace
+	}
+	n := free(m.Dir)
+	if n < 0 {
+		return nil
+	}
+	var need int64
+	for _, f := range []string{store.MainFile, store.MainFile + "-wal", store.EventsFile, store.EventsFile + "-wal"} {
+		if st, err := os.Stat(filepath.Join(m.Dir, f)); err == nil {
+			need += st.Size()
+		}
+	}
+	need *= 2
+	if n >= need {
+		return nil
+	}
+	return fmt.Errorf("Not enough free space: it needs about %d MB but only %d MB are free on the disk that holds the config folder. Free some space there; HolyArrs tries again in ten minutes", (need>>20)+1, n>>20)
 }
 
 // Pass checks once whether a backup is due (the supervisor runs it every
@@ -838,7 +870,7 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 	}
 	if m.CheckKey != nil {
 		if err := m.CheckKey(filepath.Join(out, store.MainFile)); err != nil {
-			return fmt.Errorf("the backup's secrets cannot be read with this master key: %w", err)
+			return fmt.Errorf("the backup's secrets cannot be read with this master key (moving to a new machine? see \"Move to a new machine\" in the HolyArrs docs, in docs/backups.md): %w", err)
 		}
 	}
 	staged := filepath.Join(m.Dir, StagedDir)
@@ -947,7 +979,9 @@ func syncMoveDirs(dir string, j journal) error {
 				continue
 			}
 			seen[d] = true
-			if err := store.SyncDir(d); err != nil {
+			// A folder already gone (restore-staged removed just before a
+			// cut-off) has nothing left to sync.
+			if err := store.SyncDir(d); err != nil && !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
 		}
@@ -984,6 +1018,16 @@ func donePrefix(dir string, j journal) int {
 	return n
 }
 
+// allMoved reports whether every move's new name is there.
+func allMoved(dir string, j journal) bool {
+	for _, m := range j.Moves {
+		if !present(filepath.Join(dir, m.To)) {
+			return false
+		}
+	}
+	return true
+}
+
 // recoverJournal finishes a restore that was cut off, or undoes it when it
 // cannot be finished, so the live files are never a mix of old and new.
 func recoverJournal(dir string) error {
@@ -998,6 +1042,12 @@ func recoverJournal(dir string) error {
 	if err := json.Unmarshal(b, &j); err != nil || len(j.Moves) == 0 {
 		// Written through a synced rename, so a bad journal was never used.
 		log.Printf("backup: ignoring an unreadable %s", JournalFile)
+		return removeJournal(dir)
+	}
+	// Cut off after restore-staged was removed: every move was done and
+	// synced, so only the journal is left to clear.
+	if !present(filepath.Join(dir, StagedDir)) && allMoved(dir, j) {
+		log.Printf("backup: a restore was cut off after it had finished; the replaced databases are in %s", filepath.Join(dir, j.Keep))
 		return removeJournal(dir)
 	}
 	done := donePrefix(dir, j)

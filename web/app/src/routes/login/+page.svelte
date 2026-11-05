@@ -380,7 +380,7 @@
 						{#if mode === 'setup'}
 							<p class="lead">First start. Make the owner account: the one person who runs this HolyArrs.</p>
 							{#if session.s.configUnmapped}
-								<p class="form-error" role="status">/config is not mapped to a host folder or named volume, so everything set up here is lost when the container is recreated. Map /config first (doctor shows how). Lost an earlier setup? Look for it with docker volume ls.</p>
+								<p class="form-error" role="status">/config is not mapped to a host folder or named volume, so everything set up here is lost when the container is recreated. Map /config first: see "Forgot to map /config?" in the install guide. Lost an earlier setup? Look for it with docker volume ls.</p>
 							{/if}
 						{:else if mode === 'code'}
 							<p class="lead">Type the six-digit code from your authenticator app, or one of your backup codes.</p>

@@ -22,7 +22,7 @@
 		onupd
 	}: {
 		upd: Update | null;
-		/** Whether this HolyArrs runs in Docker (null until About answers). */
+		/** Whether this HolyArrs runs in a container: Docker, Podman, Kubernetes (null until About answers). */
 		docker: boolean | null;
 		/** The trailers health check: the trailer reader's last good lookup and any failures. */
 		reader: HealthCheck | undefined;
@@ -105,7 +105,7 @@
 		<h2 id="s-how">How to update</h2>
 		<p class="lead">HolyArrs never changes its own program. Your databases, settings, keys and backups stay in the config folder through every update.</p>
 		{#if docker !== true}
-			{#if docker === null}<h3 class="kind">Without Docker</h3>{/if}
+			{#if docker === null}<h3 class="kind">Without a container</h3>{/if}
 			<ol class="steps">
 				<li><b>Stop HolyArrs</b><span>Finish or pause downloads first if you like; the queue carries on afterwards.</span></li>
 				<li><b>Replace the program</b><span>Put the new build where the old one is. Leave the config folder alone.</span></li>
@@ -113,10 +113,10 @@
 			</ol>
 		{/if}
 		{#if docker !== false}
-			{#if docker === null}<h3 class="kind">In Docker</h3>{/if}
+			{#if docker === null}<h3 class="kind">In a container</h3>{/if}
 			<ol class="steps">
-				<li><b>Get the new image</b><span>Pull the new HolyArrs image.</span></li>
-				<li><b>Recreate the container</b><span>Same mounts, same ports. One command:</span><code class="cmd">docker compose up -d --force-recreate</code></li>
+				<li><b>Get the new image</b><span>Pull the new HolyArrs image, or update it in your NAS or container app.</span></li>
+				<li><b>Recreate the container</b><span>Same mounts, same ports. With Docker Compose:</span><code class="cmd">docker compose up -d --force-recreate</code></li>
 				<li><b>Open Status</b><span>The new version shows here; the first start runs any database migration.</span></li>
 			</ol>
 		{/if}

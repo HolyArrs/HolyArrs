@@ -292,7 +292,7 @@
 				{#if about}
 					<dt>Go</dt><dd>{about.go.replace(/^go/, '')}</dd>
 					<dt>System</dt><dd>{about.os}</dd>
-					<dt>Docker</dt><dd>{about.docker ? 'Yes' : 'No'}</dd>
+					<dt>Container</dt><dd>{about.docker ? 'Yes' : 'No'}</dd>
 					<dt>Database</dt><dd>SQLite {about.sqlite}</dd>
 					<dt>Database migration</dt><dd>{about.migration}</dd>
 					<dt>Config folder</dt><dd><code>{about.config_dir}</code></dd>

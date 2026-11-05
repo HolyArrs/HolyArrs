@@ -21,7 +21,7 @@ The rows follow the Downloader live: you never need to reload the page.
 | Waiting its turn | The Downloader has it and starts it when there is room. |
 | Downloading | It is being fetched. |
 | Stalled | No progress for a while (Settings, Downloaders, "Stalled after"). After the give-up time HolyArrs marks it failed by itself. |
-| Paused in the Downloader | Someone paused it in the Downloader. HolyArrs waits. |
+| Paused in the Downloader | Someone paused it in the Downloader, and HolyArrs waits. Or the row says "The Downloader can't use the files": most often a share that mounted late. Once the share is there, use Check again on the row (or recheck it in the Downloader). After about 3 days the health check turns red. |
 | Waiting to import | The Downloader is done; HolyArrs puts it in the Library next. |
 | Importing | HolyArrs is putting the files in the Library. |
 | Done | The movie is in the Library. |

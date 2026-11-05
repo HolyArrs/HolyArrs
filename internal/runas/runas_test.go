@@ -217,6 +217,12 @@ func TestInContainer(t *testing.T) {
 		{"podman file", files("/run/.containerenv"), env(""), true},
 		{"container variable", files(), env("podman"), true},
 		{"plain host", files("/etc/passwd"), env(""), false},
+		{"kubernetes", files(), func(k string) string {
+			if k == "KUBERNETES_SERVICE_HOST" {
+				return "10.43.0.1"
+			}
+			return ""
+		}, true},
 	}
 	for _, c := range cases {
 		if got := InContainer(c.exists, c.getenv); got != c.want {

@@ -1,1 +1,0 @@
-import{t as e}from"../chunks/DK3Fl9T5.js";import{Hr as t}from"../chunks/ClTxPQeY.js";import"../chunks/DvFHo1KI.js";import{n}from"../chunks/CEuXJ1Uc.js";var r=e({load:()=>i});function i({url:e}){n(307,t(`/settings/account`)+e.search+e.hash)}function a(e){}export{a as component,r as universal};

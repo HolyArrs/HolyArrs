@@ -4,7 +4,7 @@ Every NAS below runs HolyArrs as a Docker container, so first read
 [Install HolyArrs with Docker](install.md). This page only says where things
 go on each box.
 
-The same three rules hold on every NAS:
+The same four rules hold on every NAS:
 
 - `/config` sits on a local volume of the NAS, never on a network share.
 - Set `PUID` and `PGID` to the NAS user and group that own your media (find
@@ -15,6 +15,11 @@ The same three rules hold on every NAS:
   one shared folder and mount it once (see
   [Media folders](install.md#media-folders)). Separate `/movies`, `/tv`,
   `/music` and `/downloads` mounts work too, but imports are then copied.
+- Turn on auto-restart for the container (Docker's `unless-stopped` restart
+  policy). Restart in the app, safe mode and a restore stop HolyArrs and
+  count on the NAS to start it again; without auto-restart it just looks
+  stopped. In Synology Container Manager this is "Enable auto-restart"; the
+  Unraid template sets it for you.
 
 ## Synology (Container Manager)
 
@@ -55,8 +60,9 @@ under the advanced view.
 
 - Put `/config` on a pool path such as `/mnt/<pool>/appdata/holyarrs`
   (`<pool>` is your pool's name), or set the appdata share to Exclusive
-  access (Shares > appdata > Primary storage on one pool, Secondary storage
-  none; Unraid then shows it as an Exclusive share). HolyArrs refuses
+  access (first turn on Permit exclusive shares under Settings > Global
+  Share Settings, then Shares > appdata > Primary storage on one pool,
+  Secondary storage none; Unraid then shows it as an Exclusive share). HolyArrs refuses
   `/mnt/user/appdata`, which is a FUSE path, and a pool path that does not
   exist (it lands in memory).
 - The template offers optional `/movies`, `/tv`, `/music` and `/downloads`
@@ -85,6 +91,10 @@ To let disks sleep longer:
 - Put `/config` and the download folder on an SSD or a cache pool, not on the
   media disks. On Unraid, use a pool path for `/config` and the downloads
   share.
+- If `/config` shares a pool with the downloads, keep at least 1 GB free on it.
+  HolyArrs shows a health warning when that disk drops under 1 GB, and skips
+  a backup that would not fit, because once the disk is full it cannot save
+  anything.
 - On Unraid, the Cache Directories plugin keeps folder listings in memory, so
   the rescan and folder checks can be answered without waking a disk.
 - Turn the rescan off on the Schedules page, or set it to 7 days. Files you add
