@@ -1,0 +1,1 @@
+import{Ci as e,Xi as t,ea as n}from"../chunks/qvJYZCxF.js";import"../chunks/BEUGQ_Ty.js";import{t as r}from"../chunks/C00ueIZ4.js";function i(i){e(`14tz534`,e=>{t(()=>{n.title=`Held · HolyArrs`})}),r(i,{list:`held`})}export{i as component};

@@ -1,0 +1,1 @@
+import{Ci as e,Fr as t,Kr as n,Mi as r,Xi as i,_a as a,ea as o,ei as s,ga as c}from"../chunks/qvJYZCxF.js";import"../chunks/BEUGQ_Ty.js";function l(l,u){a(u,!1),r(()=>{t(n(`/downloads/history?tab=turned-down`),{replaceState:!0})}),s(),e(`7i42b8`,e=>{i(()=>{o.title=`Turned down · HolyArrs`})}),c()}export{l as component};

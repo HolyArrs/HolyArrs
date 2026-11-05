@@ -1,0 +1,1 @@
+import{Fi as e,Ii as t,Ni as n,ra as r}from"../chunks/qvJYZCxF.js";function i(i,a){var o=t(),s=r(o);n(s,()=>a.children),e(i,o)}export{i as component};
