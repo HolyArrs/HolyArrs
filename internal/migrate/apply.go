@@ -1933,6 +1933,9 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 		err = ErrPlanChanged
 	}
 	if err != nil {
+		if r.Stopping() {
+			return ctx.Err() // a stop while reading the plan: resume after the restart
+		}
 		_ = m.setState(context.WithoutCancel(ctx), mv.ID, "failed", &Report{Move: mv.ID, Lines: []Line{}, Counts: map[string]int{},
 			Next: []string{"The move could not start from its approved preview: " + err.Error() + ". Preview it again and start a new move."}})
 		return err
