@@ -6,7 +6,7 @@ import { noSidewaysScroll, signIn } from './helpers.ts';
 
 // Status (#71, #78): every tab at desktop width and at
 // 390, the tabs work from the keyboard, and the Jobs table keeps its labels
-// on a phone. Own fresh app: npx playwright test -c e2e/status.config.ts
+// on a phone. About hands an admin the support bundle; a member never gets it. Own fresh app: npx playwright test -c e2e/status.config.ts
 test.describe.configure({ mode: 'serial' });
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp-phone');
@@ -66,6 +66,48 @@ for (const width of [1280, 390]) {
 		await page.context().close();
 	});
 }
+
+for (const width of [1280, 390]) {
+	test(`status: About downloads the support bundle at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height: 844 }, acceptDownloads: true })).newPage();
+		await signIn(page, owner());
+		await open(page, '/status?tab=about');
+		const button = page.getByTestId('status-support-bundle');
+		await expect(button).toBeVisible();
+		await button.scrollIntoViewIfNeeded();
+		const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
+		expect(download.suggestedFilename()).toMatch(/^holyarrs-support-.+\.zip$/);
+		// A zip keeps each file name in plain text in its directory.
+		const zip = readFileSync((await download.path())!);
+		expect(zip.subarray(0, 2).toString()).toBe('PK');
+		for (const name of ['log.txt', 'about.json', 'doctor.txt', 'health.json']) expect(zip.includes(name), name).toBe(true);
+		await noSidewaysScroll(page);
+		await page.context().close();
+	});
+}
+
+test('status: a member gets neither Status nor the support bundle', async ({ browser }) => {
+	const own = await (await browser.newContext()).newPage();
+	await signIn(own, owner());
+	await own.goto('/settings/users');
+	await own.getByLabel('Note for yourself').fill('Uma');
+	await own.getByRole('button', { name: 'Make an invite link' }).click();
+	const link = (await own.locator('.fresh code').textContent())!.trim();
+	const uma = await (await browser.newContext()).newPage();
+	const umaPw = `e2e-${Math.random().toString(36).slice(2)}-pw`;
+	await uma.goto(new URL(link).pathname);
+	await uma.getByLabel('Name').fill('uma');
+	await uma.getByLabel('Password', { exact: true }).fill(umaPw);
+	await uma.getByLabel('Password again').fill(umaPw);
+	await uma.getByRole('button', { name: 'Join and sign in' }).click();
+	await expect(uma).toHaveURL(/\/$/);
+	await uma.goto('/status?tab=about');
+	await expect(uma).not.toHaveURL(/\/status/);
+	await expect(uma.getByTestId('status-support-bundle')).toHaveCount(0);
+	expect((await uma.request.get('/api/v1/support/bundle')).status()).toBe(403);
+	await uma.context().close();
+	await own.context().close();
+});
 
 test('status: tabs move with the arrow keys and keep focus', async ({ browser }) => {
 	const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
