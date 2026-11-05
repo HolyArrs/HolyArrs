@@ -71,10 +71,12 @@
 	onMount(() => {
 		void refreshSettingsStatus();
 		const onReauth = (e: Event) => {
-			const method = (e as CustomEvent<{ method?: string }>).detail?.method ?? 'GET';
+			const detail = (e as CustomEvent<{ method?: string; path?: string }>).detail;
+			const method = detail?.method ?? 'GET';
 			session.s.localRecent = false;
-			// My account asks inline, next to the control that needs it.
-			if (currentSection?.group === 'account') return;
+			// My account asks inline, next to the control that needs it, and so
+			// does Jackett or Prowlarr, above its Connect button.
+			if (currentSection?.group === 'account' || detail?.path === '/bridges') return;
 			if (reauth !== 'load') reauth = method === 'GET' ? 'load' : 'save';
 		};
 		window.addEventListener('holyarrs:reauth', onReauth);

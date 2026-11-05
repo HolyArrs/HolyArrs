@@ -454,6 +454,7 @@ func TestAllowedHostNamesNeedFreshPassword(t *testing.T) {
 	if resp, out := call(t, &http.Client{}, "PUT", f.srv.URL+"/api/v1/auth/settings", `{"allowed_hosts":["evil.example"]}`, map[string]string{APIKeyHeader: k.Key}); resp.StatusCode != 403 {
 		t.Fatalf("API key saved allowed hosts: %d %s", resp.StatusCode, out)
 	}
+	own = signIn(t, f, "luis") // a password sign-in; the setup session stays recent for an hour
 	f.clock.add(11 * time.Minute)
 	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"allowed_hosts":["evil.example"]}`); resp.StatusCode != 403 || !strings.Contains(out, "reauth") {
 		t.Fatalf("old session saved allowed hosts: %d %s", resp.StatusCode, out)

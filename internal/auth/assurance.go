@@ -16,14 +16,27 @@ const (
 	AuthMethodLocalPassword string = "local_password"
 	AuthMethodLocalSetup           = "local_setup"
 	localRecentFor                 = 10 * time.Minute
+	// INTENTIONAL (Luis, 2026-11-05, "No check during setup"): first-run setup
+	// has no password re-check. The session the owner setup itself starts
+	// (setup() and the Plex, Jellyfin and Emby setup routes) counts as a
+	// recent local proof for its first hour, so the first-run steps (such as
+	// connecting Prowlarr, which makes old-app keys) never ask. Only that
+	// setup sign-in: every other sign-in, and the setup one after the hour,
+	// is unchanged. A required two-factor enrollment still wins.
+	setupRecentFor = 60 * time.Minute
+	// setupFamily starts the family id of that setup session. A '.' never
+	// comes out of token()'s base64url, so no other family can start so; the
+	// id is kept across rotation and replaced by any later sign-in or reauth.
+	setupFamily = "setup."
 )
 
 // RecentLocal reports whether this request is an authenticated browser
-// session with a recent local password proof and no unfinished two-factor
-// enrollment requirement. Outside sign-in and API keys never satisfy it.
+// session with a recent local password proof (or a first-run setup session
+// in its first hour, see setupRecentFor) and no unfinished two-factor
+// enrollment requirement. Other outside sign-ins and API keys never satisfy it.
 func RecentLocal(r *http.Request) bool {
 	who, ok := From(r.Context())
-	return ok && who.Via == "session" && who.LocalRecent && !who.MustTwoFactor
+	return ok && who.Via == "session" && (who.LocalRecent || who.SetupRecent) && !who.MustTwoFactor
 }
 
 // riskyRoutes are the routes a browser session may use only with a local

@@ -2,7 +2,7 @@
 	// Connect Jackett or Prowlarr (#96): HolyArrs takes the address and key, tests them, and brings the sites in as
 	// Sources in one step. Jackett's sites stay in step on their own;
 	// Prowlarr writes its sites in through the old-app API.
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { api, ApiError, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -15,6 +15,7 @@
 	import Icon from '#lib/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import Confirm from '#lib/account/Confirm.svelte';
 
 	type Kind = 'jackett' | 'prowlarr';
 	interface Bridge {
@@ -60,6 +61,21 @@
 	let checking = $state<number | null>(null);
 	// Old-app keys a Prowlarr connect made, shown once (an app that used a replaced one, such as Seerr, needs it).
 	let madeKeys = $state<Record<string, string> | null>(null);
+	// Making old-app keys wants a fresh password: the server answers "reauth".
+	// Ask inline instead of showing that answer, then run the step again.
+	let reauthFor = $state<'test' | 'connect' | null>(null);
+	const isReauth = (e: unknown) => e instanceof ApiError && e.status === 403 && e.body.code === 'reauth';
+	function askPassword(step: 'test' | 'connect') {
+		session.s.localRecent = false;
+		reauthFor = step;
+	}
+	$effect(() => {
+		if (reauthFor && session.s.localRecent) {
+			const again = reauthFor;
+			reauthFor = null;
+			untrack(() => void (again === 'test' ? test() : connect()));
+		}
+	});
 
 	let removing = $state<Bridge | null>(null);
 	let removeOpen = $state(false);
@@ -87,6 +103,7 @@
 		result = null;
 		errors = {};
 		keysNeeded = [];
+		reauthFor = null;
 	}
 
 	function body() {
@@ -118,7 +135,8 @@
 			keysNeeded = have;
 			result = { ok: true, text, tag };
 		} catch (e) {
-			if (!fieldError(e)) result = { ok: false, text: message(e) };
+			if (isReauth(e)) askPassword('test');
+			else if (!fieldError(e)) result = { ok: false, text: message(e) };
 		} finally {
 			testing = false;
 		}
@@ -140,7 +158,8 @@
 			await load();
 			onchange?.();
 		} catch (e) {
-			if (e instanceof ApiError && e.status === 409 && e.body.need === 'keys' && Array.isArray(e.body.sides)) {
+			if (isReauth(e)) askPassword('connect');
+			else if (e instanceof ApiError && e.status === 409 && e.body.need === 'keys' && Array.isArray(e.body.sides)) {
 				keysNeeded = e.body.sides as string[];
 				result = { ok: false, text: message(e) };
 			} else if (!fieldError(e)) result = { ok: false, text: message(e) };
@@ -271,9 +290,16 @@
 					{/if}
 				{/if}
 				{#if result && !result.tag}<p class="small" class:bad-text={!result.ok} class:ok-text={result.ok} role="status" data-testid="bridge-result">{result.text}</p>{/if}
+				{#if reauthFor}
+					{#if session.s.hasPassword}
+						<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
+					{:else}
+						<p class="small" role="status" data-testid="bridge-need-password"><a href={to('/account')}>Set a HolyArrs password</a> to connect Prowlarr.</p>
+					{/if}
+				{/if}
 				<div class="acts">
 					{#if result?.tag}<span class="tag" role="status" data-testid="bridge-result" title={result.text}><Icon name="check" size={12} stroke={2.5} />{result.tag}</span>{/if}
-					<Button type="button" variant="plain" onclick={() => (open = false)}>Cancel</Button>
+					<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; }}>Cancel</Button>
 					<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>
 					<Button type="button" variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">Connect</Button>
 				</div>

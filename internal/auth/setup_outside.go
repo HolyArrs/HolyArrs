@@ -122,7 +122,7 @@ func (a *Auth) ownerMade(w http.ResponseWriter, r *http.Request, provider string
 		log.Printf("auth: first-run setup on %s; the name is saved under Allowed host names", saved[len(saved)-1])
 	}
 	log.Printf("auth: first-run setup made the owner %q through %s from %s", name, provider, r.RemoteAddr)
-	a.startSessionAs(w, r, id, name, http.StatusCreated, provider)
+	a.startSetupSession(w, r, id, name, http.StatusCreated, provider)
 }
 
 func (a *Auth) setupPlexStart(w http.ResponseWriter, r *http.Request) {

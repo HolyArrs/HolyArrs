@@ -172,7 +172,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			}
 			// A route that wants the password typed again: Settings shows the
 			// confirm box instead of leaving the bare error on the page.
-			if (res.status === 403 && data.code === 'reauth' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method } }));
+			if (res.status === 403 && data.code === 'reauth' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method, path } }));
 			const ra = Number(res.headers.get('Retry-After'));
 			const msg = typeof data.error === 'string' && data.error ? data.error : `Request failed (${res.status})`;
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);

@@ -158,7 +158,9 @@ func TestSSOSettingsAreTheOwners(t *testing.T) {
 			t.Fatalf("API key %s %s: %d", route[0], route[1], resp.StatusCode)
 		}
 	}
-	// Ten minutes on, the owner confirms the password again first.
+	// Ten minutes on, the owner confirms the password again first (a password
+	// sign-in; the first-run setup session stays recent for an hour).
+	own = signIn(t, f, "luis")
 	f.clock.add(11 * time.Minute)
 	if resp, out := own.do(t, f, "GET", "/api/v1/auth/sso", ""); resp.StatusCode != 403 || !strings.Contains(out, "reauth") {
 		t.Fatalf("stale owner session: %d %s", resp.StatusCode, out)

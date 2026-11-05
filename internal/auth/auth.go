@@ -270,6 +270,9 @@ type Who struct {
 	// OutsideRecent is true for a Plex, Jellyfin or Emby sign-in less than
 	// ten minutes old: the proof a person with no password yet can give.
 	OutsideRecent bool `json:"outside_recent"`
+	// SetupRecent is true for the session first-run owner setup started,
+	// for setupRecentFor after it began; it then counts as LocalRecent.
+	SetupRecent bool `json:"setup_recent"`
 	// Scopes are an API key's scopes (see Scopes); empty for
 	// a session, which holds every scope.
 	Scopes []string
@@ -663,7 +666,7 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		log.Printf("auth: first-run setup on %s; the name is saved under Allowed host names", newHost)
 	}
 	log.Printf("auth: first-run setup made the owner %q from %s", c.Name, r.RemoteAddr)
-	a.startSession(w, r, id, c.Name, http.StatusCreated)
+	a.startSetupSession(w, r, id, c.Name, http.StatusCreated, AuthMethodLocalSetup)
 }
 
 var errOwnerExists = errors.New("owner exists")
@@ -1216,6 +1219,16 @@ func (a *Auth) startSession(w http.ResponseWriter, r *http.Request, userID int64
 // the request presents an existing session, its complete rotation family is
 // deleted before the replacement is made.
 func (a *Auth) startSessionAs(w http.ResponseWriter, r *http.Request, userID int64, name string, code int, method string) {
+	a.startSessionIn(w, r, userID, name, code, method, newFamily())
+}
+
+// startSetupSession starts the session first-run owner setup hands out; its
+// family marks it for SetupRecent (see setupRecentFor).
+func (a *Auth) startSetupSession(w http.ResponseWriter, r *http.Request, userID int64, name string, code int, method string) {
+	a.startSessionIn(w, r, userID, name, code, method, setupFamily+newFamily())
+}
+
+func (a *Auth) startSessionIn(w http.ResponseWriter, r *http.Request, userID int64, name string, code int, method, family string) {
 	now := a.now()
 	tok, csrf := token(32), token(32)
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
@@ -1231,7 +1244,7 @@ func (a *Auth) startSessionAs(w http.ResponseWriter, r *http.Request, userID int
 		}
 		_, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, sum(tok), userID, csrf, t, t, t, store.FormatTime(now.Add(AbsoluteTimeout)),
-			truncate(r.UserAgent(), 200), newFamily(), method, localAt)
+			truncate(r.UserAgent(), 200), family, method, localAt)
 		return err
 	})
 	if err != nil {
@@ -1265,10 +1278,10 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 	}
 	h := sum(ck.Value)
 	var who Who
-	var created, rotated, seen, expires, perms, localAuthAt string
-	err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.csrf, s.created_at, s.rotated_at, s.last_seen_at, s.expires_at, s.auth_method, s.local_auth_at
+	var created, rotated, seen, expires, perms, localAuthAt, family string
+	err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.csrf, s.created_at, s.rotated_at, s.last_seen_at, s.expires_at, s.auth_method, s.local_auth_at, s.family
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND u.state = 'active'`, h).
-		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry, &who.CSRF, &created, &rotated, &seen, &expires, &who.AuthMethod, &localAuthAt)
+		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry, &who.CSRF, &created, &rotated, &seen, &expires, &who.AuthMethod, &localAuthAt, &family)
 	if err != nil {
 		return Who{}, false
 	}
@@ -1281,6 +1294,10 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 	case ProviderPlex, ProviderJellyfin, ProviderEmby:
 		at := parseTime(created)
 		who.OutsideRecent = !at.IsZero() && !at.After(now) && now.Sub(at) < localRecentFor
+	}
+	if strings.HasPrefix(family, setupFamily) {
+		at := parseTime(created)
+		who.SetupRecent = !at.IsZero() && !at.After(now) && now.Sub(at) < setupRecentFor
 	}
 	if !now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) > IdleTimeout {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
@@ -1343,7 +1360,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	_ = a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash != '' FROM users WHERE id = ?", who.UserID).Scan(&hasPassword)
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "has_password": hasPassword,
+		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "has_password": hasPassword,
 		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 

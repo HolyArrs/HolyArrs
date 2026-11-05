@@ -244,7 +244,9 @@ func TestGateRecoveryAndNonSessionSignIns(t *testing.T) {
 // only the risky action asks, and one confirmation lets it through.
 func TestStaleSessionOpensPagesAndAsksOnlyForRiskyAction(t *testing.T) {
 	f := gated(t, Options{})
-	own := ownerOf(t, f)
+	ownerOf(t, f)
+	// A password sign-in: the first-run setup session stays recent longer.
+	own := signIn(t, f, "luis")
 	f.clock.add(localRecentFor + time.Minute)
 	if who := meOf(t, f, own); who.LocalRecent {
 		t.Fatal("proof still recent")

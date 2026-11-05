@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"strings"
 	"sync"
@@ -273,24 +274,46 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 		t.Fatalf("%d old-app keys were made for a refused call", keys)
 	}
 	// Making the keys is a risky action: a sign-in whose password proof is
-	// older than 10 minutes is asked to confirm it, and nothing is made.
-	stale := func(at string) {
+	// older than 10 minutes is asked to confirm it, and nothing is made. The
+	// first-run setup session is the exception for its first hour (Luis,
+	// 2026-11-05, "No check during setup"); f.own holds that session.
+	exec := func(q string, args ...any) {
 		if err := f.s.WriteCore(context.Background(), func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE sessions SET local_auth_at = ?", at)
+			_, err := tx.Exec(q, args...)
 			return err
 		}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	stale(store.FormatTime(time.Now().Add(-time.Hour)))
+	hourAgo := store.FormatTime(time.Now().Add(-time.Hour - time.Minute))
+	noKeys := func(what string) {
+		t.Helper()
+		_ = f.s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
+		if keys != 0 {
+			t.Fatalf("%d old-app keys were made for %s", keys, what)
+		}
+	}
+	// The setup session after its hour.
+	exec("UPDATE sessions SET local_auth_at = ?, created_at = ?", hourAgo, hourAgo)
 	if st, out := f.session("POST", "/api/v1/bridges", body); st != 403 || !strings.Contains(out, `"reauth"`) {
+		t.Fatalf("setup session after its hour made old-app keys: %d %s", st, out)
+	}
+	noKeys("an old setup session")
+	// A normal password sign-in with a stale proof.
+	jar, _ := cookiejar.New(nil)
+	other := &http.Client{Jar: jar}
+	st, _, out = f.call(other, "", "POST", "/api/v1/auth/login", `{"name":"luis","password":"a long test passphrase"}`)
+	if st != 200 {
+		t.Fatalf("login %d %s", st, out)
+	}
+	otherCSRF := aiField(out, "csrf")
+	exec("UPDATE sessions SET local_auth_at = ? WHERE family NOT LIKE 'setup.%'", hourAgo)
+	if st, _, out := f.call(other, otherCSRF, "POST", "/api/v1/bridges", body); st != 403 || !strings.Contains(out, `"reauth"`) {
 		t.Fatalf("stale sign-in made old-app keys: %d %s", st, out)
 	}
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
-	if keys != 0 {
-		t.Fatalf("%d old-app keys were made for a stale sign-in", keys)
-	}
-	stale(store.FormatTime(time.Now()))
+	noKeys("a stale sign-in")
+	// The setup session inside its hour connects with no fresh password proof.
+	exec("UPDATE sessions SET created_at = ? WHERE family LIKE 'setup.%'", store.FormatTime(time.Now().Add(-50*time.Minute)))
 	// Connect: the old-app API turns on, a key is made per side, HolyArrs is
 	// added to Prowlarr on both sides, and Prowlarr's sync writes the Sources.
 	st, out = f.session("POST", "/api/v1/bridges", body)
