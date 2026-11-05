@@ -332,12 +332,6 @@
 		</form>
 	{:else if step === 'source'}
 		<div class="card source" data-testid="welcome-source">
-			{#if sources > 0}
-				<div class="conn-row">
-					<div class="conn-text"><b>{sources} {sources === 1 ? 'source' : 'sources'}</b></div>
-					<span class="tag">Connected</span>
-				</div>
-			{/if}
 			<ConnectBridge onchange={loadSources} />
 			{#if sources > 0}
 				<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('import')}>Continue</Button>
@@ -500,7 +494,6 @@
 	.add-row { width: 100%; margin-top: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s; }
 	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }
 	.add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.source .conn-row { margin-bottom: 14px; }
 	.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; align-items: start; }
 	.two > :global(.field) { margin: 0; }
 	.source :global(.settings-card), .source :global(section) { box-shadow: none; }

@@ -188,16 +188,14 @@
 		}
 	}
 
-	const stateLine = (b: Bridge) =>
-		b.kind === 'jackett'
-			? `${b.sites} ${b.sites === 1 ? 'site' : 'sites'}, ${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`
-			: `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`;
+	const countTag = (b: Bridge) =>
+		b.kind === 'jackett' ? `${b.sites} ${b.sites === 1 ? 'site' : 'sites'}` : `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`;
 </script>
 
 <SettingsCard
 	id="connect-bridge"
 	title="Jackett or Prowlarr"
-	description="Its sites become your Sources."
+	description={bridges?.length ? undefined : 'Its sites become your Sources.'}
 >
 	{#if loadError && !bridges}
 		<LoadError hasData={false} message={loadError} onretry={load} />
@@ -215,16 +213,17 @@
 			<ul class="bridges" data-testid="bridges">
 				{#each bridges as b (b.id)}
 					<li data-testid="bridge">
-						<div class="grow">
-							<b>{names[b.kind]}</b> <span class="mono xs muted">{b.url}</span>
-							<div class="small">{stateLine(b)}{#if b.last_check} · checked {ago(b.last_check)}{/if}</div>
-							{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
-							{#if b.local}<div class="small muted" data-testid="bridge-local">Can reach your home network</div>{/if}
-							{#if b.kind === 'jackett'}<div class="small muted">Removed Sources stay removed until you connect it again</div>{/if}
+						<div class="brow">
+							<div class="grow">
+								<b>{names[b.kind]}</b>
+								<span class="mono xs muted addr" title={b.last_check ? `Checked ${ago(b.last_check)}` : undefined}>{b.url}</span>
+							</div>
+							<span class="ctag" class:bad={!!b.last_error}>{b.last_error ? 'Not connected' : countTag(b)}</span>
 						</div>
+						{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
 						{#if mayEdit}
 							<div class="acts">
-								<Button type="button" variant="plain" busy={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Check now</Button>
+								<Button type="button" variant="plain" busy={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Check</Button>
 								<Button type="button" variant="plain" onclick={() => askRemove(b)} data-testid="bridge-remove">Disconnect…</Button>
 							</div>
 						{/if}
@@ -233,7 +232,7 @@
 			</ul>
 		{/if}
 		{#if mayEdit && !open}
-			<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">{bridges.length ? 'Connect another' : 'Connect Jackett or Prowlarr'}</Button></div>
+			<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">{bridges.length ? 'Add another' : 'Connect Jackett or Prowlarr'}</Button></div>
 		{/if}
 		{#if open}
 			<div class="form" data-testid="bridge-form">
@@ -298,7 +297,13 @@
 <style>
 	.form { display: flex; flex-direction: column; gap: 16px; }
 	.bridges { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-	.bridges > li { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+	.bridges > li { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+	.brow { display: flex; align-items: center; gap: 12px; }
+	.brow .grow b { display: block; font: 600 15px/1.3 var(--font-ui); }
+	.addr { display: block; margin-top: 2px; }
+	.ctag { flex: none; padding: 4px 8px; border-radius: 999px; font: 500 12px/1.2 var(--font-ui); color: var(--ok-text, #30d158); border: 1px solid color-mix(in srgb, var(--ok-text, #30d158) 40%, transparent); }
+	.ctag.bad { color: var(--danger-text, #ff6961); border-color: color-mix(in srgb, var(--danger-text, #ff6961) 40%, transparent); }
+	.bridges .acts { justify-content: flex-start; margin: 0 -8px -6px; }
 	.grow { flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; }
 	.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }
 	.callback-line { margin: 0; overflow-wrap: anywhere; }
