@@ -15,7 +15,7 @@
 	import { applyParts } from '#lib/controls.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import { emptyForm, formBody, kindWords, testVersion, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
+	import { emptyForm, formBody, formFrom, kindWords, testVersion, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
 	import type { LibraryFolder } from '#lib/types.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
@@ -151,6 +151,8 @@
 	let dlList = $state<DownloaderView[]>([]);
 	let dlTests = $state<Record<number, { ok: boolean; text: string }>>({});
 	let dlAdding = $state(false);
+	// The downloader being edited (its form is open), or null when adding a new one.
+	let dlEditing = $state<number | null>(null);
 	const dlForm = $derived(dlList.length === 0 || dlAdding);
 	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget');
 	function pickDl(k: DownloaderForm['kind']) {
@@ -175,14 +177,33 @@
 			dlTests = { ...dlTests, [id]: { ok: false, text: message(err) } };
 		}
 	}
+	function editDl(d: DownloaderView) {
+		error = '';
+		dl = formFrom(d);
+		dlEditing = d.id;
+		dlAdding = true;
+	}
+	async function removeDl(d: DownloaderView) {
+		error = '';
+		busy = true;
+		try {
+			await api.del(`/downloaders/${d.id}`);
+			dlList = dlList.filter((x) => x.id !== d.id);
+		} catch (err) {
+			error = message(err);
+		} finally {
+			busy = false;
+		}
+	}
 	async function saveDownloader(e: SubmitEvent) {
 		e.preventDefault();
 		if (!dlForm) return go('source');
 		error = '';
 		busy = true;
 		try {
-			const v = await api.post<DownloaderView>('/downloaders', formBody(dl));
-			dlList = [...dlList, v];
+			const v = dlEditing != null ? await api.put<DownloaderView>(`/downloaders/${dlEditing}`, formBody(dl)) : await api.post<DownloaderView>('/downloaders', formBody(dl));
+			dlList = dlEditing != null ? dlList.map((x) => (x.id === v.id ? v : x)) : [...dlList, v];
+			dlEditing = null;
 			dlAdding = false;
 			dl = emptyForm();
 			await testDl(v.id);
@@ -309,6 +330,12 @@
 							{/if}
 							</div>
 							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
+							{#if !dlForm}
+								<div class="row-acts">
+									<button type="button" class="quiet" disabled={busy} onclick={() => editDl(d)} aria-label="Edit {d.name}">Edit</button>
+									<button type="button" class="quiet danger" disabled={busy} onclick={() => removeDl(d)} aria-label="Remove {d.name}">Remove</button>
+								</div>
+							{/if}
 						</li>
 					{/each}
 				</ul>
@@ -343,9 +370,9 @@
 				</div>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlForm ? 'Connect' : 'Continue'}</Button>
+			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlEditing != null ? 'Save' : dlForm ? 'Connect' : 'Continue'}</Button>
 			{#if dlForm && dlList.length}
-				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlAdding = false; dl = emptyForm(); }}>Cancel</button>
+				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlAdding = false; dlEditing = null; dl = emptyForm(); }}>Cancel</button>
 			{:else}
 				<button class="alt" type="button" disabled={busy} onclick={() => go('source')}>Skip for now</button>
 			{/if}
@@ -546,6 +573,8 @@
 	.tag.bad { color: var(--danger-text, #ff6961); border-color: color-mix(in srgb, var(--danger-text, #ff6961) 40%, transparent); }
 	.quiet { flex: none; align-self: center; border: 0; padding: 4px 2px; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
 	.quiet:hover:not(:disabled) { color: var(--text); }
+	.quiet.danger:hover:not(:disabled) { color: var(--danger-text, #ff6961); }
+	.row-acts { display: flex; gap: 16px; padding: 6px 4px 0; }
 	.quiet:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
 	.add-row { width: 100%; margin-top: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); border-radius: 16px; background: none; color: var(--text-muted); font: 500 15px/1 var(--font-ui); cursor: pointer; transition: color 0.15s, border-color 0.15s; }
 	.add-row:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--text) 32%, transparent); }

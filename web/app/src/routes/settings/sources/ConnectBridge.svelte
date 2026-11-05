@@ -30,7 +30,7 @@
 		local?: boolean;
 	}
 
-	// compact: the first-run step; a connected row shows no Sync/Disconnect there.
+	// compact: the first-run step; a connected row offers only Remove there.
 	let { onchange, compact = false }: { onchange?: () => void; compact?: boolean } = $props();
 
 	const mayEdit = $derived(session.can('settings'));
@@ -230,10 +230,10 @@
 							<span class="ctag" class:bad={!!b.last_error}>{b.last_error ? 'Not connected' : countTag(b)}</span>
 						</div>
 						{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
-						{#if mayEdit && !compact}
+						{#if mayEdit}
 							<div class="row-acts">
-								<button type="button" class="quiet" disabled={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</button>
-								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">Disconnect…</button>
+								{#if !compact}<button type="button" class="quiet" disabled={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</button>{/if}
+								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">{compact ? 'Remove' : 'Disconnect…'}</button>
 							</div>
 						{/if}
 					</li>
