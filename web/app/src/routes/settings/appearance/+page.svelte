@@ -8,7 +8,8 @@
 	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/about-picks.svelte.ts';
 	import Table from '#lib/ui/Table.svelte';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { setAutoplaySetting } from '#lib/autoplay.svelte.ts';
@@ -27,6 +28,7 @@
 	let autoplay = $state<boolean | null>(null);
 	let signinArt = $state(false);
 	let busy = $state(false);
+	let appError = $state('');
 	async function loadApp() {
 		try {
 			const s = await api.get<{ autoplay_trailers: boolean; signin_library_art?: boolean }>('/settings/ui');
@@ -36,8 +38,9 @@
 			autoplay = null;
 		}
 	}
-	async function saveApp(field: 'autoplay_trailers' | 'signin_library_art', on: boolean) {
+	async function saveApp(field: 'autoplay_trailers' | 'signin_library_art', on: boolean, box: HTMLInputElement) {
 		busy = true;
+		appError = '';
 		try {
 			const s = await api.put<{ autoplay_trailers?: boolean; signin_library_art?: boolean }>('/settings/ui', { [field]: on });
 			if (field === 'autoplay_trailers') {
@@ -49,8 +52,10 @@
 				toasts.push(signinArt ? 'The sign-in page shows Library art' : 'The sign-in page shows trending art', 'ok');
 			}
 		} catch (e) {
-			toasts.push(message(e), 'fail');
-			await loadApp();
+			// Put the box back and say why next to it, so a failed save is never silent.
+			box.checked = !on;
+			appError = `Not saved. ${message(e)}`;
+			toasts.push(appError, 'fail');
 		} finally {
 			busy = false;
 		}
@@ -121,13 +126,14 @@
 	<SettingsCard id="autoplay-card" title="For everyone" description="Applies to every person on this server" icon="tv">
 		<div data-testid="autoplay-setting">
 			<label class="checkline">
-				<input id="autoplay-trailers" type="checkbox" checked={autoplay} disabled={busy} onchange={(e) => saveApp('autoplay_trailers', e.currentTarget.checked)} />
+				<input id="autoplay-trailers" type="checkbox" checked={autoplay} disabled={busy} onchange={(e) => saveApp('autoplay_trailers', e.currentTarget.checked, e.currentTarget)} />
 				<span><b>Play trailers by themselves</b><br /><span class="hint">Muted, on Explore. Never for Kids, Reduce motion or slow connections.</span></span>
 			</label>
 			<label class="checkline" data-testid="signin-art-setting">
-				<input id="signin-art" type="checkbox" checked={signinArt} disabled={busy} onchange={(e) => saveApp('signin_library_art', e.currentTarget.checked)} />
+				<input id="signin-art" type="checkbox" checked={signinArt} disabled={busy} onchange={(e) => saveApp('signin_library_art', e.currentTarget.checked, e.currentTarget)} />
 				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">Anyone can see them, with no rating filter</span></span>
 			</label>
+			{#if appError}<p class="app-error" role="alert" data-testid="autoplay-error">{appError}</p>{/if}
 		</div>
 	</SettingsCard>
 {/if}
@@ -148,6 +154,7 @@
 </SettingsCard>
 
 <style>
+	.app-error { margin: 8px 0 0; color: var(--fail-text, var(--fail)); font: var(--t-subhead); overflow-wrap: anywhere; }
 	.grp { margin: 14px 0 6px; color: var(--text-muted); font: 600 12px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.grp:first-child { margin-top: 0; }
 	.picks { display: flex; flex-direction: column; gap: 4px; margin: 0 0 8px; padding: 0; list-style: none; }

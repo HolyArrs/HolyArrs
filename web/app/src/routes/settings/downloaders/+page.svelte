@@ -8,7 +8,8 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { ago } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -398,7 +399,7 @@
 					<span class="ic"><Icon name="downloader" /></span>
 					<div class="grow">
 						<h2 class="h3">{d.name}</h2>
-						<div class="mono xs muted ellipsis">{d.url}</div>
+						<div class="mono xs muted" style="overflow-wrap: anywhere">{d.url}</div>
 					</div>
 					{#if results[d.id]}<TestTag ok={results[d.id].ok} text={results[d.id].text} app={kindWords[d.kind]} testid="downloader-version" />{/if}
 					<span class="chip {healthTone(d.health.state)}" data-testid="downloader-state">{d.health.label}</span>

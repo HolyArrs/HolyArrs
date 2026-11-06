@@ -6,7 +6,8 @@
 	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { api, ApiError, message } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { to } from '#lib/paths.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';

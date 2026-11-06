@@ -8,7 +8,8 @@
 	import Button from '#lib/ui/Button.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import Confirm from '#lib/account/Confirm.svelte';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 

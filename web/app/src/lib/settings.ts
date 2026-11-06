@@ -1,3 +1,4 @@
+import { message } from './api.ts';
 import type { IconName } from './Icon.svelte';
 
 export type GroupId = 'library' | 'downloads' | 'users' | 'connections' | 'look' | 'system' | 'account';
@@ -108,4 +109,13 @@ export function filterSections(all: Section[], query: string): Section[] {
 		const hay = `${s.label} ${s.about} ${groups.find((g) => g.id === s.group)?.label ?? ''}`.toLowerCase();
 		return words.every((w) => hay.includes(w));
 	});
+}
+
+/** plainMessage is message() for Settings: server text starts with a capital
+ *  and ends with a stop, so an error never shows as a bare lowercase line. */
+export function plainMessage(e: unknown): string {
+	const t = message(e).trim();
+	if (!t) return 'Something went wrong.';
+	const s = t.charAt(0).toUpperCase() + t.slice(1);
+	return /[.!?)]$/.test(s) ? s : s + '.';
 }

@@ -9,7 +9,8 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/paths.ts';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { ago } from '#lib/format.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';

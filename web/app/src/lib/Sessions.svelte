@@ -4,7 +4,8 @@
 	// Signed-in devices: My account (path /auth/sessions) or one person on
 	// the Users page (path /users/<id>/sessions).
 	import { onMount } from 'svelte';
-	import { api, message } from './api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { ago, dateTime } from './format.ts';
 	import { endedWords, order, others, type SessionRow } from './sessions.ts';

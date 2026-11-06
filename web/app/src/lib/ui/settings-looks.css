@@ -91,7 +91,7 @@
 	.settings-content { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
-	.settings-content .srow > .ctl > .input { width: min(260px, 46vw); }
+	.settings-content .srow > .ctl > .input { width: min(260px, 46vw); height: 40px; min-height: 40px; }
 	.settings-content .ui-btn.md { min-height: 40px; }
 	.settings-content .ui-ibtn.ui-ibtn.md { width: 40px; height: 40px; }
 	.settings-content .srow > .ctl .ui-btn { min-height: 40px; }

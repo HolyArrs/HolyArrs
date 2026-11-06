@@ -7,7 +7,8 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/format.ts';
@@ -196,7 +197,7 @@
 						<div class="name">{f.label || f.path}</div>
 						<div class="xs muted" data-testid="folder-kind">{f.kind === 'show' ? 'For shows' : f.kind === 'music' ? 'For music' : 'For movies'}</div>
 					{/if}
-					<div class="mono xs muted ellipsis">{f.path} · {bytes(f.free_space)} free</div>
+					<div class="mono xs muted" style="overflow-wrap: anywhere">{f.path} · {bytes(f.free_space)} free</div>
 					<div class="health">
 						<span class="chip {tone(f.health)}">{folderHealth(f.health)}</span>
 						{#if f.health_reason}<span class="xs muted">{f.health_reason}</span>{/if}

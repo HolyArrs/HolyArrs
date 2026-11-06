@@ -4,7 +4,8 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { page } from '$app/state';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { ago, words } from '#lib/format.ts';
 	import { barHeight, ms, opWords, uses } from '#lib/sources.ts';
 	import { healthTone, healthWord, pausedUntil } from '#lib/source-health.ts';

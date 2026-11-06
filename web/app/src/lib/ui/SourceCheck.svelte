@@ -5,7 +5,8 @@
 	import Field from './Field.svelte';
 	import Button from './Button.svelte';
 	import TestTag from './TestTag.svelte';
-	import { api, message } from '../api.ts';
+	import { api } from '../api.ts';
+	import { plainMessage as message } from '../settings.ts';
 	import { to } from '../paths.ts';
 	import { session } from '../session.svelte.ts';
 	import { ms } from '../sources.ts';

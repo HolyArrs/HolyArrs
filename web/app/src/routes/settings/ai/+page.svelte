@@ -9,7 +9,8 @@
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, date } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';

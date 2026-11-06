@@ -3,7 +3,8 @@
 	// Sources in one step. Jackett's sites stay in step on their own;
 	// Prowlarr writes its sites in through the old-app API.
 	import { onMount, tick, untrack } from 'svelte';
-	import { api, ApiError, message } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { ago } from '#lib/format.ts';

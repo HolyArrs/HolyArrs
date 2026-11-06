@@ -10,7 +10,8 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { ago, bytes, dateTime, duration, words } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -45,19 +46,22 @@
 			uiLoaded = false;
 		}
 	}
-	async function saveCacheGB(gb: number) {
+	async function saveCacheGB(gb: number, el?: HTMLSelectElement) {
+		const was = cacheGB;
 		uiBusy = true;
 		try {
 			cacheGB = (await api.put<{ artwork_cache_gb: number }>('/settings/ui', { artwork_cache_gb: gb })).artwork_cache_gb;
 			toasts.push(`Pictures may use up to ${cacheGB} GB`, 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			if (el) el.value = String(was);
+			toasts.push(`Not saved. ${message(e)}`, 'fail');
 			await loadUi();
 		} finally {
 			uiBusy = false;
 		}
 	}
-	async function saveKeep(field: 'history_routine_days' | 'history_other_days', days: number) {
+	async function saveKeep(field: 'history_routine_days' | 'history_other_days', days: number, el?: HTMLSelectElement) {
+		const was = field === 'history_routine_days' ? keepRoutine : keepOther;
 		uiBusy = true;
 		try {
 			const s = await api.put<{ history_routine_days: number; history_other_days: number }>('/settings/ui', { [field]: days });
@@ -65,19 +69,21 @@
 			keepOther = s.history_other_days;
 			toasts.push('History keep time saved', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			if (el) el.value = String(was);
+			toasts.push(`Not saved. ${message(e)}`, 'fail');
 			await loadUi();
 		} finally {
 			uiBusy = false;
 		}
 	}
-	async function saveCountInstall(on: boolean) {
+	async function saveCountInstall(on: boolean, el?: HTMLInputElement) {
 		uiBusy = true;
 		try {
 			countInstall = (await api.put<{ count_install: boolean }>('/settings/ui', { count_install: on })).count_install;
 			toasts.push(countInstall ? 'This install is counted' : 'This install is no longer counted', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			if (el) el.checked = !on;
+			toasts.push(`Not saved. ${message(e)}`, 'fail');
 			await loadUi();
 		} finally {
 			uiBusy = false;
@@ -283,13 +289,13 @@
 		<section class="card" id="history-keep-card" aria-labelledby="h-history-keep" data-testid="history-keep-setting">
 			<div class="card-head"><h2 id="h-history-keep" class="h2">History</h2></div>
 			<label class="checkline">
-				<select aria-label="Keep routine Events" value={keepRoutine} disabled={uiBusy} onchange={(e) => saveKeep('history_routine_days', Number(e.currentTarget.value))}>
+				<select class="input" aria-label="Keep routine Events" value={keepRoutine} disabled={uiBusy} onchange={(e) => saveKeep('history_routine_days', Number(e.currentTarget.value), e.currentTarget)}>
 					{#each keepChoices.includes(keepRoutine) ? keepChoices : [...keepChoices, keepRoutine] as d (d)}<option value={d}>{keepWord(d)}</option>{/each}
 				</select>
 				<span><b>Keep routine Events</b><br /><span class="hint">Searches, feed checks, refreshes, scans</span></span>
 			</label>
 			<label class="checkline">
-				<select aria-label="Keep other Events" value={keepOther} disabled={uiBusy} onchange={(e) => saveKeep('history_other_days', Number(e.currentTarget.value))}>
+				<select class="input" aria-label="Keep other Events" value={keepOther} disabled={uiBusy} onchange={(e) => saveKeep('history_other_days', Number(e.currentTarget.value), e.currentTarget)}>
 					{#each keepChoices.includes(keepOther) ? keepChoices : [...keepChoices, keepOther] as d (d)}<option value={d}>{keepWord(d)}</option>{/each}
 				</select>
 				<span><b>Keep other Events</b><br /><span class="hint">Downloads, imports, better copies, problems, sign-ins, settings changes</span></span>
@@ -314,13 +320,13 @@
 			<SettingsCard id="this-server-card" title="This server">
 				{#if uiLoaded}
 					<label class="checkline" data-testid="artwork-cache-setting">
-						<select id="picture-storage" aria-label="Picture storage" value={cacheGB} disabled={uiBusy} onchange={(e) => saveCacheGB(Number(e.currentTarget.value))}>
+						<select id="picture-storage" class="input" aria-label="Picture storage" value={cacheGB} disabled={uiBusy} onchange={(e) => saveCacheGB(Number(e.currentTarget.value), e.currentTarget)}>
 							{#each [1, 2, 5, 10, 20] as gb (gb)}<option value={gb}>{gb} GB</option>{/each}
 						</select>
 						<span><b>Picture storage</b><br /><span class="hint">Oldest pictures are removed past this size and reload when needed</span></span>
 					</label>
 					<label class="checkline" data-testid="count-install-setting">
-						<input id="count-install" type="checkbox" checked={countInstall} disabled={uiBusy} onchange={(e) => saveCountInstall(e.currentTarget.checked)} />
+						<input id="count-install" type="checkbox" checked={countInstall} disabled={uiBusy} onchange={(e) => saveCountInstall(e.currentTarget.checked, e.currentTarget)} />
 						<span><b>Count this install</b><br /><span class="hint">Adds this install to a per-country total. Nothing else is sent.</span></span>
 					</label>
 				{/if}
@@ -418,6 +424,7 @@
 {/if}
 
 <style>
+	.checkline > select.input { width: auto; flex: none; min-width: 112px; }
 	.checks li {
 		align-items: flex-start;
 	}

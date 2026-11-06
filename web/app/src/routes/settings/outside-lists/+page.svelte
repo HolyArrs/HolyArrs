@@ -6,7 +6,8 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { dateTime } from '#lib/format.ts';

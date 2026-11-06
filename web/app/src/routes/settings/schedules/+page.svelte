@@ -6,7 +6,8 @@
 	import Icon from '#lib/Icon.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -312,7 +313,7 @@
 	.name { display: flex; align-items: center; gap: 10px; min-width: 0; }
 	.name-copy { display: grid; min-width: 0; }
 	.name-copy b { font: var(--t-callout); font-weight: 600; color: var(--text); }
-	.about { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.about { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; overflow-wrap: anywhere; }
 	.cell { min-width: 0; font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cell time { text-decoration: underline dotted color-mix(in srgb, var(--text-muted) 50%, transparent); text-underline-offset: 3px; cursor: help; }
 	.k { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

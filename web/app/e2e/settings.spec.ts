@@ -52,6 +52,20 @@ test('a direct link to a field inside More options opens it, scrolls there and f
 	await expect(page.locator('#hosts-card')).toBeInViewport();
 	await page.goto('/settings/users#inv-note');
 	await expect(page.locator('#inv-note')).toBeVisible();
+	await expect(page.locator('#inv-note')).toBeFocused();
+	await page.goto('/settings/account#pw-current');
+	await expect(page.locator('#pw-current')).toBeVisible();
+});
+
+test('a failed trailers save puts the switch back and says why, in plain words', async () => {
+	await page.goto('/settings/appearance');
+	const box = page.locator('#autoplay-trailers');
+	const was = await box.isChecked();
+	await page.route('**/api/v1/settings/ui', (r) => (r.request().method() === 'PUT' ? r.fulfill({ status: 500, json: { error: 'disk is read-only' } }) : r.fallback()));
+	await box.click();
+	await expect(page.getByTestId('autoplay-error')).toHaveText('Not saved. Disk is read-only.');
+	await expect(box).toBeChecked({ checked: was });
+	await page.unroute('**/api/v1/settings/ui');
 });
 
 test('search by another word, and the keyboard reaches the result', async () => {

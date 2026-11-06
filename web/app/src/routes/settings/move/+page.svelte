@@ -20,7 +20,8 @@
 	import MoveStep from '#lib/move/MoveStep.svelte';
 	import DoneStep from '#lib/move/DoneStep.svelte';
 	import { createFollower } from '#lib/move/poll.ts';
-	import { api, ApiError, message } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import {

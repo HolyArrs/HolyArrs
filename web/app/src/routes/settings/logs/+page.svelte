@@ -8,7 +8,8 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { dateTime } from '#lib/format.ts';
 	import { emptyFilter, levelTone, levelWord, logQuery, pageWords, type LogFilter, type LogPage } from '#lib/logs.ts';
 

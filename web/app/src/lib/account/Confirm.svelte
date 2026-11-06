@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { session } from '#lib/session.svelte.ts';
-	import { message } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { needsConfirm, type Sensitive } from './sections.ts';
 

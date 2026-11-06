@@ -3,7 +3,8 @@
 	// points, make a must-have or put in Never in any Pick rules. A sheet
 	// makes or changes one; removing one also takes it out of every Pick rule.
 	import { onMount } from 'svelte';
-	import { api, ApiError, message } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { checkOwnTrait, ownTerms } from '#lib/pick-rules.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';

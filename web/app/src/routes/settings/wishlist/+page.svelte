@@ -7,7 +7,8 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import type { AskSettings, LibraryFolder, PickRulesView } from '#lib/types.ts';

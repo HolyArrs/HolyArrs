@@ -8,7 +8,8 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { ago, words } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -256,7 +257,7 @@
 					<span class="ic"><Icon name="source" /></span>
 					<div class="grow">
 						<h2 class="h3"><a href={to(`/settings/sources/${s.id}`)}>{s.name}</a></h2>
-						<div class="mono xs muted ellipsis">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if}</div>
+						<div class="mono xs muted" style="overflow-wrap: anywhere">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if}</div>
 					</div>
 					<span class="chip {healthTone(s.health)}" data-testid="source-state">{healthWord(s.health)}</span>
 				</div>

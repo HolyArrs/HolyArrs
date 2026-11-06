@@ -7,7 +7,8 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { session, type Perm, type Role } from '#lib/session.svelte.ts';
 	import { presetOf, presetPerms, presetsFor, type PresetId } from '#lib/presets.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -140,11 +141,26 @@
 	}
 	// Settings search links to #inv-note: open the invite sheet so the
 	// layout can find and focus that field.
+	// The sheet moves focus to its first button when it opens, so put it on
+	// the note field once the dialog is showing.
+	function openInviteAtNote() {
+		inviteOpen = true;
+		let tries = 0;
+		const put = () => {
+			const el = document.getElementById('inv-note');
+			if (el && el.closest('dialog')?.open) {
+				if (document.activeElement !== el) el.focus();
+				if (tries > 3) return;
+			}
+			if (tries++ < 20) setTimeout(put, 100);
+		};
+		setTimeout(put, 50);
+	}
 	afterNavigate(({ to: dest }) => {
-		if (dest?.url.hash === '#inv-note') inviteOpen = true;
+		if (dest?.url.hash === '#inv-note') openInviteAtNote();
 	});
 	onMount(() => {
-		if (location.hash === '#inv-note') inviteOpen = true;
+		if (location.hash === '#inv-note') openInviteAtNote();
 		void load();
 	});
 

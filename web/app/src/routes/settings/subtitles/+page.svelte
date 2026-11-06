@@ -10,7 +10,8 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { testCount } from '#lib/test-tag.ts';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { dateTime } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -250,11 +251,11 @@
 				{#if isNew}
 					<fieldset class="group">
 						<legend class="label">Which site</legend>
-						{#each kinds as k (k.kind)}
+						{#each kinds.filter((x) => !x.later) as k (k.kind)}
 							<label class="checkline">
 								<input type="radio" name="site-kind" checked={form.kind === k.kind} disabled={k.later} onchange={() => pickKind(k)} />
 								<span>
-									<b>{k.name}</b> ({kindCovers(k)}){#if k.later}{' '}<span class="chip">Coming later</span>{:else if k.needs_account}{' '}<span class="chip fail">Needs your account</span>{/if}
+									<b>{k.name}</b> ({kindCovers(k)}){#if k.needs_account}{' '}<span class="chip fail">Needs your account</span>{/if}
 									{#if k.note}<br /><span class="hint">{k.note}</span>{/if}
 								</span>
 							</label>
@@ -337,7 +338,7 @@
 							<span class="ic"><Icon name="subtitle" /></span>
 							<div class="grow">
 								<h3 class="h3">{s.name}</h3>
-								<div class="mono xs muted ellipsis">{s.url}</div>
+								<div class="mono xs muted" style="overflow-wrap: anywhere">{s.url}</div>
 							</div>
 							<span class="chip {st.tone}" data-testid="subtitle-site-state">{st.label}</span>
 						</div>

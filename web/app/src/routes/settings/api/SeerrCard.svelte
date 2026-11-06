@@ -4,7 +4,8 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { onMount } from 'svelte';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { ago } from '#lib/format.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 
@@ -38,12 +39,13 @@
 	}
 	onMount(load);
 
-	async function put(body: Partial<Pick<Answer, 'enabled' | 'delete_files'>>, what: string) {
+	async function put(body: Partial<Pick<Answer, 'enabled' | 'delete_files'>>, what: string, el?: HTMLInputElement) {
 		busy = what;
 		try {
 			a = await api.put<Answer>('/settings/old-app-api', body);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			if (el) el.checked = !el.checked;
+			toasts.push(`Not saved. ${message(err)}`, 'fail');
 			await load();
 		} finally {
 			busy = '';
@@ -102,7 +104,7 @@
 				<div class="txt"><label for="seerr-on">Answer Seerr and Overseerr</label></div>
 				<div class="ctl">
 					<label class="switch">
-						<input id="seerr-on" type="checkbox" checked={a.enabled} disabled={busy === 'on'} aria-busy={busy === 'on'} onchange={(e) => put({ enabled: e.currentTarget.checked }, 'on')} data-testid="seerr-on" />
+						<input id="seerr-on" type="checkbox" checked={a.enabled} disabled={busy === 'on'} aria-busy={busy === 'on'} onchange={(e) => put({ enabled: e.currentTarget.checked }, 'on', e.currentTarget)} data-testid="seerr-on" />
 						<span class="sw" aria-hidden="true"></span>
 					</label>
 				</div>
@@ -143,7 +145,7 @@
 					<div class="txt"><label for="seerr-delete">Let these apps delete files</label><span class="hint">Seerr stores keys in plain text. Leave off unless needed.</span></div>
 					<div class="ctl">
 						<label class="switch">
-							<input id="seerr-delete" type="checkbox" checked={a.delete_files} disabled={busy === 'delete'} aria-busy={busy === 'delete'} onchange={(e) => put({ delete_files: e.currentTarget.checked }, 'delete')} data-testid="seerr-delete" />
+							<input id="seerr-delete" type="checkbox" checked={a.delete_files} disabled={busy === 'delete'} aria-busy={busy === 'delete'} onchange={(e) => put({ delete_files: e.currentTarget.checked }, 'delete', e.currentTarget)} data-testid="seerr-delete" />
 							<span class="sw" aria-hidden="true"></span>
 						</label>
 					</div>

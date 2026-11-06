@@ -8,7 +8,8 @@
 	// Settings > Music: what a new artist gets by default, which Pressing is
 	// used for an album, and where MusicBrainz answers come from.
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingRules, pressingStatuses, toggle } from '#lib/music/music.ts';
 	import type { MusicSettings } from '#lib/types.ts';

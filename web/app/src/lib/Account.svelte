@@ -4,7 +4,8 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
-	import { api, message, ApiError } from './api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import Icon from './Icon.svelte';
@@ -189,6 +190,10 @@
 	// requires a recent proof with this account's HolyArrs password.
 	// Password and linking open inline; Confirm asks for the password first when needed.
 	let pwOpen = $state(false);
+	// The Settings search links to #pw-current, which only exists once the form is open.
+	$effect(() => {
+		if (page.url.hash === '#pw-current' && (session.s.hasPassword || session.s.outsideRecent)) pwOpen = true;
+	});
 	let linkOpen = $state(false);
 	let linkError = $state('');
 	let linkBusy = $state(false);

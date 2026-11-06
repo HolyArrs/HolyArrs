@@ -7,7 +7,8 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes, dateTime, words } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';

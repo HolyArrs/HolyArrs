@@ -18,7 +18,8 @@
 	import Button from '../ui/Button.svelte';
 	import StepCapsule from '../ui/StepCapsule.svelte';
 	import TestTag from '../ui/TestTag.svelte';
-	import { api, ApiError, message } from '../api.ts';
+	import { api, ApiError } from '#lib/api.ts';
+	import { plainMessage as message } from '#lib/settings.ts';
 	import { reachWords } from '../downloaders.ts';
 	import { toasts } from '../toasts.svelte.ts';
 	import { getContext, tick } from 'svelte';
