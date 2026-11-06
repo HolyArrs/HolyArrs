@@ -256,7 +256,8 @@
 
 	@media (max-width: 767px) {
 		.group-name { font-size: 28px; margin-bottom: 10px; }
-		.caps { margin-bottom: 16px; }
+		/* Phones: the sections wrap onto a second line; nothing sits past the screen edge. */
+		.caps { margin-bottom: 16px; flex-wrap: wrap; overflow-x: visible; }
 		.back-home { margin-left: -10px; }
 	}
 
