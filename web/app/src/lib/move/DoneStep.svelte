@@ -71,61 +71,46 @@
 </SettingsCard>
 
 {#if rep && !busy}
-	<SettingsCard id="move-todo" title="To do now">
+	<SettingsCard id="move-todo" title="Next">
 		{#if plainNext}
 			{#each rep.next as n (n)}
 				<div class="srow"><p class="txt">{n}</p></div>
 			{/each}
 		{:else}
-			{#if (counts.not_found ?? 0) > 0}
-				<div class="srow"><p class="txt">Some folders were not found here. Point them to a Library folder and move again; nothing is added twice.</p></div>
-			{/if}
-			{#if needs.length > 0}
-				<div class="srow">
-					<div class="txt"><span class="label">Type {plural(needs.length, 'key or password', 'keys and passwords')}</span><span class="hint">Sources, Downloaders, Alerts and subtitle sites wait for them.</span></div>
-					<div class="ctl"><Button onclick={() => onshow('Keys to type again', needs, (n) => n)} aria-label="Show Keys to type again">Show</Button></div>
-				</div>
-			{/if}
-			{#if links}
-				<div class="srow">
-					<div class="txt"><span class="label">Check Sources and Downloaders, then resume them</span><span class="hint">Turn on May reach the local network only for one on your home network.</span></div>
-					<div class="ctl"><Button href={to('/settings/sources')}>Open Sources</Button></div>
-				</div>
-			{/if}
-			{#if lists}
-				<div class="srow">
-					<div class="txt"><span class="label">Turn on the Outside lists</span><span class="hint">They came over paused.</span></div>
-					<div class="ctl"><Button href={to('/settings/outside-lists')}>Open Outside lists</Button></div>
-				</div>
-			{/if}
-			{#if newPeople > 0}
-				<div class="srow">
-					<div class="txt"><span class="label">Invite {plural(newPeople, 'person', 'people')}</span><span class="hint">They came over turned off.</span></div>
-					<div class="ctl"><Button href={to('/settings/users')}>Open Users and roles</Button></div>
-				</div>
-			{/if}
-			{#if openChoices > 0}
-				<div class="srow">
-					<div class="txt"><span class="label">Choose for {plural(openChoices, 'person', 'people')}</span><span class="hint">Until you choose, they stay behind.</span></div>
-					<div class="ctl"><Button onclick={onchoose}>Choose</Button></div>
-				</div>
-			{/if}
-			{#if (counts.failed ?? 0) > 0}
-				<div class="srow"><p class="txt">{plural(counts.failed ?? 0, 'item')} failed. The reason is on its line below.</p></div>
-			{/if}
-			{#if rep.not_moved.length > 0}
-				<div class="srow">
-					<div class="txt"><span class="label">Look over {plural(rep.not_moved.length, 'setting')} that weren't moved</span></div>
-					<div class="ctl">
-						<Button onclick={() => onshow('Not moved', rep?.not_moved ?? [], (n, i) => ({ key: n.from + i, name: n.what, hint: n.why }))} aria-label="Show Not moved">Show</Button>
+			<div class="cards">
+				{#snippet card(title: string, sub: string, act: string, go: (() => void) | string)}
+					<div class="box card1">
+						<span class="txt"><b>{title}</b>{#if sub}<span class="sub">{sub}</span>{/if}</span>
+						{#if !act}{:else if typeof go === 'string'}<a class="quiet" href={go}>{act}</a>{:else}<button type="button" class="quiet" onclick={go}>{act}</button>{/if}
 					</div>
-				</div>
-			{/if}
-			<div class="srow"><p class="txt hint">Keep the old apps until HolyArrs runs the way you want.</p></div>
+				{/snippet}
+				{#if (counts.not_found ?? 0) > 0}
+					{@render card(`${plural(counts.not_found ?? 0, 'title')} have no folder here`, 'Add their Library folder, then move again.', 'Folders', to('/settings/library-folders'))}
+				{/if}
+				{#if needs.length > 0}
+					{@render card(`Add ${plural(needs.length, 'key', 'keys')}`, 'Sources, Downloaders and Alerts wait for them.', 'Show', () => onshow('Keys to add', needs, (n) => n))}
+				{/if}
+				{#if links}
+					{@render card('Resume Sources and Downloaders', 'They arrived paused.', 'Open', to('/settings/sources'))}
+				{/if}
+				{#if lists}
+					{@render card('Resume Outside lists', 'They arrived paused.', 'Open', to('/settings/outside-lists'))}
+				{/if}
+				{#if newPeople > 0}
+					{@render card(`Invite ${plural(newPeople, 'person', 'people')}`, '', 'Open', to('/settings/users'))}
+				{/if}
+				{#if openChoices > 0}
+					{@render card(`Choose for ${plural(openChoices, 'person', 'people')}`, 'They stay behind until you do.', 'Choose', onchoose)}
+				{/if}
+				{#if (counts.failed ?? 0) > 0}
+					{@render card(`${plural(counts.failed ?? 0, 'item')} failed`, 'Reasons are in Results.', '', () => {})}
+				{/if}
+			</div>
+			<p class="foot">Keep the old apps until you're happy.</p>
 		{/if}
 	</SettingsCard>
 	{#if groups.length > 0}
-		<SettingsCard id="move-results" title="Results by group">
+		<SettingsCard id="move-results" title="Results">
 			<ResultGroups report={rep} {groups} after {onshow} />
 		</SettingsCard>
 	{/if}
@@ -136,4 +121,14 @@
 	.when { grid-column: 1 / -1; padding-top: 6px; }
 	p.txt { margin: 0; grid-column: 1 / -1; font: var(--t-callout); }
 	p.txt.hint { color: var(--text-muted); }
+	.cards { display: grid; gap: 10px; }
+	.box { margin: 0; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+	.card1 { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+	.txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font: var(--t-callout); color: var(--text); }
+	.sub { color: var(--text-muted); font: var(--t-footnote); }
+	.quiet { flex: none; border: 0; padding: 4px 0; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; text-decoration: none; }
+	.quiet:hover { color: var(--text); }
+	.quiet:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
+	.foot { margin: 12px 2px 0; color: var(--text-muted); font: var(--t-footnote); }
+	@media (pointer: coarse) { .quiet { min-height: 44px; padding: 0 8px; margin: 0 -8px; display: inline-flex; align-items: center; } }
 </style>
