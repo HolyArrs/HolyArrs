@@ -43,7 +43,7 @@
 	});
 	onDestroy(() => clearInterval(plexTimer));
 
-	const roleWord = $derived(invite?.role === 'admin' ? 'an Admin' : invite?.max_rating ? `a Kid (titles rated up to ${invite.max_rating})` : 'a Member');
+	const roleWord = $derived(invite?.role === 'admin' ? 'an Admin' : invite?.max_rating ? `a Kid · up to ${invite.max_rating}` : 'a Member');
 
 	// A failed join: an account that is already linked gets its own line with a sign-in link.
 	function failed(err: unknown) {
@@ -188,7 +188,7 @@
 			{:else if !invite}
 				<div class="sk"></div>
 			{:else if via !== 'password'}
-				<p class="lead">You were invited as {roleWord}. Use your {wayWord[via]} name and password.</p>
+				<p class="lead">Your {wayWord[via]} name and password.</p>
 				<form onsubmit={submit} novalidate>
 					<div class="field">
 						<label for="name">{wayWord[via]} name</label>
@@ -206,7 +206,7 @@
 				</form>
 				<button class="link" type="button" onclick={back}>Other ways to join</button>
 			{:else}
-				<p class="lead">You were invited as {roleWord}.{#if !tiles.length} Pick the name and password you will sign in with.{/if}</p>
+				<p class="lead">Invited as {roleWord}</p>
 				{#if tiles.length}
 					<div class="provs" data-n={tiles.length} data-testid="invite-ways">
 						{#each tiles as t (t.way)}
