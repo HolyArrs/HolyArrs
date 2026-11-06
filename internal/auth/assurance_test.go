@@ -197,7 +197,7 @@ func TestGateAsksStaleBrowserSessionOnlyOnRiskyRoutes(t *testing.T) {
 		}
 	}
 	for _, p := range []string{
-		"POST /api/v1/auth/password", "POST /api/v1/auth/two-factor/disable", "POST /api/v1/auth/keys", "DELETE /api/v1/auth/keys/{id}",
+		"POST /api/v1/auth/two-factor/disable", "POST /api/v1/auth/keys", "DELETE /api/v1/auth/keys/{id}",
 		"PUT /api/v1/users/{id}", "POST /api/v1/backups/restore", "PUT /api/v1/auth/settings", "PUT /api/v1/auth/sso",
 	} {
 		if code, _ := gateCode(p, stale); code != http.StatusForbidden {

@@ -795,10 +795,11 @@ func TestMediaServerFirstPassword(t *testing.T) {
 	if resp, _ := call(t, &http.Client{}, "POST", f.srv.URL+"/api/v1/auth/password", `{"current":"x","new":"`+first+`-3"}`, map[string]string{APIKeyHeader: k.Key}); resp.StatusCode != 403 {
 		t.Fatalf("API key changed a password: %d", resp.StatusCode)
 	}
-	// The media server proof lasts ten minutes.
+	// A password-less account may set its first password from an older sign-in
+	// too: there is nothing to confirm, and the session already owns the account.
 	kid := signIn("kid")
 	f.clock.add(11 * time.Minute)
-	if resp, out := kid.do(t, f, "POST", "/api/v1/auth/password", `{"new":"`+first+`"}`); resp.StatusCode != 403 {
+	if resp, out := kid.do(t, f, "POST", "/api/v1/auth/password", `{"new":"`+first+`"}`); resp.StatusCode != 204 {
 		t.Fatalf("first password from an old sign-in: %d %s", resp.StatusCode, out)
 	}
 }
