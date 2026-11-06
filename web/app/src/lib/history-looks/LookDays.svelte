@@ -79,13 +79,18 @@
 	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 
 	const SIZE = 200;
+	// When repeats fold a page down to a few rows, earlier pages load on their own until the list fills a screen.
+	const FILL_ROWS = 24;
+	const FILL_PAGES = 5;
 	const feed = new EventFeed(SIZE);
 	const reload = () => feed.load(filter, kinds);
+	// Live news re-reads every page already on screen in one go, so the list never shrinks and grows back.
+	const refresh = () => feed.load(filter, kinds, 0, false, Math.min(Math.max(SIZE, feed.events.length), SIZE * FILL_PAGES));
 	$effect(() => {
 		void [filter, kinds];
 		untrack(reload);
 	});
-	onMount(() => feed.watch(reload));
+	onMount(() => feed.watch(refresh));
 	// A day header that is pinned under the page's top row gets a hairline and a soft shadow, so the list
 	// under it keeps a visible top edge instead of rows being cut off mid-row.
 	onMount(() => {
@@ -159,6 +164,12 @@
 		// The last day on the page may go on past it: "200+".
 		const more = d === days[days.length - 1] && feed.events.length < feed.total;
 		return { key: d.key, total, more, steps: [...n.values()].sort((a, b) => b.count - a.count) };
+	});
+	$effect(() => {
+		const rows = days.reduce((n, d) => n + d.items.length, 0);
+		if (!feed.loaded || feed.busy || feed.error || feed.manual) return;
+		if (rows >= FILL_ROWS || feed.events.length >= feed.total || feed.events.length >= SIZE * FILL_PAGES) return;
+		untrack(() => feed.load(filter, kinds, feed.offset + SIZE, true));
 	});
 	let open = $state<Record<string, boolean>>({});
 	let sheet = $state<HistoryRow | null>(null);
@@ -242,7 +253,7 @@
 	{/if}
 {/snippet}
 
-<LookFrame {feed} {empty} {onall} onretry={reload} onmore={() => feed.load(filter, kinds, feed.offset + SIZE, true)}>
+<LookFrame {feed} {empty} {onall} onretry={reload} onmore={() => { feed.manual = true; void feed.load(filter, kinds, feed.offset + SIZE, true); }}>
 	<div class="split size-{size}" class:compact class:on={split} class:wide data-testid="look-days" data-size={size} data-panel={wide ? (panel ? 'open' : 'hidden') : undefined}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="days" bind:this={list} onkeydown={key}>

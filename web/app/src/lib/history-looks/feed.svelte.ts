@@ -14,13 +14,15 @@ export class EventFeed {
 	offset = $state(0);
 	loaded = $state(false);
 	busy = $state(false);
+	/** A person pressed Show more: live news no longer reloads (it would pull the rows away). */
+	manual = $state(false);
 	error = $state('');
 	#latest = createLatestOnly();
 
 	constructor(readonly size: number) {}
 
-	/** load reads the page at `offset` (append adds it under the rows already shown). */
-	async load(filter: HistoryFilter, kinds: string[] | undefined, offset = 0, append = false) {
+	/** load reads the page at `offset` (append adds it under the rows already shown); `limit` reads several pages at once. */
+	async load(filter: HistoryFilter, kinds: string[] | undefined, offset = 0, append = false, limit = this.size) {
 		const ok = this.#latest();
 		if (dateRangeProblem(filter) || (kinds && !kinds.length)) {
 			this.events = [];
@@ -31,12 +33,14 @@ export class EventFeed {
 		}
 		this.busy = true;
 		try {
-			const p = await api.get<EventPage>('/events?' + eventsQuery(filter, { kinds, limit: this.size, offset }));
+			const p = await api.get<EventPage>('/events?' + eventsQuery(filter, { kinds, limit, offset }));
 			if (!ok()) return;
 			this.events = append ? [...this.events, ...p.events] : p.events;
 			this.total = p.total;
 			this.episode = p.episode ?? '';
-			this.offset = offset;
+			// The last page read: Show more reads the one after it.
+			this.offset = offset + limit - this.size;
+			if (!append) this.manual = false;
 			this.error = '';
 		} catch (e) {
 			if (!ok()) return;
@@ -54,9 +58,9 @@ export class EventFeed {
 		}
 	}
 
-	/** watch reloads (settled) on live news while the first page is shown. */
+	/** watch reloads (settled) on live news unless a person pressed Show more. */
 	watch(reload: () => void): () => void {
-		const s = settle(() => this.offset === 0 && reload(), 2000);
+		const s = settle(() => !this.manual && reload(), 2000);
 		const offs = [live.on('event', s.poke), live.on('resync', s.poke)];
 		return () => {
 			offs.forEach((o) => o());
