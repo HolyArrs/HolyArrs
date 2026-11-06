@@ -1847,6 +1847,9 @@
 	.q-more { flex: 0 0 auto; display: flex; }
 	.q-more :global(.ui-pop) { display: flex; flex: 1 1 auto; }
 	.q-more :global(.trigger) { width: 100%; }
+	/* The shared menu button has a taller minimum; match the other segments so Custom sits on the same line. */
+	.q-more :global(.ui-pop) { align-self: stretch; }
+	.q-more :global(.trigger) { min-height: 0; line-height: 1; }
 	.q-more i { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
 	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } }
 	@media (max-width: 420px) { .q-seg > button, .q-more :global(.trigger) { padding: 0 6px; font-size: 12.5px; } }

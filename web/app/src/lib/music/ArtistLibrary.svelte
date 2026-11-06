@@ -525,6 +525,9 @@
 	.q-seg > button.on, .q-more.on :global(.trigger) { background: color-mix(in srgb, var(--text) 16%, transparent); color: var(--text); }
 	.q-seg > button:hover:not(.on), .q-more:not(.on) :global(.trigger:hover) { color: var(--text); }
 	.q-more { flex: 0 0 auto; display: flex; }
+	/* The shared menu button has a taller minimum; match the other segments so Custom sits on the same line. */
+	.q-more :global(.ui-pop) { align-self: stretch; }
+	.q-more :global(.trigger) { min-height: 0; line-height: 1; }
 	.q-more :global(.ui-pop) { display: flex; flex: 1 1 auto; }
 	.q-seg i, .al-pick i { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
 	.al-pick { flex: none; max-width: 55%; min-width: 0; }
