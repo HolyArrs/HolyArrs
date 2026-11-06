@@ -201,9 +201,11 @@
 			if (r.editing && r.path.trim() === r.saved) r.editing = false;
 			if ((r.saved && !r.editing) || !r.path.trim()) continue;
 			r.error = '';
+			// A changed folder is replaced: on first run it holds nothing yet.
+			// If the new path is refused, the old one is put back.
+			const old = r.editing && r.id != null ? r.saved : '';
 			try {
-				// A changed folder is replaced: on first run it holds nothing yet.
-				if (r.editing && r.id != null) {
+				if (old) {
 					await api.del(`/library-folders/${r.id}`);
 					r.saved = '';
 					r.id = null;
@@ -216,6 +218,15 @@
 			} catch (err) {
 				r.error = folderWords(message(err));
 				failed = true;
+				if (old && r.id == null) {
+					try {
+						const back = await api.post<LibraryFolder>('/library-folders', { path: old, kind: r.kind, label: r.label });
+						r.saved = back.path;
+						r.id = back.id;
+					} catch {
+						// The old folder could not come back; the row stays empty to fill again.
+					}
+				}
 			}
 		}
 		busy = false;
