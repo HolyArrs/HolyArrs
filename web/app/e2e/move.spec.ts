@@ -435,7 +435,7 @@ test("import a made-up secrets file, then read Radarr with the saved key", async
   await expect(sheet.getByTestId("saved-address")).toBeVisible();
   await expect(sheet.getByLabel("Address", { exact: true })).toHaveCount(0);
   await expect(sheet.getByLabel("API key", { exact: true })).toHaveCount(0);
-  await expect(sheet.getByLabel("On my home network")).toHaveCount(0);
+  await expect(sheet.locator("#move-local")).toHaveCount(0);
   await sheet.getByRole("button", { name: "Read Radarr" }).click();
   await expect(sheet).toBeHidden();
   await expect(page.getByTestId("read-row")).toHaveCount(before + 1);

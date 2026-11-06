@@ -55,6 +55,7 @@
 	let username = $state('');
 	let signWord = $state('');
 	let backupPath = $state('');
+	// The owner types the address, and old apps live on the home network: always allowed.
 	let local = $state(true);
 	let useSaved = $state(true);
 	let error = $state('');
@@ -214,12 +215,6 @@
 						<div class="ctl"><input id="move-key" class="input mono" type="password" bind:value={key} oninput={changed} autocomplete="new-password" spellcheck="false" required /></div>
 					</div>
 				{/if}
-				<div class="srow">
-					<div class="txt"><label for="move-local">On my home network</label></div>
-					<div class="ctl">
-						<label class="switch"><input id="move-local" type="checkbox" bind:checked={local} onchange={changed} /><span class="sw" aria-hidden="true"></span></label>
-					</div>
-				</div>
 			{/if}
 		{/if}
 	</form>
