@@ -671,7 +671,7 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	// passwords in a backup cannot be opened on a new machine.
 	k := Result{Key: "backups:key", Kind: "backups", Subject: "Backups", State: OK}
 	if err == nil && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
-		k.State, k.Message = Warning, "Download the key kit on the Backups page: backups do not hold the master key"
+		k.State, k.Message = Warning, "Download your key kit: Backups don't include the master key"
 	}
 	return []Result{r, k}, nil
 }

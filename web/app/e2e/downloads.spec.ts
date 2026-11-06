@@ -130,7 +130,7 @@ test('Needs a decision says why and offers every choice in the row\'s details; s
 		if (!(await page.getByRole('menuitem', { name: 'Stop looking' }).isVisible())) await card.getByRole('button', { name: /^More/ }).click();
 		await page.getByRole('menuitem', { name: 'Stop looking' }).click({ timeout: 2000 });
 	}).toPass({ timeout: 20_000 });
-	await expect(page.getByText('Stopped looking for Iron Lullaby.')).toBeVisible();
+	await expect(page.getByText('Stopped looking for Iron Lullaby')).toBeVisible();
 	await expect(card).toHaveCount(0, { timeout: 30_000 });
 	await expect(decideChip()).toHaveAttribute('data-count', '0', { timeout: 30_000 });
 });

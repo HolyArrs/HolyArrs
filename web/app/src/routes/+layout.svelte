@@ -299,8 +299,10 @@
 	const roleWord = $derived({ owner: 'Owner', admin: 'Admin', member: 'Member' }[session.s.role] ?? 'Member');
 	// An id-like account name (preview-…, e2e-…) reads as "You".
 	const shownName = $derived(personName(session.s.name, 'You'));
-	const unseenAlerts = $derived(toasts.unseen());
-	const hasFailAlert = $derived(toasts.past.some((p) => p.fresh && p.tone === 'fail'));
+	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
+	const openFixes = $derived(settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0);
+	const unseenAlerts = $derived(toasts.unseen() + openFixes);
+	const hasFailAlert = $derived(openFixes > 0 || toasts.past.some((p) => p.fresh && p.tone === 'fail'));
 	const accountItems = $derived<MenuItem[]>([
 		{ label: 'Account', icon: 'user', href: to('/account') },
 		{ kind: 'separator' },

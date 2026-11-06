@@ -288,7 +288,7 @@ func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
 		// only the owner can download the kit.
 		out.Items = slices.Clone(out.Items)
 		for i := range out.Items {
-			if strings.Contains(out.Items[i].Text, "Download the key kit") {
+			if strings.Contains(out.Items[i].Text, "Download your key kit") {
 				out.Items[i].Text = "Backups: " + keyKitForOthers
 			}
 		}

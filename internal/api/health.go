@@ -22,7 +22,7 @@ func (a *API) healthRoutes(m *http.ServeMux) {
 }
 
 // keyKitForOthers is the key kit warning for people who are not the owner.
-const keyKitForOthers = "The owner should download the key kit on the Backups page: backups do not hold the master key"
+const keyKitForOthers = "Ask the owner for the key kit: Backups don't include the master key"
 
 // notOwner says whether the caller is signed in and is not the owner.
 func notOwner(r *http.Request) bool {

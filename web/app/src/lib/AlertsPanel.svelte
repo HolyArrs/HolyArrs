@@ -4,6 +4,11 @@
 	import AlertSymbol from './ui/AlertSymbol.svelte';
 	import Sheet from './ui/Sheet.svelte';
 	import { alertsPanel, toasts } from './toasts.svelte';
+	import { pinned } from './attention-alerts.ts';
+	import { sections } from './settings.ts';
+	import { settingsNow } from './settings-status.svelte.ts';
+	import { session } from './session.svelte.ts';
+	import { to } from './paths.ts';
 
 	// Recent alerts: the last 50 alerts on this device, newest first. Desktop: a glass
 	// panel beside the side menu's bell. Phone: a sheet from the bottom.
@@ -15,6 +20,9 @@
 		mq.addEventListener('change', set);
 		return () => mq.removeEventListener('change', set);
 	});
+
+	// Settings health warnings stay pinned on top until they are fixed (no × on them).
+	const fixes = $derived(session.can('settings') ? pinned(settingsNow.answer?.items ?? [], sections) : []);
 
 	// Opening shows everything waiting and clears the count (once per opening: alerts
 	// that arrive while it is open keep their "new" ring).
@@ -73,6 +81,22 @@
 <svelte:window onpointerdown={alertsPanel.open && !phone ? outside : undefined} onkeydown={key} />
 
 {#snippet rows()}
+	{#if fixes.length}
+		<h3 class="sub">Needs attention</h3>
+		<ul class="rows pins">
+			{#each fixes as f (f.key)}
+				<li class="row pin">
+					<AlertSymbol tone={f.tone} size={24} />
+					<span class="tx">
+						<span class="t">{f.title}</span>
+						{#if f.body}<span class="b">{f.body}</span>{/if}
+						<a class="act" href={to(f.href)} onclick={() => (alertsPanel.open = false)}>{f.label} ›</a>
+					</span>
+				</li>
+			{/each}
+		</ul>
+		{#if toasts.past.length}<h3 class="sub">Recent</h3>{/if}
+	{/if}
 	{#if toasts.past.length}
 		<ul class="rows">
 			{#each toasts.past as p (p.id)}
@@ -91,7 +115,7 @@
 				</li>
 			{/each}
 		</ul>
-	{:else}
+	{:else if !fixes.length}
 		<p class="empty">Nothing here yet</p>
 	{/if}
 {/snippet}
@@ -99,8 +123,9 @@
 {#if phone}
 	<Sheet bind:open={alertsPanel.open} title="Recent alerts" size="sm">
 		<div class="sheet-body">
-			{#if toasts.past.length}<div class="tools"><button type="button" class="clear" onclick={() => toasts.forgetAll()}>Clear all</button></div>{/if}
-			{@render rows()}
+			{#if alertsPanel.open && toasts.past.length}<div class="tools"><button type="button" class="clear" onclick={() => toasts.forgetAll()}>Clear all</button></div>{/if}
+			<!-- Rows only while open, so a closed sheet adds no second copy of each alert's text. -->
+			{#if alertsPanel.open}{@render rows()}{/if}
 		</div>
 	</Sheet>
 {:else if alertsPanel.open}
@@ -156,11 +181,14 @@
 	.x { flex: none; width: 22px; height: 22px; margin-right: -4px; display: grid; place-items: center; border-radius: 50%; color: rgb(245 245 247 / 55%); }
 	.x:hover { color: #f5f5f7; background: rgb(255 255 255 / 12%); }
 	.x:focus-visible, .act:focus-visible, .clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.sub { margin: 4px 8px 6px; font: var(--t-footnote); font-weight: 600; color: rgb(245 245 247 / 58%); }
+	.pins { flex: none; margin-bottom: 8px; }
+	a.act { text-decoration: none; }
 	.empty { padding: 20px 8px; text-align: center; color: rgb(245 245 247 / 55%); font: var(--t-subhead); }
 	/* Phone sheet: the app's own sheet, light or dark, so rows take the theme's colours. */
 	.sheet-body { display: flex; flex-direction: column; gap: 4px; }
 	.sheet-body .tools { display: flex; justify-content: flex-end; }
-	.sheet-body .clear, .sheet-body .b, .sheet-body time, .sheet-body .x, .sheet-body .empty { color: var(--text-muted); }
+	.sheet-body .sub, .sheet-body .clear, .sheet-body .b, .sheet-body time, .sheet-body .x, .sheet-body .empty { color: var(--text-muted); }
 	.sheet-body .act { color: var(--text); background: var(--surface-2); }
 	/* Phone sheet: the same separate cards, in the theme's own surface. */
 	.sheet-body .row, .sheet-body .row:hover { background: var(--surface-1); box-shadow: inset 0 0 0 0.5px var(--line), 0 2px 8px rgb(0 0 0 / 8%); }
