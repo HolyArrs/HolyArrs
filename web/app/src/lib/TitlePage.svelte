@@ -506,6 +506,7 @@
 	}));
 	let libAll = $state(false);
 	let renameOpen = $state(false);
+	let subsOpen = $state(false);
 	// The Rename row says up front how many files would get a new name (the same read the preview uses).
 	let renameCount = $state<number | null>(null);
 	$effect(() => {
@@ -1317,9 +1318,10 @@
 							{#if kindFolders.length > 1}
 								<div class="lib-row static" data-testid="folder-row" title={o.folder_path ?? ''}>
 									<span><b>Folder</b></span>
-									<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={240}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+									<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={340}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 								</div>
 							{/if}
+							<button type="button" class="lib-row" data-testid="subtitles-row" onclick={() => (subsOpen = true)}><span><b>Subtitles</b></span><Icon name="chevronRight" size={16} /></button>
 							{#if renameCount}
 								<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>{renameCount === 1 ? '1 file gets a new name' : `${renameCount} files get a new name`}</small></span><Icon name="chevronRight" size={16} /></button>
 							{/if}
@@ -1331,7 +1333,7 @@
 					</aside>
 				</div>
 				{#if manage}
-					<!-- The rest of the Library tools: active downloads, Versions, copies and subtitles. -->
+					<!-- The rest of the Library tools: active downloads and Versions (subtitles open from Settings). -->
 					<div class="lib-more" data-testid="lib-tools">
 						{#if activeDownloads.length}
 							<TitleSection id="h-downloads" title="Downloading">
@@ -1348,7 +1350,6 @@
 						{/if}
 						{#if o.kind === 'show'}<ShowVersions bind:this={showVersions} title={o} staff onchange={() => loadOwned(o.id)} />
 						{:else}<MovieVersions bind:this={movieVersions} list={false} title={o} onchange={() => loadOwned(o.id)} />{/if}
-						<div id="title-subtitles">{#key o.id}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} />{/key}</div>
 					</div>
 				{/if}
 			{/if}
@@ -1374,6 +1375,9 @@
 			{@const o = owned}
 				{#if mayReport}<ReportSheet bind:open={reportOpen} title={o} />{/if}
 				{#if manage}
+				<Sheet bind:open={subsOpen} title="Subtitles" description={o.name} placement="center" size="lg">
+					{#if subsOpen}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} bare />{/if}
+				</Sheet>
 				<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo ? folderName(moveTo) : ''}?`} description="Its files move to the new folder." size="sm" placement="center">
 					<p class="lib-move-path">{moveTo?.path}</p>
 					<div class="lib-move-actions">

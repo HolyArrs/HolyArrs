@@ -299,3 +299,12 @@ export async function openInLibrary(page: Page) {
 	await page.getByRole('link', { name: 'Open in Library' }).or(page.getByRole('button', { name: 'Open in Library' })).first().click();
 	await expect(page).toHaveURL(/\/library\/\d+/);
 }
+
+/** openSubtitles opens an owned title's Subtitles window from the Settings on its Library tab. */
+export async function openSubtitles(page: Page): Promise<Locator> {
+	await openLibraryTab(page);
+	await page.getByTestId('subtitles-row').click();
+	const card = page.getByTestId('subtitles');
+	await expect(card).toBeVisible();
+	return card;
+}

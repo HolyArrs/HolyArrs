@@ -3,7 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { subsPort } from './fakes.mjs';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab, openSubtitles } from './helpers.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle
@@ -170,8 +170,7 @@ test('Missing subtitles: every movie missing Spanish, by show too, and Search al
 test('Movie page: its own languages, every result with score and reasons, Choose a subtitle, Sync fix, Turn down, History', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Quill Atlas/ }).first().click();
-	await openLibraryTab(page); // the subtitle card is on the Library tab
-	const card = page.getByTestId('subtitles');
+	const card = await openSubtitles(page);
 	await expect(card.getByTestId('subtitle-wish')).toContainText('English · Spanish · the default languages');
 	await expect(card.getByTestId('subtitle-row').filter({ hasText: 'Spanish' })).toContainText('From Lab subtitle site');
 	await expect(card.getByTestId('subtitle-row').filter({ hasText: 'Spanish' })).toContainText(/\d+\/100/);
@@ -233,8 +232,7 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 test('Show page: the show follows the default languages', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
-	await openLibraryTab(page);
-	const showCard = page.getByTestId('subtitles');
+	const showCard = await openSubtitles(page);
 	await expect(showCard.getByTestId('subtitle-wish')).toContainText('English · Spanish · the default languages');
 	await expect(showCard.getByTestId('subtitle-missing-link')).toContainText('2 subtitles missing');
 });
@@ -273,8 +271,7 @@ test('the subtitle screens fit a phone and pass the accessibility scan', async (
 	}
 	await ph.goto('/library');
 	await ph.getByRole('link', { name: /Quill Atlas/ }).first().click();
-	await openLibraryTab(ph);
-	const card = ph.getByTestId('subtitles');
+	const card = await openSubtitles(ph);
 	await card.getByTestId('subtitle-choose').click();
 	await expect(card.getByTestId('subtitle-choice').first()).toBeVisible({ timeout: 30_000 });
 	await card.getByTestId('subtitle-wish-change').click();

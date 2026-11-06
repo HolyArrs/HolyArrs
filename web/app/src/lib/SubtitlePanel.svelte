@@ -46,8 +46,9 @@
 		itemId = 0,
 		label = '',
 		files: showFiles = true,
+		bare = false,
 		missingCount = $bindable(0)
-	}: { titleId: number; movie: boolean; itemId?: number; label?: string; files?: boolean; missingCount?: number } = $props();
+	}: { titleId: number; movie: boolean; itemId?: number; label?: string; files?: boolean; bare?: boolean; missingCount?: number } = $props();
 
 	const idp = $derived(itemId ? `sub-e${itemId}` : `sub-t${titleId}`);
 	let data = $state<TitleSubtitles | null>(null);
@@ -254,8 +255,8 @@
 </script>
 
 <section class="card subs" aria-labelledby="{idp}-h" data-testid="subtitles">
-	<div class="card-head">
-		<h2 id="{idp}-h" class="h2">{label ? `Subtitles of ${label}` : 'Subtitles'}</h2>
+	<div class="card-head" class:bare>
+		<h2 id="{idp}-h" class="h2" class:sr-only={bare}>{label ? `Subtitles of ${label}` : 'Subtitles'}</h2>
 		<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
 			Look for subtitles
 		</Button>
@@ -448,6 +449,7 @@
 </section>
 
 <style>
+	.card-head.bare { justify-content: flex-end; }
 	.subs .card-head {
 		display: flex;
 		justify-content: space-between;
