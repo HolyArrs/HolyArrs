@@ -146,6 +146,21 @@
 		() => toasts.push('Searching for The Bear', 'info'),
 		() => toasts.push('API key copied', 'ok'),
 		() => [1, 2, 3, 4].forEach((n) => toasts.push(`Andor S2E${n} marked failed`, 'info', { body: 'Searching for the next Release' })),
+		// Earlier alerts, so Recent alerts shows how times read (now, 5m, 1h, 3h, 2d).
+		() => {
+			const ago: [string, 'ok' | 'fail' | 'info', string | undefined, number][] = [
+				['Andor added', 'ok', 'Searching for a Release', 2 * 86400],
+				["Couldn't reach Prowlarr", 'fail', 'Check Settings › Sources', 3 * 3600],
+				['Backup made', 'ok', undefined, 3600],
+				['Searching for The Bear', 'info', undefined, 5 * 60]
+			];
+			for (const [title, tone, body, secs] of ago) {
+				const id = toasts.push(title, tone, { body });
+				const row = toasts.past.find((p) => p.id === id);
+				if (row) row.at = Date.now() - secs * 1000;
+			}
+			toasts.push('Severance deleted', 'ok', { body: 'Files kept 7 days', ms: 10000, action: { label: 'Undo', run: () => toasts.push('Severance restored', 'ok') } });
+		},
 		() => Array.from({ length: 10 }, (_, i) => i + 1).forEach((n) => toasts.push(`The Bear S3E${n} added`, 'ok', { body: 'Searching for a Release' }))
 	];
 	function playDemo() {

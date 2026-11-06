@@ -57,18 +57,18 @@
 	{#if toasts.past.length}
 		<ul class="rows">
 			{#each toasts.past as p (p.id)}
+				<!-- One pattern for every row: symbol | text column (title, second line, Undo) | time over ×. -->
 				<li class="row" class:fresh={p.fresh}>
 					<AlertSymbol tone={p.tone} size={24} />
 					<span class="tx">
 						<span class="t">{p.text}</span>
 						{#if p.body}<span class="b">{p.body}</span>{/if}
+						{#if live(p)}<button type="button" class="act" onclick={() => toasts.runPast(p.id)}>{p.action?.label}</button>{/if}
 					</span>
-					{#if live(p)}
-						<button type="button" class="act" onclick={() => toasts.runPast(p.id)}>{p.action?.label}</button>
-					{:else}
-						<time>{when(p.at)}</time>
-					{/if}
-					<button type="button" class="x" aria-label="Remove {p.text}" onclick={() => toasts.forget(p.id)}><Icon name="x" size={11} stroke={2.4} /></button>
+					<span class="side">
+						<time datetime={new Date(p.at).toISOString()}>{when(p.at)}</time>
+						<button type="button" class="x" aria-label="Remove {p.text}" onclick={() => toasts.forget(p.id)}><Icon name="x" size={11} stroke={2.4} /></button>
+					</span>
 				</li>
 			{/each}
 		</ul>
@@ -121,7 +121,7 @@
 	.clear:hover { color: #f5f5f7; background: rgb(255 255 255 / 10%); }
 	.rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; overscroll-behavior: contain; }
 	/* Each alert is its own glass card, like the pills that drop in. */
-	.row { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: linear-gradient(180deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 5%)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 0 0 0.5px rgb(255 255 255 / 7%), 0 4px 14px rgb(0 0 0 / 22%); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
+	.row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: linear-gradient(180deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 5%)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 0 0 0.5px rgb(255 255 255 / 7%), 0 4px 14px rgb(0 0 0 / 22%); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
 	.row:hover { background: linear-gradient(180deg, rgb(255 255 255 / 13%), rgb(255 255 255 / 8%)); }
 	/* New since you last looked: a thin blue ring, matching the blue dot. */
 	.row.fresh { box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%), inset 0 0 0 1px rgb(100 181 255 / 28%), 0 4px 14px rgb(0 0 0 / 22%); }
@@ -129,10 +129,12 @@
 	.t { font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fresh .t::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--info-on-art, #64b5ff); vertical-align: middle; }
 	.b { font: var(--t-footnote); color: rgb(245 245 247 / 58%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	time { flex: none; font: var(--t-footnote); color: rgb(245 245 247 / 45%); font-variant-numeric: tabular-nums; }
-	.act { flex: none; padding: 5px 12px; border-radius: 999px; font: var(--t-footnote); font-weight: 600; color: #f5f5f7; background: rgb(255 255 255 / 14%); }
+	.row :global(.ui-alert-sym) { margin-top: 1px; }
+	.side { flex: none; width: 34px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+	time { flex: none; line-height: 20px; font: var(--t-footnote); color: rgb(245 245 247 / 45%); font-variant-numeric: tabular-nums; }
+	.act { align-self: flex-start; margin-top: 6px; padding: 4px 12px; border-radius: 999px; font: var(--t-footnote); font-weight: 600; color: #f5f5f7; background: rgb(255 255 255 / 14%); }
 	.act:hover { background: rgb(255 255 255 / 22%); }
-	.x { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: rgb(245 245 247 / 55%); }
+	.x { flex: none; width: 22px; height: 22px; margin-right: -4px; display: grid; place-items: center; border-radius: 50%; color: rgb(245 245 247 / 55%); }
 	.x:hover { color: #f5f5f7; background: rgb(255 255 255 / 12%); }
 	.x:focus-visible, .act:focus-visible, .clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.empty { padding: 20px 8px; text-align: center; color: rgb(245 245 247 / 55%); font: var(--t-subhead); }
@@ -144,5 +146,7 @@
 	/* Phone sheet: the same separate cards, in the theme's own surface. */
 	.sheet-body .row, .sheet-body .row:hover { background: var(--surface-1); box-shadow: inset 0 0 0 0.5px var(--line), 0 2px 8px rgb(0 0 0 / 8%); }
 	.sheet-body .row.fresh { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #0071e3) 35%, transparent), 0 2px 8px rgb(0 0 0 / 8%); }
-	@media (pointer: coarse) { .x { width: 36px; height: 36px; margin-right: -6px; } }
+	/* Touch: a bigger hit area around the same small ×, so the column keeps its shape. */
+	.x { position: relative; }
+	@media (pointer: coarse) { .x::after { content: ''; position: absolute; inset: -10px; } }
 </style>
