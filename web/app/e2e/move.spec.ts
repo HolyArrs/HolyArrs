@@ -374,7 +374,7 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   // Forget asks in a Sheet first.
   await page.getByRole("button", { name: /^Forget the .+ read from/ }).last().click();
   const forget = page.getByRole("dialog", { name: /^Forget this .+ read\?$/ });
-  await expect(forget).toContainText("Moves already made from it stay.");
+  await expect(forget).toContainText("Finished moves stay.");
   await forget.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByTestId("read-row")).toHaveCount(before);
   // Let the sheet finish closing before it opens again.
