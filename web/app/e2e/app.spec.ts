@@ -116,11 +116,13 @@ test('the desktop menu reaches every destination and Back works', async () => {
 	await expect(page).toHaveURL(/\/downloads\?show=problems\.decide$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Downloads');
 	await link('Settings').click();
-	// The side menu folds: open the Connections group first.
-	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Connections' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
+	// Open the Linked apps card first.
+	await page.getByTestId('settings-group').filter({ hasText: 'Linked apps' }).click();
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Alerts' }).click();
 	await expect(page).toHaveURL(/\/settings\/alerts$/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Alerts');
+	await page.goBack();
+	await expect(page).toHaveURL(/\/settings\/media-servers$/);
 	await page.goBack();
 	await expect(page).toHaveURL(/\/settings$/);
 	await page.goBack();

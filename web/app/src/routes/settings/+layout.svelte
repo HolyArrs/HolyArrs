@@ -3,13 +3,16 @@
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import Icon from '#lib/Icon.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Confirm from '#lib/account/Confirm.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { filterSections, grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/settings.ts';
+	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/settings.ts';
+	import { homeArt, startArt } from '#lib/settings-home/art.svelte.ts';
+	import { wall } from '#lib/settings-home/pick.ts';
+	import { arrive, push, settingsNav, swap } from '#lib/settings-home/zoom.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
@@ -17,33 +20,18 @@
 	import { pageState, stateWords } from '#lib/settings-status.ts';
 	import '#lib/ui/settings-looks.css';
 
-	// Settings is one layout: folding groups on the left (look 6, Luis
-	// 2026-11-02), the page on the right. Plain cards and buttons on one
-	// surface that holds the menu and the page together (Luis, 2026-11-03).
+	// Settings (Luis, 2026-11-06, design settings-views v4): the home is five
+	// group cards over a still, blurred wall of this Library's posters; a page
+	// shows its group's name and a row of capsules for the group's pages. The
+	// top bar's field searches settings while you are here.
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
-	const menuGroups = $derived(groups.filter((g) => g.group.id !== 'account'));
-	const account = $derived(sections.find((s) => s.group === 'account'));
-	// The search box: Enter opens the first page that matches.
-	let find = $state('');
-	const shown = $derived(grouped(filterSections(sections, find)).filter((g) => g.group.id !== 'account'));
-	const firstShown = $derived(filterSections(sections, find)[0]);
 	const flagged = (href: string) => {
 		const a = settingsNow.answer;
 		if (!a) return false;
 		return pageState(a, href).state === 'attention';
 	};
-	function findKey(e: KeyboardEvent) {
-		if (e.key === 'Escape' && find) {
-			e.preventDefault();
-			find = '';
-		} else if (e.key === 'Enter' && find.trim()) {
-			e.preventDefault();
-			void goto(firstShown ? to(firstShown.href) : to('/settings') + '?q=' + encodeURIComponent(find.trim()));
-			find = '';
-		}
-	}
 
 	let { children }: { children: Snippet } = $props();
 	const current = $derived(appPath(page.url.pathname));
@@ -55,10 +43,51 @@
 		return !!sec && !mayOpen(sec, session.can);
 	});
 	const currentGroup = $derived(groups.find((g) => g.group.id === currentSection?.group));
+	const tiles = $derived(wall(homeArt.posters));
+	let workspace = $state<HTMLElement>();
+	let capsRow = $state<HTMLElement>();
 	const status = $derived(settingsNow.answer && currentSection ? pageState(settingsNow.answer, currentSection.href) : null);
-	// The current group is open; a heading opens another.
-	let openGroup = $state<string | null>(null);
-	const isOpen = (id: string) => (openGroup ?? currentGroup?.group.id ?? menuGroups[0]?.group.id) === id || !!find.trim();
+	// Which way the next screen moves: into a group (zoom or push), back to
+	// the home (the home plays it), or along a group's capsules (a quiet fade).
+	onNavigate(({ from, to: next }) => {
+		if (!from || !next) return;
+		const a = appPath(from.url.pathname);
+		const b = appPath(next.url.pathname);
+		if (!b.startsWith('/settings')) return;
+		const fromSec = sectionFor(all, a);
+		const toSec = sectionFor(all, b);
+		if (b === '/settings' && fromSec) {
+			settingsNav.move = 'back';
+			settingsNav.group = fromSec.group;
+		} else if (a === '/settings' && toSec) {
+			settingsNav.move = 'open';
+			settingsNav.group = toSec.group;
+		} else if (fromSec && toSec && fromSec.href !== toSec.href) {
+			settingsNav.move = 'swap';
+			settingsNav.group = toSec.group;
+		}
+	});
+	function moved() {
+		const m = settingsNav.move;
+		if (home || !workspace) return;
+		settingsNav.move = null;
+		if (m === 'open') {
+			arrive();
+			push(workspace, false);
+		} else if (m === 'swap') swap(workspace);
+		// Keep the current capsule in view on narrow screens.
+		const cur = capsRow?.querySelector<HTMLElement>('[aria-current="page"]');
+		cur?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+	}
+	// Escape on a page (nothing open, not typing) goes back to the Settings home.
+	function escape(e: KeyboardEvent) {
+		if (e.key !== 'Escape' || e.defaultPrevented || home) return;
+		const t = e.target as HTMLElement | null;
+		if (t?.closest('input, textarea, select, [contenteditable="true"], dialog, [role="menu"], [role="listbox"], [role="dialog"]')) return;
+		if (document.querySelector('dialog[open], [role="dialog"], [role="menu"]')) return;
+		e.preventDefault();
+		void goto(to('/settings'));
+	}
 
 	// Risky actions (keys, passwords, roles, backups, single sign-on) want
 	// the password typed again. The server answers 403 "reauth"; instead of leaving that
@@ -75,6 +104,7 @@
 
 	onMount(() => {
 		void refreshSettingsStatus();
+		startArt(session.s.id, session.can('users'), { name: session.s.name ?? '', avatar: session.s.avatar ?? null });
 		const onReauth = (e: Event) => {
 			const detail = (e as CustomEvent<{ method?: string; path?: string }>).detail;
 			const method = detail?.method ?? 'GET';
@@ -126,63 +156,47 @@
 	afterNavigate(() => {
 		const id = decodeURIComponent(page.url.hash.slice(1));
 		if (id) highlight(id);
-		openGroup = null;
 		reauth = null;
+		moved();
 		if (home) void refreshSettingsStatus();
 	});
 </script>
 
-<svelte:window onhashchange={() => location.hash && highlight(decodeURIComponent(location.hash.slice(1)))} />
+<svelte:window onhashchange={() => location.hash && highlight(decodeURIComponent(location.hash.slice(1)))} onkeydown={escape} />
 
 {#snippet pill()}
 	{#if status && stateWords(status)}<span class="page-status" data-testid="page-status"><StatusPill kind={status.state === 'ok' ? 'in_library' : status.state === 'attention' ? 'failed' : 'missing'} label={stateWords(status)} /></span>{/if}
 {/snippet}
 
+<!-- Background: this Library's posters, blurred and dimmed, still. -->
+{#if tiles.length && home}
+	<div class="sx-wall" aria-hidden="true">
+		<div class="tiles">{#each tiles as src, i (i)}<img {src} alt="" decoding="async" />{/each}</div>
+		<div class="veil"></div>
+	</div>
+{/if}
+
 <div class="settings-shell look-fold" class:home>
-	<nav class="settings-nav" aria-label="Settings sections" data-testid="settings-nav">
-		<div class="nav-find">
-			<Icon name="search" size={15} />
-			<label class="sr-only" for="settings-nav-find">Find a setting</label>
-			<input id="settings-nav-find" type="search" placeholder="Search" autocomplete="off" spellcheck="false" bind:value={find} onkeydown={findKey} />
+	{#if !home}
+		<div class="group-top">
+			<a class="back-home" href={to('/settings')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />Settings</a>
+			{@render pill()}
 		</div>
-		{#if account && !find.trim()}
-			<a class="nav-row nav-account" href={to(account.href)} aria-current={currentSection?.href === account.href ? 'page' : undefined}>
-				<span class="glyph"><Icon name="user" size={16} /></span><span class="label">My account</span>
-			</a>
+		{#if currentGroup}
+			<p class="group-name" data-testid="settings-group-name">{currentGroup.group.label}</p>
+			{#if currentGroup.items.length > 1}
+				<nav class="caps" aria-label="Settings sections" data-testid="settings-nav" bind:this={capsRow}>
+					{#each currentGroup.items as section (section.href)}
+						<a class="cap" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined}>
+							{section.label}
+							{#if flagged(section.href)}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
+						</a>
+					{/each}
+				</nav>
+			{/if}
 		{/if}
-		{#each shown as { group, items } (group.id)}
-			<div class="nav-group" class:closed={!isOpen(group.id)} role="group" aria-labelledby="settings-nav-{group.id}">
-				<button type="button" class="fold-head" id="settings-nav-{group.id}" aria-expanded={isOpen(group.id)} onclick={() => (openGroup = isOpen(group.id) ? '' : group.id)}>
-					<span class="glyph"><Icon name={group.icon} size={15} /></span>
-					<span class="label">{group.label}</span>
-					{#if items.some((i) => flagged(i.href))}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
-					<Icon name="chevronDown" size={14} />
-				</button>
-				{#if isOpen(group.id)}
-					<ul class="nav-section">
-						{#each items as section (section.href)}
-							<li>
-								<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined} onclick={() => (find = '')}>
-									<span class="label">{section.label}</span>
-									{#if flagged(section.href)}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
-								</a>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</div>
-		{/each}
-		{#if find.trim() && !firstShown}
-			<p class="nav-none">No matching page <a href={to('/settings') + '?q=' + encodeURIComponent(find.trim())} onclick={() => (find = '')}>Search every setting</a></p>
-		{/if}
-	</nav>
-	<div class="settings-workspace">
-		{#if !home}
-			<div class="page-top phone-top">
-				<a class="back-home" href={to('/settings')}><Icon name="chevronLeft" size={17} />Settings</a>
-				{@render pill()}
-			</div>
-		{/if}
+	{/if}
+	<div class="settings-workspace" bind:this={workspace}>
 		<div class="settings-content">
 			{#if blocked}
 				<SettingsCard id="settings-blocked" title="You can't change this" icon="shield">
@@ -206,48 +220,45 @@
 
 
 <style>
-	/* ---------- shared ---------- */
-	.settings-shell { display: grid; grid-template-columns: 252px minmax(0, 1fr); gap: clamp(24px, 3vw, 44px); align-items: start; }
-	.settings-workspace { min-width: 0; max-width: 820px; }
+	/* ---------- the wall: this Library's posters, blurred, dimmed, still ---------- */
+	.sx-wall { position: fixed; inset: 0 0 0 var(--space, 0px); z-index: -1; overflow: hidden; pointer-events: none; transition: opacity 500ms var(--ease-out); }
+	.sx-wall.dim { opacity: 0.55; }
+	.sx-wall .tiles { position: absolute; inset: -60px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; transform: rotate(-8deg) scale(1.15); filter: blur(22px) saturate(1.15); }
+	.sx-wall img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; display: block; }
+	.sx-wall .veil { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 86%, transparent), color-mix(in srgb, var(--bg) 86%, transparent)), radial-gradient(120% 80% at 50% 0, transparent, var(--bg)); }
+	@media (max-width: 767px) { .sx-wall { left: 0; } .sx-wall .tiles { grid-template-columns: repeat(4, 1fr); } }
+
+	/* ---------- frame ---------- */
+	.settings-shell { position: relative; isolation: isolate; }
+	.settings-workspace { min-width: 0; max-width: 980px; }
+	.settings-shell.home .settings-workspace { max-width: none; }
 	.settings-content { width: 100%; min-width: 0; }
 	.flag { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
-	.nav-find { position: relative; display: flex; align-items: center; margin-bottom: 8px; }
-	.nav-find > :global(.icon) { position: absolute; left: 10px; color: var(--text-muted); pointer-events: none; }
-	.nav-find input {
-		width: 100%; height: 30px; padding: 0 10px 0 31px; border: 0; border-radius: 9px;
-		background: var(--surface-3); color: var(--text); font: var(--t-callout); outline: none;
-	}
-	.nav-find input::placeholder { color: var(--text-muted); }
-	.nav-find input:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent); }
-	.settings-nav { position: sticky; top: calc(var(--topbar) + 8px); max-height: calc(100dvh - var(--topbar) - 16px); overflow-y: auto; overscroll-behavior: contain; padding: 2px 4px 6px; scrollbar-width: thin; }
-	.nav-group { margin-top: 10px; }
-	.nav-section { margin: 0; padding: 0; list-style: none; }
-	.nav-row {
-		position: relative; display: flex; align-items: center; gap: 9px; width: 100%; min-height: 30px; padding: 2px 8px;
-		border: 0; border-radius: 7px; background: none; color: var(--text); font: var(--t-callout); font-size: 13.5px; text-align: left; cursor: pointer;
-		transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
-	}
-	.nav-row .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.nav-row:hover { background: var(--surface-2); }
-	.nav-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-	.nav-row[aria-current='page'] { background: var(--accent-soft); color: var(--accent-text); font-weight: 500; }
-	.nav-row[aria-current='page'] .glyph { color: var(--accent-text); }
-	.nav-row > :global(.icon:last-child) { color: var(--text-muted); }
-	.glyph { flex: none; display: grid; place-items: center; width: 18px; color: var(--text-muted); }
-	.nav-account { margin: 4px 0 6px; }
-	.nav-none { padding: 10px 8px; color: var(--text-muted); font: var(--t-footnote); }
-	.nav-none a { color: var(--accent-text); font-weight: 600; }
-	.page-top { display: flex; align-items: center; gap: 12px; min-height: 32px; margin-bottom: 8px; }
+	.group-top { display: flex; align-items: center; gap: 12px; min-height: 36px; }
 	.page-status { margin-left: auto; }
-	.back-home { display: none; align-items: center; gap: 2px; min-height: 44px; margin-left: -6px; padding-right: 8px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
-	.phone-top:not(:has(.page-status)) { display: none; }
-	@media (pointer: coarse) { .nav-row { min-height: 40px; } }
-	@media (max-width: 767px) and (pointer: coarse) {
-		/* The shell prefix outranks the base .fold-head rule further down. */
-		.settings-shell .nav-row, .settings-shell .fold-head { min-height: 44px; }
-		.nav-find input { height: 44px; border-radius: 11px; }
+	.back-home { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin-left: -6px; padding: 0 12px 0 4px; border-radius: var(--r-pill); color: var(--accent-text); font: var(--t-callout); font-weight: 500; transition: background var(--dur-fast) var(--ease-out); }
+	.back-home:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+	.back-home:focus-visible, .cap:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.group-name { margin: 2px 0 12px; font: 700 34px/1.12 var(--font-display, var(--font-ui)); letter-spacing: -0.022em; }
+
+	/* The group's pages, one capsule each; the current one is filled. */
+	.caps { display: flex; gap: 8px; overflow-x: auto; margin: 0 -4px 22px; padding: 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
+	.caps::-webkit-scrollbar { display: none; }
+	.cap {
+		flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: var(--r-pill);
+		background: color-mix(in srgb, var(--surface-2) 72%, transparent); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-muted);
+		font: 500 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none;
+		transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 	}
-	@media (prefers-reduced-motion: reduce) { .nav-row, .fold-head > :global(.icon:last-child) { transition: none; } }
+	.cap:hover { color: var(--text); background: color-mix(in srgb, var(--surface-3) 80%, transparent); }
+	.cap[aria-current='page'] { background: var(--text); color: var(--bg); box-shadow: none; }
+	@media (pointer: coarse) { .cap { min-height: 44px; } }
+
+	@media (max-width: 767px) {
+		.group-name { font-size: 28px; margin-bottom: 10px; }
+		.caps { margin-bottom: 16px; }
+		.back-home { margin-left: -10px; }
+	}
 
 	/* content: the card grid from settings-looks.css, plus the "flash" for search hits */
 	/* Hand-built cards wear the same surface, corners and title as SettingsCards. */
@@ -261,52 +272,21 @@
 	@media (max-width: 760px) { .settings-content :global(.sc-form) { grid-template-columns: minmax(0, 1fr); } }
 	.settings-content :global(.flash-target) { border-radius: 10px; animation: flash 2.2s var(--ease-out); }
 	@keyframes flash { 0%, 30% { background: var(--accent-soft); box-shadow: 0 0 0 6px var(--accent-soft); } 100% { background: transparent; box-shadow: 0 0 0 6px transparent; } }
-	@media (prefers-reduced-motion: reduce) { .settings-content :global(.flash-target) { animation: none; background: var(--accent-soft); box-shadow: 0 0 0 6px var(--accent-soft); } }
+	@media (prefers-reduced-motion: reduce) {
+		.settings-content :global(.flash-target) { animation: none; background: var(--accent-soft); box-shadow: 0 0 0 6px var(--accent-soft); }
+		.sx-wall, .cap, .back-home { transition: none; }
+	}
 
-	/* ---------- folding groups: headings are buttons, one group open ---------- */
-	.look-fold .nav-group { margin-top: 4px; }
-	.fold-head { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 2px 8px; border: 0; border-radius: 8px; background: none; color: var(--text); font: var(--t-callout); font-weight: 600; text-align: left; cursor: pointer; }
-	.fold-head .label { flex: 1; }
-	.fold-head > :global(.icon:last-child) { color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
-	.fold-head[aria-expanded='false'] > :global(.icon:last-child) { transform: rotate(-90deg); }
-	.fold-head:hover { background: var(--surface-2); }
-	.look-fold .nav-section { padding: 2px 0 6px 8px; margin-left: 16px; border-left: 1px solid var(--line); }
-
-	/* One surface for all of Settings (Luis, 2026-11-03): a quiet panel holds
-	   the side menu and the page, so the menu is not left on the bare page.
-	   Cards and buttons stay plain. The panel is a light tint of the text
-	   colour: soft grey under white cards in light, a slight lift in dark. */
-	.look-fold { position: relative; isolation: isolate;
+	/* Plain cards and buttons on the page (Luis, 2026-11-03). */
+	.look-fold {
 		--fin-r: 12px; --fin-card: var(--surface-1); --fin-edge: var(--line);
 		--fin-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 8px 24px -14px rgb(0 0 0 / 35%); --fin-btn-r: var(--r-btn); }
-	.look-fold::before { content: ''; position: absolute; inset: -20px -20px -40px; z-index: -1; pointer-events: none; border-radius: 24px;
-		background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
-	.look-fold .settings-nav { padding-right: 16px; border-right: 1px solid var(--line); }
 	.look-fold .settings-content :global(.ui-settings) { border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); }
 	.look-fold :global(.ui-btn) { border-radius: var(--fin-btn-r); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.look-fold :global(.ui-btn:active:not(:disabled)) { transform: scale(0.98); }
 	.look-fold :global(.input) { border-radius: var(--fin-btn-r); }
-	.look-fold .nav-row, .look-fold .fold-head { border-radius: calc(var(--fin-btn-r) - 2px); }
-
 	@media (prefers-reduced-motion: reduce) {
 		.look-fold .settings-content :global(.ui-settings), .look-fold :global(.ui-btn) { transition: none; }
-		.look-fold :global(.ui-btn:hover:not(:disabled)), .look-fold :global(.ui-btn:active:not(:disabled)) { transform: none; }
-	}
-	@media (max-width: 1023px) { .look-fold .settings-nav { padding-right: 4px; border-right: 0; } }
-	@media (max-width: 767px) { .look-fold::before { inset: -16px -16px -48px; border-radius: 0; box-shadow: none; } }
-
-	/* ---------- phones: Settings home is the index; a page opens alone with a back link ---------- */
-	@media (max-width: 1023px) {
-		.settings-shell { grid-template-columns: minmax(0, 1fr); }
-		.settings-nav { position: static; max-height: none; }
-	}
-	@media (max-width: 767px) {
-		.settings-shell:not(.home) .settings-nav { display: none; }
-		/* Home on a phone: the page title stays (screen readers, the sticky
-		   mini title) above the menu; the rest of the index is the menu itself. */
-		.settings-shell.home .settings-workspace { order: -1; }
-		.settings-shell.home .settings-content > :global(:not(.ui-head)) { display: none; }
-		.back-home { display: inline-flex; }
-		.phone-top, .phone-top:not(:has(.page-status)) { display: flex; margin-bottom: 4px; }
+		.look-fold :global(.ui-btn:active:not(:disabled)) { transform: none; }
 	}
 </style>

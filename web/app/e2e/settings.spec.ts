@@ -17,22 +17,27 @@ test.afterAll(async () => {
 	await page.context().close();
 });
 
-test('Settings home: My account on top, then six groups; the side menu folds, one group open', async () => {
+test('Settings home: five group cards; a card opens its group with a row of capsules, Back returns', async () => {
 	await page.goto('/settings');
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('settings-group').getByRole('heading', { level: 2 })).toHaveText([
-		'Library', 'Downloads', 'People', 'Connections', 'Look', 'System'
+		'Library', 'Downloads', 'People', 'Linked apps', 'Server'
 	]);
-	await expect(page.getByTestId('settings-account')).toHaveAttribute('href', '/settings/account');
+	await expect(page.getByTestId('settings-group').filter({ hasText: 'Downloads' })).toContainText('How titles arrive');
+	await page.getByTestId('settings-group').filter({ hasText: 'Downloads' }).click();
+	await expect(page).toHaveURL(/\/settings\/downloaders$/);
+	await expect(page.getByTestId('settings-group-name')).toHaveText('Downloads');
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
-	await nav.getByRole('button', { name: 'Downloads' }).click();
 	await expect(nav.getByRole('link', { name: 'Pick rules' })).toBeVisible();
 	await expect(nav.getByRole('link', { name: 'Library folders' })).toHaveCount(0);
+	await page.getByTestId('settings-back').click();
+	await expect(page).toHaveURL(/\/settings$/);
+	await expect(page.locator('.sx-ghost')).toHaveCount(0);
 });
 
 test('search finds one setting, and its link scrolls to it, opens Advanced and highlights it', async () => {
 	await page.goto('/settings');
-	await page.getByLabel('Search settings').fill('free space');
+	await page.getByTestId('search-box').fill('free space');
 	const result = page.getByTestId('setting-result').filter({ hasText: 'Always leave this much free space' });
 	await expect(result).toContainText('Library › Naming and files › Advanced');
 	await result.click();
@@ -70,7 +75,7 @@ test('a failed trailers save puts the switch back and says why, in plain words',
 
 test('search by another word, and the keyboard reaches the result', async () => {
 	await page.goto('/settings');
-	const box = page.getByLabel('Search settings');
+	const box = page.getByTestId('search-box');
 	await box.fill('dark mode');
 	await expect(page.getByTestId('setting-result').first()).toContainText('Theme');
 	await box.press('Tab');
@@ -79,7 +84,7 @@ test('search by another word, and the keyboard reaches the result', async () => 
 	await expect(page).toHaveURL(/\/settings\/appearance#theme$/);
 	await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
 	await page.goto('/settings');
-	await page.getByLabel('Search settings').fill('zebra crossing');
+	await page.getByTestId('search-box').fill('zebra crossing');
 	await expect(page.getByText('No matching settings')).toBeVisible();
 });
 
@@ -101,9 +106,8 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await page.goto('/settings/wishlist');
 	await page.getByLabel('Movie requests', { exact: true }).fill('7');
 	await expect(page.getByTestId('savebar')).toBeVisible();
-	// The side menu folds: open the Downloads group first.
-	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Downloads' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
-	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sources' }).click();
+	// Another page of the People group, from its capsule row.
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sign-in and security' }).click();
 	const ask = page.getByRole('dialog', { name: 'Leave without saving?' });
 	await expect(ask).toBeVisible();
 	await ask.getByRole('button', { name: 'Stay' }).click();
@@ -111,11 +115,10 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await expect(page).toHaveURL(/\/settings\/wishlist$/);
 	await expect(page.getByLabel('Movie requests', { exact: true })).toHaveValue('7');
 
-	// The side menu folds: open the Downloads group first.
-	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Downloads' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
-	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sources' }).click();
+	// Another page of the People group, from its capsule row.
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sign-in and security' }).click();
 	await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Leave without saving' }).click();
-	await expect(page.getByRole('heading', { name: 'Sources', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Sign-in and security', level: 1 })).toBeVisible();
 	await page.goto('/settings/wishlist');
 	await expect(page.getByLabel('Movie requests', { exact: true })).not.toHaveValue('7');
 });
@@ -222,11 +225,11 @@ test('Danger zone is last, outlined, and asks before a restart', async () => {
 	await expect(box).toHaveCount(0);
 });
 
-test('a phone: Settings home is the folding menu, a page opens alone with a back link, no sideways scroll', async () => {
+test('a phone: Settings home is the cards, a page opens alone with a back link, no sideways scroll', async () => {
 	await page.setViewportSize({ width: 320, height: 720 });
 	await page.goto('/settings');
 	await noSidewaysScroll(page);
-	await page.getByTestId('settings-nav').getByRole('link').first().click();
+	await page.getByTestId('settings-group').first().click();
 	const back = page.getByRole('link', { name: 'Settings', exact: true });
 	await expect(back).toBeVisible();
 	await noSidewaysScroll(page);
@@ -238,7 +241,7 @@ test('a phone: Settings home is the folding menu, a page opens alone with a back
 test('accessibility: Settings home, a search and a page with the save bar', async () => {
 	await page.goto('/settings');
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-	await page.getByLabel('Search settings').fill('password');
+	await page.getByTestId('search-box').fill('password');
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 	await page.goto('/settings/naming');
 	await page.getByLabel('Keep deleted files for (days)').fill('8');

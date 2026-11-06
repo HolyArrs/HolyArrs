@@ -30,7 +30,9 @@ async function confirm(label: RegExp) {
 
 test('turn a part off and on, a refused switch, and the Events', async () => {
 	await page.goto('/settings');
-	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: /^Parts/ }).click();
+	// Settings home: open the Library card, then its Parts capsule.
+	await page.getByTestId('settings-group').filter({ hasText: 'Library' }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Parts', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Parts', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('part')).toHaveCount(5);
 	await expect(part('Music')).toContainText('When off: Artist and album pages');

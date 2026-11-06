@@ -87,7 +87,9 @@ test('This app shows where things are kept, and the log', async () => {
 
 test('Schedules: next feed check, run it now, change how often', async () => {
 	await page.goto('/settings');
-	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'Schedules' }).click();
+	// Settings home: open the Downloads card, then its Schedules capsule.
+	await page.getByTestId('settings-group').filter({ hasText: 'Downloads' }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Schedules', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Schedules', level: 1 })).toBeVisible();
 	const feed = page.locator('[data-testid="schedule"][data-kind="feed_check"]');
 	await expect(feed).toContainText('Feed check');
@@ -143,7 +145,9 @@ test('a newer release shows a notice; off asks nothing', async () => {
 
 test('the API page: key, scopes, base address, examples and every route', async () => {
 	await page.goto('/settings');
-	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: /^API/ }).click();
+	// Settings home: open the Linked apps card, then its API capsule.
+	await page.getByTestId('settings-group').filter({ hasText: 'Linked apps' }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'API', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'API', level: 1 })).toBeVisible();
 	await expect(page.locator('#api-start').getByRole('link', { name: 'API keys' })).toHaveAttribute('href', '#keys-card');
 	await expect(page.getByLabel('Key name')).toBeVisible();

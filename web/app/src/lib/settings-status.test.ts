@@ -80,15 +80,18 @@ describe('settings groups', () => {
 		expect(none).toEqual(['/settings/appearance', '/settings/account']);
 	});
 
-	it('puts Danger zone last in System, with Schedules there too', () => {
+	it('makes five home groups with a three-word line each, Danger zone last in Server, Schedules in Downloads', () => {
+		const home = groups.filter((g) => g.id !== 'account');
+		expect(home.map((g) => g.label)).toEqual(['Library', 'Downloads', 'People', 'Linked apps', 'Server']);
+		for (const g of home) expect(g.line.split(' ')).toHaveLength(3);
 		const m = grouped(sections).find((g) => g.group.id === 'system')!;
-		expect(m.items.map((i) => i.href)).toContain('/settings/schedules');
 		expect(m.items.at(-1)?.href).toBe('/settings/danger');
+		expect(grouped(sections).find((g) => g.group.id === 'downloads')!.items.map((i) => i.href)).toContain('/settings/schedules');
 	});
 
 	it('filters the menu by page name, its words or its group', () => {
 		expect(filterSections(sections, 'sched').map((s) => s.label)).toEqual(['Schedules']);
-		expect(filterSections(sections, 'system backups').map((s) => s.label)).toContain('Backups');
+		expect(filterSections(sections, 'server backups').map((s) => s.label)).toContain('Backups');
 		expect(filterSections(sections, '  ')).toHaveLength(sections.length);
 		expect(filterSections(sections, 'zebra')).toEqual([]);
 	});

@@ -41,6 +41,7 @@ describe('motion', () => {
 		const nav = { complete: Promise.resolve(), from: { url: new URL('http://x/a') }, to: { url: new URL('http://x/a?k=1') } };
 		expect(navigateWithTransition(nav, {})).toBeUndefined();
 		const start = vi.fn((cb: () => Promise<void> | void) => void cb());
+		expect(navigateWithTransition({ ...nav, from: { url: new URL('http://x/settings') }, to: { url: new URL('http://x/settings/api') } }, { startViewTransition: start })).toBeUndefined();
 		expect(navigateWithTransition(nav, { startViewTransition: start })).toBeUndefined();
 		const p = navigateWithTransition({ ...nav, to: { url: new URL('http://x/b') } }, { startViewTransition: start });
 		expect(p).toBeInstanceOf(Promise);

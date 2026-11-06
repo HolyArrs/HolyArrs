@@ -1,7 +1,13 @@
 <script lang="ts">
+	// Settings home (Luis, 2026-11-06, design settings-views v4): five group
+	// cards in a Bento grid over the blurred wall of this Library's posters.
+	// Each card shows what lives inside it and opens on its first page (a zoom
+	// on wider screens, a push on phones). My account is in the account menu.
 	import { to } from '#lib/paths.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { onMount, tick } from 'svelte';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import { grouped, groups as allGroups, sections as all, visible } from '#lib/settings.ts';
 	import { searchSettings, settingIndex, type SettingEntry } from '#lib/settings-search.ts';
@@ -9,16 +15,16 @@
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
 	import { settingsNow } from '#lib/settings-status.svelte.ts';
-	import { groupState, pageState, stateWords, type GroupState } from '#lib/settings-status.ts';
+	import { groupState, stateWords, type GroupState } from '#lib/settings-status.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import Avatar from '#lib/ui/Avatar.svelte';
-	import { roleWord } from '#lib/account/profile.ts';
+	import GroupArt from '#lib/settings-home/GroupArt.svelte';
+	import { homeArt } from '#lib/settings-home/art.svelte.ts';
+	import { settingsFind } from '#lib/settings-home/find.svelte.ts';
+	import { push, settingsNav, zoomBack, zoomOpen, clearFlight } from '#lib/settings-home/zoom.ts';
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
-	// My account is its own card on top (everyone has it); the groups follow.
 	const groups = $derived(grouped(sections).filter((g) => g.group.id !== 'account'));
-	const account = $derived(sections.find((s) => s.group === 'account'));
 	const open = $derived(new Set(sections.map((s) => s.href)));
 	const sectionOf = (href: string) => all.find((s) => s.href === href);
 	const groupLabel = (href: string) => allGroups.find((g) => g.id === sectionOf(href)?.group)?.label ?? '';
@@ -26,151 +32,204 @@
 	// Pages are results too, so "subtitles" finds the page as well as its fields.
 	const index = $derived<SettingEntry[]>([...sections.map((s) => ({ label: s.label, href: s.href, anchor: '', words: s.about })), ...settingIndex]);
 
-	// The side menu's search hands over what it could not find as ?q=.
-	let query = $state(page.url.searchParams.get('q') ?? '');
+	// The top bar's "Search settings" (or the field below on a phone) hands over ?q= too.
+	const q0 = page.url.searchParams.get('q');
+	if (q0) settingsFind.term = q0;
+	const query = $derived(settingsFind.term);
 	const results = $derived(searchSettings(query, (h) => open.has(h), groupLabel, index).slice(0, 30));
+	// Enter in the top bar field opens the first match.
+	$effect(() => {
+		settingsFind.first = results[0] ? link(results[0]) : '';
+	});
 	const answer = $derived(settingsNow.answer);
 	const attention = $derived((answer?.items ?? []).filter((a) => open.has(a.href)));
 
 	const tone = (s: GroupState) => (s === 'attention' ? 'fail' : s === 'unset' ? 'wait' : s === 'ok' ? 'ok' : '');
 	const link = (r: SettingEntry) => to(r.href) + (r.anchor ? `#${r.anchor}` : '');
+
+	let home = $state<HTMLElement>();
+
+	function openGroup(e: MouseEvent, id: string, href: string) {
+		if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+		settingsNav.move = 'open';
+		settingsNav.group = id;
+		if (zoomOpen(e.currentTarget as HTMLElement, id)) {
+			e.preventDefault();
+			// Let the zoom reach the compositor before the next page starts to load.
+			requestAnimationFrame(() => void goto(href));
+		}
+	}
+
+	onMount(() => {
+		const back = settingsNav.move === 'back' ? settingsNav.group : null;
+		settingsNav.move = null;
+		if (!back) {
+			clearFlight();
+			return;
+		}
+		void tick().then(() => {
+			const card = home?.querySelector<HTMLElement>(`.sx-card[data-group="${back}"]`);
+			if (home && !push(home, true) && card) zoomBack(card, back);
+			card?.focus({ preventScroll: true });
+		});
+	});
 </script>
 
 <svelte:head><title>Settings · HolyArrs</title></svelte:head>
 
-<PageHeader title="Settings" />
+<div class="sx-home" bind:this={home}>
+	<div class="sx-head">
+		<PageHeader title="Settings" />
+		<p class="lede">Your own account is in the menu under your name.</p>
+		<div class="find">
+			<Icon name="search" size={17} />
+			<label class="sr-only" for="settings-find">Search settings</label>
+			<input id="settings-find" class="input" type="search" placeholder="Search settings" autocomplete="off" enterkeyhint="search" bind:value={settingsFind.term} aria-controls={query.trim() ? 'settings-results' : undefined} />
+		</div>
+	</div>
 
-<div class="find">
-	<Icon name="search" size={17} />
-	<label class="sr-only" for="settings-find">Search settings</label>
-	<input id="settings-find" class="input" type="search" placeholder="Try “free space” or “password”" autocomplete="off" bind:value={query} aria-controls={query.trim() ? 'settings-results' : undefined} />
-</div>
-
-{#if query.trim()}
-	{#if results.length}
-		<ul class="results" id="settings-results" aria-label="Matching settings" data-testid="setting-results">
-			{#each results as r (r.href + '#' + r.anchor)}
-				{@const s = sectionOf(r.href)}
-				<li>
-					<a class="row-link" href={link(r)} data-testid="setting-result">
-						<SettingsTile icon={s?.icon ?? 'settings'} tint={s?.tint ?? 'gray'} />
-						<span class="setting-copy">
-							<strong>{r.label}</strong>
-							<span>{r.anchor ? `${groupLabel(r.href)} › ${s?.label ?? ''}${r.advanced ? ' › Advanced' : ''}` : `${groupLabel(r.href)} · page`}</span>
-						</span>
-						<Icon name="chevronRight" size={16} />
-					</a>
-				</li>
-			{/each}
-		</ul>
-	{:else}
-		<EmptyState compact icon="search" title="No matching settings" text="Try another word, like folder, key or password." action={{ label: 'Clear the search', onclick: () => (query = '') }} />
-	{/if}
-{:else}
-	{#if attention.length}
-		<section class="attention" aria-labelledby="h-attention" data-testid="needs-attention">
-			<h2 id="h-attention"><Icon name="alert" size={17} />Needs attention</h2>
-			<ul>
-				{#each attention as a (a.href + a.text)}
+	{#if query.trim()}
+		{#if results.length}
+			<ul class="results" id="settings-results" aria-label="Matching settings" data-testid="setting-results">
+				{#each results as r (r.href + '#' + r.anchor)}
+					{@const s = sectionOf(r.href)}
 					<li>
-						<span>{a.text}</span>
-						<a class="fix" href={to(a.href)} aria-label="Fix: {a.text}">Fix<Icon name="chevronRight" size={14} /></a>
+						<a class="row-link" href={link(r)} data-testid="setting-result" onclick={() => (settingsFind.term = '')}>
+							<SettingsTile icon={s?.icon ?? 'settings'} tint={s?.tint ?? 'gray'} />
+							<span class="setting-copy">
+								<strong>{r.label}</strong>
+								<span>{r.anchor ? `${groupLabel(r.href)} › ${s?.label ?? ''}${r.advanced ? ' › Advanced' : ''}` : `${groupLabel(r.href)} · page`}</span>
+							</span>
+							<Icon name="chevronRight" size={16} />
+						</a>
 					</li>
 				{/each}
 			</ul>
-		</section>
-	{/if}
-
-	{#if account}
-		<a class="account-card row-link" href={to(account.href)} data-testid="settings-account">
-			<Avatar name={session.s.name} src={session.s.avatar} size={48} />
-			<span class="setting-copy"><strong>{session.s.name || 'My account'}</strong><span>{roleWord(session.s.role)} · {account.about}</span></span>
-			<Icon name="chevronRight" size={16} />
-		</a>
-	{/if}
-
-	<div class="settings-overview">
-		{#each groups as { group, items } (group.id)}
-			{@const gs = answer ? groupState(answer, items.map((i) => i.href)) : null}
-			<section class="group-card" aria-labelledby="g-{group.id}" data-testid="settings-group" data-group={group.id}>
-				<header>
-					<div class="group-copy">
-						<h2 id="g-{group.id}">{group.label}</h2>
-					</div>
-					{#if gs && stateWords(gs)}<span class="chip {tone(gs.state)}" data-testid="group-status">{stateWords(gs)}</span>{/if}
-				</header>
-				<ul class="links">
-					{#each items as section (section.href)}
-						{@const ps = answer ? pageState(answer, section.href) : null}
+		{:else}
+			<EmptyState compact icon="search" title="No matching settings" text="Try another word, like folder, key or password." action={{ label: 'Clear the search', onclick: () => (settingsFind.term = '') }} />
+		{/if}
+	{:else}
+		{#if attention.length}
+			<section class="sx-attention" aria-labelledby="h-attention" data-testid="needs-attention">
+				<h2 id="h-attention"><Icon name="alert" size={17} />Needs attention</h2>
+				<ul>
+					{#each attention as a (a.href + a.text)}
 						<li>
-							<a class="row-link" href={to(section.href)}>
-								<SettingsTile icon={section.icon} tint={section.tint} />
-								<span class="setting-copy"><strong>{section.label}</strong><span>{section.about}</span></span>
-								{#if ps && (ps.state === 'attention' || ps.state === 'unset')}<span class="row-status {tone(ps.state)}">{stateWords(ps)}</span>{/if}
-								<Icon name="chevronRight" size={16} />
-							</a>
+							<span>{a.text}</span>
+							<a class="fix" href={to(a.href)} aria-label="Fix: {a.text}">Fix<Icon name="chevronRight" size={14} /></a>
 						</li>
 					{/each}
 				</ul>
 			</section>
-		{/each}
-	</div>
-{/if}
+		{/if}
+
+		<div class="bento" data-count={groups.length}>
+			{#each groups as { group, items } (group.id)}
+				{@const gs = answer ? groupState(answer, items.map((i) => i.href)) : null}
+				{@const href = to(items[0].href)}
+				<a class="sx-card" {href} data-group={group.id} data-testid="settings-group" aria-describedby="line-{group.id}" onclick={(e) => openGroup(e, group.id, href)}>
+					<span class="sx-face">
+						<span class="lift" aria-hidden="true"></span>
+						<span class="words">
+							<h2 class="nm">{group.label}</h2>
+							<span class="pp" id="line-{group.id}">{group.line}</span>
+						</span>
+						{#if gs && (gs.state === 'attention' || gs.state === 'unset') && stateWords(gs)}<span class="chip {tone(gs.state)}" data-testid="group-status">{stateWords(gs)}</span>{/if}
+						<span class="art-hold"><GroupArt group={group.id} posters={homeArt.posters} people={homeArt.people} /></span>
+					</span>
+				</a>
+			{/each}
+		</div>
+	{/if}
+</div>
 
 <style>
-	.find { position: relative; display: flex; align-items: center; max-width: 560px; margin: -8px 0 24px; }
+	.sx-home { display: flex; flex-direction: column; min-height: calc(100dvh - var(--topbar) - 48px); }
+	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
+	/* The top bar holds "Search settings" on tablets and desktops; phones have no top bar, so the field lives here. */
+	.find { position: relative; display: none; align-items: center; margin: -8px 0 18px; }
 	.find > :global(.icon) { position: absolute; left: 14px; color: var(--text-muted); pointer-events: none; }
-	.find .input { min-height: 44px; padding-left: 40px; border-radius: var(--r-pill); background: var(--surface-2); border-color: transparent; font: var(--t-body); }
-	.attention { margin-bottom: 20px; padding: 14px 18px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1.5px var(--wait); }
-	.attention h2 { display: flex; align-items: center; gap: 8px; font: var(--t-headline); color: var(--wait-text); }
-	.attention ul { margin-top: 6px; }
-	.attention li { display: flex; align-items: center; gap: 12px; min-height: 44px; }
-	.attention li + li { border-top: 1px solid var(--line); }
-	.attention li > span { flex: 1; min-width: 0; font: var(--t-callout); overflow-wrap: anywhere; }
+	.find .input { width: 100%; min-height: 44px; padding-left: 40px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-2) 80%, transparent); border-color: transparent; font: var(--t-body); }
+	@media (max-width: 767px) { .find { display: flex; } }
+
+	.sx-attention { margin-bottom: 20px; padding: 14px 18px; border-radius: var(--r-panel); background: color-mix(in srgb, var(--surface-1) 86%, transparent); box-shadow: 0 0 0 1.5px var(--wait); }
+	.sx-attention h2 { display: flex; align-items: center; gap: 8px; font: var(--t-headline); color: var(--wait-text); }
+	.sx-attention ul { margin-top: 6px; }
+	.sx-attention li { display: flex; align-items: center; gap: 12px; min-height: 44px; }
+	.sx-attention li + li { border-top: 1px solid var(--line); }
+	.sx-attention li > span { flex: 1; min-width: 0; font: var(--t-callout); overflow-wrap: anywhere; }
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
-	.account-card { margin-bottom: 24px; padding: 12px 16px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.account-card .setting-copy strong { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
-	/* Fill column by column, so the reading order follows the setup order. */
-	.settings-overview { columns: 2 360px; column-gap: 20px; }
-	.group-card { break-inside: avoid; margin-bottom: 28px; }
-	/* Each group: its name and line above, then one rounded card of rows with
-	   colour tiles and inset dividers, like a phone's Settings app. */
-	.group-card header { display: flex; gap: 12px; align-items: flex-end; padding: 0 6px 8px; }
-	.group-copy { flex: 1; min-width: 0; }
-	.group-copy h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
-	.group-card .chip { flex: none; white-space: nowrap; }
-	.links { margin: 0; padding: 4px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.links li { position: relative; }
-	.links li + li { border-top: 0; }
-	.links li + li::before { content: ''; position: absolute; top: 0; left: 52px; right: 12px; border-top: 1px solid var(--line); }
-	.results { margin: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); padding: 6px; }
-	.results li + li { border-top: 1px solid var(--line); }
-	.row-link {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		min-height: 56px;
-		padding: 8px 12px;
-		border-radius: var(--r-btn);
-		transition: background var(--dur-fast) var(--ease-out);
+
+	/* ---------- Bento: Library tall on the left, four around it ---------- */
+	.bento { flex: 1; display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(220px, 1fr) minmax(220px, 1fr); gap: 16px; min-height: 460px; }
+	.sx-card { position: relative; display: block; min-width: 0; border-radius: var(--r-panel); color: var(--text); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+	.sx-card[data-group='library'] { grid-row: span 2; }
+	.sx-card:focus-visible { outline: none; }
+	.sx-card:focus-visible .sx-face { box-shadow: var(--focus-ring), 0 1px 2px rgb(0 0 0 / 0.12); }
+	/* The link box never moves (so the pointer never slips off its edge and
+	   the hover never flickers); the face inside it lifts. */
+	.sx-face {
+		position: absolute; inset: 0; display: block; overflow: hidden; padding: 24px; border-radius: inherit;
+		background: color-mix(in srgb, var(--surface-1) 80%, transparent);
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 0 0 / 0.08), 0 0 0 1px var(--line);
+		transition: transform var(--dur-slow) var(--ease-out);
+		will-change: transform;
 	}
+	/* The deeper shadow is its own layer that fades in: no shadow repaint on hover. */
+	.lift { position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 2px 4px rgb(0 0 0 / 0.1), 0 14px 32px rgb(0 0 0 / 0.2); opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
+	.words { position: relative; z-index: 2; display: block; }
+	.nm { font: 700 22px/1.2 var(--font-display, var(--font-ui)); letter-spacing: -0.018em; }
+	.pp { display: block; margin-top: 4px; color: var(--text-muted); font: var(--t-subhead); }
+	.sx-card[data-group='library'] .nm { font-size: 30px; letter-spacing: -0.022em; }
+	.chip { position: absolute; z-index: 2; top: 20px; right: 20px; }
+	.art-hold :global(.sx-art) { transition: transform 700ms var(--ease-out); }
+	@media (hover: hover) {
+		.sx-card:hover .sx-face { transform: translateY(-3px); }
+		.sx-card:hover .lift { opacity: 1; }
+		.sx-card:hover .art-hold :global(.sx-art) { transform: scale(1.025); }
+	}
+	.sx-card:active .sx-face { transform: scale(0.985); transition-duration: var(--dur-instant); }
+
+	/* Tablet: Library across the top, two by two under it. */
+	@media (min-width: 768px) and (max-width: 1100px) {
+		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 260px repeat(2, 220px); min-height: 0; flex: none; }
+		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
+	}
+	/* Phone: two columns, Library wide on top. */
+	@media (max-width: 767px) {
+		.sx-home { min-height: 0; }
+		.lede { margin: -10px 0 16px; }
+		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 210px; grid-auto-rows: 168px; gap: 12px; min-height: 0; flex: none; }
+		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
+		.sx-face { padding: 16px; }
+		.nm { font-size: 19px; }
+		.sx-card[data-group='library'] .nm { font-size: 24px; }
+		.pp { font-size: 13px; }
+		.chip { top: 14px; right: 14px; }
+	}
+	/* An odd count (a part turned off): the last card takes the row. */
+	.bento[data-count='4'] .sx-card:last-child { grid-column: span 2; }
+	@media (min-width: 1101px) { .bento[data-count='4'] .sx-card:last-child { grid-column: auto; } }
+
+	@media (prefers-reduced-motion: reduce) {
+		.sx-face, .lift, .art-hold :global(.sx-art) { transition: none; }
+		.sx-card:hover .sx-face, .sx-card:active .sx-face { transform: none; }
+		.sx-card:hover .art-hold :global(.sx-art) { transform: none; }
+	}
+
+	/* Search results */
+	.results { margin: 0; border-radius: var(--r-panel); background: color-mix(in srgb, var(--surface-1) 90%, transparent); box-shadow: 0 0 0 1px var(--line); padding: 6px; }
+	.results li + li { border-top: 1px solid var(--line); }
+	.row-link { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px; border-radius: var(--r-btn); transition: background var(--dur-fast) var(--ease-out); }
 	.row-link:hover { background: var(--surface-2); }
 	.setting-copy { display: block; min-width: 0; flex: 1; }
 	.setting-copy strong, .setting-copy span { display: block; }
 	.setting-copy strong { font: var(--t-headline); font-size: 15px; }
-	.setting-copy span { margin-top: 2px; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; display: -webkit-box; overflow: hidden; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-	.row-status { flex: none; font: var(--t-footnote); font-weight: 600; }
-	.row-status.fail { color: var(--fail-text); }
-	.row-status.wait { color: var(--wait-text); }
+	.setting-copy span { margin-top: 2px; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
 	.row-link > :global(.icon:last-child) { flex: none; color: var(--text-muted); }
-	/* Phones: iOS-style grouped rows. */
-	@media (max-width: 767px) {
-		.group-card { margin-bottom: 20px; }
-		.group-card header { padding: 0 8px 6px; }
-		.group-copy h2 { font: var(--t-footnote); font-weight: 600; color: var(--text-muted); letter-spacing: 0.01em; }
-		.links { padding: 2px 4px; }
-		.links .setting-copy span { display: none; }
-		.links .setting-copy strong { font: var(--t-body); font-weight: 500; }
-		.row-link { min-height: 48px; }
-	}
+
+	/* The zoom's moving pieces live on the page body (zoom.ts). */
+	:global(.sx-ghost), :global(.sx-flyart) { position: fixed; z-index: 25; pointer-events: none; transform-origin: 0 0; will-change: transform, opacity; }
+	:global(.sx-ghost) { border-radius: 0; background: color-mix(in srgb, var(--surface-1) 94%, var(--bg)); box-shadow: 0 0 0 1px var(--line), 0 12px 28px rgb(0 0 0 / 0.18); }
+	:global(.sx-flyart) { overflow: hidden; border-radius: var(--r-panel); }
 </style>

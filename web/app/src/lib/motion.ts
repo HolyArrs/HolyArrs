@@ -140,6 +140,10 @@ export function navigateWithTransition(navigation: PageChange, doc: TransitionDo
 	if (!canViewTransition(doc)) return;
 	// Same page, other query (filters, tabs): no page animation.
 	if (navigation.from && navigation.to && navigation.from.url.pathname === navigation.to.url.pathname) return;
+	// Inside Settings the zoom, push and fade play instead (settings-home/zoom.ts);
+	// a View Transition would freeze the screen while the next page loads.
+	const inSettings = (u?: { url: URL } | null) => !!u && /\/settings(?:\/|$)/.test(u.url.pathname);
+	if (inSettings(navigation.from) && inSettings(navigation.to)) return;
 	const start = doc!.startViewTransition!;
 	return new Promise((resolve) => {
 		start.call(doc, async () => {

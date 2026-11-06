@@ -86,7 +86,7 @@ test('history on the movie page links to the movie in History', async () => {
 test('health: checks run on Health checks, show on Home, and their settings are saved', async () => {
 	await page.goto('/settings/this-app');
 	await expect(page.getByTestId('health-summary')).toBeVisible();
-	await page.getByRole('link', { name: 'Health checks' }).click();
+	await page.getByRole('link', { name: 'Health checks', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Health checks', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: 'Check again' }).click();
 	const checks = page.getByTestId('health-check');
@@ -234,7 +234,8 @@ test('alerts: add an ntfy topic, send a test, the topic gets the text', async ()
 
 test('media servers: add Jellyfin, test it, a wrong key is said plainly', async () => {
 	await page.goto('/settings');
-	await page.getByRole('link', { name: 'Media servers' }).first().click();
+	// The Linked apps card opens on Media servers.
+	await page.getByTestId('settings-group').filter({ hasText: 'Linked apps' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Media servers' })).toBeVisible();
 	await page.getByRole('button', { name: 'Add a media server' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Lab Jellyfin');
@@ -252,7 +253,7 @@ test('media servers: add Jellyfin, test it, a wrong key is said plainly', async 
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await card.getByRole('button', { name: 'Test' }).click();
 	await expect(card.getByTestId('media-test')).toHaveText('Not connected');
-	await expect(card.getByTestId('media-result')).toContainText('the server turned down the token');
+	await expect(card.getByTestId('media-result')).toContainText(/the server turned down the token/i);
 });
 
 test('red buttons keep their contrast on hover', async () => {

@@ -16,7 +16,8 @@ test.beforeAll(async ({ browser }) => {
 
 test('a TMDB list adds its movies by itself and skips the Never-add list', async () => {
 	await page.goto('/settings');
-	await page.getByRole('link', { name: /Outside lists/ }).first().click();
+	await page.getByTestId('settings-group').filter({ hasText: 'Library' }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Outside lists', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Outside lists' })).toBeVisible();
 	await expect(page.getByText('No Outside lists', { exact: true })).toBeVisible();
 

@@ -7,6 +7,7 @@
 	import { api } from '../api.ts';
 	import { createSuggest, live, step, suggestHref, SUGGEST_MIN, type SuggestAnswer } from '../live-search.ts';
 	import GlassDropdown from './GlassDropdown.svelte';
+	import { inSettings, settingsFind } from '../settings-home/find.svelte.ts';
 
 	// The one search field (spec: top bar, centre). Typing or Enter anywhere
 	// opens the Search page with the words; a focus or click on an empty field
@@ -19,7 +20,28 @@
 	const onSearch = () => appPath(page.url.pathname).startsWith('/search');
 	// On Downloads the field searches that list (a chip says so); removing the chip searches all of HolyArrs again.
 	const scoped = $derived(dlScope.on && !dlScope.off && appPath(page.url.pathname).startsWith('/downloads'));
-	const shown = $derived(scoped ? dlScope.term : searchField.term);
+	// In Settings the field searches settings instead (results on the Settings home).
+	const settings = $derived(inSettings(appPath(page.url.pathname)));
+	const shown = $derived(settings ? settingsFind.term : scoped ? dlScope.term : searchField.term);
+	function settingsTyped(v: string) {
+		settingsFind.term = v;
+		if (appPath(page.url.pathname) !== '/settings' && v.trim()) void goto(to('/settings')).then(() => el?.focus());
+	}
+	function settingsKey(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			if (settingsFind.term.trim() && settingsFind.first) {
+				const href = settingsFind.first;
+				settingsFind.term = '';
+				el?.blur();
+				void goto(href);
+			}
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			if (settingsFind.term) settingsFind.term = '';
+			else el?.blur();
+		}
+	}
 	function leaveScope() {
 		searchField.term = dlScope.term;
 		dlScope.term = '';
@@ -135,7 +157,11 @@
 <form class="ui-search" role="search" onsubmit={submitted}>
 	<span class="glow" aria-hidden="true"></span>
 	<span class="ic" aria-hidden="true"><Icon name="search" size={18} /></span>
-	<label class="sr-only" for={id}>Search for a title, an artist or a person</label>
+	<label class="sr-only" for={id}>{settings ? 'Search settings' : 'Search for a title, an artist or a person'}</label>
+	{#if settings}
+	<input {id} bind:this={el} type="search" value={shown} oninput={(e) => settingsTyped(e.currentTarget.value)} onkeydown={settingsKey} placeholder="Search settings" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
+	{#if shown}<button type="button" class="clear" tabindex="-1" aria-label="Clear the search" onclick={() => { settingsFind.term = ''; el?.focus(); }}><Icon name="x" size={14} /></button>{:else}<kbd class="hint" aria-hidden="true">{searchKey}</kbd>{/if}
+	{:else}
 	<input {id} class:scoped bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) dlScope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder={scoped ? 'Search downloads' : 'Shows, movies and people'} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
 	{#if scoped}<span class="scope" data-testid="dl-scope-chip">Downloads<button type="button" aria-label="Search all of HolyArrs instead" title="Search all of HolyArrs" onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
 	{#if shown && !one}
@@ -143,7 +169,8 @@
 	{:else if !here}
 		<kbd class="hint" aria-hidden="true">{searchKey}</kbd>
 	{/if}
-	{#if one}<button type="button" class="close" aria-label={searchField.term ? 'Clear the search' : 'Close Search'} title={searchField.term ? 'Clear the search' : 'Close Search'} data-testid="search-close" onclick={clearOrClose}><Icon name="x" size={16} /></button>{/if}
+	{/if}
+	{#if one && !settings}<button type="button" class="close" aria-label={searchField.term ? 'Clear the search' : 'Close Search'} title={searchField.term ? 'Clear the search' : 'Close Search'} data-testid="search-close" onclick={clearOrClose}><Icon name="x" size={16} /></button>{/if}
 	{#if answer || waiting}<GlassDropdown {answer} {active} id={listId} onpick={pick} onword={word} />{/if}
 </form>
 

@@ -152,7 +152,8 @@ test('delete: the plan shows first, changes with each choice, and files go to th
 
 test('settings: patterns show a live example, a bad word is caught, and the choices save', async () => {
 	await page.goto('/settings');
-	await page.getByRole('link', { name: 'Naming and files' }).first().click();
+	await page.getByTestId('settings-group').filter({ hasText: 'Library' }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Naming and files', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Naming and files' })).toBeVisible();
 	const ex = page.getByTestId('naming-example');
 	await expect(ex).toContainText('Dune - Part Two (2024)/Dune - Part Two (2024) 1080p BluRay.mkv');

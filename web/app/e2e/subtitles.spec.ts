@@ -66,8 +66,8 @@ test.beforeAll(async ({ browser }) => {
 
 test('Settings > Subtitles: English and Spanish become the default languages; the Pass marks say what they mean', async () => {
 	await page.goto('/settings');
-	// The side menu folds: open the Library group first.
-	{ const head = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Library' }); if ((await head.getAttribute('aria-expanded')) === 'false') await head.click(); }
+	// Open the Library card first.
+	await page.getByTestId('settings-group').filter({ hasText: 'Library' }).click();
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Subtitles' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Subtitles' })).toBeVisible();
 	const editor = page.getByTestId('wish-editor').first();

@@ -41,7 +41,9 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 
 	await page.goto(`${root}/settings`);
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-	await page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'This app' }).click();
+	// Settings home: open the Server card, then its This app capsule.
+	await page.getByTestId('settings-group').filter({ hasText: 'Server' }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'This app', exact: true }).click();
 	await expect(page).toHaveURL(`${root}/settings/this-app`);
 	await expect(page.getByTestId('settings-links').getByRole('link', { name: /^Logs/ })).toHaveAttribute('href', '/holyarrs/settings/logs');
 	await expect(page.getByTestId('url-base')).toContainText('/holyarrs');

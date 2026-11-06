@@ -54,10 +54,15 @@ test('a part that is off hides its pages and says so on a direct link', async ()
 	expect(r.status()).toBe(409);
 	expect(((await r.json()) as { error: string }).error).toBe('this part is off');
 
+	// With Music off, its page leaves the Library card's capsules; Sources stays under Downloads.
 	await page.goto('/settings');
-	await expect(page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'Sources' })).toBeVisible();
-	await expect(page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'MusicBrainz' })).toHaveCount(0);
-	await expect(page.getByRole('main').locator('.links').getByRole('link').filter({ hasText: 'Weekly limits' })).toHaveCount(0);
+	await page.getByTestId('settings-group').filter({ hasText: 'Downloads' }).click();
+	const caps = page.getByRole('navigation', { name: 'Settings sections' });
+	await expect(caps.getByRole('link', { name: 'Sources', exact: true })).toBeVisible();
+	await page.getByTestId('settings-back').click();
+	await page.getByTestId('settings-group').filter({ hasText: 'Library' }).click();
+	await expect(caps.getByRole('link', { name: 'Library folders', exact: true })).toBeVisible();
+	await expect(caps.getByRole('link', { name: 'Music defaults', exact: true })).toHaveCount(0);
 
 	await page.goto('/requests');
 	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
