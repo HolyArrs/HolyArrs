@@ -503,7 +503,7 @@
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
-		return { id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : ''), m.audio_codec].filter(Boolean).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		return { id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 	let libAll = $state(false);
 	let renameOpen = $state(false);
@@ -1302,7 +1302,10 @@
 							{/each}
 						</div>
 					{:else}
-						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
+						<div class="lib-eps-head">
+							<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
+							{#if manage}<span class="lib-head-acts"><button type="button" class="lib-btn sm" onclick={() => void addVersion()}><Icon name="plus" size={15} />Add a version</button></span>{/if}
+						</div>
 						<div class="lib-files">
 							{#each libFiles as f (f.id)}
 									{@const v = o.versions.find((x) => x.id === f.versionId)}
@@ -1317,7 +1320,6 @@
 							{:else}
 								<p class="muted">No file yet.</p>
 							{/each}
-							{#if manage}<button type="button" class="lib-file add" onclick={() => void addVersion()}><Icon name="plus" size={18} />Add another version<small>Keep a 4K and an HD copy side by side</small></button>{/if}
 						</div>
 					{/if}
 					</div>
@@ -1801,7 +1803,7 @@
 		.lib-ep-still { grid-row: span 2; }
 		.lib-ep-go { grid-column: 3; grid-row: 1 / span 2; }
 	}
-	.lib-files { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+	.lib-files { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
 	.lib-file { display: grid; gap: 8px; align-content: start; padding: 18px 20px; border-radius: 16px; background: var(--surface-2); min-width: 0; }
 	.lib-file p { margin: 0; }
 	.lib-file-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 700 16px/1.2 var(--font-ui); }
@@ -1812,9 +1814,7 @@
 	.lib-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font: 500 12px/1 var(--font-ui); }
 	.lib-langs .muted:not(:first-child) { margin-left: 8px; }
 	.lib-file-menu { margin-left: auto; }
-	.lib-file-name { color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.lib-file.add { place-items: center; place-content: center; gap: 6px; min-height: 120px; background: none; border: 1.5px dashed color-mix(in srgb, var(--text) 18%, transparent); color: var(--text); font: 600 14px/1.2 var(--font-ui); text-decoration: none; text-align: center; }
-	.lib-file.add small { color: var(--text-muted); font-weight: 500; }
+	.lib-file-name { margin-top: 2px !important; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }

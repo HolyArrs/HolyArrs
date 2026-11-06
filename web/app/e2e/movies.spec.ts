@@ -178,8 +178,8 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await expect(versions.nth(1)).toContainText('4K');
 	await expect(versions.nth(1)).toContainText('no file yet');
 
-	// A third Version from the File cards' Add another version, then take it off again.
-	await page.getByRole('button', { name: /^Add another version/ }).click();
+	// A third Version from Add a version beside the File cards, then take it off again.
+	await page.getByRole('button', { name: 'Add a version', exact: true }).click();
 	const vd = page.getByRole('dialog');
 	await vd.getByLabel('Version name').fill('Small');
 	await vd.getByRole('button', { name: 'Add Version' }).click();
