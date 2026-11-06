@@ -72,13 +72,13 @@ test('Choose a release shows every Release with its verdict and plain reasons; t
 
 	// Turn the 720p down (the sheet asks no reason).
 	await runnerUp.getByRole('button', { name: /^Never pick/ }).click();
-	await expect(page.getByRole('status')).toContainText('It will never be picked for this title.');
+	await expect(page.getByRole('status')).toContainText('Release turned down');
 	await expect(verdict(runnerUp)).toHaveText('Turned down');
 
 	// The cam copy failed, so Pick asks once more before it is forced.
 	await cam.getByRole('button', { name: 'Pick', exact: true }).click();
 	await cam.getByRole('button', { name: 'Pick anyway' }).click();
-	await expect(page.getByRole('status')).toContainText(/Sent .*HDCAM.* to download\./);
+	await expect(page.getByRole('status')).toContainText('Sent to download');
 	await expect(sheet).toBeHidden();
 	const again = await chooseRelease(page);
 	await again.getByRole('tab', { name: /^All/ }).click();
@@ -164,7 +164,7 @@ test('Settings > Search: the three settings are saved and a wrong interval is re
 	await page.getByLabel('Titles to search each night').fill('7');
 	await page.getByLabel('Also find better copies each night').check();
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Search settings saved.')).toBeVisible();
+	await expect(page.getByText('Search settings saved')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Check Source feeds every (minutes)')).toHaveValue('30');
 	await expect(page.getByLabel('Titles to search each night')).toHaveValue('7');
@@ -186,7 +186,7 @@ test('Settings > Search: the early and fake switches are saved', async () => {
 	// at import stay off from here on (the Go tests cover them).
 	await page.getByTestId('import-floors').uncheck();
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Search settings saved.')).toBeVisible();
+	await expect(page.getByText('Search settings saved')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Hours a Release may be early')).toHaveValue('48');
 	await expect(page.getByLabel('Episode length when not known (minutes)')).toHaveValue('30');
@@ -194,7 +194,7 @@ test('Settings > Search: the early and fake switches are saved', async () => {
 	await page.getByLabel('Hours a Release may be early').fill('24');
 	await page.getByLabel('Episode length when not known (minutes)').fill('20');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Search settings saved.').first()).toBeVisible();
+	await expect(page.getByText('Search settings saved').first()).toBeVisible();
 });
 
 test('a member sees none of the search screens', async ({ browser }) => {

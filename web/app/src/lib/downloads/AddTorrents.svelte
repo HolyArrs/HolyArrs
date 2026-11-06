@@ -74,7 +74,7 @@
 			for (const f of files) fd.append('torrents', f, f.name);
 			const out = await api.request<AddOutcome>(`/downloaders/${client.id}/torrents`, { method: 'POST', raw: fd });
 			const w = addWords(out);
-			toasts.push(w.text, w.tone === 'ok' ? 'ok' : w.tone === 'fail' ? 'fail' : 'info');
+			toasts.push(w.text, w.tone === 'ok' ? 'ok' : w.tone === 'fail' ? 'fail' : 'info', { body: w.body });
 			if (w.tone !== 'fail') {
 				open = false;
 				ondone?.();

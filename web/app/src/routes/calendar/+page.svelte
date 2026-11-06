@@ -366,7 +366,7 @@
 				if (w < lo) lo = w;
 			}
 		}
-		const edge = () => toasts.push(n > 0 ? 'No more dates after this.' : 'No dates before this.', 'ok');
+		const edge = () => toasts.push(n > 0 ? 'No later dates' : 'No earlier dates', 'ok');
 		if (target >= latest || addDays(target, 7) <= lo) return edge();
 		const tw = ymd(target);
 		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
@@ -671,9 +671,9 @@
 			entries = entries.map(upd);
 			monthDates = monthDates.map(upd);
 			if (now !== was) myFollows = Math.max(0, myFollows + (now ? 1 : -1));
-			toasts.push(now ? `You follow ${e.name}. Its dates are on your calendar.` : `You no longer follow ${e.name}.`, 'ok');
+			toasts.push(now ? `Following ${e.name}` : `Unfollowed ${e.name}`, 'ok', now ? { body: 'Dates added to your calendar' } : {});
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push('Couldn’t update follow', 'fail', { body: message(err) });
 		} finally {
 			flipping = null;
 		}

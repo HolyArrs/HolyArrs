@@ -45,7 +45,7 @@
 			a = await api.put<Answer>('/settings/old-app-api', body);
 		} catch (err) {
 			if (el) el.checked = !el.checked;
-			toasts.push(`Not saved. ${message(err)}`, 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(err) });
 			await load();
 		} finally {
 			busy = '';
@@ -61,7 +61,7 @@
 			await load();
 		} catch (err) {
 			// A 403 asking for the password again is handled by Settings itself.
-			if (!(err instanceof ApiError && err.body.code === 'reauth')) toasts.push(message(err), 'fail');
+			if (!(err instanceof ApiError && err.body.code === 'reauth')) toasts.push("Couldn't make key", 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
@@ -73,10 +73,10 @@
 		try {
 			await api.del(`/settings/old-app-api/keys/${side}`);
 			if (fresh?.side === side) fresh = null;
-			toasts.push('Key removed.', 'ok');
+			toasts.push('Key removed', 'ok');
 			await load();
 		} catch (err) {
-			if (!(err instanceof ApiError && err.body.code === 'reauth')) toasts.push(message(err), 'fail');
+			if (!(err instanceof ApiError && err.body.code === 'reauth')) toasts.push("Couldn't remove key", 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
@@ -85,9 +85,9 @@
 	async function copy(text: string, what: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toasts.push(`${what} copied.`, 'ok');
+			toasts.push(`${what} copied`, 'ok');
 		} catch {
-			toasts.push('Copy did not work here; select the text instead.', 'fail');
+			toasts.push("Couldn't copy", 'fail', { body: 'Select the text instead' });
 		}
 	}
 </script>

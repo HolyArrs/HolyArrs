@@ -116,7 +116,7 @@
 			proof = code = '';
 			confirmEveryone = false;
 			const gone = [out.links_removed && `${out.links_removed} linked sign-in${out.links_removed === 1 ? '' : 's'} removed`, out.sessions_ended && `${out.sessions_ended} signed out`].filter(Boolean).join(', ');
-			toasts.push(`Single sign-on saved${gone ? `: ${gone}` : ''}.`, 'ok');
+			toasts.push('Single sign-on saved', 'ok', gone ? { body: gone } : undefined);
 			await session.loadWays();
 		} catch (err) {
 			saveError = err instanceof ApiError && err.body.code === 'wrong_proof' ? 'The password or code is wrong.' : message(err);
@@ -129,9 +129,9 @@
 	async function copyCallback() {
 		try {
 			await navigator.clipboard.writeText(callback);
-			toasts.push('Callback address copied.', 'ok');
+			toasts.push('Callback address copied', 'ok');
 		} catch {
-			toasts.push('Copy it by hand: the browser blocked the clipboard.', 'info');
+			toasts.push("Couldn't copy", 'info', { body: 'Copy it by hand' });
 		}
 	}
 </script>

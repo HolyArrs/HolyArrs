@@ -195,7 +195,7 @@
 				return;
 			}
 			if (open) error = reachWords(message(err));
-			else toasts.push(`${appName(k)} was not read: ${reachWords(message(err))}`, 'fail');
+			else toasts.push(`Couldn’t read ${appName(k)}`, 'fail', { body: reachWords(message(err)) });
 		} finally {
 			reading = '';
 			ctrl = null;

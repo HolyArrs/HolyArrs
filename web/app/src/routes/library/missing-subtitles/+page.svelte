@@ -123,9 +123,9 @@
 			const r = await api.post<{ queued: number; job_ids: number[] }>('/subtitles/missing/search', body);
 			jobIds = r.job_ids ?? [];
 			jobStates = {};
-			toasts.push(r.queued === 1 ? 'Looking for 1 file now.' : `Looking for ${r.queued} files now.`, 'ok');
+			toasts.push(r.queued === 1 ? 'Searching subtitles for 1 file' : `Searching subtitles for ${r.queued} files`, 'info');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {
 			searchAllPending = false;
 		}
@@ -135,10 +135,10 @@
 		searchingRow = r.file_id;
 		try {
 			const q = await api.post<{ job_ids: number[] }>('/subtitles/search', { file_id: r.file_id });
-			toasts.push(`Looking for subtitles of ${missingName(r)} now.`, 'ok');
+			toasts.push('Searching for subtitles', 'info', { body: missingName(r) });
 			for (const id of q.job_ids ?? []) if (!jobIds.includes(id)) jobIds.push(id);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {
 			searchingRow = 0;
 		}

@@ -129,7 +129,7 @@ test('Import files by hand: Change matches a wrongly named file to another Libra
 	expect(res.placed_by).toBe('move');
 	const target = res.target ?? '';
 	await expect(row.getByRole('status')).toHaveText(/^Moved/);
-	await expect(page.getByText('1 file imported.')).toBeVisible();
+	await expect(page.getByText('1 file imported')).toBeVisible();
 	// Move: the loose file is gone and the movie's file is in Ochre Bandstand's folder.
 	expect(existsSync(file)).toBe(false);
 	expect(existsSync(target)).toBe(true);
@@ -186,7 +186,7 @@ test('Import files by hand: two loose episodes of a Library show, one season and
 		expect(r?.title_id).toBe(show);
 	}
 	expect(results).toHaveLength(2);
-	await expect(page.getByText('2 files imported.')).toBeVisible();
+	await expect(page.getByText('2 files imported')).toBeVisible();
 	for (const row of [first, second]) await expect(row.getByRole('status')).toHaveText(/^(Copied|Linked \(no extra space\))/);
 	expect(existsSync(named)).toBe(true);
 	expect(existsSync(dated)).toBe(true);

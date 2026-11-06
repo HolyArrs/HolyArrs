@@ -63,7 +63,7 @@
 			await setFollow(api, f.title_id, false);
 			follows = follows.filter((x) => x.title_id !== f.title_id);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't unfollow", 'fail', { body: message(err) });
 		}
 	}
 	// Reset my recommendations: Explore's category strip forgets what it learned from my opens.
@@ -74,7 +74,7 @@
 			await api.del('/explore/strip/counts');
 			toasts.push('Recommendations reset', 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't reset", 'fail', { body: message(err) });
 		} finally {
 			resetBusy = false;
 		}
@@ -87,9 +87,9 @@
 		watchBusy = true;
 		try {
 			watch = await api.put<PlexWatchlist>('/my/plex-watchlist', { movies: watch.movies, shows: watch.shows, [kind]: on });
-			toasts.push(on ? 'HolyArrs reads your Plex watchlist now and every few minutes.' : 'Saved.', 'ok');
+			toasts.push(on ? 'Plex watchlist on' : 'Settings saved', 'ok', on ? { body: 'Read every few minutes' } : undefined);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(err) });
 			watch = await api.get<PlexWatchlist>('/my/plex-watchlist').catch(() => watch);
 		} finally {
 			watchBusy = false;
@@ -99,10 +99,10 @@
 		watchBusy = true;
 		try {
 			await api.post('/my/plex-watchlist/check', {});
-			toasts.push('Reading your Plex watchlist…', 'ok');
+			toasts.push('Reading Plex watchlist', 'ok');
 			setTimeout(() => void api.get<PlexWatchlist>('/my/plex-watchlist').then((r) => (watch = r)).catch(() => {}), 4000);
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't read watchlist", 'fail', { body: message(err) });
 		} finally {
 			watchBusy = false;
 		}
@@ -217,7 +217,7 @@
 			current = next = again = '';
 			pwOpen = false;
 			if (first) session.s.hasPassword = true;
-			toasts.push(first ? `Password set. You can also sign in as ${session.s.name} with it.` : 'Password changed. Other devices signed out.', 'ok');
+			toasts.push(first ? 'Password set' : 'Password changed', 'ok', { body: first ? `Sign in as ${session.s.name} with it` : 'Other devices signed out' });
 		} catch (err) {
 			pwError = strong(err);
 		} finally {
@@ -248,7 +248,7 @@
 			tfOpen = false;
 			code = '';
 			await session.load();
-			toasts.push('Two-factor sign-in is on.', 'ok');
+			toasts.push('Two-factor on', 'ok');
 		} catch (err) {
 			tfError = strong(err);
 		} finally {
@@ -265,12 +265,12 @@
 			offCode = '';
 			if (r?.backup_codes) {
 				codes = r.backup_codes;
-				toasts.push('New backup codes made. Old ones stop working.', 'ok');
+				toasts.push('New backup codes made', 'ok', { body: 'Old ones stop working' });
 			} else {
 				codes = [];
 				tfOpen = false;
 				await session.load();
-				toasts.push('Two-factor sign-in is off.', 'ok');
+				toasts.push('Two-factor off', 'ok');
 			}
 		} catch (err) {
 			tfError = strong(err);
@@ -290,9 +290,9 @@
 	async function copyCodes() {
 		try {
 			await navigator.clipboard.writeText(codes.join('\n'));
-			toasts.push('Copied.', 'ok');
+			toasts.push('Codes copied', 'ok');
 		} catch {
-			toasts.push('Couldn’t copy. Write the codes down.', 'fail');
+			toasts.push("Couldn't copy", 'fail', { body: 'Write the codes down' });
 		}
 	}
 
@@ -322,7 +322,7 @@
 		linkBusy = true;
 		try {
 			await api.post('/auth/sso/unlink', { kind: l.kind, issuer: l.issuer });
-			toasts.push(`${linkWord(l.kind)} unlinked. Sessions it signed in are signed out.`, 'ok');
+			toasts.push(`${linkWord(l.kind)} unlinked`, 'ok', { body: 'Its devices signed out' });
 			unlinkKey = '';
 			await loadLinks();
 		} catch (err) {
@@ -349,7 +349,7 @@
 		linkBusy = true;
 		try {
 			await session.oidcLinkFinish();
-			toasts.push('Single sign-on linked.', 'ok');
+			toasts.push('Single sign-on linked', 'ok');
 			await loadLinks();
 			await goto(to('/settings/account'), { replace: true });
 		} catch (err) {
@@ -364,7 +364,7 @@
 		linkBusy = true;
 		try {
 			await session.forwardLink();
-			toasts.push('Trusted proxy sign-in linked.', 'ok');
+			toasts.push('Trusted proxy sign-in linked', 'ok');
 			await loadLinks();
 		} catch (err) {
 			linkError = message(err);
@@ -407,7 +407,7 @@
 				if ('waiting' in done) continue;
 				plexMine = done;
 				linkOpen = false;
-				toasts.push(`Plex account ${done.name} linked.`, 'ok');
+				toasts.push(`Plex ${done.name} linked`, 'ok');
 				return;
 			}
 			linkError = 'Plex sign-in timed out. Try again.';
@@ -429,7 +429,7 @@
 			await api.del('/auth/plex/my-link');
 			plexMine = { linked: false, name: '', kept: false };
 			plexUnlinking = false;
-			toasts.push('Plex unlinked. Its devices are signed out.', 'ok');
+			toasts.push('Plex unlinked', 'ok', { body: 'Its devices signed out' });
 		} catch (err) {
 			linkError = message(err);
 		} finally {
@@ -455,11 +455,11 @@
 		if (!f) return;
 		clearPick();
 		if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
-			toasts.push('Use JPEG, PNG or WebP', 'fail');
+			toasts.push('Picture not supported', 'fail', { body: 'Use JPEG, PNG or WebP' });
 			return;
 		}
 		if (f.size > AVATAR_MAX) {
-			toasts.push('Picture is over 5 MB', 'fail');
+			toasts.push('Picture is too big', 'fail', { body: 'Max 5 MB' });
 			return;
 		}
 		picked = f;
@@ -472,9 +472,9 @@
 			const r = await api.request<{ avatar: string | null }>('/account/avatar', { method: 'PUT', raw: picked });
 			session.setAvatar(r.avatar);
 			clearPick();
-			toasts.push('Profile picture saved.', 'ok');
+			toasts.push('Profile picture saved', 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't save picture", 'fail', { body: message(err) });
 		} finally {
 			avatarBusy = false;
 		}
@@ -485,9 +485,9 @@
 			await api.del('/account/avatar');
 			session.setAvatar(null);
 			clearPick();
-			toasts.push('Profile picture removed.', 'ok');
+			toasts.push('Profile picture removed', 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove picture", 'fail', { body: message(err) });
 		} finally {
 			avatarBusy = false;
 		}

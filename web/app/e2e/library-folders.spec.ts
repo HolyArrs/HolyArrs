@@ -119,7 +119,7 @@ test('Move a show with its episode files to a second show folder from the Folder
 	const confirm = page.getByRole('dialog', { name: 'Move to Show shelf two?' });
 	await expect(confirm).toContainText(two);
 	await confirm.getByRole('button', { name: 'Move files' }).click();
-	await expect(page.getByText('Moving the files to Show shelf two now.')).toBeVisible();
+	await expect(page.getByText('Moving files to Show shelf two')).toBeVisible();
 
 	// The move runs as a Job: every episode file lands in the second folder
 	// in its season folder, and the old show folder is gone.
@@ -158,7 +158,7 @@ test('Move an artist with its album files to a second music folder from the Fold
 	const confirm = page.getByRole('dialog', { name: 'Move to Music shelf two?' });
 	await expect(confirm).toContainText(two);
 	await confirm.getByRole('button', { name: 'Move files' }).click();
-	await expect(page.getByText('Moving the files to Music shelf two now.')).toBeVisible();
+	await expect(page.getByText('Moving files to Music shelf two')).toBeVisible();
 
 	// Every track lands in the second folder in its album folder, and the old artist folder is gone.
 	await expect.poll(() => filesUnder(join(two, name)), { timeout: 20_000 }).toEqual(tracks);

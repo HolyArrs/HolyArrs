@@ -88,7 +88,7 @@ test('Anime: a Release named by running number 13 is matched to S02E01, picked, 
 	if (await searchOnAdd.isChecked()) await searchOnAdd.uncheck();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(page.getByRole('status')).toContainText(`${show} is in your Library.`);
+	await expect(page.getByRole('status')).toContainText(`${show} added`);
 	await expect(page).toHaveURL(/\/library\/\d+/);
 	const id = Number(/\/library\/(\d+)/.exec(page.url())![1]);
 

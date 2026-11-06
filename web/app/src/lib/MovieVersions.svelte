@@ -58,7 +58,6 @@
 		try {
 			await api.post(`/titles/${title.id}/versions`, { label: vLabel.trim(), pick_rules_id: vRules, library_folder_id: vFolder, edition: vEdition.trim(), audio_languages: vAudio.split(/[,\s]+/).filter(Boolean), folder_name: vFolderName });
 			dialog?.close();
-			toasts.push(`The ${vLabel.trim()} Version is added.`, 'ok');
 			all = true;
 			await onchange();
 		} catch (err) {
@@ -73,10 +72,9 @@
 		if (!confirm(`Stop keeping the ${v.label} Version of this movie? Files on disk are not touched.`)) return;
 		try {
 			await api.del(`/titles/${title.id}/versions/${v.id}`);
-			toasts.push(`The ${v.label} Version is removed.`, 'ok');
 			await onchange();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
 		}
 	}
 </script>

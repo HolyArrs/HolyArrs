@@ -89,7 +89,7 @@
 			await api.put(`/titles/${titleId}/subtitle-wish`, mode === 'default' ? { inherit: true, item_id: ep.id } : { languages: [], item_id: ep.id });
 			await loadSubs();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't save subtitles`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -98,9 +98,9 @@
 		if (!ep) return;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/search', { title_id: titleId, item_id: ep.id });
-			toasts.push(r.queued ? 'Looking for subtitles now.' : 'No file yet.', 'ok');
+			toasts.push(r.queued ? 'Searching for subtitles' : 'No file to search yet', r.queued ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't search subtitles`, 'fail', { body: message(e) });
 		}
 	}
 	const subsMenu = $derived<MenuItem[]>([
@@ -139,9 +139,9 @@
 		busy = 'look';
 		try {
 			await api.post(`/titles/${titleId}/search`, { slot_id: slot.id });
-			toasts.push(`Looking for episode ${ep?.episode}.`, 'ok');
+			toasts.push(`Searching for episode ${ep?.episode}`, 'info');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -155,7 +155,7 @@
 			keep = next;
 			onchange?.();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't update episode`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}

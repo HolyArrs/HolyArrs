@@ -63,7 +63,7 @@ test('Seeding rules: the sheet opens from the details, sets a ratio and saves it
 	await sheet.getByTestId('steer-seed-none').click();
 	const before = (await (await fetch(`${qbit}/state`)).json()).shareLimits.length;
 	await sheet.getByTestId('steer-submit').click();
-	await expect(page.getByText('Seeding rules set for this torrent.')).toBeVisible();
+	await expect(page.getByText('Seeding rules set for this torrent')).toBeVisible();
 	await expect(sheet).toBeHidden();
 	const got = (await (await fetch(`${qbit}/state`)).json()).shareLimits;
 	expect(got.length).toBe(before + 1);
@@ -91,7 +91,7 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await expect(dialog.getByLabel('Search again')).toBeChecked();
 	// The confirm button names what goes: "Remove and delete files" here.
 	await dialog.getByTestId('dl-remove-confirm').click();
-	await expect(page.getByText('Removed. HolyArrs looks for the next Release.')).toBeVisible();
+	await expect(page.getByText('Download removed')).toBeVisible();
 	await expect.poll(async () => (await (await fetch(`${qbit}/state`)).json()).deleted.length).toBe(before + 1);
 	// The copy is no longer downloading; it turns into Needs a decision once the search runs out.
 	await expect(iron()).toHaveCount(0);
@@ -120,7 +120,7 @@ test('Needs a decision says why and offers every choice in the row\'s details; s
 
 	// Search again: nothing new passes, so it comes back here.
 	await card.getByRole('button', { name: 'Search again' }).click();
-	await expect(page.getByText('Searching again for Iron Lullaby.')).toBeVisible();
+	await expect(page.getByText('Searching again for Iron Lullaby')).toBeVisible();
 	await expect(card).toBeVisible({ timeout: 30_000 });
 	await expect(decideChip()).toHaveAttribute('data-count', '1', { timeout: 30_000 });
 

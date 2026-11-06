@@ -77,10 +77,10 @@
 		try {
 			const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${c.artist_mbid}`)}`);
 			const a = r.artists?.find((x) => x.mbid === c.artist_mbid);
-			if (!a) return void toasts.push(`Could not find ${artist}. Try Search.`, 'fail');
+			if (!a) return void toasts.push(`Couldn't find ${artist}`, 'fail', { body: 'Try Search' });
 			if (a.title_id && manage) addedHere = new Map([...addedHere, [a.mbid, a.title_id]]);
 			if (manage && !a.title_id) addArtist?.open(a);
-			else if (manage) toasts.push(`${a.name} is in your Library; ${c.name} comes with its next refresh.`, 'ok');
+			else if (manage) toasts.push(`${a.name} already in Library`, 'ok', { body: `${c.name} comes with next refresh` });
 			else askArtist?.open(a, c.mbid);
 		} catch (e) {
 			toasts.push(message(e), 'fail');
@@ -96,7 +96,6 @@
 			const path = `/metadata/album/${c.mbid}/follow`;
 			if (on) await api.put(path, { name: c.name, artist: c.artist ?? '', release_date: c.date ?? '' });
 			else await api.del(path);
-			toasts.push(on ? `You will hear when ${c.name} is out.` : `Stopped following ${c.name}.`, 'ok');
 		} catch (e) {
 			follows = new Map([...follows, [c.mbid, !on]]);
 			toasts.push(message(e), 'fail');
@@ -105,12 +104,12 @@
 
 	function added(_a: LookupArtist, t: TitleView) {
 		addedHere = new Map([...addedHere, [_a.mbid, t.id]]);
-		toasts.push(`${t.name} is in your Library. Albums, Pressings and tracks are being filled in.`, 'ok');
+		toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' });
 	}
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
-		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs keeps it up to date.`, 'ok');
-		else if (r.ask.state === 'asked' && r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too.`, 'ok');
-		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
+		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Kept up to date' });
+		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: 'You’re on the request too' });
+		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}
 

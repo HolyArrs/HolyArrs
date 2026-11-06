@@ -23,7 +23,7 @@
 		busy = true;
 		try {
 			await session.reauth(typed, code.trim() || undefined);
-			toasts.push('Sign-in confirmed.', 'ok');
+			toasts.push('Sign-in confirmed', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {

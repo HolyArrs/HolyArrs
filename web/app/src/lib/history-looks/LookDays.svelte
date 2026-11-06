@@ -249,7 +249,7 @@
 			await navigator.clipboard.writeText(path);
 			toasts.push('Path copied', 'ok');
 		} catch {
-			toasts.push('Could not copy the path', 'fail');
+			toasts.push('Couldn’t copy path', 'fail');
 		}
 	}
 

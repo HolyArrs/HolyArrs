@@ -91,7 +91,7 @@
 			if (resumeMove) {
 				resumeMove = false;
 				await start();
-			} else toasts.push('Password set.', 'ok');
+			} else toasts.push('Password set', 'ok');
 		} catch (err) {
 			// A first password needs a fresh sign-in with the media server (the server's rule).
 			if (err instanceof ApiError && err.body?.code === 'reauth') pwStale = true;
@@ -434,7 +434,7 @@
 		changed();
 		const what = countWords(kind, r.snapshot.counts, 1);
 		const keys = r.needs_reentry?.length ?? 0;
-		toasts.push(`${appName(kind)} read${what ? ': ' + what : ''}.${keys > 0 ? ` ${plural(keys, 'key', 'keys')} to type again after the move.` : ''}`, 'ok');
+		toasts.push(`${appName(kind)} read`, 'ok', { body: keys > 0 ? `${plural(keys, 'key', 'keys')} to type again` : what || undefined });
 	}
 	function addApp() {
 		readStart = 'radarr';
@@ -657,9 +657,9 @@
 	/** finished hears a move or an undo end. */
 	function finished(m: Move) {
 		moves = [m, ...moves.filter((x) => x.id !== m.id)];
-		if (m.state === 'undone') toasts.push(`Move ${m.id} undone.`, 'ok');
-		else if (m.undo_state === 'failed') toasts.push(`Undo of move ${m.id} stopped. Try again.`, 'fail');
-		else toasts.push(`Move ${m.id} finished.`, m.state === 'done' ? 'ok' : 'fail');
+		if (m.state === 'undone') toasts.push(`Move ${m.id} undone`, 'ok');
+		else if (m.undo_state === 'failed') toasts.push(`Undo of move ${m.id} stopped`, 'fail', { body: 'Try again' });
+		else toasts.push(`Move ${m.id} finished`, m.state === 'done' ? 'ok' : 'fail');
 		// A finished move forgets the kept keys.
 		if (m.state === 'done') void loadSaved();
 		if (m.state !== 'undone' && !m.undo_state) {

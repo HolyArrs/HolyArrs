@@ -93,9 +93,9 @@
 			a.click();
 			setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 			if (keyKit) keyKit = { ...keyKit, needed: false };
-			toasts.push('Key kit downloaded. Keep it somewhere safe, apart from your backups.', 'ok');
+			toasts.push('Key kit downloaded', 'ok', { body: 'Keep it apart from backups' });
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't download key kit", 'fail', { body: message(e) });
 		} finally {
 			gettingKit = false;
 		}
@@ -108,10 +108,10 @@
 		savingPreset = true;
 		try {
 			await api.put('/backups/settings', { preset: p });
-			toasts.push(`Backups: ${presets.find((x) => x.key === p)?.name}.`, 'ok');
+			toasts.push('Backup plan saved', 'ok', { body: presets.find((x) => x.key === p)?.name });
 		} catch (e) {
 			preset = before;
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 		} finally {
 			savingPreset = false;
 		}
@@ -122,9 +122,9 @@
 		try {
 			const b = await api.post<BackupInfo>('/backups');
 			backups = [b, ...backups.filter((x) => x.name !== b.name)];
-			toasts.push('Backup made.', 'ok');
+			toasts.push('Backup made', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't make backup", 'fail', { body: message(e) });
 		} finally {
 			making = false;
 		}
@@ -135,9 +135,9 @@
 		try {
 			await api.del(`/backups/${encodeURIComponent(b.name)}`);
 			backups = backups.filter((x) => x.name !== b.name);
-			toasts.push('Backup deleted.', 'ok');
+			toasts.push('Backup deleted', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't delete backup", 'fail', { body: message(e) });
 		}
 	}
 
@@ -154,7 +154,7 @@
 			toasts.push(r.note, 'ok');
 			waiting = true;
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't restore backup", 'fail', { body: message(err) });
 		} finally {
 			restoring = false;
 			if (fileInput) fileInput.value = '';

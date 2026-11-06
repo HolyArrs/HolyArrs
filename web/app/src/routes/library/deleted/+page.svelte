@@ -55,12 +55,12 @@
 			const r = await api.post<{ results: RestoreResult[] }>('/holding/restore', { ids: [...picked] });
 			const ok = r.results.filter((x) => x.result === 'restored').length;
 			const bad = r.results.find((x) => x.result !== 'restored');
-			if (ok) toasts.push(ok === 1 ? 'Restored 1 file.' : `Restored ${ok} files.`, 'ok');
-			if (bad) toasts.push(`${fileName(bad.path ?? '') || 'A file'}: ${bad.result}`, 'fail');
+			if (ok) toasts.push(ok === 1 ? '1 file restored' : `${ok} files restored`, 'ok');
+			if (bad) toasts.push(`Couldn't restore ${fileName(bad.path ?? '') || 'a file'}`, 'fail', { body: bad.result });
 			picked = new Set();
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't restore`, 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

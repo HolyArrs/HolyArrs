@@ -143,7 +143,7 @@ test('Import files by hand: the scan guesses the movie, Copy imports it and its 
 	expect(res.title_id).toBe(id);
 	const target = res.target ?? '';
 	await expect(row.getByRole('status')).toContainText(/^(Copied|Linked \(no extra space\))/);
-	await expect(page.getByText('1 file imported.')).toBeVisible();
+	await expect(page.getByText('1 file imported')).toBeVisible();
 	await expect(row.getByRole('checkbox')).not.toBeChecked();
 	// Copy keeps the original and puts a copy (or a link) in the Library folder.
 	expect(existsSync(file)).toBe(true);
@@ -166,7 +166,8 @@ test('Recently deleted: a movie deleted with its files is listed with days left,
 
 	await page.goto(`/library/${id}`);
 	await deleteWithFiles(page, 'Velvet Tide');
-	await expect(page.getByText(/Velvet Tide is deleted\. Its files are in the holding folder for \d+ days\./)).toBeVisible();
+	await expect(page.getByText('Velvet Tide deleted')).toBeVisible();
+	await expect(page.getByText(/Files kept \d+ days/)).toBeVisible();
 	expect(existsSync(target)).toBe(false);
 
 	await page.goto('/library');
@@ -179,7 +180,7 @@ test('Recently deleted: a movie deleted with its files is listed with days left,
 	await expect(page.getByTestId('restore-deleted')).toBeDisabled();
 	await row.getByRole('checkbox').check();
 	await page.getByTestId('restore-deleted').click();
-	await expect(page.getByText('Restored 1 file.')).toBeVisible();
+	await expect(page.getByText('1 file restored')).toBeVisible();
 	await expect(row).toHaveCount(0);
 	expect(existsSync(target)).toBe(true);
 
@@ -196,11 +197,11 @@ test('Undo in the delete message puts the movie and its file back', async ({ pag
 
 	await page.goto(`/library/${id}`);
 	await deleteWithFiles(page, 'Ember Road');
-	const toast = page.locator('.ui-toast').filter({ hasText: 'Ember Road is deleted' });
+	const toast = page.locator('.ui-toast').filter({ hasText: 'Ember Road deleted' });
 	await expect(toast).toBeVisible();
 	expect(existsSync(target)).toBe(false);
 	await toast.getByRole('button', { name: 'Undo' }).click();
-	await expect(page.getByText('Ember Road is back.')).toBeVisible();
+	await expect(page.getByText('Ember Road restored')).toBeVisible();
 	expect(existsSync(target)).toBe(true);
 	const { titles } = (await (await call('GET', '/titles')).json()) as { titles: { name: string; kind: string }[] };
 	expect(titles.filter((t) => t.kind === 'movie' && t.name === 'Ember Road')).toHaveLength(1);

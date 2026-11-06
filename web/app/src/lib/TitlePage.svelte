@@ -166,7 +166,7 @@
 			await loadOwned(id);
 			if (seasonEps[n]) await loadSeason(id, n);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't update season`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -177,7 +177,7 @@
 			await api.put(`/episodes/${e.id}`, { keep_up_to_date: keep });
 			seasonEps = { ...seasonEps, [n]: (seasonEps[n] ?? []).map((x) => (x.id === e.id ? { ...x, keep_up_to_date: keep } : x)) };
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't update episode`, 'fail', { body: message(err) });
 		}
 	}
 	// "Yesterday", "Tomorrow", "Sat, Oct 31" this year, else "Oct 31, 2024".
@@ -227,9 +227,9 @@
 		busyAction = key;
 		try {
 			await api.post(`/titles/${o.id}/search`, body);
-			toasts.push(done, 'ok');
+			toasts.push(done, 'info');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -278,7 +278,7 @@
 			const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { pick_rules_id: id });
 			owned = r.title;
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't change Pick rules`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -295,7 +295,7 @@
 			owned = r.title;
 			if (done) toasts.push(done, 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't save`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -309,11 +309,11 @@
 		busyAction = 'move';
 		try {
 			await api.post(`/titles/${o.id}/move`, { library_folder_id: f.id, apply: true });
-			toasts.push(`Moving the files to ${f.label} now.`, 'ok');
+			toasts.push(`Moving files to ${f.label}`, 'info');
 			moveTo = null;
 			void loadOwned(o.id);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't move files`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -350,7 +350,7 @@
 			openSeasons.clear();
 			await loadOwned(o.id);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't save seasons`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -365,16 +365,16 @@
 		try {
 			if (what === 'search') {
 				await api.post(`/titles/${o.id}/search`, {});
-				toasts.push('Searching for it now.', 'ok');
+				toasts.push(`Searching for ${o.name}`, 'info');
 			} else if (what === 'refresh') {
 				await api.post(`/titles/${o.id}/refresh`);
-				toasts.push('Refreshing names, dates and posters.', 'ok');
+				toasts.push(`Refreshing ${o.name}`, 'info', { body: 'Names, dates and posters' });
 			} else {
 				const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { keep_up_to_date: !o.keep_up_to_date });
 				owned = r.title;
 			}
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(what === 'search' ? `Couldn't start search` : what === 'refresh' ? `Couldn't refresh` : `Couldn't save`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -453,10 +453,10 @@
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);
-			toasts.push('Marked failed. HolyArrs looks for the next Release.', 'ok');
+			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
 			if (owned) await loadOwned(owned.id);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't mark failed`, 'fail', { body: message(e) });
 		} finally {
 			failing = 0;
 		}
@@ -540,7 +540,7 @@
 			await api.put(`/titles/${o.id}/subtitle-wish`, mode === 'default' ? { inherit: true } : { languages: [] });
 			await loadSubs(o.id);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't save subtitles`, 'fail', { body: message(e) });
 		} finally {
 			busyAction = '';
 		}
@@ -550,9 +550,9 @@
 		if (!o) return;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/search', { title_id: o.id });
-			toasts.push(r.queued ? 'Looking for subtitles now.' : 'No file to look for subtitles for yet.', 'ok');
+			toasts.push(r.queued ? 'Searching for subtitles' : 'No file to search yet', r.queued ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't search subtitles`, 'fail', { body: message(e) });
 		}
 	}
 	const subsMenu = $derived<MenuItem[]>([
@@ -657,26 +657,26 @@
 	});
 
 	function added(t: TitleView) {
-		toasts.push(`${t.name} is in your Library.`, 'ok');
+		toasts.push(`${t.name} added`, 'ok');
 		void goto(to(`/library/${t.id}`));
 	}
 
 	function movieAsked(r: { ask: Ask; joined: boolean; already: boolean }) {
 		const brief = { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length };
 		if (details) details = r.ask.four_k ? { ...details, ask4k: brief } : { ...details, ask: brief };
-		if (r.ask.four_k) toasts.push(r.joined ? `Someone asked for ${r.ask.name} in 4K already; you are on the ask too.` : `Asked for ${r.ask.name} in 4K. You will hear when it is approved.`, 'ok');
-		else if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too and will hear when it is ready.`, 'ok');
-		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
+		if (r.ask.four_k) toasts.push(`${r.ask.name} requested in 4K`, 'ok', { body: r.joined ? 'You’re on the request too' : 'Waiting for approval' });
+		else if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Searching for a Release' });
+		else if (r.joined) toasts.push(`${r.ask.name} requested`, 'ok', { body: 'You’re on the request too' });
+		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}
 
 	function showAsked(s: LookupShow, r: { ask: Ask; joined: boolean; already: boolean }) {
 		if (details) details = { ...details, ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, seasons: r.ask.seasons } };
 		const what = `${r.ask.name} (${seasonWords(r.ask.seasons)})`;
-		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs keeps it up to date.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too and will hear when it is ready.`, 'ok');
-		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
+		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Searching for a Release' });
+		else if (r.joined) toasts.push(`${what} requested`, 'ok', { body: 'You’re on the request too' });
+		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}
 
@@ -1245,7 +1245,7 @@
 						<div class="lib-eps-head">
 							<h3 class="lib-h">Seasons</h3>
 							<span class="lib-head-acts">
-								{#if manage && o.show.in_library < o.show.episodes - (o.show.not_out_yet ?? 0)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', 'Looking for every missing episode.')}><Icon name="search" size={15} />Get all missing</button>{/if}
+								{#if manage && o.show.in_library < o.show.episodes - (o.show.not_out_yet ?? 0)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', 'Searching for missing episodes')}><Icon name="search" size={15} />Get all missing</button>{/if}
 								<button type="button" class="lib-btn sm" onclick={() => toggleAll(o)}>{openSeasons.size ? 'Collapse all' : 'Expand all'}</button>
 							</span>
 						</div>
@@ -1266,7 +1266,7 @@
 										</button>
 										{#if manage}
 											<span class="lib-sr-acts">
-												<button type="button" class="lib-ico" title="Get the missing episodes" aria-label="Get the missing episodes of season {se.number}" disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, `Looking for the missing episodes of season ${se.number}.`)}><Icon name="search" size={15} /></button>
+												<button type="button" class="lib-ico" title="Get the missing episodes" aria-label="Get the missing episodes of season {se.number}" disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, `Searching for season ${se.number}`)}><Icon name="search" size={15} /></button>
 												<button type="button" class="lib-ico" title="Choose a release for this season" aria-label="Choose a release for season {se.number}" onclick={() => openPick({ label: se.number === 0 ? 'Specials' : `Season ${se.number}`, query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
 												<button type="button" class="lib-ico" title="Season tools" aria-label="Season {se.number} tools" onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
 											</span>
@@ -1289,7 +1289,7 @@
 													<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || st?.state_label || 'Missing' : 'Not out yet'}</span>
 													{#if manage && st}
 														<span class="lib-ep-acts">
-															<button type="button" class="lib-ico" title="Look for it now" aria-label="Look for episode {e.episode}" disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`); }}><Icon name="search" size={14} /></button>
+															<button type="button" class="lib-ico" title="Look for it now" aria-label="Look for episode {e.episode}" disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Searching for episode ${e.episode}`); }}><Icon name="search" size={14} /></button>
 															<button type="button" class="lib-ico" title="Choose a release for this episode" aria-label="Choose a release for episode {e.episode}" disabled={!aired} onclick={(ev) => { ev.stopPropagation(); openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
 														</span>
 													{/if}

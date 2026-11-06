@@ -68,7 +68,7 @@
 		try {
 			const lines = extraText.split('\n').map((l) => l.trim()).filter(Boolean);
 			extraText = (await api.put<{ extra_folders: string[] }>('/settings/import-folders', { extra_folders: lines })).extra_folders.join('\n');
-			toasts.push('Extra import folders saved.', 'ok');
+			toasts.push('Import folders saved', 'ok');
 		} catch (err) {
 			extraError = message(err);
 		} finally {
@@ -91,7 +91,7 @@
 			label = '';
 			kind = 'movie';
 			adding = false;
-			toasts.push(f.health === 'ok' ? 'Library folder added. It is healthy.' : `Library folder added: ${folderHealth(f.health)}.`, f.health === 'ok' ? 'ok' : 'info');
+			toasts.push('Library folder added', f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? 'It is healthy' : folderHealth(f.health) });
 		} catch (err) {
 			formError = message(err);
 		} finally {
@@ -104,9 +104,9 @@
 		try {
 			const n = await api.post<LibraryFolder>(`/library-folders/${f.id}/check`);
 			folders = folders.map((x) => (x.id === f.id ? n : x));
-			toasts.push(`Checked: ${folderHealth(n.health)}.`, n.health === 'ok' ? 'ok' : 'info');
+			toasts.push('Folder checked', n.health === 'ok' ? 'ok' : 'info', { body: folderHealth(n.health) });
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't check folder", 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
@@ -119,7 +119,7 @@
 			folders = folders.map((x) => (x.id === f.id ? n : x));
 			editing = null;
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
@@ -131,9 +131,9 @@
 		try {
 			await api.del(`/library-folders/${f.id}`);
 			folders = folders.filter((x) => x.id !== f.id);
-			toasts.push('Library folder removed.', 'ok');
+			toasts.push('Library folder removed', 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove folder", 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}

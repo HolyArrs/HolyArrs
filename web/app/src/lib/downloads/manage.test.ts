@@ -13,12 +13,12 @@ describe('splitLinks', () => {
 
 describe('addWords', () => {
 	it('names every part of the outcome', () => {
-		expect(addWords({ added: 2, failed: 0, pending: 1, duplicates: 1 })).toEqual({ text: '2 torrents added · 1 still being fetched · 1 already there.', tone: 'ok' });
+		expect(addWords({ added: 2, failed: 0, pending: 1, duplicates: 1 })).toEqual({ text: '2 torrents added', body: '1 still being fetched · 1 already there', tone: 'ok' });
 		expect(addWords({ added: 1, failed: 1, pending: 0, duplicates: 0 }).tone).toBe('info');
-		expect(addWords({ added: 0, failed: 2, pending: 0, duplicates: 0 })).toEqual({ text: '2 failed.', tone: 'fail' });
-		expect(addWords({ added: 0, failed: 0, pending: 0, duplicates: 3 })).toEqual({ text: '3 already there.', tone: 'info' });
-		expect(addWords({ added: 0, failed: 1, pending: 0, duplicates: 0, bad: ['x.txt'] }).text).toBe('1 failed · could not add: x.txt.');
-		expect(addWords({ added: 1, failed: 0, pending: 0, duplicates: 0, dropped: 2 }).text).toBe('1 torrent added · 2 local addresses left out of the magnet links.');
+		expect(addWords({ added: 0, failed: 2, pending: 0, duplicates: 0 })).toEqual({ text: '2 failed', tone: 'fail' });
+		expect(addWords({ added: 0, failed: 0, pending: 0, duplicates: 3 })).toEqual({ text: '3 already there', tone: 'info' });
+		expect(addWords({ added: 0, failed: 1, pending: 0, duplicates: 0, bad: ['x.txt'] })).toMatchObject({ text: '1 failed', body: 'could not add: x.txt' });
+		expect(addWords({ added: 1, failed: 0, pending: 0, duplicates: 0, dropped: 2 })).toMatchObject({ text: '1 torrent added', body: '2 local addresses left out of the magnet links' });
 	});
 });
 

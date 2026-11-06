@@ -82,7 +82,7 @@
 			const rest = (list ?? []).filter((x) => x.id !== t.id);
 			list = [...rest, t].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 			open = false;
-			toasts.push(editing ? `${t.name} saved.` : `${t.name} made. Pick rules can use it now.`, 'ok');
+			toasts.push(editing ? `${t.name} saved` : `${t.name} made`, 'ok', editing ? undefined : { body: 'Pick rules can use it now' });
 		} catch (err) {
 			const field = err instanceof ApiError && typeof err.body.field === 'string' ? err.body.field : '';
 			if (field === 'name' || field === 'terms' || field === 'match') serverErrors = { [field]: message(err) };
@@ -109,7 +109,7 @@
 			list = (list ?? []).filter((x) => x.id !== t.id);
 			removeOpen = false;
 			const n = r?.pick_rules_changed ?? 0;
-			toasts.push(n ? `${t.name} removed, and taken out of ${n === 1 ? '1 set' : `${n} sets`} of Pick rules.` : `${t.name} removed.`, 'ok');
+			toasts.push(`${t.name} removed`, 'ok', n ? { body: `Also taken out of ${n === 1 ? '1 set' : `${n} sets`}` } : undefined);
 		} catch (err) {
 			removeError = message(err);
 		} finally {

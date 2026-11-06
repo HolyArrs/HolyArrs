@@ -98,7 +98,7 @@ test('Schedules: next feed check, run it now, change how often', async () => {
 	await expect(feed).toContainText('Feed check');
 	await expect(feed.getByTestId('next')).toContainText('Next run');
 	await feed.getByRole('button', { name: 'Run Feed check now' }).click();
-	await expect(page.getByRole('status').filter({ hasText: /Feed check (started|is already waiting or running)\./ })).toBeVisible();
+	await expect(page.getByRole('status').filter({ hasText: /Feed check (started|already in progress)/ })).toBeVisible();
 	await feed.getByRole('button', { name: 'Change how often Feed check runs' }).click();
 	// The box holds the bounds (10 to 120 minutes); the server checks them too.
 	await expect(feed.getByLabel('Every (minutes)')).toHaveAttribute('min', '10');

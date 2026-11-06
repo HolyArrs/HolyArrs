@@ -61,10 +61,10 @@
 		busy = s.kind;
 		try {
 			const r = await api.post<{ job_id: number; already: boolean }>(`/schedules/${s.kind}/run`);
-			toasts.push(r.already ? `${s.label} is already waiting or running.` : `${s.label} started.`, 'ok');
+			toasts.push(r.already ? `${s.label} already queued` : `${s.label} started`, 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start ${s.label}`, 'fail', { body: message(e) });
 		} finally {
 			busy = null;
 		}
@@ -74,10 +74,10 @@
 		busy = s.kind;
 		try {
 			await api.put(`/schedules/${s.kind}`, { enabled });
-			toasts.push(enabled ? `${s.label} will run automatically again.` : `${s.label} automatic runs are off.`, 'ok');
+			toasts.push(enabled ? `${s.label} automatic runs on` : `${s.label} automatic runs off`, 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 		} finally {
 			busy = null;
 		}
@@ -103,7 +103,7 @@
 		const secs = Math.round(Number(amount) * unit(s.step_s).size);
 		try {
 			await api.put(`/schedules/${s.kind}`, { every_s: secs });
-			toasts.push(`${s.label} now runs ${every(secs)}.`, 'ok');
+			toasts.push(`${s.label} schedule saved`, 'ok', { body: `Runs ${every(secs)}` });
 			editing = null;
 			await load();
 		} catch (err) {

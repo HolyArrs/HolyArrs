@@ -192,7 +192,7 @@
 			if (end.State !== 'done') throw new Error(end.Error?.message || 'Adopting did not finish.');
 			results = (end.Result?.results as AdoptResult[]) ?? [];
 			const n = results.filter((x) => x.title_id).length;
-			toasts.push(n === 1 ? `1 ${word} adopted. No file was moved.` : `${n} ${word}s adopted. No file was moved.`, n ? 'ok' : 'info');
+			toasts.push(n === 1 ? `1 ${word} adopted` : `${n} ${word}s adopted`, n ? 'ok' : 'info', { body: 'No file was moved' });
 			plan = null;
 		} catch (e) {
 			error = message(e);

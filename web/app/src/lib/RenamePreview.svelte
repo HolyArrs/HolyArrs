@@ -70,7 +70,7 @@
 			);
 			if (end.State === 'done') {
 				const n = Number(end.Result?.renamed ?? 0);
-				toasts.push(n === 1 ? '1 file renamed.' : `${n} files renamed.`, 'ok');
+				toasts.push(n === 1 ? '1 file renamed' : `${n} files renamed`, 'ok');
 				onDone?.();
 			} else if (end.Error?.code === 'plan_changed') {
 				error = 'Something changed since this preview, so nothing was renamed. The preview below is fresh: check it and rename again.';

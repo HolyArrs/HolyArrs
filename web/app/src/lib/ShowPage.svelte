@@ -111,9 +111,9 @@
 		asker?.open(s);
 	}
 	function asked(_s: LookupShow, r: { ask: Ask; joined: boolean }) {
-		if (r.ask.state === 'approved') toasts.push(`${title.name} is approved; HolyArrs keeps it up to date.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${title.name} already; you are on the ask too.`, 'ok');
-		else toasts.push(`Asked for ${title.name}. You will hear when it is approved.`, 'ok');
+		if (r.ask.state === 'approved') toasts.push(`${title.name} approved`, 'ok', { body: 'Searching for a Release' });
+		else if (r.joined) toasts.push(`${title.name} requested`, 'ok', { body: 'You’re on the request too' });
+		else toasts.push(`${title.name} requested`, 'ok', { body: 'Waiting for approval' });
 	}
 	const show = $derived(title.show);
 	const order = $derived(show?.episode_order ?? 'aired');
@@ -177,16 +177,16 @@
 				await tick();
 				document.querySelector('[data-testid="show-releases"]')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 			}
-			toasts.push(r.job_ids.length ? done : 'Nothing here is looking for a copy right now.', r.job_ids.length ? 'ok' : 'info');
+			toasts.push(r.job_ids.length ? done : 'Nothing to search for', r.job_ids.length ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {
 			setTimeout(() => (searching = ''), 1200);
 		}
 	}
 
 	function searchShow() {
-		void startSearch('show', {}, 'Searching every season with an episode still looking. HolyArrs picks the best Releases by itself.');
+		void startSearch('show', {}, 'Searching every season');
 	}
 
 	function searchSeason(n: number, list = false) {
@@ -194,7 +194,7 @@
 		void startSearch(
 			`s${n}${list ? 'l' : ''}`,
 			{ season: n },
-			list ? `Searching ${name}. Pick a Release from the list once your Sources answer.` : `Searching ${name}. A season pack is taken when the whole season is missing.`,
+			`Searching ${name}`,
 			list ? { label: name, query: `season=${n}` } : undefined
 		);
 	}
@@ -207,7 +207,7 @@
 			`e${ep.id}${list ? 'l' : ''}`,
 			// Search now looks for every Version's copy; a list is for the main Version.
 			!list && ep.slots.length > 1 ? { item_id: ep.id } : { slot_id: sl.id },
-			list ? `Searching ${code}. Pick a Release from the list once your Sources answer.` : `Searching ${code}. HolyArrs picks the best Release by itself.`,
+			`Searching ${code}`,
 			list ? { label: code, query: `item_id=${ep.id}`, slotId: sl.id, slotState: sl.state } : undefined
 		);
 	}
@@ -364,10 +364,10 @@
 		busy = `s${n}`;
 		try {
 			await api.put(`/titles/${title.id}/seasons/${n}`, { keep_up_to_date: keep });
-			toasts.push(`${seasonName(n)}: ${keep ? 'HolyArrs keeps it up to date.' : 'HolyArrs stops looking for it.'}`, 'ok');
+			toasts.push(keep ? `${seasonName(n)} kept up to date` : `${seasonName(n)} not kept up to date`, 'ok');
 			await reload();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't update season`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -381,7 +381,7 @@
 			const i = list?.findIndex((x) => x.id === ep.id) ?? -1;
 			if (list && i >= 0) list[i] = { ...list[i], keep_up_to_date: r.keep_up_to_date };
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't update episode`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -391,9 +391,9 @@
 		busy = 'show';
 		try {
 			onchange((await api.put<{ title: TitleView }>(`/titles/${title.id}`, { keep_up_to_date: v })).title);
-			toasts.push(v ? 'HolyArrs keeps this show up to date.' : 'HolyArrs stops looking for this show.', 'ok');
+			toasts.push(v ? 'Show kept up to date' : 'Show not kept up to date', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't update show`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -403,9 +403,9 @@
 		refreshing = true;
 		try {
 			await api.post(`/titles/${title.id}/refresh`);
-			toasts.push('Refreshing seasons, episodes and air dates.', 'ok');
+			toasts.push(`Refreshing ${title.name}`, 'info', { body: 'Seasons, episodes and air dates' });
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't refresh`, 'fail', { body: message(e) });
 		} finally {
 			setTimeout(() => (refreshing = false), 1500);
 		}
@@ -448,7 +448,7 @@
 			editDialog?.close();
 			episodes = {};
 			for (const n of Object.keys(open).map(Number)) if (open[n]) void loadSeason(n);
-			toasts.push('Saved.', 'ok');
+			toasts.push('Show saved', 'ok');
 		} catch (err) {
 			editError = message(err);
 		} finally {

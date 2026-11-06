@@ -125,8 +125,8 @@
 	// After a health check run, say what the row shows now.
 	function afterChecks(r: StatusRow) {
 		const now = rows.find((x) => x.key === r.key);
-		if (!now) toasts.push('Checks ran.', 'ok');
-		else toasts.push(now.tone === 'ok' ? `${now.name} is working.` : `${now.name}: ${now.word}.`, now.tone === 'ok' ? 'ok' : 'fail');
+		if (!now) toasts.push('Checks ran', 'ok');
+		else toasts.push(now.tone === 'ok' ? `${now.name} working` : `${now.name}: ${now.word}`, now.tone === 'ok' ? 'ok' : 'fail');
 	}
 
 	async function check(r: StatusRow) {
@@ -136,7 +136,7 @@
 		try {
 			if (c.kind === 'job') {
 				const res = await api.post<{ already: boolean }>(`/schedules/${c.job}/run`);
-				toasts.push(res.already ? `${r.name} is already waiting or running.` : `${r.name} started.`, 'ok');
+				toasts.push(res.already ? `${r.name} already in progress` : `${r.name} started`, 'ok');
 				await load(true);
 			} else if (c.kind === 'checks') {
 				await api.post('/health/checks/run');
@@ -145,11 +145,11 @@
 				afterChecks(r);
 			} else {
 				const res = await api.post<{ ok: boolean; text: string }>(`/${c.kind}s/${c.id}/test`);
-				toasts.push(res.ok ? `${r.name}: ${testLabel(res.text)}` : `${r.name}: Not connected. ${res.text}`.trim(), res.ok ? 'ok' : 'fail');
+				toasts.push(res.ok ? `${r.name} connected` : `${r.name} not connected`, res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : res.text.trim() || undefined });
 				await load(true);
 			}
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn’t check ${r.name}`, 'fail', { body: message(e) });
 		} finally {
 			running.delete(r.key);
 		}
@@ -162,9 +162,9 @@
 			await api.post('/health/checks/run');
 			await load(true);
 			checkRuns++;
-			toasts.push('Checks ran.', 'ok');
+			toasts.push('Checks ran', 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push('Couldn’t run checks', 'fail', { body: message(e) });
 		} finally {
 			running.delete('all');
 		}

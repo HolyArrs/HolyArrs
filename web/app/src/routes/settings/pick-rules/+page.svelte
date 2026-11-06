@@ -62,7 +62,7 @@
 			await api.del(`/pick-rules/${r.id}`);
 			rules = (rules ?? []).filter((x) => x.id !== r.id);
 			removeOpen = false;
-			toasts.push(`${r.name} removed.`, 'ok');
+			toasts.push(`${r.name} removed`, 'ok');
 		} catch (err) {
 			removeError = message(err);
 			if (err instanceof ApiError && err.status === 409) {

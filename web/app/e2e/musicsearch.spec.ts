@@ -90,9 +90,9 @@ test('the artist page searches every missing album, or one', async () => {
 	await page.getByTestId('artist-tabs').getByRole('tab', { name: 'Library' }).click();
 	const lib = page.getByTestId('artist-library');
 	await lib.getByRole('button', { name: 'Get all missing' }).click();
-	await expect(page.getByRole('status')).toContainText('Looking for every missing track.');
+	await expect(page.getByRole('status')).toContainText('Searching for all missing tracks');
 	await lib.getByRole('button', { name: 'Get the missing tracks of Night Ferry', exact: true }).click();
-	await expect(page.getByRole('status')).toContainText('Looking for Night Ferry.');
+	await expect(page.getByRole('status')).toContainText('Searching for Night Ferry');
 	await axe(page, 'artist page with Search now');
 });
 
@@ -102,12 +102,12 @@ test('Settings > Search has the music choices', async () => {
 	await openAdvanced(page.locator('#music-search'));
 	await page.getByLabel('Tracks an album Release may lack').fill('1');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('status')).toContainText('Search settings saved.');
+	await expect(page.getByRole('status')).toContainText('Search settings saved');
 	await page.reload();
 	await expect(page.getByLabel('Tracks an album Release may lack')).toHaveValue('1');
 	await page.getByLabel('Tracks an album Release may lack').fill('0');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('status')).toContainText('Search settings saved.');
+	await expect(page.getByRole('status')).toContainText('Search settings saved');
 	await axe(page, 'search settings with music');
 });
 

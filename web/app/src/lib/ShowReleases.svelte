@@ -39,7 +39,7 @@
 			const still = p.running_job_ids ?? [];
 			running = running.filter((j) => still.includes(j));
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't load Releases`, 'fail', { body: message(e) });
 		} finally {
 			loaded = true;
 		}
@@ -103,8 +103,7 @@
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
 			const n = ch.slot_ids?.length ?? 1;
-			toasts.push(`Chosen: ${target.name}${n > 1 ? ` for ${n} ${noun}` : ''}. HolyArrs sends it to a Downloader now.`, 'ok');
-			for (const w of ch.warnings) toasts.push(w, 'info');
+			toasts.push('Sent to download', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : n > 1 ? { body: `For ${n} ${noun}` } : undefined);
 			onchange();
 			await load();
 		} catch (e) {
@@ -135,7 +134,7 @@
 			if (scope.slotId) body.slot_id = scope.slotId;
 			await api.post(`/releases/${target.id}/turn-down`, body);
 			turnDialog?.close();
-			toasts.push(`Turned down: ${target.name}. HolyArrs never picks it again for ${scope.slotId || music ? scope.label : 'these episodes'}.`, 'ok');
+			toasts.push('Release turned down', 'ok', { body: `Never picked for ${scope.slotId || music ? scope.label : 'these episodes'}` });
 			await load();
 		} catch (err) {
 			chooseError = message(err);

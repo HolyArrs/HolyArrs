@@ -103,7 +103,7 @@
 				plexOwner = { linked: true, name: done.name, can_import: true };
 				if (!ways.plex.server_id && done.servers.length === 1) ways.plex.server_id = done.servers[0].id;
 				linkNote = done.servers.length ? 'Linked. Pick the server people must share, then Save.' : 'Linked. Plex lists no server you own.';
-				toasts.push(`Plex account ${done.name} linked.`, 'ok');
+				toasts.push(`Plex ${done.name} linked`, 'ok');
 				return;
 			}
 			linkNote = 'The Plex sign-in timed out. Start again.';
@@ -123,9 +123,9 @@
 		try {
 			plexOwner = await api.del<{ linked: boolean; name: string; can_import: boolean }>('/auth/plex/link');
 			plexServers = [];
-			toasts.push('Plex account unlinked.', 'ok');
+			toasts.push('Plex unlinked', 'ok');
 		} catch (err) {
-			toasts.push(strongNote(err), 'fail');
+			toasts.push("Couldn't unlink Plex", 'fail', { body: strongNote(err) });
 		}
 	}
 
@@ -199,7 +199,7 @@
 		importBusy = true;
 		try {
 			const r = await api.post<{ made: string[]; skipped: number }>(`/auth/import/${importFor}`, { people });
-			toasts.push(r.made.length ? `Made ${r.made.length} ${r.made.length === 1 ? 'person' : 'people'}: ${r.made.join(', ')}.` : 'Nobody new to make.', 'ok');
+			toasts.push(r.made.length ? `${r.made.length} ${r.made.length === 1 ? 'person' : 'people'} made` : 'Nobody new to make', 'ok', r.made.length ? { body: r.made.join(', ') } : undefined);
 			importOpen = false;
 		} catch (err) {
 			importNote = strongNote(err);
@@ -246,13 +246,13 @@
 			if (w !== 'plex' && ways[w].url && !tested[w]?.ok) {
 				await testUrl(w);
 				if (!tested[w]?.ok) {
-					toasts.push(`${wayWord[w]} sign-in saved, but this address did not answer the test. People can't sign in with ${wayWord[w]} until it does.`, 'fail', { ms: 10000 });
+					toasts.push(`${wayWord[w]} address unreachable`, 'fail', { body: 'Saved, but sign-in will not work yet', ms: 10000 });
 					return;
 				}
 			}
-			toasts.push(`${wayWord[w]} sign-in saved.`, 'ok');
+			toasts.push(`${wayWord[w]} sign-in saved`, 'ok');
 		} catch (err) {
-			toasts.push(strongNote(err), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
 		} finally {
 			savingWay = '';
 		}
@@ -265,10 +265,10 @@
 		savingRequire = true;
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { require_two_factor_admins: v }));
-			toasts.push(v ? 'Admins must use two-factor sign-in.' : 'Two-factor sign-in is up to each admin.', 'ok');
+			toasts.push(v ? 'Admins must use two-factor' : 'Two-factor is up to each admin', 'ok');
 		} catch (err) {
 			requireAdmins = before;
-			toasts.push(strongNote(err), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
 		} finally {
 			savingRequire = false;
 		}
@@ -280,9 +280,9 @@
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { min_password_length: Number(minLength) }));
 			session.s.minPassword = minLength;
-			toasts.push(`New passwords need at least ${minLength} characters.`, 'ok');
+			toasts.push('Minimum length saved', 'ok', { body: `${minLength} characters` });
 		} catch (err) {
-			toasts.push(strongNote(err), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
 		} finally {
 			savingMinLength = false;
 		}
@@ -314,10 +314,10 @@
 		try {
 			// Turning it on saves the networks typed below with it.
 			took(await api.put<SignInSettings>('/auth/settings', v ? { skip_login_local_network: v, local_networks: netList() } : { skip_login_local_network: v }));
-			toasts.push(skipLocal ? 'No sign-in needed on your local network.' : 'Sign-in needed everywhere.', 'ok');
+			toasts.push(skipLocal ? 'Local network skips sign-in' : 'Sign-in needed everywhere', 'ok');
 		} catch (e) {
 			skipLocal = before;
-			toasts.push(strongNote(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: strongNote(e) });
 		} finally {
 			savingSkip = false;
 		}
@@ -328,9 +328,9 @@
 		savingNets = true;
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { local_networks: netList() }));
-			toasts.push('Local networks saved.', 'ok');
+			toasts.push('Local networks saved', 'ok');
 		} catch (err) {
-			toasts.push(strongNote(err), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
 		} finally {
 			savingNets = false;
 		}
@@ -342,9 +342,9 @@
 		try {
 			const allowed_hosts = hostNames.split(/[\s,]+/).filter(Boolean);
 			took(await api.put<SignInSettings>('/auth/settings', { allowed_hosts }));
-			toasts.push('Host names saved.', 'ok');
+			toasts.push('Host names saved', 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(err) });
 		} finally {
 			savingHosts = false;
 		}

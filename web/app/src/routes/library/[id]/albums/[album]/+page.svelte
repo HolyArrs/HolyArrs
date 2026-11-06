@@ -194,13 +194,13 @@
 		busy = choose ? 'search' : 'list';
 		try {
 			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, choose ? { album_id: albumId } : { album_id: albumId, choose: false });
-			if (choose) toasts.push(`Searching for ${album?.name}. HolyArrs picks the best Release for every track.`, 'ok');
+			if (choose) toasts.push(`Searching for ${album?.name}`, 'info');
 			else {
 				listJobs = r.job_ids;
 				listing = true;
 			}
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -210,10 +210,10 @@
 		busy = 'keep';
 		try {
 			album = await api.put<AlbumSummary>(`/albums/${albumId}`, { keep_up_to_date: keep });
-			toasts.push(keep ? 'HolyArrs keeps this album up to date.' : 'HolyArrs stops looking after this album.', 'ok');
+			toasts.push(keep ? 'Album kept up to date' : 'Album not kept up to date', 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't update album`, 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -230,10 +230,10 @@
 		busy = 'pressing';
 		try {
 			album = await api.put<AlbumSummary>(`/albums/${albumId}`, { pressing_id: chosen });
-			toasts.push(`The tracks now follow ${pressings.find((p) => p.id === chosen)?.name ?? 'that Pressing'}.`, 'ok');
+			toasts.push('Pressing changed', 'ok', { body: pressings.find((p) => p.id === chosen)?.name ?? 'Tracks follow it' });
 			await load();
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push(`Couldn't change Pressing`, 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}

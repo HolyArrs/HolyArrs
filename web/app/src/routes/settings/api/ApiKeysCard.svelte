@@ -38,7 +38,7 @@
 			label = '';
 			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
 		} catch (err) {
-			toasts.push(strongNote(err), 'fail');
+			toasts.push("Couldn't make key", 'fail', { body: strongNote(err) });
 		} finally {
 			making = false;
 		}
@@ -49,9 +49,9 @@
 		try {
 			await api.del(`/auth/keys/${k.id}`);
 			keys = keys.filter((x) => x.id !== k.id);
-			toasts.push('API key revoked.', 'ok');
+			toasts.push('API key revoked', 'ok');
 		} catch (e) {
-			toasts.push(strongNote(e), 'fail');
+			toasts.push("Couldn't revoke key", 'fail', { body: strongNote(e) });
 		}
 	}
 
@@ -59,9 +59,9 @@
 		if (!fresh) return;
 		try {
 			await navigator.clipboard.writeText(fresh.key);
-			toasts.push('Copied.', 'ok');
+			toasts.push('API key copied', 'ok');
 		} catch {
-			toasts.push('Copy did not work here; select the key and copy it by hand.', 'fail');
+			toasts.push("Couldn't copy", 'fail', { body: 'Select the key instead' });
 		}
 	}
 </script>

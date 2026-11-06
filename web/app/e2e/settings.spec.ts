@@ -126,13 +126,13 @@ test('Save in the bar saves through the page form, with a toast', async () => {
 	const before = await field.inputValue();
 	await field.fill(String(Number(before) + 1));
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Request settings saved.')).toBeVisible();
+	await expect(page.getByText('Request settings saved')).toBeVisible();
 	await expect(page.getByTestId('savebar')).toHaveCount(0);
 	await page.reload();
 	await expect(field).toHaveValue(String(Number(before) + 1));
 	await field.fill(before);
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Request settings saved.').first()).toBeVisible();
+	await expect(page.getByText('Request settings saved').first()).toBeVisible();
 });
 
 test('Advanced starts closed and stays as the person left it', async () => {
@@ -172,7 +172,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await movies.getByLabel('Search when added').uncheck();
 	const bar = page.getByTestId('savebar');
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Movies and TV defaults saved.')).toBeVisible();
+	await expect(page.getByText('Movies and TV defaults saved')).toBeVisible();
 	await expect(bar).toHaveCount(0);
 	await page.reload();
 	await expect(movies.getByLabel('Library folder')).toHaveValue(first);
@@ -209,7 +209,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await movies.getByLabel('Keep up to date').check();
 	await movies.getByLabel('Search when added').check();
 	await bar.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Movies and TV defaults saved.').first()).toBeVisible();
+	await expect(page.getByText('Movies and TV defaults saved').first()).toBeVisible();
 	await expect(bar).toHaveCount(0);
 });
 

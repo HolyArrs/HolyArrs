@@ -144,7 +144,7 @@
 			if (editId === null) await api.post<OutsideList>('/outside-lists', body);
 			else await api.put<OutsideList>(`/outside-lists/${editId}`, body);
 			formOpen = false;
-			toasts.push(enabled ? 'Saved. HolyArrs is reading the list now.' : 'Saved. The list is off.', 'ok');
+			toasts.push('List saved', 'ok', { body: enabled ? 'Reading it now' : 'The list is off' });
 			await loadLists();
 		} catch (err) {
 			formError = message(err);
@@ -157,9 +157,9 @@
 		busyId = l.id;
 		try {
 			await api.post(`/outside-lists/${l.id}/sync`);
-			toasts.push(`Reading ${l.name} now.`, 'ok');
+			toasts.push(`Reading ${l.name}`, 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't read list", 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
@@ -171,9 +171,9 @@
 		try {
 			await api.del(`/outside-lists/${l.id}`);
 			lists = lists.filter((x) => x.id !== l.id);
-			toasts.push('List removed.', 'ok');
+			toasts.push('List removed', 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't remove list", 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
@@ -190,7 +190,7 @@
 		try {
 			if (traktKey.trim()) traktMasked = (await api.put<{ key: string }>('/settings/trakt-key', { key: traktKey.trim() })).key;
 			if (traktVip.trim()) traktVipMasked = (await api.put<{ token: string }>('/settings/trakt-token', { token: traktVip.trim() })).token;
-			toasts.push(traktVip.trim() ? 'Trakt saved.' : 'Trakt key saved.', 'ok');
+			toasts.push(traktVip.trim() ? 'Trakt saved' : 'Trakt key saved', 'ok');
 			traktKey = '';
 			traktVip = '';
 		} catch (err) {
@@ -221,9 +221,9 @@
 		try {
 			await api.del(`/never-add/${n.id}`);
 			never = never.filter((x) => x.id !== n.id);
-			toasts.push(`${n.name} may be added again.`, 'ok');
+			toasts.push(`${n.name} allowed again`, 'ok');
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't update list", 'fail', { body: message(err) });
 		}
 	}
 </script>

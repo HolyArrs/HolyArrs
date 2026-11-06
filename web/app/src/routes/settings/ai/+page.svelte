@@ -148,10 +148,10 @@
 		saving = true;
 		try {
 			enabled = (await api.put<{ enabled: boolean }>('/settings/ai', { enabled: v })).enabled;
-			toasts.push(enabled ? 'AI apps are on.' : 'AI apps are off.', 'ok');
+			toasts.push(enabled ? 'AI apps on' : 'AI apps off', 'ok');
 		} catch (e) {
 			enabled = before;
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 		} finally {
 			saving = false;
 		}
@@ -170,7 +170,7 @@
 			fresh = { id: r.id, key: r.key, label: r.label, app: forApp };
 			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
 		} catch (err) {
-			toasts.push(keyNote(err), 'fail');
+			toasts.push("Couldn't make key", 'fail', { body: keyNote(err) });
 		} finally {
 			making = false;
 		}
@@ -203,9 +203,9 @@
 			keys = keys.filter((x) => x.id !== k.id);
 			// A revoked key leaves the steps and the prompt, and Make a key comes back.
 			if (fresh?.id === k.id) fresh = null;
-			toasts.push(`${k.label} revoked.`, 'ok');
+			toasts.push(`${k.label} revoked`, 'ok');
 		} catch (e) {
-			toasts.push(keyNote(e), 'fail');
+			toasts.push("Couldn't revoke key", 'fail', { body: keyNote(e) });
 		} finally {
 			revokeBusy = false;
 		}
@@ -244,9 +244,9 @@
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toasts.push('Copied.', 'ok');
+			toasts.push('Text copied', 'ok');
 		} catch {
-			toasts.push("Couldn't copy here. Select the text and copy it yourself.", 'fail');
+			toasts.push("Couldn't copy", 'fail', { body: 'Select the text instead' });
 		}
 	}
 

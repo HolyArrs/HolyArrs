@@ -106,10 +106,10 @@
 					if (i >= 0) asks[i] = now;
 				}
 				const m = /^(Declined|Approved) by (.+)$/.exec(now ? decided(now) : '');
-				toasts.push(m ? `${m[2]} already ${m[1].toLowerCase()} ${name}.` : `${name} was already answered.`, 'info');
+				toasts.push(m ? `${name} already ${m[1].toLowerCase()}` : `${name} already answered`, 'info', m ? { body: `By ${m[2]}` } : {});
 				return;
 			}
-			toasts.push(`Couldn’t ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}. ${message(err)} Try again.`, 'fail');
+			toasts.push(`Couldn’t ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}`, 'fail', { body: message(err) });
 		} finally {
 			delete pending[id];
 		}
@@ -121,15 +121,15 @@
 		const open = (a: Ask) => a.state === 'asked' || (mode === 'turn_down' && a.state === 'approved' && !a.title_id);
 		const ids = list.filter((a) => open(a) && !pending[a.id]).map((a) => a.id);
 		if (!ids.length) {
-			if (list.length && !list.some((a) => pending[a.id])) toasts.push(`Couldn’t ${mode === 'approve' ? 'approve' : 'decline'} ${list.length === 1 ? list[0].name : `${list.length} requests`}. It was already answered.`, 'fail');
+			if (list.length && !list.some((a) => pending[a.id])) toasts.push(`Couldn’t ${mode === 'approve' ? 'approve' : 'decline'} ${list.length === 1 ? list[0].name : `${list.length} requests`}`, 'fail', { body: 'Already answered' });
 			return;
 		}
 		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		// Words follow the asks actually decided (some in the list may be answered already).
 		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'the request') : `${ids.length} requests`;
-		const verb = mode === 'approve' ? 'Approved' : 'Declined';
-		const toastId = toasts.push(`${verb} ${one}.`, 'ok', {
+		const verb = mode === 'approve' ? 'approved' : 'declined';
+		const toastId = toasts.push(`${one} ${verb}`, 'ok', {
 			ms: UNDO_MS,
 			action: {
 				label: 'Undo',
@@ -234,7 +234,7 @@
 			// A background refresh that fails keeps the list on screen and says so once;
 			// a poll says nothing and tries again on its next turn.
 			if (quiet && asks.length) return;
-			if (asks.length) toasts.push(`Couldn’t refresh your requests. ${message(e)}`, 'fail');
+			if (asks.length) toasts.push('Couldn’t refresh requests', 'fail', { body: message(e) });
 			error = message(e);
 		} finally {
 			loaded = true;
@@ -379,7 +379,7 @@
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
 			// Short, like the card: what happens next is on the Processing tab.
-			toasts.push(mode === 'approve' ? `Approved ${r.ask.name}.` : `Declined ${r.ask.name}.`, 'ok');
+			toasts.push(mode === 'approve' ? `${r.ask.name} approved` : `${r.ask.name} declined`, 'ok');
 			void refreshInbox();
 			return '';
 		} catch (err) {
@@ -407,7 +407,6 @@
 		takingBack = new Set([...takingBack, a.id]);
 		try {
 			await api.del(`/asks/${a.id}`);
-			toasts.push(`Took back ${a.name}.`);
 			await load();
 			focusAfterTakeBack = () => {
 				const rows = document.querySelectorAll<HTMLElement>('[data-testid="ask"]');
@@ -444,10 +443,10 @@
 		if (!unread.length) return;
 		reading = true;
 		untrack(() => (fresh = new Set([...fresh, ...unread.flatMap((m) => (m.ask_id ? [m.ask_id] : []))])));
-		for (const m of unread.filter((m) => !m.ask_id && !toasted.has(m.id)).slice(0, 3)) {
-			toasted.add(m.id);
-			toasts.push(plain(m.text), 'ok');
-		}
+		const news = unread.filter((m) => !m.ask_id && !toasted.has(m.id)).slice(0, 3);
+		for (const m of news) toasted.add(m.id);
+		if (news.length === 1) toasts.push(plain(news[0].text), 'ok');
+		else if (news.length > 1) toasts.push(`${news.length} new updates`, 'ok');
 		void markRead()
 			.catch(() => {})
 			.finally(() => (reading = false));

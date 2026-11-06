@@ -77,7 +77,7 @@
 		try {
 			settings = await api.put<SearchSettings>('/settings/search', body);
 			saved = JSON.stringify(settings);
-			toasts.push('Search settings saved.', 'ok');
+			toasts.push('Search settings saved', 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -91,7 +91,7 @@
 			await api.post(path);
 			toasts.push(said, 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't start search", 'fail', { body: message(e) });
 		} finally {
 			now = '';
 		}
@@ -104,8 +104,8 @@
 	{#snippet actions()}
 		{#if loaded && !loadError}
 			<span class="now" id="search-now">
-				<Button type="button" disabled={!!now} aria-busy={now === '/search/feed-check'} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</Button>
-				<Button type="button" disabled={!!now} aria-busy={now === '/search/better'} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</Button>
+				<Button type="button" disabled={!!now} aria-busy={now === '/search/feed-check'} onclick={() => run('/search/feed-check', 'Checking every feed')}>Check feeds now</Button>
+				<Button type="button" disabled={!!now} aria-busy={now === '/search/better'} onclick={() => run('/search/better', 'Looking for better copies')}>Find a better copy for all</Button>
 			</span>
 		{/if}
 	{/snippet}

@@ -433,7 +433,7 @@
 		saved = [...saved.filter((s) => s.name !== name), { name, filter: { ...filter } }];
 		saveSaved(myId, kind, saved);
 		saveDialog?.close();
-		toasts.push(`Saved “${name}”.`, 'ok');
+		toasts.push(`${name} saved`, 'ok');
 	}
 	function forget(name: string) {
 		saved = saved.filter((s) => s.name !== name);
@@ -637,29 +637,29 @@
 		}
 		return failed;
 	}
-	function report(done: string, failed: number, total: number) {
-		if (failed) toasts.push(`${total - failed} of ${total} ${done}. ${failed} could not be changed.`, 'fail');
-		else toasts.push(`${total} ${total === 1 ? 'title' : 'titles'} ${done}.`, 'ok');
+	function report(done: string, failed: number, total: number, note?: string) {
+		if (failed) toasts.push(`${total - failed} of ${total} ${total === 1 ? 'title' : 'titles'} ${done}`, 'fail', { body: `${failed} couldn't be changed` });
+		else toasts.push(`${total} ${total === 1 ? 'title' : 'titles'} ${done}`, 'ok', note ? { body: note } : undefined);
 	}
 	async function setKeep(ids: number[], keep: boolean) {
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.put(`/titles/${id}`, { keep_up_to_date: keep }));
 		busy = false;
-		report(keep ? 'kept up to date' : 'no longer kept up to date', failed, ids.length);
+		report(keep ? 'kept up to date' : 'not kept up to date', failed, ids.length);
 		await load();
 	}
 	async function setRules(ids: number[], rule: { id: number; name: string }) {
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.put(`/titles/${id}`, { pick_rules_id: rule.id }));
 		busy = false;
-		report(`now use ${rule.name}`, failed, ids.length);
+		report(`set to ${rule.name}`, failed, ids.length);
 		await load();
 	}
 	async function searchTitles(ids: number[]) {
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/search`, {}));
 		busy = false;
-		report('being looked for now', failed, ids.length);
+		report('being searched for', failed, ids.length);
 	}
 	// Find another copy (movies): the selected movies' main files, searched again at their Quality
 	// after a review. Protected files are left out.
@@ -672,7 +672,7 @@
 			copyPreview = await api.post<CopySearchPreview>('/library/copies/search/preview', { selections: copyPicks });
 			copyDialog?.showModal();
 		} catch (e) {
-			toasts.push(plainReason(message(e)).text, 'fail');
+			toasts.push(`Couldn't check copies`, 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			busy = false;
 		}
@@ -682,10 +682,10 @@
 		busy = true;
 		try {
 			const r = await api.post<CopySearchResult>('/library/copies/search', { selections: copyPicks, review_token: copyPreview.review_token });
-			toasts.push(r.job_ids.length === 1 ? 'Searching for 1 copy.' : `Searching for ${r.job_ids.length} copies.`, 'ok');
+			toasts.push(r.job_ids.length === 1 ? 'Searching for 1 copy' : `Searching for ${r.job_ids.length} copies`, 'info');
 			copyDialog?.close();
 		} catch (e) {
-			toasts.push(plainReason(message(e)).text, 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			busy = false;
 		}
@@ -703,9 +703,9 @@
 		subsSearching = true;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/missing/search', { kind: kind === 'movie' ? 'movie' : 'episode' });
-			toasts.push(r.queued === 1 ? 'Searching subtitles for 1 file.' : `Searching subtitles for ${r.queued} files.`, 'ok');
+			toasts.push(r.queued === 1 ? 'Searching subtitles for 1 file' : `Searching subtitles for ${r.queued} files`, 'info');
 		} catch (e) {
-			toasts.push(plainReason(message(e)).text, 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			subsSearching = false;
 		}
@@ -713,9 +713,9 @@
 	async function refreshTitle(t: TitleView) {
 		try {
 			await api.post(`/titles/${t.id}/refresh`, {});
-			toasts.push(`Refreshing ${t.name}.`, 'ok');
+			toasts.push(`Refreshing ${t.name}`, 'info');
 		} catch (e) {
-			toasts.push(plainReason(message(e)).text, 'fail');
+			toasts.push(`Couldn't refresh`, 'fail', { body: plainReason(message(e)).text });
 		}
 	}
 	// Missing list: one search for every missing title of this kind, after a confirm.
@@ -727,10 +727,10 @@
 		searchingAll = true;
 		try {
 			await api.post('/search/missing', kind === 'all' ? undefined : { kind });
-			toasts.push(`Searching ${missingCount} missing ${missingCount === 1 ? 'title' : 'titles'}.`, 'ok');
+			toasts.push(`Searching ${missingCount} missing ${missingCount === 1 ? 'title' : 'titles'}`, 'info');
 			missingDialog?.close();
 		} catch (e) {
-			toasts.push(plainReason(message(e)).text, 'fail');
+			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			searchingAll = false;
 		}
@@ -747,7 +747,7 @@
 		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/delete`, deleteBody({}, false, false, true)));
 		busy = false;
 		deleteDialog?.close();
-		report('removed, files kept on disk', failed, ids.length);
+		report('removed', failed, ids.length, 'Files stay on disk');
 		stopSelecting();
 		await load();
 	}
@@ -756,7 +756,7 @@
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/move`, { library_folder_id: folder.id, apply: true }));
 		busy = false;
-		report(`moving to ${folder.label || folder.path}`, failed, ids.length);
+		report('being moved', failed, ids.length, folder.label || folder.path);
 		stopSelecting();
 		await load();
 	}

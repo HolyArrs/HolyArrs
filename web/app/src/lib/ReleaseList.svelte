@@ -62,13 +62,9 @@
 		busy = true;
 		try {
 			await api.del(`/${list}/${r.id}`);
-			toasts.push(
-				held ? `${r.name} is no longer held; ${listedName(r) || 'it'} goes back to looking.` : `${r.name} may be picked again.`,
-				'ok'
-			);
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't take off the list`, 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -81,12 +77,11 @@
 		if (!confirm(ask)) return;
 		busy = true;
 		try {
-			const r = await api.del<{ removed: number }>(`/${list}`);
-			toasts.push(`${r.removed} ${r.removed === 1 ? 'Release' : 'Releases'} taken off the list.`, 'ok');
+			await api.del<{ removed: number }>(`/${list}`);
 			offset = 0;
 			await load();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push(`Couldn't take off the list`, 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

@@ -588,7 +588,7 @@
 
 	/** The person's ask, or what they may do: ask (members) or add (managers). */
 	function askAlbum(a?: PageAlbum) {
-		if (!lookup) return void toasts.push('Still reading this artist; try again in a moment.', 'fail');
+		if (!lookup) return void toasts.push('Still reading artist', 'fail', { body: 'Try again in a moment' });
 		if (titleId) {
 			if (a?.part_id) return void goto(to(`/library/${titleId}/albums/${a.part_id}`));
 			return void goto(to(`/library/${titleId}`));
@@ -600,7 +600,7 @@
 	function onAsked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
 		asked = new Set([...asked, ...(r.ask.albums ?? []).map((x) => x.mbid)]);
 		lookup = lookup ? { ...lookup, ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: 1, albums: r.ask.albums } } : lookup;
-		toasts.push(r.joined ? `Someone asked for ${r.ask.name} already; you are on the ask too.` : `Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
+		toasts.push(r.joined ? `${r.ask.name} already requested` : `${r.ask.name} requested`, 'ok', { body: r.joined ? 'You’re on the request too' : 'Waiting for approval' });
 		void refreshInbox();
 	}
 
@@ -640,7 +640,6 @@
 			// The browser keeps the page answer a minute (max-age=60): fetch it
 			// afresh so a reload or a return visit shows the bell as it is now.
 			await fetch(to(`/api/v1/music/artists/${mbid}?similar=0`), { cache: 'reload', headers: { Accept: 'application/json' }, credentials: 'same-origin' }).catch(() => {});
-			toasts.push(on ? `You will hear when ${a.name} is out.` : `Stopped following ${a.name}.`, 'ok');
 		} catch (e) {
 			follows = new Map([...follows, [a.mbid, !on]]);
 			toasts.push(message(e), 'fail');
@@ -653,9 +652,9 @@
 	async function copyLink(href: string) {
 		try {
 			await navigator.clipboard.writeText(new URL(href, location.href).href);
-			toasts.push('Link copied.', 'ok');
+			toasts.push('Link copied', 'ok');
 		} catch {
-			toasts.push('Could not copy the link.', 'fail');
+			toasts.push("Couldn't copy link", 'fail');
 		}
 	}
 	/** The "…" menu of a top song: open its album, ask for it (add, for managers), copy its link. */
@@ -1068,7 +1067,7 @@
 {/if}
 
 {#if manage}
-	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} is in your Library. Albums and tracks are being filled in.`, 'ok'); void load(); }} />
+	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' }); void load(); }} />
 {:else if mayAsk}
 	<AskArtistDialog bind:this={askDialog} onasked={onAsked} />
 {/if}

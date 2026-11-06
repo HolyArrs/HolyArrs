@@ -84,7 +84,7 @@ test('rename: the Movie page shows the old and new name and renames after Apply'
 	await expect(step.locator('.new')).toContainText('Marble Comet (2014)');
 	const to = (await step.locator('.new').textContent())!.trim();
 	await dialog.getByRole('button', { name: 'Rename 1 file' }).click();
-	await expect(page.getByText('1 file renamed.')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText('1 file renamed')).toBeVisible({ timeout: 30_000 });
 	// Done, the sheet closes; opened again it has nothing left to rename.
 	await expect(dialog).toBeHidden();
 	await titleAction(page, 'Library', 'Rename files');
@@ -141,7 +141,8 @@ test('delete: the plan shows first, changes with each choice, and files go to th
 	await expect(go).toBeDisabled();
 	await dialog.getByRole('textbox', { name: /Type Willow Signal to confirm/ }).fill('Willow Signal');
 	await go.click();
-	await expect(page.getByText(/Willow Signal is deleted\. Its files are in the holding folder for 7 days/)).toBeVisible();
+	await expect(page.getByText("Willow Signal deleted")).toBeVisible();
+	await expect(page.getByText("Files kept 7 days")).toBeVisible();
 	// The title page stays, no longer in the Library: no Library tab or status.
 	await expect(dialog).toBeHidden();
 	await expect(page.getByTestId('own-tabs')).toHaveCount(0);
@@ -170,7 +171,7 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await page.getByLabel('Always leave this much free space (MB)').fill('250');
 	await expect(page.getByRole('button', { name: 'Save' })).toBeEnabled();
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Naming and file settings saved.')).toBeVisible();
+	await expect(page.getByText('Naming settings saved')).toBeVisible();
 	await page.reload();
 	await expect(page.getByLabel('Keep deleted files for (days)')).toHaveValue('14');
 	await expect(page.getByLabel('Always leave this much free space (MB)')).toHaveValue('250');
@@ -185,7 +186,7 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await page.reload();
 	await expect(page.getByLabel('Folders read per library scan')).toHaveValue('5000');
 	await page.getByRole('button', { name: 'Clear now' }).click();
-	await expect(page.getByText('Removing held files older than 14 days.')).toBeVisible();
+	await expect(page.getByText('Removing held files')).toBeVisible();
 });
 
 test('the new screens fit a phone and pass the accessibility scan', async ({ browser }) => {
