@@ -211,6 +211,9 @@
 	let stopped = false;
 	export function stop(e?: MouseEvent) {
 		if (!ctrl) return;
+		// The abort ends the read before this click's default action runs, so the
+		// button is a submit again by then and would start a second read.
+		e?.preventDefault();
 		// A second Enter on the same button right after Read is not a stop
 		// (a key press gives a click with detail 0; a real click is 1 or more).
 		if (e && e.detail === 0 && Date.now() - startedAt < 1000) return;
