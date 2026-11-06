@@ -464,6 +464,12 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		}
 		if aiPublic(r) {
 			// AI app sign-in: no cookies are read or set, so no origin check.
+			// The host name is still checked, since the answers echo it.
+			if !a.hostAllowed(r) {
+				a.logRefusedHost(r.Host)
+				fail(w, http.StatusForbidden, hostRefusedMsg(r.Host))
+				return
+			}
 			next.ServeHTTP(w, r)
 			return
 		}
