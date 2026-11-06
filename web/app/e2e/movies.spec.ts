@@ -110,16 +110,10 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 	await expect(page.getByText('Refreshing names, dates and posters')).toBeVisible();
 
 	await page.getByRole('button', { name: 'More actions' }).click();
-	await page.getByRole('menuitem', { name: 'Edit', exact: true }).click();
-	const dialog = page.getByRole('dialog', { name: 'Edit Paper Harbour' });
-	const keep = dialog.getByRole('switch', { name: /^Keep up to date/ });
-	await expect(keep).toHaveAttribute('aria-checked', 'true');
-	await keep.click();
-	await expect(keep).toHaveAttribute('aria-checked', 'false');
-	await dialog.getByRole('button', { name: 'Save' }).click();
-	await expect(dialog).toBeHidden();
+	// The Edit panel left the movie page (6e4a82053); Keep up to date is a More actions item.
+	await page.getByRole('menuitem', { name: 'Stop keeping up to date' }).click();
 	await expect(page.getByTestId('gate-reason')).toContainText('Keep up to date is off');
-	// The Edit sheet has no Release gate; the gate is changed through the API and the reason follows it.
+	// There is no Release gate control; the gate is changed through the API and the reason follows it.
 	const id = page.url().match(/\/library\/(\d+)/)![1];
 	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
 	const put = await page.request.put(`/api/v1/titles/${id}`, { headers: { 'X-CSRF-Token': me.csrf }, data: { release_gate: 'announced' } });
