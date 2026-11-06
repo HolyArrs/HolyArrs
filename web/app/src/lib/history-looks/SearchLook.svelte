@@ -109,6 +109,14 @@
 		findEl?.focus();
 		findEl?.select();
 	}
+	// The top row has no band of its own at rest (it sits on the page); once the list scrolls under it, it turns to frosted glass with a hairline.
+	let stuck = $state(false);
+	$effect(() => {
+		const on = () => (stuck = window.scrollY > 4);
+		on();
+		window.addEventListener('scroll', on, { passive: true });
+		return () => window.removeEventListener('scroll', on);
+	});
 	$effect(() => {
 		window.addEventListener('keydown', findKey, true);
 		return () => window.removeEventListener('keydown', findKey, true);
@@ -208,7 +216,7 @@
 {/snippet}
 
 <h1 class="sr-only">History</h1>
-<div class="toolbar" data-testid="history-search-bar">
+<div class="toolbar" class:stuck data-testid="history-search-bar">
 	{#if dlTop.collapsed && !phone}<span class="cap"><IconButton icon="sidebar" label="Show sidebar" onclick={() => dlTop.toggle()} data-testid="history-side-btn" /></span>{/if}
 	<label class="search">
 		<span class="mag" aria-hidden="true"><Icon name="search" size={16} /></span>
@@ -256,7 +264,8 @@
 <style>
 	/* The page's top row, in place of the shared top bar (as on Downloads and Library): the same 52px glass
 	   capsules, pinned at the top on one solid band, with the page's side margins. */
-	.toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px; height: 72px; box-sizing: border-box; margin: calc(-1 * var(--s-6, 24px)) calc(-1 * var(--gutter, 0px)) 4px; padding: 10px var(--gutter, 0px); background: var(--bg); }
+	.toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px; height: 72px; box-sizing: border-box; margin: calc(-1 * var(--s-6, 24px)) calc(-1 * var(--gutter, 0px)) 4px; padding: 10px var(--gutter, 0px); background: transparent; border-bottom: 1px solid transparent; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+	.toolbar.stuck { background: color-mix(in srgb, var(--bg) 80%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); border-bottom-color: var(--line); }
 	.cap { display: flex; flex: none; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.cap :global(.ui-ibtn) { width: 44px; height: 44px; border-radius: 10px; }
 	.search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 52px; box-sizing: border-box; padding: 0 12px 0 15px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text-muted); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); transition: border-color 220ms var(--ease-out), background 220ms var(--ease-out); }
@@ -311,6 +320,7 @@
 	@media (max-width: 767px) {
 		/* Phones: the row scrolls away with the page and wraps (search, then Filter). */
 		.toolbar { position: static; height: auto; flex-wrap: wrap; margin: 0 0 12px; padding: 0; background: none; }
+		.toolbar.stuck { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom-color: transparent; }
 		.search, .sf-btn { height: 44px; }
 		.search { flex-basis: 100%; }
 		.right { width: 100%; }
