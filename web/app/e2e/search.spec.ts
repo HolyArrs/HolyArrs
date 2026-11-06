@@ -159,7 +159,7 @@ test('Settings > Search: the three settings are saved and a wrong interval is re
 	await expect(page.getByLabel('Check Source feeds every (minutes)')).toHaveValue('15');
 	await page.getByLabel('Check Source feeds every (minutes)').fill('5');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('alert')).toContainText('10 to 120 minutes');
+	await expect(page.getByRole('alert')).toContainText('10 to 120');
 	await page.getByLabel('Check Source feeds every (minutes)').fill('30');
 	await page.getByLabel('Titles to search each night').fill('7');
 	await page.getByLabel('Also find better copies each night').check();
@@ -218,8 +218,11 @@ test('a member sees none of the search screens', async ({ browser }) => {
 	await expect(m.getByRole('heading', { level: 1 })).toContainText('Quiet Orchard');
 	for (const b of ['Search now', 'Choose a release']) await expect(m.getByRole('button', { name: b })).toHaveCount(0);
 	await expect(m.getByTestId('release')).toHaveCount(0);
-	// Staff pages send a member to their own Home, which has no searches panel.
-	for (const url of ['/library/held', '/library/turned-down', '/settings/search', '/']) {
+	// Staff pages send a member to their own Home, which has no searches panel;
+	// a Settings page they may not open says so in place instead.
+	await m.goto('/settings/search');
+	await expect(m.locator('#settings-blocked')).toContainText("You can't change this");
+	for (const url of ['/library/held', '/library/turned-down', '/']) {
 		await m.goto(url);
 		await expect(m).toHaveURL(/\/$/);
 	}

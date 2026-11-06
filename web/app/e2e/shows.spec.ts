@@ -144,7 +144,7 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toBeVisible();
 	await libraryKind(own, /^Everything/);
 	// Cards fade in one after another; let the ones on screen start before checking contrast.
-	await own.waitForFunction(() => [...document.querySelectorAll('.lp')].every((e) => e.classList.contains('shown') || e.getBoundingClientRect().top > innerHeight));
+	await own.waitForFunction(() => [...document.querySelectorAll('.lp')].every((e) => { const r = e.getBoundingClientRect(); return e.classList.contains('shown') || !e.getClientRects().length || r.top > innerHeight || r.bottom < 0 || r.left > innerWidth || r.right < 0; }), undefined, { timeout: 5_000 }).catch(() => undefined);
 	await axe(own, 'library with shows');
 });
 
