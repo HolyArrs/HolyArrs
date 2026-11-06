@@ -139,7 +139,8 @@
 	// checking the look on real pages. Normal builds drop this code.
 	const demo = !!import.meta.env.VITE_ALERTS_DEMO;
 	let step = 0;
-	const samples: (() => void)[] = [
+	// Built only into the preview: normal builds see `false ? [...] : []` and drop the samples.
+	const samples: (() => void)[] = import.meta.env.VITE_ALERTS_DEMO ? [
 		() => toasts.push('Dune: Part Two requested', 'ok', { body: 'Waiting for approval' }),
 		() => toasts.push('Severance deleted', 'ok', { body: 'Files kept 7 days', ms: 10000, action: { label: 'Undo', run: () => toasts.push('Severance restored', 'ok') } }),
 		() => toasts.push("Couldn't reach qBittorrent", 'fail', { body: 'Check Settings › Downloaders' }),
@@ -162,9 +163,9 @@
 			toasts.push('Severance deleted', 'ok', { body: 'Files kept 7 days', ms: 10000, action: { label: 'Undo', run: () => toasts.push('Severance restored', 'ok') } });
 		},
 		() => Array.from({ length: 10 }, (_, i) => i + 1).forEach((n) => toasts.push(`The Bear S3E${n} added`, 'ok', { body: 'Searching for a Release' }))
-	];
+	] : [];
 	function playDemo() {
-		samples[step++ % samples.length]();
+		if (samples.length) samples[step++ % samples.length]();
 	}
 	onMount(() => {
 		if (demo) (window as unknown as { __holyarrsToasts?: typeof toasts }).__holyarrsToasts = toasts;
@@ -237,7 +238,7 @@
 	}
 	.slot { display: flex; flex-direction: column; }
 	/* "+N more": how many wait behind the two on screen; opens Recent alerts. */
-	.more { pointer-events: auto; align-self: center; padding: 6px 14px; border-radius: 999px; font: var(--t-footnote); font-weight: 600; color: #f5f5f7; background: rgb(30 30 34 / 80%); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: 0 8px 24px rgb(0 0 0 / 32%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }
+	.more { pointer-events: auto; align-self: center; padding: 6px 14px; border-radius: 999px; font: var(--t-footnote); font-weight: 600; color: #f5f5f7; background: rgb(28 28 32 / 86%); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: 0 8px 24px rgb(0 0 0 / 32%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }
 	.more:hover { background: rgb(44 44 50 / 86%); }
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.toasts.in-win .slot { align-items: center; }

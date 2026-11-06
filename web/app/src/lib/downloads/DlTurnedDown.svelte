@@ -56,7 +56,7 @@
 			await api.del(`/turned-down/${r.id}`);
 			await load();
 		} catch (e) {
-			toasts.push('Couldn’t take off list', 'fail', { body: message(e) });
+			toasts.push("Couldn't take off list", 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -69,7 +69,7 @@
 			offset = 0;
 			await load();
 		} catch (e) {
-			toasts.push('Couldn’t clear list', 'fail', { body: message(e) });
+			toasts.push("Couldn't clear list", 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

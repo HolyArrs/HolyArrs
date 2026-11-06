@@ -80,10 +80,10 @@
 			if (!a) return void toasts.push(`Couldn't find ${artist}`, 'fail', { body: 'Try Search' });
 			if (a.title_id && manage) addedHere = new Map([...addedHere, [a.mbid, a.title_id]]);
 			if (manage && !a.title_id) addArtist?.open(a);
-			else if (manage) toasts.push(`${a.name} already in Library`, 'ok', { body: `${c.name} comes with next refresh` });
+			else if (manage) toasts.push(`${a.name} already in Library`, 'ok', { body: 'Added on next refresh' });
 			else askArtist?.open(a, c.mbid);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't add artist", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -98,7 +98,7 @@
 			else await api.del(path);
 		} catch (e) {
 			follows = new Map([...follows, [c.mbid, !on]]);
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update follow", 'fail', { body: message(e) });
 		}
 	}
 
@@ -108,7 +108,7 @@
 	}
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
 		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}

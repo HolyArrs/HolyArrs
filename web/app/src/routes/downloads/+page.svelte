@@ -324,7 +324,7 @@
 			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
 			await load();
 		} catch (e) {
-			toasts.push('Couldn’t mark failed', 'fail', { body: message(e) });
+			toasts.push("Couldn't mark failed", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -347,7 +347,7 @@
 	function askRemoveMany(rows: DownloadRow[], withFiles = false) {
 		const ok = rows.filter((r) => r.can_act);
 		if (!ok.length) {
-			toasts.push('Can’t remove these', 'info', { body: 'Not from here' });
+			toasts.push("Can't remove these", 'info', { body: 'Not from here' });
 			return;
 		}
 		targets = ok;
@@ -418,7 +418,7 @@
 			toasts.push(DONE[action], 'ok');
 			await load();
 		} catch (e) {
-			toasts.push('Couldn’t update download', 'fail', { body: message(e) });
+			toasts.push("Couldn't update download", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -445,7 +445,7 @@
 				bad.push(`${r.name || 'Download'}: ${message(e)}`);
 			}
 		}
-		if (bad.length) toasts.push('Couldn’t send back', 'fail', { body: bad.join(' · ') });
+		if (bad.length) toasts.push("Couldn't send back", 'fail', { body: bad.join(' · ') });
 		else toasts.push(list.length === 1 ? 'Sent back to queue' : `${list.length} downloads sent back`, 'ok');
 		await load();
 	}
@@ -463,7 +463,7 @@
 		const groups = byClient(list);
 		const left = list.length - [...groups.values()].reduce((n, g) => n + g.length, 0);
 		if (!groups.size) {
-			toasts.push('Can’t do that here', 'info', { body: 'Not for these downloads' });
+			toasts.push("Can't do that here", 'info', { body: 'Not for these downloads' });
 			return;
 		}
 		const bad: string[] = [];
@@ -475,8 +475,8 @@
 			}
 		}
 		const n = list.length - left;
-		if (bad.length) toasts.push('Couldn’t update downloads', 'fail', { body: bad.join(' · ') });
-		else toasts.push(`${BULK_DONE[action]}: ${n} ${n === 1 ? 'download' : 'downloads'}`, 'ok', left ? { body: `${left} skipped` } : {});
+		if (bad.length) toasts.push("Couldn't update downloads", 'fail', { body: bad.join(' · ') });
+		else toasts.push(`${n} ${n === 1 ? 'download' : 'downloads'} ${BULK_DONE[action]}`, 'ok', left ? { body: `${left} skipped` } : {});
 		await load();
 	}
 	type ClientStatus = { paused: boolean; speed_limit: number; up_limit: number };
@@ -485,11 +485,11 @@
 		try {
 			const r = await api.post<{ clients: ClientView[] }>(pause ? '/downloads/pause-all' : '/downloads/resume-all');
 			const bad = r.clients.filter((c) => c.controls && c.error);
-			if (bad.length) toasts.push(`Couldn’t ${pause ? 'pause' : 'start'} ${bad.map((c) => c.name).join(', ')}`, 'fail', { body: bad[0].error });
+			if (bad.length) toasts.push(`Couldn't ${pause ? 'pause' : 'start'} ${bad.length === 1 ? bad[0].name : `${bad.length} Downloaders`}`, 'fail', { body: bad[0].error });
 			else toasts.push(pause ? 'Everything paused' : 'Everything started', 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn’t ${pause ? 'pause' : 'start'} everything`, 'fail', { body: message(e) });
+			toasts.push(`Couldn't ${pause ? 'pause' : 'start'} everything`, 'fail', { body: message(e) });
 		}
 	}
 

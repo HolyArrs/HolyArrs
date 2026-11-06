@@ -336,7 +336,7 @@
 			await readDetail(r, 'Trackers');
 			return true;
 		} catch (e) {
-			toasts.push('Couldn’t update trackers', 'fail', { body: message(e) });
+			toasts.push("Couldn't update trackers", 'fail', { body: message(e) });
 			return false;
 		} finally {
 			trBusy = false;
@@ -374,7 +374,7 @@
 				void readDetail(r, 'Files');
 				return;
 			}
-			toasts.push('Couldn’t set file priority', 'fail', { body: message(e) });
+			toasts.push("Couldn't set file priority", 'fail', { body: message(e) });
 		} finally {
 			filesBusy = false;
 		}
@@ -402,7 +402,7 @@
 			await api.post(`/downloaders/${c.id}/slow-mode`, { on });
 			await readClients();
 		} catch (e) {
-			toasts.push('Couldn’t change slow mode', 'fail', { body: `${c.name}: ${message(e)}` });
+			toasts.push("Couldn't change slow mode", 'fail', { body: message(e) });
 		} finally {
 			slowBusy = 0;
 		}
@@ -556,7 +556,7 @@
 			await run();
 			toasts.push(done, 'ok');
 		} catch (e) {
-			toasts.push('Couldn’t update download', 'fail', { body: message(e) });
+			toasts.push("Couldn't update download", 'fail', { body: message(e) });
 		} finally {
 			if (queueBusy === r.id) queueBusy = 0;
 		}
@@ -871,7 +871,7 @@
 			if (!target) return;
 			e.preventDefault();
 			if (target.can_act) onremove(target, e.shiftKey);
-			else toasts.push('Can’t remove this download', 'info', { body: 'Not from here' });
+			else toasts.push("Can't remove this download", 'info', { body: 'Not from here' });
 			return;
 		}
 		if (!list.length) return;

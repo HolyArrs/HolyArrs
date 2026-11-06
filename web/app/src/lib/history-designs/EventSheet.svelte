@@ -26,7 +26,7 @@
 			await navigator.clipboard.writeText(path);
 			toasts.push('Path copied', 'ok');
 		} catch {
-			toasts.push('Couldn’t copy path', 'fail');
+			toasts.push("Couldn't copy path", 'fail', { body: 'Select it instead' });
 		}
 	}
 </script>

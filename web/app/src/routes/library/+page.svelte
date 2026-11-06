@@ -638,7 +638,7 @@
 		return failed;
 	}
 	function report(done: string, failed: number, total: number, note?: string) {
-		if (failed) toasts.push(`${total - failed} of ${total} ${total === 1 ? 'title' : 'titles'} ${done}`, 'fail', { body: `${failed} couldn't be changed` });
+		if (failed) toasts.push(`${total - failed} of ${total} ${total === 1 ? 'title' : 'titles'} ${done}`, 'info', { body: `${failed} couldn't be changed` });
 		else toasts.push(`${total} ${total === 1 ? 'title' : 'titles'} ${done}`, 'ok', note ? { body: note } : undefined);
 	}
 	async function setKeep(ids: number[], keep: boolean) {
@@ -703,7 +703,7 @@
 		subsSearching = true;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/missing/search', { kind: kind === 'movie' ? 'movie' : 'episode' });
-			toasts.push(r.queued === 1 ? 'Searching subtitles for 1 file' : `Searching subtitles for ${r.queued} files`, 'info');
+			toasts.push('Searching for subtitles', 'info', { body: r.queued === 1 ? '1 file' : `${r.queued} files` });
 		} catch (e) {
 			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });
 		} finally {
@@ -727,7 +727,7 @@
 		searchingAll = true;
 		try {
 			await api.post('/search/missing', kind === 'all' ? undefined : { kind });
-			toasts.push(`Searching ${missingCount} missing ${missingCount === 1 ? 'title' : 'titles'}`, 'info');
+			toasts.push(`Searching for ${missingCount} missing ${missingCount === 1 ? 'title' : 'titles'}`, 'info');
 			missingDialog?.close();
 		} catch (e) {
 			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });

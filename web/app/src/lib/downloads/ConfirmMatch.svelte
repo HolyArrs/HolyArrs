@@ -44,7 +44,7 @@
 			onchange?.();
 			if (!list.length) open = false;
 		} catch (e) {
-			toasts.push('Couldn’t confirm match', 'fail', { body: message(e) });
+			toasts.push("Couldn't confirm match", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -57,7 +57,7 @@
 			clearTimeout(later);
 			later = setTimeout(() => void read(), 4000);
 		} catch (e) {
-			toasts.push('Couldn’t start matching', 'fail', { body: message(e) });
+			toasts.push("Couldn't start matching", 'fail', { body: message(e) });
 		} finally {
 			running = false;
 		}

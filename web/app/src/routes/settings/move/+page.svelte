@@ -658,7 +658,7 @@
 	function finished(m: Move) {
 		moves = [m, ...moves.filter((x) => x.id !== m.id)];
 		if (m.state === 'undone') toasts.push(`Move ${m.id} undone`, 'ok');
-		else if (m.undo_state === 'failed') toasts.push(`Undo of move ${m.id} stopped`, 'fail', { body: 'Try again' });
+		else if (m.undo_state === 'failed') toasts.push("Couldn't undo move", 'fail', { body: 'Try again' });
 		else toasts.push(`Move ${m.id} finished`, m.state === 'done' ? 'ok' : 'fail');
 		// A finished move forgets the kept keys.
 		if (m.state === 'done') void loadSaved();

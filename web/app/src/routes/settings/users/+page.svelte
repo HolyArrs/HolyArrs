@@ -217,7 +217,7 @@
 			await navigator.clipboard.writeText(link);
 			toasts.push('Link copied', 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select the link instead' });
+			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
 		}
 	}
 
@@ -361,7 +361,7 @@
 			toasts.push(`Sign-in unlinked for ${u.name}`, 'ok', { body: ssoWord(l.kind) });
 			await load();
 		} catch (e) {
-			toasts.push("Couldn't unlink sign-in", 'fail', { body: e instanceof ApiError && e.body.code === 'reauth' ? 'Confirm your password in My account first' : message(e) });
+			toasts.push("Couldn't unlink sign-in", 'fail', { body: e instanceof ApiError && e.body.code === 'reauth' ? 'Confirm password in My account' : message(e) });
 		}
 	}
 

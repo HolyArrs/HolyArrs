@@ -123,7 +123,7 @@
 			const r = await api.post<{ queued: number; job_ids: number[] }>('/subtitles/missing/search', body);
 			jobIds = r.job_ids ?? [];
 			jobStates = {};
-			toasts.push(r.queued === 1 ? 'Searching subtitles for 1 file' : `Searching subtitles for ${r.queued} files`, 'info');
+			toasts.push('Searching for subtitles', 'info', { body: r.queued === 1 ? '1 file' : `${r.queued} files` });
 		} catch (e) {
 			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
 		} finally {

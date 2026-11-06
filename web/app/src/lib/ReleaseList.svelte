@@ -64,7 +64,7 @@
 			await api.del(`/${list}/${r.id}`);
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't take off the list`, 'fail', { body: message(e) });
+			toasts.push(`Couldn't take off list`, 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -81,7 +81,7 @@
 			offset = 0;
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't take off the list`, 'fail', { body: message(e) });
+			toasts.push(`Couldn't take off list`, 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

@@ -226,7 +226,7 @@
 			if (manage) addArtist?.open(a);
 			else askArtist?.open(a);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't add artist", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -240,7 +240,7 @@
 
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
 		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 		void load();

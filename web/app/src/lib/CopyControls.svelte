@@ -71,7 +71,7 @@
 			});
 			await changed(protectedValue ? 'Copy protected' : 'Protection removed');
 		} catch (e) {
-			toasts.push('Couldn’t change protection', 'fail', { body: message(e) });
+			toasts.push("Couldn't change protection", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -95,7 +95,7 @@
 			addFolder = folders[0]?.id ?? 0;
 			addOpen = true;
 		} catch (e) {
-			toasts.push('Couldn’t open Version form', 'fail', { body: message(e) });
+			toasts.push("Couldn't open Version form", 'fail', { body: message(e) });
 		}
 	}
 

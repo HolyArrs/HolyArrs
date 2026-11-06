@@ -103,7 +103,7 @@
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
 			const n = ch.slot_ids?.length ?? 1;
-			toasts.push('Sent to download', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : n > 1 ? { body: `For ${n} ${noun}` } : undefined);
+			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : n > 1 ? { body: `For ${n} ${noun}` } : undefined);
 			onchange();
 			await load();
 		} catch (e) {

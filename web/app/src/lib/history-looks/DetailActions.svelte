@@ -42,10 +42,10 @@
 			const slot = t.slotId > 0 ? { slot_id: t.slotId } : undefined;
 			await api.post(`/releases/${t.releaseId}/turn-down`, slot);
 			await api.post(`/titles/${t.titleId}/search`, slot);
-			toasts.push('Release blocked', 'ok', { body: 'Searching again' });
+			toasts.push('Release turned down', 'ok', { body: 'Searching again' });
 			await stop();
 		} catch (e) {
-			toasts.push('Couldn’t block release', 'fail', { body: message(e) });
+			toasts.push("Couldn't turn down Release", 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}

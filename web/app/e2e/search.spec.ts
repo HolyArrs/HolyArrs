@@ -78,7 +78,7 @@ test('Choose a release shows every Release with its verdict and plain reasons; t
 	// The cam copy failed, so Pick asks once more before it is forced.
 	await cam.getByRole('button', { name: 'Pick', exact: true }).click();
 	await cam.getByRole('button', { name: 'Pick anyway' }).click();
-	await expect(page.getByRole('status')).toContainText('Sent to download');
+	await expect(page.getByRole('status')).toContainText('Sent to Downloader');
 	await expect(sheet).toBeHidden();
 	const again = await chooseRelease(page);
 	await again.getByRole('tab', { name: /^All/ }).click();

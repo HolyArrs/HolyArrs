@@ -445,7 +445,7 @@
 		try {
 			await session.logout();
 		} catch {
-			toasts.push('Couldn’t confirm sign-out', 'fail');
+			toasts.push("Couldn't confirm sign-out", 'fail');
 		}
 		void goto(to('/login'));
 	}
@@ -453,9 +453,9 @@
 	async function signOut() {
 		try {
 			await session.logout();
-			toasts.push('Signed out');
+			toasts.push('Signed out', 'ok');
 		} catch {
-			toasts.push('Couldn’t confirm sign-out', 'fail');
+			toasts.push("Couldn't confirm sign-out", 'fail');
 		}
 	}
 

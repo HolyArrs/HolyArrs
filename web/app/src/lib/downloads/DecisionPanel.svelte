@@ -47,7 +47,7 @@
 			await refreshDecisions();
 			ondone?.();
 		} catch (e) {
-			toasts.push('Couldn’t save decision', 'fail', { body: message(e) });
+			toasts.push("Couldn't save decision", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}

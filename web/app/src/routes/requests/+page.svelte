@@ -109,7 +109,7 @@
 				toasts.push(m ? `${name} already ${m[1].toLowerCase()}` : `${name} already answered`, 'info', m ? { body: `By ${m[2]}` } : {});
 				return;
 			}
-			toasts.push(`Couldn’t ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}`, 'fail', { body: message(err) });
+			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}`, 'fail', { body: message(err) });
 		} finally {
 			delete pending[id];
 		}
@@ -121,7 +121,7 @@
 		const open = (a: Ask) => a.state === 'asked' || (mode === 'turn_down' && a.state === 'approved' && !a.title_id);
 		const ids = list.filter((a) => open(a) && !pending[a.id]).map((a) => a.id);
 		if (!ids.length) {
-			if (list.length && !list.some((a) => pending[a.id])) toasts.push(`Couldn’t ${mode === 'approve' ? 'approve' : 'decline'} ${list.length === 1 ? list[0].name : `${list.length} requests`}`, 'fail', { body: 'Already answered' });
+			if (list.length && !list.some((a) => pending[a.id])) toasts.push(`Couldn't ${mode === 'approve' ? 'approve' : 'decline'} ${list.length === 1 ? list[0].name : `${list.length} requests`}`, 'fail', { body: 'Already answered' });
 			return;
 		}
 		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
@@ -234,7 +234,7 @@
 			// A background refresh that fails keeps the list on screen and says so once;
 			// a poll says nothing and tries again on its next turn.
 			if (quiet && asks.length) return;
-			if (asks.length) toasts.push('Couldn’t refresh requests', 'fail', { body: message(e) });
+			if (asks.length) toasts.push("Couldn't refresh requests", 'fail', { body: message(e) });
 			error = message(e);
 		} finally {
 			loaded = true;
@@ -445,7 +445,7 @@
 		untrack(() => (fresh = new Set([...fresh, ...unread.flatMap((m) => (m.ask_id ? [m.ask_id] : []))])));
 		const news = unread.filter((m) => !m.ask_id && !toasted.has(m.id)).slice(0, 3);
 		for (const m of news) toasted.add(m.id);
-		if (news.length === 1) toasts.push(plain(news[0].text), 'ok');
+		if (news.length === 1) toasts.push('Request updated', 'ok', { body: plain(news[0].text) });
 		else if (news.length > 1) toasts.push(`${news.length} new updates`, 'ok');
 		void markRead()
 			.catch(() => {})

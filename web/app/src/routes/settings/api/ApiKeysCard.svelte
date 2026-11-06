@@ -61,7 +61,7 @@
 			await navigator.clipboard.writeText(fresh.key);
 			toasts.push('API key copied', 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select the key instead' });
+			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
 		}
 	}
 </script>

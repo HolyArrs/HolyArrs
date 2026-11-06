@@ -246,7 +246,7 @@
 			if (w !== 'plex' && ways[w].url && !tested[w]?.ok) {
 				await testUrl(w);
 				if (!tested[w]?.ok) {
-					toasts.push(`${wayWord[w]} address unreachable`, 'fail', { body: 'Saved, but sign-in will not work yet', ms: 10000 });
+					toasts.push(`${wayWord[w]} address unreachable`, 'fail', { body: "Saved, sign-in won't work yet", ms: 10000 });
 					return;
 				}
 			}
@@ -265,7 +265,7 @@
 		savingRequire = true;
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { require_two_factor_admins: v }));
-			toasts.push(v ? 'Admins must use two-factor' : 'Two-factor is up to each admin', 'ok');
+			toasts.push(v ? 'Two-factor required for admins' : 'Two-factor optional for admins', 'ok');
 		} catch (err) {
 			requireAdmins = before;
 			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });

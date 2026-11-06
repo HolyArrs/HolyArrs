@@ -70,10 +70,10 @@ export function byClient<T extends Addressed>(rows: T[]): Map<number, T[]> {
 	return m;
 }
 
-/** BULK_DONE is the toast after a selection action. */
+/** BULK_DONE ends the toast after a selection action: "3 downloads paused". */
 export const BULK_DONE: Record<BulkAction, string> = {
-	start: 'Started', pause: 'Paused', recheck: 'Checking again', reannounce: 'Asked the trackers again', top: 'Moved to the top', bottom: 'Moved to the bottom',
-	up: 'Moved up', down: 'Moved down', force: 'Force started', unforce: 'Back in the queue'
+	start: 'started', pause: 'paused', recheck: 'being checked', reannounce: 'announced again', top: 'moved to the top', bottom: 'moved to the bottom',
+	up: 'moved up', down: 'moved down', force: 'force started', unforce: 'back in the queue'
 };
 
 /** A torrent's own seeding rules: -2 follows the Downloader's rule, -1 is no limit. */

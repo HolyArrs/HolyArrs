@@ -60,14 +60,14 @@
 		busyId = r.id;
 		try {
 			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, { force: r.needs_force });
-			toasts.push('Sent to download', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
+			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
 			open = false;
 			onchosen?.();
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
 				r.needs_force = true;
 				confirmId = r.id;
-			} else toasts.push(`Couldn't send to download`, 'fail', { body: message(e) });
+			} else toasts.push(`Couldn't send to Downloader`, 'fail', { body: message(e) });
 		} finally {
 			busyId = 0;
 		}
@@ -79,7 +79,7 @@
 			toasts.push('Release turned down', 'ok', { body: 'Never picked for this title' });
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't turn down`, 'fail', { body: message(e) });
+			toasts.push("Couldn't turn down Release", 'fail', { body: message(e) });
 		} finally {
 			busyId = 0;
 		}

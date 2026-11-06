@@ -176,7 +176,7 @@
 			toasts.push(paused ? `${s.name} paused` : `${s.name} resumed`, 'ok', paused ? { body: 'Searches skip it' } : undefined);
 			await loadSites();
 		} catch (err) {
-			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} site`, 'fail', { body: message(err) });
+			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} Subtitle site`, 'fail', { body: message(err) });
 		}
 	}
 
@@ -186,7 +186,7 @@
 			await api.del(`/subtitle-sites/${s.ID}`);
 			await loadSites();
 		} catch (err) {
-			toasts.push("Couldn't remove site", 'fail', { body: message(err) });
+			toasts.push("Couldn't remove Subtitle site", 'fail', { body: message(err) });
 		}
 	}
 </script>

@@ -131,7 +131,7 @@
 			await navigator.clipboard.writeText(callback);
 			toasts.push('Callback address copied', 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'info', { body: 'Copy it by hand' });
+			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
 		}
 	}
 </script>

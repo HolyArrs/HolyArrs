@@ -198,13 +198,13 @@
 		try {
 			following = await setFollow(api, { titleId }, !following);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update follow", 'fail', { body: message(e) });
 		} finally {
 			followBusy = false;
 		}
 	}
 	function copy(text: string, what: string) {
-		void navigator.clipboard?.writeText(text).then(() => toasts.push(`${what} copied`, 'ok'), () => toasts.push("Couldn't copy", 'fail'));
+		void navigator.clipboard?.writeText(text).then(() => toasts.push(`${what} copied`, 'ok'), () => toasts.push(`Couldn't copy ${what.toLowerCase()}`, 'fail', { body: 'Select it instead' }));
 	}
 	const albumLink = $derived(typeof location === 'undefined' ? '' : location.href);
 	function trackItems(t: PageTrack): MenuItem[] {
@@ -263,7 +263,7 @@
 			const r = await api.post<{ ask: Ask; joined: boolean }>('/asks', { kind: 'artist', id: `mbid:${artist}`, albums: [mbid], editions: { [mbid]: edition } });
 			onAsked(lookup, r);
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't send request", 'fail', { body: message(e) });
 		} finally {
 			asking = false;
 		}
@@ -271,7 +271,7 @@
 
 	function onAsked(_a: LookupArtist, r: { ask: { name: string }; joined: boolean }) {
 		askedHere = true;
-		toasts.push(r.joined ? `${hero?.name} already requested` : `${hero?.name} requested`, 'ok', { body: r.joined ? 'You’re on the request too' : 'Waiting for approval' });
+		toasts.push(r.joined ? `${hero?.name} already requested` : `${hero?.name} requested`, 'ok', { body: r.joined ? "You're on the request too" : 'Waiting for approval' });
 		void refreshInbox();
 	}
 

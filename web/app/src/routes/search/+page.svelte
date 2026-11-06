@@ -809,7 +809,7 @@
 		patchArtist(a, { ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, albums: r.ask.albums } });
 		const what = `${r.ask.name} (${albumWords(r.ask.albums)})`;
 		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}

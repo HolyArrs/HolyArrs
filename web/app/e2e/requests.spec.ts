@@ -352,7 +352,7 @@ test('two members ask for different seasons of a show: one ask, both askers on i
 	await expect(second).toContainText('Someone asked for season 1 already');
 	await second.getByRole('button', { name: 'Ask for season 2' }).click();
 	await expect(second).toBeHidden();
-	await expect(teo.getByRole('status').filter({ hasText: 'You’re on the request too' })).toBeVisible();
+	await expect(teo.getByRole('status').filter({ hasText: "You're on the request too" })).toBeVisible();
 
 	for (const p of [rosa, teo]) {
 		await p.goto('/requests');

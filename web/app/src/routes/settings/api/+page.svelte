@@ -38,7 +38,7 @@
 			await navigator.clipboard.writeText(text);
 			toasts.push('Command copied', 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select the text instead' });
+			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
 		}
 	}
 

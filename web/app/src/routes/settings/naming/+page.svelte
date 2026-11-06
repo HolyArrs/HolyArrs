@@ -161,7 +161,7 @@
 			await api.post('/holding/clean');
 			toasts.push(
 				fr.holding_days > 0 ? 'Removing held files' : 'Nothing removed',
-				'ok', { body: fr.holding_days > 0 ? `Older than ${fr.holding_days} days` : 'Files kept until you empty them' }
+				'info', { body: fr.holding_days > 0 ? `Older than ${fr.holding_days} days` : 'Kept until emptied' }
 			);
 		} catch (e) {
 			toasts.push("Couldn't clean up", 'fail', { body: message(e) });

@@ -600,7 +600,7 @@
 	function onAsked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
 		asked = new Set([...asked, ...(r.ask.albums ?? []).map((x) => x.mbid)]);
 		lookup = lookup ? { ...lookup, ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: 1, albums: r.ask.albums } } : lookup;
-		toasts.push(r.joined ? `${r.ask.name} already requested` : `${r.ask.name} requested`, 'ok', { body: r.joined ? 'You’re on the request too' : 'Waiting for approval' });
+		toasts.push(r.joined ? `${r.ask.name} already requested` : `${r.ask.name} requested`, 'ok', { body: r.joined ? "You're on the request too" : 'Waiting for approval' });
 		void refreshInbox();
 	}
 
@@ -613,7 +613,7 @@
 			else asked = new Set([...asked, ...missing.albums]);
 			confirmAll = false;
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't send request", 'fail', { body: message(e) });
 		} finally {
 			askingAll = false;
 		}
@@ -627,7 +627,7 @@
 			await (on ? api.put(`/titles/${titleId}/follow`, {}) : api.del(`/titles/${titleId}/follow`));
 		} catch (e) {
 			following = !on;
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update follow", 'fail', { body: message(e) });
 		}
 	}
 
@@ -642,7 +642,7 @@
 			await fetch(to(`/api/v1/music/artists/${mbid}?similar=0`), { cache: 'reload', headers: { Accept: 'application/json' }, credentials: 'same-origin' }).catch(() => {});
 		} catch (e) {
 			follows = new Map([...follows, [a.mbid, !on]]);
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't update follow", 'fail', { body: message(e) });
 		}
 	}
 
@@ -654,7 +654,7 @@
 			await navigator.clipboard.writeText(new URL(href, location.href).href);
 			toasts.push('Link copied', 'ok');
 		} catch {
-			toasts.push("Couldn't copy link", 'fail');
+			toasts.push("Couldn't copy link", 'fail', { body: 'Select it instead' });
 		}
 	}
 	/** The "…" menu of a top song: open its album, ask for it (add, for managers), copy its link. */

@@ -202,7 +202,7 @@
 			if (targetSlotId) body.slot_id = targetSlotId;
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
-			toasts.push('Sent to download', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
+			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
 			await load();
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {

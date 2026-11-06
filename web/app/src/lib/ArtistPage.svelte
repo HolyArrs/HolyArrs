@@ -107,7 +107,7 @@
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
 		const what = `${title.name} (${albumWords(r.ask.albums)})`;
 		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
 		void reload();
 	}

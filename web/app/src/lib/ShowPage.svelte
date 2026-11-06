@@ -112,7 +112,7 @@
 	}
 	function asked(_s: LookupShow, r: { ask: Ask; joined: boolean }) {
 		if (r.ask.state === 'approved') toasts.push(`${title.name} approved`, 'ok', { body: 'Searching for a Release' });
-		else if (r.joined) toasts.push(`${title.name} requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.joined) toasts.push(`${title.name} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${title.name} requested`, 'ok', { body: 'Waiting for approval' });
 	}
 	const show = $derived(title.show);

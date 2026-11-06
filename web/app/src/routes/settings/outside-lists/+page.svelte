@@ -157,7 +157,7 @@
 		busyId = l.id;
 		try {
 			await api.post(`/outside-lists/${l.id}/sync`);
-			toasts.push(`Reading ${l.name}`, 'ok');
+			toasts.push(`Reading ${l.name}`, 'info');
 		} catch (err) {
 			toasts.push("Couldn't read list", 'fail', { body: message(err) });
 		} finally {

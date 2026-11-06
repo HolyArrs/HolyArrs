@@ -99,7 +99,7 @@
 		watchBusy = true;
 		try {
 			await api.post('/my/plex-watchlist/check', {});
-			toasts.push('Reading Plex watchlist', 'ok');
+			toasts.push('Reading Plex watchlist', 'info');
 			setTimeout(() => void api.get<PlexWatchlist>('/my/plex-watchlist').then((r) => (watch = r)).catch(() => {}), 4000);
 		} catch (err) {
 			toasts.push("Couldn't read watchlist", 'fail', { body: message(err) });
@@ -265,7 +265,7 @@
 			offCode = '';
 			if (r?.backup_codes) {
 				codes = r.backup_codes;
-				toasts.push('New backup codes made', 'ok', { body: 'Old ones stop working' });
+				toasts.push('Backup codes renewed', 'ok', { body: 'Old ones stop working' });
 			} else {
 				codes = [];
 				tfOpen = false;

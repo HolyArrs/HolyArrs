@@ -74,7 +74,7 @@
 		busy = s.kind;
 		try {
 			await api.put(`/schedules/${s.kind}`, { enabled });
-			toasts.push(enabled ? `${s.label} automatic runs on` : `${s.label} automatic runs off`, 'ok');
+			toasts.push(enabled ? `${s.label} auto-runs on` : `${s.label} auto-runs off`, 'ok');
 			await load();
 		} catch (e) {
 			toasts.push("Couldn't save", 'fail', { body: message(e) });

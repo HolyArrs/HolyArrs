@@ -32,7 +32,7 @@
 		busy = true;
 		try {
 			await api.del(`${path}/${encodeURIComponent(s.id)}`);
-			toasts.push(`Signed out ${s.device}`, 'ok');
+			toasts.push(`${s.device} signed out`, 'ok');
 			await load();
 		} catch (e) {
 			toasts.push("Couldn't sign out", 'fail', { body: message(e) });

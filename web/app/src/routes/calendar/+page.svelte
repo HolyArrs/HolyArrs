@@ -671,9 +671,9 @@
 			entries = entries.map(upd);
 			monthDates = monthDates.map(upd);
 			if (now !== was) myFollows = Math.max(0, myFollows + (now ? 1 : -1));
-			toasts.push(now ? `Following ${e.name}` : `Unfollowed ${e.name}`, 'ok', now ? { body: 'Dates added to your calendar' } : {});
+			toasts.push(now ? `${e.name} followed` : `${e.name} unfollowed`, 'ok', now ? { body: 'Dates added to your calendar' } : {});
 		} catch (err) {
-			toasts.push('Couldn’t update follow', 'fail', { body: message(err) });
+			toasts.push("Couldn't update follow", 'fail', { body: message(err) });
 		} finally {
 			flipping = null;
 		}

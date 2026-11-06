@@ -26,7 +26,7 @@ export interface PastAlert {
 	tone: ToastTone;
 	/** When it arrived (ms). */
 	at: number;
-	/** The toast's button, kept while it still works (until `until`). */
+	/** The toast's button, kept exactly as long as the toast offers it (until `until`). */
 	action?: ToastAction;
 	until?: number;
 	/** Not seen in the list yet. */
@@ -84,7 +84,7 @@ export function createToasts(ms = 6000) {
 
 	function remember(t: Toast, left: number) {
 		const now = Date.now();
-		past.unshift({ id: t.id, text: t.text, body: t.body, tone: t.tone, at: now, action: t.action, until: t.action ? now + left + 4000 : undefined, fresh: true });
+		past.unshift({ id: t.id, text: t.text, body: t.body, tone: t.tone, at: now, action: t.action, until: t.action ? now + left : undefined, fresh: true });
 		if (past.length > KEEP) past.length = KEEP;
 	}
 

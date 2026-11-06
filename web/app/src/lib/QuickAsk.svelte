@@ -64,13 +64,13 @@
 		asking = c.key;
 		try {
 			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
-			if (!d) return void toasts.push(`Couldn’t find ${c.name}`, 'fail', { body: 'Try Search' });
+			if (!d) return void toasts.push(`Couldn't find ${c.name}`, 'fail', { body: 'Try Search' });
 			if (d.titleId) return void toasts.push(`${c.name} already in Library`, 'ok');
 			if (act === 'add' && d.movie) addMovie?.open(d.movie);
 			else if (act === 'add' && d.show) addShow?.open(d.show);
 			else if (d.show) askShow?.open(d.show);
 		} catch (e) {
-			toasts.push('Couldn’t open title', 'fail', { body: message(e) });
+			toasts.push("Couldn't open title", 'fail', { body: message(e) });
 		} finally {
 			asking = '';
 		}
@@ -87,7 +87,7 @@
 			asked(r, c.name);
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409) refused(err.body);
-			toasts.push('Couldn’t send request', 'fail', { body: message(err) });
+			toasts.push("Couldn't send request", 'fail', { body: message(err) });
 		} finally {
 			asking = '';
 		}
@@ -96,7 +96,7 @@
 	function asked(r: { ask: Ask; joined: boolean }, what: string) {
 		if (current) askedHere = new Map([...askedHere, [current.key, { ask: r.ask.state }]]);
 		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Searching for a Release' });
-		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}

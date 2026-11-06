@@ -50,7 +50,7 @@
 			albums = a.albums ?? [];
 			events = e.events ?? [];
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			toasts.push("Couldn't load artist", 'fail', { body: message(err) });
 		}
 	}
 	$effect(() => {
@@ -113,7 +113,7 @@
 			await fn();
 			if (done) toasts.push(done, 'ok');
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			toasts.push("Couldn't save", 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -187,7 +187,7 @@
 		try {
 			await api.put(`/titles/${titleId}/artist`, { new_albums: eNew, album_types: eTypes, secondary_types: eExtras, release_statuses: eStatuses });
 			kindsOpen = false;
-			toasts.push('Saved. A refresh brings in the albums the new kinds include.', 'ok');
+			toasts.push('Album kinds saved', 'ok', { body: 'Refresh to add albums' });
 			await load();
 		} catch (err) {
 			kindsError = message(err);

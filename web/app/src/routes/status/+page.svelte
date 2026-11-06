@@ -126,7 +126,7 @@
 	function afterChecks(r: StatusRow) {
 		const now = rows.find((x) => x.key === r.key);
 		if (!now) toasts.push('Checks ran', 'ok');
-		else toasts.push(now.tone === 'ok' ? `${now.name} working` : `${now.name}: ${now.word}`, now.tone === 'ok' ? 'ok' : 'fail');
+		else toasts.push(now.tone === 'ok' ? `${now.name} working` : `${now.name} ${now.word}`, now.tone === 'ok' ? 'ok' : 'fail');
 	}
 
 	async function check(r: StatusRow) {
@@ -145,11 +145,11 @@
 				afterChecks(r);
 			} else {
 				const res = await api.post<{ ok: boolean; text: string }>(`/${c.kind}s/${c.id}/test`);
-				toasts.push(res.ok ? `${r.name} connected` : `${r.name} not connected`, res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : res.text.trim() || undefined });
+				toasts.push(res.ok ? `${r.name} connected` : `Couldn't connect ${r.name}`, res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : res.text.trim() || undefined });
 				await load(true);
 			}
 		} catch (e) {
-			toasts.push(`Couldn’t check ${r.name}`, 'fail', { body: message(e) });
+			toasts.push(`Couldn't check ${r.name}`, 'fail', { body: message(e) });
 		} finally {
 			running.delete(r.key);
 		}
@@ -164,7 +164,7 @@
 			checkRuns++;
 			toasts.push('Checks ran', 'ok');
 		} catch (e) {
-			toasts.push('Couldn’t run checks', 'fail', { body: message(e) });
+			toasts.push("Couldn't run checks", 'fail', { body: message(e) });
 		} finally {
 			running.delete('all');
 		}

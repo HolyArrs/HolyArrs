@@ -91,7 +91,7 @@
 			label = '';
 			kind = 'movie';
 			adding = false;
-			toasts.push('Library folder added', f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? 'It is healthy' : folderHealth(f.health) });
+			toasts.push('Library folder added', f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
 		} catch (err) {
 			formError = message(err);
 		} finally {

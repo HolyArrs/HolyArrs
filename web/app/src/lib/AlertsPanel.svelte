@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import Icon from './Icon.svelte';
 	import AlertSymbol from './ui/AlertSymbol.svelte';
 	import Sheet from './ui/Sheet.svelte';
@@ -16,9 +16,26 @@
 		return () => mq.removeEventListener('change', set);
 	});
 
-	// Opening shows everything waiting and clears the count.
+	// Opening shows everything waiting and clears the count (once per opening: alerts
+	// that arrive while it is open keep their "new" ring).
 	$effect(() => {
-		if (alertsPanel.open) toasts.seeAll();
+		if (alertsPanel.open) untrack(() => toasts.seeAll());
+	});
+
+	// Desktop panel: it sits just right of the side menu (open or folded), takes focus
+	// when it opens and gives it back to the bell when it closes.
+	let left = $state(272);
+	let wasOpen = false;
+	$effect(() => {
+		const open = alertsPanel.open && !phone;
+		if (open && !wasOpen) {
+			const menu = document.querySelector('.ui-sidebar');
+			left = Math.round((menu?.getBoundingClientRect().right ?? 260) + 12);
+			void tick().then(() => box?.focus());
+		} else if (!open && wasOpen) {
+			(document.querySelector('.alerts-bell') as HTMLElement | null)?.focus();
+		}
+		wasOpen = open;
 	});
 
 	// Times like "now", "2m", "1h"; refreshed while open.
@@ -47,7 +64,9 @@
 		if (box && !box.contains(el) && !el.closest('[data-alerts-open]')) close();
 	}
 	function key(e: KeyboardEvent) {
-		if (e.key === 'Escape' && alertsPanel.open && !phone) close();
+		if (e.key !== 'Escape' || !alertsPanel.open || phone) return;
+		e.stopPropagation();
+		close();
 	}
 </script>
 
@@ -85,7 +104,7 @@
 		</div>
 	</Sheet>
 {:else if alertsPanel.open}
-	<div class="panel" role="dialog" aria-label="Recent alerts" bind:this={box}>
+	<div class="panel" role="dialog" aria-label="Recent alerts" tabindex="-1" style:left="{left}px" bind:this={box}>
 		<div class="head">
 			<strong>Recent alerts</strong>
 			{#if toasts.past.length}<button type="button" class="clear" onclick={() => toasts.forgetAll()}>Clear all</button>{/if}
@@ -96,10 +115,10 @@
 
 <style>
 	/* Same dark glass as the alert pills. */
+	.panel:focus { outline: none; }
 	.panel {
 		position: fixed;
 		z-index: 91;
-		left: calc(var(--sidebar, 260px) + 12px);
 		bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 		width: min(380px, calc(100vw - 32px));
 		max-height: min(560px, calc(100dvh - 32px));
@@ -131,7 +150,7 @@
 	.b { font: var(--t-footnote); color: rgb(245 245 247 / 58%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.row :global(.ui-alert-sym) { margin-top: 1px; }
 	.side { flex: none; width: 34px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-	time { flex: none; line-height: 20px; font: var(--t-footnote); color: rgb(245 245 247 / 45%); font-variant-numeric: tabular-nums; }
+	time { flex: none; line-height: 20px; font: var(--t-footnote); color: rgb(245 245 247 / 58%); font-variant-numeric: tabular-nums; }
 	.act { align-self: flex-start; margin-top: 6px; padding: 4px 12px; border-radius: 999px; font: var(--t-footnote); font-weight: 600; color: #f5f5f7; background: rgb(255 255 255 / 14%); }
 	.act:hover { background: rgb(255 255 255 / 22%); }
 	.x { flex: none; width: 22px; height: 22px; margin-right: -4px; display: grid; place-items: center; border-radius: 50%; color: rgb(245 245 247 / 55%); }

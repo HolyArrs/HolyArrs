@@ -115,7 +115,7 @@
 			await api.del(`/media-servers/${m.id}`);
 			await load();
 		} catch (err) {
-			toasts.push("Couldn't remove media server", 'fail', { body: message(err) });
+			toasts.push("Couldn't remove Media server", 'fail', { body: message(err) });
 		}
 	}
 

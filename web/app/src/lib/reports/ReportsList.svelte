@@ -99,7 +99,7 @@
 		if (ended.length === 1) {
 			const [e] = ended;
 			if (e.kind === 'none') toasts.push(`No better copy of ${e.name}`, 'info', { body: 'Nothing found yet' });
-			else if (e.kind === 'failed') toasts.push(`Search for ${e.name} failed`, 'fail', e.error ? { body: e.error } : {});
+			else if (e.kind === 'failed') toasts.push(`Couldn't search ${e.name}`, 'fail', e.error ? { body: e.error } : {});
 			else toasts.push(`Another copy of ${e.name} found`, 'ok');
 		} else if (ended.length > 1) {
 			const found = ended.filter((e) => e.kind === 'found').length;
@@ -206,7 +206,7 @@
 		try {
 			put(await reopenReport(r.id));
 		} catch (e) {
-			toasts.push('Couldn’t reopen report', 'fail', { body: message(e) });
+			toasts.push("Couldn't reopen report", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -222,7 +222,7 @@
 			clearTimeout(searchTimer);
 			searchTimer = setTimeout(() => void readSearches(), 1500);
 		} catch (e) {
-			toasts.push('Couldn’t start search', 'fail', { body: message(e) });
+			toasts.push("Couldn't start search", 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}

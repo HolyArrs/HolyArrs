@@ -664,9 +664,9 @@
 	function movieAsked(r: { ask: Ask; joined: boolean; already: boolean }) {
 		const brief = { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length };
 		if (details) details = r.ask.four_k ? { ...details, ask4k: brief } : { ...details, ask: brief };
-		if (r.ask.four_k) toasts.push(`${r.ask.name} requested in 4K`, 'ok', { body: r.joined ? 'You’re on the request too' : 'Waiting for approval' });
+		if (r.ask.four_k) toasts.push(`${r.ask.name} requested in 4K`, 'ok', { body: r.joined ? "You're on the request too" : 'Waiting for approval' });
 		else if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Searching for a Release' });
-		else if (r.joined) toasts.push(`${r.ask.name} requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}
@@ -675,7 +675,7 @@
 		if (details) details = { ...details, ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, seasons: r.ask.seasons } };
 		const what = `${r.ask.name} (${seasonWords(r.ask.seasons)})`;
 		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Searching for a Release' });
-		else if (r.joined) toasts.push(`${what} requested`, 'ok', { body: 'You’re on the request too' });
+		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
 		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
 		void refreshInbox();
 	}

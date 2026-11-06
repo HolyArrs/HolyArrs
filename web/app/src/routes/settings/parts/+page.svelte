@@ -119,7 +119,7 @@
 			// The answer of the link's own test: the same words as its tag ("qBittorrent v5.1.2"), or Not connected and why.
 			const o = (r ?? {}) as { ok?: boolean; text?: string; message?: string; error?: string; found?: string };
 			const said = o.text || o.message || o.error || o.found || '';
-			toasts.push(o.ok === false ? `${l.name} not connected` : `${l.name} connected`, o.ok === false ? 'fail' : 'ok', { body: o.ok === false ? said || undefined : testLabel(said) });
+			toasts.push(o.ok === false ? `Couldn't connect ${l.name}` : `${l.name} connected`, o.ok === false ? 'fail' : 'ok', { body: o.ok === false ? said || undefined : testLabel(said) });
 			void load();
 		});
 	}
