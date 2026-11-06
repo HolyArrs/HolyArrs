@@ -1446,7 +1446,7 @@
 					{#each [...counts.codecs].toSorted((a, b) => b[1] - a[1]) as [c, n] (c)}<Chip label={codecLabel(c)} count={n} selected={filter.codec === c} onclick={() => setFilter({ codec: filter.codec === c ? '' : c })} />{/each}
 				</div>
 			{/if}
-			{#if (kind === 'movie' || kind === 'show') && subsTitles}
+			{#if (kind === 'movie' || kind === 'show') && subsTitles && (counts.subs || filter.subs)}
 				<h3 class="sf-h">Subtitles</h3>
 				<div class="sf-chips">
 					<Chip label="Missing" icon="subtitle" count={counts.subs} selected={!!filter.subs} onclick={() => setFilter({ subs: !filter.subs })} />
